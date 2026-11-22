@@ -508,7 +508,7 @@ export function TimeRangePicker({
                             'bg-background text-foreground',
                             'appearance-none',
                             'border border-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-primary'
+                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
                           )}
                           autoComplete="off"
                           spellCheck={false}
@@ -550,7 +550,7 @@ export function TimeRangePicker({
                             'bg-background text-foreground',
                             'appearance-none',
                             'border border-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-primary'
+                            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
                           )}
                           autoComplete="off"
                           spellCheck={false}

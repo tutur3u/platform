@@ -129,7 +129,7 @@ export function WorkbenchToolbar({
         >
           <SelectTrigger
             aria-label={t('language')}
-            className="h-8 w-auto max-w-32 rounded-full motion-reduce:transition-none"
+            className="h-8 w-auto max-w-32 motion-reduce:transition-none"
           >
             <SelectValue />
           </SelectTrigger>

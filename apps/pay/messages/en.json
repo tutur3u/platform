@@ -629,7 +629,6 @@
     "youtube_links": "YouTube Links"
   },
   "experimental-ui": {
-    "badge": "Beta",
     "corners": {
       "round": "Round",
       "sharp": "Sharp",
@@ -649,9 +648,9 @@
       "rose": "Rosé",
       "sorbet": "Sorbet"
     },
-    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
-    "setting_title": "Experimental design",
-    "setting_toggle_label": "Use the experimental Sorbet design"
+    "setting_description": "The default Tuturuuu look in every app. Turn it off to use the classic design. Saved to your account.",
+    "setting_title": "Sorbet design",
+    "setting_toggle_label": "Use the Sorbet design"
   },
   "finance": {
     "new_debt": "New debt",

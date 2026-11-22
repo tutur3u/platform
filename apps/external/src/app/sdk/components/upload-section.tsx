@@ -31,7 +31,7 @@ export function UploadSection({
               value={uploadPath}
               onChange={(e) => setUploadPath(e.target.value)}
               disabled={isUploading}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-ring/60 focus:outline-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
               placeholder="e.g., gallery"
             />
           </div>

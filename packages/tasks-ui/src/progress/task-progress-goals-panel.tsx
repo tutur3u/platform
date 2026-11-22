@@ -256,7 +256,7 @@ export function GoalsPanel({
                   {t('goals.frequency_label')}
                 </label>
                 <select
-                  className="h-11 rounded-xl border bg-background px-3 text-sm shadow-sm outline-none focus:border-dynamic-orange focus:ring-2 focus:ring-dynamic-orange/15"
+                  className="h-11 rounded-xl border bg-background px-3 text-sm shadow-sm outline-none focus:border-dynamic-orange focus-visible:ring-2 focus-visible:ring-dynamic-orange/15"
                   id="habit_frequency"
                   name="habit_frequency"
                 >

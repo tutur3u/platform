@@ -130,7 +130,7 @@ export default function InteractiveDemo() {
               <input
                 type="text"
                 placeholder={t('input-place-holder')}
-                className="w-full rounded-lg border border-primary/10 bg-background/10 px-4 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-lg border border-primary/10 bg-background/10 px-4 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                 disabled
               />
               <MessageSquare className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

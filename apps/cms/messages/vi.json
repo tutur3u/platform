@@ -2051,6 +2051,58 @@
       "unauthorized": "Truy cập trái phép",
       "unknown_error": "Đã xảy ra lỗi không xác định"
     },
+    "event_dialog": {
+      "ai_error_fallback": "Vui lòng thử lại.",
+      "ai_error_title": "Không thể tạo sự kiện",
+      "ai_generate": "Tạo",
+      "ai_generating": "Đang tạo sự kiện…",
+      "ai_image": "Đọc từ hình ảnh",
+      "ai_prompt_hint": "Ghi rõ ngày, giờ và thời lượng để có kết quả tốt nhất.",
+      "ai_prompt_label": "Mô tả sự kiện của bạn",
+      "ai_prompt_placeholder": "Ví dụ: họp nhóm lúc 14:00 thứ Hai tuần sau trong một giờ",
+      "ai_record": "Nhập bằng giọng nói",
+      "ai_stop": "Dừng ghi âm",
+      "all_day": "Cả ngày",
+      "back": "Quay lại",
+      "calendar_label": "Lịch",
+      "calendar_placeholder": "Chọn lịch",
+      "cancel": "Hủy",
+      "close": "Đóng",
+      "color_label": "Màu sự kiện",
+      "color_value": "Màu sự kiện: {color}",
+      "create": "Tạo sự kiện",
+      "delete": "Xóa sự kiện",
+      "description_label": "Mô tả",
+      "description_placeholder": "Thêm mô tả",
+      "edit_description": "Thay đổi sự kiện hiện có của bạn",
+      "edit_details": "Chỉnh sửa chi tiết",
+      "edit_title": "Chỉnh sửa sự kiện",
+      "ends": "Kết thúc",
+      "location_label": "Địa điểm",
+      "location_placeholder": "Thêm địa điểm",
+      "lock": "Khóa",
+      "locked_hint": "Tự động xếp lịch sẽ không dời sự kiện này",
+      "mode_label": "Cách nhập",
+      "new_description": "Thêm sự kiện mới vào lịch của bạn",
+      "new_title": "Sự kiện mới",
+      "next_event": "Sự kiện tiếp theo",
+      "open_in_maps": "Mở trong Google Maps",
+      "preview_insights": "Gợi ý",
+      "preview_position": "{current} / {total}",
+      "preview_title": "{count, plural, other {Sự kiện đã tạo}}",
+      "preview_unlocked": "Được tạo ở trạng thái chưa khóa",
+      "previous_event": "Sự kiện trước",
+      "save": "Lưu thay đổi",
+      "save_generated": "{count, plural, one {Lưu sự kiện} other {Lưu tất cả sự kiện}}",
+      "saving": "Đang lưu…",
+      "starts": "Bắt đầu",
+      "tab_ai": "Tạo bằng AI",
+      "tab_quick": "Nhập nhanh",
+      "timezone": "Múi giờ",
+      "title_label": "Tiêu đề",
+      "title_placeholder": "Thêm tiêu đề",
+      "unlocked_hint": "Tự động xếp lịch có thể dời sự kiện này"
+    },
     "event_preview": {
       "close": "Đóng xem nhanh",
       "delete": "Xóa sự kiện",
@@ -5002,7 +5054,6 @@
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
   },
   "experimental-ui": {
-    "badge": "Beta",
     "corners": {
       "round": "Tròn",
       "sharp": "Vuông",
@@ -5022,9 +5073,9 @@
       "rose": "Hồng",
       "sorbet": "Sorbet"
     },
-    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
-    "setting_title": "Giao diện thử nghiệm",
-    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
+    "setting_description": "Giao diện mặc định của Tuturuuu trên mọi ứng dụng. Tắt để dùng giao diện cổ điển. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện Sorbet",
+    "setting_toggle_label": "Dùng giao diện Sorbet"
   },
   "external-projects": {
     "epm": {
@@ -10108,6 +10159,8 @@
       "sidebar_hover": "Di chuột",
       "sidebar_local_override": "Ghi đè cục bộ",
       "sidebar_local_override_description": "Sử dụng cài đặt thanh bên riêng cho trình duyệt này, thay vì tùy chọn chung của tài khoản.",
+      "sidebar_nav_labels": "Hiện nhãn điều hướng",
+      "sidebar_nav_labels_description": "Hiện tên dưới các biểu tượng khi thanh bên được thu gọn.",
       "title": "Tùy chọn"
     },
     "reports": {

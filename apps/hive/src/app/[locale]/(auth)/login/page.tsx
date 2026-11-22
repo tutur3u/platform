@@ -106,7 +106,7 @@ export default async function LoginPage({ searchParams }: Props) {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <a
-                  className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-dynamic-green px-5 font-semibold text-background transition hover:bg-dynamic-green/90 focus:outline-none focus:ring-2 focus:ring-dynamic-green/35"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-dynamic-green px-5 font-semibold text-background transition hover:bg-dynamic-green/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-green/35"
                   href={loginUrl.toString()}
                 >
                   {t('continueWithTuturuuu')}

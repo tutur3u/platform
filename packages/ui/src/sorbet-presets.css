@@ -370,11 +370,23 @@
   border-color: var(--border);
 }
 
-:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
-  :where(
-    [data-slot="button"],
-    [data-slot="input"],
-    [data-slot="select-trigger"]
-  ):focus-visible {
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]:not(
+    [data-focus-modality="pointer"]
+  )
+  :where([data-slot="button"]):focus-visible {
   outline-width: 3px;
+}
+
+/* Fields draw their keyboard ring as a solid token edge instead of a halo. */
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]:not(
+    [data-focus-modality="pointer"]
+  )
+  :where(
+    [data-slot="input"],
+    [data-slot="select-trigger"],
+    [data-slot="textarea"],
+    [data-sorbet-shape="field"],
+    [data-slot="button"][role="combobox"]
+  ):focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
 }

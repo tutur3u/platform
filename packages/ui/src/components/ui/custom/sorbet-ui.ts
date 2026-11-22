@@ -1,14 +1,17 @@
 /**
- * Experimental Sorbet design switch.
+ * Sorbet design switch.
  *
- * The preference is stored on the user's account (`EXPERIMENTAL_SORBET_UI` in
- * user configs) so every Tuturuuu app follows it. Each app applies it by setting
- * `data-ui="sorbet"` on `<html>`; `sorbet.css` maps the Sorbet tokens onto the
- * shared semantic tokens under that attribute. A device-local copy lets the next
- * page load apply the last known value before the account value arrives.
+ * Sorbet is the default Tuturuuu design: it is on for everyone unless they turn
+ * it off. The choice is stored on the user's account (`EXPERIMENTAL_SORBET_UI`
+ * in user configs; the key keeps its original name) so every Tuturuuu app
+ * follows it. Only an explicit "false" turns it off; an unset or unknown value
+ * means on. Each app applies it by setting `data-ui="sorbet"` on `<html>`;
+ * `sorbet.css` maps the Sorbet tokens onto the shared semantic tokens under
+ * that attribute. A device-local copy lets the next page load apply the last
+ * known value before the account value arrives.
  */
 
-/** User config key (in `user_configs`) for the account-wide opt-in. */
+/** User config key (in `user_configs`) for the account-wide choice. */
 export const EXPERIMENTAL_SORBET_UI_CONFIG_ID = 'EXPERIMENTAL_SORBET_UI';
 export const SORBET_UI_ATTRIBUTE = 'data-ui';
 export const SORBET_UI_VALUE = 'sorbet';
@@ -16,15 +19,20 @@ export const SORBET_UI_STORAGE_KEY = 'tuturuuu:experimental-sorbet-ui';
 /** Fired on `window` when this tab changes the preference. */
 export const SORBET_UI_CHANGE_EVENT = 'tuturuuu:experimental-sorbet-ui-change';
 
+/** Sorbet applies when nothing says otherwise. */
+export const SORBET_UI_DEFAULT = true;
+
+/** On unless the value is an explicit opt-out. */
 export function parseSorbetUiValue(value: unknown): boolean {
-  return value === true || value === 'true';
+  return value !== false && value !== 'false';
 }
 
+/** This device's last known choice, or null when it has none. */
 export function readStoredSorbetUi(): boolean | null {
   try {
     const stored = window.localStorage.getItem(SORBET_UI_STORAGE_KEY);
     if (stored === null) return null;
-    return stored === 'true';
+    return parseSorbetUiValue(stored);
   } catch {
     return null;
   }

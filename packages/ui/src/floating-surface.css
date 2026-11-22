@@ -130,7 +130,7 @@
   transition-timing-function: var(--sorbet-ease-emphasized, ease-out);
 }
 
-:root
+:root:not([data-focus-modality="pointer"])
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast]:focus-visible {
   outline: 2px solid var(--ring);
@@ -231,7 +231,7 @@
   color: var(--muted-foreground);
 }
 
-:root
+:root:not([data-focus-modality="pointer"])
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]
   [data-button]:focus-visible {
@@ -321,7 +321,7 @@
   color: var(--foreground);
 }
 
-:root
+:root:not([data-focus-modality="pointer"])
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]
   [data-close-button]:focus-visible {

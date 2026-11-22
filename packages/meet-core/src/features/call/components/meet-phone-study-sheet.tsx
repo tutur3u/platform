@@ -215,7 +215,7 @@ export function MeetPhoneStudySheet({
                 onChange={(event) => setQaDraft(event.target.value)}
                 placeholder={t('ask_class_placeholder')}
                 aria-label={t('ask_class_placeholder')}
-                className="min-h-11 flex-1 rounded-full text-base"
+                className="min-h-11 flex-1 text-base"
               />
               <Button
                 type="submit"
@@ -532,7 +532,7 @@ export function MeetPhoneStudySheet({
               onChange={(event) => setTutorDraft(event.target.value)}
               placeholder={t('tutor_composer_placeholder')}
               aria-label={t('tutor_composer_placeholder')}
-              className="min-h-11 flex-1 rounded-full text-base"
+              className="min-h-11 flex-1 text-base"
             />
             <Button
               type="submit"

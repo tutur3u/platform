@@ -32,16 +32,17 @@ describe('SidebarSettingsButton', () => {
     }
   );
 
-  it('captions the collapsed rail button under its icon', () => {
+  it('shows only the icon in the collapsed rail unless labels are turned on', () => {
     const { container } = render(
       <SidebarSettingsButton isCollapsed label="Settings" />
     );
 
     const button = within(container).getByRole('button', { name: 'Settings' });
+    const caption = within(button).getByText('Settings');
 
-    expect(within(button).getByText('Settings').getAttribute('data-slot')).toBe(
-      'sidebar-item-label'
-    );
+    expect(caption.getAttribute('data-slot')).toBe('sidebar-item-label');
+    expect(caption.classList.contains('hidden')).toBe(true);
+    expect(caption.classList.contains('nav-labels:block')).toBe(true);
     expect(within(button).getAllByText('Settings')).toHaveLength(1);
   });
 });

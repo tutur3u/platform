@@ -495,7 +495,7 @@ export function PromptForm({
           placeholder={`${t('ai_chat.send_message')}.`}
           spellCheck={false}
           maxRows={7}
-          className="scrollbar-none w-full resize-none bg-transparent py-2 placeholder-foreground/50 focus-within:outline-hidden sm:text-sm"
+          className="scrollbar-none w-full resize-none bg-transparent py-2 placeholder-foreground/50 has-focus-visible:outline-hidden sm:text-sm"
         />
       </div>
     </form>

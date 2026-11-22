@@ -214,8 +214,8 @@
   }
 }
 
-/* Focus: the same solid ring on navigation, tabs and switches. */
-:root[data-ui="sorbet"]
+/* Focus: the same solid ring on navigation, tabs and switches, keyboard only. */
+:root[data-ui="sorbet"]:not([data-focus-modality="pointer"])
   :where(
     [data-slot="sidebar-menu-button"],
     [data-slot="tabs-trigger"],

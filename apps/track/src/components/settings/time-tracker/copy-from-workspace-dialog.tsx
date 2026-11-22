@@ -337,7 +337,7 @@ export function CopyFromWorkspaceDialog({
                         <button
                           key={category.id}
                           type="button"
-                          className="flex w-full items-start space-x-3 rounded-md p-3 text-left transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          className="flex w-full items-start space-x-3 rounded-md p-3 text-left transition-colors hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                           onClick={() =>
                             handleCategoryToggle(
                               category.id,

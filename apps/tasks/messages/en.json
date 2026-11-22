@@ -1665,6 +1665,58 @@
       "unauthorized": "Unauthorized access",
       "unknown_error": "An unknown error occurred"
     },
+    "event_dialog": {
+      "ai_error_fallback": "Please try again.",
+      "ai_error_title": "Couldn't generate the event",
+      "ai_generate": "Generate",
+      "ai_generating": "Creating your event…",
+      "ai_image": "Read from an image",
+      "ai_prompt_hint": "Include the date, time and length for the best result.",
+      "ai_prompt_label": "Describe your event",
+      "ai_prompt_placeholder": "For example: team meeting next Monday at 2pm for an hour",
+      "ai_record": "Dictate",
+      "ai_stop": "Stop recording",
+      "all_day": "All day",
+      "back": "Back",
+      "calendar_label": "Calendar",
+      "calendar_placeholder": "Choose a calendar",
+      "cancel": "Cancel",
+      "close": "Close",
+      "color_label": "Event color",
+      "color_value": "Event color: {color}",
+      "create": "Create event",
+      "delete": "Delete event",
+      "description_label": "Description",
+      "description_placeholder": "Add description",
+      "edit_description": "Make changes to your existing event",
+      "edit_details": "Edit details",
+      "edit_title": "Edit event",
+      "ends": "Ends",
+      "location_label": "Location",
+      "location_placeholder": "Add location",
+      "lock": "Lock",
+      "locked_hint": "Auto-scheduling will not move this event",
+      "mode_label": "Entry mode",
+      "new_description": "Add a new event to your calendar",
+      "new_title": "New event",
+      "next_event": "Next event",
+      "open_in_maps": "Open in Google Maps",
+      "preview_insights": "Suggestions",
+      "preview_position": "{current} of {total}",
+      "preview_title": "{count, plural, one {Generated event} other {Generated events}}",
+      "preview_unlocked": "Created unlocked",
+      "previous_event": "Previous event",
+      "save": "Save changes",
+      "save_generated": "{count, plural, one {Save event} other {Save all events}}",
+      "saving": "Saving…",
+      "starts": "Starts",
+      "tab_ai": "AI generate",
+      "tab_quick": "Quick entry",
+      "timezone": "Time zone",
+      "title_label": "Title",
+      "title_placeholder": "Add title",
+      "unlocked_hint": "Auto-scheduling may move this event"
+    },
     "event_preview": {
       "close": "Close preview",
       "delete": "Delete event",
@@ -4587,7 +4639,6 @@
     "experimental_notice": "This is an experimental feature that is still under heavy development. It may not work as expected and may change in the future."
   },
   "experimental-ui": {
-    "badge": "Beta",
     "corners": {
       "round": "Round",
       "sharp": "Sharp",
@@ -4607,9 +4658,9 @@
       "rose": "Rosé",
       "sorbet": "Sorbet"
     },
-    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
-    "setting_title": "Experimental design",
-    "setting_toggle_label": "Use the experimental Sorbet design"
+    "setting_description": "The default Tuturuuu look in every app. Turn it off to use the classic design. Saved to your account.",
+    "setting_title": "Sorbet design",
+    "setting_toggle_label": "Use the Sorbet design"
   },
   "external-projects": {
     "settings": {
@@ -7825,6 +7876,8 @@
       "sidebar_hover": "Hover",
       "sidebar_local_override": "Local Override",
       "sidebar_local_override_description": "Use a different sidebar setting for this browser only, instead of your account-wide preference.",
+      "sidebar_nav_labels": "Show navigation labels",
+      "sidebar_nav_labels_description": "Show names under the icons while the sidebar is collapsed.",
       "title": "Preferences"
     },
     "reports": {

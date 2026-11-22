@@ -61,7 +61,7 @@ export default function ChatView() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type a message..."
-                  className="min-h-30 w-full resize-none rounded-xl bg-muted/20 pr-12 ring-blue-500/50 focus:ring-1"
+                  className="min-h-30 w-full resize-none rounded-xl bg-muted/20 pr-12 ring-blue-500/50 focus-visible:ring-1"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();

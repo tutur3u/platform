@@ -68,7 +68,7 @@ export function LeaderboardFilters({
               placeholder={t('search-competitors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-gray-300 bg-white pr-9 pl-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900 dark:placeholder:text-slate-500"
+              className="w-full border-gray-300 bg-white pr-9 pl-9 text-gray-700 placeholder:text-gray-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:placeholder:text-slate-500"
             />
             {searchQuery && (
               <Button

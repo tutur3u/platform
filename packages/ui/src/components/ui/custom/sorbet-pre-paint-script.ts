@@ -1,3 +1,5 @@
+import { FOCUS_MODALITY_SCRIPT } from './focus-modality';
+import { NAV_LABELS_SCRIPT } from './nav-labels';
 import {
   SORBET_DENSITIES,
   SORBET_FONTS,
@@ -28,17 +30,23 @@ const THEME_OPTIONS: ReadonlyArray<
 ];
 
 /**
- * A self-contained script that applies this device's stored Sorbet values to
- * `<html>` before the first paint, so a page opens in Sorbet instead of
- * switching after hydration. It only reads local storage, embeds no request or
- * user data, and sets attributes only to allowlisted values; anything else is
- * ignored. `ExperimentalUiSync` still applies the account values afterwards.
+ * A self-contained script that prepares `<html>` before the first paint:
+ * - records the input modality, so focus rings follow keyboard navigation only
+ *   (`focus-modality.ts`);
+ * - applies this device's stored sidebar label choice (`nav-labels.ts`);
+ * - applies Sorbet unless this device stored an explicit opt-out ("false"),
+ *   even when storage is unavailable, plus the stored Sorbet theme, so a page
+ *   opens in the right design instead of switching after hydration.
+ * It only reads local storage and input events, embeds no request or user data,
+ * and sets attributes only to allowlisted values; anything else is ignored.
+ * Each part fails on its own. `ExperimentalUiSync` still applies the account
+ * values afterwards.
  */
-export const SORBET_PRE_PAINT_SCRIPT = `(function(){try{var d=document.documentElement,s=window.localStorage;if(s.getItem(${JSON.stringify(
+export const SORBET_PRE_PAINT_SCRIPT = `(function(){try{${FOCUS_MODALITY_SCRIPT}}catch(e){}try{${NAV_LABELS_SCRIPT}}catch(e){}try{var d=document.documentElement,s=null,u=null;try{s=window.localStorage;u=s.getItem(${JSON.stringify(
   SORBET_UI_STORAGE_KEY
-)})==="true")d.setAttribute(${JSON.stringify(
+)})}catch(e){}if(u!=="false")d.setAttribute(${JSON.stringify(
   SORBET_UI_ATTRIBUTE
-)},${JSON.stringify(SORBET_UI_VALUE)});var r=s.getItem(${JSON.stringify(
+)},${JSON.stringify(SORBET_UI_VALUE)});if(!s)return;var r=s.getItem(${JSON.stringify(
   SORBET_THEME_STORAGE_KEY
 )});if(!r||r.length>${MAX_STORED_LENGTH})return;var t=JSON.parse(r);if(!t||typeof t!=="object"||Array.isArray(t))return;var o=${JSON.stringify(
   THEME_OPTIONS
@@ -51,4 +59,4 @@ export const SORBET_PRE_PAINT_SCRIPT = `(function(){try{var d=document.documentE
  * this value and every policy that uses it are updated.
  */
 export const SORBET_PRE_PAINT_SCRIPT_HASH =
-  "'sha256-b4rMjbrav58KhIKM3K8HyTGBhMHEyJQK/CJiIAjbJJU='";
+  "'sha256-Jk7sEJV41YvyAb8btKlJPI92W/JyOlzyajZhw5DVQZM='";

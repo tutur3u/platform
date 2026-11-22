@@ -76,7 +76,7 @@ export function MetricSelect({
 }) {
   return (
     <select
-      className="h-11 w-full rounded-xl border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/15"
+      className="h-11 w-full rounded-xl border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-dynamic-blue focus-visible:ring-2 focus-visible:ring-dynamic-blue/15"
       defaultValue={selectedMetric?.id}
       name={name}
       required

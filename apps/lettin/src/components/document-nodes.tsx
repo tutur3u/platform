@@ -84,7 +84,7 @@ export function renderDocumentNode(
           tabIndex={id ? -1 : undefined}
           className={
             id
-              ? 'scroll-mt-24 focus:outline focus:outline-2 focus:outline-ring'
+              ? 'scroll-mt-24 focus:outline focus-visible:outline-2 focus-visible:outline-ring'
               : undefined
           }
         >

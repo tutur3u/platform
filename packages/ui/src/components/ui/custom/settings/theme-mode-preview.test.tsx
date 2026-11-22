@@ -29,7 +29,8 @@ beforeEach(() => {
 });
 
 describe('ThemeModePreview', () => {
-  it('shows the classic grounds while Sorbet is off', () => {
+  it('shows the classic grounds while Sorbet is turned off', () => {
+    configs.EXPERIMENTAL_SORBET_UI = 'false';
     render(<ThemeModePreview mode="dark" />);
 
     expect(screen.getByTestId('theme-mode-preview')).toHaveClass(
@@ -51,6 +52,12 @@ describe('ThemeModePreview', () => {
       ['matcha', 'light'],
       ['matcha', 'dark'],
     ]);
+  });
+
+  it('shows Sorbet when the account never chose, since it is the default', () => {
+    render(<ThemeModePreview mode="light" />);
+
+    expect(previewSides()).toEqual([['sorbet', 'light']]);
   });
 
   it('falls back to the default palette when the stored theme is invalid', () => {

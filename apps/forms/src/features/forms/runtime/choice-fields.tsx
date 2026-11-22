@@ -317,7 +317,7 @@ export function renderDropdownField({
         className={cn(
           toneClasses.fieldClassName,
           validationError
-            ? 'border-dynamic-red/50! ring-2! ring-dynamic-red/15! focus:border-dynamic-red! focus:ring-dynamic-red/20!'
+            ? 'border-dynamic-red/50! ring-2! ring-dynamic-red/15! focus:border-dynamic-red! focus-visible:ring-dynamic-red/20!'
             : ''
         )}
       >

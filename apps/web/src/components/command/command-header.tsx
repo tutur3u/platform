@@ -38,7 +38,7 @@ export function CommandHeader({
         ) : page !== 'root' ? (
           <button
             type="button"
-            className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/20 active:scale-95"
+            className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/20 active:scale-95"
             onClick={onBack}
             disabled={isTransitioning}
           >

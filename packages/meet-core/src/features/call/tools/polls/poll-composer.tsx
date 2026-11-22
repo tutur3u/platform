@@ -183,7 +183,6 @@ export function PollComposer({
                 aria-label={t('option_label', { number: index + 1 })}
                 maxLength={120}
                 value={choice.label}
-                className="rounded-full"
                 onChange={(event) =>
                   setChoices((current) =>
                     current.map((entry) =>
@@ -232,7 +231,6 @@ export function PollComposer({
             min={1}
             max={MAX_CHOICES}
             required
-            className="rounded-full"
             value={limit || ''}
             onChange={(event) => setLimit(Number(event.target.value))}
           />

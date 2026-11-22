@@ -5,8 +5,8 @@
   every component that uses them follows without code changes.
 
   Values come from the Tuturuuu design system (Sorbet tokens): warm white ground,
-  white surfaces, ink primary, pastel fills with matching inks, pill controls,
-  18px cards, soft shadows and Nunito. Every text pair meets 4.5:1 in both themes.
+  white surfaces, ink primary, pastel fills with matching inks, pill buttons,
+  rounded fields, 18px cards, soft shadows and Nunito. Every text pair meets 4.5:1 in both themes.
 */
 
 :root[data-ui="sorbet"] {
@@ -205,15 +205,33 @@
     sans-serif;
 }
 
-/* Pill controls. :where keeps the selectors light so local overrides still win. */
+/*
+  Pill buttons and badges. :where keeps the selectors light so local overrides
+  still win. A button opts out with data-sorbet-shape ("keep" holds its own
+  radius, "field" takes the field radius below); a combobox trigger is a field.
+*/
 :root[data-ui="sorbet"]
   :where(
-    [data-slot="button"]:not([data-sorbet-shape="keep"]),
-    [data-slot="input"],
-    [data-slot="select-trigger"],
+    [data-slot="button"]:not([data-sorbet-shape], [role="combobox"]),
     [data-slot="badge"]
   ) {
   border-radius: var(--sorbet-control-radius);
+}
+
+/*
+  Fields are rounded, never pills: inputs, textareas, select and combobox
+  triggers and field-shaped buttons such as date pickers take the md corner
+  (--radius), which the Corners option scales with the rest of the theme.
+*/
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="select-trigger"],
+    [data-slot="button"][data-sorbet-shape="field"],
+    [data-slot="button"][role="combobox"]
+  ) {
+  border-radius: var(--radius);
 }
 
 /* Surfaces float on soft shadows; borders recede. */
@@ -222,21 +240,28 @@
   box-shadow: var(--sorbet-shadow-md);
 }
 
+/* Full-screen and docked dialogs keep their square edges. */
 :root[data-ui="sorbet"]
   :where(
     [data-slot="popover-content"],
     [data-slot="dropdown-menu-content"],
-    [data-slot="dialog-content"]
+    [data-slot="dialog-content"]:not(
+      [data-presentation="fullscreen"],
+      [data-presentation="panel"]
+    )
   ) {
   border-radius: var(--radius-xl);
 }
 
-/* Focus: a solid ring that meets 3:1 on every surface. */
-:root[data-ui="sorbet"]
+/*
+  Focus: keyboard navigation only (see focus-modality.ts). Buttons take a solid
+  ring that meets 3:1 on every surface. Fields keep their primitive treatment, a
+  --ring edge with a soft halo from the same token, so no outline floats around
+  a text box.
+*/
+:root[data-ui="sorbet"]:not([data-focus-modality="pointer"])
   :where(
-    [data-slot="button"],
-    [data-slot="input"],
-    [data-slot="select-trigger"]
+    [data-slot="button"]:not([role="combobox"], [data-sorbet-shape="field"])
   ):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;

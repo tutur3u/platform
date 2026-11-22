@@ -150,7 +150,7 @@ function DurationInput({
           onChange={(e) => setInputValue(e.target.value)}
           onBlur={handleInputSubmit}
           onKeyDown={handleKeyDown}
-          className="h-7 w-16 rounded-md border bg-background px-2 text-center font-medium text-sm tabular-nums outline-none ring-1 ring-primary focus:ring-2"
+          className="h-7 w-16 rounded-md border bg-background px-2 text-center font-medium text-sm tabular-nums outline-none ring-1 ring-primary focus-visible:ring-2"
           min={min}
           max={max}
         />

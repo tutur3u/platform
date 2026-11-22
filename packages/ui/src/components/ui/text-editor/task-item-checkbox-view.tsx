@@ -133,56 +133,56 @@ export function TaskItemCheckboxContent({
               completedTaskColor === 'red' && [
                 'border-dynamic-red/50',
                 'hover:scale-105 hover:border-dynamic-red hover:bg-dynamic-red/10',
-                'focus:border-dynamic-red focus:outline-none focus:ring-2 focus:ring-dynamic-red/30 focus:ring-offset-2',
+                'focus:border-dynamic-red focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-red/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-red bg-dynamic-red/20',
               ],
               completedTaskColor === 'orange' && [
                 'border-dynamic-orange/50',
                 'hover:scale-105 hover:border-dynamic-orange hover:bg-dynamic-orange/10',
-                'focus:border-dynamic-orange focus:outline-none focus:ring-2 focus:ring-dynamic-orange/30 focus:ring-offset-2',
+                'focus:border-dynamic-orange focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-orange/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-orange bg-dynamic-orange/20',
               ],
               completedTaskColor === 'yellow' && [
                 'border-dynamic-yellow/50',
                 'hover:scale-105 hover:border-dynamic-yellow hover:bg-dynamic-yellow/10',
-                'focus:border-dynamic-yellow focus:outline-none focus:ring-2 focus:ring-dynamic-yellow/30 focus:ring-offset-2',
+                'focus:border-dynamic-yellow focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-yellow/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-yellow bg-dynamic-yellow/20',
               ],
               completedTaskColor === 'green' && [
                 'border-dynamic-green/50',
                 'hover:scale-105 hover:border-dynamic-green hover:bg-dynamic-green/10',
-                'focus:border-dynamic-green focus:outline-none focus:ring-2 focus:ring-dynamic-green/30 focus:ring-offset-2',
+                'focus:border-dynamic-green focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-green/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-green bg-dynamic-green/20',
               ],
               completedTaskColor === 'cyan' && [
                 'border-dynamic-cyan/50',
                 'hover:scale-105 hover:border-dynamic-cyan hover:bg-dynamic-cyan/10',
-                'focus:border-dynamic-cyan focus:outline-none focus:ring-2 focus:ring-dynamic-cyan/30 focus:ring-offset-2',
+                'focus:border-dynamic-cyan focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-cyan/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-cyan bg-dynamic-cyan/20',
               ],
               completedTaskColor === 'blue' && [
                 'border-dynamic-blue/50',
                 'hover:scale-105 hover:border-dynamic-blue hover:bg-dynamic-blue/10',
-                'focus:border-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 focus:ring-offset-2',
+                'focus:border-dynamic-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-blue bg-dynamic-blue/20',
               ],
               completedTaskColor === 'purple' && [
                 'border-dynamic-purple/50',
                 'hover:scale-105 hover:border-dynamic-purple hover:bg-dynamic-purple/10',
-                'focus:border-dynamic-purple focus:outline-none focus:ring-2 focus:ring-dynamic-purple/30 focus:ring-offset-2',
+                'focus:border-dynamic-purple focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-purple/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-purple bg-dynamic-purple/20',
               ],
               completedTaskColor === 'pink' && [
                 'border-dynamic-pink/50',
                 'hover:scale-105 hover:border-dynamic-pink hover:bg-dynamic-pink/10',
-                'focus:border-dynamic-pink focus:outline-none focus:ring-2 focus:ring-dynamic-pink/30 focus:ring-offset-2',
+                'focus:border-dynamic-pink focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-pink/30 focus-visible:ring-offset-2',
                 (isChecked || isIndeterminate) &&
                   'border-dynamic-pink bg-dynamic-pink/20',
               ]

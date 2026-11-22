@@ -115,6 +115,19 @@ project and classifies diagnostics:
   rerun the gate to distinguish a cascade from a real type error. Unrelated
   unknown values in the same file retain their diagnostics and blocking status.
 
+In a fresh worktree on a validation host, build the cold declarations first
+(`bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/internal-api
+--filter=@tuturuuu/supabase ...` through `ttr resources run`). Programs that
+read emitted or generated files still fail under the gate's per-program
+`--noEmit` run there: the Calendar and Mail worker programs import
+`#calendar-handler`/`#mail-handler` from the app program's `.typecheck/`
+output, and Roadmap imports its generated `routeTree.gen.ts`. Confirm those
+apps with their own `bun run type-check`, which emits and generates in order.
+Where a host's `ttr` shims are bound to a different Bun runtime than the gate
+invokes, run the whole gate in one admitted slot,
+`ttr resources run -- node scripts/check-changed.js --no-ttr`, instead of
+skipping admission.
+
 Shared-package changes select affected packages from the Turbo dry graph.
 When that command fails, the gate keeps transitive reverse dependents from
 workspace manifests. `type-check:slice` is a build-free cached Turbo task with

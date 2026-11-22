@@ -27,16 +27,28 @@ or dialog opened from it is active. After you dismiss the last overlay, the
 sidebar collapses if the pointer is outside it. This applies to Web, Workspace,
 and satellite dashboards that offer hover expansion.
 
-The collapsed rail shows each navigation item's name, and **Settings**, as a
-one-line caption under its icon, so the rail reads without hovering. Long names
-truncate; the item's tooltip and accessible name keep the full name. The rail
-stays 4rem wide, and collapsing remains a saved preference. This applies to Web,
-Workspace, and satellite dashboards that render items through the shared
-`NavLink`. Colab draws its own rail items and stays icon-only with tooltips.
-Footer actions (Upgrade, Feedback) and the account and notification controls
-stay icon-only with tooltips. Coverage: `packages/ui/src/components/ui/custom/nav-link.test.tsx`,
-`packages/satellite/src/components/sidebar-settings-button.test.tsx`, and the
-layout-shift harness in [Web design system](/build/development-tools/web-design-system#hover-expand-sidebar).
+The collapsed rail, and the resting rail of **Expand on hover**, show icons
+only by default (decided 2026-11-22). Each item's tooltip and accessible name
+carry its full name. **Settings → Sidebar → Show navigation labels** (off by
+default) brings back a one-line caption under each icon, **Settings**
+included; long names truncate. The choice is saved to the account (user config
+`SIDEBAR_NAV_LABELS`), so every app's sidebar follows it, and each device
+applies its last value before the first paint (`data-nav-labels="shown"` on
+`<html>`), so the rail never flips after loading. The rail stays 4rem wide either
+way. This applies to Web, Workspace, and satellite dashboards that render items
+through the shared `NavLink`; Colab draws its own rail items and stays icon-only.
+
+In the sidebar footer, **Feedback** is a compact icon button on the same row as
+**Settings**, with a tooltip and an accessible name; Discord, when configured,
+sits beside it the same way, and **Upgrade**, when offered, keeps its label in
+the expanded sidebar. In the collapsed rail they stack under Settings as icon
+buttons. The account and notification controls are unchanged. Coverage:
+`packages/ui/src/components/ui/custom/nav-link.test.tsx`,
+`packages/satellite/src/components/sidebar-settings-button.test.tsx`,
+`structure.test.tsx` and `satellite-shell.test.tsx` (footer row),
+`experimental-ui-sync.test.tsx` and `sorbet-pre-paint.test.tsx` (the label
+choice), and the layout-shift harness in
+[Web design system](/build/development-tools/web-design-system#hover-expand-sidebar).
 
 ## Preference precedence
 

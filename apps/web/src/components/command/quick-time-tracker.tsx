@@ -742,7 +742,7 @@ export function QuickTimeTracker({
                         type="button"
                         data-board-button
                         onClick={() => setShowBoardDropdown(!showBoardDropdown)}
-                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         <span className="truncate">
                           {selectedBoardId === 'all'

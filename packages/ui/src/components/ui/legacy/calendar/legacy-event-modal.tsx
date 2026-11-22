@@ -1,69 +1,17 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
-import {
-  AlertCircle,
-  Brain,
-  Calendar as CalendarIcon,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  FileText,
-  Image as ImageIcon,
-  Info,
-  Loader2,
-  Lock,
-  MapPin,
-  Mic,
-  Sparkles,
-  StopCircle,
-  Trash2,
-  Unlock,
-  X,
-} from '@tuturuuu/icons';
 import { getWorkspaceCalendarDefaultSource } from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@tuturuuu/ui/form';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import { newCalendarCreationRequestId } from '@tuturuuu/ui/hooks/calendar-creation-request';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { notifySave } from '@tuturuuu/ui/save-notification';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  createAllDayEvent,
-  isAllDayEvent,
-} from '@tuturuuu/utils/calendar-utils';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import dayjs from 'dayjs';
-import ts from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
+import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
+import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import {
   useCallback,
   useEffect,
@@ -72,28 +20,27 @@ import {
   useRef,
   useState,
 } from 'react';
-import { z } from 'zod';
-import { Alert, AlertDescription, AlertTitle } from '../../alert';
-import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  COLOR_OPTIONS,
-  DateError,
-  EventDateTimePicker,
-  EventTitleInput,
-  EventToggleSwitch,
-  OverlapWarning,
-} from './event-form-components';
-import { EventModalHeader } from './event-modal-header';
-import { eventEndPickerBounds } from './event-picker-bounds';
-import { CalendarEventDetails } from './calendar-event-guests';
 import type { CalendarEventCreationDraft } from '../../../../hooks/calendar-event-create-payload';
+import { EventAiEntry } from './event-dialog/event-ai-entry';
+import {
+  type EventAiFormValues,
+  useEventAiForm,
+} from './event-dialog/event-ai-form';
+import { EventAiPreview } from './event-dialog/event-ai-preview';
+import {
+  EventDialogContent,
+  EventDialogHeader,
+} from './event-dialog/event-dialog-frame';
+import { EventQuickEntry } from './event-dialog/event-quick-entry';
+import { EventWhenSection } from './event-dialog/event-when-section';
+import { useEventDateHandlers } from './event-dialog/use-event-date-handlers';
+import { useEventPromptCapture } from './event-dialog/use-event-prompt-capture';
 import { eventModalDraft, eventModalSavePayload } from './event-save-payload';
 import {
   eventSourceChanged,
   selectedEventSource,
   sourceInputFromOption,
 } from './event-source-selection';
-import { ProviderColorPicker } from './provider-color-picker';
 import {
   prepareCalendarEventDrafts,
   saveCalendarEventDrafts,
@@ -101,17 +48,6 @@ import {
 import { useCalendarSettings } from './settings/settings-context';
 import { useCalendarDraftSave } from './use-calendar-draft-save';
 import { useEventDraftSession } from './use-event-draft-session';
-
-dayjs.extend(ts);
-dayjs.extend(utc);
-
-const AIFormSchema = z.object({
-  prompt: z.string().min(1, 'Please enter a prompt to generate an event'),
-  timezone: z
-    .string()
-    .default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
-  smart_scheduling: z.boolean().default(true),
-});
 
 export function LegacyEventModal() {
   const toast = notifySave;
@@ -187,21 +123,10 @@ export function LegacyEventModal() {
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
-  // Store previous time values for toggling all-day
-  const [prevTimes, setPrevTimes] = useState<{
-    timed: { start: string | null; end: string | null };
-    allday: { start: string | null; end: string | null };
-  }>({ timed: { start: null, end: null }, allday: { start: null, end: null } });
-
-  // AI form
-  const aiForm = useForm({
-    resolver: zodResolver(AIFormSchema),
-    defaultValues: {
-      prompt: '',
-      timezone: userTimezone,
-      smart_scheduling: true,
-    },
-  });
+  const aiForm = useEventAiForm(userTimezone);
+  const capture = useEventPromptCapture((text) =>
+    aiForm.setValue('prompt', text)
+  );
 
   const { object, submit, error, isLoading } = useObject({
     api: '/api/v1/calendar/events/generate',
@@ -342,6 +267,8 @@ export function LegacyEventModal() {
       }),
   });
   const handleManualSave = async () => {
+    // A pending AI generation would switch to its preview mid-save.
+    if (isSaving || isDeleting || isLoading) return;
     if (!event.start_at || !event.end_at) return;
     if (new Date(event.end_at) <= new Date(event.start_at)) {
       setDateError('End date must be after start date');
@@ -352,7 +279,8 @@ export function LegacyEventModal() {
   };
 
   // Handle AI event generation
-  const handleGenerateEvent = async (values: z.infer<typeof AIFormSchema>) => {
+  const handleGenerateEvent = async (values: EventAiFormValues) => {
+    if (isLoading) return;
     try {
       // Include timezone in the prompt for accurate time conversion
       const promptWithTimezone = `${values.prompt}\n\nUser timezone: ${values.timezone}`;
@@ -406,7 +334,7 @@ export function LegacyEventModal() {
 
   // Handle AI event save
   const handleAISave = async () => {
-    if (generatedEvents?.length === 0) return;
+    if (isSaving || !generatedEvents?.length) return;
 
     setIsSaving(true);
     try {
@@ -449,8 +377,8 @@ export function LegacyEventModal() {
 
   // Handle event deletion
   const handleDelete = async () => {
-    if (isRecording) {
-      stopRecording();
+    if (capture.isRecording) {
+      capture.stopRecording();
     }
     if (!activeEvent?.id) return;
 
@@ -475,311 +403,14 @@ export function LegacyEventModal() {
     }
   };
 
-  // Handle start date change
-  const handleStartDateChange = (date: Date | undefined) => {
-    if (!date) return;
-
-    setEvent((prev) => {
-      const newStartDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-      const endDate =
-        tz === 'auto'
-          ? dayjs(prev.end_at || '')
-          : dayjs(prev.end_at || '').tz(tz);
-      const newEvent = { ...prev, start_at: date.toISOString() };
-
-      if (isAllDay) {
-        // For all-day, keep end_at as is if it's after or equal to start_at + 1 day, otherwise set to start + 1 day
-        newEvent.start_at = newStartDate.startOf('day').toISOString();
-        let newEnd = dayjs(prev.end_at).isValid()
-          ? dayjs(prev.end_at)
-          : newStartDate.startOf('day').add(1, 'day');
-        if (!newEnd.isAfter(newStartDate.startOf('day'))) {
-          newEnd = newStartDate.startOf('day').add(1, 'day');
-        }
-        newEvent.end_at = newEnd.toISOString();
-      } else {
-        // If end time is before or equal to new start time, set end time to 1 hour after start
-        if (!endDate.isAfter(newStartDate)) {
-          const plusOneHour = newStartDate.add(1, 'hour');
-          if (plusOneHour.date() !== newStartDate.date()) {
-            newEvent.end_at = plusOneHour.toISOString();
-          } else {
-            newEvent.end_at = plusOneHour.toISOString();
-          }
-        }
-      }
-
-      // Only show error if end <= start
-      if (
-        dayjs(newEvent.end_at).isSame(dayjs(newEvent.start_at)) ||
-        dayjs(newEvent.end_at).isBefore(dayjs(newEvent.start_at))
-      ) {
-        setDateError('End time must be after start time.');
-      } else {
-        setDateError(null);
-      }
-      return newEvent;
+  const { handleStartDateChange, handleEndDateChange, handleAllDayChange } =
+    useEventDateHandlers({
+      tz,
+      isAllDay,
+      setIsAllDay,
+      setEvent,
+      setDateError,
     });
-  };
-
-  // Handle end date change
-  const handleEndDateChange = (date: Date | undefined) => {
-    if (!date) return;
-
-    setEvent((prev) => {
-      let newEndDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-      const startDate =
-        tz === 'auto'
-          ? dayjs(prev.start_at || '')
-          : dayjs(prev.start_at || '').tz(tz);
-      const newEvent = { ...prev };
-
-      if (isAllDay) {
-        // For all-day, set end_at to the start of the day after the selected end date
-        let newEnd = newEndDate.startOf('day').add(1, 'day');
-        // Ensure end is not before or equal to start
-        if (!newEnd.isAfter(startDate.startOf('day'))) {
-          newEnd = startDate.startOf('day').add(1, 'day');
-        }
-        newEvent.end_at = newEnd.toISOString();
-        // Don't change start_at here
-      } else {
-        // If end is not after start, increment end date by one day and set the entered time
-        if (!newEndDate.isAfter(startDate)) {
-          // Use the time from the user's input, but increment the date by one day
-          newEndDate = newEndDate.add(1, 'day');
-        }
-        // If end is after start, accept as is
-        newEvent.end_at = newEndDate.toISOString();
-      }
-
-      if (!dayjs(newEvent.end_at).isAfter(dayjs(newEvent.start_at))) {
-        setDateError('End time must be after start time.');
-      } else {
-        setDateError(null);
-      }
-
-      return newEvent;
-    });
-  };
-
-  // Handle all-day toggle
-  const handleAllDayChange = (checked: boolean) => {
-    setEvent((prev) => {
-      const startDate =
-        tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
-      // Backup previous times before updating
-      const timedBackup = prevTimes.timed;
-      const alldayBackup = prevTimes.allday;
-      if (checked) {
-        setPrevTimes((old) => ({
-          ...old,
-          timed: { start: prev.start_at || null, end: prev.end_at || null },
-        }));
-        // Restore previous all-day range if it exists
-        if (alldayBackup.start && alldayBackup.end) {
-          return {
-            ...prev,
-            start_at: alldayBackup.start,
-            end_at: alldayBackup.end,
-          };
-        }
-        // Use the new createAllDayEvent helper for proper timezone handling
-        const { start_at, end_at } = createAllDayEvent(
-          startDate.toDate(),
-          tz,
-          1 // 1 day duration
-        );
-        return {
-          ...prev,
-          start_at,
-          end_at,
-        };
-      } else {
-        setPrevTimes((old) => ({
-          ...old,
-          allday: { start: prev.start_at || null, end: prev.end_at || null },
-        }));
-        // Restore previous timed range if it exists
-        if (timedBackup.start && timedBackup.end) {
-          return {
-            ...prev,
-            start_at: timedBackup.start,
-            end_at: timedBackup.end,
-          };
-        }
-        const newStart =
-          tz === 'auto'
-            ? dayjs().startOf('hour')
-            : dayjs().startOf('hour').tz(tz);
-        const newEnd = newStart.add(1, 'hour');
-        return {
-          ...prev,
-          start_at: newStart.toISOString(),
-          end_at: newEnd.toISOString(),
-        };
-      }
-    });
-    setIsAllDay((prev) => !prev);
-  };
-
-  const [isRecording, setIsRecording] = useState(false);
-  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const mediaStream = useRef<MediaStream | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const startRecording = async () => {
-    setIsRecording(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStream.current = stream;
-      mediaRecorder.current = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      });
-
-      mediaRecorder.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.current.onstop = async () => {
-        if (audioChunks.current.length === 0) {
-          setIsRecording(false);
-          setIsProcessingAudio(false);
-          return;
-        }
-
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-        const reader = new FileReader();
-
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const base64Audio = reader.result?.toString().split(',')[1];
-
-          if (!base64Audio) {
-            setIsProcessingAudio(false);
-            return;
-          }
-
-          sendAudioToServer(base64Audio);
-        };
-
-        // Cleanup
-        revokeMediaPermissions();
-        audioChunks.current = [];
-      };
-
-      mediaRecorder.current.start();
-    } catch (_) {
-      setIsRecording(false);
-    }
-  };
-
-  const triggerImageUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    setIsProcessingAudio(true);
-    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-      mediaRecorder.current.stop();
-    } else {
-      revokeMediaPermissions();
-      setIsProcessingAudio(false);
-    }
-  };
-
-  const revokeMediaPermissions = () => {
-    if (mediaStream.current) {
-      mediaStream.current.getTracks().forEach((track) => {
-        track.stop();
-      });
-      mediaStream.current = null;
-    }
-  };
-
-  const sendAudioToServer = async (base64Audio: string) => {
-    try {
-      const response = await fetch('/api/v1/calendar/audio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64Audio }),
-      });
-
-      const result = await response.json();
-      if (result.text) {
-        aiForm.setValue('prompt', result.text);
-      } else {
-        toast({
-          title: 'Transcription Error',
-          description: result.error || 'Failed to transcribe audio',
-          variant: 'destructive',
-        });
-      }
-    } catch (_) {
-      toast({
-        title: 'API Error',
-        description: 'Failed to process audio recording',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsProcessingAudio(false);
-    }
-  };
-
-  const handleUploadImage = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0]; // image file from input
-    if (!file) return;
-
-    setIsProcessingImage(true);
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onloadend = async () => {
-      const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
-      if (!base64Image) {
-        setIsProcessingImage(false);
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/v1/calendar/image', {
-          // send to API
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base64Image }),
-        });
-
-        const result = await response.json();
-        if (result.text) {
-          aiForm.setValue('prompt', result.text);
-        } else {
-          toast({
-            title: 'Image Processing Error',
-            description: result.error || 'Failed to extract text from image',
-            variant: 'destructive',
-          });
-        }
-      } catch (_) {
-        toast({
-          title: 'API Error',
-          description: 'Failed to process uploaded image',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsProcessingImage(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    };
-  };
 
   // Handle navigation between multiple events in preview
   const goToNextEvent = () => {
@@ -805,17 +436,6 @@ export function LegacyEventModal() {
           checkForOverlaps(prevEvent as Partial<CalendarEvent>);
         }
       }
-    }
-  };
-
-  // function to open Google Maps with the entered address
-  const openGoogleMaps = (address: string) => {
-    if (address) {
-      const encodedAddress = encodeURIComponent(address);
-      window.open(
-        `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
-        '_blank'
-      );
     }
   };
 
@@ -854,702 +474,122 @@ export function LegacyEventModal() {
     }
   };
 
+  const toggleLock = () => {
+    const locked = !event.locked;
+    if (isEditing) {
+      handleLockToggle(locked);
+    } else {
+      setEvent((previous) => ({ ...previous, locked }));
+    }
+  };
+
+  const transferGeneratedEvent = () => {
+    if (!generatedEvent) return;
+    setEvent({ ...generatedEvent, id: undefined });
+    setActiveTab('manual');
+  };
+
+  const submitActiveTab = () => {
+    if (isSaving || isDeleting) return;
+    if (activeTab === 'manual') void handleManualSave();
+    else if (activeTab === 'ai')
+      void aiForm.handleSubmit(handleGenerateEvent)();
+    else void handleAISave();
+  };
+
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        <EventModalHeader event={event} isEditing={isEditing} />
-
+      <EventDialogContent onSubmitShortcut={submitActiveTab}>
         <Tabs
-          value={activeTab}
+          value={activeTab === 'preview' ? 'ai' : activeTab}
           onValueChange={(value) => setActiveTab(value as 'manual' | 'ai')}
-          className="flex h-[calc(90vh-140px)] flex-col"
+          className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
-            <TabsTrigger
-              value="manual"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Quick Entry
-            </TabsTrigger>
-            <TabsTrigger
-              value="ai"
-              className="rounded-t-md rounded-b-none border-b-0 px-4 py-2 data-[state=active]:border data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              disabled={!!isEditing}
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              AI Generate
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex-1 overflow-hidden border-t">
-            {/* Manual Event Creation Tab */}
-            <TabsContent
-              value="manual"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
-              style={{ display: activeTab === 'manual' ? 'flex' : 'none' }}
-            >
-              <div className="flex flex-1 flex-col overflow-hidden">
-                <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                  <div className="space-y-3 p-4">
-                    {/* Title */}
-                    <EventTitleInput
-                      value={event.title || ''}
-                      onEnter={handleManualSave}
-                      onChange={(value) => setEvent({ ...event, title: value })}
-                    />
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label
-                          htmlFor="event-source"
-                          className="font-medium text-sm"
-                        >
-                          Calendar source
-                        </label>
-                        {selectedSourceOption && (
-                          <Badge variant="secondary" className="capitalize">
-                            {selectedSourceOption.provider}
-                          </Badge>
-                        )}
-                      </div>
-                      <Select
-                        value={selectedSourceOption?.id}
-                        onValueChange={(value) => {
-                          setSelectedSourceId(value);
-                          setEvent((previous) => ({
-                            ...previous,
-                            providerColor: undefined,
-                          }));
-                        }}
-                        disabled={sourceOptions.length === 0 || isSaving}
-                      >
-                        <SelectTrigger id="event-source" className="w-full">
-                          <SelectValue placeholder="Choose calendar source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sourceOptions.map((option) => (
-                            <SelectItem key={option.id} value={option.id}>
-                              <div className="flex min-w-0 items-center gap-2">
-                                <span
-                                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                                  style={{
-                                    backgroundColor: option.color ?? undefined,
-                                  }}
-                                />
-                                <span className="truncate">{option.label}</span>
-                                {option.provider !== 'tuturuuu' &&
-                                  option.accountEmail && (
-                                    <span className="text-muted-foreground text-xs">
-                                      {option.accountEmail}
-                                    </span>
-                                  )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Date and Time Selection */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-sm">When</h3>
-                        <EventToggleSwitch
-                          id="all-day"
-                          label="All Day"
-                          checked={isAllDay}
-                          onChange={handleAllDayChange}
-                        />
-                      </div>
-
-                      <div className="grid gap-3">
-                        <EventDateTimePicker
-                          label="Start"
-                          value={new Date(event.start_at || new Date())}
-                          onChange={handleStartDateChange}
-                          showTimeSelect={!isAllDay}
-                          scrollIntoViewOnOpen={true}
-                          pickerButtonRef={startPickerRef}
-                        />
-                        <EventDateTimePicker
-                          label="End"
-                          value={(() => {
-                            // For all-day, display end_at - 1 day
-                            if (isAllDay && event.end_at) {
-                              const end = new Date(event.end_at);
-                              end.setDate(end.getDate() - 1);
-                              return end;
-                            }
-                            return new Date(event.end_at || new Date());
-                          })()}
-                          onChange={handleEndDateChange}
-                          showTimeSelect={!isAllDay}
-                          {...eventEndPickerBounds(
-                            event.start_at || new Date().toISOString(),
-                            tz,
-                            isAllDay
-                          )}
-                          scrollIntoViewOnOpen={true}
-                          pickerButtonRef={endPickerRef}
-                        />
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Location and Description */}
-                    <div className="space-y-2">
-                      <CalendarEventDetails
-                        event={event}
-                        onChange={setEvent}
-                        source={selectedSourceOption}
-                        workspaceId={wsId}
-                        isEditing={isEditing}
-                        timeZone={tz}
-                      />
-
-                      {/* Color and Options Row */}
-                      <div className="flex items-end justify-between gap-4">
-                        <ProviderColorPicker
-                          wsId={wsId}
-                          source={selectedSourceOption}
-                          value={event.color || 'BLUE'}
-                          metadata={event.scheduling_metadata}
-                          choice={event.providerColor}
-                          onNativeChange={(value) =>
-                            setEvent({
-                              ...event,
-                              color: value,
-                              providerColor: undefined,
-                            })
-                          }
-                          onProviderChange={(providerColor) =>
-                            setEvent({ ...event, providerColor })
-                          }
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newLocked = !event.locked;
-                            if (isEditing) {
-                              handleLockToggle(newLocked);
-                            } else {
-                              setEvent((prev) => ({
-                                ...prev,
-                                locked: newLocked,
-                              }));
-                            }
-                          }}
-                          className={cn(
-                            'mb-1 flex items-center gap-1.5 rounded-md border px-3 py-1.5 font-medium text-xs transition-colors',
-                            event.locked
-                              ? 'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber'
-                              : 'border-border bg-background text-muted-foreground hover:bg-muted'
-                          )}
-                          title={
-                            event.locked
-                              ? 'Locked: Auto-scheduling will not move this event'
-                              : 'Unlocked: Auto-scheduling may move this event'
-                          }
-                        >
-                          {event.locked ? (
-                            <Lock className="h-3.5 w-3.5" />
-                          ) : (
-                            <Unlock className="h-3.5 w-3.5" />
-                          )}
-                          {event.locked ? 'Locked' : 'Unlocked'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Warnings and Errors */}
-                    {(showOverlapWarning || dateError) && (
-                      <>
-                        <Separator />
-                        <div className="space-y-3">
-                          {showOverlapWarning && (
-                            <OverlapWarning
-                              overlappingEvents={overlappingEvents}
-                            />
-                          )}
-                          {dateError && <DateError error={dateError} />}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Action Buttons */}
-                <div className="mt-auto border-t p-2">
-                  {draftSave.recoveryNotice}
-                  <div className="flex justify-between">
-                    {isEditing ? (
-                      <Button
-                        variant="destructive"
-                        onClick={handleDelete}
-                        disabled={isSaving || isDeleting}
-                        className="flex items-center gap-2"
-                      >
-                        {isDeleting ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Deleting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Trash2 className="h-4 w-4" />
-                            <span>Delete</span>
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <div />
-                    )}
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleManualSave}
-                        disabled={isSaving || isDeleting}
-                        className="flex items-center gap-2"
-                      >
-                        {isSaving ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-4 w-4" />
-                            <span>
-                              {isEditing ? 'Save Changes' : 'Create Event'}
-                            </span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* AI Event Generation Tab */}
-            <TabsContent
-              value="ai"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
-              style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
-            >
-              <Form {...aiForm}>
-                <form
-                  onSubmit={aiForm.handleSubmit(handleGenerateEvent)}
-                  className="flex h-full flex-1 flex-col"
-                >
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                      <div className="space-y-6 p-6">
-                        <FormField
-                          control={aiForm.control}
-                          name="prompt"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="font-medium text-base">
-                                Describe your event
-                              </FormLabel>
-                              <FormControl>
-                                <div className="relative w-full">
-                                  <AutosizeTextarea
-                                    {...field}
-                                    autoFocus
-                                    placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                    className="min-h-50 w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:outline-none focus:ring-1 focus:ring-ring"
-                                    disabled={
-                                      isLoading ||
-                                      isRecording ||
-                                      isProcessingAudio ||
-                                      isProcessingImage
-                                    }
-                                  />
-
-                                  {/* Record Button */}
-                                  <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                                    <Button
-                                      size="xs"
-                                      type="button"
-                                      variant={
-                                        isRecording ? 'destructive' : 'default'
-                                      }
-                                      onClick={
-                                        isRecording
-                                          ? stopRecording
-                                          : startRecording
-                                      }
-                                      disabled={
-                                        isProcessingAudio ||
-                                        isProcessingImage ||
-                                        isLoading
-                                      }
-                                      className="flex items-center rounded-md"
-                                    >
-                                      {isRecording ? (
-                                        <StopCircle className="h-4 w-4" />
-                                      ) : isProcessingAudio ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                      ) : (
-                                        <Mic className="h-4 w-4" />
-                                      )}
-                                    </Button>
-
-                                    {/* 📸 Image button */}
-                                    <Button
-                                      size="xs"
-                                      type="button"
-                                      variant="default"
-                                      onClick={triggerImageUpload}
-                                      disabled={
-                                        isRecording ||
-                                        isProcessingAudio ||
-                                        isProcessingImage ||
-                                        isLoading
-                                      }
-                                      className="flex items-center rounded-md"
-                                    >
-                                      {isProcessingImage ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                      ) : (
-                                        <ImageIcon className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                    <input
-                                      type="file"
-                                      ref={fileInputRef}
-                                      accept="image/*"
-                                      onChange={handleUploadImage}
-                                      className="hidden"
-                                    />
-                                  </div>
-                                </div>
-                              </FormControl>
-                              <FormDescription className="flex items-center gap-1 text-xs">
-                                <Info className="h-3 w-3" />
-                                Be as specific as possible for best results
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        {isLoading && (
-                          <div className="flex items-center justify-center py-8">
-                            <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                              <p className="text-muted-foreground text-sm">
-                                Creating your event...
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        {error && (
-                          <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>
-                              {error.message ||
-                                'Failed to generate event. Please try again.'}
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </div>
-                    </ScrollArea>
-
-                    {/* Action Buttons */}
-                    <div className="mt-auto border-t p-6">
-                      <div className="flex justify-between">
-                        <Button
-                          variant="outline"
-                          onClick={closeModal}
-                          disabled={isLoading}
-                          className="flex items-center gap-2"
-                        >
-                          <X className="h-4 w-4" />
-                          <span>Cancel</span>
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={isLoading || !aiForm.watch('prompt')}
-                          className="flex items-center gap-2 bg-primary"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span>Creating...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4" />
-                              <span>Generate Event</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </Form>
-            </TabsContent>
-
-            {/* Preview Tab */}
-            <TabsContent
-              value="preview"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
-              style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
-            >
-              <div className="flex flex-1 flex-col overflow-hidden">
-                <ScrollArea className="h-[calc(90vh-250px)] flex-1">
-                  <div className="space-y-6 p-6">
-                    {/* AI Generated Event Preview */}
-                    <div className="rounded-lg border bg-muted/10 p-4">
-                      <div className="mb-3 flex items-center justify-between">
-                        <h3 className="flex items-center gap-2 font-medium text-base">
-                          <Sparkles className="h-4 w-4 text-primary" />
-                          AI Generated Event
-                          {(generatedEvents?.length || 0) > 1 ? 's' : ''}
-                        </h3>
-                        <div className="flex items-center gap-2">
-                          {(generatedEvents?.length || 0) > 1 && (
-                            <div className="flex items-center gap-1 text-muted-foreground text-xs">
-                              <span>{currentEventIndex + 1}</span>
-                              <span>/</span>
-                              <span>{generatedEvents?.length || 0}</span>
-                            </div>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            Preview
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {generatedEvent && (
-                        <div className="space-y-4">
-                          <div className="mt-3 space-y-3 rounded-md border p-3">
-                            <div className="space-y-2">
-                              <h4 className="font-medium text-lg">
-                                {generatedEvent.title}
-                              </h4>
-                              <div className="flex flex-wrap gap-2 text-muted-foreground text-sm">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="h-3.5 w-3.5" />
-                                  <span>
-                                    {format(
-                                      new Date(generatedEvent.start_at || ''),
-                                      'PPP'
-                                    )}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3.5 w-3.5" />
-                                  <span>
-                                    {format(
-                                      new Date(generatedEvent.start_at || ''),
-                                      settings?.appearance?.timeFormat === '24h'
-                                        ? 'HH:mm'
-                                        : 'h:mm a'
-                                    )}{' '}
-                                    -{' '}
-                                    {format(
-                                      new Date(generatedEvent.end_at || ''),
-                                      settings?.appearance?.timeFormat === '24h'
-                                        ? 'HH:mm'
-                                        : 'h:mm a'
-                                    )}
-                                  </span>
-                                </div>
-                                {generatedEvent.location && (
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-3.5 w-3.5" />
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        openGoogleMaps(
-                                          generatedEvent.location || ''
-                                        )
-                                      }
-                                      className="text-muted-foreground text-sm hover:text-primary hover:underline"
-                                      title="Open in Google Maps"
-                                    >
-                                      {generatedEvent.location}
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {generatedEvent.description && (
-                              <div className="space-y-1">
-                                <h5 className="font-medium text-sm">
-                                  Description
-                                </h5>
-                                <p className="text-muted-foreground text-sm">
-                                  {generatedEvent.description}
-                                </p>
-                              </div>
-                            )}
-
-                            <Separator />
-
-                            {/* Color indicator and category */}
-                            <div className="flex items-center gap-2">
-                              {generatedEvent.color &&
-                                (() => {
-                                  const { bg, border, text } = getEventStyles(
-                                    generatedEvent.color
-                                  );
-                                  return (
-                                    <div
-                                      className={`flex items-center gap-2 rounded-full border px-2 py-1 text-center ${bg} ${border}`}
-                                    >
-                                      <span
-                                        className={`font-medium text-xs ${text}`}
-                                      >
-                                        {COLOR_OPTIONS.find(
-                                          (c) =>
-                                            c.value ===
-                                            (generatedEvent.color
-                                              ? generatedEvent.color.toUpperCase()
-                                              : 'BLUE')
-                                        )?.name || 'Default'}
-                                      </span>
-                                    </div>
-                                  );
-                                })()}
-                            </div>
-
-                            {/* Event protection status */}
-                            <div className="flex items-center gap-2">
-                              <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-muted-foreground text-xs">
-                                Event will be created unlocked
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Navigation buttons for multiple events */}
-                      {(generatedEvents?.length || 0) > 1 && (
-                        <div className="mt-4 flex items-center justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={goToPreviousEvent}
-                            disabled={currentEventIndex === 0}
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={goToNextEvent}
-                            disabled={
-                              currentEventIndex ===
-                              (generatedEvents?.length || 0) - 1
-                            }
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* AI Insights and Suggestions */}
-                    {aiSuggestions.length > 0 && (
-                      <div className="rounded-lg border bg-muted/10 p-4">
-                        <h3 className="mb-3 flex items-center gap-2 font-medium text-sm">
-                          <Brain className="h-4 w-4 text-primary" />
-                          AI Insights & Suggestions
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiSuggestions.map((suggestion) => (
-                            <li
-                              key={suggestion}
-                              className="flex items-start gap-2 text-sm"
-                            >
-                              <div className="mt-0.5 text-primary">•</div>
-                              <span>{suggestion}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Warnings and Errors */}
-                    {showOverlapWarning && (
-                      <OverlapWarning overlappingEvents={overlappingEvents} />
-                    )}
-                  </div>
-                </ScrollArea>
-
-                {/* Action Buttons */}
-                <div className="mt-auto border-t p-6">
-                  <div className="flex justify-between">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setActiveTab('ai')}
-                        className="flex items-center gap-2"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        <span>Back</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          // Transfer AI generated event to manual form
-                          if (generatedEvent) {
-                            setEvent({
-                              ...generatedEvent,
-                              id: undefined, // Remove ID to create a new event
-                            });
-                            setActiveTab('manual');
-                          }
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <FileText className="h-4 w-4" />
-                        <span>Edit Details</span>
-                      </Button>
-                    </div>
-                    <Button
-                      onClick={handleAISave}
-                      disabled={
-                        isSaving || (generatedEvents?.length || 0) === 0
-                      }
-                      className="flex items-center gap-2"
-                    >
-                      {isSaving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4" />
-                          <span>
-                            Save{' '}
-                            {(generatedEvents?.length || 0) > 1
-                              ? 'All Events'
-                              : 'Event'}
-                          </span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </div>
+          <EventDialogHeader
+            event={event}
+            isEditing={isEditing}
+            showModeTabs={!isEditing}
+          />
+          <TabsContent
+            value="manual"
+            className="mt-0 flex min-h-0 flex-1 flex-col"
+          >
+            <EventQuickEntry
+              event={event}
+              setEvent={setEvent}
+              isEditing={isEditing}
+              workspaceId={wsId}
+              timeZone={tz}
+              when={
+                <EventWhenSection
+                  startAt={event.start_at}
+                  endAt={event.end_at}
+                  isAllDay={isAllDay}
+                  timeZone={tz}
+                  onStartChange={handleStartDateChange}
+                  onEndChange={handleEndDateChange}
+                  onAllDayChange={handleAllDayChange}
+                  startPickerRef={startPickerRef}
+                  endPickerRef={endPickerRef}
+                />
+              }
+              sourceOptions={sourceOptions}
+              selectedSource={selectedSourceOption}
+              onSourceChange={(sourceId) => {
+                setSelectedSourceId(sourceId);
+                setEvent((previous) => ({
+                  ...previous,
+                  providerColor: undefined,
+                }));
+              }}
+              isSaving={isSaving}
+              isDeleting={isDeleting}
+              dateError={dateError}
+              overlappingEvents={overlappingEvents}
+              showOverlapWarning={showOverlapWarning}
+              recoveryNotice={draftSave.recoveryNotice}
+              onSave={handleManualSave}
+              onCancel={closeModal}
+              onDelete={handleDelete}
+              onToggleLock={toggleLock}
+            />
+          </TabsContent>
+          <TabsContent value="ai" className="mt-0 flex min-h-0 flex-1 flex-col">
+            {activeTab === 'preview' ? (
+              <EventAiPreview
+                events={generatedEvents ?? []}
+                index={currentEventIndex}
+                timeFormat={settings?.appearance?.timeFormat}
+                suggestions={aiSuggestions}
+                overlappingEvents={overlappingEvents}
+                showOverlapWarning={showOverlapWarning}
+                isSaving={isSaving}
+                onPrevious={goToPreviousEvent}
+                onNext={goToNextEvent}
+                onBack={() => setActiveTab('ai')}
+                onEditDetails={transferGeneratedEvent}
+                onSave={handleAISave}
+              />
+            ) : (
+              <EventAiEntry
+                form={aiForm}
+                onGenerate={handleGenerateEvent}
+                isGenerating={isLoading}
+                error={error}
+                isRecording={capture.isRecording}
+                isProcessingAudio={capture.isProcessingAudio}
+                isProcessingImage={capture.isProcessingImage}
+                onStartRecording={capture.startRecording}
+                onStopRecording={capture.stopRecording}
+                onPickImage={capture.pickImage}
+                onImageSelected={capture.handleImageSelected}
+                fileInputRef={capture.fileInputRef}
+                onCancel={closeModal}
+              />
+            )}
+          </TabsContent>
         </Tabs>
-      </DialogContent>
+      </EventDialogContent>
     </Dialog>
   );
 }

@@ -112,7 +112,7 @@ function SheetContent({
         {children}
         <SheetPrimitive.Close
           className={cn(
-            'absolute top-4 right-4 rounded-xs opacity-70 pointer-coarse:after:absolute pointer-coarse:after:-inset-3.5 pointer-coarse:after:content-[""] ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary'
+            'absolute top-4 right-4 rounded-xs opacity-70 pointer-coarse:after:absolute pointer-coarse:after:-inset-3.5 pointer-coarse:after:content-[""] ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary'
           )}
         >
           <XIcon className="size-4" />

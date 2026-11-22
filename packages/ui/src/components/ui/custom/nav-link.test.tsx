@@ -90,7 +90,7 @@ describe('NavLink', () => {
     );
   });
 
-  it('shows a one-line caption under the icon in the collapsed rail', () => {
+  it('hides the collapsed caption unless navigation labels are turned on', () => {
     navigationState.pathname = '/personal/calendar';
 
     renderNavLink(
@@ -105,8 +105,10 @@ describe('NavLink', () => {
     const link = screen.getByRole('link', { name: 'Calendar' });
     const label = within(link).getByText('Calendar');
 
-    expect(label).toBeVisible();
     expect(label).toHaveAttribute('data-slot', 'sidebar-item-label');
+    // Icons only by default; Settings → Sidebar → Show navigation labels sets
+    // data-nav-labels="shown" on <html>, which the nav-labels variant reads.
+    expect(label).toHaveClass('hidden', 'nav-labels:block');
     expect(label).toHaveClass('truncate', 'text-[10px]');
     expect(label).not.toHaveClass('text-muted-foreground');
     expect(link).toHaveClass('flex-col', 'bg-accent');
@@ -150,6 +152,7 @@ describe('NavLink', () => {
     expect(link).not.toHaveAttribute('aria-label');
     expect(within(link).getAllByText('Calendar')).toHaveLength(1);
     expect(within(link).getByText('Calendar')).not.toHaveClass('text-[10px]');
+    expect(within(link).getByText('Calendar')).not.toHaveClass('hidden');
     expect(link).not.toHaveClass('flex-col');
 
     fireEvent.focus(link);

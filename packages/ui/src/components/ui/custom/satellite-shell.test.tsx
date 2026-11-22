@@ -382,4 +382,26 @@ describe('shared account chrome', () => {
       screen.getByRole('link', { name: 'Discord' }).getAttribute('href')
     ).toBe('https://discord.gg/example');
   });
+  it('renders expanded feedback as a compact icon button with a tooltip', async () => {
+    const feedback = vi.fn();
+    render(
+      <SatelliteFooterActions
+        wsId=""
+        isCollapsed={false}
+        showUpgrade={false}
+        labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
+        onFeedback={feedback}
+      />
+    );
+    const button = screen.getByRole('button', { name: 'Feedback' });
+    expect(button.textContent).toBe('');
+    expect(button.className).toContain('w-9');
+    fireEvent.focus(button);
+    expect((await screen.findByRole('tooltip')).textContent).toContain(
+      'Feedback'
+    );
+    fireEvent.keyDown(button, { key: 'Enter' });
+    fireEvent.click(button);
+    expect(feedback).toHaveBeenCalledOnce();
+  });
 });

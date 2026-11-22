@@ -113,7 +113,7 @@ export function LessonQuizSubmissionsSection({
             </span>
             <input
               type="datetime-local"
-              className="w-[145px] border-none bg-transparent p-0 font-bold text-foreground text-xs outline-none focus:ring-0"
+              className="w-[145px] border-none bg-transparent p-0 font-bold text-foreground text-xs outline-none focus-visible:ring-0"
               value={localDeadline}
               onChange={(e) => setLocalDeadline(e.target.value)}
               disabled={isSaving}

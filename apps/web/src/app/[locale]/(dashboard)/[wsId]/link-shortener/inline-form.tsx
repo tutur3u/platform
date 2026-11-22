@@ -171,7 +171,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                 placeholder={t('link-shortener.url_placeholder')}
                 disabled={loading}
                 required
-                className="h-12 border-border/60 text-base transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                className="h-12 border-border/60 text-base transition-all duration-200 focus:border-dynamic-blue focus-visible:ring-2 focus-visible:ring-dynamic-blue/20"
               />
             </div>
 
@@ -193,7 +193,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                     pattern="[a-zA-Z0-9\-_]+"
                     title="Only letters, numbers, hyphens, and underscores are allowed"
                     disabled={loading}
-                    className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                    className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus-visible:ring-2 focus-visible:ring-dynamic-blue/20"
                   />
                   <p className="text-muted-foreground text-xs">
                     {t('link-shortener.custom_slug_description')}
@@ -239,7 +239,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                             required={isPasswordProtected}
                             minLength={4}
                             maxLength={100}
-                            className="h-11 border-border/60 pr-10 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                            className="h-11 border-border/60 pr-10 transition-all duration-200 focus:border-dynamic-blue focus-visible:ring-2 focus-visible:ring-dynamic-blue/20"
                           />
                           <Button
                             type="button"
@@ -274,7 +274,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                           )}
                           disabled={loading}
                           maxLength={200}
-                          className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                          className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus-visible:ring-2 focus-visible:ring-dynamic-blue/20"
                         />
                       </div>
                     </div>

@@ -250,7 +250,7 @@ export function getEditorExtensions({
     TableCell.configure({
       HTMLAttributes: {
         class:
-          'relative border-r border-dynamic-border px-4 py-3 last:border-r-0 [&>p]:my-0 hover:bg-dynamic-surface/50 focus:bg-dynamic-surface/70 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50 focus:ring-inset',
+          'relative border-r border-dynamic-border px-4 py-3 last:border-r-0 [&>p]:my-0 hover:bg-dynamic-surface/50 focus:bg-dynamic-surface/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50 focus-visible:ring-inset',
       },
     }),
     CustomImage({

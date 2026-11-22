@@ -68,7 +68,7 @@ export function TaskSummaryCard({
   return (
     <article
       className={cn(
-        'group relative block h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted/30',
+        'group relative block h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors has-focus-visible:ring-2 has-focus-visible:ring-ring hover:bg-muted/30',
         getCardColorClasses(undefined, priority)
       )}
     >

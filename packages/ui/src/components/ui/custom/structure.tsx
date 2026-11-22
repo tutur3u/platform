@@ -256,23 +256,28 @@ export function Structure({
                   <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
                     {sidebarContent}
                   </div>
-                  {sidebarUtility && (
+                  {(sidebarUtility || feedbackButton) && (
                     <div
+                      data-slot="sidebar-utility-row"
                       className={cn(
                         'flex border-foreground/10 border-t',
-                        isCollapsed ? 'justify-center px-1 py-2' : 'p-2'
+                        isCollapsed
+                          ? 'flex-col items-center gap-1 px-1 py-2'
+                          : 'items-center gap-1 p-2'
                       )}
                     >
-                      {sidebarUtility}
-                    </div>
-                  )}
-                  {feedbackButton && (
-                    <div
-                      className={cn(
-                        'flex border-foreground/10 border-t p-2',
-                        isCollapsed ? 'justify-center' : ''
+                      {sidebarUtility && (
+                        <div
+                          className={cn(
+                            'flex',
+                            isCollapsed
+                              ? 'w-full justify-center'
+                              : 'min-w-0 flex-1'
+                          )}
+                        >
+                          {sidebarUtility}
+                        </div>
                       )}
-                    >
                       {feedbackButton}
                     </div>
                   )}

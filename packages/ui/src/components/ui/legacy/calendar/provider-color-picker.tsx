@@ -17,6 +17,7 @@ import {
 import { readGoogleEventColor } from '@tuturuuu/utils/google-calendar-colors';
 import { useTranslations } from 'next-intl';
 import { EventColorPicker } from './event-form-components';
+import { EventColorPopover } from './event-dialog/event-color-popover';
 
 export function ProviderColorPicker({
   wsId,
@@ -26,6 +27,7 @@ export function ProviderColorPicker({
   choice,
   onNativeChange,
   onProviderChange,
+  compact = false,
 }: {
   wsId?: string;
   source?: CalendarSourceOption;
@@ -34,6 +36,8 @@ export function ProviderColorPicker({
   choice?: GoogleProviderColorChoice;
   onNativeChange: (value: SupportedColor) => void;
   onProviderChange: (choice: GoogleProviderColorChoice) => void;
+  /** A swatch button beside another field instead of a labelled row. */
+  compact?: boolean;
 }) {
   const t = useTranslations('calendar');
   const connectionId =
@@ -49,7 +53,11 @@ export function ProviderColorPicker({
     data.connectionId !== connectionId ||
     !data.options.length
   )
-    return <EventColorPicker value={value} onChange={onNativeChange} />;
+    return compact ? (
+      <EventColorPopover value={value} onChange={onNativeChange} />
+    ) : (
+      <EventColorPicker value={value} onChange={onNativeChange} />
+    );
   const current = readGoogleEventColor(metadata);
   const selected =
     choice?.connectionId === connectionId
@@ -64,8 +72,8 @@ export function ProviderColorPicker({
             ? `event:${current.color_id}`
             : undefined;
   return (
-    <div className="space-y-1">
-      <Label>{t('provider_color_label')}</Label>
+    <div className={compact ? 'shrink-0' : 'space-y-1'}>
+      {!compact && <Label>{t('provider_color_label')}</Label>}
       <Select
         value={selected}
         onValueChange={(key) => {
@@ -83,7 +91,10 @@ export function ProviderColorPicker({
             );
         }}
       >
-        <SelectTrigger aria-label={t('provider_color_label')}>
+        <SelectTrigger
+          aria-label={t('provider_color_label')}
+          className={compact ? 'w-auto max-w-44' : undefined}
+        >
           <SelectValue placeholder={t('provider_color_label')} />
         </SelectTrigger>
         <SelectContent>

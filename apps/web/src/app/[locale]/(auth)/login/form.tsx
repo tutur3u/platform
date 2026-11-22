@@ -1669,7 +1669,7 @@ export default function LoginForm({
                                   <InputOTPSlot
                                     key={`totp-${index + 1}`}
                                     index={index}
-                                    className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                    className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                                   />
                                 ))}
                               </InputOTPGroup>
@@ -1840,7 +1840,7 @@ export default function LoginForm({
                                   <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                                   <Input
                                     autoFocus
-                                    className={`h-12 rounded-2xl border-border bg-background pl-10 transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
+                                    className={`h-12 rounded-2xl border-border bg-background pl-10 transition-all duration-200 focus:border-primary/40 focus-visible:ring-primary/15 ${
                                       normalizedPreviewEmail ? 'pr-32' : ''
                                     }`}
                                     placeholder={t(
@@ -2017,7 +2017,7 @@ export default function LoginForm({
                                     <InputOTPSlot
                                       key={`otp-${index + 1}`}
                                       index={index}
-                                      className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                      className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                                     />
                                   ))}
                                 </InputOTPGroup>
@@ -2159,7 +2159,7 @@ export default function LoginForm({
                             <div className="group relative">
                               <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                               <Input
-                                className="h-12 rounded-2xl border-border bg-background pr-12 pl-10 transition-all duration-200 focus:border-primary/40 focus:ring-primary/15"
+                                className="h-12 rounded-2xl border-border bg-background pr-12 pl-10 transition-all duration-200 focus:border-primary/40 focus-visible:ring-primary/15"
                                 type={showPassword ? 'text' : 'password'}
                                 placeholder={t('login.password_placeholder')}
                                 {...field}

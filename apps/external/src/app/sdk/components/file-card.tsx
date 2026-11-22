@@ -110,7 +110,7 @@ export function FileCard({
               type="button"
               onClick={() => onDownload(file.name, uploadPath)}
               disabled={isDeleting}
-              className="flex-1 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Download
             </button>
@@ -118,7 +118,7 @@ export function FileCard({
               type="button"
               onClick={() => onDelete(file.name, uploadPath)}
               disabled={isDeleting}
-              className="flex-1 rounded-md bg-red-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-md bg-red-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
             </button>

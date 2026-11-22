@@ -30,7 +30,7 @@ export function ImagePreviewWithCopy({
       <button
         type="button"
         onClick={() => onFullscreen(imageUrl)}
-        className="w-fit overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
+        className="w-fit overflow-hidden rounded-lg border border-border/50 text-left transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue focus-visible:ring-offset-2"
       >
         <img
           src={imageUrl}
@@ -46,7 +46,7 @@ export function ImagePreviewWithCopy({
           event.stopPropagation();
           void onCopy(imageUrl);
         }}
-        className="absolute top-2 right-2 rounded-md border border-white/20 bg-black/60 p-1 text-white opacity-0 backdrop-blur-sm transition hover:bg-black/75 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white/60 group-hover/image:opacity-100"
+        className="absolute top-2 right-2 rounded-md border border-white/20 bg-black/60 p-1 text-white opacity-0 backdrop-blur-sm transition hover:bg-black/75 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 group-hover/image:opacity-100"
         title={buttonLabel}
         aria-label={buttonLabel}
       >

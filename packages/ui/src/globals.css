@@ -25,6 +25,19 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+  Focus rings follow keyboard navigation only. The pre-paint script records the
+  last input modality on <html> (focus-modality.ts): "pointer" after a mouse,
+  pen or touch press, "keyboard" after Tab or arrow navigation. Every
+  focus-visible: utility is gated on it, so a click or tap into a field never
+  draws a ring while keyboard focus keeps the theme ring. Without the attribute
+  (no input yet, or no script) the browser's own :focus-visible rules apply.
+*/
+@custom-variant focus-visible (&:focus-visible:where(:root:not([data-focus-modality="pointer"]) *));
+
+/* Collapsed sidebar captions, shown only when the user turns labels on. */
+@custom-variant nav-labels (&:where(:root[data-nav-labels="shown"] *));
+
+/*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.
@@ -895,6 +908,11 @@
 
   * {
     @apply border-border outline-ring/50;
+  }
+
+  /* A mouse, pen or touch press never leaves the browser's focus outline. */
+  :root[data-focus-modality="pointer"] :focus-visible {
+    outline: none;
   }
 
   body {

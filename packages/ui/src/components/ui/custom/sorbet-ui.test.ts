@@ -14,12 +14,22 @@ afterEach(() => {
 });
 
 describe('sorbet ui preference', () => {
-  it('parses only an explicit true as enabled', () => {
+  it('is on by default and off only for an explicit opt-out', () => {
     expect(parseSorbetUiValue('true')).toBe(true);
     expect(parseSorbetUiValue(true)).toBe(true);
+    expect(parseSorbetUiValue(null)).toBe(true);
+    expect(parseSorbetUiValue(undefined)).toBe(true);
+    expect(parseSorbetUiValue('')).toBe(true);
+    expect(parseSorbetUiValue('yes')).toBe(true);
     expect(parseSorbetUiValue('false')).toBe(false);
-    expect(parseSorbetUiValue(null)).toBe(false);
-    expect(parseSorbetUiValue('yes')).toBe(false);
+    expect(parseSorbetUiValue(false)).toBe(false);
+  });
+
+  it('reads a stored opt-out as off and any other stored value as on', () => {
+    window.localStorage.setItem(SORBET_UI_STORAGE_KEY, 'false');
+    expect(readStoredSorbetUi()).toBe(false);
+    window.localStorage.setItem(SORBET_UI_STORAGE_KEY, 'TRUE');
+    expect(readStoredSorbetUi()).toBe(true);
   });
 
   it('sets and clears data-ui on the root and remembers the value', () => {

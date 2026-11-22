@@ -44,7 +44,7 @@ export function GanttControls({
           placeholder="Search tasks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700"
+          className="w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 dark:border-gray-700"
         />
         {searchQuery && (
           <button

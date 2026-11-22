@@ -282,7 +282,7 @@ export default function CreatePlanDialog({
                             type="checkbox"
                             checked={field.value}
                             onChange={field.onChange}
-                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-blue focus:ring-dynamic-blue/50"
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-blue focus-visible:ring-dynamic-blue/50"
                           />
                         </FormControl>
                         <div className="flex-1 space-y-2">
@@ -343,7 +343,7 @@ export default function CreatePlanDialog({
                             type="checkbox"
                             checked={field.value}
                             onChange={field.onChange}
-                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-green focus:ring-dynamic-green/50"
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-green focus-visible:ring-dynamic-green/50"
                           />
                         </FormControl>
                         <div className="flex-1 space-y-2">

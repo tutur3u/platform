@@ -240,7 +240,7 @@ export function CourseTestDialog({
                         checked={isChecked}
                         onChange={() => handleToggleModule(m.id)}
                         disabled={createTestMutation.isPending}
-                        className="h-4 w-4 cursor-pointer border border-border accent-primary focus:ring-0"
+                        className="h-4 w-4 cursor-pointer border border-border accent-primary focus-visible:ring-0"
                       />
                       <span>{m.name}</span>
                     </label>

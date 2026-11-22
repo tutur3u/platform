@@ -364,7 +364,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
                 <button
                   type="button"
                   className={cn(
-                    'h-12 rounded-md transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400/50',
+                    'h-12 rounded-md transition-all hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50',
                     getColorClass(month.intensity),
                     'flex flex-col items-center justify-center font-medium text-xs'
                   )}

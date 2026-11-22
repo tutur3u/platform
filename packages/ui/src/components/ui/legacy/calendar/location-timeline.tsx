@@ -794,7 +794,7 @@ const LocationPill = ({
               </span>
               <input
                 type="date"
-                className="w-full rounded border bg-background px-2 py-1 text-[11px] outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded border bg-background px-2 py-1 text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-primary"
                 value={rangeStart}
                 onChange={(e) => setRangeStart(e.target.value)}
                 min={dayjs(visibleDates[eventSpan.startIndex]).format(
@@ -810,7 +810,7 @@ const LocationPill = ({
               </span>
               <input
                 type="date"
-                className="w-full rounded border bg-background px-2 py-1 text-[11px] outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded border bg-background px-2 py-1 text-[11px] outline-none focus-visible:ring-1 focus-visible:ring-primary"
                 value={rangeEnd}
                 onChange={(e) => setRangeEnd(e.target.value)}
                 min={rangeStart}
@@ -926,7 +926,7 @@ const LocationPill = ({
                   setShowCustomInput(false);
                 }
               }}
-              className="w-full rounded-md border bg-background px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-md border bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               ref={(input) => input?.focus()}
               disabled={isLoading}
             />
@@ -1223,7 +1223,7 @@ const LocationPicker = ({
                   setCustomLocationInput('');
                 }
               }}
-              className="w-full rounded-md border bg-background px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/50"
+              className="w-full rounded-md border bg-background px-3 py-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               ref={(input) => input?.focus()}
               disabled={isLoading}
             />

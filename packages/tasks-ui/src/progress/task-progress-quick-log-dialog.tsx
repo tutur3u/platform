@@ -129,7 +129,7 @@ export function QuickLogProgressDialog({
             <div className="grid gap-1.5">
               <Label htmlFor="quicklog-metric">{t('quicklog.metric')}</Label>
               <select
-                className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/15"
+                className="h-10 rounded-md border bg-background px-3 text-sm outline-none focus:border-dynamic-blue focus-visible:ring-2 focus-visible:ring-dynamic-blue/15"
                 id="quicklog-metric"
                 onChange={(e) => setMetricId(e.target.value)}
                 value={metricId}

@@ -113,7 +113,7 @@ export function PreferencesScreen({
                     disabled={loading}
                     className={cn(
                       'flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all duration-200',
-                      'hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50',
+                      'hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                       isSelected
                         ? 'border-primary bg-primary/5'
                         : 'border-border'
@@ -161,7 +161,7 @@ export function PreferencesScreen({
                     disabled={loading}
                     className={cn(
                       'flex flex-col items-center gap-1 rounded-xl border-2 p-4 transition-all duration-200',
-                      'hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50',
+                      'hover:border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                       isSelected
                         ? 'border-primary bg-primary/5'
                         : 'border-border'

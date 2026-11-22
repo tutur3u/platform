@@ -90,9 +90,12 @@ export function satelliteNavigationItemClass({
 }
 
 /**
- * Icon and title of a sidebar item. The collapsed rail keeps the title as a
- * one-line caption under the icon, so it reads without hovering; the item's
- * tooltip still carries the full title when the caption truncates.
+ * Icon and title of a sidebar item. The collapsed rail (collapsed, or resting
+ * in expand-on-hover) shows icons only; the item's tooltip and accessible name
+ * carry the title. When the user turns on Settings → Sidebar → Show navigation
+ * labels (`nav-labels.ts`), the title returns as a one-line caption under the
+ * icon. The caption stays in the markup either way, so the choice applies from
+ * `<html>` before hydration without shifting the rail.
  */
 export function SidebarNavigationItemContent({
   icon,
@@ -117,7 +120,8 @@ export function SidebarNavigationItemContent({
         data-slot="sidebar-item-label"
         className={cn(
           'truncate',
-          isCollapsed && 'max-w-full text-[10px] leading-normal',
+          isCollapsed &&
+            'hidden max-w-full text-[10px] leading-normal nav-labels:block',
           isCollapsed &&
             !isActive &&
             'text-muted-foreground group-hover/navlink:text-current group-focus-visible/navlink:text-current'

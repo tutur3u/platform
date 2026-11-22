@@ -208,8 +208,8 @@
   font-weight: 700;
 }
 
-/* Focus: the same solid ring on every control in this file. */
-:root[data-ui="sorbet"]
+/* Focus: the same solid ring on every control in this file, keyboard only. */
+:root[data-ui="sorbet"]:not([data-focus-modality="pointer"])
   :where(
     [data-slot="accordion-trigger"],
     [data-slot="breadcrumb-link"],

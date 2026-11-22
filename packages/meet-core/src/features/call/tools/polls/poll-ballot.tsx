@@ -127,7 +127,6 @@ export function PollBallot({
                 <Input
                   value={text}
                   maxLength={60}
-                  className="rounded-full"
                   onChange={(event) =>
                     setResponse({
                       type: 'word_cloud',

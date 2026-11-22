@@ -41,19 +41,28 @@ Available variants:
 - **Green**
 - **Blue**
 
-## Experimental design (Sorbet)
+## Sorbet design
 
-Sorbet is the next Tuturuuu design: a warm white ground, white surfaces, an ink
-primary colour, pastel fills with matching inks, pill-shaped controls, 18px cards,
-soft shadows and the Nunito typeface. You can try it before it becomes the default.
+Sorbet is the default Tuturuuu design: a warm white ground, white surfaces, an
+ink primary colour, pastel fills with matching inks, pill-shaped buttons and
+badges, rounded form fields, 18px cards, soft shadows and the Nunito typeface.
 
-- **Where:** Settings → Appearance → **Experimental design**, in every web app that
+- **Where:** Settings → Appearance → **Sorbet design**, in every web app that
   ships the shared settings dialog (Tuturuuu web and workspace, and the satellite
   apps such as Calendar, Tasks, Finance and Drive).
-- **Default:** off. The switch is saved to your account (user config
-  `EXPERIMENTAL_SORBET_UI`), so turning it on in one app turns it on in every app
-  you use with that account. Other apps pick up the change when you return to
-  them; other tabs of the same app follow at once.
+- **Default:** on for everyone (decided 2026-11-22). Only an explicit opt-out
+  turns it off: the switch is saved to your account (user config
+  `EXPERIMENTAL_SORBET_UI`, which keeps its original name), where `"false"`
+  means classic and an unset or unknown value means Sorbet. People who turned it
+  off before keep the classic design. Turning it off or on in one app changes
+  every app you use with that account. Other apps pick up the change when you
+  return to them; other tabs of the same app follow at once. A device with no
+  stored choice, or with storage blocked, opens in Sorbet.
+- **Fields and focus:** inputs, textareas, select and combobox triggers and
+  date pickers are rounded (the Corners option's row radius), never pills. Focus
+  rings show only for keyboard navigation: a click or tap into a field firms up
+  its border, and Tab adds the `--ring` edge with a soft halo. See
+  [Web design system](/build/development-tools/web-design-system#fields-and-focus).
 - **Light and dark:** Sorbet has both, and still follows your mode choice above.
   Every text colour keeps at least 4.5:1 contrast in both, including white
   text on solid status fills in dark mode. While Sorbet is on, the Light, Dark
@@ -79,17 +88,20 @@ soft shadows and the Nunito typeface. You can try it before it becomes the defau
   (the roadmap's boot script), and a palette chosen on the device still applies.
   The roadmap's own colours read Sorbet's role names (`--primary`, `--card`,
   `--ring` and the status inks), never a palette's source colours.
-- **Mobile app:** the same switch appears under Settings → Appearance →
-  **Experimental design**, with Palette and Corners while it is on. It reads and
-  writes the same two account settings, so turning Sorbet on in the app turns it
-  on in the web apps and back again. See [Mobile app](#mobile-app).
+- **Mobile app (exception for now):** the same switch appears under Settings →
+  Appearance → **Experimental design**, with Palette and Corners while it is on.
+  It reads and writes the same two account settings, so an explicit choice made
+  in the app or on the web applies to both. The app still treats an unset value
+  as off until its default moves to Sorbet in a separate mobile change. See
+  [Mobile app](#mobile-app).
 - **Not covered:** Colab, and web apps without a theme provider
   (Hive, Tulletin, the link shortener and external embeds) keep their current
   design.
 
 The switch only changes appearance. Pages, permissions and data stay the same.
 How it works for engineers: `ExperimentalUiSync` (in `@tuturuuu/ui`) sets
-`data-ui="sorbet"` on `<html>`, and `packages/ui/src/sorbet.css` remaps the
+`data-ui="sorbet"` on `<html>` unless the account or device value is `"false"`
+(`parseSorbetUiValue` and `SORBET_UI_DEFAULT` in `sorbet-ui.ts`), and `packages/ui/src/sorbet.css` remaps the
 shared semantic tokens under that attribute. A palette other than Sorbet adds
 `data-sorbet-preset`; `packages/ui/src/sorbet-presets.css` defines eleven source
 colours per palette and mode and maps them onto the same tokens, so the default
@@ -103,8 +115,9 @@ no account value is requested. So that a page opens in Sorbet rather than
 switching after hydration, `SorbetPrePaintScript` (in `@tuturuuu/ui`) is mounted
 beside each app's theme provider, outside any Suspense boundary. It is a static
 inline script that reads only this device's stored values, sets only
-allowlisted attributes on `<html>`, and takes the response's CSP nonce where an
-app requires one; `sorbet-pre-paint.test.tsx` checks that it applies exactly
+allowlisted attributes on `<html>`, applies Sorbet unless the device stored
+`"false"` (also when storage is unavailable), and takes the response's CSP
+nonce where an app requires one; `sorbet-pre-paint.test.tsx` checks that it applies exactly
 what the runtime applies for valid, invalid and oversized stored values.
 The native Start apps (Calendar, Tasks, Mail, Meet and Apps) mount it with
 their request nonce; Colab renders only on the client and does not apply

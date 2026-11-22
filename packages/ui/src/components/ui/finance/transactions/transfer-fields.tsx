@@ -182,7 +182,7 @@ export function TransferFields({
             aria-label={t('transaction-data-table.invert_rate')}
             className={cn(
               'ml-auto rounded-md p-1 transition-colors',
-              'hover:bg-dynamic-blue/15 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50'
+              'hover:bg-dynamic-blue/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50'
             )}
           >
             <ArrowRightLeft className="h-3.5 w-3.5" />

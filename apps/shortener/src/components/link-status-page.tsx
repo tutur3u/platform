@@ -23,7 +23,7 @@ export function LinkStatusPage({ kind }: { kind: keyof typeof COPY }) {
           <p className="mb-6 text-dynamic-red/80">{copy.description}</p>
           <a
             href="/"
-            className="inline-block rounded-md bg-dynamic-red px-4 py-2 text-white transition-colors hover:bg-dynamic-red/80 focus:outline-none focus:ring-2 focus:ring-dynamic-red focus:ring-offset-2"
+            className="inline-block rounded-md bg-dynamic-red px-4 py-2 text-white transition-colors hover:bg-dynamic-red/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-red focus-visible:ring-offset-2"
           >
             Go to Homepage
           </a>

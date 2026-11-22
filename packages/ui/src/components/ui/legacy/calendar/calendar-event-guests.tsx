@@ -43,6 +43,39 @@ export function CalendarEventDetails({
         value={event.description || ''}
         onChange={(description) => onChange({ ...event, description })}
       />
+      <CalendarEventParticipants
+        event={event}
+        onChange={onChange}
+        source={source}
+        workspaceId={workspaceId}
+        isEditing={isEditing}
+        timeZone={timeZone}
+      />
+    </>
+  );
+}
+
+/**
+ * Guests for a new event, or the read-only attendee snapshot of an existing
+ * provider event. Renders nothing when neither applies.
+ */
+export function CalendarEventParticipants({
+  event,
+  onChange,
+  source,
+  workspaceId,
+  isEditing,
+  timeZone,
+}: {
+  event: CalendarEventCreationDraft;
+  onChange: (event: CalendarEventCreationDraft) => void;
+  source?: CalendarSourceOption;
+  workspaceId?: string;
+  isEditing: boolean;
+  timeZone?: string;
+}) {
+  return (
+    <>
       {isEditing &&
         workspaceId &&
         event.id &&

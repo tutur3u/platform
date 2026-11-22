@@ -32,6 +32,7 @@ import {
   useState,
 } from 'react';
 import { DATE_TIME_PICKER_LAYOUT_CLASS_NAMES } from './date-time-picker-layout';
+import { fieldFocusClassName } from './field-focus';
 import {
   createPickerTimeOptions,
   filterPickerTimeOptions,
@@ -135,12 +136,10 @@ export function DateTimePicker({
     return 'Local time';
   }, [tz]);
 
-  // Update date directly without casting workaround
   const updateDate = (next?: Date) => {
     setDate(next);
   };
 
-  // Keep selectedDate in sync with date prop
   useEffect(() => {
     setSelectedDate(date);
   }, [date]);
@@ -634,11 +633,12 @@ export function DateTimePicker({
     <Button
       ref={pickerButtonRef}
       variant={timeToggle ? 'ghost' : 'outline'}
+      data-sorbet-shape="field"
       className={cn(
         'min-h-10 justify-start text-left font-normal',
         timeToggle
           ? 'min-w-0 flex-1 rounded-none border-0 px-3 shadow-none hover:bg-transparent'
-          : 'w-full',
+          : cn('w-full', fieldFocusClassName),
         !date && 'text-muted-foreground'
       )}
       disabled={disabled}

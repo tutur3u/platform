@@ -86,7 +86,7 @@ export default function PasswordForm({
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md border border-border px-3 py-2 pr-10 shadow-sm focus:border-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2"
+                  className="block w-full rounded-md border border-border px-3 py-2 pr-10 shadow-sm focus:border-dynamic-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue focus-visible:ring-offset-2"
                   placeholder="Enter password"
                   required
                   disabled={loading}
@@ -123,7 +123,7 @@ export default function PasswordForm({
             <button
               type="submit"
               disabled={loading || !password}
-              className="flex w-full justify-center rounded-md bg-dynamic-blue px-4 py-2 font-medium text-white transition-colors hover:bg-dynamic-blue/80 focus:outline-none focus:ring-2 focus:ring-dynamic-blue focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full justify-center rounded-md bg-dynamic-blue px-4 py-2 font-medium text-white transition-colors hover:bg-dynamic-blue/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <span className="flex items-center gap-2">

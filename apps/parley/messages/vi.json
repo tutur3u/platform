@@ -2671,7 +2671,6 @@
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
   },
   "experimental-ui": {
-    "badge": "Beta",
     "corners": {
       "round": "Tròn",
       "sharp": "Vuông",
@@ -2691,9 +2690,9 @@
       "rose": "Hồng",
       "sorbet": "Sorbet"
     },
-    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
-    "setting_title": "Giao diện thử nghiệm",
-    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
+    "setting_description": "Giao diện mặc định của Tuturuuu trên mọi ứng dụng. Tắt để dùng giao diện cổ điển. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện Sorbet",
+    "setting_toggle_label": "Dùng giao diện Sorbet"
   },
   "finance": {
     "manage_categories": "Quản lý danh mục",

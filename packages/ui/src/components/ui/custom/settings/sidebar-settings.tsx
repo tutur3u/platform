@@ -9,6 +9,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { SidebarBehavior } from '../sidebar-context';
+import { NavLabelsSetting } from './nav-labels-setting';
 
 interface SidebarSettingsProps {
   useSidebar: () => {
@@ -89,6 +90,8 @@ export default function SidebarSettings({
           </div>
         </RadioGroup>
       </SettingItemTab>
+
+      <NavLabelsSetting />
 
       <SettingItemTab
         title={t('settings.preferences.sidebar_local_override')}

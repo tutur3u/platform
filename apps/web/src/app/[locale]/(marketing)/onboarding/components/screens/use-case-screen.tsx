@@ -96,7 +96,7 @@ export function UseCaseScreen({
                 disabled={loading}
                 className={cn(
                   'group relative flex flex-col items-start rounded-xl border-2 p-5 text-left transition-all duration-200',
-                  'hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50',
+                  'hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
                   isSelected
                     ? 'border-primary bg-primary/5 shadow-md'
                     : 'border-border hover:border-primary/50'

@@ -12,6 +12,7 @@ import {
   SORBET_THEME_STORAGE_KEY,
 } from './sorbet-theme';
 import { SORBET_UI_STORAGE_KEY } from './sorbet-ui';
+import { NAV_LABELS_ATTRIBUTE, NAV_LABELS_STORAGE_KEY } from './nav-labels';
 
 const root = () => document.documentElement;
 
@@ -25,6 +26,7 @@ function attributes() {
 
 function clear() {
   for (const name of Object.keys(attributes())) root().removeAttribute(name);
+  root().removeAttribute(NAV_LABELS_ATTRIBUTE);
   window.localStorage.clear();
 }
 
@@ -32,19 +34,25 @@ function runScript() {
   new Function(SORBET_PRE_PAINT_SCRIPT)();
 }
 
+/** The theme attributes alone, without the on/off switch. */
+function themeAttributes() {
+  const { 'data-ui': _switch, ...theme } = attributes();
+  return theme;
+}
+
 /** What the script applies for a stored theme string. */
 function scriptResult(stored: string) {
   clear();
   window.localStorage.setItem(SORBET_THEME_STORAGE_KEY, stored);
   runScript();
-  return attributes();
+  return themeAttributes();
 }
 
 /** What `applySorbetTheme` applies for the same stored string. */
 function runtimeResult(stored: string) {
   clear();
   applySorbetTheme(parseSorbetTheme(stored));
-  return attributes();
+  return themeAttributes();
 }
 
 afterEach(clear);
@@ -72,19 +80,20 @@ describe('Sorbet pre-paint script', () => {
       '{"preset":"sorbet","radius":"soft","density":"comfortable","font":"nunito"}'
     );
     runScript();
-    expect(attributes()).toEqual({});
+    expect(attributes()).toEqual({ 'data-ui': 'sorbet' });
   });
 
-  it('turns Sorbet on only for the stored value "true"', () => {
-    window.localStorage.setItem(SORBET_UI_STORAGE_KEY, 'true');
+  it('turns Sorbet off only for the stored opt-out "false"', () => {
+    window.localStorage.setItem(SORBET_UI_STORAGE_KEY, 'false');
     runScript();
-    expect(root().getAttribute('data-ui')).toBe('sorbet');
+    expect(root().hasAttribute('data-ui')).toBe(false);
 
-    for (const stored of ['false', 'TRUE', '1', '']) {
+    for (const stored of [null, 'true', 'TRUE', '1', '']) {
       clear();
-      window.localStorage.setItem(SORBET_UI_STORAGE_KEY, stored);
+      if (stored !== null)
+        window.localStorage.setItem(SORBET_UI_STORAGE_KEY, stored);
       runScript();
-      expect(root().hasAttribute('data-ui'), stored).toBe(false);
+      expect(root().getAttribute('data-ui'), String(stored)).toBe('sorbet');
     }
   });
 
@@ -113,9 +122,23 @@ describe('Sorbet pre-paint script', () => {
     });
     try {
       expect(runScript).not.toThrow();
-      expect(attributes()).toEqual({});
+      // Sorbet is the default, so it still applies; nothing else does.
+      expect(attributes()).toEqual({ 'data-ui': 'sorbet' });
     } finally {
       if (original) Object.defineProperty(window, 'localStorage', original);
+    }
+  });
+
+  it('shows collapsed sidebar labels only for the stored value "true"', () => {
+    window.localStorage.setItem(NAV_LABELS_STORAGE_KEY, 'true');
+    runScript();
+    expect(root().getAttribute(NAV_LABELS_ATTRIBUTE)).toBe('shown');
+
+    for (const stored of ['false', 'TRUE', '1', '']) {
+      clear();
+      window.localStorage.setItem(NAV_LABELS_STORAGE_KEY, stored);
+      runScript();
+      expect(root().hasAttribute(NAV_LABELS_ATTRIBUTE), stored).toBe(false);
     }
   });
 

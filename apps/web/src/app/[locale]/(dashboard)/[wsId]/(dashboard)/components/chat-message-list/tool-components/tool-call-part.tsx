@@ -467,7 +467,7 @@ export function ToolCallPart({
                 <button
                   type="button"
                   onClick={() => setFullscreenImageUrl(null)}
-                  className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus:ring-0"
+                  className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus-visible:ring-0"
                 >
                   <img
                     src={fullscreenImageUrl}
@@ -538,7 +538,7 @@ export function ToolCallPart({
                 <button
                   type="button"
                   onClick={() => setFullscreenImageUrl(null)}
-                  className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus:ring-0"
+                  className="flex size-full min-h-[50vh] items-center justify-center p-4 focus:outline-none focus-visible:ring-0"
                 >
                   <img
                     src={fullscreenImageUrl}

@@ -157,6 +157,35 @@ describe('Structure', () => {
     ).not.toBeInTheDocument();
   });
 
+  it.each([false, true])(
+    'puts Settings and the footer actions on one row (collapsed: %s)',
+    (isCollapsed) => {
+      const { container } = render(
+        <Structure
+          feedbackButton={
+            <button aria-label="Feedback" type="button">
+              !
+            </button>
+          }
+          isCollapsed={isCollapsed}
+          setIsCollapsed={vi.fn()}
+          sidebarUtility={<button type="button">Settings</button>}
+        >
+          <span>Page content</span>
+        </Structure>
+      );
+
+      const rows = container.querySelectorAll(
+        '[data-slot="sidebar-utility-row"]'
+      );
+      expect(rows).toHaveLength(1);
+      const row = within(rows[0] as HTMLElement);
+      expect(row.getByRole('button', { name: 'Settings' })).toBeVisible();
+      expect(row.getByRole('button', { name: 'Feedback' })).toBeVisible();
+      expect(rows[0]).toHaveClass(isCollapsed ? 'flex-col' : 'items-center');
+    }
+  );
+
   describe('hover overlay', () => {
     const mounts = vi.fn();
     function MountProbe() {

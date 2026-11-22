@@ -51,7 +51,7 @@ export function AppsCatalog({
             <span className="sr-only">{copy.searchPlaceholder}</span>
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-foreground/40" />
             <input
-              className="h-12 w-full rounded-2xl border border-transparent bg-foreground/[0.035] pr-11 pl-11 text-sm outline-none transition-colors placeholder:text-foreground/35 focus:border-foreground/15 focus:bg-background/70 focus:ring-2 focus:ring-ring/25"
+              className="h-12 w-full rounded-2xl border border-transparent bg-foreground/[0.035] pr-11 pl-11 text-sm outline-none transition-colors placeholder:text-foreground/35 focus:border-foreground/15 focus:bg-background/70 focus-visible:ring-2 focus-visible:ring-ring/25"
               onChange={(event) => setQuery(event.target.value)}
               placeholder={copy.searchPlaceholder}
               type="search"

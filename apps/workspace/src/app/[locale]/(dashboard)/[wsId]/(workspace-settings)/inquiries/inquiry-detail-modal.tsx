@@ -354,7 +354,7 @@ export function InquiryDetailModal({
                             <button
                               key={`${currentInquiry.id}-media-${index}`}
                               type="button"
-                              className="group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all hover:border-foreground/20 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-dynamic-blue/50"
+                              className="group relative aspect-square overflow-hidden rounded-lg border bg-muted/50 transition-all hover:border-foreground/20 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50"
                               onClick={() => handleMediaClick(mediaPath)}
                             >
                               {isVideo ? (

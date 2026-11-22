@@ -137,6 +137,31 @@ update schema limit. The detail action opens Maps through the mobile link
 launcher. Import deduplication treats a different location as a different
 event. Coverage lives in the mobile calendar location tests.
 
+## Event dialog
+
+The web create and edit event dialog (decided 2026-11-22) leads with a large,
+borderless title, then icon rows for **When** (start, end, an **All day**
+switch and the time zone the times are in), **Calendar** (source with its
+colour, plus a compact event-colour swatch), **Location**, **Description** and,
+for new events on a supported provider, guests. **Quick entry** and
+**AI generate** are tabs in the header; editing shows Quick entry only. Header
+and footer stay fixed while the fields scroll, so nothing is clipped; on phones
+the dialog opens full screen. The footer keeps the lock toggle (and Delete when
+editing) on the left and **Cancel** and **Create event** or **Save changes** on
+the right.
+
+Keyboard: the title takes focus when the dialog opens; Enter in the title or
+location saves; Cmd+Enter (macOS) or Ctrl+Enter saves from any field, the
+description included, and runs Generate or Save on the AI tabs; Escape closes.
+While an input method is composing (for example Vietnamese Telex), Enter never
+saves and Escape only cancels the candidate. Repeated keypresses while a save,
+delete or generation is pending are ignored. Saving, the source choice, provider colours, guests, all-day ranges, the
+AI prompt (text, voice and image) and the draft recovery notice behave as
+before. Coverage: `event-dialog/event-dialog-keys.test.ts`,
+`event-dialog/event-dialog-frame.test.tsx` and
+`event-dialog/event-quick-entry.test.tsx` under
+`packages/ui/src/components/ui/legacy/calendar/`.
+
 ## Default calendar view
 
 Standalone Calendar and the Tasks calendar open in week view on tablet and

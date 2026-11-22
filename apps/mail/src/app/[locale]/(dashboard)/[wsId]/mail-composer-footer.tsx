@@ -152,7 +152,7 @@ function AttachmentButton({
   onUpload: (files: FileList) => void;
 }) {
   return (
-    <label className="inline-flex cursor-pointer rounded-md focus-within:ring-2 focus-within:ring-ring">
+    <label className="inline-flex cursor-pointer rounded-md has-focus-visible:ring-2 has-focus-visible:ring-ring">
       <input
         accept={accept}
         aria-label={label}

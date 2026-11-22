@@ -39,16 +39,30 @@ afterEach(() => {
 });
 
 describe('ExperimentalUiSetting', () => {
-  it('reads the account config, off by default', () => {
+  it('reads the account config, on by default', () => {
     render(<ExperimentalUiSetting />);
 
     expect(mockUseUserBooleanConfig).toHaveBeenCalledWith(
       'EXPERIMENTAL_SORBET_UI',
-      false
+      true,
+      { parse: expect.any(Function) }
     );
+    const [, , options] = mockUseUserBooleanConfig.mock.calls[0] as [
+      string,
+      boolean,
+      { parse: (raw: string) => boolean },
+    ];
+    expect(options.parse('false')).toBe(false);
+    expect(options.parse('TRUE')).toBe(true);
+  });
+
+  it('shows the switch off only for an explicit opt-out', () => {
+    render(<ExperimentalUiSetting />);
+
     expect(
       screen.getByRole('switch', { name: 'setting_toggle_label' })
     ).not.toBeChecked();
+    expect(screen.queryByText('badge')).toBeNull();
   });
 
   it('saves to the account and applies the design immediately', () => {

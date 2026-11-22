@@ -2,11 +2,9 @@
 
 import { ArrowBigUpDash, MessageSquareWarning } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import { type SatelliteBrandProps, ShellAnchor } from './satellite-brand';
-
-type FooterItem = 'upgrade' | 'discord' | 'feedback';
 
 export interface SatelliteFooterActionsProps {
   labels: { upgrade: string; feedback: string };
@@ -49,187 +47,110 @@ export function SatelliteFooterActions({
   upgradeHref,
   upgradeExternal = false,
 }: SatelliteFooterActionsProps) {
-  const [hoveredItem, setHoveredItem] = useState<FooterItem | null>(null);
-  const leaveTimer = useRef<ReturnType<typeof setTimeout>>(null);
-  // After switching items, ignore mouse events until the CSS transition
-  // finishes so layout shifts don't cause the cursor to "see" a different
-  // item mid-animation and oscillate.
-  const cooldownUntil = useRef(0);
+  const tooltipSide = isCollapsed ? 'right' : 'top';
 
-  const hasDiscord = !!discordHref;
-
-  const resolvedUpgradeHref = upgradeHref ?? `/${wsId}/billing`;
-
-  const defaultExpanded: FooterItem = showUpgrade ? 'upgrade' : 'feedback';
-  const activeExpanded = hoveredItem ?? defaultExpanded;
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (leaveTimer.current) {
-      clearTimeout(leaveTimer.current);
-      leaveTimer.current = null;
-    }
-
-    // Skip during cooldown -- transition is still running
-    if (Date.now() < cooldownUntil.current) return;
-
-    const target = (e.target as HTMLElement).closest('[data-item]');
-    if (!target) return;
-
-    const item = target.getAttribute('data-item') as FooterItem;
-    setHoveredItem((prev) => {
-      if (prev === item) return prev;
-      // Lock out further changes for the transition duration (200ms + buffer)
-      cooldownUntil.current = Date.now() + 250;
-      return item;
-    });
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    leaveTimer.current = setTimeout(() => {
-      cooldownUntil.current = Date.now() + 250;
-      setHoveredItem(null);
-    }, 100);
-  }, []);
-
-  // Collapsed: vertical stack of icon-only buttons
-  if (isCollapsed) {
-    return (
-      <div className="flex w-full flex-col items-center gap-1">
-        {showUpgrade && (
-          <CollapsedItem
-            LinkComponent={LinkComponent}
-            href={resolvedUpgradeHref}
-            external={upgradeExternal}
-            tooltip={labels.upgrade}
-            variant="upgrade"
-          >
-            <ArrowBigUpDash className="h-4.5 w-4.5" />
-          </CollapsedItem>
-        )}
-        {hasDiscord && (
-          <CollapsedItem
-            LinkComponent={LinkComponent}
-            href={discordHref!}
-            external
-            tooltip="Discord"
-          >
-            <DiscordIcon className="h-4.5 w-4.5" />
-          </CollapsedItem>
-        )}
-        <CollapsedItem
-          LinkComponent={LinkComponent}
-          tooltip={labels.feedback}
-          onClick={onFeedback}
-        >
-          <MessageSquareWarning className="h-4.5 w-4.5" />
-        </CollapsedItem>
-      </div>
-    );
-  }
-
-  // Expanded sidebar: horizontal bar.
-  // One item is "active" (expanded with label), others are icon-only.
   return (
     <div
-      className="flex w-full items-center gap-1"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      data-slot="sidebar-footer-actions"
+      className={cn(
+        'flex shrink-0 items-center gap-1',
+        isCollapsed && 'w-full flex-col'
+      )}
     >
       {showUpgrade && (
         <FooterAction
           LinkComponent={LinkComponent}
-          id="upgrade"
-          isActive={activeExpanded === 'upgrade'}
-          label={labels.upgrade}
-          href={resolvedUpgradeHref}
+          href={upgradeHref ?? `/${wsId}/billing`}
           external={upgradeExternal}
+          label={labels.upgrade}
+          showLabel={!isCollapsed}
+          tooltipSide={tooltipSide}
           variant="upgrade"
         >
-          <ArrowBigUpDash className="h-4 w-4 shrink-0" />
+          <ArrowBigUpDash className="size-4 shrink-0" />
         </FooterAction>
       )}
-      {hasDiscord && (
+      {discordHref && (
         <FooterAction
           LinkComponent={LinkComponent}
-          id="discord"
-          isActive={activeExpanded === 'discord'}
-          label="Discord"
-          href={discordHref!}
+          href={discordHref}
           external
+          label="Discord"
+          tooltipSide={tooltipSide}
         >
-          <DiscordIcon className="h-4 w-4 shrink-0" />
+          <DiscordIcon className="size-4 shrink-0" />
         </FooterAction>
       )}
       <FooterAction
         LinkComponent={LinkComponent}
-        id="feedback"
-        isActive={activeExpanded === 'feedback'}
         label={labels.feedback}
         onClick={onFeedback}
+        tooltipSide={tooltipSide}
       >
-        <MessageSquareWarning className="h-4 w-4 shrink-0" />
+        <MessageSquareWarning className="size-4 shrink-0" />
       </FooterAction>
     </div>
   );
 }
 
-// --- Sub-components ---
-
-interface CollapsedItemProps {
+interface FooterActionProps {
   LinkComponent: NonNullable<SatelliteBrandProps['LinkComponent']>;
+  label: string;
   children: ReactNode;
-  tooltip: string;
+  tooltipSide: 'right' | 'top';
   href?: string;
   external?: boolean;
   onClick?: () => void;
+  showLabel?: boolean;
   variant?: 'upgrade' | 'default';
 }
 
-function CollapsedItem({
+/**
+ * A compact footer action: a 36px icon button (Upgrade may keep its label in
+ * the expanded sidebar). The tooltip and accessible name carry the label.
+ */
+function FooterAction({
   LinkComponent: Link,
+  label,
   children,
-  tooltip,
+  tooltipSide,
   href,
   external,
   onClick,
+  showLabel = false,
   variant = 'default',
-}: CollapsedItemProps) {
+}: FooterActionProps) {
   const isUpgrade = variant === 'upgrade';
-
   const className = cn(
-    'flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-150',
+    'inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring',
+    showLabel ? 'px-2.5' : 'w-9',
     isUpgrade
-      ? [
-          'group bg-linear-to-br from-dynamic-purple/10 to-dynamic-indigo/10',
-          'border border-dynamic-purple/20 text-dynamic-purple',
-          'hover:border-dynamic-purple/40 hover:from-dynamic-purple/15 hover:to-dynamic-indigo/15',
-          'hover:[box-shadow:0_0_20px_-5px_oklch(var(--dynamic-purple)/0.3)]',
-        ]
-      : 'text-foreground/60 hover:bg-foreground/5 hover:text-foreground'
+      ? 'border border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:border-dynamic-purple/40 hover:bg-dynamic-purple/15'
+      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
   );
-
-  const wrappedChildren = isUpgrade ? (
-    <span className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110">
+  const inner = (
+    <>
       {children}
-    </span>
-  ) : (
-    children
+      {showLabel && (
+        <span className="truncate font-medium text-sm">{label}</span>
+      )}
+    </>
   );
 
-  const content = href ? (
+  const control = href ? (
     external ? (
       <a
         href={href}
         target="_blank"
         rel="noopener noreferrer"
         className={className}
-        aria-label={tooltip}
+        aria-label={label}
       >
-        {wrappedChildren}
+        {inner}
       </a>
     ) : (
-      <Link href={href} className={className} aria-label={tooltip}>
-        {wrappedChildren}
+      <Link href={href} className={className} aria-label={label}>
+        {inner}
       </Link>
     )
   ) : (
@@ -237,114 +158,16 @@ function CollapsedItem({
       type="button"
       onClick={onClick}
       className={className}
-      aria-label={tooltip}
+      aria-label={label}
     >
-      {wrappedChildren}
+      {inner}
     </button>
   );
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{content}</TooltipTrigger>
-      <TooltipContent side="right">
-        <p>{tooltip}</p>
-      </TooltipContent>
+      <TooltipTrigger asChild>{control}</TooltipTrigger>
+      <TooltipContent side={tooltipSide}>{label}</TooltipContent>
     </Tooltip>
-  );
-}
-
-interface FooterActionProps {
-  LinkComponent: NonNullable<SatelliteBrandProps['LinkComponent']>;
-  id: FooterItem;
-  isActive: boolean;
-  label: string;
-  children: ReactNode;
-  href?: string;
-  external?: boolean;
-  onClick?: () => void;
-  variant?: 'upgrade' | 'default';
-}
-
-function FooterAction({
-  LinkComponent: Link,
-  id,
-  isActive,
-  label,
-  children,
-  href,
-  external,
-  onClick,
-  variant = id === 'upgrade' ? 'upgrade' : 'default',
-}: FooterActionProps) {
-  const isUpgrade = variant === 'upgrade';
-
-  const className = cn(
-    'flex h-9 items-center justify-center gap-1.5 rounded-lg transition-all duration-200',
-    isActive ? 'min-w-0 flex-1' : 'w-9 shrink-0',
-    isUpgrade
-      ? [
-          'group relative overflow-hidden text-dynamic-purple',
-          isActive
-            ? [
-                'border border-dynamic-purple/20 bg-linear-to-r from-dynamic-purple/10 to-dynamic-indigo/8',
-                'hover:border-dynamic-purple/35 hover:[box-shadow:0_0_20px_-5px_oklch(var(--dynamic-purple)/0.3)]',
-              ]
-            : 'hover:bg-dynamic-purple/8 hover:[box-shadow:0_0_16px_-4px_oklch(var(--dynamic-purple)/0.2)]',
-        ]
-      : [
-          isActive
-            ? 'bg-foreground/5 text-foreground'
-            : 'text-foreground/50 hover:bg-foreground/5 hover:text-foreground/70',
-        ]
-  );
-
-  const inner = (
-    <>
-      <span
-        className={cn(
-          'shrink-0 transition-transform duration-200',
-          isUpgrade && 'group-hover:scale-110'
-        )}
-      >
-        {children}
-      </span>
-      {isActive && (
-        <span className="truncate font-medium text-sm">{label}</span>
-      )}
-      {isUpgrade && isActive && (
-        <span
-          className="pointer-events-none absolute inset-0 animate-[shimmer_4s_ease-in-out_infinite]"
-          style={{
-            background:
-              'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%)',
-          }}
-        />
-      )}
-    </>
-  );
-
-  // data-item is read by the container's onMouseMove for flicker-free tracking
-  const sharedProps = {
-    className,
-    'data-item': id,
-    'aria-label': label,
-  } as const;
-
-  if (href) {
-    return external ? (
-      <a href={href} target="_blank" rel="noopener noreferrer" {...sharedProps}>
-        {inner}
-      </a>
-    ) : (
-      <Link href={href} {...sharedProps}>
-        {inner}
-      </Link>
-    );
-  }
-
-  return (
-    <button type="button" onClick={onClick} {...sharedProps}>
-      {inner}
-    </button>
   );
 }

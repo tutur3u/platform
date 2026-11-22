@@ -96,16 +96,21 @@ export function useUpdateUserConfig() {
 export function useUserBooleanConfig(
   configId: string,
   defaultValue: boolean = false,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; parse?: (raw: string) => boolean }
 ) {
   const { data: rawValue, isLoading } = useUserConfig(
     configId,
     defaultValue ? 'true' : 'false',
-    options
+    { enabled: options?.enabled }
   );
   const updateConfig = useUpdateUserConfig();
 
-  const value = rawValue === undefined ? defaultValue : rawValue === 'true';
+  // Unset reads as '' or the default; the configs route deletes '' on write,
+  // and other readers of the same cache entry may default to ''.
+  const value =
+    rawValue === undefined || rawValue === ''
+      ? defaultValue
+      : (options?.parse?.(rawValue) ?? rawValue === 'true');
 
   const setValue = (newValue: boolean) => {
     updateConfig.mutate({ configId, value: newValue ? 'true' : 'false' });

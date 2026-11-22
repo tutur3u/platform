@@ -346,7 +346,7 @@ export function MessageList({
               className={cn(
                 'absolute inset-x-0 top-0 px-4 py-2',
                 item.type === 'message' &&
-                  'focus:bg-accent/40 focus:outline-2 focus:-outline-offset-2 focus:outline-ring'
+                  'focus:bg-accent/40 focus-visible:outline-2 focus:-outline-offset-2 focus-visible:outline-ring'
               )}
               data-chat-message={item.type === 'message' ? '' : undefined}
               data-index={virtualItem.index}

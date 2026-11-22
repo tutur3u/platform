@@ -4,6 +4,7 @@ import { Check, ChevronsUpDown, Plus } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
 import { Button } from '../button';
+import { fieldFocusClassName } from '../field-focus';
 import {
   Command,
   CommandEmpty,
@@ -452,6 +453,7 @@ export function Combobox({
       aria-expanded={open}
       className={cn(
         'min-w-0 overflow-hidden',
+        fieldFocusClassName,
         triggerMode === 'compact'
           ? 'w-auto justify-center gap-1.5'
           : 'w-full justify-between',
