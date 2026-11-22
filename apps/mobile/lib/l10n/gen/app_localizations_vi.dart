@@ -2407,87 +2407,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get commonWithoutGroups => 'Không có nhóm';
 
   @override
-  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu kết nối lập kế hoạch, cộng tác, vận hành, học tập và sáng tạo trong một không gian thích ứng.';
-
-  @override
-  String get connectedOnboardingEcosystemTitle => 'Kết nối mọi mục tiêu của bạn';
-
-  @override
-  String get connectedOnboardingFinish => 'Khám phá Tuturuuu';
-
-  @override
-  String get connectedOnboardingGoalBuild => 'Xây dựng và sáng tạo';
-
-  @override
-  String get connectedOnboardingGoalCollaborate => 'Cộng tác';
-
-  @override
-  String get connectedOnboardingGoalFocus => 'Tập trung và lập kế hoạch';
-
-  @override
-  String get connectedOnboardingGoalLearn => 'Học và giảng dạy';
-
-  @override
-  String get connectedOnboardingGoalOperate => 'Vận hành doanh nghiệp';
-
-  @override
-  String get connectedOnboardingGoalSubtitle => 'Chọn một hoặc nhiều lộ trình mục tiêu. Bạn có thể thay đổi bất cứ lúc nào.';
-
-  @override
-  String get connectedOnboardingGoalTitle => 'Bạn muốn thúc đẩy điều gì?';
-
-  @override
-  String get connectedOnboardingMiraSubtitle => 'Bắt đầu trò chuyện, lên kế hoạch hoặc suy nghĩ về bước tiếp theo. Mira đồng hành cùng các công cụ bạn sử dụng mỗi ngày.';
-
-  @override
-  String get connectedOnboardingMiraTitle => 'Gặp Mira, trợ lý AI của bạn';
-
-  @override
-  String get connectedOnboardingMiraToolkit => 'Một nơi để trò chuyện với Mira và truy cập công việc, lịch, tài chính và kho hàng. Chọn những gì phù hợp với bạn.';
-
-  @override
-  String get connectedOnboardingOptional => 'Nhịp độ của bạn. Không gian của bạn. Luôn tùy chọn.';
-
-  @override
-  String get connectedOnboardingRoleExecutive => 'Lãnh đạo doanh nghiệp';
-
-  @override
-  String get connectedOnboardingRoleFounder => 'Nhà sáng lập';
-
-  @override
-  String get connectedOnboardingRoleProfessional => 'Chuyên gia';
-
-  @override
-  String get connectedOnboardingRoleStudent => 'Sinh viên';
-
-  @override
-  String get connectedOnboardingRoleSubtitle => 'Chọn góc nhìn phù hợp nhất với cách bạn làm việc. Lựa chọn này chỉ thay đổi đề xuất.';
-
-  @override
-  String get connectedOnboardingRoleTeamLeader => 'Trưởng nhóm';
-
-  @override
-  String get connectedOnboardingRoleTitle => 'Cá nhân hóa Tuturuuu';
-
-  @override
-  String get connectedOnboardingSettingsDescription => 'Xem lại vai trò, lộ trình mục tiêu và hệ sinh thái ứng dụng kết nối mà không thay đổi dữ liệu của bạn.';
+  String get connectedOnboardingSettingsDescription => 'Xem lại hồ sơ, không gian và mối quan tâm mà không thay đổi dữ liệu của bạn.';
 
   @override
   String get connectedOnboardingSettingsTitle => 'Mở lại hướng dẫn Tuturuuu';
 
   @override
-  String get connectedOnboardingSkip => 'Để sau';
-
-  @override
   String connectedOnboardingStep(int step, int total) {
-    return 'Bước $step trên $total';
+    return 'Bước $step/$total';
   }
-
-  @override
-  String get connectedOnboardingToolkitSubtitle => 'Công việc, Lịch, Tài chính, Học tập và Mira phối hợp cùng nhau. Mọi hướng dẫn đều ngắn, tùy chọn và có thể mở lại.';
-
-  @override
-  String get connectedOnboardingToolkitTitle => 'Bộ công cụ thích ứng với bạn';
 
   @override
   String get counterAppBarTitle => 'Bộ đếm';
@@ -8006,27 +7934,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'ID mục: $id';
   }
-
-  @override
-  String get onboardingGetStarted => 'Bắt đầu ngay';
-
-  @override
-  String get onboardingSlide1Subtitle => 'Người bạn đồng hành AI cho công việc và cuộc sống. Mira kết nối công việc, lịch và tài chính của bạn.';
-
-  @override
-  String get onboardingSlide1Title => 'Gặp gỡ Mira';
-
-  @override
-  String get onboardingSlide2Subtitle => 'Công việc, Lịch và Theo dõi - tất cả đều được thống nhất. Không còn phải chuyển đổi giữa các ứng dụng.';
-
-  @override
-  String get onboardingSlide2Title => 'Tất cả trong một ứng dụng';
-
-  @override
-  String get onboardingSlide3Subtitle => 'Mira ghi nhớ sở thích của bạn và trở nên thông minh hơn khi bạn sử dụng nhiều hơn.';
-
-  @override
-  String get onboardingSlide3Title => 'Trí tuệ phát triển cùng bạn';
 
   @override
   String get passwordLabel => 'Mật khẩu';
@@ -15486,12 +15393,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsModeSaveFailed => 'Không thể lưu chế độ. Vui lòng thử lại.';
 
   @override
-  String get onboardingModeTitle => 'Bạn sẽ dùng Tuturuuu như thế nào?';
-
-  @override
-  String get onboardingModeSubtitle => 'Lựa chọn này quyết định Trang chủ hiển thị gì trước. Bạn có thể đổi cho từng không gian làm việc trong Cài đặt.';
-
-  @override
   String get classesTodayTitle => 'Lớp học hôm nay';
 
   @override
@@ -20290,4 +20191,172 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get authHidePassword => 'Ẩn mật khẩu';
+
+  @override
+  String get onboardingSkip => 'Để sau';
+
+  @override
+  String get onboardingContinue => 'Tiếp tục';
+
+  @override
+  String get onboardingFinish => 'Hoàn tất';
+
+  @override
+  String get onboardingProfileTitle => 'Hồ sơ của bạn';
+
+  @override
+  String get onboardingProfileSubtitle => 'Đồng đội sẽ thấy bạn như thế này.';
+
+  @override
+  String get onboardingChangePhoto => 'Đổi ảnh';
+
+  @override
+  String get onboardingPhotoFailed => 'Chưa đổi được ảnh. Bạn có thể thử lại trong hồ sơ.';
+
+  @override
+  String get onboardingDisplayName => 'Tên hiển thị';
+
+  @override
+  String get onboardingDisplayNamePlaceholder => 'Tên của bạn';
+
+  @override
+  String get onboardingDisplayNameFailed => 'Chưa lưu được tên. Bạn có thể đổi sau trong hồ sơ.';
+
+  @override
+  String get onboardingLanguage => 'Ngôn ngữ';
+
+  @override
+  String get onboardingAppearance => 'Giao diện';
+
+  @override
+  String get onboardingThemeLight => 'Sáng';
+
+  @override
+  String get onboardingThemeDark => 'Tối';
+
+  @override
+  String get onboardingThemeAuto => 'Tự động';
+
+  @override
+  String get onboardingProductNews => 'Tin tức sản phẩm qua email';
+
+  @override
+  String get onboardingProductNewsOff => 'Tắt cho đến khi bạn bật';
+
+  @override
+  String get onboardingProductNewsSoon => 'Sắp ra mắt. Tùy chọn này vẫn tắt cho đến khi bạn có thể chọn.';
+
+  @override
+  String get onboardingSpaceTitle => 'Thiết lập không gian';
+
+  @override
+  String get onboardingSpaceSubtitle => 'Không gian cá nhân đã sẵn sàng.';
+
+  @override
+  String onboardingInvitedBy(String name) {
+    return '$name đã mời bạn';
+  }
+
+  @override
+  String get onboardingInvitePending => 'Lời mời đang chờ';
+
+  @override
+  String get onboardingJoin => 'Tham gia';
+
+  @override
+  String get onboardingJoined => 'Đã tham gia';
+
+  @override
+  String get onboardingJoinFailed => 'Chưa tham gia được. Hãy thử lại trong Thông báo.';
+
+  @override
+  String get onboardingJustMe => 'Chỉ mình tôi';
+
+  @override
+  String get onboardingJustMeSubtitle => 'Giữ không gian cá nhân';
+
+  @override
+  String get onboardingWithTeam => 'Cùng nhóm của tôi';
+
+  @override
+  String get onboardingWithTeamSubtitle => 'Tạo không gian làm việc chung';
+
+  @override
+  String get onboardingWorkspaceName => 'Tên không gian làm việc';
+
+  @override
+  String get onboardingWorkspaceNamePlaceholder => 'Ví dụ: Lotus Design Lab';
+
+  @override
+  String get onboardingSpaceHelp => 'Bạn có thể mời mọi người sau trong không gian làm việc.';
+
+  @override
+  String get onboardingInterestsTitle => 'Điều gì đưa bạn đến đây?';
+
+  @override
+  String get onboardingInterestsSubtitle => 'Chọn bất kỳ. Chúng tôi sẽ đưa các ứng dụng này lên đầu.';
+
+  @override
+  String get onboardingInterestsGroup => 'Mối quan tâm';
+
+  @override
+  String get onboardingInterestCalendar => 'Lên kế hoạch mỗi ngày';
+
+  @override
+  String get onboardingInterestTasks => 'Hoàn thành công việc';
+
+  @override
+  String get onboardingInterestChat => 'Làm việc nhóm';
+
+  @override
+  String get onboardingInterestEducation => 'Dạy hoặc học';
+
+  @override
+  String get onboardingInterestFinance => 'Quản lý chi tiêu';
+
+  @override
+  String get onboardingInterestMira => 'Hỏi trợ lý';
+
+  @override
+  String get onboardingAppCalendar => 'Lịch';
+
+  @override
+  String get onboardingAppTasks => 'Công việc';
+
+  @override
+  String get onboardingAppChat => 'Trò chuyện';
+
+  @override
+  String get onboardingAppEducation => 'Giáo dục';
+
+  @override
+  String get onboardingAppFinance => 'Tài chính';
+
+  @override
+  String get onboardingAppMira => 'Mira';
+
+  @override
+  String onboardingDoneTitle(String name) {
+    return 'Bạn đã sẵn sàng, $name';
+  }
+
+  @override
+  String get onboardingDoneTitleNoName => 'Bạn đã sẵn sàng';
+
+  @override
+  String onboardingDoneSubtitle(String workspace) {
+    return '$workspace đã sẵn sàng.';
+  }
+
+  @override
+  String get onboardingNextTask => 'Thêm công việc đầu tiên';
+
+  @override
+  String get onboardingNextCalendar => 'Kết nối lịch';
+
+  @override
+  String get onboardingNextNotifications => 'Bật thông báo';
+
+  @override
+  String get onboardingOpenApp => 'Mở Tuturuuu';
 }

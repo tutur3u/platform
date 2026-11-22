@@ -38,10 +38,6 @@ lib/features/meet/view/meet_page.dart
 lib/features/notes/notes_page.dart
 lib/features/notifications/widgets/notification_read_feedback.dart
 lib/features/notifications/widgets/notifications_sheet.dart
-lib/features/onboarding/view/onboarding_page.dart
-lib/features/onboarding/widgets/onboarding_backdrop.dart
-lib/features/onboarding/widgets/onboarding_choice_slide.dart
-lib/features/onboarding/widgets/onboarding_slide.dart
 lib/features/profile/view/profile_avatar_picker.dart
 lib/features/profile/view/profile_avatar_removal.dart
 lib/features/profile/view/profile_banner.dart
@@ -164,7 +160,6 @@ test/features/mail/mail_workspace_test.dart
 test/features/notes/ai/notes_local_ai_editor_test.dart
 test/features/notes/voice/notes_voice_host_review_test.dart
 test/features/notifications/widgets/notifications_action_button_test.dart
-test/features/onboarding/onboarding_page_test.dart
 test/features/profile/view/profile_avatar_removal_test.dart
 test/features/profile/view/profile_media_recovery_test.dart
 test/features/profile/view/profile_overview_shell_test.dart

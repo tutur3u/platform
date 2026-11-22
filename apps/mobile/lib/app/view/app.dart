@@ -304,6 +304,7 @@ class _AppState extends State<App> {
       telemetryConsent: consentGate.isEligible(widget.appFlavor)
           ? TelemetryPreference.instance
           : null,
+      onboardingGate: OnboardingGate.instance,
     );
     _unregisterAssistantActions = AssistantClientActions.register(
       AppAssistantClientActionBridge(
@@ -386,9 +387,7 @@ class _AppState extends State<App> {
   Future<void> _handleInitialDeepLink() async {
     try {
       final uri = await _appLinks.getInitialLink();
-      if (uri != null) {
-        await _handleDeepLinkUri(uri);
-      }
+      if (uri != null) await _handleDeepLinkUri(uri);
     } on Object catch (error) {
       if (kDebugMode) {
         debugPrint('Failed to resolve initial app link: $error');
@@ -406,6 +405,7 @@ class _AppState extends State<App> {
       return;
     }
 
+    OnboardingGate.instance.deferForSession();
     _pendingDeepLink = deepLink;
     await _openPendingDeepLinkIfReady();
   }

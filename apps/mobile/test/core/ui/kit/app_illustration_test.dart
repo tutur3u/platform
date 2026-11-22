@@ -72,6 +72,10 @@ void main() {
       AppIllustrationKind.passkey,
       AppIllustrationKind.accounts,
       AppIllustrationKind.locked,
+      AppIllustrationKind.profileCard,
+      AppIllustrationKind.spaceTiles,
+      AppIllustrationKind.interestScoops,
+      AppIllustrationKind.allSetBowl,
     ];
 
     test('are flagged as auth scenes', () {

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
+import 'package:mobile/core/router/app_router_onboarding.dart';
 import 'package:mobile/core/router/app_router_telemetry_consent.dart';
 import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/finance_routes.dart';
@@ -46,6 +47,8 @@ import 'package:mobile/features/mastermind/fleet_access/fleet_access_routes.dart
 import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
 import 'package:mobile/features/notifications/data/notifications_unread_count.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
+import 'package:mobile/features/onboarding/data/onboarding_gate.dart';
+import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_timeline_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
@@ -74,6 +77,8 @@ export 'package:mobile/core/router/app_router_access_redirects.dart'
         shouldRedirectDisabledHabitsRoutes,
         shouldRedirectDisabledMastermindRoutes,
         shouldRedirectPersonalTimerRequests;
+export 'package:mobile/features/onboarding/data/onboarding_gate.dart'
+    show OnboardingGate;
 
 String? resolveUnauthenticatedRedirect({
   required String matchedLocation,
@@ -175,6 +180,7 @@ GoRouter createAppRouter(
   FleetAccessCubit? fleetAccessCubit,
   String? initialLocation,
   TelemetryPreference? telemetryConsent,
+  OnboardingGate? onboardingGate,
 }) {
   final navigatorKey = GlobalKey<NavigatorState>();
   ApiVerification.requestToken = () async {
@@ -206,6 +212,7 @@ GoRouter createAppRouter(
         fleetAccessCubit,
       ),
       if (telemetryConsent != null) telemetryConsent,
+      ?onboardingGate,
     ]),
     redirect: (context, state) {
       final authState = authCubit.state;
@@ -239,6 +246,7 @@ GoRouter createAppRouter(
       if (authState.status == AuthStatus.unknown) {
         return isAuthRoute ? null : Routes.login;
       }
+      primeOnboardingGate(onboardingGate, authState);
 
       // Not authenticated → enforce auth entry points.
       if (authState.status == AuthStatus.unauthenticated) {
@@ -342,6 +350,15 @@ GoRouter createAppRouter(
       );
       if (consentRedirect != null) return consentRedirect;
 
+      final onboardingRedirect = resolveOnboardingRedirect(
+        gate: onboardingGate,
+        auth: authState,
+        workspace: wsState,
+        uri: state.uri,
+        matchedLocation: state.matchedLocation,
+      );
+      if (onboardingRedirect != null) return onboardingRedirect;
+
       if (AppRegistry.moduleFromLocation(state.matchedLocation) != null) {
         appTabCubit.syncFromLocation(state.matchedLocation);
       }
@@ -383,6 +400,13 @@ GoRouter createAppRouter(
       GoRoute(
         path: Routes.telemetryConsent,
         builder: (context, state) => const TelemetryConsentPage(),
+      ),
+      // First-run onboarding also opens above the shell.
+      GoRoute(
+        path: Routes.onboarding,
+        builder: (context, state) => OnboardingPage(
+          returnTo: onboardingReturnTarget(state.uri.queryParameters['from']),
+        ),
       ),
 
       // ── Main shell with bottom navigation ────────

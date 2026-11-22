@@ -2421,87 +2421,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonWithoutGroups => 'Without groups';
 
   @override
-  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu brings planning, collaboration, operations, learning, and creation into one adaptive workspace.';
-
-  @override
-  String get connectedOnboardingEcosystemTitle => 'Your goals, connected';
-
-  @override
-  String get connectedOnboardingFinish => 'Explore Tuturuuu';
-
-  @override
-  String get connectedOnboardingGoalBuild => 'Build and create';
-
-  @override
-  String get connectedOnboardingGoalCollaborate => 'Collaborate';
-
-  @override
-  String get connectedOnboardingGoalFocus => 'Focus and plan';
-
-  @override
-  String get connectedOnboardingGoalLearn => 'Learn and teach';
-
-  @override
-  String get connectedOnboardingGoalOperate => 'Operate a business';
-
-  @override
-  String get connectedOnboardingGoalSubtitle => 'Pick one or more goal pathways. You can change them whenever you want.';
-
-  @override
-  String get connectedOnboardingGoalTitle => 'What do you want to move forward?';
-
-  @override
-  String get connectedOnboardingMiraSubtitle => 'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.';
-
-  @override
-  String get connectedOnboardingMiraTitle => 'Meet Mira, your AI companion';
-
-  @override
-  String get connectedOnboardingMiraToolkit => 'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.';
-
-  @override
-  String get connectedOnboardingOptional => 'Your pace. Your workspace. Always optional.';
-
-  @override
-  String get connectedOnboardingRoleExecutive => 'Executive';
-
-  @override
-  String get connectedOnboardingRoleFounder => 'Founder';
-
-  @override
-  String get connectedOnboardingRoleProfessional => 'Professional';
-
-  @override
-  String get connectedOnboardingRoleStudent => 'Student';
-
-  @override
-  String get connectedOnboardingRoleSubtitle => 'Choose the perspective that best matches how you work. This only changes recommendations.';
-
-  @override
-  String get connectedOnboardingRoleTeamLeader => 'Team leader';
-
-  @override
-  String get connectedOnboardingRoleTitle => 'Make Tuturuuu yours';
-
-  @override
-  String get connectedOnboardingSettingsDescription => 'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.';
+  String get connectedOnboardingSettingsDescription => 'Go through your profile, space and interests again without changing your data.';
 
   @override
   String get connectedOnboardingSettingsTitle => 'Replay Tuturuuu guide';
 
   @override
-  String get connectedOnboardingSkip => 'Skip for now';
-
-  @override
   String connectedOnboardingStep(int step, int total) {
     return 'Step $step of $total';
   }
-
-  @override
-  String get connectedOnboardingToolkitSubtitle => 'Tasks, Calendar, Finance, Learn, and Mira work together. Every guide is short, optional, and replayable.';
-
-  @override
-  String get connectedOnboardingToolkitTitle => 'A toolkit that adapts to you';
 
   @override
   String get counterAppBarTitle => 'Counter';
@@ -8115,27 +8043,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String offlineStoredItemId(String id) {
     return 'Item ID: $id';
   }
-
-  @override
-  String get onboardingGetStarted => 'Get Started';
-
-  @override
-  String get onboardingSlide1Subtitle => 'Your AI companion for work and life. Mira connects your tasks, calendar, and finances.';
-
-  @override
-  String get onboardingSlide1Title => 'Meet Mira';
-
-  @override
-  String get onboardingSlide2Subtitle => 'Tasks, Calendar, and Track - all unified. No more switching between apps.';
-
-  @override
-  String get onboardingSlide2Title => 'Everything in One App';
-
-  @override
-  String get onboardingSlide3Subtitle => 'Mira remembers your preferences and gets smarter the more you use her.';
-
-  @override
-  String get onboardingSlide3Title => 'Intelligence That Grows';
 
   @override
   String get passwordLabel => 'Password';
@@ -15665,12 +15572,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsModeSaveFailed => 'Couldn\'t save the mode. Try again.';
 
   @override
-  String get onboardingModeTitle => 'How will you use Tuturuuu?';
-
-  @override
-  String get onboardingModeSubtitle => 'This sets what Home shows first. You can change it for each workspace in Settings.';
-
-  @override
   String get classesTodayTitle => 'Today\'s classes';
 
   @override
@@ -20527,4 +20428,172 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authHidePassword => 'Hide password';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingContinue => 'Continue';
+
+  @override
+  String get onboardingFinish => 'Finish';
+
+  @override
+  String get onboardingProfileTitle => 'Make it yours';
+
+  @override
+  String get onboardingProfileSubtitle => 'This is how teammates will see you.';
+
+  @override
+  String get onboardingChangePhoto => 'Change photo';
+
+  @override
+  String get onboardingPhotoFailed => 'Your photo wasn\'t changed. You can try again from your profile.';
+
+  @override
+  String get onboardingDisplayName => 'Display name';
+
+  @override
+  String get onboardingDisplayNamePlaceholder => 'Your name';
+
+  @override
+  String get onboardingDisplayNameFailed => 'Your name wasn\'t saved. You can change it later in your profile.';
+
+  @override
+  String get onboardingLanguage => 'Language';
+
+  @override
+  String get onboardingAppearance => 'Appearance';
+
+  @override
+  String get onboardingThemeLight => 'Light';
+
+  @override
+  String get onboardingThemeDark => 'Dark';
+
+  @override
+  String get onboardingThemeAuto => 'Auto';
+
+  @override
+  String get onboardingProductNews => 'Product news by email';
+
+  @override
+  String get onboardingProductNewsOff => 'Off unless you turn it on';
+
+  @override
+  String get onboardingProductNewsSoon => 'Coming soon. It stays off until you can choose it.';
+
+  @override
+  String get onboardingSpaceTitle => 'Set up your space';
+
+  @override
+  String get onboardingSpaceSubtitle => 'Personal workspace is ready.';
+
+  @override
+  String onboardingInvitedBy(String name) {
+    return 'Invited by $name';
+  }
+
+  @override
+  String get onboardingInvitePending => 'Pending invite';
+
+  @override
+  String get onboardingJoin => 'Join';
+
+  @override
+  String get onboardingJoined => 'Joined';
+
+  @override
+  String get onboardingJoinFailed => 'You couldn\'t join yet. Try again from Notifications.';
+
+  @override
+  String get onboardingJustMe => 'Just me';
+
+  @override
+  String get onboardingJustMeSubtitle => 'Keep my personal workspace';
+
+  @override
+  String get onboardingWithTeam => 'With my team';
+
+  @override
+  String get onboardingWithTeamSubtitle => 'Create a shared workspace';
+
+  @override
+  String get onboardingWorkspaceName => 'Workspace name';
+
+  @override
+  String get onboardingWorkspaceNamePlaceholder => 'For example, Lotus Design Lab';
+
+  @override
+  String get onboardingSpaceHelp => 'Invite people later from the workspace.';
+
+  @override
+  String get onboardingInterestsTitle => 'What brings you here?';
+
+  @override
+  String get onboardingInterestsSubtitle => 'Pick any. We\'ll put these apps first.';
+
+  @override
+  String get onboardingInterestsGroup => 'Interests';
+
+  @override
+  String get onboardingInterestCalendar => 'Plan my days';
+
+  @override
+  String get onboardingInterestTasks => 'Get work done';
+
+  @override
+  String get onboardingInterestChat => 'Work with a team';
+
+  @override
+  String get onboardingInterestEducation => 'Teach or learn';
+
+  @override
+  String get onboardingInterestFinance => 'Track money';
+
+  @override
+  String get onboardingInterestMira => 'Ask an assistant';
+
+  @override
+  String get onboardingAppCalendar => 'Calendar';
+
+  @override
+  String get onboardingAppTasks => 'Tasks';
+
+  @override
+  String get onboardingAppChat => 'Chat';
+
+  @override
+  String get onboardingAppEducation => 'Education';
+
+  @override
+  String get onboardingAppFinance => 'Finance';
+
+  @override
+  String get onboardingAppMira => 'Mira';
+
+  @override
+  String onboardingDoneTitle(String name) {
+    return 'You\'re all set, $name';
+  }
+
+  @override
+  String get onboardingDoneTitleNoName => 'You\'re all set';
+
+  @override
+  String onboardingDoneSubtitle(String workspace) {
+    return '$workspace is ready.';
+  }
+
+  @override
+  String get onboardingNextTask => 'Add your first task';
+
+  @override
+  String get onboardingNextCalendar => 'Connect your calendar';
+
+  @override
+  String get onboardingNextNotifications => 'Turn on notifications';
+
+  @override
+  String get onboardingOpenApp => 'Open Tuturuuu';
 }

@@ -174,6 +174,8 @@ extension _AppPushNavigation on _AppState {
     if (request.userId != null && request.userId != _authCubit.state.user?.id) {
       return;
     }
+    // A tapped notification opens where it points, like a deep link.
+    OnboardingGate.instance.deferForSession();
     if (request.opensMfaApproval) {
       if (request.userId == _authCubit.state.user?.id) {
         _router.go(

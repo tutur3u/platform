@@ -23,10 +23,16 @@ enum AppIllustrationKind {
   twoStep,
   passkey,
   accounts,
-  locked;
+  locked,
 
-  /// The sign-in scenes draw their own hue backdrop on a wider view box
-  /// and ignore [AppIllustration.tone].
+  /// Multi-hue onboarding scenes; see `illustration_scenes_onboarding.dart`.
+  profileCard,
+  spaceTiles,
+  interestScoops,
+  allSetBowl;
+
+  /// The Sorbet sign-in and onboarding scenes draw their own hue backdrop
+  /// on a wider view box and ignore [AppIllustration.tone].
   bool get isAuthScene => index >= welcomeBowl.index;
 }
 

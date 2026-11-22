@@ -4705,136 +4705,10 @@ abstract class AppLocalizations {
   /// **'Without groups'**
   String get commonWithoutGroups;
 
-  /// No description provided for @connectedOnboardingEcosystemSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tuturuuu brings planning, collaboration, operations, learning, and creation into one adaptive workspace.'**
-  String get connectedOnboardingEcosystemSubtitle;
-
-  /// No description provided for @connectedOnboardingEcosystemTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your goals, connected'**
-  String get connectedOnboardingEcosystemTitle;
-
-  /// No description provided for @connectedOnboardingFinish.
-  ///
-  /// In en, this message translates to:
-  /// **'Explore Tuturuuu'**
-  String get connectedOnboardingFinish;
-
-  /// No description provided for @connectedOnboardingGoalBuild.
-  ///
-  /// In en, this message translates to:
-  /// **'Build and create'**
-  String get connectedOnboardingGoalBuild;
-
-  /// No description provided for @connectedOnboardingGoalCollaborate.
-  ///
-  /// In en, this message translates to:
-  /// **'Collaborate'**
-  String get connectedOnboardingGoalCollaborate;
-
-  /// No description provided for @connectedOnboardingGoalFocus.
-  ///
-  /// In en, this message translates to:
-  /// **'Focus and plan'**
-  String get connectedOnboardingGoalFocus;
-
-  /// No description provided for @connectedOnboardingGoalLearn.
-  ///
-  /// In en, this message translates to:
-  /// **'Learn and teach'**
-  String get connectedOnboardingGoalLearn;
-
-  /// No description provided for @connectedOnboardingGoalOperate.
-  ///
-  /// In en, this message translates to:
-  /// **'Operate a business'**
-  String get connectedOnboardingGoalOperate;
-
-  /// No description provided for @connectedOnboardingGoalSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick one or more goal pathways. You can change them whenever you want.'**
-  String get connectedOnboardingGoalSubtitle;
-
-  /// No description provided for @connectedOnboardingGoalTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'What do you want to move forward?'**
-  String get connectedOnboardingGoalTitle;
-
-  /// No description provided for @connectedOnboardingMiraSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a conversation, shape a plan, or think through your next step. Mira lives alongside the tools you use every day.'**
-  String get connectedOnboardingMiraSubtitle;
-
-  /// No description provided for @connectedOnboardingMiraTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Meet Mira, your AI companion'**
-  String get connectedOnboardingMiraTitle;
-
-  /// No description provided for @connectedOnboardingMiraToolkit.
-  ///
-  /// In en, this message translates to:
-  /// **'One place to chat with Mira and reach your tasks, calendar, finances, and inventory. Choose what works for you.'**
-  String get connectedOnboardingMiraToolkit;
-
-  /// No description provided for @connectedOnboardingOptional.
-  ///
-  /// In en, this message translates to:
-  /// **'Your pace. Your workspace. Always optional.'**
-  String get connectedOnboardingOptional;
-
-  /// No description provided for @connectedOnboardingRoleExecutive.
-  ///
-  /// In en, this message translates to:
-  /// **'Executive'**
-  String get connectedOnboardingRoleExecutive;
-
-  /// No description provided for @connectedOnboardingRoleFounder.
-  ///
-  /// In en, this message translates to:
-  /// **'Founder'**
-  String get connectedOnboardingRoleFounder;
-
-  /// No description provided for @connectedOnboardingRoleProfessional.
-  ///
-  /// In en, this message translates to:
-  /// **'Professional'**
-  String get connectedOnboardingRoleProfessional;
-
-  /// No description provided for @connectedOnboardingRoleStudent.
-  ///
-  /// In en, this message translates to:
-  /// **'Student'**
-  String get connectedOnboardingRoleStudent;
-
-  /// No description provided for @connectedOnboardingRoleSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose the perspective that best matches how you work. This only changes recommendations.'**
-  String get connectedOnboardingRoleSubtitle;
-
-  /// No description provided for @connectedOnboardingRoleTeamLeader.
-  ///
-  /// In en, this message translates to:
-  /// **'Team leader'**
-  String get connectedOnboardingRoleTeamLeader;
-
-  /// No description provided for @connectedOnboardingRoleTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Make Tuturuuu yours'**
-  String get connectedOnboardingRoleTitle;
-
   /// No description provided for @connectedOnboardingSettingsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.'**
+  /// **'Go through your profile, space and interests again without changing your data.'**
   String get connectedOnboardingSettingsDescription;
 
   /// No description provided for @connectedOnboardingSettingsTitle.
@@ -4843,29 +4717,11 @@ abstract class AppLocalizations {
   /// **'Replay Tuturuuu guide'**
   String get connectedOnboardingSettingsTitle;
 
-  /// No description provided for @connectedOnboardingSkip.
-  ///
-  /// In en, this message translates to:
-  /// **'Skip for now'**
-  String get connectedOnboardingSkip;
-
   /// No description provided for @connectedOnboardingStep.
   ///
   /// In en, this message translates to:
   /// **'Step {step} of {total}'**
   String connectedOnboardingStep(int step, int total);
-
-  /// No description provided for @connectedOnboardingToolkitSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tasks, Calendar, Finance, Learn, and Mira work together. Every guide is short, optional, and replayable.'**
-  String get connectedOnboardingToolkitSubtitle;
-
-  /// No description provided for @connectedOnboardingToolkitTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'A toolkit that adapts to you'**
-  String get connectedOnboardingToolkitTitle;
 
   /// Text shown in the AppBar of the Counter Page
   ///
@@ -15276,48 +15132,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Item ID: {id}'**
   String offlineStoredItemId(String id);
-
-  /// No description provided for @onboardingGetStarted.
-  ///
-  /// In en, this message translates to:
-  /// **'Get Started'**
-  String get onboardingGetStarted;
-
-  /// No description provided for @onboardingSlide1Subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Your AI companion for work and life. Mira connects your tasks, calendar, and finances.'**
-  String get onboardingSlide1Subtitle;
-
-  /// No description provided for @onboardingSlide1Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Meet Mira'**
-  String get onboardingSlide1Title;
-
-  /// No description provided for @onboardingSlide2Subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tasks, Calendar, and Track - all unified. No more switching between apps.'**
-  String get onboardingSlide2Subtitle;
-
-  /// No description provided for @onboardingSlide2Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Everything in One App'**
-  String get onboardingSlide2Title;
-
-  /// No description provided for @onboardingSlide3Subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Mira remembers your preferences and gets smarter the more you use her.'**
-  String get onboardingSlide3Subtitle;
-
-  /// No description provided for @onboardingSlide3Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Intelligence That Grows'**
-  String get onboardingSlide3Title;
 
   /// No description provided for @passwordLabel.
   ///
@@ -29065,18 +28879,6 @@ abstract class AppLocalizations {
   /// **'Couldn\'t save the mode. Try again.'**
   String get settingsModeSaveFailed;
 
-  /// No description provided for @onboardingModeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'How will you use Tuturuuu?'**
-  String get onboardingModeTitle;
-
-  /// No description provided for @onboardingModeSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'This sets what Home shows first. You can change it for each workspace in Settings.'**
-  String get onboardingModeSubtitle;
-
   /// No description provided for @classesTodayTitle.
   ///
   /// In en, this message translates to:
@@ -37530,6 +37332,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide password'**
   String get authHidePassword;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onboardingContinue;
+
+  /// No description provided for @onboardingFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get onboardingFinish;
+
+  /// No description provided for @onboardingProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it yours'**
+  String get onboardingProfileTitle;
+
+  /// No description provided for @onboardingProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This is how teammates will see you.'**
+  String get onboardingProfileSubtitle;
+
+  /// No description provided for @onboardingChangePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get onboardingChangePhoto;
+
+  /// No description provided for @onboardingPhotoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo wasn\'t changed. You can try again from your profile.'**
+  String get onboardingPhotoFailed;
+
+  /// No description provided for @onboardingDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get onboardingDisplayName;
+
+  /// No description provided for @onboardingDisplayNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get onboardingDisplayNamePlaceholder;
+
+  /// No description provided for @onboardingDisplayNameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name wasn\'t saved. You can change it later in your profile.'**
+  String get onboardingDisplayNameFailed;
+
+  /// No description provided for @onboardingLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get onboardingLanguage;
+
+  /// No description provided for @onboardingAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get onboardingAppearance;
+
+  /// No description provided for @onboardingThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get onboardingThemeLight;
+
+  /// No description provided for @onboardingThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get onboardingThemeDark;
+
+  /// No description provided for @onboardingThemeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get onboardingThemeAuto;
+
+  /// No description provided for @onboardingProductNews.
+  ///
+  /// In en, this message translates to:
+  /// **'Product news by email'**
+  String get onboardingProductNews;
+
+  /// No description provided for @onboardingProductNewsOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off unless you turn it on'**
+  String get onboardingProductNewsOff;
+
+  /// No description provided for @onboardingProductNewsSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon. It stays off until you can choose it.'**
+  String get onboardingProductNewsSoon;
+
+  /// No description provided for @onboardingSpaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your space'**
+  String get onboardingSpaceTitle;
+
+  /// No description provided for @onboardingSpaceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal workspace is ready.'**
+  String get onboardingSpaceSubtitle;
+
+  /// No description provided for @onboardingInvitedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Invited by {name}'**
+  String onboardingInvitedBy(String name);
+
+  /// No description provided for @onboardingInvitePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending invite'**
+  String get onboardingInvitePending;
+
+  /// No description provided for @onboardingJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get onboardingJoin;
+
+  /// No description provided for @onboardingJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get onboardingJoined;
+
+  /// No description provided for @onboardingJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'You couldn\'t join yet. Try again from Notifications.'**
+  String get onboardingJoinFailed;
+
+  /// No description provided for @onboardingJustMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Just me'**
+  String get onboardingJustMe;
+
+  /// No description provided for @onboardingJustMeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my personal workspace'**
+  String get onboardingJustMeSubtitle;
+
+  /// No description provided for @onboardingWithTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'With my team'**
+  String get onboardingWithTeam;
+
+  /// No description provided for @onboardingWithTeamSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a shared workspace'**
+  String get onboardingWithTeamSubtitle;
+
+  /// No description provided for @onboardingWorkspaceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name'**
+  String get onboardingWorkspaceName;
+
+  /// No description provided for @onboardingWorkspaceNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, Lotus Design Lab'**
+  String get onboardingWorkspaceNamePlaceholder;
+
+  /// No description provided for @onboardingSpaceHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite people later from the workspace.'**
+  String get onboardingSpaceHelp;
+
+  /// No description provided for @onboardingInterestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What brings you here?'**
+  String get onboardingInterestsTitle;
+
+  /// No description provided for @onboardingInterestsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick any. We\'ll put these apps first.'**
+  String get onboardingInterestsSubtitle;
+
+  /// No description provided for @onboardingInterestsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Interests'**
+  String get onboardingInterestsGroup;
+
+  /// No description provided for @onboardingInterestCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan my days'**
+  String get onboardingInterestCalendar;
+
+  /// No description provided for @onboardingInterestTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Get work done'**
+  String get onboardingInterestTasks;
+
+  /// No description provided for @onboardingInterestChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Work with a team'**
+  String get onboardingInterestChat;
+
+  /// No description provided for @onboardingInterestEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Teach or learn'**
+  String get onboardingInterestEducation;
+
+  /// No description provided for @onboardingInterestFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Track money'**
+  String get onboardingInterestFinance;
+
+  /// No description provided for @onboardingInterestMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an assistant'**
+  String get onboardingInterestMira;
+
+  /// No description provided for @onboardingAppCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get onboardingAppCalendar;
+
+  /// No description provided for @onboardingAppTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get onboardingAppTasks;
+
+  /// No description provided for @onboardingAppChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get onboardingAppChat;
+
+  /// No description provided for @onboardingAppEducation.
+  ///
+  /// In en, this message translates to:
+  /// **'Education'**
+  String get onboardingAppEducation;
+
+  /// No description provided for @onboardingAppFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get onboardingAppFinance;
+
+  /// No description provided for @onboardingAppMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira'**
+  String get onboardingAppMira;
+
+  /// No description provided for @onboardingDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all set, {name}'**
+  String onboardingDoneTitle(String name);
+
+  /// No description provided for @onboardingDoneTitleNoName.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all set'**
+  String get onboardingDoneTitleNoName;
+
+  /// No description provided for @onboardingDoneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{workspace} is ready.'**
+  String onboardingDoneSubtitle(String workspace);
+
+  /// No description provided for @onboardingNextTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first task'**
+  String get onboardingNextTask;
+
+  /// No description provided for @onboardingNextCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect your calendar'**
+  String get onboardingNextCalendar;
+
+  /// No description provided for @onboardingNextNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on notifications'**
+  String get onboardingNextNotifications;
+
+  /// No description provided for @onboardingOpenApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Tuturuuu'**
+  String get onboardingOpenApp;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

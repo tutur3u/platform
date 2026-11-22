@@ -1,0 +1,54 @@
+---
+title: Mobile onboarding
+description: When the Flutter first-run onboarding appears, what its three steps change, and the rules behind it.
+audience: developers
+---
+
+The mobile onboarding (`apps/mobile/lib/features/onboarding`) replaces the
+earlier five-slide carousel. It uses the Sorbet design: core/ui components,
+`SorbetTokens` colours and the onboarding illustration scenes in
+`lib/core/ui/kit/illustration/illustration_scenes_onboarding.dart`. It opens
+above the app shell, never inside it.
+
+The flow has three steps and a closing screen:
+
+1. **Make it yours**: photo (the existing avatar picker and upload), display
+   name (the profile API), language (EN or VI), appearance (Light, Dark or
+   Auto) and Product news by email.
+2. **Set up your space**: an open workspace invite with Join, then Just me
+   (keep the personal workspace) or With my team (create a workspace by name
+   through the same create action the workspace picker uses).
+3. **What brings you here?**: Calendar, Tasks, Chat, Education, Finance and
+   Mira tiles, multi-select.
+4. **You're all set**: Add your first task, Connect your calendar, Turn on
+   notifications, and Open Tuturuuu.
+
+## Decisions
+
+| Rule | Default | Surfaces | Exceptions |
+| --- | --- | --- | --- |
+| The flow runs once per account per device, after that account's first successful sign-in on the device. | Outcomes (`completed`, `skipped`) are stored per user id, so a second account added later gets its own run. | Mobile app router, after the auth, MFA and workspace redirects. | Accounts already on the device the first time the gate runs (the signed-in account and saved accounts) are recorded as `existing` and never see it, so an app update does not interrupt current users. Settings, Replay Tuturuuu guide, replays it for anyone and records nothing. |
+| It never runs before sign-in, during MFA, in add-account mode or while switching accounts, and waits for a selected workspace. | The redirect requires an authenticated account with a workspace. | Router redirect. | Settings, the profile editor, the workspace picker and the telemetry prompt are never redirected. |
+| A pending deep link or a tapped notification wins. | The link opens where it points; onboarding is deferred for the rest of the app session and shows on the next launch. | Deep links, push notification taps. | If the flow was already open when the link arrived, it closes without recording an outcome. |
+| Every step and the whole flow are skippable, and nothing blocks the app. | Skip records `skipped` and continues to where the account was headed. | All steps. | A failed name save shows once; the next Continue moves on. |
+| Product news by email is a separate opt-in, off by default. | Off. | Step 1. | No user-level product email preference exists in the backend yet, so the switch is shown disabled with a "Coming soon" note and nothing is stored. |
+| Teach or learn sets the account's Education mode. | Finishing step 3 with Teach or learn sets the account mode to Education through `AudienceModeCubit.setAccountMode`; any other selection sets General. | Step 3. | Skipping step 3 leaves the mode unchanged. Workspace mode choices still take precedence. |
+| Interest choices are mirrored to the web onboarding progress. | Saved locally under `connected_onboarding_interests:<userId>` and `connected_onboarding_goals:<userId>`, and sent as `goals` to `PATCH /api/v1/user/onboarding-progress` using the shared goal vocabulary (`focus`, `collaborate`, `learn`, `operate`). | Step 3. | The sync is best effort; a failure never blocks the flow. |
+| The workspace limit is shown inline. | When the limits say no more workspaces can be created, With my team shows the limit under the name field instead of calling create. | Step 2. | API errors show their message in the same place. |
+| The open invite card uses the notification inbox's invite. | The newest unanswered `workspace_invite` notification; Join accepts it the same way the inbox does and selects the workspace. | Step 2. | No card when there is no open invite notification. |
+
+## Regression coverage
+
+- `test/features/onboarding/onboarding_gate_test.dart`: once per account,
+  existing accounts on first run, per-user outcomes, deep-link deferral.
+- `test/core/router/app_router_onboarding_test.dart`: signed out, MFA,
+  add-account mode, account switching, no workspace, exempt routes, pending
+  deep link, already completed or skipped, a second account, safe return
+  targets.
+- `test/features/onboarding/onboarding_page_test.dart`: each step, skip at
+  every step, replay records nothing, product news off and disabled, name
+  save and failure, workspace create and limit, invite join, Education and
+  General modes, goal sync, next-step links.
+- `test/features/onboarding/onboarding_design_render_test.dart`: design
+  renders of the four screens at phone and tablet, light and dark, plus
+  Vietnamese step 1.

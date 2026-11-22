@@ -125,6 +125,7 @@
               "platform/features/tasks-quick-create",
               "platform/features/mobile-chat",
               "platform/features/mobile-sign-in",
+              "platform/features/mobile-onboarding",
               "platform/features/mobile-notifications",
               "platform/features/mobile-mastermind",
               "platform/features/mobile-mastermind-inbox",

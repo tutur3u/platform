@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/kit/illustration/app_illustration.dart';
 import 'package:mobile/core/ui/kit/illustration/illustration_scenes.dart';
 import 'package:mobile/core/ui/kit/illustration/illustration_scenes_auth.dart';
+import 'package:mobile/core/ui/kit/illustration/illustration_scenes_onboarding.dart';
 
 /// Paints an [AppIllustrationKind] in a 120-unit square scaled to the canvas.
 ///
@@ -62,7 +63,11 @@ class AppIllustrationPainter extends CustomPainter {
           AppIllustrationKind.twoStep ||
           AppIllustrationKind.passkey ||
           AppIllustrationKind.accounts ||
-          AppIllustrationKind.locked:
+          AppIllustrationKind.locked ||
+          AppIllustrationKind.profileCard ||
+          AppIllustrationKind.spaceTiles ||
+          AppIllustrationKind.interestScoops ||
+          AppIllustrationKind.allSetBowl:
         break;
     }
     canvas.restore();
@@ -95,6 +100,14 @@ class AppIllustrationPainter extends CustomPainter {
         paintAccounts(canvas, ink);
       case AppIllustrationKind.locked:
         paintLocked(canvas, ink);
+      case AppIllustrationKind.profileCard:
+        paintProfileCard(canvas, ink);
+      case AppIllustrationKind.spaceTiles:
+        paintSpaceTiles(canvas, ink);
+      case AppIllustrationKind.interestScoops:
+        paintInterestScoops(canvas, ink);
+      case AppIllustrationKind.allSetBowl:
+        paintAllSetBowl(canvas, ink);
       case AppIllustrationKind.notificationsClear ||
           AppIllustrationKind.noTasks ||
           AppIllustrationKind.noTransactions ||
