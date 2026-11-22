@@ -364,7 +364,11 @@ export function applyLiveActivities(
       : { ...activities, assessment: EMPTY_ACTIVITIES.assessment };
   if (message.type === 'activity.read') {
     const reply: MeetRealtimeServerMessage[] = [
-      { type: 'activity.snapshot', snapshot: publicView(shown(current)), requestId },
+      {
+        type: 'activity.snapshot',
+        snapshot: publicView(shown(current)),
+        requestId,
+      },
       {
         type: 'activity.mine',
         mine: mineView(shown(current), participantId),
@@ -372,7 +376,11 @@ export function applyLiveActivities(
       },
     ];
     if (manager)
-      reply.push({ type: 'activity.host', host: hostView(shown(current)), requestId });
+      reply.push({
+        type: 'activity.host',
+        host: hostView(shown(current)),
+        requestId,
+      });
     return outcome(room, { reply });
   }
 
@@ -397,7 +405,11 @@ export function applyLiveActivities(
   const next = applyActivity(current, command, participantId, timestamp);
   if (typeof next === 'string') return denied(room, next, requestId);
   const reply: MeetRealtimeServerMessage[] = [
-    { type: 'activity.mine', mine: mineView(shown(next), participantId), requestId },
+    {
+      type: 'activity.mine',
+      mine: mineView(shown(next), participantId),
+      requestId,
+    },
   ];
   if (next === current) return outcome(room, { reply });
   if (command.kind === 'flashcards.mark') {

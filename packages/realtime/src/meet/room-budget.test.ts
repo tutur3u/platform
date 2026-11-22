@@ -155,8 +155,10 @@ describe('meeting resource budget', () => {
       penboardLimits: buckets,
     });
     expect(JSON.stringify(state)).toContain('Private answer');
-    const ended = expireRoomBudget(state, now + MEET_MAX_ROOM_DURATION_MS)!
-      .state;
+    const ended = expireRoomBudget(
+      state,
+      now + MEET_MAX_ROOM_DURATION_MS
+    )!.state;
     expect(ended.ended).toBe(true);
     // What the room persists after the expiry holds none of it.
     const persisted = JSON.parse(JSON.stringify(ended));

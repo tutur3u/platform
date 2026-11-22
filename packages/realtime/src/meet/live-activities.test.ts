@@ -438,7 +438,7 @@ it('delivers manager messages by one rule on every transport', () => {
   expect(receivesMeetManagerMessage(guest, notice)).toBe(false);
 });
 
-it('refuses an activity frame it cannot read under the sender\'s request id', () => {
+it("refuses an activity frame it cannot read under the sender's request id", () => {
   // What a page from before reveals named their card would send.
   const outdated = {
     type: 'activity.command',
@@ -482,7 +482,8 @@ it('keeps what one flashcard mark sends small, however large the room and the de
     back: `${index} ${'b'.repeat(390)}`,
   }));
   const set = action(room(), host, { kind: 'flashcards.set', cards });
-  const full = serializedMeetBytes(set.broadcast) + serializedMeetBytes(set.toManagers);
+  const full =
+    serializedMeetBytes(set.broadcast) + serializedMeetBytes(set.toManagers);
   expect(full).toBeGreaterThan(30_000);
   const cardId = set.state.liveActivities?.flashcards.cards[0]?.id;
 
@@ -516,8 +517,7 @@ it('keeps what one flashcard mark sends small, however large the room and the de
   expect(bytes(others)).toBe(0);
   // The marker gets their own small view, each manager a small update.
   expect(marker.send).toHaveBeenCalledTimes(1);
-  for (const manager of managers)
-    expect(manager.send).toHaveBeenCalledTimes(1);
+  for (const manager of managers) expect(manager.send).toHaveBeenCalledTimes(1);
   expect(bytes([marker])).toBeLessThan(600);
   expect(bytes(managers)).toBeLessThan(2 * 200);
   expect(bytes([marker, ...others, ...managers])).toBeLessThan(1_000);

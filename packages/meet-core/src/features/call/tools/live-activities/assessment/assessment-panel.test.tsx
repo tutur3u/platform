@@ -212,9 +212,7 @@ it('shows the host each answer, grades written ones and releases results', () =>
   const dialog = screen.getByRole('alertdialog');
   expect(within(dialog).getByText(t.reopen_hint)).toBeTruthy();
   expect(sent()).toHaveLength(3);
-  fireEvent.click(
-    within(dialog).getByRole('button', { name: strings.cancel })
-  );
+  fireEvent.click(within(dialog).getByRole('button', { name: strings.cancel }));
   expect(screen.queryByRole('alertdialog')).toBeNull();
   expect(sent()).toHaveLength(3);
   // Only the destructive confirm sends, and it is its own command, never a

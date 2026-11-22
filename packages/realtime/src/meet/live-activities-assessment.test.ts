@@ -300,9 +300,7 @@ describe('assessment', () => {
     // The release wins the race: the queued Reopen must not clear the answers.
     const released = action(closed, cohost, release).state;
     const lateReopen = action(released, host, reopen);
-    expect(lateReopen.reply).toMatchObject(
-      error('activity_assessment_sealed')
-    );
+    expect(lateReopen.reply).toMatchObject(error('activity_assessment_sealed'));
     expect(lateReopen.state).toBe(released);
     expect(released.liveActivities?.assessment.responses).toHaveLength(1);
 
@@ -399,7 +397,11 @@ describe('assessment', () => {
     expect(reopened.state).toBe(legacy);
     const fresh = action(legacy, host, { kind: 'assessment.restart' }).state
       .liveActivities?.assessment;
-    expect(fresh).toMatchObject({ status: 'open', sealed: false, responses: [] });
+    expect(fresh).toMatchObject({
+      status: 'open',
+      sealed: false,
+      responses: [],
+    });
     expect(fresh?.items.map(({ id }) => id)).not.toContain(long?.id);
     // A draft stored the same way has released nothing and opens as usual.
     const draft: MeetRoomSnapshot = {
@@ -559,9 +561,12 @@ describe('assessment', () => {
 });
 
 it('refuses every assessment command and shows none of it when switched off', () => {
-  const configured = action(room(), host, { kind: 'assessment.set', items: [
-    { prompt: 'Question', kind: 'choice', options: ['A', 'B'], answer: 1 },
-  ] });
+  const configured = action(room(), host, {
+    kind: 'assessment.set',
+    items: [
+      { prompt: 'Question', kind: 'choice', options: ['A', 'B'], answer: 1 },
+    ],
+  });
   const open = action(configured.state, host, {
     kind: 'assessment.status',
     status: 'open',
@@ -638,9 +643,9 @@ it('refuses every assessment command and shows none of it when switched off', ()
   expect(prompted.broadcast).toMatchObject([
     { snapshot: { icebreaker: { prompt: 'Hi?' }, assessment: { items: [] } } },
   ]);
-  expect(JSON.stringify([prompted.broadcast, prompted.toManagers])).not.toContain(
-    'Question'
-  );
+  expect(
+    JSON.stringify([prompted.broadcast, prompted.toManagers])
+  ).not.toContain('Question');
   // The stored attempt is untouched, so switching back on brings it back.
   expect(prompted.state.liveActivities?.assessment.responses).toHaveLength(1);
 });
