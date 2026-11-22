@@ -662,9 +662,7 @@
           },
           {
             "group": "Smart Scheduling API",
-            "pages": [
-              "platform/features/smart-scheduling/api-reference"
-            ]
+            "pages": ["platform/features/smart-scheduling/api-reference"]
           }
         ]
       },
@@ -693,9 +691,7 @@
               "learn/overview",
               {
                 "group": "Examples",
-                "pages": [
-                  "learn/examples/overview"
-                ]
+                "pages": ["learn/examples/overview"]
               },
               {
                 "group": "Workshops",
