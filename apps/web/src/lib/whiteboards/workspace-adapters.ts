@@ -20,7 +20,7 @@ const boardUrl = ({ wsId, boardId }: BoardRef) =>
 export function createWorkspaceWhiteboardPersistence(
   board: BoardRef,
   fetchImpl: FetchLike = (...args) => fetch(...args)
-): WhiteboardPersistence {
+): WhiteboardPersistence & Required<Pick<WhiteboardPersistence, 'load'>> {
   return {
     async load() {
       const response = await fetchImpl(boardUrl(board), { cache: 'no-store' });

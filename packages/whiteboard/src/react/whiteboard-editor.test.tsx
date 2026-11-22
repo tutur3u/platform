@@ -158,18 +158,84 @@ describe('WhiteboardEditor', () => {
     expect(save).toHaveBeenCalledTimes(2);
   });
 
-  it('applies a newer stored snapshot on load while nothing is unsaved', async () => {
-    const persistence = createMemoryPersistence();
-    await persistence.save({ elements: [makeElement('remote')] });
+  it('applies a newer stored snapshot while nothing is unsaved, once per revision', async () => {
+    const stored = {
+      snapshot: { elements: [makeElement('remote')] },
+      revision: 'r1',
+    };
 
-    render(<WhiteboardEditor theme="light" persistence={persistence} />);
+    const { rerender } = render(<WhiteboardEditor theme="light" />);
     await screen.findByTestId('canvas');
+    rerender(<WhiteboardEditor theme="light" storedSnapshot={stored} />);
 
     await vi.waitFor(() =>
       expect(canvas.api.updateScene).toHaveBeenCalledWith({
         elements: [expect.objectContaining({ id: 'remote' })],
       })
     );
+
+    canvas.api.updateScene.mockClear();
+    rerender(<WhiteboardEditor theme="light" storedSnapshot={{ ...stored }} />);
+    expect(canvas.api.updateScene).not.toHaveBeenCalled();
+
+    rerender(
+      <WhiteboardEditor
+        theme="light"
+        storedSnapshot={{ ...stored, revision: 'r2' }}
+      />
+    );
+    await vi.waitFor(() => expect(canvas.api.updateScene).toHaveBeenCalled());
+  });
+
+  it('holds a stored snapshot back while there are unsaved local edits', async () => {
+    const persistence = createMemoryPersistence();
+    const element = makeElement('mine');
+    canvas.api.getSceneElements.mockReturnValue([element]);
+    const stored = {
+      snapshot: { elements: [makeElement('remote')] },
+      revision: 'r1',
+    };
+
+    const { rerender } = render(
+      <WhiteboardEditor
+        theme="light"
+        persistence={persistence}
+        autoSaveDebounceMs={60_000}
+      />
+    );
+    await screen.findByTestId('canvas');
+
+    act(() => {
+      canvas.props?.onChange([element], {
+        scrollX: 0,
+        scrollY: 0,
+        zoom: { value: 1 },
+      });
+    });
+    rerender(
+      <WhiteboardEditor
+        theme="light"
+        persistence={persistence}
+        autoSaveDebounceMs={60_000}
+        storedSnapshot={stored}
+      />
+    );
+
+    expect(canvas.api.updateScene).not.toHaveBeenCalledWith({
+      elements: [expect.objectContaining({ id: 'remote' })],
+    });
+  });
+
+  it('never loads on its own, even when the adapter can', async () => {
+    const persistence = createMemoryPersistence();
+    const load = vi.spyOn(persistence, 'load');
+
+    render(<WhiteboardEditor theme="light" persistence={persistence} />);
+    await screen.findByTestId('canvas');
+    window.dispatchEvent(new Event('focus'));
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(load).not.toHaveBeenCalled();
   });
 
   it('restores the remembered viewport', async () => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { ArrowLeftIcon, WifiIcon, WifiOffIcon } from '@tuturuuu/icons';
 import { useOptionalWorkspacePresenceContext } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
 import {
@@ -26,7 +27,7 @@ import { useWorkspaceWhiteboardCollaboration } from '@/hooks/useWhiteboardCollab
 import {
   createWorkspaceWhiteboardAssets,
   createWorkspaceWhiteboardPersistence,
-} from '@/lib/whiteboards';
+} from '@/lib/whiteboards/workspace-adapters';
 import { WhiteboardSyncIndicator } from './whiteboard-sync-indicator';
 import { WhiteboardTitle } from './whiteboard-title';
 
@@ -95,6 +96,25 @@ export function CustomWhiteboard({
     () => createWorkspaceWhiteboardAssets({ wsId, boardId }),
     [wsId, boardId]
   );
+
+  // The stored snapshot is read here, not in the editor, so the app's query
+  // cache owns retries, dedupe and refetch triggers.
+  const { data: storedSnapshot, refetch: refetchSnapshot } = useQuery({
+    queryKey: ['whiteboard-snapshot', wsId, boardId],
+    queryFn: () => persistence.load(),
+    staleTime: 0,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: true,
+  });
+
+  // Catch up on edits missed while the live connection was down.
+  const wasConnectedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (wasConnectedRef.current === false && status.isConnected) {
+      void refetchSnapshot();
+    }
+    wasConnectedRef.current = status.isConnected;
+  }, [status.isConnected, refetchSnapshot]);
 
   const wsUpdateLocation = wsPresence?.updateLocation;
   const whiteboardViewers = wsPresence?.getWhiteboardViewers(boardId) ?? [];
@@ -225,6 +245,7 @@ export function CustomWhiteboard({
             initialData={initialData}
             theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
             persistence={persistence}
+            storedSnapshot={storedSnapshot}
             assets={assets}
             collaboration={collaboration}
             viewportStorageKey={`${VIEWPORT_STORAGE_KEY_PREFIX}:${wsId}:${boardId}`}

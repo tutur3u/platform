@@ -1,3 +1,5 @@
+'use client';
+
 import type {
   AppState,
   ExcalidrawImperativeAPI,
@@ -14,6 +16,7 @@ import {
   useState,
 } from 'react';
 import type {
+  StoredWhiteboardSnapshot,
   WhiteboardAssets,
   WhiteboardPersistence,
   WhiteboardTransport,
@@ -60,6 +63,12 @@ export interface WhiteboardEditorProps {
     appState: AppState
   ) => void;
   persistence?: WhiteboardPersistence;
+  /**
+   * The latest snapshot the host read from its store. The editor applies it
+   * when its revision is new and no local edit is unsaved; refetching (on
+   * focus, reconnect, ...) is the host's job.
+   */
+  storedSnapshot?: StoredWhiteboardSnapshot | null;
   assets?: WhiteboardAssets;
   collaboration?: WhiteboardCollaborationConfig;
   /** Remembers scroll and zoom under this key. */
@@ -90,6 +99,7 @@ export const WhiteboardEditor = forwardRef<
     readOnly = false,
     onChange,
     persistence,
+    storedSnapshot,
     assets,
     collaboration,
     viewportStorageKey,
@@ -108,7 +118,6 @@ export const WhiteboardEditor = forwardRef<
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const previousElementsRef = useRef<readonly ExcalidrawElement[]>([]);
   const lastSelectionSignatureRef = useRef('');
-  const previousConnectedRef = useRef<boolean | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const onNotifyRef = useRef(onNotify);
@@ -126,9 +135,9 @@ export const WhiteboardEditor = forwardRef<
     saveNow,
     triggerAutoSave,
     hasUnsavedChanges,
-    refresh,
   } = useScenePersistence({
     persistence,
+    storedSnapshot,
     apiRef,
     previousElementsRef,
     initialData,
@@ -172,20 +181,6 @@ export const WhiteboardEditor = forwardRef<
   useEffect(() => {
     onStatusChange?.({ syncStatus, lastSyncError, isConnected });
   }, [syncStatus, lastSyncError, isConnected, onStatusChange]);
-
-  // Re-read the stored snapshot once the live connection comes back.
-  useEffect(() => {
-    if (previousConnectedRef.current === null) {
-      previousConnectedRef.current = isConnected;
-      return;
-    }
-
-    if (!previousConnectedRef.current && isConnected) {
-      void refresh();
-    }
-
-    previousConnectedRef.current = isConnected;
-  }, [isConnected, refresh]);
 
   useEffect(() => {
     apiRef.current?.updateScene({ collaborators });

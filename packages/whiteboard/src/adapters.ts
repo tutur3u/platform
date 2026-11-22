@@ -31,10 +31,18 @@ export interface SelectionUpdate {
   timestamp: number;
 }
 
+/** Which of the transport's channels a status or error came from. */
+export type WhiteboardChannelKind = 'elements' | 'cursors';
+
 export interface WhiteboardTransportHandlers {
   /** The identity this client broadcasts as; used to announce departure. */
   user: WhiteboardIdentity;
-  onStatus: (status: WhiteboardConnectionStatus, error?: Error) => void;
+  /** `channel` is set on errors so hosts can treat element and cursor failures differently. */
+  onStatus: (
+    status: WhiteboardConnectionStatus,
+    error?: Error,
+    channel?: WhiteboardChannelKind
+  ) => void;
   onElementChanges: (batch: ElementChangeBatch) => void;
   onCursor: (update: CursorUpdate) => void;
   onSelection: (update: SelectionUpdate) => void;
@@ -42,7 +50,8 @@ export interface WhiteboardTransportHandlers {
 
 /**
  * Moves element deltas, cursors and selections between peers. Implementations
- * own connection lifetime; `connect` returns the matching disconnect.
+ * own connection lifetime; `connect` returns the matching disconnect. A
+ * transport serves one consumer at a time: create one per editor.
  */
 export interface WhiteboardTransport {
   connect(handlers: WhiteboardTransportHandlers): () => void;
@@ -62,7 +71,12 @@ export interface StoredWhiteboardSnapshot {
 }
 
 export interface WhiteboardPersistence {
-  load(): Promise<StoredWhiteboardSnapshot>;
+  /**
+   * Reads the stored snapshot. The editor never calls this: hosts own
+   * fetching (caching, retries, refetch triggers) and hand the result to the
+   * editor as `storedSnapshot`.
+   */
+  load?(): Promise<StoredWhiteboardSnapshot>;
   /** Stores the snapshot and returns the new revision, if the store has one. */
   save(snapshot: WhiteboardSnapshot): Promise<{ revision: string | null }>;
 }

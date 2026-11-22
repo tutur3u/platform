@@ -144,4 +144,46 @@ describe('useWhiteboardCollaboration', () => {
       retried?.changes.map((c) => [c.element.id, c.element.version])
     ).toEqual([['x', 2]]);
   });
+
+  it('keeps element and cursor channel errors separate and only reports element ones', async () => {
+    const hub = createMemoryTransportHub();
+    const transport = hub.createPeer();
+    let handlers: Parameters<typeof transport.connect>[0] | null = null;
+    const connect = transport.connect.bind(transport);
+    vi.spyOn(transport, 'connect').mockImplementation((h) => {
+      handlers = h;
+      return connect(h);
+    });
+    const onError = vi.fn();
+
+    const { result } = renderHook(() =>
+      useWhiteboardCollaboration({ transport, user: ada, onError })
+    );
+
+    act(() => {
+      handlers!.onStatus('error', new Error('cursor down'), 'cursors');
+      handlers!.onStatus('error', new Error('cursor down'), 'cursors');
+      handlers!.onStatus('error', new Error('cursor down'), 'cursors');
+    });
+    expect(onError).not.toHaveBeenCalled();
+
+    // The spent cursor budget does not stop element sends.
+    const send = vi.spyOn(transport, 'sendElementChanges');
+    act(() => {
+      handlers!.onStatus('connected');
+      result.current.broadcastElementChanges([], [makeElement('x')]);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(150);
+    });
+    expect(send).toHaveBeenCalledOnce();
+
+    act(() => {
+      handlers!.onStatus('error', new Error('elements down'), 'elements');
+    });
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'elements down' })
+    );
+  });
 });

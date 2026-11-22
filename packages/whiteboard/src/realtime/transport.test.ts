@@ -33,13 +33,17 @@ class FakeChannel implements BroadcastChannelLike {
     callback('SUBSCRIBED');
   }
 
+  sendHook: (() => Promise<unknown>) | null = null;
+
   send(message: { event: string; payload: unknown }) {
     this.sent.push({ event: message.event, payload: message.payload });
+    const hooked = this.sendHook?.();
     for (const peer of this.bus.get(this.topic) ?? []) {
       if (peer !== this && !peer.removed) {
         peer.listeners.get(message.event)?.({ payload: message.payload });
       }
     }
+    return hooked;
   }
 }
 
@@ -141,10 +145,18 @@ describe('createRealtimeWhiteboardTransport', () => {
     }).connect(handlers({ onStatus }));
 
     channels[0]?.statusCallback?.('CHANNEL_ERROR');
-    expect(onStatus).toHaveBeenLastCalledWith('error', expect.any(Error));
+    expect(onStatus).toHaveBeenLastCalledWith(
+      'error',
+      expect.any(Error),
+      'elements'
+    );
 
     channels[1]?.statusCallback?.('TIMED_OUT');
-    expect(onStatus).toHaveBeenLastCalledWith('error', expect.any(Error));
+    expect(onStatus).toHaveBeenLastCalledWith(
+      'error',
+      expect.any(Error),
+      'cursors'
+    );
   });
 
   it('reuses the connection when reconnected within the dispose delay', async () => {
@@ -225,6 +237,166 @@ describe('createRealtimeWhiteboardTransport', () => {
 
     channels[1]?.listeners.get('cursor-move')?.({ payload: {} });
 
-    expect(onStatus).toHaveBeenLastCalledWith('error', expect.any(Error));
+    expect(onStatus).toHaveBeenLastCalledWith(
+      'error',
+      expect.any(Error),
+      'cursors'
+    );
+  });
+
+  it('tags channel errors so hosts can tell element failures from cursor failures', () => {
+    const onStatus = vi.fn();
+    const { client, channels } = createFakeClient();
+
+    createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    }).connect(handlers({ onStatus }));
+
+    channels[0]?.statusCallback?.('CHANNEL_ERROR');
+    expect(onStatus).toHaveBeenLastCalledWith(
+      'error',
+      expect.any(Error),
+      'elements'
+    );
+
+    channels[1]?.statusCallback?.('TIMED_OUT');
+    expect(onStatus).toHaveBeenLastCalledWith(
+      'error',
+      expect.any(Error),
+      'cursors'
+    );
+  });
+
+  it('tags errors thrown by a handler with the channel it arrived on', () => {
+    const onStatus = vi.fn();
+    const { client, channels } = createFakeClient();
+
+    createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    }).connect(
+      handlers({
+        onStatus,
+        onElementChanges: () => {
+          throw new Error('boom');
+        },
+      })
+    );
+
+    channels[0]?.listeners.get('element-changes')?.({ payload: {} });
+
+    expect(onStatus).toHaveBeenLastCalledWith(
+      'error',
+      expect.any(Error),
+      'elements'
+    );
+  });
+
+  it('replays the current status to a consumer that takes over the open channels', async () => {
+    const { client } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    transport.connect(handlers())();
+    const onStatus = vi.fn();
+    transport.connect(handlers({ onStatus }));
+
+    expect(onStatus).toHaveBeenCalledWith('connected');
+  });
+
+  it('replays connecting when the channels are not both subscribed yet', () => {
+    const channels: FakeChannel[] = [];
+    const client: BroadcastClientLike<FakeChannel> = {
+      channel(topic) {
+        const channel = new FakeChannel(topic, new Map());
+        channel.subscribe = (callback) => {
+          channel.statusCallback = callback;
+        };
+        channels.push(channel);
+        return channel;
+      },
+      removeChannel() {},
+    };
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    transport.connect(handlers())();
+    const onStatus = vi.fn();
+    transport.connect(handlers({ onStatus }));
+
+    expect(onStatus).toHaveBeenCalledWith('connecting');
+  });
+
+  it('refuses a second consumer while the first is attached', () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+    const first = handlers();
+
+    transport.connect(first);
+
+    expect(() => transport.connect(handlers())).toThrow(
+      /already has an active consumer/
+    );
+    expect(channels.every((c) => !c.removed)).toBe(true);
+  });
+
+  it('ignores a disconnect from a consumer that was already replaced', async () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    const staleDisconnect = transport.connect(handlers());
+    staleDisconnect();
+    transport.connect(handlers());
+    staleDisconnect();
+    await vi.advanceTimersByTimeAsync(500);
+
+    expect(channels.every((c) => !c.removed)).toBe(true);
+  });
+
+  it('lets departure messages finish before the channels close', async () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+    const release: (() => void)[] = [];
+
+    transport.connect(handlers())();
+    channels[1]!.sendHook = () =>
+      new Promise<void>((resolve) => release.push(resolve));
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(channels[1]!.sent).toHaveLength(2);
+    expect(channels.every((c) => !c.removed)).toBe(true);
+
+    for (const done of release) done();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(channels.every((c) => c.removed)).toBe(true);
+  });
+
+  it('closes the channels without an unhandled rejection when a departure fails', async () => {
+    const { client, channels } = createFakeClient();
+    const transport = createRealtimeWhiteboardTransport({
+      channelName: 'b',
+      createClient: () => client,
+    });
+
+    transport.connect(handlers())();
+    channels[1]!.sendHook = () => Promise.reject(new Error('gone'));
+    await vi.advanceTimersByTimeAsync(150);
+
+    expect(channels.every((c) => c.removed)).toBe(true);
   });
 });

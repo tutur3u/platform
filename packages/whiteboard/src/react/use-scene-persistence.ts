@@ -6,7 +6,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { WhiteboardPersistence } from '../adapters';
+import type {
+  StoredWhiteboardSnapshot,
+  WhiteboardPersistence,
+} from '../adapters';
 import { isExcalidrawSnapshot, toStoredWhiteboardSnapshot } from '../snapshot';
 import type { ExcalidrawElement, WhiteboardSnapshot } from '../types';
 import type { WhiteboardNotice, WhiteboardSyncStatus } from './notices';
@@ -16,6 +19,8 @@ export interface ScenePersistenceOptions {
   apiRef: MutableRefObject<ExcalidrawImperativeAPI | null>;
   previousElementsRef: MutableRefObject<readonly ExcalidrawElement[]>;
   initialData?: WhiteboardSnapshot;
+  /** Latest snapshot read by the host; applied when newer and nothing is unsaved. */
+  storedSnapshot?: StoredWhiteboardSnapshot | null;
   autoSaveDebounceMs?: number;
   notify?: (notice: WhiteboardNotice) => void;
 }
@@ -24,15 +29,15 @@ const snapshotKey = (elements: readonly ExcalidrawElement[]) =>
   JSON.stringify({ elements });
 
 /**
- * Debounced auto-save plus catch-up: the stored snapshot is re-read when the
- * window regains focus, the network returns or the live connection resumes,
- * and applied only while there are no unsaved local edits.
+ * Debounced auto-save plus catch-up: a stored snapshot the host hands in is
+ * applied only when its revision is new and there are no unsaved local edits.
  */
 export function useScenePersistence({
   persistence,
   apiRef,
   previousElementsRef,
   initialData,
+  storedSnapshot,
   autoSaveDebounceMs = 1000,
   notify,
 }: ScenePersistenceOptions) {
@@ -43,7 +48,6 @@ export function useScenePersistence({
   const pendingChangesRef = useRef(false);
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRevisionRef = useRef<string | null>(null);
-  const loadingRef = useRef(false);
   const notifyRef = useRef(notify);
   notifyRef.current = notify;
 
@@ -107,22 +111,27 @@ export function useScenePersistence({
     []
   );
 
-  /** Re-reads the stored snapshot and applies it if it is newer and safe to apply. */
-  const refresh = useCallback(async () => {
-    if (!persistence || loadingRef.current) return;
-    loadingRef.current = true;
+  // Seed the saved baseline from the scene the editor starts with.
+  useEffect(() => {
+    const elements = initialData?.elements ?? [];
+    lastSavedRef.current = snapshotKey(elements);
+    previousElementsRef.current = elements.map((el) => ({ ...el }));
+  }, [initialData, previousElementsRef]);
+
+  // Apply a newer stored snapshot the host read, unless local edits are unsaved.
+  useEffect(() => {
+    if (!storedSnapshot) return;
+
+    const { snapshot, revision } = storedSnapshot;
+
+    if (!revision || revision === lastRevisionRef.current) return;
+    if (pendingChangesRef.current) return;
+    if (!isExcalidrawSnapshot(snapshot)) return;
+
+    const api = apiRef.current;
+    if (!api) return;
 
     try {
-      const stored = await persistence.load();
-      const { snapshot, revision } = stored;
-
-      if (!revision || revision === lastRevisionRef.current) return;
-      if (pendingChangesRef.current) return;
-      if (!isExcalidrawSnapshot(snapshot)) return;
-
-      const api = apiRef.current;
-      if (!api) return;
-
       const nextElements = snapshot.elements ?? [];
 
       api.updateScene({ elements: nextElements });
@@ -132,36 +141,8 @@ export function useScenePersistence({
       lastRevisionRef.current = revision;
     } catch (error) {
       console.error('Failed to apply whiteboard snapshot catchup:', error);
-    } finally {
-      loadingRef.current = false;
     }
-  }, [apiRef, persistence, previousElementsRef]);
-
-  // Seed the saved baseline from the scene the editor starts with.
-  useEffect(() => {
-    const elements = initialData?.elements ?? [];
-    lastSavedRef.current = snapshotKey(elements);
-    previousElementsRef.current = elements.map((el) => ({ ...el }));
-  }, [initialData, previousElementsRef]);
-
-  useEffect(() => {
-    void refresh();
-
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void refresh();
-    };
-    const onFocus = () => void refresh();
-
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', onFocus);
-    window.addEventListener('online', onFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', onFocus);
-      window.removeEventListener('online', onFocus);
-    };
-  }, [refresh]);
+  }, [storedSnapshot, apiRef, previousElementsRef]);
 
   useEffect(() => cancelAutoSave, [cancelAutoSave]);
 
@@ -184,6 +165,5 @@ export function useScenePersistence({
     saveNow,
     triggerAutoSave,
     hasUnsavedChanges,
-    refresh,
   };
 }

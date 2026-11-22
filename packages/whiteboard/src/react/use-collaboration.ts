@@ -1,6 +1,7 @@
 import type { Collaborator, SocketId } from '@excalidraw/excalidraw/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
+  WhiteboardChannelKind,
   WhiteboardConnectionStatus,
   WhiteboardTransport,
 } from '../adapters';
@@ -91,9 +92,13 @@ export function useWhiteboardCollaboration({
     receiveCursor,
     receiveSelection,
     clearRemote,
-    recordError: (error: unknown) => {
-      elementBudget.record(error, true);
-      cursorBudget.record(error);
+    // Each channel spends its own budget; only element failures reach the host.
+    recordError: (error: unknown, channel?: WhiteboardChannelKind) => {
+      if (channel === 'cursors') {
+        cursorBudget.record(error);
+      } else {
+        elementBudget.record(error, true);
+      }
     },
     resetBudgets: () => {
       elementBudget.reset();
@@ -113,13 +118,16 @@ export function useWhiteboardCollaboration({
 
     const disconnect = transport.connect({
       user,
-      onStatus: (next, error) => {
+      onStatus: (next, error, channel) => {
         setStatus(next);
 
         if (next === 'connected') {
           handlersRef.current.resetBudgets();
         } else if (next === 'error') {
-          handlersRef.current.recordError(error ?? new Error('Channel error'));
+          handlersRef.current.recordError(
+            error ?? new Error('Channel error'),
+            channel
+          );
         } else if (next === 'disconnected') {
           handlersRef.current.clearRemote();
         }

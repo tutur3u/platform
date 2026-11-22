@@ -8,7 +8,10 @@ import type {
 } from '../adapters';
 import { makeElement } from './fixtures';
 
-/** Behavior every WhiteboardPersistence must have, starting from an empty board. */
+/**
+ * Behavior every WhiteboardPersistence must have, starting from an empty board.
+ * `load` is optional on the interface; when present it must return what was saved.
+ */
 export async function expectPersistenceContract(
   persistence: WhiteboardPersistence
 ) {
@@ -17,12 +20,15 @@ export async function expectPersistenceContract(
   const saved = await persistence.save(snapshot);
   expect(saved).toHaveProperty('revision');
 
-  const loaded = await persistence.load();
+  const load = persistence.load?.bind(persistence);
+  if (!load) return;
+
+  const loaded = await load();
   expect(loaded.snapshot?.elements?.map((el) => el.id)).toEqual(['a', 'b']);
   expect(loaded.revision).toBe(saved.revision);
 
   const next = await persistence.save({ elements: [makeElement('c')] });
-  const reloaded = await persistence.load();
+  const reloaded = await load();
   expect(reloaded.snapshot?.elements?.map((el) => el.id)).toEqual(['c']);
   expect(reloaded.revision).toBe(next.revision);
   if (saved.revision !== null) {
@@ -81,7 +87,13 @@ export async function expectTransportContract(
   expect(received).toHaveLength(1);
   expect(received[0]?.changes[0]?.element.id).toBe('x');
 
-  disconnectA();
+  // After a consumer disconnects it receives nothing more.
   disconnectB();
+  await settle();
+  await a.sendElementChanges({ ...batch, timestamp: 2 });
+  await settle();
+  expect(received).toHaveLength(1);
+
+  disconnectA();
   await settle();
 }

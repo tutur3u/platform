@@ -2,6 +2,7 @@ import type {
   CursorUpdate,
   ElementChangeBatch,
   SelectionUpdate,
+  WhiteboardChannelKind,
   WhiteboardTransport,
   WhiteboardTransportHandlers,
 } from '../adapters';
@@ -60,6 +61,10 @@ const HIDDEN_CURSOR = -1000;
  * one for cursors and selections. It reports `connected` only while both are
  * subscribed, and defers teardown so a disconnect immediately followed by a
  * connect keeps the same channels.
+ *
+ * It serves one consumer at a time. Reconnecting right after a disconnect hands
+ * the open channels to the new consumer; connecting while another consumer is
+ * still attached throws instead of tearing that consumer down.
  */
 export function createRealtimeWhiteboardTransport<
   TChannel extends BroadcastChannelLike,
@@ -71,18 +76,34 @@ export function createRealtimeWhiteboardTransport<
   let active: ActiveConnection<TChannel> | null = null;
   let disposeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const toError = (error: unknown) =>
+    error instanceof Error ? error : new Error(String(error));
+
+  const guard = (
+    connection: ActiveConnection<TChannel>,
+    channel: WhiteboardChannelKind,
+    deliver: (handlers: WhiteboardTransportHandlers) => void
+  ) => {
+    try {
+      deliver(connection.handlers);
+    } catch (error) {
+      connection.handlers.onStatus('error', toError(error), channel);
+    }
+  };
+
   const reportStatus = (
     connection: ActiveConnection<TChannel>,
-    status: string,
-    label: string
+    channel: WhiteboardChannelKind,
+    status: string
   ) => {
     const { handlers } = connection;
+    const label = channel === 'elements' ? 'Channel' : 'Cursor channel';
     switch (status) {
       case 'CHANNEL_ERROR':
-        handlers.onStatus('error', new Error(`${label} error`));
+        handlers.onStatus('error', new Error(`${label} error`), channel);
         return;
       case 'TIMED_OUT':
-        handlers.onStatus('error', new Error(`${label} timed out`));
+        handlers.onStatus('error', new Error(`${label} timed out`), channel);
         return;
       default:
         handlers.onStatus(
@@ -108,75 +129,58 @@ export function createRealtimeWhiteboardTransport<
     };
 
     elements
-      .on('broadcast', { event: ELEMENT_EVENT }, (message) => {
-        try {
-          connection.handlers.onElementChanges(
-            message.payload as ElementChangeBatch
-          );
-        } catch (error) {
-          connection.handlers.onStatus(
-            'error',
-            error instanceof Error ? error : new Error(String(error))
-          );
-        }
-      })
+      .on('broadcast', { event: ELEMENT_EVENT }, (message) =>
+        guard(connection, 'elements', (h) =>
+          h.onElementChanges(message.payload as ElementChangeBatch)
+        )
+      )
       .subscribe((status) => {
         connection.elementsReady = status === 'SUBSCRIBED';
-        reportStatus(connection, status, 'Channel');
+        reportStatus(connection, 'elements', status);
       });
 
     cursors
-      .on('broadcast', { event: CURSOR_EVENT }, (message) => {
-        try {
-          connection.handlers.onCursor(message.payload as CursorUpdate);
-        } catch (error) {
-          connection.handlers.onStatus(
-            'error',
-            error instanceof Error ? error : new Error(String(error))
-          );
-        }
-      })
-      .on('broadcast', { event: SELECTION_EVENT }, (message) => {
-        try {
-          connection.handlers.onSelection(message.payload as SelectionUpdate);
-        } catch (error) {
-          connection.handlers.onStatus(
-            'error',
-            error instanceof Error ? error : new Error(String(error))
-          );
-        }
-      })
+      .on('broadcast', { event: CURSOR_EVENT }, (message) =>
+        guard(connection, 'cursors', (h) =>
+          h.onCursor(message.payload as CursorUpdate)
+        )
+      )
+      .on('broadcast', { event: SELECTION_EVENT }, (message) =>
+        guard(connection, 'cursors', (h) =>
+          h.onSelection(message.payload as SelectionUpdate)
+        )
+      )
       .subscribe((status) => {
         connection.cursorsReady = status === 'SUBSCRIBED';
-        reportStatus(connection, status, 'Cursor channel');
+        reportStatus(connection, 'cursors', status);
       });
 
     handlers.onStatus('connecting');
     return connection;
   };
 
-  const dispose = (connection: ActiveConnection<TChannel>) => {
+  const dispose = async (connection: ActiveConnection<TChannel>) => {
     const { user } = connection.handlers;
 
-    // Best effort: tell peers to drop this client's cursor and selection.
-    try {
-      void connection.cursors.send({
-        type: 'broadcast',
+    // Tell peers to drop this client's cursor and selection, and let those
+    // sends settle before the channels close so they actually go out.
+    const departures = [
+      {
         event: CURSOR_EVENT,
         payload: { x: HIDDEN_CURSOR, y: HIDDEN_CURSOR, user },
-      });
-      void connection.cursors.send({
-        type: 'broadcast',
+      },
+      {
         event: SELECTION_EVENT,
         payload: {
           senderId: user.id,
           selectedElementIds: {},
           timestamp: Date.now(),
         },
-      });
-    } catch {
-      // The connection is going away; there is nobody to tell.
-    }
+      },
+    ].map(async ({ event, payload }) => {
+      await connection.cursors.send({ type: 'broadcast', event, payload });
+    });
+    await Promise.allSettled(departures);
 
     void connection.client.removeChannel(connection.elements);
     void connection.client.removeChannel(connection.cursors);
@@ -197,20 +201,32 @@ export function createRealtimeWhiteboardTransport<
         clearTimeout(disposeTimer);
         disposeTimer = null;
         active.handlers = handlers;
+        handlers.onStatus(
+          active.elementsReady && active.cursorsReady
+            ? 'connected'
+            : 'connecting'
+        );
+      } else if (active) {
+        throw new Error(
+          'Whiteboard transport already has an active consumer; create one transport per editor.'
+        );
       } else {
-        if (active) dispose(active);
         active = open(handlers);
       }
 
       const connection = active;
+      let disconnected = false;
 
       return () => {
-        if (disposeTimer) clearTimeout(disposeTimer);
+        // A consumer that was replaced, or already left, must not schedule teardown.
+        if (disconnected || connection.handlers !== handlers) return;
+        disconnected = true;
+
         disposeTimer = setTimeout(() => {
           disposeTimer = null;
           if (active === connection) {
             active = null;
-            dispose(connection);
+            void dispose(connection);
           }
         }, disposeDelayMs);
       };

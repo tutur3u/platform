@@ -29,16 +29,24 @@ renders nothing on the server.
 
 The host passes these to `WhiteboardEditor`; all are optional.
 
-- `WhiteboardPersistence`: `load()` returns the stored snapshot and an opaque
-  revision; `save(snapshot)` stores it and returns the new revision. The editor
-  debounces saves, saves on Cmd/Ctrl+S, and re-reads the snapshot when the window
-  regains focus, the network returns or the live connection resumes. A stored
-  snapshot is applied only when its revision is new and no local edit is unsaved.
+- `WhiteboardPersistence`: `save(snapshot)` stores the snapshot and returns the new
+  revision; `load()` is optional and is never called by the editor. The host reads
+  the stored snapshot with its own data layer (Workspace Whiteboards uses TanStack
+  Query, so retries, dedupe and refetch on focus, reconnect and live-connection
+  resume stay in the app) and passes `{snapshot, revision}` to the editor as
+  `storedSnapshot`. The editor applies it only when the revision is new and no
+  local edit is unsaved. It debounces saves and saves on Cmd/Ctrl+S.
 - `WhiteboardAssets`: `upload(file)` returns the file id the scene stores;
   `resolveUrl(fileId)` returns a fetchable URL or `null`. Without it the editor
   offers no image upload.
 - `WhiteboardTransport`: `connect(handlers)` returns a disconnect function;
-  `sendElementChanges`, `sendCursor` and `sendSelection` publish to peers. The
+  `sendElementChanges`, `sendCursor` and `sendSelection` publish to peers. Errors
+  reported through `onStatus` carry the channel (`elements` or `cursors`); only
+  element failures reach the host's `onNotify`. A transport serves one editor at
+  a time: connecting while another consumer is attached throws, and reconnecting
+  right after a disconnect reuses the open channels and replays the current
+  status. On teardown the realtime transport waits for its departure messages to
+  settle before closing the channels. The
   collaboration `user` object must be referentially stable, because a new
   identity reconnects the transport.
 

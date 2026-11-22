@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { extractWhiteboardImageFileIds } from '@/lib/whiteboards';
+import { extractWhiteboardImageFileIds } from '@/lib/whiteboards/snapshot';
 import { requireWhiteboardAccess } from '../access';
 
 const paramsSchema = z.object({
