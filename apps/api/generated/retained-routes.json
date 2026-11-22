@@ -2104,7 +2104,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/state/route.ts",
-    "sourceSha256": "28cb5be8fc976ca4ac31134383e48a99920bfbca9bff1419985024b90c1dec2d",
+    "sourceSha256": "7c79814b1eceff10e9aa0108b4a79885adf06533ed19864c1c56e751d2600ec4",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2454,7 +2454,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/notifications/account-preferences/route.ts",
-    "sourceSha256": "bdbf05116c6bf8dc4feabffb235ae9dfe0922ece8149d0ff90daeb30c739ff7f",
+    "sourceSha256": "d00f0d136e1fd5177c5f9642c6eaa35f7ae4f80b8a38547955d501704c7338e6",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

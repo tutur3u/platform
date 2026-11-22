@@ -119,10 +119,14 @@ export function buildMastermindPushMessage(
   };
 }
 
-async function allowsPush(admin: MastermindPushAdminClient, userId: string) {
+export async function allowsMastermindPush(
+  admin: MastermindPushAdminClient,
+  userId: string,
+  eventType = 'push_notifications'
+) {
   const { data, error } = await admin.rpc('should_send_notification', {
     p_user_id: userId,
-    p_event_type: 'push_notifications',
+    p_event_type: eventType,
     p_channel: 'push',
     p_scope: 'user',
     p_ws_id: null,
@@ -132,7 +136,7 @@ async function allowsPush(admin: MastermindPushAdminClient, userId: string) {
 }
 
 /** An unreadable root permission denies delivery. */
-async function holdsMastermindPermission(
+export async function holdsMastermindPermission(
   admin: MastermindPushAdminClient,
   userId: string,
   permission: PermissionId
@@ -159,7 +163,6 @@ export async function deliverMastermindPushEvent({
   redis,
   locale = 'en',
   nowMs = Date.now(),
-  fleetDecisionTitle,
   deadline = mastermindPushDeadline(),
 }: {
   admin: MastermindPushAdminClient;
@@ -168,7 +171,6 @@ export async function deliverMastermindPushEvent({
   redis: Pick<UpstashRestRedisClient, 'get' | 'set' | 'eval'>;
   locale?: MastermindPushLocale;
   nowMs?: number;
-  fleetDecisionTitle?: string;
   deadline?: ReturnType<typeof mastermindPushDeadline>;
 }): Promise<MastermindPushDeliveryResult> {
   const result = { sent: 0, coalesced: 0, skipped: 0, failed: 0 };
@@ -194,11 +196,9 @@ export async function deliverMastermindPushEvent({
     }
 
     const message = buildMastermindPushMessage(event.type, locale, nowMs);
-    if (fleetDecisionTitle !== undefined) message.title = fleetDecisionTitle;
-    const permission =
-      fleetDecisionTitle !== undefined || mastermindRequiresExplicitGrant()
-        ? mastermindAccessPermission()
-        : null;
+    const permission = mastermindRequiresExplicitGrant()
+      ? mastermindAccessPermission()
+      : null;
     for (const userId of ownerIds) {
       await deliverOwner(userId);
     }
@@ -216,7 +216,7 @@ export async function deliverMastermindPushEvent({
           !(await deadline.run(() =>
             holdsMastermindPermission(admin, userId, permission)
           ))) ||
-        !(await deadline.run(() => allowsPush(admin, userId)))
+        !(await deadline.run(() => allowsMastermindPush(admin, userId)))
       ) {
         result.skipped += 1;
         return;

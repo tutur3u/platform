@@ -159,13 +159,17 @@ describe('Mastermind fleet sync routes', () => {
     const minutes = (value: number) =>
       vi.setSystemTime(Date.now() + value * 60_000);
     const decision = sampleFleetState().decisions[0]!;
-    const state = (...ids: string[]) =>
-      sampleFleetState({
-        generatedAt: new Date().toISOString(),
-        decisions: ids.map((id) => ({ ...decision, id })),
+    const state = (...ids: string[]) => {
+      const now = new Date().toISOString();
+      return sampleFleetState({
+        generatedAt: now,
+        decisions: ids.map((id) => ({ ...decision, id, createdAt: now })),
       });
+    };
 
     beforeEach(() => {
+      vi.stubEnv('MASTERMIND_FLEET_INBOX_PUSH_ENABLED', 'true');
+      vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', OWNER);
       // Include a device outside the query audience to exercise the fan-out guard.
       mocks.devices.mockReturnValue({
         limit: async () => ({
@@ -180,11 +184,6 @@ describe('Mastermind fleet sync routes', () => {
     });
 
     it('sends no decision push for a login request', async () => {
-      vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', OWNER);
-      mocks.permission.mockImplementation(async () => ({
-        data: true,
-        error: null,
-      }));
       expect((await publish(state())).status).toBe(200);
       expect(
         (
@@ -215,13 +214,8 @@ describe('Mastermind fleet sync routes', () => {
       expect(mocks.push).not.toHaveBeenCalled();
     });
 
-    it('sends one scrubbed Inbox push for a new id, to authorized fleet owners only', async () => {
+    it('sends one scrubbed card notification to the configured fleet owner', async () => {
       vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', PUSH_OWNER);
-      vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', `${OWNER},${NO_PERMISSION}`);
-      mocks.permission.mockImplementation(async ({ p_user_id }) => ({
-        data: p_user_id === OWNER,
-        error: null,
-      }));
       expect((await publish(state())).status).toBe(200);
       const first = state(decision.id);
       const decisions = [
@@ -229,14 +223,12 @@ describe('Mastermind fleet sync routes', () => {
           ...decision,
           title:
             'Approve rollout https://secret.example/thing person@example.com /Users/private/file',
-          body: 'private decision body',
+          body: 'Rollout review summary https://private.example/draft',
+          createdAt: new Date().toISOString(),
         },
       ];
       expect((await publish({ ...first, decisions })).status).toBe(200);
-      expect(mocks.devices).toHaveBeenCalledExactlyOnceWith('user_id', [
-        OWNER,
-        NO_PERMISSION,
-      ]);
+      expect(mocks.devices).toHaveBeenCalledExactlyOnceWith('user_id', [OWNER]);
       expect(mocks.permission).toHaveBeenCalledWith({
         p_ws_id: ROOT_WORKSPACE_ID,
         p_user_id: OWNER,
@@ -246,10 +238,19 @@ describe('Mastermind fleet sync routes', () => {
         devices: [{ token: 'owner-device' }],
         message: {
           title: 'Approve rollout',
-          body: 'Open Mastermind',
-          category: 'tuturuuu_mastermind',
+          body: 'Rollout review summary',
+          category: 'mastermind_inbox_decision',
+          androidChannelId: 'mastermind_inbox_decision',
+          androidPriority: 'high',
+          interruptionLevel: 'time-sensitive',
           expiresAt: expect.any(String),
-          data: { openTarget: 'mastermind', route: '/mastermind/inbox' },
+          data: {
+            openTarget: 'mastermind',
+            route: '/mastermind/inbox',
+            entityId: decision.id,
+            userId: OWNER,
+            mastermindCategory: 'decision',
+          },
         },
       });
 
@@ -262,7 +263,7 @@ describe('Mastermind fleet sync routes', () => {
       expect(mocks.push).toHaveBeenCalledTimes(1);
     });
 
-    it('coalesces concurrent publishes and drops new ids inside the shared window', async () => {
+    it('deduplicates concurrent publishes and dispatches each distinct card', async () => {
       const first = state('first', 'second');
       const concurrent = await Promise.all([
         publish(first),
@@ -276,15 +277,15 @@ describe('Mastermind fleet sync routes', () => {
       expect((await publish(state('first', 'second', 'third'))).status).toBe(
         200
       );
-      expect(mocks.push).toHaveBeenCalledTimes(1);
+      expect(mocks.push).toHaveBeenCalledTimes(3);
       minutes(1);
       expect(
         (await publish(state('first', 'second', 'third', 'fourth'))).status
       ).toBe(200);
-      expect(mocks.push).toHaveBeenCalledTimes(2);
+      expect(mocks.push).toHaveBeenCalledTimes(4);
     });
 
-    it('skips answers and withdrawals without consuming the next decision slot', async () => {
+    it('skips a card answered before ingest and dispatches the next new card', async () => {
       const store = mocks.store;
       if (!store) throw new Error('Missing test store');
       await recordFleetAnswer(

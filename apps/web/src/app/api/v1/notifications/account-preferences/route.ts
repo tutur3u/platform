@@ -6,21 +6,29 @@ import {
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { saveNotificationPreferences } from '@/legacy-api-routes/v1/notifications/notification-preferences-write';
+import { fleetPushPreference } from '@/lib/mastermind/fleet/push-categories';
 
 const updateSchema = z.object({
   preferences: z.array(
-    z.object({
-      eventType: z.enum([
-        // Account-level events
-        'email_notifications',
-        'push_notifications',
-        'marketing_communications',
-        'security_alerts',
-        'workspace_activity',
-      ]),
-      channel: z.enum(['web', 'email', 'push']),
-      enabled: z.boolean(),
-    })
+    z.union([
+      z.object({
+        eventType: z.enum([
+          // Account-level events
+          'email_notifications',
+          'push_notifications',
+          'marketing_communications',
+          'security_alerts',
+          'workspace_activity',
+        ]),
+        channel: z.enum(['web', 'email', 'push']),
+        enabled: z.boolean(),
+      }),
+      z.object({
+        eventType: z.enum(fleetPushPreference),
+        channel: z.literal('push'),
+        enabled: z.boolean(),
+      }),
+    ])
   ),
 });
 

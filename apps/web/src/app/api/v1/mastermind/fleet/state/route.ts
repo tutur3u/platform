@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { readFleetAlerts } from '@/lib/mastermind/fleet/alerts';
-import { notifyNewFleetDecision } from '@/lib/mastermind/fleet/decision-push';
 import {
   isFleetOwner,
   MASTERMIND_APP_SESSION,
@@ -12,6 +11,10 @@ import {
   type FleetAnswerRecord,
   fleetStateSchema,
 } from '@/lib/mastermind/fleet/contract';
+import {
+  fleetPushEnabled,
+  notifyNewFleetDecision,
+} from '@/lib/mastermind/fleet/decision-push';
 import {
   authorizeFleetPublisher,
   FLEET_NO_STORE,
@@ -128,9 +131,10 @@ export async function PUT(request: Request) {
   if (!parsed.success) return fleetError('invalid_state', 422);
 
   try {
-    const previous = parsed.data.decisions.length
-      ? await readFleetState(auth.store).catch(() => undefined)
-      : undefined;
+    const previous =
+      fleetPushEnabled() && parsed.data.decisions.length
+        ? await readFleetState(auth.store).catch(() => undefined)
+        : undefined;
     const stored = await writeFleetState(auth.store, parsed.data);
     if (previous !== undefined) {
       await notifyNewFleetDecision(auth.store, previous, stored).catch(() =>

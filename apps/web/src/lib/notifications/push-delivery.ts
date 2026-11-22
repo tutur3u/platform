@@ -33,6 +33,9 @@ export interface CustomPushMessageInput {
   dataOnly?: boolean;
   expiresAt?: string;
   category?: string;
+  androidPriority?: 'high' | 'normal';
+  androidChannelId?: string;
+  interruptionLevel?: 'time-sensitive' | 'active';
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -196,7 +199,7 @@ export function buildMulticastMessage(
     tokens,
     data: message.data,
     android: {
-      priority: 'high',
+      priority: message.androidPriority ?? 'high',
       ...(collapseKey ? { collapseKey } : {}),
       ...(message.expiresAt
         ? { ttl: Math.max(0, Date.parse(message.expiresAt) - Date.now()) }
@@ -204,7 +207,7 @@ export function buildMulticastMessage(
       notification: message.dataOnly
         ? undefined
         : {
-            channelId: 'tuturuuu_notifications',
+            channelId: message.androidChannelId ?? 'tuturuuu_notifications',
             ...(ownedInboxIdentity ? { tag: ownedInboxIdentity } : {}),
           },
     },
@@ -212,7 +215,10 @@ export function buildMulticastMessage(
       headers: {
         // APNs requires background pushes at priority 5 and alerts at 10.
         'apns-push-type': message.dataOnly ? 'background' : 'alert',
-        'apns-priority': message.dataOnly ? '5' : '10',
+        'apns-priority':
+          message.dataOnly || message.interruptionLevel === 'active'
+            ? '5'
+            : '10',
         ...(collapseKey ? { 'apns-collapse-id': collapseKey } : {}),
         ...(message.expiresAt
           ? {
@@ -230,6 +236,9 @@ export function buildMulticastMessage(
           ? { contentAvailable: true }
           : {
               sound: 'default',
+              ...(message.interruptionLevel
+                ? { 'interruption-level': message.interruptionLevel }
+                : {}),
               ...(message.category ? { category: message.category } : {}),
             },
       },

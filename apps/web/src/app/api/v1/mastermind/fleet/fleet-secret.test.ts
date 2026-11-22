@@ -501,14 +501,21 @@ describe('Mastermind secret answers', () => {
     expect((await publish(eleven.slice(0, 10))).status).toBe(200);
   });
 
-  it('never sends a decision push for a secret request', async () => {
+  it('excludes secret requests when Inbox push dispatch is enabled', async () => {
+    vi.stubEnv('MASTERMIND_FLEET_INBOX_PUSH_ENABLED', 'true');
     await publish([]);
     await publish([request, pairing]);
     expect(mocks.push).not.toHaveBeenCalled();
     // The same publish path still pushes a new ask.
     vi.setSystemTime(T0.getTime() + 2 * 60_000);
-    await publish([request, pairing, ask]);
-    expect(mocks.push).toHaveBeenCalledTimes(1);
+    await publish([request, pairing, { ...ask, createdAt: T0.toISOString() }]);
+    expect(mocks.push).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          data: expect.objectContaining({ entityId: ask.id }),
+        }),
+      })
+    );
     expect(JSON.stringify(mocks.push.mock.calls)).not.toContain(request.title);
   });
 });

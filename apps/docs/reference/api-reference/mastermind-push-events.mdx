@@ -149,31 +149,62 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   or event key for receipt/window-write warnings. Never owner/device ids,
   device tokens, claim tokens, raw backend errors or secrets.
 
-## Fleet decision pushes
+## Fleet Inbox cards
 
-An authenticated `PUT /api/v1/mastermind/fleet/state` first stores the
-scrubbed snapshot. When it introduces a decision ID absent from the preceding
-snapshot, Web can deliver a `decision.awaiting` push directly. This uses the
-fleet publisher signature and the shared FCM path. The hub POST contract
-above still uses its own signature and fixed notification copy.
+The signed `PUT /api/v1/mastermind/fleet/state` stores the scrubbed snapshot
+and then dispatches new ask and review cards to the owner's registered devices
+through the shared FCM sender. The hub POST above keeps its separate signature
+and fixed copy.
 
-- **Audience:** the fleet owner allowlist, `MASTERMIND_FLEET_OWNER_IDS`, or
-  `MASTERMIND_PUSH_OWNER_IDS` when the fleet variable is unset or empty.
-  Each recipient must also hold the same root-workspace permission required
-  to open the fleet Inbox and have push notifications enabled.
-- **Copy:** the scrubbed decision title and the localized “Open Mastermind”
-  body. Push data contains the Inbox tab route and target. Decision IDs,
-  decision bodies, options and answer text stay out of the push payload.
-- **Rate and deduplication:** one fleet decision is admitted per 60 seconds
-  across Web instances, with the shared per-owner `decision.awaiting` cap
-  also applied. A decision present on consecutive publishes is skipped.
-  Web claims an admitted ID for 24 hours before delivery, so concurrent
-  publishes and reappearances within that period cannot resend it.
-  Decisions skipped during a burst remain in the Inbox.
-- **Lifecycle:** Web checks that the decision is still open and unanswered
-  before delivery. Answers and withdrawals generate no additional push.
-  Delivery is best effort with a five-second budget after snapshot storage.
-  Delivery failure does not change the publish response or schedule a retry.
+- Web requires exactly one UUID in the existing fleet owner allowlist and
+  checks its root-workspace Mastermind permission, account-wide push
+  preference, and the preference for the card's category. Account category
+  preferences default to enabled. Login cards, secure-entry cards, ended
+  cards and cards created more than one hour ago are excluded.
+- The notification shows the scrubbed question and a one-line excerpt. Its
+  recipient-bound card ID opens the exact Inbox detail on supported mobile
+  builds. Older builds open the Inbox tab. Urgent and decision alerts use
+  Android high priority and iOS time-sensitive delivery. FYI uses normal
+  priority. The notification preview can show the scrubbed question and excerpt
+  on the lock screen, subject to the device’s preview settings.
+- Web checks the latest stored snapshot and answer receipts before dispatch.
+  It claims each card ID for 48 hours with an atomic create-if-absent write.
+  Card IDs represent immutable creation events. Reusing an ID for different
+  content or a new creation date is unsupported. There is no dispatch retry
+  after FCM has been called, even if its response was lost. A timeout or a
+  full budget after claiming can also leave the card available only in the
+  Inbox.
+- The existing signed publisher route allows up to 50 ask/review cards per
+  snapshot. Web admits up to 100 cards per UTC day across instances, with up
+  to 10 owner tokens per card, an eight-second request budget and at most
+  eight concurrent card sends per request. The daily counter uses durable
+  compare-and-set. Snapshots still publish when sending is disabled, capped
+  or unavailable. No scheduled work runs for these notifications.
+- `Mastermind Inbox push accepted by FCM` logs the hashed card key, category,
+  accepted device count and elapsed times from card creation and server ingest.
+  FCM acceptance establishes provider intake. The phone confirmation checks
+  actual display and navigation.
+
+### Rollout and rollback
+
+Deploy the Web API through its current Worker family workflow and record the
+active provider version before promotion. Release the mobile build with the
+Inbox detail route and the iOS Time Sensitive Notifications capability in its
+signing profile. The existing device registration refreshes after login and
+on app resume. The phone must allow notifications.
+
+Enable dispatch by setting `MASTERMIND_FLEET_INBOX_PUSH_ENABLED=true` in the
+serving Web runtime. The default is off. Remove the setting or set it to
+`false` and confirm the serving version to stop new sends. If the deployment
+itself fails its health check, restore the recorded prior Web Worker version.
+Keep the device tokens, category preferences and claims during rollback so
+turning dispatch back on does not replay cards.
+
+For live acceptance, publish one harmless FYI with `iris-ask` and ID
+`push-test-<time>`. Correlate its server receipt via SHA-256 of
+`fleet:iris-push-test-<time>`, then confirm receipt and card navigation with
+the owner. Compare `createdToPushMs` and `ingestToPushMs` to separate publisher
+delay from dispatch time.
 
 ## Responses
 
