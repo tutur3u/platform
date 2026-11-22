@@ -6,6 +6,7 @@ const { selectLocalChecks } = require('../ci/check-map.js');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
 const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
+const { cliUsageRatchetSteps } = require('./cli-usage-ratchet.js');
 const { i18nUsageSteps } = require('./i18n-usage.js');
 const { routeRegistrySteps } = require('./route-registries.js');
 
@@ -411,6 +412,7 @@ function planChecks(changes, context) {
     );
   }
   steps.push(...routeRegistrySteps(selected));
+  steps.push(...cliUsageRatchetSteps(changes, context));
 
   const workflowTouched = any(/^\.github\/(workflows|actions)\//);
   const relatedTests = new Map();

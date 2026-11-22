@@ -18,6 +18,9 @@ const { pinVitestTsconfig } = require('./check-changed/vitest-tsconfig-pin.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { selectAffectedWorkspaces } = require('./check-changed/affected.js');
+const {
+  withoutRepeatedGuard,
+} = require('./check-changed/cli-usage-ratchet.js');
 const { i18nUsageUntrackedNote } = require('./check-changed/i18n-usage.js');
 const {
   trustedTtr,
@@ -523,7 +526,9 @@ function main(argv = process.argv.slice(2), deps = {}) {
         exists(`${workspace}/vitest.config.${ext}`)
       ),
   });
-  const steps = selectSteps(plan.steps, options.only, options.skip);
+  const steps = withoutRepeatedGuard(
+    selectSteps(plan.steps, options.only, options.skip)
+  );
   if (options.hook) {
     const selected = [
       ...new Set(
