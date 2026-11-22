@@ -7954,6 +7954,14 @@
   "mastermindUsageDisabled": "Nhà cung cấp đã tắt hoặc chưa khả dụng trên máy này.",
   "mastermindUsageEmailMissing": "Chưa có email tài khoản",
   "mastermindUsageInput": "Đầu vào chưa lưu đệm",
+  "mastermindUsageLastReceived": "Nhận lần cuối {age}",
+  "@mastermindUsageLastReceived": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUsageLimited": "Hết hạn mức",
   "mastermindUsageMachine": "Máy",
   "mastermindUsageMissing": "Chưa có dữ liệu",

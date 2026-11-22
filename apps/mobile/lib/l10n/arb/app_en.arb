@@ -9405,6 +9405,14 @@
   "mastermindUsageDisabled": "Provider is disabled or unavailable on this machine.",
   "mastermindUsageEmailMissing": "Account email unavailable",
   "mastermindUsageInput": "Uncached input",
+  "mastermindUsageLastReceived": "Last received {age}",
+  "@mastermindUsageLastReceived": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUsageLimited": "Limited",
   "mastermindUsageMachine": "Machine",
   "mastermindUsageMissing": "Unavailable",

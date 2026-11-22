@@ -21,13 +21,12 @@ import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/threads/threads_location.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_decision_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
-import 'package:mobile/features/mastermind/view/insights/mastermind_chart_table_page.dart';
 import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 
 /// Tab routes other than Home, which the app registry owns at
-/// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
-/// table details, and Iris devices. Inside the shell route.
+/// [Routes.mastermind], plus the pushed Needs-you, decision and lane details,
+/// and Iris devices. Inside the shell route.
 final List<GoRoute> mastermindTabRoutes = [
   GoRoute(
     path: '/mastermind/work/machine/:machineId',
@@ -128,12 +127,5 @@ final List<GoRoute> mastermindTabRoutes = [
   GoRoute(
     path: Routes.mastermindInsights,
     builder: (context, state) => const MastermindInsightsPage(),
-  ),
-  GoRoute(
-    path: Routes.mastermindInsightsTable,
-    builder: (context, state) => MastermindChartTablePage(
-      section: state.pathParameters['section'] ?? '',
-      chartId: state.pathParameters['chartId'] ?? '',
-    ),
   ),
 ];

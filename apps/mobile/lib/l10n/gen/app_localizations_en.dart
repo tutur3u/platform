@@ -19031,6 +19031,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsageInput => 'Uncached input';
 
   @override
+  String mastermindUsageLastReceived(String age) {
+    return 'Last received $age';
+  }
+
+  @override
   String get mastermindUsageLimited => 'Limited';
 
   @override

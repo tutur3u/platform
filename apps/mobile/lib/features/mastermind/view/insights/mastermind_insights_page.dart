@@ -14,7 +14,9 @@ import 'package:mobile/features/mastermind/view/mastermind_states.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
 class MastermindInsightsPage extends StatelessWidget {
-  const MastermindInsightsPage({super.key});
+  const MastermindInsightsPage({this.usageSource, super.key});
+
+  final FleetUsageSource? usageSource;
 
   @override
   Widget build(BuildContext context) {
@@ -26,20 +28,22 @@ class MastermindInsightsPage extends StatelessWidget {
           cubit.state.enabled,
     );
     return allowed && admitted
-        ? _UsageBody(key: ValueKey(overlay?.epoch))
+        ? _UsageBody(source: usageSource, key: ValueKey(overlay?.epoch))
         : const MastermindSkeleton();
   }
 }
 
 class _UsageBody extends StatefulWidget {
-  const _UsageBody({super.key});
+  const _UsageBody({required this.source, super.key});
+
+  final FleetUsageSource? source;
 
   @override
   State<_UsageBody> createState() => _UsageBodyState();
 }
 
 class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
-  final _source = FleetUsageSource();
+  late final _defaultSource = FleetUsageSource();
   late final _live = FleetOwnerLive(
     onFrame: (frame) {
       if (frame.kind == FleetOwnerFrameKind.poke &&
@@ -89,7 +93,7 @@ class _UsageBodyState extends State<_UsageBody> with WidgetsBindingObserver {
 
   Future<void> _fetch() async {
     try {
-      final usage = await _source.fetch();
+      final usage = await (widget.source ?? _defaultSource).fetch();
       if (!mounted) return;
       setState(() {
         _usage = usage;

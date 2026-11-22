@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/ship/ship_page.dart';
+import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
 
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_ship_fixture.dart';
@@ -47,7 +48,7 @@ void main() {
       expect(find.byType(ShipLivePage), findsOneWidget);
     });
 
-    testWidgets('the Usage link opens the Insights tab', (tester) async {
+    testWidgets('the Usage link opens the Usage tab', (tester) async {
       final router = workRouter(Routes.mastermind);
       await pumpMastermindRoute(
         tester,
@@ -57,7 +58,7 @@ void main() {
       await tester.tap(find.text('Usage'));
       await tester.pumpAndSettle();
       expect(workUri(router).path, Routes.mastermindInsights);
-      expect(find.text('Session left'), findsOneWidget);
+      expect(find.byType(MastermindInsightsPage), findsOneWidget);
     });
   });
 }

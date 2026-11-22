@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/features/mastermind/usage/fleet_usage.dart';
 import 'package:mobile/features/mastermind/view/insights/mastermind_insights_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 import 'helpers.dart';
+import 'mastermind_home_fixture.dart';
 import 'mastermind_view_harness.dart';
 import 'mastermind_work_pump.dart';
 
@@ -64,26 +66,17 @@ Future<MastermindViewHarness> pumpMastermindRoute(
 
 Future<MastermindViewHarness> pumpInsights(
   WidgetTester tester,
-  Map<String, dynamic> json, {
-  GoRouter? router,
-  TestAccess access = TestAccess.enabled,
-  FakeHubSource? source,
+  FleetUsageSource source, {
   Size size = const Size(430, 12000),
   double dockClearance = 0,
   Locale locale = const Locale('en'),
   double textScale = 1,
 }) => _pump(
   tester,
-  json,
-  const MastermindInsightsPage(),
-  router: router,
-  access: access,
-  source: source,
+  homeJson(needsYou: false),
+  MastermindInsightsPage(usageSource: source),
   size: size,
   dockClearance: dockClearance,
   locale: locale,
   textScale: textScale,
 );
-
-double top(WidgetTester tester, String text) =>
-    tester.getTopLeft(find.text(text).first).dy;

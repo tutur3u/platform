@@ -72,14 +72,6 @@ abstract final class Routes {
   static const mastermindFleetAccess = '/mastermind/fleet-access';
   static const mastermindInboxDecision =
       '/mastermind/inbox/decision/:decisionId';
-  static const mastermindInsightsTable =
-      '/mastermind/insights/:section/table/:chartId';
-
-  /// Section and chart ids are route parameters only: they pick a chart out of
-  /// the current snapshot and never appear in an external deep link.
-  static String mastermindInsightsTablePath(String section, String chartId) =>
-      '$mastermindInsights/${Uri.encodeComponent(section)}/table/'
-      '${Uri.encodeComponent(chartId)}';
 
   /// An item detail is pushed over the Inbox or Home, so Back pops to whichever
   /// opened it rather than falling back to the Inbox.
@@ -95,13 +87,6 @@ abstract final class Routes {
   /// pops to whichever opened it, segment and filters intact.
   static bool isMastermindInboxDecisionLocation(String location) =>
       normalizeLocation(location).startsWith('$mastermindInbox/decision/');
-
-  /// A chart table is pushed over Insights, so Back pops to where it was.
-  static bool isMastermindInsightsTableLocation(String location) {
-    final normalized = normalizeLocation(location);
-    return normalized.startsWith('$mastermindInsights/') &&
-        normalized.contains('/table/');
-  }
 
   /// Item ids are opaque snapshot ids. They are route parameters only and never
   /// appear in an external deep link.

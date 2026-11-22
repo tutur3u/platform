@@ -34951,6 +34951,12 @@ abstract class AppLocalizations {
   /// **'Uncached input'**
   String get mastermindUsageInput;
 
+  /// No description provided for @mastermindUsageLastReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Last received {age}'**
+  String mastermindUsageLastReceived(String age);
+
   /// No description provided for @mastermindUsageLimited.
   ///
   /// In en, this message translates to:

@@ -2,14 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
-import 'package:mobile/features/mastermind/presentation/usage_charts.dart';
-import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
 import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_snapshot_builder.dart';
-import '../../../helpers/mastermind_usage_fixture.dart';
 
 Map<String, dynamic> _root() => MastermindSnapshotBuilder.defaults().toJson();
 Map<String, dynamic> _map(Object? raw) => raw! as Map<String, dynamic>;
@@ -113,25 +110,5 @@ void main() {
       HubField.parse({'value': null, 'status': 'stale'}).reason(l10n),
       'Stale',
     );
-  });
-
-  test('chart semantics summary includes gap bounds and reason', () {
-    final series = usageSeries('Claude pool B');
-    final root = usageJson(instances: [series.last], series: series);
-    _map(_map(root['observability'])['usage'])['gaps'] = [
-      {
-        'start': series.first['t'],
-        'end': series.last['t'],
-        'reason': 'no_samples',
-      },
-    ];
-    final model = MastermindUsageModel.from(parsedSnapshot(root));
-    final spec = usageChartSpec(
-      l10n,
-      model,
-      usageChartId(UsageChartKind.budget, 'Claude pool B'),
-    )!;
-    expect(spec.summary, contains('Gap 00:00–00:30: No samples published'));
-    expect(spec.bands.first.label, 'No samples published');
   });
 }

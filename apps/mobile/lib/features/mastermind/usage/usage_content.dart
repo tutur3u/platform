@@ -34,6 +34,21 @@ class _UsageContentState extends State<UsageContent> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final machines = widget.usage.machines;
+    final freshness = FleetReceiptFreshnessLine(
+      receivedAt: widget.usage.receivedAt,
+      failed: widget.refreshFailed,
+      staleLabel: (l10n, age) => l10n.mastermindUsageLastReceived(age),
+    );
+    if (machines.isEmpty) {
+      return AppPageScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverList.list(
+            children: [freshness, Text(l10n.mastermindUsageEmpty)],
+          ),
+        ],
+      );
+    }
     final providers = {
       for (final machine in machines) ...[
         for (final account in machine.accounts) account.provider,
@@ -56,10 +71,7 @@ class _UsageContentState extends State<UsageContent> {
       slivers: [
         SliverList.list(
           children: [
-            FleetReceiptFreshnessLine(
-              receivedAt: widget.usage.receivedAt,
-              failed: widget.refreshFailed,
-            ),
+            freshness,
             AppAdaptiveGrid(
               minTileWidth: 140,
               equalHeight: true,
@@ -243,6 +255,7 @@ class _AccountPanel extends StatelessWidget {
               window: account.windows
                   .where((row) => row.kind == kind)
                   .firstOrNull,
+              checkedAt: account.checkedAt,
               now: now,
             ),
           ],
@@ -256,11 +269,13 @@ class _UsageWindow extends StatelessWidget {
   const _UsageWindow({
     required this.label,
     required this.window,
+    required this.checkedAt,
     required this.now,
   });
 
   final String label;
   final UsageWindow? window;
+  final DateTime? checkedAt;
   final DateTime now;
 
   @override
@@ -269,9 +284,12 @@ class _UsageWindow extends StatelessWidget {
     final used = window?.usedPercent;
     final reset = window?.resetsAt;
     final quota = used == null
-        ? l10n.mastermindUsageMissing
+        ? '—'
         : NumberFormat.percentPattern(l10n.localeName).format(used / 100);
     final resetDate = reset == null ? null : Gmt7.date(reset, l10n.localeName);
+    final readingDate = checkedAt == null
+        ? null
+        : Gmt7.date(checkedAt!, l10n.localeName);
     final resetTime = reset == null
         ? null
         : DateFormat('HH:mm:ss', l10n.localeName).format(Gmt7.wallTime(reset));
@@ -287,7 +305,10 @@ class _UsageWindow extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             [
-              '$resetDate $resetTime ICT',
+              if (resetDate == readingDate)
+                '$resetTime ICT'
+              else
+                '$resetDate $resetTime ICT',
               if (reset.isAfter(now))
                 fleetCountdown(l10n, reset.difference(now))
               else

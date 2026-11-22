@@ -18808,6 +18808,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsageInput => 'Đầu vào chưa lưu đệm';
 
   @override
+  String mastermindUsageLastReceived(String age) {
+    return 'Nhận lần cuối $age';
+  }
+
+  @override
   String get mastermindUsageLimited => 'Hết hạn mức';
 
   @override

@@ -19,6 +19,7 @@ import 'package:mobile/features/mastermind/view/work/mastermind_lane_page.dart';
 import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
 
 import '../../../helpers/helpers.dart';
+import '../../../helpers/mastermind_fleet_usage_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 
 final _fixture = File('test/fixtures/mastermind/forge_v1_redacted.json');
@@ -80,7 +81,12 @@ void main() {
     ('Home', const MastermindHomePage()),
     ('Inbox', const MastermindInboxPage()),
     ('Work', const MastermindWorkPage()),
-    ('Insights', const MastermindInsightsPage()),
+    (
+      'Usage',
+      MastermindInsightsPage(
+        usageSource: FakeFleetUsageSource(fleetUsageFixture(sessionUsed: null)),
+      ),
+    ),
     (
       'Ask detail',
       const MastermindItemPage(itemId: 'item-f23ae309c10a83c168e3'),
@@ -152,12 +158,10 @@ void main() {
           expect(tester.takeException(), isNull);
         case 'Work':
           expect(find.text('[Atlas] Mastermind'), findsOneWidget);
-        case 'Insights':
-          expect(
-            find.textContaining('Out of service / unreadable'),
-            findsWidgets,
-          );
-          expect(find.textContaining('No samples published'), findsOneWidget);
+        case 'Usage':
+          expect(find.text(fleetUsageEmail), findsOneWidget);
+          expect(find.text('Session used · —'), findsOneWidget);
+          expect(find.text('Weekly used · —'), findsOneWidget);
       }
       final words = tester
           .widgetList<Text>(find.byType(Text))

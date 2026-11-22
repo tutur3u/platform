@@ -7,9 +7,8 @@ audience: users
 
 Mastermind is an internal fleet overview. Today, Inbox and Work read the live
 fleet snapshot from Web (see Fleet sync); Ship reads the ship collector (see
-Ship); Insights still reads the sanitized snapshot from the Mastermind hub
-Worker. This page records the
-product rules of the shell entry and every tab.
+Ship); Usage reads the owner-only fleet usage report (see Usage). This page
+records the product rules of the shell entry and every tab.
 
 ## Fleet sync
 
@@ -898,10 +897,10 @@ connectivity alone changes.
 
 ## Tabs
 
-Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
+Home, Inbox, Work, Ship and Usage share one mini-app shell: the top navbar
 shows the destination title and no Back button, and the floating dock owns Back.
 Every tab sits behind the same access gate and freshness strip. Work is planned
-to become Threads (Home · Inbox · Threads · Ship · Insights); until the hub
+to become Threads (Home · Inbox · Threads · Ship · Usage); until the hub
 serves threads it shows today's lane list.
 
 In-screen views (Needs you | Decisions, Lanes | Backlog | Staff) use the compact
@@ -976,7 +975,7 @@ hold more than the cap; Inbox shows every ask (see below).
 - **Ship.** Failing environments first, then the three most recent releases;
   a release with no age reads `—` and sorts last. A basis shared by every row
   moves into the caption ("Ship · GitHub deployment").
-- **Quota.** The three most urgent pools (the Insights order) with a sparkline;
+- **Quota.** The three most urgent pools (ordered by pacing) with a sparkline;
   a missing session budget or pacing reads `—`.
 - **Activity** and **recent decisions** show three each; decision rows push
   their detail and "See all decisions" opens the Decisions segment.
@@ -1294,62 +1293,34 @@ counts as filter pills (All, Waiting, Failing, Stale).
 
 Ship shows no tokens, commit messages or author identities.
 
-## Insights
+## Usage
 
-`/mastermind/insights` is the Usage view (the Fleet, Models, Coordination and
-Delivery sections arrive later and reuse the table route below).
+Open **Usage** from the dock or the Home Usage link. The route is
+`/mastermind/insights`. It reads the owner-only report from
+`GET /api/v1/mastermind/fleet/usage`. Machine and provider filters apply to
+quota and accounting.
 
-- **Pools** come from `observability.usage.instances[]`, most urgent first:
-  SHORT, then unknown pacing, then OK, then SURPLUS, then the least session
-  budget left, then label. A pool's pacing is the worse of its session and
-  weekly windows, so a weekly SHORT outranks a session that is fine. Pool labels
-  are opaque display strings, shown verbatim and never summed or stacked.
-- **Pool card.** One pacing verdict per pool, as a shape and a word: "Running
-  short", "On pace", "Surplus", or "No pacing data" (a static hollow square, not
-  the dashed outline that read as a spinner). The verdict is the worse of the
-  windows that report pacing, so a window without pacing does not hide the
-  other's. Under it, one muted line gives the burn and the signed projection at
-  reset for the window the verdict comes from. An info button opens the
-  "Reserve pacing (chart rule)" note saying it is not the routing decision.
-  Then "Session left" and "Weekly left" each show a meter toned by that
-  window's pacing, the percent and the reset ("Resets 17:10", with the day when
-  it differs from the reading's). A window the hub did not read shows a dash
-  and its reason ("Not connected · Last checked 19:22"), never 0.
-- **Contradiction guard.** Scope: the pool card's burn line. Default: when the
-  verdict window is SHORT and its burn is 0 pp/h or less, the line reads "Burn
-  not measured yet" instead of "0 pp/h", because a pool that burns nothing
-  cannot run short and the hub reading is partial. Exceptions: a zero burn on an
-  OK or SURPLUS window is shown as measured. Coverage:
-  `presentation/ship_usage_model_test.dart` ("a zero burn next to SHORT") and
-  `mastermind_insights_compact_test.dart`.
-- **Charts** use the shared chart kit: one panel per pool (session solid,
-  weekly dashed, a fixed 0 to 100 percent axis, a reset marker when it falls in
-  range), and for each Codex pool in `usage.credits[]` a balance panel and a
-  burn-against-target panel. "Credits" is a unit of its own, never money or
-  tokens; a null daily target reads "Target unavailable". Each panel's header
-  holds its title and the Table action (a ghost button with an icon and a 44-pt
-  target), so the action is never at the bottom of the card under the floating
-  dock. A muted caption says what the plot leaves out ("Partial data: Weekly
-  window not reported.", the gaps and their reasons). The plot's semantics label
-  is the full text summary. The legend names only series with at least one
-  reading, and a live readout follows. X-axis ticks show the GMT+7 time alone
-  ("20:30"), adding the day ("Oct 28 05:45") only where the day changes and
-  never on a chart within one day. With `usage.coverage` of `missing` or
-  `unavailable` the plot is left out and the summary and coverage note stand
-  in. With `partial` or `stale`, the caption and summary lead with the coverage
-  word. A pool with no series shows the summary only.
-- **Quota table** (`products.quotas[]`, including `Unknown account`), least left
-  first and unknown last, with "as of N min ago" (left out when the read age is
-  null). **Forecasts** (`quota_forecasts[]`): "Projected empty `<time>` GMT+7"
-  soonest first, or "Not projected to run out before reset". Both captions carry
-  the row count and show five rows with "Show all N" for the rest.
-- **Chart table route.** `/mastermind/insights/:section/table/:chartId` is
-  pushed over Insights and shows the same series rows the panel draws (a null
-  cell reads "Unavailable"). The section is `usage` and the chart id is
-  `budget:<pool>`, `credits:<pool>` or `burn:<pool>`; both are route parameters
-  only. A chart the snapshot no longer has shows "This chart is no longer in
-  Mastermind" with a way back, never an error. The shell pops this location on
-  Back instead of falling back to the tab root.
+- **Readiness and quotas.** Each machine lists the accounts with confirmed
+  capacity. Account cards show the provider, machine, plan and email when the
+  fleet reports them. Session and weekly meters show the percent used. A missing
+  reading shows a dash. An explicitly reported zero shows 0%. Reset times use
+  ICT (GMT+7) and include the date when it differs from the quota reading's date
+  or the reading has no timestamp. Once the reset passes, the card waits for a
+  fresh quota reading before changing its meter.
+- **Cost and tokens.** The cost bars group priced records by day, account and
+  provider/model. USD totals include available prices. A coverage notice marks
+  partial or unpriced records, and costs with no account attribution appear
+  under **Account unavailable**. The paginated table shows uncached input,
+  cache read, cache write and output tokens by machine, day and model.
+  The fleet report supplies no provider credit balances, pacing forecasts or
+  historical quota series.
+- **Refresh.** The tab refreshes on a live usage notification, every 15 seconds
+  in the foreground and on pull-to-refresh. After two minutes, the receipt
+  line shows **Last received** with the report's age. A failed refresh keeps the
+  last report under a warning. Access refusal clears the report. A successful
+  receipt with no machines shows **No usage data reported.**
+- **Layout.** The scroll view reserves the floating dock's space, including
+  when the Vietnamese interface is displayed at 200% text size.
 
 ## Product decisions
 
@@ -1370,7 +1341,7 @@ Delivery sections arrive later and reuse the table route below).
   a child lane; an item uses its real title or first ask line. Models shorten
   to "Sonnet 5.5" or "GPT-6.1 sol"; an unknown model reads "Model not
   reported". Coverage: `presentation/display_names_test.dart`.
-- **No bare unknown.** Scope: Home now, Insights next. Ship is an exception:
+- **No bare unknown.** Scope: Home and Usage. Ship is an exception:
   an environment with no record reads "Unknown" beside its row's freshness and
   named sources (see Ship). Default: a
   missing, blank or "unknown" reading renders a muted `—` (`ReportedText`)
@@ -1412,8 +1383,8 @@ Delivery sections arrive later and reuse the table route below).
 
 One Vietnamese word per state: "queued" is "trong hàng đợi", "pending" is "chờ
 xử lý" and "waiting" stays "đang chờ", across lane, deploy and CI labels. One
-term per destination: the Home "Usage" link and the Insights page caption are
-both "Mức sử dụng", and the Insights tab and its label are both "Phân tích".
+term per destination: the Home Usage link and the Usage tab both read
+"Mức sử dụng".
 Whole-section state titles carry no trailing period; their messages do.
 
 ## Push notifications
@@ -1457,7 +1428,7 @@ signed hub events and sends a mobile push to Mastermind owners.
 ## App-switcher privacy
 
 On every `/mastermind/**` route (Home, For you, Decided, Journal, item and
-decision detail, Work, Ship, Insights) the app covers its own content with a
+decision detail, Work, Ship, Usage) the app covers its own content with a
 blur under a mostly opaque surface tint while it is not in the foreground
 (SB-100 L2). The cover is built on `inactive`, `hidden` and `paused`, so the
 OS-captured switcher thumbnail never holds hub text, and it does not depend on
@@ -1481,15 +1452,6 @@ pauses the app (Control Centre, a biometric prompt) briefly covers it too.
 - **Activity cursor (spec 2.10).** Home shows the latest three events from
   `now.digest` as display only. The "new since you last looked" cursor and the
   full Activity feed arrive with PR8.
-
-The Insights charts ship as one session-and-weekly panel per pool. These
-chart-spec gaps are deferred to PR8 with the remaining chart sections:
-
-- separate session and weekly small multiples instead of one shared panel;
-- a signed projection axis;
-- a pp/h axis for burn;
-- diverging credit bars for `burn_vs_target`;
-- a light and dark golden image for the chart panels.
 
 ## Regression coverage
 
@@ -1532,14 +1494,12 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   the snapshot is removed from the URL too, and valid filters are kept.
 - `mastermind_lane_page_test.dart` (detail, gone, updated) and
   `work_model_test.dart`.
-- `mastermind_insights_page_test.dart`: pool urgency order, one verdict per
-  pool, the reserve note behind its info button, unread windows as a dash, GMT+7
-  resets, credits copy, quota and forecasts, coverage handling, the chart table
-  route (same series, gone chart, Back), whole-section states, dock clearance.
-  `mastermind_insights_compact_test.dart`: the burn guard, the static
-  no-pacing shape, the Table action above the plot with a 44-pt target, the
-  legend of drawn series, the plot's summary label, the quota cap and the Forge
-  v1 fixture (a reason per window, no bare "unknown").
+- `mastermind_insights_page_test.dart`: empty reports, loss of access, cached
+  reports after refresh failure, receipt age, quota gaps, ICT reset times,
+  cost grouping and token counts. `mastermind_insights_compact_test.dart`
+  checks that the last token row clears the dock at standard and enlarged
+  Vietnamese text sizes. `forge_v1_fixture_test.dart` mounts Usage with a
+  fleet report containing missing quota readings.
 - Ship: `apps/mastermind/src/ship/model.test.ts` and `ship-page.test.tsx`
   (freshness kinds, stats, groups, partial and all-down states, the stale
   opt-in, Check now and its rate limit, Vietnamese),
@@ -1548,8 +1508,8 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   collector and route tests listed in the
   [collector runbook](/build/devops/mastermind-ship-collector#bounds-and-stop-fence).
 - `mastermind_home_links_test.dart`: Home Ship rows open the live Ship tab and
-  the Usage link opens Insights. `presentation/ship_usage_model_test.dart`: the Ship and Usage
-  models and chart ids.
+  the Usage link opens the Usage tab. `presentation/ship_usage_model_test.dart`
+  covers the hub Ship and quota models.
 - `apps/mobile/test/features/mastermind/access/mastermind_access_cubit_test.dart`:
   the root workspace, server answer and configured-source matrix (the entry
   follows `GET /api/v1/mastermind/access`), the personal workspace, creator and
@@ -1564,11 +1524,7 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   hidden behind userinfo or a fragment are refused.
 - `apps/mobile/test/features/shell/view/shell_back_navigation_test.dart`:
   system Back from a lane over a filtered Work location returns to that
-  location with its query (it fails without the shell's lane-pop rule). System
-  and dock Back from a chart table, pushed over Insights over Work, pop back to
-  the same Insights (one state created, Work still beneath it); both fail
-  without the shell's chart-table pop rule, because the mini-app parent
-  fallback's `go` rebuilds Insights and flattens the stack.
+  location and retains its query.
 
 The registered-destination smoke test builds every `/mastermind/**` route
 through the production router.
@@ -1603,18 +1559,11 @@ stable item ID. Resolved items leave Needs you and can appear in Recently resolv
 Full asks use `ask_text` (up to 2000 characters); an absent full ask is stated on
 the detail page. No mobile action can infer that the hub processed a reply.
 
-Usage charts annotate timestamp gaps with published reasons (source failure,
-account switch or quota reset). Without metadata they say “No samples published”.
-A reset timestamp within an inferred gap supplies the reset reason. Pools remain
-separate. Adapter and classification regressions live in
-`apps/mobile/test/features/mastermind/presentation/hub_contract_test.dart`.
-
 Optional resolved history is parsed row by row: invalid entries are skipped,
 repeated IDs use their latest resolved entry, and the last 20 valid entries are
 shown. Additive lane and staff metadata does not invalidate the snapshot; known
 fields still receive strict validation. Native open items may supply `status`
-without the legacy `state`. Checked field timestamps and spoken chart gap bounds
-use the same GMT+7 wall time as the rest of Mastermind.
+without the legacy `state`. Checked field timestamps use GMT+7 wall time.
 
 Pages consume the shell's published bottom clearance through `AppPageScrollView`.
 The Sources sheet opens on the root navigator, above the floating dock, so the
@@ -1622,29 +1571,25 @@ system safe area pads its end and no dock estimate is needed.
 
 Forge v1 publishes field health beside the legacy arrays: `ship[]` supplies
 `deploy`, `ci`, and `released_at`; `work.lanes[]` supplies age/ETA observations;
-`insights[].weekly` supplies weekly budget and pacing observations. Mobile adapts
-these companion paths and can show their reasons even when legacy environment
-and usage-instance lists are empty. `work.counts` supplies Home's top-level
+`insights[].weekly` supplies weekly budget and pacing observations for the hub quota model.
+Mobile adapts these companion paths even when the legacy environment and
+usage-instance lists are empty. `work.counts` supplies Home's top-level
 running, waiting, and idle counts. Unknown root keys, `asks_source`, and
 `decisions_unknown` are safe to ignore. The exact redacted publisher fixture is
 covered by `test/features/mastermind/view/forge_v1_fixture_test.dart`; it verifies
-all five tabs, open asks, resolved history, source reasons, gaps, and counts.
+the supported hub views, open asks, resolved history, source metadata and
+counts. The Usage case uses a separate fleet report.
 
 Optional companions are validated field by field. Ship observations apply only to
 production; null companions retain a published legacy value. Unknown enums,
 invalid numeric values and unparseable timestamps retain the legacy value with
 `not_published` status and an “Unrecognised value” reason. ISO timestamps with
-`Z` or an explicit offset normalize to UTC. These rules apply to Ship, weekly
-Insights and Work age/ETA fields. A malformed lane or unknown decision status
+`Z` or an explicit offset normalize to UTC. These rules apply to hub Ship observations, weekly quota and Work age/ETA
+fields. A malformed lane or unknown decision status
 is skipped without hiding the remaining snapshot. Decisions marked resolved in
 `decisions[]` also populate Recently resolved. Home keeps a queued chip when
 `work.counts` is published, deriving queued from lanes when absent.
 Regression coverage: `test/features/mastermind/presentation/companion_hardening_test.dart`.
-
-An unreported pacing value retains its dashed status glyph beside the explicit
-reason. The label wraps within the row's content area so checked timestamps do
-not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
-one-glyph-per-window assertion for reported and unreported values.
 
 Truncated asks carry a visible Mac continuation notice. Recorded answers remain
 available regardless of length, with an expandable preview. Failed replies say
@@ -1676,8 +1621,8 @@ See [answered elsewhere and withdrawn](/platform/features/mobile-mastermind-answ
 ## Read-only Threads preview
 
 `MASTERMIND_THREADS` is a Dart define, default `false`. With it off, Work, Ship
-and Insights retain their existing navigation. When enabled, Threads replaces
-Work in the dock; Backlog and Staff remain segments, and Ship and Insights stay
+and Usage retain their existing navigation. When enabled, Threads replaces
+Work in the dock; Backlog and Staff remain segments, and Ship and Usage stay
 separate. The flag is read through `mastermindThreadsEnabled`, which tests can
 override with `debugOverrideMastermindThreads`, so the default `flutter test` run
 covers both the flag-off and flag-on paths without a `--dart-define`.
@@ -1736,16 +1681,6 @@ Full detail continues to show canonical ask text and choices.
 Regression coverage: `view/decision_cards_test.dart` (English/Vietnamese,
 320px, text scale 2.0, short-copy fallback, recommendation, canonical indices,
 Undo and delayed send) plus the existing reply cubit and Inbox/Home suites.
-
-### Unreadable quota pools
-
-On mobile Insights, a null pool percentage displays “Out of service / unreadable”
-in the quota table, percentage chart summaries, and session/weekly rows. Null
-quota rows sort before numeric readings so they remain visible in the initial
-five rows. Missing chart series retain their window-not-reported description.
-Numeric readings, including a measured zero, retain their existing meaning.
-Regression coverage lives in `mastermind_insights_compact_test.dart` and
-`ship_usage_model_test.dart`; snapshot parsing preserves null quota rows.
 
 ## Iris in the Inbox (M0)
 

@@ -60,6 +60,7 @@ class FleetReceiptFreshnessLine extends StatefulWidget {
     this.failed = false,
     this.refreshing = false,
     this.freshLabel,
+    this.staleLabel,
     this.now,
     super.key,
   });
@@ -70,6 +71,7 @@ class FleetReceiptFreshnessLine extends StatefulWidget {
 
   /// The fresh-state wording; "Updated {age}" without it.
   final String Function(AppLocalizations l10n, String age)? freshLabel;
+  final String Function(AppLocalizations l10n, String age)? staleLabel;
   final DateTime Function()? now;
 
   @override
@@ -109,7 +111,8 @@ class _FleetFreshnessLineState extends State<FleetReceiptFreshnessLine> {
           )
         : stale
         ? (
-            l10n.mastermindFleetStale(age),
+            widget.staleLabel?.call(l10n, age) ??
+                l10n.mastermindFleetStale(age),
             LucideIcons.triangleAlert,
             AppTone.warning,
           )
