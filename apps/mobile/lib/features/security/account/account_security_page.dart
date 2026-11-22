@@ -284,16 +284,14 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
 
     Widget sessionTile(AccountSession session) {
       final label = baseLabels[session.id]!;
-      final identifier = formatSessionIdentifier(
-        l10n,
-        label,
-        disambiguations[session.id],
-      );
+      final disambiguation = disambiguations[session.id];
+      final identifier = formatSessionIdentifier(l10n, label, disambiguation);
       return AccountSessionTile(
         key: ValueKey(session.id),
         session: session,
         now: now,
         busy: _busy,
+        ordinal: disambiguation?.ordinal,
         identifier: identifier,
         onSignOut: session.current
             ? null

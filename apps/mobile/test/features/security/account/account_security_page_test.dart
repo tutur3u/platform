@@ -373,9 +373,12 @@ void main() {
     final refreshFuture = tester
         .widget<RefreshIndicator>(find.byType(RefreshIndicator))
         .onRefresh();
+    var refreshDone = false;
+    unawaited(refreshFuture.whenComplete(() => refreshDone = true));
     await tester.pump();
 
     expect(calls, 3);
+    expect(refreshDone, isFalse);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     third.complete(
@@ -384,6 +387,7 @@ void main() {
     await refreshFuture;
     await tester.pumpAndSettle();
 
+    expect(refreshDone, isTrue);
     expect(calls, 3);
     expect(
       find.text("Couldn't refresh sessions and connections."),
@@ -433,6 +437,9 @@ void main() {
       const firstId = 'Chrome on macOS (14.161.x.x, 2 hours ago, #1)';
       const secondId = 'Chrome on macOS (14.161.x.x, 2 hours ago, #2)';
       const thirdId = 'Chrome on macOS (171.250.x.x, 5 hours ago)';
+      expect(find.text('Chrome on macOS (#1)'), findsOneWidget);
+      expect(find.text('Chrome on macOS (#2)'), findsOneWidget);
+      expect(find.text('Chrome on macOS'), findsOneWidget);
       expect(find.byTooltip('Sign out $firstId'), findsOneWidget);
       expect(find.byTooltip('Sign out $secondId'), findsOneWidget);
       expect(find.byTooltip('Sign out $thirdId'), findsOneWidget);

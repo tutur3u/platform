@@ -288,7 +288,14 @@ export default function SessionsCard() {
           });
         }
       }
-      return [item.id, { lastActive: item.lastActive, identifier }] as const;
+      return [
+        item.id,
+        {
+          lastActive: item.lastActive,
+          identifier,
+          ordinal: dis?.ordinal ?? null,
+        },
+      ] as const;
     })
   );
 
@@ -335,6 +342,7 @@ export default function SessionsCard() {
                       meta?.lastActive ?? formatTimeAgo(session.updated_at)
                     }
                     identifier={meta?.identifier}
+                    ordinal={meta?.ordinal ?? null}
                     revoking={revokingIds.includes(session.session_id)}
                     onRevoke={() => revokeSession(session.session_id)}
                   />

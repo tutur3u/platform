@@ -93,12 +93,14 @@ export function SessionRow({
   session,
   lastActive,
   identifier,
+  ordinal,
   revoking,
   onRevoke,
 }: {
   session: SessionRowData;
   lastActive: string;
   identifier?: string;
+  ordinal?: number | null;
   revoking: boolean;
   onRevoke: () => void;
 }) {
@@ -109,7 +111,9 @@ export function SessionRow({
 
   const client = describeSessionUserAgent(session.user_agent);
   const label = formatSessionClientLabel(client, t);
-  const accessibleLabel = identifier ?? label;
+  const displayLabel =
+    ordinal != null ? t('session_ordinal', { label, ordinal }) : label;
+  const accessibleLabel = identifier ?? displayLabel;
 
   const masked = maskSessionIp(session.ip);
   const address = sessionIpAddress(session.ip);
@@ -135,7 +139,7 @@ export function SessionRow({
     <SettingItemTab
       layout="compact"
       icon={<ClientIcon client={client} />}
-      title={label}
+      title={displayLabel}
       description={
         <Collapsible open={open} onOpenChange={setOpen}>
           <span>
@@ -207,10 +211,14 @@ export function SessionRow({
               disabled={revoking}
               aria-label={
                 revoking
-                  ? t('revoking')
+                  ? t('revoking_named', { label: accessibleLabel })
                   : t('revoke_named', { label: accessibleLabel })
               }
-              title={t('revoke_named', { label: accessibleLabel })}
+              title={
+                revoking
+                  ? t('revoking_named', { label: accessibleLabel })
+                  : t('revoke_named', { label: accessibleLabel })
+              }
             >
               <LogOut className="h-4 w-4" />
             </Button>

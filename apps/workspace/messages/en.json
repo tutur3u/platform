@@ -16295,6 +16295,7 @@
     "revoke_session_question": "Revoke Session?",
     "revoke_success": "Session revoked",
     "revoking": "Revoking...",
+    "revoking_named": "Revoking {label}...",
     "session_ordinal": "{label} (#{ordinal})",
     "session_with_context": "{label} ({context})",
     "session_with_context_ordinal": "{label} ({context}, #{ordinal})",

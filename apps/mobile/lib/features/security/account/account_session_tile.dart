@@ -16,6 +16,7 @@ class AccountSessionTile extends StatefulWidget {
     required this.now,
     required this.busy,
     this.identifier,
+    this.ordinal,
     this.onSignOut,
     super.key,
   });
@@ -27,6 +28,9 @@ class AccountSessionTile extends StatefulWidget {
   /// Disambiguated identifier used for accessible labels and confirmation
   /// prompts when multiple sessions share the same client label.
   final String? identifier;
+
+  /// Tie-breaker ordinal rendered on rows that share both label and context.
+  final int? ordinal;
 
   /// Null for this device's own session, which cannot be signed out here.
   final ValueChanged<String>? onSignOut;
@@ -49,7 +53,11 @@ class _AccountSessionTileState extends State<AccountSessionTile> {
       client,
       localPlatform: session.current ? currentAppPlatform() : null,
     );
-    final accessibleLabel = widget.identifier ?? label;
+    final ordinal = widget.ordinal;
+    final displayLabel = ordinal != null
+        ? l10n.securitySessionOrdinal(label, ordinal)
+        : label;
+    final accessibleLabel = widget.identifier ?? displayLabel;
     final lastActive = session.lastActive;
     final relative = lastActive == null
         ? null
@@ -65,13 +73,15 @@ class _AccountSessionTileState extends State<AccountSessionTile> {
         Semantics(
           expanded: _expanded,
           child: AppGroupedRow(
-            semanticLabel: accessibleLabel == label ? null : accessibleLabel,
+            semanticLabel: accessibleLabel == displayLabel
+                ? null
+                : accessibleLabel,
             onTap: () => setState(() => _expanded = !_expanded),
             leading: AppIconTile(
               icon: sessionClientIcon(client),
               tone: session.current ? AppTone.success : AppTone.neutral,
             ),
-            title: Text(label),
+            title: Text(displayLabel),
             subtitle: summary.isEmpty
                 ? null
                 : lastActive == null

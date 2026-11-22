@@ -16302,6 +16302,7 @@
     "revoke_session_question": "Thu hồi phiên?",
     "revoke_success": "Đã thu hồi phiên",
     "revoking": "Đang thu hồi...",
+    "revoking_named": "Đang thu hồi {label}...",
     "session_ordinal": "{label} (#{ordinal})",
     "session_with_context": "{label} ({context})",
     "session_with_context_ordinal": "{label} ({context}, #{ordinal})",
