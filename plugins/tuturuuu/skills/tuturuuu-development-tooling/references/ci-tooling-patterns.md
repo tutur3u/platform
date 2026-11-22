@@ -739,9 +739,9 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `cancel-in-progress` enabled. Safe push validation coalesces `main` by workflow
   and ref without cancelling the active run: `cancel-in-progress` exempts
   `refs/heads/main`, so a newer push replaces only the pending run and long
-  workflows still finish under frequent pushes. Docs/SEO, CodeQL and Cloudflare Source workflows use this policy. Test and Type
-  Check use distinct main SHA/run/attempt groups so pending validation survives
-  rapid pushes. CI Admitted and SDK package qualification mirror the main
+  workflows still finish under frequent pushes. Docs/SEO and CodeQL use this policy. App Cloudflare artifact producers, Test,
+  and Type Check use distinct main SHA/run/attempt groups so pending evidence
+  survives rapid pushes. Keep publish serialization at the deployment boundary. CI Admitted and SDK package qualification mirror the main
   protection in their expressions. Their current triggers do not run on main pushes.
   CodeQL push scans diff from the last successful push scan, so a replaced
   pending commit is still analyzed. Oxc also keeps per-SHA main groups and uses job-level mutation locks. Only

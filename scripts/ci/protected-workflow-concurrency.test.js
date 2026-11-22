@@ -688,7 +688,7 @@ test('Oxc keeps each main push', () => {
   }
 });
 
-test('Cloudflare Source and docs coalesce main pushes without cancelling', () => {
+test('Cloudflare Source isolates main pushes and docs coalesces them', () => {
   const files = Object.entries(workflows)
     .filter(([, workflow]) =>
       String(workflow.name || '').endsWith(' Cloudflare Source')
@@ -700,9 +700,8 @@ test('Cloudflare Source and docs coalesce main pushes without cancelling', () =>
   assert.equal(files.length, 24);
   files.push('docs-seo-check.yaml');
   for (const file of files) {
-    // The active main run always finishes; a newer push replaces only the
-    // pending run, so the newest head gets its own complete run.
-    assert.equal(queuedMainBaselines.has(file), false, file);
+    const coalesces = file === 'docs-seo-check.yaml';
+    assert.equal(queuedMainBaselines.has(file), !coalesces, file);
     const policy = workflows[file].concurrency;
     const first = {
       ...context('refs/heads/main', 'a'.repeat(40), 11),
@@ -713,8 +712,8 @@ test('Cloudflare Source and docs coalesce main pushes without cancelling', () =>
       workflow: workflows[file].name,
     };
     assert.equal(
-      render(policy.group, first),
-      render(policy.group, second),
+      render(policy.group, first) === render(policy.group, second),
+      coalesces,
       file
     );
     assert.equal(render(policy['cancel-in-progress'], first), false, file);

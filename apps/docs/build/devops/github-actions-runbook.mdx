@@ -95,11 +95,16 @@ Public pull-request jobs use GitHub-hosted runners. Self-hosted CI is restricted
 
 Cancellation needs explicit authorization for its scope. Identify each run and its source before acting, preserve required release and deployment work, and record the observed outcome. A branch name alone does not establish that a run is redundant.
 
-Preserve all `main` runs during queue cleanup. Test and TypeScript Type Check use
-a different concurrency group for each main push. GitHub can replace a pending
-run in a shared group even when active-run cancellation is disabled. A cancelled
+Preserve all `main` runs during queue cleanup. Test, TypeScript Type Check, and
+Cloudflare app artifact producers use a different concurrency group for each main
+push. Deployments take their target lock in arrival order. GitHub can replace a
+pending run in a shared group even when active-run cancellation is disabled. A cancelled
 run with no jobs at the next push is consistent with pending replacement. Check
 job history and timing before attributing it to an operator or fleet task.
+
+Before enabling staging publication from parallel main builds, add a
+source-revision check under the upload lock so a late older build cannot
+replace a newer deployment.
 
 ## Draft PR runner admission
 

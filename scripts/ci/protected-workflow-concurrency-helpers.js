@@ -109,6 +109,17 @@ function pushesMain(workflow) {
     !push?.['branches-ignore']?.includes('main')
   );
 }
+const mainArtifactProducers = Object.keys(workflows).filter(
+  (file) =>
+    pushesMain(workflows[file]) &&
+    (/-cloudflare(?:-artifact)?\.ya?ml$/u.test(file) ||
+      [
+        'api-worker.yaml',
+        'cms-renderer.yaml',
+        'mail-calendar-tasks-builds.yaml',
+      ].includes(file))
+);
+for (const file of mainArtifactProducers) queuedMainBaselines.add(file);
 for (const [file, workflow] of Object.entries(workflows)) {
   if (
     pushesMain(workflow) &&
@@ -257,6 +268,7 @@ module.exports = {
   mainExceptions,
   queuedMainBaselines,
   boundedMainProducers,
+  mainArtifactProducers,
   pushesMain,
   mainRunCancels,
   workflows,
