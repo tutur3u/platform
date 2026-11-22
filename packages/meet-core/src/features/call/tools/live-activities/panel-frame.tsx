@@ -10,12 +10,15 @@ export function LiveActivityPanelFrame({
   title,
   icon = LayoutGrid,
   subtitle,
+  actions,
   onClose,
   children,
 }: {
   title: string;
   icon?: ComponentType<{ className?: string }>;
   subtitle?: ReactNode;
+  /** Controls beside the close action, such as opening full screen. */
+  actions?: ReactNode;
   onClose?: () => void;
   children: ReactNode;
 }) {
@@ -26,6 +29,7 @@ export function LiveActivityPanelFrame({
         icon={icon}
         title={title}
         subtitle={subtitle}
+        actions={actions}
         closeLabel={t('close')}
         onClose={() => onClose?.()}
       />

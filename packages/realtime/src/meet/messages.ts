@@ -4,7 +4,10 @@ import {
   type LiveActivitiesServerMessage,
 } from './live-activities-schema';
 import { penboardClientMessages, type PenboardServerMessage } from './penboard';
-import type { LiveQaSnapshot } from './live-qa';
+import {
+  liveQaClientMessages,
+  type LiveQaServerMessage,
+} from './live-qa-schema';
 import type { ClassTimer } from './class-timer';
 import {
   type MeetRoomMediaQualitySummary,
@@ -92,26 +95,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   transcriptionConsentMessageSchema,
   ...liveActivityClientMessages,
   ...penboardClientMessages,
-  z.object({ type: z.literal('qa.read'), requestId }),
-  z.object({
-    type: z.literal('qa.ask'),
-    text: z.string().trim().min(1).max(400),
-    requestId,
-  }),
-  z.object({
-    type: z.literal('qa.upvote'),
-    questionId: z.string().uuid(),
-    upvoted: z.boolean(),
-    requestId,
-  }),
-  z.object({
-    type: z.literal('qa.moderate'),
-    questionId: z.string().uuid(),
-    field: z.enum(['hidden', 'answered']),
-    value: z.boolean(),
-    requestId,
-  }),
-  z.object({ type: z.literal('qa.clear'), requestId }),
+  ...liveQaClientMessages,
   z.object({
     type: z.literal('media.quality'),
     sample: meetMediaQualitySampleSchema,
@@ -312,7 +296,7 @@ export type MeetRealtimeRoomTrack = {
 export type MeetRealtimeServerMessage =
   | LiveActivitiesServerMessage
   | PenboardServerMessage
-  | { type: 'qa.snapshot'; snapshot: LiveQaSnapshot; requestId?: string }
+  | LiveQaServerMessage
   | TranscriptionStateMessage
   | TranscriptionConsentMessage
   | {

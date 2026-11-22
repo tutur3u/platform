@@ -13,6 +13,7 @@ export {
   MEET_LIVE_ASSESSMENT_ENABLED,
   readMeetClientFrame,
 } from './live-activities';
+export { LIVE_QA_LIMITS } from './live-qa-schema';
 export {
   PENBOARD_LIMITS,
   penboardColors,

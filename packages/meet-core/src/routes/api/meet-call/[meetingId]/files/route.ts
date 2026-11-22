@@ -86,6 +86,7 @@ export async function GET(request: Request, { params }: Params) {
       size: number;
       contentType: string;
     }>(access, { action: 'attachment', id });
+    const { name, size, contentType } = file;
     const downloadUrl = await createWorkspaceStorageSignedReadUrl(
       file.storageWsId,
       file.path,
@@ -96,10 +97,13 @@ export async function GET(request: Request, { params }: Params) {
         status: 307,
         headers: { Location: downloadUrl },
       });
+    // Only these fields leave the route; where the bytes live and who
+    // uploaded them stay on the server.
     return {
-      ...file,
-      path: undefined,
-      storageWsId: undefined,
+      id,
+      name,
+      size,
+      contentType,
       // Authorize again and mint a fresh signed URL when opened, including after
       // a long call. No polling or changing a playing video's source is needed.
       url: meetPathForRequest(

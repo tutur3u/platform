@@ -1,5 +1,9 @@
 import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
-import { createLiveQaClient, type LiveQaCommand } from './qa-store';
+import {
+  createLiveQaClient,
+  LIVE_QA_REQUEST_PREFIX,
+  type LiveQaCommand,
+} from './qa-store';
 
 type RoomChannel = {
   send?: (message: LiveQaCommand) => void;
@@ -39,9 +43,16 @@ export function handleLiveQaMessage(
   if (
     (message.type === 'ready' && message.admission === 'admitted') ||
     (message.type === 'admission.result' && message.admitted)
-  )
+  ) {
+    room.client.reset();
     send({ type: 'qa.read' });
-  if (message.type === 'qa.snapshot')
+  }
+  if (
+    message.type === 'qa.snapshot' ||
+    message.type === 'qa.host' ||
+    (message.type === 'error' &&
+      message.requestId?.startsWith(LIVE_QA_REQUEST_PREFIX))
+  )
     for (const listener of room.listeners) listener(message);
   if (message.type === 'room.ended') rooms.delete(meetingId);
 }

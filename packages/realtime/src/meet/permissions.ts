@@ -207,6 +207,7 @@ const PRIVATE_TOOL_FRAMES = new Set([
   'activity.progress',
   'penboard.snapshot',
   'penboard.stroke',
+  'qa.host',
 ]);
 
 /** Frames that carry one person's or the managers' activity data. */
@@ -235,6 +236,8 @@ export function receivesMeetToolFrame(
     !!state.presence[token.userId] &&
     !state.waiting[token.userId] &&
     (!MANAGER_ACTIVITY_FRAMES.has(message.type) ||
-      canMeetRealtimeRunActivities(token))
+      canMeetRealtimeRunActivities(token)) &&
+    // The full Q&A view names anonymous askers and holds hidden questions.
+    (message.type !== 'qa.host' || token.role === 'host')
   );
 }

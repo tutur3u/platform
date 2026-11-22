@@ -1,65 +1,70 @@
 // @vitest-environment jsdom
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import {
   admitOrHold,
   createMeetRoomSnapshot,
   MeetCommandExecutor,
-  meetRealtimeClientMessageSchema,
   meetRealtimeTokenPayloadSchema,
   type MeetRealtimeServerMessage,
+  type MeetRealtimeTokenPayload,
   type MeetRoomSnapshot,
 } from '@tuturuuu/realtime/meet';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
+import { createRoomActions } from '../../../lib/room-actions';
+import { MeetSignaling } from '../../../lib/signaling';
+import { handleLiveQaMessage, liveQaRoom } from './qa-handler';
+import { sortLiveQa, upvotedByMe } from './qa-sort';
 import {
   createLiveQaClient,
   type LiveQaChannel,
   type LiveQaCommand,
+  type LiveQaQuestion,
 } from './qa-store';
-import { LiveQaClientContext, QaPanel } from './qa-panel';
-import { handleLiveQaMessage, liveQaRoom } from './qa-handler';
-import { createRoomActions } from '../../../lib/room-actions';
-import { MeetSignaling } from '../../../lib/signaling';
 
-vi.mock('../panel-frame', () => ({
-  LiveActivityPanelFrame: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
-afterEach(cleanup);
-const now = '2026-11-21T08:00:00Z';
-function token(host: boolean) {
+const now = '2026-11-23T08:00:00Z';
+function token(
+  role: 'host' | 'speaker',
+  extra: Partial<MeetRealtimeTokenPayload> = {}
+) {
   return meetRealtimeTokenPayloadSchema.parse({
-    role: host ? 'host' : 'speaker',
+    role,
     admission: 'open',
-    userId: host
-      ? '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691'
-      : '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2692',
-    displayName: host ? 'Host' : 'Participant',
+    userId: crypto.randomUUID(),
+    displayName: role === 'host' ? 'Host' : 'Participant',
     roomId: 'room',
     meetingId: '5e5217de-9bb3-4e20-8d99-526ad3e7e34f',
     wsId: '0f1a64f7-780f-4d30-9d72-5530f204e95c',
     exp: 2000000000,
     limits: {},
     scopes: [],
+    ...extra,
   });
 }
 
-it('two independent clients converge after durable reload, including late join and host moderation', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'meet-qa-'));
-  const path = join(dir, 'snapshot.json');
-  const host = token(true);
-  const guest = token(false);
-  let state = admitOrHold(createMeetRoomSnapshot(), host, now).state;
-  state = admitOrHold(state, guest, now).state;
-  await writeFile(path, JSON.stringify(state));
-  const recipients: Array<(message: MeetRealtimeServerMessage) => void> = [];
-  async function run(message: LiveQaCommand, actor = guest) {
-    // A fresh executor and deserialized state for every command model eviction.
-    const restored: MeetRoomSnapshot = JSON.parse(await readFile(path, 'utf8'));
+/**
+ * A room run through the real executor with a JSON round trip for every
+ * command, and clients that receive what their connection would: their own
+ * replies, the broadcast, and messages sent directly to them.
+ */
+function harness(tokens: MeetRealtimeTokenPayload[]) {
+  let state: MeetRoomSnapshot = createMeetRoomSnapshot();
+  for (const entry of tokens) state = admitOrHold(state, entry, now).state;
+  const connections: Array<{
+    token: MeetRealtimeTokenPayload;
+    receive: (message: MeetRealtimeServerMessage) => void;
+  }> = [];
+  const pending: Promise<unknown>[] = [];
+  let queue: Promise<unknown> = Promise.resolve();
+  // The room handles one message at a time, in the order they arrive.
+  function run(message: LiveQaCommand, actor: MeetRealtimeTokenPayload) {
+    const next = queue.then(() => execute(message, actor));
+    queue = next;
+    return next;
+  }
+  async function execute(
+    message: LiveQaCommand,
+    actor: MeetRealtimeTokenPayload
+  ) {
+    const restored: MeetRoomSnapshot = JSON.parse(JSON.stringify(state));
     const replies: MeetRealtimeServerMessage[] = [];
     await new MeetCommandExecutor().run(
       { message, token: actor, now },
@@ -69,136 +74,258 @@ it('two independent clients converge after durable reload, including late join a
           throw new Error('unexpected SFU call');
         },
         commit: async (result) => {
-          await writeFile(path, JSON.stringify(result.state));
+          state = JSON.parse(JSON.stringify(result.state));
           replies.push(...result.reply);
-          for (const entry of result.broadcast)
-            for (const receive of recipients) receive(structuredClone(entry));
+          for (const connection of connections) {
+            for (const entry of result.broadcast)
+              connection.receive(structuredClone(entry));
+            for (const entry of result.direct)
+              if (entry.userId === connection.token.userId)
+                connection.receive(structuredClone(entry.message));
+          }
         },
       }
     );
     return replies;
   }
-  const pending: Promise<unknown>[] = [];
-  function channel(): LiveQaChannel {
-    return {
+  function connect(actor: MeetRealtimeTokenPayload) {
+    const channel: LiveQaChannel = {
       send: (message) => {
         pending.push(
-          run(message).then((replies) => {
-            for (const reply of replies)
-              for (const receive of recipients) receive(structuredClone(reply));
+          run(message, actor).then((replies) => {
+            for (const connection of connections)
+              if (connection.token === actor)
+                for (const reply of replies) connection.receive(reply);
           })
         );
       },
       subscribe: (listener) => {
-        recipients.push(listener);
+        const connection = { token: actor, receive: listener };
+        connections.push(connection);
         return () => {
-          recipients.splice(recipients.indexOf(listener), 1);
+          connections.splice(connections.indexOf(connection), 1);
         };
       },
     };
+    const client = createLiveQaClient(channel);
+    client.subscribe(() => {});
+    return client;
   }
-  const a = createLiveQaClient(channel());
-  const b = createLiveQaClient(channel());
-  const stopA = a.subscribe(() => {});
-  await Promise.all(pending.splice(0));
-  const stopB = b.subscribe(() => {});
-  await Promise.all(pending.splice(0));
-  try {
-    await run({ type: 'qa.ask', text: 'What is next?' });
-    expect(a.read()).toEqual(b.read());
-    expect(a.read()).not.toBe(b.read());
-    const id = a.read().questions[0]!.id;
-    await run({ type: 'qa.upvote', questionId: id, upvoted: true });
-    await run({ type: 'qa.upvote', questionId: id, upvoted: true });
-    expect(a.read().questions[0]!.upvotes).toEqual([guest.userId]);
-    for (const field of ['hidden', 'answered'] as const) {
-      const denied = await run({
-        type: 'qa.moderate',
-        questionId: id,
-        field,
-        value: true,
-      });
-      expect(denied).toContainEqual(
-        expect.objectContaining({ type: 'error', error: 'permission_denied' })
-      );
-      expect(a.read().questions[0]![field]).toBe(false);
-      await run(
-        { type: 'qa.moderate', questionId: id, field, value: true },
-        host
-      );
-    }
-    await run({ type: 'qa.clear' });
-    expect(a.read().questions[0]).toMatchObject({
-      hidden: true,
-      answered: true,
-    });
-    const lateClient = createLiveQaClient(channel());
-    const stopLate = lateClient.subscribe(() => {});
-    await Promise.all(pending.splice(0));
-    expect(lateClient.read()).toEqual(a.read());
-    stopLate();
-    const late = await run({ type: 'qa.read' });
-    expect(late).toContainEqual(
-      expect.objectContaining({ snapshot: a.read() })
-    );
-    await run({ type: 'qa.clear' }, host);
-    expect(a.read()).toEqual(b.read());
-    expect(b.read().questions[0]).toMatchObject({
-      hidden: false,
-      answered: false,
-    });
-    expect(
-      meetRealtimeClientMessageSchema.safeParse({
-        type: 'qa.ask',
-        text: 'x'.repeat(401),
-      }).success
-    ).toBe(false);
-    expect(await run({ type: 'qa.ask', text: 'x'.repeat(401) })).toContainEqual(
-      expect.objectContaining({ error: 'qa_invalid_length' })
-    );
-    for (let i = 0; i < 20; i++)
-      await run({ type: 'qa.upvote', questionId: id, upvoted: true });
-    expect(await run({ type: 'qa.ask', text: 'Limited' })).toContainEqual(
-      expect.objectContaining({ error: 'qa_rate_limited' })
-    );
-    expect(a.read().questions).toHaveLength(1);
-  } finally {
-    stopA();
-    stopB();
-    await rm(dir, { recursive: true });
-  }
+  return {
+    connect,
+    run,
+    settle: () => Promise.all(pending.splice(0)),
+    state: () => state,
+  };
+}
+
+it('shows each person their own vote, for guests and signed-in members alike', async () => {
+  const host = token('host', { accountId: crypto.randomUUID() });
+  const member = token('speaker', { accountId: crypto.randomUUID() });
+  // A guest has no account, so the room keys its votes by its room id.
+  const guest = token('speaker', { displayName: 'Guest' });
+  const room = harness([host, member, guest]);
+  const hostClient = room.connect(host);
+  const memberClient = room.connect(member);
+  const guestClient = room.connect(guest);
+  await room.settle();
+  expect(guestClient.read().self).toEqual({
+    actor: guest.userId,
+    participantId: guest.userId,
+    votedIds: [],
+  });
+  expect(memberClient.read().self?.actor).toBe(member.accountId);
+  memberClient.send({ type: 'qa.ask', text: 'What is next?' });
+  await room.settle();
+  const question = () => guestClient.read().snapshot.questions[0]!;
+  guestClient.send({
+    type: 'qa.upvote',
+    questionId: question().id,
+    upvoted: true,
+  });
+  await room.settle();
+  expect(upvotedByMe(question(), guestClient.read().self)).toBe(true);
+  expect(
+    upvotedByMe(
+      memberClient.read().snapshot.questions[0]!,
+      memberClient.read().self
+    )
+  ).toBe(false);
+  memberClient.send({
+    type: 'qa.upvote',
+    questionId: question().id,
+    upvoted: true,
+  });
+  await room.settle();
+  expect(
+    upvotedByMe(
+      memberClient.read().snapshot.questions[0]!,
+      memberClient.read().self
+    )
+  ).toBe(true);
+  // The room sees a count, never who voted.
+  expect(question().upvoteCount).toBe(2);
+  expect(question().upvotes).toEqual([]);
+  expect(hostClient.read().snapshot.questions[0]?.upvotes).toHaveLength(2);
+  expect(question().authorName).toBe('Participant');
+  expect(hostClient.read().isHost).toBe(true);
+  expect(guestClient.read().isHost).toBe(false);
 });
 
-it('sends participant questions through the channel and renders only server state', () => {
-  const send = vi.fn();
+it('keeps hidden questions with hosts, converges answers and serves late joiners', async () => {
+  const host = token('host');
+  const guest = token('speaker');
+  const room = harness([host, guest]);
+  const hostClient = room.connect(host);
+  const guestClient = room.connect(guest);
+  await room.settle();
+  guestClient.send({ type: 'qa.ask', text: 'Keep?' });
+  guestClient.send({ type: 'qa.ask', text: 'Remove?' });
+  await room.settle();
+  const [keep, remove] = guestClient.read().snapshot.questions;
+  hostClient.send({
+    type: 'qa.moderate',
+    questionId: remove!.id,
+    field: 'hidden',
+    value: true,
+  });
+  guestClient.send({ type: 'qa.answer', questionId: keep!.id, text: 'Yes' });
+  await room.settle();
+  expect(guestClient.read().snapshot.questions.map((q) => q.text)).toEqual([
+    'Keep?',
+  ]);
+  expect(hostClient.read().snapshot.questions).toHaveLength(2);
+  expect(hostClient.read().snapshot.questions[0]?.answers).toMatchObject([
+    { text: 'Yes', byHost: false },
+  ]);
+  // A guest's host-only command is refused and shown to that guest only.
+  guestClient.send({ type: 'qa.pin', questionId: keep!.id, pinned: true });
+  await room.settle();
+  expect(guestClient.read().error).toBe('permission_denied');
+  expect(hostClient.read().error).toBe(null);
+  const late = room.connect(guest);
+  await room.settle();
+  expect(late.read().snapshot).toEqual(guestClient.read().snapshot);
+});
+
+it('forgets the host view and older snapshots when the person is admitted again', () => {
   let receive: (message: MeetRealtimeServerMessage) => void = () => {};
   const client = createLiveQaClient({
-    send,
+    send: () => {},
     subscribe: (listener) => {
       receive = listener;
       return () => {};
     },
   });
-  const props = {
-    roomRole: 'participant',
-    participantId: token(false).userId,
-  } as const;
-  render(
-    <LiveQaClientContext value={client}>
-      <QaPanel {...props} />
-    </LiveQaClientContext>
-  );
-  fireEvent.change(screen.getByLabelText('Question'), {
-    target: { value: 'A question' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
-  expect(send).toHaveBeenCalledWith({ type: 'qa.ask', text: 'A question' });
-  expect(client.read().questions).toHaveLength(0);
-  receive({ type: 'qa.snapshot', snapshot: { questions: [] } });
-  expect(screen.queryByRole('button', { name: 'Hide' })).toBeNull();
+  client.subscribe(() => {});
+  receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 5 } });
+  receive({ type: 'qa.host', snapshot: { questions: [], revision: 5 } });
+  // A held broadcast older than the latest reply is ignored.
+  receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 4 } });
+  expect(client.read().snapshot.revision).toBe(5);
+  expect(client.read().isHost).toBe(true);
+  client.reset();
+  expect(client.read().isHost).toBe(false);
+  receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 1 } });
+  expect(client.read().snapshot.revision).toBe(1);
 });
 
-it('routes panel commands and reconnect snapshots through the existing signaling instance', () => {
+it('resolves a request when the room answers it', async () => {
+  const sent: LiveQaCommand[] = [];
+  let receive: (message: MeetRealtimeServerMessage) => void = () => {};
+  const client = createLiveQaClient(
+    {
+      send: (message) => sent.push(message),
+      subscribe: (listener) => {
+        receive = listener;
+        return () => {};
+      },
+    },
+    { requestTimeoutMs: 50 }
+  );
+  client.subscribe(() => {});
+  const applied = client.request({ type: 'qa.clear' });
+  receive({
+    type: 'qa.snapshot',
+    snapshot: { questions: [] },
+    requestId: sent.at(-1)?.requestId,
+  });
+  expect(await applied).toBe(null);
+  const refused = client.request({ type: 'qa.clear' });
+  receive({
+    type: 'error',
+    error: 'permission_denied',
+    requestId: sent.at(-1)?.requestId,
+  });
+  expect(await refused).toBe('permission_denied');
+  expect(await client.request({ type: 'qa.clear' })).toBe('qa_timeout');
+});
+
+it('drops a host view once the shared view is newer', () => {
+  let receive: (message: MeetRealtimeServerMessage) => void = () => {};
+  const client = createLiveQaClient({
+    send: () => {},
+    subscribe: (listener) => {
+      receive = listener;
+      return () => {};
+    },
+  });
+  client.subscribe(() => {});
+  receive({ type: 'qa.host', snapshot: { questions: [], revision: 3 } });
+  receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 3 } });
+  expect(client.read().isHost).toBe(true);
+  receive({ type: 'qa.snapshot', snapshot: { questions: [], revision: 4 } });
+  expect(client.read().isHost).toBe(false);
+});
+
+it('sorts by votes, by time and by answered, with the pinned question first', () => {
+  const question = (
+    id: string,
+    votes: number,
+    minute: number,
+    extra: Partial<LiveQaQuestion> = {}
+  ): LiveQaQuestion => ({
+    id,
+    participantId: 'p',
+    text: id,
+    upvotes: Array.from({ length: votes }, (_, index) => `v${index}`),
+    answered: false,
+    hidden: false,
+    createdAt: `2026-11-23T08:0${minute}:00Z`,
+    ...extra,
+  });
+  const questions = [
+    question('old-popular', 5, 1),
+    question('new-quiet', 0, 4),
+    question('tied-newer', 2, 3),
+    question('tied-older', 2, 2),
+    question('pinned', 0, 0, { pinned: true }),
+    question('done', 9, 5, { answered: true }),
+    question('hidden', 9, 6, { hidden: true }),
+  ];
+  const ids = (sort: Parameters<typeof sortLiveQa>[1]) =>
+    sortLiveQa(questions, sort).map((q) => q.id);
+  expect(ids('top')).toEqual([
+    'pinned',
+    'old-popular',
+    'tied-newer',
+    'tied-older',
+    'new-quiet',
+  ]);
+  expect(ids('newest')).toEqual([
+    'pinned',
+    'new-quiet',
+    'tied-newer',
+    'tied-older',
+    'old-popular',
+  ]);
+  expect(ids('answered')).toEqual(['done']);
+  expect(
+    sortLiveQa(questions, 'top', { includeHidden: true }).map((q) => q.id)
+  ).toContain('hidden');
+});
+
+it('routes Q&A frames and its own refusals through the existing signaling instance', () => {
   const signaling = new MeetSignaling({
     onMessage: () => {},
     resolveUrl: () => '',
@@ -215,27 +342,39 @@ it('routes panel commands and reconnect snapshots through the existing signaling
   );
   expect(send).toHaveBeenCalledWith({ type: 'qa.read' });
   client.send({ type: 'qa.ask', text: 'Shared socket' });
-  expect(send).toHaveBeenCalledWith({ type: 'qa.ask', text: 'Shared socket' });
+  expect(send).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'qa.ask', text: 'Shared socket' })
+  );
+  const snapshot = {
+    questions: [
+      {
+        id: 'question',
+        participantId: 'guest',
+        text: 'Shared socket',
+        upvotes: [],
+        hidden: false,
+        answered: false,
+      },
+    ],
+  };
   handleLiveQaMessage(
     meetingId,
-    {
-      type: 'qa.snapshot',
-      snapshot: {
-        questions: [
-          {
-            id: 'question',
-            participantId: 'guest',
-            text: 'Shared socket',
-            upvotes: [],
-            hidden: false,
-            answered: false,
-          },
-        ],
-      },
-    },
+    { type: 'qa.snapshot', snapshot },
     actions.sendLiveQa
   );
-  expect(client.read().questions[0]?.text).toBe('Shared socket');
+  expect(client.read().snapshot.questions[0]?.text).toBe('Shared socket');
+  handleLiveQaMessage(
+    meetingId,
+    { type: 'error', error: 'chat_rate_limited', requestId: 'chat:1' },
+    actions.sendLiveQa
+  );
+  expect(client.read().error).toBe(null);
+  handleLiveQaMessage(
+    meetingId,
+    { type: 'error', error: 'qa_rate_limited', requestId: 'qa:9' },
+    actions.sendLiveQa
+  );
+  expect(client.read().error).toBe('qa_rate_limited');
   stop();
   handleLiveQaMessage(meetingId, { type: 'room.ended' }, actions.sendLiveQa);
 });

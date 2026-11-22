@@ -718,6 +718,80 @@ and a second close of the same attempt; a Save can replace another manager's
 newer draft; and an open confirmation can act on an attempt that replaced the
 one it was opened for. One person managing an assessment is not affected.
 
+### Live Q&A
+
+Live Q&A is open to everyone admitted to the room, in Meet and Parley. People
+ask questions of up to 400 characters, upvote them, and answer them in a thread
+under each question. The room records each author's name from the room's
+participant record and the time from its own clock, never from the client.
+Text loses control and bidirectional override characters before it is stored.
+
+- **Votes.** One vote per person, stored under the room's actor key: the
+  account id for a signed-in person and the room id for a guest. The shared view
+  carries only a vote count per question (`upvoteCount`) and an empty `upvotes`
+  list, so nobody learns who voted. Each connection's own replies carry
+  `self`: the questions that person voted on (`votedIds`) and whether they are a
+  guest, so the panel marks a vote with a filled button and a **You voted**
+  chip. Pages from before this change read the empty list and show 0 votes
+  until they reload.
+- **Answers.** By default everyone admitted may answer. A host can limit answers
+  to hosts. Answers hold up to 1,000 characters and up to four files; a question
+  takes up to 20 answers. The author or a host can delete an answer. Questions
+  cannot be deleted: a host hides them instead.
+- **Files.** Questions and answers reuse the room's chat upload route, which
+  stores files in the room creator's Drive under `Meet/{meetingId}/Chat/` (25 MB
+  each). The room accepts a file id only when that file is registered with the
+  room, was uploaded by the same actor, has not been withdrawn and has not been
+  shared before. Sharing marks it published. Reads, from the files route and
+  from the room's attachment read, return an allowlist only: `id`, `name`,
+  `size`, `contentType` and a short-lived signed `url`, the same signed URLs as
+  chat files. Storage paths and workspace ids never leave the server.
+- **Withheld files.** Hiding a question marks its files and its answers' files
+  `withheld`. Withheld files are readable by hosts only; unhiding the question
+  or clearing moderation removes the mark.
+- **Released files.** Deleting an answer marks its files discarded and
+  unpublished, so the room stops signing reads for them. Once the room confirms
+  the deletion, the answering client calls `DELETE` on the files route for each
+  file, through the room connection with a 10 second timeout, and the bytes are
+  removed from the Drive. The cleanup is best effort: if the page closes first,
+  the bytes remain in Drive but stay unreadable through the room.
+- **Guests.** Guests see no attach buttons and no attachments; the panel shows
+  **Sign in to see attachments** in their place.
+- **Hosts** (the room's `host` role) pin one question at a time, mark questions
+  answered or reopen them, hide them, reset moderation, and choose whether
+  anonymous questions are allowed. Anonymous questions are off by default.
+  When allowed, an anonymous question reaches everyone without its author,
+  while hosts still see who asked. Hiding a question unpins it.
+- **Views.** Everyone receives the shared view (`qa.snapshot`) without hidden
+  questions or anonymous authors. Admitted hosts also receive the full view
+  (`qa.host`), serialized once for all host sockets, and the panel shows host
+  tools only while that view is current. Both views carry a revision and the
+  client ignores an older one than it holds. Authors' actor keys stay on the
+  server. A host's view is cleared when they are readmitted.
+- **Broadcast hold.** The room holds the shared snapshot for 200 ms and sends
+  only the newest one, so a burst of votes costs each socket one frame. At most
+  one snapshot and one timer are held; the timer fires once and is dropped, and
+  a room that ends discards the held snapshot and its timer. A reply to the
+  person who made a change is never held. Hosts on pages from before this change
+  must reload to manage hidden questions.
+- **Limits.** 200 questions, about 192 KiB of stored Q&A per room, and 20 Q&A
+  actions per person per minute. The room refuses a change past a limit and the
+  panel shows the refusal to the person who made it.
+- **Sorting.** **Top** orders open questions by votes, then newest; **Newest**
+  by time; **Answered** lists answered questions. The pinned question comes
+  first in Top and Newest.
+- **Full screen.** The panel opens in full screen. On wide screens a rail shows
+  the pinned question, or the top open one, large, with **Mark answered** and
+  **Next** for hosts. `ActivityFullscreen` in `tools/live-activities` is the
+  shared wrapper for activities in full screen.
+
+Every question field after `hidden` is optional, so pages that do not know
+answers, pins or files still read the snapshot. Regression coverage lives in
+`live-qa.test.ts`, `live-qa-privacy.test.ts`, `live-qa-delivery.test.ts`,
+`live-qa-broadcast.test.ts` and `room-attachments.test.ts` under
+`packages/realtime/src/meet`, the meet-call files route test, and the `qa.test.tsx`
+and `qa-panel.test.tsx` files under `tools/live-activities/qa`.
+
 ## Viewer admission for large classes
 
 Meet hosts with a signed allowance of at least 50 publisher slots can enable

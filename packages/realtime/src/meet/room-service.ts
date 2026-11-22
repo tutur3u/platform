@@ -50,20 +50,14 @@ import { transcriptionClientSnapshot } from './transcription';
 import type { MiraRoomState } from './room-mira-consent';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
 import { isGuestRemovalBlocked } from './room-removed-guests';
+import {
+  applyRoomAttachment,
+  isRoomAttachmentCommand,
+  type RoomAttachment,
+  roomAttachmentCommands,
+} from './room-attachments';
 
-const attachment = z.object({
-  id: z.uuid(),
-  name: z.string().min(1).max(255),
-  size: z.number().int().positive().max(100_000_000),
-  contentType: z.string().max(255),
-  path: z.string().trim().min(1).max(1024),
-  storageWsId: z.uuid(),
-});
-export type RoomAttachment = z.infer<typeof attachment> & {
-  ownerAccountId?: string;
-  discarded?: boolean;
-  published?: boolean;
-};
+export type { RoomAttachment } from './room-attachments';
 export type RoomChatMessage = Extract<
   MeetRealtimeServerMessage,
   { type: 'chat.message' }
@@ -113,10 +107,7 @@ const roomCommand = z.union([
     z.object({ action: z.literal('ai.review.list') }),
     z.object({ action: z.literal('costs') }),
     z.object({ action: z.literal('recording.list') }),
-    z.object({ action: z.literal('attach'), attachment }),
-    z.object({ action: z.literal('attachment'), id: z.uuid() }),
-    z.object({ action: z.literal('attachment.discard'), id: z.uuid() }),
-    z.object({ action: z.literal('attachment.deleted'), id: z.uuid() }),
+    ...roomAttachmentCommands,
     z.object({
       action: z.literal('recording.save'),
       sessionId: z.uuid(),
@@ -368,31 +359,12 @@ export function roomService(
       },
     };
   }
-  if (message.action === 'attachment.deleted') {
-    const file = snapshot.attachments?.[message.id];
-    if (!file) return { state: snapshot, body: { ok: true } };
-    if (file.ownerAccountId !== accountId || !file.discarded || file.published)
-      return fail('Attachment cannot be removed');
-    const attachments = { ...snapshot.attachments };
-    delete attachments[message.id];
-    return { state: { ...snapshot, attachments }, body: { ok: true } };
-  }
-  if (message.action === 'attachment.discard') {
-    const file = snapshot.attachments?.[message.id];
-    if (!file || file.ownerAccountId !== accountId)
-      return fail('Attachment unavailable', 404);
-    if (file.published) return fail('Attachment is already shared', 409);
-    return {
-      state: {
-        ...snapshot,
-        attachments: {
-          ...snapshot.attachments,
-          [message.id]: { ...file, discarded: true },
-        },
-      },
-      body: { path: file.path, storageWsId: file.storageWsId },
-    };
-  }
+  if (isRoomAttachmentCommand(message))
+    return applyRoomAttachment(snapshot, message, {
+      accountId,
+      admin,
+      admitted,
+    });
   // Finalize an already authorized generation even if its user left meanwhile.
   if (
     ![
@@ -404,29 +376,6 @@ export function roomService(
     (!admitted || snapshot.ended)
   )
     return fail('Join the active meeting first');
-  if (message.action === 'attach') {
-    if (Object.keys(snapshot.attachments ?? {}).length >= 1000)
-      return fail('Room attachment limit reached', 409);
-    return {
-      state: {
-        ...snapshot,
-        attachments: {
-          ...snapshot.attachments,
-          [message.attachment.id]: {
-            ...message.attachment,
-            ownerAccountId: accountId,
-          },
-        },
-      },
-      body: { ok: true },
-    };
-  }
-  if (message.action === 'attachment') {
-    const file = snapshot.attachments?.[message.id];
-    return file && !file.discarded
-      ? { state: snapshot, body: file }
-      : fail('Attachment unavailable', 404);
-  }
   if (message.action === 'ai.reserve') {
     if (
       Object.values(snapshot.aiRequests ?? {}).some(

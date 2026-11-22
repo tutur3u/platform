@@ -4874,7 +4874,68 @@
           "correct_choice": "Correct answer"
         },
         "qa": {
-          "title": "Q&A"
+          "allow_anonymous": "Allow anonymous questions",
+          "anonymous_author": "Anonymous",
+          "answer": "Answer",
+          "answer_label": "Your answer",
+          "answer_placeholder": "Write an answer",
+          "answered_chip": "Answered",
+          "answers_count": "{count, plural, one {# answer} other {# answers}}",
+          "ask": "Ask",
+          "ask_anonymously": "Ask anonymously",
+          "attach_file": "Attach file",
+          "attach_image": "Add image",
+          "attachment_loading": "Loading file",
+          "attachment_unavailable": "File unavailable",
+          "attachments_sign_in": "{count, plural, one {Sign in to see the attachment} other {Sign in to see # attachments}}",
+          "composer_label": "Your question",
+          "composer_placeholder": "Ask a question. Be specific so others can upvote it.",
+          "counter": "{count} of {max} characters",
+          "counts": "{open} open · {answered} answered",
+          "delete_answer": "Delete answer",
+          "empty": "No questions yet",
+          "empty_answered": "No answered questions yet",
+          "errors": {
+            "anonymous_disabled": "Anonymous questions are turned off.",
+            "answers_full": "This question has reached its answer limit.",
+            "attachment_unavailable": "A file could not be attached. Upload it again.",
+            "full": "This Q&A is full.",
+            "generic": "Something went wrong. Try again.",
+            "invalid_length": "Write something first, within the length limit.",
+            "not_found": "That question is no longer available.",
+            "permission": "You can't do that in this room.",
+            "rate_limited": "You're going a little fast. Try again in a minute.",
+            "too_large": "Files must be 25 MB or smaller.",
+            "upload_failed": "The file could not be uploaded."
+          },
+          "hidden_chip": "Hidden",
+          "hide": "Hide",
+          "host_chip": "Host",
+          "hosts_answer": "Only hosts can answer",
+          "live": "Live",
+          "mark_answered": "Mark answered",
+          "moderate": "Moderate",
+          "moderate_count": "Moderate ({count})",
+          "next": "Next",
+          "on_screen": "On screen now",
+          "pin": "Pin",
+          "pinned": "Pinned",
+          "remove_file": "Remove {name}",
+          "remove_upvote": "Remove your upvote. {count, plural, one {# vote} other {# votes}}",
+          "reopen": "Reopen",
+          "reset_moderation": "Reset moderation",
+          "send": "Send",
+          "show": "Show",
+          "sort": {
+            "answered": "Answered",
+            "newest": "Newest",
+            "top": "Top"
+          },
+          "sort_label": "Sort questions",
+          "title": "Q&A",
+          "unpin": "Unpin",
+          "upvote": "Upvote. {count, plural, one {# vote} other {# votes}}",
+          "you_voted": "You voted"
         },
         "penboard": {
           "title": "Pen whiteboard"
@@ -5013,7 +5074,9 @@
           "no_responses": "No answers yet. Be the first.",
           "hidden": "{count, plural, one {# hidden answer} other {# hidden answers}}"
         },
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "fullscreen": "Full screen",
+        "exit_fullscreen": "Exit full screen"
       },
       "settings_pages": {
         "activities": "Choose who can open activities and summon others.",

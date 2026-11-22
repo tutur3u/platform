@@ -15,6 +15,7 @@ import type { RoomBudget } from './room-budget';
 import type { RoomFormsState } from './room-forms';
 import { hasMeetMediaContextConflict } from './room-media-role';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
+import { createLiveQaBroadcastWindow } from './live-qa-broadcast';
 import { outcome } from './room-outcome';
 import {
   failActiveRecording,
@@ -369,7 +370,14 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
     for (const reply of replies) sendTo(socket, reply);
   }
 
+  const liveQaWindow = createLiveQaBroadcastWindow((messages) =>
+    broadcastNow(messages)
+  );
   function broadcast(messages: MeetRealtimeServerMessage[]) {
+    broadcastNow(liveQaWindow.hold(messages));
+  }
+
+  function broadcastNow(messages: MeetRealtimeServerMessage[]) {
     messages = messages.filter((message) => message.type !== 'presence');
     if (!messages.length) return;
     const frames = messages.map((message) => ({
@@ -408,12 +416,24 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
     }
   }
 
+  // One change sends the same host view to every host; serialize it once.
+  const hostViewWires = new WeakMap<MeetRealtimeServerMessage, string>();
+  function sharedWire(message: MeetRealtimeServerMessage) {
+    if (message.type !== 'qa.host') return undefined;
+    let wire = hostViewWires.get(message);
+    if (wire === undefined) {
+      wire = JSON.stringify(message);
+      hostViewWires.set(message, wire);
+    }
+    return wire;
+  }
+
   function sendToUser(userId: string, messages: MeetRealtimeServerMessage[]) {
     if (!messages.length) return;
     for (const socket of sockets()) {
       if (tokenOf(socket)?.userId !== userId) continue;
       for (const message of messages) {
-        sendTo(socket, message);
+        sendTo(socket, message, sharedWire(message));
         const token = tokenOf(socket);
         if (message.type === 'admission.result' && message.admitted && token)
           sendTo(socket, fullPresence(token.roomId));
