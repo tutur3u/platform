@@ -1,0 +1,52 @@
+---
+title: Playground execution image
+description: Build and qualify the shared eleven-language Linux image for hosted Playground.
+---
+
+## Build and qualify the exact image
+
+Use the Dockerfile in `apps/playground-execution/container` from the reviewed
+source commit. Run the build and template checks on an admitted Linux CI
+executor with Docker and Node.js 24 or newer.
+
+```sh
+(
+  set -eu
+  image_id_file="$(mktemp)"
+  trap 'rm -f "$image_id_file"' 0
+  docker build --platform linux/amd64 --iidfile "$image_id_file" \
+    apps/playground-execution/container
+  node apps/playground-execution/verify-image.mjs "$(cat "$image_id_file")"
+)
+```
+
+The fixture uses the same stock commands that Meet and Learn load. It checks
+Python, JavaScript, TypeScript, C, C++, Java, Rust, Go, Ruby, PHP, and Shell.
+Each template runs in a fresh local container with UID and GID 65534, all
+capabilities removed, no new privileges, no network, a read-only root, and
+bounded writable directories. The Dockerfile uses a pinned amd64 base manifest and signed, dated Debian
+snapshots. Refresh the base and snapshots together when updating toolchains.
+The image contains no application credentials.
+
+Record the source SHA, build invocation, result for every language, and image
+ID. After an approved registry upload, also record the Cloudflare registry
+digest. Use the digest in the Worker image configuration. The local image ID
+and the registry manifest digest identify different objects. Retain the
+previous digest while it is a rollback target. [Cloudflare image management](https://developers.cloudflare.com/containers/guides/image-management/)
+
+## Hosted qualification
+
+Run the fixture again against the digest on the actual Cloudflare execution
+path before enabling product traffic. Prove the guest has no external DNS,
+direct IP, or private network egress. Check effective UID and GID, all Linux
+capability sets, no new privileges, filesystem write bounds, resource limits,
+command timeout, output truncation, cancellation, and descendant cleanup.
+Confirm the container stops after idle. Measure cold latency and, if the
+per-run isolation boundary supports reuse, measure warm latency with a clean
+workspace. Include a second participant's result from a real Meet room for
+each language.
+
+A Docker fixture verifies the image and template contracts. Cloudflare applies
+its own runtime policy. In particular, Durable Object scheduling does not
+remove root capabilities merely because an exec process sets a numeric user.
+Require hosted isolation evidence before enabling an execution route. [Cloudflare Container exec](https://developers.cloudflare.com/containers/api/durable-object-container/#exec)

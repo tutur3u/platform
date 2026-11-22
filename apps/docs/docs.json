@@ -265,6 +265,7 @@
                   "build/devops/tanstack-rust-cutover-runbook",
                   "build/devops/chat-realtime-runbook",
                   "build/devops/programming-realtime-runbook",
+                  "build/devops/playground-execution",
                   "build/devops/hive-realtime-runbook",
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
