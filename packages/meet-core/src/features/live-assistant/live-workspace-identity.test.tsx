@@ -262,8 +262,8 @@ for (const locale of ['en', 'vi'] as const) {
     showPanel(syntheticRoom(), vi.fn(), locale);
     expect((await screen.findByRole('alert')).textContent).toBe(
       locale === 'en'
-        ? 'Mira Live is temporarily unavailable. No assistant joined the meeting.'
-        : 'Mira Live tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.'
+        ? 'Mira is temporarily unavailable. No assistant joined the meeting.'
+        : 'Mira tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.'
     );
     expect(f.start).not.toHaveBeenCalled();
   });
