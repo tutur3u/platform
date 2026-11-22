@@ -42,7 +42,6 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
-import { requiresAccountMfa } from '@tuturuuu/utils/required-mfa-browser';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {
@@ -86,6 +85,7 @@ import {
   processEmailInput,
 } from './login-email-mode';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
+import { useLoginMfaCheck } from './mfa-step-up';
 import {
   buildManagedTuturuuuCurrentReturnUrl,
   getPlatformVerifyTokenNextPath,
@@ -562,10 +562,7 @@ export default function LoginForm({
     </div>
   );
 
-  const needsMFA = useCallback(
-    () => requiresAccountMfa(supabase, { acceptMobileApproval: true }),
-    [supabase]
-  );
+  const needsMFA = useLoginMfaCheck(supabase, searchParams);
 
   const prepareReturnAppConfirmation = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
