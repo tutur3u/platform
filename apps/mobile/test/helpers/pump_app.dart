@@ -65,13 +65,17 @@ extension PumpApp on WidgetTester {
   }
 
   /// Pumps the app shell around [router]; [wrap] adds providers above it.
+  /// With [brightness], the app uses the default appearance theme for it.
   Future<void> pumpAppRouter(
     GoRouter router, {
     Widget Function(Widget app)? wrap,
+    Brightness? brightness,
   }) {
     final app = shad.ShadcnApp.router(
       debugShowCheckedModeBanner: false,
-      theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
+      theme: brightness == null
+          ? const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc)
+          : AppearanceTheme.shadTheme(const AppearanceSettings(), brightness),
       localizationsDelegates: const [
         ...AppLocalizations.localizationsDelegates,
         AppShadcnLocalizationsDelegate(),

@@ -280,4 +280,14 @@ style="background:linear-gradient(white,white)!important;color:white!important">
       expect(document.querySelector('meta[http-equiv="refresh"]'), isNull);
     }
   });
+  test('images decode off the main thread and defer below the fold', () {
+    final document = buildMailHtmlDocument(
+      '<p>Hi</p><img src="https://example.test/a.png" width="40" height="20">',
+      loadImages: true,
+    );
+    expect(document, contains('decoding="async"'));
+    expect(document, contains('loading="lazy"'));
+    // Known dimensions still reserve the image's box before it loads.
+    expect(document, contains('aspect-ratio:40.0 / 20.0'));
+  });
 }

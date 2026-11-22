@@ -1,15 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/pump_app.dart';
@@ -57,9 +61,9 @@ void main() {
     final preference = MailPrimaryActionPreference.instance;
     final previous = preference.value;
     SharedPreferences.setMockInitialValues({
-      MailPrimaryActionPreference.storageKey: 'reply',
+      MailPrimaryActionPreference.storageKey: 'archive',
     });
-    preference.value = MailPrimaryAction.reply;
+    preference.value = MailPrimaryAction.archive;
     addTearDown(() => preference.value = previous);
     await tester.pumpApp(
       AppMasterDetail(
@@ -84,9 +88,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // The pane toolbar holds the only Reply beside the default action;
+    // Delete lives in More.
     expect(find.byTooltip('Reply'), findsOneWidget);
     expect(find.byTooltip('Archive'), findsOneWidget);
-    expect(find.byTooltip('Trash'), findsOneWidget);
+    expect(find.byTooltip('Delete'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -277,6 +283,104 @@ void main() {
     await tester.pump();
     expect(find.byType(MailReader), findsNothing);
     expect(actions.state.backForLocation(Routes.mail), isNull);
+    await drain(tester);
+  });
+
+  testWidgets('split read failure does not overwrite a newer filtered list '
+      'or concurrent row removal', (tester) async {
+    setMailSurface(tester, _tablet);
+    final repository = MailPreviewRepository();
+    stubMailPreview(repository, threads: 2);
+    when(
+      () => repository.detail('ws', 'box', 'thread-0', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'thread-0', 'subject': 'Unread zero'},
+        'messages': [
+          {
+            'id': 'message-0',
+            'fromAddress': 'sender@example.invalid',
+            'bodyText': 'Body zero',
+            'unread': true,
+          },
+        ],
+      },
+    );
+    when(
+      () => repository.list(
+        'ws',
+        'box',
+        folder: any(named: 'folder'),
+        query: any(named: 'query'),
+        page: any(named: 'page'),
+        label: any(named: 'label'),
+        folderId: any(named: 'folderId'),
+        forceRefresh: any(named: 'forceRefresh'),
+      ),
+    ).thenAnswer((invocation) async {
+      final query = invocation.namedArguments[#query] as String;
+      if (query == 'is:starred') {
+        return {
+          'threads': [
+            {
+              'id': 'starred-only',
+              'subject': 'Starred subject',
+              'unread': false,
+              'participants': <dynamic>[],
+            },
+          ],
+          'pagination': {'hasMore': false},
+        };
+      }
+      return {
+        'threads': [
+          {
+            'id': 'thread-0',
+            'subject': 'Unread zero',
+            'unread': true,
+            'unreadCount': 1,
+            'participants': <dynamic>[],
+          },
+          {
+            'id': 'thread-1',
+            'subject': 'Second thread',
+            'unread': false,
+            'participants': <dynamic>[],
+          },
+        ],
+        'pagination': {'hasMore': false},
+      };
+    });
+    final markRead = Completer<void>();
+    when(
+      () => repository.changeState(
+        'ws',
+        'box',
+        'thread-0',
+        'mark_read',
+        thread: true,
+      ),
+    ).thenAnswer((_) => markRead.future);
+
+    await tester.pumpApp(
+      MailWorkspace(workspaceId: 'ws', repository: repository),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unread zero'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Switch to Starred while mark_read is still pending, then fail mark_read.
+    await tester.tap(find.byKey(const ValueKey('mail-quick-filter-starred')));
+    await tester.pumpAndSettle();
+    expect(find.text('Starred subject'), findsOneWidget);
+
+    markRead.completeError(
+      const ApiException(message: 'Failed', statusCode: 500),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Starred subject'), findsOneWidget);
+    expect(find.text('Second thread'), findsNothing);
     await drain(tester);
   });
 }

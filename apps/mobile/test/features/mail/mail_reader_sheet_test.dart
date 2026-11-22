@@ -21,12 +21,11 @@ void main() {
     ('inbox', false, 'Archive'),
     ('archive', false, 'Move to inbox'),
     ('trash', false, 'Move to inbox'),
-    ('spam', true, 'Reply'),
-    ('trash', true, 'Reply'),
+    ('spam', true, null),
+    ('trash', true, null),
   ]) {
-    testWidgets('dock primary follows $folder quarantine=$quarantined', (
-      tester,
-    ) async {
+    testWidgets('navbar default action follows $folder '
+        'quarantine=$quarantined', (tester) async {
       SharedPreferences.setMockInitialValues({
         MailPrimaryActionPreference.storageKey: 'archive',
       });
@@ -68,10 +67,14 @@ void main() {
       final chrome = tester.widget<ShellChromeActions>(
         find.byType(ShellChromeActions),
       );
-      final primary = chrome.actionGroup!.primary!;
-      expect(primary.label, expected);
+      // One bar beside Back; the default action sits on the navbar.
+      expect(chrome.actionGroup!.primary, isNull);
+      final quick = chrome.actions
+          .where((action) => action.id == 'mail-reader-quick')
+          .firstOrNull;
+      expect(quick?.tooltip, expected);
       if (folder != 'inbox' && !quarantined) {
-        primary.onPressed!();
+        quick!.onPressed!();
         await tester.pumpAndSettle();
         expect(closed, isTrue);
         verify(
@@ -128,19 +131,19 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final organization = folder == 'archive' ? 'restore' : 'archive';
       expect(
         find.byTooltip(folder == 'archive' ? 'Move to inbox' : 'Archive'),
         findsOneWidget,
       );
-      expect(find.byTooltip('Trash'), findsOneWidget);
+      expect(find.byTooltip('Delete'), findsNothing);
       await tester.tap(find.byTooltip('Show menu'));
       await tester.pumpAndSettle();
       final sheet = tester.widget<AppActionSheet<String>>(
         find.byType(AppActionSheet<String>),
       );
-      final values = sheet.actions.map((action) => action.value).toSet();
-      expect(values, containsAll([organization, 'trash']));
+      final values = sheet.actions.map((action) => action.value).toList();
+      expect(values, containsAll(['move', 'trash']));
+      expect(values.last, 'trash');
       expect(tester.takeException(), isNull);
     });
   }
@@ -200,38 +203,37 @@ void main() {
             find.byType(AppActionSheet<String>),
           );
           expect(sheet.title, 'helppp');
-          final values = sheet.actions.map((action) => action.value).toSet();
+          final values = sheet.actions.map((action) => action.value).toList();
+          final labels = sheet.actions.map((action) => action.label).toSet();
           expect(
-            values,
+            labels,
             containsAll([
-              if (reversed) 'unsnooze' else 'snooze',
-              if (reversed) 'unmute' else 'mute',
-              if (reversed) 'restore' else if (!quarantined) 'archive',
-              'mark_unread',
-              if (status != 'trash' && !quarantined) 'trash',
+              if (reversed) 'Move to Inbox now' else 'Snooze',
+              if (reversed) 'Unmute thread' else 'Mute thread',
+              'Mark unread',
+              'Labels',
+              'Message appearance',
+              'Share',
             ]),
           );
-          for (final value in [
-            if (reversed) 'snooze' else 'unsnooze',
-            if (reversed) 'mute' else 'unmute',
-            if (reversed) 'archive' else 'restore',
-          ]) {
-            expect(values, isNot(contains(value)));
-          }
-          // The inline reply row is gone; without a dock the menu carries the
-          // replies for a mailbox that can send. Quarantined mail already has
-          // Reply as its primary command.
-          expect(
-            values,
-            containsAll([if (!quarantined) 'reply', 'reply_all', 'forward']),
-          );
+          // The navbar owns Archive or Restore, so the sheet never repeats it.
+          expect(values, isNot(contains('archive')));
+          // Without a dock the menu carries Reply all and Forward; Reply sits
+          // beside the default action.
+          expect(values.take(2), ['reply_all', 'forward']);
           if (quarantined) {
-            expect(
-              values.intersection({'restore', 'archive', 'trash'}),
-              isEmpty,
-            );
+            expect(values, isNot(contains('move')));
+            expect(values, isNot(contains('trash')));
+          } else {
+            expect(values, contains('move'));
           }
-          if (status == 'trash') expect(values, isNot(contains('trash')));
+          if (status == 'trash') {
+            expect(values, isNot(contains('trash')));
+          } else if (!quarantined) {
+            expect(values.last, 'trash');
+            expect(sheet.actions.last.label, 'Delete');
+            expect(sheet.actions.last.destructive, isTrue);
+          }
           expect(find.text('Show menu'), findsNothing);
           expect(tester.takeException(), isNull);
           await DesignRender.capture(

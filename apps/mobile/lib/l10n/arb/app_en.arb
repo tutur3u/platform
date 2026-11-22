@@ -8187,6 +8187,38 @@
     }
   },
   "mailProfilesRetry": "Names unavailable · Retry",
+  "mailToMe": "to me",
+  "mailToRecipient": "to {name}",
+  "@mailToRecipient": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mailTimeJustNow": "Just now",
+  "mailTimeMinutesAgo": "{count}m ago",
+  "@mailTimeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailTimeHoursAgo": "{count}h ago",
+  "@mailTimeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailFeedbackArchived": "Archived",
+  "mailFeedbackTrashed": "Moved to Trash",
+  "mailFeedbackKeptNewMessage": "Kept: a new message arrived",
+  "mailFilterUnread": "Unread",
+  "mailQuickFilter": "Quick filter",
+  "mailMessageActions": "Message actions",
   "fleetStatusNeedsUser": "Needs you",
   "fleetStatusRunning": "Running",
   "fleetStatusWaitingReview": "In review",

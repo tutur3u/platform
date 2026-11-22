@@ -7438,6 +7438,38 @@
     }
   },
   "mailProfilesRetry": "Không tải được tên · Thử lại",
+  "mailToMe": "gửi tôi",
+  "mailToRecipient": "gửi {name}",
+  "@mailToRecipient": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mailTimeJustNow": "Vừa xong",
+  "mailTimeMinutesAgo": "{count} phút trước",
+  "@mailTimeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailTimeHoursAgo": "{count} giờ trước",
+  "@mailTimeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailFeedbackArchived": "Đã lưu trữ",
+  "mailFeedbackTrashed": "Đã chuyển vào thùng rác",
+  "mailFeedbackKeptNewMessage": "Đã giữ lại: có thư mới",
+  "mailFilterUnread": "Chưa đọc",
+  "mailQuickFilter": "Lọc nhanh",
+  "mailMessageActions": "Thao tác với thư",
   "fleetStatusNeedsUser": "Cần bạn",
   "fleetStatusRunning": "Đang chạy",
   "fleetStatusWaitingReview": "Chờ duyệt",

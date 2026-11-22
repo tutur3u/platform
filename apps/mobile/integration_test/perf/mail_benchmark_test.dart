@@ -9,8 +9,10 @@
 // The real Mail workspace runs against a synthetic in-memory repository, so
 // nothing touches the network and nothing resembles real mail. Each scenario
 // prints one `MAIL_BENCH` JSON line with build and raster percentiles, jank
-// counts, time to first content and resident memory. Compare rounds of the
-// same scenario across commits on the same device.
+// counts, time to first content (for the first open and for the next
+// conversation) and resident memory. Compare rounds of the same scenario
+// across commits on the same device. Emulator raster times mostly measure
+// the host GPU path; compare build times and open times there.
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -66,26 +68,8 @@ void main() {
 
       // Open the third row: a three-message thread whose latest message is a
       // long table newsletter.
-      final subject = _subject(2);
-      final open = Stopwatch()..start();
-      await tester.tap(find.text(subject).first);
-      Duration? firstContent;
-      Duration? body;
       final reader = find.byType(MailReader);
-      while (open.elapsed < const Duration(seconds: 10) && body == null) {
-        await tester.pump();
-        firstContent ??=
-            find
-                .descendant(of: reader, matching: find.text(subject))
-                .hitTestable()
-                .evaluate()
-                .isNotEmpty
-            ? open.elapsed
-            : null;
-        if (find.byType(InAppWebView).evaluate().isNotEmpty) {
-          body = open.elapsed;
-        }
-      }
+      final first = await _openThread(tester, _subject(2));
       await _settle(tester, const Duration(seconds: 2));
       final rssThread = ProcessInfo.currentRss;
 
@@ -101,18 +85,25 @@ void main() {
         }
       });
 
+      // Back to the inbox, then the next conversation: the likely next read
+      // after archiving or finishing the first one.
+      await tester.pageBack();
+      await _settle(tester, const Duration(seconds: 1));
+      final next = await _openThread(tester, _subject(3));
+      await _settle(tester, const Duration(seconds: 2));
+      final rssNext = ProcessInfo.currentRss;
+
       final result = {
         'round': round,
         'inboxScroll': inbox,
         'threadScroll': thread,
-        'threadOpen': {
-          'firstContentMs': firstContent?.inMilliseconds,
-          'bodyMs': body?.inMilliseconds,
-        },
+        'threadOpen': first,
+        'nextThreadOpen': next,
         'rssMb': {
           'start': _mb(rssStart),
           'inbox': _mb(rssInbox),
           'thread': _mb(rssThread),
+          'nextThread': _mb(rssNext),
           'max': _mb(ProcessInfo.maxRss),
         },
       };
@@ -122,6 +113,40 @@ void main() {
       await _settle(tester, const Duration(seconds: 1));
     });
   }
+}
+
+/// Taps the inbox row for [subject] and times the reader: the subject being
+/// readable, then the HTML body's WebView existing.
+Future<Map<String, int?>> _openThread(
+  WidgetTester tester,
+  String subject,
+) async {
+  final reader = find.byType(MailReader);
+  final open = Stopwatch()..start();
+  await tester.tap(find.text(subject).first);
+  Duration? firstContent;
+  Duration? body;
+  while (open.elapsed < const Duration(seconds: 10) && body == null) {
+    await tester.pump();
+    firstContent ??=
+        find
+            .descendant(of: reader, matching: find.text(subject))
+            .hitTestable()
+            .evaluate()
+            .isNotEmpty
+        ? open.elapsed
+        : null;
+    if (find
+        .descendant(of: reader, matching: find.byType(InAppWebView))
+        .evaluate()
+        .isNotEmpty) {
+      body = open.elapsed;
+    }
+  }
+  return {
+    'firstContentMs': firstContent?.inMilliseconds,
+    'bodyMs': body?.inMilliseconds,
+  };
 }
 
 double _mb(int bytes) => (bytes / (1024 * 1024) * 10).roundToDouble() / 10;

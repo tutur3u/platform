@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
@@ -17,8 +18,12 @@ import 'package:mobile/features/mail/data/mail_optimistic.dart';
 import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
+import 'package:mobile/features/mail/view/mail_document_request.dart';
+import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
+import 'package:mobile/features/mail/view/mail_quick_filter.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
@@ -40,6 +45,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'mail_workspace_layout.dart';
 part 'mail_workspace_controls.dart';
 part 'mail_shell_actions.dart';
+part 'mail_workspace_bulk.dart';
 part 'mail_workspace_cache.dart';
 part 'mail_workspace_swipes.dart';
 part 'mail_workspace_open.dart';
@@ -118,10 +124,19 @@ class MailWorkspace extends StatefulWidget {
     super.key,
     this.repository,
     this.destination,
+    this.renderedDocuments,
+    this.currentUserId = currentCacheUserId,
   });
   final MailPushDestination? destination;
   final String workspaceId;
   final MailRepository? repository;
+
+  /// The memo of rendered HTML bodies. The view creates and disposes its own
+  /// unless one is supplied, which the caller then owns.
+  final MailRenderedDocuments? renderedDocuments;
+
+  /// The signed-in account, read again whenever a held write is submitted.
+  final String? Function() currentUserId;
 
   @override
   State<MailWorkspace> createState() => _MailWorkspaceState();
@@ -132,12 +147,19 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   bool _childRouteOpen = false;
   bool _pushDestinationHandled = false;
   late final MailPreviewStore _previews = _createPreviewStore();
-  final _renderedDocuments = MailRenderedDocuments();
+  late final MailRenderedDocuments _renderedDocuments =
+      widget.renderedDocuments ?? MailRenderedDocuments();
   _MailSelection? _selection;
+
+  /// Counts opens, so one that had to wait yields to a later one.
+  int _openRequest = 0;
   bool _split = false;
   Route<void>? _readerRoute;
   bool _migratingReader = false;
   final Set<String> _visibleIds = {};
+
+  /// Conversations whose newest body should render once its detail loads.
+  final Set<String> _prerenderIds = {};
   Timer? _prefetchDebounce;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _swipeFeedback;
 
@@ -159,6 +181,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         setState(() => _childRouteOpen = false);
         // A rotation while a child route covered Mail is applied on return.
         if (route != _readerRoute) _syncSelectionWithLayout();
+        _flushPendingFeedback();
       }
     }
   }
@@ -175,10 +198,29 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   List<Map<String, dynamic>> _labels = [];
   List<Map<String, dynamic>> _folders = [];
   final Set<String> _selected = {};
-  final Set<String> _pendingSwipeIds = {};
+
+  /// Swipe writes on their way, by conversation, with their mailbox.
+  final Map<String, String> _pendingSwipeIds = {};
   final Map<String, ({String mailbox, String action})> _pendingReaderIds = {};
+  final Map<String, ({String mailbox, String action})> _pendingDeferredIds = {};
+  final Set<Future<void>> _inFlightDeferredCommits = {};
+  _PendingMailFeedback? _pendingFeedback;
+  _PendingMailFeedback? _activeFeedback;
+  bool _disposing = false;
+
+  /// The account this view was opened by; its writes belong to no other.
+  late final String? _accountId;
+  String? _currentUserId() => widget.currentUserId();
   String? _labelId;
   String? _folderId;
+  MailQuickFilter _quickFilter = MailQuickFilter.all;
+
+  /// The list query: typed search plus the quick filter's operator. Drafts
+  /// show no filter bar, so no filter applies there.
+  String get _query => mailFilterQuery(
+    _search.text,
+    _folder == 'drafts' ? MailQuickFilter.all : _quickFilter,
+  );
   bool _mutating = false;
   String? _mailboxId;
   String _folder = 'inbox';
@@ -219,6 +261,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   void initState() {
     super.initState();
     _repository = widget.repository ?? MailRepository();
+    _accountId = widget.currentUserId();
     _repository.accessRevoked?.addListener(_onCacheAccessRevoked);
     _searchFocus.addListener(_onSearchFocusChanged);
     _mailPushSubscription = PushNotificationService.instance.events.listen((
@@ -231,8 +274,15 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         _requestForegroundRefresh();
       }
     });
-    _lifecycle = AppLifecycleListener(onResume: _requestForegroundRefresh);
+    _lifecycle = AppLifecycleListener(
+      onResume: _requestForegroundRefresh,
+      // A suspended app may never reach the end of an Undo window.
+      onHide: () => unawaited(_settleDeferredWrites()),
+    );
     unawaited(_swipePreferences.load());
+    // A pre-render must use the reader's image and appearance choices.
+    unawaited(MailImagePreference.instance.load());
+    unawaited(MailAppearancePreference.instance.load());
     _snoozeRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
           ['inbox', 'snoozed'].contains(_folder)) {
@@ -260,12 +310,14 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   @override
   void dispose() {
+    _disposing = true;
     _repository.accessRevoked?.removeListener(_onCacheAccessRevoked);
-    _dismissSwipeFeedback();
+    _flushAllDeferredFeedback();
+    _swipeFeedback = null;
     _snoozeRefreshTimer?.cancel();
     _prefetchDebounce?.cancel();
     _previews.dispose();
-    _renderedDocuments.dispose();
+    if (widget.renderedDocuments == null) _renderedDocuments.dispose();
     _generation++;
     _bootstrapGeneration++;
     _organizationGeneration++;
@@ -277,7 +329,17 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       ..dispose();
     _search.dispose();
     _swipePreferences.dispose();
-    if (widget.repository == null) _repository.dispose();
+    if (widget.repository == null) {
+      if (_inFlightDeferredCommits.isEmpty) {
+        _repository.dispose();
+      } else {
+        unawaited(
+          Future.wait(
+            _inFlightDeferredCommits.toList(),
+          ).whenComplete(_repository.dispose),
+        );
+      }
+    }
     _notificationsRepository.dispose();
     super.dispose();
   }
@@ -293,7 +355,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     final params = Uri(
       queryParameters: {
         'folder': _folder,
-        'query': _search.text.trim(),
+        'query': _query,
         'page': '$page',
         'pageSize': '30',
         if (_labelId != null) 'label': _labelId,
@@ -337,16 +399,25 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         widget.workspaceId,
         box,
         folder: _folder,
-        query: _search.text.trim(),
+        query: _query,
         page: page,
         label: _labelId,
         folderId: _folderId,
         forceRefresh: forceRefresh,
       );
-      if (!mounted || generation != _generation) return;
+      if (!mounted) return;
+      // A response that a later change made stale is still the server's
+      // word on new mail, so held writes are checked against it first.
+      final kept =
+          box == _mailboxId &&
+          _keepConversationsWithNewMail(mailRows(result['threads']));
+      if (generation != _generation) {
+        if (kept) unawaited(_load());
+        return;
+      }
       final pagination = result['pagination'] as Map<String, dynamic>;
+      final items = mailRows(result[_threads ? 'threads' : 'messages']);
       setState(() {
-        final items = mailRows(result[_threads ? 'threads' : 'messages']);
         _items = _overlayReaderActions(
           more ? [..._items, ...items] : items,
           box,
@@ -461,88 +532,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     } finally {
       if (mounted) {
         setState(() => _childRouteOpen = false);
+        _flushPendingFeedback();
         await _load();
-      }
-    }
-  }
-
-  Future<void> _bulk(String action, {String? labelId, String? folderId}) async {
-    final box = _mailboxId;
-    if (_mutating || _selected.isEmpty || box == null) return;
-    final selected = Set<String>.of(_selected);
-    final previous = _items;
-    final generation = ++_generation;
-    setState(() {
-      _mutating = true;
-      _loading = false;
-      _items = optimisticMailItems(
-        _items,
-        selected,
-        action: action,
-        folder: _folder,
-        query: _search.text,
-      );
-      _selected.clear();
-    });
-    try {
-      await _repository.bulk(
-        widget.workspaceId,
-        box,
-        selected.toList(),
-        action,
-        threads: _threads,
-        labelId: labelId,
-        folderId: folderId,
-      );
-    } on Object {
-      if (mounted && generation == _generation) {
-        setState(() {
-          _items = previous;
-          _selected.addAll(selected);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
-        );
-      }
-    } finally {
-      if (mounted) await _load();
-      if (mounted) setState(() => _mutating = false);
-    }
-  }
-
-  Future<void> _markAllRead() async {
-    if (_mutating || _mailboxId == null) return;
-    final previous = _items;
-    final generation = ++_generation;
-    setState(() {
-      _mutating = true;
-      _loading = false;
-      _items = optimisticMailItems(
-        _items,
-        _items.map((item) => item['id'] as String).toSet(),
-        action: 'mark_read',
-        folder: _folder,
-        query: _search.text,
-      );
-    });
-    try {
-      await _repository.markFolderRead(
-        widget.workspaceId,
-        _mailboxId!,
-        _folder,
-      );
-      _saveView();
-    } on Object {
-      if (mounted && generation == _generation) {
-        setState(() => _items = previous);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _mutating = false);
-        if (generation == _generation) unawaited(_load());
       }
     }
   }
@@ -552,4 +543,37 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   @override
   Widget build(BuildContext context) => _buildWorkspace(context);
+}
+
+class _PendingMailFeedback {
+  _PendingMailFeedback({
+    required this.message,
+    required this.box,
+    required this.folder,
+    required this.listKey,
+    required this.id,
+    required this.threads,
+    this.inverse,
+    this.restoreUnread = false,
+    this.deferredItem,
+    this.deferredIndex,
+    this.heldActivity,
+    this.commit,
+  });
+
+  final String message;
+  final String box;
+  final String folder;
+  final String? listKey;
+  final String id;
+  final bool threads;
+  final String? inverse;
+  final bool restoreUnread;
+  final Map<String, dynamic>? deferredItem;
+  final int? deferredIndex;
+
+  /// The conversation's latest message time when its write was held.
+  final Object? heldActivity;
+  final Future<void> Function()? commit;
+  bool settled = false;
 }

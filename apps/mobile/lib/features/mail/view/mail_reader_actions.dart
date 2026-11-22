@@ -20,61 +20,6 @@ extension _MailReaderActions on _MailReaderState {
       for (final file in mailRows(message['attachments'])) (message, file),
   ];
 
-  /// Message count, labels and the attachments toggle on one compact row.
-  /// Message commands live on the dock and its More sheet.
-  Widget _threadHeader() {
-    final l10n = context.l10n;
-    final tokens = AppTokens.of(context);
-    final muted = Theme.of(
-      context,
-    ).textTheme.bodySmall?.copyWith(color: tokens.colorScheme.mutedForeground);
-    final labels = mailRows(
-      _messageStateMetadata?['labels'] ?? widget.summary?['labels'],
-    );
-    final attachments = _attachments.length;
-    final children = <Widget>[
-      if (widget.thread && _messages.length > 1)
-        Text(
-          l10n.mailThreadMessageCount(_messages.length),
-          key: const ValueKey('mail-thread-count'),
-          style: muted,
-        ),
-      for (final label in labels)
-        if (label['name'] case final String name)
-          AppBadge.outline(child: Text(name)),
-      if (attachments > 0)
-        AppChip(
-          key: const ValueKey('mail-attachments-toggle'),
-          selected: _attachmentsTab,
-          avatar: _attachmentsTab ? null : const Icon(Icons.attach_file),
-          label: Text(l10n.mailAttachmentCount(attachments)),
-          onSelected: (value) => _updateState(() => _attachmentsTab = value),
-        ),
-      if (_peopleFailed)
-        TextButton.icon(
-          key: const ValueKey('mail-people-retry'),
-          style: TextButton.styleFrom(
-            visualDensity: VisualDensity.compact,
-            foregroundColor: tokens.colorScheme.mutedForeground,
-            textStyle: muted,
-          ),
-          onPressed: _peopleLoading ? null : _resolvePeople,
-          icon: const Icon(Icons.refresh, size: 16),
-          label: Text(l10n.mailProfilesRetry),
-        ),
-    ];
-    if (children.isEmpty) return const SizedBox(height: AppSpacing.xs);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: children,
-      ),
-    );
-  }
-
   Widget _attachmentList() {
     final files = _attachments;
     if (files.isEmpty) return Text(context.l10n.mailNoAttachments);

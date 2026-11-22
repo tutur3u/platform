@@ -33,7 +33,7 @@ extension MailSwipePresentation on MailSwipeAction {
 /// Stores gesture choices only, never mailbox identifiers or email contents.
 class MailSwipePreferences extends ChangeNotifier {
   MailSwipeAction left = MailSwipeAction.archive;
-  MailSwipeAction right = MailSwipeAction.read;
+  MailSwipeAction right = MailSwipeAction.trash;
   bool _edited = false;
   bool _disposed = false;
 

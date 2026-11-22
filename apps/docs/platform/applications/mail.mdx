@@ -80,32 +80,117 @@ localized empty state. Narrower bodies keep the pushed reader. The open
 conversation survives rotation and window resizing, moving between the pane and
 the pushed reader. Notification deep links open in the pane on wide layouts. On
 wide layouts, the first Back (dock, rail or system) and Escape close the pane;
-the next Back leaves Mail. The pane header carries the subject and message
-actions; the shell navbar and dock keep the inbox title, filters and actions.
+the next Back leaves Mail. The pane header is a compact toolbar (the default
+action, Reply, More and Close); the shell navbar and dock keep the inbox title,
+filters and actions.
 
-The mobile reader body carries no command row. A compact header shows the
-message count (conversations with more than one message), the labels and an
-attachments toggle that swaps the conversation for its attachment list. On
-phones, Archive (Restore in Archive and Trash) and Trash sit on the top navbar
-unless the dock's primary circle already owns that command. Reply, Reply all
-and Forward fill the dock pill, and Star, Read state, Snooze, Labels and Move
-live in the dock's More sheet. Standalone and split-pane readers show Archive
-or Restore and Trash beside their overflow menu, which lists every command.
-Quarantined messages offer neither Archive nor Trash. Earlier messages in a
-conversation fold to one line (sender, date and snippet), and the newest is
-expanded. Profile lookups never block reading: a failed lookup retries once
-after two seconds, and only a second failure shows an inline retry caption.
-Coverage: `mail_reader_states_test.dart`, `mail_reader_dock_test.dart` and
-`mail_reader_dock_plan_test.dart`.
+The mobile reader is compact. The subject is the content's first heading and
+wraps instead of truncating, with the labels as small badges after it and the
+star beside it. A quiet row below shows the message count (conversations with
+more than one message), an attachments toggle that swaps the conversation for
+its attachment list, and a failed-lookup retry. Each message has one sender
+row: avatar, name, a relative time ("4h ago", then the date; the full date is
+its tooltip) and "to me" or "to Name +N" (the first To recipient, or the first
+Cc or Bcc recipient when there is no To, counting the rest as "+N"). Tapping
+that toggle expands the From, To, Cc and date inline. The row's menu offers
+Reply, Reply all and Forward for that message. On phones the navbar names the
+folder until the subject heading scrolls away, then shows the subject.
 
-Each message header shows the sender on the left and its date right-aligned
-on the same row, with the recipients line directly below. That line names the
-first To recipient (or the first Cc or Bcc recipient when there is no To),
-counts the rest as "+N", and opens the delivery details in a sheet. The sender name
-truncates before the date. When the row cannot keep 120dp for the sender
-(narrow widths or large text), the date follows the To recipient instead, on
-its line when it fits and wrapped below it otherwise. Coverage:
-`mail_reader_header_test.dart` and `mail_recipient_summary_test.dart`.
+On phones the reader registers one action bar beside the shell's Back: Reply,
+Reply all and Forward. A mailbox that cannot send shows its read-state and
+Snooze commands there instead. There is no separate floating circle. The user's
+default email action sits on the top navbar, one tap away: Archive by default,
+Restore in Archive and Trash, and Delete or Mark unread when chosen (retired
+`reply` preferences migrate to Archive on load). More holds
+every other command in three sections. The first holds the read state, Snooze,
+Mute (conversations), Labels, Archive (when it is not the default action) and
+Move. The second holds the message appearance, remote images and Share (which
+includes the sender's address only when their profile affirms it is visible;
+hidden, unknown and unresolved senders are named without it). Delete
+comes last on its own, styled destructive. Delete and Archive close the reader at
+once; in Inbox their writes wait through the Undo window so Undo cancels them
+without altering older archived or trashed messages in the conversation.
+Feedback that becomes ready while a reader, the composer or Mail settings covers
+the list is shown when the originating list returns; opening one of those while
+an Undo is showing dismisses it and submits its held write. Swiping the
+conversation that a split-view pane is showing to Archive or Delete closes the
+pane, so no later change there can overtake the held write, and opening a
+conversation whose write is still held or on its way first submits it and waits
+for it to land, unless another conversation is opened or the mailbox or folder
+changes during that wait. The server applies Archive and Delete to every message a
+conversation has when the write arrives, so a list reload during the Undo window
+that reports a newer message than the reader or the row showed cancels the
+held write, returns the row and says so, including a response that was already
+on its way when the write was held; the hold therefore hides no mail that the list would have
+shown. A held write that lands does not reload the list under a selection in
+progress. Undo returns the row as the visible list and the reader
+last showed it (a conversation read from the Unread filter, or unstarred from
+Starred, stays out; a filter chosen while a split-view reader stayed open is the
+list it returns to) and then reloads the list, so the server decides what it
+holds. Selection actions and Mark all as read first submit any write still
+inside its Undo window, wait for it, and end with a reload; their optimistic
+change applies only while the list acted on is still the visible one, and the
+write goes to the mailbox and folder acted on even if another list or mailbox
+is chosen during the wait. Hiding the app submits held writes
+at once. A held write that fails puts its row back in the list it left without
+waiting on a reload, and a write still on its way for another mailbox never
+holds back the visible mailbox's reload. A held write is dropped, never sent, once mailbox access is lost or
+the signed-in account differs from the one that asked; the same check guards a
+selection action or Mark all as read after its wait.
+Coverage: `mail_deferred_writes_test.dart`. Standalone and
+split-pane readers show the default action beside an overflow menu that lists
+the same entries. Quarantined messages offer neither Archive, Move nor Delete.
+Earlier messages in a conversation fold to one line (sender, time and snippet),
+and the newest is expanded. HTML mail follows the app's dark theme unless the
+user picked Original or Light. Profile lookups never block reading: a failed
+lookup retries once after two seconds, and only a second failure shows an inline
+retry caption. Report spam is not offered because the Mail state API has no
+spam action.
+
+The mobile inbox uses dense three-line rows: sender and time, subject with up
+to two label badges and an optional delivery badge sharing a width budget, and
+a one-line snippet. Unread rows are bold with a dot. A quick filter above the
+list (All, Unread, Starred, Attachments) adds `is:unread`, `is:starred` or
+`has:attachment` to the list query, resets on mailbox or folder changes, is
+ignored in Drafts, and is saved with the view. By default, swiping left archives
+and swiping right deletes; Inbox Archive and Delete swipes also defer their
+writes through the Undo window.
+Coverage: `mail_reader_states_test.dart`, `mail_reader_dock_test.dart`,
+`mail_reader_dock_plan_test.dart`, `mail_reader_sheet_test.dart`,
+`mail_reader_header_test.dart` and `mail_compact_flow_test.dart`.
+
+Rendered HTML bodies are memoized per Mail view (12 entries by exact HTML and
+rendering options). One render runs per document however many callers ask for
+it. The row under the finger and an open conversation's previous and next
+neighbours render ahead (at most two at a time). An open that follows a
+finished render shows its body in the reader's first frame; an earlier open
+joins the render in flight and shows the body when it completes. Rows that are
+only visible are prefetched but not rendered. Bodies with inline images are never memoized, and the memo clears
+with the view and on access denial, fencing any in-flight render started before
+`clear()` or disposal so stale private HTML cannot repopulate the cache.
+Coverage: `mail_rendered_documents_test.dart` and `mail_compact_flow_test.dart`.
+
+### Mobile Mail benchmark
+
+`apps/mobile/integration_test/perf/mail_benchmark_test.dart` runs the real Mail
+view against a synthetic in-memory repository and prints one `MAIL_BENCH` JSON
+line per round: inbox and thread scroll frame percentiles and jank counts, time
+to the subject and to the HTML body for the first open and for the next
+conversation, and resident memory. Run it in profile mode on a fleet Mac, never
+in debug mode:
+
+```sh
+flutter drive --profile --flavor development \
+  --driver=test_driver/integration_test.dart \
+  --target=integration_test/perf/mail_benchmark_test.dart -d <device>
+```
+
+A physical phone gives representative raster times. On an Android arm64
+emulator, raster times mostly measure the host GPU path, so compare build times
+and open times there, and compare commits only on the same device in the same
+session. The iOS Simulator cannot run profile mode. If the driver stalls before
+the first round on an emulator, rerun with `--host-vmservice-port <port>` and
+restore the ADB forward that the verbose log prints.
 
 Opening never waits for the network. The reader renders the inbox row's
 subject, participants and snippet over placeholder lines in the opening frame
@@ -131,11 +216,7 @@ cold inbox shows placeholder rows until the list arrives. Prefetching
 fetches message JSON only; images load only when a body is shown, under the
 saved remote-image preference (or the notification-entry suppression). The
 preview store lives in memory for one signed-in workspace view, holds 40
-details, and is cleared on access denial. Rendered HTML documents of plain
-bodies are memoized by their exact HTML and rendering options (12 entries) in
-the same view. The memo is cleared on access denial and discarded with the
-view, which is keyed by account and workspace; a render finishing after its
-reader or view closed is not stored.
+details, and is cleared on access denial.
 
 Regression coverage: `mail_master_detail_test.dart`,
 `mail_preview_latency_test.dart`, `mail_tap_warmup_test.dart`,
@@ -147,8 +228,9 @@ Regression coverage: `mail_master_detail_test.dart`,
 
 Opening a loaded conversation optimistically clears its unread indicators and
 updates cached Inbox counts. Failed writes restore that conversation's prior
-state. The reader's compact read/unread control closes the conversation when
-marking it unread, preventing automatic viewing from immediately clearing it.
+state. Marking a conversation unread from the reader's default action closes
+it, preventing automatic viewing from immediately clearing it; **Mark
+unread** under More keeps the conversation open.
 Archive actions persist both `archived_at` and `read_at` for the current user;
 users can explicitly mark an archived conversation unread afterward.
 

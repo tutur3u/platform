@@ -45,21 +45,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final oldMessage = find.byKey(
-      const ValueKey('mail-thread-message-old-older'),
-    );
-    final latestMessage = find.byKey(
-      const ValueKey('mail-thread-message-new-latest'),
-    );
-    expect(tester.widget<ExpansionTile>(oldMessage).initiallyExpanded, isFalse);
-    expect(
-      tester.widget<ExpansionTile>(latestMessage).initiallyExpanded,
-      isTrue,
-    );
-    expect(find.byKey(const ValueKey('mail-collapsed-old')), findsOneWidget);
+    // Only the newest message renders its body; the older one folds to its
+    // one-line text under the sender.
+    expect(find.byType(MailMessageContent), findsOneWidget);
+    expect(find.text('Latest message body'), findsOneWidget);
+    expect(find.text('Old message body'), findsOneWidget);
     await tester.tap(find.text('old@example.com').first);
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('mail-collapsed-old')), findsNothing);
     expect(find.byType(MailMessageContent), findsNWidgets(2));
     expect(find.text('Old message body'), findsOneWidget);
   });
@@ -115,19 +107,14 @@ void main() {
     });
     await tester.pumpAndSettle();
     // The earlier message folds to a one-line preview with no body.
-    expect(
-      find.byKey(const ValueKey('mail-collapsed-previous')),
-      findsOneWidget,
-    );
     expect(find.byType(MailMessageContent), findsOneWidget);
     expect(find.text('Latest body'), findsOneWidget);
     expect(
-      tester
-          .widget<ExpansionTile>(
-            find.byKey(const ValueKey('mail-thread-message-previous-older')),
-          )
-          .initiallyExpanded,
-      isFalse,
+      find.descendant(
+        of: find.byKey(const ValueKey('mail-message-previous')),
+        matching: find.byType(MailMessageContent),
+      ),
+      findsNothing,
     );
   });
 
@@ -252,9 +239,8 @@ void main() {
       );
       await tester.tap(find.text('Open message'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Show menu'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Star'));
+      // The star sits beside the subject heading.
+      await tester.tap(find.byTooltip('Star'));
       await tester.pump();
       read.completeError(ApiException(message: 'Failed', statusCode: status));
       await tester.pumpAndSettle();
@@ -269,9 +255,7 @@ void main() {
       star.complete();
       await tester.pumpAndSettle();
       if (status != 403) {
-        await tester.tap(find.byTooltip('Show menu'));
-        await tester.pumpAndSettle();
-        expect(find.text('Remove star'), findsOneWidget);
+        expect(find.byTooltip('Remove star'), findsOneWidget);
       }
       expect(tester.takeException(), isNull);
     });

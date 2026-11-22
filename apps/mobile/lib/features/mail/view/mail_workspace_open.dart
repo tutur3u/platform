@@ -10,6 +10,7 @@ class _MailSelection {
     required this.thread,
     required this.notificationEntry,
     required this.beforeRead,
+    required this.listKey,
   });
 
   final Map<String, dynamic> item;
@@ -18,6 +19,9 @@ class _MailSelection {
   final bool thread;
   final bool notificationEntry;
   final List<Map<String, dynamic>> beforeRead;
+
+  /// The list [beforeRead] was taken from (mailbox, folder, query, labels).
+  final String? listKey;
   String get id => item['id'] as String;
 }
 
@@ -38,7 +42,41 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
         unawaited(_denyCachedAccess());
       }
     },
+    onLoaded: (mailboxId, id, {required thread}) {
+      if (_prerenderIds.contains(id) && mailboxId == _mailboxId) {
+        _prerender(id);
+      }
+    },
   );
+
+  /// Renders the newest message's HTML ahead of the reader, as soon as the
+  /// detail is in memory, so the open shows the body in its first frame.
+  /// Only the row under the finger and an open conversation's neighbours
+  /// are rendered ahead; visible-row prefetching stops at the detail.
+  void _prerender(String id) {
+    final box = _mailboxId;
+    if (!mounted || box == null || !_canPrefetch) return;
+    final detail = _previews.peek(box, id, thread: _threads)?.detail;
+    if (detail == null) {
+      _prerenderIds.add(id);
+      while (_prerenderIds.length > 6) {
+        _prerenderIds.remove(_prerenderIds.first);
+      }
+      return;
+    }
+    _prerenderIds.remove(id);
+    final message = _threads ? mailRows(detail['messages']).lastOrNull : detail;
+    if (message == null) return;
+    final html = mailMessageHtml(message);
+    if (html.isEmpty) return;
+    _renderedDocuments.warm(
+      mailDocumentRequest(
+        context,
+        html: html,
+        loadImages: MailImagePreference.instance.value,
+      ),
+    );
+  }
 
   /// Opens [item] without waiting for the network: the reader renders the
   /// inbox row (or the cached body) in the next frame and hydrates itself.
@@ -48,7 +86,23 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
   }) async {
     final box = _mailboxId;
     if (box == null || (!_split && _childRouteOpen)) return;
+    final request = ++_openRequest;
+    final folder = _folder;
     _dismissSwipeFeedback();
+    if (_pendingDeferredIds.containsKey(item['id'])) {
+      // A write held or on its way for this conversation lands first, so
+      // nothing done in its reader can reach the server ahead of it. The
+      // open is dropped when another conversation was opened during the
+      // wait, or the row's mailbox or folder is no longer the one shown.
+      await _settleDeferredWrites();
+      if (!mounted ||
+          request != _openRequest ||
+          box != _mailboxId ||
+          folder != _folder ||
+          (!_split && _childRouteOpen)) {
+        return;
+      }
+    }
     if (_folder == 'drafts') {
       await _openDraft(item, box);
       return;
@@ -60,6 +114,7 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       thread: _threads,
       notificationEntry: notificationEntry,
       beforeRead: _items,
+      listKey: _visibleListKey,
     );
     if (selection.thread) {
       unawaited(_archiveViewedMailThread(box, selection.id));
@@ -71,10 +126,10 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
         {selection.id},
         action: 'mark_read',
         folder: _folder,
-        query: _search.text,
+        query: _query,
       );
     });
-    _prefetchAround(selection.id);
+    _prefetchAround(selection.id, selection.beforeRead);
     if (!_split) await _presentReaderRoute(selection);
   }
 
@@ -121,7 +176,7 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     if (mounted &&
         selection.mailboxId == _mailboxId &&
         selection.folder == _folder &&
-        _pendingReaderIds.isEmpty) {
+        _visibleMailboxSettled) {
       unawaited(_load());
     }
   }
@@ -180,9 +235,31 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       refreshOnOpen: cached != null && selection.thread,
       notificationEntry: selection.notificationEntry,
       onReadFailed: () {
-        if (mounted && box == _mailboxId && selection.folder == _folder) {
-          _updateState(() => _items = selection.beforeRead);
+        // Roll back only the originating row in its original list; a filter,
+        // search or folder change since then shows a different list, and
+        // concurrent changes to other rows stay intact.
+        if (!mounted ||
+            box != _mailboxId ||
+            selection.listKey != _visibleListKey ||
+            _pendingReaderIds.containsKey(selection.id) ||
+            _pendingDeferredIds.containsKey(selection.id)) {
+          return;
         }
+        final originalIndex = selection.beforeRead.indexWhere(
+          (row) => row['id'] == selection.id,
+        );
+        if (originalIndex < 0) return;
+        final originalRow = selection.beforeRead[originalIndex];
+        final currentIndex = _items.indexWhere(
+          (row) => row['id'] == selection.id,
+        );
+        final updated = [..._items];
+        if (currentIndex >= 0) {
+          updated[currentIndex] = originalRow;
+        } else {
+          updated.insert(originalIndex.clamp(0, updated.length), originalRow);
+        }
+        _updateState(() => _items = updated);
       },
       onOptimisticAction: (action, id) {
         if (!mounted || box != _mailboxId) return;
@@ -195,11 +272,84 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
             {id},
             action: action,
             folder: _folder,
-            query: _search.text,
+            query: _query,
           );
         });
         _saveView();
       },
+      onDeferCloseAction: selection.folder == 'inbox'
+          ? (
+              action,
+              id, {
+              required starred,
+              required unread,
+              required lastMessageAt,
+            }) {
+              if (!mounted || box != _mailboxId) return false;
+              // Undo returns the row the visible list shows at this point,
+              // with the reader's star and read state. The list can differ
+              // from the one the conversation was opened in, and the row is
+              // absent when the open or a change in the reader took it out
+              // of the visible filter.
+              final index = _items.indexWhere((row) => row['id'] == id);
+              var shown = [if (index >= 0) _items[index]];
+              // The reader's own load is what the user saw; a reader opened
+              // from a notification has no list row to fall back on.
+              final heldActivity =
+                  lastMessageAt ??
+                  (shown.firstOrNull ?? selection.item)['lastMessageAt'];
+              for (final state in [
+                if (starred) 'star' else 'unstar',
+                if (unread) 'mark_unread' else 'mark_read',
+              ]) {
+                shown = optimisticMailItems(
+                  shown,
+                  {id},
+                  action: state,
+                  folder: _folder,
+                  query: _query,
+                );
+              }
+              _pendingReaderIds.remove(id);
+              _pendingDeferredIds[id] = (mailbox: box, action: action);
+              ++_generation;
+              _updateState(() {
+                _loading = false;
+                _items = optimisticMailItems(
+                  _items,
+                  {id},
+                  action: action,
+                  folder: _folder,
+                  query: _query,
+                );
+              });
+              _saveView();
+              _presentOrQueueFeedback(
+                _PendingMailFeedback(
+                  message: action == 'archive'
+                      ? context.l10n.mailFeedbackArchived
+                      : context.l10n.mailFeedbackTrashed,
+                  box: box,
+                  folder: _folder,
+                  listKey: _visibleListKey,
+                  id: id,
+                  threads: selection.thread,
+                  inverse: 'restore',
+                  deferredItem: shown.firstOrNull,
+                  deferredIndex: index >= 0 ? index : 0,
+                  heldActivity: heldActivity,
+                  commit: () => _repository.changeState(
+                    widget.workspaceId,
+                    box,
+                    id,
+                    action,
+                    thread: selection.thread,
+                  ),
+                ),
+              );
+              return true;
+            }
+          : null,
       onActionSettled: ({required action, required id, required success}) {
         _pendingReaderIds.remove(id);
         if (!mounted || box != _mailboxId) return;
@@ -207,8 +357,24 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.l10n.mailActionFailed)),
           );
+        } else if (action == 'archive' || action == 'trash') {
+          // The reader closed optimistically; its Archive and Delete get
+          // the same Undo as a swipe.
+          _presentOrQueueFeedback(
+            _PendingMailFeedback(
+              message: action == 'archive'
+                  ? context.l10n.mailFeedbackArchived
+                  : context.l10n.mailFeedbackTrashed,
+              box: box,
+              folder: selection.folder,
+              listKey: selection.listKey,
+              id: id,
+              threads: selection.thread,
+              inverse: selection.folder == 'inbox' ? 'restore' : null,
+            ),
+          );
         }
-        if (_pendingReaderIds.isEmpty) unawaited(_load());
+        if (_visibleMailboxSettled) unawaited(_load());
       },
       thread: selection.thread,
       canSend: _canSend,
@@ -252,23 +418,29 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     if (box == null || !_canPrefetch || _mutating || _selected.isNotEmpty) {
       return;
     }
+    final id = item['id'] as String;
+    _prerender(id);
     unawaited(
       _previews
-          .load(box, item['id'] as String, thread: _threads)
+          .load(box, id, thread: _threads)
           .then<void>((_) {}, onError: (Object _) {}),
     );
   }
 
-  /// After opening a row, its neighbours are the likely next reads.
-  void _prefetchAround(String id) {
+  /// After opening a row, its neighbours are the likely next reads. [rows]
+  /// is the list as opened: a filter can take the opened row out of it.
+  void _prefetchAround(String id, List<Map<String, dynamic>> rows) {
     final box = _mailboxId;
     if (box == null || !_canPrefetch) return;
-    final index = _items.indexWhere((item) => item['id'] == id);
+    final index = rows.indexWhere((item) => item['id'] == id);
     if (index < 0) return;
-    _previews.prefetch(box, [
+    final neighbours = [
       for (final i in [index + 1, index - 1, index + 2])
-        if (i >= 0 && i < _items.length) _items[i]['id'] as String,
-    ], thread: _threads);
+        if (i >= 0 && i < rows.length) rows[i]['id'] as String,
+    ];
+    // The next and previous conversations also get their body rendered.
+    neighbours.take(2).forEach(_prerender);
+    _previews.prefetch(box, neighbours, thread: _threads);
   }
 
   // Drafts open the composer, and an unverified cached view must not fetch.

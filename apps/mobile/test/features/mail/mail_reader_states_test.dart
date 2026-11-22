@@ -148,30 +148,43 @@ void main() {
     // The body has no command toolbar or tab control.
     expect(find.byTooltip('Snooze'), findsNothing);
     expect(find.text('Conversation'), findsNothing);
+    // The subject is the page heading, with the labels beside it.
+    expect(find.byKey(const ValueKey('mail-reader-subject')), findsOneWidget);
+    expect(find.text('Quarterly plan'), findsOneWidget);
     // Older messages fold to one line; only the newest renders its body.
-    expect(find.byKey(const ValueKey('mail-collapsed-first')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mail-collapsed-second')), findsOneWidget);
+    expect(find.text('Snippet of first'), findsOneWidget);
+    expect(find.text('Snippet of second'), findsOneWidget);
     expect(find.byType(MailMessageContent), findsOneWidget);
-    // One To recipient plus a count of the rest.
-    expect(find.text('+1'), findsOneWidget);
+    // "to me" plus a count of the other recipients.
+    expect(find.text('to me +1'), findsOneWidget);
+    // Tapping a folded message unfolds it.
+    await tester.tap(find.text('Snippet of first'));
+    await tester.pumpAndSettle();
+    expect(find.text('Body of first'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('mail-attachments-toggle')));
     await tester.pumpAndSettle();
     expect(find.text('plan.pdf'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the recipients line opens the message details sheet', (
-    tester,
-  ) async {
+  testWidgets('"to me" expands the delivery details inline and folds them '
+      'again', (tester) async {
     await tester.pumpApp(_reader(detail: _thread()));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('mail-recipients-third')));
+    final toggle = find.byKey(const ValueKey('mail-recipients-toggle'));
+    await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('mail-details-sheet-third')),
       findsOneWidget,
     );
     expect(find.text('cc@example.test'), findsOneWidget);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('mail-details-sheet-third')),
+      findsNothing,
+    );
   });
 
   testWidgets('profile lookups retry quietly before offering a retry', (
@@ -216,7 +229,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('mail-thread-count')), findsNothing);
-    expect(find.byKey(const ValueKey('mail-collapsed-only')), findsNothing);
+    expect(find.text('Snippet of only'), findsNothing);
     expect(find.text('Body of only'), findsOneWidget);
   });
 }

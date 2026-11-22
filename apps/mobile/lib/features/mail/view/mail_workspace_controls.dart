@@ -66,11 +66,13 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
         box['id'] as String: box['address'] as String,
     }, _mailboxId);
     if (!mounted || value == null || value == _mailboxId) return;
+    _flushAllDeferredFeedback();
     _dismissSwipeFeedback();
     _updateState(() {
       _mailboxId = value;
       _labelId = null;
       _folderId = null;
+      _quickFilter = MailQuickFilter.all;
       _selected.clear();
       // An open conversation belongs to the previous mailbox.
       _selection = null;
@@ -110,9 +112,20 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
     unawaited(_load(forceRefresh: false));
   }
 
+  void _setQuickFilter(MailQuickFilter filter) {
+    if (filter == _quickFilter) return;
+    _dismissSwipeFeedback();
+    _updateState(() {
+      _quickFilter = filter;
+      _selected.clear();
+    });
+    unawaited(_load(forceRefresh: false));
+  }
+
   Widget _buildMailControls(Widget folderPicker, bool sharedShell) {
     final l10n = context.l10n;
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!sharedShell)
           Row(
@@ -135,6 +148,15 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
                 icon: const Icon(AppIcons.search),
               ),
             ],
+          ),
+        if (_folder != 'drafts')
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: MailQuickFilterBar(
+              value: _quickFilter,
+              enabled: !_mutating && _mailboxId != null,
+              onChanged: _setQuickFilter,
+            ),
           ),
         AnimatedSize(
           duration: const Duration(milliseconds: 220),

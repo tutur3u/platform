@@ -15,9 +15,22 @@ IconData _mailMessageActionIcon(String action) => switch (action) {
   _ => Icons.more_horiz,
 };
 
+/// A More entry as the shell sheet, a pane menu and the bar render it.
+typedef _MailMoreEntry = ({
+  String id,
+  IconData icon,
+  String label,
+  bool enabled,
+  bool destructive,
+  Future<void> Function() run,
+});
+
 extension _MailReaderChrome on _MailReaderState {
   bool get _unread =>
       _unreadOverride ?? _messages.any((message) => message['unread'] == true);
+
+  bool get _muted =>
+      _mutedOverride ?? (_messageStateMetadata?['muted'] == true);
 
   // Dock entries use method tear-offs, which compare equal across rebuilds, so
   // the registered group only changes when its contents do.
@@ -37,13 +50,24 @@ extension _MailReaderChrome on _MailReaderState {
 
   Future<void> _toggleRead() => _action(_unread ? 'mark_read' : 'mark_unread');
 
+  /// As the default action, Mark unread returns to the list like Archive.
+  Future<void> _quickToggleRead() =>
+      _action(_unread ? 'mark_read' : 'mark_unread', close: !_unread);
+
   Future<void> _archiveOrRestore() =>
       _action(_canRestore ? 'restore' : 'archive', close: true);
 
+  /// Delete closes the reader at once; the inbox offers Undo.
   Future<void> _trashMessage() => _action('trash', close: true);
 
   Future<void> _toggleSnooze() =>
       _action(_messageSnoozed ? 'unsnooze' : 'snooze');
+
+  Future<void> _toggleMute() => _action(_muted ? 'unmute' : 'mute');
+
+  Future<void> _toggleImagesAsync() async => _toggleReaderImages();
+
+  Future<void> _chooseAppearanceAsync() => _chooseAppearance();
 
   void _setAppearance(String id) {
     final mode = MailMessageAppearance.values
@@ -52,12 +76,60 @@ extension _MailReaderChrome on _MailReaderState {
     if (mode != null) unawaited(MailAppearancePreference.instance.select(mode));
   }
 
+  /// Shares the newest message as plain text through the system sheet.
+  Future<void> _shareMessage() async {
+    final message = _messages.lastOrNull;
+    if (message == null) return;
+    final subject = _subjectText;
+    final box = context.findRenderObject() as RenderBox?;
+    await SharePlus.instance.share(
+      ShareParams(
+        subject: subject,
+        text: mailShareText(
+          subject: subject,
+          message: message,
+          profile: _person(message['fromAddress'] as String?),
+          hiddenFallback: context.l10n.mailMember,
+        ),
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
+      ),
+    );
+  }
+
+  String get _subjectText {
+    final subject = widget.thread
+        ? ((_detail?['thread'] as Map<String, dynamic>?)?['subject'] as String?)
+        : (_detail?['subject'] as String?);
+    return subject?.trim().isNotEmpty == true
+        ? subject!.trim()
+        : context.l10n.mailNoSubject;
+  }
+
+  /// The navbar shows where the message lives until its subject heading
+  /// scrolls away, then the subject.
+  String _navbarTitle(String subject) {
+    if (_subjectInTitle && subject.isNotEmpty) return subject;
+    final l10n = context.l10n;
+    return switch (widget.sourceFolder) {
+      'archive' => l10n.mailArchive,
+      'trash' => l10n.mailTrash,
+      'snoozed' => l10n.mailSnoozed,
+      'muted' => l10n.mailMuted,
+      'sent' => l10n.mailSent,
+      'starred' => l10n.mailStarred,
+      'spam' => l10n.mailSpam,
+      _ => l10n.mailInbox,
+    };
+  }
+
   Widget _readerChrome(String subject) => Stack(
     children: [
       ShellTitleOverride(
         ownerId: 'mail-reader',
         locations: const {Routes.mail},
-        title: subject,
+        title: _navbarTitle(subject),
         showLeadingBrand: false,
       ),
       ShellChromeActions(
@@ -84,57 +156,163 @@ extension _MailReaderChrome on _MailReaderState {
 
   MailReaderDockPlan _dockPlan() => MailReaderDockPlan.build(
     canSend: widget.canSend,
-    primary: _primaryAction,
+    primary: MailPrimaryActionPreference.instance.value,
     quarantined: _quarantined,
     inTrash: widget.sourceFolder == 'trash',
     canRestore: _canRestore,
-    starred: _starred,
     unread: _unread,
     snoozed: _messageSnoozed,
+    thread: widget.thread,
+    muted: _muted,
   );
 
-  /// Archive (or Restore) and Trash sit on the top navbar, one tap away,
-  /// unless the dock's primary circle already owns them.
-  List<ShellActionSpec> _navbarActions() {
+  ({IconData icon, String label, Future<void> Function() run})? _quick() {
     final l10n = context.l10n;
-    final ready = !_busy && _detail != null;
-    final more = _dockPlan().more;
+    return switch (_dockPlan().quick) {
+      null => null,
+      MailQuickAction.archive => (
+        icon: Icons.archive_outlined,
+        label: l10n.mailArchive,
+        run: _archiveOrRestore,
+      ),
+      MailQuickAction.restore => (
+        icon: Icons.inbox_outlined,
+        label: l10n.mailRestore,
+        run: _archiveOrRestore,
+      ),
+      MailQuickAction.trash => (
+        icon: Icons.delete_outline,
+        label: l10n.commonDelete,
+        run: _trashMessage,
+      ),
+      MailQuickAction.markRead => (
+        icon: Icons.mark_email_read_outlined,
+        label: l10n.mailMarkRead,
+        run: _quickToggleRead,
+      ),
+      MailQuickAction.markUnread => (
+        icon: Icons.mark_email_unread_outlined,
+        label: l10n.mailMarkUnread,
+        run: _quickToggleRead,
+      ),
+    };
+  }
+
+  /// The default action, one tap away beside the title.
+  List<ShellActionSpec> _navbarActions() {
+    final quick = _quick();
+    final ready = !_busy && _detail != null && !_readPending;
     return [
-      if (more.contains(MailDockMore.archive) ||
-          more.contains(MailDockMore.restore))
+      if (quick != null)
         ShellActionSpec(
-          id: 'mail-reader-archive',
-          icon: _canRestore ? Icons.inbox_outlined : Icons.archive_outlined,
-          tooltip: _canRestore ? l10n.mailRestore : l10n.mailArchive,
+          id: 'mail-reader-quick',
+          icon: quick.icon,
+          tooltip: quick.label,
           enabled: ready,
-          callbackToken: (_canRestore, ready),
-          onPressed: _archiveOrRestore,
-        ),
-      if (more.contains(MailDockMore.trash))
-        ShellActionSpec(
-          id: 'mail-reader-trash',
-          icon: _mailMessageActionIcon('trash'),
-          tooltip: l10n.mailTrash,
-          enabled: ready,
-          callbackToken: ready,
-          onPressed: _trashMessage,
+          callbackToken: (quick.label, ready),
+          onPressed: quick.run,
         ),
     ];
   }
 
-  /// Reply, Reply all and Forward fill the pill, the primary command owns the
-  /// circle, Archive and Trash sit on the navbar, and everything else lives in
-  /// the More sheet.
+  _MailMoreEntry _moreEntry(MailDockMore kind) {
+    final l10n = context.l10n;
+    final ready = !_busy && _detail != null;
+    _MailMoreEntry entry(
+      String id,
+      IconData icon,
+      String label,
+      Future<void> Function() run, {
+      bool enabled = true,
+      bool destructive = false,
+    }) => (
+      id: id,
+      icon: icon,
+      label: label,
+      enabled: enabled,
+      destructive: destructive,
+      run: run,
+    );
+    return switch (kind) {
+      MailDockMore.markRead || MailDockMore.markUnread => entry(
+        'mark-read',
+        _mailMessageActionIcon(_unread ? 'mark_read' : 'mark_unread'),
+        _unread ? l10n.mailMarkRead : l10n.mailMarkUnread,
+        _toggleRead,
+        enabled: ready && !_readPending,
+      ),
+      MailDockMore.snooze || MailDockMore.unsnooze => entry(
+        'snooze',
+        _mailMessageActionIcon(_messageSnoozed ? 'unsnooze' : 'snooze'),
+        _messageSnoozed ? l10n.mailUnsnooze : l10n.mailSnooze,
+        _toggleSnooze,
+        enabled: ready,
+      ),
+      MailDockMore.mute || MailDockMore.unmute => entry(
+        'mute',
+        _mailMessageActionIcon(_muted ? 'unmute' : 'mute'),
+        _muted ? l10n.mailUnmute : l10n.mailMute,
+        _toggleMute,
+        enabled: ready,
+      ),
+      MailDockMore.labels => entry(
+        'labels',
+        Icons.label_outline,
+        l10n.mailLabels,
+        _readerLabels,
+        enabled: ready,
+      ),
+      MailDockMore.archive || MailDockMore.restore => entry(
+        'archive',
+        _canRestore ? Icons.inbox_outlined : Icons.archive_outlined,
+        _canRestore ? l10n.mailRestore : l10n.mailArchive,
+        _archiveOrRestore,
+        enabled: ready,
+      ),
+      MailDockMore.move => entry(
+        'move',
+        Icons.drive_file_move_outlined,
+        l10n.mailMove,
+        _moveMessage,
+        enabled: ready,
+      ),
+      MailDockMore.appearance => entry(
+        'appearance',
+        Icons.contrast_rounded,
+        l10n.mailMessageAppearance,
+        _chooseAppearanceAsync,
+      ),
+      MailDockMore.images => entry(
+        'images',
+        _showImages ? Icons.image_outlined : Icons.image_not_supported_outlined,
+        _showImages ? l10n.mailHideImages : l10n.mailLoadImages,
+        _toggleImagesAsync,
+      ),
+      MailDockMore.share => entry(
+        'share',
+        Icons.ios_share_outlined,
+        l10n.commonShare,
+        _shareMessage,
+        enabled: _detail != null,
+      ),
+      MailDockMore.trash => entry(
+        'trash',
+        _mailMessageActionIcon('trash'),
+        l10n.commonDelete,
+        _trashMessage,
+        enabled: ready,
+        destructive: true,
+      ),
+    };
+  }
+
+  /// Replies (or a read-only mailbox's common commands) fill the bar beside
+  /// Back; More holds everything else, with Delete last.
   ShellDockActionGroup _dockGroup() {
     final l10n = context.l10n;
-    final primary = _primaryAction;
-    final ready = !_busy && _detail != null;
     final plan = _dockPlan();
-    final canReply = ready && _messages.isNotEmpty;
-    final readBlocked = _readPending;
-    final appearance =
-        MailAppearancePreference.instance.value ??
-        MailMessageAppearance.original;
+    final canReply = !_busy && _detail != null && _messages.isNotEmpty;
+    final appearance = mailEffectiveAppearance(context);
 
     ShellDockGroupAction reply(MailDockReply kind) => switch (kind) {
       MailDockReply.reply => ShellDockGroupAction(
@@ -160,126 +338,50 @@ extension _MailReaderChrome on _MailReaderState {
       ),
     };
 
-    ShellDockMoreItem more(MailDockMore kind) => switch (kind) {
-      MailDockMore.inbox => ShellDockGroupAction(
-        id: 'inbox',
-        icon: Icons.inbox_outlined,
-        label: l10n.mailInbox,
-        onPressed: _close,
-      ),
-      MailDockMore.appearance => ShellDockChoice(
-        id: 'appearance',
-        icon: Icons.contrast_rounded,
-        label: l10n.mailMessageAppearance,
-        options: [
-          (
-            id: MailMessageAppearance.original.name,
-            label: l10n.mailAppearanceOriginal,
-          ),
-          (
-            id: MailMessageAppearance.light.name,
-            label: l10n.settingsThemeLight,
-          ),
-          (id: MailMessageAppearance.dark.name, label: l10n.settingsThemeDark),
-        ],
-        selectedId: appearance.name,
-        onSelected: _setAppearance,
-      ),
-      MailDockMore.images => ShellDockGroupAction(
-        id: 'images',
-        icon: _showImages
-            ? Icons.image_outlined
-            : Icons.image_not_supported_outlined,
-        label: _showImages ? l10n.mailHideImages : l10n.mailLoadImages,
-        onPressed: _toggleReaderImages,
-      ),
-      MailDockMore.star || MailDockMore.unstar => ShellDockGroupAction(
-        id: 'star',
-        icon: _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
-        label: _starred ? l10n.mailUnstar : l10n.mailStar,
-        enabled: ready,
-        onPressed: _toggleStar,
-      ),
-      MailDockMore.markRead || MailDockMore.markUnread => ShellDockGroupAction(
-        id: 'mark-read',
-        icon: _mailMessageActionIcon(_unread ? 'mark_read' : 'mark_unread'),
-        label: _unread ? l10n.mailMarkRead : l10n.mailMarkUnread,
-        enabled: ready && !readBlocked,
-        onPressed: _toggleRead,
-      ),
-      MailDockMore.snooze || MailDockMore.unsnooze => ShellDockGroupAction(
-        id: 'snooze',
-        icon: _mailMessageActionIcon(_messageSnoozed ? 'unsnooze' : 'snooze'),
-        label: _messageSnoozed ? l10n.mailUnsnooze : l10n.mailSnooze,
-        enabled: ready,
-        onPressed: _toggleSnooze,
-      ),
-      MailDockMore.labels => ShellDockGroupAction(
-        id: 'labels',
-        icon: Icons.label_outline,
-        label: l10n.mailLabels,
-        enabled: ready,
-        onPressed: _readerLabels,
-      ),
-      MailDockMore.archive || MailDockMore.restore => ShellDockGroupAction(
-        id: 'archive',
-        icon: _canRestore ? Icons.inbox_outlined : Icons.archive_outlined,
-        label: _canRestore ? l10n.mailRestore : l10n.mailArchive,
-        enabled: ready,
-        onPressed: _archiveOrRestore,
-      ),
-      MailDockMore.move => ShellDockGroupAction(
-        id: 'move',
-        icon: Icons.drive_file_move_outlined,
-        label: l10n.mailMove,
-        enabled: ready,
-        onPressed: _moveMessage,
-      ),
-      MailDockMore.trash => ShellDockGroupAction(
-        id: 'trash',
-        icon: _mailMessageActionIcon('trash'),
-        label: l10n.mailTrash,
-        enabled: ready,
-        destructive: true,
-        onPressed: _trashMessage,
-      ),
-    };
+    ShellDockGroupAction action(MailDockMore kind) {
+      final entry = _moreEntry(kind);
+      return ShellDockGroupAction(
+        id: entry.id,
+        icon: entry.icon,
+        label: entry.label,
+        enabled: entry.enabled,
+        destructive: entry.destructive,
+        onPressed: entry.run,
+      );
+    }
 
-    const navbar = {
-      MailDockMore.archive,
-      MailDockMore.restore,
-      MailDockMore.trash,
-    };
-    const reader = {
-      MailDockMore.inbox,
-      MailDockMore.appearance,
-      MailDockMore.images,
-    };
-    final circleRestores = primary == MailPrimaryAction.archive && _canRestore;
+    ShellDockMoreItem more(MailDockMore kind) => kind == MailDockMore.appearance
+        ? ShellDockChoice(
+            id: 'appearance',
+            icon: Icons.contrast_rounded,
+            label: l10n.mailMessageAppearance,
+            options: [
+              (
+                id: MailMessageAppearance.original.name,
+                label: l10n.mailAppearanceOriginal,
+              ),
+              (
+                id: MailMessageAppearance.light.name,
+                label: l10n.settingsThemeLight,
+              ),
+              (
+                id: MailMessageAppearance.dark.name,
+                label: l10n.settingsThemeDark,
+              ),
+            ],
+            selectedId: appearance.name,
+            onSelected: _setAppearance,
+          )
+        : action(kind);
+
     return ShellDockActionGroup(
-      actions: [for (final kind in plan.replies) reply(kind)],
-      primary: ShellDockGroupAction(
-        id: switch (primary) {
-          MailPrimaryAction.archive => 'archive',
-          MailPrimaryAction.trash => 'trash',
-          MailPrimaryAction.markUnread => 'mark-unread-primary',
-          MailPrimaryAction.reply => 'reply',
-        },
-        icon: circleRestores ? Icons.inbox_outlined : primary.icon,
-        label: circleRestores ? l10n.mailRestore : primary.label(context),
-        enabled:
-            ready && !(_readPending && primary == MailPrimaryAction.markUnread),
-        onPressed: _runPrimaryAction,
-      ),
+      actions: [
+        for (final kind in plan.replies) reply(kind),
+        for (final kind in plan.bar) action(kind),
+      ],
       more: [
-        [
-          for (final kind in plan.more)
-            if (reader.contains(kind)) more(kind),
-        ],
-        [
-          for (final kind in plan.more)
-            if (!reader.contains(kind) && !navbar.contains(kind)) more(kind),
-        ],
+        for (final section in plan.more)
+          [for (final kind in section) more(kind)],
       ],
     );
   }
@@ -322,83 +424,51 @@ extension _MailReaderChrome on _MailReaderState {
     if (value != null) await MailAppearancePreference.instance.select(value);
   }
 
-  Future<void> _chooseAction(Map<String, String> actions) async {
+  /// The More sheet for split panes and standalone readers, which have no
+  /// shell dock: replies first, then the same entries as the dock's More.
+  Future<void> _chooseAction() async {
     if (_busy || _detail == null) return;
-    final subject = widget.thread
-        ? ((_detail?['thread'] as Map<String, dynamic>?)?['subject'] as String?)
-        : (_detail?['subject'] as String?);
+    final l10n = context.l10n;
+    final plan = _dockPlan();
+    final entries = <_MailMoreEntry>[
+      if (plan.replies.contains(MailDockReply.replyAll))
+        (
+          id: 'reply_all',
+          icon: Icons.reply_all_outlined,
+          label: l10n.mailReplyAll,
+          enabled: true,
+          destructive: false,
+          run: _replyAllLast,
+        ),
+      if (plan.replies.contains(MailDockReply.forward))
+        (
+          id: 'forward',
+          icon: Icons.forward_outlined,
+          label: l10n.mailForward,
+          enabled: true,
+          destructive: false,
+          run: _forwardLast,
+        ),
+      for (final kind in [...plan.bar, ...plan.more.expand((s) => s)])
+        _moreEntry(kind),
+    ];
     final value = await showAppActionSheet<String>(
       context: context,
       useRootNavigator: true,
-      title: subject?.trim().isNotEmpty == true
-          ? subject!
-          : context.l10n.mailNoSubject,
+      title: _subjectText,
       actions: [
-        if (widget.canSend) ...[
-          if (_primaryAction != MailPrimaryAction.reply)
-            AppSheetAction(
-              label: context.l10n.mailReply,
-              icon: Icons.reply_outlined,
-              value: 'reply',
-            ),
+        for (final entry in entries)
           AppSheetAction(
-            label: context.l10n.mailReplyAll,
-            icon: Icons.reply_all_outlined,
-            value: 'reply_all',
-          ),
-          AppSheetAction(
-            label: context.l10n.mailForward,
-            icon: Icons.forward_outlined,
-            value: 'forward',
-          ),
-        ],
-        AppSheetAction(
-          label: _starred ? context.l10n.mailUnstar : context.l10n.mailStar,
-          icon: _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
-          value: _starred ? 'unstar' : 'star',
-        ),
-        AppSheetAction(
-          label: context.l10n.mailLabels,
-          icon: Icons.label_outline,
-          value: 'labels',
-        ),
-        if (!_quarantined)
-          AppSheetAction(
-            label: context.l10n.mailMove,
-            icon: Icons.drive_file_move_outlined,
-            value: 'move',
-          ),
-        for (final action in actions.entries)
-          AppSheetAction(
-            label: action.value,
-            icon: _mailMessageActionIcon(action.key),
-            value: action.key,
-            destructive: action.key == 'trash',
-            enabled:
-                !_readPending ||
-                (action.key != 'mark_read' && action.key != 'mark_unread'),
+            label: entry.label,
+            icon: entry.icon,
+            value: entry.id,
+            destructive: entry.destructive,
+            enabled: entry.enabled,
           ),
       ],
     );
     if (!mounted || value == null) return;
-    switch (value) {
-      case 'move':
-        await _moveMessage();
-        return;
-      case 'labels':
-        await _readerLabels();
-        return;
-      case 'reply':
-        await _replyLast();
-        return;
-      case 'reply_all':
-        await _replyAllLast();
-        return;
-      case 'forward':
-        await _forwardLast();
-        return;
-    }
-    await _action(value, close: value != 'star' && value != 'unstar');
+    await entries.firstWhere((entry) => entry.id == value).run();
   }
 
   /// Lists the destinations for the open message and applies the chosen one.

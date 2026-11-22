@@ -48,29 +48,13 @@ class MailReaderIdentity extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = visibleName(address, name, profile, context.l10n.mailMember);
-    final words = label.split('@').first.trim().split(RegExp(r'\s+'));
-    final initials = words
-        .where((word) => word.isNotEmpty)
-        .take(2)
-        .map((word) => word.characters.first)
-        .join()
-        .toUpperCase();
-    final avatar = avatarUrl(profile?['avatarUrl']);
-    final colors = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
+        MailReaderAvatar(
+          label: label,
+          profile: profile,
           radius: compact ? 12 : 22,
-          backgroundColor: colors.surfaceContainerHighest,
-          foregroundColor: colors.onSurfaceVariant,
-          foregroundImage: avatar == null || avatar.isEmpty
-              ? null
-              : NetworkImage(avatar),
-          onForegroundImageError: avatar == null || avatar.isEmpty
-              ? null
-              : (_, _) {},
-          child: Text(initials, style: TextStyle(fontSize: compact ? 10 : 14)),
         ),
         const SizedBox(width: 10),
         Flexible(
@@ -79,6 +63,78 @@ class MailReaderIdentity extends StatelessWidget {
               : Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ],
+    );
+  }
+}
+
+/// The plain text Share hands to the system sheet. The sender's address is
+/// included only for a person whose profile affirms it is visible; a hidden,
+/// unknown or unresolved sender is named without it.
+String mailShareText({
+  required String subject,
+  required Map<String, dynamic> message,
+  required Map<String, dynamic>? profile,
+  required String hiddenFallback,
+}) {
+  final address = (message['fromAddress'] as String? ?? '').trim();
+  final effectiveProfile =
+      profile ??
+      (message['fromProfile'] is Map<String, dynamic>
+          ? message['fromProfile'] as Map<String, dynamic>
+          : null);
+  final emailAllowed = effectiveProfile?['emailVisible'] == true;
+  final label = MailReaderIdentity.visibleName(
+    address,
+    message['fromName'] as String?,
+    emailAllowed
+        ? effectiveProfile
+        : {...?effectiveProfile, 'emailVisible': false},
+    hiddenFallback,
+  );
+  final sender = !emailAllowed || address.isEmpty || label == address
+      ? label
+      : '$label <$address>';
+  final body =
+      (message['bodyText'] as String?) ?? (message['snippet'] as String?) ?? '';
+  return [subject, sender, body].where((part) => part.isNotEmpty).join('\n\n');
+}
+
+/// The circular avatar for a visible mail identity: the profile photo when
+/// it is an HTTPS URL, otherwise up to two initials of [label].
+class MailReaderAvatar extends StatelessWidget {
+  const MailReaderAvatar({
+    required this.label,
+    this.profile,
+    this.radius = 16,
+    super.key,
+  });
+
+  /// The already privacy-filtered visible name.
+  final String label;
+  final Map<String, dynamic>? profile;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final words = label.split('@').first.trim().split(RegExp(r'\s+'));
+    final initials = words
+        .where((word) => word.isNotEmpty)
+        .take(2)
+        .map((word) => word.characters.first)
+        .join()
+        .toUpperCase();
+    final avatar = MailReaderIdentity.avatarUrl(profile?['avatarUrl']);
+    final colors = Theme.of(context).colorScheme;
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: colors.surfaceContainerHighest,
+      foregroundColor: colors.onSurfaceVariant,
+      foregroundImage: avatar == null ? null : NetworkImage(avatar),
+      onForegroundImageError: avatar == null ? null : (_, _) {},
+      child: Text(
+        initials,
+        style: TextStyle(fontSize: radius * 0.8, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

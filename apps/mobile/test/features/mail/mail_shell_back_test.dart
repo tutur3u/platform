@@ -240,8 +240,12 @@ void main() {
     expect(tester.widget<ColoredBox>(backdrop).color.a, 1);
     expect(tester.getSize(backdrop), tester.getSize(find.byType(MailReader)));
     // Only the reader names the Mail location; the inbox title retired.
-    final override = titles.state.resolveForLocation(Routes.mail);
-    expect(override, isNot('Inbox'));
+    expect(
+      titles.state.registrations.values
+          .where((registration) => registration.locations.contains(Routes.mail))
+          .map((registration) => registration.ownerId),
+      ['mail-reader'],
+    );
     await settleMail(tester);
     expect(_location(tester), Routes.mail);
     await drain(tester);

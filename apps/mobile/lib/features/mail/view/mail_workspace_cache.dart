@@ -6,14 +6,17 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
     String mailbox,
   ) {
     var result = items;
-    for (final entry in _pendingReaderIds.entries) {
+    for (final entry in {
+      ..._pendingReaderIds,
+      ..._pendingDeferredIds,
+    }.entries) {
       if (entry.value.mailbox != mailbox) continue;
       result = optimisticMailItems(
         result,
         {entry.key},
         action: entry.value.action,
         folder: _folder,
-        query: _search.text,
+        query: _query,
       );
     }
     return result;
@@ -70,6 +73,9 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
         _labels = labels;
         _folders = folders;
         _search.text = query;
+        _quickFilter = folder == 'drafts'
+            ? MailQuickFilter.all
+            : MailQuickFilter.parse(saved['quickFilter']);
         _items = _overlayReaderActions(items, mailboxId);
         _visibleListKey = listKey;
         _listResolved = listKey != null;
@@ -101,6 +107,8 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
             'labelId': _labelId,
             'folderId': _folderId,
             'query': _search.text.trim(),
+            'quickFilter':
+                (_folder == 'drafts' ? MailQuickFilter.all : _quickFilter).name,
             'labels': _labels,
             'folders': _folders,
             'items': _items.take(30).toList(growable: false),
@@ -115,6 +123,14 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
     _generation++;
     _organizationGeneration++;
     _accessVerified = false;
+    // A revoked mailbox takes no more writes: cancel those still inside
+    // their Undo window and withdraw the control that would submit them.
+    _pendingFeedback?.settled = true;
+    _activeFeedback?.settled = true;
+    _pendingFeedback = null;
+    _activeFeedback = null;
+    _pendingDeferredIds.clear();
+    if (mounted) _dismissSwipeFeedback();
     _previews.clear();
     _renderedDocuments.clear();
     if (mounted) {

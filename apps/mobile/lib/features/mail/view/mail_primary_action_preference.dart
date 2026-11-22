@@ -2,28 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum MailPrimaryAction { archive, trash, markUnread, reply }
+/// The reader's one-tap default action. Reply is always on the action bar,
+/// so it is not a choice here; a saved `reply` falls back to Archive.
+enum MailPrimaryAction { archive, trash, markUnread }
 
 extension MailPrimaryActionPresentation on MailPrimaryAction {
-  IconData get icon => switch (this) {
-    MailPrimaryAction.archive => Icons.archive_outlined,
-    MailPrimaryAction.trash => Icons.delete_outline,
-    MailPrimaryAction.markUnread => Icons.mark_email_unread_outlined,
-    MailPrimaryAction.reply => Icons.reply_outlined,
-  };
-
   String label(BuildContext context) => switch (this) {
     MailPrimaryAction.archive => context.l10n.mailArchive,
-    MailPrimaryAction.trash => context.l10n.mailTrash,
+    MailPrimaryAction.trash => context.l10n.commonDelete,
     MailPrimaryAction.markUnread => context.l10n.mailMarkUnread,
-    MailPrimaryAction.reply => context.l10n.mailReply,
-  };
-
-  String? get stateAction => switch (this) {
-    MailPrimaryAction.archive => 'archive',
-    MailPrimaryAction.trash => 'trash',
-    MailPrimaryAction.markUnread => 'mark_unread',
-    MailPrimaryAction.reply => null,
   };
 }
 
@@ -44,7 +31,15 @@ class MailPrimaryActionPreference extends ValueNotifier<MailPrimaryAction> {
       final action = MailPrimaryAction.values
           .where((item) => item.name == name)
           .firstOrNull;
-      if (!_selected && action != null) value = action;
+      if (!_selected) {
+        if (action != null) {
+          value = action;
+        } else if (name != null) {
+          // Migrate retired choices (such as `reply`) explicitly to Archive.
+          value = MailPrimaryAction.archive;
+          await prefs.setString(storageKey, MailPrimaryAction.archive.name);
+        }
+      }
     } on Exception {
       // Keep Archive as the default if preference storage is unavailable.
     }

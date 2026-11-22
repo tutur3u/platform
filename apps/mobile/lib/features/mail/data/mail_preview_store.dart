@@ -33,6 +33,7 @@ class MailPreviewStore {
     required this.fetch,
     required this.peekStored,
     this.onError,
+    this.onLoaded,
     this.capacity = 40,
     this.maxQueued = 8,
     this.maxConcurrent = 2,
@@ -41,6 +42,10 @@ class MailPreviewStore {
   final MailPreviewFetch fetch;
   final MailPreviewPeek peekStored;
   final void Function(Object error)? onError;
+
+  /// Called once a detail is in memory, whether opened or prefetched.
+  final void Function(String mailboxId, String id, {required bool thread})?
+  onLoaded;
   final int capacity;
   final int maxQueued;
   final int maxConcurrent;
@@ -115,6 +120,7 @@ class MailPreviewStore {
           thread: thread,
           fromNetwork: preview.fromNetwork,
         );
+        if (!_disposed) onLoaded?.call(mailboxId, id, thread: thread);
         return preview;
       } finally {
         // Drop the entry without touching the future other callers await.

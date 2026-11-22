@@ -8,103 +8,146 @@ MailReaderDockPlan _plan({
   bool quarantined = false,
   bool inTrash = false,
   bool canRestore = false,
-  bool starred = false,
   bool unread = false,
   bool snoozed = false,
+  bool thread = false,
+  bool muted = false,
 }) => MailReaderDockPlan.build(
   canSend: canSend,
   primary: primary,
   quarantined: quarantined,
   inTrash: inTrash,
   canRestore: canRestore,
-  starred: starred,
   unread: unread,
   snoozed: snoozed,
+  thread: thread,
+  muted: muted,
 );
 
+List<MailDockMore> _all(MailReaderDockPlan plan) => [
+  ...plan.bar,
+  ...plan.more.expand((section) => section),
+];
+
 void main() {
-  test('default plan matches the approved dock and omits Archive', () {
+  test('the default plan: replies on the bar, Archive on the navbar and '
+      'Delete alone at the end of More', () {
     final plan = _plan();
     expect(plan.replies, [
       MailDockReply.reply,
       MailDockReply.replyAll,
       MailDockReply.forward,
     ]);
+    expect(plan.bar, isEmpty);
+    expect(plan.quick, MailQuickAction.archive);
     expect(plan.more, [
-      MailDockMore.inbox,
-      MailDockMore.appearance,
-      MailDockMore.images,
-      MailDockMore.star,
-      MailDockMore.markUnread,
-      MailDockMore.snooze,
-      MailDockMore.labels,
-      MailDockMore.move,
-      MailDockMore.trash,
+      [
+        MailDockMore.markUnread,
+        MailDockMore.snooze,
+        MailDockMore.labels,
+        MailDockMore.move,
+      ],
+      [MailDockMore.appearance, MailDockMore.images, MailDockMore.share],
+      [MailDockMore.trash],
     ]);
   });
 
-  test('a snoozed message offers Move to Inbox now instead of Snooze', () {
-    final more = _plan(snoozed: true).more;
-    expect(more, contains(MailDockMore.unsnooze));
-    expect(more, isNot(contains(MailDockMore.snooze)));
+  test('every command appears in exactly one place', () {
+    for (final primary in MailPrimaryAction.values) {
+      for (final canRestore in [false, true]) {
+        final plan = _plan(primary: primary, canRestore: canRestore);
+        final entries = _all(plan);
+        expect(entries.toSet().length, entries.length);
+        if (plan.quick == MailQuickAction.archive ||
+            plan.quick == MailQuickAction.restore) {
+          expect(entries, isNot(contains(MailDockMore.archive)));
+          expect(entries, isNot(contains(MailDockMore.restore)));
+        }
+        if (plan.quick == MailQuickAction.trash) {
+          expect(entries, isNot(contains(MailDockMore.trash)));
+        }
+      }
+    }
   });
 
-  test('read-only mailboxes offer More without reply entries', () {
-    expect(_plan(canSend: false).replies, isEmpty);
-  });
-
-  test('the circle set to Reply drops the pill Reply slot', () {
-    expect(_plan(primary: MailPrimaryAction.reply).replies, [
-      MailDockReply.replyAll,
-      MailDockReply.forward,
+  test('Archive is the default navbar action while Reply stays on the bar', () {
+    expect(MailPrimaryAction.values, const [
+      MailPrimaryAction.archive,
+      MailPrimaryAction.trash,
+      MailPrimaryAction.markUnread,
     ]);
-    expect(
-      _plan(primary: MailPrimaryAction.reply).more,
-      contains(MailDockMore.archive),
-    );
+    final plan = _plan();
+    expect(plan.quick, MailQuickAction.archive);
+    expect(plan.replies.first, MailDockReply.reply);
   });
 
-  test('sheet labels follow message state', () {
-    final more = _plan(starred: true, unread: true).more;
-    expect(more, contains(MailDockMore.unstar));
-    expect(more, contains(MailDockMore.markRead));
-    expect(more, isNot(contains(MailDockMore.star)));
-    expect(more, isNot(contains(MailDockMore.markUnread)));
+  test('a default of Delete puts Delete on the navbar and Archive in More', () {
+    final plan = _plan(primary: MailPrimaryAction.trash);
+    expect(plan.quick, MailQuickAction.trash);
+    expect(plan.more.first, contains(MailDockMore.archive));
+    expect(plan.more.length, 2);
   });
 
-  test('whatever the circle holds is left out of the sheet', () {
+  test('a default of Mark unread follows the read state', () {
     expect(
-      _plan(primary: MailPrimaryAction.trash).more,
-      isNot(contains(MailDockMore.trash)),
+      _plan(primary: MailPrimaryAction.markUnread).quick,
+      MailQuickAction.markUnread,
     );
     expect(
-      _plan(primary: MailPrimaryAction.markUnread).more,
+      _plan(primary: MailPrimaryAction.markUnread, unread: true).quick,
+      MailQuickAction.markRead,
+    );
+    expect(
+      _all(_plan(primary: MailPrimaryAction.markUnread)),
       isNot(contains(MailDockMore.markUnread)),
     );
+  });
+
+  test('archived and trashed mail restores from the navbar', () {
+    expect(_plan(canRestore: true).quick, MailQuickAction.restore);
+    final trash = _plan(canRestore: true, inTrash: true);
+    expect(trash.quick, MailQuickAction.restore);
+    expect(_all(trash), isNot(contains(MailDockMore.trash)));
     expect(
-      _plan(canRestore: true, primary: MailPrimaryAction.reply).more,
-      contains(MailDockMore.restore),
+      _plan(
+        primary: MailPrimaryAction.trash,
+        inTrash: true,
+        canRestore: true,
+      ).quick,
+      MailQuickAction.restore,
     );
   });
 
-  test(
-    'an unread message keeps Mark read even when the circle marks unread',
-    () {
-      expect(
-        _plan(primary: MailPrimaryAction.markUnread, unread: true).more,
-        contains(MailDockMore.markRead),
-      );
-    },
-  );
+  test('quarantined mail offers no Archive, Move or Delete', () {
+    final plan = _plan(quarantined: true);
+    expect(plan.quick, isNull);
+    expect(
+      _all(plan),
+      isNot(
+        anyOf(
+          contains(MailDockMore.archive),
+          contains(MailDockMore.move),
+          contains(MailDockMore.trash),
+        ),
+      ),
+    );
+  });
 
-  test('quarantined and trashed messages hide unsafe destinations', () {
-    final quarantined = _plan(
-      quarantined: true,
-      primary: MailPrimaryAction.reply,
-    ).more;
-    expect(quarantined, isNot(contains(MailDockMore.archive)));
-    expect(quarantined, isNot(contains(MailDockMore.move)));
-    expect(quarantined, isNot(contains(MailDockMore.trash)));
-    expect(_plan(inTrash: true).more, isNot(contains(MailDockMore.trash)));
+  test('state-dependent entries follow the message', () {
+    expect(_all(_plan(unread: true)), contains(MailDockMore.markRead));
+    expect(_all(_plan(snoozed: true)), contains(MailDockMore.unsnooze));
+    expect(_all(_plan()), isNot(contains(MailDockMore.mute)));
+    expect(_all(_plan(thread: true)), contains(MailDockMore.mute));
+    expect(
+      _all(_plan(thread: true, muted: true)),
+      contains(MailDockMore.unmute),
+    );
+  });
+
+  test('a mailbox that cannot send puts its common commands on the bar', () {
+    final plan = _plan(canSend: false);
+    expect(plan.replies, isEmpty);
+    expect(plan.bar, [MailDockMore.markUnread, MailDockMore.snooze]);
+    expect(plan.more.first, isNot(contains(MailDockMore.markUnread)));
   });
 }

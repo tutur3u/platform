@@ -16754,6 +16754,45 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailProfilesRetry => 'Không tải được tên · Thử lại';
 
   @override
+  String get mailToMe => 'gửi tôi';
+
+  @override
+  String mailToRecipient(String name) {
+    return 'gửi $name';
+  }
+
+  @override
+  String get mailTimeJustNow => 'Vừa xong';
+
+  @override
+  String mailTimeMinutesAgo(int count) {
+    return '$count phút trước';
+  }
+
+  @override
+  String mailTimeHoursAgo(int count) {
+    return '$count giờ trước';
+  }
+
+  @override
+  String get mailFeedbackArchived => 'Đã lưu trữ';
+
+  @override
+  String get mailFeedbackTrashed => 'Đã chuyển vào thùng rác';
+
+  @override
+  String get mailFeedbackKeptNewMessage => 'Đã giữ lại: có thư mới';
+
+  @override
+  String get mailFilterUnread => 'Chưa đọc';
+
+  @override
+  String get mailQuickFilter => 'Lọc nhanh';
+
+  @override
+  String get mailMessageActions => 'Thao tác với thư';
+
+  @override
   String get fleetStatusNeedsUser => 'Cần bạn';
 
   @override

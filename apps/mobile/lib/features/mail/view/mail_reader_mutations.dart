@@ -37,9 +37,19 @@ extension _MailReaderMutations on _MailReaderState {
       });
     }
     if (optimisticClose) {
-      // Hand the dock back to Mail now, before the reader's pop animation.
+      // Hand the dock back to Mail at once, before the reader's pop animation.
       _busy = true;
-      widget.onOptimisticAction?.call(action, id);
+      final deferred =
+          (action == 'archive' || action == 'trash') &&
+          (widget.onDeferCloseAction?.call(
+                action,
+                id,
+                starred: _starred,
+                unread: _unread,
+                lastMessageAt: _messageStateMetadata?['lastMessageAt'],
+              ) ??
+              false);
+      if (!deferred) widget.onOptimisticAction?.call(action, id);
       lookupShellMiniNavCubit(context)?.dismissOwner('mail-reader');
       try {
         context.read<ShellChromeActionsCubit>().dismissOwner('mail-reader');
@@ -47,6 +57,7 @@ extension _MailReaderMutations on _MailReaderState {
         // Standalone reader tests and screens need no shared dock handoff.
       }
       _close();
+      if (deferred) return;
     }
     try {
       if (folderId != null) {

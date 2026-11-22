@@ -50,11 +50,13 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
               _folder == 'inbox' &&
               _labelId == null &&
               _folderId == null &&
+              _quickFilter == MailQuickFilter.all &&
               _search.text.trim().isEmpty;
           _mailboxId = destination.mailboxId;
           _folder = 'inbox';
           _labelId = null;
           _folderId = null;
+          _quickFilter = MailQuickFilter.all;
           _search.clear();
           if (!sameInbox) {
             _items = [];

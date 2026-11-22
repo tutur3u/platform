@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 
 /// Horizontal gestures preserve scrolling and long-press selection.
@@ -26,30 +27,31 @@ class MailSwipeTile extends StatelessWidget {
       final left = preferences.left;
       final right = preferences.right;
       Widget background(MailSwipeAction action, Alignment alignment) {
-        final colors = Theme.of(context).colorScheme;
+        final colors = AppTokens.of(context).colorScheme;
         final destructive = action == MailSwipeAction.trash;
-        return Container(
-          color: destructive ? colors.errorContainer : colors.primaryContainer,
-          alignment: alignment,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                action.icon,
-                color: destructive
-                    ? colors.onErrorContainer
-                    : colors.onPrimaryContainer,
+        final foreground = destructive
+            ? colors.destructiveForeground
+            : colors.background;
+        return ColoredBox(
+          color: destructive ? colors.destructive : colors.info,
+          child: Align(
+            alignment: alignment,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(action.icon, color: foreground),
+                  Text(
+                    action.label(context),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                action.label(context),
-                style: TextStyle(
-                  color: destructive
-                      ? colors.onErrorContainer
-                      : colors.onPrimaryContainer,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       }

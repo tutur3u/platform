@@ -22,11 +22,13 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
         _folder,
       );
       if (!mounted || folder == null || folder == _folder) return;
+      _flushAllDeferredFeedback();
       _dismissSwipeFeedback();
       _updateState(() {
         _folder = folder;
         _labelId = null;
         _folderId = null;
+        _quickFilter = MailQuickFilter.all;
         _selected.clear();
       });
       unawaited(_load(forceRefresh: false));
@@ -322,7 +324,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             sliver: SliverList.separated(
                               itemCount: _items.length + 1,
                               separatorBuilder: (_, index) =>
-                                  const Divider(height: 1, indent: 36),
+                                  const Divider(height: 1, indent: 32),
                               itemBuilder: (context, index) {
                                 if (index == _items.length) {
                                   if (_hasMore) {

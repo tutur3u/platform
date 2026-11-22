@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
+import 'package:mobile/features/mail/view/mail_document_request.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_inline_images.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Native rendering isolated from the app's authenticated browser state.
 class MailHtmlBody extends StatefulWidget {
@@ -63,7 +63,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   Widget? _webView;
 
   MailMessageAppearance get _effectiveAppearance =>
-      MailAppearancePreference.instance.value ?? MailMessageAppearance.original;
+      mailEffectiveAppearance(context);
 
   @override
   void initState() {
@@ -129,16 +129,12 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     _document = null;
     _failed = false;
     try {
-      final request = MailDocumentRequest(
+      final request = mailDocumentRequest(
+        context,
         html: widget.html,
         loadImages: _images,
         inlineImages: widget.inlineImages,
-        appearance: _appearance ?? MailMessageAppearance.original,
-        backgroundArgb:
-            (_appearance == MailMessageAppearance.dark) ==
-                (Theme.of(context).brightness == Brightness.dark)
-            ? shad.Theme.of(context).colorScheme.background.toARGB32()
-            : null,
+        appearance: _appearance,
       );
       _request = request;
       final cachedHeight = widget.renderedDocuments?.lookupHeight(
@@ -151,15 +147,17 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
       }
       final documents = widget.renderedDocuments;
       final memo = documents?.lookup(request);
+      // A warm-up or another body may already be rendering this document;
+      // the owner's memo shares that run and keeps the result.
       final document =
           memo ??
-          await compute<MailDocumentRequest, String>(
-            renderMailDocument,
-            request,
-          );
+          await (documents?.render(request) ??
+              compute<MailDocumentRequest, String>(
+                renderMailDocument,
+                request,
+              ));
       // A render that outlived this body (or its Mail view) is discarded.
       if (!mounted || generation != _generation) return;
-      if (memo == null) documents?.store(request, document);
       setState(() => _document = document);
     } on Object {
       if (mounted && generation == _generation) setState(() => _failed = true);

@@ -31279,6 +31279,72 @@ abstract class AppLocalizations {
   /// **'Names unavailable · Retry'**
   String get mailProfilesRetry;
 
+  /// No description provided for @mailToMe.
+  ///
+  /// In en, this message translates to:
+  /// **'to me'**
+  String get mailToMe;
+
+  /// No description provided for @mailToRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'to {name}'**
+  String mailToRecipient(String name);
+
+  /// No description provided for @mailTimeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get mailTimeJustNow;
+
+  /// No description provided for @mailTimeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m ago'**
+  String mailTimeMinutesAgo(int count);
+
+  /// No description provided for @mailTimeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h ago'**
+  String mailTimeHoursAgo(int count);
+
+  /// No description provided for @mailFeedbackArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get mailFeedbackArchived;
+
+  /// No description provided for @mailFeedbackTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to Trash'**
+  String get mailFeedbackTrashed;
+
+  /// No description provided for @mailFeedbackKeptNewMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept: a new message arrived'**
+  String get mailFeedbackKeptNewMessage;
+
+  /// No description provided for @mailFilterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get mailFilterUnread;
+
+  /// No description provided for @mailQuickFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick filter'**
+  String get mailQuickFilter;
+
+  /// No description provided for @mailMessageActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Message actions'**
+  String get mailMessageActions;
+
   /// No description provided for @fleetStatusNeedsUser.
   ///
   /// In en, this message translates to:

@@ -16952,6 +16952,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailProfilesRetry => 'Names unavailable · Retry';
 
   @override
+  String get mailToMe => 'to me';
+
+  @override
+  String mailToRecipient(String name) {
+    return 'to $name';
+  }
+
+  @override
+  String get mailTimeJustNow => 'Just now';
+
+  @override
+  String mailTimeMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String mailTimeHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String get mailFeedbackArchived => 'Archived';
+
+  @override
+  String get mailFeedbackTrashed => 'Moved to Trash';
+
+  @override
+  String get mailFeedbackKeptNewMessage => 'Kept: a new message arrived';
+
+  @override
+  String get mailFilterUnread => 'Unread';
+
+  @override
+  String get mailQuickFilter => 'Quick filter';
+
+  @override
+  String get mailMessageActions => 'Message actions';
+
+  @override
   String get fleetStatusNeedsUser => 'Needs you';
 
   @override

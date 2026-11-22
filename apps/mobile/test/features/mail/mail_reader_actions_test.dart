@@ -60,7 +60,8 @@ void main() {
         'to@example.test',
       ]),
     );
-    await tester.tap(find.byKey(const ValueKey('mail-recipients-message')));
+    // "to …" opens the delivery details inline under the sender row.
+    await tester.tap(find.byKey(const ValueKey('mail-recipients-toggle')));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('mail-details-sheet-message')),
@@ -75,7 +76,7 @@ void main() {
     tester,
   ) async {
     final repository = _Repository();
-    final read = Completer<void>();
+    final pending = Completer<void>();
     when(
       () => repository.changeState(
         'ws',
@@ -84,7 +85,7 @@ void main() {
         'mark_read',
         thread: false,
       ),
-    ).thenAnswer((_) => read.future);
+    ).thenAnswer((_) => pending.future);
     await tester.pumpApp(
       MailReader(
         repository: repository,
@@ -120,18 +121,17 @@ void main() {
       find.byType(AppActionSheet<String>),
     );
     expect(sheet.title, 'Read state');
-    expect(
-      sheet.actions
-          .singleWhere((action) => action.value == 'mark_read')
-          .enabled,
-      isFalse,
+    final read = sheet.actions.singleWhere(
+      (action) => action.value == 'mark-read',
     );
-    expect(
-      sheet.actions.where((action) => action.value == 'unsnooze'),
-      isEmpty,
-    );
-    expect(sheet.actions.where((action) => action.value == 'restore'), isEmpty);
-    expect(sheet.actions.where((action) => action.value == 'reply'), isEmpty);
+    expect(read.label, 'Mark as read');
+    expect(read.enabled, isFalse);
+    final labels = [for (final action in sheet.actions) action.label];
+    expect(labels, isNot(contains('Move to Inbox now')));
+    expect(labels, isNot(contains('Move to inbox')));
+    expect(labels, isNot(contains('Reply')));
+    // Delete is the sheet's last entry.
+    expect(labels.last, 'Delete');
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     verifyNever(
@@ -143,19 +143,18 @@ void main() {
         thread: false,
       ),
     );
-    read.complete();
+    pending.complete();
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Show menu'));
     await tester.pumpAndSettle();
     final settled = tester.widget<AppActionSheet<String>>(
       find.byType(AppActionSheet<String>),
     );
-    expect(
-      settled.actions
-          .singleWhere((action) => action.value == 'mark_unread')
-          .enabled,
-      isTrue,
+    final unread = settled.actions.singleWhere(
+      (action) => action.value == 'mark-read',
     );
+    expect(unread.label, 'Mark unread');
+    expect(unread.enabled, isTrue);
   });
   for (final oldCompletesFirst in [true, false]) {
     testWidgets(

@@ -142,6 +142,10 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
     final tag = element.localName;
     final width = element.attributes['width'];
     if (tag == 'img') {
+      // Decode off the WebView's main thread, and let a scrolling document
+      // ("View original") defer images below the fold.
+      element.attributes['decoding'] = 'async';
+      element.attributes['loading'] = 'lazy';
       final alt = element.attributes['alt'] ?? '';
       final src = element.attributes['src'] ?? '';
       final description = '$alt $src'.toLowerCase();

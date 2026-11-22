@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -23,6 +24,7 @@ import 'package:mobile/features/mail/view/mail_move_destinations.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader_dock_plan.dart';
 import 'package:mobile/features/mail/view/mail_reader_header.dart';
+import 'package:mobile/features/mail/view/mail_reader_identity.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_skeletons.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
@@ -60,6 +62,7 @@ class MailReader extends StatefulWidget {
     this.notificationEntry = false,
     this.onReadFailed,
     this.onOptimisticAction,
+    this.onDeferCloseAction,
     this.onActionSettled,
     this.signatureText,
     this.signatureHtml,
@@ -109,6 +112,19 @@ class MailReader extends StatefulWidget {
   final bool notificationEntry;
   final VoidCallback? onReadFailed;
   final void Function(String action, String id)? onOptimisticAction;
+
+  /// Returns true when the owner defers committing a closing Inbox action
+  /// through its Undo window instead of writing immediately. The owner then
+  /// applies the optimistic change itself. `starred`, `unread` and
+  /// `lastMessageAt` are the conversation as the reader shows it.
+  final bool Function(
+    String action,
+    String id, {
+    required bool starred,
+    required bool unread,
+    required Object? lastMessageAt,
+  })?
+  onDeferCloseAction;
   final void Function({
     required String action,
     required String id,
@@ -147,14 +163,39 @@ class _MailReaderState extends State<MailReader> {
   bool _showImages = false;
   bool _childRouteOpen = false;
   final Map<String, bool> _expandedMessages = {};
+
+  /// Messages whose delivery details are open under their sender row.
+  final Set<String> _detailsOpen = {};
   late Map<String, dynamic>? _detail = widget.detail;
   Object? _loadError;
   bool _starred = false;
-  List<Map<String, dynamic>> get _messages => switch (_detail) {
-    null => const [],
-    final detail when widget.thread => mailRows(detail['messages']),
-    final detail => [detail],
-  };
+
+  final GlobalKey _headingKey = GlobalKey();
+  double _headingExtent = 56;
+  double _lastScrollPixels = 0;
+  bool _pendingTitleSync = false;
+
+  /// Whether the subject heading has scrolled under the navbar, which then
+  /// shows the subject instead of the folder.
+  bool _subjectInTitle = false;
+
+  Map<String, dynamic>? _messagesSource;
+  List<Map<String, dynamic>> _messagesCache = const [];
+
+  /// Parsed once per detail: rows read it many times per build.
+  List<Map<String, dynamic>> get _messages {
+    final detail = _detail;
+    if (!identical(detail, _messagesSource)) {
+      _messagesSource = detail;
+      _messagesCache = switch (detail) {
+        null => const [],
+        _ when widget.thread => mailRows(detail['messages']),
+        _ => [detail],
+      };
+    }
+    return _messagesCache;
+  }
+
   String get _id => switch (_detail) {
     null => widget.summary!['id'] as String,
     final detail when widget.thread =>
@@ -162,12 +203,51 @@ class _MailReaderState extends State<MailReader> {
     final detail => detail['id'] as String,
   };
 
-  ValueKey<String> _threadExpansionKey(Map<String, dynamic> message) {
-    final position = message['id'] == _messages.last['id'] ? 'latest' : 'older';
-    return ValueKey('mail-thread-message-${message['id']}-$position');
+  void _updateState(VoidCallback update) => setState(update);
+
+  /// Follows the reader's own vertical scroll and layout-clamped metric
+  /// updates. The list keeps the route's primary scroll controller, so the
+  /// status-bar tap still scrolls to top.
+  void _updateHeadingExtent() {
+    final heading = _headingKey.currentContext?.findRenderObject();
+    if (heading is RenderBox && heading.hasSize) {
+      _headingExtent = heading.size.height;
+    }
   }
 
-  void _updateState(VoidCallback update) => setState(update);
+  void _syncSubjectInTitle(ScrollMetrics metrics) {
+    _lastScrollPixels = metrics.pixels;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      if (_pendingTitleSync) return;
+      _pendingTitleSync = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pendingTitleSync = false;
+        if (!mounted) return;
+        _updateHeadingExtent();
+        final next = _lastScrollPixels > _headingExtent;
+        if (next != _subjectInTitle) setState(() => _subjectInTitle = next);
+      });
+      return;
+    }
+    _updateHeadingExtent();
+    final next = _lastScrollPixels > _headingExtent;
+    if (next != _subjectInTitle) setState(() => _subjectInTitle = next);
+  }
+
+  bool _onScroll(ScrollNotification notification) {
+    if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
+      _syncSubjectInTitle(notification.metrics);
+    }
+    return false;
+  }
+
+  bool _onScrollMetrics(ScrollMetricsNotification notification) {
+    if (notification.depth == 0 && notification.metrics.axis == Axis.vertical) {
+      _syncSubjectInTitle(notification.metrics);
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -216,6 +296,7 @@ class _MailReaderState extends State<MailReader> {
       _snoozedOverride = null;
       _mutedOverride = null;
       _expandedMessages.clear();
+      _detailsOpen.clear();
       _detail = widget.detail;
       _loadError = null;
       oldWidget.repository.accessRevoked?.removeListener(_onAccessRevoked);
@@ -337,26 +418,6 @@ class _MailReaderState extends State<MailReader> {
   Widget build(BuildContext context) {
     if (_accessRevoked) return const SizedBox.shrink();
     final l10n = context.l10n;
-    final snoozed = _messageSnoozed;
-    final muted = _mutedOverride ?? (_messageStateMetadata?['muted'] == true);
-    final archived = _canRestore;
-    final unread =
-        _unreadOverride ??
-        _messages.any((message) => message['unread'] == true);
-    final actions = {
-      if (snoozed) 'unsnooze': l10n.mailUnsnooze else 'snooze': l10n.mailSnooze,
-      if (widget.thread)
-        (muted ? 'unmute' : 'mute'): muted ? l10n.mailUnmute : l10n.mailMute,
-      if (archived)
-        'restore': l10n.mailRestore
-      else if (!_quarantined)
-        'archive': l10n.mailArchive,
-      (unread ? 'mark_read' : 'mark_unread'): unread
-          ? l10n.mailMarkRead
-          : l10n.mailMarkUnread,
-      if (widget.sourceFolder != 'trash' && !_quarantined)
-        'trash': l10n.mailTrash,
-    };
     final subject = switch (_detail) {
       null => widget.summary?['subject'] as String?,
       final detail when widget.thread =>
@@ -377,6 +438,13 @@ class _MailReaderState extends State<MailReader> {
 
     // A pane header (split layouts) or the shell owns the message controls.
     final headerControls = sharedShell || pane;
+    final attachments = _attachmentsTab && _attachments.isNotEmpty;
+    final messages = _messages;
+    final count = _detail == null
+        ? 2
+        : attachments
+        ? 2
+        : 1 + messages.length;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -385,34 +453,43 @@ class _MailReaderState extends State<MailReader> {
           backgroundColor: sharedShell
               ? Colors.transparent
               : AppTokens.of(context).colorScheme.background,
-          appBar: sharedShell || pane ? null : _fallbackAppBar(title, actions),
+          appBar: sharedShell || pane ? null : _fallbackAppBar(title),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (pane) _paneHeader(title, actions),
+              if (pane) _paneHeader(),
               Expanded(
                 child: LayoutBuilder(
-                  builder: (context, constraints) => ListView(
-                    padding:
-                        AppPageInsets.of(
-                          context,
-                          width: constraints.maxWidth,
-                          kind: AppPageKind.reading,
-                        ).copyWith(
-                          bottom:
-                              readerBottomClearance + AppLayout.scrollEndGap,
+                  builder: (context, constraints) =>
+                      NotificationListener<ScrollMetricsNotification>(
+                        onNotification: _onScrollMetrics,
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: _onScroll,
+                          child: ListView.builder(
+                            padding:
+                                AppPageInsets.of(
+                                  context,
+                                  width: constraints.maxWidth,
+                                  kind: AppPageKind.reading,
+                                ).copyWith(
+                                  top: AppSpacing.sm,
+                                  bottom:
+                                      readerBottomClearance +
+                                      AppLayout.scrollEndGap,
+                                ),
+                            itemCount: count,
+                            itemBuilder: (context, index) {
+                              if (index == 0) return _threadHeader(title);
+                              if (_detail == null) return _summaryPreview();
+                              if (attachments) return _attachmentList();
+                              return _messageCard(
+                                messages[index - 1],
+                                headerControls,
+                              );
+                            },
+                          ),
                         ),
-                    children: _detail == null
-                        ? [_summaryPreview()]
-                        : [
-                            _threadHeader(),
-                            if (_attachmentsTab && _attachments.isNotEmpty)
-                              _attachmentList()
-                            else
-                              for (final message in _messages)
-                                _messageCard(message, headerControls),
-                          ],
-                  ),
+                      ),
                 ),
               ),
             ],

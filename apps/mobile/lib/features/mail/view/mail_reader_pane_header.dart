@@ -1,55 +1,32 @@
 part of 'mail_reader.dart';
 
 /// In a split layout the shell navbar and dock stay with the inbox, so the
-/// detail pane carries the message title and message actions itself.
+/// detail pane carries a compact toolbar: the default action, Reply, More
+/// and Close. The subject is the content's own heading.
 extension _MailReaderPaneHeader on _MailReaderState {
-  Widget _paneHeader(String title, Map<String, String> actions) {
+  Widget _paneHeader() {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final primary = _primaryAction;
     final idle = !_busy && _detail != null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
-        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xs,
         AppSpacing.sm,
         0,
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Semantics(
-              header: true,
-              child: Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge,
-              ),
-            ),
-          ),
-          if (primary == MailPrimaryAction.reply)
+          ?_quickButton(),
+          if (widget.canSend)
             IconButton(
-              tooltip: primary.label(context),
-              onPressed: idle ? _runPrimaryAction : null,
-              icon: Icon(primary.icon),
+              tooltip: l10n.mailReply,
+              onPressed: idle && _messages.isNotEmpty ? _replyLast : null,
+              icon: const Icon(Icons.reply_outlined),
             ),
-          ..._prominentActions(),
-          IconButton(
-            tooltip: l10n.mailLoadImages,
-            isSelected: _showImages,
-            onPressed: _toggleReaderImages,
-            icon: const Icon(Icons.image_not_supported_outlined),
-            selectedIcon: const Icon(Icons.image_outlined),
-          ),
-          IconButton(
-            tooltip: l10n.mailMessageAppearance,
-            onPressed: _chooseAppearance,
-            icon: const Icon(Icons.contrast_rounded),
-          ),
+          const Spacer(),
           IconButton(
             tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-            onPressed: idle ? () => _chooseAction(actions) : null,
+            onPressed: idle ? _chooseAction : null,
             icon: const Icon(Icons.more_horiz),
           ),
           IconButton(

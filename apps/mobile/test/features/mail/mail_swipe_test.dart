@@ -99,7 +99,7 @@ void main() {
       expect(actions, [MailSwipeAction.archive]);
       await tester.drag(find.text('Message'), const Offset(260, 0));
       await tester.pumpAndSettle();
-      expect(actions, [MailSwipeAction.archive, MailSwipeAction.read]);
+      expect(actions, [MailSwipeAction.archive, MailSwipeAction.trash]);
       await preferences.select(swipeLeft: true, action: MailSwipeAction.none);
       await preferences.select(swipeLeft: false, action: MailSwipeAction.none);
       await tester.pumpAndSettle();

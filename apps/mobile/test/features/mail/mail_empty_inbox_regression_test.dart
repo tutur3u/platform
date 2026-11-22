@@ -111,7 +111,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(MailReader), findsOneWidget);
         expect(find.byTooltip('Archive'), findsOneWidget);
-        expect(find.byTooltip('Trash'), findsOneWidget);
+        // Delete lives in More, not beside Archive.
+        expect(find.byTooltip('Delete'), findsNothing);
         await tester.tap(find.byTooltip('Archive'));
         // Bound the frame wait so the original infinite spinner fails quickly.
         await tester.pump();
@@ -134,6 +135,10 @@ void main() {
         await tester.pump();
         expect(find.text('Last message'), findsNothing);
         if (afterExit) expect(find.text('New arrival'), findsOneWidget);
+        // Let the Inbox Undo window close so the deferred archive starts.
+        await tester.pump(const Duration(seconds: 4));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
         if (success) {
           archive.complete();
         } else {

@@ -35,6 +35,7 @@ Future<ShellDockActionGroup> _pumpDock(
   String? sourceFolder = 'inbox',
   Map<String, dynamic>? detail,
   MailRepository? repository,
+  VoidCallback? onClose,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final preference = MailPrimaryActionPreference.instance;
@@ -55,6 +56,7 @@ Future<ShellDockActionGroup> _pumpDock(
         fromAddress: 'me@example.test',
         resolvePeople: (_, _) async => {},
         detail: detail ?? _detail(),
+        onClose: onClose,
       ),
     ),
   );
@@ -73,46 +75,56 @@ List<String> _ids(Iterable<dynamic> items) => [
 ];
 
 void main() {
-  testWidgets('the dock holds replies, the primary circle and More', (
+  testWidgets('one bar of replies and More; Archive on the navbar', (
     tester,
   ) async {
     final group = await _pumpDock(tester);
 
     expect(_ids(group.actions), ['reply', 'reply-all', 'forward']);
-    expect(group.primary!.id, 'archive');
+    // No separate floating circle beside the bar.
+    expect(group.primary, isNull);
     expect(
       [for (final section in group.more) _ids(section)],
       [
-        ['inbox', 'appearance', 'images'],
-        ['star', 'mark-read', 'snooze', 'labels', 'move'],
+        ['mark-read', 'snooze', 'labels', 'move'],
+        ['appearance', 'images', 'share'],
+        ['trash'],
       ],
     );
-    expect(group.primary!.label, 'Archive');
-    // Trash is one tap away on the navbar; the circle already archives.
-    expect(
-      [for (final action in _navbar(tester)) action.id],
-      ['mail-reader-trash'],
-    );
+    final delete = group.more.last.single as ShellDockGroupAction;
+    expect(delete.label, 'Delete');
+    expect(delete.destructive, isTrue);
+    final navbar = _navbar(tester);
+    expect([for (final action in navbar) action.id], ['mail-reader-quick']);
+    expect(navbar.single.tooltip, 'Archive');
   });
 
-  testWidgets('a mailbox that cannot send offers More only', (tester) async {
+  testWidgets('a mailbox that cannot send keeps its common commands on the '
+      'bar', (tester) async {
     final group = await _pumpDock(tester, canSend: false);
 
-    expect(group.actions, isEmpty);
+    expect(_ids(group.actions), ['mark-read', 'snooze']);
     expect(group.more, isNotEmpty);
   });
 
-  testWidgets('the circle set to Reply drops the pill Reply slot', (
-    tester,
-  ) async {
-    final group = await _pumpDock(tester, primary: MailPrimaryAction.reply);
+  test('a saved reply preference migrates explicitly to Archive', () async {
+    SharedPreferences.setMockInitialValues({
+      MailPrimaryActionPreference.storageKey: 'reply',
+    });
+    final preference = MailPrimaryActionPreference()
+      ..value = MailPrimaryAction.trash;
+    await preference.load();
+    expect(preference.value, MailPrimaryAction.archive);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString(MailPrimaryActionPreference.storageKey), 'archive');
+  });
 
-    expect(group.primary!.id, 'reply');
-    expect(_ids(group.actions), ['reply-all', 'forward']);
-    expect(
-      [for (final action in _navbar(tester)) action.id],
-      ['mail-reader-archive', 'mail-reader-trash'],
-    );
+  testWidgets('Archive on the navbar stays excluded from More', (tester) async {
+    final group = await _pumpDock(tester);
+
+    expect(group.primary, isNull);
+    expect(_ids(group.actions), ['reply', 'reply-all', 'forward']);
+    expect(_navbar(tester).single.tooltip, 'Archive');
     expect([
       for (final section in group.more) ..._ids(section),
     ], isNot(contains('archive')));
@@ -121,23 +133,14 @@ void main() {
   testWidgets('sheet labels follow message state', (tester) async {
     final group = await _pumpDock(tester, detail: _detail(unread: true));
 
-    final read = group.more.last.singleWhere((item) => item.id == 'mark-read');
+    final read = group.more.first.singleWhere((item) => item.id == 'mark-read');
     expect(read.label, 'Mark as read');
   });
 
   testWidgets('archived mail offers Restore on the navbar', (tester) async {
-    await _pumpDock(
-      tester,
-      sourceFolder: 'archive',
-      primary: MailPrimaryAction.reply,
-    );
+    await _pumpDock(tester, sourceFolder: 'archive');
 
-    expect(
-      _navbar(
-        tester,
-      ).singleWhere((action) => action.id == 'mail-reader-archive').tooltip,
-      'Move to inbox',
-    );
+    expect(_navbar(tester).single.tooltip, 'Move to inbox');
   });
 
   testWidgets('the appearance row selects and applies a message theme', (
@@ -145,7 +148,7 @@ void main() {
   ) async {
     final group = await _pumpDock(tester);
     final appearance =
-        group.more.first.singleWhere((item) => item.id == 'appearance')
+        group.more[1].singleWhere((item) => item.id == 'appearance')
             as ShellDockChoice;
     final previous = MailAppearancePreference.instance.value;
     addTearDown(() => MailAppearancePreference.instance.value = previous);
@@ -163,8 +166,7 @@ void main() {
         tester
                 .widget<ShellChromeActions>(find.byType(ShellChromeActions))
                 .actionGroup!
-                .more
-                .first
+                .more[1]
                 .singleWhere((item) => item.id == 'appearance')
             as ShellDockChoice;
     expect(updated.selectedId, 'dark');
@@ -180,11 +182,48 @@ void main() {
   testWidgets('Move in More lists the mailbox folders', (tester) async {
     final group = await _pumpDock(tester);
 
-    (group.more.last.singleWhere((item) => item.id == 'move')
+    (group.more.first.singleWhere((item) => item.id == 'move')
             as ShellDockGroupAction)
         .onPressed!();
     await tester.pumpAndSettle();
 
     expect(find.text('Receipts'), findsOneWidget);
+  });
+  testWidgets('a default of Mark unread marks it and returns to the list', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    when(
+      () => repository.changeState(
+        'ws',
+        'box',
+        'm',
+        'mark_unread',
+        thread: false,
+      ),
+    ).thenAnswer((_) async {});
+    var closed = false;
+    await _pumpDock(
+      tester,
+      primary: MailPrimaryAction.markUnread,
+      repository: repository,
+      onClose: () => closed = true,
+    );
+    final quick = _navbar(tester).single;
+    expect(quick.tooltip, 'Mark unread');
+
+    quick.onPressed!();
+    await tester.pumpAndSettle();
+
+    verify(
+      () => repository.changeState(
+        'ws',
+        'box',
+        'm',
+        'mark_unread',
+        thread: false,
+      ),
+    ).called(1);
+    expect(closed, isTrue);
   });
 }

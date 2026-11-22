@@ -345,10 +345,10 @@ void main() {
     await tester.tap(find.text('First'));
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);
-    expect(
-      actions.state.actionGroupForLocation(Routes.mail)?.primary,
-      isNotNull,
-    );
+    // The reader's one action bar replaces the inbox dock; no circle.
+    final group = actions.state.actionGroupForLocation(Routes.mail)!;
+    expect(group.actions, isNotEmpty);
+    expect(group.primary, isNull);
     expect(
       actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
       isNot(contains('mail-search')),
@@ -357,7 +357,7 @@ void main() {
       actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
       isNot(contains('mail-star')),
     );
-    expect(titles.state.resolveForLocation(Routes.mail), 'First');
+    expect(titles.state.registrations.values.single.ownerId, 'mail-reader');
     navigator.currentState!.pop();
     await tester.pumpAndSettle();
     expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
@@ -588,14 +588,14 @@ void main() {
         .widget<Dismissible>(find.byKey(const ValueKey('mail-swipe-First')))
         .confirmDismiss!(DismissDirection.endToStart);
     await tester.pump();
-    verify(
-      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
-    ).called(1);
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text('Old feedback'), findsNothing);
     expect(find.text('Queued feedback'), findsNothing);
     await tester.tap(find.text('Second'));
     await tester.pumpAndSettle();
+    verify(
+      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
+    ).called(1);
     expect(find.byType(MailReader), findsOneWidget);
     expect(find.byType(SnackBar), findsNothing);
   });

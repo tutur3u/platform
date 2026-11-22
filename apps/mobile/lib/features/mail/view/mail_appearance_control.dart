@@ -42,6 +42,14 @@ class MailAppearancePreference extends ValueNotifier<MailMessageAppearance?> {
   }
 }
 
+/// The appearance a message renders with: the saved choice, else the app's
+/// own theme, so HTML mail is not a white sheet inside a dark app.
+MailMessageAppearance mailEffectiveAppearance(BuildContext context) =>
+    MailAppearancePreference.instance.value ??
+    (Theme.of(context).brightness == Brightness.dark
+        ? MailMessageAppearance.dark
+        : MailMessageAppearance.original);
+
 class MailAppearanceControl extends StatelessWidget {
   const MailAppearanceControl({required this.appearance, super.key});
 

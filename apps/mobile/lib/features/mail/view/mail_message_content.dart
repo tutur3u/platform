@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
+import 'package:mobile/features/mail/view/mail_document_request.dart';
 import 'package:mobile/features/mail/view/mail_html_body.dart';
 import 'package:mobile/features/mail/view/mail_inline_images.dart';
 import 'package:mobile/features/mail/view/mail_invitation_card.dart';
@@ -45,12 +46,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
   Map<String, Map<String, dynamic>> _imageFiles = const {};
   int _generation = 0;
   String? _actorId;
-  String get _html => rewriteMailInlineAttachmentUrls(
-    widget.message['bodyHtml'] as String? ??
-        widget.message['sanitizedHtml'] as String? ??
-        '',
-    mailAttachmentContentIds(mailRows(widget.message['attachments'])),
-  );
+  String get _html => mailMessageHtml(widget.message);
 
   @override
   void initState() {
