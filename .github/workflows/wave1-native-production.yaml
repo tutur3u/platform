@@ -5,7 +5,7 @@ on:
       app:
         description: App admitted by its separate cutover PR
         type: choice
-        options: [calendar, mail, apps, finance]
+        options: [calendar, mail, apps, finance, drive]
         required: true
       release-artifact:
         description: Build and seal only. The publish job does not run.
@@ -109,8 +109,8 @@ jobs:
             const { assertReleaseInputs } = await import('./scripts/ci/wave1-release-inputs.mjs');
             assertReleaseInputs(process.env);
           }
-          // Finance's native profile pins its own public URLs; the build env matches finance-cloudflare.yaml.
-          const appUrl = p.app === 'finance' ? '' : `NEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\n`;
+          // Finance and Drive pin their own public URLs; the build env matches their native qualification workflows.
+          const appUrl = ['finance', 'drive'].includes(p.app) ? '' : `NEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\n`;
           appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\n${appUrl}NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com\n`);
           JS
       - name: Generate exact source metadata
@@ -120,7 +120,7 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build admitted production frontend and transitive suppliers
-        if: ${{ inputs.app != 'finance' }}
+        if: ${{ inputs.app != 'finance' && inputs.app != 'drive' }}
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2
@@ -149,6 +149,37 @@ jobs:
         env:
           VITE_FINANCE_NATIVE_PROFILE: production
         run: python3 scripts/ci/finance-native-artifact.py config apps/finance
+      # Drive's package build is its Next build; the Worker is its Void build,
+      # qualified by the same checks as drive-cloudflare-artifact.yaml.
+      - name: Build Drive workspace suppliers
+        if: ${{ inputs.app == 'drive' }}
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/drive^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Drive production native Worker
+        if: ${{ inputs.app == 'drive' }}
+        env:
+          NODE_ENV: production
+          VITE_DRIVE_NATIVE_PROFILE: production
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/drive && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Qualify the emitted Drive production profile
+        if: ${{ inputs.app == 'drive' }}
+        timeout-minutes: 2
+        env:
+          VITE_DRIVE_NATIVE_PROFILE: production
+        run: python3 scripts/ci/drive-native-artifact.py config apps/drive
+      - name: Workerd acceptance of the emitted Drive Worker on both production hosts
+        if: ${{ inputs.app == 'drive' }}
+        timeout-minutes: 5
+        env:
+          DRIVE_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: node --test apps/drive/cloudflare/cutover.runtime.mjs
       - name: Prepare the production profile and receipt
         timeout-minutes: 2
         run: |
@@ -171,7 +202,7 @@ jobs:
         run: |
           HOST="$(node --input-type=module -e "import { profileFor } from './scripts/ci/wave1-native-profile.mjs'; console.log(profileFor(process.env.APP, 'production').host)")"
           FLAGS=()
-          if [ "$APP" = calendar ] || [ "$APP" = mail ] || [ "$APP" = finance ]; then FLAGS+=(--expect-redirect); fi
+          if [ "$APP" = calendar ] || [ "$APP" = mail ] || [ "$APP" = finance ] || [ "$APP" = drive ]; then FLAGS+=(--expect-redirect); fi
           node scripts/ci/pre-seal-doctor.mjs "$APP" "apps/$APP" "$HOST" "$SOURCE_SHA" --wave1 "${FLAGS[@]}"
       - name: Seal and exercise the original route-free production bytes
         timeout-minutes: 5

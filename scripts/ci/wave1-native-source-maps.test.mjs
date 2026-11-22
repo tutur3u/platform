@@ -124,7 +124,7 @@ test('production verify refuses a seal that still carries server maps', (t) => {
 });
 
 test('every wave-1 production seal strips server maps', (t) => {
-  for (const name of ['mail', 'apps', 'finance', 'calendar']) {
+  for (const name of ['mail', 'apps', 'finance', 'drive', 'calendar']) {
     const app = fixture(t, name);
     writeFileSync(join(app, 'dist/server/index.js.map'), '{}');
     prepare(app, name, 'production', undefined, sha);

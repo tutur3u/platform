@@ -192,7 +192,7 @@ test('topology change after upload is not accepted', async (t) => {
   );
 });
 
-for (const app of ['calendar', 'mail', 'apps', 'finance']) {
+for (const app of ['calendar', 'mail', 'apps', 'finance', 'drive']) {
   test(`${app} sealed production config has no serving routes`, (t) => {
     const root = fixture(t, app);
     prepare(root, app, 'production', 'fixture', sha);
@@ -221,6 +221,7 @@ test('only the production environment upload step receives the named deploy toke
     'mail',
     'apps',
     'finance',
+    'drive',
   ]);
   const environment = 'wave1-${{ inputs.app }}-production';
   assert.equal(workflow.jobs.publish.environment, environment);

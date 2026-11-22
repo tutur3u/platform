@@ -1,7 +1,7 @@
 ---
 title: "Drive on Start + Void"
 description: "Native Drive Worker profiles, the sealed Cloudflare artifact, and the cutover and Vercel rollback packet."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-23"
 audience: developers
 ---
 
@@ -16,6 +16,15 @@ stable, so the canonical host keeps a one-step route back.
 | --- | --- | --- | --- |
 | Staging (default) | no profile variable | the staging Worker name | `src/start-candidate/staging-policy.ts`; the build refuses a non-staging value |
 | Production | `VITE_DRIVE_NATIVE_PROFILE=production` | `tuturuuu-drive` | `cloudflare/production-profile.json` |
+
+The production profile sets `TTR_CSP_DRIVE=enforce`. The Worker refuses a
+production request whose bindings differ from this file, so a Worker deployed
+without the marker answers 503 instead of serving. The script policy itself comes
+from the bridge's nonce CSP and is on in both profiles. Trusted Types is
+report-only until `TTR_TRUSTED_TYPES_DRIVE=enforce` is set, which waits for a
+clean signed-in crawl. The profile carries no `TUTURUUU_NOINDEX` or
+`TTR_ONE_ORIGIN_DRIVE`: the response policy always sends `noindex`, and the apex
+mount is served from the profile alone.
 
 Neither profile declares routes, custom domains, `workers_dev` or
 `preview_urls`. The hostname is attached at cutover by the release operator.
@@ -41,6 +50,19 @@ a clean restore before uploading `drive-native-<source SHA>` (7 days).
 
 Do not run `build:cloudflare` on a shared development machine; use the workflow.
 
+### Wave-1 producer
+
+`wave1-native-production.yaml` releases Drive through the same producer as the
+other wave-1 apps (`app=drive`). With `release-artifact` and the exact `main`
+`source-sha` it builds the workspace suppliers and the production Void profile,
+runs `drive-native-artifact.py config` and `cutover.runtime.mjs` on the emitted
+Worker, seals the route-free bytes (`workers_dev` and `preview_urls` off, no
+routes) with the profile in `scripts/ci/wave1-native-profiles.json`, and requalifies
+the restored archive without provider credentials. The recipe's vars equal
+`cloudflare/production-profile.json`; change the two together. The release inputs pin
+the production Supabase host. The publish job does not run for a release artifact,
+and production publication stays held until an explicit cutover change admits Drive.
+
 ## Cutover packet
 
 | Item | Value |
@@ -51,7 +73,7 @@ Do not run `build:cloudflare` on a shared development machine; use the workflow.
 | Build command | `VITE_DRIVE_NATIVE_PROFILE=production bun run --cwd apps/drive build:cloudflare` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Central API origin | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` |
-| Rollback | Record the serving subdomain provider and immutable deployment, plus the active gateway version, mount bindings and overlapping zone routes for the apex |
+| Rollback | Capture the Worker, version and routing that serve `drive.tuturuuu.com` before activating (it currently serves an older vinext build), then record the immutable deployment, plus the active gateway version, mount bindings and overlapping zone routes for the apex |
 | Data | no database writes and no migrations |
 
 ### Switch

@@ -118,14 +118,14 @@ async function runRuntimeAcceptance() {
       ? accessFixture()
       : null;
   // N8/N9: each Calendar and Mail artifact must 404 the other environment's host.
-  // The production Finance artifact rejects the staging subdomain.
+  // The production Finance and Drive artifacts reject the staging subdomain.
   const foreignHost =
     app === 'calendar' || app === 'mail'
       ? environment === 'production'
         ? `${app}.tutur3u.com`
         : `${app}.tuturuuu.com`
-      : app === 'finance'
-        ? 'finance.tutur3u.com'
+      : app === 'finance' || app === 'drive'
+        ? `${app}.tutur3u.com`
         : null;
   let clean = false;
   try {
@@ -134,14 +134,14 @@ async function runRuntimeAcceptance() {
       app === 'calendar' && environment === 'production'
         ? calendarProductionRuntimeTarget(receipt.profile)
         : null;
-    const financePathTarget =
-      app === 'finance' && environment === 'production'
+    // Finance and Drive also answer on their `/<app>` mount of the apex.
+    const pathTarget =
+      (app === 'finance' || app === 'drive') && environment === 'production'
         ? {
-            host: new URL(releaseRecipes.finance.mountHosts[0]).hostname,
-            basePath: '/finance',
+            host: new URL(releaseRecipes[app].mountHosts[0]).hostname,
+            basePath: `/${app}`,
           }
         : null;
-    const pathTarget = financePathTarget;
     if (pathTarget) hosts.unshift(pathTarget.host);
     if (calendarShadow) hosts.unshift(calendarShadow.apexHost);
     const appsMountHost =
@@ -397,9 +397,9 @@ async function runRuntimeAcceptance() {
         assert.match(identity.headers.get('cache-control'), /no-store/);
         if (calendarShadow && host === calendarShadow.apexHost)
           assert.match(identity.headers.get('x-robots-tag') ?? '', /noindex/);
-        if (host === financePathTarget?.host)
+        if (host === pathTarget?.host)
           assert.deepEqual(identity.headers.getSetCookie(), []);
-        if (host === financePathTarget?.host) {
+        if (host === pathTarget?.host) {
           for (const path of [
             '/api/auth/refresh-app-session',
             '/api/auth/verify-app-token',
@@ -411,11 +411,13 @@ async function runRuntimeAcceptance() {
           }
         }
         const post = await fetchWorker('/api/build-info', { method: 'POST' });
-        // Finance's proxy refuses every unregistered anonymous API request.
-        assert.equal(
-          post.status,
-          app === 'finance' ? 401 : 405,
-          'Identity route must not accept mutations'
+        // Finance's proxy refuses every unregistered anonymous API request;
+        // Drive's refuses it or lets the read-only route answer 405.
+        const mutationStatuses =
+          app === 'finance' ? [401] : app === 'drive' ? [401, 405] : [405];
+        assert.ok(
+          mutationStatuses.includes(post.status),
+          `Identity route must not accept mutations, got ${post.status}`
         );
         const head = await fetchWorker('/api/build-info', { method: 'HEAD' });
         assert.equal(head.status, 200);
@@ -471,7 +473,12 @@ async function runRuntimeAcceptance() {
           Buffer.from(await response.arrayBuffer()),
           await readFile(join(appRoot, 'dist', file))
         );
-        if (app === 'mail' || app === 'calendar' || app === 'finance') {
+        if (
+          app === 'mail' ||
+          app === 'calendar' ||
+          app === 'finance' ||
+          app === 'drive'
+        ) {
           const workspace = '/en/00000000-0000-4000-8000-000000000001';
           const page = await fetchWorker(workspace);
           assert.equal(
@@ -484,13 +491,13 @@ async function runRuntimeAcceptance() {
             target.hostname,
             environment === 'production' ? 'tuturuuu.com' : 'web.tutur3u.com'
           );
-          if (host === financePathTarget?.host) {
+          if (host === pathTarget?.host) {
             assert.equal(target.pathname, '/login');
             assert.match(page.headers.get('cache-control') ?? '', /no-store/u);
             assert.deepEqual(page.headers.getSetCookie(), []);
             const returnUrl = new URL(target.searchParams.get('returnUrl'));
             assert.equal(returnUrl.origin, 'https://tuturuuu.com');
-            assert.equal(returnUrl.pathname, '/finance/verify-token');
+            assert.equal(returnUrl.pathname, `${basePath}/verify-token`);
             assert.equal(returnUrl.searchParams.get('nextUrl'), workspace);
           }
           if (calendarShadow && host === calendarShadow.apexHost) {

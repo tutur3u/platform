@@ -256,7 +256,10 @@ test('the producer builds Finance with its Void production profile and qualifies
   const index = (name) => steps.findIndex((step) => step.name === name);
   const generic =
     steps[index('Build admitted production frontend and transitive suppliers')];
-  assert.equal(generic.if, "${{ inputs.app != 'finance' }}");
+  assert.equal(
+    generic.if,
+    "${{ inputs.app != 'finance' && inputs.app != 'drive' }}"
+  );
   assert.equal(
     generic.with.command,
     'bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2'
@@ -300,7 +303,7 @@ test('the producer builds Finance with its Void production profile and qualifies
   const doctor = steps[index('Pre-seal doctor on the production Host header')];
   assert.match(
     doctor.run,
-    /\[ "\$APP" = calendar \] \|\| \[ "\$APP" = mail \] \|\| \[ "\$APP" = finance \]; then FLAGS\+=\(--expect-redirect\)/
+    /\[ "\$APP" = calendar \] \|\| \[ "\$APP" = mail \] \|\| \[ "\$APP" = finance \] \|\| \[ "\$APP" = drive \]; then FLAGS\+=\(--expect-redirect\)/
   );
   assert.ok(workflow.jobs.publish.needs.includes('production-policy'));
   assert.match(

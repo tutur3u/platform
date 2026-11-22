@@ -10,6 +10,13 @@ const financeVars = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://nzamlzqfdwaaxdefwraj.supabase.co',
   ABUSE_GUARD_FAMILIES: '',
 };
+// Drive's emitted production config (apps/drive/cloudflare/production-profile.json).
+const driveVars = JSON.parse(
+  fs.readFileSync(
+    path.join(__dirname, '../../apps/drive/cloudflare/production-profile.json'),
+    'utf8'
+  )
+);
 function fixture(t, app = 'mail') {
   const dir = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), 'wave1-artifact-'))
@@ -44,7 +51,9 @@ function fixture(t, app = 'mail') {
       no_bundle: true,
       main: './index.js',
       compatibility_date:
-        app === 'apps' || app === 'finance' ? '2026-10-12' : '2026-10-19',
+        app === 'apps' || app === 'finance' || app === 'drive'
+          ? '2026-10-12'
+          : '2026-10-19',
       compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
       vars:
         app === 'web'
@@ -66,9 +75,11 @@ function fixture(t, app = 'mail') {
                 }
               : app === 'finance'
                 ? financeVars
-                : app === 'calendar'
-                  ? { ABUSE_GUARD_FAMILIES: 'proxy' }
-                  : {},
+                : app === 'drive'
+                  ? driveVars
+                  : app === 'calendar'
+                    ? { ABUSE_GUARD_FAMILIES: 'proxy' }
+                    : {},
       ...(app === 'calendar' || app === 'finance'
         ? {
             services: [
@@ -91,4 +102,4 @@ function fixture(t, app = 'mail') {
   );
   return dir;
 }
-module.exports = { financeVars, fixture };
+module.exports = { driveVars, financeVars, fixture };
