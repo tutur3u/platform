@@ -33,8 +33,12 @@ import {
  * many of its items the owner has seen, when known.
  */
 export const GET = withSessionAuth(
-  async (request, { user, supabase }) => {
-    const refusal = await refuseFleetRead(request, { user, supabase });
+  async (request, { appSessionToken, user, supabase }) => {
+    const refusal = await refuseFleetRead(request, {
+      appSessionToken,
+      user,
+      supabase,
+    });
     if (refusal) return refusal;
     const query = new URL(request.url).searchParams;
     const machineId = query.get('machineId') ?? '';

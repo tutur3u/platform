@@ -192,6 +192,8 @@ export async function authorize(
 // ---------------------------------------------------------------------------
 
 export interface SessionAuthContext {
+  /** Exact verified app credential selected by the wrapper, if applicable. */
+  appSessionToken?: string;
   user: SupabaseUser;
   supabase: TypedSupabaseClient;
 }
@@ -661,7 +663,11 @@ export function withSessionAuth<T = unknown>(
 
         const response = await handler(
           request,
-          { user: appSessionUser, supabase: appSessionSupabase },
+          {
+            appSessionToken: appSessionVerification.token,
+            user: appSessionUser,
+            supabase: appSessionSupabase,
+          },
           params
         );
 

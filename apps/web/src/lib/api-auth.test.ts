@@ -34,7 +34,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   createAppSessionUser: mocks.createAppSessionUser,
   getAppSessionTokenFromRequest: mocks.getAppSessionTokenFromRequest,
   hasSupportedSupabaseAuthCookie: mocks.hasSupportedSupabaseAuthCookie,
-  verifyAppSessionRequest: mocks.verifyAppSessionRequest,
+  verifyAppSessionRequestWithToken: mocks.verifyAppSessionRequest,
 }));
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
@@ -472,6 +472,7 @@ describe('withSessionAuth stepUpExempt', () => {
       ...(method === 'POST' ? { body: '{}' } : {}),
     });
 
+  const fleetStateUrl = 'https://tuturuuu.com/api/v1/mastermind/fleet/state';
   const fleetCredentialOptions = {
     rateLimit: false,
     allowAppSessionAuth: {
@@ -517,63 +518,30 @@ describe('withSessionAuth stepUpExempt', () => {
     }).token;
 
     function request(sessionId: string, headers: Record<string, string>) {
-      // Supabase verification is stubbed above. The real admission still checks
-      // the server-signed mobile credential against the token's verified subject.
-      const claims = Buffer.from(
-        JSON.stringify({
-          sub: owner.id,
-          session_id: sessionId,
-        })
-      ).toString('base64url');
-      return new NextRequest(
-        'https://tuturuuu.com/api/v1/mastermind/fleet/state',
-        {
-          headers: {
-            authorization: `Bearer header.${claims}.signature`,
-            ...headers,
-          },
-        }
-      );
+      const claims = { sub: owner.id, session_id: sessionId };
+      const payload = Buffer.from(JSON.stringify(claims)).toString('base64url');
+      return new NextRequest(fleetStateUrl, {
+        headers: {
+          authorization: `Bearer header.${payload}.signature`,
+          ...headers,
+        },
+      });
     }
 
-    expect((await route(request('native-session', {}))).status).toBe(401);
-    expect(
-      (
-        await route(
-          request('native-session', {
-            [MOBILE_CLIENT_HEADER]: genericCredential,
-          })
-        )
-      ).status
-    ).toBe(401);
-    expect(
-      (
-        await route(
-          request('another-session', {
-            [MOBILE_CLIENT_HEADER]: credential,
-          })
-        )
-      ).status
-    ).toBe(401);
-    expect(
-      (
-        await route(
-          request('native-session', {
-            [MOBILE_CLIENT_HEADER]: credential,
-            'sec-fetch-site': 'same-origin',
-          })
-        )
-      ).status
-    ).toBe(401);
-    expect(
-      (
-        await route(
-          request('native-session', {
-            [MOBILE_CLIENT_HEADER]: credential,
-          })
-        )
-      ).status
-    ).toBe(200);
+    for (const [session, headers] of [
+      ['native-session', {}],
+      ['native-session', { [MOBILE_CLIENT_HEADER]: genericCredential }],
+      ['another-session', { [MOBILE_CLIENT_HEADER]: credential }],
+      [
+        'native-session',
+        { [MOBILE_CLIENT_HEADER]: credential, 'sec-fetch-site': 'same-origin' },
+      ],
+    ] as const)
+      expect((await route(request(session, headers))).status).toBe(401);
+    const admitted = request('native-session', {
+      [MOBILE_CLIENT_HEADER]: credential,
+    });
+    expect((await route(admitted)).status).toBe(200);
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
@@ -584,28 +552,31 @@ describe('withSessionAuth stepUpExempt', () => {
     mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_test');
     mocks.createAppSessionUser.mockReturnValue(owner);
     mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
-    const request = new NextRequest(
-      'https://tuturuuu.com/api/v1/mastermind/fleet/state',
-      {
-        headers: { authorization: 'Bearer ttr_app_test' },
-      }
-    );
-    for (const mfa of [
-      undefined,
-      { sessionId: 'mfa', verifiedAt: now - 86_401 },
-    ]) {
+    const request = new NextRequest(fleetStateUrl, {
+      headers: { authorization: 'Bearer ttr_app_test' },
+    });
+    const select = (verifiedAt?: number) =>
       mocks.verifyAppSessionRequest.mockReturnValue({
         ok: true,
-        claims: { mfa },
+        claims: {
+          mfa:
+            verifiedAt === undefined
+              ? undefined
+              : { sessionId: 'mfa', verifiedAt },
+        },
+        token: 'ttr_app_admitted',
       });
-      expect((await route(request)).status).toBe(403);
-    }
-    mocks.verifyAppSessionRequest.mockReturnValue({
-      ok: true,
-      claims: { mfa: { sessionId: 'mfa', verifiedAt: now - 1 } },
-    });
+    select();
+    expect((await route(request)).status).toBe(403);
+    select(now - 86_401);
+    expect((await route(request)).status).toBe(403);
+    select(now - 1);
     expect((await route(request)).status).toBe(200);
-    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledExactlyOnceWith(
+      request,
+      expect.objectContaining({ appSessionToken: 'ttr_app_admitted' }),
+      {}
+    );
   });
 
   it('lets an exempt user skip a challenged mutation', async () => {

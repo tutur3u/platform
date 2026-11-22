@@ -55,13 +55,13 @@ const replyInputSchema = z
  * only: no attachments, no commands, no new threads.
  */
 export const POST = withSessionAuth(
-  async (request, { user, supabase }) => {
+  async (request, { appSessionToken, user, supabase }) => {
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
 
     const maxAgeSeconds = replyMfaMaxAgeSeconds();
     const assurance = await replyAssurance(
       request,
-      { userId: user.id, supabase },
+      { userId: user.id, supabase, appSessionToken },
       maxAgeSeconds
     );
     if (assurance.status === 'unavailable')

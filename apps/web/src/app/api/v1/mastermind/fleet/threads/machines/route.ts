@@ -15,8 +15,12 @@ import {
  * whether it answers now.
  */
 export const GET = withSessionAuth(
-  async (request, { user, supabase }) => {
-    const refusal = await refuseFleetRead(request, { user, supabase });
+  async (request, { appSessionToken, user, supabase }) => {
+    const refusal = await refuseFleetRead(request, {
+      appSessionToken,
+      user,
+      supabase,
+    });
     if (refusal) return refusal;
     const machineId = new URL(request.url).searchParams.get('machineId') ?? '';
     if (!MACHINE_ID.test(machineId)) return fleetError('invalid_query', 422);

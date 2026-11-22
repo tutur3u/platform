@@ -10,14 +10,10 @@ const BEARER = ['eyJhbGciOiJFUzI1NiJ9', 'eyJzdWIiOiJvd25lciJ9', 'sig'].join(
 );
 
 const mocks = vi.hoisted(() => ({
-  appToken: null as string | null,
   /** What the account check asks of the client it is handed. */
   account: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/auth/app-session-core', () => ({
-  getAppSessionTokenFromRequest: () => mocks.appToken,
-}));
 vi.mock('@tuturuuu/supabase/next/server', async () => ({
   createAdminClient: async () => ({}),
   // The real predicate, so the tests read the credential as production does.
@@ -68,7 +64,6 @@ const assurance = () => import('@/lib/mastermind/fleet/bridge');
 
 describe('fleet assurance reads the proof from the credential the request carried', () => {
   beforeEach(() => {
-    mocks.appToken = null;
     mocks.account.mockReset();
     // An account without the required policy: the check asks for no claims.
     mocks.account.mockResolvedValue({
@@ -191,7 +186,6 @@ describe('fleet assurance reads the proof from the credential the request carrie
   it('never reads an app session token as a provider token', async () => {
     const { replyAssurance } = await assurance();
     const appToken = `ttr_app_${'a'.repeat(24)}`;
-    mocks.appToken = appToken;
     mocks.account.mockResolvedValue({
       proof: { sessionId: 'session-1', verifiedAt: NOW - 5 },
       status: 'allowed',
@@ -199,8 +193,8 @@ describe('fleet assurance reads the proof from the credential the request carrie
     });
     const supabase = client('bearer', session(NOW - 5));
     const verdict = await replyAssurance(
-      request(`Bearer ${appToken}`),
-      { userId: OWNER, supabase },
+      request('Bearer ttr_app_other_candidate'),
+      { userId: OWNER, supabase, appSessionToken: appToken },
       1800,
       NOW
     );

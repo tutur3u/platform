@@ -1,6 +1,6 @@
 import {
   type AppSessionTargetApp,
-  verifyAppSessionRequest,
+  verifyAppSessionRequestWithToken,
 } from '@tuturuuu/auth/app-session';
 import {
   CLI_APP_ACCESS_SCOPE,
@@ -46,7 +46,7 @@ function isAppSessionAuthOptionsList(
 }
 
 export type ConfiguredAppSessionResult =
-  | Extract<ReturnType<typeof verifyAppSessionRequest>, { ok: true }>
+  | Extract<ReturnType<typeof verifyAppSessionRequestWithToken>, { ok: true }>
   | { ok: false; response: NextResponse };
 
 /**
@@ -67,7 +67,10 @@ export async function verifyConfiguredAppSessionRequest(
     request,
     allowAppSessionAuth
   )) {
-    const verification = verifyAppSessionRequest(request, verificationOptions);
+    const verification = verifyAppSessionRequestWithToken(
+      request,
+      verificationOptions
+    );
 
     if (verification.ok) {
       if (!isExternalAppClaims(verification.claims)) return verification;

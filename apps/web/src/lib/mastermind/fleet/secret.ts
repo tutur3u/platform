@@ -3,7 +3,7 @@ import 'server-only';
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import type { MastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import { NextResponse, type NextRequest } from 'next/server';
-import { type ClaimsReader, replyAssurance } from './bridge';
+import { type FleetAssurancePrincipal, replyAssurance } from './bridge';
 import type {
   FleetAnswerInput,
   FleetAnswerRecord,
@@ -177,7 +177,7 @@ export function secretMfaMaxAgeSeconds(
  */
 export async function secretAnswerAssurance(
   request: Pick<NextRequest, 'headers' | 'url'>,
-  principal: { userId: string; supabase: ClaimsReader },
+  principal: FleetAssurancePrincipal,
   action: FleetSecretAction
 ): Promise<NextResponse | null> {
   if (action === 'decline') return null;

@@ -22,6 +22,7 @@ export async function refuseFleetRead(
   principal: {
     user: Parameters<typeof isFleetOwner>[0];
     supabase: ClaimsReader;
+    appSessionToken?: string;
   }
 ) {
   if (!(await isFleetOwner(principal.user)))
@@ -29,6 +30,7 @@ export async function refuseFleetRead(
   const assurance = await readAssurance(request, {
     userId: principal.user.id,
     supabase: principal.supabase,
+    appSessionToken: principal.appSessionToken,
   });
   if (assurance === 'unavailable') return fleetError('unavailable', 503);
   if (assurance !== 'allowed') return fleetError('mfa_required', 401);

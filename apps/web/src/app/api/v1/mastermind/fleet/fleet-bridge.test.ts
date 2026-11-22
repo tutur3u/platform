@@ -62,6 +62,7 @@ vi.mock('@/lib/api-auth', () => ({
         request,
         {
           user: mocks.user,
+          appSessionToken: mocks.appToken ?? undefined,
           supabase: {
             auth: {
               getClaims: async () =>
@@ -74,9 +75,6 @@ vi.mock('@/lib/api-auth', () => ({
         await context?.params
       )
   ),
-}));
-vi.mock('@tuturuuu/auth/app-session-core', () => ({
-  getAppSessionTokenFromRequest: () => mocks.appToken,
 }));
 // The platform's own account check has its own tests; here it is the gate
 // the route must consult, for the principal the route admitted.

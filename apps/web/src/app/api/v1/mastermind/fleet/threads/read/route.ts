@@ -34,8 +34,12 @@ const seenInputSchema = z
  * is new. The marker only moves forward and holds a count, never content.
  */
 export const POST = withSessionAuth(
-  async (request, { user, supabase }) => {
-    const refusal = await refuseFleetRead(request, { user, supabase });
+  async (request, { appSessionToken, user, supabase }) => {
+    const refusal = await refuseFleetRead(request, {
+      appSessionToken,
+      user,
+      supabase,
+    });
     if (refusal) return refusal;
     const body = await readCappedText(request, 2048);
     if (body === null) return fleetError('payload_too_large', 413);

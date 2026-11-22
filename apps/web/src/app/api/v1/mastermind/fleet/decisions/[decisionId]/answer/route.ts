@@ -56,7 +56,7 @@ function receipt(answer: FleetAnswerRecord) {
  * `@/lib/mastermind/fleet/secret`.
  */
 export const POST = withSessionAuth<{ decisionId: string }>(
-  async (request, { user, supabase }, { decisionId }) => {
+  async (request, { appSessionToken, user, supabase }, { decisionId }) => {
     if (!DECISION_ID.test(decisionId)) return fleetError('not_found', 404);
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
 
@@ -74,7 +74,7 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     if (isFleetSecretAction(parsed.data.action)) {
       const refused = await secretAnswerAssurance(
         request,
-        { userId: user.id, supabase },
+        { userId: user.id, supabase, appSessionToken },
         parsed.data.action
       );
       if (refused) return refused;

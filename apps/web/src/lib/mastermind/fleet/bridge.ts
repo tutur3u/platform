@@ -105,6 +105,12 @@ function credentialClient(
   };
 }
 
+export type FleetAssurancePrincipal = {
+  userId: string;
+  supabase: ClaimsReader;
+  appSessionToken?: string;
+};
+
 export type ReplyAssurance =
   | { status: 'allowed'; proof: MfaSessionProof }
   | { status: 'required' }
@@ -123,11 +129,11 @@ export type ReplyAssurance =
  */
 export async function replyAssurance(
   request: Pick<NextRequest, 'headers' | 'url'>,
-  principal: { userId: string; supabase: ClaimsReader },
+  principal: FleetAssurancePrincipal,
   maxAgeSeconds: number,
-  nowSeconds = Math.floor(Date.now() / 1000),
-  appToken = getAppSessionTokenFromRequest(request) ?? undefined
+  nowSeconds = Math.floor(Date.now() / 1000)
 ): Promise<ReplyAssurance> {
+  const appToken = principal.appSessionToken;
   const client = credentialClient(request, principal.supabase);
   const account = await checkRequiredAccountMfa(
     request,
@@ -170,10 +176,10 @@ export async function replyAssurance(
  */
 export async function readAssurance(
   request: Pick<NextRequest, 'headers' | 'url'>,
-  principal: { userId: string; supabase: ClaimsReader },
+  principal: FleetAssurancePrincipal,
   nowSeconds = Math.floor(Date.now() / 1000)
 ): Promise<'allowed' | 'required' | 'unavailable'> {
-  const appToken = getAppSessionTokenFromRequest(request) ?? undefined;
+  const appToken = principal.appSessionToken;
   const client = credentialClient(request, principal.supabase);
   const account = await checkRequiredAccountMfa(
     request,
@@ -204,10 +210,9 @@ export async function ownerLiveLease(
     return { status: 'required' } as const;
   const assurance = await replyAssurance(
     request,
-    principal,
+    { ...principal, appSessionToken: session?.token },
     OWNER_LIVE_MFA_MAX_AGE_SECONDS,
-    Math.floor(now / 1000),
-    session?.token
+    Math.floor(now / 1000)
   );
   if (assurance.status !== 'allowed') return assurance;
 
