@@ -44,8 +44,8 @@ String? parseSorbetAccent(Object? value) {
   return _hexColor.hasMatch(normalized) ? normalized : null;
 }
 
-/// The stored opt-in: only `true` or `'true'` enables Sorbet.
-bool parseSorbetEnabled(Object? value) => value == true || value == 'true';
+/// Sorbet applies unless the stored value explicitly opts out.
+bool parseSorbetEnabled(Object? value) => value != false && value != 'false';
 
 /// The Sorbet look options, parsed and serialized exactly like
 /// `parseSorbetTheme` / `serializeSorbetTheme` on the web.
@@ -151,10 +151,10 @@ class SorbetTheme extends Equatable {
   List<Object?> get props => [preset, accent, radius, density, font];
 }
 
-/// The opt-in and its look, as one value for caching and state.
+/// Whether Sorbet is enabled and its look, as one cached value.
 class SorbetPreferences extends Equatable {
   const SorbetPreferences({
-    this.enabled = false,
+    this.enabled = true,
     this.theme = const SorbetTheme(),
   });
 

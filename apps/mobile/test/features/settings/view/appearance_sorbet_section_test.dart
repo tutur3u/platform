@@ -53,6 +53,13 @@ void main() {
   ) async {
     await pumpPage(tester);
     expect(find.text('Experimental design'), findsOneWidget);
+    expect(sorbet.state.enabled, isTrue);
+    expect(palette, findsOneWidget);
+    expect(find.byType(AppearanceThemeGallery), findsNothing);
+
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(sorbet.state.enabled, isFalse);
     expect(palette, findsNothing);
     expect(find.byType(AppearanceThemeGallery), findsOneWidget);
 

@@ -88,12 +88,8 @@ badges, rounded form fields, 18px cards, soft shadows and the Nunito typeface.
   (the roadmap's boot script), and a palette chosen on the device still applies.
   The roadmap's own colours read Sorbet's role names (`--primary`, `--card`,
   `--ring` and the status inks), never a palette's source colours.
-- **Mobile app (exception for now):** the same switch appears under Settings →
-  Appearance → **Experimental design**, with Palette and Corners while it is on.
-  It reads and writes the same two account settings, so an explicit choice made
-  in the app or on the web applies to both. The app still treats an unset value
-  as off until its default moves to Sorbet in a separate mobile change. See
-  [Mobile app](#mobile-app).
+- **Mobile app:** Settings → Appearance → **Experimental design** uses the
+  same default and account choice as the web. See [Mobile app](#mobile-app).
 - **Not covered:** Colab, and web apps without a theme provider
   (Hive, Tulletin, the link shortener and external embeds) keep their current
   design.
@@ -224,12 +220,12 @@ an accent colour and a background style (Solid, Gradient or Blobs). For gradient
 and blob backgrounds, you can tune intensity, blob softness and card opacity, and
 optionally animate blobs. Animation stays off when your device's Reduce Motion
 setting is on. Changes apply across the app immediately. **Reset to default**
-restores Classic with the system mode.
+restores the classic appearance settings and system mode.
 
-**Experimental design** at the top of Appearance turns on Sorbet for your
-account (off by default). It is the same switch as on the web
-(`EXPERIMENTAL_SORBET_UI`), and its **Palette** and **Corners** choices are the
-web's `SORBET_THEME` values, so both follow you across the app and the web apps.
+**Experimental design** at the top of Appearance uses Sorbet by default. The
+same account switch on mobile and web (`EXPERIMENTAL_SORBET_UI`) stores
+`"false"` when you opt out. **Palette** and **Corners** use the shared
+`SORBET_THEME` value, so your choices follow you across the app and web.
 An accent and density set on the web apply in the app too (Spacious renders as
 Comfortable); the Nunito font choice renders in Noto Sans, which the app bundles. While Sorbet is on,
 the classic theme, accent, background, density and corner controls are hidden

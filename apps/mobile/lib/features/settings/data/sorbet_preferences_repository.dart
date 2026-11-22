@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// The two Sorbet account configs, which sync on their own.
 enum SorbetField { enabled, theme }
 
-/// Sorbet opt-in and look, shared with the web apps.
+/// Sorbet preferences shared with the web apps.
 ///
 /// The account stores `EXPERIMENTAL_SORBET_UI` ('true'/'false') and
 /// `SORBET_THEME` (compact JSON) in `user_configs` through
@@ -27,7 +27,7 @@ class SorbetPreferencesRepository {
   static String _themeKey(String? userId) => 'sorbet-theme:${_owner(userId)}';
   static String _pendingKey(String userId) => 'sorbet-pending:$userId';
 
-  /// The account values; a missing config reads as off / default theme.
+  /// Reads the account values, with Sorbet and its default theme when unset.
   Future<SorbetPreferences> loadAccount(String userId) async {
     final values = await ApiClient.runForUser(
       userId,

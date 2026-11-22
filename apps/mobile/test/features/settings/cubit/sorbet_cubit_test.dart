@@ -61,7 +61,10 @@ void main() {
       'sorbet-ui:u1': 'true',
       'sorbet-theme:u1': _matcha.serialize(),
     });
-    accounts.stored['u1'] = const SorbetPreferences(theme: _rose);
+    accounts.stored['u1'] = const SorbetPreferences(
+      enabled: false,
+      theme: _rose,
+    );
     final hold = accounts.holds['u1'] = Completer<void>();
 
     final bind = cubit.bindAccount('u1');
@@ -78,7 +81,10 @@ void main() {
   });
 
   test('setEnabled applies at once and uploads only that field', () async {
-    accounts.stored['u1'] = const SorbetPreferences(theme: _rose);
+    accounts.stored['u1'] = const SorbetPreferences(
+      enabled: false,
+      theme: _rose,
+    );
     await cubit.bindAccount('u1');
 
     final save = cubit.setEnabled(enabled: true);
@@ -91,7 +97,8 @@ void main() {
   });
 
   test('an account switch fences the previous account', () async {
-    accounts.stored['u1'] = const SorbetPreferences(enabled: true);
+    const previousAppearance = SorbetPreferences(theme: _rose);
+    accounts.stored['u1'] = previousAppearance;
     accounts.stored['u2'] = const SorbetPreferences(theme: _lagoon);
     final hold = accounts.holds['u1'] = Completer<void>();
     final states = <SorbetPreferences>[];
@@ -106,14 +113,11 @@ void main() {
     await sub.cancel();
 
     expect(cubit.state.preferences, const SorbetPreferences(theme: _lagoon));
-    expect(states.any((s) => s.enabled), isFalse);
+    expect(states, isNot(contains(previousAppearance)));
   });
 
   test('a change made while loading beats the loaded value', () async {
-    accounts.stored['u1'] = const SorbetPreferences(
-      enabled: true,
-      theme: _rose,
-    );
+    accounts.stored['u1'] = const SorbetPreferences(theme: _rose);
     final hold = accounts.holds['u1'] = Completer<void>();
 
     final bind = cubit.bindAccount('u1');
@@ -129,6 +133,7 @@ void main() {
   });
 
   test('a failed upload keeps the local value and retries on bind', () async {
+    accounts.stored['u1'] = const SorbetPreferences(enabled: false);
     await cubit.bindAccount('u1');
     accounts.failSave = true;
     await cubit.setEnabled(enabled: true);
@@ -146,15 +151,28 @@ void main() {
     expect(await accounts.pendingFields('u1'), isEmpty);
   });
 
-  test('signed out choices stay on the device', () async {
-    await cubit.bindAccount(null);
-    await cubit.setEnabled(enabled: true);
+  test('an unset account value replaces a legacy false cache', () async {
+    SharedPreferences.setMockInitialValues({'sorbet-ui:u1': 'false'});
+
+    await cubit.bindAccount('u1');
+
+    expect(cubit.state.enabled, isTrue);
+    expect((await accounts.readCache('u1'))?.enabled, isTrue);
     expect(accounts.saves, isEmpty);
-    expect((await accounts.readCache(null))?.enabled, isTrue);
+  });
+
+  test('signed out devices start on and keep an explicit opt-out', () async {
+    expect(cubit.state.enabled, isTrue);
+    await cubit.bindAccount(null);
+    expect(cubit.state.enabled, isTrue);
+
+    await cubit.setEnabled(enabled: false);
+    expect(accounts.saves, isEmpty);
+    expect((await accounts.readCache(null))?.enabled, isFalse);
 
     final next = SorbetCubit(repository: accounts);
     addTearDown(next.close);
     await next.bindAccount(null);
-    expect(next.state.enabled, isTrue);
+    expect(next.state.enabled, isFalse);
   });
 }

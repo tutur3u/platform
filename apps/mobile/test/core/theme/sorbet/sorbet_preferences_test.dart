@@ -95,17 +95,20 @@ void main() {
     expect(theme.copyWith(preset: SorbetPreset.rose).accent, '#112233');
   });
 
-  test('only true or "true" enables Sorbet', () {
-    expect(parseSorbetEnabled('true'), isTrue);
-    expect(parseSorbetEnabled(true), isTrue);
-    for (final value in <Object?>['false', 'TRUE', '1', null, 1, '']) {
-      expect(parseSorbetEnabled(value), isFalse, reason: '$value');
+  test('Sorbet is on when unset and off only for an explicit opt-out', () {
+    for (final value in <Object?>[null, '', 'true', true, 'TRUE', '1', 1]) {
+      expect(parseSorbetEnabled(value), isTrue, reason: '$value');
     }
+    expect(parseSorbetEnabled('false'), isFalse);
+    expect(parseSorbetEnabled(false), isFalse);
   });
 
   test('the active theme is null while Sorbet is off', () {
     const theme = SorbetTheme(preset: SorbetPreset.mango);
-    expect(const SorbetPreferences(theme: theme).active, isNull);
-    expect(const SorbetPreferences(enabled: true, theme: theme).active, theme);
+    expect(const SorbetPreferences(theme: theme).active, theme);
+    expect(
+      const SorbetPreferences(enabled: false, theme: theme).active,
+      isNull,
+    );
   });
 }

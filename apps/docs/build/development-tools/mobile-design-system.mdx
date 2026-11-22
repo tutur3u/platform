@@ -67,10 +67,10 @@ its names and values are unchanged.
 
 ### Sorbet (experimental design)
 
-Settings > Appearance > Experimental design turns on Sorbet, the same opt-in as
-the web apps: the account configs `EXPERIMENTAL_SORBET_UI` and `SORBET_THEME`,
-read and written through `/api/v1/users/me/configs/{id}` by
-`SorbetPreferencesRepository`. `SorbetCubit` shows the per-user device cache
+Sorbet is on by default. Settings > Appearance > Experimental design uses
+the same account settings as the web apps. An explicit `"false"` in
+`EXPERIMENTAL_SORBET_UI` selects Classic. `SorbetPreferencesRepository` reads
+and writes that choice and `SORBET_THEME` through `/api/v1/users/me/configs/{id}`. `SorbetCubit` shows the per-user device cache
 first, then the account values; a local change is cached, marked pending and
 uploaded, and a field changed locally is never replaced by an older load.
 
