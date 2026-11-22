@@ -88,7 +88,8 @@ The operator calls `POST /control` with the operator credential and
 `{"enabled":false}`. The response records the new generation and the number of
 active reservations. Admission then refuses new work. A draining response uses
 HTTP 202. A claimed Drive writeback keeps the reservation active until the
-checkpoint confirms settlement. Confirm there are zero
+coordinator receives the checkpoint confirmation. Stop fences new writes
+and lets an in-flight export finish its bounded receipt wait. Confirm there are zero
 active reservations and zero running instances before rolling back the
 application route or rotating service secrets. The same control request is
 idempotent. Re-enable only after a scoped approval and verified teardown.

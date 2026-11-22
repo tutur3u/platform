@@ -215,8 +215,7 @@ export class PlaygroundSlot extends DurableObject<Env> {
     if (!changed.length && files.length === original.size) return undefined;
     const { claim, exportTicket, revision } = assignment;
     const origin = this.env.PLAYGROUND_SOURCE_ORIGIN;
-    const remaining = claim.deadline - Date.now();
-    if (!origin || remaining < 1 || signal.aborted)
+    if (!origin || claim.deadline <= Date.now() || signal.aborted)
       throw new Error('Playground writeback expired');
     const url = new URL('/api/v1/internal/playground-execution/export', origin);
     if (url.protocol !== 'https:')
@@ -236,6 +235,11 @@ export class PlaygroundSlot extends DurableObject<Env> {
     if (!(await coordinator(this.env).mayExecute(claim)) || signal.aborted) {
       throw new Error('Playground writeback cancelled');
     }
+    const remaining = claim.deadline - Date.now();
+    if (remaining < 1) throw new Error('Playground writeback expired');
+    // The guest has already stopped. A Stop fences a new checkpoint claim,
+    // but an in-flight claim can publish. Keep the bounded receipt wait alive
+    // so the slot can reconcile a commit if Web cannot settle it directly.
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -244,10 +248,7 @@ export class PlaygroundSlot extends DurableObject<Env> {
       },
       body: JSON.stringify({ revision, files: changed, paths, baseline }),
       redirect: 'manual',
-      signal: AbortSignal.any([
-        signal,
-        AbortSignal.timeout(Math.min(10_000, remaining)),
-      ]),
+      signal: AbortSignal.timeout(Math.min(15_000, remaining)),
     });
     if (!response.ok) {
       await response.body?.cancel();
