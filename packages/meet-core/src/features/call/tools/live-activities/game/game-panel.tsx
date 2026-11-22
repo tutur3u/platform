@@ -7,7 +7,7 @@ import { ActivityEmpty, ActivityNotice, useActivity } from '../activity-kit';
 import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
 import { GameRound, GameScoreboard } from './game-round';
-import { GameRoundsEditor } from './game-rounds-editor';
+import { GameRoundsEditor, useGameRoundsDraft } from './game-rounds-editor';
 
 /**
  * A quick multiple-choice game the room plays together. The host prepares the
@@ -18,6 +18,9 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
   const t = useTranslations('meet.call.live_activities.game');
   const { game } = activity.snapshot;
   const rounds = activity.host?.game.rounds ?? [];
+  // Held here, not in the editor: the editor leaves the screen while a game
+  // runs, and the host's unsaved rounds must still be there when it ends.
+  const draft = useGameRoundsDraft(rounds);
   const last = !!game.round && game.round.index + 1 >= game.round.total;
   // Reveal and Next name the round on screen, so the room can refuse one that
   // arrives after the game moved on.
@@ -31,7 +34,11 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
     >
       {game.phase === 'idle' ? (
         activity.canManage ? (
-          <GameRoundsEditor saved={rounds} send={activity.send} />
+          <GameRoundsEditor
+            draft={draft}
+            saved={rounds}
+            send={activity.send}
+          />
         ) : (
           <ActivityEmpty>{t('empty_participant')}</ActivityEmpty>
         )

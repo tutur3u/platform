@@ -24,6 +24,7 @@ import { GamePanel } from './game-panel';
 
 const t = strings.game;
 const ROUND = '77777777-7777-4777-8777-777777777777';
+const REISSUED = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const round = {
   id: ROUND,
   index: 0,
@@ -147,6 +148,23 @@ it('says when a late save is refused and offers no round editor while a game run
   });
   expect(screen.queryByRole('button', { name: t.save_rounds })).toBeNull();
   expect(screen.queryByLabelText(t.prompt)).toBeNull();
+
+  // The game ends and the room issues new round ids. The text the host could
+  // not save is still in the editor, ready to save.
+  room({
+    manager: true,
+    snapshot: { game: idle },
+    host: {
+      game: { rounds: [{ ...prepared.game.rounds[0]!, id: REISSUED }] },
+    },
+  });
+  expect((screen.getByLabelText(t.prompt) as HTMLInputElement).value).toBe(
+    'Slowest average sort?'
+  );
+  expect(screen.getByRole('button', { name: t.save_rounds })).toHaveProperty(
+    'disabled',
+    false
+  );
 });
 
 it('lets a player answer once and shows the key and scores on reveal', () => {

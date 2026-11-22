@@ -67,19 +67,29 @@ export function gameRounds(drafts: readonly DraftRound[]) {
   return rounds;
 }
 
+/**
+ * The host's rounds in progress. The panel holds them above its phase switch,
+ * so a game that runs in between does not take unsaved text away. The room
+ * issues new ids on save and reset and repeats the rounds after a reconnect;
+ * none of that may replace a round the host is still writing.
+ */
+export function useGameRoundsDraft(saved: readonly SavedRound[]) {
+  const stored = saved.map(toDraft);
+  const [drafts, setDrafts] = useRoomDraft(stored, sameRounds);
+  return { stored, drafts, setDrafts };
+}
+
 /** The host prepares rounds here, saves them to the room and starts the game. */
 export function GameRoundsEditor({
+  draft: { stored, drafts, setDrafts },
   saved,
   send,
 }: {
+  draft: ReturnType<typeof useGameRoundsDraft>;
   saved: readonly SavedRound[];
   send: Activity['send'];
 }) {
   const t = useTranslations('meet.call.live_activities.game');
-  const stored = saved.map(toDraft);
-  // The room issues new ids on save and repeats the rounds after a reconnect;
-  // neither may replace a round the host is still writing.
-  const [drafts, setDrafts] = useRoomDraft(stored, sameRounds);
   const rounds = gameRounds(drafts);
   const dirty = JSON.stringify(rounds) !== JSON.stringify(gameRounds(stored));
   const update = (key: string, patch: Partial<DraftRound>) =>
