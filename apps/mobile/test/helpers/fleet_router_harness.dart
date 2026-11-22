@@ -5,6 +5,8 @@ import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/view/detail/fleet_decision_page.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_page.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_review_preview.dart';
@@ -29,6 +31,8 @@ Future<GoRouter> pumpFleetRoutes(
   DateTime Function()? now,
   FleetReviewAssetLoader? assets,
   MobileLinkLaunch? launch,
+  bool secretCardsReady = fleetSecretCardsReady,
+  Future<void> Function(BuildContext, FleetDecision)? openSecret,
   String theme = 'light',
   Size? size,
   double textScale = 1,
@@ -47,7 +51,11 @@ Future<GoRouter> pumpFleetRoutes(
     routes: [
       GoRoute(
         path: Routes.mastermindInbox,
-        builder: (_, _) => FleetInboxPage(now: now),
+        builder: (_, _) => FleetInboxPage(
+          now: now,
+          secretCardsReady: secretCardsReady,
+          openSecret: openSecret,
+        ),
       ),
       GoRoute(
         path: Routes.mastermindFleetDecision,

@@ -239,8 +239,10 @@ class RecordingSecretSource implements FleetSecretAnswerSource {
 FleetSnapshot secretSnapshot({
   List<Map<String, dynamic>> decisions = const [],
   List<Map<String, dynamic>> resolved = const [],
+  Map<String, dynamic> answers = const {},
 }) => FleetSnapshot.parse({
   'receivedAt': '2026-11-22T10:01:00.000Z',
+  'answers': answers,
   'state': {
     'version': 1,
     'generatedAt': '2026-11-22T10:01:00.000Z',

@@ -72,6 +72,9 @@ extension FleetAnswerActionView on FleetAnswerAction {
     FleetAnswerAction.signedIn => l10n.mastermindFleetAnswerSignedIn,
     FleetAnswerAction.requestChanges =>
       l10n.mastermindFleetAnswerChangesRequested,
+    FleetAnswerAction.secret => l10n.mastermindSecretSent,
+    FleetAnswerAction.decline => l10n.mastermindSecretOutcomeDeclined,
+    FleetAnswerAction.pair => l10n.mastermindSecretOutcomePaired,
   };
 }
 

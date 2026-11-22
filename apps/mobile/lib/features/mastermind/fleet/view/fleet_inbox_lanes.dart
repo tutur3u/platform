@@ -20,40 +20,57 @@ Widget _gap(Widget child) => Padding(
   child: child,
 );
 
-/// Needs you: every open ask, sign-in request and review as a compact card,
-/// most urgent first, then what is snoozed on this device.
+/// Needs you: urgent mobile issues, pending secret requests when enabled,
+/// then every open ask, sign-in request and review as a compact card, most
+/// urgent first, then what is snoozed on this device.
 List<Widget> fleetNeedsYouLane(
   AppLocalizations l10n,
   FleetInboxGroups groups, {
   required FleetInboxCardBuilder card,
   required void Function(String decisionId) onWake,
   List<FleetMobileIssue> mobileIssues = const [],
-}) => [
-  for (final alert in mobileIssues) _gap(FleetMobileIssueRow(alert: alert)),
-  if (groups.needs.isEmpty && mobileIssues.isEmpty)
-    _gap(
-      AppStateMessage.inline(
-        icon: LucideIcons.circleCheck,
-        title: l10n.mastermindFleetInboxEmpty,
-        tone: AppTone.success,
+  FleetInboxCardBuilder? secretCard,
+}) {
+  final hasSecrets = groups.secrets.isNotEmpty && secretCard != null;
+  return [
+    for (final alert in mobileIssues) _gap(FleetMobileIssueRow(alert: alert)),
+    if (!hasSecrets && groups.needs.isEmpty && mobileIssues.isEmpty)
+      _gap(
+        AppStateMessage.inline(
+          icon: LucideIcons.circleCheck,
+          title: l10n.mastermindFleetInboxEmpty,
+          tone: AppTone.success,
+        ),
       ),
-    ),
-  for (final decision in groups.needs) _gap(card(decision)),
-  if (groups.snoozed.isNotEmpty) ...[
-    AppSectionHeader(
-      title: l10n.mastermindFleetSnoozedTitle,
-      count: groups.snoozed.length,
-    ),
-    for (final (decision, until) in groups.snoozed)
-      FleetSnoozedRow(
-        key: ValueKey('fleet-snoozed-${decision.id}'),
-        decision: decision,
-        until: until,
-        onWake: () => onWake(decision.id),
+    if (hasSecrets) ...[
+      AppSectionHeader(
+        title: l10n.mastermindSecretSectionTitle,
+        count: groups.secrets.length,
       ),
-    const SizedBox(height: AppSpacing.md),
-  ],
-];
+      for (final decision in groups.secrets) _gap(secretCard(decision)),
+      if (groups.needs.isNotEmpty)
+        AppSectionHeader(
+          title: l10n.mastermindSecretDecisionsSectionTitle,
+          count: groups.needs.length,
+        ),
+    ],
+    for (final decision in groups.needs) _gap(card(decision)),
+    if (groups.snoozed.isNotEmpty) ...[
+      AppSectionHeader(
+        title: l10n.mastermindFleetSnoozedTitle,
+        count: groups.snoozed.length,
+      ),
+      for (final (decision, until) in groups.snoozed)
+        FleetSnoozedRow(
+          key: ValueKey('fleet-snoozed-${decision.id}'),
+          decision: decision,
+          until: until,
+          onWake: () => onWake(decision.id),
+        ),
+      const SizedBox(height: AppSpacing.md),
+    ],
+  ];
+}
 
 /// FYI: open items that only inform, and firing SLO alerts.
 List<Widget> fleetFyiLane(

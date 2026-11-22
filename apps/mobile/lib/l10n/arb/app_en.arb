@@ -10336,5 +10336,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindSecretSectionTitle": "Secret requests",
+  "mastermindSecretDecisionsSectionTitle": "Decisions",
+  "mastermindSecretCardHint": "End-to-end encrypted · opens secure entry",
+  "mastermindSecretPairCardHint": "Enter the pairing code shown on this machine"
 }

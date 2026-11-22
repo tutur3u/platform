@@ -8507,5 +8507,9 @@
   "mastermindMobileIssueRegression": "Sự cố di động tái diễn",
   "mastermindMobileIssueSpike": "Số báo cáo sự cố di động tăng đột biến",
   "mastermindMobileIssueTest": "Kiểm thử chẩn đoán di động",
-  "mastermindMobileIssueDetail": "{platform} bản dựng {build} · {count} báo cáo · {issueId}"
+  "mastermindMobileIssueDetail": "{platform} bản dựng {build} · {count} báo cáo · {issueId}",
+  "mastermindSecretSectionTitle": "Yêu cầu bí mật",
+  "mastermindSecretDecisionsSectionTitle": "Quyết định",
+  "mastermindSecretCardHint": "Mã hóa đầu cuối · mở trang nhập bảo mật",
+  "mastermindSecretPairCardHint": "Nhập mã ghép nối hiển thị trên máy này"
 }

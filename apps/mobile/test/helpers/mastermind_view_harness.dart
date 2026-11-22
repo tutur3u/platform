@@ -100,6 +100,7 @@ final class MastermindViewHarness {
     FleetCubit? fleet,
     FleetSnoozeStore? fleetSnoozeStore,
     FleetAccessCubit? fleetAccess,
+    String? Function()? userId,
     Stream<void>? mastermindPushes,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
@@ -128,6 +129,7 @@ final class MastermindViewHarness {
       fleet: fleet,
       fleetSnoozeStore: fleetSnoozeStore,
       fleetAccess: fleetAccess,
+      userId: userId,
       onlineChanges: onlineChanges,
       mastermindPushes: mastermindPushes,
     );

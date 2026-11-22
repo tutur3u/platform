@@ -32,7 +32,16 @@ enum FleetAnswerAction {
   signedIn('signed_in'),
 
   /// "Request changes" on a design review; carries the owner's notes.
-  requestChanges('request_changes');
+  requestChanges('request_changes'),
+
+  /// Sealed secret answer posted from this phone.
+  secret('secret'),
+
+  /// Signed decline of a secret request.
+  decline('decline'),
+
+  /// Machine pairing answer posted from this phone.
+  pair('pair');
 
   const FleetAnswerAction(this.wire);
 

@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_binding.dart';
-import 'package:mobile/features/mastermind/fleet/view/fleet_secret_details.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The Inbox row of a `secret` decision: what kind it is, the purpose (or
-/// the machine to pair), the machine, the countdown and one button that
-/// opens [onOpen]. Nothing here is verified yet; the full-screen page
-/// verifies before it shows any input.
+/// The Inbox card of a `secret` decision: clearly labelled as an encrypted
+/// secret request or machine pairing, with the purpose (or machine to pair),
+/// machine name, live countdown, and one entry point into [onOpen].
+///
+/// Matches the compact Inbox card layout while staying visually distinct and
+/// never rendering ordinary decision controls (Approve, Hold, Reply, Snooze).
+/// Nothing here is verified yet; the full-screen page verifies before it
+/// shows any input.
 class FleetSecretCard extends StatelessWidget {
   const FleetSecretCard({
     required this.decision,
@@ -36,40 +39,109 @@ class FleetSecretCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
+    final muted = colors.mutedForeground;
+    final caption = tokens.typography.caption.copyWith(color: muted);
     final secret = decision.secret!;
     final pairing = secret is FleetSecretPairing;
     final subject = switch (secret) {
       FleetSecretRequest(:final purpose) => purpose,
       FleetSecretPairing(:final machineLabel) => machineLabel,
     };
+    final visibleSubject = FleetSecretBinding.visible(subject);
+    final kind = kindLabel(l10n, decision);
+    final machine = machineLabel ?? secret.machineId;
     return AppCard(
       key: ValueKey('fleet-secret-card-${decision.id}'),
+      onTap: onOpen,
+      semanticLabel: '$kind: $visibleSubject',
+      fillColor: Color.alphaBlend(
+        colors.warning.withValues(alpha: colors.isDark ? 0.10 : 0.05),
+        colors.card,
+      ),
+      borderColor: colors.warning.withValues(
+        alpha: colors.isDark ? 0.45 : 0.35,
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppRichRow(
-            title: kindLabel(l10n, decision),
-            subtitle: FleetSecretBinding.visible(subject),
-            meta: [
-              AppMetaItem(
-                icon: LucideIcons.monitor,
-                label: machineLabel ?? secret.machineId,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    AppBadge(
+                      variant: AppBadgeVariant.warning,
+                      leading: Icon(
+                        pairing ? LucideIcons.link : LucideIcons.lock,
+                      ),
+                      child: Text(kind),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: FleetClock(
+                  now: now,
+                  builder: (context, current) {
+                    final left = secret.expiresAtTime.difference(current);
+                    final clamped = left.isNegative ? Duration.zero : left;
+                    final urgent = clamped <= const Duration(minutes: 1);
+                    return Text(
+                      l10n.mastermindFleetExpiresIn(
+                        fleetCountdown(l10n, clamped),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                      style: urgent
+                          ? caption.copyWith(color: colors.destructive)
+                          : caption,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Icon(LucideIcons.chevronRight, size: 16, color: muted),
             ],
-            leading: AppIconTile(
-              icon: pairing ? LucideIcons.link : LucideIcons.lock,
-              tone: AppTone.warning,
-            ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            visibleSubject,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: tokens.typography.heading,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            pairing
+                ? l10n.mastermindSecretPairCardHint
+                : l10n.mastermindSecretCardHint,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: tokens.typography.bodySm.copyWith(color: muted),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Divider(height: 1, thickness: 1, color: colors.border),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
-                child: FleetSecretCountdown(
-                  expiresAt: secret.expiresAtTime,
-                  now: now,
-                ),
+                child: AppMetaItem(icon: LucideIcons.monitor, label: machine),
               ),
+              const SizedBox(width: AppSpacing.sm),
               AppButton.primary(
                 key: const ValueKey('fleet-secret-open'),
                 size: AppButtonSize.small,

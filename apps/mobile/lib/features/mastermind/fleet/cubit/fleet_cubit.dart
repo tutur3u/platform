@@ -22,6 +22,7 @@ class FleetViewState {
     this.failure,
     this.refreshing = false,
     this.pending = const {},
+    this.handledSecrets = const {},
     this.lastFetchedAt,
   });
 
@@ -33,6 +34,10 @@ class FleetViewState {
   final FleetFailure? failure;
   final bool refreshing;
   final Map<String, FleetPendingAnswer> pending;
+
+  /// Secret requests or pairings already answered or closed on this phone
+  /// while the next snapshot refresh catches up. Memory-only.
+  final Set<String> handledSecrets;
 
   /// When this device last read the snapshot successfully, kept across
   /// restarts. A fresh value beside an old `receivedAt` means the publisher
@@ -46,6 +51,7 @@ class FleetViewState {
     bool clearFailure = false,
     bool? refreshing,
     Map<String, FleetPendingAnswer>? pending,
+    Set<String>? handledSecrets,
     DateTime? lastFetchedAt,
   }) => FleetViewState(
     status: status ?? this.status,
@@ -53,6 +59,7 @@ class FleetViewState {
     failure: clearFailure ? null : failure ?? this.failure,
     refreshing: refreshing ?? this.refreshing,
     pending: pending ?? this.pending,
+    handledSecrets: handledSecrets ?? this.handledSecrets,
     lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
   );
 }
@@ -192,12 +199,19 @@ class FleetCubit extends Cubit<FleetViewState> {
       if (isClosed || generation != _generation) return;
       final fetchedAt = _now();
       _remember(snapshot);
+      final openSecrets = {
+        for (final d in snapshot.decisions)
+          if (d.kind == FleetDecisionKind.secret) d.id,
+      };
       emit(
         state.copyWith(
           status: FleetLoadStatus.ready,
           snapshot: snapshot,
           clearFailure: true,
           refreshing: false,
+          handledSecrets: state.handledSecrets
+              .where(openSecrets.contains)
+              .toSet(),
           lastFetchedAt: fetchedAt,
         ),
       );
@@ -377,6 +391,13 @@ class FleetCubit extends Cubit<FleetViewState> {
     final entry = state.pending[decisionId];
     if (entry == null || entry.outstanding) return;
     _setPending({...state.pending}..remove(decisionId));
+  }
+
+  /// Marks a secret request or pairing as answered or closed on this phone so
+  /// it disappears from the Inbox immediately while the next poll catches up.
+  void markSecretHandled(String decisionId) {
+    if (isClosed || state.handledSecrets.contains(decisionId)) return;
+    emit(state.copyWith(handledSecrets: {...state.handledSecrets, decisionId}));
   }
 
   /// Sends a retrying answer now instead of at its scheduled time, or a

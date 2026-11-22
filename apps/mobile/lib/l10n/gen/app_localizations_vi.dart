@@ -20122,4 +20122,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindMobileIssueDetail(String platform, int build, int count, String issueId) {
     return '$platform bản dựng $build · $count báo cáo · $issueId';
   }
+
+  @override
+  String get mastermindSecretSectionTitle => 'Yêu cầu bí mật';
+
+  @override
+  String get mastermindSecretDecisionsSectionTitle => 'Quyết định';
+
+  @override
+  String get mastermindSecretCardHint => 'Mã hóa đầu cuối · mở trang nhập bảo mật';
+
+  @override
+  String get mastermindSecretPairCardHint => 'Nhập mã ghép nối hiển thị trên máy này';
 }

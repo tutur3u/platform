@@ -10,6 +10,7 @@ import 'package:mobile/features/mastermind/fleet/cubit/fleet_secret_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_reply_step_up.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_answer.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_secret_pins.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_secret_details.dart';
@@ -24,6 +25,11 @@ import 'package:mobile/l10n/l10n.dart';
 Future<void> showFleetSecretPage(
   BuildContext context, {
   required FleetDecision decision,
+  FleetSecretCrypto? crypto,
+  FleetSecretPins? pins,
+  FleetSecretAnswerSource? source,
+  FleetReplyStepUp? stepUp,
+  DateTime Function()? now,
 }) {
   final runtime = context.read<MastermindRuntime>();
   final auth = context.read<AuthRepository?>();
@@ -34,19 +40,25 @@ Future<void> showFleetSecretPage(
       fullscreenDialog: true,
       builder: (_) => FleetSecretPage(
         decision: decision,
+        now: now,
         laneTitle: snapshot?.lanes
             .where((lane) => lane.id == decision.laneId)
             .firstOrNull
             ?.title,
-        stepUp: auth == null ? null : FleetReplyStepUp(auth: auth),
+        stepUp: stepUp ?? (auth == null ? null : FleetReplyStepUp(auth: auth)),
         create: () => FleetSecretCubit(
           decision: decision,
-          crypto: FleetSecretCrypto.instance,
-          pins: FleetSecretPins(userId: userId),
-          source: FleetRepository(),
+          crypto: crypto ?? FleetSecretCrypto.instance,
+          pins: pins ?? FleetSecretPins(userId: userId),
+          source: source ?? FleetRepository(),
           accountId: userId,
           snapshot: snapshot,
           snapshots: runtime.fleet.stream.map((state) => state.snapshot),
+          now: now,
+          onHandled: () {
+            runtime.fleet.markSecretHandled(decision.id);
+            unawaited(runtime.fleet.refresh());
+          },
         ),
       ),
     ),
@@ -249,6 +261,15 @@ class _Body extends StatelessWidget {
                 key: const ValueKey('fleet-secret-forget'),
                 onPressed: () => unawaited(cubit.forgetMachine()),
                 child: Text(l10n.mastermindSecretForget),
+              ),
+            ],
+            if (state.phase == FleetSecretPhase.outcome ||
+                state.phase == FleetSecretPhase.closed) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppButton.outline(
+                key: const ValueKey('fleet-secret-done'),
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: Text(l10n.mastermindSecretClose),
               ),
             ],
           ],

@@ -9,6 +9,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_clock.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_compact_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
@@ -16,6 +17,8 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_freshness_line.dart'
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_groups.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_lanes.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_login_card.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_secret_card.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_secret_page.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_snooze.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_undelivered_row.dart';
@@ -48,12 +51,26 @@ String fleetAnswerLabel(
 /// open items that only inform; History lists answered and closed
 /// decisions. The Needs you and FYI counts cover only open items.
 class FleetInboxPage extends StatefulWidget {
-  const FleetInboxPage({this.now, this.launch, super.key});
+  const FleetInboxPage({
+    this.now,
+    this.launch,
+    this.secretCardsReady = fleetSecretCardsReady,
+    this.openSecret,
+    super.key,
+  });
 
   final DateTime Function()? now;
 
   /// Test seam for the app's link launcher.
   final MobileLinkLaunch? launch;
+
+  /// Gate for rendering `secret` decisions in the Inbox; defaults to
+  /// [fleetSecretCardsReady].
+  final bool secretCardsReady;
+
+  /// Test seam for opening the full-screen secret entry flow.
+  final Future<void> Function(BuildContext context, FleetDecision decision)?
+  openSecret;
 
   @override
   State<FleetInboxPage> createState() => _FleetInboxPageState();
@@ -84,6 +101,12 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
   void _open(String decisionId) =>
       unawaited(context.push(Routes.mastermindFleetDecisionPath(decisionId)));
 
+  Future<void> _openSecret(FleetDecision decision) {
+    final opener = widget.openSecret;
+    if (opener != null) return opener(context, decision);
+    return showFleetSecretPage(context, decision: decision, now: widget.now);
+  }
+
   @override
   Widget build(BuildContext context) =>
       BlocListener<FleetCubit, FleetViewState>(
@@ -111,6 +134,8 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                       now,
                       pending: state.pending,
                       seen: _runtime.fleet.seenDecision,
+                      secretCardsReady: widget.secretCardsReady,
+                      handledSecrets: state.handledSecrets,
                     ),
                     now,
                   ),
@@ -188,6 +213,12 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
         .toList();
     Widget card(FleetDecision decision) =>
         _card(snapshot, state, decision, now);
+    Widget secretCard(FleetDecision decision) => FleetSecretCard(
+      decision: decision,
+      machineLabel: snapshot.machineLabel(decision.secret!.machineId),
+      now: widget.now,
+      onOpen: () => unawaited(_openSecret(decision)),
+    );
     return AppPageScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -210,6 +241,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                 groups,
                 card: card,
                 mobileIssues: urgentIssues,
+                secretCard: widget.secretCardsReady ? secretCard : null,
                 onWake: (id) => unawaited(_runtime.fleetSnoozes.wake(id)),
               ),
               FleetInboxLane.fyi => fleetFyiLane(

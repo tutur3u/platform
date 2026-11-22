@@ -1,5 +1,6 @@
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_pending_answer.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_secret_crypto.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_history_entry.dart';
 
 export 'package:mobile/features/mastermind/fleet/view/fleet_history_entry.dart';
@@ -24,6 +25,8 @@ class FleetInboxGroups {
     DateTime now, {
     Map<String, FleetPendingAnswer> pending = const {},
     FleetDecision? Function(String decisionId)? seen,
+    bool secretCardsReady = fleetSecretCardsReady,
+    Set<String> handledSecrets = const {},
   }) {
     final secretIds = {
       for (final decision in snapshot.decisions)
@@ -34,6 +37,22 @@ class FleetInboxGroups {
     bool secret(String id) =>
         secretIds.contains(id) ||
         seen?.call(id)?.kind == FleetDecisionKind.secret;
+
+    if (secretCardsReady) {
+      secrets.addAll(
+        [
+          for (final d in snapshot.decisions)
+            if (d.kind == FleetDecisionKind.secret &&
+                d.secret != null &&
+                !handledSecrets.contains(d.id) &&
+                d.secret!.expiresAtTime.isAfter(now) &&
+                !(d.secret is FleetSecretRequest &&
+                    snapshot.answers.containsKey(d.id)))
+              d,
+        ]..sort((a, b) => a.createdAt.compareTo(b.createdAt)),
+      );
+      openCount += secrets.length;
+    }
 
     // A sign-in request keeps its card while its answer travels: it keeps
     // blocking work until the agent verifies it.
@@ -95,6 +114,10 @@ class FleetInboxGroups {
     );
     alertCount = snapshot.alerts.length;
   }
+
+  /// Open secret requests and pairings when secret cards are enabled; never
+  /// joined into [needs], [snoozed], [history] or [order].
+  final secrets = <FleetDecision>[];
 
   /// Asks, sign-in requests and reviews, most urgent first.
   final needs = <FleetDecision>[];

@@ -365,6 +365,40 @@ void main() {
     );
 
     test(
+      "Web's pickup receipt marks the answer picked up while still listed",
+      () async {
+        await pinActive();
+        final decision = await signedRequestDecision();
+        final snapshots = StreamController<FleetSnapshot?>();
+        addTearDown(snapshots.close);
+        final flow = cubit(decision, snapshots: snapshots.stream);
+        addTearDown(flow.close);
+        await flow.start();
+        flow.stepUpVerified();
+        await flow.send(Uint8List.fromList(utf8.encode('disposable')));
+        Map<String, dynamic> receipt({required bool pickedUp}) => {
+          decision.id: {
+            'action': 'secret',
+            'revision': 1,
+            'answeredAt': '2026-11-22T10:05:00.000Z',
+            'pickedUp': pickedUp,
+          },
+        };
+        final listed = [decisionJson(decision)];
+        snapshots.add(
+          secretSnapshot(decisions: listed, answers: receipt(pickedUp: false)),
+        );
+        await pumpEventQueue();
+        expect(flow.state.phase, FleetSecretPhase.sent);
+        snapshots.add(
+          secretSnapshot(decisions: listed, answers: receipt(pickedUp: true)),
+        );
+        await pumpEventQueue();
+        expect(flow.state.phase, FleetSecretPhase.pickedUp);
+      },
+    );
+
+    test(
       'an outcome for another answer, or unsigned, is not trusted',
       () async {
         await pinActive();

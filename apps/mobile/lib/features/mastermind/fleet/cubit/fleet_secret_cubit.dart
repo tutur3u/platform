@@ -31,6 +31,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     String Function()? newKey,
     Duration Function(int attempt)? retryDelay,
     FleetPairingAttempts? attempts,
+    void Function()? onHandled,
   }) : _crypto = crypto,
        _pins = pins,
        _source = source,
@@ -41,6 +42,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
        _retryDelay = retryDelay ?? _defaultDelay,
        _pairer = FleetSecretPairer(crypto: crypto, attempts: attempts),
        _attempts = attempts ?? FleetPairingAttempts.shared,
+       _onHandled = onHandled,
        super(const FleetSecretState());
 
   /// Input stops this long before `expiresAt`; Web stops at 15 seconds.
@@ -62,8 +64,16 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   final Duration Function(int attempt) _retryDelay;
   final FleetSecretPairer _pairer;
   final FleetPairingAttempts _attempts;
+  final void Function()? _onHandled;
 
   bool _started = false;
+  bool _handledNotified = false;
+
+  void _notifyHandled() {
+    if (_handledNotified) return;
+    _handledNotified = true;
+    _onHandled?.call();
+  }
 
   /// [fleetSecretErasures] when this cubit was made. Any later erasure ends
   /// its work: no owner key, pin write, answer or retry runs after it.
@@ -366,6 +376,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         _pending = null;
         if (_ended) return;
         emit(state.copyWith(phase: FleetSecretPhase.sent));
+        _notifyHandled();
         if (snapshot case final current?) _onSnapshot(current);
         return;
       } on FleetSecretSendException catch (error) {
@@ -377,6 +388,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
           case FleetSecretSendFailure.closed:
             _pending = null;
             emit(state.copyWith(phase: FleetSecretPhase.closed));
+            _notifyHandled();
             return;
           case FleetSecretSendFailure.forbidden:
             _fail(FleetSecretBlock.forbidden);
@@ -409,11 +421,17 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         .where((r) => r.id == decision.id)
         .firstOrNull;
     final open = next.decisions.any((d) => d.id == decision.id);
+    final receipt = next.answers[decision.id];
+    final pickedUp =
+        receipt != null &&
+        receipt.action == FleetAnswerAction.secret &&
+        receipt.pickedUp;
     switch (state.phase) {
       case FleetSecretPhase.sent || FleetSecretPhase.pickedUp:
         if (resolved?.secretOutcome case final outcome?) {
           unawaited(_settle(outcome));
-        } else if (!open && state.phase == FleetSecretPhase.sent) {
+        } else if ((pickedUp || !open) &&
+            state.phase == FleetSecretPhase.sent) {
           emit(state.copyWith(phase: FleetSecretPhase.pickedUp));
         }
       case FleetSecretPhase.verifying ||
@@ -425,6 +443,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         if (resolved != null || !open) {
           _pending = null;
           emit(state.copyWith(phase: FleetSecretPhase.closed));
+          _notifyHandled();
         }
       case FleetSecretPhase.sealing ||
           FleetSecretPhase.outcome ||
@@ -475,6 +494,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         ),
       ),
     );
+    _notifyHandled();
   }
 
   /// Activates pending pins whose pairing the machine settled for this
@@ -518,6 +538,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     if (_ended) return;
     await _pins.forget(secret.machineId, account: _account);
     if (!isClosed) emit(state.copyWith(phase: FleetSecretPhase.closed));
+    _notifyHandled();
   }
 
   @override

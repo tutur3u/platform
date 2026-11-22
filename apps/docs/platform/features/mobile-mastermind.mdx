@@ -613,8 +613,10 @@ page (`/mastermind/inbox/ask/<id>`). Default: every list card is compact and
 every answer is given on the detail page, in the decision's own option order.
 Secret requests are excluded from the ordinary Inbox lanes, Today’s Needs you
 list, and decision navigation. A direct decision URL shows the existing
-unavailable state while secure entry is disabled. The fleet decision route
-and Inbox grouping tests cover this boundary.
+unavailable state. With secure entry enabled, open secret and pairing requests
+appear only in their own "Secret requests" group at the top of Needs you (see
+[Secret requests](#secret-requests)). The fleet decision route and Inbox
+grouping tests cover this boundary.
 
 - **Lanes:** a "Needs you N" / "FYI N" / "History" switch at the top of the
   Inbox root (no extra top bar; the shell owns the title). Needs you holds
@@ -1512,8 +1514,16 @@ quota and accounting.
   from the machine's signed record. "Written" means the value entered the
   command's private input pipe; whether the command used it shows only in the
   command's own exit status, which the agent receives.
+- **Inbox entry:** open requests sit in a "Secret requests" group at the top
+  of Needs you and count toward it. Each card carries a lock badge, the
+  purpose, "End-to-end encrypted", the machine and the countdown, and one
+  action: Provide (or Pair). It never shows approve, hold, reply or snooze
+  controls. Tapping the card or its action opens the full-screen page;
+  closing the page without answering keeps the card. Once the answer is
+  sent, declined or the request closes, the card leaves the Inbox and never
+  appears in History. The group stays hidden until secure entry is enabled.
 - **Exceptions:** secret requests send no push notification and never join the
-  Inbox swipe deck; they open their own full-screen page.
+  Inbox swipe deck or decision detail; they open their own full-screen page.
 - **Regression coverage:** `scripts/mastermind-fleet/secret-*.test.mjs`
   (including the CryptoKit end-to-end test), the CryptoKit self-test in
   `scripts/mastermind-fleet/secret-hpke/`,

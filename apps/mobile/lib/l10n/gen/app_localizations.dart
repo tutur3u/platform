@@ -37218,6 +37218,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{platform} build {build} · {count} reports · {issueId}'**
   String mastermindMobileIssueDetail(String platform, int build, int count, String issueId);
+
+  /// No description provided for @mastermindSecretSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret requests'**
+  String get mastermindSecretSectionTitle;
+
+  /// No description provided for @mastermindSecretDecisionsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Decisions'**
+  String get mastermindSecretDecisionsSectionTitle;
+
+  /// No description provided for @mastermindSecretCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'End-to-end encrypted · opens secure entry'**
+  String get mastermindSecretCardHint;
+
+  /// No description provided for @mastermindSecretPairCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the pairing code shown on this machine'**
+  String get mastermindSecretPairCardHint;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

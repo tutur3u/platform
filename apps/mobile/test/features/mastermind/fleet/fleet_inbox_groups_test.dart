@@ -81,10 +81,84 @@ void main() {
         seen: (id) => id == stale.id ? stale : null,
       );
 
+      expect(inbox.secrets, isEmpty);
       expect(inbox.order, ['ordinary']);
       expect(inbox.snoozed, isEmpty);
       expect(inbox.history, isEmpty);
       expect(inbox.undelivered, isEmpty);
+    },
+  );
+
+  test(
+    'secretCardsReady lists open secret requests apart from ordinary lanes',
+    () async {
+      final secret = await signedRequestDecision(resign: false);
+      final pairing = pairDecision();
+      final answered = await signedRequestDecision(
+        id: 'secret-ffffffffffffffffffffffff',
+        changes: {'requestId': 'secret-ffffffffffffffffffffffff'},
+        resign: false,
+      );
+      final expired = await signedRequestDecision(
+        id: 'secret-eeeeeeeeeeeeeeeeeeeeeeee',
+        changes: {
+          'requestId': 'secret-eeeeeeeeeeeeeeeeeeeeeeee',
+          'expiresAt': '2026-11-22T10:04:00.000Z',
+        },
+        resign: false,
+      );
+      final now = DateTime.utc(2026, 11, 22, 10, 5);
+      final snapshot = FleetSnapshot.parse(
+        fleetSampleJson(
+          decisions: [
+            decisionJson(secret),
+            decisionJson(pairing),
+            decisionJson(answered),
+            decisionJson(expired),
+            _ask('ordinary'),
+          ],
+          answers: {
+            answered.id: {
+              'action': 'secret',
+              'revision': 1,
+              'answeredAt': '2026-11-22T10:04:30.000Z',
+              'pickedUp': false,
+            },
+          },
+          resolved: [
+            {
+              'id': 'secret-closed',
+              'title': 'Closed secret request',
+              'kind': 'secret',
+              'resolvedAt': '2026-11-22T10:03:00.000Z',
+            },
+          ],
+        ),
+      );
+      expect(snapshot.answers[answered.id]?.action, FleetAnswerAction.secret);
+
+      final inbox = FleetInboxGroups(
+        snapshot,
+        {secret.id: now.add(const Duration(minutes: 5))},
+        now,
+        secretCardsReady: true,
+      );
+      expect(inbox.secrets.map((d) => d.id), [secret.id, pairing.id]);
+      expect(inbox.openCount, 3);
+      expect(inbox.order, ['ordinary']);
+      expect(inbox.snoozed, isEmpty);
+      expect(inbox.history, isEmpty);
+      expect(inbox.undelivered, isEmpty);
+
+      final handled = FleetInboxGroups(
+        snapshot,
+        const {},
+        now,
+        secretCardsReady: true,
+        handledSecrets: {secret.id, pairing.id},
+      );
+      expect(handled.secrets, isEmpty);
+      expect(handled.openCount, 1);
     },
   );
 

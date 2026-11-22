@@ -20359,4 +20359,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindMobileIssueDetail(String platform, int build, int count, String issueId) {
     return '$platform build $build · $count reports · $issueId';
   }
+
+  @override
+  String get mastermindSecretSectionTitle => 'Secret requests';
+
+  @override
+  String get mastermindSecretDecisionsSectionTitle => 'Decisions';
+
+  @override
+  String get mastermindSecretCardHint => 'End-to-end encrypted · opens secure entry';
+
+  @override
+  String get mastermindSecretPairCardHint => 'Enter the pairing code shown on this machine';
 }
