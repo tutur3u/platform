@@ -1,0 +1,156 @@
+---
+title: 'Supabase backup export'
+description: 'Gated, read-only export of a Supabase project into the bucket-locked R2 backup bucket, with snapshot-consistent row counts and a restore parity check.'
+updatedAt: '2026-11-23'
+audience: developers
+---
+
+The **Supabase Backup Export** workflow (`.github/workflows/supabase-backup-export.yaml`)
+is the safety net for moving data off Supabase. It reads a project and writes
+age-encrypted files to an R2 bucket that has a bucket lock. Every statement it
+sends to Supabase is a read. Agents never run SQL against a Supabase project
+themselves; catalog reads and exports run only through this reviewed job.
+
+## Modes
+
+| Mode | Reads | Writes to R2 |
+| --- | --- | --- |
+| `catalog` | Table sizes, index counts, write counters (`pg_stat_user_tables`), exact row counts, and `storage.objects` totals per bucket | `counts.csv`, `sizes.csv`, `storage-stats.csv` and `storage-excluded.csv`, all encrypted, plus `manifest.json` |
+| `export` | Everything in `catalog`, plus `pg_dump`, the role list and every storage object | The catalog files, plus `database.dump`, `roles.sql`, `storage.tar`, the parity reports and the restore logs, all encrypted, plus `manifest.json` |
+
+Every file except `manifest.json` is encrypted to the `age` public keys in
+`BACKUP_AGE_RECIPIENTS`. At least two keys are required: the owner's and an
+escrowed second holder's. Losing one key therefore cannot strand a backup.
+CI never holds a private key.
+
+The prefix is `supabase/<target>/<UTC timestamp>-<run id>-<attempt>/`. The
+manifest lists each file's sha256, the git SHA, the run and the parity results.
+It is uploaded last, so a partial upload can be recognised.
+
+The manifest is not encrypted, so the hashes can be checked before
+decryption. It carries only totals (tables, rows, objects) and no names, and
+it sits in the locked, private backup bucket.
+
+## Consistency and verification
+
+- One `REPEATABLE READ, READ ONLY` transaction exports a snapshot. The row
+  counts, the storage totals and `pg_dump --snapshot` all read that snapshot,
+  so the counts describe exactly the data in the dump.
+- The dump is restored into a **local Postgres 17 cluster** (PGDG packages, with
+  pgvector), reachable only through a Unix socket. The restore uses
+  `--no-owner --no-acl`.
+  - Supabase-only extensions (pg_cron, pg_net, pgsodium, pg_graphql, wrappers)
+    do not exist there, so objects that depend on them fail. Their errors are
+    counted, not fatal.
+  - **Parity is judged on row counts.** Every source table must exist after the
+    restore with the same count.
+  - Tables owned by an extension (for example `extensions.wrappers_fdw_stats`)
+    are left out, because `pg_dump` does not dump their data.
+- Every bucket listed in `storage.buckets` at the snapshot is copied through
+  Supabase's S3 endpoint, and parity is checked **key by key**:
+  - every object with a recorded size must arrive with exactly that size;
+  - a downloaded file that is not one of those keys is allowed only if the
+    snapshot listed it as excluded (an unfinished upload with no size, or a key
+    ending in `/`);
+  - a sync error, for example an excluded row with no backend object, is
+    recorded in the encrypted bundle, and the key comparison decides the
+    outcome;
+  - an upload between the snapshot and the copy fails the run. Re-run it;
+  - a bucket whose id is not a safe directory name, or that holds a key with a
+    leading `/` or an empty, `.` or `..` segment, is **not synced**, so nothing
+    can be written outside its directory. Storage parity then fails, and the
+    unsafe keys are listed in the encrypted report.
+- The archive is streamed straight into `age`, so no plaintext tar is written.
+- Counts run with `row_security = off`, so a count fails, as `pg_dump` does,
+  instead of returning a number silently filtered by RLS.
+- The restore cluster's bootstrap superuser is `restore_admin`, so replaying
+  `roles.sql` (which alters the role named `postgres`) never changes the
+  restore's own admin.
+- **Disk.** After the snapshot reads, the job sizes the export from the data:
+  twice the relation bytes (the dump and the restored cluster), plus twice the
+  storage bytes (the tree and its archive), plus a 2 GiB margin. It fails early
+  if the scratch disk (`/mnt`) has less. The job timeout is 240 minutes.
+- A run that uploads files but fails parity exits non-zero. It is **not** a
+  verified backup.
+
+## What the backup leaves out
+
+These schemas are excluded:
+
+- `graphql`, `graphql_public`, `net`, `pgbouncer`, `pgsodium`, `pgsodium_masks`,
+  `realtime`, `_realtime`, `supabase_functions`, `vault`, `cron`, `_analytics`.
+
+Their DDL comes from migrations, but some of their contents have to be recreated
+by hand after a restore:
+
+- `cron.job` rows: the pg_cron schedules;
+- Vault secrets;
+- `supabase_functions` webhooks.
+
+`auth`, `storage`, `public`, `private`, `extensions` and `supabase_migrations` are
+included. The role dump uses `--no-role-passwords`, so roles are restored
+without passwords.
+
+## Transport security
+
+- Connections use `sslmode=verify-full` against Supabase's database CA
+  certificate, which is stored in the environment variable `SUPABASE_DB_CA_CERT`.
+- The password travels only in `PGPASSWORD`, never in a command line.
+
+## Public-repository logging
+
+This repository is public, so workflow logs are public too.
+
+- The job uploads no artifacts.
+- It prints only "Snapshot read.", pass or fail, the R2 prefix and the
+  manifest's sha256.
+- Parse errors name a line number, never a table, bucket, key or count. A
+  report that cannot be parsed is recorded as a failed parity result, so the
+  archives and the manifest are still uploaded.
+- Output from psql, `pg_dump`, `pg_restore` and the storage copy goes to files.
+  On failure those files are encrypted and uploaded, and the log shows only a
+  generic error. Such output can contain business metrics, object keys or row
+  values: a failed `COPY` can echo a row.
+
+## Environment setup
+
+Two environments, `supabase-backup-staging` and `supabase-backup-production`,
+are restricted to `main` and have required reviewers. Each holds:
+
+| Name | Kind | Value |
+| --- | --- | --- |
+| `PROJECT_ID` | secret | Project ref. The script accepts only the known staging and production refs |
+| `DB_PASSWORD` | secret | Database password, used through the session pooler |
+| `POOLER_HOST` | secret | `aws-<n>-ap-southeast-1.pooler.supabase.com` |
+| `SUPABASE_DB_CA_CERT` | variable | Supabase's database CA certificate (PEM) |
+| `R2_BACKUP_ENDPOINT`, `R2_BACKUP_BUCKET` | secret | The backup bucket's S3 endpoint and name |
+| `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY` | secret | R2 token scoped to the backup bucket only (Object Read & Write is the narrowest R2 scope) |
+| `STORAGE_S3_ENDPOINT`, `STORAGE_S3_ACCESS_KEY_ID`, `STORAGE_S3_SECRET_ACCESS_KEY` | secret | Supabase Storage S3 access keys, used only in `export` mode |
+| `BACKUP_AGE_RECIPIENTS` | variable | Two or more space-separated `age1…` X25519 public keys. Plugin recipients are not accepted |
+
+**The bucket lock.** The backup bucket's lock rule keeps every object for 90
+days, so the job's token cannot delete or overwrite an export. An account
+administrator can still remove the lock rule itself, so R2 admin rights belong
+only with the release authority. Backups that contain erased accounts persist for
+up to 90 days. That is the documented backup exception to account erasure.
+
+## Running it
+
+1. Dispatch **Supabase Backup Export** from `main` with `target` and `mode`.
+   Run staging before production.
+2. Approve the environment deployment.
+3. Record the R2 prefix and the manifest's sha256 from the job summary.
+4. To restore, download the prefix, check every file against the manifest, then
+   decrypt it with `age -d -i <key>`. Only key holders can do this.
+
+The helper tests in `scripts/backup/backup-manifest.test.mjs` cover:
+
+- count parsing, including quoted names;
+- parse errors that never echo values;
+- failed reports for unparseable input;
+- key-level storage parity (missing, resized, unexpected and excluded keys);
+- disk sizing;
+- manifest hashing.
+
+Storage parsing and parity are in `scripts/backup/storage-parity.mjs`, with tests
+in `storage-parity.test.mjs`.

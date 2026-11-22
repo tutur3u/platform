@@ -145,6 +145,7 @@
   "sso-persistence-contract.yaml": ["path-filters"],
   "status-api-cloudflare.yaml": ["path-filters"],
   "storefront-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
+  "supabase-backup-export.yaml": ["always"],
   "supabase-baseline.yaml": ["path-filters"],
   "supabase-family-key.yaml": ["always"],
   "supabase-production-migration-only.yaml": ["always"],

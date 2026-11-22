@@ -212,6 +212,7 @@
                   "build/devops/deployment-configuration",
                   "build/devops/deployment-coordinator",
                   "build/devops/cost-discovery",
+                  "build/devops/supabase-backup-export",
                   "build/devops/active-runtime",
                   "build/devops/standalone-api",
                   "build/devops/native-start-migration",

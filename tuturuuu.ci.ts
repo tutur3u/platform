@@ -90,6 +90,7 @@ export const ci = {
   'supabase-production.yaml': true,
   'supabase-staging.yaml': true,
   'supabase-staging-list.yaml': true,
+  'supabase-backup-export.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
   'finance-cloudflare.yaml': true,
