@@ -64,10 +64,13 @@ describe('login form budget', () => {
       }
     }
 
-    const form = read(`${LOGIN_DIR}/form.tsx`);
+    // Each heavy module still loads, behind a dynamic import inside the
+    // graph: the form itself, or a presentation step such as the shared
+    // code field.
+    const sources = graph.map(read).join('\n');
     for (const heavyModule of HEAVY_MODULES) {
       const escaped = heavyModule.replace(/[./]/gu, '\\$&');
-      expect(form).toMatch(
+      expect(sources).toMatch(
         new RegExp(`await import\\(\\s*['"]${escaped}['"]\\s*\\)`, 'u')
       );
     }

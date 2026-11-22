@@ -7,13 +7,6 @@ import { SAFARI_SAFE_TURNSTILE_OPTIONS } from '@tuturuuu/cloudflare/turnstile/cl
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
 import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Lock,
-  Mail,
-} from '@tuturuuu/icons/lucide-static';
-import {
   createCrossAppReturnUrlWithInternalApi,
   createMfaMobileApprovalChallengeWithInternalApi,
   getOtpSettings,
@@ -24,19 +17,8 @@ import {
 } from '@tuturuuu/internal-api/auth';
 import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
@@ -95,7 +77,6 @@ import {
 import { RequiredMfaEnrollment } from './required-mfa-enrollment';
 import {
   type AuthStage,
-  InputOTPRowFallback,
   InternalAppAccountConfirmationFallback,
   RedirectingAfterAuthCard,
   TurnstileLoadingFallback,
@@ -108,8 +89,10 @@ import {
 } from './focused-sign-in-card';
 import { type LoginMethod, rememberLoginMethod } from './last-login-method';
 import { SavedAccountChooser } from './saved-account-chooser';
-import { OAuthMethodButtons } from './sign-in-methods';
-import { IdentifyStep } from './identify-step';
+import { IdentifyStep, type IdentifyStepTurnstile } from './identify-step';
+import { OtpStep } from './otp-step';
+import { PasswordStep } from './password-step';
+import { AuthRateLimitAlert } from './auth-rate-limit-alert';
 import { AuthInlineError } from './auth-inline-error';
 import { authToast as toast } from './auth-inline-error-store';
 import { resolveTurnstilePillState } from './turnstile-pill-state';
@@ -134,27 +117,6 @@ const InternalAppAccountConfirmation = lazy(async () => {
     await import('./internal-app-account-confirmation');
 
   return { default: Confirmation };
-});
-
-const InputOTP = lazy(async () => {
-  const { InputOTP: InputOTPComponent } =
-    await import('@tuturuuu/ui/input-otp');
-
-  return { default: InputOTPComponent };
-});
-
-const InputOTPGroup = lazy(async () => {
-  const { InputOTPGroup: InputOTPGroupComponent } =
-    await import('@tuturuuu/ui/input-otp');
-
-  return { default: InputOTPGroupComponent };
-});
-
-const InputOTPSlot = lazy(async () => {
-  const { InputOTPSlot: InputOTPSlotComponent } =
-    await import('@tuturuuu/ui/input-otp');
-
-  return { default: InputOTPSlotComponent };
 });
 
 type LoginFormProps = {
@@ -341,7 +303,6 @@ export default function LoginForm({
   const emailValue = emailForm.watch('email');
   const passwordEmailValue = passwordForm.watch('email');
   const passwordValue = passwordForm.watch('password');
-  const otpValue = otpForm.watch('otp');
   const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
   const preferredEmailMode = emailModePreference.current.resolve(
     processEmailInput(emailValue),
@@ -1232,15 +1193,6 @@ export default function LoginForm({
     if (method !== 'email' && method !== 'passkey')
       void handleOAuthLogin(method);
   };
-  const renderRateLimitedSocialAuthSuggestion = (email: string) => (
-    <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        {t('login.rate_limited_social_auth_hint', { email })}
-      </p>
-      <OAuthMethodButtons disabled={loading} onChoose={chooseSignInMethod} />
-    </div>
-  );
-
   useEffect(() => setIsHydrated(true), []);
   useDeferredAuthSurfaceRecovery(
     deferAuthSurfaceUntilSessionCheck,
@@ -1651,21 +1603,35 @@ export default function LoginForm({
     );
   }
 
+  const turnstileSlot: IdentifyStepTurnstile = {
+    detail:
+      turnstileClientState.canRenderWidget && turnstileSiteKey
+        ? captchaError
+        : t('login.captcha_not_configured'),
+    onRetry: retryCaptchaManually,
+    state: resolveTurnstilePillState({
+      ...turnstileClientState,
+      error: captchaError,
+      token: captchaToken,
+    }),
+    widget:
+      isResolvingOtpEnablement || !turnstileSiteKey ? (
+        <TurnstileLoadingFallback />
+      ) : (
+        renderTurnstile(turnstileSiteKey)
+      ),
+  };
+
   return (
     <fieldset disabled={!isHydrated} className="contents">
-      {/* The email-first step sits flat on the page; later steps are cards. */}
-      <Card
-        className={
-          authStage === 'identify'
-            ? 'overflow-visible border-0 bg-transparent shadow-none!'
-            : 'overflow-hidden rounded-3xl border bg-card shadow-elevation-1!'
-        }
-      >
-        <CardContent
-          className={authStage === 'identify' ? 'p-0' : 'p-6 sm:p-8'}
-        >
+      {/* The email-first step sits flat on the page; later steps are cards
+          that repeat their own inline errors. */}
+      <Card className="overflow-visible border-0 bg-transparent shadow-none!">
+        <CardContent className="p-0">
           <div className="space-y-6">
-            <AuthInlineError busy={loading} key={authStage} />
+            {authStage === 'identify' ? (
+              <AuthInlineError busy={loading} key={authStage} />
+            ) : null}
             {authStage === 'identify' ? (
               <div key="identify-auth" className={authStageTransitionClassName}>
                 <IdentifyStep
@@ -1702,306 +1668,68 @@ export default function LoginForm({
                     requiresTurnstile: turnstileClientState.isRequired,
                   }}
                   pending={loading || isResolvingOtpEnablement}
-                  turnstile={{
-                    detail:
-                      turnstileClientState.canRenderWidget && turnstileSiteKey
-                        ? captchaError
-                        : t('login.captcha_not_configured'),
-                    onRetry: retryCaptchaManually,
-                    state: resolveTurnstilePillState({
-                      ...turnstileClientState,
-                      error: captchaError,
-                      token: captchaToken,
-                    }),
-                    widget:
-                      isResolvingOtpEnablement || !turnstileSiteKey ? (
-                        <TurnstileLoadingFallback />
-                      ) : (
-                        renderTurnstile(turnstileSiteKey)
-                      ),
-                  }}
+                  turnstile={turnstileSlot}
                   usePasswordAvailable={webOtpEnabled}
                 />
               </div>
             ) : authStage === 'otp' ? (
               <div key="otp-auth" className={authStageTransitionClassName}>
-                <div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
-                    onClick={returnToIdentifyStage}
-                    disabled={loading}
-                  >
-                    <ArrowLeft className="size-4" />
-                    <span>{t('common.back')}</span>
-                  </Button>
-                </div>
-
-                <div className="space-y-2 text-center">
-                  <p className="font-medium text-foreground text-sm">
-                    {emailForm.getValues('email')}
-                  </p>
-                  <p className="text-balance text-muted-foreground text-sm">
-                    {otpRetryAfterSeconds > 0
-                      ? t('login.otp_rate_limited_inline', {
-                          seconds: otpRetryAfterSeconds,
-                        })
-                      : t('login.check_email')}
-                  </p>
-                </div>
-
-                <Form {...otpForm}>
-                  <form
-                    onSubmit={otpForm.handleSubmit(loginWithOtp)}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={otpForm.control}
-                      name="otp"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-medium text-sm">
-                            {t('login.verification_code_label')}
-                          </FormLabel>
-                          <FormControl>
-                            <Suspense fallback={<InputOTPRowFallback />}>
-                              <InputOTP
-                                maxLength={6}
-                                {...field}
-                                disabled={loading}
-                                className="justify-center"
-                              >
-                                <InputOTPGroup className="w-full gap-2">
-                                  {Array.from({ length: 6 }).map((_, index) => (
-                                    <InputOTPSlot
-                                      key={`otp-${index + 1}`}
-                                      index={index}
-                                      className="h-12 w-full rounded-2xl border border-border bg-background font-semibold text-lg transition-all duration-200 focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
-                                    />
-                                  ))}
-                                </InputOTPGroup>
-                              </InputOTP>
-                            </Suspense>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button
-                      type="submit"
-                      className="h-12 w-full rounded-2xl font-medium"
-                      disabled={loading || otpValue.length !== 6}
-                    >
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingIndicator className="h-4 w-4" />
-                          <span>{t('common.loading')}...</span>
-                        </div>
-                      ) : (
-                        t('login.verify_button')
-                      )}
-                    </Button>
-
-                    {turnstileClientState.isRequired ? (
-                      <div className="rounded-2xl bg-transparent py-1">
-                        {turnstileClientState.canRenderWidget &&
-                        turnstileSiteKey ? (
-                          <div className="flex flex-col items-center gap-2">
-                            {renderTurnstile(turnstileSiteKey)}
-                            {captchaError ? (
-                              <p className="text-destructive text-sm">
-                                {captchaError}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="text-destructive text-sm">
-                            {t('login.captcha_not_configured')}
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-11 rounded-2xl"
-                        onClick={() => void sendEmailOtp()}
-                        disabled={
-                          loading ||
-                          otpRetryAfterSeconds > 0 ||
-                          (turnstileClientState.isRequired &&
-                            isCaptchaBlockingPasswordSubmit)
-                        }
-                      >
-                        {otpRetryAfterSeconds > 0
-                          ? t('login.resend_available_in', {
-                              seconds: otpRetryAfterSeconds,
-                            })
-                          : t('login.resend')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-11 rounded-2xl"
-                        onClick={() => void advanceToPasswordStage()}
+                <OtpStep
+                  email={emailForm.getValues('email')}
+                  form={otpForm}
+                  loading={loading}
+                  onBack={returnToIdentifyStage}
+                  onResend={() => void sendEmailOtp()}
+                  onSubmit={loginWithOtp}
+                  onUsePassword={() => void advanceToPasswordStage()}
+                  rateLimit={
+                    otpRetryAfterSeconds > 0 ? (
+                      <AuthRateLimitAlert
                         disabled={loading}
-                      >
-                        {t('login.use_password_instead')}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-
-                {otpRetryAfterSeconds > 0
-                  ? renderRateLimitedSocialAuthSuggestion(
-                      emailForm.getValues('email')
-                    )
-                  : null}
+                        email={emailForm.getValues('email')}
+                        onChooseProvider={chooseSignInMethod}
+                        retryAfterSeconds={otpRetryAfterSeconds}
+                      />
+                    ) : null
+                  }
+                  resendDisabled={
+                    loading ||
+                    otpRetryAfterSeconds > 0 ||
+                    (turnstileClientState.isRequired &&
+                      isCaptchaBlockingPasswordSubmit)
+                  }
+                  retryAfterSeconds={otpRetryAfterSeconds}
+                  turnstile={turnstileSlot}
+                />
               </div>
             ) : (
               <div key="password-auth" className={authStageTransitionClassName}>
-                <div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
-                    onClick={returnToIdentifyStage}
-                    disabled={loading}
-                  >
-                    <ArrowLeft className="size-4" />
-                    <span>{t('common.back')}</span>
-                  </Button>
-                </div>
-
-                <Form {...passwordForm}>
-                  <form
-                    onSubmit={passwordForm.handleSubmit(loginWithPassword)}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={passwordForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-medium text-sm">
-                            {t('login.email')}
-                          </FormLabel>
-                          <FormControl>
-                            <div className="group relative">
-                              <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                              <Input
-                                className="h-12 rounded-2xl border-border/60 bg-muted/30 pl-10 font-medium text-foreground shadow-none"
-                                {...field}
-                                aria-readonly="true"
-                                readOnly
-                                tabIndex={-1}
-                              />
-                            </div>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={passwordForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-medium text-sm">
-                            {t('login.password')}
-                          </FormLabel>
-                          <FormControl>
-                            <div className="group relative">
-                              <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                              <Input
-                                className="h-12 rounded-2xl border-border bg-background pr-12 pl-10 transition-all duration-200 focus:border-primary/40 focus-visible:ring-primary/15"
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder={t('login.password_placeholder')}
-                                {...field}
-                                disabled={loading}
-                              />
-                              <button
-                                type="button"
-                                className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="size-4" />
-                                ) : (
-                                  <Eye className="size-4" />
-                                )}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {turnstileClientState.isRequired ? (
-                      <div className="rounded-2xl bg-transparent py-1">
-                        {turnstileClientState.canRenderWidget &&
-                        turnstileSiteKey ? (
-                          <div className="flex flex-col items-center gap-2">
-                            {renderTurnstile(turnstileSiteKey)}
-                            {captchaError ? (
-                              <p className="text-destructive text-sm">
-                                {captchaError}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="text-destructive text-sm">
-                            {t('login.captcha_not_configured')}
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-
-                    <Button
-                      type="submit"
-                      className="h-12 w-full rounded-2xl font-medium"
-                      disabled={
-                        loading ||
-                        !passwordCredentialsAreValid ||
-                        isCaptchaBlockingPasswordSubmit
-                      }
-                    >
-                      {loading ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingIndicator className="h-4 w-4" />
-                          <span>{t('common.loading')}...</span>
-                        </div>
-                      ) : (
-                        t('login.sign_in')
-                      )}
-                    </Button>
-
-                    {webOtpEnabled ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-11 w-full rounded-2xl"
-                        onClick={() => void sendEmailOtp(true)}
+                <PasswordStep
+                  form={passwordForm}
+                  loading={loading}
+                  onBack={returnToIdentifyStage}
+                  onSubmit={loginWithPassword}
+                  onToggleShowPassword={() => setShowPassword((prev) => !prev)}
+                  onUseCode={
+                    webOtpEnabled ? () => void sendEmailOtp(true) : null
+                  }
+                  rateLimit={
+                    passwordRateLimitedEmail ? (
+                      <AuthRateLimitAlert
                         disabled={loading}
-                      >
-                        {t('login.use_code_instead')}
-                      </Button>
-                    ) : null}
-                  </form>
-                </Form>
-
-                {passwordRateLimitedEmail
-                  ? renderRateLimitedSocialAuthSuggestion(
-                      passwordRateLimitedEmail
-                    )
-                  : null}
+                        email={passwordRateLimitedEmail}
+                        onChooseProvider={chooseSignInMethod}
+                      />
+                    ) : null
+                  }
+                  showPassword={showPassword}
+                  submitDisabled={
+                    loading ||
+                    !passwordCredentialsAreValid ||
+                    isCaptchaBlockingPasswordSubmit
+                  }
+                  turnstile={turnstileSlot}
+                />
               </div>
             )}
           </div>

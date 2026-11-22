@@ -24,7 +24,9 @@ async function identify(email: string) {
 }
 
 async function back() {
-  fireEvent.click(screen.getByRole('button', { name: 'common.back' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'login.other_sign_in_methods' })
+  );
   await screen.findByPlaceholderText('login.email_username_placeholder');
 }
 
@@ -172,7 +174,9 @@ describe('LoginForm email method defaults', () => {
       screen.getByPlaceholderText('login.password_placeholder')
     ).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'common.back' })).toBeEnabled()
+      expect(
+        screen.getByRole('button', { name: 'login.other_sign_in_methods' })
+      ).toBeEnabled()
     );
     await back();
     await identify('person@tutur3u.com');
