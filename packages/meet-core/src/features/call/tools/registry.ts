@@ -1,3 +1,4 @@
+import { MEET_LIVE_ASSESSMENT_ENABLED } from '@tuturuuu/realtime/meet';
 import type { ComponentType } from 'react';
 import { liveAssessmentTool } from './live-activities/assessment/definition';
 import { liveFlashcardsTool } from './live-activities/flashcards/definition';
@@ -37,13 +38,25 @@ export const liveActivityTools: readonly MeetToolDefinition[] = [
   liveIcebreakerTool,
 ];
 
-export const meetTools: readonly MeetToolDefinition[] = [
-  pollsTool,
-  timersTool,
-  quizTool,
-  ...liveActivityTools,
-  whiteboardTool,
-];
+/**
+ * The hub's tools. With the assessment switched off it is not among them, so
+ * neither the Activities menu nor a co-host's list offers it.
+ */
+export function meetToolsFor(features: {
+  assessment: boolean;
+}): readonly MeetToolDefinition[] {
+  return [
+    pollsTool,
+    timersTool,
+    quizTool,
+    ...liveActivityTools,
+    whiteboardTool,
+  ].filter((tool) => features.assessment || tool !== liveAssessmentTool);
+}
+
+export const meetTools = meetToolsFor({
+  assessment: MEET_LIVE_ASSESSMENT_ENABLED,
+});
 
 export function findMeetTool(
   id: string | null,

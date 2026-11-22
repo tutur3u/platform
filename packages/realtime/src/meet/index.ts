@@ -9,6 +9,7 @@ export {
   liveActivitiesHostSchema,
   liveActivitiesMineSchema,
   liveActivitiesSnapshotSchema,
+  MEET_LIVE_ASSESSMENT_ENABLED,
 } from './live-activities';
 export {
   PENBOARD_LIMITS,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LIVE_ACTIVITY_LIMITS } from './live-activities';
+import { applyLiveActivities, LIVE_ACTIVITY_LIMITS } from './live-activities';
 import {
   action as dispatch,
   cohost,
@@ -13,6 +13,7 @@ import {
 import { serializedMeetBytes } from './live-activity-rate';
 import { mineView, publicView } from './live-activity-views';
 import { MEET_MAX_MESSAGE_BYTES } from './message-size';
+import { meetRealtimeClientMessageSchema } from './messages';
 import type { MeetRoomSnapshot } from './room';
 
 // Manager commands name the attempt and the status on the sender's screen.
@@ -555,4 +556,91 @@ describe('assessment', () => {
       LIVE_ACTIVITY_LIMITS.stateBytes
     );
   });
+});
+
+it('refuses every assessment command and shows none of it when switched off', () => {
+  const configured = action(room(), host, { kind: 'assessment.set', items: [
+    { prompt: 'Question', kind: 'choice', options: ['A', 'B'], answer: 1 },
+  ] });
+  const open = action(configured.state, host, {
+    kind: 'assessment.status',
+    status: 'open',
+  }).state;
+  const [question] = open.liveActivities?.assessment.items ?? [];
+  const answered = action(open, guest, {
+    kind: 'assessment.submit',
+    itemId: question?.id,
+    choice: 1,
+  }).state;
+  const attemptId = answered.liveActivities?.assessment.attempt;
+  const send = (token: typeof host, message: unknown, assessment: boolean) => {
+    const result = applyLiveActivities(
+      answered,
+      {
+        message: meetRealtimeClientMessageSchema.parse(message),
+        token,
+        now: new Date().toISOString(),
+      },
+      { assessment }
+    );
+    if (!result) throw new Error('Expected an activity outcome');
+    return result;
+  };
+  const readAll = { type: 'activity.read', requestId: 'read' };
+  const commands = [
+    { kind: 'assessment.set', items: [] },
+    { kind: 'assessment.status', status: 'closed', attemptId, from: 'open' },
+    { kind: 'assessment.restart', attemptId },
+    { kind: 'assessment.release', released: true, attemptId },
+    { kind: 'assessment.submit', itemId: question?.id, choice: 0 },
+    {
+      kind: 'assessment.grade',
+      attemptId,
+      itemId: question?.id,
+      participantId: guest.userId,
+      revision: 0,
+      score: 1,
+    },
+  ];
+
+  // On: the room serves the assessment as usual.
+  expect(JSON.stringify(send(host, readAll, true).reply)).toContain('Question');
+  expect(
+    send(host, { type: 'activity.command', command: commands[1] }, true).state
+      .liveActivities?.assessment.status
+  ).toBe('closed');
+
+  // Off: every command is refused and changes nothing.
+  for (const command of commands) {
+    const token = command.kind === 'assessment.submit' ? guest : host;
+    const refused = send(token, { type: 'activity.command', command }, false);
+    expect(refused.reply).toMatchObject(error('activity_assessment_disabled'));
+    expect(refused.state).toBe(answered);
+    expect(refused.broadcast).toEqual([]);
+  }
+  // Off: no view carries a question, an answer or a key, for anyone.
+  for (const token of [host, cohost, guest]) {
+    const views = JSON.stringify(send(token, readAll, false).reply);
+    expect(views).not.toMatch(/Question|"answers":\{"|"choice"/);
+    expect(send(token, readAll, false).reply[0]).toMatchObject({
+      snapshot: { assessment: { status: 'draft', items: [], attemptId: null } },
+    });
+  }
+  // Off: another activity still works, and its views stay free of assessment.
+  const prompted = send(
+    host,
+    {
+      type: 'activity.command',
+      command: { kind: 'icebreaker.prompt', text: 'Hi?' },
+    },
+    false
+  );
+  expect(prompted.broadcast).toMatchObject([
+    { snapshot: { icebreaker: { prompt: 'Hi?' }, assessment: { items: [] } } },
+  ]);
+  expect(JSON.stringify([prompted.broadcast, prompted.toManagers])).not.toContain(
+    'Question'
+  );
+  // The stored attempt is untouched, so switching back on brings it back.
+  expect(prompted.state.liveActivities?.assessment.responses).toHaveLength(1);
 });

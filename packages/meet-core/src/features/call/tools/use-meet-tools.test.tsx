@@ -8,7 +8,9 @@ import {
   type MeetToolDefinition,
   type MeetToolPanelProps,
   meetTools,
+  meetToolsFor,
 } from './registry';
+import { roomActivityTools } from './live-activities/activity-manager';
 import { toolIdFromDrawer, useMeetTools } from './use-meet-tools';
 
 function SamplePanel({ roomRole, participantId }: MeetToolPanelProps) {
@@ -173,4 +175,28 @@ it('registers polls, timer, quiz, the live activities and the pen board in order
   ]);
   expect(toolIdFromDrawer('tool:quiz')).toBe('quiz');
   expect(toolIdFromDrawer('chat')).toBeNull();
+});
+
+it('offers the assessment in the menu and to co-hosts only while it is switched on', () => {
+  const ids = (tools: readonly MeetToolDefinition[]) =>
+    tools.map(({ id }) => id);
+  const on = meetToolsFor({ assessment: true });
+  const off = meetToolsFor({ assessment: false });
+  expect(ids(on)).toContain('live-assessment');
+  expect(ids(roomActivityTools(on))).toContain('live-assessment');
+  expect(ids(off)).not.toContain('live-assessment');
+  expect(ids(roomActivityTools(off))).toEqual([
+    'live-flashcards',
+    'live-game',
+    'live-icebreaker',
+    'pen-whiteboard',
+  ]);
+  // Nothing else leaves the menu with it.
+  expect(ids(off)).toEqual(ids(on).filter((id) => id !== 'live-assessment'));
+  // The switch is on.
+  expect(ids(meetTools)).toEqual(ids(on));
+  renderHarness({ drawer: null, onDrawer: vi.fn(), registry: off });
+  expect(screen.getByTestId('shown').textContent).not.toContain(
+    'live-assessment'
+  );
 });

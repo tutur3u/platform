@@ -1,6 +1,7 @@
 import {
   LIVE_ACTIVITY_LIMITS,
   type LiveActivityCommand,
+  MEET_LIVE_ASSESSMENT_ENABLED,
 } from './live-activities-schema';
 import { applyLiveActivityGame } from './live-activity-game';
 import {
@@ -321,9 +322,13 @@ function refreshActors(
   }
 }
 
+/** Which activities the room offers; see `MEET_LIVE_ASSESSMENT_ENABLED`. */
+export type LiveActivityFeatures = { assessment: boolean };
+
 export function applyLiveActivities(
   state: MeetRoomSnapshot,
-  { message, token, now }: MeetRoomCommand
+  { message, token, now }: MeetRoomCommand,
+  features: LiveActivityFeatures = { assessment: MEET_LIVE_ASSESSMENT_ENABLED }
 ) {
   if (message.type !== 'activity.read' && message.type !== 'activity.command')
     return null;
@@ -339,21 +344,28 @@ export function applyLiveActivities(
     return denied(state, 'awaiting_admission', requestId);
   const manager = canMeetRealtimeRunActivities(token);
   const current = settleActivities(state.liveActivities ?? EMPTY_ACTIVITIES);
+  // With the assessment switched off, nothing of it leaves the room.
+  const shown = (activities: Activities) =>
+    features.assessment
+      ? activities
+      : { ...activities, assessment: EMPTY_ACTIVITIES.assessment };
   if (message.type === 'activity.read') {
     const reply: MeetRealtimeServerMessage[] = [
-      { type: 'activity.snapshot', snapshot: publicView(current), requestId },
+      { type: 'activity.snapshot', snapshot: publicView(shown(current)), requestId },
       {
         type: 'activity.mine',
-        mine: mineView(current, participantId),
+        mine: mineView(shown(current), participantId),
         requestId,
       },
     ];
     if (manager)
-      reply.push({ type: 'activity.host', host: hostView(current), requestId });
+      reply.push({ type: 'activity.host', host: hostView(shown(current)), requestId });
     return outcome(state, { reply });
   }
 
   const { command } = message;
+  if (!features.assessment && command.kind.startsWith('assessment.'))
+    return denied(state, 'activity_assessment_disabled', requestId);
   if (
     !manager &&
     command.kind !== 'assessment.submit' &&
@@ -372,12 +384,12 @@ export function applyLiveActivities(
   const next = applyActivity(current, command, participantId, timestamp);
   if (typeof next === 'string') return denied(state, next, requestId);
   const reply: MeetRealtimeServerMessage[] = [
-    { type: 'activity.mine', mine: mineView(next, participantId), requestId },
+    { type: 'activity.mine', mine: mineView(shown(next), participantId), requestId },
   ];
   if (next === current) return outcome(state, { reply });
 
-  const snapshot = publicView(next);
-  const host = hostView(next);
+  const snapshot = publicView(shown(next));
+  const host = hostView(shown(next));
   if (
     serializedMeetBytes(snapshot) > LIVE_ACTIVITY_LIMITS.viewBytes ||
     serializedMeetBytes(host) > LIVE_ACTIVITY_LIMITS.viewBytes ||
@@ -393,7 +405,7 @@ export function applyLiveActivities(
     ) {
       direct.push({
         userId,
-        message: { type: 'activity.mine', mine: mineView(next, userId) },
+        message: { type: 'activity.mine', mine: mineView(shown(next), userId) },
       });
     }
   }

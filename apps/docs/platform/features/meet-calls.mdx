@@ -683,6 +683,11 @@ Regression coverage lives in `live-activities.test.ts`, `live-activities-assessm
 `*-panel.test.tsx` files under
 `tools/live-activities` and the Meet whiteboard store and panel tests.
 
+`MEET_LIVE_ASSESSMENT_ENABLED` in `packages/realtime` turns the assessment
+off as a whole. When it is false the room refuses every assessment command,
+leaves assessment out of every view, and the Activities menu and the co-host
+list no longer offer it. The other activities and the pen board are unaffected.
+
 ## Viewer admission for large classes
 
 Meet hosts with a signed allowance of at least 50 publisher slots can enable

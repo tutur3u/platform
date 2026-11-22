@@ -11,6 +11,14 @@ export const LIVE_ACTIVITY_LIMITS = {
   viewBytes: 112 * 1024,
 } as const;
 
+/**
+ * Whether rooms offer the assessment. When false the room refuses every
+ * assessment command and leaves assessment out of every view, and the
+ * Activities menu and the co-host list no longer offer it. The other
+ * activities and the pen board do not depend on it.
+ */
+export const MEET_LIVE_ASSESSMENT_ENABLED: boolean = true;
+
 export const liveActivityRequestIdSchema = z
   .string()
   .trim()
