@@ -2,6 +2,7 @@
 // file and never overwrites it. See "Worker options" in
 // apps/docs/build/devops/start-bridge-codemod.mdx.
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
+import { denyFrameAncestors } from '@tuturuuu/start-bridge/response-policy';
 import {
   defineBridgeAppConfig,
   withDocumentSecurity,
@@ -41,18 +42,9 @@ export default defineBridgeAppConfig(
         result.headers.delete('X-Frame-Options');
       } else {
         const csp = result.headers.get('Content-Security-Policy');
-        const directives =
-          csp
-            ?.split(';')
-            .map((directive) => directive.trim())
-            .filter(
-              (directive) =>
-                directive.trim() &&
-                !/^frame-ancestors(?:\s|$)/iu.test(directive.trim())
-            ) ?? [];
         result.headers.set(
           'Content-Security-Policy',
-          [...directives, "frame-ancestors 'none'"].join('; ')
+          denyFrameAncestors(csp ?? '')
         );
         result.headers.set('X-Frame-Options', 'DENY');
       }

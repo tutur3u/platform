@@ -120,10 +120,12 @@ describe('sandboxed uploaded WebGL documents', () => {
   it('denies framing on a neighbouring path', async () => {
     const response = await decorate(
       '/api/v1/workspaces/ws/external-projects/assets/asset/webgl-other/game.js',
-      { 'Content-Security-Policy': sandbox }
+      {
+        'Content-Security-Policy': `${sandbox}, frame-ancestors 'none'`,
+      }
     );
     expect(response.headers.get('Content-Security-Policy')).toBe(
-      `${sandbox}; frame-ancestors 'none'`
+      `${sandbox}; frame-ancestors 'none', frame-ancestors 'none'`
     );
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
   });

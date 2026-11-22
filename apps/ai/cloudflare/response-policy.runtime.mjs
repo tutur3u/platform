@@ -83,7 +83,7 @@ test(
       assert.equal(neighbouring.status, 200);
       assert.equal(
         neighbouring.headers['content-security-policy'],
-        `${sandbox}; frame-ancestors 'none'`
+        `${sandbox}; frame-ancestors 'none', frame-ancestors 'none'`
       );
       assert.equal(neighbouring.headers['x-frame-options'], 'DENY');
     }
