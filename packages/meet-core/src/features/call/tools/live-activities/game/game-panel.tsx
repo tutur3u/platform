@@ -19,6 +19,9 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
   const { game } = activity.snapshot;
   const rounds = activity.host?.game.rounds ?? [];
   const last = !!game.round && game.round.index + 1 >= game.round.total;
+  // Reveal and Next name the round on screen, so the room can refuse one that
+  // arrives after the game moved on.
+  const roundId = game.round?.id;
   return (
     <LiveActivityPanelFrame
       title={t('title')}
@@ -48,7 +51,9 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
                   icon={Eye}
                   label={t('reveal')}
                   variant="default"
-                  onClick={() => activity.send({ kind: 'game.reveal' })}
+                  onClick={() =>
+                    roundId && activity.send({ kind: 'game.reveal', roundId })
+                  }
                 />
               )}
               {game.phase === 'reveal' && (
@@ -56,7 +61,9 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
                   icon={last ? Flag : ChevronRight}
                   label={t(last ? 'finish' : 'next_round')}
                   variant="default"
-                  onClick={() => activity.send({ kind: 'game.next' })}
+                  onClick={() =>
+                    roundId && activity.send({ kind: 'game.next', roundId })
+                  }
                 />
               )}
               <ToolAction

@@ -101,8 +101,9 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
     rounds: z.array(gameRoundSchema).max(LIVE_ACTIVITY_LIMITS.gameRounds),
   }),
   z.object({ kind: z.literal('game.start') }),
-  z.object({ kind: z.literal('game.next') }),
-  z.object({ kind: z.literal('game.reveal') }),
+  // Both name the round on the sender's screen; another round is refused.
+  z.object({ kind: z.literal('game.next'), roundId: id }),
+  z.object({ kind: z.literal('game.reveal'), roundId: id }),
   z.object({ kind: z.literal('game.reset') }),
   z.object({
     kind: z.literal('game.answer'),

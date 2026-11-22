@@ -98,8 +98,11 @@ export function applyLiveActivityGame(
       };
     }
     case 'game.reveal': {
-      if (game.phase === 'reveal' || game.phase === 'done') return game;
-      if (game.phase !== 'question') return 'activity_game_unavailable';
+      if (game.phase === 'idle') return 'activity_game_unavailable';
+      // A reveal sent for an earlier round never closes the one in play.
+      if (game.rounds[game.index]?.id !== command.roundId)
+        return 'activity_round_changed';
+      if (game.phase !== 'question') return game;
       const scores = { ...game.scores };
       const correct = game.rounds[game.index]?.answer;
       for (const [id, answer] of Object.entries(game.answers))
@@ -107,6 +110,10 @@ export function applyLiveActivityGame(
       return { ...game, phase: 'reveal', scores };
     }
     case 'game.next':
+      if (game.phase === 'idle') return 'activity_game_unavailable';
+      // A repeated Next for an earlier round never skips the one in play.
+      if (game.rounds[game.index]?.id !== command.roundId)
+        return 'activity_round_changed';
       if (game.phase === 'done') return game;
       if (game.phase !== 'reveal') return 'activity_game_unavailable';
       return game.index + 1 >= game.rounds.length

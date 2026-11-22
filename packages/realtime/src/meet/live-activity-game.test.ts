@@ -68,7 +68,7 @@ describe('game', () => {
     const revealed = action(
       answered.state,
       cohost,
-      { kind: 'game.reveal' },
+      { kind: 'game.reveal', roundId },
       5000
     );
     expect(revealed.broadcast).toMatchObject([
@@ -83,13 +83,68 @@ describe('game', () => {
       },
     ]);
     expect(
-      action(revealed.state, host, { kind: 'game.reveal' }, 5001).state
+      action(revealed.state, host, { kind: 'game.reveal', roundId }, 5001)
+        .state
     ).toBe(revealed.state);
     expect(
-      action(revealed.state, host, { kind: 'game.next' }, 5001).broadcast
+      action(revealed.state, host, { kind: 'game.next', roundId }, 5001)
+        .broadcast
     ).toMatchObject([
       { snapshot: { game: { phase: 'done', round: { correct: 1 } } } },
     ]);
+  });
+
+  it('refuses a Reveal or Next sent for a round that is no longer in play', () => {
+    const round = { prompt: 'Pick', options: ['A', 'B'], answer: 1, seconds: 5 };
+    const ready = action(room(), host, {
+      kind: 'game.set',
+      rounds: [round, { ...round, prompt: 'Pick again', answer: 0 }],
+    }).state;
+    const started = action(ready, host, { kind: 'game.start' }).state;
+    const [first, second] = (started.liveActivities?.game.rounds ?? []).map(
+      ({ id }) => id
+    );
+    const firstShown = action(started, host, {
+      kind: 'game.reveal',
+      roundId: first,
+    }).state;
+    const secondInPlay = action(firstShown, host, {
+      kind: 'game.next',
+      roundId: first,
+    });
+    expect(secondInPlay.broadcast).toMatchObject([
+      { snapshot: { game: { phase: 'question', round: { id: second } } } },
+    ]);
+    expect(JSON.stringify(secondInPlay.broadcast)).not.toContain('"correct"');
+
+    // A delayed reveal of round one must not close round two or show its key.
+    const lateReveal = action(secondInPlay.state, cohost, {
+      kind: 'game.reveal',
+      roundId: first,
+    });
+    expect(lateReveal.reply).toMatchObject(error('activity_round_changed'));
+    expect(lateReveal.state).toBe(secondInPlay.state);
+    expect(lateReveal.broadcast).toEqual([]);
+    expect(read(secondInPlay.state, guest).reply).toMatchObject([
+      { snapshot: { game: { phase: 'question' } } },
+      {},
+    ]);
+
+    // A repeated Next for round one must not skip round two either.
+    const secondShown = action(secondInPlay.state, host, {
+      kind: 'game.reveal',
+      roundId: second,
+    }).state;
+    const lateNext = action(secondShown, cohost, {
+      kind: 'game.next',
+      roundId: first,
+    });
+    expect(lateNext.reply).toMatchObject(error('activity_round_changed'));
+    expect(lateNext.state).toBe(secondShown);
+    expect(
+      action(secondShown, host, { kind: 'game.next', roundId: second }).state
+        .liveActivities?.game.phase
+    ).toBe('done');
   });
 
   it('refuses new rounds while a game is running, so a late save cannot wipe it', () => {
@@ -115,8 +170,11 @@ describe('game', () => {
       roundId,
       choice: 1,
     }).state;
-    const revealed = action(answered, host, { kind: 'game.reveal' }).state;
-    const done = action(revealed, host, { kind: 'game.next' }).state;
+    const revealed = action(answered, host, {
+      kind: 'game.reveal',
+      roundId,
+    }).state;
+    const done = action(revealed, host, { kind: 'game.next', roundId }).state;
     for (const running of [answered, revealed, done]) {
       const refused = action(running, cohost, late);
       expect(refused.reply).toMatchObject(error('activity_game_running'));

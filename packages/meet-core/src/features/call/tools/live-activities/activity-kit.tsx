@@ -24,6 +24,7 @@ const ERRORS: Record<string, string> = {
   activity_icebreaker_unavailable: 'prompt_changed',
   activity_offline: 'reconnecting',
   activity_card_changed: 'card_changed',
+  activity_round_changed: 'round_changed',
 };
 
 /**

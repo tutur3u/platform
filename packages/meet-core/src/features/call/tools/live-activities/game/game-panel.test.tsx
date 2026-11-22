@@ -114,8 +114,8 @@ it('lets the host prepare rounds, start once the room has them and pace the game
   fireEvent.click(screen.getByRole('button', { name: t.finish }));
   expect(sent().slice(1)).toEqual([
     { kind: 'game.start' },
-    { kind: 'game.reveal' },
-    { kind: 'game.next' },
+    { kind: 'game.reveal', roundId: ROUND },
+    { kind: 'game.next', roundId: ROUND },
   ]);
 });
 
