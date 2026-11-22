@@ -19,6 +19,7 @@ import {
   LIVE_ACTIVITY_ACTIONS_PER_MINUTE,
   serializedMeetBytes,
 } from './live-activity-rate';
+import { mineView, publicView } from './live-activity-views';
 import { MEET_MAX_MESSAGE_BYTES } from './message-size';
 import {
   createMeetRoomSnapshot,
@@ -184,29 +185,60 @@ describe('assessment', () => {
       'private answer'
     );
 
-    // Reopening makes answers editable again, so keys and grades go back.
+    // Answers closed without a release can open again and keep what is there.
+    const kept = action(graded.state, host, {
+      kind: 'assessment.status',
+      status: 'open',
+    }).state.liveActivities?.assessment;
+    expect(kept?.responses).toHaveLength(1);
+    expect(kept?.items.map(({ id }) => id)).toEqual([question.id, long.id]);
+
+    // The key went out, so that attempt is over: opening again is a new one.
     const reopened = action(released.state, cohost, {
       kind: 'assessment.status',
       status: 'open',
     });
-    expect(reopened.state.liveActivities?.assessment).toMatchObject({
+    const fresh = reopened.state.liveActivities?.assessment;
+    expect(fresh).toMatchObject({
       status: 'open',
       released: false,
+      sealed: false,
+      responses: [],
     });
+    const freshIds = fresh?.items.map(({ id }) => id) ?? [];
+    expect(freshIds).toHaveLength(2);
+    expect(freshIds).not.toContain(question.id);
+    expect(freshIds).not.toContain(long.id);
     expect(JSON.stringify(reopened.broadcast)).not.toContain('"correct"');
     expect(reopened.direct).toMatchObject([
       { userId: guest.userId, message: { type: 'activity.mine' } },
     ]);
     expect(JSON.stringify(reopened.direct)).not.toMatch(
-      /Private feedback|"score"/
+      /Private feedback|"score"|private answer/
     );
+    // Nobody who saw the key can answer the questions it belonged to.
     expect(
       action(reopened.state, guest, {
         kind: 'assessment.submit',
         itemId: long.id,
         answer: 'second thoughts',
-      }).state.liveActivities?.assessment.responses
-    ).toMatchObject([{ answer: 'second thoughts' }]);
+      }).reply
+    ).toMatchObject(error('activity_item_not_found'));
+
+    // Hiding the results again does not make the released attempt reopenable.
+    const hiddenAgain = action(released.state, host, {
+      kind: 'assessment.release',
+      released: false,
+    });
+    expect(hiddenAgain.broadcast).toMatchObject([
+      { snapshot: { assessment: { released: false, sealed: true } } },
+    ]);
+    expect(
+      action(hiddenAgain.state, host, {
+        kind: 'assessment.status',
+        status: 'open',
+      }).state.liveActivities?.assessment
+    ).toMatchObject({ status: 'open', sealed: false, responses: [] });
 
     const draft = action(released.state, host, {
       kind: 'assessment.status',
@@ -219,6 +251,61 @@ describe('assessment', () => {
       released: false,
       responses: [],
     });
+  });
+
+  it('treats an assessment stored as released while open as closed for good', () => {
+    const configured = action(room(), host, { kind: 'assessment.set', items });
+    const open = action(configured.state, host, {
+      kind: 'assessment.status',
+      status: 'open',
+    }).state;
+    const [question] = open.liveActivities?.assessment.items ?? [];
+    const answered = action(open, guest, {
+      kind: 'assessment.submit',
+      itemId: question?.id,
+      choice: 0,
+    }).state;
+    const activities = answered.liveActivities;
+    if (!activities || !question) throw new Error('Missing activities');
+    const leaked = {
+      ...activities,
+      assessment: {
+        ...activities.assessment,
+        released: true,
+        responses: activities.assessment.responses.map((response) => ({
+          ...response,
+          score: 50,
+        })),
+      },
+    };
+    // Neither projection hands out results while answers are open.
+    expect(publicView(leaked).assessment).toMatchObject({ released: false });
+    expect(JSON.stringify(publicView(leaked))).not.toContain('"correct"');
+    expect(JSON.stringify(mineView(leaked, guest.userId))).not.toContain(
+      '"score"'
+    );
+
+    // The room reads that state as a released attempt: closed, key visible.
+    const stored = { ...answered, liveActivities: leaked };
+    expect(read(stored, guest).reply).toMatchObject([
+      {
+        snapshot: {
+          assessment: { status: 'closed', released: true, sealed: true },
+        },
+      },
+      { mine: { assessment: { [question.id]: { choice: 0, score: 50 } } } },
+    ]);
+    expect(
+      action(stored, guest, {
+        kind: 'assessment.submit',
+        itemId: question.id,
+        choice: 1,
+      }).reply
+    ).toMatchObject(error('activity_assessment_closed'));
+    expect(
+      action(stored, host, { kind: 'assessment.status', status: 'open' }).state
+        .liveActivities?.assessment
+    ).toMatchObject({ status: 'open', released: false, responses: [] });
   });
 
   it('rejects aggregate escaped JSON beyond the view budget without changing state', () => {

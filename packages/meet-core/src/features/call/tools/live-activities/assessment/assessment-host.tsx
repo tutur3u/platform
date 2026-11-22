@@ -108,15 +108,22 @@ export function AssessmentHost({ activity }: { activity: Activity }) {
   const responses = activity.host?.assessment.responses ?? [];
   const answers = activity.host?.assessment.answers ?? {};
   const open = assessment.status === 'open';
-  // Reopening withdraws released results, so it asks twice once they are out.
-  const reopenNeedsConfirm = !open && assessment.released && !confirmReopen;
+  // A release ends the attempt, so opening again clears it and asks twice.
+  const { sealed } = assessment;
+  const reopenNeedsConfirm = !open && sealed && !confirmReopen;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <ToolAction
           icon={open ? Lock : Play}
           label={t(
-            open ? 'close_answers' : confirmReopen ? 'reopen_confirm' : 'reopen'
+            open
+              ? 'close_answers'
+              : confirmReopen
+                ? 'reopen_confirm'
+                : sealed
+                  ? 'new_attempt'
+                  : 'reopen'
           )}
           variant={confirmReopen ? 'destructive' : 'outline'}
           onClick={() => {

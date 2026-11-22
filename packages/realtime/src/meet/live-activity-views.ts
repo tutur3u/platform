@@ -30,6 +30,8 @@ export type Activities = {
     LiveActivitiesSnapshot['assessment'],
     'status' | 'released'
   > & {
+    /** Absent in state stored before a release ended its attempt. */
+    sealed?: boolean;
     items: AssessmentItem[];
     responses: AssessmentResponse[];
   };
@@ -63,6 +65,25 @@ export const EMPTY_ACTIVITIES: Activities = {
   icebreaker: { prompt: null, promptId: null, responses: [] },
 };
 
+/** Results are out only for closed answers, whatever the stored flags say. */
+const resultsOut = ({ status, released }: Activities['assessment']) =>
+  released && status === 'closed';
+
+/**
+ * Stored state as the rules read it. A release ends its attempt, so an
+ * assessment stored as released while still open is closed, and any released
+ * one is sealed.
+ */
+export function settleActivities(state: Activities): Activities {
+  const { assessment } = state;
+  if (!assessment.released) return state;
+  if (assessment.status === 'closed' && assessment.sealed) return state;
+  return {
+    ...state,
+    assessment: { ...assessment, status: 'closed', sealed: true },
+  };
+}
+
 export const EMPTY_LIVE_ACTIVITIES_SNAPSHOT = publicView(EMPTY_ACTIVITIES);
 export const EMPTY_LIVE_ACTIVITIES_MINE = mineView(EMPTY_ACTIVITIES, '');
 
@@ -75,18 +96,18 @@ export function publicView({
   const counts = Object.fromEntries(assessment.items.map(({ id }) => [id, 0]));
   for (const { itemId } of assessment.responses)
     counts[itemId] = (counts[itemId] ?? 0) + 1;
+  const released = resultsOut(assessment);
   return {
     assessment: {
       status: assessment.status,
-      released: assessment.released,
+      released,
+      sealed: assessment.sealed === true || assessment.released,
       items: assessment.items.map(({ id, prompt, kind, options, answer }) => ({
         id,
         prompt,
         kind,
         options,
-        ...(assessment.released && answer !== undefined
-          ? { correct: answer }
-          : {}),
+        ...(released && answer !== undefined ? { correct: answer } : {}),
       })),
       counts,
     },
@@ -128,7 +149,7 @@ export function mineView(
           {
             answer,
             choice,
-            ...(assessment.released ? { score, feedback } : {}),
+            ...(resultsOut(assessment) ? { score, feedback } : {}),
           },
         ])
     ),

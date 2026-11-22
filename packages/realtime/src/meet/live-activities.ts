@@ -14,6 +14,7 @@ import {
   hostView,
   mineView,
   publicView,
+  settleActivities,
 } from './live-activity-views';
 import type { MeetRealtimeServerMessage } from './messages';
 import { canMeetRealtimeRunActivities } from './permissions';
@@ -25,6 +26,26 @@ export {
   EMPTY_LIVE_ACTIVITIES_MINE,
   EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
 } from './live-activity-views';
+
+/**
+ * The same questions as a new attempt: new ids and no answers, so nothing
+ * written for the last attempt can attach to this one.
+ */
+function newAttempt(
+  assessment: Activities['assessment'],
+  status: 'draft' | 'open'
+): Activities['assessment'] {
+  return {
+    status,
+    released: false,
+    sealed: false,
+    items: assessment.items.map((item) => ({
+      ...item,
+      id: crypto.randomUUID(),
+    })),
+    responses: [],
+  };
+}
 
 function applyActivity(
   state: Activities,
@@ -48,24 +69,35 @@ function applyActivity(
       };
     case 'assessment.status':
       if (command.status === assessment.status) return state;
+      if (command.status === 'draft')
+        return {
+          ...state,
+          assessment: {
+            ...assessment,
+            status: 'draft',
+            responses: [],
+            released: false,
+            sealed: false,
+          },
+        };
+      // A release ends its attempt for good, so opening again starts a new one.
+      if (command.status === 'open' && assessment.sealed)
+        return { ...state, assessment: newAttempt(assessment, 'open') };
       return {
         ...state,
-        assessment:
-          command.status === 'draft'
-            ? { ...assessment, status: 'draft', responses: [], released: false }
-            : command.status === 'open'
-              ? // Answers can change again, so released results are withdrawn.
-                { ...assessment, status: 'open', released: false }
-              : { ...assessment, status: command.status },
+        assessment: { ...assessment, status: command.status },
       };
     case 'assessment.release':
       if (command.released === assessment.released) return state;
       // Keys and grades leave the managers only once answers are final.
       if (command.released && assessment.status !== 'closed')
         return 'activity_assessment_not_closed';
+      // Hiding the results again does not unseal the attempt.
       return {
         ...state,
-        assessment: { ...assessment, released: command.released },
+        assessment: command.released
+          ? { ...assessment, released: true, sealed: true }
+          : { ...assessment, released: false },
       };
     case 'assessment.submit': {
       if (assessment.status !== 'open' || assessment.released)
@@ -253,11 +285,11 @@ function refreshActors(
   switch (command.kind) {
     case 'assessment.release':
     case 'assessment.status':
-      // Reopening withdraws released results, so each respondent's own view
-      // loses its score and feedback again.
+      // A release changes what respondents see of their own result, and a
+      // reset or a new attempt takes their answers away.
       return command.kind === 'assessment.release' ||
-        command.status === 'draft' ||
-        before.assessment.released !== after.assessment.released
+        before.assessment.released !== after.assessment.released ||
+        before.assessment.responses.length !== after.assessment.responses.length
         ? before.assessment.responses.map(({ participantId }) => participantId)
         : [];
     case 'assessment.grade':
@@ -296,7 +328,7 @@ export function applyLiveActivities(
   )
     return denied(state, 'awaiting_admission', requestId);
   const manager = canMeetRealtimeRunActivities(token);
-  const current = state.liveActivities ?? EMPTY_ACTIVITIES;
+  const current = settleActivities(state.liveActivities ?? EMPTY_ACTIVITIES);
   if (message.type === 'activity.read') {
     const reply: MeetRealtimeServerMessage[] = [
       { type: 'activity.snapshot', snapshot: publicView(current), requestId },

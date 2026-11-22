@@ -149,6 +149,11 @@ export const liveActivitiesSnapshotSchema = z.object({
   assessment: z.object({
     status: assessmentStatusSchema,
     released: z.boolean(),
+    /**
+     * True once results went out in this attempt. It takes no more answers,
+     * and opening again starts a new attempt.
+     */
+    sealed: z.boolean(),
     items: z
       .array(
         z.object({

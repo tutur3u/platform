@@ -42,6 +42,7 @@ const items = [
 const open = {
   status: 'open' as const,
   released: false,
+  sealed: false,
   items,
   counts: { [CHOICE]: 0, [LONG]: 0 },
 };
@@ -94,6 +95,7 @@ it('lets the host write a choice question, save it and open it once the room has
       assessment: {
         status: 'draft',
         released: false,
+        sealed: false,
         items: [items[0]!],
         counts: { [CHOICE]: 0 },
       },
@@ -175,16 +177,24 @@ it('shows the host each answer, grades written ones and releases results', () =>
   fireEvent.click(screen.getByRole('button', { name: t.release }));
   expect(sent().at(-1)).toEqual({ kind: 'assessment.release', released: true });
 
-  // Released: reopening would withdraw the results, so it asks twice.
+  // Closed without a release: answers can simply open again.
+  expect(screen.getByRole('button', { name: t.reopen })).toBeTruthy();
+  // Released: the attempt is final. The way on is a new attempt, which clears
+  // the answers, so it asks twice.
   room({
     manager: true,
-    snapshot: { assessment: { ...closed, released: true } },
+    snapshot: { assessment: { ...closed, released: true, sealed: true } },
   });
-  fireEvent.click(screen.getByRole('button', { name: t.reopen }));
+  expect(screen.queryByRole('button', { name: t.reopen })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: t.new_attempt }));
   expect(sent()).toHaveLength(3);
   expect(screen.getByText(t.reopen_hint)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: t.reopen_confirm }));
   expect(sent().at(-1)).toEqual({ kind: 'assessment.status', status: 'open' });
+  // Hiding the results again does not bring the plain Reopen back.
+  room({ manager: true, snapshot: { assessment: { ...closed, sealed: true } } });
+  expect(screen.getByRole('button', { name: t.new_attempt })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: t.reopen })).toBeNull();
 
   // Going back to the questions clears answers, so it asks twice as well.
   fireEvent.click(screen.getByRole('button', { name: t.edit }));
@@ -294,6 +304,7 @@ it('keeps a question the host is writing when the room repeats its state', () =>
       assessment: {
         status: 'draft' as const,
         released: false,
+        sealed: false,
         items: [items[0]!],
         counts: { [CHOICE]: 0 },
       },
