@@ -138,6 +138,52 @@ the guest starts. `container-run.test.mjs` covers the guest: egress disabled,
 output bounds and confirmed destruction. Run them with
 `bun run --cwd apps/playground-execution test`.
 
+## Code checks
+
+`POST /check` returns compile-only diagnostics for unsaved room files in C,
+C++ and Java. No program runs. The coordinator charges a separate check
+budget in its own table: 60 checks per requester and 300 per room in a
+rolling 10 minutes, and `PLAYGROUND_MAX_CHECKS_PER_UTC_DAY` (default and
+ceiling 20,000) per UTC day. Every attempt is charged, including a retry
+with the same request ID, and an ID already used by another person or room
+is refused. The durable admission gate that pauses Runs pauses checks too,
+and a pause also stops the warm guests of rooms with checks in the last 35
+minutes; `/control` answers 202 until each confirms it stopped. The pause is a
+durable fence: a check admitted before it is refused even if it reaches the
+room's checker afterwards.
+
+Each room with recent checks has one `PlaygroundChecker` Durable Object and
+one warm guest on the `basic` instance (1/4 vCPU, 1 GiB) with Internet
+disabled. The guest stops after 90 seconds without checks, and an alarm
+replaces it 30 minutes after it starts, even under continuous checks. The `checker` container class allows at most 50 live
+guests. A cold room starts its guest and answers `check_warming`; the client
+retries. Each person has at most one check in flight, and a newer check kills
+the older one (`check_superseded`). A room runs at most two checks at once
+(`check_busy`).
+
+Every check is a separate exec with its own mount namespace, a fresh `/tmp`
+workspace, PID and network namespaces, the dropped identity and Landlock, so
+nothing a check writes survives it or reaches another check. The launcher
+runs a fixed command, never one from the request: `gcc` or `g++` with
+`-fsyntax-only`, or `javac -proc:none -implicit:none` with a throwaway class
+directory. Sources are passed as `./path` so no file name is read as an
+option or argument file. gcc and g++ get 4 seconds of wall and CPU time
+and 512 MiB of address space; javac gets 8 seconds, because a cold JVM on the
+smallest instance needs more, and a 192 MiB heap. The Worker abandons a check
+4 seconds after the guest's own limit, and the sandbox dies with its
+launcher, so a killed or superseded check leaves no compiler running.
+
+The Worker reports diagnostics only for request paths; a problem located in
+any other file (a toolchain header or an absolute include) becomes the fixed
+text "Problem in an included file" at the include site. A message located in
+a request file can still quote a value the compiler derived from an included
+file, and an include can test whether a path exists. The guest holds only the
+public image and the request's own files, so this reveals nothing a Run could
+not read.
+
+A warm room guest costs about $0.00000278 per live second plus the CPU of
+its checks, about $0.012 per active room-hour at the published overage rates.
+
 ## Launcher behaviour
 
 The trusted launcher (`container/run.py`) runs as root only to mount a fresh

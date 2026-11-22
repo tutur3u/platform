@@ -58,63 +58,94 @@ const errorCode = z.enum([
   'user_rate_limit',
   'daily_capacity',
   'request_conflict',
+  'check_quota',
+  'check_warming',
+  'check_busy',
+  'check_superseded',
+  'check_unavailable',
 ]);
 type Denial = z.infer<typeof errorCode>;
 
 export type CloudPlaygroundRefusalCode =
   | 'PLAYGROUND_UNAVAILABLE'
+  | 'PLAYGROUND_WARMING'
   | 'PLAYGROUND_BUSY'
   | 'PLAYGROUND_QUOTA'
-  | 'PLAYGROUND_REQUEST_CONFLICT';
+  | 'PLAYGROUND_REQUEST_CONFLICT'
+  | 'PLAYGROUND_SUPERSEDED';
 
-const UNAVAILABLE_RETRY_SECONDS = 30;
-const BUSY_RETRY_SECONDS = 5;
 const MAX_QUOTA_RETRY_SECONDS = 600;
+type Refusal = {
+  status: number;
+  code: CloudPlaygroundRefusalCode;
+  message: string;
+  /** Fixed retry hint; `quota` uses the service's window time instead. */
+  retry?: number | 'quota';
+};
+const UNAVAILABLE: Refusal = {
+  status: 503,
+  code: 'PLAYGROUND_UNAVAILABLE',
+  message: 'Running code is unavailable',
+  retry: 30,
+};
+const RUN_BUSY: Refusal = {
+  status: 429,
+  code: 'PLAYGROUND_BUSY',
+  message: 'Playground runners are busy',
+  retry: 5,
+};
+const QUOTA: Refusal = {
+  status: 429,
+  code: 'PLAYGROUND_QUOTA',
+  message: 'Playground limit reached',
+  retry: 'quota',
+};
+const REFUSALS: Record<Denial | 'unavailable', Refusal> = {
+  unavailable: UNAVAILABLE,
+  execution_paused: UNAVAILABLE,
+  check_unavailable: UNAVAILABLE,
+  global_capacity: RUN_BUSY,
+  user_busy: RUN_BUSY,
+  project_busy: RUN_BUSY,
+  check_busy: { ...RUN_BUSY, message: 'Code checks are busy', retry: 2 },
+  user_rate_limit: QUOTA,
+  daily_capacity: QUOTA,
+  check_quota: QUOTA,
+  request_conflict: {
+    status: 409,
+    code: 'PLAYGROUND_REQUEST_CONFLICT',
+    message: 'Playground request conflict',
+  },
+  check_warming: {
+    status: 503,
+    code: 'PLAYGROUND_WARMING',
+    message: 'Code checks are starting',
+    retry: 2,
+  },
+  check_superseded: {
+    status: 409,
+    code: 'PLAYGROUND_SUPERSEDED',
+    message: 'A newer code check replaced this one',
+  },
+};
 
-/** A Run the service refused, with the client contract's code and retry hint. */
+/** A request the service refused, with the client contract's code and retry hint. */
 export class CloudPlaygroundRefusal extends AccountServiceError {
   readonly code: CloudPlaygroundRefusalCode;
   /** Whole seconds, at least 1; absent when retrying cannot help. */
   readonly retryAfterSeconds?: number;
 
   constructor(cause: Denial | 'unavailable', retryAfterSeconds?: number) {
-    const refusal =
-      cause === 'unavailable' || cause === 'execution_paused'
-        ? {
-            status: 503,
-            code: 'PLAYGROUND_UNAVAILABLE' as const,
-            message: 'Running code is unavailable',
-            retry: UNAVAILABLE_RETRY_SECONDS,
-          }
-        : cause === 'request_conflict'
-          ? {
-              status: 409,
-              code: 'PLAYGROUND_REQUEST_CONFLICT' as const,
-              message: 'Playground run request conflict',
-              retry: undefined,
-            }
-          : cause === 'user_rate_limit' || cause === 'daily_capacity'
-            ? {
-                status: 429,
-                code: 'PLAYGROUND_QUOTA' as const,
-                message: 'Playground run limit reached',
-                retry: Math.min(
-                  MAX_QUOTA_RETRY_SECONDS,
-                  Math.max(
-                    1,
-                    Math.ceil(retryAfterSeconds ?? MAX_QUOTA_RETRY_SECONDS)
-                  )
-                ),
-              }
-            : {
-                status: 429,
-                code: 'PLAYGROUND_BUSY' as const,
-                message: 'Playground runners are busy',
-                retry: BUSY_RETRY_SECONDS,
-              };
+    const refusal = REFUSALS[cause];
     super(refusal.status, refusal.message);
     this.code = refusal.code;
-    this.retryAfterSeconds = refusal.retry;
+    this.retryAfterSeconds =
+      refusal.retry === 'quota'
+        ? Math.min(
+            MAX_QUOTA_RETRY_SECONDS,
+            Math.max(1, Math.ceil(retryAfterSeconds ?? MAX_QUOTA_RETRY_SECONDS))
+          )
+        : refusal.retry;
   }
 }
 
@@ -131,6 +162,7 @@ export function isCloudPlaygroundRun(id: string) {
 async function callCloudPlayground(
   path:
     | '/run'
+    | '/check'
     | '/stop'
     | '/result'
     | `/writeback/${'verify' | 'claim' | 'settle'}`,
@@ -309,4 +341,40 @@ export async function cloudPlaygroundWriteback(
       'Playground run or saved revision changed'
     );
   }
+}
+
+const checkResult = z.object({
+  requestId: z.uuid(),
+  diagnostics: z
+    .array(
+      z.object({
+        path: z.string().max(240),
+        line: z.number().int().positive(),
+        column: z.number().int().positive(),
+        severity: z.enum(['error', 'warning', 'info']),
+        message: z.string().max(1000),
+        code: z.string().max(120).optional(),
+        source: z.enum(['gcc', 'g++', 'javac']),
+      })
+    )
+    .max(200),
+  truncated: z.boolean(),
+  durationMs: z.number().int().nonnegative(),
+});
+export type CloudPlaygroundCheckResult = z.infer<typeof checkResult>;
+
+/** Compile-only diagnostics for unsaved room files; no program runs. */
+export async function checkCloudPlayground(
+  meetingId: string,
+  request: {
+    requester: string;
+    requestId: string;
+    language: 'c' | 'cpp' | 'java';
+    files: { path: string; content: string }[];
+    entry?: string;
+  }
+): Promise<CloudPlaygroundCheckResult> {
+  return checkResult.parse(
+    await callCloudPlayground('/check', { meetingId, ...request }, 7000)
+  );
 }

@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   cloudflare: vi.fn(),
   ticket: vi.fn(),
   startCloud: vi.fn(),
+  checkCloud: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/education-core/education/programming-access', () => ({
@@ -64,15 +65,24 @@ vi.mock('../lib/call-access', () => ({
 }));
 vi.mock('@tuturuuu/storage-core/cloud-playground', () => ({
   CloudPlaygroundRefusal: class extends Error {
+    readonly status: number;
+    readonly code: string;
+    readonly retryAfterSeconds?: number;
+    // The real class is built from a service cause; tests also build a
+    // refusal directly from its status, message, code and retry hint.
     constructor(
-      readonly status: number,
-      message: string,
-      readonly code: string,
-      readonly retryAfterSeconds?: number
+      cause: number | 'unavailable',
+      message = 'Running code is unavailable',
+      code = 'PLAYGROUND_UNAVAILABLE',
+      retryAfterSeconds: number | undefined = 30
     ) {
       super(message);
+      this.status = cause === 'unavailable' ? 503 : cause;
+      this.code = code;
+      this.retryAfterSeconds = retryAfterSeconds;
     }
   },
+  checkCloudPlayground: mocks.checkCloud,
   isCloudPlaygroundRun: vi.fn(() => false),
   readCloudPlayground: vi.fn(),
   startCloudPlayground: mocks.startCloud,
@@ -99,6 +109,7 @@ vi.mock('./personal-chat-request', () => ({
 import { changeMeetingProgrammingMira } from './programming-mira';
 import { CloudPlaygroundRefusal } from '@tuturuuu/storage-core/cloud-playground';
 import {
+  checkMeetingProgramming,
   createMeetingPlayground,
   executeMeetingPlayground,
   joinMeetingProgramming,
@@ -410,5 +421,83 @@ describe('meeting cloud Run refusals', () => {
       retryAfterSeconds: 5,
     });
     expect(mocks.startCloud).not.toHaveBeenCalled();
+  });
+});
+
+describe('meeting code checks', () => {
+  const projectId = '00000000-0000-4000-8000-000000000020';
+  const check = {
+    requestId: '00000000-0000-4000-8000-000000000021',
+    language: 'cpp',
+    files: [{ path: 'main.cpp', content: 'int main() {}' }],
+  };
+  beforeEach(() => {
+    vi.stubEnv('MEET_PLAYGROUND_EXECUTION_PROVIDER', 'cloudflare');
+    mocks.room.mockResolvedValue({
+      selection: { kind: 'playground', id: projectId, language: 'cpp' },
+    });
+    mocks.elevated.mockResolvedValue(true);
+    mocks.metadata.mockResolvedValue({
+      language: 'cpp',
+      revision: 3,
+      activeRun: null,
+    });
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('checks the room files as the caller after authorizing the selection', async () => {
+    mocks.checkCloud.mockResolvedValue({ diagnostics: [] });
+    await expect(checkMeetingProgramming(access, check)).resolves.toEqual({
+      diagnostics: [],
+    });
+    expect(mocks.metadata).toHaveBeenCalledWith('actor', projectId);
+    expect(mocks.checkCloud).toHaveBeenCalledWith('meeting', {
+      requester: 'actor',
+      ...check,
+    });
+  });
+
+  it('refuses a language other than the selection before any check', async () => {
+    await expect(
+      checkMeetingProgramming(access, { ...check, language: 'java' })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.checkCloud).not.toHaveBeenCalled();
+  });
+
+  it('reports checks unavailable while Meet is not on Cloudflare execution', async () => {
+    vi.stubEnv('MEET_PLAYGROUND_EXECUTION_PROVIDER', '');
+    await expect(checkMeetingProgramming(access, check)).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(mocks.checkCloud).not.toHaveBeenCalled();
+  });
+
+  it('passes a warming refusal and its retry hint to the room response', async () => {
+    mocks.checkCloud.mockRejectedValue(
+      new (CloudPlaygroundRefusal as unknown as new (
+        ...args: unknown[]
+      ) => Error)(503, 'Code checks are starting', 'PLAYGROUND_WARMING', 2)
+    );
+    await expect(checkMeetingProgramming(access, check)).rejects.toMatchObject({
+      status: 503,
+      code: 'PLAYGROUND_WARMING',
+      retryAfterSeconds: 2,
+    });
+  });
+
+  it('rejects unknown fields and oversize inventories', async () => {
+    for (const payload of [
+      { ...check, command: 'id' },
+      { ...check, files: [] },
+      {
+        ...check,
+        files: Array.from({ length: 21 }, (_, i) => ({
+          path: `f${i}.cpp`,
+          content: '',
+        })),
+      },
+    ])
+      await expect(checkMeetingProgramming(access, payload)).rejects.toThrow();
+    expect(mocks.checkCloud).not.toHaveBeenCalled();
   });
 });

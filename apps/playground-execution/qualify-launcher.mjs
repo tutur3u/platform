@@ -12,7 +12,10 @@ if (!image || !/^(?:[\w./:-]+@)?sha256:[a-f0-9]{64}$/u.test(image)) {
   throw new Error('Pass an immutable image ID or registry digest.');
 }
 
-function launch(job, { network = 'none', timeout = 60_000 } = {}) {
+function launch(
+  job,
+  { network = 'none', timeout = 60_000, cpus = '0.5', memory = '2g' } = {}
+) {
   const started = Date.now();
   const result = spawnSync(
     'docker',
@@ -33,8 +36,8 @@ function launch(job, { network = 'none', timeout = 60_000 } = {}) {
       '--cap-add=KILL',
       '--security-opt=seccomp=unconfined',
       '--security-opt=apparmor=unconfined',
-      '--memory=2g',
-      '--cpus=0.5',
+      `--memory=${memory}`,
+      `--cpus=${cpus}`,
       '--user=0:0',
       '--interactive',
       '--entrypoint=/usr/bin/unshare',
@@ -237,4 +240,188 @@ expect(
   'process limit',
   forks.outcome === 'exited' && forks.output.trim() === 'True',
   forks
+);
+
+// Code checks run on the smallest instance (1/4 vCPU, 1 GiB).
+const basic = { cpus: '0.25', memory: '1g' };
+const check = (language, files, entry) =>
+  launch(
+    {
+      mode: 'check',
+      language,
+      files,
+      sources: entry ? [entry] : files.map(({ path }) => path),
+    },
+    basic
+  );
+for (const [language, path, content, expected] of [
+  ['c', 'main.c', 'int main(void) { return y; }\n', "'y' undeclared"],
+  [
+    'cpp',
+    'main.cpp',
+    '#include <vector>\nint main() { std::vector<int> v; v.nope(); }\n',
+    'nope',
+  ],
+  [
+    'java',
+    'Main.java',
+    'class Main { void f() { int x = "s"; } }\n',
+    'incompatible types',
+  ],
+]) {
+  const started = Date.now();
+  const result = check(language, [{ path, content }]);
+  expect(
+    `${language} check (${Date.now() - started} ms)`,
+    result.outcome === 'exited' &&
+      result.exitCode !== 0 &&
+      result.output.includes(expected) &&
+      result.files === null,
+    result
+  );
+}
+
+const memoryBomb = check('c', [
+  { path: 'main.c', content: '#include "/dev/zero"\n' },
+]);
+expect(
+  'check memory limit',
+  memoryBomb.outcome === 'exited' &&
+    memoryBomb.exitCode !== 0 &&
+    /memory/i.test(memoryBomb.output) &&
+    memoryBomb.seconds < 10,
+  memoryBomb
+);
+
+// Killing the launcher mid-compile must take the whole sandbox with it.
+const orphanJob = JSON.stringify({
+  mode: 'check',
+  language: 'cpp',
+  files: [
+    {
+      path: 'main.cpp',
+      // Nested loops stay under the per-loop constexpr limit, so constant
+      // evaluation runs far longer than the 2-second kill.
+      content:
+        'constexpr long f() { long s = 0;\n' +
+        '  for (int i = 0; i < 200000; ++i) for (int j = 0; j < 200000; ++j) s += i ^ j;\n' +
+        '  return s; }\n' +
+        'constexpr long x = f();\n',
+    },
+  ],
+  sources: ['main.cpp'],
+});
+const orphan = spawnSync(
+  'docker',
+  [
+    'run',
+    '--rm',
+    '--pull=never',
+    '--platform=linux/amd64',
+    '--network=none',
+    '--cap-drop=ALL',
+    '--cap-add=SYS_ADMIN',
+    '--cap-add=SETUID',
+    '--cap-add=SETGID',
+    '--cap-add=SETPCAP',
+    '--cap-add=CHOWN',
+    '--cap-add=FOWNER',
+    '--cap-add=DAC_OVERRIDE',
+    '--cap-add=KILL',
+    '--security-opt=seccomp=unconfined',
+    '--security-opt=apparmor=unconfined',
+    '--cpus=0.25',
+    '--user=0:0',
+    '--interactive',
+    '--entrypoint=/bin/sh',
+    image,
+    '-c',
+    `scan() {
+  for status in /proc/[0-9]*/status; do
+    name="$(sed -n 's/^Name:[[:space:]]*//p' "$status" 2>/dev/null)"
+    case "$name" in cc1plus|g++|unshare|setpriv) echo "$1: $name";; esac
+  done
+}
+cat > /tmp/job.json
+/usr/bin/unshare --mount --propagation private /usr/bin/python3 -I -S -B /usr/local/lib/playground/run.py < /tmp/job.json > /dev/null &
+launcher=$!
+sleep 2
+scan running
+kill -9 "$launcher"
+sleep 2
+scan left
+echo done`,
+  ],
+  { input: orphanJob, encoding: 'utf8', timeout: 60_000 }
+);
+if (orphan.error) throw orphan.error;
+expect(
+  'killed launcher leaves no compiler behind',
+  orphan.status === 0 &&
+    orphan.stdout.includes('running: cc1plus') &&
+    !orphan.stdout.includes('left:') &&
+    orphan.stdout.trim().endsWith('done'),
+  { stdout: orphan.stdout, stderr: orphan.stderr }
+);
+
+// Two Java checks share one quarter-CPU guest, as two people in a room can.
+const javaJob = JSON.stringify({
+  mode: 'check',
+  language: 'java',
+  files: [
+    {
+      path: 'Main.java',
+      content: 'class Main { void f() { int x = "s"; } }\n',
+    },
+  ],
+  sources: ['Main.java'],
+});
+const pair = spawnSync(
+  'docker',
+  [
+    'run',
+    '--rm',
+    '--pull=never',
+    '--platform=linux/amd64',
+    '--network=none',
+    '--cpus=0.25',
+    '--memory=1g',
+    '--cap-drop=ALL',
+    '--cap-add=SYS_ADMIN',
+    '--cap-add=SETUID',
+    '--cap-add=SETGID',
+    '--cap-add=SETPCAP',
+    '--cap-add=CHOWN',
+    '--cap-add=FOWNER',
+    '--cap-add=DAC_OVERRIDE',
+    '--cap-add=KILL',
+    '--security-opt=seccomp=unconfined',
+    '--security-opt=apparmor=unconfined',
+    '--user=0:0',
+    '--interactive',
+    '--entrypoint=/bin/sh',
+    image,
+    '-c',
+    `cat > /tmp/job.json
+run() { /usr/bin/unshare --mount --propagation private /usr/bin/python3 -I -S -B /usr/local/lib/playground/run.py < /tmp/job.json > "/tmp/$1.json"; }
+start=$(date +%s%N)
+run a & run b & wait
+echo "ms=$(( ($(date +%s%N) - start) / 1000000 ))"
+cat /tmp/a.json; echo; cat /tmp/b.json; echo`,
+  ],
+  { input: javaJob, encoding: 'utf8', timeout: 90_000 }
+);
+if (pair.error) throw pair.error;
+const [timing, ...reports] = pair.stdout.trim().split('\n');
+const pairResults = reports.map((line) => JSON.parse(line));
+expect(
+  `two concurrent Java checks on a quarter CPU (${timing})`,
+  pair.status === 0 &&
+    pairResults.length === 2 &&
+    pairResults.every(
+      (result) =>
+        result.outcome === 'exited' &&
+        result.output.includes('incompatible types')
+    ),
+  { stdout: pair.stdout.slice(0, 2000), stderr: pair.stderr }
 );

@@ -1,7 +1,12 @@
 import { DurableObject } from 'cloudflare:workers';
 import { parseCapacity, PlaygroundAdmission, type RunRow } from './admission';
+import {
+  CheckAdmission,
+  type CheckRequest,
+  parseCheckCapacity,
+} from './check-admission';
 import type { GuestResult } from './container-run';
-import { type Env, executionSlot } from './environment';
+import { type Env, executionSlot, roomChecker } from './environment';
 import {
   identifyRun,
   projectScope,
@@ -39,6 +44,7 @@ function present(row: RunRow) {
 
 export class PlaygroundCoordinator extends DurableObject<Env> {
   private readonly admission: PlaygroundAdmission;
+  private readonly checks: CheckAdmission;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -49,6 +55,17 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
       },
       parseCapacity(env)
     );
+    this.checks = new CheckAdmission(
+      {
+        query: (query, ...params) => ctx.storage.sql.exec(query, ...params),
+        transaction: (callback) => ctx.storage.transactionSync(callback),
+      },
+      parseCheckCapacity(env)
+    );
+  }
+
+  admitCheck(request: CheckRequest) {
+    return this.checks.admit(request, Date.now());
   }
 
   async enqueue(submission: RunSubmission) {
@@ -189,12 +206,24 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
   }
 
   async gate(enabled: boolean) {
-    return this.ctx.blockConcurrencyWhile(async () => {
+    const state = await this.ctx.blockConcurrencyWhile(async () => {
       const gate = this.admission.setEnabled(enabled);
       const active = this.admission.active().length;
       await this.schedule();
       return { ...gate, active };
     });
+    if (state.enabled) return { ...state, checkers: 0 };
+    // Pausing also stops the warm check guests of recently active rooms;
+    // older rooms' guests have already idled out.
+    const stopped = await Promise.allSettled(
+      this.checks
+        .recentRooms(Date.now())
+        .map((room) => roomChecker(this.env, room).shutdown())
+    );
+    const unconfirmed = stopped.filter(
+      (result) => result.status === 'rejected' || !result.value
+    ).length;
+    return { ...state, checkers: unconfirmed };
   }
 
   async alarm() {

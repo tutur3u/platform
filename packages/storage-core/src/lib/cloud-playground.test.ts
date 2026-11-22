@@ -14,8 +14,12 @@ vi.mock('@tuturuuu/utils/account-benefits-server', () => {
   return { AccountServiceError, accountPrivateRpc: vi.fn() };
 });
 
-const { CloudPlaygroundRefusal, readCloudPlayground, startCloudPlayground } =
-  await import('./cloud-playground');
+const {
+  CloudPlaygroundRefusal,
+  checkCloudPlayground,
+  readCloudPlayground,
+  startCloudPlayground,
+} = await import('./cloud-playground');
 
 const scope = {
   meetingId: '00000000-0000-4000-8000-000000000001',
@@ -171,5 +175,100 @@ describe('cloud Playground results', () => {
       status: 'succeeded',
       reason: null,
     });
+  });
+});
+
+describe('cloud Playground checks', () => {
+  const check = {
+    requester: request.requester,
+    requestId: request.requestId,
+    language: 'cpp' as const,
+    files: [{ path: 'main.cpp', content: 'int main() {}\n' }],
+  };
+  async function checkRefusal(response: Response) {
+    fetchMock.mockResolvedValueOnce(response);
+    const error = await checkCloudPlayground(scope.meetingId, check).catch(
+      (caught: unknown) => caught
+    );
+    expect(error).toBeInstanceOf(CloudPlaygroundRefusal);
+    const { status, code, retryAfterSeconds } = error as InstanceType<
+      typeof CloudPlaygroundRefusal
+    >;
+    return { status, code, retryAfterSeconds };
+  }
+
+  it('maps each check refusal to the agreed code and retry hint', async () => {
+    expect(
+      await checkRefusal(
+        Response.json({ code: 'check_warming' }, { status: 503 })
+      )
+    ).toEqual({
+      status: 503,
+      code: 'PLAYGROUND_WARMING',
+      retryAfterSeconds: 2,
+    });
+    expect(
+      await checkRefusal(Response.json({ code: 'check_busy' }, { status: 429 }))
+    ).toEqual({ status: 429, code: 'PLAYGROUND_BUSY', retryAfterSeconds: 2 });
+    expect(
+      await checkRefusal(
+        Response.json({ code: 'check_superseded' }, { status: 409 })
+      )
+    ).toEqual({
+      status: 409,
+      code: 'PLAYGROUND_SUPERSEDED',
+      retryAfterSeconds: undefined,
+    });
+    expect(
+      await checkRefusal(
+        Response.json(
+          { code: 'check_quota', retryAfterSeconds: 95 },
+          { status: 429 }
+        )
+      )
+    ).toEqual({ status: 429, code: 'PLAYGROUND_QUOTA', retryAfterSeconds: 95 });
+    expect(
+      await checkRefusal(
+        Response.json({ code: 'check_unavailable' }, { status: 503 })
+      )
+    ).toEqual({
+      status: 503,
+      code: 'PLAYGROUND_UNAVAILABLE',
+      retryAfterSeconds: 30,
+    });
+  });
+
+  it('sends the room and request and validates the diagnostics', async () => {
+    const result = {
+      requestId: request.requestId,
+      diagnostics: [
+        {
+          path: 'main.cpp',
+          line: 1,
+          column: 5,
+          severity: 'error',
+          message: 'expected ;',
+          source: 'g++',
+        },
+      ],
+      truncated: false,
+      durationMs: 40,
+    };
+    fetchMock.mockResolvedValueOnce(Response.json(result));
+    await expect(checkCloudPlayground(scope.meetingId, check)).resolves.toEqual(
+      result
+    );
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toBe('https://execution.example/check');
+    expect(JSON.parse(String(init?.body))).toEqual({
+      meetingId: scope.meetingId,
+      ...check,
+    });
+    fetchMock.mockResolvedValueOnce(
+      Response.json({ ...result, diagnostics: [{ path: 'x' }] })
+    );
+    await expect(
+      checkCloudPlayground(scope.meetingId, check)
+    ).rejects.toThrow();
   });
 });

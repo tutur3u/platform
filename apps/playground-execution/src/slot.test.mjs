@@ -1,32 +1,8 @@
 import assert from 'node:assert/strict';
-import { registerHooks } from 'node:module';
 import test from 'node:test';
 
-// The slot imports the Workers runtime base class and a workspace type module
-// whose package entry points at build output. Serve both from source so the
-// test exercises the real slot without a build.
-const typesSource = new URL(
-  '../../../packages/types/src/primitives/playgrounds.ts',
-  import.meta.url
-).href;
-registerHooks({
-  resolve(specifier, context, next) {
-    if (specifier === 'cloudflare:workers') {
-      return {
-        url: 'data:text/javascript,export class DurableObject{constructor(ctx,env){this.ctx=ctx;this.env=env}}',
-        shortCircuit: true,
-      };
-    }
-    if (specifier === '@tuturuuu/types/primitives/playgrounds') {
-      return { url: typesSource, shortCircuit: true };
-    }
-    // Worker sources use bundler-style extensionless relative imports.
-    if (specifier.startsWith('./') && !/\.[cm]?[jt]s$/u.test(specifier)) {
-      return next(`${specifier}.ts`, context);
-    }
-    return next(specifier, context);
-  },
-});
+import './worker-test-runtime.mjs';
+
 const { PlaygroundSlot } = await import('./slot.ts');
 
 const PROJECT = '7d0f9e5c-3f4b-4c1e-9a55-0f1d2e3c4b5a';

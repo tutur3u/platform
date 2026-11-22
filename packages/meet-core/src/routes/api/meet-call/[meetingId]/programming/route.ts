@@ -1,4 +1,5 @@
 import {
+  checkMeetingProgramming,
   createMeetingPlayground,
   executeMeetingPlayground,
   joinMeetingProgramming,
@@ -51,8 +52,10 @@ export async function POST(request: Request, { params }: Context) {
     const body = await request.json();
     return query.has('create')
       ? createMeetingPlayground(access, body)
-      : query.has('run')
-        ? executeMeetingPlayground(access, body)
-        : testMeetingProgramming(access, body);
+      : query.has('check')
+        ? checkMeetingProgramming(access, body)
+        : query.has('run')
+          ? executeMeetingPlayground(access, body)
+          : testMeetingProgramming(access, body);
   });
 }

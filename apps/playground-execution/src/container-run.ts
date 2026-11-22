@@ -1,4 +1,17 @@
 const IDLE_TIMEOUT_MS = 15_000;
+// Each exec gets a private mount namespace, so the launcher's fresh /tmp and
+// everything staged in it disappear when the exec ends.
+export const LAUNCHER = [
+  '/usr/bin/unshare',
+  '--mount',
+  '--propagation',
+  'private',
+  '/usr/bin/python3',
+  '-I',
+  '-S',
+  '-B',
+  '/usr/local/lib/playground/run.py',
+];
 const MAX_RESPONSE_BYTES = 14 * 1024 * 1024;
 const MAX_CONSOLE_BYTES = 64 * 1024;
 
@@ -43,7 +56,10 @@ function parseResult(value: unknown): GuestResult {
   };
 }
 
-async function readGuestStream(stream: ReadableStream | null): Promise<string> {
+export async function readGuestStream(
+  stream: ReadableStream | null,
+  maxBytes = MAX_RESPONSE_BYTES
+): Promise<string> {
   if (!stream) throw new Error('Missing Playground guest output');
   const reader = stream.getReader();
   const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -57,7 +73,7 @@ async function readGuestStream(stream: ReadableStream | null): Promise<string> {
         throw new Error('Invalid Playground guest output chunk');
       }
       bytes += next.value.byteLength;
-      if (bytes > MAX_RESPONSE_BYTES) {
+      if (bytes > maxBytes) {
         void reader.cancel().catch(() => {});
         throw new Error('Playground guest output limit exceeded');
       }
@@ -113,20 +129,11 @@ export async function runInFreshContainer(
         throw new Error('Playground execution stopped before dispatch');
       }
       const stdin = new Blob([JSON.stringify(input)]).stream();
-      const process = await container.exec(
-        [
-          '/usr/bin/unshare',
-          '--mount',
-          '--propagation',
-          'private',
-          '/usr/bin/python3',
-          '-I',
-          '-S',
-          '-B',
-          '/usr/local/lib/playground/run.py',
-        ],
-        { user: '0:0', stdin, stderr: 'ignore' }
-      );
+      const process = await container.exec(LAUNCHER, {
+        user: '0:0',
+        stdin,
+        stderr: 'ignore',
+      });
       const [output, exitCode] = await Promise.all([
         readGuestStream(process.stdout),
         process.exitCode,

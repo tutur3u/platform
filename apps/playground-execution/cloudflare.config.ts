@@ -40,16 +40,31 @@ if (
   );
 }
 
+const images = image ? { images: { toolchain: { reference: image } } } : {};
+// A fresh guest per Run; at most one per admitted slot.
 const slot = defineContainer({
   name: `${worker}-slot`,
   schedulingPolicy: 'durable-object',
+  instanceType: 'standard-1',
+  maxInstances: 20,
   ssh: { enabled: false },
   observability: { enabled: false },
-  ...(image ? { images: { toolchain: { reference: image } } } : {}),
+  ...images,
+});
+// One warm compile-only guest per room with recent checks, on the smallest
+// instance. The cap bounds total live check guests and therefore their cost.
+const checker = defineContainer({
+  name: `${worker}-checker`,
+  schedulingPolicy: 'durable-object',
+  instanceType: 'basic',
+  maxInstances: 50,
+  ssh: { enabled: false },
+  observability: { enabled: false },
+  ...images,
 });
 
 export default defineConfig({
-  containers: [slot],
+  containers: [slot, checker],
   worker: {
     name: worker,
     entrypoint: 'src/worker.ts',
@@ -66,6 +81,10 @@ export default defineConfig({
       PLAYGROUND_SLOT: bindings.durableObject({
         worker,
         exportName: 'PlaygroundSlot',
+      }),
+      PLAYGROUND_CHECKER: bindings.durableObject({
+        worker,
+        exportName: 'PlaygroundChecker',
       }),
       PLAYGROUND_INGRESS_SECRET: bindings.secret(),
       PLAYGROUND_OPERATOR_SECRET: bindings.secret(),
@@ -84,12 +103,19 @@ export default defineConfig({
       PLAYGROUND_MAX_STARTS_PER_UTC_DAY: bindings.text(
         process.env.PLAYGROUND_MAX_STARTS_PER_UTC_DAY ?? '5000'
       ),
+      PLAYGROUND_MAX_CHECKS_PER_UTC_DAY: bindings.text(
+        process.env.PLAYGROUND_MAX_CHECKS_PER_UTC_DAY ?? '20000'
+      ),
     },
     exports: {
       PlaygroundCoordinator: exports.durableObject({ storage: 'sqlite' }),
       PlaygroundSlot: exports.durableObject({
         storage: 'sqlite',
         container: slot,
+      }),
+      PlaygroundChecker: exports.durableObject({
+        storage: 'sqlite',
+        container: checker,
       }),
     },
   },

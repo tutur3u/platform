@@ -2329,6 +2329,19 @@ Learn uses the same workbench without the meeting-only controls.
   sandbox, or a job that outlived its deadline). A program's own non-zero exit
   has `reason: null`.
 
+- Code checks (`POST /api/meet-call/{meetingId}/programming?check`) return
+  compile-only diagnostics for the room's unsaved C, C++ or Java files in the
+  selection's language: `{ requestId, diagnostics, truncated, durationMs }`
+  with 1-based positions, at most 200 diagnostics and only the request's own
+  paths. A request has at most 20 files, 128 KB each and 200 KB in total.
+  Python and TypeScript are checked in the browser. Checks have their own
+  budget (60 per person and 300 per room in 10 minutes, and a daily cap) and
+  use the same envelope as Runs plus two codes: 503 `PLAYGROUND_WARMING`
+  (retry after 2 seconds while the room's checker starts) and 409
+  `PLAYGROUND_SUPERSEDED` (a newer check from the same person replaced it).
+  BUSY for checks retries after 2 seconds. Checks are unavailable until Meet
+  uses Cloudflare execution.
+
 Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
 `workbench-errors.test.ts`, `workbench-language.test.ts`,
 `workbench-language-picker.test.tsx`, `workbench-files.test.tsx`,

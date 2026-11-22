@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { coordinator, type Env } from './environment';
+import { coordinator, type Env, roomChecker } from './environment';
 import {
   authenticated,
+  CheckSubmission,
   readBoundedJson,
   RunIdentity,
   RunLookup,
@@ -9,6 +10,7 @@ import {
   RunWriteback,
 } from './protocol';
 
+export { PlaygroundChecker } from './checker';
 export { PlaygroundCoordinator } from './coordinator';
 export { PlaygroundSlot } from './slot';
 
@@ -22,6 +24,7 @@ const writeback = new Map<string, 'verify' | 'claim' | 'settle'>([
 ] as const);
 const routes = new Set([
   '/run',
+  '/check',
   '/result',
   '/stop',
   '/control',
@@ -29,6 +32,25 @@ const routes = new Set([
 ]);
 const json = (body: object, status = 200) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
+const CHECK_STATUS = {
+  execution_paused: 503,
+  check_quota: 429,
+  request_conflict: 409,
+  check_warming: 503,
+  check_busy: 429,
+  check_superseded: 409,
+  check_unavailable: 503,
+} as const;
+const refuseCheck = (code: keyof typeof CHECK_STATUS, retryAfterMs?: number) =>
+  json(
+    retryAfterMs === undefined
+      ? { code }
+      : {
+          code,
+          retryAfterSeconds: Math.max(1, Math.ceil(retryAfterMs / 1000)),
+        },
+    CHECK_STATUS[code]
+  );
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -80,6 +102,26 @@ export default {
           status
         );
       }
+      if (path === '/check') {
+        const input = CheckSubmission.safeParse(body);
+        if (!input.success) return json(REJECTED, 400);
+        const { meetingId, requester, requestId, ...job } = input.data;
+        const admission = await service.admitCheck({
+          requestId,
+          requester,
+          room: meetingId,
+        });
+        if (admission.kind === 'refused')
+          return refuseCheck(admission.reason, admission.retryAfterMs);
+        const outcome = await roomChecker(env, meetingId).check({
+          requester,
+          admittedAt: admission.admittedAt,
+          ...job,
+        });
+        if (outcome.kind === 'refused') return refuseCheck(outcome.reason);
+        const { kind: _kind, ...result } = outcome;
+        return json({ requestId, ...result });
+      }
       if (path === '/result') {
         const input = RunLookup.safeParse(body);
         if (!input.success) return json(REJECTED, 400);
@@ -107,7 +149,7 @@ export default {
       const status =
         state.enabled !== input.data.enabled
           ? 409
-          : !state.enabled && state.active > 0
+          : !state.enabled && (state.active > 0 || state.checkers > 0)
             ? 202
             : 200;
       return json(state, status);

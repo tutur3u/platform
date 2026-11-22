@@ -27,6 +27,65 @@ export const RunWriteback = RunLookup.extend({
 });
 export const GuestJob = PlaygroundJob.refine((job) => job.operation === 'run');
 
+const CheckPath = z
+  .string()
+  .max(240)
+  .refine(
+    (path) =>
+      path
+        .split('/')
+        .every(
+          (part) =>
+            /^[a-zA-Z0-9_.@+-]+$/u.test(part) &&
+            ![
+              '.',
+              '..',
+              '.git',
+              '.venv',
+              'node_modules',
+              '__pycache__',
+              'target',
+            ].includes(part)
+        ),
+    'Invalid path'
+  );
+export const CheckSubmission = z
+  .strictObject({
+    meetingId: z.uuid(),
+    requester: z.uuid(),
+    requestId: z.uuid(),
+    language: z.enum(['c', 'cpp', 'java']),
+    files: z
+      .array(
+        z.strictObject({
+          path: CheckPath,
+          content: z
+            .string()
+            .refine(
+              (content) =>
+                !content.includes('\0') &&
+                new TextEncoder().encode(content).byteLength <= 128 * 1024,
+              'Invalid content'
+            ),
+        })
+      )
+      .min(1)
+      .max(20),
+    entry: CheckPath.optional(),
+  })
+  .refine(
+    ({ files }) =>
+      new Set(files.map(({ path }) => path)).size === files.length &&
+      files.reduce(
+        (total, { content }) =>
+          total + new TextEncoder().encode(content).byteLength,
+        0
+      ) <=
+        200 * 1024,
+    'Invalid check inventory'
+  );
+export type CheckSubmission = z.infer<typeof CheckSubmission>;
+
 export type RunIdentity = z.infer<typeof RunIdentity>;
 export type RunSubmission = z.infer<typeof RunSubmission>;
 export type RunLookup = z.infer<typeof RunLookup>;

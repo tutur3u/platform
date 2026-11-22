@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/realtime/meet';
 import {
   CloudPlaygroundRefusal,
+  checkCloudPlayground,
   isCloudPlaygroundRun,
   readCloudPlayground,
   startCloudPlayground,
@@ -429,13 +430,7 @@ export async function executeMeetingPlayground(
       });
       return queued;
     } catch (error) {
-      if (error instanceof CloudPlaygroundRefusal)
-        throw new MeetCallAccessError(
-          error.status,
-          error.message,
-          error.code,
-          error.retryAfterSeconds
-        );
+      if (error instanceof CloudPlaygroundRefusal) throw meetCallRefusal(error);
       throw error;
     }
   }
@@ -447,6 +442,58 @@ export async function executeMeetingPlayground(
     { stdin: parsed.stdin },
     project.meetingId
   );
+}
+const checkLanguages = ['c', 'cpp', 'java'] as const;
+const checkRequest = z
+  .object({
+    requestId: z.uuid(),
+    language: z.enum(checkLanguages),
+    files: z
+      .array(
+        z.object({ path: z.string().min(1).max(240), content: z.string() })
+      )
+      .min(1)
+      .max(20),
+    entry: z.string().min(1).max(240).optional(),
+  })
+  .strict();
+
+function meetCallRefusal(error: CloudPlaygroundRefusal) {
+  return new MeetCallAccessError(
+    error.status,
+    error.message,
+    error.code,
+    error.retryAfterSeconds
+  );
+}
+
+/**
+ * Compile-only diagnostics for the room's current files. The selection
+ * authorizes the caller exactly as running it would; no program executes.
+ */
+export async function checkMeetingProgramming(
+  access: Access,
+  payload: unknown
+) {
+  const selection = await selected(access);
+  if (!selection) throw new MeetCallAccessError(409, 'Select a playground');
+  if (selection.kind === 'playground')
+    await authorizePlayground(access, selection);
+  else await problemAccess(access, selection.id);
+  const parsed = checkRequest.parse(payload);
+  if (parsed.language !== selection.language)
+    throw new MeetCallAccessError(409, 'Playground language changed');
+  if (!useCloudMeetPlayground())
+    throw meetCallRefusal(new CloudPlaygroundRefusal('unavailable'));
+  try {
+    return await checkCloudPlayground(access.meeting.id, {
+      requester: access.user.id,
+      ...parsed,
+    });
+  } catch (error) {
+    if (error instanceof CloudPlaygroundRefusal) throw meetCallRefusal(error);
+    throw error;
+  }
 }
 export async function readMeetingPlaygroundRun(access: Access, runId: string) {
   const selection = await selected(access);
