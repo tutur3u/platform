@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveMailRouteContext } from '@/lib/mail/auth';
-import { safeErrorFields } from '@/lib/mail/log-safety';
+import { safeErrorFields, safeLogWorkspaceId } from '@/lib/mail/log-safety';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   if (error) {
     console.error('Failed to fetch internal emails', {
       error: safeErrorFields(error),
-      wsId: normalizedWsId,
+      wsId: safeLogWorkspaceId(normalizedWsId),
     });
     return NextResponse.json(
       { message: 'Failed to fetch emails' },

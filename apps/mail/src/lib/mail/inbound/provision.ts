@@ -1,3 +1,4 @@
+import { safeLogUuid } from '../log-safety';
 import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import { resolveInternalMailboxName } from '../identity';
 import { linkPersonalMailboxWorkspace } from '../repository/shared';
@@ -68,8 +69,7 @@ export async function ensureMailboxForRecipient(
   if (existing) {
     if (existing.status === 'active') return existing;
     console.warn('[mail] inbound recipient mailbox is not active', {
-      mailboxId: existing.id,
-      status: existing.status,
+      mailboxId: safeLogUuid(existing.id),
     });
     return null;
   }

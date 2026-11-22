@@ -4,6 +4,7 @@
  * Implementation of email provider using Amazon Simple Email Service (SES).
  */
 
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import {
   GetSendQuotaCommand,
   SESClient,
@@ -272,8 +273,10 @@ export class SESEmailProvider extends BaseEmailProvider {
     } catch (error) {
       const result = sesFailureOutcome(error, dispatched);
       console.error('[SESEmailProvider] Email dispatch failed', {
-        deliveryOutcome: result.deliveryOutcome,
-        httpStatus: result.httpStatus,
+        error: safeErrorFields({
+          name: 'SESError',
+          status: result.httpStatus,
+        }),
       });
       return result;
     }
@@ -293,16 +296,15 @@ export class SESEmailProvider extends BaseEmailProvider {
         typeof response.Max24HourSend === 'number';
 
       if (isValid) {
-        console.log('[SESEmailProvider] Credentials validated:', {
-          max24HourSend: response.Max24HourSend,
-          maxSendRate: response.MaxSendRate,
-          sentLast24Hours: response.SentLast24Hours,
-        });
+        console.log('[SESEmailProvider] Credentials validated:');
       }
 
       return isValid;
     } catch (error) {
-      console.error('[SESEmailProvider] Credential validation failed:', error);
+      console.error(
+        '[SESEmailProvider] Credential validation failed:',
+        safeErrorFields(error)
+      );
       return false;
     }
   }
@@ -325,7 +327,10 @@ export class SESEmailProvider extends BaseEmailProvider {
         sentLast24Hours: response.SentLast24Hours || 0,
       };
     } catch (error) {
-      console.error('[SESEmailProvider] Error getting send quota:', error);
+      console.error(
+        '[SESEmailProvider] Error getting send quota:',
+        safeErrorFields(error)
+      );
       return null;
     }
   }

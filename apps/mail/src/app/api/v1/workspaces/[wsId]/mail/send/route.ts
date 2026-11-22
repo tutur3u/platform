@@ -30,7 +30,6 @@ export async function POST(
   }
 ) {
   const { wsId } = await params;
-  const logWsId = safeLogWorkspaceId(wsId);
 
   const data: {
     mail?: {
@@ -107,7 +106,7 @@ export async function POST(
   if (apiKeyError) {
     console.warn('Error fetching internal email API key', {
       error: safeErrorFields(apiKeyError),
-      wsId: logWsId,
+      wsId: safeLogWorkspaceId(wsId),
     });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -125,7 +124,7 @@ export async function POST(
   if (apiKeyUserError || !apiKeyUser) {
     console.warn('Error fetching internal email API key user', {
       error: safeErrorFields(apiKeyUserError),
-      wsId: logWsId,
+      wsId: safeLogWorkspaceId(wsId),
     });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -156,7 +155,7 @@ export async function POST(
       allowedCount: apiKey.allowed_emails.length,
       requestedCount: recipients.length,
       rejectedCount: disallowedRecipients.length,
-      wsId: logWsId,
+      wsId: safeLogWorkspaceId(wsId),
     });
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
   }
@@ -201,13 +200,13 @@ export async function POST(
       if (result.blockedRecipients && result.blockedRecipients.length > 0) {
         console.warn('Some internal email recipients were blocked', {
           blockedCount: result.blockedRecipients.length,
-          wsId: logWsId,
+          wsId: safeLogWorkspaceId(wsId),
         });
       }
 
       console.error('Internal email sending failed', {
         error: safeErrorFields(result.error),
-        wsId: logWsId,
+        wsId: safeLogWorkspaceId(wsId),
       });
       return NextResponse.json(
         { message: result.error || 'Failed to send email' },
@@ -238,7 +237,7 @@ export async function POST(
     if (error) {
       console.warn('Error logging sent internal email', {
         error: safeErrorFields(error),
-        wsId: logWsId,
+        wsId: safeLogWorkspaceId(wsId),
       });
       // Don't fail the request - email was already sent
     }
@@ -259,7 +258,7 @@ export async function POST(
   } catch (error) {
     console.error('Error sending internal email', {
       error: safeErrorFields(error),
-      wsId: logWsId,
+      wsId: safeLogWorkspaceId(wsId),
     });
     return NextResponse.json(
       { message: 'Internal server error' },

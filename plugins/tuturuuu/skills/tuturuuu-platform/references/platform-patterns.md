@@ -4,6 +4,9 @@ These patterns were moved out of root `AGENTS.md` so the root file can stay a
 hard-policy index. Load this reference when implementing broad `apps/web` or
 shared-package changes.
 
+- For shared Worker failure logs, use the bounded fields and tests in
+  [Worker failure logs](../../../../../apps/docs/build/devops/start-bridge.mdx#worker-failure-logs).
+
 ## Web And Shared UI
 
 - Sorbet mobile shell (`MobileDock` in `@tuturuuu/ui`, below `md`): browser or

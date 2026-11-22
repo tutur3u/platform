@@ -200,14 +200,15 @@ describe('inbound mailbox provisioning', () => {
     expect(JSON.stringify(failure)).not.toContain('example.com');
   });
 
-  it('keeps a retained mailbox inactive and logs only its id and status', async () => {
+  it('keeps a retained mailbox inactive and logs only its ID', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const mailboxId = '12345678-1234-1234-1234-123456789abc';
     const { admin, inserts } = createAdmin({
       mailboxes: [
         {
           address: 'person@example.com',
           domain_id: 'canonical',
-          id: 'retained',
+          id: mailboxId,
           status: 'disabled',
         },
       ],
@@ -221,8 +222,7 @@ describe('inbound mailbox provisioning', () => {
     expect(warn).toHaveBeenCalledWith(
       '[mail] inbound recipient mailbox is not active',
       {
-        mailboxId: 'retained',
-        status: 'disabled',
+        mailboxId,
       }
     );
   });

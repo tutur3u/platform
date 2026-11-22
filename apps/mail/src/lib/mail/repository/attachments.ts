@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { EmailAttachment } from '@tuturuuu/email-service';
 import { MAIL_ATTACHMENT_FILE_BYTES } from '../attachment-upload-policy';
-import { safeErrorFields } from '../log-safety';
+import { safeErrorFields, safeLogUuid } from '../log-safety';
 import {
   deleteMailStoredObject,
   getMailR2BucketName,
@@ -231,7 +231,7 @@ export async function uploadDraftAttachment({
         .catch((cleanupError: unknown) => {
           console.error('[mail] failed to clean up attachment metadata', {
             cleanupError: safeErrorFields(cleanupError),
-            storedObjectId,
+            storedObjectId: safeLogUuid(storedObjectId),
           });
         });
     }

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAuditRecord } from '../email-audit';
 import { EmailService } from '../email-service';
 import { BlacklistChecker } from '../protection/blacklist-checker';
 
@@ -287,27 +288,61 @@ describe('EmailService', () => {
       expect(result.error).toBe('No recipients specified');
     });
 
-    it('should handle DEV_MODE', async () => {
-      const devService = new EmailService({ ...defaultConfig, devMode: true });
-      devService.setSupabaseClient({} as any);
-
-      // Mock blacklist checker to return allowed emails so we reach dev mode check
-      (devService as any).blacklistChecker = {
-        checkEmails: vi.fn(async (emails) => ({
-          allowed: emails,
-          blocked: [],
-        })),
-      };
-
-      const result = await devService.send({
-        recipients: { to: ['test@example.com'] },
-        content: { subject: 'Hi', text: 'Body', html: '<p>Body</p>' },
-        metadata: defaultMetadata,
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.messageId).toBe('dev-mode-skip');
-    });
+    it.each(['send', 'sendInternal'] as const)(
+      'logs counts and audit ID when %s skips delivery in DEV_MODE',
+      async (method) => {
+        delete process.env.SEND_PRODUCTION_EMAIL;
+        const devService = new EmailService({
+          ...defaultConfig,
+          devMode: true,
+        });
+        devService.setSupabaseClient({} as any);
+        Reflect.set(devService, 'blacklistChecker', {
+          checkEmails: async (emails: string[]) => ({
+            allowed: emails,
+            blocked: [],
+          }),
+        });
+        const auditId = '12345678-1234-1234-1234-123456789abc';
+        vi.mocked(createAuditRecord).mockResolvedValueOnce(auditId);
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+        try {
+          const result = await devService[method]({
+            recipients: {
+              to: ['to@example.test'],
+              cc: ['cc@example.test'],
+              bcc: ['bcc@example.test'],
+            },
+            content: {
+              subject: 'Private subject',
+              text: 'Private body',
+              html: '<p>Private body</p>',
+            },
+            metadata: defaultMetadata,
+          });
+          expect(result).toMatchObject({
+            success: true,
+            messageId: 'dev-mode-skip',
+            auditId,
+          });
+          expect(providerSend).not.toHaveBeenCalled();
+          const mode = method === 'send' ? 'DEV_MODE' : 'DEV_MODE (internal)';
+          expect(log.mock.calls).toEqual([
+            [
+              `[EmailService] ${mode} - email logged but NOT sent:`,
+              {
+                toCount: 1,
+                ccCount: 1,
+                bccCount: 1,
+                auditId,
+              },
+            ],
+          ]);
+        } finally {
+          log.mockRestore();
+        }
+      }
+    );
 
     it('should send real email in DEV_MODE when SEND_PRODUCTION_EMAIL=true', async () => {
       process.env.SEND_PRODUCTION_EMAIL = 'true';

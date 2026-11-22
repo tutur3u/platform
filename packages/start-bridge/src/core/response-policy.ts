@@ -14,6 +14,7 @@
  * Web's uploaded WebGL builds carry a `sandbox` CSP that must reach the
  * browser as served. Matching is case-sensitive, like central's routes.
  */
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import { type AppSeoPolicy, robotsForUrl } from '@tuturuuu/utils/seo-robots';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
@@ -193,7 +194,7 @@ export function withHstsResponsePolicy<Args extends unknown[]>(
     try {
       response = await fetch(...args);
     } catch (error) {
-      console.error('[start-bridge] worker failed', error);
+      console.error('[start-bridge] worker failed', safeErrorFields(error));
       response = new Response('Internal Server Error', {
         status: 500,
         headers: {

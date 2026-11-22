@@ -1,3 +1,4 @@
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import {
   type ErrorComponentProps,
   useLocation,
@@ -58,7 +59,8 @@ export function createBridgeStatusComponents(
   function BridgeError({ error, reset }: ErrorComponentProps) {
     const router = useRouter();
     const props = useStatusProps(options);
-    if (import.meta.env?.SSR) console.error('Page render failed', error);
+    if (import.meta.env?.SSR)
+      console.error('Page render failed', safeErrorFields(error));
     return (
       <StatusPage
         {...props}

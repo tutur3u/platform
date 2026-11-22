@@ -4,6 +4,7 @@
  * Functions for creating and managing email audit records.
  */
 
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
 
@@ -52,13 +53,19 @@ export async function createAuditRecord(
       .single();
 
     if (error) {
-      console.error('[EmailAudit] Error creating audit record:', error);
+      console.error(
+        '[EmailAudit] Error creating audit record:',
+        safeErrorFields(error)
+      );
       return null;
     }
 
     return data.id;
   } catch (error) {
-    console.error('[EmailAudit] Exception creating audit record:', error);
+    console.error(
+      '[EmailAudit] Exception creating audit record:',
+      safeErrorFields(error)
+    );
     return null;
   }
 }
@@ -109,13 +116,19 @@ export async function updateAuditRecord(
       .eq('id', auditId);
 
     if (error) {
-      console.error('[EmailAudit] Error updating audit record:', error);
+      console.error(
+        '[EmailAudit] Error updating audit record:',
+        safeErrorFields(error)
+      );
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[EmailAudit] Exception updating audit record:', error);
+    console.error(
+      '[EmailAudit] Exception updating audit record:',
+      safeErrorFields(error)
+    );
     return false;
   }
 }
@@ -140,13 +153,19 @@ export async function markAsBounced(
       .eq('message_id', messageId);
 
     if (error) {
-      console.error('[EmailAudit] Error marking as bounced:', error);
+      console.error(
+        '[EmailAudit] Error marking as bounced:',
+        safeErrorFields(error)
+      );
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[EmailAudit] Exception marking as bounced:', error);
+    console.error(
+      '[EmailAudit] Exception marking as bounced:',
+      safeErrorFields(error)
+    );
     return false;
   }
 }
@@ -170,13 +189,19 @@ export async function markAsComplained(
       .eq('message_id', messageId);
 
     if (error) {
-      console.error('[EmailAudit] Error marking as complained:', error);
+      console.error(
+        '[EmailAudit] Error marking as complained:',
+        safeErrorFields(error)
+      );
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[EmailAudit] Exception marking as complained:', error);
+    console.error(
+      '[EmailAudit] Exception marking as complained:',
+      safeErrorFields(error)
+    );
     return false;
   }
 }
@@ -232,7 +257,10 @@ export async function logEmailAbuseEvent(
     });
   } catch (error) {
     // Log but don't throw - abuse logging should not block email operations
-    console.error('[EmailAudit] Error logging abuse event:', error);
+    console.error(
+      '[EmailAudit] Error logging abuse event:',
+      safeErrorFields(error)
+    );
   }
 }
 
@@ -271,7 +299,10 @@ export async function getEmailStats(
       .gte('created_at', since.toISOString());
 
     if (error) {
-      console.error('[EmailAudit] Error getting stats:', error);
+      console.error(
+        '[EmailAudit] Error getting stats:',
+        safeErrorFields(error)
+      );
       return null;
     }
 
@@ -302,7 +333,10 @@ export async function getEmailStats(
 
     return stats;
   } catch (error) {
-    console.error('[EmailAudit] Exception getting stats:', error);
+    console.error(
+      '[EmailAudit] Exception getting stats:',
+      safeErrorFields(error)
+    );
     return null;
   }
 }
@@ -365,13 +399,19 @@ export async function getRecentAuditRecords(
     const { data, error } = await query;
 
     if (error) {
-      console.error('[EmailAudit] Error getting records:', error);
+      console.error(
+        '[EmailAudit] Error getting records:',
+        safeErrorFields(error)
+      );
       return { records: [], error: error.message };
     }
 
     return { records: data || [] };
   } catch (error) {
-    console.error('[EmailAudit] Exception getting records:', error);
+    console.error(
+      '[EmailAudit] Exception getting records:',
+      safeErrorFields(error)
+    );
     return {
       records: [],
       error: error instanceof Error ? error.message : 'Unknown error',

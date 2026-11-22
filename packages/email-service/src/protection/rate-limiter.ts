@@ -5,6 +5,7 @@
  * Uses Redis with in-memory fallback (consistent with abuse-protection patterns).
  */
 
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import { createHash } from 'node:crypto';
 import {
   getUpstashRestRedisClient,
@@ -70,7 +71,10 @@ async function getRedisClient(): Promise<RedisClient | null> {
     redisInitialized = true;
     return redisClient;
   } catch (error) {
-    console.warn('[EmailRateLimiter] Redis unavailable:', error);
+    console.warn(
+      '[EmailRateLimiter] Redis unavailable:',
+      safeErrorFields(error)
+    );
     redisInitialized = true;
     return null;
   }
@@ -432,7 +436,10 @@ export class EmailRateLimiter {
         const count = await redis.get<number>(key);
         return count || 0;
       } catch (error) {
-        console.error('[EmailRateLimiter] Redis get error:', error);
+        console.error(
+          '[EmailRateLimiter] Redis get error:',
+          safeErrorFields(error)
+        );
         // Fall through to memory
       }
     }
@@ -485,7 +492,10 @@ export class EmailRateLimiter {
         }
         return;
       } catch (error) {
-        console.error('[EmailRateLimiter] Redis incr error:', error);
+        console.error(
+          '[EmailRateLimiter] Redis incr error:',
+          safeErrorFields(error)
+        );
         // Fall through to memory
       }
     }

@@ -1,4 +1,4 @@
-import { safeErrorFields } from '../log-safety';
+import { safeErrorFields, safeLogUuid } from '../log-safety';
 import { unseal } from './crypto';
 import type { ConnectedAccount, Credentials } from './repository';
 
@@ -32,15 +32,13 @@ export async function revokeProviderAccess(
     token = credentials?.refreshToken || credentials?.accessToken;
   } catch {
     console.warn('Mail disconnect could not read stored credentials', {
-      accountId: account.id,
-      provider: account.provider,
+      accountId: safeLogUuid(account.id),
     });
     return false;
   }
   if (typeof token !== 'string' || !token) {
     console.warn('Mail disconnect found no stored token to revoke', {
-      accountId: account.id,
-      provider: account.provider,
+      accountId: safeLogUuid(account.id),
     });
     return false;
   }
@@ -56,15 +54,13 @@ export async function revokeProviderAccess(
     await response.body?.cancel();
     if (response.ok) return true;
     console.warn('Mail provider token revocation was rejected', {
-      accountId: account.id,
-      provider: account.provider,
-      status: response.status,
+      accountId: safeLogUuid(account.id),
+      error: safeErrorFields(response),
     });
     return false;
   } catch (error) {
     console.warn('Mail provider token revocation failed', {
-      accountId: account.id,
-      provider: account.provider,
+      accountId: safeLogUuid(account.id),
       error: safeErrorFields(error),
     });
     return false;

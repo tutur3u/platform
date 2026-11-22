@@ -5,6 +5,7 @@
  * Uses existing RPC functions for batch checking.
  */
 
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
 import { z } from 'zod';
@@ -176,13 +177,19 @@ export class BlacklistChecker {
         if (error.code === '23505') {
           return { success: false, error: 'Entry already exists in blacklist' };
         }
-        console.error('[BlacklistChecker] Insert error:', error);
+        console.error(
+          '[BlacklistChecker] Insert error:',
+          safeErrorFields(error)
+        );
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('[BlacklistChecker] Error adding to blacklist:', error);
+      console.error(
+        '[BlacklistChecker] Error adding to blacklist:',
+        safeErrorFields(error)
+      );
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -207,13 +214,19 @@ export class BlacklistChecker {
         .eq('id', id);
 
       if (error) {
-        console.error('[BlacklistChecker] Delete error:', error);
+        console.error(
+          '[BlacklistChecker] Delete error:',
+          safeErrorFields(error)
+        );
         return { success: false, error: error.message };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('[BlacklistChecker] Error removing from blacklist:', error);
+      console.error(
+        '[BlacklistChecker] Error removing from blacklist:',
+        safeErrorFields(error)
+      );
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -268,13 +281,19 @@ export class BlacklistChecker {
       const { data, error } = await query;
 
       if (error) {
-        console.error('[BlacklistChecker] Query error:', error);
+        console.error(
+          '[BlacklistChecker] Query error:',
+          safeErrorFields(error)
+        );
         return { entries: [], error: error.message };
       }
 
       return { entries: data || [] };
     } catch (error) {
-      console.error('[BlacklistChecker] Error getting blacklist:', error);
+      console.error(
+        '[BlacklistChecker] Error getting blacklist:',
+        safeErrorFields(error)
+      );
       return {
         entries: [],
         error: error instanceof Error ? error.message : 'Unknown error',

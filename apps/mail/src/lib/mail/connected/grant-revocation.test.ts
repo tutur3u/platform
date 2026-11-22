@@ -230,16 +230,19 @@ describe('revoked grant classification', () => {
 });
 
 describe('refresh with a revoked grant', () => {
+  const targetAccountId = '12345678-1234-1234-1234-123456789abc';
   it.each([
     ['google', googleRevoked],
     ['microsoft', microsoftRevoked],
   ] as const)(
     'deletes only the %s account row with the disconnect predicate and revision',
     async (provider, body) => {
-      const target = row('target', provider);
+      const target = row(targetAccountId, provider);
       const sibling = row('sibling', provider);
-      const otherWorkspace = row('target', provider, { ws_id: 'elsewhere' });
-      const otherUser = row('target', provider, { user_id: 'someone' });
+      const otherWorkspace = row(targetAccountId, provider, {
+        ws_id: 'elsewhere',
+      });
+      const otherUser = row(targetAccountId, provider, { user_id: 'someone' });
       db.rows = [target, sibling, otherWorkspace, otherUser];
       vi.stubGlobal('fetch', tokenError(400, body));
 
@@ -251,7 +254,7 @@ describe('refresh with a revoked grant', () => {
       });
       expect(db.deletes).toEqual([
         [
-          ['id', 'target'],
+          ['id', targetAccountId],
           ['user_id', 'owner'],
           ['ws_id', 'workspace'],
           ['revision', 5],
@@ -260,7 +263,7 @@ describe('refresh with a revoked grant', () => {
       expect(db.rows).toEqual([sibling, otherWorkspace, otherUser]);
       expect(warn).toHaveBeenCalledWith(
         'Mail removed a connected account whose grant was revoked',
-        { accountId: 'target', provider }
+        { accountId: targetAccountId }
       );
     }
   );
@@ -386,7 +389,7 @@ describe('refresh with a revoked grant', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
   it('reports a failed delete without leaking credentials', async () => {
-    const target = row('target', 'microsoft');
+    const target = row(targetAccountId, 'microsoft');
     db.rows = [target];
     db.deleteError = { message: 'synthetic' };
     vi.stubGlobal('fetch', tokenError(400, microsoftRevoked));
@@ -395,7 +398,7 @@ describe('refresh with a revoked grant', () => {
     );
     expect(warn).toHaveBeenCalledWith(
       'Mail could not remove a revoked connected account',
-      { accountId: 'target', provider: 'microsoft' }
+      { accountId: targetAccountId }
     );
   });
   it('never logs tokens or the provider response body', async () => {

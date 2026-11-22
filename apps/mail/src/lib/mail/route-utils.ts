@@ -67,7 +67,7 @@ export async function withMailContext(
       : run());
   } catch (error) {
     if (error instanceof MailReadTimeout) {
-      console.warn('[mail] read timed out', { stage: error.stage });
+      console.warn('[mail] read timed out', safeErrorFields(error));
       return NextResponse.json(
         { code: MAIL_READ_TIMEOUT_CODE, error: error.message },
         {

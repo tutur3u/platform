@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   withHstsResponsePolicy,
   appRobots,
@@ -7,6 +7,8 @@ import {
   denyFrameAncestors,
   type ResponsePolicyContext,
 } from './response-policy';
+
+afterEach(() => vi.restoreAllMocks());
 
 const policy = createRootResponsePolicy({ seo: 'noindex, nofollow' });
 const publicAssets = new Set(['/robots.txt', '/favicon.ico']);
@@ -518,10 +520,23 @@ describe('Worker HSTS final boundary', () => {
       );
     }
   );
-  it('finalizes a thrown handler failure', async () => {
-    const response = await withHstsResponsePolicy(() => {
-      throw new Error('fixture');
+  it('finalizes a thrown handler failure and logs only safe fields', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await withHstsResponsePolicy(async () => {
+      throw {
+        name: 'PostgrestError',
+        code: 'PGRST116',
+        statusCode: 406,
+        message: 'lookup failed for private@example.test',
+        hint: 'private detail',
+      };
     })();
+    expect(log.mock.calls).toEqual([
+      [
+        '[start-bridge] worker failed',
+        { name: 'PostgrestError', code: 'PGRST116', status: 406 },
+      ],
+    ]);
     expect(response.status).toBe(500);
     expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
     expect(response.headers.get('Cache-Control')).toBe('no-store');

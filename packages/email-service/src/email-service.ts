@@ -21,6 +21,7 @@ import {
   logEmailAbuseEvent,
   updateAuditRecord,
 } from './email-audit';
+import { completeEmailDelivery } from './email-delivery';
 import { CredentialsError } from './errors';
 import { BlacklistChecker, EmailRateLimiter } from './protection/index';
 import { CloudflareEmailProvider } from './providers/cloudflare';
@@ -382,77 +383,17 @@ export class EmailService {
       ...allowedBcc,
     ]);
 
-    if (shouldSkipSending) {
-      console.log('[EmailService] DEV_MODE - email logged but NOT sent:', {
-        to: allowedTo,
-        cc: allowedCc,
-        bcc: allowedBcc,
-        subject: params.content.subject,
-        templateType: params.metadata.templateType,
-      });
-
-      if (auditId) {
-        await updateAuditRecord(
-          this.supabase,
-          auditId,
-          'sent',
-          'dev-mode-skip'
-        );
-      }
-
-      return {
-        success: true,
-        messageId: 'dev-mode-skip',
-        auditId: auditId || undefined,
-        blockedRecipients:
-          blockedRecipients.length > 0 ? blockedRecipients : undefined,
-      };
-    }
-
-    // Format source for provider
-    const formattedSource = `"${source.name}" <${source.email}>`;
-
-    const providerResult = await this.provider.send({
-      source: formattedSource,
-      recipients: {
-        to: allowedTo,
-        cc: allowedCc,
-        bcc: allowedBcc,
-      },
+    return completeEmailDelivery({
+      provider: this.provider,
+      supabase: this.supabase,
+      source,
+      recipients: { to: allowedTo, cc: allowedCc, bcc: allowedBcc },
       content: params.content,
+      auditId,
+      blockedRecipients,
+      shouldSkipSending,
+      internal: false,
     });
-
-    // 7. Update audit record and counters
-    if (providerResult.success) {
-      if (auditId) {
-        await updateAuditRecord(
-          this.supabase,
-          auditId,
-          'sent',
-          providerResult.messageId
-        );
-      }
-    } else {
-      if (auditId) {
-        await updateAuditRecord(
-          this.supabase,
-          auditId,
-          'failed',
-          undefined,
-          providerResult.error
-        );
-      }
-    }
-
-    return {
-      deliveryOutcome: providerResult.deliveryOutcome,
-      success: providerResult.success,
-      messageId: providerResult.messageId,
-      auditId: auditId || undefined,
-      error: providerResult.error,
-      blockedRecipients:
-        blockedRecipients.length > 0 ? blockedRecipients : undefined,
-    };
   }
 
   /**
@@ -554,72 +495,17 @@ export class EmailService {
     // Check dev mode - skip actual sending but log as sent
     const shouldSkipSending = this.shouldSkipSendingInDevMode();
 
-    if (shouldSkipSending) {
-      console.log(
-        '[EmailService] DEV_MODE (internal) - email logged but NOT sent:',
-        {
-          to: allowedTo,
-          cc: allowedCc,
-          bcc: allowedBcc,
-          subject: params.content.subject,
-          templateType: params.metadata.templateType,
-        }
-      );
-
-      if (auditId) {
-        await updateAuditRecord(
-          this.supabase,
-          auditId,
-          'sent',
-          'dev-mode-skip'
-        );
-      }
-
-      return {
-        success: true,
-        messageId: 'dev-mode-skip',
-        auditId: auditId || undefined,
-        blockedRecipients:
-          blockedRecipients.length > 0 ? blockedRecipients : undefined,
-      };
-    }
-
-    const formattedSource = `"${source.name}" <${source.email}>`;
-
-    const providerResult = await this.provider.send({
-      source: formattedSource,
+    return completeEmailDelivery({
+      provider: this.provider,
+      supabase: this.supabase,
+      source,
       recipients: { to: allowedTo, cc: allowedCc, bcc: allowedBcc },
       content: params.content,
+      auditId,
+      blockedRecipients,
+      shouldSkipSending,
+      internal: true,
     });
-
-    if (auditId) {
-      if (providerResult.success) {
-        await updateAuditRecord(
-          this.supabase,
-          auditId,
-          'sent',
-          providerResult.messageId
-        );
-      } else {
-        await updateAuditRecord(
-          this.supabase,
-          auditId,
-          'failed',
-          undefined,
-          providerResult.error
-        );
-      }
-    }
-
-    return {
-      deliveryOutcome: providerResult.deliveryOutcome,
-      success: providerResult.success,
-      messageId: providerResult.messageId,
-      auditId: auditId || undefined,
-      error: providerResult.error,
-      blockedRecipients:
-        blockedRecipients.length > 0 ? blockedRecipients : undefined,
-    };
   }
 
   /**
@@ -665,7 +551,7 @@ export class EmailService {
       throw new Error(`Error fetching email credentials: ${error.message}`);
     }
 
-    let credentials: WorkspaceEmailCredentials | null = null;
+    let credentials: WorkspaceEmailCredentials;
     if (dbCredentials) {
       credentials = dbCredentials;
     } else {

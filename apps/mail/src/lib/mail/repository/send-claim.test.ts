@@ -51,7 +51,7 @@ it.each(['TypeError', 'private synthetic name'])(
         })
       ).rejects.toThrow('Mail delivery could not be confirmed');
       expect(warn).toHaveBeenCalledWith('[mail] send failed', {
-        errorName: name === 'TypeError' ? 'TypeError' : 'UnknownError',
+        error: { name: name === 'TypeError' ? 'TypeError' : 'other' },
         frames: expect.any(Array),
       });
       expect(JSON.stringify(warn.mock.calls)).not.toContain('private');

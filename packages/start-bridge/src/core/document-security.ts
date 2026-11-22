@@ -4,13 +4,6 @@ export const CSP_REPORT_PATH = '/api/csp-report';
 const MAX_BYTES = 16 * 1024;
 let windowStart = 0;
 let count = 0;
-const directives = new Set([
-  'script-src',
-  'script-src-elem',
-  'script-src-attr',
-  'require-trusted-types-for',
-  'trusted-types',
-]);
 
 /** Bounded, credential-free diagnostics: never echo or log report payloads. */
 export async function collectDocumentSecurityReport(request: Request) {
@@ -63,23 +56,8 @@ export async function collectDocumentSecurityReport(request: Request) {
     }
     for (const entry of entries) {
       if (!entry || typeof entry !== 'object' || count >= 50) continue;
-      const directive =
-        'effective-directive' in entry
-          ? entry['effective-directive']
-          : 'effectiveDirective' in entry
-            ? entry.effectiveDirective
-            : undefined;
       count += 1;
-      console.warn('document security violation', {
-        directive:
-          typeof directive === 'string' && directives.has(directive)
-            ? directive
-            : 'unknown',
-        disposition:
-          'disposition' in entry && entry.disposition === 'enforce'
-            ? 'enforce'
-            : 'report',
-      });
+      console.warn('document security violation');
     }
   } catch {
     return done();

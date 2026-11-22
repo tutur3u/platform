@@ -93,10 +93,7 @@ it('collects without logging URLs, samples, or arbitrary directives', async () =
   );
   expect(response.status).toBe(204);
   expect(await response.text()).toBe('');
-  expect(log).toHaveBeenCalledWith('document security violation', {
-    directive: 'trusted-types',
-    disposition: 'enforce',
-  });
+  expect(log.mock.calls).toEqual([['document security violation']]);
   log.mockRestore();
 });
 

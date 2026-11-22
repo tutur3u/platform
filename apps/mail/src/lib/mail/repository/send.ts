@@ -3,7 +3,7 @@ import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { replaceMailInlineAttachmentUrls } from '../inline-images';
 import { MailSendError } from '../send-error';
-import { safeStackFrames } from '../stack-frames';
+import { safeErrorFields, safeLogUuid, safeStackFrames } from '../log-safety';
 import type { MailRouteContext } from '../types';
 import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
@@ -17,19 +17,8 @@ export async function sendMailMessage(
   try {
     return await sendClaimedMailMessage(args);
   } catch (error) {
-    const safeErrorNames = [
-      'Error',
-      'TypeError',
-      'RangeError',
-      'SyntaxError',
-      'MailSendError',
-    ];
-    const errorName =
-      error instanceof Error && safeErrorNames.includes(error.name)
-        ? error.name
-        : 'UnknownError';
     console.warn('[mail] send failed', {
-      errorName,
+      error: safeErrorFields(error),
       frames: safeStackFrames(error),
     });
     throw new MailSendError();
@@ -272,10 +261,10 @@ async function sendClaimedMailMessage({
 
   if (!result.success) {
     console.warn('[mail] outbound send failed', {
-      code: 'MAIL_PROVIDER_REJECTED',
-      mailboxId,
-      messageId: message.id,
-      wsId: ctx.normalizedWsId,
+      error: safeErrorFields({ code: 'MAIL_PROVIDER_REJECTED' }),
+      mailboxId: safeLogUuid(mailboxId),
+      messageId: safeLogUuid(message.id),
+      wsId: safeLogUuid(ctx.normalizedWsId),
     });
   }
 

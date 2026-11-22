@@ -45,15 +45,7 @@ export function admitMountedMutation({
   if (verdict.ok) return null;
 
   if (shouldReport(`${appPath}|${verdict.reason}|${verdict.origin}`)) {
-    console.warn('CSRF check failed', {
-      method: request.method,
-      mode,
-      mounted: true,
-      origin: verdict.origin,
-      reason: verdict.reason,
-      route: appPath,
-      secFetchSite: verdict.secFetchSite,
-    });
+    console.warn('CSRF check failed');
   }
 
   if (mode === 'report') return null;

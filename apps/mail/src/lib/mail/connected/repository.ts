@@ -1,3 +1,4 @@
+import { safeLogUuid } from '../log-safety';
 import { getAdminClient } from '../repository/shared';
 import type { MailRouteContext } from '../types';
 import {
@@ -192,7 +193,6 @@ async function removeRevokedAccount(
   previousToken: string,
   force: boolean
 ): Promise<RefreshedCredentials> {
-  const { id: accountId, provider } = account;
   const { data, error } = await (
     await table('mail_connected_accounts')
   )
@@ -205,15 +205,13 @@ async function removeRevokedAccount(
     .maybeSingle();
   if (error) {
     console.warn('Mail could not remove a revoked connected account', {
-      accountId,
-      provider,
+      accountId: safeLogUuid(account.id),
     });
     throw new RevokedGrantError();
   }
   if (data) {
     console.warn('Mail removed a connected account whose grant was revoked', {
-      accountId,
-      provider,
+      accountId: safeLogUuid(account.id),
     });
     throw new RevokedGrantError();
   }
