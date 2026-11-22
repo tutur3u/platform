@@ -6812,6 +6812,7 @@
     "runDuration": "{seconds} s",
     "runnerUnavailableBody": "Meet's code runner is still being set up. You can keep writing code together, and it's saved with this meeting.",
     "runnerUnavailableTitle": "Running code isn't available yet",
+    "runnerUnavailableUnsaved": "Meet's code runner is still being set up. You can keep writing code together.",
     "running": "Running…",
     "runShortcut": "{action} ({shortcut})",
     "save": "Save to Drive",

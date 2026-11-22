@@ -140,13 +140,8 @@ export function WorkbenchToolbar({
             <WorkbenchRunButton
               label={t('run')}
               busy={controls.busy || controls.pending}
-              disabled={
-                controls.pending ||
-                !controls.editable ||
-                controls.busy ||
-                !!controls.unavailable
-              }
-              describedBy={controls.unavailable}
+              disabled={controls.pending || !controls.editable || controls.busy}
+              unavailable={controls.unavailable}
               onRun={controls.onRun}
             />
             <Button

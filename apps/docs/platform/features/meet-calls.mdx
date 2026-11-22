@@ -2138,19 +2138,23 @@ Learn uses the same workbench without the meeting-only controls.
   a retry. The reason follows the HTTP status of the failed step: 502, 503 and
   504 say that running code is temporarily unavailable (a Playground pool with
   no ready runner answers a run with 503), and 429 says the service is busy.
-- **Runner unavailable.** In a meeting, once starting a run answers 502, 503 or
-  504, Run stays visible but disabled for the rest of the call, including after a
-  language switch. A status card above the output tabs says running code is not
-  available yet, that the code is saved with the meeting, and offers Copy code,
-  Download for the active file and Retry; the Run button's `aria-describedby`
-  points at it. A run that starts again re-enables Run. A failure while saving
-  the room first does not count. Learn's hosted playground keeps the retry
-  notice for every failure.
+- **Runner unavailable.** In a meeting playground, once starting a run answers
+  502, 503 or 504, Run stays visible and focusable but `aria-disabled` for the
+  rest of the call, including after a language switch; its tooltip and
+  `aria-describedby` point at a status card above the output tabs. The card says
+  running code is not available yet and that the code is saved with the meeting
+  (not while the last save failed), and offers Copy code, Download for the
+  active file and, for people who can run, Retry. A run that starts again
+  re-enables Run. Only a refused run counts: save, result, test and stop
+  failures keep their own notice. Learn problems opened in the meeting never
+  show the card, and Learn's hosted playground keeps the retry notice for every
+  failure.
 
 Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
 `workbench-errors.test.ts`, `workbench-language.test.ts`,
 `workbench-language-picker.test.tsx`, `workbench-files.test.tsx`,
-`workbench-runner-unavailable.test.tsx` and `programming-panel.test.tsx`.
+`workbench-runner-unavailable.test.tsx`, `use-workbench-run.test.tsx` and
+`programming-panel.test.tsx`.
 
 Web screen capture depends on browser getDisplayMedia support. Android and iOS
 browsers that lack it can receive screens and co-program, but cannot open a

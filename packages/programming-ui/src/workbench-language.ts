@@ -30,17 +30,21 @@ export const LANGUAGE_CODES: Record<PlaygroundLanguage, string> = {
   shell: 'SH',
 };
 
-/** Tinted badge tones from the dynamic palette, so each runtime reads apart at a glance. */
+/**
+ * Tinted badge tones, limited to the hues Sorbet tunes for light and dark
+ * (blue, green, orange, red, yellow, purple, pink, teal, gray) so every ink
+ * keeps AA contrast on its own tint.
+ */
 export const LANGUAGE_TONES: Record<PlaygroundLanguage, string> = {
   python: 'bg-dynamic-blue/10 text-dynamic-blue',
   javascript: 'bg-dynamic-yellow/10 text-dynamic-yellow',
-  typescript: 'bg-dynamic-sky/10 text-dynamic-sky',
+  typescript: 'bg-dynamic-purple/10 text-dynamic-purple',
   c: 'bg-dynamic-gray/10 text-dynamic-gray',
-  cpp: 'bg-dynamic-indigo/10 text-dynamic-indigo',
-  java: 'bg-dynamic-orange/10 text-dynamic-orange',
-  rust: 'bg-dynamic-rose/10 text-dynamic-rose',
-  go: 'bg-dynamic-cyan/10 text-dynamic-cyan',
-  ruby: 'bg-dynamic-red/10 text-dynamic-red',
+  cpp: 'bg-dynamic-blue/10 text-dynamic-blue',
+  java: 'bg-dynamic-red/10 text-dynamic-red',
+  rust: 'bg-dynamic-orange/10 text-dynamic-orange',
+  go: 'bg-dynamic-teal/10 text-dynamic-teal',
+  ruby: 'bg-dynamic-pink/10 text-dynamic-pink',
   php: 'bg-dynamic-purple/10 text-dynamic-purple',
   shell: 'bg-dynamic-green/10 text-dynamic-green',
 };

@@ -8,9 +8,17 @@ export interface WorkbenchRunner {
   /** Referenced by the Run button's aria-describedby. */
   id: string;
   file?: { path: string; content: string };
-  onRetry: () => void;
-  retrying: boolean;
+  /** Absent for people who cannot start runs. */
+  onRetry?: () => void;
+  /** A run, save or earlier run is still in flight, or the room is read-only. */
+  retryDisabled: boolean;
+  /** The last save of the room failed, so the card does not claim the code is saved. */
+  saveFailed: boolean;
 }
+
+const COPIED_MS = 2000;
+// Some browsers start the download after click() returns; revoking at once can cancel it.
+const REVOKE_MS = 1000;
 
 function download(file: { path: string; content: string }) {
   const url = URL.createObjectURL(
@@ -19,24 +27,51 @@ function download(file: { path: string; content: string }) {
   const link = document.createElement('a');
   link.href = url;
   link.download = file.path.split('/').at(-1) || file.path;
+  link.hidden = true;
+  document.body.append(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_MS);
 }
 
 /**
  * Shown once Meet's code runner answered that it cannot take runs. Run stays
- * visible but disabled; the code itself is safe in the room, so the card
- * offers what still works: copying or downloading it, and a manual retry.
+ * visible but disabled; the card offers what still works: copying or
+ * downloading the code, and a manual retry.
  */
 export function WorkbenchRunnerUnavailable({
   id,
   file,
   onRetry,
-  retrying,
+  retryDisabled,
+  saveFailed,
 }: WorkbenchRunner) {
   const t = useTranslations('programmingPlayground');
-  const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle');
+  // Tied to the exact file and text copied, so an edit or a tab switch drops the confirmation.
+  const [copy, setCopy] = useState<{
+    state: 'copied' | 'failed';
+    source: string;
+  } | null>(null);
+  const source = file ? `${file.path}\n${file.content}` : '';
+  const copyState = copy?.source === source ? copy.state : 'idle';
   const name = file ? file.path.split('/').at(-1) || file.path : '';
+  const copyCode = (value: { path: string; content: string }) => {
+    const done = (state: 'copied' | 'failed') => {
+      setCopy({ state, source });
+      if (state === 'copied')
+        setTimeout(
+          () => setCopy((last) => (last?.source === source ? null : last)),
+          COPIED_MS
+        );
+    };
+    const clipboard =
+      typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    if (!clipboard?.writeText) return done('failed');
+    clipboard.writeText(value.content).then(
+      () => done('copied'),
+      () => done('failed')
+    );
+  };
   return (
     <div
       id={id}
@@ -51,7 +86,9 @@ export function WorkbenchRunnerUnavailable({
         <div className="space-y-0.5">
           <p className="font-semibold">{t('runnerUnavailableTitle')}</p>
           <p className="text-muted-foreground text-xs">
-            {t('runnerUnavailableBody')}
+            {t(
+              saveFailed ? 'runnerUnavailableUnsaved' : 'runnerUnavailableBody'
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -61,19 +98,14 @@ export function WorkbenchRunnerUnavailable({
                 size="xs"
                 variant="outline"
                 className="rounded-full px-3"
-                onClick={() =>
-                  navigator.clipboard
-                    .writeText(file.content)
-                    .then(() => setCopy('copied'))
-                    .catch(() => setCopy('failed'))
-                }
+                onClick={() => copyCode(file)}
               >
-                {copy === 'copied' ? (
+                {copyState === 'copied' ? (
                   <Check aria-hidden="true" className="size-3.5" />
                 ) : (
                   <Copy aria-hidden="true" className="size-3.5" />
                 )}
-                {t(copy === 'copied' ? 'codeCopied' : 'copyCode')}
+                {t(copyState === 'copied' ? 'codeCopied' : 'copyCode')}
               </Button>
               <Button
                 size="xs"
@@ -88,18 +120,20 @@ export function WorkbenchRunnerUnavailable({
               </Button>
             </>
           )}
-          <Button
-            size="xs"
-            variant="ghost"
-            className="rounded-full px-3"
-            disabled={retrying}
-            onClick={onRetry}
-          >
-            <RotateCcw aria-hidden="true" className="size-3.5" />
-            {t('retry')}
-          </Button>
+          {onRetry && (
+            <Button
+              size="xs"
+              variant="ghost"
+              className="rounded-full px-3"
+              disabled={retryDisabled}
+              onClick={onRetry}
+            >
+              <RotateCcw aria-hidden="true" className="size-3.5" />
+              {t('retry')}
+            </Button>
+          )}
         </div>
-        {copy === 'failed' && (
+        {copyState === 'failed' && (
           <p role="alert" className="text-destructive text-xs">
             {t('copyFailed')}
           </p>

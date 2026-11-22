@@ -99,6 +99,8 @@ it('badges only the active tab with its language code when asked to', () => {
   expect(badge?.getAttribute('data-language')).toBe('python');
   expect(badge?.querySelector('[aria-hidden="true"]')?.textContent).toBe('PY');
   expect(badge?.className).toContain('bg-dynamic-blue/10');
-  expect(main!.textContent).toBe('main.pyPYPython');
+  // The visible code is hidden from the accessible name; the label is separated.
+  expect(main!.textContent).toBe('main.pyPY, Python');
+  expect(main!.querySelector('.sr-only')?.textContent).toBe(', Python');
   expect(util!.querySelector('[data-language]')).toBeNull();
 });

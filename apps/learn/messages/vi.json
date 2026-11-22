@@ -1151,6 +1151,7 @@
     "run": "Chạy",
     "runnerUnavailableBody": "Trình chạy mã của Meet vẫn đang được thiết lập. Mọi người vẫn có thể cùng viết mã, và mã được lưu cùng cuộc họp này.",
     "runnerUnavailableTitle": "Chưa thể chạy mã",
+    "runnerUnavailableUnsaved": "Trình chạy mã của Meet vẫn đang được thiết lập. Mọi người vẫn có thể cùng viết mã.",
     "running": "Đang chạy…",
     "save": "Lưu vào Drive",
     "saved": "Đã lưu vào Drive",

@@ -20,6 +20,7 @@ import {
 } from './mira-code-presence';
 import { isRunShortcut } from './run-shortcut';
 import { useProgrammingRoom } from './use-programming-room';
+import { runnerGate } from './use-runner-availability';
 import { useWorkbenchRun, type WorkbenchExecution } from './use-workbench-run';
 import { WorkbenchEditorStage } from './workbench-editor-stage';
 import { WorkbenchEditorStatus } from './workbench-editor-status';
@@ -204,14 +205,16 @@ export function ProgrammingWorkbench({
     else if (runFailure.step === 'result') void result.refetch();
     else run.mutate(run.variables ?? 'run');
   };
+  const gate = runnerGate(
+    runner.unavailable,
+    !problem && canExecute,
+    runFailure
+  );
+  const runnerDown = gate.id;
   const output = {
     view: outputView(!!problem, testOutput, result.data),
     save: selectedSave,
-    // The runner card explains a refused run; other failures still show.
-    failure:
-      runner.unavailable && runFailure?.reason === 'unavailable'
-        ? null
-        : runFailure,
+    failure: gate.failure,
     onRetry: retry,
     retrying:
       save.isPending || run.isPending || test.isPending || result.isFetching,
@@ -280,7 +283,7 @@ export function ProgrammingWorkbench({
     } else if (
       canExecute &&
       !busy &&
-      !runner.unavailable &&
+      !runnerDown &&
       !run.isPending &&
       !save.isPending
     )
@@ -334,7 +337,7 @@ export function ProgrammingWorkbench({
                   onRun: () => run.mutate('run'),
                   onStop: () => run.mutate('stop'),
                   onSave: canCheckpoint ? () => save.mutate() : undefined,
-                  unavailable: runner.unavailable,
+                  unavailable: runnerDown,
                 }
               : { kind: 'none' }
         }
@@ -491,12 +494,14 @@ export function ProgrammingWorkbench({
             }
             preview={previewSettings}
             runner={
-              runner.unavailable
+              runnerDown
                 ? {
-                    id: runner.unavailable,
+                    id: runnerDown,
                     file: active,
-                    onRetry: () => run.mutate('run'),
-                    retrying: run.isPending || save.isPending,
+                    onRetry: editable ? () => run.mutate('run') : undefined,
+                    retryDisabled:
+                      !editable || busy || run.isPending || save.isPending,
+                    saveFailed: selectedSave === 'failed',
                   }
                 : undefined
             }

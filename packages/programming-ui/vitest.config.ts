@@ -7,6 +7,13 @@ export default defineConfig({
         find: /^@tuturuuu\/types\/(.+)$/,
         replacement: path.resolve(import.meta.dirname, '../types/src/$1.ts'),
       },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: path.resolve(
+          import.meta.dirname,
+          '../internal-api/src/$1.ts'
+        ),
+      },
     ],
   },
   root: import.meta.dirname,

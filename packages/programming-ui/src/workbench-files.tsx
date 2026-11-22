@@ -136,7 +136,7 @@ function LanguageBadge({ path }: { path: string }) {
       )}
     >
       <span aria-hidden="true">{LANGUAGE_CODES[language]}</span>
-      <span className="sr-only">{LANGUAGE_LABELS[language]}</span>
+      <span className="sr-only">, {LANGUAGE_LABELS[language]}</span>
     </span>
   );
 }

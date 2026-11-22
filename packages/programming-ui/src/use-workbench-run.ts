@@ -96,11 +96,14 @@ export function useWorkbenchRun({
       onStarted();
     },
     // A run saves the room first, so an older save failure no longer applies.
-    onSuccess: () => {
+    // Only a run speaks for the runner; a refused stop leaves Run as it is.
+    onSuccess: (_, operation) => {
       save.reset();
-      runner.onRunStarted();
+      if (operation === 'run') runner.onRunStarted();
     },
-    onError: runner.onRunError,
+    onError: (error, operation) => {
+      if (operation === 'run') runner.onRunError(error);
+    },
   });
   const finished = timing.current;
   return {

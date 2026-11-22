@@ -14,7 +14,7 @@ export function WorkbenchEditorStatus({
 }) {
   const t = useTranslations('programmingPlayground');
   return (
-    <footer className="flex h-7 shrink-0 items-center gap-3 border-t bg-muted/25 px-3 text-muted-foreground text-xs">
+    <div className="flex h-7 shrink-0 items-center gap-3 border-t bg-muted/25 px-3 text-muted-foreground text-xs">
       <span
         data-language={language}
         className="flex items-center gap-1.5 font-semibold text-foreground"
@@ -29,6 +29,6 @@ export function WorkbenchEditorStatus({
           {t('readOnly')}
         </span>
       )}
-    </footer>
+    </div>
   );
 }

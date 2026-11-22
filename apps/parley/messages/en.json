@@ -6215,6 +6215,7 @@
     "run": "Run",
     "runnerUnavailableBody": "Meet's code runner is still being set up. You can keep writing code together, and it's saved with this meeting.",
     "runnerUnavailableTitle": "Running code isn't available yet",
+    "runnerUnavailableUnsaved": "Meet's code runner is still being set up. You can keep writing code together.",
     "running": "Running…",
     "save": "Save to Drive",
     "saved": "Saved to Drive",

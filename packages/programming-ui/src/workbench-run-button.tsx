@@ -15,30 +15,39 @@ export function WorkbenchRunButton({
   disabled,
   busy,
   onRun,
-  describedBy,
+  unavailable,
 }: {
   label: string;
   disabled: boolean;
   busy: boolean;
   onRun: () => void;
-  /** The element explaining why Run is disabled, e.g. the runner-unavailable card. */
-  describedBy?: string;
+  /**
+   * Id of the card explaining that runs are unavailable. Run then stays
+   * focusable with aria-disabled, so its tooltip can still say why.
+   */
+  unavailable?: string;
 }) {
   const t = useTranslations('programmingPlayground');
   // The platform is only known in the browser; the server renders Ctrl.
   const apple = useSyncExternalStore(subscribe, isApplePlatform, () => false);
   const keys = runShortcutKeys(apple);
   const shortcut = keys.join(' ');
+  const blocked = disabled || !!unavailable;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
           size="sm"
-          className="h-8 gap-1.5 rounded-full px-3.5"
           disabled={disabled}
-          aria-describedby={describedBy}
-          aria-keyshortcuts={apple ? 'Meta+Enter' : 'Control+Enter'}
-          onClick={onRun}
+          aria-disabled={unavailable ? true : undefined}
+          aria-describedby={unavailable}
+          aria-keyshortcuts={
+            blocked ? undefined : apple ? 'Meta+Enter' : 'Control+Enter'
+          }
+          className="h-8 gap-1.5 rounded-full px-3.5 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          onClick={() => {
+            if (!blocked) onRun();
+          }}
         >
           {busy ? (
             <Loader2
@@ -49,20 +58,24 @@ export function WorkbenchRunButton({
             <Play aria-hidden="true" className="size-3.5" />
           )}
           {label}
-          <KbdGroup aria-hidden="true" className="@3xl:inline-flex hidden">
-            {keys.map((key) => (
-              <Kbd
-                key={key}
-                className="h-4.5 bg-primary-foreground/15 px-1 text-[10px] text-primary-foreground"
-              >
-                {key}
-              </Kbd>
-            ))}
-          </KbdGroup>
+          {!unavailable && (
+            <KbdGroup aria-hidden="true" className="@3xl:inline-flex hidden">
+              {keys.map((key) => (
+                <Kbd
+                  key={key}
+                  className="h-4.5 bg-primary-foreground/15 px-1 text-[10px] text-primary-foreground"
+                >
+                  {key}
+                </Kbd>
+              ))}
+            </KbdGroup>
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        {t('runShortcut', { action: label, shortcut })}
+        {unavailable
+          ? t('runnerUnavailableTitle')
+          : t('runShortcut', { action: label, shortcut })}
       </TooltipContent>
     </Tooltip>
   );
