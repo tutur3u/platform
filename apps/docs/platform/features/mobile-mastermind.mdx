@@ -643,13 +643,13 @@ and Inbox grouping tests cover this boundary.
   and a toast offers Copy text. A second answer is never offered, because
   Iris takes only the first.
 - **Optimistic send:** Send closes the decision at once: it leaves Needs you
-  for History ("Sending"), a toast says "Answered: <option>" with Undo for
+  for History ("Sending"), a toast says "Answered: `<option>`" with Undo for
   the five-second undo window, and the detail page moves to the next
   decision (or back to the Inbox after the last one). Delivery continues in
   the background under one idempotency key (see Answer delivery). Undo in
   the window drops the answer unsent and brings the card back. A refused
   answer, or one still undelivered after four automatic attempts, returns
-  to the top of Needs you with "Not delivered: <answer>" and Retry, which
+  to the top of Needs you with "Not delivered: `<answer>`" and Retry, which
   resends under the same key; background retries continue meanwhile.
 - **History:** grouped by ICT day (Today, Yesterday, then the date), newest
   first. Each row shows the question, the chosen answer, who answered and
@@ -738,7 +738,7 @@ never left stuck as "Not sent".
   same actor retries the same key and payload, so a lost response settles
   as delivered. Any other 4xx, such as a 422 `invalid_answer` or
   `unknown_option`, settles as refused: the card returns to Needs you with
-  "Not delivered: <answer>" and Retry, which resends under the same key, and
+  "Not delivered: `<answer>`" and Retry, which resends under the same key, and
   the detail page lets the owner answer again.
 - **Abuse step-up (mobile).** A 403 that asks for a browser check
   (`ABUSE_CHALLENGE_REQUIRED` or `x-abuse-challenge`) is not lost access:
