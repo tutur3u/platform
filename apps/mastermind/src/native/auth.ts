@@ -12,6 +12,8 @@ export interface MastermindEnvironment {
   MASTERMIND_OWNER_EMAIL?: string;
   OWNER_IDS?: string;
   TUTURUUU_APP_COORDINATION_SECRET?: string;
+  /** `true` signs each sign-in as a Web-verified transaction (secret, default off). */
+  MASTERMIND_SIGNIN_TRANSACTION?: string;
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
 export function assertMastermindEnvironment(env: MastermindEnvironment): void {

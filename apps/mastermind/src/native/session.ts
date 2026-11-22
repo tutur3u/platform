@@ -139,8 +139,12 @@ export async function loginRedirect(
   }: { freshMfa?: boolean; chooseAccount?: boolean; signedIn?: boolean } = {},
   now = Date.now()
 ) {
-  const secret = env.TUTURUUU_APP_COORDINATION_SECRET;
-  if (!secret) return new Response('Sign-in unavailable', { status: 503 });
+  // Signed transactions start only once Web can claim them (its replay store
+  // serves): until then Web answers a transaction it cannot claim with 503.
+  const signTransaction = env.MASTERMIND_SIGNIN_TRANSACTION === 'true';
+  const secret = env.TUTURUUU_APP_COORDINATION_SECRET?.trim();
+  if (signTransaction && !secret)
+    return new Response('Sign-in unavailable', { status: 503 });
   const state = randomToken(16);
   const verifier = randomToken(32);
   const next = new URL(safeNextPath(nextPath), MASTERMIND_ORIGIN);
@@ -153,10 +157,11 @@ export async function loginRedirect(
     WEB_ORIGIN
   );
   const challenge = await pkceChallenge(verifier);
-  verify.searchParams.set(
-    MASTERMIND_LOGIN_TRANSACTION_PARAM,
-    createMastermindLoginTransaction(verify, challenge, freshMfa, secret, now)
-  );
+  if (signTransaction && secret)
+    verify.searchParams.set(
+      MASTERMIND_LOGIN_TRANSACTION_PARAM,
+      createMastermindLoginTransaction(verify, challenge, freshMfa, secret, now)
+    );
   login.searchParams.set('returnUrl', verify.toString());
   if (freshMfa)
     login.searchParams.set('mfaMaxAge', String(FRESH_MFA_MAX_AGE_SECONDS));

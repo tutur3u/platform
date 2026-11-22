@@ -405,7 +405,8 @@ records the product rules of the shell entry and every tab.
   Mastermind access session with a recent MFA proof. The routes recheck
   owner allowlist and root permission, and thread replies retain their
   fresh MFA requirement. The native-session requirement is held behind
-  `MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED=true` on Web (off by default);
+  `MASTERMIND_FLEET_NATIVE_SESSION_REQUIRED=true`, set as a Worker secret on
+  `tuturuuu-web-vinext-api-core` (off by default);
   while it is off, the earlier Supabase session admission still applies to
   these routes, and the dedicated Worker session's 24-hour MFA bound applies
   either way. Before turning it on, verify a

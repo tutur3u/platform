@@ -7,7 +7,11 @@ import {
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { MastermindEnvironment } from './auth';
 import { mastermindRequest } from './request';
-import { createAppRedeemProof } from '@tuturuuu/auth/app-redeem-proof';
+import {
+  createAppRedeemProof,
+  MASTERMIND_LOGIN_TRANSACTION_PARAM,
+  verifyMastermindLoginTransaction,
+} from '@tuturuuu/auth/app-redeem-proof';
 import {
   exchangeHandoff,
   loginRedirect,
@@ -50,7 +54,10 @@ beforeEach(() => {
     }
   );
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 /** An MFA (aal2) proof as Web carries it into the app session. */
 const mfa = {
@@ -396,6 +403,63 @@ test('a forced intruder handoff and a sessionless fetch are refused without cook
     now
   );
   expect(fetchOnly.status).toBe(403);
+});
+
+test('signs the sign-in as a Web-verified transaction only once it is switched on', async () => {
+  const returnUrl = async (worker: MastermindEnvironment, freshMfa = false) => {
+    const response = await loginRedirect(
+      '/vi/projects',
+      worker,
+      { freshMfa },
+      now
+    );
+    const login = new URL(response.headers.get('Location') ?? '');
+    return {
+      challenge: login.searchParams.get('code_challenge'),
+      verify: login.searchParams.get('returnUrl') ?? '',
+    };
+  };
+  // Off by default: the return is the PKCE return the serving Web accepts.
+  for (const value of [undefined, '', '1', 'TRUE']) {
+    const { verify } = await returnUrl({
+      ...env,
+      MASTERMIND_SIGNIN_TRANSACTION: value,
+    });
+    expect(
+      new URL(verify).searchParams.has(MASTERMIND_LOGIN_TRANSACTION_PARAM)
+    ).toBe(false);
+  }
+  vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', secret);
+  const on = { ...env, MASTERMIND_SIGNIN_TRANSACTION: 'true' };
+  for (const freshMfa of [false, true]) {
+    const { challenge, verify } = await returnUrl(on, freshMfa);
+    const transaction = verifyMastermindLoginTransaction(
+      verify,
+      Math.floor(now / 1000)
+    );
+    expect(transaction?.codeChallenge).toBe(challenge);
+    expect(transaction?.mfaMaxAge).toBe(freshMfa ? 30 : undefined);
+  }
+  expect(
+    (
+      await loginRedirect(
+        '/',
+        { ...on, TUTURUUU_APP_COORDINATION_SECRET: undefined },
+        {},
+        now
+      )
+    ).status
+  ).toBe(503);
+  expect(
+    (
+      await loginRedirect(
+        '/',
+        { ...on, TUTURUUU_APP_COORDINATION_SECRET: '   ' },
+        {},
+        now
+      )
+    ).status
+  ).toBe(503);
 });
 
 test('a step-up sign-in asks Web for a second factor verified in the last 30 seconds, and changes nothing else', async () => {
