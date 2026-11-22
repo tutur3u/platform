@@ -69,6 +69,79 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('pending status read hides registration claim until loaded', (
+    tester,
+  ) async {
+    final status =
+        Completer<({DeviceMfaRegistry registry, String? currentFactorId})>();
+    when(service.status).thenAnswer((_) => status.future);
+    await open(tester, const Size(390, 844), settle: false);
+
+    expect(find.text("This device isn't registered"), findsNothing);
+    expect(find.text('This device is registered'), findsNothing);
+    expect(find.text('Checking device security…'), findsOneWidget);
+
+    status.complete((
+      registry: DeviceMfaRegistry(
+        locked: false,
+        devices: [
+          TrustedAuthenticator(
+            factorId: 'f-this',
+            name: 'Skora Macbook M3 Pro',
+            verified: true,
+            createdAt: DateTime.utc(2026, 11, 18, 12),
+          ),
+        ],
+      ),
+      currentFactorId: 'f-this',
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('This device is registered'), findsOneWidget);
+    expect(find.text("This device isn't registered"), findsNothing);
+    await tester.tap(find.byTooltip('Close authenticator'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+    'failed initial status read retries without claiming unregistered',
+    (tester) async {
+      var calls = 0;
+      when(service.status).thenAnswer((_) async {
+        if (++calls == 1) {
+          throw const ApiException.transport(message: 'offline');
+        }
+        return (
+          registry: DeviceMfaRegistry(
+            locked: false,
+            devices: [
+              TrustedAuthenticator(
+                factorId: 'f-this',
+                name: 'Skora Macbook M3 Pro',
+                verified: true,
+                createdAt: DateTime.utc(2026, 11, 18, 12),
+              ),
+            ],
+          ),
+          currentFactorId: 'f-this',
+        );
+      });
+      await open(tester, const Size(390, 844));
+
+      expect(find.text('Could not finish this step'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text("This device isn't registered"), findsNothing);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not finish this step'), findsNothing);
+      expect(find.text('This device is registered'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close authenticator'));
+      await tester.pumpAndSettle();
+    },
+  );
+
   for (final size in [
     const Size(390, 844),
     const Size(844, 390),
@@ -225,5 +298,138 @@ void main() {
     expect(reads, 3);
     await tester.tap(find.byTooltip('Close authenticator'));
     await tester.pumpAndSettle();
+  });
+
+  group('registered device', () {
+    setUp(() {
+      when(service.status).thenAnswer(
+        (_) async => (
+          registry: DeviceMfaRegistry(
+            locked: false,
+            devices: [
+              TrustedAuthenticator(
+                factorId: 'f-this',
+                name: 'Skora Macbook M3 Pro',
+                verified: true,
+                createdAt: DateTime.utc(2026, 11, 18, 12),
+              ),
+              TrustedAuthenticator(
+                factorId: 'f-phone',
+                name: 'Skora iPhone 13',
+                verified: true,
+                createdAt: DateTime.utc(2026, 9, 20, 12),
+              ),
+              TrustedAuthenticator(
+                factorId: 'f-new',
+                name: 'Work laptop',
+                verified: false,
+                createdAt: DateTime.utc(2026, 11, 21, 12),
+              ),
+            ],
+          ),
+          currentFactorId: 'f-this',
+        ),
+      );
+    });
+
+    testWidgets('shows status, locale dates and the This device badge', (
+      tester,
+    ) async {
+      await open(tester, const Size(390, 1600));
+      expect(find.text('This device is registered'), findsOneWidget);
+      expect(
+        find.text('Skora Macbook M3 Pro · 2 trusted devices'),
+        findsOneWidget,
+      );
+      expect(find.text('Added Sep 20, 2026'), findsOneWidget);
+      expect(find.textContaining('2026-09-20'), findsNothing);
+      expect(find.text('This device'), findsOneWidget);
+      expect(find.text('Setup incomplete'), findsOneWidget);
+      expect(find.byTooltip('Remove Skora Macbook M3 Pro'), findsNothing);
+      expect(find.byTooltip('Remove Skora iPhone 13'), findsOneWidget);
+      expect(find.text('Lock new registrations'), findsOneWidget);
+      expect(find.text('Keep a second trusted device'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('Close authenticator'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('removing a trusted device waits for confirmation', (
+      tester,
+    ) async {
+      when(
+        () => service.removeTrustedDevice(any(), reason: any(named: 'reason')),
+      ).thenAnswer((_) async {});
+      await open(tester, const Size(390, 1600));
+      await tester.tap(find.byTooltip('Remove Skora iPhone 13'));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove Skora iPhone 13?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      verifyNever(
+        () => service.removeTrustedDevice(any(), reason: any(named: 'reason')),
+      );
+
+      await tester.tap(find.byTooltip('Remove Skora iPhone 13'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove trusted device'));
+      await tester.pumpAndSettle();
+      verify(
+        () => service.removeTrustedDevice(
+          'f-phone',
+          reason: any(named: 'reason'),
+        ),
+      ).called(1);
+      await tester.tap(find.byTooltip('Close authenticator'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('removing this authenticator waits for confirmation', (
+      tester,
+    ) async {
+      when(
+        () => service.remove(reason: any(named: 'reason')),
+      ).thenAnswer((_) async {});
+      await open(tester, const Size(390, 1600));
+      await tester.tap(find.text('Remove this authenticator'));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove this authenticator?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      verifyNever(() => service.remove(reason: any(named: 'reason')));
+
+      await tester.tap(find.text('Remove this authenticator'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove this authenticator').last);
+      await tester.pumpAndSettle();
+      verify(() => service.remove(reason: any(named: 'reason'))).called(1);
+      await tester.tap(find.byTooltip('Close authenticator'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the code shows with a countdown and hides again', (
+      tester,
+    ) async {
+      when(
+        () => service.code(reason: any(named: 'reason')),
+      ).thenAnswer((_) async => '482913');
+      final semantics = tester.ensureSemantics();
+      await open(tester, const Size(390, 1600));
+      await tester.tap(find.text('Show verification code'));
+      // The code rotates within 30 s, so pump a frame instead of settling.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('482913'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp(r'^Changes in \d+ seconds?$')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Hide code'));
+      await tester.pump();
+      expect(find.text('482913'), findsNothing);
+      semantics.dispose();
+      await tester.tap(find.byTooltip('Close authenticator'));
+      await tester.pumpAndSettle();
+    });
   });
 }

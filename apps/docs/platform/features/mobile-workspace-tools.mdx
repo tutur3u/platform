@@ -1,7 +1,7 @@
 ---
 title: "Mobile Workspace Tools"
 description: "Shared mobile navigation, tablet layouts, caching, and workspace application behavior."
-updatedAt: 2026-10-03
+updatedAt: 2026-11-22
 audience: users
 ---
 
@@ -824,6 +824,59 @@ Android only from `apps/mobile` with `dart run tool/generate_android_splash.dart
 it preserves the canonical logo and excludes iOS/web generation. Pixel tests
 verify transparent native padding and 80 dp artwork across all densities.
 Installed OS launch scaling and release artifact qualification remain separate.
+
+### Settings > Session layout
+
+Settings > Session groups its rows into Sign-in & devices (device authenticator,
+sessions and connections), App protection (app lock and its delay) and Other
+(QR sign-in, web MFA approvals), followed by a separate destructive log-out row.
+On wide windows the hub keeps the detail page width (720 dp minus gutters), so
+switches stay beside their labels.
+
+Sessions and connections shows This device first, then other sessions active in
+the last seven days, then older ones. Rows name the client from its user agent
+("Chrome on macOS", "Safari on iPhone", "T3 Code on macOS"). The Flutter client
+reports only `Dart/x (dart:io)`, so it reads "Tuturuuu app"; this device's own
+row adds the local platform. Lists show a relative last-active time (absolute
+on hover or long-press) and a masked address: the first two IPv4 octets or IPv6
+groups, never a `/32` or `/128` prefix. The platform has no IP location, so
+none is shown. The expanded details hold the full address, timestamps and raw
+user agent. Sessions and connected accounts load in order but fail separately:
+a failing sessions endpoint shows its own retry and leaves the sign-in methods
+usable, and a failed connections load offers only a retry, never a Connect row
+for a provider that may already be linked. A failed refresh keeps the lists on
+screen under an error banner. Sign out all other sessions names no count,
+because it revokes every other session the server holds, including ones that
+started after the list loaded.
+
+Each action keeps its gate:
+
+- Session sign-out, sign out all other sessions and provider disconnect: an
+  in-app confirmation, then OS authentication, then an account-identity
+  recheck before the request.
+- Authenticator removal and trusted-device removal: an in-app confirmation,
+  then device verification (OS authentication and this device's proof), with
+  an account recheck around each request.
+- Lock new registrations: no confirmation; the toggle goes straight to device
+  verification and the account recheck.
+- Log out current account: the Settings page's sign-out confirmation.
+
+The hub shows neither the signed-in email nor a pending request's pair code;
+the approval dialog asks the user to read the code from the requesting device.
+Switch rows take one keyboard stop, since the row owns activation.
+
+The device authenticator sheet (full height on phones, a dialog on wider
+windows) leads with this device's status and its primary action; removal is a
+quiet destructive action with an in-app confirmation. Trusted devices show a
+device icon inferred from their name, the locale date they were added and a
+This device badge. The lock-recovery warning is a warning callout.
+
+Regression coverage: `session_presentation_test.dart` (user-agent labels, IP
+masking, last-active buckets, grouping, device kinds),
+`account_security_page_test.dart` (groups, masking, details, confirm → verify →
+revoke ordering, separate load failures) and `device_mfa_sheet_test.dart` (confirmations, dates, code
+countdown). `security_screens_render_test.dart` writes phone and desktop
+renders when `DESIGN_RENDER_DIR` is set.
 
 ### Device authenticators and trusted registrations
 

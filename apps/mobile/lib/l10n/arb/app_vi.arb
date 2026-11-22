@@ -1304,6 +1304,7 @@
   "appLockSettingsDisabled": "Tắt",
   "appLockSettingsEnabled": "Bật",
   "appLockSettingsTitle": "Khóa ứng dụng",
+  "appLockHubSubtitle": "Face ID, vân tay hoặc mã PIN thiết bị",
   "appLockUnavailableDescription": "Xác thực cục bộ không khả dụng hoặc đã bị hủy.",
   "appLockUnlockAction": "Mở khóa",
   "appLockUnlockReason": "Mở khóa Tuturuuu.",
@@ -2314,6 +2315,51 @@
   "deviceMfaUseDevice": "Xác minh bằng thiết bị này",
   "deviceMfaVerifyReason": "Xác minh danh tính để dùng trình xác thực Tuturuuu",
   "deviceMfaWorking": "Đang kiểm tra bảo mật thiết bị…",
+  "deviceMfaHubSubtitle": "Phê duyệt đăng nhập và hiện mã",
+  "deviceMfaNotRegisteredTitle": "Thiết bị này chưa được đăng ký",
+  "deviceMfaTrustedSummary": "{count, plural, other{{count} thiết bị tin cậy}}",
+  "@deviceMfaTrustedSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceMfaAddedOn": "Đã thêm {date}",
+  "@deviceMfaAddedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceMfaRegistrationSection": "Đăng ký",
+  "deviceMfaBackupCalloutTitle": "Giữ thêm một thiết bị tin cậy",
+  "deviceMfaRemoveConfirmTitle": "Gỡ trình xác thực này?",
+  "deviceMfaRemoveTrustedNamed": "Xóa {device}",
+  "@deviceMfaRemoveTrustedNamed": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceMfaRemoveTrustedConfirmTitle": "Xóa {device}?",
+  "@deviceMfaRemoveTrustedConfirmTitle": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceMfaCodeChangesIn": "{seconds, plural, other{Đổi sau {seconds} giây}}",
+  "@deviceMfaCodeChangesIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "documentsContentHint": "Bắt đầu viết...",
   "documentsCreated": "Đã tạo tài liệu.",
   "documentsDelete": "Xóa tài liệu",
@@ -3625,6 +3671,15 @@
   "mfaApprovalRequiresMobileMfa": "Hãy xác minh MFA trong phiên di động này trước khi phê duyệt đăng nhập web.",
   "mfaApprovalSettingsIdle": "Mở màn hình này khi trang MFA trên web hiển thị mã ghép đôi. Yêu cầu đang chờ sẽ tự làm mới.",
   "mfaApprovalSettingsTitle": "Phê duyệt MFA web",
+  "mfaApprovalPendingCount": "{count, plural, other{{count} đang chờ}}",
+  "@mfaApprovalPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mfaApprovalReviewAction": "Xem",
   "mfaCodeLabel": "Mã gồm 6 chữ số",
   "mfaInvalidCode": "Mã xác thực không hợp lệ. Vui lòng thử lại.",
   "mfaReviewSignIn": "Xem yêu cầu đăng nhập",
@@ -3986,6 +4041,9 @@
   "qrLoginSettingsDescription": "Quét mã QR trên màn hình đăng nhập khác và phê duyệt bằng khóa ứng dụng.",
   "qrLoginSettingsDisabledDescription": "Bật khóa ứng dụng trước khi quét mã QR đăng nhập.",
   "qrLoginSettingsTitle": "Quét QR đăng nhập",
+  "qrLoginHubSubtitle": "Đăng nhập trên màn hình khác",
+  "qrLoginApproveSite": "Trang web",
+  "qrLoginApproveAccount": "Tài khoản",
   "reminders12h": "Trước 12 giờ",
   "reminders1d": "Trước 1 ngày",
   "reminders1h": "Trước 1 giờ",
@@ -4029,6 +4087,7 @@
   "securityConnect": "Kết nối",
   "securityConnectionsDescription": "Chọn cách đăng nhập. Giữ ít nhất một tài khoản đã kết nối.",
   "securityConnectionsTitle": "Tài khoản đã kết nối",
+  "securityConnectionsLoadFailedTitle": "Không thể tải các tài khoản đã liên kết",
   "securityCurrentSession": "Phiên hiện tại",
   "securityDisconnect": "Ngắt kết nối",
   "securityDisconnectDescription": "Bạn sẽ không thể đăng nhập bằng tài khoản đã kết nối này nữa.",
@@ -4038,6 +4097,149 @@
   "securitySessionsDescription": "Xem các thiết bị đang đăng nhập. Đăng xuất phiên khác không làm đăng xuất thiết bị này.",
   "securitySessionsTitle": "Phiên đăng nhập và kết nối",
   "securityUnknownDevice": "Thiết bị không xác định",
+  "securityHubSignInSection": "Đăng nhập & thiết bị",
+  "securityHubProtectionSection": "Bảo vệ ứng dụng",
+  "securityHubOtherSection": "Khác",
+  "securitySessionsHubSubtitle": "Thiết bị đang đăng nhập và tài khoản liên kết",
+  "securitySessionsThisDevice": "Thiết bị này",
+  "securitySessionsRecent": "Hoạt động gần đây",
+  "securitySessionsOlder": "Cũ hơn",
+  "securitySessionsNoOthersTitle": "Không có phiên nào khác",
+  "securitySessionsNoOthersMessage": "Chỉ thiết bị này đang đăng nhập.",
+  "securitySessionsLoadFailedTitle": "Không thể tải các phiên",
+  "securitySessionsLoadFailedMessage": "Kiểm tra kết nối rồi thử lại.",
+  "securitySessionsRefreshFailed": "Không thể làm mới các phiên và tài khoản đã liên kết.",
+  "securitySessionsActionFailed": "Không thể hoàn tất thay đổi. Hãy thử lại.",
+  "securitySessionActiveNow": "Đang hoạt động",
+  "securitySessionMinutesAgo": "{count, plural, other{{count} phút trước}}",
+  "@securitySessionMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionHoursAgo": "{count, plural, other{{count} giờ trước}}",
+  "@securitySessionHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionYesterday": "Hôm qua",
+  "securitySessionDaysAgo": "{count, plural, other{{count} ngày trước}}",
+  "@securitySessionDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionWeeksAgo": "{count, plural, other{{count} tuần trước}}",
+  "@securitySessionWeeksAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionShowDetails": "Hiện chi tiết",
+  "securitySessionHideDetails": "Ẩn chi tiết",
+  "securitySessionLastActive": "Hoạt động lần cuối",
+  "securitySessionSignedIn": "Đăng nhập lúc",
+  "securitySessionIpAddress": "Địa chỉ IP",
+  "securitySessionUserAgent": "Chuỗi user agent",
+  "securitySessionSignOut": "Đăng xuất",
+  "securitySessionSignOutNamed": "Đăng xuất {device}",
+  "@securitySessionSignOutNamed": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionSignOutConfirmTitle": "Đăng xuất {device}?",
+  "@securitySessionSignOutConfirmTitle": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionSignOutConfirmMessage": "Thiết bị đó sẽ cần đăng nhập lại.",
+  "securitySessionSignedOut": "Đã đăng xuất phiên",
+  "securitySessionsSignOutOthers": "Đăng xuất tất cả phiên khác",
+  "securitySessionsSignOutOthersConfirmTitle": "Đăng xuất tất cả phiên khác?",
+  "securitySessionsSignOutOthersConfirmMessage": "Mọi thiết bị và trình duyệt khác sẽ cần đăng nhập lại. Thiết bị này vẫn được giữ đăng nhập.",
+  "securitySessionsSignOutOthersAction": "Đăng xuất tất cả phiên khác",
+  "securitySessionsSignedOutOthers": "Đã đăng xuất các phiên khác",
+  "securitySessionsStaysSignedIn": "Thiết bị này vẫn được giữ đăng nhập.",
+  "securitySessionClientOn": "{client} trên {platform}",
+  "@securitySessionClientOn": {
+    "placeholders": {
+      "client": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionTuturuuuApp": "Ứng dụng Tuturuuu",
+  "securitySessionDesktopApp": "Ứng dụng máy tính",
+  "securitySessionWithContext": "{label} ({context})",
+  "@securitySessionWithContext": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "context": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionWithContextOrdinal": "{label} ({context}, #{ordinal})",
+  "@securitySessionWithContextOrdinal": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "context": {
+        "type": "String"
+      },
+      "ordinal": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionOrdinal": "{label} (#{ordinal})",
+  "@securitySessionOrdinal": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "ordinal": {
+        "type": "int"
+      }
+    }
+  },
+  "securityConnectProvider": "Kết nối {provider}",
+  "@securityConnectProvider": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "securityDisconnectNamed": "Ngắt kết nối {provider}",
+  "@securityDisconnectNamed": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
   "selectImageSource": "Chọn nguồn ảnh",
   "settingsAboutSectionDescription": "Thông tin bản phát hành và sản phẩm của bản dựng này.",
   "settingsAboutSectionTitle": "Giới thiệu ứng dụng",

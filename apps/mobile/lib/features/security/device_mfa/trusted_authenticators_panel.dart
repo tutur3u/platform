@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
+import 'package:mobile/features/security/presentation/security_labels.dart';
+import 'package:mobile/features/security/presentation/session_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TrustedAuthenticatorsPanel extends StatelessWidget {
   const TrustedAuthenticatorsPanel({
@@ -27,16 +29,14 @@ class TrustedAuthenticatorsPanel extends StatelessWidget {
     final confirmed = await showAppDialog<bool>(
       context: context,
       builder: (context) => AppDialog(
-        title: l10n.deviceMfaRemoveTrusted,
-        content: Text('${device.name}\n\n${l10n.deviceMfaRemoveDeviceHint}'),
+        title: l10n.deviceMfaRemoveTrustedConfirmTitle(device.name),
+        content: Text(l10n.deviceMfaRemoveDeviceHint),
         actions: [
-          shad.OutlineButton(
-            alignment: Alignment.center,
+          AppButton.outline(
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.commonCancel),
           ),
-          shad.DestructiveButton(
-            alignment: Alignment.center,
+          AppButton.destructive(
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n.deviceMfaRemoveTrusted),
           ),
@@ -49,78 +49,123 @@ class TrustedAuthenticatorsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final colors = shad.Theme.of(context).colorScheme;
     final hasBackup =
         registry.devices.where((device) => device.verified).length > 1;
+    final canToggleLock = canManage && (registry.locked || hasBackup);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          l10n.deviceMfaTrustedTitle,
-          style: shad.Theme.of(context).typography.large,
-        ),
-        const SizedBox(height: 8),
-        for (final device in registry.devices)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Icon(
-                  device.verified
-                      ? Icons.verified_user_outlined
-                      : Icons.pending_outlined,
-                  size: 20,
-                  color: colors.primary,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(device.name),
-                      Text(
-                        !device.verified
-                            ? l10n.deviceMfaPending
-                            : device.factorId == currentFactorId
-                            ? l10n.deviceMfaCurrentDevice
-                            : device.createdAt
-                                  .toLocal()
-                                  .toString()
-                                  .split(' ')
-                                  .first,
-                        style: shad.Theme.of(context).typography.small.copyWith(
-                          color: colors.mutedForeground,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (canManage && device.factorId != currentFactorId)
-                  IconButton(
-                    tooltip: l10n.deviceMfaRemoveTrusted,
-                    onPressed: () => _confirmRemoval(context, device),
-                    icon: const Icon(Icons.remove_circle_outline, size: 20),
-                  ),
-              ],
+        AppGroupedSection.spaced(
+          caption: l10n.deviceMfaTrustedTitle,
+          captionTrailing: Text(
+            '${registry.devices.length}',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-        AppToggleRow(
-          title: Text(l10n.deviceMfaLockTitle),
-          subtitle: Text(l10n.deviceMfaLockHint),
-          value: registry.locked,
-          onChanged: canManage && (registry.locked || hasBackup)
-              ? onLockChanged
-              : null,
+          children: [
+            for (final device in registry.devices)
+              _TrustedDeviceRow(
+                device: device,
+                current: device.factorId == currentFactorId,
+                onRemove: canManage && device.factorId != currentFactorId
+                    ? () => _confirmRemoval(context, device)
+                    : null,
+              ),
+          ],
         ),
-        Text(
-          !registry.locked && !hasBackup
-              ? l10n.deviceMfaNeedBackup
-              : l10n.deviceMfaLockRecoveryHint,
-          style: shad.Theme.of(
-            context,
-          ).typography.small.copyWith(color: colors.mutedForeground),
+        AppGroupedSection(
+          caption: l10n.deviceMfaRegistrationSection,
+          children: [
+            Semantics(
+              toggled: registry.locked,
+              enabled: canToggleLock,
+              child: AppGroupedRow(
+                leading: const AppIconTile(icon: LucideIcons.lock),
+                title: Text(l10n.deviceMfaLockTitle),
+                subtitle: Text(l10n.deviceMfaLockHint),
+                onTap: canToggleLock
+                    ? () => onLockChanged(!registry.locked)
+                    : null,
+                // The row owns focus and activation; the switch only shows
+                // the state, so keyboard users get one stop.
+                trailing: ExcludeFocus(
+                  child: ExcludeSemantics(
+                    child: IgnorePointer(
+                      child: AppSwitch(
+                        value: registry.locked,
+                        onChanged: canToggleLock ? (_) {} : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppAlert(
+          variant: AppAlertVariant.warning,
+          title: Text(l10n.deviceMfaBackupCalloutTitle),
+          content: Text(
+            !registry.locked && !hasBackup
+                ? l10n.deviceMfaNeedBackup
+                : l10n.deviceMfaLockRecoveryHint,
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _TrustedDeviceRow extends StatelessWidget {
+  const _TrustedDeviceRow({
+    required this.device,
+    required this.current,
+    required this.onRemove,
+  });
+
+  final TrustedAuthenticator device;
+  final bool current;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = AppTokens.of(context).colorScheme;
+    return AppGroupedRow(
+      leading: AppIconTile(
+        icon: securityDeviceIcon(authenticatorDeviceKind(device.name)),
+        tone: current && device.verified ? AppTone.success : AppTone.neutral,
+      ),
+      title: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xxs,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(device.name),
+          if (!device.verified)
+            AppBadge(
+              variant: AppBadgeVariant.warning,
+              child: Text(l10n.deviceMfaPending),
+            )
+          else if (current)
+            AppBadge(
+              variant: AppBadgeVariant.success,
+              child: Text(l10n.deviceMfaCurrentDevice),
+            ),
+        ],
+      ),
+      subtitle: Text(
+        l10n.deviceMfaAddedOn(securityDate(context, device.createdAt)),
+      ),
+      trailing: onRemove == null
+          ? null
+          : AppIconButton(
+              tooltip: l10n.deviceMfaRemoveTrustedNamed(device.name),
+              onPressed: onRemove,
+              icon: Icon(LucideIcons.trash2, size: 18, color: c.destructive),
+            ),
     );
   }
 }

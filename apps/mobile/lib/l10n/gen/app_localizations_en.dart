@@ -199,6 +199,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockSettingsTitle => 'App lock';
 
   @override
+  String get appLockHubSubtitle => 'Face ID, fingerprint, or device PIN';
+
+  @override
   String get appLockUnavailableDescription => 'Local authentication is unavailable or was cancelled.';
 
   @override
@@ -3234,6 +3237,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceMfaWorking => 'Checking device security…';
+
+  @override
+  String get deviceMfaHubSubtitle => 'Approve sign-ins and show codes';
+
+  @override
+  String get deviceMfaNotRegisteredTitle => 'This device isn\'t registered';
+
+  @override
+  String deviceMfaTrustedSummary(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trusted devices',
+      one: '1 trusted device',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deviceMfaAddedOn(String date) {
+    return 'Added $date';
+  }
+
+  @override
+  String get deviceMfaRegistrationSection => 'Registration';
+
+  @override
+  String get deviceMfaBackupCalloutTitle => 'Keep a second trusted device';
+
+  @override
+  String get deviceMfaRemoveConfirmTitle => 'Remove this authenticator?';
+
+  @override
+  String deviceMfaRemoveTrustedNamed(String device) {
+    return 'Remove $device';
+  }
+
+  @override
+  String deviceMfaRemoveTrustedConfirmTitle(String device) {
+    return 'Remove $device?';
+  }
+
+  @override
+  String deviceMfaCodeChangesIn(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Changes in $seconds seconds',
+      one: 'Changes in 1 second',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get documentsContentHint => 'Start writing...';
@@ -7283,6 +7338,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mfaApprovalSettingsTitle => 'Approve web MFA';
 
   @override
+  String mfaApprovalPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pending',
+      one: '$count pending',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mfaApprovalReviewAction => 'Review';
+
+  @override
   String get mfaCodeLabel => '6-digit code';
 
   @override
@@ -8440,6 +8509,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qrLoginSettingsTitle => 'Scan login QR';
 
   @override
+  String get qrLoginHubSubtitle => 'Sign in on another screen';
+
+  @override
+  String get qrLoginApproveSite => 'Website';
+
+  @override
+  String get qrLoginApproveAccount => 'Account';
+
+  @override
   String get reminders12h => '12 hours before';
 
   @override
@@ -8583,6 +8661,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get securityConnectionsTitle => 'Connected accounts';
 
   @override
+  String get securityConnectionsLoadFailedTitle => 'Couldn\'t load connected accounts';
+
+  @override
   String get securityCurrentSession => 'This session';
 
   @override
@@ -8608,6 +8689,186 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get securityUnknownDevice => 'Unknown device';
+
+  @override
+  String get securityHubSignInSection => 'Sign-in & devices';
+
+  @override
+  String get securityHubProtectionSection => 'App protection';
+
+  @override
+  String get securityHubOtherSection => 'Other';
+
+  @override
+  String get securitySessionsHubSubtitle => 'Signed-in devices and linked accounts';
+
+  @override
+  String get securitySessionsThisDevice => 'This device';
+
+  @override
+  String get securitySessionsRecent => 'Active recently';
+
+  @override
+  String get securitySessionsOlder => 'Older';
+
+  @override
+  String get securitySessionsNoOthersTitle => 'No other sessions';
+
+  @override
+  String get securitySessionsNoOthersMessage => 'Only this device is signed in.';
+
+  @override
+  String get securitySessionsLoadFailedTitle => 'Couldn\'t load sessions';
+
+  @override
+  String get securitySessionsLoadFailedMessage => 'Check your connection and try again.';
+
+  @override
+  String get securitySessionsRefreshFailed => 'Couldn\'t refresh sessions and connections.';
+
+  @override
+  String get securitySessionsActionFailed => 'Couldn\'t finish that change. Try again.';
+
+  @override
+  String get securitySessionActiveNow => 'Active now';
+
+  @override
+  String securitySessionMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes ago',
+      one: '$count minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String securitySessionHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours ago',
+      one: '$count hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get securitySessionYesterday => 'Yesterday';
+
+  @override
+  String securitySessionDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '$count day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String securitySessionWeeksAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count weeks ago',
+      one: '$count week ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get securitySessionShowDetails => 'Show details';
+
+  @override
+  String get securitySessionHideDetails => 'Hide details';
+
+  @override
+  String get securitySessionLastActive => 'Last active';
+
+  @override
+  String get securitySessionSignedIn => 'Signed in';
+
+  @override
+  String get securitySessionIpAddress => 'IP address';
+
+  @override
+  String get securitySessionUserAgent => 'User agent';
+
+  @override
+  String get securitySessionSignOut => 'Sign out';
+
+  @override
+  String securitySessionSignOutNamed(String device) {
+    return 'Sign out $device';
+  }
+
+  @override
+  String securitySessionSignOutConfirmTitle(String device) {
+    return 'Sign out $device?';
+  }
+
+  @override
+  String get securitySessionSignOutConfirmMessage => 'That device will need to sign in again.';
+
+  @override
+  String get securitySessionSignedOut => 'Session signed out';
+
+  @override
+  String get securitySessionsSignOutOthers => 'Sign out all other sessions';
+
+  @override
+  String get securitySessionsSignOutOthersConfirmTitle => 'Sign out all other sessions?';
+
+  @override
+  String get securitySessionsSignOutOthersConfirmMessage => 'Every other device and browser will need to sign in again. This device stays signed in.';
+
+  @override
+  String get securitySessionsSignOutOthersAction => 'Sign out all others';
+
+  @override
+  String get securitySessionsSignedOutOthers => 'Other sessions signed out';
+
+  @override
+  String get securitySessionsStaysSignedIn => 'This device stays signed in.';
+
+  @override
+  String securitySessionClientOn(String client, String platform) {
+    return '$client on $platform';
+  }
+
+  @override
+  String get securitySessionTuturuuuApp => 'Tuturuuu app';
+
+  @override
+  String get securitySessionDesktopApp => 'Desktop app';
+
+  @override
+  String securitySessionWithContext(String label, String context) {
+    return '$label ($context)';
+  }
+
+  @override
+  String securitySessionWithContextOrdinal(String label, String context, int ordinal) {
+    return '$label ($context, #$ordinal)';
+  }
+
+  @override
+  String securitySessionOrdinal(String label, int ordinal) {
+    return '$label (#$ordinal)';
+  }
+
+  @override
+  String securityConnectProvider(String provider) {
+    return 'Connect $provider';
+  }
+
+  @override
+  String securityDisconnectNamed(String provider) {
+    return 'Disconnect $provider';
+  }
 
   @override
   String get selectImageSource => 'Select image source';

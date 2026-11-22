@@ -8,6 +8,7 @@ class AccountSession {
     required this.label,
     required this.current,
     this.lastActive,
+    this.createdAt,
     this.ip,
   });
   factory AccountSession.fromJson(Map<String, dynamic> json) => AccountSession(
@@ -15,12 +16,16 @@ class AccountSession {
     label: json['user_agent'] as String? ?? '',
     current: json['is_current'] == true,
     lastActive: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+    createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
     ip: json['ip'] as String?,
   );
   final String id;
   final String label;
   final bool current;
   final DateTime? lastActive;
+
+  /// When the session signed in; shown only in the session details.
+  final DateTime? createdAt;
   final String? ip;
 }
 

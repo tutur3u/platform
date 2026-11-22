@@ -2,14 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_error.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_status_card.dart';
 import 'package:mobile/features/security/device_mfa/trusted_authenticators_panel.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DeviceMfaPanel extends StatefulWidget {
   const DeviceMfaPanel({this.service, this.onBusyChanged, super.key});
@@ -28,7 +29,6 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
   bool _busy = true;
   Object? _error;
   Future<void> Function()? _retry;
-  bool _confirmRemoval = false;
   String? _code;
   late DateTime _codeExpires;
   DeviceMfaRegistry? _registry;
@@ -99,158 +99,208 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
     }
   }
 
+  void _enroll(String reason) {
+    final l10n = context.l10n;
+    unawaited(
+      _run(() async {
+        await _service.enroll(
+          name: _name.text.trim().isEmpty
+              ? l10n.deviceMfaDefaultName
+              : _name.text.trim(),
+          reason: reason,
+        );
+        await _refresh();
+        unawaited(
+          PushNotificationService.instance
+              .ensurePermissionPrompted()
+              .catchError((Object _) {}),
+        );
+      }),
+    );
+  }
+
+  void _toggleCode(String reason) {
+    if (_code != null) {
+      setState(() => _code = null);
+      return;
+    }
+    unawaited(
+      _run(() async {
+        final code = await _service.code(reason: reason);
+        if (!mounted) return;
+        _code = code;
+        final now = DateTime.now().millisecondsSinceEpoch;
+        _codeExpires = DateTime.fromMillisecondsSinceEpoch(
+          (now ~/ 30000 + 1) * 30000,
+        );
+      }),
+    );
+  }
+
+  Future<void> _confirmRemove(String reason) async {
+    final l10n = context.l10n;
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: l10n.deviceMfaRemoveConfirmTitle,
+      message: l10n.deviceMfaRemoveHint,
+      confirmLabel: l10n.deviceMfaRemove,
+      cancelLabel: l10n.commonCancel,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    unawaited(
+      _run(() async {
+        await _service.remove(reason: reason);
+        await _refresh();
+        _code = null;
+      }),
+    );
+  }
+
+  String? _statusSubtitle(AppLocalizations l10n) {
+    final registry = _registry;
+    if (!_registered || registry == null) return l10n.deviceMfaDescription;
+    final current = registry.devices
+        .where((device) => device.factorId == _currentFactorId)
+        .firstOrNull;
+    final trusted = l10n.deviceMfaTrustedSummary(
+      registry.devices.where((device) => device.verified).length,
+    );
+    return current == null ? trusted : '${current.name} · $trusted';
+  }
+
+  List<Widget> _statusActions(AppLocalizations l10n, String reason) {
+    final tokens = AppTokens.of(context);
+    final registry = _registry;
+    if (!_registered && registry?.locked == true) {
+      return [
+        AppAlert(
+          variant: AppAlertVariant.warning,
+          content: Text(l10n.deviceMfaLocked),
+        ),
+      ];
+    }
+    if (!_registered && registry != null) {
+      return [
+        Text(
+          l10n.deviceMfaEnrollWarning,
+          style: tokens.typography.small.copyWith(
+            color: tokens.colorScheme.mutedForeground,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          selectionControls: platformTextSelectionControls(),
+          contextMenuBuilder: platformTextContextMenuBuilder(),
+          controller: _name,
+          enabled: !_busy,
+          placeholder: l10n.deviceMfaName,
+          maxLength: 40,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppButton.primary(
+          onPressed: _busy ? null : () => _enroll(reason),
+          child: Text(l10n.deviceMfaEnroll),
+        ),
+      ];
+    }
+    if (!_registered) return const [];
+    final code = _code;
+    return [
+      if (code != null) ...[
+        DeviceMfaCodeDisplay(
+          code: code,
+          secondsLeft:
+              (_codeExpires.difference(DateTime.now()).inMilliseconds / 1000)
+                  .ceil(),
+        ),
+        const SizedBox(height: AppSpacing.md),
+      ],
+      AppButton.primary(
+        leading: Icon(
+          code == null ? LucideIcons.eye : LucideIcons.eyeOff,
+          size: 18,
+        ),
+        onPressed: _busy ? null : () => _toggleCode(reason),
+        child: Text(
+          code == null ? l10n.deviceMfaShowCode : l10n.deviceMfaHideCode,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      _DestructiveTextButton(
+        label: l10n.deviceMfaRemove,
+        onPressed: _busy ? null : () => unawaited(_confirmRemove(reason)),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final reason = l10n.deviceMfaVerifyReason;
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final registry = _registry;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_busy) ...[
             Row(
               children: [
-                const NovaLoadingIndicator(size: 18),
-                const shad.Gap(12),
-                Expanded(child: Text(l10n.deviceMfaWorking)),
-              ],
-            ),
-            const shad.Gap(16),
-          ],
-          if (_error != null) ...[
-            Semantics(
-              liveRegion: true,
-              child: shad.Alert(
-                title: Text(l10n.deviceMfaActionFailed),
-                content: Text(deviceMfaErrorMessage(_error!, l10n)),
-              ),
-            ),
-            const shad.Gap(8),
-            shad.OutlineButton(
-              alignment: Alignment.center,
-              onPressed: _busy
-                  ? null
-                  : () => unawaited(_run(_retry ?? _refresh)),
-              child: Text(l10n.commonRetry),
-            ),
-            const shad.Gap(16),
-          ],
-          Text(_registered ? l10n.deviceMfaReady : l10n.deviceMfaDescription),
-          const shad.Gap(12),
-          if (!_registered && _registry?.locked == true)
-            Text(l10n.deviceMfaLocked),
-          if (!_registered && _registry != null && !_registry!.locked) ...[
-            Text(l10n.deviceMfaEnrollWarning, style: theme.typography.small),
-            const shad.Gap(12),
-            shad.TextField(
-              selectionControls: platformTextSelectionControls(),
-              contextMenuBuilder: platformTextContextMenuBuilder(),
-              controller: _name,
-              enabled: !_busy,
-              placeholder: Text(l10n.deviceMfaName),
-              maxLength: 40,
-            ),
-            const shad.Gap(12),
-            shad.PrimaryButton(
-              alignment: Alignment.center,
-              onPressed: _busy
-                  ? null
-                  : () => unawaited(
-                      _run(() async {
-                        await _service.enroll(
-                          name: _name.text.trim().isEmpty
-                              ? l10n.deviceMfaDefaultName
-                              : _name.text.trim(),
-                          reason: reason,
-                        );
-                        await _refresh();
-                        unawaited(
-                          PushNotificationService.instance
-                              .ensurePermissionPrompted()
-                              .catchError((Object _) {}),
-                        );
-                      }),
-                    ),
-              child: Text(l10n.deviceMfaEnroll),
-            ),
-          ] else if (_registered) ...[
-            if (_code != null) ...[
-              SelectableText(
-                _code!,
-                style: theme.typography.h1.copyWith(letterSpacing: 8),
-              ),
-              Text(l10n.deviceMfaCodeHint),
-              const shad.Gap(12),
-            ],
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                shad.PrimaryButton(
-                  alignment: Alignment.center,
-                  onPressed: _busy
-                      ? null
-                      : () {
-                          if (_code != null) {
-                            setState(() => _code = null);
-                            return;
-                          }
-                          unawaited(
-                            _run(() async {
-                              final code = await _service.code(reason: reason);
-                              if (!mounted) return;
-                              _code = code;
-                              final now = DateTime.now().millisecondsSinceEpoch;
-                              _codeExpires =
-                                  DateTime.fromMillisecondsSinceEpoch(
-                                    (now ~/ 30000 + 1) * 30000,
-                                  );
-                            }),
-                          );
-                        },
+                const AppLoadingIndicator.inline(),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
                   child: Text(
-                    _code == null
-                        ? l10n.deviceMfaShowCode
-                        : l10n.deviceMfaHideCode,
+                    l10n.deviceMfaWorking,
+                    style: tokens.typography.small.copyWith(
+                      color: tokens.colorScheme.mutedForeground,
+                    ),
                   ),
                 ),
-                shad.OutlineButton(
-                  alignment: Alignment.center,
-                  onPressed: _busy
-                      ? null
-                      : () =>
-                            setState(() => _confirmRemoval = !_confirmRemoval),
-                  child: Text(l10n.deviceMfaRemove),
-                ),
               ],
             ),
-            if (_confirmRemoval) ...[
-              const shad.Gap(12),
-              Text(l10n.deviceMfaRemoveHint),
-              const shad.Gap(8),
-              shad.DestructiveButton(
-                alignment: Alignment.center,
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          if (_error != null) ...[
+            AppAlert.destructive(
+              title: Text(l10n.deviceMfaActionFailed),
+              content: Text(deviceMfaErrorMessage(_error!, l10n)),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AppButton.outline(
                 onPressed: _busy
                     ? null
                     : () => unawaited(
-                        _run(() async {
-                          await _service.remove(reason: reason);
-                          await _refresh();
-                          _code = null;
-                          _confirmRemoval = false;
-                        }),
+                        _run(
+                          _retry ?? _refresh,
+                          blockDismissal: _retry != _refresh,
+                        ),
                       ),
-                child: Text(l10n.deviceMfaRemove),
+                child: Text(l10n.commonRetry),
               ),
-            ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
           ],
-          if (_registry != null &&
-              (_registered || _registry!.devices.isNotEmpty)) ...[
-            const shad.Gap(16),
+          if (registry == null) ...[
+            if (_busy && _error == null)
+              const AppGroupedCard(children: [AppSkeletonRows()]),
+          ] else
+            DeviceMfaStatusCard(
+              registered: _registered,
+              title: _registered
+                  ? l10n.deviceMfaReady
+                  : l10n.deviceMfaNotRegisteredTitle,
+              subtitle: _statusSubtitle(l10n),
+              children: _statusActions(l10n, reason),
+            ),
+          if (registry != null &&
+              (_registered || registry.devices.isNotEmpty)) ...[
+            const SizedBox(height: AppLayout.sectionGap),
             TrustedAuthenticatorsPanel(
-              registry: _registry!,
+              registry: registry,
               currentFactorId: _currentFactorId,
               canManage: _registered && !_busy,
               onLockChanged: (locked) => unawaited(
@@ -273,6 +323,31 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Quiet destructive action: destructive text without a filled surface, so
+/// it never competes with the primary action above it.
+class _DestructiveTextButton extends StatelessWidget {
+  const _DestructiveTextButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppTokens.of(context).colorScheme;
+    final color = onPressed == null ? c.mutedForeground : c.destructive;
+    return TextButton.icon(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        minimumSize: const Size.fromHeight(44),
+        shape: const StadiumBorder(),
+      ),
+      icon: Icon(LucideIcons.trash2, size: 16, color: color),
+      label: Text(label),
     );
   }
 }

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_panel.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> showDeviceMfaSheet(
   BuildContext context, {
@@ -16,8 +17,9 @@ Future<void> showDeviceMfaSheet(
     await showAdaptiveSheet<void>(
       context: context,
       useRootNavigator: true,
-      maxDialogWidth: 600,
+      maxDialogWidth: 640,
       enableDrag: false,
+      backgroundColor: AppTokens.of(context).colorScheme.background,
       builder: (context) => ValueListenableBuilder<bool>(
         valueListenable: busy,
         builder: (context, isBusy, _) => PopScope(
@@ -50,7 +52,7 @@ class _DeviceMfaSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
     final compact = context.isCompact;
     return SafeArea(
       top: false,
@@ -67,25 +69,36 @@ class _DeviceMfaSheet extends StatelessWidget {
                   : MediaQuery.sizeOf(context).height * 0.86,
             ),
             child: Material(
-              color: theme.colorScheme.background,
+              color: tokens.colorScheme.background,
               borderRadius: BorderRadius.circular(compact ? 24 : 20),
               clipBehavior: Clip.antiAlias,
               child: Column(
                 mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                    ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.phonelink_lock_rounded,
-                          color: theme.colorScheme.primary,
+                        const AppIconTile(
+                          icon: LucideIcons.smartphone,
+                          tone: AppTone.success,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
-                          child: Text(
-                            context.l10n.deviceMfaTitle,
-                            style: theme.typography.large,
+                          child: Semantics(
+                            header: true,
+                            child: Text(
+                              context.l10n.deviceMfaTitle,
+                              style: tokens.typography.large.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: tokens.colorScheme.foreground,
+                              ),
+                            ),
                           ),
                         ),
                         IconButton(
@@ -93,17 +106,22 @@ class _DeviceMfaSheet extends StatelessWidget {
                           onPressed: busy
                               ? null
                               : () => Navigator.of(context).maybePop(),
-                          icon: const Icon(Icons.close_rounded),
+                          icon: const Icon(LucideIcons.x, size: 20),
                         ),
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: theme.colorScheme.border),
+                  Divider(height: 1, color: tokens.colorScheme.border),
                   Flexible(
                     child: SingleChildScrollView(
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.xs,
+                        AppSpacing.xl,
+                        AppSpacing.xxl,
+                      ),
                       child: DeviceMfaPanel(
                         service: service,
                         onBusyChanged: onBusyChanged,

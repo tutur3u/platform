@@ -199,6 +199,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appLockSettingsTitle => 'Khóa ứng dụng';
 
   @override
+  String get appLockHubSubtitle => 'Face ID, vân tay hoặc mã PIN thiết bị';
+
+  @override
   String get appLockUnavailableDescription => 'Xác thực cục bộ không khả dụng hoặc đã bị hủy.';
 
   @override
@@ -3220,6 +3223,56 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get deviceMfaWorking => 'Đang kiểm tra bảo mật thiết bị…';
+
+  @override
+  String get deviceMfaHubSubtitle => 'Phê duyệt đăng nhập và hiện mã';
+
+  @override
+  String get deviceMfaNotRegisteredTitle => 'Thiết bị này chưa được đăng ký';
+
+  @override
+  String deviceMfaTrustedSummary(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thiết bị tin cậy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String deviceMfaAddedOn(String date) {
+    return 'Đã thêm $date';
+  }
+
+  @override
+  String get deviceMfaRegistrationSection => 'Đăng ký';
+
+  @override
+  String get deviceMfaBackupCalloutTitle => 'Giữ thêm một thiết bị tin cậy';
+
+  @override
+  String get deviceMfaRemoveConfirmTitle => 'Gỡ trình xác thực này?';
+
+  @override
+  String deviceMfaRemoveTrustedNamed(String device) {
+    return 'Xóa $device';
+  }
+
+  @override
+  String deviceMfaRemoveTrustedConfirmTitle(String device) {
+    return 'Xóa $device?';
+  }
+
+  @override
+  String deviceMfaCodeChangesIn(int seconds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      seconds,
+      locale: localeName,
+      other: 'Đổi sau $seconds giây',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get documentsContentHint => 'Bắt đầu viết...';
@@ -7207,6 +7260,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mfaApprovalSettingsTitle => 'Phê duyệt MFA web';
 
   @override
+  String mfaApprovalPendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count đang chờ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mfaApprovalReviewAction => 'Xem';
+
+  @override
   String get mfaCodeLabel => 'Mã gồm 6 chữ số';
 
   @override
@@ -8334,6 +8400,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get qrLoginSettingsTitle => 'Quét QR đăng nhập';
 
   @override
+  String get qrLoginHubSubtitle => 'Đăng nhập trên màn hình khác';
+
+  @override
+  String get qrLoginApproveSite => 'Trang web';
+
+  @override
+  String get qrLoginApproveAccount => 'Tài khoản';
+
+  @override
   String get reminders12h => 'Trước 12 giờ';
 
   @override
@@ -8477,6 +8552,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get securityConnectionsTitle => 'Tài khoản đã kết nối';
 
   @override
+  String get securityConnectionsLoadFailedTitle => 'Không thể tải các tài khoản đã liên kết';
+
+  @override
   String get securityCurrentSession => 'Phiên hiện tại';
 
   @override
@@ -8502,6 +8580,182 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get securityUnknownDevice => 'Thiết bị không xác định';
+
+  @override
+  String get securityHubSignInSection => 'Đăng nhập & thiết bị';
+
+  @override
+  String get securityHubProtectionSection => 'Bảo vệ ứng dụng';
+
+  @override
+  String get securityHubOtherSection => 'Khác';
+
+  @override
+  String get securitySessionsHubSubtitle => 'Thiết bị đang đăng nhập và tài khoản liên kết';
+
+  @override
+  String get securitySessionsThisDevice => 'Thiết bị này';
+
+  @override
+  String get securitySessionsRecent => 'Hoạt động gần đây';
+
+  @override
+  String get securitySessionsOlder => 'Cũ hơn';
+
+  @override
+  String get securitySessionsNoOthersTitle => 'Không có phiên nào khác';
+
+  @override
+  String get securitySessionsNoOthersMessage => 'Chỉ thiết bị này đang đăng nhập.';
+
+  @override
+  String get securitySessionsLoadFailedTitle => 'Không thể tải các phiên';
+
+  @override
+  String get securitySessionsLoadFailedMessage => 'Kiểm tra kết nối rồi thử lại.';
+
+  @override
+  String get securitySessionsRefreshFailed => 'Không thể làm mới các phiên và tài khoản đã liên kết.';
+
+  @override
+  String get securitySessionsActionFailed => 'Không thể hoàn tất thay đổi. Hãy thử lại.';
+
+  @override
+  String get securitySessionActiveNow => 'Đang hoạt động';
+
+  @override
+  String securitySessionMinutesAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count phút trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String securitySessionHoursAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count giờ trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get securitySessionYesterday => 'Hôm qua';
+
+  @override
+  String securitySessionDaysAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String securitySessionWeeksAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tuần trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get securitySessionShowDetails => 'Hiện chi tiết';
+
+  @override
+  String get securitySessionHideDetails => 'Ẩn chi tiết';
+
+  @override
+  String get securitySessionLastActive => 'Hoạt động lần cuối';
+
+  @override
+  String get securitySessionSignedIn => 'Đăng nhập lúc';
+
+  @override
+  String get securitySessionIpAddress => 'Địa chỉ IP';
+
+  @override
+  String get securitySessionUserAgent => 'Chuỗi user agent';
+
+  @override
+  String get securitySessionSignOut => 'Đăng xuất';
+
+  @override
+  String securitySessionSignOutNamed(String device) {
+    return 'Đăng xuất $device';
+  }
+
+  @override
+  String securitySessionSignOutConfirmTitle(String device) {
+    return 'Đăng xuất $device?';
+  }
+
+  @override
+  String get securitySessionSignOutConfirmMessage => 'Thiết bị đó sẽ cần đăng nhập lại.';
+
+  @override
+  String get securitySessionSignedOut => 'Đã đăng xuất phiên';
+
+  @override
+  String get securitySessionsSignOutOthers => 'Đăng xuất tất cả phiên khác';
+
+  @override
+  String get securitySessionsSignOutOthersConfirmTitle => 'Đăng xuất tất cả phiên khác?';
+
+  @override
+  String get securitySessionsSignOutOthersConfirmMessage => 'Mọi thiết bị và trình duyệt khác sẽ cần đăng nhập lại. Thiết bị này vẫn được giữ đăng nhập.';
+
+  @override
+  String get securitySessionsSignOutOthersAction => 'Đăng xuất tất cả phiên khác';
+
+  @override
+  String get securitySessionsSignedOutOthers => 'Đã đăng xuất các phiên khác';
+
+  @override
+  String get securitySessionsStaysSignedIn => 'Thiết bị này vẫn được giữ đăng nhập.';
+
+  @override
+  String securitySessionClientOn(String client, String platform) {
+    return '$client trên $platform';
+  }
+
+  @override
+  String get securitySessionTuturuuuApp => 'Ứng dụng Tuturuuu';
+
+  @override
+  String get securitySessionDesktopApp => 'Ứng dụng máy tính';
+
+  @override
+  String securitySessionWithContext(String label, String context) {
+    return '$label ($context)';
+  }
+
+  @override
+  String securitySessionWithContextOrdinal(String label, String context, int ordinal) {
+    return '$label ($context, #$ordinal)';
+  }
+
+  @override
+  String securitySessionOrdinal(String label, int ordinal) {
+    return '$label (#$ordinal)';
+  }
+
+  @override
+  String securityConnectProvider(String provider) {
+    return 'Kết nối $provider';
+  }
+
+  @override
+  String securityDisconnectNamed(String provider) {
+    return 'Ngắt kết nối $provider';
+  }
 
   @override
   String get selectImageSource => 'Chọn nguồn ảnh';

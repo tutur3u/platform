@@ -451,6 +451,12 @@ abstract class AppLocalizations {
   /// **'App lock'**
   String get appLockSettingsTitle;
 
+  /// No description provided for @appLockHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Face ID, fingerprint, or device PIN'**
+  String get appLockHubSubtitle;
+
   /// No description provided for @appLockUnavailableDescription.
   ///
   /// In en, this message translates to:
@@ -6258,6 +6264,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checking device security…'**
   String get deviceMfaWorking;
+
+  /// No description provided for @deviceMfaHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve sign-ins and show codes'**
+  String get deviceMfaHubSubtitle;
+
+  /// No description provided for @deviceMfaNotRegisteredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This device isn\'t registered'**
+  String get deviceMfaNotRegisteredTitle;
+
+  /// No description provided for @deviceMfaTrustedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 trusted device} other{{count} trusted devices}}'**
+  String deviceMfaTrustedSummary(int count);
+
+  /// No description provided for @deviceMfaAddedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {date}'**
+  String deviceMfaAddedOn(String date);
+
+  /// No description provided for @deviceMfaRegistrationSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration'**
+  String get deviceMfaRegistrationSection;
+
+  /// No description provided for @deviceMfaBackupCalloutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a second trusted device'**
+  String get deviceMfaBackupCalloutTitle;
+
+  /// No description provided for @deviceMfaRemoveConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this authenticator?'**
+  String get deviceMfaRemoveConfirmTitle;
+
+  /// No description provided for @deviceMfaRemoveTrustedNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {device}'**
+  String deviceMfaRemoveTrustedNamed(String device);
+
+  /// No description provided for @deviceMfaRemoveTrustedConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {device}?'**
+  String deviceMfaRemoveTrustedConfirmTitle(String device);
+
+  /// No description provided for @deviceMfaCodeChangesIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds, plural, one{Changes in 1 second} other{Changes in {seconds} seconds}}'**
+  String deviceMfaCodeChangesIn(int seconds);
 
   /// No description provided for @documentsContentHint.
   ///
@@ -13789,6 +13855,18 @@ abstract class AppLocalizations {
   /// **'Approve web MFA'**
   String get mfaApprovalSettingsTitle;
 
+  /// No description provided for @mfaApprovalPendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} pending} other{{count} pending}}'**
+  String mfaApprovalPendingCount(int count);
+
+  /// No description provided for @mfaApprovalReviewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get mfaApprovalReviewAction;
+
   /// No description provided for @mfaCodeLabel.
   ///
   /// In en, this message translates to:
@@ -15955,6 +16033,24 @@ abstract class AppLocalizations {
   /// **'Scan login QR'**
   String get qrLoginSettingsTitle;
 
+  /// No description provided for @qrLoginHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in on another screen'**
+  String get qrLoginHubSubtitle;
+
+  /// No description provided for @qrLoginApproveSite.
+  ///
+  /// In en, this message translates to:
+  /// **'Website'**
+  String get qrLoginApproveSite;
+
+  /// No description provided for @qrLoginApproveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get qrLoginApproveAccount;
+
   /// No description provided for @reminders12h.
   ///
   /// In en, this message translates to:
@@ -16213,6 +16309,12 @@ abstract class AppLocalizations {
   /// **'Connected accounts'**
   String get securityConnectionsTitle;
 
+  /// No description provided for @securityConnectionsLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load connected accounts'**
+  String get securityConnectionsLoadFailedTitle;
+
   /// No description provided for @securityCurrentSession.
   ///
   /// In en, this message translates to:
@@ -16266,6 +16368,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown device'**
   String get securityUnknownDevice;
+
+  /// No description provided for @securityHubSignInSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in & devices'**
+  String get securityHubSignInSection;
+
+  /// No description provided for @securityHubProtectionSection.
+  ///
+  /// In en, this message translates to:
+  /// **'App protection'**
+  String get securityHubProtectionSection;
+
+  /// No description provided for @securityHubOtherSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get securityHubOtherSection;
+
+  /// No description provided for @securitySessionsHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed-in devices and linked accounts'**
+  String get securitySessionsHubSubtitle;
+
+  /// No description provided for @securitySessionsThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get securitySessionsThisDevice;
+
+  /// No description provided for @securitySessionsRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Active recently'**
+  String get securitySessionsRecent;
+
+  /// No description provided for @securitySessionsOlder.
+  ///
+  /// In en, this message translates to:
+  /// **'Older'**
+  String get securitySessionsOlder;
+
+  /// No description provided for @securitySessionsNoOthersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No other sessions'**
+  String get securitySessionsNoOthersTitle;
+
+  /// No description provided for @securitySessionsNoOthersMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Only this device is signed in.'**
+  String get securitySessionsNoOthersMessage;
+
+  /// No description provided for @securitySessionsLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load sessions'**
+  String get securitySessionsLoadFailedTitle;
+
+  /// No description provided for @securitySessionsLoadFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get securitySessionsLoadFailedMessage;
+
+  /// No description provided for @securitySessionsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh sessions and connections.'**
+  String get securitySessionsRefreshFailed;
+
+  /// No description provided for @securitySessionsActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t finish that change. Try again.'**
+  String get securitySessionsActionFailed;
+
+  /// No description provided for @securitySessionActiveNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Active now'**
+  String get securitySessionActiveNow;
+
+  /// No description provided for @securitySessionMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} minute ago} other{{count} minutes ago}}'**
+  String securitySessionMinutesAgo(int count);
+
+  /// No description provided for @securitySessionHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} hour ago} other{{count} hours ago}}'**
+  String securitySessionHoursAgo(int count);
+
+  /// No description provided for @securitySessionYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get securitySessionYesterday;
+
+  /// No description provided for @securitySessionDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} day ago} other{{count} days ago}}'**
+  String securitySessionDaysAgo(int count);
+
+  /// No description provided for @securitySessionWeeksAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} week ago} other{{count} weeks ago}}'**
+  String securitySessionWeeksAgo(int count);
+
+  /// No description provided for @securitySessionShowDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Show details'**
+  String get securitySessionShowDetails;
+
+  /// No description provided for @securitySessionHideDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide details'**
+  String get securitySessionHideDetails;
+
+  /// No description provided for @securitySessionLastActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Last active'**
+  String get securitySessionLastActive;
+
+  /// No description provided for @securitySessionSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in'**
+  String get securitySessionSignedIn;
+
+  /// No description provided for @securitySessionIpAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'IP address'**
+  String get securitySessionIpAddress;
+
+  /// No description provided for @securitySessionUserAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'User agent'**
+  String get securitySessionUserAgent;
+
+  /// No description provided for @securitySessionSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get securitySessionSignOut;
+
+  /// No description provided for @securitySessionSignOutNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out {device}'**
+  String securitySessionSignOutNamed(String device);
+
+  /// No description provided for @securitySessionSignOutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out {device}?'**
+  String securitySessionSignOutConfirmTitle(String device);
+
+  /// No description provided for @securitySessionSignOutConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'That device will need to sign in again.'**
+  String get securitySessionSignOutConfirmMessage;
+
+  /// No description provided for @securitySessionSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Session signed out'**
+  String get securitySessionSignedOut;
+
+  /// No description provided for @securitySessionsSignOutOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out all other sessions'**
+  String get securitySessionsSignOutOthers;
+
+  /// No description provided for @securitySessionsSignOutOthersConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out all other sessions?'**
+  String get securitySessionsSignOutOthersConfirmTitle;
+
+  /// No description provided for @securitySessionsSignOutOthersConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Every other device and browser will need to sign in again. This device stays signed in.'**
+  String get securitySessionsSignOutOthersConfirmMessage;
+
+  /// No description provided for @securitySessionsSignOutOthersAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out all others'**
+  String get securitySessionsSignOutOthersAction;
+
+  /// No description provided for @securitySessionsSignedOutOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Other sessions signed out'**
+  String get securitySessionsSignedOutOthers;
+
+  /// No description provided for @securitySessionsStaysSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'This device stays signed in.'**
+  String get securitySessionsStaysSignedIn;
+
+  /// No description provided for @securitySessionClientOn.
+  ///
+  /// In en, this message translates to:
+  /// **'{client} on {platform}'**
+  String securitySessionClientOn(String client, String platform);
+
+  /// No description provided for @securitySessionTuturuuuApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu app'**
+  String get securitySessionTuturuuuApp;
+
+  /// No description provided for @securitySessionDesktopApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop app'**
+  String get securitySessionDesktopApp;
+
+  /// No description provided for @securitySessionWithContext.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} ({context})'**
+  String securitySessionWithContext(String label, String context);
+
+  /// No description provided for @securitySessionWithContextOrdinal.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} ({context}, #{ordinal})'**
+  String securitySessionWithContextOrdinal(String label, String context, int ordinal);
+
+  /// No description provided for @securitySessionOrdinal.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} (#{ordinal})'**
+  String securitySessionOrdinal(String label, int ordinal);
+
+  /// No description provided for @securityConnectProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect {provider}'**
+  String securityConnectProvider(String provider);
+
+  /// No description provided for @securityDisconnectNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect {provider}'**
+  String securityDisconnectNamed(String provider);
 
   /// No description provided for @selectImageSource.
   ///

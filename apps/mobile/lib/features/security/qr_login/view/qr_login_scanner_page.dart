@@ -5,13 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/qr_login/data/qr_login_repository.dart';
 import 'package:mobile/features/security/qr_login/qr_login_payload.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -172,9 +172,10 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
     final l10n = context.l10n;
     final user = context.watch<AuthCubit>().state.user;
+    final radius = tokens.interface.borderRadius(AppRadius.card);
 
     return shad.Scaffold(
       // The camera viewport is an inset rounded card, so it shares the page
@@ -186,7 +187,7 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: radius,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -195,31 +196,34 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
                         onDetect: _handleDetect,
                         errorBuilder: (context, error) => ColoredBox(
                           color: Colors.black,
+                          // Scrolls in a short window or at large text so
+                          // the explanation never overflows the viewport.
                           child: Center(
-                            child: Text(
-                              l10n.qrLoginCameraUnavailable,
-                              style: theme.typography.small.copyWith(
-                                color: Colors.white,
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(AppSpacing.xl),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    LucideIcons.cameraOff,
+                                    color: Colors.white70,
+                                    size: 32,
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    l10n.qrLoginCameraUnavailable,
+                                    textAlign: TextAlign.center,
+                                    style: tokens.typography.small.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
                       ),
-                      IgnorePointer(
-                        child: Center(
-                          child: Container(
-                            width: 240,
-                            height: 240,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                width: 3,
-                              ),
-                              borderRadius: BorderRadius.circular(28),
-                            ),
-                          ),
-                        ),
-                      ),
+                      const IgnorePointer(child: Center(child: _ScanFrame())),
                     ],
                   ),
                 ),
@@ -228,18 +232,7 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
             Flexible(
               child: SingleChildScrollView(
                 child: _payload == null
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ScannerHint(error: _error),
-                          const shad.Gap(12),
-                          shad.OutlineButton(
-                            alignment: Alignment.center,
-                            onPressed: _enterLink,
-                            child: Text(l10n.deviceMfaQrPaste),
-                          ),
-                        ],
-                      )
+                    ? _ScannerHint(error: _error, onEnterLink: _enterLink)
                     : _ApprovalPanel(
                         approving: _approving,
                         error: _error,
@@ -257,36 +250,96 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
   }
 }
 
-class _ScannerHint extends StatelessWidget {
-  const _ScannerHint({this.error});
-
-  final String? error;
+/// Four rounded corner brackets that frame the code without hiding it.
+class _ScanFrame extends StatelessWidget {
+  const _ScanFrame();
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final l10n = context.l10n;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          l10n.qrLoginScannerDescription,
-          textAlign: TextAlign.center,
-          style: theme.typography.textSmall.copyWith(
-            color: theme.colorScheme.mutedForeground,
+    const size = 232.0;
+    const arm = 44.0;
+    const stroke = 4.0;
+    final color = Colors.white.withValues(alpha: 0.92);
+    Widget corner(Alignment alignment, BorderRadius radius, Border border) =>
+        Align(
+          alignment: alignment,
+          child: Container(
+            width: arm,
+            height: arm,
+            decoration: BoxDecoration(borderRadius: radius, border: border),
           ),
-        ),
-        if (error != null) ...[
-          const shad.Gap(8),
-          Text(
-            error!,
-            textAlign: TextAlign.center,
-            style: theme.typography.small.copyWith(
-              color: theme.colorScheme.destructive,
-            ),
+        );
+    final side = BorderSide(color: color, width: stroke);
+    const r = Radius.circular(22);
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        children: [
+          corner(
+            Alignment.topLeft,
+            const BorderRadius.only(topLeft: r),
+            Border(top: side, left: side),
+          ),
+          corner(
+            Alignment.topRight,
+            const BorderRadius.only(topRight: r),
+            Border(top: side, right: side),
+          ),
+          corner(
+            Alignment.bottomLeft,
+            const BorderRadius.only(bottomLeft: r),
+            Border(bottom: side, left: side),
+          ),
+          corner(
+            Alignment.bottomRight,
+            const BorderRadius.only(bottomRight: r),
+            Border(bottom: side, right: side),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ScannerHint extends StatelessWidget {
+  const _ScannerHint({required this.onEnterLink, this.error});
+
+  final String? error;
+  final Future<void> Function() onEnterLink;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final l10n = context.l10n;
+
+    return AppGroupedCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      showDividers: false,
+      children: [
+        Row(
+          children: [
+            const AppIconTile(icon: LucideIcons.scanQrCode),
+            const SizedBox(width: AppLayout.rowLeadingGap),
+            Expanded(
+              child: Text(
+                l10n.qrLoginScannerDescription,
+                style: tokens.typography.small.copyWith(
+                  color: tokens.colorScheme.mutedForeground,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          AppAlert.destructive(content: Text(error!)),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        AppButton.outline(
+          leading: const Icon(LucideIcons.link, size: 16),
+          onPressed: () => unawaited(onEnterLink()),
+          child: Text(l10n.deviceMfaQrPaste),
+        ),
       ],
     );
   }
@@ -311,70 +364,75 @@ class _ApprovalPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
     final l10n = context.l10n;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        border: Border.all(color: theme.colorScheme.border),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.qrLoginApproveTitle,
-            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const shad.Gap(10),
-          Text(
-            l10n.qrLoginApproveDescription(origin, userEmail),
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-          if (error != null) ...[
-            const shad.Gap(10),
-            Text(
-              error!,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.destructive,
-              ),
-            ),
-          ],
-          const shad.Gap(16),
-          Row(
+    return AppGroupedCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      showDividers: false,
+      children: [
+        Semantics(
+          header: true,
+          child: Row(
             children: [
-              Expanded(
-                child: shad.OutlineButton(
-                  alignment: Alignment.center,
-                  enabled: !approving,
-                  onPressed: onScanAgain,
-                  child: Text(l10n.qrLoginScanAgain),
-                ),
+              const AppIconTile(
+                icon: LucideIcons.shieldCheck,
+                tone: AppTone.primary,
               ),
-              const shad.Gap(12),
+              const SizedBox(width: AppLayout.rowLeadingGap),
               Expanded(
-                child: shad.PrimaryButton(
-                  alignment: Alignment.center,
-                  enabled: !approving,
-                  onPressed: () => unawaited(onApprove()),
-                  child: approving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: NovaLoadingIndicator(size: 20),
-                        )
-                      : Text(l10n.qrLoginApproveAction),
+                child: Text(
+                  l10n.qrLoginApproveTitle,
+                  style: tokens.typography.large.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: tokens.colorScheme.foreground,
+                  ),
                 ),
               ),
             ],
           ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Semantics(
+          label: l10n.qrLoginApproveDescription(origin, userEmail),
+          excludeSemantics: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppKeyValueRow(label: l10n.qrLoginApproveSite, value: origin),
+              AppKeyValueRow(
+                label: l10n.qrLoginApproveAccount,
+                value: userEmail,
+              ),
+            ],
+          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          AppAlert.destructive(content: Text(error!)),
         ],
-      ),
+        const SizedBox(height: AppSpacing.lg),
+        Row(
+          children: [
+            Expanded(
+              child: AppButton.outline(
+                enabled: !approving,
+                onPressed: onScanAgain,
+                child: Text(l10n.qrLoginScanAgain),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppButton.primary(
+                enabled: !approving,
+                loading: approving,
+                onPressed: () => unawaited(onApprove()),
+                child: Text(l10n.qrLoginApproveAction),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

@@ -64,7 +64,8 @@ class SettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (title.trim().isNotEmpty) SettingsCaption(title),
+        if (title.trim().isNotEmpty)
+          Semantics(header: true, child: SettingsCaption(title)),
         if (description?.trim().isNotEmpty ?? false) ...[
           const AppGap(6),
           Padding(

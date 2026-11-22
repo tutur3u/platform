@@ -60,11 +60,7 @@ lib/features/profile/view/profile_banner_picker.dart
 lib/features/profile/view/profile_media_recovery.dart
 lib/features/profile/view/profile_page.dart
 lib/features/profile/view/workspace_activity_section.dart
-lib/features/security/account/account_security_page.dart
-lib/features/security/device_mfa/device_mfa_panel.dart
-lib/features/security/device_mfa/device_mfa_sheet.dart
 lib/features/security/device_mfa/device_mfa_suggestion.dart
-lib/features/security/device_mfa/trusted_authenticators_panel.dart
 lib/features/security/mfa_approval/view/mfa_approval_dialog.dart
 lib/features/security/mfa_approval/view/mfa_approval_listener.dart
 lib/features/security/mfa_approval/view/mfa_request_page.dart

@@ -1382,6 +1382,7 @@
   "appLockSettingsDisabled": "Off",
   "appLockSettingsEnabled": "On",
   "appLockSettingsTitle": "App lock",
+  "appLockHubSubtitle": "Face ID, fingerprint, or device PIN",
   "appLockUnavailableDescription": "Local authentication is unavailable or was cancelled.",
   "appLockUnlockAction": "Unlock",
   "appLockUnlockReason": "Unlock Tuturuuu.",
@@ -2552,6 +2553,51 @@
   "deviceMfaUseDevice": "Verify with this device",
   "deviceMfaVerifyReason": "Verify your identity to use your Tuturuuu authenticator",
   "deviceMfaWorking": "Checking device security…",
+  "deviceMfaHubSubtitle": "Approve sign-ins and show codes",
+  "deviceMfaNotRegisteredTitle": "This device isn't registered",
+  "deviceMfaTrustedSummary": "{count, plural, one{1 trusted device} other{{count} trusted devices}}",
+  "@deviceMfaTrustedSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deviceMfaAddedOn": "Added {date}",
+  "@deviceMfaAddedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceMfaRegistrationSection": "Registration",
+  "deviceMfaBackupCalloutTitle": "Keep a second trusted device",
+  "deviceMfaRemoveConfirmTitle": "Remove this authenticator?",
+  "deviceMfaRemoveTrustedNamed": "Remove {device}",
+  "@deviceMfaRemoveTrustedNamed": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceMfaRemoveTrustedConfirmTitle": "Remove {device}?",
+  "@deviceMfaRemoveTrustedConfirmTitle": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceMfaCodeChangesIn": "{seconds, plural, one{Changes in 1 second} other{Changes in {seconds} seconds}}",
+  "@deviceMfaCodeChangesIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "documentsContentHint": "Start writing...",
   "documentsCreated": "Document created.",
   "documentsDelete": "Delete document",
@@ -3911,6 +3957,15 @@
   "mfaApprovalRequiresMobileMfa": "Verify MFA on this mobile session before approving web sign-ins.",
   "mfaApprovalSettingsIdle": "Open this screen when the web MFA page shows a pair code. Pending requests refresh automatically.",
   "mfaApprovalSettingsTitle": "Approve web MFA",
+  "mfaApprovalPendingCount": "{count, plural, one{{count} pending} other{{count} pending}}",
+  "@mfaApprovalPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mfaApprovalReviewAction": "Review",
   "mfaCodeLabel": "6-digit code",
   "mfaInvalidCode": "Invalid verification code. Please try again.",
   "mfaReviewSignIn": "Review sign-in",
@@ -4272,6 +4327,9 @@
   "qrLoginSettingsDescription": "Scan a QR code on another sign-in screen and approve it with app lock.",
   "qrLoginSettingsDisabledDescription": "Turn on app lock before scanning QR login codes.",
   "qrLoginSettingsTitle": "Scan login QR",
+  "qrLoginHubSubtitle": "Sign in on another screen",
+  "qrLoginApproveSite": "Website",
+  "qrLoginApproveAccount": "Account",
   "reminders12h": "12 hours before",
   "reminders1d": "1 day before",
   "reminders1h": "1 hour before",
@@ -4315,6 +4373,7 @@
   "securityConnect": "Connect",
   "securityConnectionsDescription": "Choose how you sign in. Keep at least one connected account.",
   "securityConnectionsTitle": "Connected accounts",
+  "securityConnectionsLoadFailedTitle": "Couldn't load connected accounts",
   "securityCurrentSession": "This session",
   "securityDisconnect": "Disconnect",
   "securityDisconnectDescription": "You will no longer be able to sign in with this connected account.",
@@ -4324,6 +4383,149 @@
   "securitySessionsDescription": "Review devices signed in to your account. Signing out another session keeps this device signed in.",
   "securitySessionsTitle": "Sessions and connections",
   "securityUnknownDevice": "Unknown device",
+  "securityHubSignInSection": "Sign-in & devices",
+  "securityHubProtectionSection": "App protection",
+  "securityHubOtherSection": "Other",
+  "securitySessionsHubSubtitle": "Signed-in devices and linked accounts",
+  "securitySessionsThisDevice": "This device",
+  "securitySessionsRecent": "Active recently",
+  "securitySessionsOlder": "Older",
+  "securitySessionsNoOthersTitle": "No other sessions",
+  "securitySessionsNoOthersMessage": "Only this device is signed in.",
+  "securitySessionsLoadFailedTitle": "Couldn't load sessions",
+  "securitySessionsLoadFailedMessage": "Check your connection and try again.",
+  "securitySessionsRefreshFailed": "Couldn't refresh sessions and connections.",
+  "securitySessionsActionFailed": "Couldn't finish that change. Try again.",
+  "securitySessionActiveNow": "Active now",
+  "securitySessionMinutesAgo": "{count, plural, one{{count} minute ago} other{{count} minutes ago}}",
+  "@securitySessionMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionHoursAgo": "{count, plural, one{{count} hour ago} other{{count} hours ago}}",
+  "@securitySessionHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionYesterday": "Yesterday",
+  "securitySessionDaysAgo": "{count, plural, one{{count} day ago} other{{count} days ago}}",
+  "@securitySessionDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionWeeksAgo": "{count, plural, one{{count} week ago} other{{count} weeks ago}}",
+  "@securitySessionWeeksAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionShowDetails": "Show details",
+  "securitySessionHideDetails": "Hide details",
+  "securitySessionLastActive": "Last active",
+  "securitySessionSignedIn": "Signed in",
+  "securitySessionIpAddress": "IP address",
+  "securitySessionUserAgent": "User agent",
+  "securitySessionSignOut": "Sign out",
+  "securitySessionSignOutNamed": "Sign out {device}",
+  "@securitySessionSignOutNamed": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionSignOutConfirmTitle": "Sign out {device}?",
+  "@securitySessionSignOutConfirmTitle": {
+    "placeholders": {
+      "device": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionSignOutConfirmMessage": "That device will need to sign in again.",
+  "securitySessionSignedOut": "Session signed out",
+  "securitySessionsSignOutOthers": "Sign out all other sessions",
+  "securitySessionsSignOutOthersConfirmTitle": "Sign out all other sessions?",
+  "securitySessionsSignOutOthersConfirmMessage": "Every other device and browser will need to sign in again. This device stays signed in.",
+  "securitySessionsSignOutOthersAction": "Sign out all others",
+  "securitySessionsSignedOutOthers": "Other sessions signed out",
+  "securitySessionsStaysSignedIn": "This device stays signed in.",
+  "securitySessionClientOn": "{client} on {platform}",
+  "@securitySessionClientOn": {
+    "placeholders": {
+      "client": {
+        "type": "String"
+      },
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionTuturuuuApp": "Tuturuuu app",
+  "securitySessionDesktopApp": "Desktop app",
+  "securitySessionWithContext": "{label} ({context})",
+  "@securitySessionWithContext": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "context": {
+        "type": "String"
+      }
+    }
+  },
+  "securitySessionWithContextOrdinal": "{label} ({context}, #{ordinal})",
+  "@securitySessionWithContextOrdinal": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "context": {
+        "type": "String"
+      },
+      "ordinal": {
+        "type": "int"
+      }
+    }
+  },
+  "securitySessionOrdinal": "{label} (#{ordinal})",
+  "@securitySessionOrdinal": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "ordinal": {
+        "type": "int"
+      }
+    }
+  },
+  "securityConnectProvider": "Connect {provider}",
+  "@securityConnectProvider": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "securityDisconnectNamed": "Disconnect {provider}",
+  "@securityDisconnectNamed": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
   "selectImageSource": "Select image source",
   "settingsAboutSectionDescription": "Release details and product information for this build.",
   "settingsAboutSectionTitle": "About the app",
