@@ -547,7 +547,6 @@ describe('web proxy api handling', () => {
       { status: 413 }
     );
     mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
-
     const secretsIn = vi.fn().mockResolvedValue({ count: 1, error: null });
     const secretsEq = vi.fn().mockReturnValue({ in: secretsIn });
     const secretsSelect = vi.fn().mockReturnValue({ eq: secretsEq });

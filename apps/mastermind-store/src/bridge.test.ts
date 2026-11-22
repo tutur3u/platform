@@ -51,6 +51,15 @@ const ackSig = (
 let workDir: string;
 let scriptPath: string;
 
+/** `Promise.withResolvers` is ES2024; the package type-checks against ES2022. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((settle) => {
+    resolve = settle;
+  });
+  return { promise, resolve };
+}
+
 beforeAll(async () => {
   workDir = await mkdtemp(join(tmpdir(), 'mastermind-bridge-test-'));
   scriptPath = join(workDir, 'worker.mjs');
@@ -353,7 +362,7 @@ describe('fleet bridge', () => {
       expect((await owner.next()).t).toBe('machine');
       expect(checked).toEqual([ACTOR]);
 
-      const closed = Promise.withResolvers<number>();
+      const closed = deferred<number>();
       owner.socket.addEventListener('close', (event) =>
         closed.resolve(event.code)
       );
@@ -378,7 +387,7 @@ describe('fleet bridge', () => {
     });
     try {
       const owner = await connect(mf, await ticketFor(mf, ownerTicket()));
-      const closed = Promise.withResolvers<number>();
+      const closed = deferred<number>();
       owner.socket.addEventListener('close', (event) =>
         closed.resolve(event.code)
       );
@@ -407,7 +416,7 @@ describe('fleet bridge', () => {
           leaseExpiresAt,
         })
       );
-      const closed = Promise.withResolvers<number>();
+      const closed = deferred<number>();
       owner.socket.addEventListener('close', (event) =>
         closed.resolve(event.code)
       );

@@ -64,8 +64,9 @@ void main() {
       DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
           1000,
     );
-    when(() => storage.read(key: any(named: 'key')))
-        .thenAnswer((call) async => values[call.namedArguments[#key]]);
+    when(
+      () => storage.read(key: any(named: 'key')),
+    ).thenAnswer((call) async => values[call.namedArguments[#key]]);
     when(
       () => storage.write(
         key: any(named: 'key'),
@@ -289,16 +290,18 @@ void main() {
     setUp(() {
       // A cold Keychain/Keystore read that never returns.
       final storage = _Storage();
-      when(() => storage.read(key: any(named: 'key')))
-          .thenAnswer((_) => Completer<String?>().future);
+      when(
+        () => storage.read(key: any(named: 'key')),
+      ).thenAnswer((_) => Completer<String?>().future);
       when(
         () => storage.write(
           key: any(named: 'key'),
           value: any(named: 'value'),
         ),
       ).thenAnswer((_) => Completer<void>().future);
-      when(() => storage.delete(key: any(named: 'key')))
-          .thenAnswer((_) => Completer<void>().future);
+      when(
+        () => storage.delete(key: any(named: 'key')),
+      ).thenAnswer((_) => Completer<void>().future);
       MobileClientCredentials.instance = MobileClientCredentials(
         storage: storage,
         turnstile: (_, _) async => 'captcha',

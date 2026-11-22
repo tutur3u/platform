@@ -3,7 +3,7 @@ import {
   BRIDGE_SUBPROTOCOL,
   OWNER_TICKET_VERSION,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
-import { Miniflare, Response } from 'miniflare';
+import { Miniflare, type Request, Response } from 'miniflare';
 
 export const ORIGIN = 'http://localhost';
 export const ACTOR = '00000000-0000-4000-8000-0000000000aa';
@@ -30,7 +30,7 @@ export function createBridgeTestRuntime(
     scriptPath,
     modulesRoot,
     compatibilityDate: '2026-07-01',
-    outboundService: async (request) => {
+    outboundService: async (request: Request) => {
       const expected =
         'https://tuturuuu.com/api/v1/mastermind/fleet/live/owner-authorization';
       if (
