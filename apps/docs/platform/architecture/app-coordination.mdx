@@ -294,6 +294,13 @@ with `hasGrantedScope` from `@tuturuuu/utils/external-app-registry-policy`;
 `apps/web/src/lib/external-apps/scope-matcher-guard.test.ts` fails on a local
 wildcard matcher in the external-app route code.
 
+The exact-manage path (`requireWorkspaceExternalProjectManageDecision`) also
+needs `external-projects:manage` granted by name in the app's live
+registration; `external-projects:*` does not satisfy it, and removing the
+grant applies on the next call. Other external-project routes treat the
+expanded scopes as granted. Coverage:
+`apps/web/src/lib/external-projects/manage-decision-grant.test.ts`.
+
 #### Registration boundary with first-party apps
 
 App-session checks trust a token's `target_app` and the `internal-app:*` scopes

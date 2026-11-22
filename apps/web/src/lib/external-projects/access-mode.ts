@@ -56,6 +56,19 @@ export function appTokenHasRequiredScope(
   return acceptedScopes.some((scope) => hasGrantedScope(claims.scopes, scope));
 }
 
+/**
+ * Whether the app's live registration grants `external-projects:manage` by
+ * name. A grant that covers it only through `external-projects:*` does not
+ * count, so the exact-manage path stays closed to wildcard grants.
+ */
+export function hasExplicitExternalProjectManage(
+  allowedScopes: readonly string[]
+) {
+  return allowedScopes.some(
+    (scope) => scope.trim() === 'external-projects:manage'
+  );
+}
+
 export function getExternalProjectModeForScopes(
   scopes: string[]
 ): WorkspaceExternalProjectMode | null {

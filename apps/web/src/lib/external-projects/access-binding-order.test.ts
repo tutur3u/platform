@@ -45,9 +45,7 @@ vi.mock('./binding-state', () => ({
   getDefaultCanonicalExternalProjectId: vi.fn(),
 }));
 vi.mock('./store', () => ({}));
-vi.mock('@/lib/app-coordination/external-app-bearer', () => ({
-  rejectStaleExternalAppBearer: async () => null,
-}));
+vi.mock('@/lib/app-coordination/external-app-bearer');
 
 import { requireWorkspaceExternalProjectAccess } from './access';
 

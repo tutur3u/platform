@@ -54,9 +54,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('./store', () => storeMocks);
-vi.mock('@/lib/app-coordination/external-app-bearer', () => ({
-  rejectStaleExternalAppBearer: async () => null,
-}));
+vi.mock('@/lib/app-coordination/external-app-bearer');
 
 const workspaceId = '22222222-2222-4222-8222-222222222222';
 const cmsAppSessionClaims: AppCoordinationTokenClaims = {

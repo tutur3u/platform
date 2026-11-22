@@ -20,7 +20,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { rejectStaleExternalAppBearer } from '@/lib/app-coordination/external-app-bearer';
+import { requireLiveExternalApp } from '@/lib/app-coordination/external-app-bearer';
 import {
   normalizeExternalAppWorkspaceId,
   rejectExternalAppTokenWorkspace,
@@ -32,6 +32,7 @@ import {
 import {
   appTokenHasRequiredScope,
   getExternalProjectModeForScopes,
+  hasExplicitExternalProjectManage,
   hasWorkspaceExternalProjectPermission,
   type WorkspaceExternalProjectMode,
 } from './access-mode';
@@ -335,11 +336,8 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const appRejection = await rejectStaleExternalAppBearer(
-    admin,
-    verification.claims
-  );
-  if (appRejection) return { ok: false as const, response: appRejection };
+  const issuer = await requireLiveExternalApp(admin, verification.claims);
+  if (!issuer.ok) return issuer;
   const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
@@ -493,7 +491,8 @@ export async function requireWorkspaceExternalProjectAccessWithAppToken({
 
   const tokenWorkspace = verification.claims.workspace_id;
   if (exactManage && !tokenWorkspace) return deny('Unauthorized', 401);
-  if (exactManage && tokenWorkspace !== wsId) return deny('Forbidden', 403);
+  if (exactManage && tokenWorkspace?.toLowerCase() !== wsId.toLowerCase())
+    return deny('Forbidden', 403);
 
   if (
     exactManage
@@ -504,11 +503,14 @@ export async function requireWorkspaceExternalProjectAccessWithAppToken({
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const appRejection = await rejectStaleExternalAppBearer(
-    admin,
-    verification.claims
-  );
-  if (appRejection) return { ok: false as const, response: appRejection };
+  const issuer = await requireLiveExternalApp(admin, verification.claims);
+  if (!issuer.ok) return issuer;
+  if (
+    exactManage &&
+    !hasExplicitExternalProjectManage(issuer.app.allowedScopes)
+  ) {
+    return deny('Forbidden', 403);
+  }
   const normalizedWorkspaceId = await normalizeExternalAppWorkspaceId({
     admin,
     userId: verification.claims.sub,
