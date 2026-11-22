@@ -196,7 +196,11 @@ describe('satellite UserNavClient shared settings', () => {
 
     const onUrlUpdate = vi.fn();
     render(<SidebarWithSettings />, {
-      wrapper: withNuqsTestingAdapter({ onUrlUpdate, searchParams: '' }),
+      wrapper: withNuqsTestingAdapter({
+        hasMemory: true,
+        onUrlUpdate,
+        searchParams: '',
+      }),
     });
 
     const opener = screen.getByRole('button', {
