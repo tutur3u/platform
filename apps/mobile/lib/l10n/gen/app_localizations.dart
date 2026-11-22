@@ -36364,7 +36364,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindSecretOutcomeDelivered.
   ///
   /// In en, this message translates to:
-  /// **'Delivered to the command'**
+  /// **'Written to the command\'s input'**
   String get mastermindSecretOutcomeDelivered;
 
   /// No description provided for @mastermindSecretOutcomeFailed.

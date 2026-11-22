@@ -178,7 +178,7 @@ test('resolved records carry a well-formed machine-signed outcome only', () => {
           id,
           kind: 'secret',
           title: 'Test',
-          outcome: 'Delivered',
+          outcome: 'Written to command',
           resolvedAt: NOW.toISOString(),
           ...extra,
         })

@@ -1392,9 +1392,11 @@ quota and accounting.
   no field. The field has no clipboard, suggestions or autocorrect, is cleared
   when the app goes to the background, and input stops 45 seconds before
   expiry. The answer is sealed and signed on the phone, never stored, and
-  sent once; Decline is signed too. The final outcome ("Delivered",
-  "Declined", "Expired", "Cancelled", "Failed") comes only from the machine's
-  signed record.
+  sent once; Decline is signed too. The final outcome ("Written to the
+  command's input", "Declined", "Expired", "Cancelled", "Failed") comes only
+  from the machine's signed record. "Written" means the value entered the
+  command's private input pipe; whether the command used it shows only in the
+  command's own exit status, which the agent receives.
 - **Exceptions:** secret requests send no push notification and never join the
   Inbox swipe deck; they open their own full-screen page.
 - **Regression coverage:** `scripts/mastermind-fleet/secret-*.test.mjs`

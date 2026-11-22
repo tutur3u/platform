@@ -164,7 +164,9 @@ describe('fleet publisher output', () => {
       { active: [], recent: [], threads: new Map(), peers: [] },
       { now: at, decisions, localMachine: { id: 'skr-m4', label: 'M4' } }
     );
-    const parsed = fleetStateSchema.safeParse(JSON.parse(JSON.stringify(state)));
+    const parsed = fleetStateSchema.safeParse(
+      JSON.parse(JSON.stringify(state))
+    );
     expect(parsed.success, JSON.stringify(parsed.error?.issues[0])).toBe(true);
     // Signed fields reach the phone byte for byte.
     expect(parsed.data?.decisions.map((d) => d.secret)).toEqual(

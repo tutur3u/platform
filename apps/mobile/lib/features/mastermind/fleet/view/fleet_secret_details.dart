@@ -59,8 +59,8 @@ class _Block extends StatelessWidget {
   }
 }
 
-/// Arguments in monospace, one per line and never shortened. An empty
-/// argument shows as `''`; control and invisible characters as escapes.
+/// Arguments in monospace, one per line and never shortened, each quoted
+/// by [FleetSecretBinding.argument] so distinct arguments look distinct.
 class _Args extends StatelessWidget {
   const _Args(this.args);
 
@@ -85,7 +85,7 @@ class _Args extends StatelessWidget {
           children: [
             for (final arg in args)
               Text(
-                arg.isEmpty ? "''" : FleetSecretBinding.visible(arg),
+                FleetSecretBinding.argument(arg),
                 style: style,
                 softWrap: true,
               ),

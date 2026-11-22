@@ -19820,7 +19820,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSecretPickedUp => 'Picked up by the machine';
 
   @override
-  String get mastermindSecretOutcomeDelivered => 'Delivered to the command';
+  String get mastermindSecretOutcomeDelivered => 'Written to the command\'s input';
 
   @override
   String get mastermindSecretOutcomeFailed => 'The command did not receive it';

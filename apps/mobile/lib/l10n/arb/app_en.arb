@@ -9943,7 +9943,7 @@
   "mastermindSecretSent": "Sent",
   "mastermindSecretPairSent": "Waiting for the machine to confirm",
   "mastermindSecretPickedUp": "Picked up by the machine",
-  "mastermindSecretOutcomeDelivered": "Delivered to the command",
+  "mastermindSecretOutcomeDelivered": "Written to the command's input",
   "mastermindSecretOutcomeFailed": "The command did not receive it",
   "mastermindSecretOutcomeDeclined": "Declined",
   "mastermindSecretOutcomeExpired": "Expired",

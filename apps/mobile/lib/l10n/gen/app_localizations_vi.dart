@@ -19596,7 +19596,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSecretPickedUp => 'Máy đã nhận';
 
   @override
-  String get mastermindSecretOutcomeDelivered => 'Đã chuyển đến lệnh';
+  String get mastermindSecretOutcomeDelivered => 'Đã ghi vào đầu vào của lệnh';
 
   @override
   String get mastermindSecretOutcomeFailed => 'Lệnh không nhận được';

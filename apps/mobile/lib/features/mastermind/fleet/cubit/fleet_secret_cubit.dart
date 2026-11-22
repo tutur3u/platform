@@ -64,6 +64,10 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   final FleetPairingAttempts _attempts;
 
   bool _started = false;
+
+  /// [fleetSecretErasures] when this cubit was made. Any later erasure ends
+  /// its work: no owner key, pin write, answer or retry runs after it.
+  final int _erasure = fleetSecretErasures.value;
   StreamSubscription<FleetSnapshot?>? _snapshotSub;
   Timer? _cutoff;
   late String _account;
@@ -87,7 +91,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     fleetSecretErasures.addListener(_onErased);
     _snapshotSub = _snapshots?.listen(_onSnapshot);
     final block = await _verify();
-    if (isClosed || state.phase != FleetSecretPhase.verifying) return;
+    if (_ended || state.phase != FleetSecretPhase.verifying) return;
     if (block != null) {
       emit(state.copyWith(phase: FleetSecretPhase.blocked, block: block));
       return;
@@ -122,6 +126,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
       state.copyWith(fingerprint: FleetSecretBinding.fingerprint(signerKey)),
     );
     try {
+      if (_ended) return FleetSecretBlock.failed;
       _ownerKey = await _crypto.ownerPublicKey(account);
       _keyId = FleetSecretBinding.ownerKeyId(_ownerKey);
       if (secret is FleetSecretPairing) {
@@ -164,6 +169,9 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
 
   bool _expiring() => secret.expiresAtTime.difference(_now()) < inputCutoff;
 
+  /// Closed, or the owner keys and pins were erased since [start].
+  bool get _ended => isClosed || fleetSecretErasures.value != _erasure;
+
   static Uint8List _bytes(String b64url, int length) =>
       Uint8List.fromList(fleetSecretFromB64url(b64url, length: length)!);
 
@@ -182,6 +190,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   }
 
   void _onErased() {
+    _pending = null;
     if (!isClosed) emit(state.copyWith(phase: FleetSecretPhase.closed));
   }
 
@@ -224,10 +233,11 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         plaintext: plaintext,
       );
       FleetSecretBinding.wipe(plaintext);
+      if (_ended) return;
       final enc = fleetSecretB64url(sealed.enc);
       final ct = fleetSecretB64url(sealed.ct);
       final owner = await _sign(request, 'secret', enc, ct);
-      if (isClosed) return;
+      if (_ended) return;
       await _post(FleetSecretValueAnswer(enc: enc, ct: ct, owner: owner));
     } on FleetSecretCryptoException {
       _fail(FleetSecretBlock.failed);
@@ -247,7 +257,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     emit(state.copyWith(phase: FleetSecretPhase.sealing, declined: true));
     try {
       final owner = await _sign(request, 'decline', '', '');
-      if (isClosed) return;
+      if (_ended) return;
       await _post(FleetSecretDeclineAnswer(owner: owner));
     } on FleetSecretCryptoException {
       _fail(FleetSecretBlock.failed);
@@ -293,7 +303,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
     emit(state.copyWith(phase: FleetSecretPhase.sealing));
     try {
       final (check, key) = await _pairer.check(pairing, code);
-      if (isClosed) return;
+      if (_ended) return;
       switch (check) {
         case FleetPairingCheck.malformed || FleetPairingCheck.wrong:
           emit(
@@ -314,14 +324,16 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
       }
       final ownerKey = fleetSecretB64url(_ownerKey);
       final mac = await _pairer.ownerMac(pairing, key!, ownerKey);
+      if (_ended) return;
       await _pins.putPending(
         machineId: pairing.machineId,
         signerKey: pairing.signerKey,
         label: pairing.machineLabel,
         pairingId: pairing.pairingId,
         now: _now(),
+        account: _account,
       );
-      if (isClosed) return;
+      if (_ended) return;
       await _post(FleetSecretPairAnswer(ownerKey: ownerKey, ownerMac: mac));
     } on FleetSecretCryptoException {
       _fail(FleetSecretBlock.failed);
@@ -330,7 +342,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
 
   void _fail(FleetSecretBlock block) {
     _pending = null;
-    if (!isClosed) {
+    if (!_ended) {
       emit(state.copyWith(phase: FleetSecretPhase.blocked, block: block));
     }
   }
@@ -341,7 +353,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
       _pendingKey = _newKey();
     }
     final key = _pendingKey;
-    for (var attempt = 0; !isClosed; attempt++) {
+    for (var attempt = 0; !_ended; attempt++) {
       emit(
         state.copyWith(phase: FleetSecretPhase.sealing, retrying: attempt > 0),
       );
@@ -352,12 +364,12 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
           idempotencyKey: key,
         );
         _pending = null;
-        if (isClosed) return;
+        if (_ended) return;
         emit(state.copyWith(phase: FleetSecretPhase.sent));
         if (snapshot case final current?) _onSnapshot(current);
         return;
       } on FleetSecretSendException catch (error) {
-        if (isClosed) return;
+        if (_ended) return;
         switch (error.failure) {
           case FleetSecretSendFailure.mfaRequired:
             emit(state.copyWith(phase: FleetSecretPhase.stepUp, resend: true));
@@ -376,6 +388,7 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
           case FleetSecretSendFailure.unavailable:
             final deadline = secret.expiresAtTime.subtract(_answerCutoff);
             final delay = _retryDelay(attempt);
+            if (_ended) return;
             if (_now().add(delay).isAfter(deadline)) {
               _fail(FleetSecretBlock.failed);
               return;
@@ -439,17 +452,18 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
           verified &&
           outcome.outcome == FleetSecretOutcomeKind.paired &&
           outcome.answerDigest == _keyId;
-      if (mine) {
+      if (mine && !_ended) {
         pin = await _pins.activate(
           machineId: secret.machineId,
           pairingId: secret.pairingId,
           signerKey: secret.signerKey,
+          account: _account,
         );
       }
     } else {
       mine = verified && _digest != null && outcome.answerDigest == _digest;
     }
-    if (isClosed) return;
+    if (_ended) return;
     emit(
       state.copyWith(
         phase: FleetSecretPhase.outcome,
@@ -487,11 +501,12 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
         ),
         signature: _bytes(outcome.sig, 64),
       );
-      if (verified) {
+      if (verified && !_ended) {
         await _pins.activate(
           machineId: pin.machineId,
           pairingId: pairingId,
           signerKey: pin.signerKey,
+          account: _account,
         );
       }
     }
@@ -500,7 +515,8 @@ class FleetSecretCubit extends Cubit<FleetSecretState> {
   /// "Forget this machine": removes its pin; the next request needs a new
   /// pairing.
   Future<void> forgetMachine() async {
-    await _pins.forget(secret.machineId);
+    if (_ended) return;
+    await _pins.forget(secret.machineId, account: _account);
     if (!isClosed) emit(state.copyWith(phase: FleetSecretPhase.closed));
   }
 

@@ -14,9 +14,11 @@ import {
   ANSWER_DOMAIN,
   b64url,
   bindingBytes,
+  COMMAND_MAX,
   encodeSecretPlaintext,
   ownerKeyId,
   ownerTranscript,
+  SECRET_MAX_BYTES,
 } from './secret-protocol.mjs';
 import { sign } from 'node:crypto';
 import {
@@ -144,5 +146,67 @@ test(
     });
     assert.equal(await run, EXIT.notDelivered);
     assert.equal(fs.existsSync(world.received), false);
+  }
+);
+
+test(
+  'a maximum-length command and a 4,096-byte value fit the helper',
+  { skip },
+  async () => {
+    world = makeWorld();
+    install(world.paths);
+    const argv = [
+      process.execPath,
+      '-e',
+      `require('fs').writeFileSync(${JSON.stringify(world.received)}, require('fs').readFileSync(0))`,
+    ];
+    world.writeOperations({
+      max: { purpose: 'Largest request', argv, delivery: 'stdin', extraArgs: true },
+    });
+    // Fill `command` to exactly COMMAND_MAX UTF-8 bytes.
+    const extra = [];
+    const size = () =>
+      Buffer.byteLength(JSON.stringify({ argv: [...argv, ...extra] }));
+    while (size() + 3 + 512 <= COMMAND_MAX) extra.push('a'.repeat(512));
+    extra.push('b'.repeat(COMMAND_MAX - size() - 3));
+    assert.equal(size(), COMMAND_MAX);
+    const helper = verifyPlatform(world.paths);
+    const run = runRequest({
+      paths: world.paths,
+      operationId: 'max',
+      extra,
+      checkPlatform: () => helper,
+      pollMs: 20,
+      print: () => {},
+    });
+    const { secret } = await openDecision(world.paths);
+    const { mode: _m, sig: _s, ...request } = secret;
+    const value = 'v'.repeat(SECRET_MAX_BYTES);
+    const sealed = seal(
+      request.publicKey,
+      bindingBytes(ANSWER_DOMAIN, request),
+      encodeSecretPlaintext(Buffer.from(value, 'utf8'))
+    );
+    const signedAt = new Date().toISOString();
+    const keyId = ownerKeyId(world.ownerRaw);
+    const transcript = ownerTranscript(request, {
+      action: 'secret',
+      ...sealed,
+      signedAt,
+      keyId,
+    });
+    writeSpool(world.paths, request.requestId, 1, {
+      decisionId: request.requestId,
+      action: 'secret',
+      sealed,
+      owner: {
+        publicKey: b64url(world.ownerRaw),
+        keyId,
+        signedAt,
+        sig: b64url(sign(null, transcript, world.owner)),
+      },
+    });
+    assert.equal(await run, EXIT.ok);
+    assert.equal(fs.readFileSync(world.received, 'utf8'), value);
   }
 );

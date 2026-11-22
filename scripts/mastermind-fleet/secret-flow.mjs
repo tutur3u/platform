@@ -34,6 +34,7 @@ import {
   parsePairingCode,
 } from './secret-pairing.mjs';
 import {
+  ANSWER_AAD_MAX,
   ANSWER_DOMAIN,
   b64url,
   bindingBytes,
@@ -67,7 +68,7 @@ const OUTCOME_EXIT = {
   paired: EXIT.ok,
 };
 const LABELS = {
-  delivered: 'Delivered',
+  delivered: 'Written to command',
   failed: 'Failed',
   declined: 'Declined',
   expired: 'Expired',
@@ -205,8 +206,11 @@ export async function runPair({
         )
       )
         return null;
+      // The lock can wait: expiry and cancel are checked again inside it.
       return withOwnerKeysLock(paths, () =>
-        addOwnerKey(paths, ownerKey, new Date(now()))
+        now() < ctx.deadlineMs && !signal?.aborted
+          ? addOwnerKey(paths, ownerKey, new Date(now()))
+          : null
       );
     });
     const outcome = result.claim
@@ -281,7 +285,7 @@ export async function runRequest({
   signal,
   checkPlatform = verifyPlatform,
   spawn,
-  env = process.env,
+  account,
   print = (line) => process.stderr.write(`${line}\n`),
 }) {
   const helper = checkPlatform(paths);
@@ -317,6 +321,8 @@ export async function runRequest({
         .sort()
         .join(','),
     };
+    if (bindingBytes(ANSWER_DOMAIN, request).length > ANSWER_AAD_MAX)
+      throw new Error('secret_operation_args');
     const ctx = {
       id: request.requestId,
       title: op.purpose,
@@ -345,7 +351,9 @@ export async function runRequest({
     );
 
     const result = await waitForClaim(paths, ctx, (record) =>
-      withOwnerKeysLock(paths, () => checkAnswer(paths, request, record, now()))
+      withOwnerKeysLock(paths, () =>
+        signal?.aborted ? null : checkAnswer(paths, request, record, now())
+      )
     );
     if (!result.claim) {
       hpke.kill();
@@ -369,7 +377,10 @@ export async function runRequest({
         bindingBytes(ANSWER_DOMAIN, request)
       );
       const value = decodeSecretPlaintext(plaintext);
-      const run = deliver(op, value, { ...(spawn ? { spawn } : {}), env });
+      const run = deliver(op, value, {
+        ...(spawn ? { spawn } : {}),
+        ...(account ? { account } : {}),
+      });
       delivered = await run.delivered;
       exit = run.exit;
     } catch {

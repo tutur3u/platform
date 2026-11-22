@@ -314,7 +314,8 @@ export function resolveOperation(paths, operationId, extra = []) {
   }
   if (argv.length > ARGS_MAX + 2) throw new Error('secret_operation_args');
   const command = JSON.stringify(remote ? { argv, remote } : { argv });
-  if (command.length > COMMAND_MAX) throw new Error('secret_operation_args');
+  if (Buffer.byteLength(command, 'utf8') > COMMAND_MAX)
+    throw new Error('secret_operation_args');
   const purpose = fleetText(op.purpose, PURPOSE_MAX);
   if (!purpose || purpose !== op.purpose) throw new Error('secret_purpose');
   if (op.delivery !== 'stdin' && op.delivery !== 'fd3')
@@ -325,6 +326,14 @@ export function resolveOperation(paths, operationId, extra = []) {
     op.output !== 'agent'
   )
     throw new Error('secret_operation_output');
+  if (
+    op.sshAuthSock !== undefined &&
+    (typeof op.sshAuthSock !== 'string' ||
+      !path.isAbsolute(op.sshAuthSock) ||
+      op.sshAuthSock.length > ARG_MAX ||
+      CONTROL.test(op.sshAuthSock))
+  )
+    throw new Error('secret_operation_ssh_agent');
   return {
     id: operationId,
     purpose,
@@ -334,6 +343,7 @@ export function resolveOperation(paths, operationId, extra = []) {
     delivery: op.delivery,
     newline: op.newline === true,
     output: op.output ?? 'withheld',
+    sshAuthSock: op.sshAuthSock ?? null,
     maxTtlMinutes: Number.isInteger(op.maxTtlMinutes)
       ? Math.min(Math.max(op.maxTtlMinutes, 1), MAX_TTL_MINUTES)
       : 10,

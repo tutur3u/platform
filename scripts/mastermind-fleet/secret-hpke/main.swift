@@ -15,7 +15,11 @@ import Foundation
 // The CryptoKit calls live in MastermindSecretCrypto.swift, shared with the
 // iOS app. Build and self-test: build.sh, on a macOS 14 or later build host.
 
-let maxInputBytes = 16 * 1024
+// The one input line at its largest: {"enc","ct","aad"} with a 32-byte enc,
+// a 17-block ciphertext (4,368 bytes) and an AAD of ANSWER_AAD_MAX (16,384
+// bytes, secret-protocol.mjs), each base64url: 43 + 5,824 + 21,846 plus 27
+// bytes of JSON is 27,740. The cap leaves headroom over that.
+let maxInputBytes = 32 * 1024
 
 func emit(_ object: [String: String]) {
   guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])

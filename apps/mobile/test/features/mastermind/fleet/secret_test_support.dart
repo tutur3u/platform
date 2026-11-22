@@ -50,6 +50,9 @@ class FakeSecretPlatform {
   final deletedAccounts = <String?>[];
   bool hasOwnerKey = false;
 
+  /// Runs before each call is answered, to interleave work with it.
+  Future<void> Function(String method)? onCall;
+
   static final _ed = Ed25519();
 
   void install() => TestDefaultBinaryMessengerBinding
@@ -71,6 +74,7 @@ class FakeSecretPlatform {
 
   Future<Object?> handle(MethodCall call) async {
     calls.add(call.method);
+    await onCall?.call(call.method);
     final args = (call.arguments as Map<Object?, Object?>?) ?? const {};
     Uint8List bytes(String name) => args[name]! as Uint8List;
     if (!supported && call.method != 'supported') {

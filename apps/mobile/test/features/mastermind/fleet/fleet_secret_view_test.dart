@@ -154,8 +154,8 @@ void main() {
       final decision = (await tester.runAsync(signedRequestDecision))!;
       await pumpPage(tester, decision);
       expect(find.text('Skora M4'), findsOneWidget);
-      expect(find.text("it's"), findsOneWidget);
-      expect(find.text("''"), findsOneWidget);
+      expect(find.text('"it\'s"'), findsOneWidget);
+      expect(find.text('""'), findsOneWidget);
       expect(find.textContaining('Secret entry lane'), findsOneWidget);
       expect(find.byKey(const ValueKey('fleet-secret-field')), findsNothing);
       await tester.enterText(

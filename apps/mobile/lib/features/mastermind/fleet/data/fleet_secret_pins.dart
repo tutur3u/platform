@@ -95,19 +95,22 @@ class FleetSecretPins {
 
   final String? Function() _userId;
   final FlutterSecureStorage _storage;
-  Future<void> _tail = Future<void>.value();
 
-  Future<T> _serial<T>(Future<T> Function() operation) {
+  /// One queue for every instance, so [eraseAll] orders against writes made
+  /// through any other instance.
+  static Future<void> _tail = Future<void>.value();
+
+  static Future<T> _serial<T>(Future<T> Function() operation) {
     final future = _tail.then((_) => operation());
     _tail = future.then<void>((_) {}, onError: (Object _) {});
     return future;
   }
 
-  String? _name() {
-    final user = _userId();
-    if (user == null || user.isEmpty) return null;
-    return '$keyPrefix${sha256.convert(utf8.encode(user))}';
-  }
+  static String? _nameFor(String? user) => user == null || user.isEmpty
+      ? null
+      : '$keyPrefix${sha256.convert(utf8.encode(user))}';
+
+  String? _name() => _nameFor(_userId());
 
   Future<Map<String, FleetSecretPin>> _read(String name) async {
     final raw = await _storage.read(key: name);
@@ -141,15 +144,27 @@ class FleetSecretPins {
     return name == null ? <String, FleetSecretPin>{} : await _read(name);
   });
 
+  /// Changes the pins of [account] (default: the signed-in user). The
+  /// account and the erasure count are fixed when this is called: the change
+  /// is dropped when an erasure ran since, or another user signed in.
   Future<void> _update(
-    void Function(Map<String, FleetSecretPin> pins) change,
-  ) => _serial(() async {
-    final name = _name();
-    if (name == null) return;
-    final pins = await _read(name);
-    change(pins);
-    await _write(name, pins);
-  });
+    void Function(Map<String, FleetSecretPin> pins) change, {
+    String? account,
+  }) {
+    final erasure = fleetSecretErasures.value;
+    final user = account ?? _userId();
+    return _serial(() async {
+      final name = _nameFor(user);
+      if (name == null ||
+          fleetSecretErasures.value != erasure ||
+          _userId() != user) {
+        return;
+      }
+      final pins = await _read(name);
+      change(pins);
+      await _write(name, pins);
+    });
+  }
 
   /// Records a pending pin after a correct pairing code. It replaces any
   /// earlier pin for the machine: a new pairing is the only way to change it.
@@ -159,6 +174,7 @@ class FleetSecretPins {
     required String label,
     required String pairingId,
     required DateTime now,
+    String? account,
   }) => _update(
     (pins) => pins[machineId] = FleetSecretPin(
       machineId: machineId,
@@ -168,6 +184,7 @@ class FleetSecretPins {
       state: FleetSecretPinState.pending,
       pairingId: pairingId,
     ),
+    account: account,
   );
 
   /// Activates the pending pin of [pairingId] when it still names
@@ -176,9 +193,10 @@ class FleetSecretPins {
     required String machineId,
     required String pairingId,
     required String signerKey,
+    String? account,
   }) async {
     FleetSecretPin? result;
-    await _update((pins) {
+    await _update(account: account, (pins) {
       final pin = pins[machineId];
       if (pin == null ||
           pin.state != FleetSecretPinState.pending ||
@@ -192,8 +210,8 @@ class FleetSecretPins {
   }
 
   /// "Forget this machine".
-  Future<void> forget(String machineId) =>
-      _update((pins) => pins.remove(machineId));
+  Future<void> forget(String machineId, {String? account}) =>
+      _update((pins) => pins.remove(machineId), account: account);
 
   /// Every user's pins on this device.
   Future<void> eraseAll() => _serial(() async {

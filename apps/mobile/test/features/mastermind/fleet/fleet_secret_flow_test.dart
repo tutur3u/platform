@@ -405,6 +405,86 @@ void main() {
       expect(await pins.read(), isEmpty);
       expect(platform.deletedAccounts, [null]);
     });
+
+    Future<void> eraseElsewhere() => eraseFleetSecretKeys(
+      crypto: platform.crypto(),
+      pins: FleetSecretPins(
+        userId: () => null,
+        storage: const FlutterSecureStorage(),
+      ),
+    );
+
+    test('an erase stops the retries of an answer in flight', () async {
+      await pinActive();
+      source.replies.addAll(List.filled(3, FleetSecretSendFailure.unavailable));
+      final flow = FleetSecretCubit(
+        decision: await signedRequestDecision(),
+        crypto: platform.crypto(),
+        pins: pins,
+        source: source,
+        accountId: () => 'user-1',
+        now: () => now,
+        retryDelay: (_) {
+          unawaited(eraseElsewhere());
+          return Duration.zero;
+        },
+        attempts: attempts,
+      );
+      addTearDown(flow.close);
+      await flow.start();
+      flow.stepUpVerified();
+      await flow.send(Uint8List.fromList(utf8.encode('disposable')));
+      await pumpEventQueue();
+      expect(source.answers, hasLength(1));
+      expect(flow.state.phase, FleetSecretPhase.closed);
+    });
+
+    test('a pin write queued before an erase does not outlive it', () async {
+      final write = pins.putPending(
+        machineId: 'skr-m4',
+        signerKey: signerKey,
+        label: 'Skora M4',
+        pairingId: 'pair-0123456789abcdef01234567',
+        now: now,
+      );
+      await Future.wait([write, eraseElsewhere()]);
+      expect(await pins.read(), isEmpty);
+    });
+
+    test('a pin write for another account is dropped', () async {
+      await pins.putPending(
+        machineId: 'skr-m4',
+        signerKey: signerKey,
+        label: 'Skora M4',
+        pairingId: 'pair-0123456789abcdef01234567',
+        now: now,
+        account: 'user-2',
+      );
+      expect(await pins.read(), isEmpty);
+      expect(
+        await FleetSecretPins(
+          userId: () => 'user-2',
+          storage: const FlutterSecureStorage(),
+        ).read(),
+        isEmpty,
+      );
+    });
+
+    test('an erase during pairing writes no pin and sends nothing', () async {
+      var macs = 0;
+      platform.onCall = (method) async {
+        if (method == 'hmac' && ++macs == 2) await eraseElsewhere();
+      };
+      final flow = cubit(pairDecision());
+      addTearDown(flow.close);
+      await flow.start();
+      flow.stepUpVerified();
+      await flow.submitCode('008j 4ct4 ank7 f24s');
+      expect(macs, 2);
+      expect(flow.state.phase, FleetSecretPhase.closed);
+      expect(source.answers, isEmpty);
+      expect(await pins.read(), isEmpty);
+    });
   });
 
   group('pairing', () {

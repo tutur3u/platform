@@ -1,30 +1,43 @@
 // Hands a secret to the owner-approved command over a private inherited
 // pipe (standard input or descriptor 3), never through a file or the
-// agent. The command runs in `/` with a fixed minimal environment, and its
-// output goes to /dev/null unless the operation sends it to the agent.
+// agent. The command runs in `/` with a fixed minimal environment taken
+// from the OS account and the operations file, never from the requesting
+// process, and its output goes to /dev/null unless the operation sends it
+// to the agent.
 // Design: apps/docs/build/devops/mastermind-secret-entry.mdx#delivery-on-the-machine.
 import { spawn as nodeSpawn } from 'node:child_process';
+import os from 'node:os';
 
 export const DELIVERY_TIMEOUT_MS = 30_000;
 
-export function childEnv(env = process.env) {
-  const out = { PATH: '/usr/bin:/bin:/usr/sbin:/sbin' };
-  for (const name of ['HOME', 'USER', 'LOGNAME', 'LANG', 'SSH_AUTH_SOCK'])
-    if (typeof env[name] === 'string') out[name] = env[name];
-  return out;
+/**
+ * The child's whole environment: identity from the OS account database, a
+ * fixed locale, and `SSH_AUTH_SOCK` only when the operation names one.
+ */
+export function childEnv(op, account = os.userInfo()) {
+  return {
+    PATH: '/usr/bin:/bin:/usr/sbin:/sbin',
+    HOME: account.homedir,
+    USER: account.username,
+    LOGNAME: account.username,
+    LANG: 'en_US.UTF-8',
+    ...(op.sshAuthSock ? { SSH_AUTH_SOCK: op.sshAuthSock } : {}),
+  };
 }
 
 /**
  * Starts `op.argv` and writes `value` (plus a newline when the operation
- * asks) to its pipe, then closes the pipe. Resolves `delivered` once the
- * pipe accepted every byte, or `failed` when the command could not start,
- * closed the pipe early, or did not take the value within `timeoutMs` (then
- * it is stopped). `exit` resolves with the command's exit code.
+ * asks) to its pipe, then closes the pipe. `delivered` resolves true once
+ * the pipe accepted every byte: the value is in the command's input, which
+ * does not prove the command read it (its exit code says how it went). It
+ * resolves false when the command could not start, closed the pipe early,
+ * or did not take the value within `timeoutMs` (then it is stopped). `exit`
+ * resolves with the command's exit code.
  */
 export function deliver(
   op,
   value,
-  { spawn = nodeSpawn, timeoutMs = DELIVERY_TIMEOUT_MS, env = process.env } = {}
+  { spawn = nodeSpawn, timeoutMs = DELIVERY_TIMEOUT_MS, account } = {}
 ) {
   const output = op.output === 'agent' ? 'inherit' : 'ignore';
   const stdio =
@@ -35,7 +48,7 @@ export function deliver(
   try {
     child = spawn(op.argv[0], op.argv.slice(1), {
       cwd: '/',
-      env: childEnv(env),
+      env: childEnv(op, account),
       stdio,
     });
   } catch {

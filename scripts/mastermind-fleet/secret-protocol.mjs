@@ -23,8 +23,14 @@ export const SECRET_MAX_BYTES = 4096;
 /** Plaintext is padded to a multiple of this, so only the bucket leaks. */
 export const SECRET_PAD_BLOCK = 256;
 export const SECRET_MAX_BLOCKS = 17;
-/** Longest bound `command` JSON text. */
+/** Longest bound `command` JSON text, in UTF-8 bytes. */
 export const COMMAND_MAX = 8192;
+/**
+ * Largest answer binding (the HPKE AAD), in bytes: the phone's plugin seals
+ * no more, and the helper's input line fits it (see secret-hpke/main.swift).
+ * A request over it is refused before anyone is asked.
+ */
+export const ANSWER_AAD_MAX = 16_384;
 const PLAINTEXT_SINGLE_VALUE = 0x01;
 const TAG_BYTES = 16;
 

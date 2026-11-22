@@ -8224,7 +8224,7 @@
   "mastermindSecretSent": "Đã gửi",
   "mastermindSecretPairSent": "Đang chờ máy xác nhận",
   "mastermindSecretPickedUp": "Máy đã nhận",
-  "mastermindSecretOutcomeDelivered": "Đã chuyển đến lệnh",
+  "mastermindSecretOutcomeDelivered": "Đã ghi vào đầu vào của lệnh",
   "mastermindSecretOutcomeFailed": "Lệnh không nhận được",
   "mastermindSecretOutcomeDeclined": "Đã từ chối",
   "mastermindSecretOutcomeExpired": "Đã hết hạn",

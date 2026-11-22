@@ -151,6 +151,29 @@ abstract final class FleetSecretBinding {
         : '\\u{${code.toRadixString(16).padLeft(4, '0').toUpperCase()}}';
   });
 
+  /// One command argument as the owner approves it: in double quotes, with
+  /// `\\` and `\"` escaped and every character outside printable ASCII
+  /// (spaces other than U+0020, controls, format characters, look-alike
+  /// letters) as `\u{…}`. Distinct arguments never render the same.
+  static String argument(String arg) {
+    final out = StringBuffer('"');
+    for (final rune in arg.runes) {
+      if (rune == 0x5C) {
+        out.write(r'\\');
+      } else if (rune == 0x22) {
+        out.write(r'\"');
+      } else if (rune >= 0x20 && rune <= 0x7E) {
+        out.writeCharCode(rune);
+      } else {
+        out.write(
+          '\\u{${rune.toRadixString(16).padLeft(4, '0').toUpperCase()}}',
+        );
+      }
+    }
+    out.write('"');
+    return out.toString();
+  }
+
   /// Zeroes a buffer that held a value, a plaintext or key material.
   static void wipe(Uint8List? bytes) => bytes?.fillRange(0, bytes.length, 0);
 }

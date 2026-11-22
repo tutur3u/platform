@@ -93,7 +93,7 @@ test('a signed answer is opened and handed only to the command, then everything 
     })
   );
   const record = verifyOutcome(world.paths, decision.id, 'delivered', digest);
-  assert.equal(record.outcome, 'Delivered');
+  assert.equal(record.outcome, 'Written to command');
   assert.equal(
     verifyEd25519(
       fromB64url(request.signerKey, 32),

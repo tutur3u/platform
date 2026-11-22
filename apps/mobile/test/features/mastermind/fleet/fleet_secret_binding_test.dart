@@ -191,6 +191,38 @@ void main() {
       expect(FleetSecretBinding.visible('x\u200By\u007f'), r'x\u{200B}y\x7F');
       expect(FleetSecretBinding.visible('Mật khẩu'), 'Mật khẩu');
     });
+
+    test('command arguments render quoted and one-to-one', () {
+      String show(String arg) => FleetSecretBinding.argument(arg);
+      expect(show(''), '""');
+      expect(show("''"), '"\'\'"');
+      expect(show(' a '), '" a "');
+      expect(show(r'C:\x1B'), r'"C:\\x1B"');
+      expect(show('\u001b'), r'"\u{001B}"');
+      expect(show('say "hi"'), r'"say \"hi\""');
+      expect(show('a\u00a0b'), r'"a\u{00A0}b"');
+      expect(show('\u0430dmin'), r'"\u{0430}dmin"');
+      expect(show('\u{1F511}'), r'"\u{1F511}"');
+      final args = [
+        '',
+        "''",
+        '""',
+        r'\',
+        r'\\',
+        r'\x1B',
+        '\u001b',
+        r'\u{001B}',
+        '\u202e',
+        r'\u{202E}',
+        ' ',
+        '\u00a0',
+        'a',
+        '\u0430',
+        '"',
+        r'\"',
+      ];
+      expect(args.map(show).toSet(), hasLength(args.length));
+    });
   });
 
   group('pairing code', () {
