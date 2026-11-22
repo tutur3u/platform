@@ -61,8 +61,7 @@ import {
 import { handleLocale } from './lib/locale-proxy';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
-import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
-import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
+import { webProxyPayloadLimit } from './lib/proxy-payload-limit';
 import {
   isRoadmapPublicPath,
   proxyRoadmapPublicRequest,
@@ -1026,9 +1025,7 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
       const guardResponse = await guardApiProxyRequest(req, {
         additionalRoutePolicies,
         ...calendarPreferenceGuardOptions(req),
-        maxPayloadBytes:
-          profileMediaProxyPayloadLimit(req.method, req.nextUrl) ??
-          feedbackProxyPayloadLimit(req.method, req.nextUrl.pathname),
+        maxPayloadBytes: webProxyPayloadLimit(req),
         trustedBypassRules: [
           {
             matches: () => trustedStaffCli,

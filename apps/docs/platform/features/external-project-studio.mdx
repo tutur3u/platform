@@ -365,6 +365,20 @@ bun run test -- src/lib/external-projects/email-policy.test.ts \
   'src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.test.ts'
 ```
 
+## Multipart upload request size
+
+Web accepts request bodies up to 12 MiB for multipart POSTs to
+`/api/v1/workspaces/{wsId}/external-projects/assets/upload-url` and
+`/api/v1/workspaces/{wsId}/external-projects/storage`. This limit includes form
+fields and encoding overhead, with room for a 10 MiB file. For larger asset
+uploads, request a signed upload URL and send the file to storage directly.
+The handlers still check file type, size, and workspace quota. JSON requests,
+including WebGL signed-URL requests, keep the default 512 KiB proxy limit.
+
+`apps/web/src/lib/external-projects/upload-proxy-payload-limit.test.ts` covers
+the two multipart paths and verifies that other methods, content types and
+paths keep the default.
+
 ## Edge WAF exception for media uploads
 
 Bearer-authenticated multipart uploads from linked sites can trip the
