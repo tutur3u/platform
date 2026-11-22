@@ -1,5 +1,6 @@
 'use client';
 
+import { claimSettingsDialogIntent } from '@tuturuuu/satellite/settings-dialog-intent';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -91,6 +92,8 @@ export function SettingsDialogHost({
 
   useEffect(() => {
     const handleSettingsIntent = (event: Event) => {
+      if (!claimSettingsDialogIntent(event)) return;
+
       const detail =
         event instanceof CustomEvent &&
         event.detail &&

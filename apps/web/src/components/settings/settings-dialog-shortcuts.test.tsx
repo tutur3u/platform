@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { SETTINGS_DIALOG_OPEN_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import type { ComponentType, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
@@ -159,7 +160,7 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
     <button type="button">{children}</button>
   ),
   DropdownMenuTrigger: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
+    <div data-testid="account-menu-trigger">{children}</div>
   ),
 }));
 
@@ -484,6 +485,47 @@ describe('settings dialog shortcut', () => {
 
     expectSettingsQueryOpened();
   });
+
+  it.each([
+    ['Ada', 'profile'],
+    ['account_switcher.manage_accounts', 'accounts'],
+  ])(
+    'passes the account trigger when opening %s in the workspace host',
+    (label, tab) => {
+      const { getByRole, getByTestId } = render(
+        <>
+          <SettingsDialogHost user={user as unknown as WorkspaceUser} />
+          <UserNavClient
+            hideMetadata
+            locale="en"
+            renderCommandLauncher={false}
+            renderSettingsDialog={false}
+            user={user as unknown as WorkspaceUser}
+          />
+        </>
+      );
+      const accountTrigger = getByTestId('account-menu-trigger').querySelector(
+        'button'
+      );
+      const item = getByRole('button', { name: label });
+      const onIntent = vi.fn();
+      window.addEventListener(SETTINGS_DIALOG_OPEN_INTENT_EVENT, onIntent, {
+        once: true,
+      });
+
+      fireEvent.click(item);
+
+      expect(onIntent).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          detail: { returnFocus: accountTrigger, settingsTab: tab },
+        })
+      );
+      expect(setSettingsQueryMock).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ settingsDialog: 'open', settingsTab: tab }),
+        expect.anything()
+      );
+    }
+  );
 
   it('renders the fullscreen settings loading skeleton', () => {
     const { getByTestId, getAllByText } = render(

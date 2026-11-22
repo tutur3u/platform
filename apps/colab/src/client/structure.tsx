@@ -264,6 +264,7 @@ export function Structure({
           <Button
             variant="ghost"
             aria-label={c.settings}
+            data-slot="sidebar-settings-button"
             className={`h-9 rounded-lg ${collapsed ? 'w-9 px-0' : 'w-full justify-start px-3'}`}
             onClick={(event) => openSettings(event.currentTarget)}
           >

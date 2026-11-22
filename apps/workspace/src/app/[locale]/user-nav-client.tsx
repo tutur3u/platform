@@ -36,7 +36,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { SETTINGS_DIALOG_CLOSE_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import {
+  SETTINGS_DIALOG_CLOSE_INTENT_EVENT,
+  SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+} from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
@@ -49,7 +52,7 @@ import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
@@ -130,6 +133,7 @@ export default function UserNavClient({
   const t = useTranslations();
   const params = useParams();
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
   const sidebar = useContext(SidebarContext);
   const workspaceSelectorVisible = useWorkspaceSelectorVisibility();
   const { accounts } = useAccountSwitcher();
@@ -174,9 +178,20 @@ export default function UserNavClient({
 
   const openSettingsDialog = useCallback(
     (tab?: string) => {
+      if (
+        !renderSettingsDialog &&
+        !window.dispatchEvent(
+          new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+            cancelable: true,
+            detail: { returnFocus: menuTrigger.current, settingsTab: tab },
+          })
+        )
+      ) {
+        return;
+      }
       openSettings(tab ?? null);
     },
-    [openSettings]
+    [openSettings, renderSettingsDialog]
   );
 
   useEffect(() => {
@@ -238,6 +253,7 @@ export default function UserNavClient({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
+            ref={menuTrigger}
             type="button"
             className={cn(
               'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
