@@ -999,10 +999,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/19498fa9486cf588dcca376dbf43dfa4b6073145",
-        "reason": "The committed mount inventory gains the tuturuuu.com/apps mount. The filename stays the only Wrangler use, so counts stay 1/1."
+        "decision": "https://github.com/tutur3u/platform/commit/b1a9f43ea2c4783ff5cd014fec362f674ca05e41",
+        "reason": "The Gateway config declares the Contacts mount and service binding. The filename remains the only Wrangler use."
       },
-      "digest": "96acadd933eb2bc42a13aad5d51768a8b08fe27f5a6455e3ada8868dfb315f5d"
+      "digest": "22d485dbf8f7f14e32971c6cc3ed96e5e3a0f993b1c3080dabd63ca6c44f53a9"
     },
     "apps/gateway/wrangler.subdomain-redirect.jsonc": {
       "lines": 1,
