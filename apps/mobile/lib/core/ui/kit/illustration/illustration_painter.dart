@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/kit/illustration/app_illustration.dart';
 import 'package:mobile/core/ui/kit/illustration/illustration_scenes.dart';
+import 'package:mobile/core/ui/kit/illustration/illustration_scenes_auth.dart';
 
 /// Paints an [AppIllustrationKind] in a 120-unit square scaled to the canvas.
 ///
@@ -23,6 +24,10 @@ class AppIllustrationPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (kind.isAuthScene) {
+      _paintAuthScene(canvas, size);
+      return;
+    }
     final scale = size.shortestSide / unit;
     canvas
       ..save()
@@ -52,6 +57,54 @@ class AppIllustrationPainter extends CustomPainter {
         paintCalendar(canvas, ink);
       case AppIllustrationKind.conversations:
         paintConversations(canvas, ink);
+      case AppIllustrationKind.welcomeBowl ||
+          AppIllustrationKind.emailCode ||
+          AppIllustrationKind.twoStep ||
+          AppIllustrationKind.passkey ||
+          AppIllustrationKind.accounts ||
+          AppIllustrationKind.locked:
+        break;
+    }
+    canvas.restore();
+  }
+
+  /// Fits the scene's view box inside the canvas, centred.
+  void _paintAuthScene(Canvas canvas, Size size) {
+    final box = kind == AppIllustrationKind.welcomeBowl
+        ? welcomeBowlViewBox
+        : authSceneViewBox;
+    final scale = math.min(size.width / box.width, size.height / box.height);
+    canvas
+      ..save()
+      ..translate(
+        (size.width - box.width * scale) / 2,
+        (size.height - box.height * scale) / 2,
+      )
+      ..scale(scale);
+    final ink = IllustrationInk(palette, progress.value);
+    switch (kind) {
+      case AppIllustrationKind.welcomeBowl:
+        paintWelcomeBowl(canvas, ink);
+      case AppIllustrationKind.emailCode:
+        paintEmailCode(canvas, ink);
+      case AppIllustrationKind.twoStep:
+        paintTwoStep(canvas, ink);
+      case AppIllustrationKind.passkey:
+        paintPasskey(canvas, ink);
+      case AppIllustrationKind.accounts:
+        paintAccounts(canvas, ink);
+      case AppIllustrationKind.locked:
+        paintLocked(canvas, ink);
+      case AppIllustrationKind.notificationsClear ||
+          AppIllustrationKind.noTasks ||
+          AppIllustrationKind.noTransactions ||
+          AppIllustrationKind.noBudgets ||
+          AppIllustrationKind.wallet ||
+          AppIllustrationKind.searchNoResults ||
+          AppIllustrationKind.offline ||
+          AppIllustrationKind.calendarFree ||
+          AppIllustrationKind.conversations:
+        break;
     }
     canvas.restore();
   }

@@ -16,9 +16,21 @@ enum AppIllustrationKind {
   offline,
   calendarFree,
   conversations,
+
+  /// Multi-hue sign-in scenes; see `illustration_scenes_auth.dart`.
+  welcomeBowl,
+  emailCode,
+  twoStep,
+  passkey,
+  accounts,
+  locked;
+
+  /// The sign-in scenes draw their own hue backdrop on a wider view box
+  /// and ignore [AppIllustration.tone].
+  bool get isAuthScene => index >= welcomeBowl.index;
 }
 
-/// Small vector illustration for empty, offline and error states.
+/// Small vector illustration for empty, offline, error and sign-in states.
 ///
 /// Every colour comes from the appearance tokens through [tone], so the
 /// drawing follows Classic and Sorbet in light and dark. The scene loops for
@@ -35,6 +47,9 @@ class AppIllustration extends StatefulWidget {
   });
 
   final AppIllustrationKind kind;
+
+  /// Width; the classic scenes are square, sign-in scenes keep their
+  /// view box ratio.
   final double size;
   final AppTone tone;
 
@@ -46,6 +61,13 @@ class AppIllustration extends StatefulWidget {
   @override
   State<AppIllustration> createState() => _AppIllustrationState();
 }
+
+/// Height over width: sign-in scenes are wider than tall.
+double _aspect(AppIllustrationKind kind) => switch (kind) {
+  AppIllustrationKind.welcomeBowl => 280 / 320,
+  _ when kind.isAuthScene => 160 / 200,
+  _ => 1,
+};
 
 class _AppIllustrationState extends State<AppIllustration>
     with SingleTickerProviderStateMixin {
@@ -94,8 +116,9 @@ class _AppIllustrationState extends State<AppIllustration>
     final palette = AppIllustrationPalette.of(context, widget.tone);
     return ExcludeSemantics(
       child: RepaintBoundary(
-        child: SizedBox.square(
-          dimension: widget.size,
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size * _aspect(widget.kind),
           child: CustomPaint(
             painter: AppIllustrationPainter(
               kind: widget.kind,

@@ -25,8 +25,10 @@ class _Board extends StatelessWidget {
         spacing: 12,
         runSpacing: 12,
         children: [
+          // Sign-in scenes are covered by app_illustration_test.dart; adding
+          // them here would need new Linux baselines for this board.
           for (final kind in AppIllustrationKind.values)
-            AppIllustration(kind, size: 108, cycles: 0),
+            if (!kind.isAuthScene) AppIllustration(kind, size: 108, cycles: 0),
           const AppIllustration(
             AppIllustrationKind.offline,
             size: 108,
