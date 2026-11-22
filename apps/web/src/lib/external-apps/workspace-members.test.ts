@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   loadExternalAppWorkspaceMembers,
+  updateExternalAppWorkspaceDefaultAdmin,
   updateExternalAppWorkspaceMemberRole,
 } from './workspace-members';
 
@@ -88,36 +89,208 @@ describe('external app workspace member helpers', () => {
     ]);
   });
 
-  it('force-demotion removes every role that grants either admin permission', async () => {
-    const inMock = vi.fn().mockResolvedValue({ error: null });
-    const eqMock = vi.fn(() => ({ in: inMock }));
-    const deleteMock = vi.fn(() => ({ eq: eqMock }));
-    const admin = {
-      from: vi.fn((table: string) => {
-        if (table !== 'workspace_role_members') {
-          throw new Error(`Unexpected table: ${table}`);
-        }
-        return { delete: deleteMock };
-      }),
-    };
-    mocks.getWorkspaceMembers
-      .mockResolvedValueOnce([splitRoleMember, existingAdmin])
-      .mockResolvedValueOnce([splitRoleMember]);
+  it.each([false, true])(
+    'demotes through one atomic RPC (disable defaults %s)',
+    async (disableDefaultAdmin) => {
+      const admin = {
+        from: vi.fn(),
+        rpc: vi.fn().mockResolvedValue({ data: 'removed', error: null }),
+      };
+      mocks.getWorkspaceMembers.mockResolvedValue([
+        splitRoleMember,
+        existingAdmin,
+      ]);
 
+      const response = await updateExternalAppWorkspaceMemberRole({
+        access: access({ admin }),
+        request: new Request('http://localhost', {
+          body: JSON.stringify({
+            role: 'member',
+            confirmDefaultAdminDisable: disableDefaultAdmin,
+          }),
+          method: 'PATCH',
+        }),
+        userId: 'user-2',
+      });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ message: 'success' });
+      expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+        'reduce_external_app_workspace_admin_guarded',
+        {
+          p_actor_id: 'user-1',
+          p_disable_default_admin: disableDefaultAdmin,
+          p_user_id: 'user-2',
+          p_ws_id: 'workspace-1',
+        }
+      );
+      expect(admin.from).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['not_found', 404, { message: 'Member not found' }],
+    [
+      'creator_protected',
+      403,
+      { message: 'Workspace creator access cannot be changed here' },
+    ],
+    ['self_protected', 403, { message: 'Cannot change your own access' }],
+    [
+      'last_admin',
+      403,
+      { message: 'At least one workspace admin is required' },
+    ],
+    [
+      'last_manager',
+      409,
+      {
+        code: 'WORKSPACE_LAST_MANAGER',
+        message: 'At least one member must be able to manage members',
+      },
+    ],
+    [
+      'default_admin_enabled',
+      409,
+      {
+        code: 'DEFAULT_ADMIN_ENABLED',
+        message: 'Default member admin access must be disabled before demotion',
+      },
+    ],
+    ['forbidden', 403, { error: 'Forbidden' }],
+    ['unexpected', 500, { message: 'Error updating workspace role' }],
+  ])(
+    'maps demotion result %s without direct writes',
+    async (data, status, body) => {
+      const admin = {
+        from: vi.fn(),
+        rpc: vi.fn().mockResolvedValue({ data, error: null }),
+      };
+      mocks.getWorkspaceMembers.mockResolvedValue([
+        splitRoleMember,
+        existingAdmin,
+      ]);
+      const response = await updateExternalAppWorkspaceMemberRole({
+        access: access({ admin }),
+        request: new Request('http://localhost', {
+          body: JSON.stringify({ role: 'member' }),
+          method: 'PATCH',
+        }),
+        userId: 'user-2',
+      });
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual(body);
+      expect(admin.from).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['removed', 200, { message: 'success' }],
+    [
+      'last_admin',
+      403,
+      { message: 'At least one workspace admin is required' },
+    ],
+    [
+      'last_manager',
+      409,
+      {
+        code: 'WORKSPACE_LAST_MANAGER',
+        message: 'At least one member must be able to manage members',
+      },
+    ],
+    ['forbidden', 403, { error: 'Forbidden' }],
+    ['not_found', 500, { message: 'Error updating default admin access' }],
+    ['unexpected', 500, { message: 'Error updating default admin access' }],
+  ])(
+    'maps default-admin reduction %s without a direct upsert',
+    async (data, status, body) => {
+      const admin = {
+        from: vi.fn(),
+        rpc: vi.fn().mockResolvedValue({ data, error: null }),
+      };
+      const response = await updateExternalAppWorkspaceDefaultAdmin({
+        access: access({ admin }),
+        request: new Request('http://localhost', {
+          body: JSON.stringify({ enabled: false }),
+          method: 'PATCH',
+        }),
+      });
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual(body);
+      expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+        'reduce_external_app_workspace_admin_guarded',
+        {
+          p_actor_id: 'user-1',
+          p_disable_default_admin: true,
+          p_ws_id: 'workspace-1',
+        }
+      );
+      expect(admin.from).not.toHaveBeenCalled();
+    }
+  );
+
+  it('uses the role failure envelope when an admin reduction RPC fails', async () => {
+    const error = new Error('unavailable');
+    const admin = {
+      from: vi.fn(),
+      rpc: vi.fn().mockResolvedValue({ data: 'removed', error }),
+    };
+    mocks.getWorkspaceMembers.mockResolvedValue([
+      splitRoleMember,
+      existingAdmin,
+    ]);
     const response = await updateExternalAppWorkspaceMemberRole({
       access: access({ admin }),
       request: new Request('http://localhost', {
-        body: JSON.stringify({ role: 'member' }),
+        body: JSON.stringify({
+          role: 'member',
+          confirmDefaultAdminDisable: true,
+        }),
         method: 'PATCH',
       }),
       userId: 'user-2',
     });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      message: 'Error updating workspace role',
+    });
+    expect(admin.from).not.toHaveBeenCalled();
+  });
 
+  it('keeps enabling member admin defaults as a scoped permission grant', async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const admin = { from: vi.fn(() => ({ upsert })), rpc: vi.fn() };
+    const response = await updateExternalAppWorkspaceDefaultAdmin({
+      access: access({ admin }),
+      request: new Request('http://localhost', {
+        body: JSON.stringify({ enabled: true }),
+        method: 'PATCH',
+      }),
+    });
     expect(response.status).toBe(200);
-    expect(inMock).toHaveBeenCalledWith('role_id', [
-      'role-members',
-      'role-roles',
-    ]);
+    expect(await response.json()).toEqual({ message: 'success' });
+    expect(admin.rpc).not.toHaveBeenCalled();
+    expect(admin.from).toHaveBeenCalledExactlyOnceWith(
+      'workspace_default_permissions'
+    );
+    expect(upsert).toHaveBeenCalledExactlyOnceWith(
+      [
+        {
+          enabled: true,
+          member_type: 'MEMBER',
+          permission: 'manage_workspace_members',
+          ws_id: 'workspace-1',
+        },
+        {
+          enabled: true,
+          member_type: 'MEMBER',
+          permission: 'manage_workspace_roles',
+          ws_id: 'workspace-1',
+        },
+      ],
+      { onConflict: 'ws_id,permission,member_type' }
+    );
   });
 
   it('refuses to promote through a name-selected creator-granted role, even for its creator', async () => {

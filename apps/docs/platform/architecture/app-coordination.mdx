@@ -484,6 +484,33 @@ registrations retain their existing behavior. Regression coverage lives in
 `packages/auth/src/cross-app/index.test.ts`, and
 `apps/web/src/app/api/v1/auth/cross-app-return/route.test.ts`.
 
+### External app workspace member removal and demotion
+
+The external member routes verify the bearer, live app, workspace allowlist
+and write scopes. The database uses the token's authenticated actor and
+checks full workspace membership and the required workspace permissions
+under the workspace removal lock.
+
+A person cannot remove or demote themselves or the workspace creator
+through these routes. Demotion removes all role assignments that grant at
+least one admin capability and, when confirmed, disables both member admin
+defaults in the same transaction. Disabling defaults on its own uses the
+same transaction guard. The common last-manager rule applies when a full
+member could manage members and a full member would remain. The external
+app's separate admin floor also applies.
+
+The API returns HTTP 409 with `WORKSPACE_LAST_MANAGER` for the manager
+refusal and HTTP 403 when the separate admin floor refuses the operation.
+Demotion that needs default disable confirmation returns HTTP 409 with
+`DEFAULT_ADMIN_ENABLED`. Invitation cancellation by ID begins after the
+membership function reports success or absence. Email-only cancellation
+does not affect membership.
+
+Regression coverage lives in the
+[external member tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/external-apps/workspace-members.removal.test.ts)
+and
+[external role and default tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/external-apps/workspace-members.test.ts).
+
 ## Operational notes
 
 Server-side internal API calls identify themselves with

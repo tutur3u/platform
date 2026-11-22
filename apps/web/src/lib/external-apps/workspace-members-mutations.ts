@@ -1,3 +1,7 @@
+import {
+  GUARD_WORKSPACE_SELF_REMOVAL,
+  lastManagerResponse,
+} from '@tuturuuu/apis/members/guarded-removal';
 import type { TablesInsert } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { roleHasCreatorGrantPermission } from '@/lib/workspace-creator-grant-permissions';
@@ -14,7 +18,6 @@ import {
 import {
   type ExternalAppWorkspaceMember,
   normalizeWorkspaceMembers,
-  roleAdminSources,
 } from './workspace-members-model';
 
 async function getWorkspaceMemberSnapshot(
@@ -33,8 +36,35 @@ async function getWorkspaceMemberSnapshot(
   });
 }
 
-function effectiveAdminCount(members: ExternalAppWorkspaceMember[]) {
-  return members.filter((member) => member.role === 'admin').length;
+function externalMemberRemovalRefusal(
+  result:
+    | 'creator_protected'
+    | 'self_protected'
+    | 'last_admin'
+    | 'last_manager'
+    | 'forbidden'
+) {
+  switch (result) {
+    case 'creator_protected':
+      return NextResponse.json(
+        { message: 'Workspace creator access cannot be changed here' },
+        { status: 403 }
+      );
+    case 'self_protected':
+      return NextResponse.json(
+        { message: 'Cannot change your own access' },
+        { status: 403 }
+      );
+    case 'last_admin':
+      return NextResponse.json(
+        { message: 'At least one workspace admin is required' },
+        { status: 403 }
+      );
+    case 'last_manager':
+      return lastManagerResponse();
+    case 'forbidden':
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 }
 
 function assertCanMutateMember({
@@ -48,19 +78,10 @@ function assertCanMutateMember({
     return NextResponse.json({ message: 'Member not found' }, { status: 404 });
   }
 
-  if (member.isCreator) {
-    return NextResponse.json(
-      { message: 'Workspace creator access cannot be changed here' },
-      { status: 403 }
-    );
-  }
-
-  if (member.id === access.user.id) {
-    return NextResponse.json(
-      { message: 'Cannot change your own access' },
-      { status: 403 }
-    );
-  }
+  if (member.isCreator)
+    return externalMemberRemovalRefusal('creator_protected');
+  if (member.id === access.user.id)
+    return externalMemberRemovalRefusal('self_protected');
 
   return null;
 }
@@ -82,27 +103,63 @@ export async function removeExternalAppWorkspaceMember({
   }
 
   const { email, userId } = validation.data;
-  const snapshot = await getWorkspaceMemberSnapshot(access);
-  const member = userId
-    ? (snapshot.members.find((entry) => entry.id === userId) ?? null)
-    : null;
+  if (userId) {
+    try {
+      const { data, error } = await access.admin.rpc(
+        'remove_workspace_member_guarded_in_mode',
+        {
+          p_actor_id: access.user.id,
+          p_guard_self: GUARD_WORKSPACE_SELF_REMOVAL,
+          p_mode: 'external_app',
+          p_user_id: userId,
+          p_ws_id: access.normalizedWorkspaceId,
+        }
+      );
+      if (error) throw error;
 
-  if (member) {
-    const mutationError = assertCanMutateMember({ access, member });
-    if (mutationError) return mutationError;
-
-    const nextMembers = snapshot.members.filter((entry) => entry.id !== userId);
-    if (effectiveAdminCount(nextMembers) === 0) {
+      switch (data) {
+        case 'removed':
+          break;
+        case 'not_found': {
+          const snapshot = await getWorkspaceMemberSnapshot(access);
+          // Direct board guests can be listed without a workspace membership.
+          const member = snapshot.members.find((entry) => entry.id === userId);
+          if (
+            member &&
+            !snapshot.members.some(
+              (entry) => entry.id !== userId && entry.role === 'admin'
+            )
+          ) {
+            return externalMemberRemovalRefusal('last_admin');
+          }
+          break;
+        }
+        case 'creator_protected':
+        case 'self_protected':
+        case 'last_admin':
+        case 'last_manager':
+        case 'forbidden':
+          return externalMemberRemovalRefusal(data);
+        default:
+          throw new Error(
+            'Unexpected guarded external member removal response'
+          );
+      }
+    } catch (error) {
+      console.error('Error removing external app workspace member', {
+        error,
+        wsId: access.normalizedWorkspaceId,
+      });
       return NextResponse.json(
-        { message: 'At least one workspace admin is required' },
-        { status: 403 }
+        { message: 'Error removing workspace access' },
+        { status: 500 }
       );
     }
   }
 
   let inviteUserIds: string[] = [];
 
-  if (email) {
+  if (email && !userId) {
     const { data, error } = await access.admin
       .from('workspace_members_and_invites')
       .select('id')
@@ -147,25 +204,15 @@ export async function removeExternalAppWorkspaceMember({
         .eq('email', email)
     : { error: undefined };
 
-  const memberQuery = userId
-    ? access.admin
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', access.normalizedWorkspaceId)
-        .eq('user_id', userId)
-    : { error: undefined };
-
-  const [inviteResult, emailInviteResult, memberResult] = await Promise.all([
+  const [inviteResult, emailInviteResult] = await Promise.all([
     inviteQuery,
     emailInviteQuery,
-    memberQuery,
   ]);
 
-  if (inviteResult.error || emailInviteResult.error || memberResult.error) {
+  if (inviteResult.error || emailInviteResult.error) {
     console.error('Error removing external app workspace member', {
       emailInviteError: emailInviteResult.error,
       inviteError: inviteResult.error,
-      memberError: memberResult.error,
       wsId: access.normalizedWorkspaceId,
     });
     return NextResponse.json(
@@ -265,42 +312,76 @@ async function promoteWorkspaceMember({
   if (error) throw error;
 }
 
-async function disableDefaultAdmin(access: ExternalAppWorkspaceMembersAccess) {
-  const { error } = await access.admin
-    .from('workspace_default_permissions')
-    .upsert(
-      ADMIN_PERMISSION_SET.map(
-        (permission): TablesInsert<'workspace_default_permissions'> => ({
-          enabled: false,
-          member_type: MEMBER_DEFAULT_TYPE,
-          permission,
-          ws_id: access.normalizedWorkspaceId,
-        })
-      ),
-      { onConflict: 'ws_id,permission,member_type' }
-    );
-
-  if (error) throw error;
-}
-
-async function removeAdminRoleMemberships({
+async function reduceExternalAppAdmin({
   access,
-  roleIds,
+  disableDefaultAdmin,
   userId,
 }: {
   access: ExternalAppWorkspaceMembersAccess;
-  roleIds: string[];
-  userId: string;
+  disableDefaultAdmin: boolean;
+  userId?: string;
 }) {
-  if (roleIds.length === 0) return;
+  try {
+    const { data, error } = await access.admin.rpc(
+      'reduce_external_app_workspace_admin_guarded',
+      {
+        p_actor_id: access.user.id,
+        p_disable_default_admin: disableDefaultAdmin,
+        p_ws_id: access.normalizedWorkspaceId,
+        ...(userId ? { p_user_id: userId } : {}),
+      }
+    );
+    if (error) throw error;
 
-  const { error } = await access.admin
-    .from('workspace_role_members')
-    .delete()
-    .eq('user_id', userId)
-    .in('role_id', roleIds);
+    switch (data) {
+      case 'removed':
+        return NextResponse.json({ message: 'success' });
+      case 'last_admin':
+      case 'last_manager':
+      case 'forbidden':
+        return externalMemberRemovalRefusal(data);
+      case 'creator_protected':
+      case 'self_protected':
+        if (userId) return externalMemberRemovalRefusal(data);
+        break;
+      case 'not_found':
+        if (userId) {
+          return NextResponse.json(
+            { message: 'Member not found' },
+            { status: 404 }
+          );
+        }
+        break;
+      case 'default_admin_enabled':
+        if (userId) {
+          return NextResponse.json(
+            {
+              code: 'DEFAULT_ADMIN_ENABLED',
+              message:
+                'Default member admin access must be disabled before demotion',
+            },
+            { status: 409 }
+          );
+        }
+        break;
+    }
 
-  if (error) throw error;
+    throw new Error('Unexpected guarded external admin reduction response');
+  } catch (error) {
+    console.error('Error reducing external app workspace admin access', {
+      error,
+      userId,
+      wsId: access.normalizedWorkspaceId,
+    });
+    return NextResponse.json(
+      {
+        message: userId
+          ? 'Error updating workspace role'
+          : 'Error updating default admin access',
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function updateExternalAppWorkspaceMemberRole({
@@ -327,71 +408,16 @@ export async function updateExternalAppWorkspaceMemberRole({
 
   if (mutationError) return mutationError;
 
+  if (validation.data.role === 'member') {
+    return reduceExternalAppAdmin({
+      access,
+      disableDefaultAdmin: validation.data.confirmDefaultAdminDisable === true,
+      userId,
+    });
+  }
+
   try {
-    if (validation.data.role === 'admin') {
-      await promoteWorkspaceMember({ access, userId });
-    } else {
-      if (
-        snapshot.defaultAdminEnabled &&
-        !validation.data.confirmDefaultAdminDisable
-      ) {
-        return NextResponse.json(
-          {
-            code: 'DEFAULT_ADMIN_ENABLED',
-            message:
-              'Default member admin access must be disabled before demotion',
-          },
-          { status: 409 }
-        );
-      }
-
-      const nextMembers = snapshot.members.map((entry) =>
-        entry.id === userId
-          ? { ...entry, role: 'member' as const, roleSources: [] }
-          : entry
-      );
-      const nextAfterDefaults = validation.data.confirmDefaultAdminDisable
-        ? nextMembers.map((entry) =>
-            entry.roleSources.includes('default')
-              ? {
-                  ...entry,
-                  role: entry.roleSources.some((source) =>
-                    ['creator', 'role'].includes(source)
-                  )
-                    ? entry.role
-                    : ('member' as const),
-                  roleSources: entry.roleSources.filter(
-                    (source) => source !== 'default'
-                  ),
-                }
-              : entry
-          )
-        : nextMembers;
-
-      if (effectiveAdminCount(nextAfterDefaults) === 0) {
-        return NextResponse.json(
-          { message: 'At least one workspace admin is required' },
-          { status: 403 }
-        );
-      }
-
-      if (validation.data.confirmDefaultAdminDisable) {
-        await disableDefaultAdmin(access);
-      }
-
-      const members = await getWorkspaceMembers({
-        sbAdmin: access.admin,
-        status: 'joined',
-        supabase: access.admin,
-        wsId: access.normalizedWorkspaceId,
-      });
-      const target = members.find((entry) => entry.id === userId);
-      await removeAdminRoleMemberships({
-        access,
-        roleIds: target ? roleAdminSources(target) : [],
-        userId,
-      });
-    }
+    await promoteWorkspaceMember({ access, userId });
   } catch (error) {
     // The database refuses roles for users without a MEMBER membership.
     if ((error as { code?: unknown } | null)?.code === '42501') {
@@ -430,29 +456,8 @@ export async function updateExternalAppWorkspaceDefaultAdmin({
     );
   }
 
-  const snapshot = await getWorkspaceMemberSnapshot(access);
-  const nextMembers = validation.data.enabled
-    ? snapshot.members.map((member) => ({
-        ...member,
-        role: 'admin' as const,
-        roleSources: [...new Set([...member.roleSources, 'default' as const])],
-      }))
-    : snapshot.members.map((member) => {
-        const roleSources = member.roleSources.filter(
-          (source) => source !== 'default'
-        );
-        return {
-          ...member,
-          role: roleSources.length > 0 ? member.role : ('member' as const),
-          roleSources,
-        };
-      });
-
-  if (!validation.data.enabled && effectiveAdminCount(nextMembers) === 0) {
-    return NextResponse.json(
-      { message: 'At least one workspace admin is required' },
-      { status: 403 }
-    );
+  if (!validation.data.enabled) {
+    return reduceExternalAppAdmin({ access, disableDefaultAdmin: true });
   }
 
   const { error } = await access.admin
@@ -460,7 +465,7 @@ export async function updateExternalAppWorkspaceDefaultAdmin({
     .upsert(
       ADMIN_PERMISSION_SET.map(
         (permission): TablesInsert<'workspace_default_permissions'> => ({
-          enabled: validation.data.enabled,
+          enabled: true,
           member_type: MEMBER_DEFAULT_TYPE,
           permission,
           ws_id: access.normalizedWorkspaceId,

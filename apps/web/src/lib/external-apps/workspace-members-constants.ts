@@ -13,9 +13,6 @@ export const ADMIN_PERMISSION_SET = [
   'manage_workspace_members',
   'manage_workspace_roles',
 ] as const satisfies readonly WorkspaceRolePermissionValue[];
-export const ADMIN_PERMISSION_LOOKUP = new Set<WorkspaceRolePermissionValue>(
-  ADMIN_PERMISSION_SET
-);
 export const BROAD_ADMIN_PERMISSION =
   'admin' satisfies WorkspaceRolePermissionValue;
 export const MEMBER_DEFAULT_TYPE =

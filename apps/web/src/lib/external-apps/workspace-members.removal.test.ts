@@ -59,7 +59,7 @@ function query(table: string) {
   };
   return q;
 }
-const admin = { from: vi.fn(query) };
+const admin = { from: vi.fn(query), rpc: vi.fn() };
 
 function fixture(id: string, isCreator = false, isAdmin = false) {
   return {
@@ -96,6 +96,18 @@ describe('external app member removal target identity', () => {
     vi.clearAllMocks();
     filters.length = 0;
     writes.length = 0;
+    admin.rpc.mockReset();
+    admin.rpc.mockImplementation(
+      async (_name, args: { p_user_id: string }) => ({
+        data:
+          args.p_user_id === creator
+            ? 'creator_protected'
+            : args.p_user_id === actor
+              ? 'self_protected'
+              : 'removed',
+        error: null,
+      })
+    );
     mocks.members.mockResolvedValue([
       fixture(creator, true),
       fixture(member),
@@ -105,32 +117,49 @@ describe('external app member removal target identity', () => {
   it.each([creator, creator.toUpperCase()])(
     'preserves creator protection for canonical UUID identity',
     async (id) => {
-      expect((await call(id)).status).toBe(403);
+      const response = await call(id);
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        message: 'Workspace creator access cannot be changed here',
+      });
+      expect(admin.from).not.toHaveBeenCalled();
       expect(writes).toEqual([]);
     }
   );
   it.each([actor, actor.toUpperCase()])(
     'preserves self protection',
     async (id) => {
-      expect((await call(id)).status).toBe(403);
+      const response = await call(id);
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        message: 'Cannot change your own access',
+      });
+      expect(admin.from).not.toHaveBeenCalled();
       expect(writes).toEqual([]);
     }
   );
   it.each([member, member.toUpperCase()])(
     'preserves last-admin protection',
     async (id) => {
-      mocks.members.mockResolvedValue([
-        fixture(member, false, true),
-        fixture(actor),
-      ]);
-      expect((await call(id)).status).toBe(403);
+      admin.rpc.mockResolvedValue({ data: 'last_admin', error: null });
+      const response = await call(id);
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        message: 'At least one workspace admin is required',
+      });
+      expect(admin.from).not.toHaveBeenCalled();
       expect(writes).toEqual([]);
     }
   );
   it.each([`{${creator}}`, creator.replaceAll('-', ''), 'not-a-uuid'])(
     'rejects noncanonical member identifier syntax',
     async (id) => {
-      expect((await call(id)).status).toBe(400);
+      const response = await call(id);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        message: 'Missing member identifier',
+      });
+      expect(admin.rpc).not.toHaveBeenCalled();
       expect(writes).toEqual([]);
     }
   );
@@ -138,14 +167,97 @@ describe('external app member removal target identity', () => {
     'uses the canonical target for scoped deletion',
     async (id) => {
       expect((await call(id)).status).toBe(200);
-      expect(filters).toContainEqual(['workspace_members', 'ws_id', 'ws-a']);
-      expect(filters).toContainEqual(['workspace_members', 'user_id', member]);
+      expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+        'remove_workspace_member_guarded_in_mode',
+        {
+          p_actor_id: actor,
+          p_guard_self: false,
+          p_mode: 'external_app',
+          p_user_id: member,
+          p_ws_id: 'ws-a',
+        }
+      );
+      expect(admin.rpc.mock.invocationCallOrder[0]).toBeLessThan(
+        admin.from.mock.invocationCallOrder[0]!
+      );
       expect(filters).toContainEqual(['workspace_invites', 'user_id', member]);
-      expect(writes).toEqual(['workspace_invites', 'workspace_members']);
+      expect(writes).toEqual(['workspace_invites']);
     }
   );
+  it.each([
+    [
+      'last_manager',
+      409,
+      {
+        code: 'WORKSPACE_LAST_MANAGER',
+        message: 'At least one member must be able to manage members',
+      },
+    ],
+    ['forbidden', 403, { error: 'Forbidden' }],
+    ['unexpected', 500, { message: 'Error removing workspace access' }],
+  ])(
+    'maps %s without cancellation or direct removal',
+    async (data, status, body) => {
+      admin.rpc.mockResolvedValue({ data, error: null });
+      const response = await call(member, 'invite@example.invalid');
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual(body);
+      expect(admin.from).not.toHaveBeenCalled();
+    }
+  );
+
+  it('preserves access records on an RPC error', async () => {
+    admin.rpc.mockResolvedValue({
+      data: 'removed',
+      error: new Error('unavailable'),
+    });
+    const response = await call(member, 'invite@example.invalid');
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      message: 'Error removing workspace access',
+    });
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('cancels a direct invitation when membership is already absent', async () => {
+    mocks.members.mockResolvedValue([fixture(creator, true), fixture(actor)]);
+    admin.rpc.mockResolvedValue({ data: 'not_found', error: null });
+    const response = await call(member);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ message: 'success' });
+    expect(writes).toEqual(['workspace_invites']);
+  });
+
+  it('keeps the last-admin check for a listed board guest without membership', async () => {
+    mocks.members.mockResolvedValue([
+      { ...fixture(member), direct_board_guest: true },
+      fixture(actor),
+    ]);
+    admin.rpc.mockResolvedValue({ data: 'not_found', error: null });
+
+    const response = await call(member);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      message: 'At least one workspace admin is required',
+    });
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('cancels both invitations only after a matching membership is removed', async () => {
+    const response = await call(member, 'invite@example.invalid');
+    expect(response.status).toBe(200);
+    expect(writes).toEqual(['workspace_invites', 'workspace_email_invites']);
+    expect(admin.rpc.mock.invocationCallOrder[0]).toBeLessThan(
+      admin.from.mock.invocationCallOrder[0]!
+    );
+    expect(admin.from).not.toHaveBeenCalledWith(
+      'workspace_members_and_invites'
+    );
+  });
+
   it('retains email-only invitation removal', async () => {
     expect((await call(null, 'invite@example.invalid')).status).toBe(200);
+    expect(admin.rpc).not.toHaveBeenCalled();
     expect(writes).toEqual(['workspace_email_invites']);
   });
 });

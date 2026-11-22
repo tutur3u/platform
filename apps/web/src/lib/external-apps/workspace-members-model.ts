@@ -1,9 +1,7 @@
 import type { EnhancedWorkspaceMember } from '@/lib/workspace-members';
 import {
-  ADMIN_PERMISSION_LOOKUP,
   ADMIN_PERMISSION_SET,
   BROAD_ADMIN_PERMISSION,
-  type WorkspaceRolePermissionValue,
 } from './workspace-members-constants';
 
 export type ExternalAppWorkspaceMember = {
@@ -41,26 +39,6 @@ function hasAdminPermission(
 
 export function defaultAdminEnabled(member: EnhancedWorkspaceMember) {
   return hasAdminPermission(member.default_permissions ?? []);
-}
-
-function roleGrantsAdminPermission(
-  role: NonNullable<EnhancedWorkspaceMember['roles']>[number]
-) {
-  const permissions = role.permissions ?? [];
-  return permissions.some(
-    (permission) =>
-      permission.enabled !== false &&
-      (permission.permission === BROAD_ADMIN_PERMISSION ||
-        ADMIN_PERMISSION_LOOKUP.has(
-          permission.permission as WorkspaceRolePermissionValue
-        ))
-  );
-}
-
-export function roleAdminSources(member: EnhancedWorkspaceMember) {
-  return (member.roles ?? [])
-    .filter((role) => roleGrantsAdminPermission(role))
-    .map((role) => role.id);
 }
 
 function roleAdminEnabled(member: EnhancedWorkspaceMember) {
