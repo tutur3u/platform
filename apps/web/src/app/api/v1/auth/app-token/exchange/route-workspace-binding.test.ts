@@ -4,7 +4,7 @@ import {
   createAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 import {
   createExchangeRequest,
@@ -126,18 +126,64 @@ describe('app token exchange workspace binding', () => {
     expect(response.status).toBe(403);
   });
 
-  it('refuses an unbound refresh token for workspace scopes', async () => {
-    for (const workspace of [undefined, workspaceId]) {
-      const response = await exchange({
-        refreshToken: refreshToken(),
-        workspaceId: workspace,
-      });
+  it('asks for a workspace on an unbound refresh token', async () => {
+    const response = await exchange({ refreshToken: refreshToken() });
 
-      expect(response.status).toBe(401);
-      await expect(response.json()).resolves.toEqual({
-        error: 'Workspace-bound sign-in required',
-      });
-    }
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'WORKSPACE_ID_REQUIRED',
+    });
+  });
+
+  it('binds an unbound refresh token that names its workspace', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const response = await exchange({
+      refreshToken: refreshToken(),
+      workspaceId: 'linked-workspace',
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.clone().json()) as { refreshToken: string };
+    expect((await accessClaims(response))?.workspace_id).toBe(workspaceId);
+    const rotated = verifyAppCoordinationToken(body.refreshToken, {
+      secret: 'test-secret',
+    });
+    expect(rotated.ok && rotated.claims.workspace_id).toBe(workspaceId);
+    expect(info).toHaveBeenCalledWith(expect.any(String), {
+      targetApp: 'drive-app',
+    });
+    info.mockRestore();
+  });
+
+  it('runs the workspace checks before binding on refresh', async () => {
+    const response = await exchange({
+      refreshToken: refreshToken(),
+      workspaceId: otherWorkspaceId,
+    });
+
+    expect(response.status).toBe(403);
+  });
+
+  it('stops binding on refresh after the sunset', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-12-23T23:59:00+07:00'));
+    const token = refreshToken();
+
+    const response = await exchange({ refreshToken: token, workspaceId });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('never binds an external-project refresh token on refresh', async () => {
+    mockRegisteredApp(['external-projects:read'], 'drive-app', [workspaceId]);
+
+    const response = await exchange({
+      refreshToken: refreshToken(),
+      requestedScopes: ['external-projects:read'],
+      workspaceId,
+    });
+
+    expect(response.status).toBe(401);
   });
 });
 

@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
-import { expandWildcardScopes } from '@tuturuuu/utils/external-app-registry-policy';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
@@ -19,9 +18,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
 import {
-  getAllowedAppTokenScopes,
-  verifyExternalAppSecret,
-} from '@/lib/app-coordination/external-apps';
+  getAllowedAppTokenScopesWithWorkspaceSession,
+  requiresWorkspaceSessionAuthorization,
+} from '@/lib/app-coordination/exchange-scopes';
+import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import {
   INVITATION_ACTION_SCOPE,
   INVITATION_ACTION_TOKEN_TTL_SECONDS,
@@ -29,10 +29,15 @@ import {
 } from '@/lib/app-coordination/invitation-action-token';
 import {
   externalAppWorkspaceRequiredResponse,
-  isWorkspaceRouteScope,
   requiresExternalAppWorkspaceBinding,
 } from '@/lib/app-coordination/external-app-workspace';
+import {
+  checkRefreshBinding,
+  logBoundOnRefresh,
+  workspaceBoundSignInRequired,
+} from '@/lib/app-coordination/refresh-binding';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
+import { isExternalAppStrictBinding } from '@/lib/app-coordination/strict-binding';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import { PKCE_CODE_VERIFIER_PATTERN } from '@/lib/auth/cross-app-pkce';
 import {
@@ -51,8 +56,6 @@ import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-project
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import type { WorkspaceInvitationRecord } from '@/lib/workspace-invitations/status';
 import { acceptIeeaiFreeInvite } from '@/lib/workspace-invitations/ieeai-free-invite';
-
-const WORKSPACE_SESSION_SCOPE = 'workspace:session';
 
 const exchangeSchema = z.object({
   appId: z
@@ -98,64 +101,6 @@ function getValidationRow(value: unknown): CrossAppValidationRow | null {
 
 function isConfiguredApp(targetApp: string) {
   return getAppDomainMap().some((domain) => domain.name === targetApp);
-}
-
-function requiresWorkspaceSessionAuthorization(scopes: string[]) {
-  return scopes.some(isWorkspaceRouteScope);
-}
-
-function shouldInferWorkspaceSessionScope({
-  allowedWorkspaceIds,
-  requestedScopes,
-  workspaceId,
-}: {
-  allowedWorkspaceIds: string[];
-  requestedScopes: string[];
-  workspaceId?: string;
-}) {
-  const requestedWorkspaceSession = requestedScopes.includes(
-    WORKSPACE_SESSION_SCOPE
-  );
-
-  return (
-    allowedWorkspaceIds.length > 0 &&
-    (requestedWorkspaceSession ||
-      (requestedScopes.length === 0 && Boolean(workspaceId?.trim())))
-  );
-}
-
-function getAllowedAppTokenScopesWithWorkspaceSession({
-  allowedScopes,
-  allowedWorkspaceIds,
-  requestedScopes,
-  workspaceId,
-}: {
-  allowedScopes: string[];
-  allowedWorkspaceIds: string[];
-  requestedScopes: string[];
-  workspaceId?: string;
-}) {
-  const inferWorkspaceSession = shouldInferWorkspaceSessionScope({
-    allowedWorkspaceIds,
-    requestedScopes,
-    workspaceId,
-  });
-  const requestedApiScopes = inferWorkspaceSession
-    ? requestedScopes.filter((scope) => scope !== WORKSPACE_SESSION_SCOPE)
-    : requestedScopes;
-  // Issued tokens never carry a literal wildcard.
-  const scopes = expandWildcardScopes(
-    getAllowedAppTokenScopes({
-      allowedScopes,
-      requestedScopes: requestedApiScopes,
-    })
-  );
-
-  if (!inferWorkspaceSession) {
-    return scopes;
-  }
-
-  return [...new Set([...scopes, WORKSPACE_SESSION_SCOPE])].sort();
 }
 
 async function resolveExchangeTarget({
@@ -415,9 +360,11 @@ async function exchangeAppToken(request: NextRequest) {
       { status: resolvedTarget.status }
     );
   }
-  const requiresWorkspace = requiresExternalAppWorkspaceBinding(
-    resolvedTarget.scopes
-  );
+
+  // RA-MEDIA-C1-001 exempts listed apps from strict binding until expiry.
+  const strictBinding = isExternalAppStrictBinding(resolvedTarget.targetApp);
+  const requiresWorkspace =
+    strictBinding && requiresExternalAppWorkspaceBinding(resolvedTarget.scopes);
   if (token && requiresWorkspace && !workspaceId?.trim()) {
     return externalAppWorkspaceRequiredResponse();
   }
@@ -438,8 +385,17 @@ async function exchangeAppToken(request: NextRequest) {
   let assurance: SessionAssurance | null = null;
   let refreshFamily: string | undefined;
   let refreshWorkspaceId: string | undefined;
+  let refreshBinding = { bindOnRefresh: false, boundOnRefresh: false };
 
   if (refreshToken) {
+    const binding = checkRefreshBinding({
+      refreshToken,
+      requiresWorkspace,
+      scopes: resolvedTarget.scopes,
+      workspaceId,
+    });
+    if ('refusal' in binding) return binding.refusal;
+    refreshBinding = binding;
     const refreshResult = await verifyExternalAppRefreshToken({
       admin: sbAdmin,
       app: resolvedTarget.app,
@@ -471,11 +427,9 @@ async function exchangeAppToken(request: NextRequest) {
     const refreshClaims = refreshResult.claims;
     refreshFamily = refreshResult.family;
     refreshWorkspaceId = refreshClaims.workspace_id;
-    if (!refreshWorkspaceId && requiresWorkspace) {
-      return NextResponse.json(
-        { error: 'Workspace-bound sign-in required' },
-        { status: 401 }
-      );
+    // A grace retry must not bind the same unbound token a second time.
+    if (refreshBinding.bindOnRefresh && refreshResult.graceReplay) {
+      return workspaceBoundSignInRequired();
     }
     workspaceId ??= refreshWorkspaceId;
     userId = refreshClaims.sub;
@@ -556,7 +510,8 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
   let workspaceSessionAuthorization = requiresWorkspaceSessionAuthorization(
-    resolvedTarget.scopes
+    resolvedTarget.scopes,
+    strictBinding || Boolean(workspaceId?.trim())
   )
     ? await authorizeWorkspaceSessionAppTokenExchange({
         admin: sbAdmin,
@@ -596,7 +551,11 @@ async function exchangeAppToken(request: NextRequest) {
   }
 
   if (workspaceSessionAuthorization && !workspaceSessionAuthorization.ok) {
-    if (workspaceSessionAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
+    // Invitation actions need the user present, so a refresh gets a plain 403.
+    if (
+      token &&
+      workspaceSessionAuthorization.code === 'PENDING_WORKSPACE_INVITE'
+    ) {
       const normalizedWorkspaceId =
         workspaceSessionAuthorization.normalizedWorkspaceId;
       return createPendingInvitationResponse({
@@ -628,7 +587,7 @@ async function exchangeAppToken(request: NextRequest) {
   });
 
   if (!exchangeAuthorization.ok) {
-    if (exchangeAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
+    if (token && exchangeAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
       const normalizedWorkspaceId = exchangeAuthorization.normalizedWorkspaceId;
       return createPendingInvitationResponse({
         mfa,
@@ -655,7 +614,10 @@ async function exchangeAppToken(request: NextRequest) {
   if (requiresWorkspace && !normalizedWorkspaceId) {
     return externalAppWorkspaceRequiredResponse();
   }
-  if (refreshWorkspaceId && normalizedWorkspaceId !== refreshWorkspaceId) {
+  if (
+    refreshWorkspaceId &&
+    normalizedWorkspaceId?.toLowerCase() !== refreshWorkspaceId.toLowerCase()
+  ) {
     return NextResponse.json(
       { error: 'Refresh workspace does not match' },
       { status: 403 }
@@ -668,7 +630,8 @@ async function exchangeAppToken(request: NextRequest) {
     userId,
   });
 
-  return createExchangeTokenResponse({
+  const response = await createExchangeTokenResponse({
+    boundOnRefresh: refreshBinding.boundOnRefresh,
     maxBearerTtlSeconds: resolvedTarget.maxBearerTtlSeconds,
     refreshFamily,
     assurance,
@@ -681,6 +644,8 @@ async function exchangeAppToken(request: NextRequest) {
     userProfile,
     userId,
   });
+  if (refreshBinding.bindOnRefresh) logBoundOnRefresh(resolvedTarget.targetApp);
+  return response;
 }
 
 export async function POST(request: NextRequest) {

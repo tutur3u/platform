@@ -14,8 +14,18 @@ export function newRefreshFamily() {
   return randomUUID();
 }
 
-export function refreshTokenScopes(family: string) {
-  return [APP_TOKEN_REFRESH_SCOPE, `${FAMILY_SCOPE_PREFIX}${family}`];
+/**
+ * Carried by every refresh token descended from one bound on refresh. Such a
+ * family never receives external-project scopes.
+ */
+export const BOUND_ON_REFRESH_SCOPE = 'app-token:bound-on-refresh';
+
+export function refreshTokenScopes(family: string, boundOnRefresh = false) {
+  return [
+    APP_TOKEN_REFRESH_SCOPE,
+    `${FAMILY_SCOPE_PREFIX}${family}`,
+    ...(boundOnRefresh ? [BOUND_ON_REFRESH_SCOPE] : []),
+  ];
 }
 
 /** The family of a refresh token, or null for tokens issued without one. */

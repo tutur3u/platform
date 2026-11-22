@@ -67,6 +67,7 @@ export function createExchangeTokenBody({
   mfa,
   normalizedWorkspaceId,
   policy,
+  boundOnRefresh = false,
   refreshFamily = newRefreshFamily(),
   scopes,
   targetApp,
@@ -81,6 +82,8 @@ export function createExchangeTokenBody({
   mfa: MfaSessionProof | null;
   normalizedWorkspaceId?: string | null;
   policy: AppCoordinationSessionPolicy;
+  /** Marks the rotated refresh token's family as bound on refresh. */
+  boundOnRefresh?: boolean;
   /** Rotation family carried from the presented refresh token, if any. */
   refreshFamily?: string;
   scopes: string[];
@@ -122,7 +125,7 @@ export function createExchangeTokenBody({
         mfa: mfa ?? undefined,
         expiresInSeconds: policy.internalAppRefreshTtlSeconds,
         originApp: 'web',
-        scopes: refreshTokenScopes(refreshFamily),
+        scopes: refreshTokenScopes(refreshFamily, boundOnRefresh),
         targetApp,
         userId,
         workspaceId: normalizedWorkspaceId ?? undefined,

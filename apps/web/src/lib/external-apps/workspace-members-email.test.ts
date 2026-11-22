@@ -56,13 +56,17 @@ const members = [
   },
 ];
 
-async function loadMembers(scopes: string[], permissions: string[]) {
+async function loadMembers(
+  scopes: string[],
+  permissions: string[],
+  targetApp = 'fysh'
+) {
   mocks.claims.mockReturnValue({
     email: 'actor@example.com',
     iat: Math.floor(Date.now() / 1000),
     scopes,
     sub: 'user-1',
-    target_app: 'fysh',
+    target_app: targetApp,
     workspace_id: wsId,
   });
   mocks.getPermissions.mockResolvedValue({
@@ -91,12 +95,12 @@ function emails(result: Awaited<ReturnType<typeof loadMembers>>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.getExternalAppById.mockResolvedValue({
+  mocks.getExternalAppById.mockImplementation(async (id: string) => ({
     allowedWorkspaceIds: [wsId],
     enabled: true,
-    id: 'fysh',
+    id,
     secretIssuedAt: null,
-  });
+  }));
   mocks.verifyMembership.mockResolvedValue({ ok: true });
   mocks.getWorkspaceMembers.mockResolvedValue(members);
 });
@@ -143,5 +147,22 @@ describe('external-app workspace member emails', () => {
     );
 
     expect(emails(result)).toEqual([null, null]);
+  });
+
+  it('returns emails to cybershield35 only before the RA expiry', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-11-24T12:00:00+07:00'));
+      expect(
+        emails(await loadMembers(readScopes, [], 'cybershield35'))
+      ).toEqual(['member@example.com', 'invitee@example.com']);
+
+      vi.setSystemTime(new Date('2026-11-25T23:59:00+07:00'));
+      expect(
+        emails(await loadMembers(readScopes, [], 'cybershield35'))
+      ).toEqual([null, null]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

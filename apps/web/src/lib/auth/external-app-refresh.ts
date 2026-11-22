@@ -24,7 +24,12 @@ const REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
 const REFRESH_FAMILY_REVOKED_KEY_PREFIX = 'app-token:refresh:family-revoked';
 
 export type ExternalAppRefreshResult =
-  | { claims: AppCoordinationTokenClaims; family: string }
+  | {
+      claims: AppCoordinationTokenClaims;
+      family: string;
+      /** A retry of an already-consumed token inside the replay grace. */
+      graceReplay: boolean;
+    }
   | 'limited'
   | 'unavailable'
   | null;
@@ -153,7 +158,7 @@ export async function verifyExternalAppRefreshToken({
     if (grant !== 'live') return grant === 'revoked' ? null : 'unavailable';
   }
 
-  return { claims, family };
+  return { claims, family, graceReplay: consumeResult === 'grace' };
 }
 
 /** Deploy markers that name a non-production runtime. */

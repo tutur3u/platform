@@ -15,6 +15,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireLiveExternalApp } from '@/lib/app-coordination/external-app-bearer';
+import { isExternalAppStrictBinding } from '@/lib/app-coordination/strict-binding';
 import {
   normalizeExternalAppWorkspaceId,
   rejectExternalAppTokenWorkspace,
@@ -164,14 +165,16 @@ export async function requireExternalAppWorkspaceMembersAccess({
   }
 
   // Emails need the explicit scope plus the permissions the first-party
-  // members list requires (`/api/workspaces/{wsId}/members/enhanced`).
+  // members list requires (`/api/workspaces/{wsId}/members/enhanced`), except
+  // for an app exempt from strict binding (RA-MEDIA-C1-001).
   const canReadMemberEmails =
-    hasGrantedScope(
+    !isExternalAppStrictBinding(app.id) ||
+    (hasGrantedScope(
       verification.claims.scopes,
       WORKSPACE_MEMBERS_EMAIL_READ_SCOPE
     ) &&
-    canManageMembers &&
-    canManageRoles;
+      canManageMembers &&
+      canManageRoles);
 
   return {
     admin,

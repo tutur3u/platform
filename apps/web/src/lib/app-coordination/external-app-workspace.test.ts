@@ -13,6 +13,8 @@ const workspaceId = '22222222-2222-4222-8222-222222222222';
 const otherWorkspaceId = '77777777-7777-4777-8777-777777777777';
 const personalWorkspaceId = '88888888-8888-4888-8888-888888888888';
 const userId = '11111111-1111-4111-8111-111111111111';
+const beforeExpiry = new Date('2026-11-25T23:58:59+07:00');
+const atExpiry = new Date('2026-11-25T23:59:00+07:00');
 
 function adminWithWorkspaces(
   rows: { handle?: string; id: string; personal?: boolean }[]
@@ -43,6 +45,7 @@ describe('externalAppTokenAllowsWorkspace', () => {
   it('admits the bound workspace and refuses every other one', () => {
     const claims = {
       scopes: ['workspace:drive:read'],
+      target_app: 'fysh',
       workspace_id: workspaceId,
     };
     expect(externalAppTokenAllowsWorkspace(claims, workspaceId)).toBe(true);
@@ -57,9 +60,44 @@ describe('externalAppTokenAllowsWorkspace', () => {
   it('refuses every bearer without a bound workspace', () => {
     for (const workspace_id of [undefined, '', '  ']) {
       expect(
-        externalAppTokenAllowsWorkspace({ workspace_id }, workspaceId)
+        externalAppTokenAllowsWorkspace(
+          {
+            scopes: ['workspace:drive:read'],
+            target_app: 'fysh',
+            workspace_id,
+          },
+          workspaceId,
+          beforeExpiry
+        )
       ).toBe(false);
     }
+  });
+
+  it('admits an exempt app unbound bearer only before the RA expiry', () => {
+    const unbound = {
+      scopes: ['workspace:drive:read'],
+      target_app: 'cybershield35',
+    };
+    expect(
+      externalAppTokenAllowsWorkspace(unbound, workspaceId, beforeExpiry)
+    ).toBe(true);
+    expect(
+      externalAppTokenAllowsWorkspace(unbound, workspaceId, atExpiry)
+    ).toBe(false);
+    expect(
+      externalAppTokenAllowsWorkspace(
+        { ...unbound, scopes: ['workspace:session'] },
+        workspaceId,
+        beforeExpiry
+      )
+    ).toBe(false);
+    expect(
+      externalAppTokenAllowsWorkspace(
+        { ...unbound, workspace_id: otherWorkspaceId },
+        workspaceId,
+        beforeExpiry
+      )
+    ).toBe(false);
   });
 });
 
@@ -87,7 +125,7 @@ describe('requiresExternalAppWorkspaceBinding', () => {
 describe('rejectExternalAppTokenWorkspace', () => {
   it('answers a mismatch with a stable 403', async () => {
     const response = rejectExternalAppTokenWorkspace(
-      { workspace_id: workspaceId },
+      { scopes: [], target_app: 'fysh', workspace_id: workspaceId },
       otherWorkspaceId
     );
     expect(response?.status).toBe(403);
@@ -96,7 +134,7 @@ describe('rejectExternalAppTokenWorkspace', () => {
     });
     expect(
       rejectExternalAppTokenWorkspace(
-        { workspace_id: workspaceId },
+        { scopes: [], target_app: 'fysh', workspace_id: workspaceId },
         workspaceId
       )
     ).toBeNull();

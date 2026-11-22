@@ -161,4 +161,30 @@ describe.each(entryPoints)('%s workspace binding', (_name, access) => {
     if (!result.ok) expect(result.response.status).toBe(403);
     expect(mocks.verifyMembership).not.toHaveBeenCalled();
   });
+
+  it('admits an unbound cybershield35 bearer only before the RA expiry', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      mocks.claims.mockReturnValue(claims({ target_app: 'cybershield35' }));
+      mocks.getExternalAppById.mockResolvedValue({
+        allowedWorkspaceIds: [wsId],
+        enabled: true,
+        id: 'cybershield35',
+        secretIssuedAt: null,
+      });
+
+      vi.setSystemTime(new Date('2026-11-24T12:00:00+07:00'));
+      await access(wsId);
+      expect(mocks.verifyMembership).toHaveBeenCalled();
+
+      mocks.verifyMembership.mockClear();
+      vi.setSystemTime(new Date('2026-11-25T23:59:00+07:00'));
+      const result = await access(wsId);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.response.status).toBe(403);
+      expect(mocks.verifyMembership).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

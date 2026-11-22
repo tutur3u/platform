@@ -43,6 +43,13 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ['INVITATION_ACTION_SCOPE'],
   },
+  // Bind-on-refresh decision before the refresh token is consumed: reads its
+  // workspace and family marker only and never grants; the consume step
+  // below verifies it again.
+  'apps/web/src/lib/app-coordination/refresh-binding.ts': {
+    calls: 1,
+    gates: ['APP_TOKEN_REFRESH_SCOPE', 'BOUND_ON_REFRESH_SCOPE'],
+  },
   // External-app refresh for the exchange route: target app and refresh scope,
   // then the single-use and family fences.
   'apps/web/src/lib/auth/external-app-refresh.ts': {

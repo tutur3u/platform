@@ -138,12 +138,11 @@ describe('free IEEAI exchange integration', () => {
       targetApp: 'ieeai-stats',
       originApp: 'web',
       scopes: ['app-token:refresh'],
-      workspaceId: ws,
     });
-    // The refresh grant refuses a bound workspace the user is not a member of.
+    // Bound on refresh: the pending invitation answers a plain 403.
     expect(
       (await request({ token: undefined, refreshToken: refresh.token })).status
-    ).toBe(401);
+    ).toBe(403);
     expect(rpc).not.toHaveBeenCalled();
   });
 

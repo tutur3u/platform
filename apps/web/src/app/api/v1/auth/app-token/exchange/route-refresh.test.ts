@@ -221,6 +221,7 @@ describe('app token exchange route', () => {
         scopes: ['app-token:refresh'],
         targetApp: 'yoola',
         userId: victimUserId,
+        workspaceId,
       },
       { secret: 'test-secret' }
     );
@@ -255,6 +256,7 @@ describe('app token exchange route', () => {
         scopes: ['app-token:refresh'],
         targetApp: 'yoola',
         userId: victimUserId,
+        workspaceId,
       },
       { secret: 'test-secret' }
     );

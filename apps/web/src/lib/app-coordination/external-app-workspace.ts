@@ -7,11 +7,16 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
+import { isExternalAppStrictBinding } from './strict-binding';
 
 export const EXTERNAL_APP_WORKSPACE_MISMATCH_ERROR =
   'Token is not valid for this workspace';
 
 type WorkspaceBindingClaims = Pick<AppCoordinationTokenClaims, 'workspace_id'>;
+type RouteBindingClaims = Pick<
+  AppCoordinationTokenClaims,
+  'scopes' | 'target_app' | 'workspace_id'
+>;
 
 function isWorkspaceHandleCandidate(value: string) {
   return /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/u.test(value);
@@ -103,21 +108,39 @@ export function externalAppWorkspaceRequiredResponse() {
   );
 }
 
+/** The exchange's 401 for a refresh token that cannot be bound. */
+export function workspaceBoundSignInRequired() {
+  return NextResponse.json(
+    { error: 'Workspace-bound sign-in required' },
+    { status: 401 }
+  );
+}
+
 function tokenWorkspaceId(claims: WorkspaceBindingClaims) {
   return claims.workspace_id?.trim().toLowerCase() || null;
 }
 
 /**
  * Whether an external-app bearer may act on `workspaceId`, a resolved
- * workspace UUID. Only a bearer bound to that workspace may; one without
- * `workspace_id` acts on no workspace.
+ * workspace UUID. A bearer bound to that workspace may. A bearer without
+ * `workspace_id` may only while its app is exempt from strict binding
+ * (RA-MEDIA-C1-001), and never for `workspace:session` or external-project
+ * scopes, which the exchange always binds.
  */
 export function externalAppTokenAllowsWorkspace(
-  claims: WorkspaceBindingClaims,
-  workspaceId: string
+  claims: RouteBindingClaims,
+  workspaceId: string,
+  now?: Date
 ) {
   const bound = tokenWorkspaceId(claims);
-  return bound !== null && bound === workspaceId.trim().toLowerCase();
+  if (bound !== null) return bound === workspaceId.trim().toLowerCase();
+  return (
+    !isExternalAppStrictBinding(claims.target_app, now) &&
+    !claims.scopes.some(
+      (scope) =>
+        scope === 'workspace:session' || scope.startsWith('external-projects:')
+    )
+  );
 }
 
 function workspaceMismatchResponse() {
@@ -129,18 +152,20 @@ function workspaceMismatchResponse() {
 
 /** The 403 response for a bearer bound to another workspace, or null. */
 export function rejectExternalAppTokenWorkspace(
-  claims: WorkspaceBindingClaims,
-  workspaceId: string
+  claims: RouteBindingClaims,
+  workspaceId: string,
+  now?: Date
 ) {
-  return externalAppTokenAllowsWorkspace(claims, workspaceId)
+  return externalAppTokenAllowsWorkspace(claims, workspaceId, now)
     ? null
     : workspaceMismatchResponse();
 }
 
 /**
- * Applies the workspace binding to a route whose params carry `wsId`. An
- * unbound bearer is refused without a lookup, and a segment that cannot be
- * resolved is refused.
+ * Applies the workspace binding to a scope-only app-session route whose
+ * params carry `wsId`, such as `workspaces/{wsId}/avatar`. An unbound bearer
+ * (for example a `users:profile:*` one) is refused without a lookup for every
+ * app, and a segment that cannot be resolved is refused.
  */
 export async function rejectExternalAppRouteWorkspace({
   admin,
@@ -171,5 +196,7 @@ export async function rejectExternalAppRouteWorkspace({
     return workspaceMismatchResponse();
   }
 
-  return rejectExternalAppTokenWorkspace(claims, workspaceId);
+  return tokenWorkspaceId(claims) === workspaceId.trim().toLowerCase()
+    ? null
+    : workspaceMismatchResponse();
 }

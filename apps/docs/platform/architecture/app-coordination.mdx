@@ -273,10 +273,56 @@ to that workspace and the user must be a direct `MEMBER`. Each of these
 routes resolves the route workspace (UUID, handle or `personal`) and answers
 a bearer bound to another workspace, or bound to none, with `403`
 `Token is not valid for this workspace`. A refresh keeps the refresh token's
-workspace: naming another workspace answers `403`, and a refresh token
-without a workspace for these scopes answers `401`
-`Workspace-bound sign-in required`, so the app signs the user in again.
-The check lives in `apps/web/src/lib/app-coordination/external-app-workspace.ts`.
+workspace, and naming another workspace answers `403`.
+
+A refresh token without a workspace (no `workspace_id`, or an empty one), for
+workspace scopes, is bound on refresh until 2026-12-23 23:59 ICT
+(`BIND_ON_REFRESH_SUNSET`, one refresh family lifetime). The checks below
+that refuse a request run before the single-use refresh token is consumed,
+so they never burn it:
+
+- A request naming `workspaceId` passes the same checks as a fresh exchange
+  (linked app, direct `MEMBER`, MFA) and receives a bound bearer and a bound,
+  rotated refresh token marked `app-token:bound-on-refresh`; every later
+  refresh token in that family keeps the marker. This holds for every app,
+  including one exempt from strict binding.
+- The token is consumed before those workspace checks run. Naming a
+  workspace the user is not a member of answers `403` and spends the token,
+  so a retry with it answers `401` and the user signs in again.
+- A request without `workspaceId` answers `400` `WORKSPACE_ID_REQUIRED`, and
+  the same token can be retried with one. An app exempt from strict binding
+  instead keeps an unbound refresh.
+- A retry of an already-consumed token inside the replay grace cannot bind it
+  again; it answers `401`.
+- External-project scopes are never granted to a refresh token without a
+  workspace, for any app, nor to a family marked as bound on refresh. Those
+  refreshes, and every unbound one from the sunset on, answer `401`
+  `Workspace-bound sign-in required`.
+
+On refresh, a pending invitation to the chosen workspace answers a plain
+`403`; the invitation action token is issued only on a sign-in exchange,
+where the user is present. The checks live in
+`apps/web/src/lib/app-coordination/external-app-workspace.ts` and
+`refresh-binding.ts`. Coverage:
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-refresh-binding.test.ts`.
+
+#### Strict binding exemption (RA-MEDIA-C1-001)
+
+`EXTERNAL_APP_STRICT_BINDING` (`apps/web/src/lib/app-coordination/strict-binding.ts`)
+applies three checks to every app: the exchange refuses workspace scopes
+without `workspaceId`, a refresh token without a workspace is refused or
+bound as above, and member emails need `workspace.members.email:read`. Risk
+acceptance RA-MEDIA-C1-001 exempts `cybershield35` from those three checks
+until 2026-11-25 23:59 ICT; from that instant strict binding applies to every
+app. While exempt, `cybershield35` may receive a bearer without a workspace,
+which the Drive, members and cron routes accept for its linked workspaces;
+a bearer bound to another workspace is still refused, and scope matching,
+wildcard rules and Drive permissions apply unchanged. The exempt list and
+expiry are code constants with no environment override; setting
+`EXTERNAL_APP_STRICT_BINDING=all` ends the exemption early, and no value
+relaxes strict binding. Coverage:
+`apps/web/src/lib/app-coordination/strict-binding.test.ts` and
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-strict-binding.test.ts`.
 
 Coverage:
 `apps/web/src/lib/app-coordination/external-app-bearer.test.ts`,
