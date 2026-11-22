@@ -16,7 +16,9 @@ def load():
     spec = importlib.util.spec_from_file_location("mastermind_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.IDENTITY = {**module.IDENTITY, "name": WORKER, "workers_dev": False, "preview_urls": False, "vars": {}, "observability": {"enabled": False}}
+    # Mastermind fetches tuturuuu.com on its own zone, so the Worker needs
+    # global_fetch_strictly_public to reach the gateway's zone route.
+    module.IDENTITY = {**module.IDENTITY, "name": WORKER, "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"], "workers_dev": False, "preview_urls": False, "vars": {}, "observability": {"enabled": False}}
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "mastermind-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
