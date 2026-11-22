@@ -3,6 +3,7 @@ import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { replaceMailInlineAttachmentUrls } from '../inline-images';
 import { MailSendError } from '../send-error';
+import { safeStackFrames } from '../stack-frames';
 import type { MailRouteContext } from '../types';
 import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
@@ -27,7 +28,10 @@ export async function sendMailMessage(
       error instanceof Error && safeErrorNames.includes(error.name)
         ? error.name
         : 'UnknownError';
-    console.warn('[mail] send failed', { errorName });
+    console.warn('[mail] send failed', {
+      errorName,
+      frames: safeStackFrames(error),
+    });
     throw new MailSendError();
   }
 }
