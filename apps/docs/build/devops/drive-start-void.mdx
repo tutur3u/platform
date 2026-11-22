@@ -34,8 +34,11 @@ Neither profile declares routes, custom domains, `workers_dev` or
 The production Worker answers every request with a refusal until
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
 `SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` are present
-(`cloudflare/required-bindings.ts`). Names only are recorded here; values stay in
-the secret store. The production profile admits `drive.tuturuuu.com` and the
+(`cloudflare/required-bindings.ts`). The Supabase origin is a public production
+var pinned in `cloudflare/production-profile.json`, like Finance's; the other
+three are Worker secrets. Names only are recorded here; secret values stay in the
+secret store. A production request whose Supabase origin differs from the pinned
+one answers 503. The production profile admits `drive.tuturuuu.com` and the
 exact `/drive` mount and its descendants on `tuturuuu.com`. Both use the
 production configuration fence. The staging profile admits only its declared
 staging hostname, and unlisted hosts or apex paths answer `404`.
@@ -61,8 +64,12 @@ runs `drive-native-artifact.py config` and `cutover.runtime.mjs` on the emitted
 Worker, seals the route-free bytes (`workers_dev` and `preview_urls` off, no
 routes) with the profile in `scripts/ci/wave1-native-profiles.json`, and requalifies
 the restored archive without provider credentials. The recipe's vars equal
-`cloudflare/production-profile.json`; change the two together. The release inputs pin
-the production Supabase host. The publish job does not run for a release artifact,
+`cloudflare/production-profile.json`; change the two together. The release inputs and
+the recipe's public input pin both name the production Supabase origin. The runtime
+gates (`cutover.runtime.mjs` on the emitted build, `wave1-native-runtime.mjs` on the
+restored archive) also require, on `drive.tuturuuu.com` and `tuturuuu.com/drive`, an
+enforcing nonce and `'strict-dynamic'` `Content-Security-Policy` on an owned HTML
+response and `require-trusted-types-for` only in `Content-Security-Policy-Report-Only`. The publish job does not run for a release artifact,
 and production publication stays held until an explicit cutover change admits Drive.
 
 ## Cutover packet
@@ -73,20 +80,48 @@ and production publication stays held until an explicit cutover change admits Dr
 | Routes | Existing canonical subdomain, plus `/drive` and `/drive/*` via the gateway's `MOUNT_DRIVE` binding after acceptance |
 | Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
 | Build command | `VITE_DRIVE_NATIVE_PROFILE=production bun run --cwd apps/drive build:cloudflare` |
-| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
+| Pinned public var | `NEXT_PUBLIC_SUPABASE_URL` (the production origin, in `cloudflare/production-profile.json`) |
 | Central API origin | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` |
-| Rollback | Capture the Worker, version and routing that serve `drive.tuturuuu.com` before activating (it currently serves an older vinext build), then record the immutable deployment, plus the active gateway version, mount bindings and overlapping zone routes for the apex |
+| Rollback | Capture the Worker, version and hostname attachment that serve `drive.tuturuuu.com` before the first change (it currently serves an older vinext build), plus the active gateway version, mount bindings, Web's active-mount list and overlapping zone routes for the apex. The [ordered reverse rollback](#rollback) uses these captures |
 | Data | no database writes and no migrations |
 
 ### Switch
 
-1. Record the source SHA, the sealed artifact name and the Vercel deployment ID.
-2. Provision the four secrets on `tuturuuu-drive`, then deploy the sealed output.
-3. Run private version-pinned smoke for both production host variants before
-   routing traffic.
-4. Activate `/drive` and `/drive/*` with the same gateway version and
-   `MOUNT_DRIVE` binding. Keep the serving subdomain routing as its separate
-   rollback surface.
+Drive's production publication is held until the release authority admits it.
+The hostname `drive.tuturuuu.com` is attached to the legacy `tuturuuu-drive`
+Worker, and the publish preflight refuses while it stays attached there, so the
+hostname moves first. Each step is verified before the next one starts, and each
+has the reverse step listed under [Rollback](#rollback).
+
+1. **Record** the source SHA, the sealed artifact name, the Vercel deployment ID
+   and the captures listed in the packet.
+2. **1a, move the hostname.** Reattach `drive.tuturuuu.com` to the
+   `tuturuuu-apex-redirect` Worker with `drive` *not* in `SUBDOMAIN_REDIRECT_APPS`.
+   With no redirect list entry the Worker is a pure passthrough to its `APP_DRIVE`
+   binding for `tuturuuu-drive`, so the legacy build keeps serving unchanged while
+   the hostname leaves that Worker's attachment. The redirect Worker needs that
+   binding (a gateway configuration change) before this step.
+3. **Publish native Drive** with `TTR_TRUSTED_TYPES_DRIVE=report`. Provision the
+   three Worker secrets on `tuturuuu-drive` first, publish the sealed route-free
+   artifact, and record the vinext preimage version that the upload replaces.
+4. **1b, signed-in crawl.** Crawl every Drive route signed in through a
+   `Cloudflare-Workers-Version-Overrides` staged version of the new Worker. The
+   expected result is zero Trusted Types violations in the report endpoint's logs.
+5. **1c, enforce.** Change the profile to `enforce`, re-release through the
+   producer and publish the new sealed version.
+6. **2, mount.** Write the gateway mount for `/drive` and `/drive/*`
+   (`MOUNT_DRIVE`) and, in the same window, land the matching mount commit on
+   `main` so Web's active-mount list includes `drive`. Run
+   `node scripts/active-app-mounts.mjs --live <version.json>` against the live
+   gateway version before any Web family promotion, and keep unrelated gateway
+   and Web changes frozen until it passes.
+7. **3, redirect.** Add `drive` to `SUBDOMAIN_REDIRECT_APPS` so
+   `drive.tuturuuu.com` navigations answer 301 to `tuturuuu.com/drive`.
+
+Run private version-pinned smoke for both production host variants before routing
+traffic to a new version, and the smoke below after each step that changes
+routing.
 
 ### Smoke
 
@@ -117,12 +152,45 @@ storage request bodies, ranges and response status.
 
 - **Triggers:** roll back immediately on a smoke, authentication, error-rate,
   latency or storage permission regression during the 30–60 minute watch.
-- **Action:** restore the captured gateway version for the apex. For a
-  subdomain change, restore the captured routing to its immutable prior
-  deployment.
+- **Order:** undo only the steps that were completed, newest first. Check
+  `drive.tuturuuu.com` and `tuturuuu.com/drive` after each reverse step before
+  taking the next.
+
+1. Remove `drive` from `SUBDOMAIN_REDIRECT_APPS` and release that Worker version;
+   the hostname returns to passthrough and the 301 stops.
+2. Reattach `drive.tuturuuu.com` to the Worker it was attached to, from the
+   capture taken before step 1a.
+3. Revert the mount commit on `main` and rebuild Web's active-mount list with
+   `drive` removed, preserving the other entries.
+4. Restore the captured gateway version at 100%, using the
+   [gateway rollback procedure](/build/devops/gateway-worker#one-action-rollback-for-a-gateway-mount).
+   `/drive` and `/drive/*` return to their captured dispatch.
+5. Restore the Worker preimage: the recorded vinext version of `tuturuuu-drive`.
+   Roll the Trusted Types profile back to `report` first when only the `enforce`
+   release regressed, because that is a one-var change to a published version.
+
 - **Data:** a route rollback changes no stored files or metadata.
 - **Stability:** keep the Vercel project and domain for 14 consecutive stable
   days before decommissioning, which is a separate approval.
+
+## Legacy hostname
+
+`drive.tuturuuu.com` moves to the
+[legacy redirect Worker](/build/devops/gateway-worker#legacy-subdomain-redirect)
+at step 1a, before the native publish, because the publish preflight refuses a
+Worker that still holds a route or custom domain. With `APP_DRIVE` bound and
+`drive` absent from `SUBDOMAIN_REDIRECT_APPS`, the redirect Worker forwards every
+request to `tuturuuu-drive`, so `tuturuuu-drive` keeps serving the hostname.
+Adding `drive` to the list is a separate, later step, taken after the apex mount
+passes signed-in smoke. Once enabled, check
+that `/vi/personal?ref=a&ref=b` redirects once to
+`/drive/vi/personal?ref=a&ref=b`, and that legacy API requests, auth callbacks and
+assets still reach Drive. Restore the captured attachment first if rolling back
+after enabling the 301.
+
+Drive needs no `/vi/drive` locale alias at the gateway: Drive owns `NEXT_LOCALE`,
+and `tuturuuu.com/vi/drive` already answers `307` to `/drive` with
+`NEXT_LOCALE=vi` set.
 
 ## Latency qualification
 

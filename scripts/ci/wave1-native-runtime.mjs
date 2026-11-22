@@ -19,6 +19,7 @@ import {
   storefrontAssetFile,
   storefrontRuntimeHosts,
 } from './storefront-native-runtime.mjs';
+import { assertReportOnlyTrustedTypes } from './wave1-document-security.mjs';
 import { verify } from './wave1-native-artifact.mjs';
 import { releaseRecipes } from './wave1-native-profile.mjs';
 import { runInfrastructureProductionRuntime } from './infrastructure-production-runtime.mjs';
@@ -52,6 +53,28 @@ export function calendarProductionRuntimeTarget(profile) {
       },
     ],
   };
+}
+
+/**
+ * The extra hosts a sealed artifact is exercised on. Each Calendar and Mail
+ * artifact must 404 the other environment's host; the production Finance and
+ * Drive artifacts reject the staging subdomain and also answer on their
+ * `/<app>` mount of the apex.
+ */
+export function nativeRuntimeHostTargets(app, environment, recipe) {
+  const foreignHost =
+    app === 'calendar' || app === 'mail'
+      ? environment === 'production'
+        ? `${app}.tutur3u.com`
+        : `${app}.tuturuuu.com`
+      : app === 'finance' || app === 'drive'
+        ? `${app}.tutur3u.com`
+        : null;
+  const pathTarget =
+    (app === 'finance' || app === 'drive') && environment === 'production'
+      ? { host: new URL(recipe.mountHosts[0]).hostname, basePath: `/${app}` }
+      : null;
+  return { foreignHost, pathTarget };
 }
 
 /** A browser document navigation, which fetch() cannot express. */
@@ -117,30 +140,17 @@ async function runRuntimeAcceptance() {
     (app === 'calendar' || app === 'mail') && environment === 'staging'
       ? accessFixture()
       : null;
-  // N8/N9: each Calendar and Mail artifact must 404 the other environment's host.
-  // The production Finance and Drive artifacts reject the staging subdomain.
-  const foreignHost =
-    app === 'calendar' || app === 'mail'
-      ? environment === 'production'
-        ? `${app}.tutur3u.com`
-        : `${app}.tuturuuu.com`
-      : app === 'finance' || app === 'drive'
-        ? `${app}.tutur3u.com`
-        : null;
+  const { foreignHost, pathTarget } = nativeRuntimeHostTargets(
+    app,
+    environment,
+    releaseRecipes[app]
+  );
   let clean = false;
   try {
     const hosts = [receipt.profile.host];
     const calendarShadow =
       app === 'calendar' && environment === 'production'
         ? calendarProductionRuntimeTarget(receipt.profile)
-        : null;
-    // Finance and Drive also answer on their `/<app>` mount of the apex.
-    const pathTarget =
-      (app === 'finance' || app === 'drive') && environment === 'production'
-        ? {
-            host: new URL(releaseRecipes[app].mountHosts[0]).hostname,
-            basePath: `/${app}`,
-          }
         : null;
     if (pathTarget) hosts.unshift(pathTarget.host);
     if (calendarShadow) hosts.unshift(calendarShadow.apexHost);
@@ -473,6 +483,22 @@ async function runRuntimeAcceptance() {
           Buffer.from(await response.arrayBuffer()),
           await readFile(join(appRoot, 'dist', file))
         );
+        if (app === 'drive') {
+          // An owned HTML response: the app's own 404 document.
+          const document = await fetchWorker(
+            '/verify-token/__native-asset-probe/missing'
+          );
+          assert.equal(document.status, 404);
+          assert.match(
+            document.headers.get('content-type') ?? '',
+            /^text\/html\b/u
+          );
+          await document.body?.cancel();
+          assertReportOnlyTrustedTypes((name) => document.headers.get(name), {
+            where: `${host}${basePath}`,
+            basePath,
+          });
+        }
         if (
           app === 'mail' ||
           app === 'calendar' ||

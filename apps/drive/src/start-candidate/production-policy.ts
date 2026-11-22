@@ -1,31 +1,15 @@
 import productionVars from '../../cloudflare/production-profile.json';
-import { STAGING_SUPABASE_ORIGIN } from './staging-policy';
 
+/**
+ * The profile pins every production var, including the Supabase origin, so a
+ * Worker carrying any other value (or a staging one) is not production.
+ */
 export function isDriveProductionEnvironment(
-  env: Partial<
-    Record<keyof typeof productionVars | 'NEXT_PUBLIC_SUPABASE_URL', string>
-  >
+  env: Partial<Record<keyof typeof productionVars, string>>
 ) {
-  if (
-    !Object.entries(productionVars).every(([key, value]) =>
-      Object.entries(env).some(
-        ([name, configured]) => name === key && configured === value
-      )
+  return Object.entries(productionVars).every(([key, value]) =>
+    Object.entries(env).some(
+      ([name, configured]) => name === key && configured === value
     )
-  )
-    return false;
-  try {
-    const url = new URL(env.NEXT_PUBLIC_SUPABASE_URL ?? '');
-    return (
-      url.protocol === 'https:' &&
-      !url.username &&
-      !url.password &&
-      url.origin !== STAGING_SUPABASE_ORIGIN &&
-      url.pathname === '/' &&
-      !url.search &&
-      !url.hash
-    );
-  } catch {
-    return false;
-  }
+  );
 }

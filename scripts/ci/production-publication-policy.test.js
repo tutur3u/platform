@@ -22,6 +22,7 @@ const apps = [
   'nova',
   'mind',
   'finance',
+  'drive',
   'meet',
   'calendar',
   'mail',

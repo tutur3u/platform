@@ -6,14 +6,16 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertReportOnlyTrustedTypes } from '../../../scripts/ci/wave1-document-security.mjs';
 import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
 const canonical = 'drive.tuturuuu.com';
 const apex = 'tuturuuu.com';
+// The Supabase origin is a pinned production var in the emitted config; only
+// the credentials are Worker secrets.
 const required = [
-  'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   'SUPABASE_SECRET_KEY',
   'TUTURUUU_APP_COORDINATION_SECRET',
@@ -49,10 +51,7 @@ test(
         name,
         {
           type: 'plain_text',
-          value:
-            name === 'NEXT_PUBLIC_SUPABASE_URL'
-              ? 'https://production-smoke.invalid'
-              : 'synthetic-cutover-fixture-value-000000000000',
+          value: 'synthetic-cutover-fixture-value-000000000000',
         },
       ])
     );
@@ -157,18 +156,27 @@ test(
     }
     assert.equal((await call('/drive', 'untrusted.invalid')).status, 404);
     assert.equal((await call('/', 'drive.tutur3u.com')).status, 404);
+    const documentProbes = profiles.map(({ host, base }) => ({
+      host,
+      base,
+      path: `${base}/verify-token/__native-asset-probe/missing`,
+      status: 404,
+    }));
     await t.test('every rendered asset loads on both hosts', (t) =>
-      assertRenderedAssets(
-        t,
-        require,
-        call,
-        profiles.map(({ host, base }) => ({
-          host,
-          base,
-          path: `${base}/verify-token/__native-asset-probe/missing`,
-          status: 404,
-        }))
-      )
+      assertRenderedAssets(t, require, call, documentProbes)
+    );
+    await t.test(
+      'owned HTML enforces the nonce policy and only reports Trusted Types',
+      async () => {
+        for (const { host, base, path } of documentProbes) {
+          const page = await call(path, host);
+          assert.equal(page.status, 404, host);
+          assertReportOnlyTrustedTypes((name) => page.headers[name], {
+            where: host,
+            basePath: base,
+          });
+        }
+      }
     );
   }
 );

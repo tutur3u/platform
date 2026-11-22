@@ -4,12 +4,12 @@ import {
   runtimeAppBase,
   withAppBase,
 } from '@tuturuuu/start-bridge/app-url';
+import { createMountedAppAuth } from '@tuturuuu/auth/proxy';
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import appConfig from '../../start-bridge.config';
-import { mountedLogin } from './mounted-login';
 
 vi.hoisted(() => {
   vi.stubEnv('VITE_DRIVE_NATIVE_PROFILE', 'production');
@@ -22,6 +22,8 @@ vi.mock('@tuturuuu/auth/proxy', async () => ({
 
 const app = 'drive';
 const base = '/drive';
+// The same helper Drive's proxy uses for every request on the mount.
+const mountedAuth = createMountedAppAuth({ targetApp: app });
 const mounts = { app, rootHosts: [], ...appConfig.mounts };
 const ctx = { waitUntil: vi.fn() };
 afterEach(() => vi.unstubAllEnvs());
@@ -36,8 +38,11 @@ function fixture() {
   };
   const proxy = vi.fn(async (request: NextRequest) => {
     seen.push(request);
-    const login = await mountedLogin(request);
-    if (login) return login;
+    if (
+      mountedAuth.isMounted(request) &&
+      request.nextUrl.pathname.endsWith('/login')
+    )
+      return mountedAuth.auth(request);
     const response = NextResponse.next();
     response.cookies.set('NEXT_LOCALE', 'vi', {
       domain: '.tuturuuu.com',
@@ -168,7 +173,7 @@ describe('drive apex mount', () => {
   it('keeps root-mode URL and login handling intact', () => {
     expect(withAppBase('/assets/chunk.js', '')).toBe('/assets/chunk.js');
     expect(
-      mountedLogin(new NextRequest('https://drive.tuturuuu.com/login'))
-    ).toBeNull();
+      mountedAuth.isMounted(new NextRequest('https://drive.tuturuuu.com/login'))
+    ).toBe(false);
   });
 });

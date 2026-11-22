@@ -883,10 +883,10 @@
         "WEB_APP_URL": "https://tuturuuu.com",
         "TTR_URL": "https://tuturuuu.com",
         "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+        "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
         "TTR_TRUSTED_TYPES_DRIVE": "report"
       },
       "secrets": [
-        "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_SECRET_KEY",
         "TUTURUUU_APP_COORDINATION_SECRET"
@@ -898,7 +898,6 @@
         "canonicalHosts": ["https://drive.tuturuuu.com"],
         "mountHosts": ["https://tuturuuu.com"],
         "requiredSecretNames": [
-          "NEXT_PUBLIC_SUPABASE_URL",
           "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
           "SUPABASE_SECRET_KEY",
           "TUTURUUU_APP_COORDINATION_SECRET"
@@ -912,9 +911,10 @@
           "WEB_APP_URL": "https://tuturuuu.com",
           "TTR_URL": "https://tuturuuu.com",
           "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+          "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
           "TTR_TRUSTED_TYPES_DRIVE": "report"
         },
-        "publicInputPins": [],
+        "publicInputPins": ["https://nzamlzqfdwaaxdefwraj.supabase.co"],
         "publicationPolicyKey": "productionPublicationPolicy",
         "rollbackTargetRule": "recorded-preimage",
         "buildRecipe": {
@@ -961,6 +961,7 @@
             "WEB_APP_URL": "https://tuturuuu.com",
             "TTR_URL": "https://tuturuuu.com",
             "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+            "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
             "TTR_TRUSTED_TYPES_DRIVE": "report"
           },
           "stagingPublicationVars": {},

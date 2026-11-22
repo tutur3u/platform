@@ -35,7 +35,6 @@ describe('Drive production mount environment gate', () => {
     vi.stubGlobal('__driveTestRsc', { loadModule: runtime.loadModule });
     const env = {
       ...productionVars,
-      NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.supabase.co',
       ASSETS: { fetch: async () => new Response('asset') },
     };
     for (const url of [
@@ -49,6 +48,30 @@ describe('Drive production mount environment gate', () => {
       expect(await response.text()).toBe('Drive');
     }
   });
+  it.each([
+    'https://fixture.supabase.co',
+    'https://drive-production-fixture.invalid',
+    'https://nzamlzqfdwaaxdefwraj.supabase.co.evil.invalid',
+  ])(
+    'rejects the unpinned Supabase origin %s on both hosts',
+    async (origin) => {
+      vi.stubGlobal('__driveTestRsc', { loadModule: runtime.loadModule });
+      const env = {
+        ...productionVars,
+        NEXT_PUBLIC_SUPABASE_URL: origin,
+        ASSETS: { fetch: async () => new Response('asset') },
+      };
+      for (const url of [
+        'https://drive.tuturuuu.com/workspace',
+        'https://tuturuuu.com/drive/workspace',
+      ]) {
+        const response = await worker.fetch(new Request(url), env, {
+          waitUntil: vi.fn(),
+        });
+        expect(response.status).toBe(503);
+      }
+    }
+  );
   it('rejects staging bindings on the production mount', async () => {
     const response = await worker.fetch(
       new Request('https://tuturuuu.com/drive/workspace'),

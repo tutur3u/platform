@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { assertReportOnlyTrustedTypes } from './wave1-document-security.mjs';
 import { prepare, verify } from './wave1-native-artifact.mjs';
 import { assertRouteFree } from './wave1-native-production.mjs';
 import {
@@ -22,6 +23,7 @@ import {
   publicationConfig,
   releaseRecipes,
 } from './wave1-native-profile.mjs';
+import { nativeRuntimeHostTargets } from './wave1-native-runtime.mjs';
 import {
   assertReleaseInputs,
   DRIVE_PRODUCTION_HOST,
@@ -60,28 +62,57 @@ test('the Drive wave-1 entry mirrors the reviewed native production profile', ()
   assert.deepEqual(driveVars, productionVars);
   assert.equal(recipe.cf.productionOnly, true);
   assert.deepEqual(recipe.cf.admittedSourceServices, []);
-  assert.deepEqual(recipe.publicInputPins, []);
-  assert.match(
-    read('apps/drive/void.config.ts'),
-    new RegExp(`compatibility_date: '${recipe.cf.compatibilityDate}'`)
-  );
-  const bridge = read('apps/drive/start-bridge.config.ts');
-  assert.match(bridge, /'drive\.tuturuuu\.com'/);
-  assert.match(bridge, /mountHosts: production \? \['tuturuuu\.com'\]/);
-  assert.match(bridge, /basePath: '\/drive'/);
+  assert.equal(recipe.cf.compatibilityDate, '2026-10-12');
 });
 
-test('Drive secrets are exactly the Worker bindings it refuses to start without', () => {
-  const required = [
-    ...read('apps/drive/cloudflare/required-bindings.ts').matchAll(
-      /^ {2}'([A-Z0-9_]+)',$/gmu
-    ),
-  ].map((match) => match[1]);
-  assert.equal(required.length, 4);
-  assert.deepEqual(profiles.apps.drive.secrets, required);
-  assert.deepEqual(releaseRecipes.drive.requiredSecretNames, required);
-  for (const name of required)
-    assert.ok(!Object.hasOwn(productionVars, name), name);
+test('Drive pins the production Supabase origin as a public input, not a secret', () => {
+  const origin = `https://${DRIVE_PRODUCTION_HOST}`;
+  assert.equal(productionVars.NEXT_PUBLIC_SUPABASE_URL, origin);
+  assert.deepEqual(releaseRecipes.drive.publicInputPins, [origin]);
+  assert.ok(!profiles.apps.drive.secrets.includes('NEXT_PUBLIC_SUPABASE_URL'));
+  assert.ok(
+    !releaseRecipes.drive.requiredSecretNames.includes(
+      'NEXT_PUBLIC_SUPABASE_URL'
+    )
+  );
+});
+
+test('Drive secrets and pinned vars are exactly the Worker bindings it refuses to start without', async () => {
+  const { missingRequiredBindings } =
+    await import('../../apps/drive/cloudflare/required-bindings.ts');
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    const candidates = [
+      ...profiles.apps.drive.secrets,
+      ...Object.keys(productionVars),
+    ];
+    const bindings = Object.fromEntries(
+      candidates.map((name) => [name, 'bound'])
+    );
+    assert.equal(missingRequiredBindings(bindings), false);
+    const required = candidates.filter((name) => {
+      const { [name]: _removed, ...rest } = bindings;
+      return missingRequiredBindings(rest);
+    });
+    assert.deepEqual(
+      required.toSorted(),
+      [
+        'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+        'NEXT_PUBLIC_SUPABASE_URL',
+        'SUPABASE_SECRET_KEY',
+        'TUTURUUU_APP_COORDINATION_SECRET',
+      ].toSorted()
+    );
+    const secrets = required.filter(
+      (name) => !Object.hasOwn(productionVars, name)
+    );
+    assert.deepEqual(profiles.apps.drive.secrets, secrets);
+    assert.deepEqual(releaseRecipes.drive.requiredSecretNames, secrets);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
 });
 
 test('the Drive production vars keep Trusted Types report-only', () => {
@@ -146,7 +177,6 @@ test('Drive production seal keeps the emitted vars and a route-free relocatable 
   ]);
   assert.deepEqual(emitted.vars, productionVars);
   assert.deepEqual(emitted.secrets.required, [
-    'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
     'SUPABASE_SECRET_KEY',
     'TUTURUUU_APP_COORDINATION_SECRET',
@@ -212,6 +242,28 @@ for (const [name, change, message] of [
     (base) => ({
       ...base,
       vars: { ...base.vars, TTR_ONE_ORIGIN_DRIVE: 'shadow' },
+    }),
+    /Source vars require explicit profile review/,
+  ],
+  [
+    'a non-production Supabase origin',
+    (base) => ({
+      ...base,
+      vars: {
+        ...base.vars,
+        NEXT_PUBLIC_SUPABASE_URL: 'https://fxefojytwimjiqxseqag.supabase.co',
+      },
+    }),
+    /Source vars require explicit profile review/,
+  ],
+  [
+    'an unpinned Supabase origin',
+    (base) => ({
+      ...base,
+      vars: {
+        ...base.vars,
+        NEXT_PUBLIC_SUPABASE_URL: 'https://drive-fixture.supabase.co',
+      },
     }),
     /Source vars require explicit profile review/,
   ],
@@ -291,11 +343,20 @@ test('Drive secret names never duplicate a bound var and the source must be exac
   assert.throws(
     () =>
       publicationConfig(
-        { ...base, vars: { ...driveVars, NEXT_PUBLIC_SUPABASE_URL: 'x' } },
+        base,
         {
           ...profile,
           secrets: [...profile.secrets, 'NEXT_PUBLIC_SUPABASE_URL'],
         },
+        options
+      ),
+    /Secret name duplicates a source var: NEXT_PUBLIC_SUPABASE_URL/
+  );
+  assert.throws(
+    () =>
+      publicationConfig(
+        { ...base, vars: { ...driveVars, NEXT_PUBLIC_SUPABASE_URL: 'x' } },
+        profile,
         options
       ),
     /Source vars require explicit profile review/
@@ -446,11 +507,74 @@ test('the configure step writes only the profile public URLs for Drive', () => {
 });
 
 test('the runtime gate exercises the Drive apex mount and refuses the staging host', () => {
-  const runtime = read('scripts/ci/wave1-native-runtime.mjs');
-  assert.match(
-    runtime,
-    /app === 'finance' \|\| app === 'drive'\n\s+\? `\$\{app\}\.tutur3u\.com`/
+  const targets = nativeRuntimeHostTargets(
+    'drive',
+    'production',
+    releaseRecipes.drive
   );
-  assert.match(runtime, /basePath: `\/\$\{app\}`/);
-  assert.match(runtime, /app === 'drive'\n\s+\) \{/);
+  assert.equal(targets.foreignHost, 'drive.tutur3u.com');
+  assert.deepEqual(targets.pathTarget, {
+    host: 'tuturuuu.com',
+    basePath: '/drive',
+  });
+  // Drive publishes production only, so no staging path target exists.
+  assert.equal(
+    nativeRuntimeHostTargets('drive', 'staging', releaseRecipes.drive)
+      .pathTarget,
+    null
+  );
+});
+
+test('the document gate needs an enforcing nonce policy and report-only Trusted Types', () => {
+  const nonce = 'dGVzdC1ub25jZS0xMjM0NQ==';
+  const enforcing = `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`;
+  const reportOnly = (base) =>
+    `require-trusted-types-for 'script'; trusted-types default; report-uri ${base}/api/csp-report`;
+  const headers = (values) => (name) => values[name] ?? null;
+  for (const base of ['', '/drive'])
+    assertReportOnlyTrustedTypes(
+      headers({
+        'content-security-policy': enforcing,
+        'content-security-policy-report-only': reportOnly(base),
+      }),
+      { where: 'fixture', basePath: base }
+    );
+  const refused = [
+    [
+      'no enforcing policy',
+      { 'content-security-policy-report-only': reportOnly('') },
+    ],
+    [
+      'a script policy without strict-dynamic',
+      {
+        'content-security-policy': `script-src 'nonce-${nonce}'`,
+        'content-security-policy-report-only': reportOnly(''),
+      },
+    ],
+    [
+      'enforced Trusted Types',
+      {
+        'content-security-policy': `${enforcing}; ${reportOnly('')}`,
+        'content-security-policy-report-only': reportOnly(''),
+      },
+    ],
+    ['no report-only policy', { 'content-security-policy': enforcing }],
+    [
+      'a report endpoint outside the base',
+      {
+        'content-security-policy': enforcing,
+        'content-security-policy-report-only': reportOnly('/other'),
+      },
+    ],
+  ];
+  for (const [name, values] of refused)
+    assert.throws(
+      () =>
+        assertReportOnlyTrustedTypes(headers(values), {
+          where: name,
+          basePath: '',
+        }),
+      undefined,
+      name
+    );
 });

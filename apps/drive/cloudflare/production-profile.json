@@ -7,5 +7,6 @@
   "WEB_APP_URL": "https://tuturuuu.com",
   "TTR_URL": "https://tuturuuu.com",
   "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+  "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
   "TTR_TRUSTED_TYPES_DRIVE": "report"
 }

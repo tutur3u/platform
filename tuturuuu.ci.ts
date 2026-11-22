@@ -265,4 +265,7 @@ export const productionPublicationPolicy = {
     surfaces: ['frontend'],
   },
   contacts: { state: 'held', reason: 'held for wave-2 cutover' },
+  // The hostname moves off tuturuuu-drive first, then the native Worker
+  // publishes; admission is a reviewed wave-1 cutover change.
+  drive: { state: 'held', reason: 'held for wave-1 cutover' },
 } satisfies ProductionPublicationPolicy;

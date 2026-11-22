@@ -26,8 +26,10 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   `VITE_DRIVE_NATIVE_PROFILE=production bun run build:cloudflare` in `apps/drive`. The producer
   qualifies the emitted config with `python3 scripts/ci/drive-native-artifact.py config apps/drive`
   and runs `node --test apps/drive/cloudflare/cutover.runtime.mjs` (workerd on both
-  production hosts) before the shared prepare step. These are the same checks
-  `drive-cloudflare-artifact.yaml` runs, so a release artifact is qualified by one suite.
+  production hosts) on the emitted build before the shared prepare step; these are the
+  checks `drive-cloudflare-artifact.yaml` runs. The `restored` job does not repeat that
+  suite: it restores the sealed archive and re-runs `scripts/ci/wave1-native-runtime.mjs`
+  on the restored bytes without provider credentials.
 - Calendar, Mail, Apps, Finance and Drive release recipe records use a closed schema inside
   `scripts/ci/wave1-native-profiles.json`. Each declares public origins, allowed vars,
   secret names, committed build recipe, compatibility settings and bounded smoke
@@ -181,22 +183,26 @@ sealed archive. The staging profile serves only its own root host.
 | Worker | `tuturuuu-drive` (production only; `drive-cloudflare-artifact.yaml` qualifies the build and the staging profile serves `drive.tutur3u.com`) |
 | Canonical host | `drive.tuturuuu.com` |
 | Admitted apex mount | `https://tuturuuu.com/drive`; the production Worker rejects other apex paths, `drive.tutur3u.com` and unknown hosts with 404 |
-| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`; the Worker answers 503 until all four are present |
-| Vars | `apps/drive/cloudflare/production-profile.json`: `DRIVE_NATIVE_PROFILE`, the app and web URLs, `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` and `TTR_TRUSTED_TYPES_DRIVE=report` (`enforce` after a clean signed-in crawl, before the apex mount). The Worker rejects any other value of a listed var |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`; the Worker answers 503 until these and the pinned Supabase origin are present |
+| Vars | `apps/drive/cloudflare/production-profile.json`: `DRIVE_NATIVE_PROFILE`, the app and web URLs, `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`, the pinned production `NEXT_PUBLIC_SUPABASE_URL` (also a release-recipe public input pin) and `TTR_TRUSTED_TYPES_DRIVE=report` (`enforce` after a clean signed-in crawl, before the apex mount). The Worker rejects any other value of a listed var, so a Supabase origin other than the pinned one answers 503 |
 | Bindings | `ASSETS` only |
 | Compatibility | `2026-10-12`, `nodejs_compat` and `global_fetch_strictly_public`, from `apps/drive/void.config.ts` |
-| Publication | Held: `tuturuuu.ci.ts` has no Drive entry, so only the `release-artifact` path runs until an explicit cutover PR admits it. Environment `wave1-drive-production` |
+| Publication | Held: `tuturuuu.ci.ts` declares Drive as `held` in `productionPublicationPolicy`, so only the `release-artifact` path runs until an explicit cutover change admits it. Environment `wave1-drive-production` |
 | Anonymous `/` | 307 to `https://tuturuuu.com/login` with `no-store`; the pre-seal doctor runs with `--expect-redirect` |
 | Smoke | Anonymous `/` as above, `/api/build-info` returns the accepted commit with `no-store`; the runtime gate also requires 404 on `drive.tutur3u.com` and on apex paths outside `/drive` |
 
 The script policy is enforced (nonce and `strict-dynamic`) on both hosts. Trusted
-Types stays report-only because the production vars do not set
-`TTR_TRUSTED_TYPES_DRIVE`; the release owner enforces it only after a clean
-signed-in crawl, per the [mounted app rollout](/platform/architecture/one-origin-security#mounted-app-trusted-types-rollout).
+Types stays report-only because the production vars set `TTR_TRUSTED_TYPES_DRIVE=report`;
+the release owner enforces it only after a clean signed-in crawl, per the
+[mounted app rollout](/platform/architecture/one-origin-security#mounted-app-trusted-types-rollout).
+Both the build suite and the restored-archive run fetch one owned HTML document (the
+Start 404) per host and require an enforcing `Content-Security-Policy` with a nonce and
+`'strict-dynamic'`, and `require-trusted-types-for` only in
+`Content-Security-Policy-Report-Only`.
 `drive.tuturuuu.com` currently serves an older vinext build, so a release first
 captures the serving Worker, its version and the active routing for rollback.
-Production Workerd acceptance checks the build identity on both hosts, before
-and after restoring the sealed archive.
+`cutover.runtime.mjs` checks the build identity on both hosts for the emitted build;
+the restored-archive run checks it again with `wave1-native-runtime.mjs`.
 
 ## Meet
 

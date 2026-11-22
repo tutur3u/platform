@@ -161,7 +161,6 @@ it('enforces the production fence and delegates storage on both admitted hosts',
       await import('../../cloudflare/worker');
     const productionEnv = {
       ...productionVars,
-      NEXT_PUBLIC_SUPABASE_URL: 'https://drive-production-fixture.invalid',
       ASSETS: env.ASSETS,
     };
     const apex = 'https://tuturuuu.com';

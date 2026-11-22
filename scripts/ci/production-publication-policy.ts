@@ -17,6 +17,7 @@ const protectedSurfaces = {
   nova: ['frontend'],
   mind: ['frontend'],
   finance: ['frontend'],
+  drive: ['frontend'],
   mastermind: ['frontend'],
   meet: ['frontend', 'realtime-do'],
   calendar: ['frontend'],

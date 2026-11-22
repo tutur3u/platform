@@ -87,6 +87,24 @@ describe('Drive proxy on the tuturuuu.com/drive mount', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
+  it.each(['/login', '/vi/login'])(
+    'hands %s on the mount to Web login through the mounted session',
+    async (path) => {
+      mocks.mountedAuth.mockResolvedValueOnce(
+        NextResponse.redirect('https://tuturuuu.com/login')
+      );
+
+      const response = await proxy(based(`${path}?next=%2F`));
+
+      expect(mocks.mountedAuth).toHaveBeenCalledOnce();
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+      expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/login'
+      );
+    }
+  );
+
   it('hands verify-token to the mounted session, not the token exchange', async () => {
     mocks.mountedAuth.mockResolvedValueOnce(
       NextResponse.redirect('https://tuturuuu.com/drive/en/personal/drive')
