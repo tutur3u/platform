@@ -18,6 +18,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { hasGrantedScope } from '@tuturuuu/utils/external-app-registry-policy';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -75,17 +76,6 @@ export type ExternalAppWorkspaceDriveAccess = {
   targetApp: string;
   user: { email: string | null; id: string };
 };
-
-function hasScope(scopes: string[], requiredScope: RequiredScope) {
-  return (
-    scopes.includes('*') ||
-    scopes.includes(requiredScope) ||
-    scopes.some(
-      (scope) =>
-        scope.endsWith(':*') && requiredScope.startsWith(scope.slice(0, -1))
-    )
-  );
-}
 
 function accessError(message: string, status: 400 | 401 | 403 | 500) {
   return {
@@ -145,7 +135,9 @@ export async function requireExternalAppWorkspaceDriveAccess({
   const verification = verifyAppCoordinationToken(token);
   if (!verification.ok) return accessError('Unauthorized', 401);
   if (
-    requiredScopes.some((scope) => !hasScope(verification.claims.scopes, scope))
+    requiredScopes.some(
+      (scope) => !hasGrantedScope(verification.claims.scopes, scope)
+    )
   ) {
     return accessError('Requested scope is not allowed for this app', 403);
   }

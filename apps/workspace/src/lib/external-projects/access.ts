@@ -17,6 +17,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { hasGrantedScope } from '@tuturuuu/utils/external-app-registry-policy';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -158,18 +159,15 @@ export function getExternalProjectModeForScopes(
     return null;
   }
 
-  if (
-    scopes.includes('external-projects:*') ||
-    scopes.includes('external-projects:manage')
-  ) {
+  if (hasGrantedScope(scopes, 'external-projects:manage')) {
     return 'manage';
   }
 
-  if (scopes.includes('external-projects:publish')) {
+  if (hasGrantedScope(scopes, 'external-projects:publish')) {
     return 'publish';
   }
 
-  if (scopes.includes('external-projects:read')) {
+  if (hasGrantedScope(scopes, 'external-projects:read')) {
     return 'read';
   }
 

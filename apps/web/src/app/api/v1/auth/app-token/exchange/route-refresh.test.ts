@@ -120,7 +120,12 @@ describe('app token exchange route', () => {
     if (accessVerification.ok) {
       expect(accessVerification.claims.sub).toBe(victimUserId);
       expect(accessVerification.claims.target_app).toBe('yoola');
-      expect(accessVerification.claims.scopes).toEqual(['external-projects:*']);
+      // The wildcard grant is issued as its frozen list.
+      expect(accessVerification.claims.scopes).toEqual([
+        'external-projects:manage',
+        'external-projects:publish',
+        'external-projects:read',
+      ]);
     }
     expect(nextRefreshVerification.ok).toBe(true);
     if (nextRefreshVerification.ok) {

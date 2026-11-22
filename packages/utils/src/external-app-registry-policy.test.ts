@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertExternalAppRegistrationAllowed,
+  expandWildcardScopes,
   getAllowedAppTokenScopes,
   getReservedInternalAppNames,
   hasGrantedScope,
@@ -191,6 +192,26 @@ describe('scope coverage', () => {
       expect(hasGrantedScope(['workspace:*'], scope)).toBe(false);
       expect(hasGrantedScope(['drive.files:*'], scope)).toBe(false);
     }
+  });
+});
+
+describe('expandWildcardScopes', () => {
+  it('issues the frozen list for external-projects:* and drops other wildcards', () => {
+    expect(
+      expandWildcardScopes([
+        '*',
+        'external-projects:*',
+        'workspace:*',
+        'workspace:drive:read',
+        'external-projects:read',
+      ])
+    ).toEqual([
+      'external-projects:manage',
+      'external-projects:publish',
+      'external-projects:read',
+      'workspace:drive:read',
+    ]);
+    expect(expandWildcardScopes(['*', 'ai:*'])).toEqual([]);
   });
 });
 

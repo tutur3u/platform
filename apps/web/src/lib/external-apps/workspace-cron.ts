@@ -5,6 +5,7 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { hasGrantedScope } from '@tuturuuu/utils/external-app-registry-policy';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import {
   getPermissions,
@@ -204,15 +205,6 @@ type ExternalAppWorkspaceCronExecution = {
   startedAt: string | null;
   status: string;
 };
-
-function hasScope(scopes: string[], requiredScope: RequiredScope) {
-  if (scopes.includes('*') || scopes.includes(requiredScope)) return true;
-
-  return scopes.some(
-    (scope) =>
-      scope.endsWith(':*') && requiredScope.startsWith(scope.slice(0, -1))
-  );
-}
 
 function accessError(
   message: string,
@@ -430,7 +422,7 @@ export async function requireExternalAppWorkspaceCronAccess({
   }
 
   for (const requiredScope of requiredScopes) {
-    if (!hasScope(verification.claims.scopes, requiredScope)) {
+    if (!hasGrantedScope(verification.claims.scopes, requiredScope)) {
       return accessError(SCOPE_NOT_ALLOWED_ERROR, 403);
     }
   }

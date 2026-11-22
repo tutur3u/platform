@@ -1,8 +1,10 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
+import { expandWildcardScopes } from '@tuturuuu/utils/external-app-registry-policy';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { describe, expect, it } from 'vitest';
 import {
   appTokenHasRequiredScope,
+  getExternalProjectModeForScopes,
   hasWorkspaceExternalProjectPermission,
   type WorkspaceExternalProjectMode,
 } from './access-mode';
@@ -133,5 +135,20 @@ describe('external project app-token scope checks', () => {
         'manage'
       )
     ).toBe(false);
+  });
+});
+
+describe('getExternalProjectModeForScopes', () => {
+  it.each([
+    [['external-projects:*'], 'manage'],
+    [['external-projects:manage'], 'manage'],
+    [['external-projects:publish'], 'publish'],
+    [['external-projects:read'], 'read'],
+    [['workspace:drive:read'], null],
+  ] as const)('gives %j the same mode once expanded', (scopes, mode) => {
+    expect(getExternalProjectModeForScopes([...scopes])).toBe(mode);
+    expect(getExternalProjectModeForScopes(expandWildcardScopes(scopes))).toBe(
+      mode
+    );
   });
 });

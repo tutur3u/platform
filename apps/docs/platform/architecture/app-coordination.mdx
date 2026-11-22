@@ -284,6 +284,16 @@ Coverage:
 `apps/web/src/lib/profile-app-session-external-bearer.test.ts` and
 `apps/ai/src/lib/public-credential.test.ts`.
 
+#### Scope grants
+
+`external-projects:*` covers exactly `external-projects:read`, `publish` and
+`manage`; a bare `*` and every other wildcard cover nothing. Issued tokens
+never carry a wildcard: the exchange issues `external-projects:*` as those
+three scopes and drops any other wildcard grant. Every route checks scopes
+with `hasGrantedScope` from `@tuturuuu/utils/external-app-registry-policy`;
+`apps/web/src/lib/external-apps/scope-matcher-guard.test.ts` fails on a local
+wildcard matcher in the external-app route code.
+
 #### Registration boundary with first-party apps
 
 App-session checks trust a token's `target_app` and the `internal-app:*` scopes

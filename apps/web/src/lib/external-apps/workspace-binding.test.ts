@@ -87,7 +87,11 @@ function claims(overrides: Record<string, unknown> = {}) {
   return {
     email: 'member@example.com',
     iat: Math.floor(Date.now() / 1000),
-    scopes: ['workspace:*'],
+    scopes: [
+      'workspace:cron:read',
+      'workspace:drive:read',
+      'workspace:members:read',
+    ],
     sub: '11111111-1111-4111-8111-111111111111',
     target_app: 'fysh',
     ...overrides,
@@ -146,8 +150,8 @@ describe.each(entryPoints)('%s workspace binding', (_name, access) => {
   });
 
   it.each([
-    ['scope-only', ['workspace:*']],
-    ['workspace-session', ['workspace:*', 'workspace:session']],
+    ['scope-only', ['workspace:drive:read']],
+    ['workspace-session', ['workspace:drive:read', 'workspace:session']],
   ])('refuses an unbound %s bearer', async (_kind, scopes) => {
     mocks.claims.mockReturnValue(claims({ scopes }));
 

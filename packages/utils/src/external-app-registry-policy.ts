@@ -84,6 +84,23 @@ export function hasGrantedScope(grants: readonly string[], scope: string) {
   return grants.some((grant) => scopeGrantCovers(grant, scope));
 }
 
+/** Whether `scope` is a wildcard grant (`*` or anything ending in `:*`). */
+export function isWildcardScope(scope: string) {
+  return scope === '*' || scope.endsWith(':*');
+}
+
+/**
+ * The scopes an issued token carries for a granted set: each wildcard with a
+ * frozen coverage list becomes that list, and every other wildcard is
+ * dropped, so a token never carries a literal wildcard.
+ */
+export function expandWildcardScopes(scopes: readonly string[]) {
+  const expanded = scopes.flatMap((scope) =>
+    isWildcardScope(scope) ? (WILDCARD_SCOPE_COVERAGE[scope] ?? []) : [scope]
+  );
+  return [...new Set(expanded)].sort();
+}
+
 const SCOPE_PATTERN = /^[a-z0-9:*._-]{1,80}$/u;
 
 function normalizeRequestedScopes(values: readonly string[]) {

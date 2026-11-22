@@ -6,7 +6,10 @@ import {
 import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
+import {
+  hasGrantedScope,
+  wasIssuedBeforeSecretRotation,
+} from '@tuturuuu/utils/external-app-registry-policy';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import {
   EXTERNAL_APP_WORKSPACE_MISMATCH_ERROR,
@@ -41,15 +44,6 @@ function parseStringArray(value: string | null | undefined): string[] {
   } catch {
     return [];
   }
-}
-
-function scopeAllowed(scopes: readonly string[], requiredScope: string) {
-  return scopes.some(
-    (scope) =>
-      scope === '*' ||
-      scope === requiredScope ||
-      (scope.endsWith(':*') && requiredScope.startsWith(scope.slice(0, -1)))
-  );
 }
 
 function invalidExternalCredential(message: string, status = 403) {
@@ -141,7 +135,7 @@ export async function authenticateExternalAiRequest(
 
   if (
     !enabled ||
-    !scopeAllowed(allowedScopes, requiredScope) ||
+    !hasGrantedScope(allowedScopes, requiredScope) ||
     !allowedWorkspaceIds.includes(workspaceId)
   ) {
     throw invalidExternalCredential(

@@ -6,6 +6,7 @@ import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
+import { hasGrantedScope } from '@tuturuuu/utils/external-app-registry-policy';
 import {
   getPermissions,
   type PermissionsResult,
@@ -53,15 +54,6 @@ export type ExternalAppWorkspaceMembersAccess = {
   };
 };
 
-function hasScope(scopes: string[], requiredScope: RequiredScope) {
-  if (scopes.includes('*') || scopes.includes(requiredScope)) return true;
-
-  return scopes.some(
-    (scope) =>
-      scope.endsWith(':*') && requiredScope.startsWith(scope.slice(0, -1))
-  );
-}
-
 function accessError(message: string, status: 400 | 401 | 403 | 500) {
   return {
     ok: false as const,
@@ -93,7 +85,7 @@ export async function requireExternalAppWorkspaceMembersAccess({
   }
 
   for (const requiredScope of requiredScopes) {
-    if (!hasScope(verification.claims.scopes, requiredScope)) {
+    if (!hasGrantedScope(verification.claims.scopes, requiredScope)) {
       return accessError('Forbidden', 403);
     }
   }

@@ -140,3 +140,28 @@ describe('app token exchange workspace binding', () => {
     }
   });
 });
+
+describe('app token exchange wildcard expansion', () => {
+  registerExchangeTestSetup();
+
+  it('issues no literal wildcard scope', async () => {
+    mockRegisteredApp(
+      ['*', 'workspace:*', 'workspace:drive:read'],
+      'drive-app',
+      [workspaceId]
+    );
+
+    const response = await exchange({
+      requestedScopes: [],
+      token: 'valid-cross-app-token',
+      workspaceId,
+    });
+
+    expect(response.status).toBe(200);
+    const claims = await accessClaims(response);
+    expect(claims?.scopes).toEqual([
+      'workspace:drive:read',
+      'workspace:session',
+    ]);
+  });
+});

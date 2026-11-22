@@ -74,7 +74,7 @@ beforeEach(() => {
   mocks.claims.mockReturnValue({
     email: 'member@example.com',
     iat: rotatedAtSeconds + 60,
-    scopes: ['workspace:*'],
+    scopes: ['workspace:cron:read', 'workspace:members:read'],
     sub: '11111111-1111-4111-8111-111111111111',
     target_app: 'fysh',
     workspace_id: wsId,
@@ -120,7 +120,7 @@ describe.each(entryPoints)('%s bearer access', (_name, access) => {
     mocks.claims.mockReturnValue({
       email: 'member@example.com',
       iat: rotatedAtSeconds - 1,
-      scopes: ['workspace:*'],
+      scopes: ['workspace:cron:read', 'workspace:members:read'],
       sub: '11111111-1111-4111-8111-111111111111',
       target_app: 'fysh',
     });

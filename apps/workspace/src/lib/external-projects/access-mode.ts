@@ -1,4 +1,5 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
+import { hasGrantedScope } from '@tuturuuu/utils/external-app-registry-policy';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 
 // Editors can read the studio and save or privately preview page drafts.
@@ -52,8 +53,5 @@ export function appTokenHasRequiredScope(
         ? ['external-projects:publish', 'external-projects:manage']
         : ['external-projects:manage'];
 
-  return (
-    claims.scopes.includes('external-projects:*') ||
-    acceptedScopes.some((scope) => claims.scopes.includes(scope))
-  );
+  return acceptedScopes.some((scope) => hasGrantedScope(claims.scopes, scope));
 }

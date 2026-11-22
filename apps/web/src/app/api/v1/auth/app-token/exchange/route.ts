@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
+import { expandWildcardScopes } from '@tuturuuu/utils/external-app-registry-policy';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
@@ -142,10 +143,13 @@ function getAllowedAppTokenScopesWithWorkspaceSession({
   const requestedApiScopes = inferWorkspaceSession
     ? requestedScopes.filter((scope) => scope !== WORKSPACE_SESSION_SCOPE)
     : requestedScopes;
-  const scopes = getAllowedAppTokenScopes({
-    allowedScopes,
-    requestedScopes: requestedApiScopes,
-  });
+  // Issued tokens never carry a literal wildcard.
+  const scopes = expandWildcardScopes(
+    getAllowedAppTokenScopes({
+      allowedScopes,
+      requestedScopes: requestedApiScopes,
+    })
+  );
 
   if (!inferWorkspaceSession) {
     return scopes;
