@@ -102,7 +102,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
@@ -129,7 +129,7 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "FX-RATES-CRON-CONTROL-1: enable finance-exchange-rates (daily 0 6 * * *, idempotent upsert) so Cron Control schedules web's exchange-rate refresh; the previous stage is the live WEB-CRON-HANDOVER-1 identity",
+    "decision": "MASTERMIND-SHIP-CRON-CONTROL-1: enable mastermind-ship (every second minute of the existing trigger, bounded requests, durable stop) so Cron Control collects the Mastermind Ship snapshot; the previous stage is the live FX-RATES-CRON-CONTROL-1 identity",
     "fields": ["vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication.",
