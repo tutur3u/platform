@@ -142,6 +142,18 @@ describe('cleanSnippetSource', () => {
     ).toBe('Hello');
   });
 
+  it('closes each hidden element with its own tag in any case', () => {
+    const html = (value: string) => cleanSnippetSource(value, { html: true });
+    expect(html('<SCRIPT type="x">a()</script >Hello')).toBe('Hello');
+    expect(html('<Style>.a{}</STYLE>Hi <title>T</Title>there')).toBe(
+      'Hi there'
+    );
+    expect(html('<head><title>T</title></head>Body')).toBe('Body');
+    expect(html('<xml>x</noscript>still hidden')).toBe('');
+    // The /iu opener case-folds U+017F to s; its closer must still match.
+    expect(html('<\u017Fcript>placeholder</script>Visible')).toBe('Visible');
+  });
+
   it('removes a truncated selector block', () => {
     expect(cleanSnippetSource('Hi there\n.inner-body { width: 100%...')).toBe(
       'Hi there'

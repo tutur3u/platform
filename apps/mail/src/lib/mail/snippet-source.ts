@@ -16,9 +16,31 @@ export { stripLeakedCss };
 
 const MAX_SOURCE_LENGTH = 20_000;
 
+// The capture group that matched names the element. Reading the name from the
+// matched text would miss case-folded spellings the /iu opener accepts.
+const HIDDEN_TAG_NAMES = [
+  'style',
+  'script',
+  'head',
+  'title',
+  'template',
+  'noscript',
+  'xml',
+] as const;
 const HIDDEN_TAG_OPENER =
-  /<(style|script|head|title|template|noscript|xml)\b/giu;
+  /<(?:(style)|(script)|(head)|(title)|(template)|(noscript)|(xml))\b/giu;
 const DOCTYPE_OPENER = /<!doctype/giu;
+// One fixed closing pattern per hidden element, so no pattern is built from
+// input text.
+const HIDDEN_TAG_CLOSERS: Readonly<Record<string, RegExp>> = {
+  head: /<\/head\s*>/giu,
+  noscript: /<\/noscript\s*>/giu,
+  script: /<\/script\s*>/giu,
+  style: /<\/style\s*>/giu,
+  template: /<\/template\s*>/giu,
+  title: /<\/title\s*>/giu,
+  xml: /<\/xml\s*>/giu,
+};
 const HTML_COMMENTS = /<!--[\s\S]*?(?:-->|$)/gu;
 const CONDITIONAL_COMMENTS = /<!\[[^\]<>]{0,200}\]>/gu;
 const HTML_TAG = /<\/?[a-z](?:"[^"]*"|'[^']*'|[^<>"'])*>/giu;
@@ -81,8 +103,12 @@ function replaceTagRegions(
     if (nextGt < start) nextGt = value.indexOf('>', start);
     if (nextGt === -1) break;
     let end = nextGt + 1;
-    if (closing) {
-      const close = new RegExp(`</${match[1]}\\s*>`, 'giu');
+    const close = closing
+      ? HIDDEN_TAG_CLOSERS[
+          HIDDEN_TAG_NAMES[match.slice(1).findIndex(Boolean)] ?? ''
+        ]
+      : undefined;
+    if (close) {
       close.lastIndex = end;
       const closed = close.exec(value);
       end = closed ? closed.index + closed[0].length : value.length;
