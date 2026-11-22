@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import {
   getCurrentUser,
@@ -11,33 +10,12 @@ import { resolveWelcomeEntry } from '@/lib/onboarding/welcome-gate';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import { getUserOnboardingProgress } from './actions';
 import { WelcomeFlow } from './welcome-flow';
-import {
-  PRODUCT_NEWS_CHANNEL,
-  PRODUCT_NEWS_EVENT,
-  parseWelcomeStep,
-} from './welcome-model';
+import { parseWelcomeStep } from './welcome-model';
 
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-async function readProductNews(userId: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from('notification_preferences')
-    .select('enabled')
-    .is('ws_id', null)
-    .eq('user_id', userId)
-    .eq('event_type', PRODUCT_NEWS_EVENT)
-    .eq('channel', PRODUCT_NEWS_CHANNEL);
-  const rows = data ?? [];
-  // Only an explicit opt-in shows as on; no row means the switch starts off.
-  return {
-    hasRow: rows.length > 0,
-    optedIn: rows.some((row) => row.enabled),
-  };
 }
 
 export async function WelcomeRuntime({
@@ -70,8 +48,6 @@ export async function WelcomeRuntime({
     );
   }
 
-  const productNews = await readProductNews(user.id);
-
   return (
     <WelcomeFlow
       avatarUser={{
@@ -81,8 +57,6 @@ export async function WelcomeRuntime({
       }}
       calendarOrigin={getCalendarAppOrigin()}
       displayName={user.display_name?.trim() || ''}
-      hasProductNewsRow={productNews.hasRow}
-      initialProductNews={productNews.optedIn}
       initialStep={parseWelcomeStep(firstValue(params.step))}
       tasksOrigin={getTasksAppOrigin()}
     />

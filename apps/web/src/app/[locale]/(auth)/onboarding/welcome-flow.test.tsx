@@ -63,8 +63,6 @@ const PROPS: WelcomeFlowProps = {
   avatarUser: { avatar_url: null, display_name: 'Lan Nguyen', id: 'user-1' },
   calendarOrigin: 'https://calendar.test',
   displayName: 'Lan Nguyen',
-  hasProductNewsRow: false,
-  initialProductNews: false,
   initialStep: 'profile',
   tasksOrigin: 'https://tasks.test',
 };
@@ -105,45 +103,32 @@ beforeEach(() => {
 });
 
 describe('product news by email', () => {
-  it('starts off and is never pre-checked', () => {
+  it('ships disabled and off, with the coming-soon note', () => {
     renderFlow();
     const toggle = screen.getByRole('switch', { name: 'news_title' });
+    expect(toggle).toBeDisabled();
     expect(toggle).toHaveAttribute('aria-checked', 'false');
-    expect(mocks.updateAccountPreferences).not.toHaveBeenCalled();
+    expect(toggle).toHaveAccessibleDescription('news_description');
   });
 
-  it('stores an explicit off when the account has no preference yet', async () => {
+  it('stores nothing when the person continues past the profile step', async () => {
     renderFlow();
-    click('continue');
-    await waitFor(() =>
-      expect(mocks.updateAccountPreferences).toHaveBeenCalledWith([
-        {
-          channel: 'email',
-          enabled: false,
-          eventType: 'marketing_communications',
-        },
-      ])
-    );
-  });
-
-  it('stores an opt-in only after the person turns it on', async () => {
-    renderFlow();
-    fireEvent.click(screen.getByRole('switch', { name: 'news_title' }));
-    click('continue');
-    await waitFor(() =>
-      expect(mocks.updateAccountPreferences).toHaveBeenCalledWith([
-        expect.objectContaining({ enabled: true }),
-      ])
-    );
-  });
-
-  it('leaves a saved preference alone when nothing changed', async () => {
-    renderFlow({ hasProductNewsRow: true, initialProductNews: true });
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     click('continue');
     await waitFor(() =>
       expect(lastProgress()).toMatchObject({ current_step: 'space' })
     );
+    expect(mocks.updateAccountPreferences).not.toHaveBeenCalled();
+  });
+
+  it('stores nothing when the profile step or the whole flow is skipped', async () => {
+    const first = renderFlow();
+    click('skip_for_now');
+    await screen.findByText('space_title');
+    first.unmount();
+
+    renderFlow();
+    click('skip_setup');
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/personal'));
     expect(mocks.updateAccountPreferences).not.toHaveBeenCalled();
   });
 });
@@ -197,10 +182,6 @@ describe('skipping', () => {
       completed_steps: [],
       current_step: 'space',
     });
-    // The skipped profile step still records "no product news".
-    expect(mocks.updateAccountPreferences).toHaveBeenCalledWith([
-      expect.objectContaining({ enabled: false }),
-    ]);
 
     click('skip_for_now');
     await screen.findByText('interests_title');
@@ -228,9 +209,6 @@ describe('skipping', () => {
     expect(mocks.updateProgress).toHaveBeenCalledWith({
       dismissed_at: expect.any(String),
     });
-    expect(mocks.updateAccountPreferences).toHaveBeenCalledWith([
-      expect.objectContaining({ enabled: false }),
-    ]);
   });
 
   it('still opens the workspace when recording the skip fails', async () => {

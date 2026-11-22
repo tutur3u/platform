@@ -10,7 +10,6 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getUserDefaultWorkspace: vi.fn(),
   getUserOnboardingProgress: vi.fn(),
-  preferenceRows: [] as Array<{ enabled: boolean }>,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -21,15 +20,6 @@ vi.mock('next/navigation', () => ({
 vi.mock('@tuturuuu/utils/user-helper', () => ({
   getCurrentUser: mocks.getCurrentUser,
   getUserDefaultWorkspace: mocks.getUserDefaultWorkspace,
-}));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: async () => {
-    const query: Record<string, unknown> = {};
-    for (const method of ['select', 'is', 'eq']) query[method] = () => query;
-    query.then = (resolve: (value: unknown) => void) =>
-      resolve({ data: mocks.preferenceRows });
-    return { from: () => query };
-  },
 }));
 vi.mock('./actions', () => ({
   getUserOnboardingProgress: mocks.getUserOnboardingProgress,
@@ -56,7 +46,6 @@ async function run(searchParams: Record<string, string> = {}) {
 describe('/onboarding gate', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.preferenceRows = [];
     mocks.getCurrentUser.mockResolvedValue(USER);
     mocks.getUserOnboardingProgress.mockResolvedValue(null);
     mocks.getUserDefaultWorkspace.mockResolvedValue({
@@ -77,8 +66,6 @@ describe('/onboarding gate', () => {
     expect(result.props).toMatchObject({
       calendarOrigin: 'https://calendar.test',
       displayName: 'Lan Nguyen',
-      hasProductNewsRow: false,
-      initialProductNews: false,
       initialStep: 'profile',
       tasksOrigin: 'https://tasks.test',
     });
@@ -115,21 +102,5 @@ describe('/onboarding gate', () => {
     });
     const result = (await run({ replay: '1' })) as ReactElement;
     expect(isValidElement(result)).toBe(true);
-  });
-
-  it('starts the product news switch off unless an explicit opt-in exists', async () => {
-    mocks.preferenceRows = [{ enabled: false }];
-    const off = (await run()) as ReactElement<Record<string, unknown>>;
-    expect(off.props).toMatchObject({
-      hasProductNewsRow: true,
-      initialProductNews: false,
-    });
-
-    mocks.preferenceRows = [{ enabled: true }];
-    const on = (await run()) as ReactElement<Record<string, unknown>>;
-    expect(on.props).toMatchObject({
-      hasProductNewsRow: true,
-      initialProductNews: true,
-    });
   });
 });

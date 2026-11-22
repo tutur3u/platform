@@ -22,16 +22,12 @@ import {
 import { ProfileScene } from './onboarding-illustrations';
 import { InlineAlert, SegmentedChoice } from './welcome-controls';
 import { WELCOME_THEMES, type WelcomeTheme } from './welcome-model';
-import {
-  saveAppearanceAndLanguage,
-  saveProductNews,
-} from './welcome-persistence';
+import { saveAppearanceAndLanguage } from './welcome-persistence';
 import { StepHeading } from './welcome-shell';
 
 export type ProfileDraft = {
   language: Locale;
   name: string;
-  productNews: boolean;
 };
 
 const LOCALE_LABELS: Record<Locale, string> = {
@@ -42,17 +38,13 @@ const LOCALE_LABELS: Record<Locale, string> = {
 export function StepProfile({
   avatarUser,
   draft,
-  hasProductNewsRow,
   initialName,
-  initialProductNews,
   onAdvance,
   onChange,
 }: {
   avatarUser: WorkspaceUser;
   draft: ProfileDraft;
-  hasProductNewsRow: boolean;
   initialName: string;
-  initialProductNews: boolean;
   onAdvance: () => Promise<void>;
   onChange: (draft: ProfileDraft) => void;
 }) {
@@ -70,10 +62,6 @@ export function StepProfile({
       const name = draft.name.trim();
       if (name && name !== initialName.trim()) {
         await updateCurrentUserProfile({ display_name: name });
-      }
-      // Off is stored too: with no row the platform default would be on.
-      if (draft.productNews !== initialProductNews || !hasProductNewsRow) {
-        await saveProductNews(draft.productNews);
       }
       await saveAppearanceAndLanguage({
         language: draft.language,
@@ -152,14 +140,19 @@ export function StepProfile({
           <Label className="font-semibold" htmlFor={`${nameId}-news`}>
             {t('news_title')}
           </Label>
-          <span className="text-muted-foreground text-xs">
+          <span
+            className="text-muted-foreground text-xs"
+            id={`${nameId}-news-note`}
+          >
             {t('news_description')}
           </span>
         </div>
+        {/* Disabled and off: nothing is stored until consent is recorded. */}
         <Switch
-          checked={draft.productNews}
+          aria-describedby={`${nameId}-news-note`}
+          checked={false}
+          disabled
           id={`${nameId}-news`}
-          onCheckedChange={(productNews) => onChange({ ...draft, productNews })}
         />
       </div>
 

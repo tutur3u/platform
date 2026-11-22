@@ -70,8 +70,4 @@ export const WELCOME_THEMES: readonly WelcomeTheme[] = [
   'system',
 ];
 
-/** The account notification preference that marketing email maps onto. */
-export const PRODUCT_NEWS_EVENT = 'marketing_communications';
-export const PRODUCT_NEWS_CHANNEL = 'email';
-
 export const WORKSPACE_LIMIT_CODE = 'WORKSPACE_LIMIT_REACHED';

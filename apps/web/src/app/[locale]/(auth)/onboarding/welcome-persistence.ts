@@ -1,7 +1,6 @@
 import {
   type ConnectedOnboardingUpdate,
   getUserConfig,
-  updateAccountNotificationPreferences,
   updateConnectedOnboardingProgress,
   updateUserConfig,
 } from '@tuturuuu/internal-api';
@@ -10,8 +9,6 @@ import {
   EDUCATION_AUDIENCE_MODE,
   goalsFromInterests,
   type InterestId,
-  PRODUCT_NEWS_CHANNEL,
-  PRODUCT_NEWS_EVENT,
   type WelcomeScreen,
   type WelcomeStep,
 } from './welcome-model';
@@ -76,19 +73,4 @@ async function adoptEducationAudience() {
   );
   if (current?.value) return;
   await updateUserConfig(AUDIENCE_MODE_CONFIG_ID, EDUCATION_AUDIENCE_MODE);
-}
-
-/**
- * Writes the "Product news by email" choice explicitly, off included: with no
- * stored row the notification check defaults to enabled, so a stored `false`
- * is what keeps the switch's promise.
- */
-export function saveProductNews(enabled: boolean) {
-  return updateAccountNotificationPreferences([
-    {
-      channel: PRODUCT_NEWS_CHANNEL,
-      enabled,
-      eventType: PRODUCT_NEWS_EVENT,
-    },
-  ]);
 }

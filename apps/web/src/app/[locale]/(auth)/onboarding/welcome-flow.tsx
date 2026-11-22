@@ -17,20 +17,13 @@ import {
   type WelcomeScreen,
   type WelcomeStep,
 } from './welcome-model';
-import {
-  saveFlowSkipped,
-  saveProductNews,
-  saveStepPosition,
-} from './welcome-persistence';
+import { saveFlowSkipped, saveStepPosition } from './welcome-persistence';
 import { WelcomeShell } from './welcome-shell';
 
 export type WelcomeFlowProps = {
   avatarUser: WorkspaceUser;
   calendarOrigin: string;
   displayName: string;
-  /** Whether a product-news preference row already exists for the account. */
-  hasProductNewsRow: boolean;
-  initialProductNews: boolean;
   initialStep: WelcomeStep;
   tasksOrigin: string;
 };
@@ -48,7 +41,6 @@ export function WelcomeFlow(props: WelcomeFlowProps) {
   const [profile, setProfile] = useState<ProfileDraft>({
     language: locale,
     name: props.displayName,
-    productNews: props.initialProductNews,
   });
   const [space, setSpace] = useState<SpaceDraft>({
     emails: [],
@@ -80,25 +72,14 @@ export function WelcomeFlow(props: WelcomeFlowProps) {
     setScreen(nextWelcomeScreen(step));
   };
 
-  /** A skipped profile step still records "no product news" when unset. */
-  const keepNewsOff = () =>
-    props.hasProductNewsRow
-      ? Promise.resolve()
-      : saveProductNews(false).then(
-          () => undefined,
-          () => undefined
-        );
-
   const skipStep = useMutation({
     mutationFn: async (step: WelcomeStep) => {
-      if (step === 'profile') await keepNewsOff();
       await advance(step, { skipped: true });
     },
   });
 
   const skipFlow = useMutation({
     mutationFn: async () => {
-      await keepNewsOff();
       await saveFlowSkipped();
     },
     // Skipping must always lead into the app, even if the save failed.
@@ -141,9 +122,7 @@ export function WelcomeFlow(props: WelcomeFlowProps) {
         <StepProfile
           avatarUser={props.avatarUser}
           draft={profile}
-          hasProductNewsRow={props.hasProductNewsRow}
           initialName={props.displayName}
-          initialProductNews={props.initialProductNews}
           onAdvance={() => advance('profile')}
           onChange={setProfile}
         />
