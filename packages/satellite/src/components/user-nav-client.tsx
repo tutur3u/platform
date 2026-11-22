@@ -27,7 +27,10 @@ import {
   useState,
 } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
-import { SatelliteDefaultSettingsDialog } from './account-settings/default-settings-dialog';
+import {
+  SatelliteDefaultSettingsDialog,
+  type SatelliteSidebarSettingsTab,
+} from './account-settings/default-settings-dialog';
 import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
 import { AppGuideOverlay } from './app-guide-overlay';
 import { LanguageWrapper } from './language-wrapper';
@@ -49,6 +52,8 @@ interface UserNavClientProps {
   ttrUrl?: string;
   /** Optional settings dialog component. Receives wsId and user as props. */
   settingsDialog?: ReactNode;
+  /** Sidebar tab for apps using the shared settings dialog. */
+  sidebarSettingsTab?: SatelliteSidebarSettingsTab;
   /** Let an app-level host own settings URL state, shortcuts, and rendering. */
   externalSettingsHost?: boolean;
 }
@@ -59,6 +64,7 @@ export default function UserNavClient({
   hideMetadata = false,
   ttrUrl,
   settingsDialog,
+  sidebarSettingsTab,
   externalSettingsHost = false,
 }: UserNavClientProps) {
   const t = useTranslations();
@@ -135,7 +141,11 @@ export default function UserNavClient({
       : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
   // Apps without their own dialog still get the shared account tabs.
   const effectiveSettingsDialog = settingsDialog ?? (
-    <SatelliteDefaultSettingsDialog centralUrl={centralUrl} user={user} />
+    <SatelliteDefaultSettingsDialog
+      centralUrl={centralUrl}
+      sidebarTab={sidebarSettingsTab}
+      user={user}
+    />
   );
   const renderedSettingsDialog = isValidElement(effectiveSettingsDialog)
     ? cloneElement(effectiveSettingsDialog, {

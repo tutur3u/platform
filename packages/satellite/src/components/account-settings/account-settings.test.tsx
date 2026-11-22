@@ -1,5 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
+import type { ComponentProps } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildWebAccountSettingsUrl } from './account-settings-links';
 import {
@@ -9,9 +11,35 @@ import {
   isWebManagedAccountTab,
 } from './account-settings-navigation';
 import { SatelliteAccountSettingsPanel } from './account-settings-panel';
+import { SatelliteDefaultSettingsDialog } from './default-settings-dialog';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+}));
+vi.mock('@tuturuuu/ui/custom/settings/appearance-settings', () => ({
+  AppearanceSettings: () => null,
+}));
+vi.mock('@tuturuuu/ui/custom/settings-dialog-shell', () => ({
+  SettingsDialogShell: ({
+    children,
+    navItems,
+    onActiveTabChange,
+  }: ComponentProps<typeof SettingsDialogShell>) => (
+    <>
+      {navItems.flatMap(({ items }) =>
+        items.map(({ label, name }) => (
+          <button
+            key={name}
+            onClick={() => onActiveTabChange(name)}
+            type="button"
+          >
+            {label}
+          </button>
+        ))
+      )}
+      {children}
+    </>
+  ),
 }));
 vi.mock('../profile-settings/profile-settings-panel', () => ({
   SatelliteProfileSettingsPanel: ({ user }: { user: WorkspaceUser }) => (
@@ -24,6 +52,30 @@ const user = { email: 'ada@example.com', id: 'user-1' } as WorkspaceUser;
 afterEach(cleanup);
 
 describe('shared satellite account settings', () => {
+  it('opens the sidebar panel only when the app supplies a tab', () => {
+    const props = { centralUrl: 'https://tuturuuu.com', user: null };
+    const { rerender } = render(<SatelliteDefaultSettingsDialog {...props} />);
+    expect(screen.queryByRole('button', { name: 'Sidebar' })).toBeNull();
+
+    rerender(
+      <SatelliteDefaultSettingsDialog
+        {...props}
+        sidebarTab={{
+          content: <button type="button">Show navigation labels</button>,
+          description: 'Adjust navigation',
+          label: 'Sidebar',
+        }}
+      />
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Show navigation labels' })
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Sidebar' }));
+    expect(
+      screen.getByRole('button', { name: 'Show navigation labels' })
+    ).toBeDefined();
+  });
+
   it('exposes profile, accounts, security and sessions in one group', () => {
     const group = createAccountSettingsNavGroup((key) => key);
     expect(group.label).toBe('satellite-account-settings.title');

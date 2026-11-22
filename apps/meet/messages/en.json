@@ -6843,7 +6843,18 @@
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
-      "sidebar_minimal": "Minimal"
+      "sidebar": "Sidebar",
+      "sidebar_behavior": "Sidebar Behavior",
+      "sidebar_behavior_description": "Choose how the sidebar behaves by default. This setting syncs across all your browsers.",
+      "sidebar_collapsed": "Collapsed",
+      "sidebar_description": "Manage sidebar visibility and behavior",
+      "sidebar_expanded": "Expanded",
+      "sidebar_hover": "Hover",
+      "sidebar_local_override": "Local Override",
+      "sidebar_local_override_description": "Use a different sidebar setting for this browser only, instead of your account-wide preference.",
+      "sidebar_minimal": "Minimal",
+      "sidebar_nav_labels": "Show navigation labels",
+      "sidebar_nav_labels_description": "Show names under the icons while the sidebar is collapsed."
     },
     "search_settings_placeholder": "Search settings..."
   },
@@ -6939,6 +6950,7 @@
     "full-settings": "View all settings",
     "handle-description": "This is your custom URL namespace within Tuturuuu.",
     "hide-experimental-on-sidebar": "Hide experimental features on sidebar",
+    "hide-experimental-on-sidebar-description": "Remove experimental features from the sidebar navigation",
     "hide-experimental-on-top-nav": "Hide experimental features on top navigation bar",
     "invalid-verification-code": "Invalid verification code. Please try again.",
     "invalid-verification-code-simple": "Invalid verification code",

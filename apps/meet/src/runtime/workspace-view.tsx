@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { Structure } from '../app/[locale]/[wsId]/structure';
 import NotificationPopover from './notification-popover';
 import type { MeetPageModel } from './page-model.server';
+import { MeetSidebarSettings } from './sidebar-settings';
 
 type WorkspaceModel = Extract<
   MeetPageModel,
@@ -25,8 +26,18 @@ export function WorkspaceView({
 }) {
   const t = useTranslations();
   const { workspaceSlug, wsId, user, profile } = workspace;
+  const sidebarSettingsTab = {
+    content: <MeetSidebarSettings />,
+    description: t('settings.preferences.sidebar_description'),
+    label: t('settings.preferences.sidebar'),
+  };
   const userPopover = (
-    <UserNavClient user={profile} locale={locale} hideMetadata />
+    <UserNavClient
+      user={profile}
+      locale={locale}
+      hideMetadata
+      sidebarSettingsTab={sidebarSettingsTab}
+    />
   );
   const notificationPopover = <NotificationPopover userId={user.id} />;
   return (
@@ -39,7 +50,11 @@ export function WorkspaceView({
           actions={
             <div className="flex w-full items-center gap-1">
               <div className="min-w-0 flex-1">
-                <UserNavClient user={profile} locale={locale} />
+                <UserNavClient
+                  externalSettingsHost
+                  user={profile}
+                  locale={locale}
+                />
               </div>
               {notificationPopover}
             </div>
