@@ -540,23 +540,22 @@ it('keeps what one flashcard mark sends small, however large the room and the de
   // The marker gets their own small view and the cards they now know, each
   // manager a small update.
   expect(marker.send).toHaveBeenCalledTimes(2);
-  for (const manager of managers)
-    expect(manager.send).toHaveBeenCalledTimes(1);
+  for (const manager of managers) expect(manager.send).toHaveBeenCalledTimes(1);
   // The person's other connection learns the mark, so its next click toggles
   // the card instead of sending the same mark again.
-  expect(secondDevice.send.mock.calls.map(([wire]) => JSON.parse(wire))).toEqual(
-    [{ type: 'activity.known', flashcards: { known: [cardId] } }]
-  );
+  expect(
+    secondDevice.send.mock.calls.map(([wire]) => JSON.parse(wire))
+  ).toEqual([{ type: 'activity.known', flashcards: { known: [cardId] } }]);
   // Another person in the room never gets that frame.
-  expect(JSON.stringify(others.map(({ send }) => send.mock.calls))).not.toContain(
-    'activity.known'
-  );
+  expect(
+    JSON.stringify(others.map(({ send }) => send.mock.calls))
+  ).not.toContain('activity.known');
   expect(bytes([marker])).toBeLessThan(600);
   expect(bytes([secondDevice])).toBeLessThan(200);
   expect(bytes(managers)).toBeLessThan(2 * 200);
-  expect(
-    bytes([marker, secondDevice, ...others, ...managers])
-  ).toBeLessThan(1_000);
+  expect(bytes([marker, secondDevice, ...others, ...managers])).toBeLessThan(
+    1_000
+  );
   // No frame carries the deck again.
   expect(
     JSON.stringify([

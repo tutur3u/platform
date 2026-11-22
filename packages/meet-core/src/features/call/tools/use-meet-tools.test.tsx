@@ -203,9 +203,7 @@ it('offers the assessment in the menu and to co-hosts only while it is switched 
   // Nothing else leaves the menu with it.
   expect(ids(off)).toEqual(ids(on).filter((id) => id !== 'live-assessment'));
   // What the call offers by default follows the configured switch.
-  expect(ids(meetTools)).toEqual(
-    ids(MEET_LIVE_ASSESSMENT_ENABLED ? on : off)
-  );
+  expect(ids(meetTools)).toEqual(ids(MEET_LIVE_ASSESSMENT_ENABLED ? on : off));
   renderHarness({ drawer: null, onDrawer: vi.fn(), registry: off });
   expect(screen.getByTestId('shown').textContent).not.toContain(
     'live-assessment'
