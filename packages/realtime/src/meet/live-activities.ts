@@ -400,6 +400,28 @@ export function applyLiveActivities(
     { type: 'activity.mine', mine: mineView(shown(next), participantId), requestId },
   ];
   if (next === current) return outcome(room, { reply });
+  if (command.kind === 'flashcards.mark') {
+    // A mark changes one person's progress and nothing the room shares. They
+    // get their own view back and the managers a small update; no shared view
+    // is sent again, so the cost does not grow with the room or the deck.
+    if (serializedMeetBytes(next) > LIVE_ACTIVITY_LIMITS.stateBytes)
+      return denied(room, 'activity_full', requestId);
+    return outcome(
+      { ...room, liveActivities: next, liveActivityLimits: limits },
+      {
+        reply,
+        toManagers: [
+          {
+            type: 'activity.progress',
+            flashcards: {
+              participantId,
+              known: next.flashcards.progress[participantId]?.length ?? 0,
+            },
+          },
+        ],
+      }
+    );
+  }
 
   const snapshot = publicView(shown(next));
   const host = hostView(shown(next));

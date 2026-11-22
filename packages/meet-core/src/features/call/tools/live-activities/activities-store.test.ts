@@ -298,3 +298,36 @@ it('treats a read the room never answers as refused, so later clicks are not los
   expect(room.read().error).toBeNull();
   room.close();
 });
+
+it('folds a flashcard progress update into the manager view, for managers only', () => {
+  const ANA = '22222222-2222-4222-8222-222222222222';
+  const BEN = '33333333-3333-4333-8333-333333333333';
+  const update = (participantId: string, known: number) =>
+    handleLiveActivitiesMessage(
+      meetingId,
+      { type: 'activity.progress', flashcards: { participantId, known } },
+      send
+    );
+  const progress = () => room.read().host?.flashcards.progress;
+  handleLiveActivitiesMessage(meetingId, ready('admitted'), send);
+  const room = liveActivitiesRoom(meetingId);
+  answer(room);
+  // Without a manager view there is nothing to fold into.
+  update(ANA, 1);
+  expect(room.read().host).toBeNull();
+  room.receive({ type: 'activity.host', host });
+  update(ANA, 1);
+  update(BEN, 2);
+  update(ANA, 3);
+  expect(progress()).toEqual([
+    { participantId: BEN, known: 2 },
+    { participantId: ANA, known: 3 },
+  ]);
+  // Someone who knows no card any more leaves the list.
+  update(BEN, 0);
+  expect(progress()).toEqual([{ participantId: ANA, known: 3 }]);
+  // A participant never holds progress of others.
+  room.setManager(false);
+  update(BEN, 4);
+  expect(room.read().host).toBeNull();
+});

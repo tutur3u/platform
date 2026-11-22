@@ -292,4 +292,12 @@ export type LiveActivitiesServerMessage =
       requestId?: string;
     }
   | { type: 'activity.mine'; mine: LiveActivitiesMine; requestId?: string }
-  | { type: 'activity.host'; host: LiveActivitiesHost; requestId?: string };
+  | { type: 'activity.host'; host: LiveActivitiesHost; requestId?: string }
+  /**
+   * One person's flashcard progress, for managers. A mark changes nothing the
+   * room shares, so this small update stands in for the whole manager view.
+   */
+  | {
+      type: 'activity.progress';
+      flashcards: { participantId: string; known: number };
+    };

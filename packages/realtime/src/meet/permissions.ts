@@ -180,6 +180,9 @@ export function meetTrackKind(track: {
   );
 }
 
+/** Activity frames for whoever runs activities: the view and its updates. */
+const MANAGER_ACTIVITY_FRAMES = new Set(['activity.host', 'activity.progress']);
+
 /**
  * Whether a message for the room's managers reaches this token. Participant
  * managers get all of them. The activity view also goes to workspace co-hosts,
@@ -192,13 +195,15 @@ export function receivesMeetManagerMessage(
 ) {
   return (
     canMeetRealtimeManageParticipants(token) ||
-    (message.type === 'activity.host' && canMeetRealtimeRunActivities(token))
+    (MANAGER_ACTIVITY_FRAMES.has(message.type) &&
+      canMeetRealtimeRunActivities(token))
   );
 }
 
 const PRIVATE_TOOL_FRAMES = new Set([
   'activity.mine',
   'activity.host',
+  'activity.progress',
   'penboard.snapshot',
   'penboard.stroke',
 ]);
@@ -228,6 +233,7 @@ export function receivesMeetToolFrame(
     !state.ended &&
     !!state.presence[token.userId] &&
     !state.waiting[token.userId] &&
-    (message.type !== 'activity.host' || canMeetRealtimeRunActivities(token))
+    (!MANAGER_ACTIVITY_FRAMES.has(message.type) ||
+      canMeetRealtimeRunActivities(token))
   );
 }

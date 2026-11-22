@@ -145,6 +145,23 @@ export function createLiveActivitiesStore() {
         case 'activity.host':
           if (manager) publish({ ...view, host: message.host });
           break;
+        case 'activity.progress': {
+          // One person's flashcard progress, in place of a whole new view.
+          if (!manager || !view.host) break;
+          const { participantId, known } = message.flashcards;
+          const progress = view.host.flashcards.progress.filter(
+            (entry) => entry.participantId !== participantId
+          );
+          if (known > 0) progress.push({ participantId, known });
+          publish({
+            ...view,
+            host: {
+              ...view.host,
+              flashcards: { ...view.host.flashcards, progress },
+            },
+          });
+          break;
+        }
         case 'error':
           if (message.requestId && message.requestId === readRequest)
             failRead(message.error);

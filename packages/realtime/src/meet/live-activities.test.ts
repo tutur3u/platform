@@ -15,7 +15,10 @@ import {
   read,
   room,
 } from './live-activities.fixtures';
-import { LIVE_ACTIVITY_ACTIONS_PER_MINUTE } from './live-activity-rate';
+import {
+  LIVE_ACTIVITY_ACTIONS_PER_MINUTE,
+  serializedMeetBytes,
+} from './live-activity-rate';
 import { meetRealtimeClientMessageSchema } from './messages';
 import { receivesMeetManagerMessage } from './permissions';
 import {
@@ -53,7 +56,17 @@ describe('flashcards', () => {
     expect(marked.reply).toMatchObject([
       { mine: { flashcards: { known: [card?.id] } } },
     ]);
-    expect(marked.toManagers).toMatchObject([
+    // A mark shares nothing new with the room: managers get a small update.
+    expect(marked.broadcast).toEqual([]);
+    expect(marked.toManagers).toEqual([
+      {
+        type: 'activity.progress',
+        flashcards: { participantId: guest.userId, known: 1 },
+      },
+    ]);
+    expect(read(marked.state, host).reply).toMatchObject([
+      {},
+      {},
       {
         host: {
           flashcards: { progress: [{ participantId: guest.userId, known: 1 }] },
@@ -453,4 +466,63 @@ it('refuses an activity frame it cannot read under the sender\'s request id', ()
       type: 'error',
       error: 'malformed_event',
     });
+});
+
+it('keeps what one flashcard mark sends small, however large the room and the deck', () => {
+  const socket = (token: typeof host) => ({
+    readyState: 1,
+    send: vi.fn<(wire: string) => void>(),
+    close: vi.fn(),
+    deserializeAttachment: () => ({ token }),
+    serializeAttachment: vi.fn<(value: MeetRoomSocketAttachment) => void>(),
+  });
+  // A full deck with the longest sides, so the shared views are large.
+  const cards = Array.from({ length: 60 }, (_, index) => ({
+    front: `${index} ${'f'.repeat(190)}`,
+    back: `${index} ${'b'.repeat(390)}`,
+  }));
+  const set = action(room(), host, { kind: 'flashcards.set', cards });
+  const full = serializedMeetBytes(set.broadcast) + serializedMeetBytes(set.toManagers);
+  expect(full).toBeGreaterThan(30_000);
+  const cardId = set.state.liveActivities?.flashcards.cards[0]?.id;
+
+  // The marker, three other sockets of people in the room and two managers.
+  const marker = socket(guest);
+  const others = [socket(other), socket(other), socket(other)];
+  const managers = [socket(host), socket(cohost)];
+  const marked = action(set.state, guest, {
+    kind: 'flashcards.mark',
+    cardId,
+    known: true,
+  });
+  const delivery = createMeetRoomSocketDelivery({
+    sockets: () => [marker, ...others, ...managers],
+    read: () => marked.state,
+    fullPresence: () => ({ type: 'room.ended' }),
+    announcements: () => [],
+  });
+  // Delivered the way the room flushes an outcome.
+  delivery.sendToSocket(marker, marked.reply);
+  delivery.broadcast(marked.broadcast);
+  delivery.sendToManagers(marked.toManagers);
+  for (const entry of marked.direct)
+    delivery.sendToUser(entry.userId, [entry.message]);
+  const bytes = (sockets: ReturnType<typeof socket>[]) =>
+    sockets
+      .flatMap(({ send }) => send.mock.calls)
+      .reduce((sum, [wire]) => sum + new TextEncoder().encode(wire).length, 0);
+
+  // Nobody else in the room receives anything for someone's mark.
+  expect(bytes(others)).toBe(0);
+  // The marker gets their own small view, each manager a small update.
+  expect(marker.send).toHaveBeenCalledTimes(1);
+  for (const manager of managers)
+    expect(manager.send).toHaveBeenCalledTimes(1);
+  expect(bytes([marker])).toBeLessThan(600);
+  expect(bytes(managers)).toBeLessThan(2 * 200);
+  expect(bytes([marker, ...others, ...managers])).toBeLessThan(1_000);
+  // No frame carries the deck again.
+  expect(
+    JSON.stringify([marked.reply, marked.broadcast, marked.toManagers])
+  ).not.toMatch(/ffffffff|bbbbbbbb/);
 });
