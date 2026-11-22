@@ -156,6 +156,24 @@ afterEach(() => {
 });
 
 describe('web API origin on the Worker', () => {
+  it('serves pages and forwards API requests with the production Worker config', async () => {
+    vi.stubEnv('VITE_WORKSPACE_NATIVE_PROFILE', 'production');
+    const { default: workerConfig } = await import('./void.config');
+    expect(workerConfig.cloudflare?.name).toBe('tuturuuu-workspace');
+
+    const { handler, fetcher } = handlerFor();
+    const env = { ...workerConfig.cloudflare?.vars, ASSETS: assets };
+
+    const page = await handler(request('/login'), env, worker);
+    expect(page.status).toBe(200);
+    expect(await page.text()).toBe('page');
+
+    const api = await handler(request('/api/v1/mobile/version'), env, worker);
+    expect(api.status).toBe(200);
+    expect(await api.text()).toBe('upstream');
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('forwards /api to the canonical Web origin when unset', async () => {
     const { handler, fetcher } = handlerFor();
 
