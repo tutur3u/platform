@@ -1,16 +1,19 @@
 'use client';
 
-import { AlertCircle, CheckCircle2 } from '@tuturuuu/icons';
+import { AlertTriangle, CheckCircle2 } from '@tuturuuu/icons/lucide-static';
 import {
   type ConsumeAuthRecoveryResponse,
   consumeAuthRecoveryWithInternalApi,
 } from '@tuturuuu/internal-api/auth';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import { AuthCodeField } from '../../login/auth-code-field';
+import { AuthReferenceRow } from '../../login/auth-reference-row';
 
 interface AuthRecoveryFormProps {
   defaultEmail: string;
@@ -72,56 +75,62 @@ export function AuthRecoveryForm({
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       {message ? (
         <div
-          className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-sm"
-          role="status"
+          className={
+            isSuccess
+              ? 'flex items-start gap-3 rounded-2xl bg-dynamic-green/10 px-3.5 py-3 text-dynamic-green text-sm leading-relaxed'
+              : 'flex items-start gap-3 rounded-2xl bg-dynamic-red/10 px-3.5 py-3 text-dynamic-red text-sm leading-relaxed'
+          }
+          role={isSuccess ? 'status' : 'alert'}
         >
           {isSuccess ? (
-            <CheckCircle2 className="mt-0.5 size-4 text-dynamic-green" />
+            <CheckCircle2 aria-hidden className="mt-0.5 size-4 shrink-0" />
           ) : (
-            <AlertCircle className="mt-0.5 size-4 text-dynamic-red" />
+            <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0" />
           )}
-          <div className="space-y-1">
-            <p>{message}</p>
-            {diagnosticCode ? (
-              <p className="text-muted-foreground">
-                {t('diagnostic_code', { code: diagnosticCode })}
-              </p>
-            ) : null}
-          </div>
+          <p className="min-w-0 font-semibold">{message}</p>
         </div>
       ) : null}
+      {diagnosticCode && message && !isSuccess ? (
+        <AuthReferenceRow
+          code={diagnosticCode}
+          copiedLabel={t('reference_copied')}
+          copyLabel={t('copy_reference')}
+          label={t('reference_label')}
+        />
+      ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="auth-recovery-email">{t('email_label')}</Label>
+      <div className="flex flex-col gap-2">
+        <Label className="font-semibold" htmlFor="auth-recovery-email">
+          {t('email_label')}
+        </Label>
         <Input
           autoComplete="email"
+          className="h-12 rounded-2xl"
           id="auth-recovery-email"
           inputMode="email"
           name="email"
           onChange={(event) => setEmail(event.target.value)}
+          placeholder={t('email_placeholder')}
           required
           type="email"
           value={email}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="auth-recovery-code">{t('code_label')}</Label>
-        <Input
-          autoComplete="one-time-code"
+      <div className="flex flex-col gap-2">
+        <Label className="font-semibold" htmlFor="auth-recovery-code">
+          {t('code_label')}
+        </Label>
+        <AuthCodeField
+          align="start"
+          disabled={isSubmitting}
           id="auth-recovery-code"
-          inputMode="numeric"
-          maxLength={6}
-          minLength={6}
+          idPrefix="auth-recovery-code"
           name="code"
-          onChange={(event) =>
-            setCode(event.target.value.replace(/\D/gu, '').slice(0, 6))
-          }
-          pattern="[0-9]{6}"
-          required
+          onChange={(value) => setCode(value.replace(/\D/gu, '').slice(0, 6))}
           value={code}
         />
         <p className="text-muted-foreground text-xs leading-5">
@@ -129,7 +138,12 @@ export function AuthRecoveryForm({
         </p>
       </div>
 
-      <Button className="w-full" disabled={isSubmitting} type="submit">
+      <Button
+        className="h-12 w-full rounded-2xl font-bold"
+        disabled={isSubmitting || code.length !== 6}
+        type="submit"
+      >
+        {isSubmitting ? <LoadingIndicator className="size-4" /> : null}
         {isSubmitting ? t('submitting') : t('submit')}
       </Button>
     </form>

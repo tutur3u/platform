@@ -58,16 +58,21 @@ export function LogoutChoices({
   };
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-8 sm:px-6">
+    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-8 text-foreground sm:px-6">
       <section
         aria-labelledby="logout-title"
-        className="flex w-full max-w-md flex-col gap-6 rounded-2xl border bg-card p-6 shadow-sm sm:p-8"
+        className="flex w-full max-w-[400px] flex-col gap-4 rounded-[28px] border bg-card p-6"
       >
-        <TuturuuLogo src={TUTURUUU_LOCAL_LOGO_URL} width={40} height={40} />
-        <div className="space-y-2">
+        <TuturuuLogo
+          className="self-center"
+          height={40}
+          src={TUTURUUU_LOCAL_LOGO_URL}
+          width={40}
+        />
+        <div className="flex flex-col gap-1.5 text-center">
           <h1
             id="logout-title"
-            className="font-semibold text-2xl tracking-tight"
+            className="text-balance font-extrabold text-2xl tracking-[-0.02em]"
           >
             {appLoggedOut && target
               ? t('app-done', { app: target.name })
@@ -76,17 +81,21 @@ export function LogoutChoices({
           <p className="text-muted-foreground text-sm">
             {appLoggedOut ? t('others-stay-signed-in') : t('this-browser')}
           </p>
-          {email && <p className="break-all text-sm">{email}</p>}
+          {email && (
+            <p className="mt-1 inline-flex h-7 max-w-full items-center self-center truncate rounded-full bg-secondary px-3 font-semibold text-muted-foreground text-xs">
+              {email}
+            </p>
+          )}
           {!appLoggedOut && canLogoutBrowser && (
             <p className="text-muted-foreground text-sm">
               {t('current-account')}
             </p>
           )}
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {target && !appLoggedOut && (
             <Button
-              className="min-h-12 w-full whitespace-normal"
+              className="min-h-12 w-full whitespace-normal rounded-2xl font-bold"
               disabled={pending !== null}
               onClick={() => void logout('app')}
             >
@@ -101,7 +110,7 @@ export function LogoutChoices({
           {!appLoggedOut && canLogoutBrowser && (
             <Button
               variant="outline"
-              className="min-h-12 w-full whitespace-normal border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              className="min-h-12 w-full whitespace-normal rounded-2xl border-destructive/40 font-bold text-destructive hover:bg-destructive/10 hover:text-destructive"
               disabled={pending !== null}
               onClick={() => void logout('browser')}
             >
@@ -115,7 +124,7 @@ export function LogoutChoices({
           )}
           <Button
             variant="ghost"
-            className="min-h-12 w-full whitespace-normal"
+            className="min-h-12 w-full whitespace-normal rounded-2xl font-bold"
             disabled={pending !== null}
             onClick={() =>
               navigateFromLogout(
@@ -136,7 +145,10 @@ export function LogoutChoices({
           </Button>
         </div>
         {failed && (
-          <p role="alert" className="text-destructive text-sm">
+          <p
+            role="alert"
+            className="rounded-2xl bg-dynamic-red/10 px-3.5 py-3 font-semibold text-dynamic-red text-sm"
+          >
             {t('error')}
           </p>
         )}

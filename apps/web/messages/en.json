@@ -1580,17 +1580,25 @@
     "email-sent-p2": "Please check your inbox and use the provided verification code to complete your registration."
   },
   "auth-recovery": {
+    "back_to_sign_in": "Back to sign in",
     "code_hint": "Use the 6-digit code from your recovery email if the one-click link did not open.",
-    "code_label": "Verification code",
+    "code_label": "Recovery code",
+    "copy_reference": "Copy",
     "description": "Enter the recovery code sent by support to complete account recovery.",
     "diagnostic_code": "Diagnostic code: {code}",
     "email_label": "Email address",
+    "email_placeholder": "you@example.com",
+    "enter_code_instead": "Enter a recovery code",
     "generic_error": "Unable to complete account recovery right now.",
     "invalid_link": "That recovery link is invalid or expired. Enter the verification code from the latest email.",
+    "link_expired_description": "Links work once and only for a short time. Sign in again, or enter the code from your latest recovery email.",
+    "link_expired_title": "This recovery link has expired",
+    "reference_copied": "Copied",
+    "reference_label": "Reference",
     "submit": "Verify and sign in",
     "submitting": "Verifying...",
     "success": "Recovery confirmed. Redirecting...",
-    "title": "Account recovery"
+    "title": "Recover your account"
   },
   "auth-recovery-admin": {
     "actions": {

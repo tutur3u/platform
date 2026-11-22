@@ -1,3 +1,4 @@
+import { SorbetRouteScope } from '@tuturuuu/ui/custom/sorbet-route-scope';
 import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
 export const generateMetadata = createMarketingMetadata({
@@ -12,5 +13,11 @@ export default function LogoutLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      {/* Log out shares the Sorbet sign-in design for every visitor. */}
+      <SorbetRouteScope />
+      {children}
+    </>
+  );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { AuthRecoveryForm } from './recovery-form';
+import { AuthRecoveryView } from './recovery-view';
 
 export const metadata: Metadata = {
   title: 'Account Recovery',
@@ -23,27 +22,17 @@ export default async function AuthRecoveryPage({
 }: Props) {
   const { locale } = await params;
   const sp = await searchParams;
-  const t = await getTranslations('auth-recovery');
-
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <section className="w-full max-w-md space-y-6 rounded-lg border bg-card p-6 shadow-sm">
-        <div className="space-y-2">
-          <h1 className="font-semibold text-2xl tracking-normal">
-            {t('title')}
-          </h1>
-          <p className="text-muted-foreground text-sm leading-6">
-            {t('description')}
-          </p>
-        </div>
-        <AuthRecoveryForm
+    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-12 text-foreground">
+      <div className="flex w-full max-w-[400px] flex-col gap-4">
+        <AuthRecoveryView
           defaultEmail={sp.email ?? ''}
           diagnosticCode={sp.diagnostic}
           error={sp.error}
           locale={locale}
           next={sp.next}
         />
-      </section>
+      </div>
     </main>
   );
 }

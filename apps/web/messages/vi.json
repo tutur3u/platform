@@ -1580,17 +1580,25 @@
     "email-sent-p2": "Vui lòng kiểm tra hộp thư đến của bạn và sử dụng mã xác nhận được cung cấp để hoàn tất đăng ký của bạn."
   },
   "auth-recovery": {
+    "back_to_sign_in": "Quay lại đăng nhập",
     "code_hint": "Dùng mã 6 chữ số trong email khôi phục nếu liên kết một chạm không mở được.",
-    "code_label": "Mã xác minh",
+    "code_label": "Mã khôi phục",
+    "copy_reference": "Sao chép",
     "description": "Nhập mã khôi phục do bộ phận hỗ trợ gửi để hoàn tất khôi phục tài khoản.",
     "diagnostic_code": "Mã chẩn đoán: {code}",
     "email_label": "Địa chỉ email",
+    "email_placeholder": "ban@example.com",
+    "enter_code_instead": "Nhập mã khôi phục",
     "generic_error": "Hiện chưa thể hoàn tất khôi phục tài khoản.",
     "invalid_link": "Liên kết khôi phục không hợp lệ hoặc đã hết hạn. Hãy nhập mã xác minh từ email mới nhất.",
+    "link_expired_description": "Mỗi liên kết chỉ dùng được một lần và trong thời gian ngắn. Hãy đăng nhập lại, hoặc nhập mã trong email khôi phục mới nhất.",
+    "link_expired_title": "Liên kết khôi phục đã hết hạn",
+    "reference_copied": "Đã sao chép",
+    "reference_label": "Mã tham chiếu",
     "submit": "Xác minh và đăng nhập",
     "submitting": "Đang xác minh...",
     "success": "Đã xác nhận khôi phục. Đang chuyển hướng...",
-    "title": "Khôi phục tài khoản"
+    "title": "Khôi phục tài khoản của bạn"
   },
   "auth-recovery-admin": {
     "actions": {
