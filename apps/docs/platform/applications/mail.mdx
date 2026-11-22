@@ -598,13 +598,21 @@ Do not change DNS from code or migrations. The current public MX for `tuturuuu.c
 
 1. Verify the domain or pilot subdomain in the SES receiving region.
 2. Create an S3 bucket for raw MIME objects.
-3. Create an SNS topic for receipt notifications and subscribe the web webhook:
-   `POST /api/v1/webhooks/mail/ses`.
-4. Create an SES receipt rule that stores raw MIME in S3 and publishes the SNS notification.
-5. Configure `MAIL_SES_INBOUND_TOPIC_ARN`, `MAIL_SES_INBOUND_BUCKET`, `MAIL_SES_INBOUND_KEY_PREFIX`, and `MAIL_SES_REGION`.
-6. Only after validation, stage the MX/DNS change outside the app repository.
+3. Create an SNS topic for receipt notifications.
+4. Configure `MAIL_SES_INBOUND_TOPIC_ARN`, `MAIL_SES_INBOUND_BUCKET`, `MAIL_SES_INBOUND_KEY_PREFIX`, and `MAIL_SES_REGION` on the Mail Worker.
+5. Subscribe the Mail webhook `POST /api/v1/webhooks/mail/ses` to the topic. The
+   subscription confirmation must reach a Worker that already has the topic ARN.
+6. Create an SES receipt rule that stores raw MIME in S3 and publishes the SNS notification.
+7. Only after validation, stage the MX/DNS change outside the app repository.
 
 For local SNS fixture tests, set `MAIL_SES_SNS_SIGNATURE_VERIFICATION=disabled`. Do not use that setting in production.
+
+SES inbound is optional. Without `MAIL_SES_INBOUND_TOPIC_ARN`, `POST
+/api/v1/webhooks/mail/ses` answers `410 Gone` (`SES inbound is not configured`)
+before reading or verifying the body. SNS treats a 410 as a permanent failure
+and does not retry it. Production inbound runs through Cloudflare Email Routing.
+Configure the topic and the other `MAIL_SES_*` values on the Mail Worker before
+subscribing SNS to the endpoint. Coverage: `apps/mail/src/app/api/v1/webhooks/mail/ses/route.test.ts`.
 
 ## Cloudflare onboarding
 

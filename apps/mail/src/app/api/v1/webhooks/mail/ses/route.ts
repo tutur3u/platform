@@ -6,7 +6,21 @@ import {
   verifySnsEnvelope,
 } from '@/lib/mail/inbound';
 
+/**
+ * SES inbound is optional. Without a configured SNS topic the endpoint answers
+ * 410 Gone before reading or verifying the body; SNS treats 410 as permanent.
+ */
+function sesInboundConfigured() {
+  return Boolean(process.env.MAIL_SES_INBOUND_TOPIC_ARN?.trim());
+}
+
 export async function POST(request: NextRequest) {
+  if (!sesInboundConfigured()) {
+    return NextResponse.json(
+      { error: 'SES inbound is not configured' },
+      { status: 410 }
+    );
+  }
   const rawBody = await request.text();
 
   try {
