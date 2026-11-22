@@ -11,6 +11,7 @@ const {
   planWrapperChanges,
   wrapperContent,
 } = require('./generate-web-api-route-wrappers.js');
+const { guardedWorkspaceGroups } = require('./web-api-wrapper-groups.js');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 
@@ -167,6 +168,73 @@ test('planWrapperChanges passes a workspace group guard to its router', () => {
     contents['v1/workspaces/[wsId]/roles/[[...segments]]/route.ts'],
     /guard/u
   );
+});
+
+test('planWrapperChanges refuses a missing or unlisted group guard', () => {
+  const { appApiDir, legacyApiDir } = makeFixture();
+  const groupDir = path.join(legacyApiDir, 'v1', 'workspaces', '[wsId]');
+  writeFile(
+    path.join(groupDir, 'external-apps', 'members', 'route.ts'),
+    'export async function GET() {}\n'
+  );
+  assert.throws(
+    () => planWrapperChanges({ appApiDir, legacyApiDir }),
+    /Missing route-guard\.ts for guarded group/u
+  );
+
+  writeFile(
+    path.join(groupDir, 'external-apps', 'route-guard.ts'),
+    'export const guard = () => undefined;\n'
+  );
+  writeFile(
+    path.join(groupDir, 'roles', 'route.ts'),
+    'export async function GET() {}\n'
+  );
+  writeFile(
+    path.join(groupDir, 'roles', 'route-guard.ts'),
+    'export const guard = () => undefined;\n'
+  );
+  assert.throws(
+    () => planWrapperChanges({ appApiDir, legacyApiDir }),
+    /roles is not a guarded group/u
+  );
+});
+
+test('repo wrappers pass every guarded group its route guard', () => {
+  for (const group of guardedWorkspaceGroups) {
+    const base = `v1/workspaces/[wsId]/${group}`;
+    const source = fs.readFileSync(
+      path.join(
+        REPO_ROOT,
+        'apps/web/src/app/api',
+        base,
+        '[...segments]',
+        'route.ts'
+      ),
+      'utf8'
+    );
+    assert.ok(
+      source.includes(
+        `import { guard } from '@/legacy-api-routes/${base}/route-guard';`
+      ),
+      `${group} wrapper imports its guard`
+    );
+    assert.match(
+      source,
+      /createWorkspaceRouteHandlers\(\s*\[[\s\S]*\],\s*guard\s*\);/u
+    );
+    assert.ok(
+      fs.existsSync(
+        path.join(
+          REPO_ROOT,
+          'apps/web/src/legacy-api-routes',
+          base,
+          'route-guard.ts'
+        )
+      )
+    );
+  }
+  assert.ok(guardedWorkspaceGroups.includes('external-apps'));
 });
 
 test('repo import graph keeps legacy API routes concrete without catch-all bridges', () => {

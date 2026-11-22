@@ -31,10 +31,27 @@ const workspaceGroups = [
 ];
 
 /**
- * A group may export `guard` from `<group>/route-guard.ts` in the legacy
- * tree; its wrapper then runs that guard before every matched handler.
+ * Groups whose wrapper runs `guard` from `<group>/route-guard.ts` in the
+ * legacy tree before every matched handler. Generation fails when a listed
+ * group lacks the file or an unlisted group has one, so a guard cannot be
+ * dropped or ignored silently.
  */
+const guardedWorkspaceGroups = ['external-apps'];
 const GROUP_GUARD_FILE = 'route-guard.ts';
+
+function hasWorkspaceGroupGuard(base, group, hasGroupFile) {
+  const present = hasGroupFile(`${base}/${GROUP_GUARD_FILE}`);
+  const listed = guardedWorkspaceGroups.includes(group);
+  if (listed && !present) {
+    throw new Error(`Missing ${GROUP_GUARD_FILE} for guarded group ${base}`);
+  }
+  if (!listed && present) {
+    throw new Error(
+      `${base}/${GROUP_GUARD_FILE} exists but ${group} is not a guarded group`
+    );
+  }
+  return listed;
+}
 
 function groupWorkspaceWrappers(
   wrappers,
@@ -82,7 +99,11 @@ function groupWorkspaceWrappers(
       return `  [${JSON.stringify(segments)}, { ${handlers.join(', ')} }],`;
     });
 
-    const guarded = hasGroupFile(`${base}/${GROUP_GUARD_FILE}`);
+    const guarded = hasWorkspaceGroupGuard(
+      base,
+      base.split('/').at(-1),
+      hasGroupFile
+    );
     if (guarded) {
       imports.push(
         `import { guard } from '@/legacy-api-routes/${base}/route-guard';`
@@ -112,4 +133,4 @@ function groupWorkspaceWrappers(
   return individual;
 }
 
-module.exports = { groupWorkspaceWrappers };
+module.exports = { groupWorkspaceWrappers, guardedWorkspaceGroups };

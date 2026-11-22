@@ -3,10 +3,9 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
-import {
-  PERSONAL_WORKSPACE_SLUG,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
+import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
+import { UNKNOWN_CLIENT_IP } from '@tuturuuu/utils/abuse-protection/client-ip';
+import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { hasUpstashRestEnv } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import { isNonProductionDeployment } from '@/lib/auth/external-app-refresh';
@@ -40,14 +39,18 @@ function keyPart(value: string) {
 }
 
 /**
- * The workspace part of a key. `personal` names a different workspace for
- * each user, so it is counted per user instead of as one shared workspace.
+ * The key part for the workspace the bearer is bound to, when the URL names
+ * exactly that workspace. Only a bound workspace gets workspace counters, so
+ * a token cannot spend another workspace's budget and URL strings never mint
+ * keys before the handler authorizes them. Handles and `personal` are not
+ * resolved here, so their requests count per user only.
  */
-function workspaceKeyPart(wsId: string, userId: string) {
-  const resolved = resolveWorkspaceId(wsId);
-  return resolved.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG
-    ? `personal:${keyPart(userId)}`
-    : keyPart(resolved);
+function boundWorkspaceKeyPart(wsId: string, boundWorkspaceId?: string) {
+  const bound = boundWorkspaceId?.toLowerCase();
+  if (!bound) return null;
+  return resolveWorkspaceId(wsId).toLowerCase() === bound
+    ? keyPart(bound)
+    : null;
 }
 
 /**
@@ -138,15 +141,21 @@ async function consume(counters: Counter[]) {
   return rateLimitedResponse(retryAfter, limit);
 }
 
-/** The counters one external-app workspace request consumes. */
+/**
+ * The counters one external-app workspace request consumes. Every bucket is
+ * counted per app and user, which caps a bearer however its URL names the
+ * workspace; a bound workspace also gets a per-app workspace counter.
+ */
 export function externalAppWorkspaceCounters({
   appId,
+  boundWorkspaceId,
   method,
   pattern,
   userId,
   wsId,
 }: {
   appId: string;
+  boundWorkspaceId?: string;
   method: string;
   pattern: readonly string[];
   userId: string;
@@ -154,29 +163,34 @@ export function externalAppWorkspaceCounters({
 }): Counter[] {
   const route = pattern.join('/');
   const app = keyPart(appId);
-  const workspace = workspaceKeyPart(wsId, userId);
-  const workspaceCounter = (bucket: ExternalAppRateLimitBucket) => ({
-    bucket,
-    failClosed: bucket !== 'read',
-    key: `${KEY_PREFIX}:${bucket}:app:${app}:ws:${workspace}`,
-  });
-
-  if (READ_METHODS.has(method) || READ_ROUTES.has(`${method} ${route}`)) {
+  const user = keyPart(userId);
+  const workspace = boundWorkspaceKeyPart(wsId, boundWorkspaceId);
+  const countersFor = (
+    bucket: ExternalAppRateLimitBucket,
+    { perWorkspace = true } = {}
+  ): Counter[] => {
     // Reads fail open, as `checkRateLimit` does: a read changes nothing and
     // sends nothing, so a limiter outage should not take the app's reads down.
-    return [workspaceCounter('read')];
+    const failClosed = bucket !== 'read';
+    const prefix = `${KEY_PREFIX}:${bucket}:app:${app}`;
+    return [
+      { bucket, failClosed, key: `${prefix}:user:${user}` },
+      ...(workspace && perWorkspace
+        ? [{ bucket, failClosed, key: `${prefix}:ws:${workspace}` }]
+        : []),
+    ];
+  };
+
+  if (READ_METHODS.has(method) || READ_ROUTES.has(`${method} ${route}`)) {
+    return countersFor('read');
   }
 
-  const counters: Counter[] = [workspaceCounter('write')];
+  const counters = countersFor('write');
   if (route === 'drive/upload-url') {
-    counters.push({
-      bucket: 'uploadUrl',
-      failClosed: true,
-      key: `${KEY_PREFIX}:uploadUrl:app:${app}:user:${keyPart(userId)}`,
-    });
+    counters.push(...countersFor('uploadUrl', { perWorkspace: false }));
   }
   if (route === 'members/invitations') {
-    counters.push(workspaceCounter('invitation'));
+    counters.push(...countersFor('invitation'));
   }
   return counters;
 }
@@ -203,6 +217,7 @@ export async function limitExternalAppWorkspaceRequest(
   const refusal = await consume(
     externalAppWorkspaceCounters({
       appId: verification.claims.target_app,
+      boundWorkspaceId: verification.claims.workspace_id,
       method,
       pattern,
       userId: verification.claims.sub,
@@ -212,7 +227,11 @@ export async function limitExternalAppWorkspaceRequest(
   return refusal ?? undefined;
 }
 
-/** Limits a cross-app token exchange per app and trusted client IP. */
+/**
+ * Limits a cross-app token exchange per app and trusted client IP, with IPv6
+ * counted per /64. Without a trusted IP every client of the app would share
+ * one small bucket, so those exchanges get a larger per-app ceiling instead.
+ */
 export function limitExternalAppTokenExchange({
   appId,
   ip,
@@ -220,11 +239,26 @@ export function limitExternalAppTokenExchange({
   appId: string;
   ip: string;
 }) {
+  const app = keyPart(appId);
+  const source = guardSourceBucket(ip);
+  if (source === UNKNOWN_CLIENT_IP) {
+    console.warn('External app token exchange has no trusted client IP', {
+      appId: app,
+      code: 'EXCHANGE_CLIENT_IP_UNKNOWN',
+    });
+    return consume([
+      {
+        bucket: 'exchangeUnknownIp',
+        failClosed: true,
+        key: `${KEY_PREFIX}:exchangeUnknownIp:app:${app}`,
+      },
+    ]);
+  }
   return consume([
     {
       bucket: 'exchange',
       failClosed: true,
-      key: `${KEY_PREFIX}:exchange:app:${keyPart(appId)}:ip:${keyPart(ip)}`,
+      key: `${KEY_PREFIX}:exchange:app:${app}:ip:${keyPart(source)}`,
     },
   ]);
 }

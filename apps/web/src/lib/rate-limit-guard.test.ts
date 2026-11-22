@@ -98,3 +98,36 @@ it('logs the guard failure code and runtime cause when a count fails open', asyn
   );
   error.mockRestore();
 });
+
+it('retries a failed store init instead of keeping it for the isolate', async () => {
+  vi.stubEnv('ABUSE_GUARD_FAMILIES', 'ratelimit');
+  vi.useFakeTimers({ toFake: ['Date'] });
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  mocks.getClient
+    .mockRejectedValueOnce(new Error('binding not ready'))
+    .mockResolvedValueOnce(null);
+  const { checkRateLimitRedis } = await import('./rate-limit');
+  const count = () => checkRateLimitRedis('cron', config, { failClosed: true });
+
+  try {
+    expect((await count()).unavailable).toBe(true);
+    // Inside the retry interval the failed init is not repeated per request.
+    expect((await count()).unavailable).toBe(true);
+    expect(mocks.getClient).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(Date.now() + 30_000);
+    expect((await count()).unavailable).toBe(true);
+    expect(mocks.getClient).toHaveBeenCalledTimes(2);
+
+    vi.setSystemTime(Date.now() + 30_000);
+    const recovered = await count();
+    expect(recovered).toMatchObject({ allowed: true });
+    expect(recovered.unavailable).toBeUndefined();
+    expect(mocks.getClient).toHaveBeenCalledTimes(3);
+    await count();
+    expect(mocks.getClient).toHaveBeenCalledTimes(3);
+  } finally {
+    vi.useRealTimers();
+    warn.mockRestore();
+  }
+});

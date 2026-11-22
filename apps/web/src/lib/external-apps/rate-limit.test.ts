@@ -1,65 +1,15 @@
 import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest } from 'next/server';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RateLimitConfig } from '@/lib/rate-limit';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fill, registerRateLimitStore, store } from './rate-limit-test-support';
 import { guard } from '@/legacy-api-routes/v1/workspaces/[wsId]/external-apps/route-guard';
 import { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';
-import { limitExternalAppTokenExchange } from './rate-limit';
-import { EXTERNAL_APP_RATE_LIMITS } from './rate-limit-policy';
-
-const store = vi.hoisted(() => ({
-  calls: [] as string[],
-  counts: new Map<string, number>(),
-  down: false,
-  guardAssigned: true,
-}));
-
-vi.mock('@/lib/rate-limit', () => ({
-  checkRateLimitRedis: async (
-    key: string,
-    config: RateLimitConfig,
-    options: { failClosed?: boolean } = {}
-  ) => {
-    store.calls.push(key);
-    const reset = Math.floor(Date.now() / 1000) + config.windowMs / 1000;
-    if (store.down) {
-      return {
-        allowed: !options.failClosed,
-        limit: config.maxRequests,
-        remaining: 0,
-        reset,
-        unavailable: true,
-      };
-    }
-    const count = (store.counts.get(key) ?? 0) + 1;
-    store.counts.set(key, count);
-    return {
-      allowed: count <= config.maxRequests,
-      limit: config.maxRequests,
-      remaining: Math.max(0, config.maxRequests - count),
-      reset,
-    };
-  },
-}));
-
-vi.mock('next/server', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('next/server')>()),
-  connection: async () => {},
-}));
-
-vi.mock('@tuturuuu/utils/abuse-guard/select', () => ({
-  isAbuseGuardFamilyAssigned: (family: string) =>
-    family === 'ratelimit' && store.guardAssigned,
-}));
-
-vi.mock('@tuturuuu/utils/upstash-rest', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tuturuuu/utils/upstash-rest')>()),
-  hasUpstashRestEnv: () => false,
-}));
 
 const WS_1 = '22222222-2222-4222-8222-222222222222';
 const WS_2 = '33333333-3333-4333-8333-333333333333';
 const USER = '11111111-1111-4111-8111-111111111111';
+const OTHER_USER = '44444444-4444-4444-8444-444444444444';
 
 const handlerCalls: string[] = [];
 const ok = (name: string) => async () => {
@@ -78,7 +28,13 @@ const router = createWorkspaceRouteHandlers(
   guard
 );
 
-function bearer(appId = 'yoola', userId = USER) {
+type Bearer = { appId?: string; userId?: string; workspaceId?: string | null };
+
+function bearer({
+  appId = 'yoola',
+  userId = USER,
+  workspaceId = WS_1,
+}: Bearer = {}) {
   return createAppCoordinationToken(
     {
       email: 'member@example.com',
@@ -87,6 +43,7 @@ function bearer(appId = 'yoola', userId = USER) {
       scopes: ['workspace:members:read'],
       targetApp: appId,
       userId,
+      workspaceId: workspaceId ?? undefined,
     },
     { secret: 'test-secret' }
   ).token;
@@ -96,59 +53,43 @@ async function call(
   method: 'GET' | 'PATCH' | 'POST',
   path: string,
   {
-    appId = 'yoola',
-    userId = USER,
-    token = bearer(appId, userId),
+    token,
     wsId = WS_1,
-  }: {
-    appId?: string;
-    token?: string | null;
-    userId?: string;
-    wsId?: string;
-  } = {}
+    ...claims
+  }: Bearer & { token?: string | null; wsId?: string } = {}
 ) {
-  const segments = path.split('/');
+  const auth = token === undefined ? bearer(claims) : token;
   const request = new NextRequest(
-    `http://localhost/api/v1/workspaces/${wsId}/external-apps/${path}`,
+    `http://localhost/api/v1/workspaces/${encodeURIComponent(wsId)}/external-apps/${path}`,
     {
-      headers: token ? { authorization: `Bearer ${token}` } : {},
+      headers: auth ? { authorization: `Bearer ${auth}` } : {},
       method,
     }
   );
   const response = await router[method](request, {
-    params: Promise.resolve({ segments, wsId }),
+    params: Promise.resolve({ segments: path.split('/'), wsId }),
   });
   if (!response) throw new Error('The router returned no response');
   return response;
 }
 
-function fill(key: string, bucket: keyof typeof EXTERNAL_APP_RATE_LIMITS) {
-  store.counts.set(
-    `external-app:${bucket}:${key}`,
-    EXTERNAL_APP_RATE_LIMITS[bucket].maxRequests
-  );
-}
-
-beforeEach(() => {
-  vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
-  store.calls.length = 0;
-  store.counts.clear();
-  store.down = false;
-  store.guardAssigned = true;
-  handlerCalls.length = 0;
-});
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
+const userKey = (bucket: string, userId = USER, appId = 'yoola') =>
+  `external-app:${bucket}:app:${appId}:user:${userId}`;
+const wsKey = (bucket: string, wsId = WS_1, appId = 'yoola') =>
+  `external-app:${bucket}:app:${appId}:ws:${wsId}`;
 
 describe('external-app workspace route limits', () => {
+  registerRateLimitStore();
+  beforeEach(() => {
+    handlerCalls.length = 0;
+  });
+
   it('lets a request under the limit through with one count per key', async () => {
     const response = await call('GET', 'members');
 
     expect(response.status).toBe(200);
     expect(handlerCalls).toEqual(['members']);
-    expect(store.calls).toEqual([`external-app:read:app:yoola:ws:${WS_1}`]);
+    expect(store.calls.sort()).toEqual([userKey('read'), wsKey('read')]);
   });
 
   it('answers 429 with Retry-After once a key is over its limit', async () => {
@@ -182,11 +123,8 @@ describe('external-app workspace route limits', () => {
   it('allows a read while the limiter is unavailable', async () => {
     store.down = true;
 
-    const members = await call('GET', 'members');
-    const readUrl = await call('POST', 'drive/read-url');
-
-    expect(members.status).toBe(200);
-    expect(readUrl.status).toBe(200);
+    expect((await call('GET', 'members')).status).toBe(200);
+    expect((await call('POST', 'drive/read-url')).status).toBe(200);
     expect(handlerCalls).toEqual(['members', 'read-url']);
   });
 
@@ -205,34 +143,77 @@ describe('external-app workspace route limits', () => {
     fill(`app:yoola:ws:${WS_1}`, 'write');
 
     expect((await call('PATCH', 'cron/jobs/a')).status).toBe(429);
-    expect((await call('PATCH', 'cron/jobs/a', { wsId: WS_2 })).status).toBe(
-      200
-    );
+    expect(
+      (await call('PATCH', 'cron/jobs/a', { workspaceId: WS_2, wsId: WS_2 }))
+        .status
+    ).toBe(200);
     expect(
       (await call('PATCH', 'cron/jobs/a', { appId: 'other' })).status
     ).toBe(200);
   });
 
-  it('counts upload URLs per app and user across workspaces', async () => {
-    const response = await call('POST', 'drive/upload-url');
+  it('never counts against a workspace the bearer is not bound to', async () => {
+    fill(`app:yoola:ws:${WS_2}`, 'write');
 
-    expect(response.status).toBe(200);
+    // A bearer for workspace A aimed at workspace B, and an unbound bearer.
+    await call('PATCH', 'cron/jobs/a', { wsId: WS_2 });
+    await call('POST', 'members/invitations', { wsId: WS_2 });
+    await call('PATCH', 'cron/jobs/a', { workspaceId: null, wsId: WS_2 });
+
+    expect(store.calls.filter((key) => key.includes(`:ws:${WS_2}`))).toEqual(
+      []
+    );
+    expect(store.counts.get(wsKey('write', WS_2))).toBe(60);
+    expect(store.counts.has(wsKey('invitation', WS_2))).toBe(false);
+  });
+
+  it('caps a bearer per user however the URL names its workspace', async () => {
+    fill(`app:yoola:user:${USER}`, 'write');
+
+    for (const wsId of [WS_1, WS_1.toUpperCase(), 'acme', 'personal', ' x']) {
+      expect((await call('PATCH', 'cron/jobs/a', { wsId })).status).toBe(429);
+    }
+    // Only the bound workspace, by its id, ever names a workspace counter.
+    expect(new Set(store.calls.filter((key) => key.includes(':ws:')))).toEqual(
+      new Set([wsKey('write')])
+    );
+  });
+
+  it('counts the internal alias against the root workspace it names', async () => {
+    await call('GET', 'members', {
+      workspaceId: ROOT_WORKSPACE_ID,
+      wsId: 'internal',
+    });
+
     expect(store.calls.sort()).toEqual([
-      `external-app:uploadUrl:app:yoola:user:${USER}`,
-      `external-app:write:app:yoola:ws:${WS_1}`,
+      userKey('read'),
+      wsKey('read', ROOT_WORKSPACE_ID),
+    ]);
+  });
+
+  it('counts upload URLs per app and user across workspaces', async () => {
+    expect((await call('POST', 'drive/upload-url')).status).toBe(200);
+    expect(store.calls.sort()).toEqual([
+      userKey('uploadUrl'),
+      userKey('write'),
+      wsKey('write'),
     ]);
 
     fill(`app:yoola:user:${USER}`, 'uploadUrl');
     expect(
-      (await call('POST', 'drive/upload-url', { wsId: WS_2 })).status
+      (
+        await call('POST', 'drive/upload-url', {
+          workspaceId: WS_2,
+          wsId: WS_2,
+        })
+      ).status
     ).toBe(429);
-    const otherUser = '44444444-4444-4444-8444-444444444444';
     expect(
-      (await call('POST', 'drive/upload-url', { userId: otherUser })).status
+      (await call('POST', 'drive/upload-url', { userId: OTHER_USER })).status
     ).toBe(200);
   });
 
-  it('caps invitation requests per app and workspace per hour', async () => {
+  it('caps invitation requests per user and per workspace each hour', async () => {
     for (let index = 0; index < 5; index += 1) {
       expect((await call('POST', 'members/invitations')).status).toBe(200);
     }
@@ -241,18 +222,28 @@ describe('external-app workspace route limits', () => {
 
     expect(response.status).toBe(429);
     expect(Number(response.headers.get('Retry-After'))).toBeGreaterThan(60);
-    expect(store.calls).toHaveLength(12);
+    expect(store.calls).toHaveLength(24);
+    const elsewhere = { workspaceId: WS_2, wsId: WS_2 };
     expect(
-      (await call('POST', 'members/invitations', { wsId: WS_2 })).status
+      (await call('POST', 'members/invitations', { userId: OTHER_USER })).status
+    ).toBe(429);
+    expect((await call('POST', 'members/invitations', elsewhere)).status).toBe(
+      429
+    );
+    expect(
+      (
+        await call('POST', 'members/invitations', {
+          ...elsewhere,
+          userId: OTHER_USER,
+        })
+      ).status
     ).toBe(200);
   });
 
-  it('counts the personal workspace per user', async () => {
+  it('counts the personal workspace per user only', async () => {
     await call('GET', 'members', { wsId: 'personal' });
 
-    expect(store.calls).toEqual([
-      `external-app:read:app:yoola:ws:personal:${USER}`,
-    ]);
+    expect(store.calls).toEqual([userKey('read')]);
   });
 
   it('leaves a request without a valid bearer to the handler', async () => {
@@ -261,44 +252,5 @@ describe('external-app workspace route limits', () => {
 
     expect(store.calls).toEqual([]);
     expect(handlerCalls).toEqual(['members', 'members']);
-  });
-});
-
-describe('external-app token exchange limit', () => {
-  it('counts each exchange once per app and IP', async () => {
-    await expect(
-      limitExternalAppTokenExchange({ appId: 'yoola', ip: '203.0.113.7' })
-    ).resolves.toBeNull();
-    expect(store.calls).toEqual([
-      'external-app:exchange:app:yoola:ip:203.0.113.7',
-    ]);
-  });
-
-  it('answers 429 over the limit, keyed per app and IP', async () => {
-    fill('app:yoola:ip:203.0.113.7', 'exchange');
-
-    const limited = await limitExternalAppTokenExchange({
-      appId: 'yoola',
-      ip: '203.0.113.7',
-    });
-    expect(limited?.status).toBe(429);
-    expect(limited?.headers.get('Retry-After')).toBeTruthy();
-    await expect(
-      limitExternalAppTokenExchange({ appId: 'yoola', ip: '203.0.113.8' })
-    ).resolves.toBeNull();
-    await expect(
-      limitExternalAppTokenExchange({ appId: 'other', ip: '203.0.113.7' })
-    ).resolves.toBeNull();
-  });
-
-  it('fails closed while the limiter is unavailable', async () => {
-    store.down = true;
-
-    const refusal = await limitExternalAppTokenExchange({
-      appId: 'yoola',
-      ip: '203.0.113.7',
-    });
-
-    expect(refusal?.status).toBe(503);
   });
 });

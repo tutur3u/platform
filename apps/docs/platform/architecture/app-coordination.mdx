@@ -515,30 +515,43 @@ and
 
 Every external-app workspace route under
 `/api/v1/workspaces/{wsId}/external-apps/` is counted once, at the route
-group's entry, after the app bearer's signature is verified. A request without
-a valid bearer is left to the handler, which refuses it. The app-token exchange
-counts `token` exchanges before the app secret is checked; `refreshToken`
-exchanges keep their own per-family pre-limit. Limits live in
+group's entry (`route-guard.ts`, wired by the wrapper generator's guarded-group
+list), after the app bearer's signature is verified. A request without a valid
+bearer is left to the handler, which refuses it. Each bucket is counted per app
+and user, so no spelling of a workspace in the URL can raise a bearer's limit.
+A bearer whose `workspace_id` claim names the requested workspace, by its id or
+the `internal` alias, is also counted per app and workspace; other bearers,
+handles and `personal` count per user only, so a token never spends another
+workspace's budget. Limits live in
 `apps/web/src/lib/external-apps/rate-limit-policy.ts`:
 
-| Counter | Key | Limit |
+| Counter | Keys | Limit |
 | --- | --- | --- |
-| Reads (`GET`, `drive/read-url`) | app and workspace | 600 per minute |
-| Writes (every other method) | app and workspace | 60 per minute |
+| Reads (`GET`, `drive/read-url`) | app and user; app and bound workspace | 600 per minute |
+| Writes (every other method) | app and user; app and bound workspace | 60 per minute |
 | `drive/upload-url`, besides the write | app and user | 10 per minute |
-| `members/invitations`, besides the write | app and workspace | 5 per hour |
-| Token exchange | app and client IP (`cf-connecting-ip`) | 30 per minute |
+| `members/invitations`, besides the write | app and user; app and bound workspace | 5 per hour |
+| `token` exchange | app and client IP (`cf-connecting-ip`, IPv6 per /64) | 30 per minute |
+| `token` exchange without a trusted client IP | app | 300 per minute |
 
-The `personal` workspace alias is counted per user. Counts use the web
-`ratelimit` abuse-guard family (the `ABUSE_GUARD` service binding) through
-`checkRateLimitRedis`. An over-limit request gets HTTP 429 with `Retry-After`
-and code `RATE_LIMIT_EXCEEDED`. When the counter store is unavailable, writes,
-upload URLs, invitations and exchanges get HTTP 503 with `Retry-After: 30` and
-code `RATE_LIMIT_UNAVAILABLE`, while reads continue. A non-production runtime
-with no counter store configured lets those requests through; production
-always refuses. Regression coverage lives in
-`apps/web/src/lib/external-apps/rate-limit.test.ts` and
-`apps/web/src/app/api/v1/auth/app-token/exchange/route-rate-limit.test.ts`.
+The app-token exchange counts `token` exchanges before the app secret is
+checked; `refreshToken` exchanges keep their own per-family pre-limit. An
+exchange without a trusted client IP logs `EXCHANGE_CLIENT_IP_UNKNOWN`. A
+request counts even when the limiter or its handler then refuses it.
+
+Counts use the web `ratelimit` abuse-guard family (the `ABUSE_GUARD` service
+binding) through `checkRateLimitRedis`, which retries a store that failed to
+initialize after 30 seconds. An over-limit request gets HTTP 429 with
+`Retry-After` and code `RATE_LIMIT_EXCEEDED`. When the counter store is
+unavailable, writes, upload URLs, invitations and exchanges get HTTP 503 with
+`Retry-After: 30` and code `RATE_LIMIT_UNAVAILABLE`, while reads continue. A
+non-production runtime with no counter store configured lets those requests
+through; production always refuses. Regression coverage lives in
+`apps/web/src/lib/external-apps/rate-limit.test.ts`,
+`apps/web/src/lib/external-apps/rate-limit-exchange.test.ts`,
+`apps/web/src/lib/rate-limit-guard.test.ts`,
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-rate-limit.test.ts` and
+`scripts/generate-web-api-route-wrappers.test.js`.
 
 ## Operational notes
 

@@ -120,26 +120,34 @@ function buildFailOpenRateLimitResult(
  */
 let redisClient: UpstashRestRedisClient | null = null;
 let redisInitialized = false;
+/** A configured store that failed to initialize is retried after this long. */
+const REDIS_INIT_RETRY_MS = 30_000;
+let redisRetryAt = 0;
 
 /**
  * Initialize the rate-limit store. With the `ratelimit` abuse-guard family
  * assigned, counts live in the abuse-guard Durable Object and never fall back
  * to Upstash; otherwise the legacy Upstash client is used when configured.
- * Safe to call multiple times — only initializes once.
+ * Safe to call multiple times: a usable store, or the absence of any
+ * configured store, is kept for the isolate; a configured store that failed
+ * to initialize is retried after `REDIS_INIT_RETRY_MS`.
  */
 export async function getRedisClient() {
   configureWebIdentityAbuseGuard();
   if (redisInitialized) return redisClient;
+  if (Date.now() < redisRetryAt) return null;
 
   try {
     if (isAbuseGuardFamilyAssigned('ratelimit')) {
       redisClient = await getUpstashRestRedisClient({ family: 'ratelimit' });
-      redisInitialized = true;
       if (!redisClient) {
+        redisRetryAt = Date.now() + REDIS_INIT_RETRY_MS;
         console.warn(
           'Rate limiting store unavailable: the ratelimit abuse-guard family is assigned but not usable; allowing requests'
         );
+        return null;
       }
+      redisInitialized = true;
       return redisClient;
     }
 
@@ -157,7 +165,7 @@ export async function getRedisClient() {
     return redisClient;
   } catch (error) {
     console.warn('Redis rate limiting unavailable - allowing requests:', error);
-    redisInitialized = true;
+    redisRetryAt = Date.now() + REDIS_INIT_RETRY_MS;
     return null;
   }
 }
