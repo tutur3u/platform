@@ -19,6 +19,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { selectAffectedWorkspaces } = require('./check-changed/affected.js');
 const {
+  findWorkflowScanningTests,
+} = require('./check-changed/workflow-scanners.js');
+const {
   withoutRepeatedGuard,
 } = require('./check-changed/cli-usage-ratchet.js');
 const { i18nUsageUntrackedNote } = require('./check-changed/i18n-usage.js');
@@ -520,6 +523,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
     ...validationBranch(execFile, pushes),
     exists,
     readSource: (file) => fs.readFileSync(path.join(root, file), 'utf8'),
+    workflowScanningTests: () => findWorkflowScanningTests(root),
     workspaces,
     hasVitest: (workspace) =>
       ['ts', 'mts', 'js', 'mjs'].some((ext) =>

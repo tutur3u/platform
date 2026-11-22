@@ -302,6 +302,32 @@ test('workflow edits run workflow policy tests with changed script tests', () =>
   assert.ok(!formatter.args.includes('.github/workflows/type-check.yaml'));
 });
 
+test('workflow edits also run every repository-wide workflow scanner', () => {
+  const scanners = [
+    'scripts/ci/production-secret-scope.test.js',
+    'scripts/ci/workflow-permissions.test.js',
+  ];
+  const plan = planChecks(
+    changed('.github/workflows/supabase-backup-export.yaml'),
+    context(scanners, { workflowScanningTests: () => scanners })
+  );
+  const step = plan.steps.find((entry) => entry.id === 'script-tests');
+  for (const scanner of scanners) assert.ok(step.args.includes(scanner));
+
+  const untouched = planChecks(
+    changed('scripts/oxc.js'),
+    context(['scripts/oxc.test.js', ...scanners], {
+      workflowScanningTests: () => scanners,
+    })
+  );
+  const scriptTests = untouched.steps.find(
+    (entry) => entry.id === 'script-tests'
+  );
+  for (const scanner of scanners) {
+    assert.ok(!scriptTests.args.includes(scanner));
+  }
+});
+
 test('ignored formats do not claim formatter execution or omit workflow guards', () => {
   const files = [
     '.github/workflows/type-check.yaml',
