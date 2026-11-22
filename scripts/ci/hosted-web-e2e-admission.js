@@ -12,6 +12,8 @@ const KEYS = Object.freeze([
 const WORKFLOW =
   'tutur3u/platform/.github/workflows/e2e-smoke-report-only.yaml@refs/heads/main';
 const BUILD_CONTEXT_KEY = 'DOCKER_WEB_E2E_ADMISSION';
+const ADMISSION_ERROR =
+  'Docker exception is limited to the trusted main Web E2E fleet workflow';
 
 function isNumeric(value) {
   return (
@@ -35,9 +37,7 @@ function assertAdmission(env) {
     !isNumeric(env.GITHUB_RUN_ID) ||
     !isNumeric(env.GITHUB_RUN_ATTEMPT)
   ) {
-    throw new Error(
-      'Docker exception is limited to the trusted main Web E2E fleet workflow'
-    );
+    throw new Error(ADMISSION_ERROR);
   }
 }
 function admissionContext(env) {
@@ -81,6 +81,7 @@ function ensureLocalE2EEnvFile(envFilePath, overrides = {}, env = process.env) {
   );
 }
 module.exports = {
+  ADMISSION_ERROR,
   BUILD_CONTEXT_KEY,
   assertAdmission,
   admissionContext,

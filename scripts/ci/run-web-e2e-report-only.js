@@ -3,7 +3,11 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const { assertAdmission } = require('./hosted-web-e2e-admission');
+const {
+  ADMISSION_ERROR,
+  assertAdmission,
+} = require('./hosted-web-e2e-admission');
+const { safeFailureSuffix } = require('./secret-safe-diagnostics.js');
 
 function plan(env = process.env, home = os.homedir()) {
   assertAdmission(env);
@@ -175,27 +179,38 @@ function cleanup(p, run = command) {
 }
 
 async function main() {
-  const p = plan();
-  if (fs.realpathSync(process.cwd()) !== fs.realpathSync(p.root)) {
-    throw new Error('Run from the workflow checkout');
+  let phase = 'admission';
+  try {
+    const p = plan();
+    phase = 'checkout validation';
+    if (fs.realpathSync(process.cwd()) !== fs.realpathSync(p.root)) {
+      throw new Error('Run from the workflow checkout');
+    }
+    const mode = process.argv[2];
+    phase = 'cleanup';
+    if (mode === 'cleanup') return cleanup(p);
+    phase = 'mode validation';
+    const args = argsFor(mode);
+    if ((mode === 'nightly') !== (p.env.GITHUB_EVENT_NAME === 'schedule')) {
+      throw new Error('Only the scheduled event admits the full suite');
+    }
+    phase = 'host claim';
+    claim(p);
+    Object.assign(process.env, p.env);
+    phase = 'test run';
+    // Deliberately bypass only the paused package alias in this admitted wrapper.
+    // Rust, TanStack, the cron runner and all other Docker entrypoints stay paused.
+    const { runWebE2E } = require('../run-web-e2e-docker.js');
+    await runWebE2E(args, { frontend: 'next', playwrightArgs: args });
+  } catch (error) {
+    console.error(
+      phase === 'admission' && error?.message === ADMISSION_ERROR
+        ? ADMISSION_ERROR
+        : `Web E2E ${phase} failed${safeFailureSuffix(error)}.`
+    );
+    process.exitCode = 1;
   }
-  const mode = process.argv[2];
-  if (mode === 'cleanup') return cleanup(p);
-  const args = argsFor(mode);
-  if ((mode === 'nightly') !== (p.env.GITHUB_EVENT_NAME === 'schedule')) {
-    throw new Error('Only the scheduled event admits the full suite');
-  }
-  claim(p);
-  Object.assign(process.env, p.env);
-  // Deliberately bypass only the paused package alias in this admitted wrapper.
-  // Rust, TanStack, the cron runner and all other Docker entrypoints stay paused.
-  const { runWebE2E } = require('../run-web-e2e-docker.js');
-  await runWebE2E(args, { frontend: 'next', playwrightArgs: args });
 }
 
-if (require.main === module)
-  main().catch((error) => {
-    console.error(error.message);
-    process.exitCode = 1;
-  });
+if (require.main === module) void main();
 module.exports = { plan, argsFor, claim, cleanup };

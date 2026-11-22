@@ -79,7 +79,6 @@ async function githubRequest(
       continue;
     }
     if (!response.ok) {
-      const detail = body.trim().slice(0, 500);
       if (
         [500, 502, 503, 504].includes(response.status) &&
         attempt < attempts
@@ -87,10 +86,11 @@ async function githubRequest(
         await sleepImpl(1000 * 2 ** (attempt - 1));
         continue;
       }
-      throw new Error(
-        `GitHub API ${method} ${pathname} failed (${response.status})${
-          detail ? `: ${detail}` : '.'
-        }`
+      throw Object.assign(
+        new Error(
+          `GitHub API ${method} ${pathname} failed (${response.status}).`
+        ),
+        { httpStatus: response.status }
       );
     }
     return JSON.parse(body);

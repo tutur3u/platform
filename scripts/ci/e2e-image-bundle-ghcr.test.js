@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 const test = require('node:test');
 const {
   cleanupBundle,
@@ -9,6 +11,24 @@ const {
 const env = { GITHUB_TOKEN: 'synthetic-token' };
 const repository = 'ghcr.io/tutur3u/platform-e2e';
 const json = (data) => new Response(JSON.stringify(data), { status: 200 });
+
+test('bundle CLI reports the failed operation and HTTP status without the response body', () => {
+  const privateBody = 'synthetic private registry response';
+  const stub = `globalThis.fetch = async () => new Response(${JSON.stringify(privateBody)}, { status: 403 });`;
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--import',
+      `data:text/javascript,${encodeURIComponent(stub)}`,
+      path.join(__dirname, 'e2e-image-bundle.js'),
+      'cleanup',
+    ],
+    { env, encoding: 'utf8' }
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /E2E image bundle cleanup failed \(HTTP 403\)/);
+  assert.ok(!`${result.stdout}${result.stderr}`.includes(privateBody));
+});
 
 for (const status of [500, 502, 503, 504]) {
   test(`safe GET recovers ${status} with bounded backoff`, async () => {

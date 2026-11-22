@@ -41,6 +41,8 @@ const {
   writeRegistryBakeDefinition,
 } = require('./e2e-image-bundle-registry.js');
 
+const { safeFailureSuffix } = require('./secret-safe-diagnostics.js');
+
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DEFAULT_WAIT_SECONDS = 360;
 const DEFAULT_POLL_MS = 10_000;
@@ -542,11 +544,9 @@ async function pullBundle(
         await run('docker', ['tag', entry.remote, target], { env });
       }
     }
-  } catch (error) {
+  } catch {
     process.stdout.write(
-      `::notice title=E2E image bundle incomplete::${
-        error instanceof Error ? error.message : String(error)
-      }; using local cache-backed builds.\n`
+      '::notice title=E2E image bundle incomplete::Image pull or tagging failed; using local cache-backed builds.\n'
     );
     return false;
   }
@@ -573,27 +573,27 @@ async function pullBundle(
 }
 
 async function main() {
-  const options = parseArgs();
-
-  if (options.command === 'publish') {
-    await publishBundle(options);
-    return;
-  }
-
-  if (options.command === 'pull') {
-    await pullBundle(options);
-    return;
-  }
-
-  await cleanupBundle(options);
-}
-
-if (require.main === module) {
-  void main().catch((error) => {
-    console.error(error instanceof Error ? error.message : error);
+  let phase = 'argument validation';
+  try {
+    const options = parseArgs();
+    phase = options.command;
+    if (phase === 'publish') await publishBundle(options);
+    else if (phase === 'pull') await pullBundle(options);
+    else await cleanupBundle(options);
+  } catch (error) {
+    console.error(
+      `E2E image bundle ${phase} failed${safeFailureSuffix(error)}.`
+    );
+    if (phase === 'argument validation') {
+      console.error(
+        'Usage: e2e-image-bundle.js <publish|pull|cleanup> [options]'
+      );
+    }
     process.exitCode = 1;
-  });
+  }
 }
+
+if (require.main === module) void main();
 
 module.exports = {
   BUNDLE_TAG_PATTERN,

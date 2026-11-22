@@ -46,6 +46,21 @@ test('entrypoint refuses ordinary local execution before touching Docker', () =>
     assert.throws(() => plan({ ...trusted, ...change }), /limited/);
 });
 
+test('entrypoint reports checkout failure without echoing its environment path', () => {
+  const privatePath = '/fixture/private-checkout-marker';
+  const result = spawnSync(
+    process.execPath,
+    [path.join(__dirname, 'run-web-e2e-report-only.js'), 'smoke'],
+    {
+      env: { ...trusted, GITHUB_WORKSPACE: privatePath },
+      encoding: 'utf8',
+    }
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Web E2E checkout validation failed \(ENOENT\)/);
+  assert.ok(!`${result.stdout}${result.stderr}`.includes(privatePath));
+});
+
 test('run plan isolates identities and preserves paused services and smoke limits', async () => {
   const p = plan(trusted, '/fixture');
   assert.notEqual(
