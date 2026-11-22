@@ -4577,6 +4577,7 @@
           "kind_choice": "Choice",
           "kind_long": "Long answer",
           "kind_short": "Short answer",
+          "new_attempt": "New attempt",
           "no_responses": "No answers yet.",
           "not_answered": "You did not answer this one.",
           "open": "Open for answers",
@@ -4589,8 +4590,8 @@
           "released_note": "Results are released. Only you see your score and feedback.",
           "remove_question": "Remove question {number}",
           "reopen": "Reopen",
-          "reopen_confirm": "Reopen and withdraw results",
-          "reopen_hint": "Reopening withdraws the released results so answers can change. Select again to confirm.",
+          "reopen_confirm": "Clear answers and start again",
+          "reopen_hint": "Results were released, so this attempt is final. A new attempt clears every answer and grade.",
           "responses": "{count, plural, =0 {No answers} one {# answer} other {# answers}}",
           "save": "Save questions",
           "score": "Score",
@@ -4609,6 +4610,7 @@
         "close": "Close panel",
         "errors": {
           "answer_changed": "That answer changed after you read it. Check it again before grading.",
+          "card_changed": "The deck changed. Check the card on show and try again.",
           "closed": "That is closed now.",
           "full": "This activity is full. Remove something before adding more.",
           "game_running": "A game is running. End it before changing the rounds.",
@@ -4617,7 +4619,8 @@
           "permission": "Only hosts and co-hosts can do that.",
           "prompt_changed": "That question is no longer the current one, so your answer was not added.",
           "rate_limited": "That was a lot at once. Wait a moment and try again.",
-          "reconnecting": "Reconnecting. Try again in a moment."
+          "reconnecting": "Reconnecting. Try again in a moment.",
+          "round_changed": "The game moved on. Check the round on screen and try again."
         },
         "flashcards": {
           "add_card": "Add card",

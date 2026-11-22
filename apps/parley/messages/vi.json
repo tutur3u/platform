@@ -4832,7 +4832,9 @@
           "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm.",
           "game_running": "Trò chơi đang diễn ra. Hãy dừng trò chơi trước khi sửa các vòng.",
           "prompt_changed": "Câu hỏi đó không còn là câu hỏi hiện tại nên câu trả lời của bạn chưa được thêm.",
-          "reconnecting": "Đang kết nối lại. Hãy thử lại sau giây lát."
+          "reconnecting": "Đang kết nối lại. Hãy thử lại sau giây lát.",
+          "card_changed": "Bộ thẻ đã thay đổi. Hãy xem lại thẻ đang hiển thị rồi thử lại.",
+          "round_changed": "Trò chơi đã chuyển tiếp. Hãy xem vòng đang hiển thị rồi thử lại."
         },
         "options": {
           "legend": "Các lựa chọn, đánh dấu lựa chọn đúng",
@@ -4892,9 +4894,10 @@
           "closed_note": "Đã đóng nhận câu trả lời. Kết quả sẽ hiện ở đây khi chủ phòng công bố.",
           "released_note": "Kết quả đã được công bố. Chỉ bạn thấy điểm và nhận xét của mình.",
           "your_score": "Điểm của bạn: {score}",
-          "reopen_confirm": "Mở lại và thu hồi kết quả",
-          "reopen_hint": "Mở lại sẽ thu hồi kết quả đã công bố để câu trả lời có thể thay đổi. Chọn lần nữa để xác nhận.",
-          "release_hint": "Hãy đóng nhận câu trả lời để chấm điểm và công bố kết quả."
+          "reopen_confirm": "Xóa câu trả lời và bắt đầu lại",
+          "reopen_hint": "Kết quả đã được công bố nên lượt làm này đã kết thúc. Lượt làm mới sẽ xóa mọi câu trả lời và điểm.",
+          "release_hint": "Hãy đóng nhận câu trả lời để chấm điểm và công bố kết quả.",
+          "new_attempt": "Lượt làm mới"
         },
         "flashcards": {
           "title": "Thẻ ghi nhớ",

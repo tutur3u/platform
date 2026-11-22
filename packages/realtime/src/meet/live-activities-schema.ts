@@ -82,6 +82,8 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('flashcards.show'),
+    /** The card the sender saw at `index`; another card there is refused. */
+    cardId: id,
     index: z
       .number()
       .int()

@@ -153,6 +153,9 @@ function applyActivity(
       };
     case 'flashcards.show':
       if (!flashcards.cards[command.index]) return 'activity_item_not_found';
+      // A reveal names its card, so it never flips one from a newer deck.
+      if (flashcards.cards[command.index]?.id !== command.cardId)
+        return 'activity_card_changed';
       if (
         command.index === flashcards.index &&
         command.flipped === flashcards.flipped

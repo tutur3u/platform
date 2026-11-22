@@ -48,8 +48,18 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
   const known = activity.mine.flashcards.known;
   const [editing, setEditing] = useState(false);
   const progress = activity.host?.flashcards.progress ?? [];
-  const show = (next: number, side: boolean) =>
-    activity.send({ kind: 'flashcards.show', index: next, flipped: side });
+  // The command names the card seen here, so the room can refuse it once
+  // another deck has put a different card at that position.
+  const show = (next: number, side: boolean) => {
+    const target = cards[next];
+    if (target)
+      activity.send({
+        kind: 'flashcards.show',
+        cardId: target.id,
+        index: next,
+        flipped: side,
+      });
+  };
   return (
     <LiveActivityPanelFrame
       title={t('title')}

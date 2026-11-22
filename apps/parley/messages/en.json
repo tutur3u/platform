@@ -4832,7 +4832,9 @@
           "answer_changed": "That answer changed after you read it. Check it again before grading.",
           "game_running": "A game is running. End it before changing the rounds.",
           "prompt_changed": "That question is no longer the current one, so your answer was not added.",
-          "reconnecting": "Reconnecting. Try again in a moment."
+          "reconnecting": "Reconnecting. Try again in a moment.",
+          "card_changed": "The deck changed. Check the card on show and try again.",
+          "round_changed": "The game moved on. Check the round on screen and try again."
         },
         "options": {
           "legend": "Options, with the correct one selected",
@@ -4892,9 +4894,10 @@
           "closed_note": "Answers are closed. Results appear here when the host releases them.",
           "released_note": "Results are released. Only you see your score and feedback.",
           "your_score": "Your score: {score}",
-          "reopen_confirm": "Reopen and withdraw results",
-          "reopen_hint": "Reopening withdraws the released results so answers can change. Select again to confirm.",
-          "release_hint": "Close answers to grade and release results."
+          "reopen_confirm": "Clear answers and start again",
+          "reopen_hint": "Results were released, so this attempt is final. A new attempt clears every answer and grade.",
+          "release_hint": "Close answers to grade and release results.",
+          "new_attempt": "New attempt"
         },
         "flashcards": {
           "title": "Flashcards",

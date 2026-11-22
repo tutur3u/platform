@@ -271,6 +271,7 @@ describe('flashcards', () => {
     expect(card).toMatchObject({ front: 'Question', back: 'Answer' });
     const shown = action(set.state, cohost, {
       kind: 'flashcards.show',
+      cardId: card?.id,
       index: 0,
       flipped: true,
     });
@@ -340,6 +341,7 @@ describe('flashcards', () => {
     // Flipped: exactly the card on show carries its back.
     const flipped = action(set.state, host, {
       kind: 'flashcards.show',
+      cardId: deck[0]?.id,
       index: 0,
       flipped: true,
     });
@@ -350,6 +352,7 @@ describe('flashcards', () => {
     // Moving on hides the first back again and does not reveal the next one.
     const moved = action(flipped.state, cohost, {
       kind: 'flashcards.show',
+      cardId: deck[1]?.id,
       index: 1,
       flipped: false,
     });
@@ -359,12 +362,14 @@ describe('flashcards', () => {
     // Un-flipping the card on show takes its back away as well.
     const shown = action(moved.state, host, {
       kind: 'flashcards.show',
+      cardId: deck[1]?.id,
       index: 1,
       flipped: true,
     });
     expect(publicCards(shown.state, other)).toEqual([fronts[0], full[1]]);
     const hidden = action(shown.state, host, {
       kind: 'flashcards.show',
+      cardId: deck[1]?.id,
       index: 1,
       flipped: false,
     });
@@ -381,6 +386,42 @@ describe('flashcards', () => {
         read(step.state, guest).reply.map(({ type }) => type)
       ).not.toContain('activity.host');
     }
+  });
+
+  it('refuses a reveal for a card that a newer deck replaced at that position', () => {
+    const save = (state: MeetRoomSnapshot, back: string) =>
+      action(state, host, {
+        kind: 'flashcards.set',
+        cards: [{ front: 'Front', back }],
+      }).state;
+    const first = save(room(), 'First back');
+    const seen = first.liveActivities?.flashcards.cards[0]?.id;
+    // Another manager saves a new deck before the reveal arrives.
+    const second = save(first, 'Second back');
+    const late = action(second, cohost, {
+      kind: 'flashcards.show',
+      cardId: seen,
+      index: 0,
+      flipped: true,
+    });
+    expect(late.reply).toMatchObject(error('activity_card_changed'));
+    expect(late.state).toBe(second);
+    expect(late.broadcast).toEqual([]);
+    expect(JSON.stringify(read(second, guest).reply)).not.toContain(
+      'Second back'
+    );
+    // The same reveal for the card that is there now goes through.
+    const current = second.liveActivities?.flashcards.cards[0]?.id;
+    expect(
+      JSON.stringify(
+        action(second, cohost, {
+          kind: 'flashcards.show',
+          cardId: current,
+          index: 0,
+          flipped: true,
+        }).broadcast
+      )
+    ).toContain('Second back');
   });
 
   it('projects a deck stored before backs were withheld without exposing it', () => {

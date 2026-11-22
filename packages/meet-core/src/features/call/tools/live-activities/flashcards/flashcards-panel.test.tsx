@@ -84,6 +84,7 @@ it('lets the host save a deck, see both sides and reveal the card to the room', 
   fireEvent.click(screen.getByRole('button', { name: t.reveal }));
   expect(sent().at(-1)).toEqual({
     kind: 'flashcards.show',
+    cardId: FIRST,
     index: 0,
     flipped: true,
   });
@@ -99,8 +100,8 @@ it('lets the host save a deck, see both sides and reveal the card to the room', 
   fireEvent.click(screen.getByRole('button', { name: t.hide }));
   fireEvent.click(screen.getByRole('button', { name: t.next }));
   expect(sent().slice(-2)).toEqual([
-    { kind: 'flashcards.show', index: 0, flipped: false },
-    { kind: 'flashcards.show', index: 1, flipped: false },
+    { kind: 'flashcards.show', cardId: FIRST, index: 0, flipped: false },
+    { kind: 'flashcards.show', cardId: SECOND, index: 1, flipped: false },
   ]);
   // Editing starts from the full deck the host holds, backs included.
   fireEvent.click(screen.getByRole('button', { name: t.edit_deck }));

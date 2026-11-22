@@ -4577,6 +4577,7 @@
           "kind_choice": "Lựa chọn",
           "kind_long": "Trả lời dài",
           "kind_short": "Trả lời ngắn",
+          "new_attempt": "Lượt làm mới",
           "no_responses": "Chưa có câu trả lời.",
           "not_answered": "Bạn chưa trả lời câu này.",
           "open": "Mở nhận câu trả lời",
@@ -4589,8 +4590,8 @@
           "released_note": "Kết quả đã được công bố. Chỉ bạn thấy điểm và nhận xét của mình.",
           "remove_question": "Xóa câu hỏi {number}",
           "reopen": "Mở lại",
-          "reopen_confirm": "Mở lại và thu hồi kết quả",
-          "reopen_hint": "Mở lại sẽ thu hồi kết quả đã công bố để câu trả lời có thể thay đổi. Chọn lần nữa để xác nhận.",
+          "reopen_confirm": "Xóa câu trả lời và bắt đầu lại",
+          "reopen_hint": "Kết quả đã được công bố nên lượt làm này đã kết thúc. Lượt làm mới sẽ xóa mọi câu trả lời và điểm.",
           "responses": "{count, plural, =0 {Chưa có câu trả lời} other {# câu trả lời}}",
           "save": "Lưu câu hỏi",
           "score": "Điểm",
@@ -4609,6 +4610,7 @@
         "close": "Đóng bảng",
         "errors": {
           "answer_changed": "Câu trả lời đã thay đổi sau khi bạn đọc. Hãy xem lại trước khi chấm.",
+          "card_changed": "Bộ thẻ đã thay đổi. Hãy xem lại thẻ đang hiển thị rồi thử lại.",
           "closed": "Phần này đã đóng.",
           "full": "Hoạt động này đã đầy. Hãy xóa bớt trước khi thêm.",
           "game_running": "Trò chơi đang diễn ra. Hãy dừng trò chơi trước khi sửa các vòng.",
@@ -4617,7 +4619,8 @@
           "permission": "Chỉ chủ phòng và đồng chủ phòng mới làm được việc này.",
           "prompt_changed": "Câu hỏi đó không còn là câu hỏi hiện tại nên câu trả lời của bạn chưa được thêm.",
           "rate_limited": "Bạn thao tác hơi nhanh. Hãy chờ một chút rồi thử lại.",
-          "reconnecting": "Đang kết nối lại. Hãy thử lại sau giây lát."
+          "reconnecting": "Đang kết nối lại. Hãy thử lại sau giây lát.",
+          "round_changed": "Trò chơi đã chuyển tiếp. Hãy xem vòng đang hiển thị rồi thử lại."
         },
         "flashcards": {
           "add_card": "Thêm thẻ",
