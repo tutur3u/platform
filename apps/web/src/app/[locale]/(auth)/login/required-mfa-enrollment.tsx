@@ -3,11 +3,17 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { requiresFreshPrimaryForMfa } from '@tuturuuu/utils/required-mfa-policy';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { AuthCodeField } from './auth-code-field';
+import { ConfirmIdentityIllustration } from './auth-illustrations';
+import { AuthStateCard, AuthTextButton } from './auth-state-card';
+import {
+  EnrollmentSetupKey,
+  EnrollmentStepBar,
+} from './required-mfa-enrollment-parts';
 
 /** Enrollment stays on the login surface, reachable before database access. */
 export function RequiredMfaEnrollment({
@@ -66,87 +72,124 @@ export function RequiredMfaEnrollment({
       await onVerified();
     },
   });
+  const signInAgain = async () => {
+    await client.auth.signOut({ scope: 'local' });
+    window.location.assign('/login');
+  };
+  const signOut = async () => {
+    await client.auth.signOut();
+    window.location.assign('/login');
+  };
   if (factors.data?.primaryRequired)
     return (
-      <section className="space-y-5 rounded-3xl border bg-background p-6">
-        <h2 className="font-semibold text-2xl">
-          {t('required_mfa_recovery_title')}
-        </h2>
-        <p>{t('required_mfa_recovery_description')}</p>
+      <AuthStateCard
+        description={t('required_mfa_recovery_description')}
+        illustration={<ConfirmIdentityIllustration />}
+        testId="required-mfa-sign-in-again"
+        title={t('required_mfa_recovery_title')}
+      >
         <Button
-          onClick={async () => {
-            await client.auth.signOut({ scope: 'local' });
-            window.location.assign('/login');
-          }}
+          className="h-12 w-full rounded-2xl font-bold"
+          onClick={() => void signInAgain()}
         >
           {t('required_mfa_sign_in_again')}
         </Button>
-      </section>
+      </AuthStateCard>
     );
   if (factors.data?.factors.length) return children;
   if (factors.isPending)
-    return <p role="status">{t('required_mfa_loading')}</p>;
-  return (
-    <section className="space-y-5 rounded-3xl border bg-background p-6">
-      <h2 className="font-semibold text-2xl">
-        {t('required_mfa_enroll_title')}
-      </h2>
-      <p className="text-muted-foreground text-sm">
-        {t('required_mfa_enroll_description')}
+    return (
+      <p
+        className="flex items-center justify-center gap-2 py-8 text-muted-foreground text-sm"
+        role="status"
+      >
+        <LoadingIndicator aria-hidden className="size-4" />
+        {t('required_mfa_loading')}
       </p>
-      {factors.isError || enroll.isError || verify.isError ? (
-        <p role="alert" className="text-destructive">
+    );
+  const failed = factors.isError || enroll.isError || verify.isError;
+  return (
+    <AuthStateCard
+      align="start"
+      lead={
+        <EnrollmentStepBar
+          current={verify.isSuccess ? 3 : enroll.data ? 2 : 1}
+        />
+      }
+      description={
+        enroll.data
+          ? t('required_mfa_scan_description')
+          : t('required_mfa_enroll_description')
+      }
+      testId="required-mfa-enrollment"
+      title={t('required_mfa_enroll_title')}
+    >
+      {failed ? (
+        <p
+          className="rounded-2xl bg-dynamic-red/10 px-3.5 py-3 font-semibold text-dynamic-red text-sm"
+          role="alert"
+        >
           {t('required_mfa_error')}
         </p>
       ) : null}
       {factors.isError ? (
-        <Button onClick={() => factors.refetch()}>
+        <Button
+          className="h-12 w-full rounded-2xl font-bold"
+          onClick={() => factors.refetch()}
+        >
           {t('required_mfa_retry')}
         </Button>
       ) : enroll.data ? (
         <form
-          className="space-y-4"
+          className="flex flex-col gap-4"
           onSubmit={(event) => {
             event.preventDefault();
             verify.mutate();
           }}
         >
-          <p className="text-sm">{t('required_mfa_secret_label')}</p>
-          <code className="block select-all break-all rounded border p-3">
-            {enroll.data.totp.secret}
-          </code>
-          <Label htmlFor="required-mfa-code">
-            {t('verification_code_label')}
-          </Label>
-          <Input
-            id="required-mfa-code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            value={code}
-            maxLength={6}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+          <EnrollmentSetupKey
+            secret={enroll.data.totp.secret}
+            uri={enroll.data.totp.uri}
           />
+          <div className="flex flex-col gap-2">
+            <label
+              className="font-semibold text-sm"
+              htmlFor="required-mfa-code"
+            >
+              {t('required_mfa_code_label')}
+            </label>
+            <AuthCodeField
+              align="start"
+              disabled={verify.isPending}
+              id="required-mfa-code"
+              idPrefix="required-mfa"
+              invalid={verify.isError}
+              onChange={(value) => setCode(value.replace(/\D/g, ''))}
+              value={code}
+            />
+          </div>
           <Button
-            type="submit"
+            className="h-12 w-full rounded-2xl font-bold"
             disabled={code.length !== 6 || verify.isPending}
+            type="submit"
           >
-            {t('required_mfa_verify')}
+            {verify.isPending ? <LoadingIndicator className="size-4" /> : null}
+            {t('required_mfa_turn_on')}
           </Button>
         </form>
       ) : (
-        <Button disabled={enroll.isPending} onClick={() => enroll.mutate()}>
+        <Button
+          className="h-12 w-full rounded-2xl font-bold"
+          disabled={enroll.isPending}
+          onClick={() => enroll.mutate()}
+        >
+          {enroll.isPending ? <LoadingIndicator className="size-4" /> : null}
           {t('required_mfa_start')}
         </Button>
       )}
-      <Button
-        variant="ghost"
-        onClick={async () => {
-          await client.auth.signOut();
-          window.location.assign('/login');
-        }}
-      >
+      <AuthTextButton className="self-center" onClick={() => void signOut()}>
         {t('required_mfa_sign_out')}
-      </Button>
-    </section>
+      </AuthTextButton>
+    </AuthStateCard>
   );
 }

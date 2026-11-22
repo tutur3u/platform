@@ -26,6 +26,7 @@ export function AuthCodeField({
   align = 'center',
   ariaLabel,
   disabled,
+  id,
   idPrefix,
   invalid,
   name,
@@ -37,6 +38,8 @@ export function AuthCodeField({
   align?: 'center' | 'start';
   ariaLabel?: string;
   disabled?: boolean;
+  /** Lets a visible label name the field. */
+  id?: string;
   idPrefix: string;
   invalid?: boolean;
   name?: string;
@@ -56,6 +59,7 @@ export function AuthCodeField({
           align === 'center' ? 'justify-center' : 'justify-start'
         )}
         disabled={disabled}
+        id={id}
         inputMode="numeric"
         maxLength={SLOTS}
         name={name}

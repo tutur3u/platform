@@ -54,25 +54,27 @@ export function AuthBackButton({
 }
 
 /**
- * The shared auth state card: one 400px column, an optional back action,
- * the illustration on top, a title and a short description, then the step's
- * single primary action and its quieter alternatives.
+ * The shared auth state card: one 400px column, an optional lead (a back
+ * action or a step bar), the illustration on top, a title and a short
+ * description, then the step's single primary action and its quieter
+ * alternatives.
  */
 export function AuthStateCard({
   align = 'center',
-  back,
   children,
   description,
   illustration,
+  lead,
   testId,
   title,
   titleAs: Title = 'h2',
 }: {
   align?: 'center' | 'start';
-  back?: ReactNode;
   children?: ReactNode;
   description?: ReactNode;
   illustration?: ReactNode;
+  /** Above the illustration: a back action or a step bar. */
+  lead?: ReactNode;
   testId?: string;
   title: ReactNode;
   titleAs?: 'h1' | 'h2';
@@ -83,7 +85,7 @@ export function AuthStateCard({
       data-testid={testId}
     >
       <CardContent className="flex flex-col gap-4 p-6">
-        {back}
+        {lead}
         {illustration}
         <div
           className={cn(
