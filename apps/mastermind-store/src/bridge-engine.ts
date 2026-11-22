@@ -11,6 +11,7 @@
  */
 import {
   BRIDGE_LIMITS,
+  OWNER_LIVE_LEASE_MS,
   type BridgeDelivery,
   type BridgeErrorCode,
   type BridgeMachineStatus,
@@ -96,8 +97,17 @@ export function createBridgeEngine(sql: SqlLike) {
       'CREATE TABLE IF NOT EXISTS outbox (id TEXT PRIMARY KEY, frame TEXT NOT NULL)'
     );
     rows(
-      'CREATE TABLE IF NOT EXISTS tickets (hash TEXT PRIMARY KEY, role TEXT NOT NULL, machine TEXT, exp INTEGER NOT NULL)'
+      'CREATE TABLE IF NOT EXISTS tickets (hash TEXT PRIMARY KEY, role TEXT NOT NULL, machine TEXT, exp INTEGER NOT NULL, owner TEXT, lease_exp INTEGER)'
     );
+    // Legacy machine tickets remain redeemable. Owner tickets without
+    // identity or a lease cannot authorize notices.
+    const ticketColumns = new Set(
+      rows('PRAGMA table_info(tickets)').map((column) => column.name)
+    );
+    if (!ticketColumns.has('owner'))
+      rows('ALTER TABLE tickets ADD COLUMN owner TEXT');
+    if (!ticketColumns.has('lease_exp'))
+      rows('ALTER TABLE tickets ADD COLUMN lease_exp INTEGER');
     rows(
       `CREATE TABLE IF NOT EXISTS pokes (
          machine TEXT NOT NULL, topic TEXT NOT NULL, revision INTEGER NOT NULL,
@@ -174,11 +184,20 @@ export function createBridgeEngine(sql: SqlLike) {
 
     /** Stores a single-use ticket by its hash. */
     mintTicket(
-      input: { hash: string; role: 'machine' | 'owner'; machineId?: string },
+      input: { hash: string } & (
+        | { role: 'machine'; machineId: string }
+        | { role: 'owner'; ownerId: string; leaseExpiresAt: number }
+      ),
       now: number,
       budget: number
     ) {
       refuseWhenStopped();
+      if (
+        input.role === 'owner' &&
+        (input.leaseExpiresAt <= now ||
+          input.leaseExpiresAt > now + OWNER_LIVE_LEASE_MS)
+      )
+        throw new BridgeError('unauthorized');
       sweep(now);
       if (
         count('SELECT count(*) AS n FROM tickets WHERE exp > ?', now) >=
@@ -186,13 +205,18 @@ export function createBridgeEngine(sql: SqlLike) {
       )
         throw new BridgeError('rate_limited');
       charge(now, budget);
-      const expiresAt = now + BRIDGE_LIMITS.ticketTtlMs;
+      const expiresAt = Math.min(
+        now + BRIDGE_LIMITS.ticketTtlMs,
+        input.role === 'owner' ? input.leaseExpiresAt : Number.POSITIVE_INFINITY
+      );
       rows(
-        'INSERT INTO tickets (hash, role, machine, exp) VALUES (?, ?, ?, ?)',
+        'INSERT INTO tickets (hash, role, machine, exp, owner, lease_exp) VALUES (?, ?, ?, ?, ?, ?)',
         input.hash,
         input.role,
-        input.machineId ?? null,
-        expiresAt
+        input.role === 'machine' ? input.machineId : null,
+        expiresAt,
+        input.role === 'owner' ? input.ownerId : null,
+        input.role === 'owner' ? input.leaseExpiresAt : null
       );
       return expiresAt;
     },
@@ -206,8 +230,14 @@ export function createBridgeEngine(sql: SqlLike) {
       if (Number(row.exp) <= now) return null;
       return row.role === 'machine' && typeof row.machine === 'string'
         ? ({ role: 'machine', machineId: row.machine } as const)
-        : row.role === 'owner'
-          ? ({ role: 'owner' } as const)
+        : row.role === 'owner' &&
+            typeof row.owner === 'string' &&
+            Number(row.lease_exp) > now
+          ? ({
+              role: 'owner',
+              ownerId: row.owner,
+              leaseExpiresAt: Number(row.lease_exp),
+            } as const)
           : null;
     },
 

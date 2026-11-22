@@ -79,7 +79,7 @@ client: `bridge-client.ts`.
 
 | Route | Auth | Purpose |
 | --- | --- | --- |
-| `POST /v1/bridge/ticket` | service token | Single-use, 60-second ticket for a machine or an owner socket. |
+| `POST /v1/bridge/ticket` | service token | Single-use, 60-second ticket for a machine or an owner socket. Owner tickets bind the Web-authorized user ID and credential lease. |
 | `GET /v1/bridge/connect` | ticket as the second WebSocket subprotocol | The socket. Machines speak a closed frame set; owner sockets only listen. |
 | `POST /v1/bridge/send` | service token | Store one signed reply, push it, wait up to 2.5 s for the acknowledgement. |
 | `POST /v1/bridge/rpc` | service token | Relay one sealed read request to its machine and return the sealed answer; waits up to 12 s, stores nothing. |
@@ -106,6 +106,14 @@ Bounds and stop fence:
   and refused past it with `budget` (429). Acknowledgements are counted
   against it but never refused, since the delivery already happened. A retry
   of a stored reply, receipts and `live` reads are not charged.
+- Each owner and notice uses one live Web permission check, shared across
+  that owner's sockets. The store reserves one operation from the same
+  durable budget before the call. It makes no retries. Web checks the live
+  owner permission and suspension state. A lease lasts at most five
+  minutes and ends at the access token or MFA deadline if that comes first.
+  Denial, timeout, budget exhaustion, an expired lease, or a legacy
+  socket without a bound user ID closes the socket before delivery.
+  Bridge fixtures cover revocation, lease expiry and budget exhaustion.
 - Read requests are relayed, never stored: refused when the machine is not
   connected, at most 8 in flight, each charged one operation and answered or
   timed out within 12 seconds. Only a machine's answer to a read still
@@ -118,6 +126,14 @@ Bounds and stop fence:
   refuses tickets, sends, replays and pokes, and retires every socket. A
   machine that keeps retrying backs off to one ticket request a minute, and a
   refused ticket charges nothing.
+- Deploy the Web owner-authorization endpoint and the identity-bearing
+  ticket issuer before deploying the store enforcement. During service
+  token rotation, the first store service token must match Web's active
+  token for the outgoing authorization call. Canonical Web ingress gives
+  authenticated callbacks a separate bucket of 300 a minute, 6,000 an
+  hour and 20,000 a day. Verify the production ingress and current
+  token identity before enabling the upgraded store.
+
 - The reply text reaches the Worker only as ciphertext, with a keyed digest
   for the record; the Worker holds no key for either. It holds only the
   public half of the machine's acknowledgement key, so it can refuse a

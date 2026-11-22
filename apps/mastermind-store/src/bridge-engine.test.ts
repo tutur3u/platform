@@ -11,6 +11,11 @@ import type { SqlLike } from './engine';
 const NOW = Date.UTC(2026, 10, 21, 5, 0, 0);
 const BUDGET = 1000;
 const ACTOR = '00000000-0000-4000-8000-0000000000aa';
+const ownerTicket = {
+  role: 'owner' as const,
+  ownerId: ACTOR,
+  leaseExpiresAt: NOW + 300_000,
+};
 const uuid = (n: number) =>
   `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
@@ -293,10 +298,10 @@ describe('fleet bridge engine', () => {
   it('stops at the daily operation budget and resets the next UTC day', () => {
     const { engine } = setup();
     engine.enqueue(reply(1), NOW, 2);
-    engine.mintTicket({ hash: 'h1', role: 'owner' }, NOW, 2);
+    engine.mintTicket({ hash: 'h1', ...ownerTicket }, NOW, 2);
     expect(code(() => engine.enqueue(reply(2), NOW, 2))).toBe('budget');
     expect(
-      code(() => engine.mintTicket({ hash: 'h2', role: 'owner' }, NOW, 2))
+      code(() => engine.mintTicket({ hash: 'h2', ...ownerTicket }, NOW, 2))
     ).toBe('budget');
     // A refused reply left no record behind.
     expect(engine.receipt(uuid(2), NOW)).toBeNull();
@@ -308,11 +313,11 @@ describe('fleet bridge engine', () => {
   it('refuses new work behind the stop fence but still answers receipts and replays', () => {
     const { engine } = setup();
     const first = engine.enqueue(reply(1), NOW, BUDGET);
-    engine.mintTicket({ hash: 'live', role: 'owner' }, NOW, BUDGET);
+    engine.mintTicket({ hash: 'live', ...ownerTicket }, NOW, BUDGET);
     engine.setStopped(true);
     expect(code(() => engine.enqueue(reply(2), NOW, BUDGET))).toBe('stopped');
     expect(
-      code(() => engine.mintTicket({ hash: 'h', role: 'owner' }, NOW, BUDGET))
+      code(() => engine.mintTicket({ hash: 'h', ...ownerTicket }, NOW, BUDGET))
     ).toBe('stopped');
     expect(engine.redeemTicket('live', NOW)).toBeNull();
     expect(
@@ -338,33 +343,62 @@ describe('fleet bridge engine', () => {
       BUDGET
     );
     expect(expiresAt).toBe(NOW + BRIDGE_LIMITS.ticketTtlMs);
-    engine.mintTicket({ hash: 'o', role: 'owner' }, NOW, BUDGET);
-    engine.mintTicket({ hash: 'late', role: 'owner' }, NOW, BUDGET);
+    engine.mintTicket({ hash: 'o', ...ownerTicket }, NOW, BUDGET);
+    engine.mintTicket({ hash: 'late', ...ownerTicket }, NOW, BUDGET);
     expect(engine.redeemTicket('m', NOW + 1)).toEqual({
       role: 'machine',
       machineId: 'skr-m4',
     });
     expect(engine.redeemTicket('m', NOW + 2)).toBeNull();
-    expect(engine.redeemTicket('o', NOW + 2)).toEqual({ role: 'owner' });
+    expect(engine.redeemTicket('o', NOW + 2)).toEqual(ownerTicket);
     expect(engine.redeemTicket('unknown', NOW)).toBeNull();
     expect(engine.redeemTicket('late', expiresAt)).toBeNull();
     // An expired ticket is spent too: it cannot be retried.
     expect(engine.redeemTicket('late', NOW)).toBeNull();
   });
 
+  it('bounds a single-use owner ticket by the credential lease', () => {
+    const { engine } = setup();
+    expect(
+      engine.mintTicket(
+        {
+          hash: 'short',
+          ...ownerTicket,
+          leaseExpiresAt: NOW + 500,
+        },
+        NOW,
+        BUDGET
+      )
+    ).toBe(NOW + 500);
+    expect(engine.redeemTicket('short', NOW + 500)).toBeNull();
+    expect(
+      code(() =>
+        engine.mintTicket(
+          {
+            hash: 'long',
+            ...ownerTicket,
+            leaseExpiresAt: NOW + 300_001,
+          },
+          NOW,
+          BUDGET
+        )
+      )
+    ).toBe('unauthorized');
+  });
+
   it('caps live tickets', () => {
     const { engine } = setup();
     for (let i = 0; i < BRIDGE_LIMITS.maxLiveTickets; i++)
-      engine.mintTicket({ hash: `t${i}`, role: 'owner' }, NOW, BUDGET);
+      engine.mintTicket({ hash: `t${i}`, ...ownerTicket }, NOW, BUDGET);
     expect(
       code(() =>
-        engine.mintTicket({ hash: 'more', role: 'owner' }, NOW, BUDGET)
+        engine.mintTicket({ hash: 'more', ...ownerTicket }, NOW, BUDGET)
       )
     ).toBe('rate_limited');
     expect(
       code(() =>
         engine.mintTicket(
-          { hash: 'later', role: 'owner' },
+          { hash: 'later', ...ownerTicket },
           NOW + BRIDGE_LIMITS.ticketTtlMs,
           BUDGET
         )

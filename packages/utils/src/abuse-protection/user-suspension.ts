@@ -16,14 +16,40 @@ interface SuspensionResult {
   expiresAt?: Date;
 }
 
-async function getSupabaseAdmin() {
+async function getSupabaseAdmin(noCookie = false) {
   try {
     const { createAdminClient } =
       await import('@tuturuuu/supabase/next/server');
-    return await createAdminClient();
+    return await createAdminClient({ noCookie });
   } catch {
     return null;
   }
+}
+
+function readActiveSuspension(
+  client: NonNullable<Awaited<ReturnType<typeof getSupabaseAdmin>>>,
+  userId: string
+) {
+  return client
+    .from('user_suspensions')
+    .select('id, reason, expires_at')
+    .eq('user_id', userId)
+    .is('lifted_at', null)
+    .or('expires_at.is.null,expires_at.gt.now()')
+    .order('suspended_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+}
+
+/** Definitive online result for a privileged delivery. A lookup failure throws. */
+export async function isUserCurrentlySuspended(
+  userId: string
+): Promise<boolean> {
+  const admin = await getSupabaseAdmin(true);
+  if (!admin) throw new Error('Suspension verification unavailable');
+  const { data, error } = await readActiveSuspension(admin, userId);
+  if (error) throw new Error('Suspension verification unavailable');
+  return data !== null;
 }
 
 /**
@@ -64,15 +90,7 @@ export async function checkUserSuspension(
     const sbAdmin = await getSupabaseAdmin();
     if (!sbAdmin) return { suspended: false };
 
-    const { data, error } = await sbAdmin
-      .from('user_suspensions')
-      .select('id, reason, expires_at')
-      .eq('user_id', userId)
-      .is('lifted_at', null)
-      .or('expires_at.is.null,expires_at.gt.now()')
-      .order('suspended_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const { data, error } = await readActiveSuspension(sbAdmin, userId);
 
     if (error || !data) {
       // Cache negative result

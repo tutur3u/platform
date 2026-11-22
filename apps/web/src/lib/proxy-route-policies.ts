@@ -3,6 +3,10 @@ import type {
   RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
+import {
+  hasOwnerNoticeServiceCredential,
+  OWNER_NOTICE_AUTH_PATH,
+} from './mastermind/fleet/owner-notice-auth';
 
 export const EMAIL_ROUTE_WORKSPACE_PATTERN =
   /^\/api\/v1\/workspaces\/([^/]+)\/(?:users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
@@ -70,6 +74,22 @@ export const FLEET_PUBLISHER_ROUTE_POLICY: ProxyRoutePolicy = {
   },
 };
 
+export const FLEET_OWNER_NOTICE_ROUTE_POLICY: ProxyRoutePolicy = {
+  key: 'fleet-owner-notice',
+  matches: (request) =>
+    request.method === 'POST' &&
+    request.nextUrl.pathname === OWNER_NOTICE_AUTH_PATH &&
+    hasOwnerNoticeServiceCredential(request),
+  rateLimits: {
+    get: [],
+    mutate: [
+      { window: 'minute', limit: 300, duration: '1 m' },
+      { window: 'hour', limit: 6_000, duration: '1 h' },
+      { window: 'day', limit: 20_000, duration: '1 d' },
+    ],
+  },
+};
+
 /**
  * Route policies Web adds ahead of the shared defaults. The first matching
  * policy selects the bucket.
@@ -78,6 +98,10 @@ export function webProxyRoutePolicies(
   hasEmailRateLimitOverrides: boolean
 ): ProxyRoutePolicy[] {
   return hasEmailRateLimitOverrides
-    ? [FLEET_PUBLISHER_ROUTE_POLICY, EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY]
-    : [FLEET_PUBLISHER_ROUTE_POLICY];
+    ? [
+        FLEET_OWNER_NOTICE_ROUTE_POLICY,
+        FLEET_PUBLISHER_ROUTE_POLICY,
+        EMAIL_RATE_LIMIT_OVERRIDE_ROUTE_POLICY,
+      ]
+    : [FLEET_OWNER_NOTICE_ROUTE_POLICY, FLEET_PUBLISHER_ROUTE_POLICY];
 }

@@ -14,6 +14,8 @@ const NOW_S = () => Math.floor(Date.now() / 1000);
 
 const mocks = vi.hoisted(() => ({
   user: { id: '' },
+  getClaims: vi.fn(),
+
   granted: [] as string[],
   store: null as unknown,
   bridge: null as Record<string, ReturnType<typeof vi.fn>> | null,
@@ -23,7 +25,14 @@ vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
     (handler: (r: Request, a: unknown, p: unknown) => Response) =>
     async (request: Request, context?: { params?: unknown }) =>
-      handler(request, { user: mocks.user }, await context?.params),
+      handler(
+        request,
+        {
+          user: mocks.user,
+          supabase: { auth: { getClaims: mocks.getClaims } },
+        },
+        await context?.params
+      ),
 }));
 vi.mock('@tuturuuu/supabase/next/server', async () => ({
   createAdminClient: async () => ({}),
@@ -33,6 +42,12 @@ vi.mock('@tuturuuu/supabase/next/server', async () => ({
       '@tuturuuu/supabase/next/server'
     )
   ).getBearerAccessToken,
+}));
+vi.mock('@tuturuuu/utils/required-mfa-request', () => ({
+  checkRequiredAccountMfa: async () => ({
+    status: 'allowed',
+    proof: { sessionId: 'current', verifiedAt: Math.floor(Date.now() / 1000) },
+  }),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({
@@ -158,6 +173,11 @@ describe('fleet bridge tickets and live state', () => {
   });
 
   it('serves live state and listen-only tickets to the owner alone', async () => {
+    const sessionExpiresAt = Math.floor(Date.now() / 1000) + 30;
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { sub: OWNER, exp: sessionExpiresAt } },
+      error: null,
+    });
     const live = await import('./live/route');
     const ticket = await import('./live/ticket/route');
     const get = () =>
@@ -192,7 +212,11 @@ describe('fleet bridge tickets and live state', () => {
     expect(await (await post()).json()).toMatchObject({
       ticket: 't'.repeat(43),
     });
-    expect(mocks.bridge!.ticket).toHaveBeenLastCalledWith({ role: 'owner' });
+    expect(mocks.bridge!.ticket).toHaveBeenLastCalledWith({
+      role: 'owner',
+      ownerId: OWNER,
+      leaseExpiresAt: sessionExpiresAt * 1000,
+    });
     mocks.user = { id: STRANGER };
     expect((await get()).status).toBe(403);
     expect((await post()).status).toBe(403);

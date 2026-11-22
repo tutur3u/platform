@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  FLEET_OWNER_NOTICE_ROUTE_POLICY,
   FLEET_PUBLISHER_ROUTE_POLICY,
   isSignedFleetPublish,
   webProxyRoutePolicies,
@@ -143,11 +144,37 @@ describe('fleet publisher proxy policy', () => {
 
   it('always adds the fleet policy, and the email override only when present', () => {
     expect(webProxyRoutePolicies(false).map((p) => p.key)).toEqual([
+      'fleet-owner-notice',
       'fleet-publisher',
     ]);
     expect(webProxyRoutePolicies(true).map((p) => p.key)).toEqual([
+      'fleet-owner-notice',
       'fleet-publisher',
       'email-rate-limit-override',
     ]);
   });
+});
+
+it('reserves the notice bucket for the exact service credential, method and path', () => {
+  const token = 'fixture-store-token'.repeat(2);
+  const path = '/api/v1/mastermind/fleet/live/owner-authorization';
+  vi.stubEnv('MASTERMIND_STORE_TOKEN', token);
+  try {
+    const matches = (method: string, route: string, bearer: string) =>
+      FLEET_OWNER_NOTICE_ROUTE_POLICY.matches(
+        new NextRequest(`https://tuturuuu.com${route}`, {
+          method,
+          headers: { authorization: `Bearer ${bearer}` },
+        })
+      );
+    expect(matches('POST', path, token)).toBe(true);
+    expect(matches('POST', path, 'wrong')).toBe(false);
+    expect(matches('GET', path, token)).toBe(false);
+    expect(matches('POST', path + '/other', token)).toBe(false);
+    expect(
+      FLEET_OWNER_NOTICE_ROUTE_POLICY.rateLimits.mutate.at(-1)?.limit
+    ).toBe(20_000);
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });

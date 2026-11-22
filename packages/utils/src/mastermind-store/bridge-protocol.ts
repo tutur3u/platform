@@ -283,9 +283,17 @@ export const bridgeOwnerFrameSchema = z.discriminatedUnion('t', [
 ]);
 export type BridgeOwnerFrame = z.infer<typeof bridgeOwnerFrameSchema>;
 
+/** Each owner socket is bounded by the credential Web admitted. */
+export const OWNER_LIVE_LEASE_MS = 5 * 60 * 1000;
+
 export const bridgeTicketRequestSchema = z.discriminatedUnion('role', [
   z.object({ v, role: z.literal('machine'), machineId }),
-  z.object({ v, role: z.literal('owner') }),
+  z.object({
+    v,
+    role: z.literal('owner'),
+    ownerId: z.uuid(),
+    leaseExpiresAt: z.number().int().positive(),
+  }),
 ]);
 export type BridgeTicketRequest = z.infer<typeof bridgeTicketRequestSchema>;
 

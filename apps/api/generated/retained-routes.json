@@ -2050,6 +2050,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/mastermind/fleet/live/owner-authorization",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/live/owner-authorization/route.ts",
+    "sourceSha256": "856bd9f503994b8ed479c339181cc0fcae2e3c1ae706f28aa2c610bee1a7f1b5",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/mastermind/fleet/live",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -2064,7 +2074,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/live/ticket/route.ts",
-    "sourceSha256": "c199dd441fd28e0c8d8da1cb3b25761bbd14c69327418eb3933ee0a590996ceb",
+    "sourceSha256": "b0ad9afcbc81bbbd4c20169c95250acb74204a5d1c41f359b327e08eef14f473",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

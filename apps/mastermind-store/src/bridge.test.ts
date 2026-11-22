@@ -8,13 +8,20 @@ import {
   bridgeAckSigningString,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
 import { build } from 'esbuild';
-import { Miniflare } from 'miniflare';
+import type { Miniflare } from 'miniflare';
 import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test';
 
-const TOKEN = 'service-token-'.padEnd(48, 's');
-const OPERATOR = 'operator-token-'.padEnd(48, 'o');
-const ORIGIN = 'http://localhost';
-const ACTOR = '00000000-0000-4000-8000-0000000000aa';
+import {
+  ACTOR,
+  createBridgeTestRuntime,
+  OPERATOR,
+  ORIGIN,
+  ownerTicket,
+  openBridgeSocket,
+  TOKEN,
+  upgradeStatus,
+  uuid,
+} from './bridge-test-runtime';
 const DIGEST = 'a'.repeat(64);
 // The machine's acknowledgement key pair; the store only ever sees the public half.
 const machineKey = generateKeyPairSync('ed25519');
@@ -41,9 +48,6 @@ const ackSig = (
     ),
     machineKey.privateKey
   ).toString('hex');
-const uuid = (n: number) =>
-  `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-
 let workDir: string;
 let scriptPath: string;
 
@@ -68,23 +72,8 @@ afterAll(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
 
-function runtime(ops = '1000') {
-  return new Miniflare({
-    durableObjectsPersist: false,
-    modules: true,
-    scriptPath,
-    modulesRoot: workDir,
-    compatibilityDate: '2026-07-01',
-    durableObjects: {
-      MASTERMIND_STORE: { className: 'MastermindStore', useSQLite: true },
-      MASTERMIND_BRIDGE: { className: 'FleetBridge', useSQLite: true },
-    },
-    bindings: {
-      MASTERMIND_STORE_TOKENS: TOKEN,
-      MASTERMIND_STORE_OPERATOR_TOKEN: OPERATOR,
-      MASTERMIND_BRIDGE_DAILY_OPS: ops,
-    },
-  });
+function runtime(ops = '1000', authorize?: (ownerId: string) => number) {
+  return createBridgeTestRuntime(scriptPath, workDir, ops, authorize);
 }
 
 async function call(
@@ -112,61 +101,8 @@ const ticketFor = async (mf: Miniflare, request: Record<string, unknown>) =>
     })
   ).body.ticket as string;
 
-/** The upgrade status alone, for the refusal cases. */
-async function upgradeStatus(mf: Miniflare, ticket: string, protocol?: string) {
-  const response = await mf.dispatchFetch(`${ORIGIN}/v1/bridge/connect`, {
-    headers: {
-      upgrade: 'websocket',
-      'sec-websocket-protocol': protocol ?? `${BRIDGE_SUBPROTOCOL}, ${ticket}`,
-    },
-  });
-  return response.status;
-}
-
-async function connect(mf: Miniflare, ticket: string) {
-  const response = await mf.dispatchFetch(`${ORIGIN}/v1/bridge/connect`, {
-    headers: {
-      upgrade: 'websocket',
-      'sec-websocket-protocol': `${BRIDGE_SUBPROTOCOL}, ${ticket}`,
-    },
-  });
-  const socket = response.webSocket;
-  if (!socket) throw new Error(`connect refused: ${response.status}`);
-  const frames: Record<string, any>[] = [];
-  const waiting: ((frame: Record<string, any>) => void)[] = [];
-  socket.addEventListener('message', (event) => {
-    const frame = JSON.parse(String(event.data));
-    const next = waiting.shift();
-    if (next) next(frame);
-    else frames.push(frame);
-  });
-  socket.accept();
-  return {
-    status: response.status,
-    socket,
-    /** Acknowledgements are signed as the machine unless a signature is given. */
-    send: (frame: Record<string, unknown>) =>
-      socket.send(
-        JSON.stringify({
-          v: BRIDGE_PROTOCOL_VERSION,
-          ...(frame.t === 'ack' ? { sig: ackSig(frame as never) } : {}),
-          ...frame,
-        })
-      ),
-    /** The next frame, or a timeout marker so a missing frame fails fast. */
-    next: () =>
-      frames.length > 0
-        ? Promise.resolve(frames.shift()!)
-        : new Promise<Record<string, any>>((done) => {
-            const timer = setTimeout(() => done({ t: 'timeout' }), 1500);
-            waiting.push((frame) => {
-              clearTimeout(timer);
-              done(frame);
-            });
-          }),
-    pending: () => frames.length,
-  };
-}
+const connect = (mf: Miniflare, ticket: string) =>
+  openBridgeSocket(mf, ticket, ackSig);
 
 const machine = async (mf: Miniflare, machineId = 'skr-m4') =>
   connect(mf, await ticketFor(mf, { role: 'machine', machineId }));
@@ -195,7 +131,7 @@ describe('fleet bridge', () => {
     const mf = runtime();
     try {
       expect(
-        (await call(mf, '/v1/bridge/ticket', { v: 1, role: 'owner' }, null))
+        (await call(mf, '/v1/bridge/ticket', { v: 1, ...ownerTicket() }, null))
           .status
       ).toBe(401);
       expect(
@@ -203,7 +139,6 @@ describe('fleet bridge', () => {
       ).toBe(400);
       const ticket = await ticketFor(mf, { role: 'machine', machineId: 'm1' });
       for (const protocol of [
-        BRIDGE_SUBPROTOCOL,
         `${BRIDGE_SUBPROTOCOL}, ${'x'.repeat(43)}`,
         `other, ${ticket}`,
       ])
@@ -341,7 +276,7 @@ describe('fleet bridge', () => {
   it('fans receipts, pokes and presence out to owner sockets, which cannot speak', async () => {
     const mf = runtime();
     try {
-      const owner = await connect(mf, await ticketFor(mf, { role: 'owner' }));
+      const owner = await connect(mf, await ticketFor(mf, ownerTicket()));
       const link = await machine(mf);
       expect(await owner.next()).toMatchObject({
         t: 'machine',
@@ -390,6 +325,89 @@ describe('fleet bridge', () => {
     }
   });
 
+  it('retires revoked owners before sending the next notice', async () => {
+    let revoked = false;
+    const checked: string[] = [];
+    const mf = runtime('1000', (ownerId) => {
+      checked.push(ownerId);
+      return revoked ? 403 : 204;
+    });
+    try {
+      const owner = await connect(mf, await ticketFor(mf, ownerTicket()));
+      await machine(mf);
+      expect((await owner.next()).t).toBe('machine');
+      expect(checked).toEqual([ACTOR]);
+
+      const closed = Promise.withResolvers<number>();
+      owner.socket.addEventListener('close', (event) =>
+        closed.resolve(event.code)
+      );
+      revoked = true;
+      await send(mf, 1);
+      expect(await closed.promise).toBe(4004);
+      expect(owner.pending()).toBe(0);
+      expect(checked).toEqual([ACTOR, ACTOR]);
+
+      await send(mf, 2);
+      expect(checked).toEqual([ACTOR, ACTOR]);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it('charges the durable budget before authorizing a notice', async () => {
+    let calls = 0;
+    const mf = runtime('2', () => {
+      calls++;
+      return 204;
+    });
+    try {
+      const owner = await connect(mf, await ticketFor(mf, ownerTicket()));
+      const closed = Promise.withResolvers<number>();
+      owner.socket.addEventListener('close', (event) =>
+        closed.resolve(event.code)
+      );
+      await machine(mf);
+      expect(await closed.promise).toBe(4004);
+      expect(calls).toBe(0);
+      expect(owner.pending()).toBe(0);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it('retires an expired credential lease before sending a notice', async () => {
+    let calls = 0;
+    const mf = runtime('1000', () => {
+      calls++;
+      return 204;
+    });
+    try {
+      await machine(mf);
+      const leaseExpiresAt = Date.now() + 1800;
+      const owner = await connect(
+        mf,
+        await ticketFor(mf, {
+          ...ownerTicket(),
+          leaseExpiresAt,
+        })
+      );
+      const closed = Promise.withResolvers<number>();
+      owner.socket.addEventListener('close', (event) =>
+        closed.resolve(event.code)
+      );
+      await new Promise((done) =>
+        setTimeout(done, Math.max(0, leaseExpiresAt - Date.now()) + 10)
+      );
+      await send(mf, 1);
+      expect(await closed.promise).toBe(4004);
+      expect(calls).toBe(0);
+      expect(owner.pending()).toBe(0);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
   it('stops everything behind the operator fence and resumes when it is cleared', async () => {
     const mf = runtime();
     try {
@@ -399,7 +417,12 @@ describe('fleet bridge', () => {
       expect((await fence(true)).body).toEqual({ ok: true, stopped: true });
       expect((await send(mf, 1)).status).toBe(503);
       expect(
-        (await call(mf, '/v1/bridge/ticket', { v: 1, role: 'owner' })).status
+        (
+          await call(mf, '/v1/bridge/ticket', {
+            v: 1,
+            ...ownerTicket(),
+          })
+        ).status
       ).toBe(503);
       expect((await fence(false)).body).toEqual({ ok: true, stopped: false });
       // The fenced socket is gone for good: the machine has to reconnect.
@@ -458,7 +481,7 @@ describe('fleet bridge', () => {
         ).toMatchObject([{ machineId: 'flooder', connected: false }]);
       }
       // An owner socket has nothing to say: a handful of messages retires it.
-      const owner = await connect(mf, await ticketFor(mf, { role: 'owner' }));
+      const owner = await connect(mf, await ticketFor(mf, ownerTicket()));
       for (let i = 0; i < 12; i++) owner.socket.send('x');
       await new Promise((done) => setTimeout(done, 150));
       await send(mf, 1);

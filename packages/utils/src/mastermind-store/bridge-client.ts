@@ -33,7 +33,9 @@ export interface MastermindBridge {
   /** Where a ticket holder opens its WebSocket. */
   readonly socketUrl: string;
   ticket(
-    request: { role: 'machine'; machineId: string } | { role: 'owner' }
+    request:
+      | { role: 'machine'; machineId: string }
+      | { role: 'owner'; ownerId: string; leaseExpiresAt: number }
   ): Promise<{ ticket: string; expiresAt: number }>;
   send(input: {
     envelope: BridgeReplyEnvelope;

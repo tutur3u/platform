@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 884,
+    "total": 885,
     "categories": {
-      "api": 684,
+      "api": 685,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 872 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 873 }
   },
   "routes": [
     {
@@ -3080,6 +3080,14 @@
     {
       "pattern": "/api/v1/mastermind/fleet/decisions/[decisionId]/answer",
       "source": "apps/web/src/app/api/v1/mastermind/fleet/decisions/[decisionId]/answer/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/live/owner-authorization",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/live/owner-authorization/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

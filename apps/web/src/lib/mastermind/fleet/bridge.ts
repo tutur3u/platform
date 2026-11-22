@@ -9,7 +9,10 @@ import {
   randomBytes,
   verify,
 } from 'node:crypto';
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session-core';
+import {
+  getAppSessionTokenFromRequest,
+  verifyAppSessionRequest,
+} from '@tuturuuu/auth/app-session-core';
 import {
   createAdminClient,
   getBearerAccessToken,
@@ -24,6 +27,7 @@ import {
   BRIDGE_ACK_KEY_INFO,
   BRIDGE_DIGEST_KEY_INFO,
   BRIDGE_SEAL_KEY_INFO,
+  OWNER_LIVE_LEASE_MS,
   type BridgeReceipt,
   type BridgeReplyEnvelope,
   bridgeAckSigningString,
@@ -183,6 +187,59 @@ export async function readAssurance(
   );
   if (account.status === 'unavailable') return 'unavailable';
   return account.status === 'allowed' ? 'allowed' : 'required';
+}
+
+const OWNER_LIVE_MFA_MAX_AGE_SECONDS = 24 * 60 * 60;
+
+/** No socket can outlive its verified access credential or MFA proof. */
+export async function ownerLiveLease(
+  request: Pick<NextRequest, 'headers' | 'url'>,
+  principal: { userId: string; supabase: ClaimsReader },
+  now = Date.now()
+) {
+  const assurance = await replyAssurance(
+    request,
+    principal,
+    OWNER_LIVE_MFA_MAX_AGE_SECONDS,
+    Math.floor(now / 1000)
+  );
+  if (assurance.status !== 'allowed') return assurance;
+
+  let sessionExpiresAt: number | undefined;
+  if (getAppSessionTokenFromRequest(request)) {
+    const session = verifyAppSessionRequest(request, {
+      targetApp: 'mastermind',
+    });
+    if (session.ok && session.claims.sub === principal.userId)
+      sessionExpiresAt = session.claims.exp;
+  } else {
+    try {
+      const result = await credentialClient(
+        request,
+        principal.supabase
+      ).auth.getClaims();
+      const claims = result.data?.claims;
+      if (
+        !result.error &&
+        claims?.sub === principal.userId &&
+        typeof claims.exp === 'number' &&
+        Number.isSafeInteger(claims.exp)
+      )
+        sessionExpiresAt = claims.exp;
+    } catch {
+      return { status: 'unavailable' } as const;
+    }
+  }
+  if (sessionExpiresAt === undefined) return { status: 'unavailable' } as const;
+  const leaseExpiresAt = Math.min(
+    now + OWNER_LIVE_LEASE_MS,
+    sessionExpiresAt * 1000,
+    (assurance.proof.verifiedAt + OWNER_LIVE_MFA_MAX_AGE_SECONDS) * 1000,
+    (assurance.proof.expiresAt ?? Number.POSITIVE_INFINITY) * 1000
+  );
+  return leaseExpiresAt > now
+    ? ({ status: 'allowed', leaseExpiresAt } as const)
+    : ({ status: 'required' } as const);
 }
 
 /** The fleet secret, or null when it is missing or too short to use. */

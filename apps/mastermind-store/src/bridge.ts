@@ -39,7 +39,14 @@ type Attachment =
       frames?: number;
       helloAt?: number;
     }
-  | { role: 'owner'; at: number; windowStart?: number; frames?: number }
+  | {
+      role: 'owner';
+      ownerId: string;
+      leaseExpiresAt: number;
+      at: number;
+      windowStart?: number;
+      frames?: number;
+    }
   /** Replaced or fenced: its close handshake may lag, its frames never count. */
   | { role: 'retired'; at: number; windowStart?: number; frames?: number };
 type ParsedSend = z.output<typeof bridgeSendRequestSchema>;
@@ -57,6 +64,7 @@ const TICKET = /^[\w-]{32,128}$/u;
 const CLOSE_REPLACED = 4001;
 const CLOSE_FLOOD = 4008;
 const CLOSE_STOPPED = 4003;
+const CLOSE_OWNER_UNAUTHORIZED = 4004;
 
 async function sha256Hex(value: string) {
   const digest = await crypto.subtle.digest(
@@ -174,9 +182,79 @@ export class FleetBridge extends DurableObject {
   }
 
   private broadcast(frame: OwnerFrameBody) {
+    this.ctx.waitUntil(this.deliverOwnerNotice(frame));
+  }
+
+  private async deliverOwnerNotice(frame: OwnerFrameBody) {
+    const byOwner = new Map<string, WebSocket[]>();
+    for (const socket of this.ctx.getWebSockets('owner')) {
+      const who = this.attachment(socket);
+      if (who?.role !== 'owner') continue;
+      // Hibernated sockets accepted before identity binding must reconnect.
+      if (!who.ownerId || !(who.leaseExpiresAt > Date.now())) {
+        this.retire(socket, CLOSE_OWNER_UNAUTHORIZED, 'authorization required');
+        continue;
+      }
+      const sockets = byOwner.get(who.ownerId) ?? [];
+      sockets.push(socket);
+      byOwner.set(who.ownerId, sockets);
+    }
+    if (byOwner.size === 0) return;
+
     const text = JSON.stringify({ v: BRIDGE_PROTOCOL_VERSION, ...frame });
-    for (const socket of this.ctx.getWebSockets('owner'))
-      if (this.attachment(socket)?.role === 'owner') this.push(socket, text);
+    await Promise.all(
+      [...byOwner].map(async ([ownerId, sockets]) => {
+        const allowed = await this.authorizeOwnerNotice(ownerId);
+        for (const socket of sockets) {
+          // The stop fence, socket limit or another denied notice may have
+          // retired this socket while authorization was in flight.
+          const who = this.attachment(socket);
+          if (who?.role !== 'owner') continue;
+          if (allowed && who.leaseExpiresAt > Date.now())
+            this.push(socket, text);
+          else
+            this.retire(
+              socket,
+              CLOSE_OWNER_UNAUTHORIZED,
+              'authorization required'
+            );
+        }
+      })
+    );
+  }
+
+  private async authorizeOwnerNotice(ownerId: string) {
+    const env = this.env as {
+      MASTERMIND_BRIDGE_DAILY_OPS?: string;
+      MASTERMIND_STORE_TOKENS?: string;
+    };
+    const token = env.MASTERMIND_STORE_TOKENS?.split(',')[0]?.trim();
+    const budget = bridgeBudget(env.MASTERMIND_BRIDGE_DAILY_OPS);
+    if (!token || token.length < 32 || budget === null) return false;
+    // At most one Web authorization call per owner and notice, zero retries.
+    // Reserve from the persistent bridge budget before doing any outbound work.
+    const charged = this.attempt(() =>
+      this.engine.chargeFrame(Date.now(), budget)
+    );
+    if (!charged.ok) return false;
+    try {
+      const response = await fetch(
+        'https://tuturuuu.com/api/v1/mastermind/fleet/live/owner-authorization',
+        {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${token}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ ownerId }),
+          redirect: 'error',
+          signal: AbortSignal.timeout(2_000),
+        }
+      );
+      return response.status === 204;
+    } catch {
+      return false;
+    }
   }
 
   private machineSockets(machineId: string) {
@@ -225,17 +303,7 @@ export class FleetBridge extends DurableObject {
     const hash = await sha256Hex(ticket);
     const now = Date.now();
     const minted = this.attempt(() =>
-      this.engine.mintTicket(
-        {
-          hash,
-          role: request.role,
-          ...(request.role === 'machine'
-            ? { machineId: request.machineId }
-            : {}),
-        },
-        now,
-        budget
-      )
+      this.engine.mintTicket({ ...request, hash }, now, budget)
     );
     return minted.ok
       ? ({ ok: true, ticket, expiresAt: minted.value } as const)
@@ -424,6 +492,8 @@ export class FleetBridge extends DurableObject {
       this.ctx.acceptWebSocket(server, ['owner']);
       server.serializeAttachment({
         role: 'owner',
+        ownerId: admitted.value.ownerId,
+        leaseExpiresAt: admitted.value.leaseExpiresAt,
         at: now,
       } satisfies Attachment);
     }
