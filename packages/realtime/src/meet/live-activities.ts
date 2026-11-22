@@ -344,7 +344,19 @@ export function applyLiveActivities(
   )
     return denied(state, 'awaiting_admission', requestId);
   const manager = canMeetRealtimeRunActivities(token);
-  const current = settleActivities(state.liveActivities ?? EMPTY_ACTIVITIES);
+  const stored = state.liveActivities ?? EMPTY_ACTIVITIES;
+  // A prompt stored before prompts had ids gets its own now. The id goes back
+  // into the room with this very outcome, a read included, so it is issued
+  // once and every later read agrees on it. Its replies stay.
+  const named =
+    stored.icebreaker.prompt !== null && !stored.icebreaker.promptId
+      ? {
+          ...stored,
+          icebreaker: { ...stored.icebreaker, promptId: crypto.randomUUID() },
+        }
+      : stored;
+  const room = named === stored ? state : { ...state, liveActivities: named };
+  const current = settleActivities(named);
   // With the assessment switched off, nothing of it leaves the room.
   const shown = (activities: Activities) =>
     features.assessment
@@ -361,12 +373,12 @@ export function applyLiveActivities(
     ];
     if (manager)
       reply.push({ type: 'activity.host', host: hostView(shown(current)), requestId });
-    return outcome(state, { reply });
+    return outcome(room, { reply });
   }
 
   const { command } = message;
   if (!features.assessment && command.kind.startsWith('assessment.'))
-    return denied(state, 'activity_assessment_disabled', requestId);
+    return denied(room, 'activity_assessment_disabled', requestId);
   if (
     !manager &&
     command.kind !== 'assessment.submit' &&
@@ -374,20 +386,20 @@ export function applyLiveActivities(
     command.kind !== 'game.answer' &&
     command.kind !== 'icebreaker.respond'
   )
-    return denied(state, 'permission_denied', requestId);
+    return denied(room, 'permission_denied', requestId);
   const limits = nextLiveActivityLimit(
     state.liveActivityLimits,
     token.accountId ?? participantId,
     timestamp,
     LIVE_ACTIVITY_ACTIONS_PER_MINUTE
   );
-  if (!limits) return denied(state, 'activity_rate_limited', requestId);
+  if (!limits) return denied(room, 'activity_rate_limited', requestId);
   const next = applyActivity(current, command, participantId, timestamp);
-  if (typeof next === 'string') return denied(state, next, requestId);
+  if (typeof next === 'string') return denied(room, next, requestId);
   const reply: MeetRealtimeServerMessage[] = [
     { type: 'activity.mine', mine: mineView(shown(next), participantId), requestId },
   ];
-  if (next === current) return outcome(state, { reply });
+  if (next === current) return outcome(room, { reply });
 
   const snapshot = publicView(shown(next));
   const host = hostView(shown(next));
@@ -396,7 +408,7 @@ export function applyLiveActivities(
     serializedMeetBytes(host) > LIVE_ACTIVITY_LIMITS.viewBytes ||
     serializedMeetBytes(next) > LIVE_ACTIVITY_LIMITS.stateBytes
   )
-    return denied(state, 'activity_full', requestId);
+    return denied(room, 'activity_full', requestId);
   const direct: ReturnType<typeof outcome>['direct'] = [];
   for (const userId of new Set(refreshActors(command, current, next))) {
     if (
@@ -411,7 +423,7 @@ export function applyLiveActivities(
     }
   }
   return outcome(
-    { ...state, liveActivities: next, liveActivityLimits: limits },
+    { ...room, liveActivities: next, liveActivityLimits: limits },
     {
       reply,
       broadcast: [{ type: 'activity.snapshot', snapshot }],

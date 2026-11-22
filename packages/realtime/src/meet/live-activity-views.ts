@@ -86,32 +86,18 @@ const resultsOut = ({ status, released }: Activities['assessment']) =>
   released && status === 'closed';
 
 /**
- * The id of a prompt stored before prompts had ids. It is fixed, so every
- * read agrees on it and people can still reply; the next prompt gets its own.
- */
-export const LEGACY_ICEBREAKER_PROMPT_ID =
-  '00000000-0000-4000-8000-000000000001';
-
-/**
  * Stored state as the rules read it. A release ends its attempt, so an
  * assessment stored as released while still open is closed, and the seal is
- * always recorded. An active prompt always has an id.
+ * always recorded.
  */
 export function settleActivities(state: Activities): Activities {
-  const { assessment, icebreaker } = state;
+  const { assessment } = state;
   const sealed = isSealed(assessment);
   const status = assessment.released ? 'closed' : assessment.status;
   const unsettled =
     sealed !== assessment.sealed || status !== assessment.status;
-  const unnamed = icebreaker.prompt !== null && !icebreaker.promptId;
-  if (!unsettled && !unnamed) return state;
-  return {
-    ...state,
-    assessment: unsettled ? { ...assessment, status, sealed } : assessment,
-    icebreaker: unnamed
-      ? { ...icebreaker, promptId: LEGACY_ICEBREAKER_PROMPT_ID }
-      : icebreaker,
-  };
+  if (!unsettled) return state;
+  return { ...state, assessment: { ...assessment, status, sealed } };
 }
 
 export const EMPTY_LIVE_ACTIVITIES_SNAPSHOT = publicView(EMPTY_ACTIVITIES);

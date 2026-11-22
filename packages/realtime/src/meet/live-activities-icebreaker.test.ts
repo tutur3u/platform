@@ -10,53 +10,90 @@ import {
   read,
   room,
 } from './live-activities.fixtures';
-import { LEGACY_ICEBREAKER_PROMPT_ID } from './live-activity-views';
 import type { MeetRoomSnapshot } from './room';
 
 describe('icebreaker', () => {
-  it('gives a prompt stored without an id a fixed one, so people can still reply', () => {
+  it('gives a prompt stored without an id its own on the first read and keeps it', () => {
     const asked = action(room(), host, {
       kind: 'icebreaker.prompt',
       text: 'Hi?',
     }).state;
-    const activities = asked.liveActivities;
+    const answered = action(asked, guest, {
+      kind: 'icebreaker.respond',
+      promptId: asked.liveActivities?.icebreaker.promptId,
+      text: 'Kept reply',
+    }).state;
+    const activities = answered.liveActivities;
     if (!activities) throw new Error('Missing activities');
-    const stored: MeetRoomSnapshot = {
-      ...asked,
+    // As the room stored a prompt before prompts had ids.
+    const legacy: MeetRoomSnapshot = {
+      ...answered,
       liveActivities: {
         ...activities,
-        icebreaker: { prompt: 'Hi?', responses: [] },
+        icebreaker: {
+          prompt: 'Hi?',
+          responses: activities.icebreaker.responses,
+        },
       },
     };
-    // Every read agrees on the id, without anything being written first.
-    for (const token of [guest, other])
-      expect(read(stored, token).reply).toMatchObject([
-        {
-          snapshot: {
-            icebreaker: {
-              prompt: 'Hi?',
-              promptId: LEGACY_ICEBREAKER_PROMPT_ID,
-            },
+
+    // The first read writes the id back with its reply, and keeps the replies.
+    const first = read(legacy, guest);
+    const promptId = first.state.liveActivities?.icebreaker.promptId;
+    expect(promptId).toEqual(expect.any(String));
+    expect(first.state).not.toBe(legacy);
+    expect(first.reply).toMatchObject([
+      {
+        snapshot: {
+          icebreaker: {
+            prompt: 'Hi?',
+            promptId,
+            responses: [{ text: 'Kept reply' }],
           },
         },
-        {},
-      ]);
-    const replied = action(stored, guest, {
-      kind: 'icebreaker.respond',
-      promptId: LEGACY_ICEBREAKER_PROMPT_ID,
-      text: 'Still here',
-    });
-    expect(replied.broadcast).toMatchObject([
-      { snapshot: { icebreaker: { responses: [{ text: 'Still here' }] } } },
+      },
+      { mine: { icebreaker: { promptId, text: 'Kept reply' } } },
     ]);
-    // The id is stored with that first change, and the next prompt gets its own.
-    expect(replied.state.liveActivities?.icebreaker.promptId).toBe(
-      LEGACY_ICEBREAKER_PROMPT_ID
-    );
+    // Every later read of what was stored agrees, and writes nothing.
+    const again = read(first.state, other);
+    expect(again.state).toBe(first.state);
+    expect(again.reply).toMatchObject([
+      { snapshot: { icebreaker: { promptId } } },
+      {},
+    ]);
+    // Another id-less prompt never shares that id.
     expect(
-      action(replied.state, host, { kind: 'icebreaker.prompt', text: 'Next?' })
-        .state.liveActivities?.icebreaker.promptId
-    ).not.toBe(LEGACY_ICEBREAKER_PROMPT_ID);
+      read(legacy, guest).state.liveActivities?.icebreaker.promptId
+    ).not.toBe(promptId);
+    // People can reply under the id, next to the replies that were there.
+    expect(
+      action(first.state, other, {
+        kind: 'icebreaker.respond',
+        promptId,
+        text: 'Still here',
+      }).broadcast
+    ).toMatchObject([
+      {
+        snapshot: {
+          icebreaker: {
+            responses: [{ text: 'Kept reply' }, { text: 'Still here' }],
+          },
+        },
+      },
+    ]);
+    // A refused command that meets the id-less prompt stores the id as well.
+    const refused = action(legacy, other, {
+      kind: 'icebreaker.respond',
+      promptId: crypto.randomUUID(),
+      text: 'Guessing',
+    });
+    expect(refused.reply).toMatchObject(
+      error('activity_icebreaker_prompt_changed')
+    );
+    expect(refused.state.liveActivities?.icebreaker.promptId).toEqual(
+      expect.any(String)
+    );
+    expect(refused.state.liveActivities?.icebreaker.responses).toHaveLength(1);
   });
 
   it('hides a response from public views and preserves moderation across edits', () => {
