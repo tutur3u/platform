@@ -67,9 +67,12 @@ function PromptPicker({ send }: { send: Activity['send'] }) {
 
 /** One reply per person; sending again replaces it. */
 function ResponseForm({
+  promptId,
   mine,
   send,
 }: {
+  /** The question on screen: the room refuses a reply to an earlier one. */
+  promptId: string | null;
   mine: string | undefined;
   send: Activity['send'];
 }) {
@@ -81,7 +84,8 @@ function ResponseForm({
       className="flex items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
-        if (text) send({ kind: 'icebreaker.respond', text });
+        if (text && promptId)
+          send({ kind: 'icebreaker.respond', promptId, text });
       }}
     >
       <Input
@@ -96,7 +100,7 @@ function ResponseForm({
         type="submit"
         label={t(mine ? 'update' : 'send')}
         variant="default"
-        disabled={!text || text === mine}
+        disabled={!text || !promptId || text === mine}
       />
     </form>
   );
@@ -109,7 +113,7 @@ function ResponseForm({
 export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
   const activity = useActivity();
   const t = useTranslations('meet.call.live_activities.icebreaker');
-  const { prompt, responses } = activity.snapshot.icebreaker;
+  const { prompt, promptId, responses } = activity.snapshot.icebreaker;
   const hidden = activity.host?.icebreaker.hidden ?? [];
   const hide = (responseId: string, value: boolean) =>
     activity.send({ kind: 'icebreaker.hide', responseId, hidden: value });
@@ -143,7 +147,8 @@ export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
           </div>
           <ResponseForm
             // A new question starts from an empty reply.
-            key={prompt}
+            key={promptId}
+            promptId={promptId}
             mine={activity.mine.icebreaker.text}
             send={activity.send}
           />

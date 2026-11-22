@@ -111,7 +111,12 @@ export const liveActivityCommandSchema = z.discriminatedUnion('kind', [
     kind: z.literal('icebreaker.prompt'),
     text: text(200).nullable(),
   }),
-  z.object({ kind: z.literal('icebreaker.respond'), text: text(200) }),
+  z.object({
+    kind: z.literal('icebreaker.respond'),
+    /** The prompt being answered; a reply to an earlier one is refused. */
+    promptId: id,
+    text: text(200),
+  }),
   z.object({
     kind: z.literal('icebreaker.hide'),
     responseId: id,
@@ -186,6 +191,8 @@ export const liveActivitiesSnapshotSchema = z.object({
   }),
   icebreaker: z.object({
     prompt: text(200).nullable(),
+    /** Issued by the room for each prompt, so a reply names what it answers. */
+    promptId: id.nullable(),
     responses: z.array(icebreakerResponse).max(LIVE_ACTIVITY_LIMITS.actors),
   }),
 });

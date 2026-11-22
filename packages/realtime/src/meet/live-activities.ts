@@ -192,9 +192,20 @@ function applyActivity(
       return game === next ? state : { ...state, game: next };
     }
     case 'icebreaker.prompt':
-      return { ...state, icebreaker: { prompt: command.text, responses: [] } };
+      // Every prompt gets its own id, even the same words asked again.
+      return {
+        ...state,
+        icebreaker: {
+          prompt: command.text,
+          promptId: command.text === null ? null : crypto.randomUUID(),
+          responses: [],
+        },
+      };
     case 'icebreaker.respond': {
       if (icebreaker.prompt === null) return 'activity_icebreaker_unavailable';
+      // A reply written for an earlier prompt never lands under the next one.
+      if (command.promptId !== icebreaker.promptId)
+        return 'activity_icebreaker_prompt_changed';
       const index = icebreaker.responses.findIndex(
         (response) => response.participantId === participantId
       );

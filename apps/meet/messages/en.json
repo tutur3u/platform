@@ -4615,6 +4615,7 @@
           "generic": "That did not go through. Try again.",
           "not_closed": "Close answers first.",
           "permission": "Only hosts and co-hosts can do that.",
+          "prompt_changed": "That question is no longer the current one, so your answer was not added.",
           "rate_limited": "That was a lot at once. Wait a moment and try again."
         },
         "flashcards": {

@@ -20,6 +20,8 @@ const ERRORS: Record<string, string> = {
   activity_assessment_not_closed: 'not_closed',
   activity_answer_changed: 'answer_changed',
   activity_game_running: 'game_running',
+  activity_icebreaker_prompt_changed: 'prompt_changed',
+  activity_icebreaker_unavailable: 'prompt_changed',
 };
 
 /**

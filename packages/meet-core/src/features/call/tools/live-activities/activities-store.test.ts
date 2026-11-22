@@ -12,6 +12,7 @@ import {
 } from './activities-store';
 
 const meetingId = 'live-activities';
+const PROMPT = '55555555-5555-4555-8555-555555555555';
 const send = vi.fn<(message: MeetRealtimeClientMessage) => boolean>(() => true);
 const host = {
   assessment: { responses: [], answers: {} },
@@ -46,7 +47,7 @@ it('reads once on admission and updates separate public and private views from r
 
   const snapshot = {
     ...EMPTY_LIVE_ACTIVITIES_SNAPSHOT,
-    icebreaker: { prompt: 'Hi', responses: [] },
+    icebreaker: { prompt: 'Hi', promptId: PROMPT, responses: [] },
   };
   const mine = {
     ...EMPTY_LIVE_ACTIVITIES_MINE,

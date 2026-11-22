@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   ANA,
   closeRoom,
+  lastRequestId,
   renderPanel,
   room,
   SELF,
@@ -23,6 +24,8 @@ import { IcebreakerPanel } from './icebreaker-panel';
 const t = strings.icebreaker;
 const VISIBLE = '88888888-8888-4888-8888-888888888888';
 const HIDDEN = '99999999-9999-4999-8999-999999999999';
+const PROMPT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const NEXT_PROMPT = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const prompt = t.suggestions.learned;
 
 afterEach(() => {
@@ -47,6 +50,7 @@ it('lets the host ask a suggested or custom question and moderate answers', () =
     snapshot: {
       icebreaker: {
         prompt,
+        promptId: PROMPT,
         responses: [{ id: VISIBLE, participantId: ANA, text: 'Merge sort' }],
       },
     },
@@ -76,7 +80,9 @@ it('lets the host ask a suggested or custom question and moderate answers', () =
 it('lets a participant answer once, replace it and read the visible answers', () => {
   renderPanel(IcebreakerPanel, false);
   expect(screen.getByText(t.empty_participant)).toBeTruthy();
-  room({ snapshot: { icebreaker: { prompt, responses: [] } } });
+  room({
+    snapshot: { icebreaker: { prompt, promptId: PROMPT, responses: [] } },
+  });
   expect(screen.getByText(t.no_responses)).toBeTruthy();
   expect(screen.queryByRole('button', { name: t.clear_prompt })).toBeNull();
   fireEvent.change(screen.getByLabelText(t.your_response), {
@@ -84,13 +90,14 @@ it('lets a participant answer once, replace it and read the visible answers', ()
   });
   fireEvent.click(screen.getByRole('button', { name: t.send }));
   expect(sent()).toEqual([
-    { kind: 'icebreaker.respond', text: 'Binary search' },
+    { kind: 'icebreaker.respond', promptId: PROMPT, text: 'Binary search' },
   ]);
 
   room({
     snapshot: {
       icebreaker: {
         prompt,
+        promptId: PROMPT,
         responses: [
           { id: VISIBLE, participantId: ANA, text: 'Merge sort' },
           { id: HIDDEN, participantId: SELF, text: 'Binary search' },
@@ -111,6 +118,45 @@ it('lets a participant answer once, replace it and read the visible answers', ()
   fireEvent.click(update);
   expect(sent().at(-1)).toEqual({
     kind: 'icebreaker.respond',
+    promptId: PROMPT,
     text: 'Quick sort',
+  });
+});
+
+it('ties each reply to the question on screen and says when it arrived too late', () => {
+  renderPanel(IcebreakerPanel, false);
+  const store = room({
+    snapshot: { icebreaker: { prompt, promptId: PROMPT, responses: [] } },
+  });
+  fireEvent.change(screen.getByLabelText(t.your_response), {
+    target: { value: 'Binary search' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: t.send }));
+  expect(sent().at(-1)).toMatchObject({ promptId: PROMPT });
+  // The host asked the next question before that reply reached the room.
+  act(() =>
+    store.receive({
+      type: 'error',
+      error: 'activity_icebreaker_prompt_changed',
+      requestId: lastRequestId(),
+    })
+  );
+  expect(screen.getByRole('status').textContent).toBe(
+    strings.errors.prompt_changed
+  );
+  room({
+    snapshot: {
+      icebreaker: { prompt, promptId: NEXT_PROMPT, responses: [] },
+    },
+  });
+  // The same words asked again are a new question: the reply starts empty.
+  const input = screen.getByLabelText(t.your_response) as HTMLInputElement;
+  expect(input.value).toBe('');
+  fireEvent.change(input, { target: { value: 'Merge sort' } });
+  fireEvent.click(screen.getByRole('button', { name: t.send }));
+  expect(sent().at(-1)).toEqual({
+    kind: 'icebreaker.respond',
+    promptId: NEXT_PROMPT,
+    text: 'Merge sort',
   });
 });

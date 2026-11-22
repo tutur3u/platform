@@ -41,7 +41,12 @@ export type Activities = {
     progress: Record<string, string[]>;
   };
   game: LiveActivityGame;
-  icebreaker: { prompt: string | null; responses: IcebreakerResponse[] };
+  icebreaker: {
+    prompt: string | null;
+    /** Absent only in state stored before prompts had ids. */
+    promptId?: string | null;
+    responses: IcebreakerResponse[];
+  };
 };
 
 declare module './room' {
@@ -55,7 +60,7 @@ export const EMPTY_ACTIVITIES: Activities = {
   assessment: { status: 'draft', released: false, items: [], responses: [] },
   flashcards: { cards: [], index: 0, flipped: false, progress: {} },
   game: EMPTY_ACTIVITY_GAME,
-  icebreaker: { prompt: null, responses: [] },
+  icebreaker: { prompt: null, promptId: null, responses: [] },
 };
 
 export const EMPTY_LIVE_ACTIVITIES_SNAPSHOT = publicView(EMPTY_ACTIVITIES);
@@ -101,6 +106,7 @@ export function publicView({
     game: liveGameSnapshot(game),
     icebreaker: {
       prompt: icebreaker.prompt,
+      promptId: icebreaker.promptId ?? null,
       responses: icebreaker.responses
         .filter(({ hidden }) => !hidden)
         .map(({ id, participantId, text }) => ({ id, participantId, text })),
