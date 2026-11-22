@@ -1,4 +1,9 @@
-import { requiresWorkerRedeemProof } from '@tuturuuu/auth/app-redeem-proof';
+import {
+  createMastermindHandoffIssuerProof,
+  MASTERMIND_HANDOFF_ISSUER_PARAM,
+  requiresWorkerRedeemProof,
+  verifyMastermindLoginTransaction,
+} from '@tuturuuu/auth/app-redeem-proof';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import {
   createAdminClient,
@@ -16,7 +21,8 @@ import { checkRequiredAccountMfa } from '@tuturuuu/utils/required-mfa-request';
 import { createMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
 import { sessionAssuranceFromVerifiedClaims } from '@tuturuuu/utils/session-assurance';
 import { createSessionAssuranceTransfer } from '@tuturuuu/utils/session-assurance-transfer';
-import { type NextRequest, NextResponse } from 'next/server';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
 import {
@@ -47,6 +53,34 @@ const returnUrlSchema = z.object({
 });
 
 const ROUTE = '/api/v1/auth/cross-app-return';
+const HANDOFF_NO_STORE = { 'Cache-Control': 'private, no-store' };
+
+function isDocumentNavigation(request: NextRequest) {
+  return (
+    request.method === 'GET' &&
+    request.headers.get('sec-fetch-mode') === 'navigate' &&
+    request.headers.get('sec-fetch-dest') === 'document' &&
+    !request.headers.has('sec-purpose') &&
+    !request.headers.has('purpose') &&
+    !request.headers.has('authorization')
+  );
+}
+
+async function claimMastermindTransaction(
+  transaction: NonNullable<ReturnType<typeof verifyMastermindLoginTransaction>>
+) {
+  const ttl = transaction.expiresAt - Math.floor(Date.now() / 1000);
+  if (ttl <= 0) return false;
+  const redis = await getUpstashRestRedisClient({ family: 'replay' });
+  if (!redis) throw new Error('Replay protection unavailable');
+  return (
+    (await redis.set(
+      `mastermind:login:used:${transaction.codeChallenge}`,
+      '1',
+      { ex: ttl, nx: true }
+    )) === 'OK'
+  );
+}
 
 function decodeReturnUrl(returnUrl: string) {
   // Decode only an encoded outer URL. Decoding a parsed URL also decodes
@@ -213,7 +247,24 @@ async function createCrossAppReturn(
     );
   }
 
-  const pkceChallenge = parseCrossAppPkceChallenge(parsed.data);
+  const mastermind = target.targetApp === 'mastermind';
+  const transaction =
+    mastermind && parsed.data.generateToken
+      ? verifyMastermindLoginTransaction(target.canonicalReturnUrl)
+      : null;
+  if (mastermind && parsed.data.generateToken && !transaction) {
+    return fail(
+      'INVALID_CODE_CHALLENGE',
+      NextResponse.json(
+        {
+          code: 'INVALID_CODE_CHALLENGE',
+          error: 'Invalid sign-in transaction',
+        },
+        { status: 403, headers: HANDOFF_NO_STORE }
+      )
+    );
+  }
+  const pkceChallenge = transaction ?? parseCrossAppPkceChallenge(parsed.data);
 
   if (pkceChallenge === false) {
     return fail(
@@ -225,9 +276,9 @@ async function createCrossAppReturn(
     );
   }
 
-  const mfaMaxAge = parseMfaMaxAge(parsed.data.mfaMaxAge);
+  const requestedMfaMaxAge = parseMfaMaxAge(parsed.data.mfaMaxAge);
 
-  if (mfaMaxAge === false) {
+  if (requestedMfaMaxAge === false) {
     return fail(
       'INVALID_MFA_MAX_AGE',
       NextResponse.json(
@@ -242,6 +293,21 @@ async function createCrossAppReturn(
       appName: target.appName,
       targetApp: target.targetApp,
     });
+  }
+
+  const mfaMaxAge = transaction?.mfaMaxAge ?? requestedMfaMaxAge;
+  if (
+    transaction &&
+    request.method !== 'POST' &&
+    !isDocumentNavigation(request)
+  ) {
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      {
+        status: 403,
+        headers: HANDOFF_NO_STORE,
+      }
+    );
   }
 
   const supabase = (await createClient(request)) as TypedSupabaseClient;
@@ -335,6 +401,41 @@ async function createCrossAppReturn(
       NextResponse.json({ code: 'MFA_REQUIRED' }, { status: 403 })
     );
   }
+  if (transaction && request.method === 'POST') {
+    // The sign-in page can check the selected account and MFA before navigating.
+    // A fetch receives only the navigation target, never the handoff itself.
+    const navigation = new URL(ROUTE, request.nextUrl.origin);
+    navigation.searchParams.set('returnUrl', target.canonicalReturnUrl);
+    navigation.searchParams.set('expectedUserId', user.id);
+    if (mfaMaxAge !== undefined)
+      navigation.searchParams.set('mfaMaxAge', String(mfaMaxAge));
+    return NextResponse.json(
+      {
+        appName: target.appName,
+        returnUrl: navigation.href,
+        targetApp: target.targetApp,
+      },
+      { headers: HANDOFF_NO_STORE }
+    );
+  }
+  if (transaction) {
+    let claimed: boolean;
+    try {
+      claimed = await claimMastermindTransaction(transaction);
+    } catch {
+      return NextResponse.json(
+        { code: 'AUTH_UNAVAILABLE' },
+        { status: 503, headers: HANDOFF_NO_STORE }
+      );
+    }
+    if (!claimed) {
+      return NextResponse.json(
+        { error: 'Sign-in transaction expired or already used' },
+        { status: 409, headers: HANDOFF_NO_STORE }
+      );
+    }
+  }
+
   const mfaTransfer = createMfaTransfer(user.id, target.targetApp, proof);
   // The handed-off session's own aal/amr, signed so exchange can trust it.
   const assuranceTransfer = createSessionAssuranceTransfer(
@@ -361,15 +462,25 @@ async function createCrossAppReturn(
       })
     : await supabase.rpc('generate_cross_app_token', mintArgs);
 
-  if (error || !data) {
+  if (error || typeof data !== 'string' || !data) {
     return fail(
       'TOKEN_MINT_FAILED',
       NextResponse.json({ error: 'Failed to generate token' }, { status: 500 })
     );
   }
 
-  const nextUrl = buildTokenReturnUrl(target);
-  nextUrl.searchParams.set('token', data as string);
+  const nextUrl = buildTokenReturnUrl(
+    transaction
+      ? { ...target, canonicalReturnUrl: transaction.callback }
+      : target
+  );
+  nextUrl.searchParams.set('token', data);
+  if (transaction) {
+    nextUrl.searchParams.set(
+      MASTERMIND_HANDOFF_ISSUER_PARAM,
+      createMastermindHandoffIssuerProof(data)
+    );
+  }
   nextUrl.searchParams.set('originApp', 'web');
   nextUrl.searchParams.set('targetApp', target.targetApp);
 
@@ -393,11 +504,7 @@ export async function POST(request: NextRequest) {
 }
 
 /** Sign-in parameters that need the login page's own interaction. */
-const INTERACTIVE_LOGIN_PARAMS = [
-  'confirmAccount',
-  'expectedUserId',
-  'multiAccount',
-] as const;
+const INTERACTIVE_LOGIN_PARAMS = ['confirmAccount', 'multiAccount'] as const;
 
 function redirectTo(location: string) {
   return new NextResponse(null, {
@@ -430,17 +537,24 @@ async function continueSignedInReturn(
   login.search = request.nextUrl.search;
   const fallback = () => redirectTo(login.toString());
 
-  const navigation =
-    request.headers.get('sec-fetch-mode') === 'navigate' &&
-    request.headers.get('sec-fetch-dest') === 'document';
   const returnUrl = params.get('returnUrl');
-  if (
-    !navigation ||
-    !returnUrl ||
-    INTERACTIVE_LOGIN_PARAMS.some((name) => params.has(name))
-  ) {
-    return fallback();
+  if (!returnUrl) return fallback();
+  if (!isDocumentNavigation(request)) {
+    if (
+      mapConfiguredUrlToApp(decodeReturnUrl(returnUrl))?.targetApp !==
+      'mastermind'
+    )
+      return fallback();
+    return NextResponse.json(
+      { error: 'Forbidden' },
+      {
+        status: 403,
+        headers: HANDOFF_NO_STORE,
+      }
+    );
   }
+  if (INTERACTIVE_LOGIN_PARAMS.some((name) => params.has(name)))
+    return fallback();
   const target = await resolveTargetApp(decodeReturnUrl(returnUrl), request);
   // Only Worker-only targets continue here: their handoff is bound to the
   // browser's PKCE verifier and redeemable only with the Worker's proof, so
@@ -456,12 +570,30 @@ async function continueSignedInReturn(
 
   const rawMfaMaxAge = params.get('mfaMaxAge');
   const response = await createCrossAppReturn(request, fail, {
-    codeChallenge: params.get('code_challenge') ?? undefined,
-    codeChallengeMethod: params.get('code_challenge_method') ?? undefined,
+    expectedUserId: params.get('expectedUserId') ?? undefined,
     ...(rawMfaMaxAge === null ? {} : { mfaMaxAge: Number(rawMfaMaxAge) }),
     returnUrl,
   });
-  if (!response.ok) return fallback();
+  if (!response.ok) {
+    if (
+      !params.has('expectedUserId') &&
+      (response.status === 401 || response.status === 403)
+    ) {
+      const body: unknown = await response
+        .clone()
+        .json()
+        .catch(() => null);
+      if (
+        response.status === 401 ||
+        (body &&
+          typeof body === 'object' &&
+          'code' in body &&
+          body.code === 'MFA_REQUIRED')
+      )
+        return fallback();
+    }
+    return response;
+  }
   const body = (await response.json().catch(() => null)) as {
     returnUrl?: unknown;
   } | null;
@@ -471,6 +603,7 @@ async function continueSignedInReturn(
 }
 
 export async function GET(request: NextRequest) {
+  await connection();
   return withRequestLogDrain({ request, route: ROUTE }, () =>
     withAuthHandoffDiagnostics(ROUTE, (fail) =>
       continueSignedInReturn(request, fail)

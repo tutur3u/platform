@@ -1,11 +1,16 @@
+import {
+  createMastermindLoginTransaction,
+  MASTERMIND_LOGIN_TRANSACTION_PARAM,
+} from '@tuturuuu/auth/app-redeem-proof';
 import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { isFreshMfaProof } from '@/lib/auth/mfa-proof-age';
-import { POST } from './route';
+import { GET, POST } from './route';
 
 const NOW = 1_795_000_000;
 const HOUR_AGO = NOW - 3600;
+const LOGIN_SECRET = 'mastermind-test-signing-key'.repeat(2);
 /** A first-party app that receives a token. */
 const MASTERMIND = 'https://mastermind.tuturuuu.com/verify-token?nextUrl=%2Fen';
 /** A registered app that is not Tuturuuu's own. */
@@ -19,6 +24,11 @@ const mocks = vi.hoisted(() => ({
   },
   getClaims: vi.fn(),
   rpc: vi.fn(),
+}));
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: async () => undefined,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -39,6 +49,9 @@ vi.mock('@tuturuuu/utils/required-mfa-request', () => ({
   checkRequiredAccountMfa: vi.fn(async () => mocks.account),
 }));
 
+vi.mock('@tuturuuu/utils/upstash-rest', () => ({
+  getUpstashRestRedisClient: async () => ({ set: async () => 'OK' }),
+}));
 vi.mock('@/lib/app-coordination/external-apps', () => ({
   getExternalAppByReturnUrl: vi.fn(async () => ({
     callbackPaths: [],
@@ -67,14 +80,41 @@ const session = (totpAt: number) => ({
 });
 
 async function mint(body: Record<string, unknown>) {
+  const callback = new URL(MASTERMIND);
+  callback.searchParams.set(
+    MASTERMIND_LOGIN_TRANSACTION_PARAM,
+    createMastermindLoginTransaction(
+      callback,
+      CHALLENGE.codeChallenge,
+      false,
+      LOGIN_SECRET,
+      NOW * 1000
+    )
+  );
   const response = await POST(
     new NextRequest('http://localhost/api/v1/auth/cross-app-return', {
-      // Mastermind handoffs are always bound to the browser's PKCE verifier.
-      body: JSON.stringify({ returnUrl: MASTERMIND, ...CHALLENGE, ...body }),
+      body: JSON.stringify({ returnUrl: callback.href, ...body }),
       method: 'POST',
     })
   );
-  return { body: await response.json(), status: response.status };
+  const payload = await response.json();
+  if (response.ok && payload.targetApp === 'mastermind' && payload.returnUrl) {
+    expect(payload.returnUrl).not.toContain('token=handoff-token');
+    const before = mocks.rpc.mock.calls.length;
+    // The POST is a preflight for login. Only the document navigation mints.
+    const next = await GET(
+      new NextRequest(payload.returnUrl, {
+        headers: { 'sec-fetch-mode': 'navigate', 'sec-fetch-dest': 'document' },
+      })
+    );
+    expect(next.status).toBe(303);
+    expect(mocks.rpc.mock.calls).toHaveLength(before + 1);
+    return {
+      body: { ...payload, returnUrl: next.headers.get('Location') },
+      status: response.status,
+    };
+  }
+  return { body: payload, status: response.status };
 }
 
 /** The proof inside the token minted by the last successful call. */
@@ -100,6 +140,7 @@ describe('cross-app return with a maximum second-factor age', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', LOGIN_SECRET);
     mocks.account = { proof: null, status: 'allowed', userId: 'user-1' };
     mocks.rpc.mockResolvedValue({ data: 'handoff-token', error: null });
     mocks.getClaims.mockResolvedValue({
@@ -114,9 +155,10 @@ describe('cross-app return with a maximum second-factor age', () => {
   });
 
   it('binds a Mastermind handoff to the PKCE challenge and refuses one without', async () => {
-    expect(
-      await mint({ codeChallenge: undefined, codeChallengeMethod: undefined })
-    ).toMatchObject({ body: { code: 'PKCE_REQUIRED' }, status: 400 });
+    expect(await mint({ returnUrl: MASTERMIND })).toMatchObject({
+      body: { code: 'INVALID_CODE_CHALLENGE' },
+      status: 403,
+    });
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect((await mint({})).status).toBe(200);
     expect(mocks.rpc).toHaveBeenCalledWith(
@@ -309,12 +351,13 @@ describe('cross-app return with a maximum second-factor age', () => {
     ]);
     // A malformed challenge is refused before the age is looked at.
     const challenge = await mint({
+      returnUrl: MASTERMIND,
       codeChallenge: 'short',
       codeChallengeMethod: 'S256',
       mfaMaxAge: 30,
     });
     expect([challenge.status, challenge.body.code]).toEqual([
-      400,
+      403,
       'INVALID_CODE_CHALLENGE',
     ]);
     expect(mocks.rpc).not.toHaveBeenCalled();

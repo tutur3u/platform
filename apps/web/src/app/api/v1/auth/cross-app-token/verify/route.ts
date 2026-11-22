@@ -2,6 +2,7 @@ import {
   APP_REDEEM_PROOF_HEADER,
   requiresWorkerRedeemProof,
   verifyAppRedeemProof,
+  verifyMastermindHandoffIssuerProof,
 } from '@tuturuuu/auth/app-redeem-proof';
 import { createAppSessionTokenPair } from '@tuturuuu/auth/app-session';
 import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
@@ -28,6 +29,10 @@ const verifyCrossAppTokenSchema = z.object({
   codeVerifier: z
     .string()
     .regex(/^[A-Za-z0-9._~-]{43,128}$/)
+    .optional(),
+  issuerProof: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{43}$/u)
     .optional(),
   targetApp: z.string().min(1).max(64),
   token: z.string().min(1),
@@ -85,6 +90,19 @@ async function verifyCrossAppToken(
   ) {
     return fail(
       'REDEEM_PROOF_REQUIRED',
+      jsonNoStore({ error: 'Invalid or expired token' }, { status: 401 })
+    );
+  }
+
+  if (
+    parsed.data.targetApp === 'mastermind' &&
+    !verifyMastermindHandoffIssuerProof(
+      parsed.data.token,
+      parsed.data.issuerProof
+    )
+  ) {
+    return fail(
+      'ISSUER_PROOF_REQUIRED',
       jsonNoStore({ error: 'Invalid or expired token' }, { status: 401 })
     );
   }

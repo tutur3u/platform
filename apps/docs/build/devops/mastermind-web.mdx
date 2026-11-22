@@ -196,19 +196,22 @@ like every other satellite. No other host, subdomain or path maps to it.
    `returnUrl=https://mastermind.tuturuuu.com/verify-token?nextUrl=<path>`.
    Return paths must stay on the host and never point at `/login` or
    `/verify-token`. `/login` also stores a random nonce and a PKCE verifier
-   in the `__Host-mastermind_login_state` cookie (600 seconds) and sends the
-   verifier's S256 `code_challenge`. When the browser carries a central
+   in the `__Host-mastermind_login_state` cookie (600 seconds). The Worker
+   signs the S256 challenge, callback, expiry and MFA intent in the return
+   URL. When the browser carries a central
    Tuturuuu session cookie (a routing hint only), the same query goes to
    Web's [signed-in continue](/platform/architecture/authentication#signed-in-continue-for-first-party-apps)
    instead, which returns straight to `/verify-token` without rendering the
    sign-in page; a step-up (`mfa=fresh`) or an account choice always uses
    `/login`.
-2. Web mints a single-use, 300-second cross-app token for target
-   `mastermind` after its own MFA policy, bound to that challenge; it refuses
-   a Mastermind handoff without one (`PKCE_REQUIRED`). `/verify-token` checks
-   the nonce against the cookie, then exchanges the token at
-   `POST /api/v1/auth/cross-app-token/verify` with the verifier and the
-   Worker-only redeem proof. Web redeems it only through the service-role
+2. Web checks the signed transaction and its own MFA policy. The login
+   page's fetch can check the account and MFA and receive a navigation URL.
+   Only an unprefetched top-level document navigation claims the transaction
+   in the replay store and mints a single-use, 300-second `mastermind`
+   token bound to the Worker's challenge. `/verify-token` checks the nonce
+   against the cookie and presents the verifier, the Worker-only redeem
+   proof, and Web's token-specific issuer proof to
+   `POST /api/v1/auth/cross-app-token/verify`. Web redeems it only through the service-role
    PKCE validator, so a handoff URL copied from history or logs cannot be
    redeemed from another browser. The Worker accepts the answer only when
    the access and refresh tokens verify locally for target `mastermind` and
@@ -260,11 +263,11 @@ The session cookies carry `__Host-` names too (`__Host-mastermind_session`,
 names before verifying, so a session a sibling `*.tuturuuu.com` host plants
 under those names is never read.
 
-One gap remains, owned by the Web auth lane, latest by 2026-12-05. The state
-binds the browser, not the handoff token, so a nonce read from the sign-in URL
-within its ten minutes allows a login swap into the reader's own grantee
-session. Binding internal handoffs to an S256 challenge, as external apps
-already are, closes it.
+Deploy the Mastermind Worker with transaction signing and issuer-proof
+forwarding before activating the new Web issuer and redemption routes.
+Start a fresh sign-in from Mastermind when a transaction expires or was
+already used. Regression tests cover unsigned requests, callback changes,
+browser fetch, prefetch, concurrent replay, and tokens missing Web issuer proof.
 
 **Revocation.** Removing the owner from the Worker's `OWNER_IDS` or from
 Web's root Mastermind permission denies the next request and every refresh.

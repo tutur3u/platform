@@ -1,4 +1,7 @@
-import { createAppRedeemProof } from '@tuturuuu/auth/app-redeem-proof';
+import {
+  createAppRedeemProof,
+  createMastermindHandoffIssuerProof,
+} from '@tuturuuu/auth/app-redeem-proof';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
@@ -49,6 +52,7 @@ const verify = (
       body: JSON.stringify({
         targetApp: 'mastermind',
         token: 'handoff',
+        issuerProof: createMastermindHandoffIssuerProof('handoff'),
         ...extra,
       }),
       headers,
@@ -115,6 +119,19 @@ describe('Mastermind handoff redemption', () => {
     }
     expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.adminRpc).not.toHaveBeenCalled();
+  });
+
+  it('refuses unsigned or differently issued tokens before PKCE redemption', async () => {
+    for (const issuerProof of [
+      undefined,
+      createMastermindHandoffIssuerProof('other-token'),
+    ]) {
+      expect(
+        (await verify(proof(), { codeVerifier: VERIFIER, issuerProof })).status
+      ).toBe(401);
+    }
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('mints a 300 s session for the Worker even under a looser policy', async () => {

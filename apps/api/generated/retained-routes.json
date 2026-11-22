@@ -1044,7 +1044,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/cross-app-return/route.ts",
-    "sourceSha256": "f7469f0413b473ecf4f5729bef09c7912282e3a6f8bdb07ab1a3860ae2317c22",
+    "sourceSha256": "a5b707ed6aa82e722e97b42b6f21d484f7e094c7e7ae61f99868e0e2fc76c1fa",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1064,7 +1064,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/cross-app-token/verify/route.ts",
-    "sourceSha256": "9dceae75795f36aa56ccad68f7a86b55f6fa15667c2e3e165c802714a36c2a87",
+    "sourceSha256": "ed17f769422b23ce991c3f7132264900d9dc97c366695839c7996f618845260e",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

@@ -90,7 +90,10 @@ test('return paths stay on the host and never loop through the handoff', () => {
 
 test('handoff accepts only a 300 s owner session for target mastermind with the owner email', async () => {
   web.mockResolvedValueOnce(Response.json(issued()));
-  expect(await exchangeHandoff('t', VERIFIER, env, now)).toMatchObject({
+  const issuerProof = 'i'.repeat(43);
+  expect(
+    await exchangeHandoff('t', VERIFIER, env, now, fetch, issuerProof)
+  ).toMatchObject({
     userId: 'owner',
   });
   const request = web.mock.calls[0]?.[0] as Request;
@@ -102,6 +105,7 @@ test('handoff accepts only a 300 s owner session for target mastermind with the 
     targetApp: 'mastermind',
     token: 't',
     codeVerifier: VERIFIER,
+    issuerProof,
   });
   expect(request.headers.get('x-tuturuuu-app-redeem-proof')).toBe(
     createAppRedeemProof('mastermind', 't', secret)
@@ -442,8 +446,8 @@ test('a step-up sign-in asks Web for a second factor verified in the last 30 sec
   expect(web).not.toHaveBeenCalled();
 
   expect(
-    location(await loginRedirect('/', { freshMfa: true })).searchParams.get(
-      'mfaMaxAge'
-    )
+    location(
+      await loginRedirect('/', env, { freshMfa: true }, now)
+    ).searchParams.get('mfaMaxAge')
   ).toBe('30');
 });

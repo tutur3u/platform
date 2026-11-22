@@ -1,12 +1,19 @@
+import {
+  createMastermindLoginTransaction,
+  createMastermindHandoffIssuerProof,
+  MASTERMIND_HANDOFF_ISSUER_PARAM,
+  MASTERMIND_LOGIN_TRANSACTION_PARAM,
+} from '@tuturuuu/auth/app-redeem-proof';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET } from './route';
+import { GET, POST } from './route';
 
 const NOW = 1_795_000_000;
 const MASTERMIND =
   'https://mastermind.tuturuuu.com/verify-token?nextUrl=%2Fship';
 const PARTNER = 'https://fysh.example/auth/callback';
 const CHALLENGE = 'c'.repeat(43);
+const LOGIN_SECRET = 'mastermind-test-signing-key'.repeat(2);
 
 const mocks = vi.hoisted(() => ({
   account: { proof: null, status: 'allowed', userId: 'user-1' } as {
@@ -17,6 +24,12 @@ const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
   getUser: vi.fn(),
   rpc: vi.fn(),
+  claim: vi.fn(),
+}));
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: async () => undefined,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -28,6 +41,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 vi.mock('@tuturuuu/utils/required-mfa-request', () => ({
   checkRequiredAccountMfa: vi.fn(async () => mocks.account),
+}));
+vi.mock('@tuturuuu/utils/upstash-rest', () => ({
+  getUpstashRestRedisClient: async () => ({ set: mocks.claim }),
 }));
 vi.mock('@/lib/app-coordination/external-apps', () => ({
   getExternalAppByReturnUrl: vi.fn(async () => ({
@@ -50,8 +66,19 @@ const navigation = {
 };
 
 function query(extra: Record<string, string> = {}) {
+  const callback = new URL(MASTERMIND);
+  callback.searchParams.set(
+    MASTERMIND_LOGIN_TRANSACTION_PARAM,
+    createMastermindLoginTransaction(
+      callback,
+      CHALLENGE,
+      false,
+      LOGIN_SECRET,
+      NOW * 1000
+    )
+  );
   return new URLSearchParams({
-    returnUrl: MASTERMIND,
+    returnUrl: callback.href,
     code_challenge: CHALLENGE,
     code_challenge_method: 'S256',
     ...extra,
@@ -92,6 +119,8 @@ describe('signed-in continue for a first-party app', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', LOGIN_SECRET);
+    mocks.claim.mockReset().mockResolvedValue('OK');
     mocks.account = { proof: null, status: 'allowed', userId: 'user-1' };
     mocks.rpc.mockResolvedValue({ data: 'handoff-token', error: null });
     mocks.getUser.mockResolvedValue({
@@ -124,6 +153,9 @@ describe('signed-in continue for a first-party app', () => {
       'https://mastermind.tuturuuu.com/verify-token'
     );
     expect(location.searchParams.get('token')).toBe('handoff-token');
+    expect(location.searchParams.get(MASTERMIND_HANDOFF_ISSUER_PARAM)).toBe(
+      createMastermindHandoffIssuerProof('handoff-token')
+    );
     expect(location.searchParams.get('nextUrl')).toBe('/ship');
     expect(mocks.rpc).toHaveBeenCalledWith(
       'generate_cross_app_token_pkce',
@@ -166,14 +198,68 @@ describe('signed-in continue for a first-party app', () => {
   it('never mints for a request that is not a top-level navigation', async () => {
     const requests: Record<string, string>[] = [
       {},
-      { 'sec-fetch-mode': 'cors', 'sec-fetch-dest': 'empty' },
+      {
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-site': 'same-origin',
+      },
+      { ...navigation, 'sec-purpose': 'prefetch' },
       { 'sec-fetch-mode': 'navigate', 'sec-fetch-dest': 'iframe' },
       { 'sec-fetch-mode': 'no-cors', 'sec-fetch-dest': 'image' },
     ];
     for (const headers of requests) {
       const params = query();
-      expectLogin((await open(params, headers)).location, params);
+      expect((await open(params, headers)).response.status).toBe(403);
     }
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('refuses a same-origin fetch with a caller-supplied challenge', async () => {
+    const response = await POST(
+      new NextRequest('https://tuturuuu.com/api/v1/auth/cross-app-return', {
+        method: 'POST',
+        headers: { ...navigation, origin: 'https://tuturuuu.com' },
+        body: JSON.stringify({
+          codeChallenge: CHALLENGE,
+          codeChallengeMethod: 'S256',
+          returnUrl: MASTERMIND,
+        }),
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.claim).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('refuses a navigation with no proof or with a changed callback', async () => {
+    const changed = new URL(query().get('returnUrl')!);
+    changed.searchParams.set('nextUrl', '/projects');
+    for (const returnUrl of [MASTERMIND, changed.href]) {
+      expect((await open(query({ returnUrl }))).response.status).toBe(403);
+    }
+    expect(mocks.claim).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('claims the server-created transaction once before minting', async () => {
+    mocks.claim.mockResolvedValueOnce('OK').mockResolvedValueOnce(null);
+    const params = query({ code_challenge: 'd'.repeat(43) });
+    const responses = await Promise.all([open(params), open(params)]);
+    expect(responses.map(({ response }) => response.status).sort()).toEqual([
+      303, 409,
+    ]);
+    expect(mocks.claim).toHaveBeenCalledWith(
+      `mastermind:login:used:${CHALLENGE}`,
+      '1',
+      { ex: 600, nx: true }
+    );
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc.mock.calls[0]?.[1].p_code_challenge).toBe(CHALLENGE);
+  });
+
+  it('fails closed when the replay store is unavailable', async () => {
+    mocks.claim.mockRejectedValueOnce(new Error('offline'));
+    expect((await open(query())).response.status).toBe(503);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
@@ -181,7 +267,6 @@ describe('signed-in continue for a first-party app', () => {
     for (const params of [
       query({ confirmAccount: '1' }),
       query({ multiAccount: 'true' }),
-      query({ expectedUserId: 'user-1' }),
       query({ returnUrl: PARTNER }),
       // Only browser-bound Worker-only targets continue here.
       query({
@@ -191,8 +276,6 @@ describe('signed-in continue for a first-party app', () => {
       query({ returnUrl: 'https://tuturuuu.com/verify-token?nextUrl=%2Fhome' }),
       query({ returnUrl: 'https://evil.example/verify-token' }),
       new URLSearchParams(),
-      // A Mastermind handoff without the browser's challenge is never minted.
-      new URLSearchParams({ returnUrl: MASTERMIND }),
     ]) {
       expectLogin((await open(params)).location, params);
     }

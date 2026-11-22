@@ -1,3 +1,4 @@
+import { MASTERMIND_HANDOFF_ISSUER_PARAM } from '@tuturuuu/auth/app-redeem-proof';
 import {
   type AppMountConfig,
   type ResolvedMount,
@@ -152,6 +153,7 @@ export async function mastermindRequest(
         signedIn && !isOwner(signedIn) && !chooseAccount
           ? fleetReturnPath(next)
           : next,
+        env,
         {
           // `mfa=fresh` is the step-up before a reply: the second factor is
           // verified again even when the session already holds one.
@@ -159,7 +161,8 @@ export async function mastermindRequest(
           // `account=choose` lets the person pick another Tuturuuu account.
           chooseAccount,
           signedIn: hasCentralSessionHint(request),
-        }
+        },
+        now
       )
     );
   }
@@ -169,9 +172,17 @@ export async function mastermindRequest(
     // verifier.
     const state = consumeLoginState(request, url.searchParams.get('nextUrl'));
     const token = url.searchParams.get('token');
+    const issuerProof = url.searchParams.get(MASTERMIND_HANDOFF_ISSUER_PARAM);
     const session =
       state && isHandoffToken(token)
-        ? await exchangeHandoff(token, state.verifier, env, now)
+        ? await exchangeHandoff(
+            token,
+            state.verifier,
+            env,
+            now,
+            fetch,
+            issuerProof ?? undefined
+          )
         : null;
     if (!state || !session) {
       const retry = safeNextPath(url.searchParams.get('nextUrl'));
@@ -232,7 +243,7 @@ export async function mastermindRequest(
     // step-up is under way, or for any other request, the notice answers.
     const cleared = clearedSessionCookies();
     if (isNavigation(request) && !readCookie(request, MFA_STEP_COOKIE)) {
-      const step = await loginRedirect(here, { freshMfa: true });
+      const step = await loginRedirect(here, env, { freshMfa: true }, now);
       for (const cookie of cleared) step.headers.append('Set-Cookie', cookie);
       step.headers.append('Set-Cookie', START_MFA_STEP);
       return secure(step);
@@ -261,9 +272,12 @@ export async function mastermindRequest(
     }
     return isNavigation(request)
       ? secure(
-          await loginRedirect(fleetPath ? fleetReturnPath(here) : here, {
-            signedIn: hasCentralSessionHint(request),
-          })
+          await loginRedirect(
+            fleetPath ? fleetReturnPath(here) : here,
+            env,
+            { signedIn: hasCentralSessionHint(request) },
+            now
+          )
         )
       : secure(new Response('Forbidden', { status: 403 }));
   }

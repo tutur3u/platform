@@ -1,6 +1,10 @@
 import {
   APP_REDEEM_PROOF_HEADER,
   createAppRedeemProof,
+  createMastermindLoginTransaction,
+  MASTERMIND_FRESH_MFA_SECONDS,
+  MASTERMIND_LOGIN_TRANSACTION_PARAM,
+  MASTERMIND_LOGIN_TRANSACTION_SECONDS,
 } from '@tuturuuu/auth/app-redeem-proof';
 import {
   APP_SESSION_COOKIE_NAME,
@@ -62,7 +66,7 @@ export function safeNextPath(raw: string | null) {
  */
 export const LOGIN_STATE_COOKIE = '__Host-mastermind_login_state';
 export const LOGIN_STATE_PARAM = 'mm_state';
-const LOGIN_STATE_SECONDS = 600;
+const LOGIN_STATE_SECONDS = MASTERMIND_LOGIN_TRANSACTION_SECONDS;
 
 function base64url(bytes: Uint8Array) {
   let binary = '';
@@ -97,7 +101,7 @@ const LOGIN_NONCE = /^[A-Za-z0-9_-]{22}$/;
  * a step-up, in seconds: in practice, verified during that sign-in. Web
  * judges the proof's age again, against its own window, when a reply is sent.
  */
-export const FRESH_MFA_MAX_AGE_SECONDS = 30;
+export const FRESH_MFA_MAX_AGE_SECONDS = MASTERMIND_FRESH_MFA_SECONDS;
 
 /**
  * Whether the browser carries a Tuturuuu session cookie on the shared
@@ -127,12 +131,16 @@ const WEB_CONTINUE_PATH = '/api/v1/auth/cross-app-return';
  */
 export async function loginRedirect(
   nextPath: string,
+  env: MastermindEnvironment,
   {
     freshMfa = false,
     chooseAccount = false,
     signedIn = false,
-  }: { freshMfa?: boolean; chooseAccount?: boolean; signedIn?: boolean } = {}
+  }: { freshMfa?: boolean; chooseAccount?: boolean; signedIn?: boolean } = {},
+  now = Date.now()
 ) {
+  const secret = env.TUTURUUU_APP_COORDINATION_SECRET;
+  if (!secret) return new Response('Sign-in unavailable', { status: 503 });
   const state = randomToken(16);
   const verifier = randomToken(32);
   const next = new URL(safeNextPath(nextPath), MASTERMIND_ORIGIN);
@@ -144,12 +152,17 @@ export async function loginRedirect(
     signedIn && !freshMfa && !chooseAccount ? WEB_CONTINUE_PATH : '/login',
     WEB_ORIGIN
   );
+  const challenge = await pkceChallenge(verifier);
+  verify.searchParams.set(
+    MASTERMIND_LOGIN_TRANSACTION_PARAM,
+    createMastermindLoginTransaction(verify, challenge, freshMfa, secret, now)
+  );
   login.searchParams.set('returnUrl', verify.toString());
   if (freshMfa)
     login.searchParams.set('mfaMaxAge', String(FRESH_MFA_MAX_AGE_SECONDS));
   // Web shows its account picker instead of continuing as the current one.
   if (chooseAccount) login.searchParams.set('confirmAccount', '1');
-  login.searchParams.set('code_challenge', await pkceChallenge(verifier));
+  login.searchParams.set('code_challenge', challenge);
   login.searchParams.set('code_challenge_method', 'S256');
   const headers = new Headers({ Location: login.toString() });
   headers.append(
@@ -317,12 +330,18 @@ export async function exchangeHandoff(
   codeVerifier: string,
   env: MastermindEnvironment,
   now = Date.now(),
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  issuerProof?: string
 ) {
   try {
     const body = await postWeb(
       '/api/v1/auth/cross-app-token/verify',
-      { targetApp: TARGET, token, codeVerifier },
+      {
+        targetApp: TARGET,
+        token,
+        codeVerifier,
+        ...(issuerProof ? { issuerProof } : {}),
+      },
       token,
       env,
       fetcher
