@@ -185,11 +185,13 @@ trust signal that a spoofed User-Agent cannot produce.
   to the Supabase session it was issued for, and never logs it. A sign-out,
   an account removal or an account switch clears it. `ApiClient` attaches the
   stored credential to authenticated mutations only, and a request carrying
-  it never follows redirects, so it cannot reach another host. Secure
-  storage reads and writes on the request path wait at most three seconds;
-  past that the mutation goes out without the credential and no mint starts,
-  so a stalled Keychain/Keystore read can never hold a request before its
-  HTTP timeout begins. A late read still fills the cache. A mutation
+  it never follows redirects, so it cannot reach another host. Each
+  secure storage read or write on the request path waits at most three
+  seconds, so a stalled Keychain/Keystore can never hold a request before its
+  HTTP timeout begins. A read that times out sends the mutation without the
+  credential and starts no mint; a write that times out stays queued while a
+  freshly minted credential is still used for the replay. Concurrent callers
+  share one in-flight read, and a late read still fills the cache. A mutation
   with none, or with under one hour left, mints in the background, so a slow
   Turnstile page never delays the request. On a 403 with
   `x-abuse-challenge: turnstile` the client replays the request once with a

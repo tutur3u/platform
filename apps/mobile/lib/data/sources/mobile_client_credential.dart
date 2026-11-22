@@ -117,6 +117,7 @@ class MobileClientCredentials {
   final Duration _storageTimeout;
 
   Map<String, _Credential>? _entries;
+  Future<Map<String, _Credential>>? _loading;
   Future<void> _writes = Future<void>.value();
   final _inFlight = <String, Future<String?>>{};
   final _failures = <String, int>{};
@@ -128,9 +129,15 @@ class MobileClientCredentials {
 
   DateTime get _now => _clock().toUtc();
 
-  Future<Map<String, _Credential>> _load() async {
+  /// One storage read at a time: while secure storage is slow, every caller
+  /// shares the read already in flight instead of starting another.
+  Future<Map<String, _Credential>> _load() {
     final loaded = _entries;
-    if (loaded != null) return loaded;
+    if (loaded != null) return Future.value(loaded);
+    return _loading ??= _readStorage().whenComplete(() => _loading = null);
+  }
+
+  Future<Map<String, _Credential>> _readStorage() async {
     final entries = <String, _Credential>{};
     try {
       final raw = await _storage.read(key: _storageKey);

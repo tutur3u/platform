@@ -129,6 +129,50 @@ void main() {
     );
   });
 
+  test('callers share one stalled storage read', () async {
+    final slow = _Storage();
+    when(
+      () => slow.read(key: any(named: 'key')),
+    ).thenAnswer((_) => Completer<String?>().future);
+    final cold = MobileClientCredentials(
+      storage: slow,
+      clock: () => now,
+      storageTimeout: const Duration(milliseconds: 20),
+    );
+    await Future.wait([
+      cold.current(userId: 'user-a', accessToken: accessA),
+      cold.current(userId: 'user-a', accessToken: accessA),
+    ]);
+    await cold.current(userId: 'user-a', accessToken: accessA);
+    verify(() => slow.read(key: any(named: 'key'))).called(1);
+  });
+
+  test('a stalled write still returns the minted credential', () async {
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((_) => Completer<void>().future);
+    final stalled = MobileClientCredentials(
+      storage: storage,
+      clock: () => now,
+      turnstile: (_, _) async => 'captcha',
+      storageTimeout: const Duration(milliseconds: 20),
+    );
+    expect(
+      await stalled
+          .ensure(
+            userId: 'user-a',
+            accessToken: accessA,
+            origin: origin,
+            mint: (_) async => issued('minted'),
+          )
+          .timeout(const Duration(seconds: 2)),
+      'minted',
+    );
+  });
+
   test('binds the Turnstile solve to the session like the server', () {
     expect(supabaseSessionId(accessA, 'user-a'), 'session-1');
     expect(supabaseSessionId(accessA, 'user-b'), isNull);
