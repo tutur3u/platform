@@ -106,3 +106,87 @@ test('trims oldest UTF-8 accounting buckets to the byte budget and keeps quotas'
   assert.ok(machine.buckets.length > 0 && machine.buckets.length < 384);
   assert.equal(machine.buckets[0].day, '2026-11-21');
 });
+
+test('names why each machine was not read without leaking the failure', async () => {
+  const now = new Date('2026-11-21T12:00:00.000Z');
+  const failures = {
+    refused: new Error('usage_ticket_refused'),
+    mismatch: new Error('usage_environment_mismatch'),
+    timeout: new Error('usage_rpc_timeout'),
+    offline: new TypeError('fetch failed: connect ECONNREFUSED fixture-host'),
+    odd: new Error('unexpected fixture-bearer detail'),
+  };
+  const configured = [...Object.keys(failures), 'missing', 'silent'];
+  const collect = usageCollector({
+    root: '/fixture',
+    configs: configured.map((id) => ({
+      id,
+      environmentId: id,
+      origin: 'http://127.0.0.1:3773',
+    })),
+    readSecret: (file) => {
+      if (file.endsWith('/missing')) {
+        throw Object.assign(new Error('ENOENT: fixture path'), {
+          code: 'ENOENT',
+        });
+      }
+      return 'fixture-bearer';
+    },
+    now,
+    async collect({ environmentId }) {
+      if (environmentId === 'silent') {
+        return {
+          quota: { kind: 'unavailable' },
+          accounts: [],
+          accounting: { kind: 'unavailable' },
+          buckets: [],
+        };
+      }
+      throw failures[environmentId];
+    },
+  });
+  const machines = [...configured, 'unlinked'].map((id) => ({ id, label: id }));
+  const { body } = await collect(machines);
+  const reasons = Object.fromEntries(
+    JSON.parse(body).machines.map((machine) => [
+      machine.id,
+      [machine.quota.reason, machine.accounting.reason],
+    ])
+  );
+  assert.deepEqual(reasons, {
+    refused: ['reader_refused', 'reader_refused'],
+    mismatch: ['environment_mismatch', 'environment_mismatch'],
+    timeout: ['unreachable', 'unreachable'],
+    offline: ['unreachable', 'unreachable'],
+    odd: ['read_failed', 'read_failed'],
+    missing: ['reader_missing', 'reader_missing'],
+    silent: ['not_reported', 'not_reported'],
+    unlinked: ['not_configured', 'not_configured'],
+  });
+  assert.doesNotMatch(body, /fixture-bearer|fixture-host|fixture path/);
+
+  // A changed reason alone is a new snapshot, so a renewed reader publishes.
+  const renewed = usageCollector({
+    root: '/fixture',
+    configs: [{ id: 'refused', environmentId: 'refused', origin: 'http://127.0.0.1:3773' }],
+    readSecret: () => 'fixture-bearer',
+    now,
+    collect: async () => {
+      throw new Error('usage_rpc_timeout');
+    },
+  });
+  assert.notEqual(
+    (await renewed([{ id: 'refused', label: 'refused' }])).hash,
+    (
+      await usageCollector({
+        root: '/fixture',
+        configs: [{ id: 'refused', environmentId: 'refused', origin: 'http://127.0.0.1:3773' }],
+        readSecret: () => 'fixture-bearer',
+        now,
+        collect: async () => {
+          throw new Error('usage_ticket_refused');
+        },
+      })([{ id: 'refused', label: 'refused' }])
+    ).hash
+  );
+});

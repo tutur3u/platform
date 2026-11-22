@@ -199,3 +199,87 @@ test('uses a valid reset when equally used quota windows disagree', () => {
     { kind: 'session', usedPercent: 88, resetsAt: '2026-11-21T12:00:00.000Z' },
   ]);
 });
+
+// Shapes T3 returned on 2026-11-22 for Cursor (two monthly rows), OpenCode
+// (session, weekly and monthly) and a signed-in provider with no window.
+test('reports monthly limits and names a signed-in provider without windows', () => {
+  const limits = (windows) => ({
+    checkedAt: '2026-11-21T18:29:00+07:00',
+    windows,
+  });
+  const { accounts } = normalizeT3Quota(
+    {
+      providers: [
+        {
+          ...PROVIDER,
+          instanceId: 'cursor',
+          driver: 'cursor',
+          usageLimits: limits([
+            { kind: 'monthly', usedPercent: 100, resetsAt: '2026-11-26T03:52:28.283Z' },
+            { kind: 'monthly', usedPercent: 100, resetsAt: '2026-11-26T03:52:28.283Z' },
+          ]),
+        },
+        {
+          ...PROVIDER,
+          instanceId: 'opencode',
+          driver: 'opencode',
+          usageLimits: limits([
+            { kind: 'session', usedPercent: 40, resetsAt: null },
+            { kind: 'weekly', usedPercent: 69, resetsAt: null },
+            { kind: 'monthly', usedPercent: 100, resetsAt: null },
+          ]),
+        },
+        {
+          ...PROVIDER,
+          instanceId: 'opencode-open',
+          driver: 'opencode',
+          usageLimits: limits([
+            { kind: 'session', usedPercent: 40, resetsAt: null },
+            { kind: 'weekly', usedPercent: 69, resetsAt: null },
+            { kind: 'monthly', usedPercent: 89, resetsAt: null },
+          ]),
+        },
+        {
+          ...PROVIDER,
+          instanceId: 'no-windows',
+          usageLimits: limits([]),
+        },
+      ],
+    },
+    NOW
+  );
+  const [cursor, capped, open, silent] = accounts;
+  assert.deepEqual(cursor.status, { kind: 'limited', reason: 'monthly' });
+  assert.deepEqual(cursor.windows, [
+    { kind: 'monthly', usedPercent: 100, resetsAt: '2026-11-26T03:52:28.283Z' },
+  ]);
+  // Two rows at most, so older clients keep parsing; the exhausted one stays.
+  assert.deepEqual(capped.status, { kind: 'limited', reason: 'monthly' });
+  assert.deepEqual(
+    capped.windows.map((window) => window.kind),
+    ['session', 'monthly']
+  );
+  assert.deepEqual(open.status, { kind: 'available' });
+  assert.deepEqual(
+    open.windows.map((window) => window.kind),
+    ['session', 'weekly']
+  );
+  assert.deepEqual(silent.status, { kind: 'unknown', reason: 'not_reported' });
+});
+
+test('treats a missing provider store and a provisional refresh as complete', () => {
+  const summary = (sources) =>
+    normalizeT3Accounting({ readAt: NOW.toISOString(), sources, buckets: [] });
+  assert.equal(
+    summary([
+      { status: 'ok', refreshing: true },
+      { status: 'missing' },
+    ]).accounting.kind,
+    'complete'
+  );
+  assert.equal(
+    summary([{ status: 'ok' }, { status: 'error' }]).accounting.kind,
+    'partial'
+  );
+  assert.equal(summary([]).accounting.kind, 'partial');
+});

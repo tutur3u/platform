@@ -9,6 +9,52 @@ const BYTE_LIMIT = 92 * 1024;
 const KEY = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const ENVIRONMENT = /^[a-z0-9-]{1,80}$/i;
 
+// Closed reasons for a machine whose quota or accounting was not read. Only
+// these values leave the host; credentials and RPC bodies never do.
+const READ_FAILURES = new Map([
+  ['usage_ticket_refused', 'reader_refused'],
+  ['usage_ticket_invalid', 'reader_refused'],
+  ['usage_environment_mismatch', 'environment_mismatch'],
+  ['usage_origin_invalid', 'config_invalid'],
+  ['secret_not_a_file', 'reader_missing'],
+  ['secret_file_permissions', 'reader_missing'],
+  ['secret_too_short', 'reader_missing'],
+  ['usage_rpc_timeout', 'unreachable'],
+  ['usage_rpc_disconnected', 'unreachable'],
+]);
+
+export function usageReadFailure(error) {
+  const message = error instanceof Error ? error.message : '';
+  if (READ_FAILURES.has(message)) return READ_FAILURES.get(message);
+  if (error?.code === 'ENOENT') return 'reader_missing';
+  if (
+    error?.name === 'TimeoutError' ||
+    error?.name === 'AbortError' ||
+    error instanceof TypeError
+  ) {
+    // fetch reports refused connections and DNS failures as TypeError.
+    return 'unreachable';
+  }
+  return 'read_failed';
+}
+
+function unread(machine, reason) {
+  return {
+    ...machine,
+    quota: { kind: 'unavailable', reason },
+    accounting: { kind: 'unavailable', reason },
+    accounts: [],
+    buckets: [],
+  };
+}
+
+/** A source T3 answered without a usable reply is named as not reported. */
+function withReportedReason(source) {
+  return source.kind === 'unavailable' && !source.reason
+    ? { ...source, reason: 'not_reported' }
+    : source;
+}
+
 function configuredMachines(raw) {
   if (raw == null) return new Map();
   if (!Array.isArray(raw) || raw.length > MAX_MACHINES) {
@@ -49,27 +95,25 @@ export function usageCollector({
       fleetMachines.slice(0, MAX_MACHINES).map(async ({ id, label }) => {
         const machine = { id, label: fleetText(label, 48) || id };
         const config = configured.get(id);
-        if (config) {
-          try {
-            const result = await collect({
-              ...config,
-              bearer: readSecret(path.join(root, 'usage-readers', id)),
-              signal,
-              now,
-            });
-            return { ...machine, ...result };
-          } catch {
-            // Closed status only. Neither credentials nor RPC error bodies
-            // are returned or logged.
-          }
+        if (!config) return unread(machine, 'not_configured');
+        try {
+          const result = await collect({
+            ...config,
+            bearer: readSecret(path.join(root, 'usage-readers', id)),
+            signal,
+            now,
+          });
+          return {
+            ...machine,
+            ...result,
+            quota: withReportedReason(result.quota),
+            accounting: withReportedReason(result.accounting),
+          };
+        } catch (error) {
+          // Closed reason only. Neither credentials nor RPC error bodies
+          // are returned or logged.
+          return unread(machine, usageReadFailure(error));
         }
-        return {
-          ...machine,
-          quota: { kind: 'unavailable' },
-          accounting: { kind: 'unavailable' },
-          accounts: [],
-          buckets: [],
-        };
       })
     );
 
@@ -122,8 +166,8 @@ export function usageCollector({
     }
     const fingerprint = machines.map(({ quota, accounting, ...machine }) => ({
       ...machine,
-      quota: quota.kind,
-      accounting: accounting.kind,
+      quota: [quota.kind, quota.reason],
+      accounting: [accounting.kind, accounting.reason],
     }));
     return {
       path: ROUTE,

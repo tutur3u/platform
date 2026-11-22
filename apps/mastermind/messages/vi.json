@@ -267,22 +267,31 @@
       "cost": "Chi phí (USD)",
       "day": "Ngày",
       "emailUnknown": "Chưa có email tài khoản",
+      "gap": {
+        "partial": "Một số nguồn mức dùng trên {machines} chưa đầy đủ.",
+        "stale": "Bản ghi mức dùng từ {machines} đã cũ hơn 2 phút.",
+        "unpriced": "{count} bản ghi mức dùng chưa có giá, nên tổng chi phí không tính các bản ghi này.",
+        "unread": "Không có bản ghi mức dùng từ {machines}."
+      },
       "input": "Đầu vào chưa lưu đệm",
       "loading": "Đang tải mức sử dụng",
       "machine": "Máy",
       "missing": "Chưa có dữ liệu",
       "model": "Mô hình",
       "noConfirmedQuota": "Chưa xác nhận được hạn mức hiện tại",
+      "noneAvailable": "Hiện không tài khoản nào chạy được. Mỗi tài khoản đều bị giới hạn, đã đăng xuất hoặc không báo hạn mức.",
       "output": "Đầu ra",
       "partial": "Thiếu một phần dữ liệu sử dụng hoặc giá. Tổng chi phí gồm các bản ghi đã có giá.",
       "provider": "Nhà cung cấp",
       "readiness": "Có thể chạy ngay",
       "reason": {
         "disabled": "Nhà cung cấp đã tắt hoặc chưa khả dụng trên máy này.",
+        "monthly": "Đã chạm giới hạn tháng.",
         "not_authenticated": "Cần đăng nhập.",
+        "not_reported": "Đã đăng nhập, nhưng nhà cung cấp chưa báo khung hạn mức nào.",
         "provider": "Đã chạm giới hạn chi tiêu.",
         "session": "Đã hết hạn mức phiên.",
-        "unavailable": "Không đọc được hạn mức.",
+        "unavailable": "Nhà cung cấp báo hạn mức hiện không khả dụng.",
         "unsupported": "Nhà cung cấp này không báo hạn mức tại đây.",
         "weekly": "Đã hết hạn mức tuần."
       },
@@ -299,7 +308,18 @@
       "unattributed": "Chưa rõ tài khoản",
       "unavailable": "Tạm thời không tải được mức sử dụng.",
       "unpublished": "Chưa có bản công bố mức sử dụng.",
+      "unread": {
+        "config_invalid": "Thiết lập trình đọc mức dùng của máy này không hợp lệ.",
+        "environment_mismatch": "Máy trả lời với một môi trường T3 khác, nên mức dùng không được đọc.",
+        "not_configured": "Máy này chưa được thiết lập trình đọc mức dùng, nên hạn mức của máy không được đọc.",
+        "not_reported": "Máy đã phản hồi nhưng không kèm số liệu hạn mức.",
+        "read_failed": "Không đọc được mức dùng trên máy này.",
+        "reader_missing": "Bộ phát hành thiếu thông tin xác thực của trình đọc mức dùng cho máy này.",
+        "reader_refused": "Máy này đã từ chối thông tin xác thực của trình đọc mức dùng. Hãy cấp mã đọc mới.",
+        "unreachable": "Máy không phản hồi yêu cầu đọc mức dùng."
+      },
       "window": {
+        "monthly": "Đã dùng trong tháng",
         "session": "Đã dùng trong phiên",
         "weekly": "Đã dùng trong tuần"
       }

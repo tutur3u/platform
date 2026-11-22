@@ -1,9 +1,7 @@
 import { Card } from '@tuturuuu/ui/card';
-import {
-  FLEET_USAGE_STALE_MS,
-  type FleetUsageSnapshot,
-} from '../../../web/src/lib/mastermind/fleet/usage-contract';
+import type { FleetUsageSnapshot } from '../../../web/src/lib/mastermind/fleet/usage-contract';
 import { useI18n } from '../i18n';
+import { accountingGaps, hasAccountingGaps } from './model';
 
 type Machine = FleetUsageSnapshot['machines'][number];
 type Bucket = Machine['buckets'][number];
@@ -109,18 +107,31 @@ export function UsageAccounting({
     (row) => `${row.provider} · ${row.model}`
   ).sort((a, b) => b[1] - a[1]);
   const byAccount = [...accounts].sort((a, b) => b[1][1] - a[1][1]);
-  const incomplete =
-    machines.some(
-      ({ accounting }) =>
-        accounting.kind !== 'complete' ||
-        now - Date.parse(accounting.observedAt) > FLEET_USAGE_STALE_MS
-    ) || rows.some((row) => row.costUsd === null || row.unpricedRecords > 0);
+  const gaps = accountingGaps(machines, rows, now);
 
   return (
     <div className="space-y-3">
       <h3 className="font-semibold">{t('usage.cost')}</h3>
-      {incomplete && (
-        <p className="text-muted-foreground text-sm">{t('usage.partial')}</p>
+      {hasAccountingGaps(gaps) && (
+        <div className="space-y-1 text-muted-foreground text-sm">
+          <p>{t('usage.partial')}</p>
+          {gaps.unread.length > 0 && (
+            <p>{t('usage.gap.unread', { machines: gaps.unread.join(', ') })}</p>
+          )}
+          {gaps.partial.length > 0 && (
+            <p>
+              {t('usage.gap.partial', { machines: gaps.partial.join(', ') })}
+            </p>
+          )}
+          {gaps.stale.length > 0 && (
+            <p>{t('usage.gap.stale', { machines: gaps.stale.join(', ') })}</p>
+          )}
+          {gaps.unpriced > 0 && (
+            <p>
+              {t('usage.gap.unpriced', { count: count.format(gaps.unpriced) })}
+            </p>
+          )}
+        </div>
       )}
       <div className="grid gap-3 md:grid-cols-3">
         <CostBars title={t('usage.byDay')} rows={byDay} currency={currency} />

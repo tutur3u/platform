@@ -143,4 +143,57 @@ describe('fleet usage route', () => {
     ).toBe(409);
     expect(await (await get()).json()).toEqual({ snapshot, receivedAt: NOW });
   });
+
+  it('keeps why a machine was not read and monthly provider windows', async () => {
+    const [machine] = snapshot.machines;
+    const account = machine!.accounts[0]!;
+    const explained = {
+      ...snapshot,
+      machines: [
+        {
+          ...machine,
+          accounting: { kind: 'unavailable', reason: 'not_reported' },
+          accounts: [
+            {
+              ...account,
+              status: { kind: 'limited', reason: 'monthly' },
+              windows: [{ kind: 'monthly', usedPercent: 100, resetsAt: NOW }],
+            },
+            {
+              ...account,
+              id: 'signed-in-without-windows',
+              status: { kind: 'unknown', reason: 'not_reported' },
+              windows: [],
+            },
+          ],
+        },
+        {
+          id: 'unread-machine',
+          label: 'Unread machine',
+          quota: { kind: 'unavailable', reason: 'reader_refused' },
+          accounting: { kind: 'unavailable', reason: 'reader_refused' },
+          accounts: [],
+          buckets: [],
+        },
+      ],
+    };
+    expect((await put(explained)).status).toBe(200);
+    expect(await (await get()).json()).toEqual({
+      snapshot: explained,
+      receivedAt: NOW,
+    });
+
+    vi.setSystemTime(new Date('2026-11-21T11:25:01.000Z'));
+    const invented = {
+      ...explained,
+      generatedAt: '2026-11-21T11:25:01.000Z',
+      machines: [
+        {
+          ...explained.machines[1],
+          quota: { kind: 'unavailable', reason: 'bearer token text' },
+        },
+      ],
+    };
+    expect((await put(invented)).status).toBe(422);
+  });
 });

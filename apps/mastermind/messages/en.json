@@ -267,22 +267,31 @@
       "cost": "Cost in USD",
       "day": "Day",
       "emailUnknown": "Account email unavailable",
+      "gap": {
+        "partial": "Some usage sources are incomplete on {machines}.",
+        "stale": "Usage records from {machines} are older than 2 minutes.",
+        "unpriced": "{count} usage records have no price, so cost totals leave them out.",
+        "unread": "No usage records from {machines}."
+      },
       "input": "Uncached input",
       "loading": "Loading fleet usage",
       "machine": "Machine",
       "missing": "Unavailable",
       "model": "Model",
       "noConfirmedQuota": "No current quota confirmed",
+      "noneAvailable": "No account can run now. Each one is limited, signed out or not reporting quota.",
       "output": "Output",
       "partial": "Some usage or prices are missing. Totals include the priced records available.",
       "provider": "Provider",
       "readiness": "What can run now",
       "reason": {
         "disabled": "Provider is disabled or unavailable on this machine.",
+        "monthly": "Monthly limit reached.",
         "not_authenticated": "Sign-in required.",
+        "not_reported": "Signed in, but the provider has not reported a quota window.",
         "provider": "Provider spend cap reached.",
         "session": "Session limit reached.",
-        "unavailable": "Quota could not be read.",
+        "unavailable": "The provider reported its quota as unavailable.",
         "unsupported": "This provider does not report quota here.",
         "weekly": "Weekly limit reached."
       },
@@ -299,7 +308,18 @@
       "unattributed": "Account unavailable",
       "unavailable": "Fleet usage is temporarily unavailable.",
       "unpublished": "Fleet usage has not been published yet.",
+      "unread": {
+        "config_invalid": "The usage reader settings for this machine are invalid.",
+        "environment_mismatch": "The machine answered as a different T3 environment, so usage was not read.",
+        "not_configured": "No usage reader is set up for this machine, so its quota is not read.",
+        "not_reported": "The machine answered without a quota reading.",
+        "read_failed": "The usage read failed on this machine.",
+        "reader_missing": "This machine's usage reader credential is missing on the publisher.",
+        "reader_refused": "This machine refused the usage reader credential. Issue a new reader token.",
+        "unreachable": "The machine did not answer the usage read."
+      },
       "window": {
+        "monthly": "Monthly used",
         "session": "Session used",
         "weekly": "Weekly used"
       }

@@ -5,7 +5,11 @@ import { fleetText } from './scrub.mjs';
 
 const ACCOUNT_MAX = 32;
 const BUCKET_MAX = 384;
-const WINDOW_KINDS = ['session', 'weekly'];
+const WINDOW_KINDS = ['session', 'weekly', 'monthly'];
+// Clients released before monthly windows accept at most two rows.
+const WINDOW_MAX = 2;
+// A source with no provider store has nothing to count; it does not leave a gap.
+const COMPLETE_SOURCE = new Set(['ok', 'missing']);
 const ACCOUNT_EMAIL =
   /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i;
 const PLAN_LABEL =
@@ -49,7 +53,7 @@ function accountId(instanceId) {
   return createHash('sha256').update(instanceId).digest('hex').slice(0, 24);
 }
 
-function normalizeWindows(limits) {
+function accountWindows(limits) {
   if (!Array.isArray(limits?.windows)) return [];
   return WINDOW_KINDS.flatMap((kind) => {
     // Model-specific windows cannot establish that the entire account is capped.
@@ -85,6 +89,20 @@ function normalizeWindows(limits) {
   });
 }
 
+/** Keeps exhausted windows first, then the shortest, in canonical order. */
+function publishedWindows(windows) {
+  if (windows.length <= WINDOW_MAX) return windows;
+  const rank = (window) => WINDOW_KINDS.indexOf(window.kind);
+  return [...windows]
+    .sort(
+      (a, b) =>
+        Number(b.usedPercent >= 100) - Number(a.usedPercent >= 100) ||
+        rank(a) - rank(b)
+    )
+    .slice(0, WINDOW_MAX)
+    .sort((a, b) => rank(a) - rank(b));
+}
+
 function statusFor(row, windows) {
   const unknown = (reason) => ({ kind: 'unknown', reason });
   if (!row.enabled || !row.installed) return unknown('disabled');
@@ -102,9 +120,9 @@ function statusFor(row, windows) {
   if (limits?.zeroSpendCap) return { kind: 'limited', reason: 'provider' };
   const exhausted = windows.find((window) => window.usedPercent >= 100);
   if (exhausted) return { kind: 'limited', reason: exhausted.kind };
-  if (row.availability === 'unavailable' || !windows.length) {
-    return unknown('unavailable');
-  }
+  if (row.availability === 'unavailable') return unknown('unavailable');
+  // Signed in, but the provider has not returned an account-wide window.
+  if (!windows.length) return unknown('not_reported');
   return { kind: 'available' };
 }
 
@@ -114,7 +132,7 @@ function normalizeAccount(row) {
   const provider = fleetText(row.driver, 48);
   if (!provider) return null;
   const authenticated = row.auth?.status === 'authenticated';
-  const windows = normalizeWindows(row.usageLimits);
+  const windows = accountWindows(row.usageLimits);
   return {
     id: accountId(row.instanceId),
     provider,
@@ -126,7 +144,7 @@ function normalizeAccount(row) {
         : null,
     checkedAt: isoTime(row.usageLimits?.checkedAt),
     status: statusFor(row, windows),
-    windows,
+    windows: publishedWindows(windows),
   };
 }
 
@@ -236,9 +254,9 @@ export function normalizeT3Accounting(summary, { trackSources = false } = {}) {
         rows.length !== summary.buckets.length ||
         rows.length > BUCKET_MAX ||
         !summary.sources.length ||
-        summary.sources.some(
-          (source) => source?.status !== 'ok' || source.refreshing
-        )
+        // A provisional read is complete as of readAt while T3 keeps scanning;
+        // the client's freshness limit covers its age.
+        summary.sources.some((source) => !COMPLETE_SOURCE.has(source?.status))
           ? 'partial'
           : 'complete',
       observedAt,

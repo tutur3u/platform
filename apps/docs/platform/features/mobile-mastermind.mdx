@@ -1,7 +1,7 @@
 ---
 title: Mobile Mastermind
 description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-22"
 audience: users
 ---
 
@@ -396,13 +396,43 @@ records the product rules of the shell entry and every tab.
   Keep a private backup of the installed script directory and config before
   switching versions. Restore that directory and config together on rollback.
   Verify a successful core state and answer tick during either switch.
+  Issue each reader on its machine with `t3 auth session issue --scope
+  orchestration:read --scope diagnostics:read --ttl 30d --subject
+  mastermind-usage-reader --token-only`, writing the output straight into
+  `usage-readers/<id>` (mode 0600) without printing it. Readers expire after
+  30 days; a refused or expired reader publishes `reader_refused`, so renew it
+  before then. A machine whose quota or accounting was not read publishes one
+  closed `reason`: `not_configured` (no `usageMachines` entry),
+  `reader_missing`, `reader_refused`, `environment_mismatch`,
+  `config_invalid`, `unreachable`, `not_reported` (T3 answered without that
+  section) or `read_failed`. The reason is part of the publish fingerprint,
+  so a renewed reader publishes at once. Accounts carry at most two quota
+  windows (`session`, `weekly` or `monthly`, exhausted windows first, so older
+  clients still parse them), and a signed-in provider that reports no window
+  reads `not_reported`. Sources T3 marks `missing` (provider not installed)
+  or `refreshing` (provisional read) do not make accounting partial; the
+  partial line names the machines and the unpriced record count. Web and the
+  Mastermind Worker must accept these fields before a publisher that emits
+  them is installed, since the older contract refuses the write. Regression
+  coverage: `scripts/mastermind-fleet/usage-normalize.test.mjs`,
+  `scripts/mastermind-fleet/usage-snapshot.test.mjs`,
+  `apps/web/src/app/api/v1/mastermind/fleet/usage/usage-route.test.ts`,
+  `apps/mastermind/src/usage/model.test.ts` and
+  `apps/mobile/test/features/mastermind/usage/usage_reasons_test.dart`.
 - **Today’s outcomes:** The publisher reads the local T3 failure projection
   from the start of the ICT day. It counts an automatic quota recovery only
   after a linked T3 continuation completes. Missing or unknown structured
-  failures are unclassified. Linked machines without an outcome feed show
-  unavailable coverage. Publisher and machine timestamps show stale after
-  two minutes. Account quota freshness uses the provider’s original check
-  time. The legacy Hub feed retains its own guard and prepared-publication
+  failures are unclassified. T3's peer link lists thread status but not
+  failure kinds, so only the publishing machine has classified outcomes.
+  Every other online or stale machine shows its failed lanes and its lanes
+  recovered after a retry, updated since ICT midnight, with that reason; an
+  offline machine says outcomes are not collected, and outcomes from another
+  day read unavailable. Publisher and machine timestamps show stale after two
+  minutes. Account quota freshness uses the provider’s original check time,
+  judged on a 15-minute limit (`FLEET_USAGE_ACCOUNT_STALE_MS`) because T3
+  rechecks some providers' limits only every two to five minutes. Regression
+  coverage: `apps/mobile/test/features/mastermind/fleet/fleet_today_outcomes_test.dart`.
+  The legacy Hub feed retains its own guard and prepared-publication
   custody.
 - **Delivery and freshness SLO:** Mastermind is the primary owner channel,
   at least as fresh as the WhatsApp relay. Targets on the orchestrator Mac:

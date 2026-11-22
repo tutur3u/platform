@@ -4,6 +4,9 @@ import { scrubFleetText } from './scrub';
 // Storage CAS carries both the old and new value in one RPC.
 export const FLEET_USAGE_MAX_BYTES = 96 * 1024;
 export const FLEET_USAGE_STALE_MS = 120_000;
+// T3 rechecks some providers' limits only every few minutes, so an account's
+// own check time is judged on this longer clock.
+export const FLEET_USAGE_ACCOUNT_STALE_MS = 15 * 60_000;
 
 const time = z.iso.datetime({ offset: true });
 const day = z.iso.date();
@@ -17,7 +20,7 @@ const text = (length: number) =>
 const tokens = z.number().int().nonnegative();
 
 const window = z.strictObject({
-  kind: z.enum(['session', 'weekly']),
+  kind: z.enum(['session', 'weekly', 'monthly']),
   usedPercent: z.number().min(0).max(100).nullable(),
   resetsAt: time.nullable(),
 });
@@ -34,7 +37,7 @@ const account = z.strictObject({
     z.strictObject({ kind: z.literal('available') }),
     z.strictObject({
       kind: z.literal('limited'),
-      reason: z.enum(['session', 'weekly', 'provider']),
+      reason: z.enum(['session', 'weekly', 'monthly', 'provider']),
     }),
     z.strictObject({
       kind: z.literal('unknown'),
@@ -43,6 +46,7 @@ const account = z.strictObject({
         'not_authenticated',
         'disabled',
         'unavailable',
+        'not_reported',
       ]),
     }),
   ]),
@@ -67,8 +71,24 @@ const bucket = z.strictObject({
   costUsd: z.number().nonnegative().nullable(),
 });
 
+// Why a machine's quota or accounting was not read, from the publisher's
+// closed list. Snapshots written before reasons existed omit it.
+const unreadReason = z.enum([
+  'not_configured',
+  'reader_missing',
+  'reader_refused',
+  'environment_mismatch',
+  'config_invalid',
+  'unreachable',
+  'not_reported',
+  'read_failed',
+]);
+
 const source = z.discriminatedUnion('kind', [
-  z.strictObject({ kind: z.literal('unavailable') }),
+  z.strictObject({
+    kind: z.literal('unavailable'),
+    reason: unreadReason.optional(),
+  }),
   z.strictObject({ kind: z.literal('partial'), observedAt: time }),
   z.strictObject({ kind: z.literal('complete'), observedAt: time }),
 ]);

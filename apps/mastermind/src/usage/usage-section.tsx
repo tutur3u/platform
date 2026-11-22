@@ -3,12 +3,10 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useState } from 'react';
-import {
-  FLEET_USAGE_STALE_MS,
-  type FleetUsageSnapshot,
-} from '../../../web/src/lib/mastermind/fleet/usage-contract';
+import type { FleetUsageSnapshot } from '../../../web/src/lib/mastermind/fleet/usage-contract';
 import { Section, SectionMessage } from '../components/section';
 import { FLEET_TIME_ZONE, formatAge, useI18n } from '../i18n';
+import { accountStale, readiness, windowKinds } from './model';
 import { UsageAccounting } from './usage-accounting';
 import { loadUsage } from './server';
 
@@ -17,12 +15,6 @@ type Account = Machine['accounts'][number];
 const ALL = '';
 const REFRESH_MS = 15_000;
 export const USAGE_QUERY_KEY = ['fleet', 'usage'] as const;
-
-function isStale(checkedAt: string | null, now: number) {
-  return (
-    checkedAt !== null && now - Date.parse(checkedAt) > FLEET_USAGE_STALE_MS
-  );
-}
 
 function AccountCard({
   account,
@@ -34,7 +26,7 @@ function AccountCard({
   now: number;
 }) {
   const { locale, t } = useI18n();
-  const stale = isStale(account.checkedAt, now);
+  const stale = accountStale(account, now);
   const dt = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'medium',
@@ -69,7 +61,7 @@ function AccountCard({
         )}
       </div>
       <div className="space-y-3">
-        {(['session', 'weekly'] as const).map((kind) => {
+        {windowKinds(account).map((kind) => {
           const window = account.windows.find((row) => row.kind === kind);
           const reset = window?.resetsAt;
           const used = window?.usedPercent;
@@ -195,20 +187,18 @@ export function UsageSection({ now }: { now: number }) {
           <Card className="gap-2 p-4">
             <h3 className="font-semibold">{t('usage.readiness')}</h3>
             {filtered.map((machine) => {
-              const available = machine.accounts.filter(
-                (account) =>
-                  account.checkedAt &&
-                  !isStale(account.checkedAt, now) &&
-                  account.status.kind === 'available' &&
-                  machine.quota.kind !== 'unavailable' &&
-                  !isStale(machine.quota.observedAt, now)
-              );
+              const line = readiness(machine, machine.accounts, now);
               return (
                 <p key={machine.id} className="text-sm">
                   <span className="font-medium">{machine.label}</span>
                   {' · '}
-                  {available.map((account) => account.instance).join(', ') ||
-                    t('usage.noConfirmedQuota')}
+                  {line.kind === 'available'
+                    ? line.instances.join(', ')
+                    : line.kind === 'unread' && line.reason
+                      ? t(`usage.unread.${line.reason}`)
+                      : line.kind === 'none_available'
+                        ? t('usage.noneAvailable')
+                        : t('usage.noConfirmedQuota')}
                 </p>
               );
             })}
