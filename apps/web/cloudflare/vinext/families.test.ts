@@ -110,6 +110,25 @@ describe('vinext route families', () => {
     }
   });
 
+  it('assigns the replay guard family on api-core only', async () => {
+    const families = async (family?: string) => {
+      vi.resetModules();
+      vi.stubEnv('WEB_VINEXT_FAMILY', family ?? '');
+      const { default: config } = await import('../../cloudflare.config');
+      vi.unstubAllEnvs();
+      const env = (config as { worker: { env: Record<string, unknown> } })
+        .worker.env;
+      return (env.ABUSE_GUARD_FAMILIES as { value: string }).value.split(',');
+    };
+    const base = ['proxy', 'ratelimit', 'integrity'];
+    expect(await families('api-core')).toEqual([...base, 'replay']);
+    expect(await families()).toEqual([...base, 'replay']);
+    for (const { id } of config.families) {
+      if (id === 'api-core') continue;
+      expect(await families(id), id).toEqual(base);
+    }
+  });
+
   it('places the API families in a Gemini-supported region', async () => {
     const placement = async (family?: string) => {
       vi.resetModules();

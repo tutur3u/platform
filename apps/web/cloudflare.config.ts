@@ -67,7 +67,14 @@ export default defineConfig({
         worker: 'tuturuuu-abuse-guard',
         exportName: 'AbuseGuardEntrypoint',
       }),
-      ABUSE_GUARD_FAMILIES: bindings.text('proxy,ratelimit,integrity'),
+      // api-core serves the refresh routes (CLI, cross-app session and app
+      // token exchange) that consume refresh tokens through the fail-closed
+      // `replay` family, so it and the unsplit Worker assign that family.
+      ABUSE_GUARD_FAMILIES: bindings.text(
+        !family || family === 'api-core'
+          ? 'proxy,ratelimit,integrity,replay'
+          : 'proxy,ratelimit,integrity'
+      ),
       // Cron Control has no public ingress. api-core serves Mastermind Ship's
       // Check now and relays it over this binding; Cron Control still checks
       // the MASTERMIND_SHIP_CHECK_TOKEN bearer.
