@@ -30331,6 +30331,66 @@ abstract class AppLocalizations {
   /// **'Privacy details'**
   String get telemetryConsentLearnMore;
 
+  /// No description provided for @telemetryConsentLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Share crash reports and usage data with Google Firebase Analytics and Crashlytics so we can fix problems faster.'**
+  String get telemetryConsentLead;
+
+  /// No description provided for @telemetryConsentCrashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash reports'**
+  String get telemetryConsentCrashTitle;
+
+  /// No description provided for @telemetryConsentCrashBody.
+  ///
+  /// In en, this message translates to:
+  /// **'What went wrong when the app crashed or hit an error.'**
+  String get telemetryConsentCrashBody;
+
+  /// No description provided for @telemetryConsentUsageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage & performance'**
+  String get telemetryConsentUsageTitle;
+
+  /// No description provided for @telemetryConsentUsageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Features you use, app startup time and failed requests.'**
+  String get telemetryConsentUsageBody;
+
+  /// No description provided for @telemetryConsentAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No account details sent to Google'**
+  String get telemetryConsentAccountTitle;
+
+  /// No description provided for @telemetryConsentAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports use app and device identifiers, never your name, email or account ID.'**
+  String get telemetryConsentAccountBody;
+
+  /// No description provided for @telemetryConsentSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change anytime in Settings'**
+  String get telemetryConsentSettingsTitle;
+
+  /// No description provided for @telemetryConsentSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences > Privacy'**
+  String get telemetryConsentSettingsBody;
+
+  /// No description provided for @telemetryConsentDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s shared'**
+  String get telemetryConsentDetails;
+
   /// No description provided for @settingsShareTelemetryDescription.
   ///
   /// In en, this message translates to:

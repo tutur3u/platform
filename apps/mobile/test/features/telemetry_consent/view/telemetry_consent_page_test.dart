@@ -7,6 +7,7 @@ import 'package:mobile/core/router/app_router_telemetry_consent.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/telemetry_consent/view/telemetry_consent_page.dart';
+import 'package:mobile/l10n/gen/app_localizations_en.dart';
 import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -255,51 +256,104 @@ void main() {
       expect(controls.calls, isNot(contains('analytics:true')));
     });
 
-    testWidgets('names Firebase, offers equal choices and a privacy link', (
-      tester,
-    ) async {
-      final (preference, _, _) = await _start(direct: true);
-      final opened = <(Uri, LaunchMode)>[];
-      await tester.pumpApp(
-        TelemetryConsentPage(
-          preference: preference,
-          launch: (uri, mode) async {
-            opened.add((uri, mode));
-            return true;
-          },
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('Help improve Tuturuuu?'), findsOneWidget);
-      expect(find.textContaining('Google Firebase'), findsOneWidget);
-      expect(find.textContaining('anonymous'), findsNothing);
-      expect(find.textContaining('advertising'), findsNothing);
-      final buttons = tester
-          .widgetList<AppButton>(
-            find.ancestor(
-              of: find.textContaining(RegExp(r'^(Allow|Don.t allow)$')),
-              matching: find.byType(AppButton),
-            ),
-          )
-          .toList();
-      expect(buttons.map((b) => b.variant), [
-        AppButtonVariant.outline,
-        AppButtonVariant.outline,
-      ]);
-      expect(buttons.map((b) => b.size).toSet(), hasLength(1));
-      expect(
-        tester.getSize(find.byWidget(buttons.first)),
-        tester.getSize(find.byWidget(buttons.last)),
-      );
-      await tester.tap(find.text('Privacy details'));
-      await tester.pumpAndSettle();
-      expect(opened, [
-        (
-          Uri.parse('https://tuturuuu.com/privacy'),
-          LaunchMode.inAppBrowserView,
-        ),
-      ]);
-    }, variant: const TargetPlatformVariant({TargetPlatform.android}));
+    testWidgets(
+      'summarises in rows, keeps the full disclosure and offers fair choices',
+      (tester) async {
+        final (preference, _, _) = await _start(direct: true);
+        final opened = <(Uri, LaunchMode)>[];
+        await tester.pumpApp(
+          TelemetryConsentPage(
+            preference: preference,
+            launch: (uri, mode) async {
+              opened.add((uri, mode));
+              return true;
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+        final semantics = tester.ensureSemantics();
+        expect(find.text('Help improve Tuturuuu?'), findsOneWidget);
+        expect(
+          tester.getSemantics(find.text('Help improve Tuturuuu?')),
+          containsSemantics(isHeader: true),
+        );
+        for (final point in [
+          'Crash reports',
+          'Usage & performance',
+          'No account details sent to Google',
+          'Change anytime in Settings',
+        ]) {
+          expect(find.text(point), findsOneWidget, reason: point);
+        }
+        expect(find.textContaining('anonymous'), findsNothing);
+        expect(find.textContaining('advertising'), findsNothing);
+
+        // The first layer names the processors; the full disclosure stays
+        // one tap away, word for word.
+        expect(
+          find.textContaining('Google Firebase Analytics and Crashlytics'),
+          findsOneWidget,
+        );
+        final l10n = AppLocalizationsEn();
+        expect(find.text(l10n.telemetryConsentBody), findsNothing);
+        final details = find.byKey(const ValueKey('telemetry-consent-details'));
+        await tester.ensureVisible(find.text("What's shared"));
+        await tester.tap(find.text("What's shared"));
+        await tester.pumpAndSettle();
+        expect(
+          tester.getSemantics(
+            find.descendant(of: details, matching: find.text("What's shared")),
+          ),
+          containsSemantics(isExpanded: true),
+        );
+        expect(find.text(l10n.telemetryConsentBody), findsOneWidget);
+        expect(
+          find.text(l10n.telemetryFirebaseInstallationDisclosure),
+          findsOneWidget,
+        );
+
+        // Allow may lead, but both answers share one size and stay enabled.
+        final buttons = tester
+            .widgetList<AppButton>(
+              find.ancestor(
+                of: find.textContaining(RegExp(r'^(Allow|Don.t allow)$')),
+                matching: find.byType(AppButton),
+              ),
+            )
+            .toList();
+        expect(buttons.map((b) => b.variant), [
+          AppButtonVariant.primary,
+          AppButtonVariant.outline,
+        ]);
+        expect(buttons.map((b) => b.size).toSet(), {AppButtonSize.large});
+        expect(buttons.every((b) => b.onPressed != null), isTrue);
+        expect(
+          tester.getSize(find.byWidget(buttons.first)),
+          tester.getSize(find.byWidget(buttons.last)),
+        );
+
+        final privacy = find.byKey(const ValueKey('telemetry-consent-privacy'));
+        await tester.ensureVisible(privacy);
+        expect(
+          tester.getSemantics(privacy),
+          containsSemantics(
+            label: 'Privacy details',
+            isButton: true,
+            hasTapAction: true,
+          ),
+        );
+        await tester.tap(find.text('Privacy details'));
+        await tester.pumpAndSettle();
+        expect(opened, [
+          (
+            Uri.parse('https://tuturuuu.com/privacy'),
+            LaunchMode.inAppBrowserView,
+          ),
+        ]);
+        semantics.dispose();
+      },
+      variant: const TargetPlatformVariant({TargetPlatform.android}),
+    );
 
     for (final language in ['en', 'vi']) {
       testWidgets(
@@ -326,13 +380,11 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          await tester.tap(
-            find.text(
-              language == 'vi'
-                  ? 'Chi tiết về quyền riêng tư'
-                  : 'Privacy details',
-            ),
+          final privacy = find.text(
+            language == 'vi' ? 'Chi tiết về quyền riêng tư' : 'Privacy details',
           );
+          await tester.ensureVisible(privacy);
+          await tester.tap(privacy);
           await tester.pumpAndSettle();
           expect(opened, [
             (
@@ -358,6 +410,7 @@ void main() {
       expect(vi.telemetryConsentAllow, 'Cho phép');
       expect(vi.telemetryConsentDeny, 'Không cho phép');
       expect(vi.telemetryConsentLearnMore, 'Chi tiết về quyền riêng tư');
+      expect(vi.telemetryConsentDetails, 'Dữ liệu được chia sẻ');
       expect(
         vi.settingsShareTelemetry,
         'Chia sẻ dữ liệu phân tích và báo cáo sự cố',

@@ -16362,6 +16362,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telemetryConsentLearnMore => 'Privacy details';
 
   @override
+  String get telemetryConsentLead => 'Share crash reports and usage data with Google Firebase Analytics and Crashlytics so we can fix problems faster.';
+
+  @override
+  String get telemetryConsentCrashTitle => 'Crash reports';
+
+  @override
+  String get telemetryConsentCrashBody => 'What went wrong when the app crashed or hit an error.';
+
+  @override
+  String get telemetryConsentUsageTitle => 'Usage & performance';
+
+  @override
+  String get telemetryConsentUsageBody => 'Features you use, app startup time and failed requests.';
+
+  @override
+  String get telemetryConsentAccountTitle => 'No account details sent to Google';
+
+  @override
+  String get telemetryConsentAccountBody => 'Reports use app and device identifiers, never your name, email or account ID.';
+
+  @override
+  String get telemetryConsentSettingsTitle => 'Change anytime in Settings';
+
+  @override
+  String get telemetryConsentSettingsBody => 'Preferences > Privacy';
+
+  @override
+  String get telemetryConsentDetails => 'What\'s shared';
+
+  @override
   String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
 
   @override

@@ -605,7 +605,9 @@ and the pre-`runApp` join. Completion-barrier tests live in
 - The first-run prompt (`TelemetryConsentPage`, `/telemetry-consent`) is driven by
   `TelemetryPreference.consentPending` and the router redirect in
   `app_router_telemetry_consent.dart`; it is production-only, opens above the
-  shell, has equal-weight answers (back gesture = Don't allow) and persists
+  shell, has full-width answers of one size pinned below the scroll (back
+  gesture = Don't allow), keeps the full disclosure verbatim behind What's
+  shared, and persists
   through `setEnabled`.
 - See `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for the consent
   rules, notice versioning and exceptions. Verify startup ordering,

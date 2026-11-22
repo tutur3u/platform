@@ -38,12 +38,21 @@ or /vi/privacy for Vietnamese, selected by the app locale.
 
 Production builds show a one-time, full-screen prompt (route
 `/telemetry-consent`, above the shell) once a signed-in user has a workspace and
-the device has no stored answer for the current notice version. **Allow** and
-**Don't allow** share one size and style, in that order, nothing is preselected,
-and **Privacy details** opens the public privacy notice. The iOS and Mac App
+the device has no stored answer for the current notice version. It leads with
+one sentence that names Google Firebase Analytics and Crashlytics, then four
+icon rows (crash reports, usage and performance, no
+account details sent to Google, change it in Settings). The full disclosure
+above, including the FID sentence, sits word for word behind an expandable
+**What's shared** row, so the notice version stays `telemetry-consent-v1`.
+**Allow** (filled) and **Don't allow** (outlined) are full-width buttons of one
+size, both always enabled, in that order, pinned below the scrolling content so both stay visible at
+any text size. Nothing is preselected, and the **Privacy details** row opens the
+public privacy notice. The iOS and Mac App
 Store builds open it in the system browser so the website's pricing navigation
 stays outside the app. Other platforms use the link browser preference.
-`telemetry_consent_page_test.dart` covers the launch mode and localized URL.
+`telemetry_consent_page_test.dart` covers the launch mode, localized URL and
+button parity; `telemetry_consent_render_test.dart` covers light and dark,
+EN/VI and a 320x568 phone at 2x text.
 Closing the prompt with
 the back gesture counts as **Don't allow**, never as consent. An answer persists
 exactly like the Settings switch (declining revokes before persisting) and the

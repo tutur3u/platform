@@ -16180,6 +16180,36 @@ class AppLocalizationsVi extends AppLocalizations {
   String get telemetryConsentLearnMore => 'Chi tiết về quyền riêng tư';
 
   @override
+  String get telemetryConsentLead => 'Chia sẻ báo cáo sự cố và dữ liệu sử dụng với Google Firebase Analytics và Crashlytics để chúng tôi sửa lỗi nhanh hơn.';
+
+  @override
+  String get telemetryConsentCrashTitle => 'Báo cáo sự cố';
+
+  @override
+  String get telemetryConsentCrashBody => 'Điều gì đã xảy ra khi ứng dụng gặp sự cố hoặc lỗi.';
+
+  @override
+  String get telemetryConsentUsageTitle => 'Sử dụng và hiệu năng';
+
+  @override
+  String get telemetryConsentUsageBody => 'Tính năng bạn dùng, thời gian khởi động ứng dụng và các yêu cầu bị lỗi.';
+
+  @override
+  String get telemetryConsentAccountTitle => 'Không gửi thông tin tài khoản cho Google';
+
+  @override
+  String get telemetryConsentAccountBody => 'Báo cáo dùng mã định danh ứng dụng và thiết bị, không bao giờ gồm tên, email hay mã tài khoản của bạn.';
+
+  @override
+  String get telemetryConsentSettingsTitle => 'Đổi bất cứ lúc nào trong Cài đặt';
+
+  @override
+  String get telemetryConsentSettingsBody => 'Tùy chọn > Quyền riêng tư';
+
+  @override
+  String get telemetryConsentDetails => 'Dữ liệu được chia sẻ';
+
+  @override
   String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase Analytics và Crashlytics để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
 
   @override

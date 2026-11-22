@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout_tokens.dart' show AppPageKind;
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/platform/apple_store_policy.dart';
+import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/telemetry_consent/view/telemetry_consent_sections.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Where "Privacy details" opens: the public privacy notice.
@@ -16,10 +19,11 @@ Uri telemetryPrivacyUri(Locale locale) => Uri.https(
 
 /// One-time, full-screen analytics and crash report choice.
 ///
-/// Both answers carry equal weight and persist exactly like the Settings
-/// switch. The route opens above the shell. Closing it with the back gesture
-/// counts as "Don't allow", never as consent; the route leaves once an answer
-/// is stored.
+/// Allow (filled) and Don't allow (outlined) are full-width buttons of one
+/// size, always on screen, and persist exactly like the Settings switch. The
+/// route opens above the shell. Closing it with the back gesture counts as
+/// "Don't allow", never as consent; the route leaves once an answer is
+/// stored.
 class TelemetryConsentPage extends StatefulWidget {
   const TelemetryConsentPage({super.key, this.preference, this.launch});
 
@@ -45,10 +49,21 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
     }
   }
 
+  void _openPrivacy() => unawaited(
+    openMobileLink(
+      context,
+      telemetryPrivacyUri(Localizations.localeOf(context)),
+      launch: widget.launch,
+      readPreference: isAppleStorePlatform()
+          ? () async => LinkBrowserPreference.external
+          : null,
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final textTheme = Theme.of(context).textTheme;
+    final tokens = AppTokens.of(context);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -57,7 +72,7 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
         }
       },
       child: AppScaffold(
-        backgroundColor: AppTokens.of(context).colorScheme.background,
+        backgroundColor: tokens.colorScheme.background,
         child: SafeArea(
           child: ListenableBuilder(
             listenable: _preference,
@@ -67,69 +82,69 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(LucideIcons.shield, size: 40),
-                          const SizedBox(height: AppSpacing.md),
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              l10n.telemetryConsentTitle,
-                              style: textTheme.headlineSmall,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(l10n.telemetryConsentBody),
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(l10n.telemetryFirebaseInstallationDisclosure),
-                          const SizedBox(height: AppSpacing.sm),
-                          AppButton.ghost(
-                            onPressed: () => openMobileLink(
-                              context,
-                              telemetryPrivacyUri(
-                                Localizations.localeOf(context),
-                              ),
-                              launch: widget.launch,
-                              readPreference: isAppleStorePlatform()
-                                  ? () async => LinkBrowserPreference.external
-                                  : null,
-                            ),
-                            child: Text(l10n.telemetryConsentLearnMore),
-                          ),
-                          if (_failed) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              l10n.settingsTelemetryError,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.xxxl,
+                        AppSpacing.xl,
+                        AppSpacing.lg,
+                      ),
+                      child: _Measure(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const TelemetryConsentHeader(),
+                            const SizedBox(height: AppSpacing.xxl),
+                            const TelemetryConsentPoints(),
+                            const SizedBox(height: AppSpacing.lg),
+                            TelemetryConsentMore(onOpenPrivacy: _openPrivacy),
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
+                  // Both answers stay on screen at every text size and share
+                  // one width and height; neither is preselected.
                   Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AppButton.outline(
-                          onPressed: enabled
-                              ? () => _answer(allow: true)
-                              : null,
-                          child: Text(l10n.telemetryConsentAllow),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        AppButton.outline(
-                          onPressed: enabled
-                              ? () => _answer(allow: false)
-                              : null,
-                          child: Text(l10n.telemetryConsentDeny),
-                        ),
-                      ],
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                    ),
+                    child: _Measure(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_failed) ...[
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                l10n.settingsTelemetryError,
+                                textAlign: TextAlign.center,
+                                style: tokens.typography.small.copyWith(
+                                  color: tokens.colorScheme.destructive,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
+                          AppButton.primary(
+                            size: AppButtonSize.large,
+                            onPressed: enabled
+                                ? () => _answer(allow: true)
+                                : null,
+                            child: Text(l10n.telemetryConsentAllow),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          AppButton.outline(
+                            size: AppButtonSize.large,
+                            onPressed: enabled
+                                ? () => _answer(allow: false)
+                                : null,
+                            child: Text(l10n.telemetryConsentDeny),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -140,4 +155,23 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
       ),
     );
   }
+}
+
+/// Keeps the prompt at the form measure on tablets and landscape.
+class _Measure extends StatelessWidget {
+  const _Measure({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth:
+            AppLayout.maxContentWidth(AppPageKind.form, context.deviceClass) ??
+            double.infinity,
+      ),
+      child: child,
+    ),
+  );
 }
