@@ -7,17 +7,23 @@
   "name": "tuturuuu-apex-redirect",
   "main": "src/subdomain-redirect-worker.ts",
   "compatibility_date": "2026-09-28",
+  "compatibility_flags": ["global_fetch_strictly_public"],
   "workers_dev": false,
   "preview_urls": false,
   "limits": { "cpu_ms": 10 },
   "observability": { "enabled": true, "head_sampling_rate": 0.01 },
   "vars": {
     "SHARED_HOST": "tuturuuu.com",
-    "SUBDOMAIN_REDIRECT_APPS": "apps,finance",
+    // Start from the active Apps redirect. Set the candidate allowlist during
+    // the acknowledged provider rollout, using the captured host attachments.
+    "SUBDOMAIN_REDIRECT_APPS": "apps",
   },
   "services": [
     { "binding": "APP_TASKS", "service": "tuturuuu-tasks" },
     { "binding": "APP_APPS", "service": "tuturuuu-apps" },
     { "binding": "APP_FINANCE", "service": "tuturuuu-finance" },
+    { "binding": "APP_CALENDAR", "service": "tuturuuu-calendar" },
+    { "binding": "APP_MAIL", "service": "tuturuuu-mail" },
+    { "binding": "APP_MEET", "service": "tuturuuu-meet" },
   ],
 }

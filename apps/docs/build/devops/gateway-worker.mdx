@@ -366,7 +366,7 @@ live, and run the `--live` check against the captured version after that write.
 
 ### Legacy subdomain redirect
 
-Once `tuturuuu.com/<app>` passes its smoke, the app's legacy hostname
+Once `tuturuuu.com/<app>` passes signed-in acceptance, the app's legacy hostname
 (`<app>.tuturuuu.com`) moves to the `tuturuuu-apex-redirect` Worker
 (`apps/gateway/wrangler.subdomain-redirect.jsonc`, entry
 `src/subdomain-redirect-worker.ts`). Attach the hostname the same way the app
@@ -374,17 +374,31 @@ holds it: reassign its zone route `<app>.tuturuuu.com/*`, or update its Worker
 custom domain to the redirect Worker. Capture the prior attachment first.
 
 - Bind the app Worker as `APP_<APP>` (`APP_TASKS`). A hostname without a
-  binding answers `404`.
+  binding answers `404`. The shared Worker includes bindings for Apps,
+  Calendar, Finance, Mail, Meet and Tasks. Mastermind keeps its own hostname.
 - `SUBDOMAIN_REDIRECT_APPS` lists the apps whose navigations (`GET`/`HEAD`
   with `Sec-Fetch-Mode: navigate`, or `Accept: text/html` without Fetch
   Metadata) answer `301` to `https://tuturuuu.com/<app><path><query>`. The
-  subdomain root maps to the bare mount.
+  subdomain root and English locale prefix collapse in the same hop. For
+  example, `mail.tuturuuu.com/en/personal?tab=unread` maps to
+  `tuturuuu.com/mail/personal?tab=unread`, and a Vietnamese path stays under
+  `/mail/vi`. The apex mount handles sign-in using its existing session.
 - Everything else reaches the app Worker unchanged through its binding:
-  fetches, mutations, `/api`, `/assets`, `/.well-known`, `/_serverFn`,
-  `/serwist` and `verify-token`, so open tabs, API clients, uploads and auth
-  return URLs on the subdomain keep working.
+  fetches, mutations, API paths (including Calendar OAuth and Mail webhooks),
+  app-session `verify-token` URLs, client assets, service workers and app
+  association files. Meet also keeps its legacy live-connect, realtime and
+  native collaboration endpoints for mobile clients.
 - An unlisted app is served through its binding without redirecting, so the
   hostname can be attached before the redirect is switched on.
+
+The checked-in redirect allowlist starts with Apps. Use the acknowledged
+provider packet to select the list for the staged version and capture the
+serving version and each hostname attachment. Stage at 0% and verify existing
+Apps traffic through the staged version before promotion. After each
+attachment, smoke the legacy root, a localized deep link with duplicate query
+keys, and that app's API or auth callback. Finance Phase B stays with the
+Finance cutover owner and requires explicit signed-in acceptance before its
+hostname is attached for the redirect.
 
 The `301` carries `Cache-Control: no-store`, so browsers do not keep it:
 a rollback takes effect on the next request, and a later fetch or webhook

@@ -28,15 +28,45 @@ const APP_LABEL = /^[a-z][a-z0-9-]*$/u;
 /**
  * Subdomain paths reached by links an app sent earlier and by machines. Auth
  * return URLs land on `verify-token` and finish there; its follow-up
- * navigation then redirects. `/api`, `/assets`, `/.well-known` and
- * `/_serverFn` always pass through.
+ * navigation then redirects. Include locale-prefixed forms since a callback
+ * or asset can be reached through a localized legacy URL.
  */
 const MACHINE_PATH_PREFIXES = [
+  '/api',
+  '/assets',
+  '/.well-known',
+  '/_fn',
+  '/_serverFn',
+  '/_next',
+  '/_rum',
+  '/auth',
   '/verify-token',
-  '/en/verify-token',
-  '/vi/verify-token',
+  '/apple-app-site-association',
+  '/media',
+  '/robots.txt',
   '/serwist',
+  '/offline.html',
+  '/site.webmanifest',
 ];
+
+function localizedPrefixes(prefixes: readonly string[]) {
+  return prefixes.flatMap((prefix) => [prefix, `/en${prefix}`, `/vi${prefix}`]);
+}
+
+const MACHINE_PATHS = localizedPrefixes(MACHINE_PATH_PREFIXES);
+const APP_MACHINE_PATHS = new Map([
+  ['calendar', localizedPrefixes(['/_calendar/functions'])],
+  ['mail', localizedPrefixes(['/_mail'])],
+  [
+    'meet',
+    localizedPrefixes([
+      '/live-connect',
+      '/realtime',
+      '/_meet',
+      '/native-collaboration',
+    ]),
+  ],
+]);
 
 function plain(status: number, body: string) {
   return new Response(body, {
@@ -77,20 +107,33 @@ export async function handleSubdomainRedirect(
     .split(',')
     .map((entry) => entry.trim().toLowerCase())
     .includes(target.app);
-  if (listed) {
+  if (listed && target.app !== 'mastermind') {
+    const basePath = `/${target.app}`;
+    const sharedOrigin = `https://${target.shared}`;
     const decision = decideOneOriginRequest(request, {
-      basePath: `/${target.app}`,
-      sharedOrigin: `https://${target.shared}`,
+      basePath,
+      sharedOrigin,
       subdomainOrigin: `https://${url.host.toLowerCase()}`,
       mode: 'on',
       redirectStatus: 301,
       basePathReady: true,
-      machinePathPrefixes: MACHINE_PATH_PREFIXES,
+      machinePathPrefixes: [
+        ...MACHINE_PATHS,
+        ...(APP_MACHINE_PATHS.get(target.app) ?? []),
+      ],
     });
     if (decision.action === 'redirect') {
       // A stored 301 would outlive a rollback and also answer later
       // non-navigation requests (fetches, webhook retries) to the same URL.
       const response = new Response(null, decision.response);
+      const location = response.headers.get('Location');
+      if (location && /^\/en(?:\/|$)/u.test(url.pathname)) {
+        const mount = `${sharedOrigin}${basePath}`;
+        response.headers.set(
+          'Location',
+          mount + location.slice(mount.length + '/en'.length)
+        );
+      }
       response.headers.set('Cache-Control', 'no-store');
       return response;
     }
