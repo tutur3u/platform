@@ -112,7 +112,7 @@ describe('Structure in minimal mode', () => {
     expect(sidebar()).not.toHaveClass('backdrop-blur-lg');
     expect(sidebar()).not.toHaveClass('bg-background/50');
     expect(container.querySelector('main')).toHaveClass(
-      'md:pl-[var(--sidebar-collapsed-width)]'
+      'md:pl-[var(--sidebar-minimal-gutter)]'
     );
     // Phones keep their top bar and drawer.
     expect(screen.getByText('Mobile header')).toBeInTheDocument();
@@ -210,7 +210,7 @@ describe('Structure in minimal mode', () => {
     expect(
       sidebar().querySelector('[data-sidebar-overlay-surface]')?.className
     ).toContain(
-      'group-has-[[data-sidebar-reveal-trigger]:focus-visible]:ring-2'
+      'group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-2'
     );
   });
 

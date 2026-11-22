@@ -198,9 +198,11 @@ export function useSidebarOverlayClose({
     }
   });
 
-  const handleTriggerClick = useEffectEvent(() => {
-    if (isCollapsed) hold('tap');
-    else dismiss(true);
+  const handleTriggerClick = useEffectEvent((trigger: HTMLElement) => {
+    if (isCollapsed) {
+      hold('tap');
+      trigger.focus({ preventScroll: true });
+    } else dismiss(true);
   });
 
   const handleLinkClick = useEffectEvent(() => {
@@ -256,7 +258,7 @@ export function useSidebarOverlayClose({
   }, [isCollapsed]);
 
   useLayoutEffect(() => {
-    if (!panel) return;
+    if (!panel || !enabled) return;
 
     // Native boundary events track the actual panel even when a React portal
     // is logically its child. The open overlay keeps the panel pinned there.
@@ -289,7 +291,7 @@ export function useSidebarOverlayClose({
       clearDelay();
       pendingLeave.current = false;
     };
-  }, [clearDelay, clearTimer, panel, revealTrigger]);
+  }, [clearDelay, clearTimer, enabled, panel, revealTrigger]);
 
   useLayoutEffect(() => {
     if (!panel || !revealTrigger) return;
@@ -319,7 +321,8 @@ export function useSidebarOverlayClose({
     const click = (event: MouseEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (target.closest(SIDEBAR_REVEAL_TRIGGER_SELECTOR)) handleTriggerClick();
+      const trigger = target.closest(SIDEBAR_REVEAL_TRIGGER_SELECTOR);
+      if (trigger instanceof HTMLElement) handleTriggerClick(trigger);
       else if (target.closest('a[href]')) handleLinkClick();
     };
     const keyDown = (event: KeyboardEvent) => handleKeyDown(event);

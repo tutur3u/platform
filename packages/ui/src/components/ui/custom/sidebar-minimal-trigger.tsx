@@ -25,12 +25,12 @@ export function SidebarMinimalTrigger({
   return (
     <button
       type="button"
-      aria-controls={controls}
+      aria-controls={expanded ? controls : undefined}
       aria-expanded={expanded}
       aria-label={label}
       data-sidebar-reveal-trigger=""
       className={cn(
-        'absolute top-3.5 left-[calc((var(--sidebar-collapsed-width)-2.5rem)/2)] hidden size-10 cursor-pointer items-center justify-center rounded-xl outline-none transition-[background-color,opacity] duration-150 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring md:flex',
+        'absolute top-3 left-2 hidden size-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-card outline-none transition-[background-color,opacity] duration-150 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none md:flex',
         expanded && 'pointer-events-none opacity-0'
       )}
     >

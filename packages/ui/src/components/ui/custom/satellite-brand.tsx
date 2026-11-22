@@ -16,6 +16,7 @@ export type ShellLinkComponent = ComponentType<
 export const ShellAnchor: ShellLinkComponent = (props) => <a {...props} />;
 
 interface WorkspaceSelectVisibilityToggleProps {
+  controls?: string;
   hideLabel: string;
   onToggle: () => void;
   showLabel: string;
@@ -23,6 +24,7 @@ interface WorkspaceSelectVisibilityToggleProps {
 }
 
 export function WorkspaceSelectVisibilityToggle({
+  controls = 'sidebar-workspace-selector',
   hideLabel,
   onToggle,
   showLabel,
@@ -34,7 +36,7 @@ export function WorkspaceSelectVisibilityToggle({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          aria-controls="sidebar-workspace-selector"
+          aria-controls={controls}
           aria-expanded={visible}
           aria-label={label}
           className="size-8 shrink-0 text-muted-foreground shadow-none hover:text-foreground"

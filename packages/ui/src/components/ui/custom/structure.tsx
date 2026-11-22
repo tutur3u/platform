@@ -22,6 +22,7 @@ import { useSidebarOverlayClose } from './use-sidebar-overlay-close';
 const MINIMAL_OPEN_DELAY_MS = 120;
 /** Grace for a pointer that slips off the floating panel and comes back. */
 const MINIMAL_CLOSE_DELAY_MS = 240;
+const MINIMAL_GUTTER = '3.5rem';
 
 interface StructureProps {
   sidebarLabels?: { open: string; close: string };
@@ -94,7 +95,7 @@ export function Structure({
   const overlay = overlayOnExpand || isMinimal;
   const revealTrigger = isMinimal && !isMobile;
   const overlayClose = useSidebarOverlayClose({
-    enabled: overlay,
+    enabled: overlay && !isMobile,
     externalOverlayOpen: sidebarOverlayOpen,
     isCollapsed,
     onMouseEnter,
@@ -118,6 +119,7 @@ export function Structure({
   const sidebarStyle = {
     '--sidebar-collapsed-width': sidebarCollapsedWidth,
     '--sidebar-expanded-width': sidebarExpandedWidth,
+    '--sidebar-minimal-gutter': MINIMAL_GUTTER,
     ...(sidebarHeaderHeight
       ? { '--sidebar-header-height': sidebarHeaderHeight }
       : {}),
@@ -206,7 +208,7 @@ export function Structure({
                     : 'w-[var(--sidebar-expanded-width)] max-sm:w-full',
                   isMinimal
                     ? isCollapsed
-                      ? 'max-md:bg-background/50'
+                      ? 'max-md:bg-background/50 md:w-[var(--sidebar-minimal-gutter)]'
                       : 'max-md:bg-background md:w-[calc(var(--sidebar-expanded-width)+1rem)]'
                     : isCollapsed
                       ? 'bg-background/50'
@@ -245,111 +247,111 @@ export function Structure({
                     ever repositioned, so the swap cannot register as a layout
                     shift, and the new subtree fades in. Minimal has no rail. */}
                 {isMinimal && isCollapsed ? null : (
-                <div
-                  key={overlay ? (isCollapsed ? 'rail' : 'panel') : 'static'}
-                  id={isMinimal ? panelId : undefined}
-                  data-sidebar-overlay-surface={isMinimal ? '' : undefined}
-                  className={cn(
-                    'flex min-h-0 flex-1 flex-col',
-                    overlayOpen &&
-                      !isMinimal &&
-                      (overlayClose.isClosing
-                        ? 'sidebar-overlay-content-out'
-                        : 'sidebar-overlay-content'),
-                    overlayOpen &&
-                      isMinimal &&
-                      'group-has-[[data-sidebar-reveal-trigger]:focus-visible]:ring-2 group-has-[[data-sidebar-reveal-trigger]:focus-visible]:ring-ring md:m-2 md:overflow-hidden md:rounded-2xl md:border md:bg-background md:shadow-xl',
-                    overlayOpen &&
-                      isMinimal &&
-                      (overlayClose.isClosing
-                        ? 'sidebar-minimal-conceal'
-                        : 'sidebar-minimal-reveal')
-                  )}
-                >
                   <div
+                    key={overlay ? (isCollapsed ? 'rail' : 'panel') : 'static'}
+                    id={isMinimal ? panelId : undefined}
+                    data-sidebar-overlay-surface={isMinimal ? '' : undefined}
                     className={cn(
-                      sidebarHeaderHeight
-                        ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
-                        : 'flex min-h-12 items-center p-2 md:px-0',
-                      isCollapsed ? 'justify-center' : 'py-1',
-                      sidebarHeaderClassName
+                      'flex min-h-0 flex-1 flex-col',
+                      overlayOpen &&
+                        !isMinimal &&
+                        (overlayClose.isClosing
+                          ? 'sidebar-overlay-content-out'
+                          : 'sidebar-overlay-content'),
+                      overlayOpen &&
+                        isMinimal &&
+                        'group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-2 group-has-[[data-sidebar-reveal-trigger]:focus-visible:not([data-focus-modality=pointer]_*)]:ring-ring md:m-2 md:overflow-hidden md:rounded-2xl md:border md:bg-background md:shadow-xl',
+                      overlayOpen &&
+                        isMinimal &&
+                        (overlayClose.isClosing
+                          ? 'sidebar-minimal-conceal'
+                          : 'sidebar-minimal-reveal')
                     )}
                   >
                     <div
                       className={cn(
-                        'flex min-h-13 w-full items-center md:px-2',
-                        isCollapsed ? 'justify-center' : ''
+                        sidebarHeaderHeight
+                          ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
+                          : 'flex min-h-12 items-center p-2 md:px-0',
+                        isCollapsed ? 'justify-center' : 'py-1',
+                        sidebarHeaderClassName
                       )}
                     >
                       <div
                         className={cn(
-                          'flex w-full items-center gap-2',
-                          isCollapsed ? 'justify-center' : 'justify-between'
+                          'flex min-h-13 w-full items-center md:px-2',
+                          isCollapsed ? 'justify-center' : ''
                         )}
                       >
-                        {sidebarHeader}
-                        {isCollapsed || (
-                          <Button
-                            size="icon"
-                            variant="outline"
-                            className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                            aria-label={
-                              isCollapsed
-                                ? sidebarLabels?.open
-                                : sidebarLabels?.close
-                            }
-                            onClick={() => setIsCollapsed(!isCollapsed)}
-                          >
-                            <X className="h-5 w-5" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-                    {sidebarContent}
-                  </div>
-                  {(sidebarUtility || feedbackButton) && (
-                    <div
-                      data-slot="sidebar-utility-row"
-                      className={cn(
-                        'flex border-foreground/10 border-t',
-                        isCollapsed
-                          ? 'flex-col items-center gap-1 px-1 py-2'
-                          : 'items-center gap-1 p-2'
-                      )}
-                    >
-                      {sidebarUtility && (
                         <div
                           className={cn(
-                            'flex',
-                            isCollapsed
-                              ? 'w-full justify-center'
-                              : 'min-w-0 flex-1'
+                            'flex w-full items-center gap-2',
+                            isCollapsed ? 'justify-center' : 'justify-between'
                           )}
                         >
-                          {sidebarUtility}
+                          {sidebarHeader}
+                          {isCollapsed || (
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                              aria-label={
+                                isCollapsed
+                                  ? sidebarLabels?.open
+                                  : sidebarLabels?.close
+                              }
+                              onClick={() => setIsCollapsed(!isCollapsed)}
+                            >
+                              <X className="h-5 w-5" />
+                            </Button>
+                          )}
                         </div>
-                      )}
-                      {feedbackButton}
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      'mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]',
-                      isCollapsed ? 'justify-center' : ''
-                    )}
-                  >
-                    {isCollapsed ? (
-                      <div className="flex w-full flex-col items-center gap-1">
-                        {userPopover}
-                        {notificationPopover}
                       </div>
-                    ) : (
-                      actions
+                    </div>
+                    <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+                      {sidebarContent}
+                    </div>
+                    {(sidebarUtility || feedbackButton) && (
+                      <div
+                        data-slot="sidebar-utility-row"
+                        className={cn(
+                          'flex border-foreground/10 border-t',
+                          isCollapsed
+                            ? 'flex-col items-center gap-1 px-1 py-2'
+                            : 'items-center gap-1 p-2'
+                        )}
+                      >
+                        {sidebarUtility && (
+                          <div
+                            className={cn(
+                              'flex',
+                              isCollapsed
+                                ? 'w-full justify-center'
+                                : 'min-w-0 flex-1'
+                            )}
+                          >
+                            {sidebarUtility}
+                          </div>
+                        )}
+                        {feedbackButton}
+                      </div>
                     )}
+                    <div
+                      className={cn(
+                        'mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]',
+                        isCollapsed ? 'justify-center' : ''
+                      )}
+                    >
+                      {isCollapsed ? (
+                        <div className="flex w-full flex-col items-center gap-1">
+                          {userPopover}
+                          {notificationPopover}
+                        </div>
+                      ) : (
+                        actions
+                      )}
+                    </div>
                   </div>
-                </div>
                 )}
 
                 {!hideSizeToggle && !isMinimal && (
@@ -384,9 +386,11 @@ export function Structure({
                 : 'h-full min-h-screen overflow-y-visible',
               sidebarHidden
                 ? 'md:pl-0'
-                : isCollapsed || overlay
-                  ? 'md:pl-[var(--sidebar-collapsed-width)]'
-                  : 'md:pl-[var(--sidebar-expanded-width)]'
+                : isMinimal
+                  ? 'md:pl-[var(--sidebar-minimal-gutter)]'
+                  : isCollapsed || overlay
+                    ? 'md:pl-[var(--sidebar-collapsed-width)]'
+                    : 'md:pl-[var(--sidebar-expanded-width)]'
             )}
             style={sidebarStyle}
           >

@@ -9,6 +9,7 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
+import { WorkspaceSelectVisibilityToggle } from '@tuturuuu/ui/custom/satellite-brand';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import {
@@ -18,9 +19,21 @@ import {
 } from '@tuturuuu/ui/custom/satellite-navigation';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import {
+  useOpenWorkspaceSelectWhenRevealed,
+  useWorkspaceSelectSection,
+} from '@tuturuuu/ui/custom/workspace-select-reveal';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { type ReactNode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { WorkspaceSelectTrigger } from '../../src/components/ui/custom/workspace-select-trigger';
 import './style.css';
 
 /**
@@ -156,6 +169,34 @@ function CalendarGrid(): ReactNode {
   );
 }
 
+function WorkspacePickerFixture({ isCollapsed }: { isCollapsed: boolean }) {
+  const [open, setOpen] = useState(false);
+  useOpenWorkspaceSelectWhenRevealed(true, setOpen);
+
+  return (
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger asChild>
+        <WorkspaceSelectTrigger
+          appearance="switch"
+          compact={isCollapsed}
+          invitationCount={1}
+          labels={{
+            invitations: 'pending invitation',
+            loading: 'Loading',
+            select: 'Select workspace',
+            switch: 'Switch workspace',
+          }}
+          workspace={{ name: 'Calendar workspace' }}
+        />
+      </DialogTrigger>
+      <DialogContent>
+        <DialogTitle>Select workspace</DialogTitle>
+        <DialogDescription>Choose a workspace.</DialogDescription>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Harness() {
   const [, setNoop] = useState(0);
   const shell = useSatelliteShell({
@@ -165,6 +206,7 @@ function Harness() {
     handleBehaviorChange: () => setNoop((n) => n + 1),
     backLabel: 'Back',
   });
+  const workspace = useWorkspaceSelectSection(shell.isCollapsed);
   const logo = <div className="size-8 rounded-lg bg-foreground" />;
   return (
     <SatelliteShell
@@ -175,6 +217,15 @@ function Harness() {
         </div>
       }
       brand={{
+        actions: (
+          <WorkspaceSelectVisibilityToggle
+            controls={workspace.id}
+            hideLabel="Hide workspace selector"
+            onToggle={() => workspace.toggle(shell.expandSidebar)}
+            showLabel="Show workspace selector"
+            visible={workspace.visible}
+          />
+        ),
         appName: 'Calendar',
         appHref: '/ws',
         centralHref: '/',
@@ -214,7 +265,12 @@ function Harness() {
           navState={shell.navState}
           setIsCollapsed={shell.setIsCollapsed}
           setNavState={shell.setNavState}
-          workspaceSelectVisible={false}
+          workspaceSelect={({ isCollapsed }) => (
+            <WorkspacePickerFixture isCollapsed={isCollapsed} />
+          )}
+          workspaceSelectId={workspace.id}
+          workspaceSelectOpenRequest={workspace.openRequest}
+          workspaceSelectVisible={workspace.visible}
           wsId="ws"
         />
       }

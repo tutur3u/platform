@@ -8,10 +8,11 @@ import {
 } from '@tuturuuu/satellite/fixed-app-brand';
 import { SidebarOverlayLayout as BaseStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { SidebarWorkspaceSelectSection } from '@tuturuuu/ui/custom/satellite-workspace-section';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { restsCollapsed } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { WorkspaceSelectRevealProvider } from '@tuturuuu/ui/custom/workspace-select-reveal';
+import { useWorkspaceSelectSection } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { cn } from '@tuturuuu/utils/format';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
@@ -259,7 +260,6 @@ export function StructureImpl({
   const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
-  const [workspaceSelectVisible, setWorkspaceSelectVisible] = useState(false);
   const SidebarActiveTimer = useSidebarActiveTimerComponent();
   const hydratedLinks = useMemo(
     () => hydrateDashboardNavigationIcons(links),
@@ -563,10 +563,6 @@ export function StructureImpl({
     setIsCollapsed(restsCollapsed(behavior));
   }, [behavior]);
 
-  useEffect(() => {
-    if (isCollapsed) setWorkspaceSelectVisible(false);
-  }, [isCollapsed]);
-
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
     (navLinks: (NavLink | null)[]): boolean => {
@@ -729,7 +725,6 @@ export function StructureImpl({
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
-    if (newCollapsed) setWorkspaceSelectVisible(false);
     setCookie(
       SIDEBAR_COLLAPSED_COOKIE_NAME,
       newCollapsed,
@@ -798,33 +793,20 @@ export function StructureImpl({
     }
   };
 
-  const showWorkspaceSelect = workspaceSelectVisible && !isCollapsed;
-  const handleToggleWorkspaceSelect = () => {
-    const nextVisible = !showWorkspaceSelect;
-    setWorkspaceSelectVisible(nextVisible);
-
-    if (nextVisible && isCollapsed) {
-      setIsCollapsed(false);
-      handleBehaviorChange('expanded');
-      setCookie(
-        SIDEBAR_COLLAPSED_COOKIE_NAME,
-        false,
-        getSidebarCookieOptions()
-      );
-    }
-  };
+  const workspaceSection = useWorkspaceSelectSection(isCollapsed);
+  const showWorkspaceSelect =
+    workspaceSection.visible && !(behavior === 'minimal' && isCollapsed);
   const workspaceSelectToggle = (
     <WorkspaceSelectVisibilityToggle
+      controls={workspaceSection.id}
       hideLabel={t('command_launcher.hide_workspace_selector')}
-      onToggle={handleToggleWorkspaceSelect}
+      onToggle={() => workspaceSection.toggle(() => setIsCollapsed(false))}
       showLabel={t('command_launcher.show_workspace_selector')}
       visible={showWorkspaceSelect}
     />
   );
 
-  const logo = (
-    <TuturuuLogo alt="" className="size-7" height={32} width={32} />
-  );
+  const logo = <TuturuuLogo alt="" className="size-7" height={32} width={32} />;
   const sidebarHeader = isCollapsed ? (
     <Link aria-label={t('common.home')} href="/home">
       {logo}
@@ -842,37 +824,25 @@ export function StructureImpl({
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <WorkspaceSelectRevealProvider revealed={showWorkspaceSelect}>
-        <div
-          aria-hidden={!showWorkspaceSelect}
-          className={cn(
-            'grid shrink-0 overflow-hidden px-2 transition-[grid-template-rows,opacity,border-color,padding] duration-200 ease-out',
-            showWorkspaceSelect
-              ? 'grid-rows-[1fr] border-b pb-2 opacity-100'
-              : 'pointer-events-none grid-rows-[0fr] border-transparent pb-0 opacity-0'
-          )}
-          data-sidebar-workspace-select
-          data-state={showWorkspaceSelect ? 'open' : 'closed'}
-          id="sidebar-workspace-selector"
-          inert={showWorkspaceSelect ? undefined : true}
+      <SidebarWorkspaceSelectSection
+        id={workspaceSection.id}
+        openRequest={workspaceSection.openRequest}
+        visible={showWorkspaceSelect}
+      >
+        <Suspense
+          key={user?.id}
+          fallback={
+            <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
+          }
         >
-          <div className="min-h-0 overflow-hidden">
-            <Suspense
-              key={user?.id}
-              fallback={
-                <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
-              }
-            >
-              <WorkspaceSelect
-                disableCreateNewWorkspace={disableCreateNewWorkspace}
-                hideLeading={isCollapsed}
-                standalone
-                wsId={wsId}
-              />
-            </Suspense>
-          </div>
-        </div>
-      </WorkspaceSelectRevealProvider>
+          <WorkspaceSelect
+            disableCreateNewWorkspace={disableCreateNewWorkspace}
+            hideLeading={isCollapsed}
+            standalone
+            wsId={wsId}
+          />
+        </Suspense>
+      </SidebarWorkspaceSelectSection>
       {SidebarActiveTimer && (
         <SidebarActiveTimer wsId={wsId} isCollapsed={isCollapsed} />
       )}

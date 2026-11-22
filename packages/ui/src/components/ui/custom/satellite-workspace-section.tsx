@@ -1,9 +1,14 @@
-import { WorkspaceSelectRevealProvider } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
+import {
+  type WorkspaceSelectOpenRequest,
+  WorkspaceSelectRevealProvider,
+} from './workspace-select-reveal';
 
 interface SidebarWorkspaceSelectSectionProps {
   children?: ReactNode;
+  id?: string;
+  openRequest?: WorkspaceSelectOpenRequest;
   visible: boolean;
 }
 
@@ -14,10 +19,12 @@ interface SidebarWorkspaceSelectSectionProps {
  */
 export function SidebarWorkspaceSelectSection({
   children,
+  id = 'sidebar-workspace-selector',
+  openRequest,
   visible,
 }: SidebarWorkspaceSelectSectionProps) {
   return (
-    <WorkspaceSelectRevealProvider revealed={visible}>
+    <WorkspaceSelectRevealProvider openRequest={openRequest} revealed={visible}>
       <div
         aria-hidden={!visible}
         className={cn(
@@ -28,7 +35,7 @@ export function SidebarWorkspaceSelectSection({
         )}
         data-sidebar-workspace-select
         data-state={visible ? 'open' : 'closed'}
-        id="sidebar-workspace-selector"
+        id={id}
         inert={visible ? undefined : true}
         style={{
           // Satellite source files are outside each app's Tailwind scan root.

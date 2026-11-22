@@ -7,19 +7,74 @@ import {
   type SetStateAction,
   useContext,
   useEffect,
+  useId,
+  useState,
 } from 'react';
+import { useIsMobile } from '../../../hooks/use-mobile';
 
-const WorkspaceSelectRevealContext = createContext<boolean | null>(null);
+export type WorkspaceSelectOpenRequest = () => boolean;
+
+const WorkspaceSelectRevealContext = createContext<{
+  revealed: boolean;
+  openRequest?: WorkspaceSelectOpenRequest;
+} | null>(null);
+
+export function useWorkspaceSelectSection(isCollapsed: boolean) {
+  const isMobile = useIsMobile();
+  const id = useId();
+  const [section, setSection] = useState<{
+    mobile: boolean;
+    openRequest: WorkspaceSelectOpenRequest;
+  } | null>(null);
+  const current = section?.mobile === isMobile ? section : null;
+
+  useEffect(() => {
+    if (section?.mobile && !isMobile) {
+      section.openRequest();
+      setSection(null);
+      return;
+    }
+    if (!isCollapsed || !current) return;
+    current.openRequest();
+    if (isMobile) setSection(null);
+  }, [current, isCollapsed, isMobile, section]);
+
+  return {
+    id,
+    visible: current !== null && (!isMobile || !isCollapsed),
+    openRequest: isCollapsed ? undefined : current?.openRequest,
+    toggle(openDrawer: () => void) {
+      if (current) {
+        current.openRequest();
+        setSection(null);
+        return;
+      }
+
+      let pending = true;
+      setSection({
+        mobile: isMobile,
+        openRequest() {
+          const shouldOpen = pending;
+          pending = false;
+          return shouldOpen;
+        },
+      });
+      if (isMobile && isCollapsed) openDrawer();
+    },
+  };
+}
 
 export function WorkspaceSelectRevealProvider({
   children,
+  openRequest,
   revealed,
 }: {
   children: ReactNode;
+  openRequest?: WorkspaceSelectOpenRequest;
   revealed: boolean;
 }) {
   return (
-    <WorkspaceSelectRevealContext.Provider value={revealed}>
+    <WorkspaceSelectRevealContext.Provider value={{ revealed, openRequest }}>
       {children}
     </WorkspaceSelectRevealContext.Provider>
   );
@@ -37,18 +92,20 @@ export function useOpenWorkspaceSelectWhenRevealed(
   hasSelectableWorkspaces: boolean,
   setOpen: Dispatch<SetStateAction<boolean>>
 ) {
-  const revealed = useContext(WorkspaceSelectRevealContext);
+  const section = useContext(WorkspaceSelectRevealContext);
+  const revealed = section?.revealed;
+  const openRequest = section?.openRequest;
 
   useEffect(() => {
-    if (revealed === null) return;
+    if (revealed === undefined) return;
 
     if (!revealed) {
       setOpen(false);
       return;
     }
 
-    if (revealed && hasSelectableWorkspaces) {
+    if (hasSelectableWorkspaces && openRequest?.()) {
       setOpen(true);
     }
-  }, [hasSelectableWorkspaces, revealed, setOpen]);
+  }, [hasSelectableWorkspaces, openRequest, revealed, setOpen]);
 }

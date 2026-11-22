@@ -248,6 +248,45 @@ try {
     keyboard = { resting, focused, escaped: await state() };
   }
 
+  if (behavior === 'hover') {
+    const aside = page.locator('aside');
+    const picker = page.getByRole('dialog', { name: 'Select workspace' });
+    const switcher = aside.getByRole('button', { name: 'Switch workspace' });
+    await page.mouse.move(24, 400);
+    await aside
+      .getByRole('button', { name: 'Show workspace selector' })
+      .click();
+    await picker.waitFor();
+    await page.keyboard.press('Escape');
+    await picker.waitFor({ state: 'hidden' });
+    await page.mouse.move(900, 450);
+    await switcher.locator('[data-invitation-dot]').waitFor();
+    assert.equal(
+      await switcher
+        .locator('span')
+        .filter({ hasText: /^Switch workspace$/ })
+        .count(),
+      0
+    );
+    if (shots) {
+      await page.screenshot({
+        path: path.join(shots, '4-collapsed-avatar.png'),
+      });
+    }
+    await page.mouse.move(24, 400);
+    await switcher.getByText('Switch workspace', { exact: true }).waitFor();
+    assert.equal(
+      await picker.isVisible(),
+      false,
+      'hover must not reopen the picker'
+    );
+    if (shots) {
+      await page.screenshot({
+        path: path.join(shots, '5-expanded-avatar.png'),
+      });
+    }
+  }
+
   const frames = cycles.flatMap((c) => c.frames);
   const expandedAsideWidth = Math.max(
     ...cycles

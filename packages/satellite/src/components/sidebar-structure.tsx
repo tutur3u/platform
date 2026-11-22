@@ -5,6 +5,7 @@ import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
+import { useWorkspaceSelectSection } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
@@ -108,8 +109,6 @@ export function SidebarStructure({
     setIsCollapsed,
     appsLauncherOpen,
     setAppsLauncherOpen,
-    workspaceSelectVisible,
-    setWorkspaceSelectVisible,
     navState,
     setNavState,
     backButton,
@@ -143,20 +142,16 @@ export function SidebarStructure({
     name: workspace?.name ?? null,
     personal: workspace?.personal ?? false,
   };
-  const showWorkspaceSelect = workspaceSelectVisible && !isCollapsed;
-  const handleToggleWorkspaceSelect = workspaceSelect
-    ? () => {
-        const nextVisible = !showWorkspaceSelect;
-        setWorkspaceSelectVisible(nextVisible);
-        if (nextVisible && isCollapsed) expandSidebar();
-      }
-    : undefined;
+  const workspaceSection = useWorkspaceSelectSection(isCollapsed);
+  const showWorkspaceSelect =
+    workspaceSection.visible && !(behavior === 'minimal' && isCollapsed);
 
-  const workspaceToggle = handleToggleWorkspaceSelect ? (
+  const workspaceToggle = workspaceSelect ? (
     <WorkspaceSelectVisibilityToggle
+      controls={workspaceSection.id}
       hideLabel={t('command_launcher.hide_workspace_selector')}
       showLabel={t('command_launcher.show_workspace_selector')}
-      onToggle={handleToggleWorkspaceSelect}
+      onToggle={() => workspaceSection.toggle(expandSidebar)}
       visible={showWorkspaceSelect}
     />
   ) : null;
@@ -217,6 +212,8 @@ export function SidebarStructure({
               setIsCollapsed={setIsCollapsed}
               setNavState={setNavState}
               workspaceSelect={workspaceSelect}
+              workspaceSelectId={workspaceSection.id}
+              workspaceSelectOpenRequest={workspaceSection.openRequest}
               workspaceSelectVisible={showWorkspaceSelect}
               wsId={wsId}
             />

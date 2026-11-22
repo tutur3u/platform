@@ -102,9 +102,7 @@ describe('parseSidebarBehavior', () => {
 
 describe('getSidebarCollapsedState', () => {
   it('treats minimal as collapsed for initial layout state', () => {
-    expect(getSidebarCollapsedState(cookieStoreWith({}), 'minimal')).toBe(
-      true
-    );
+    expect(getSidebarCollapsedState(cookieStoreWith({}), 'minimal')).toBe(true);
   });
 
   it('uses the collapsed cookie for expanded behavior', () => {

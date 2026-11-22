@@ -64,9 +64,8 @@ choice follows the account across browsers unless **Local Override** is on.
 
 **Minimal** (decided 2026-11-22) is the mode for the most room: the rail, its
 border and the account controls are gone and only the logo floats at the top
-left. A gutter the width of the collapsed rail stays reserved, so page content
-never sits under the logo and switching between Collapsed, Hover and Minimal
-does not move the page.
+left. A fixed 3.5rem gutter keeps page content clear of the logo while the panel
+opens and closes.
 
 - **Hover**: resting the pointer on the logo or anywhere along the left edge
   for 120 ms opens the sidebar as a floating panel over the page. A pointer
@@ -109,14 +108,14 @@ the dialog and shortcut are unchanged. A pending-invitation count still shows
 beside the label and is announced as the row's description. This applies to Web,
 Workspace and every satellite sidebar.
 
-Unchanged: collapsing the sidebar still turns the selector off, so the collapsed
-rail shows no switcher; use the shortcut there. Where a surface does render the
-control collapsed, it is the avatar alone with a tooltip, an accessible name and
-a dot for pending invitations. Exception: outside the sidebar (the settings
-breadcrumb and the account menu) the control still names the current workspace,
-because there it says which workspace you are in. Coverage:
-`workspace-select-trigger.test.tsx` and the sidebar case in
-`workspace-select-invitations.test.tsx` under
+On desktop, collapsing the sidebar keeps the selector visible as an avatar
+with a tooltip, an accessible name and a dot for pending invitations. Hovering
+the rail restores the label without reopening the dialog. Minimal mode shows
+the selector only while the panel is open. Closing the phone drawer hides the
+selector and cancels any pending request to open its dialog. The settings
+breadcrumb and account menu show the workspace name. Coverage:
+`workspace-select-reveal.test.tsx`, `workspace-select-trigger.test.tsx` and the
+sidebar case in `workspace-select-invitations.test.tsx` under
 `packages/ui/src/components/ui/custom/__tests__/`.
 
 ## Preference precedence

@@ -26,8 +26,9 @@ export function parseSidebarBehavior(
 ): SidebarBehavior {
   // A cookie still holding the retired "hidden" mode reads as "minimal".
   return (
-    normalizeSidebarBehavior(cookies.get(SIDEBAR_BEHAVIOR_COOKIE_NAME)?.value) ??
-    fallback
+    normalizeSidebarBehavior(
+      cookies.get(SIDEBAR_BEHAVIOR_COOKIE_NAME)?.value
+    ) ?? fallback
   );
 }
 

@@ -24,17 +24,12 @@ describe('sidebar behavior', () => {
     expect(normalizeSidebarBehavior('hidden')).toBe('minimal');
   });
 
-  it.each([
-    undefined,
-    null,
-    '',
-    'Hidden',
-    'floating',
-    1,
-    {},
-  ])('rejects %j', (value) => {
-    expect(normalizeSidebarBehavior(value)).toBeNull();
-  });
+  it.each([undefined, null, '', 'Hidden', 'floating', 1, {}])(
+    'rejects %j',
+    (value) => {
+      expect(normalizeSidebarBehavior(value)).toBeNull();
+    }
+  );
 
   it('rests collapsed in every mode but expanded', () => {
     expect(SIDEBAR_BEHAVIORS.filter(restsCollapsed)).toEqual([

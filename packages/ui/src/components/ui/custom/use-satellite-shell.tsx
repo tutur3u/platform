@@ -65,7 +65,6 @@ export function useSatelliteShell({
   const isCollapsed = isMobile ? mobileCollapsed : desktopCollapsed;
   const setIsCollapsed = isMobile ? setMobileCollapsed : setDesktopCollapsed;
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
-  const [workspaceSelectVisible, setWorkspaceSelectVisible] = useState(false);
   const navigationLinks = useMemo<(NavLink | null)[]>(() => links, [links]);
   const [navState, setNavState] = useState<NavigationState>(() => {
     const activeNavigation = findActiveNavigation({
@@ -87,10 +86,6 @@ export function useSatelliteShell({
     seenBehavior.current = behavior;
     setDesktopCollapsed(collapsedForBehavior(behavior, false));
   }, [behavior]);
-
-  useEffect(() => {
-    if (isCollapsed) setWorkspaceSelectVisible(false);
-  }, [isCollapsed]);
 
   useEffect(() => {
     setNavState((prevState) => {
@@ -140,7 +135,6 @@ export function useSatelliteShell({
     }
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
-    if (newCollapsed) setWorkspaceSelectVisible(false);
     persistCollapsed?.(newCollapsed);
 
     if (behavior === 'expanded' && newCollapsed) {
@@ -177,8 +171,6 @@ export function useSatelliteShell({
     setIsCollapsed,
     appsLauncherOpen,
     setAppsLauncherOpen,
-    workspaceSelectVisible,
-    setWorkspaceSelectVisible,
     navState,
     setNavState,
     backButton,
