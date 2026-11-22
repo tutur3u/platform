@@ -113,6 +113,7 @@ describe('app token exchange email authority (SR-926)', () => {
         scopes: ['app-token:refresh'],
         targetApp: 'workspace-app',
         userId: victimUserId,
+        workspaceId,
       },
       { secret: 'test-secret' }
     );

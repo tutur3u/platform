@@ -208,7 +208,8 @@ describe('app token exchange route', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: 'Missing workspace ID for workspace session scope',
+      code: 'WORKSPACE_ID_REQUIRED',
+      error: 'Workspace ID is required for workspace scopes',
     });
   });
 

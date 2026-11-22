@@ -11,10 +11,7 @@ import { validate as validateUUID } from 'uuid';
 export const EXTERNAL_APP_WORKSPACE_MISMATCH_ERROR =
   'Token is not valid for this workspace';
 
-type WorkspaceBindingClaims = Pick<
-  AppCoordinationTokenClaims,
-  'scopes' | 'workspace_id'
->;
+type WorkspaceBindingClaims = Pick<AppCoordinationTokenClaims, 'workspace_id'>;
 
 function isWorkspaceHandleCandidate(value: string) {
   return /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/u.test(value);
@@ -76,15 +73,33 @@ export async function normalizeExternalAppWorkspaceId({
   return data?.id ?? resolvedWorkspaceId;
 }
 
+/** Workspace route scopes: `workspace:*` and `workspace.*` grants. */
+export function isWorkspaceRouteScope(scope: string) {
+  return scope.startsWith('workspace:') || scope.startsWith('workspace.');
+}
+
 /**
- * The exchange binds every `workspace:session` and external-project bearer to
- * the workspace it authorized, so such a bearer without `workspace_id` is not
- * one the exchange issued and is refused.
+ * Whether a token for `scopes` must carry `workspace_id`. The exchange binds
+ * every workspace route and external-project token to the workspace it
+ * authorized and refuses to mint one without it.
  */
-function requiresWorkspaceBinding(scopes: readonly string[]) {
+export function requiresExternalAppWorkspaceBinding(scopes: readonly string[]) {
   return scopes.some(
     (scope) =>
-      scope === 'workspace:session' || scope.startsWith('external-projects:')
+      isWorkspaceRouteScope(scope) || scope.startsWith('external-projects:')
+  );
+}
+
+export const EXTERNAL_APP_WORKSPACE_REQUIRED_CODE = 'WORKSPACE_ID_REQUIRED';
+
+/** The exchange's 400 for workspace scopes requested without `workspaceId`. */
+export function externalAppWorkspaceRequiredResponse() {
+  return NextResponse.json(
+    {
+      code: EXTERNAL_APP_WORKSPACE_REQUIRED_CODE,
+      error: 'Workspace ID is required for workspace scopes',
+    },
+    { status: 400 }
   );
 }
 
@@ -94,18 +109,15 @@ function tokenWorkspaceId(claims: WorkspaceBindingClaims) {
 
 /**
  * Whether an external-app bearer may act on `workspaceId`, a resolved
- * workspace UUID. A bearer carrying `workspace_id` acts only on that
- * workspace. A bearer issued for scopes that bind no workspace (for example
- * `workspace:drive:read` requested without `workspace:session`) carries none
- * and stays limited by the route's app-link and membership checks.
+ * workspace UUID. Only a bearer bound to that workspace may; one without
+ * `workspace_id` acts on no workspace.
  */
 export function externalAppTokenAllowsWorkspace(
   claims: WorkspaceBindingClaims,
   workspaceId: string
 ) {
   const bound = tokenWorkspaceId(claims);
-  if (!bound) return !requiresWorkspaceBinding(claims.scopes);
-  return bound === workspaceId.trim().toLowerCase();
+  return bound !== null && bound === workspaceId.trim().toLowerCase();
 }
 
 function workspaceMismatchResponse() {
@@ -126,9 +138,9 @@ export function rejectExternalAppTokenWorkspace(
 }
 
 /**
- * Applies the workspace binding to a route whose params carry `wsId`. The
- * segment is resolved only when the bearer is bound, so unbound scope-only
- * bearers cost no lookup; a segment that cannot be resolved is refused.
+ * Applies the workspace binding to a route whose params carry `wsId`. An
+ * unbound bearer is refused without a lookup, and a segment that cannot be
+ * resolved is refused.
  */
 export async function rejectExternalAppRouteWorkspace({
   admin,
@@ -136,7 +148,7 @@ export async function rejectExternalAppRouteWorkspace({
   params,
 }: {
   admin: TypedSupabaseClient;
-  claims: WorkspaceBindingClaims & Pick<AppCoordinationTokenClaims, 'sub'>;
+  claims: Pick<AppCoordinationTokenClaims, 'sub' | 'workspace_id'>;
   params?: unknown;
 }) {
   const resolvedParams = await Promise.resolve(params);
@@ -146,11 +158,7 @@ export async function rejectExternalAppRouteWorkspace({
       : undefined;
 
   if (typeof wsId !== 'string' || !wsId.trim()) return null;
-  if (!tokenWorkspaceId(claims)) {
-    return requiresWorkspaceBinding(claims.scopes)
-      ? workspaceMismatchResponse()
-      : null;
-  }
+  if (!tokenWorkspaceId(claims)) return workspaceMismatchResponse();
 
   let workspaceId: string;
   try {

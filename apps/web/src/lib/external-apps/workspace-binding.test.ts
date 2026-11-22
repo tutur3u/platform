@@ -145,20 +145,11 @@ describe.each(entryPoints)('%s workspace binding', (_name, access) => {
     }
   });
 
-  it('keeps an unbound scope-only bearer on the app-link and membership checks', async () => {
-    mocks.claims.mockReturnValue(claims());
-
-    await access(otherWsId);
-
-    expect(mocks.verifyMembership).toHaveBeenCalledWith(
-      expect.objectContaining({ wsId: otherWsId })
-    );
-  });
-
-  it('refuses an unbound workspace-session bearer', async () => {
-    mocks.claims.mockReturnValue(
-      claims({ scopes: ['workspace:*', 'workspace:session'] })
-    );
+  it.each([
+    ['scope-only', ['workspace:*']],
+    ['workspace-session', ['workspace:*', 'workspace:session']],
+  ])('refuses an unbound %s bearer', async (_kind, scopes) => {
+    mocks.claims.mockReturnValue(claims({ scopes }));
 
     const result = await access(wsId);
 

@@ -187,8 +187,9 @@ CLI-only APIs.
 5. The external app server calls
    `POST /api/v1/auth/app-token/exchange` with `appId`, `appSecret`, `token`,
    optional `requestedScopes`, and `workspaceId` whenever the requested or
-   issued scopes include `external-projects:*`, `external-projects:manage`,
-   `external-projects:publish`, or `external-projects:read`.
+   issued scopes include a workspace scope (`workspace:*` or `workspace.*`)
+   or an external-project scope. Without it the exchange answers `400` with
+   `code: "WORKSPACE_ID_REQUIRED"` before redeeming the cross-app token.
    This server-to-server route must bypass browser challenges and WAF managed
    challenges. A Cloudflare response with `cf-mitigated: challenge` is an edge
    block, not an app-token validation failure, and the external app cannot
@@ -258,15 +259,16 @@ A bearer counts as an
 external app's when it lacks `internal-app:session` and its `target_app` is not
 a reserved internal app name.
 
-An external-app bearer acts only on the workspace it was issued for. Each of
-these routes resolves the route workspace (UUID, handle or `personal`) and
-answers a bearer whose `workspace_id` names another workspace with `403`
-`Token is not valid for this workspace`. The exchange binds every
-`workspace:session` and external-project bearer to the workspace it
-authorized, so such a bearer without `workspace_id` is refused the same way.
-A bearer issued for other scopes without `workspace:session` carries no
-workspace; it reaches only the app's linked workspaces where the user is a
-direct `MEMBER`. Request `workspace:session` with a `workspaceId` to bind it.
+An external-app bearer acts only on the workspace it was issued for. The
+exchange binds every token that carries a workspace or external-project
+scope to the workspace it authorized (`workspace_id`): the app must be linked
+to that workspace and the user must be a direct `MEMBER`. Each of these
+routes resolves the route workspace (UUID, handle or `personal`) and answers
+a bearer bound to another workspace, or bound to none, with `403`
+`Token is not valid for this workspace`. A refresh keeps the refresh token's
+workspace: naming another workspace answers `403`, and a refresh token
+without a workspace for these scopes answers `401`
+`Workspace-bound sign-in required`, so the app signs the user in again.
 The check lives in `apps/web/src/lib/app-coordination/external-app-workspace.ts`.
 
 Coverage:
@@ -274,6 +276,7 @@ Coverage:
 `apps/web/src/lib/app-coordination/external-app-workspace.test.ts`,
 `apps/web/src/lib/external-apps/workspace-binding.test.ts`,
 `apps/web/src/lib/api-auth-app-session-workspace.test.ts`,
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-workspace-binding.test.ts`,
 `apps/web/src/lib/external-projects/access-app-status.test.ts`,
 `apps/web/src/lib/external-apps/live-app-access.test.ts`,
 `apps/web/src/lib/external-apps/workspace-drive.test.ts`,

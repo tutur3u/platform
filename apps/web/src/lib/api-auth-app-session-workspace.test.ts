@@ -80,17 +80,18 @@ describe('external-app bearer workspace binding on app-session routes', () => {
     }
   });
 
-  it('admits an unbound scope-only bearer and routes without wsId', async () => {
+  it('refuses an unbound bearer on a workspace route only', async () => {
     const unbound = await verifyConfiguredAppSessionRequest(
       bearerRequest(),
       auth,
-      { wsId: otherWsId }
+      { wsId }
     );
-    expect(unbound.ok).toBe(true);
+    expect(unbound.ok).toBe(false);
+    if (!unbound.ok) expect(unbound.response.status).toBe(403);
     expect(mocks.admin.from).not.toHaveBeenCalled();
 
     const noWorkspace = await verifyConfiguredAppSessionRequest(
-      bearerRequest(wsId),
+      bearerRequest(),
       auth
     );
     expect(noWorkspace.ok).toBe(true);

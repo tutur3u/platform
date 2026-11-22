@@ -32,6 +32,7 @@ describe('app token exchange route', () => {
         scopes: ['app-token:refresh'],
         targetApp: 'workspace-app',
         userId: victimUserId,
+        workspaceId,
       },
       { secret: 'test-secret' }
     );
@@ -312,7 +313,8 @@ describe('app token exchange route', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: 'Missing workspace ID for external project scopes',
+      code: 'WORKSPACE_ID_REQUIRED',
+      error: 'Workspace ID is required for workspace scopes',
     });
   });
 

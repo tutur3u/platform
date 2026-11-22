@@ -26,6 +26,11 @@ import {
   INVITATION_ACTION_TOKEN_TTL_SECONDS,
   invitationWorkspaceScope,
 } from '@/lib/app-coordination/invitation-action-token';
+import {
+  externalAppWorkspaceRequiredResponse,
+  isWorkspaceRouteScope,
+  requiresExternalAppWorkspaceBinding,
+} from '@/lib/app-coordination/external-app-workspace';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import { PKCE_CODE_VERIFIER_PATTERN } from '@/lib/auth/cross-app-pkce';
@@ -95,7 +100,7 @@ function isConfiguredApp(targetApp: string) {
 }
 
 function requiresWorkspaceSessionAuthorization(scopes: string[]) {
-  return scopes.includes(WORKSPACE_SESSION_SCOPE);
+  return scopes.some(isWorkspaceRouteScope);
 }
 
 function shouldInferWorkspaceSessionScope({
@@ -406,6 +411,12 @@ async function exchangeAppToken(request: NextRequest) {
       { status: resolvedTarget.status }
     );
   }
+  const requiresWorkspace = requiresExternalAppWorkspaceBinding(
+    resolvedTarget.scopes
+  );
+  if (token && requiresWorkspace && !workspaceId?.trim()) {
+    return externalAppWorkspaceRequiredResponse();
+  }
 
   if (token) {
     const refusal = await limitVerifiedExternalAppExchange(
@@ -456,14 +467,7 @@ async function exchangeAppToken(request: NextRequest) {
     const refreshClaims = refreshResult.claims;
     refreshFamily = refreshResult.family;
     refreshWorkspaceId = refreshClaims.workspace_id;
-    if (
-      !refreshWorkspaceId &&
-      resolvedTarget.scopes.some(
-        (scope) =>
-          scope === 'external-projects:manage' ||
-          scope === 'external-projects:*'
-      )
-    ) {
+    if (!refreshWorkspaceId && requiresWorkspace) {
       return NextResponse.json(
         { error: 'Workspace-bound sign-in required' },
         { status: 401 }
@@ -644,6 +648,9 @@ async function exchangeAppToken(request: NextRequest) {
   const normalizedWorkspaceId =
     exchangeAuthorization.normalizedWorkspaceId ??
     workspaceSessionAuthorization?.normalizedWorkspaceId;
+  if (requiresWorkspace && !normalizedWorkspaceId) {
+    return externalAppWorkspaceRequiredResponse();
+  }
   if (refreshWorkspaceId && normalizedWorkspaceId !== refreshWorkspaceId) {
     return NextResponse.json(
       { error: 'Refresh workspace does not match' },

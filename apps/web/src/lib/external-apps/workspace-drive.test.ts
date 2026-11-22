@@ -88,6 +88,7 @@ describe('external app workspace Drive', () => {
         scopes: ['workspace:drive:read', 'workspace:drive:write'],
         sub: '11111111-1111-4111-8111-111111111111',
         target_app: 'cybershield35',
+        workspace_id: workspaceId,
       },
       ok: true,
     });

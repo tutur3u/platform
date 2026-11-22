@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   EXTERNAL_APP_WORKSPACE_MISMATCH_ERROR,
   externalAppTokenAllowsWorkspace,
+  isWorkspaceRouteScope,
   normalizeExternalAppWorkspaceId,
   rejectExternalAppRouteWorkspace,
   rejectExternalAppTokenWorkspace,
+  requiresExternalAppWorkspaceBinding,
 } from './external-app-workspace';
 
 const workspaceId = '22222222-2222-4222-8222-222222222222';
@@ -52,38 +54,40 @@ describe('externalAppTokenAllowsWorkspace', () => {
     );
   });
 
-  it('admits an unbound bearer whose scopes bind no workspace', () => {
-    expect(
-      externalAppTokenAllowsWorkspace(
-        { scopes: ['workspace:drive:read', 'workspace:members:read'] },
-        workspaceId
-      )
-    ).toBe(true);
-  });
-
-  it('refuses an unbound bearer whose scopes always bind a workspace', () => {
-    for (const scope of [
-      'workspace:session',
-      'external-projects:read',
-      'external-projects:*',
-    ]) {
+  it('refuses every bearer without a bound workspace', () => {
+    for (const workspace_id of [undefined, '', '  ']) {
       expect(
-        externalAppTokenAllowsWorkspace({ scopes: [scope] }, workspaceId)
-      ).toBe(false);
-      expect(
-        externalAppTokenAllowsWorkspace(
-          { scopes: [scope], workspace_id: '' },
-          workspaceId
-        )
+        externalAppTokenAllowsWorkspace({ workspace_id }, workspaceId)
       ).toBe(false);
     }
+  });
+});
+
+describe('requiresExternalAppWorkspaceBinding', () => {
+  it('binds workspace route and external-project scopes only', () => {
+    for (const scope of [
+      'workspace:session',
+      'workspace:drive:read',
+      'workspace:members:read',
+      'workspace.members.email:read',
+      'external-projects:read',
+    ]) {
+      expect(requiresExternalAppWorkspaceBinding([scope])).toBe(true);
+      expect(isWorkspaceRouteScope(scope)).toBe(
+        !scope.startsWith('external-projects:')
+      );
+    }
+    expect(requiresExternalAppWorkspaceBinding(['users:profile:write'])).toBe(
+      false
+    );
+    expect(requiresExternalAppWorkspaceBinding([])).toBe(false);
   });
 });
 
 describe('rejectExternalAppTokenWorkspace', () => {
   it('answers a mismatch with a stable 403', async () => {
     const response = rejectExternalAppTokenWorkspace(
-      { scopes: ['workspace:session'], workspace_id: workspaceId },
+      { workspace_id: workspaceId },
       otherWorkspaceId
     );
     expect(response?.status).toBe(403);
@@ -92,7 +96,7 @@ describe('rejectExternalAppTokenWorkspace', () => {
     });
     expect(
       rejectExternalAppTokenWorkspace(
-        { scopes: ['workspace:session'], workspace_id: workspaceId },
+        { workspace_id: workspaceId },
         workspaceId
       )
     ).toBeNull();
@@ -161,25 +165,17 @@ describe('rejectExternalAppRouteWorkspace', () => {
     }
   });
 
-  it('skips the lookup for routes without wsId and unbound bearers', async () => {
+  it('skips routes without wsId and refuses unbound bearers unread', async () => {
     const { admin, from } = adminWithWorkspaces([]);
     await expect(
       rejectExternalAppRouteWorkspace({ admin, claims: bound, params: {} })
     ).resolves.toBeNull();
-    await expect(
-      rejectExternalAppRouteWorkspace({
-        admin,
-        claims: { scopes: ['users:profile:write'], sub: userId },
-        params: { wsId: 'acme' },
-      })
-    ).resolves.toBeNull();
-    expect(from).not.toHaveBeenCalled();
-
-    const unboundSession = await rejectExternalAppRouteWorkspace({
+    const unbound = await rejectExternalAppRouteWorkspace({
       admin,
-      claims: { scopes: ['workspace:session'], sub: userId },
+      claims: { sub: userId },
       params: { wsId: workspaceId },
     });
-    expect(unboundSession?.status).toBe(403);
+    expect(unbound?.status).toBe(403);
+    expect(from).not.toHaveBeenCalled();
   });
 });

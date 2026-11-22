@@ -157,6 +157,7 @@ describe('external app managed cron routes', () => {
         scopes: ['workspace:cron:read', 'workspace:cron:write'],
         sub: userId,
         target_app: 'cybershield35',
+        workspace_id: workspaceId,
       },
       ok: true,
     });

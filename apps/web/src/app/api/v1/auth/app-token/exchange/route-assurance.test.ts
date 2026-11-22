@@ -173,6 +173,7 @@ describe('app token exchange session assurance', () => {
         scopes: ['app-token:refresh'],
         targetApp: 'yoola',
         userId: victimUserId,
+        workspaceId,
       },
       { secret: 'test-secret' }
     );

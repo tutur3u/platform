@@ -77,6 +77,7 @@ beforeEach(() => {
     scopes: ['workspace:*'],
     sub: '11111111-1111-4111-8111-111111111111',
     target_app: 'fysh',
+    workspace_id: wsId,
   });
   mocks.getExternalAppById.mockResolvedValue({
     allowedWorkspaceIds: [wsId],
