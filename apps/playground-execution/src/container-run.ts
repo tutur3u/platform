@@ -101,42 +101,42 @@ export async function runInFreshContainer(
       if (signal?.aborted) abort();
       timer = setTimeout(abort, Math.max(0, deadline - Date.now()));
     });
-    result = await Promise.race([
-      expiration,
-      (async () => {
-        await container.setInactivityTimeout(IDLE_TIMEOUT_MS);
-        if (
-          cancelled ||
-          Date.now() >= deadline ||
-          !(await mayExecute()) ||
-          cancelled ||
-          Date.now() >= deadline
-        ) {
-          throw new Error('Playground execution stopped before dispatch');
-        }
-        const stdin = new Blob([JSON.stringify(input)]).stream();
-        const process = await container.exec(
-          [
-            '/usr/bin/unshare',
-            '--mount',
-            '--propagation',
-            'private',
-            '/usr/bin/python3',
-            '-I',
-            '-S',
-            '-B',
-            '/usr/local/lib/playground/run.py',
-          ],
-          { user: '0:0', stdin, stderr: 'ignore' }
-        );
-        const [output, exitCode] = await Promise.all([
-          readGuestStream(process.stdout),
-          process.exitCode,
-        ]);
-        if (exitCode !== 0) throw new Error('Playground guest launcher failed');
-        return parseResult(JSON.parse(output));
-      })(),
-    ]);
+    const execution = (async () => {
+      await container.setInactivityTimeout(IDLE_TIMEOUT_MS);
+      if (
+        cancelled ||
+        Date.now() >= deadline ||
+        !(await mayExecute()) ||
+        cancelled ||
+        Date.now() >= deadline
+      ) {
+        throw new Error('Playground execution stopped before dispatch');
+      }
+      const stdin = new Blob([JSON.stringify(input)]).stream();
+      const process = await container.exec(
+        [
+          '/usr/bin/unshare',
+          '--mount',
+          '--propagation',
+          'private',
+          '/usr/bin/python3',
+          '-I',
+          '-S',
+          '-B',
+          '/usr/local/lib/playground/run.py',
+        ],
+        { user: '0:0', stdin, stderr: 'ignore' }
+      );
+      const [output, exitCode] = await Promise.all([
+        readGuestStream(process.stdout),
+        process.exitCode,
+      ]);
+      if (exitCode !== 0) throw new Error('Playground guest launcher failed');
+      return parseResult(JSON.parse(output));
+    })();
+    // When cancellation wins, destroying the guest rejects the losing branch.
+    execution.catch(() => {});
+    result = await Promise.race([expiration, execution]);
   } finally {
     clearTimeout(timer);
     if (abort) signal?.removeEventListener('abort', abort);

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   room: vi.fn(),
@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   authority: vi.fn(),
   cloudflare: vi.fn(),
   ticket: vi.fn(),
+  startCloud: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/education-core/education/programming-access', () => ({
@@ -53,11 +54,31 @@ vi.mock('../lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       readonly status: number,
-      message: string
+      message: string,
+      readonly code?: string,
+      readonly retryAfterSeconds?: number
     ) {
       super(message);
     }
   },
+}));
+vi.mock('@tuturuuu/storage-core/cloud-playground', () => ({
+  CloudPlaygroundRefusal: class extends Error {
+    constructor(
+      readonly status: number,
+      message: string,
+      readonly code: string,
+      readonly retryAfterSeconds?: number
+    ) {
+      super(message);
+    }
+  },
+  isCloudPlaygroundRun: vi.fn(() => false),
+  readCloudPlayground: vi.fn(),
+  startCloudPlayground: mocks.startCloud,
+  stopCloudPlayground: vi.fn(),
+  useCloudMeetPlayground: () =>
+    process.env.MEET_PLAYGROUND_EXECUTION_PROVIDER === 'cloudflare',
 }));
 
 vi.mock('@opennextjs/cloudflare', () => ({
@@ -76,7 +97,12 @@ vi.mock('./personal-chat-request', () => ({
 }));
 
 import { changeMeetingProgrammingMira } from './programming-mira';
-import { createMeetingPlayground, joinMeetingProgramming } from './programming';
+import { CloudPlaygroundRefusal } from '@tuturuuu/storage-core/cloud-playground';
+import {
+  createMeetingPlayground,
+  executeMeetingPlayground,
+  joinMeetingProgramming,
+} from './programming';
 
 const access = {
   isHost: true,
@@ -332,5 +358,57 @@ describe('Mira coding routes', () => {
       access,
       expect.objectContaining({ phase: 'finish' })
     );
+  });
+});
+
+describe('meeting cloud Run refusals', () => {
+  const projectId = '00000000-0000-4000-8000-000000000010';
+  const run = {
+    operation: 'run',
+    requestId: '00000000-0000-4000-8000-000000000011',
+  };
+  beforeEach(() => {
+    vi.stubEnv('MEET_PLAYGROUND_EXECUTION_PROVIDER', 'cloudflare');
+    mocks.room.mockResolvedValue({
+      selection: { kind: 'playground', id: projectId, language: 'python' },
+    });
+    mocks.elevated.mockResolvedValue(true);
+    mocks.metadata.mockResolvedValue({
+      language: 'python',
+      revision: 3,
+      activeRun: null,
+    });
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('passes the refusal code and retry hint to the room response', async () => {
+    mocks.startCloud.mockRejectedValue(
+      new (CloudPlaygroundRefusal as unknown as new (
+        ...args: unknown[]
+      ) => Error)(429, 'Playground run limit reached', 'PLAYGROUND_QUOTA', 120)
+    );
+    await expect(executeMeetingPlayground(access, run)).rejects.toMatchObject({
+      status: 429,
+      code: 'PLAYGROUND_QUOTA',
+      retryAfterSeconds: 120,
+    });
+    expect(mocks.room).not.toHaveBeenCalledWith(
+      access,
+      expect.objectContaining({ action: 'programming.run' })
+    );
+  });
+
+  it('reports a legacy active run as busy without dispatching', async () => {
+    mocks.metadata.mockResolvedValue({
+      language: 'python',
+      revision: 3,
+      activeRun: 'legacy-run',
+    });
+    await expect(executeMeetingPlayground(access, run)).rejects.toMatchObject({
+      status: 429,
+      code: 'PLAYGROUND_BUSY',
+      retryAfterSeconds: 5,
+    });
+    expect(mocks.startCloud).not.toHaveBeenCalled();
   });
 });

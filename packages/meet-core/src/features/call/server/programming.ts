@@ -400,7 +400,8 @@ export async function executeMeetingPlayground(
         throw new MeetCallAccessError(
           429,
           'Playground project already has an active run',
-          'PLAYGROUND_CAPACITY'
+          'PLAYGROUND_BUSY',
+          5
         );
       }
       const queued = await startCloudPlayground(
@@ -429,7 +430,12 @@ export async function executeMeetingPlayground(
       return queued;
     } catch (error) {
       if (error instanceof CloudPlaygroundRefusal)
-        throw new MeetCallAccessError(error.status, error.message, error.code);
+        throw new MeetCallAccessError(
+          error.status,
+          error.message,
+          error.code,
+          error.retryAfterSeconds
+        );
       throw error;
     }
   }

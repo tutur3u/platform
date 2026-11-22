@@ -199,6 +199,7 @@ test('a normal Run makes one source fetch, one guest start, one command and one 
     ['succeeded']
   );
   assert.equal(fx.coordinator.calls.complete[0].result.output, 'hi\n');
+  assert.equal(fx.coordinator.calls.complete[0].result.sandboxFailed, false);
   // The journal, sealed input and deadline alarm are all cleared.
   assert.equal(fx.store.values.size, 0);
   assert.equal(fx.store.alarm(), null);
@@ -325,4 +326,31 @@ test('assignment is idempotent per Run and refuses expired or overlapping work',
     false
   );
   assert.equal(fresh.store.values.size, 0);
+});
+
+test('a launcher that cannot build its sandbox reports a service failure', async (t) => {
+  const guest = containerFixture();
+  guest.container.exec = async () => {
+    guest.calls.exec += 1;
+    return {
+      stdout: new Blob([
+        JSON.stringify({
+          exitCode: 126,
+          output: '',
+          outcome: 'sandbox_failed',
+          files: null,
+        }),
+      ]).stream(),
+      exitCode: Promise.resolve(0),
+    };
+  };
+  const fx = setup(t, { guest });
+  await fx.slot().assign(claim(), identity, 3, ...tickets, undefined);
+  await fx.slot().alarm();
+  assert.deepEqual(fx.guest.calls, { start: 1, exec: 1, destroy: 1 });
+  assert.equal(fx.fetches.length, 1);
+  const [completion] = fx.coordinator.calls.complete;
+  assert.equal(completion.state, 'failed');
+  assert.equal(completion.result.sandboxFailed, true);
+  assert.equal(completion.result.exitCode, 126);
 });

@@ -1,6 +1,10 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ACTOR_WINDOW_MS = 10 * 60 * 1000;
 const MAX_JOB_AGE_MS = 50_000;
+// Web can hold a writeback claim through one room checkpoint (35 s) plus its
+// settlement calls. After this grace past the deadline an unsettled claim no
+// longer holds the slot, the requester or the project.
+export const WRITEBACK_GRACE_MS = 60_000;
 const RESULT_RETENTION_MS = DAY_MS;
 
 export interface Capacity {
@@ -105,6 +109,7 @@ export interface RunRow extends SqlRow {
   exit_code: number | null;
   result_revision: number | null;
   output: string;
+  failure_reason: 'sandbox_failed' | null;
 }
 
 interface GateRow extends SqlRow {
@@ -155,7 +160,8 @@ export class PlaygroundAdmission {
         writeback_claim_id TEXT,
         exit_code INTEGER,
         result_revision INTEGER,
-        output TEXT NOT NULL
+        output TEXT NOT NULL,
+        failure_reason TEXT
       )`);
     storage.query(`
       CREATE UNIQUE INDEX IF NOT EXISTS playground_active_slot
@@ -225,7 +231,7 @@ export class PlaygroundAdmission {
     now: number
   ):
     | { kind: 'new' | 'existing'; run: RunRow }
-    | { kind: 'refused'; reason: Denial } {
+    | { kind: 'refused'; reason: Denial; retryAfterMs?: number } {
     return this.storage.transaction(() => {
       const [previous] = this.storage.query<RunRow>(
         'SELECT * FROM playground_runs WHERE run_id = ?',
@@ -244,7 +250,11 @@ export class PlaygroundAdmission {
       // A clock reversal keeps the newest UTC day's budget charged.
       const starts = day > gate.day ? 0 : gate.starts;
       if (starts >= this.capacity.startsPerDay) {
-        return { kind: 'refused', reason: 'daily_capacity' };
+        return {
+          kind: 'refused',
+          reason: 'daily_capacity',
+          retryAfterMs: (Math.max(day, gate.day) + 1) * DAY_MS - now,
+        };
       }
       const active = this.active();
       if (active.some((run) => run.project_id === request.projectId)) {
@@ -260,8 +270,8 @@ export class PlaygroundAdmission {
         return { kind: 'refused', reason: 'global_capacity' };
       }
       const recent = Array.from(
-        this.storage.query<{ run_id: string }>(
-          `SELECT run_id FROM playground_runs WHERE requester = ? AND created_at > ?
+        this.storage.query<{ created_at: number }>(
+          `SELECT created_at FROM playground_runs WHERE requester = ? AND created_at > ?
          ORDER BY created_at DESC LIMIT ?`,
           request.requester,
           now - ACTOR_WINDOW_MS,
@@ -269,7 +279,13 @@ export class PlaygroundAdmission {
         )
       );
       if (recent.length >= this.capacity.perActorPerWindow) {
-        return { kind: 'refused', reason: 'user_rate_limit' };
+        // The oldest counted start leaves the rolling window first.
+        const oldest = recent.at(-1)?.created_at ?? now;
+        return {
+          kind: 'refused',
+          reason: 'user_rate_limit',
+          retryAfterMs: oldest + ACTOR_WINDOW_MS - now,
+        };
       }
       const usedSlots = new Set(active.map((run) => run.slot));
       let slot = 0;
@@ -295,10 +311,11 @@ export class PlaygroundAdmission {
         exit_code: null,
         result_revision: null,
         output: '',
+        failure_reason: null,
       };
       this.storage.query(
         `INSERT INTO playground_runs VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', NULL, 0, ?, 0, 0, 0, NULL, NULL, NULL, ''
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', NULL, 0, ?, 0, 0, 0, NULL, NULL, NULL, '', NULL
         )`,
         run.run_id,
         run.requester,
@@ -440,7 +457,8 @@ export class PlaygroundAdmission {
   requestStop(run: RunRow) {
     this.storage.query(
       `UPDATE playground_runs SET cleanup_at = 0, stop_requested = 1
-       WHERE run_id = ? AND generation = ? AND ${ACTIVE} AND cleanup_attempts < 3`,
+       WHERE run_id = ? AND generation = ? AND ${ACTIVE}
+         AND stop_requested = 0 AND cleanup_attempts < 3`,
       run.run_id,
       run.generation
     );
@@ -464,7 +482,12 @@ export class PlaygroundAdmission {
     input: Pick<RunRow, 'run_id' | 'generation' | 'slot'>,
     state: TerminalState,
     now: number,
-    result?: { exitCode: number; output: string; savedRevision?: number }
+    result?: {
+      exitCode: number;
+      output: string;
+      savedRevision?: number;
+      sandboxFailed?: boolean;
+    }
   ) {
     return this.storage.transaction(() => {
       const [run] = this.storage.query<RunRow>(
@@ -481,8 +504,24 @@ export class PlaygroundAdmission {
         run.writeback_state === 1 && result?.savedRevision !== undefined
           ? result.savedRevision
           : run.result_revision;
-      if (run.writeback_state === 1 && confirmedRevision === null)
+      if (
+        run.writeback_state === 1 &&
+        confirmedRevision === null &&
+        now < run.deadline + WRITEBACK_GRACE_MS
+      ) {
+        // Wait for Web to settle the claim, and leave one cleanup attempt
+        // for the grace boundary so a lost settlement cannot wedge the row.
+        this.storage.query(
+          `UPDATE playground_runs
+           SET cleanup_at = ?, cleanup_attempts = MIN(cleanup_attempts, 2)
+           WHERE run_id = ? AND generation = ? AND slot = ?`,
+          run.deadline + WRITEBACK_GRACE_MS,
+          input.run_id,
+          input.generation,
+          input.slot
+        );
         return undefined;
+      }
       const gate = this.gate();
       const expired = Boolean(run.client_expired) || run.deadline <= now;
       const cancelled =
@@ -492,10 +531,16 @@ export class PlaygroundAdmission {
         state === 'cancelled';
       const finalState = expired ? 'failed' : cancelled ? 'cancelled' : state;
       const receipt = expired || cancelled ? undefined : result;
+      // A failure with no guest result, or a launcher that could not build
+      // its sandbox, is the service's failure rather than the program's.
+      const failureReason =
+        finalState === 'failed' && (!receipt || receipt.sandboxFailed)
+          ? 'sandbox_failed'
+          : null;
       this.storage.query(
         `UPDATE playground_runs
          SET state = ?, finished_at = ?, cleanup_at = NULL, client_expired = ?,
-             exit_code = ?, result_revision = ?, output = ?,
+             exit_code = ?, result_revision = ?, output = ?, failure_reason = ?,
              writeback_state = CASE WHEN writeback_state = 1 THEN 2 ELSE writeback_state END
          WHERE run_id = ? AND generation = ? AND slot = ?`,
         finalState,
@@ -504,6 +549,7 @@ export class PlaygroundAdmission {
         receipt?.exitCode ?? null,
         confirmedRevision,
         receipt?.output ?? '',
+        failureReason,
         input.run_id,
         input.generation,
         input.slot

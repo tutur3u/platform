@@ -2151,12 +2151,31 @@ Learn uses the same workbench without the meeting-only controls.
   failures keep their own notice. Learn problems opened in the meeting never
   show the card, and Learn's hosted playground keeps the retry notice for every
   failure.
+- On the Cloudflare execution path, a refused Run keeps the room action
+  envelope `{ error, code, retryAfterSeconds }` and sends a matching
+  `Retry-After` header. `retryAfterSeconds` is a whole number of seconds, at
+  least 1.
+
+  | Status | `code` | Meaning | `retryAfterSeconds` |
+  | --- | --- | --- | --- |
+  | 503 | `PLAYGROUND_UNAVAILABLE` | Execution is paused, or the service is unreachable or failing | 30 |
+  | 429 | `PLAYGROUND_BUSY` | All runners are in use, or this user or project already has an active Run | 5 |
+  | 429 | `PLAYGROUND_QUOTA` | The per-user limit (30 Runs in 10 minutes) or the daily limit is reached | Time until the window frees, at most 600 |
+  | 409 | `PLAYGROUND_REQUEST_CONFLICT` | A reused request ID no longer matches; send a new one | None |
+
+  Starting a guest from zero is not an error: an accepted Run returns
+  `{ runId, startedAt }` and reads report `queued`, then `running`. A failed
+  read carries `reason: 'sandbox_failed'` when the service could not start or
+  sandbox the program (no guest result, a launcher that could not build its
+  sandbox, or a job that outlived its deadline). A program's own non-zero exit
+  has `reason: null`.
 
 Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
 `workbench-errors.test.ts`, `workbench-language.test.ts`,
 `workbench-language-picker.test.tsx`, `workbench-files.test.tsx`,
-`workbench-runner-unavailable.test.tsx`, `use-workbench-run.test.tsx` and
-`programming-panel.test.tsx`.
+`workbench-runner-unavailable.test.tsx`, `use-workbench-run.test.tsx`,
+`programming-panel.test.tsx`, `room-service.test.ts`, `programming.test.ts`,
+`cloud-playground.test.ts` and the `apps/playground-execution` Node tests.
 
 Web screen capture depends on browser getDisplayMedia support. Android and iOS
 browsers that lack it can receive screens and co-program, but cannot open a

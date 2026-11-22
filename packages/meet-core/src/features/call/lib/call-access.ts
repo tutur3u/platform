@@ -13,7 +13,9 @@ export class MeetCallAccessError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    /** Whole seconds, at least 1, sent as `retryAfterSeconds` and `Retry-After`. */
+    public retryAfterSeconds?: number
   ) {
     super(message);
   }

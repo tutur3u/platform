@@ -104,16 +104,36 @@ def set_limits():
     resource.setrlimit(resource.RLIMIT_FSIZE, (32 * 1024 * 1024,) * 2)
 
 
-def run(command, stdin):
-    args = [
+def sandboxed(*command):
+    return [
         "/usr/bin/unshare", "--net", "--pid", "--fork", "--kill-child", "--mount-proc",
         "/usr/bin/setpriv", "--reuid", str(UID), "--regid", str(UID), "--clear-groups",
         "--bounding-set=-all", "--inh-caps=-all", "--ambient-caps=-all", "--no-new-privs",
         "--landlock-access", "fs:" + WRITE_RIGHTS,
         "--landlock-rule", "path-beneath:" + WORKSPACE_RIGHTS + ":/tmp",
         "--landlock-rule", "path-beneath:write-file:/dev/null",
-        "/bin/sh", "-c", command,
+        *command,
     ]
+
+
+def preflight():
+    # Build the same sandbox around a no-op first. A kernel or runtime that
+    # cannot provide a namespace, the privilege drop or Landlock fails here,
+    # before user code runs, and never surfaces as the program's own output.
+    subprocess.run(
+        sandboxed("/bin/true"),
+        check=True,
+        cwd=WORKSPACE,
+        env=GUEST_ENV,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        timeout=5,
+    )
+
+
+def run(command, stdin):
+    args = sandboxed("/bin/sh", "-c", command)
     with tempfile.TemporaryFile() as input_file:
         input_file.write(stdin.encode())
         input_file.seek(0)
@@ -151,40 +171,50 @@ def run(command, stdin):
             return code if code >= 0 else 128 - code, output, "exited"
 
 
-def export_files():
+def export_files(sources):
+    """Return the saveable workspace, or None when a project file cannot be saved.
+
+    The export is a complete inventory, so leaving out a project file would
+    delete it. Build output the program created (binaries, unsupported names,
+    oversized or non-text files) is left out instead.
+    """
     if not stat.S_ISDIR(WORKSPACE.lstat().st_mode):
         raise ValueError("Workspace directory was replaced")
     files = []
+    seen = set()
     total = 0
     entries = 0
     for directory, folders, names, directory_fd in os.fwalk(WORKSPACE):
         folders[:] = [name for name in folders if name not in EXCLUDED]
         entries += len(folders) + len(names)
         if entries > 512:
-            raise ValueError("Workspace inventory limit exceeded")
+            return None
         for name in names:
-            relative = (Path(directory) / name).relative_to(WORKSPACE)
+            relative = str((Path(directory) / name).relative_to(WORKSPACE))
             if not stat.S_ISREG(os.stat(name, dir_fd=directory_fd, follow_symlinks=False).st_mode):
                 continue
-            if len(str(relative)) > 240 or any(
-                not SEGMENT.fullmatch(part) or part in EXCLUDED for part in relative.parts
+            if len(relative) > 240 or any(
+                not SEGMENT.fullmatch(part) or part in EXCLUDED for part in relative.split("/")
             ):
-                raise ValueError("Unsupported workspace path")
+                continue
             fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
             with os.fdopen(fd, "rb") as handle:
                 data = handle.read(MAX_FILE_BYTES + 1)
-            if len(data) > MAX_FILE_BYTES:
-                raise ValueError("File size limit exceeded")
             try:
                 text = data.decode("utf-8")
             except UnicodeDecodeError:
                 continue
-            if chr(0) in text:
+            if len(data) > MAX_FILE_BYTES or chr(0) in text:
                 continue
             total += len(data)
             if total > MAX_PROJECT_BYTES or len(files) >= 128:
-                raise ValueError("Workspace size limit exceeded")
-            files.append({"path": str(relative), "content": text})
+                return None
+            files.append({"path": relative, "content": text})
+            seen.add(relative)
+    # A project file that was removed, replaced or made unsaveable is not
+    # dropped silently; the run keeps its output and skips the save.
+    if any(path not in seen for path in sources if os.path.lexists(WORKSPACE / path)):
+        return None
     return files
 
 
@@ -192,10 +222,16 @@ def main():
     try:
         job = read_job()
         stage_files(job["files"])
+        preflight()
         exit_code, output, outcome = run(job["command"], job.get("stdin", ""))
-        files = export_files() if outcome == "exited" else None
     except (KeyError, OSError, TypeError, ValueError, subprocess.SubprocessError):
-        exit_code, output, outcome, files = 126, b"", "sandbox_failed", None
+        exit_code, output, outcome = 126, b"", "sandbox_failed"
+    files = None
+    if outcome == "exited":
+        try:
+            files = export_files([file["path"] for file in job["files"]])
+        except (OSError, ValueError):
+            files = None
     json.dump({
         "exitCode": exit_code,
         "output": output.decode("utf-8", errors="replace").encode("utf-8")[

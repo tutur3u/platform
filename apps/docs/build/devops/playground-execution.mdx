@@ -88,7 +88,10 @@ The operator calls `POST /control` with the operator credential and
 `{"enabled":false}`. The response records the new generation and the number of
 active reservations. Admission then refuses new work. A draining response uses
 HTTP 202. A claimed Drive writeback keeps the reservation active until the
-coordinator receives the checkpoint confirmation. Stop fences new writes
+coordinator receives the checkpoint confirmation, or until 60 seconds after the
+job deadline. That grace covers one room checkpoint and its settlement calls;
+after it the Run fails without a saved revision and releases its slot, user and
+project, so a lost settlement cannot wedge capacity or block re-enabling. Stop fences new writes
 and lets an in-flight export finish its bounded receipt wait. Confirm there are zero
 active reservations and zero running instances before rolling back the
 application route or rotating service secrets. The same control request is
@@ -114,6 +117,23 @@ an unconfirmed teardown that keeps the slot occupied, and Stop or pause before
 the guest starts. `container-run.test.mjs` covers the guest: egress disabled,
 output bounds and confirmed destruction. Run them with
 `bun run --cwd apps/playground-execution test`.
+
+## Launcher behaviour
+
+The trusted launcher (`container/run.py`) runs as root only to mount a fresh
+`/tmp` and build the sandbox. It first runs the same namespace, privilege drop
+and Landlock chain around `/bin/true`; if the kernel or runtime cannot provide
+any part of it, the Run fails as `sandbox_failed` before user code runs. The
+program then runs as UID and GID 65534 with no capabilities, no new
+privileges, an empty network namespace, its own PID namespace and writes limited to
+`/tmp`.
+
+After a normal exit the launcher exports the workspace as a complete
+inventory. Files the program created that cannot be saved (binaries, names
+outside the path rules, files over 256 KiB, non-UTF-8 text) are left out. If a
+project file still exists but cannot be saved, or the workspace exceeds the
+inventory or size limits, nothing is exported and the Run keeps its output.
+An export problem never replaces the program's output.
 
 ## Usage and cost
 

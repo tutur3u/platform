@@ -52,11 +52,15 @@ describe('workbench failures', () => {
   });
 });
 
-it('shows Playground capacity and pause refusals independently of the HTTP status', () => {
-  expect(failureReason({ status: 429, code: 'PLAYGROUND_CAPACITY' })).toBe(
+it('maps the Playground refusal codes independently of the HTTP status', () => {
+  expect(failureReason({ status: 503, code: 'PLAYGROUND_UNAVAILABLE' })).toBe(
+    'unavailable'
+  );
+  expect(failureReason({ status: 429, code: 'PLAYGROUND_BUSY' })).toBe('busy');
+  expect(failureReason({ status: 429, code: 'PLAYGROUND_QUOTA' })).toBe(
     'capacity'
   );
-  expect(failureReason({ status: 503, code: 'PLAYGROUND_PAUSED' })).toBe(
-    'paused'
-  );
+  expect(
+    failureReason({ status: 409, code: 'PLAYGROUND_REQUEST_CONFLICT' })
+  ).toBe('changed');
 });

@@ -25,7 +25,9 @@ vi.mock('../lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string,
+      public retryAfterSeconds?: number
     ) {
       super(message);
     }
@@ -33,7 +35,7 @@ vi.mock('../lib/call-access', () => ({
 }));
 vi.mock('../lib/call-session', () => ({ getMeetCallSession: vi.fn() }));
 
-import { getMeetCallAccess } from '../lib/call-access';
+import { getMeetCallAccess, MeetCallAccessError } from '../lib/call-access';
 import { personalWorkspace, roomRoute } from './room-service';
 
 beforeEach(() => vi.clearAllMocks());
@@ -94,4 +96,46 @@ it('enforces the real same-origin check on room actions', async () => {
   expect(trusted.status).toBe(200);
   expect(await trusted.json()).toEqual({ ok: true });
   expect(run).toHaveBeenCalledTimes(1);
+});
+
+it('sends the Run refusal code, retry hint and Retry-After header', async () => {
+  const url = 'https://meet.tuturuuu.com/api/meet-call/meeting/programming';
+  vi.mocked(getMeetCallAccess).mockResolvedValue({} as never);
+  const refuse = (error: Error) =>
+    roomRoute(
+      new Request(url, {
+        method: 'POST',
+        headers: { Origin: 'https://meet.tuturuuu.com' },
+      }),
+      'meeting',
+      async () => {
+        throw error;
+      }
+    );
+  const cases = [
+    [503, 'PLAYGROUND_UNAVAILABLE', 30],
+    [429, 'PLAYGROUND_BUSY', 5],
+    [429, 'PLAYGROUND_QUOTA', 420],
+  ] as const;
+  for (const [status, code, retryAfterSeconds] of cases) {
+    const response = await refuse(
+      new MeetCallAccessError(status, 'Refused', code, retryAfterSeconds)
+    );
+    expect(response.status).toBe(status);
+    expect(response.headers.get('Retry-After')).toBe(String(retryAfterSeconds));
+    expect(await response.json()).toEqual({
+      code,
+      error: 'Refused',
+      retryAfterSeconds,
+    });
+  }
+  const conflict = await refuse(
+    new MeetCallAccessError(409, 'Conflict', 'PLAYGROUND_REQUEST_CONFLICT')
+  );
+  expect(conflict.status).toBe(409);
+  expect(conflict.headers.get('Retry-After')).toBeNull();
+  expect(await conflict.json()).toEqual({
+    code: 'PLAYGROUND_REQUEST_CONFLICT',
+    error: 'Conflict',
+  });
 });

@@ -67,7 +67,18 @@ export default {
             : code === 'request_conflict'
               ? 409
               : 429;
-        return json({ code }, status);
+        return json(
+          admission.retryAfterMs === undefined
+            ? { code }
+            : {
+                code,
+                retryAfterSeconds: Math.max(
+                  1,
+                  Math.ceil(admission.retryAfterMs / 1000)
+                ),
+              },
+          status
+        );
       }
       if (path === '/result') {
         const input = RunLookup.safeParse(body);

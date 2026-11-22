@@ -40,6 +40,8 @@ export interface PlaygroundExecutionResult {
   output: string;
   revision: number;
   saved: boolean;
+  /** Set on a failed Run when the service, not the program, failed. */
+  reason?: 'sandbox_failed' | null;
 }
 export interface AccountBenefit {
   id: string;

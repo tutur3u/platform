@@ -187,12 +187,13 @@ export class PlaygroundSlot extends DurableObject<Env> {
                   exitCode: finished ? result.exitCode : 126,
                   output: result.output,
                   savedRevision,
+                  sandboxFailed: result.outcome === 'sandbox_failed',
                 }
               : undefined
           );
         }
       } finally {
-        this.running = undefined;
+        if (this.running?.runId === claim.run_id) this.running = undefined;
         settled.resolve();
       }
     }

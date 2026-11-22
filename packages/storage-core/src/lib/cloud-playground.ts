@@ -45,6 +45,7 @@ const runResult = runReceipt.extend({
   output: z.string(),
   revision: z.number().int().nonnegative(),
   saved: z.boolean(),
+  reason: z.literal('sandbox_failed').nullable().default(null),
 });
 
 type Scope = z.infer<typeof scopeSchema>;
@@ -60,22 +61,60 @@ const errorCode = z.enum([
 ]);
 type Denial = z.infer<typeof errorCode>;
 
-export class CloudPlaygroundRefusal extends AccountServiceError {
-  readonly code: string;
+export type CloudPlaygroundRefusalCode =
+  | 'PLAYGROUND_UNAVAILABLE'
+  | 'PLAYGROUND_BUSY'
+  | 'PLAYGROUND_QUOTA'
+  | 'PLAYGROUND_REQUEST_CONFLICT';
 
-  constructor(status: number, cause: Denial) {
-    super(
-      status,
-      cause === 'execution_paused'
-        ? 'Playground execution is paused'
-        : 'Playground run limit reached'
-    );
-    this.code =
-      cause === 'execution_paused'
-        ? 'PLAYGROUND_PAUSED'
+const UNAVAILABLE_RETRY_SECONDS = 30;
+const BUSY_RETRY_SECONDS = 5;
+const MAX_QUOTA_RETRY_SECONDS = 600;
+
+/** A Run the service refused, with the client contract's code and retry hint. */
+export class CloudPlaygroundRefusal extends AccountServiceError {
+  readonly code: CloudPlaygroundRefusalCode;
+  /** Whole seconds, at least 1; absent when retrying cannot help. */
+  readonly retryAfterSeconds?: number;
+
+  constructor(cause: Denial | 'unavailable', retryAfterSeconds?: number) {
+    const refusal =
+      cause === 'unavailable' || cause === 'execution_paused'
+        ? {
+            status: 503,
+            code: 'PLAYGROUND_UNAVAILABLE' as const,
+            message: 'Running code is unavailable',
+            retry: UNAVAILABLE_RETRY_SECONDS,
+          }
         : cause === 'request_conflict'
-          ? 'PLAYGROUND_REQUEST_CONFLICT'
-          : 'PLAYGROUND_CAPACITY';
+          ? {
+              status: 409,
+              code: 'PLAYGROUND_REQUEST_CONFLICT' as const,
+              message: 'Playground run request conflict',
+              retry: undefined,
+            }
+          : cause === 'user_rate_limit' || cause === 'daily_capacity'
+            ? {
+                status: 429,
+                code: 'PLAYGROUND_QUOTA' as const,
+                message: 'Playground run limit reached',
+                retry: Math.min(
+                  MAX_QUOTA_RETRY_SECONDS,
+                  Math.max(
+                    1,
+                    Math.ceil(retryAfterSeconds ?? MAX_QUOTA_RETRY_SECONDS)
+                  )
+                ),
+              }
+            : {
+                status: 429,
+                code: 'PLAYGROUND_BUSY' as const,
+                message: 'Playground runners are busy',
+                retry: BUSY_RETRY_SECONDS,
+              };
+    super(refusal.status, refusal.message);
+    this.code = refusal.code;
+    this.retryAfterSeconds = refusal.retry;
   }
 }
 
@@ -101,9 +140,10 @@ async function callCloudPlayground(
   const origin = process.env.PLAYGROUND_EXECUTION_ORIGIN;
   const secret = process.env.PLAYGROUND_INGRESS_SECRET;
   if (!origin || !secret || secret.length < 32)
-    throw new AccountServiceError(503);
+    throw new CloudPlaygroundRefusal('unavailable');
   const url = new URL(path, origin);
-  if (url.protocol !== 'https:') throw new AccountServiceError(503);
+  if (url.protocol !== 'https:')
+    throw new CloudPlaygroundRefusal('unavailable');
   let response: Response;
   try {
     response = await fetch(url, {
@@ -118,17 +158,23 @@ async function callCloudPlayground(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch {
-    throw new AccountServiceError(503);
+    throw new CloudPlaygroundRefusal('unavailable');
   }
   if (response.ok) return response.json() as Promise<unknown>;
   const parsed = z
-    .object({ code: errorCode })
+    .object({
+      code: errorCode,
+      retryAfterSeconds: z.number().int().positive().optional(),
+    })
     .safeParse(await response.json().catch(() => null));
   if (parsed.success)
-    throw new CloudPlaygroundRefusal(response.status, parsed.data.code);
-  throw new AccountServiceError(
-    response.status === 404 || response.status === 409 ? response.status : 503
-  );
+    throw new CloudPlaygroundRefusal(
+      parsed.data.code,
+      parsed.data.retryAfterSeconds
+    );
+  if (response.status === 404 || response.status === 409)
+    throw new AccountServiceError(response.status);
+  throw new CloudPlaygroundRefusal('unavailable');
 }
 
 export async function startCloudPlayground(
@@ -141,7 +187,7 @@ export async function startCloudPlayground(
   },
   roomMeetingId?: string
 ) {
-  const secret = process.env.PLAYGROUND_SOURCE_TICKET_SECRET;
+  const secret = process.env.PLAYGROUND_SOURCE_TICKET_SECRET?.trim();
   if (!secret || secret.length < 32) throw new AccountServiceError(503);
   const claims = {
     ...scope,
@@ -189,7 +235,7 @@ export async function authorizeCloudPlaygroundTicket(
   token: string,
   aud: z.infer<typeof sourceClaims>['aud']
 ) {
-  const secret = process.env.PLAYGROUND_SOURCE_TICKET_SECRET;
+  const secret = process.env.PLAYGROUND_SOURCE_TICKET_SECRET?.trim();
   if (!secret || secret.length < 32) throw new AccountServiceError(503);
   const parsed = sourceClaims.safeParse(verifyRealtimePayload(token, secret));
   const now = Math.floor(Date.now() / 1000);
@@ -254,7 +300,7 @@ export async function cloudPlaygroundWriteback(
       await callCloudPlayground(
         `/writeback/${action}`,
         { ...scope, runId, revision, claimId, savedRevision },
-        action === 'settle' ? 600 : 2000
+        2000
       )
     );
   if (!receipt.success) {

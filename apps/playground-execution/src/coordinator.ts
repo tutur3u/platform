@@ -33,6 +33,7 @@ function present(row: RunRow) {
     output: row.output,
     revision: row.result_revision ?? row.revision,
     saved: row.result_revision !== null,
+    reason: status === 'failed' ? (row.failure_reason ?? null) : null,
   };
 }
 
@@ -140,6 +141,7 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
     state: Terminal,
     result?: Pick<GuestResult, 'exitCode' | 'output'> & {
       savedRevision?: number;
+      sandboxFailed?: boolean;
     }
   ) {
     await this.ctx.blockConcurrencyWhile(async () => {

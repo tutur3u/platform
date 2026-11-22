@@ -5,6 +5,7 @@ import {
   DEFAULT_CAPACITY,
   parseCapacity,
   PlaygroundAdmission,
+  WRITEBACK_GRACE_MS,
 } from './admission.ts';
 
 function fixture(t, capacity = DEFAULT_CAPACITY) {
@@ -151,21 +152,26 @@ test('daily count and rolling user count survive restarts and advance at their b
     ledger.finish(run, 'succeeded', day - 1);
   }
   const restarted = store.create();
+  // The oldest counted start leaves the 10-minute window first.
   assert.deepEqual(restarted.reserve(input(3, 'same-user'), day), {
     kind: 'refused',
     reason: 'user_rate_limit',
+    retryAfterMs: 600_000 - 1,
   });
   for (let index = 3; index <= 5; index += 1) {
     const run = reserve(restarted, input(index), day);
     restarted.finish(run, 'succeeded', day);
   }
+  // The daily budget frees at the next UTC midnight, even after a clock reversal.
   assert.deepEqual(restarted.reserve(input(6), day + 1), {
     kind: 'refused',
     reason: 'daily_capacity',
+    retryAfterMs: day - 1,
   });
   assert.deepEqual(restarted.reserve(input(6), day - 100), {
     kind: 'refused',
     reason: 'daily_capacity',
+    retryAfterMs: day + 100,
   });
   reserve(restarted, input(7, 'same-user'), day * 2);
 });
@@ -334,4 +340,85 @@ test('settlement preserves an acknowledged revision after the export response is
   assert.equal(restarted.finish(run, 'failed', run.deadline), 'failed');
   assert.equal(restarted.read(input(1)).result_revision, 2);
   assert.equal(restarted.active().length, 0);
+});
+
+test('a writeback claim that is never settled releases its slot after the grace', (t) => {
+  const store = fixture(t, { ...DEFAULT_CAPACITY, concurrent: 1 });
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1, 'same-user'));
+  assert.equal(ledger.claimStart(run, 1), true);
+  assert.equal(ledger.claimWriteback(run, 'lost', run.deadline - 1), true);
+  // The slot reports without a saved revision and Web never settles.
+  assert.equal(ledger.finish(run, 'failed', run.deadline), undefined);
+  const grace = run.deadline + WRITEBACK_GRACE_MS;
+  const held = ledger.active()[0];
+  assert.equal(held.cleanup_at, grace);
+  assert.equal(held.cleanup_attempts, 0);
+  assert.equal(ledger.claimCleanup(held, grace - 1), false);
+  assert.equal(
+    ledger.reserve(input(2, 'same-user'), grace - 1).reason,
+    'user_busy'
+  );
+  const restarted = store.create();
+  assert.equal(restarted.finish(run, 'failed', grace - 1), undefined);
+  assert.equal(restarted.claimCleanup(restarted.active()[0], grace), true);
+  assert.equal(restarted.finish(run, 'failed', grace), 'failed');
+  const receipt = restarted.read(input(1, 'same-user'));
+  assert.equal(receipt.result_revision, null);
+  assert.equal(receipt.failure_reason, 'sandbox_failed');
+  assert.equal(restarted.active().length, 0);
+  // A late settlement cannot reopen the finished row.
+  assert.equal(restarted.settleWriteback(run, 'lost', grace + 1, 4), false);
+  assert.equal(restarted.setEnabled(false).enabled, false);
+  assert.equal(restarted.setEnabled(true).enabled, true);
+  reserve(restarted, input(3, 'same-user'), grace + 1);
+});
+
+test('repeated Stop requests keep the cleanup backoff and budget', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const run = reserve(ledger, input(1));
+  assert.equal(ledger.claimStart(run, 1), true);
+  ledger.requestStop(run);
+  assert.equal(ledger.claimCleanup(run, 2), true);
+  const backoff = ledger.active()[0].cleanup_at;
+  assert.equal(backoff, 3002);
+  ledger.requestStop(run);
+  ledger.requestStop(store.create().active()[0]);
+  const after = store.create().active()[0];
+  assert.equal(after.cleanup_at, backoff);
+  assert.equal(after.cleanup_attempts, 1);
+  assert.equal(ledger.claimCleanup(run, 3), false);
+});
+
+test('only a service failure records the sandbox_failed reason', (t) => {
+  const store = fixture(t);
+  const ledger = store.create();
+  ledger.setEnabled(true);
+  const outcomes = [
+    [undefined, 'failed', 'sandbox_failed'],
+    [
+      { exitCode: 126, output: '', sandboxFailed: true },
+      'failed',
+      'sandbox_failed',
+    ],
+    [
+      { exitCode: 1, output: 'Traceback', sandboxFailed: false },
+      'failed',
+      null,
+    ],
+    [{ exitCode: 0, output: 'ok' }, 'succeeded', null],
+  ];
+  outcomes.forEach(([result, state, reason], index) => {
+    const run = reserve(ledger, input(index + 1), 10 * index);
+    assert.equal(ledger.claimStart(run, 10 * index + 1), true);
+    assert.equal(ledger.finish(run, state, 10 * index + 2, result), state);
+    assert.equal(ledger.read(input(index + 1)).failure_reason, reason);
+  });
+  const stopped = reserve(ledger, input(9), 100);
+  ledger.requestStop(stopped);
+  assert.equal(ledger.finish(stopped, 'failed', 101), 'cancelled');
+  assert.equal(ledger.read(input(9)).failure_reason, null);
 });

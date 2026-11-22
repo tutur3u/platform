@@ -134,6 +134,10 @@ export async function meetCallRoomRoute(
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',
       });
+    const retryAfterSeconds =
+      error instanceof MeetCallAccessError
+        ? error.retryAfterSeconds
+        : undefined;
     return Response.json(
       {
         code: error instanceof MeetCallAccessError ? error.code : undefined,
@@ -141,8 +145,17 @@ export async function meetCallRoomRoute(
           error instanceof MeetCallAccessError
             ? error.message
             : 'Room action failed',
+        retryAfterSeconds,
       },
-      { status, headers: { 'Cache-Control': 'private, no-store' } }
+      {
+        status,
+        headers: {
+          'Cache-Control': 'private, no-store',
+          ...(retryAfterSeconds === undefined
+            ? {}
+            : { 'Retry-After': String(retryAfterSeconds) }),
+        },
+      }
     );
   }
 }
