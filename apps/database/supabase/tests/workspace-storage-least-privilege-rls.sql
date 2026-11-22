@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(395);
+select plan(515);
 
 -- Actors: creator (seed only), member, viewer, manager, owner, non-member.
 insert into auth.users (id) values
@@ -53,6 +53,11 @@ on commit drop;
 insert into storage_rls_objects values
   ('drive_root', '5707a6e0-0000-4000-8000-000000009711/drive.txt'),
   ('drive_folder', '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf'),
+  ('drive_unicode', '5707a6e0-0000-4000-8000-000000009711/Tài liệu/report.pdf'),
+  ('ai_imports_dotless_i', '5707a6e0-0000-4000-8000-000000009711/Aı Agent Imports/file.pdf'),
+  ('ai_imports_dotted_i', '5707a6e0-0000-4000-8000-000000009711/Aİ Agent Imports/file.pdf'),
+  ('recordings_ascii_i', '5707a6e0-0000-4000-8000-000000009711/RECORDINGS/clip.webm'),
+  ('mira_dotted_i', '5707a6e0-0000-4000-8000-000000009711/MIRA/İMAGES/pic.png'),
   ('chat_owner', '5707a6e0-0000-4000-8000-000000009711/chat/5707a6e0-0000-4000-8000-000000009721/a.png'),
   ('chat_other', '5707a6e0-0000-4000-8000-000000009711/chat/5707a6e0-0000-4000-8000-000000009722/b.png'),
   ('chats_owner', '5707a6e0-0000-4000-8000-000000009711/chats/ai/resources/5707a6e0-0000-4000-8000-000000009721/c.pdf'),
@@ -85,7 +90,8 @@ select a.actor, o.key,
     when a.actor = 'service' then 'SIUD'
     when a.actor = 'nonmember' then '----'
     when o.key = 'project_updates' then 'SIUD'
-    when o.key in ('drive_root', 'drive_folder', 'drive_mira_qr') then
+    when o.key in ('drive_root', 'drive_folder', 'drive_mira_qr', 'drive_unicode',
+      'ai_imports_dotless_i') then
       case a.actor when 'manager' then 'SIUD' when 'viewer' then 'S---' else '----' end
     when o.key = 'template_bg' then
       case a.actor when 'manager' then 'SIUD' else 'S---' end
@@ -201,7 +207,7 @@ select ok(pg_temp.storage_rls_can('member', 'delete', '5707a6e0-0000-4000-8000-0
   'MEMBER default admin manages Drive but still cannot read private roots');
 delete from public.workspace_default_permissions where ws_id = '5707a6e0-0000-4000-8000-000000009711';
 
--- Matrix (12-395): 6 actors x 16 objects x 4 operations.
+-- Matrix (12-515): 6 actors x 21 objects x 4 operations.
 select is(
   pg_temp.storage_rls_can(e.actor, op.name, o.name),
   position(op.flag in e.flags) > 0,
