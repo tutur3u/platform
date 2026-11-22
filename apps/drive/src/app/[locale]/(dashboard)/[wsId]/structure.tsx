@@ -9,6 +9,8 @@ import { WorkspaceSelect } from './workspace-select';
 
 interface StructureProps {
   actions: ReactNode;
+  /** The storage analytics endpoint requires manage_drive. */
+  canManageDrive: boolean;
   children: ReactNode;
   defaultCollapsed: boolean;
   disableCreateNewWorkspace?: boolean;
@@ -21,6 +23,7 @@ interface StructureProps {
 
 export function Structure({
   actions,
+  canManageDrive,
   children,
   defaultCollapsed = false,
   disableCreateNewWorkspace,
@@ -39,7 +42,7 @@ export function Structure({
       links={links}
       notificationPopover={notificationPopover}
       sidebarContentAfter={({ isCollapsed }) =>
-        isCollapsed ? null : <DriveStorageCard wsId={wsId} />
+        isCollapsed || !canManageDrive ? null : <DriveStorageCard wsId={wsId} />
       }
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}

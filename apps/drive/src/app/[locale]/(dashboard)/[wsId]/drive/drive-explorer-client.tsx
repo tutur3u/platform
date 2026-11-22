@@ -1,9 +1,11 @@
 'use client';
 
 import { CloudUpload, TriangleAlert } from '@tuturuuu/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { DriveAccess } from './drive-browser-state';
+import { DriveBottomStack } from './drive-bottom-stack';
 import { DriveBrowserView } from './drive-browser-view';
 import { DriveExplorerDialogs } from './drive-explorer-dialogs';
 import { DriveFilterBar } from './drive-filter-bar';
@@ -28,13 +30,17 @@ export default function DriveExplorerClient({
 }: DriveExplorerClientProps) {
   const t = useTranslations('drive');
   const drive = useDriveExplorerController(wsId, access);
-  const quota = useDriveQuota(wsId);
+  const quota = useDriveQuota(wsId, { enabled: drive.canManage });
   const { handlers, state: dropState } = useDriveDropTarget({
     disabled: !drive.canManage,
     onDrop: drive.uploadFiles,
+    onFoldersSkipped: (count) =>
+      toast.info(t('uploads.folders_skipped', { count })),
   });
   const { browserState, directoryQuery, searchState, selection } = drive;
   const searching = Boolean(searchState.q.trim() || searchState.type);
+  const showsLoadedItems =
+    browserState.kind === 'ready' || browserState.kind === 'filtering-more';
   const quotaTone = quota.state.kind === 'ready' ? quota.state.tone : 'normal';
 
   return (
@@ -54,7 +60,7 @@ export default function DriveExplorerClient({
       {browserState.kind === 'denied' ? null : (
         <DriveFilterBar onChange={drive.update} searchState={searchState} />
       )}
-      {searching && browserState.kind === 'ready' ? (
+      {searching && showsLoadedItems ? (
         <p className="text-muted-foreground text-xs" aria-live="polite">
           {t('search.scope', { folder: drive.folderLabel })}
           {searchState.type && drive.hasMore
@@ -86,6 +92,8 @@ export default function DriveExplorerClient({
           )
         }
         onClearFilters={() => drive.update({ q: null, type: null })}
+        onGoHome={() => drive.navigate('')}
+        onNewFolder={() => drive.setDialog({ kind: 'new-folder' })}
         onNavigate={drive.openFolder}
         onRetry={() => void directoryQuery.refetch()}
         onSelectAll={selection.handleSelectAllVisible}
@@ -96,7 +104,7 @@ export default function DriveExplorerClient({
         view={searchState.view}
         wsId={wsId}
       />
-      {browserState.kind === 'ready' && drive.hasMore ? (
+      {showsLoadedItems && drive.hasMore ? (
         <DriveLoadMore
           isLoading={directoryQuery.isFetchingNextPage}
           loaded={drive.loadedCount}
@@ -127,19 +135,21 @@ export default function DriveExplorerClient({
         tabIndex={-1}
         type="file"
       />
-      <DriveSelectionBar
-        actions={drive.actions}
-        onClear={() => selection.setSelectedKeys([])}
-        selected={selection.selectedItems}
-      />
-      <DriveUploadsPanel uploads={drive.uploads} />
-      {drive.canManage && selection.selectedItems.length === 0 ? (
-        <DriveMobileNew
-          folderLabel={drive.folderLabel}
-          onNewFolder={() => drive.setDialog({ kind: 'new-folder' })}
-          onUpload={drive.openFilePicker}
+      <DriveBottomStack>
+        <DriveSelectionBar
+          actions={drive.actions}
+          onClear={() => selection.setSelectedKeys([])}
+          selected={selection.selectedItems}
         />
-      ) : null}
+        <DriveUploadsPanel uploads={drive.uploads} />
+        {drive.canManage && selection.selectedItems.length === 0 ? (
+          <DriveMobileNew
+            folderLabel={drive.folderLabel}
+            onNewFolder={() => drive.setDialog({ kind: 'new-folder' })}
+            onUpload={drive.openFilePicker}
+          />
+        ) : null}
+      </DriveBottomStack>
       <DriveExplorerDialogs drive={drive} wsId={wsId} />
     </div>
   );

@@ -5,13 +5,46 @@ import { getStorageObjectDisplayName } from './storage-display-name';
 
 const DOWNLOAD_LINK_TTL_SECONDS = 60 * 60;
 
-/** Refresh a signed link halfway through the lifetime the server reports. */
-export function getSignedLinkStaleTime(expiresIn: number | null | undefined) {
-  return expiresIn ? (expiresIn * 1000) / 2 : 5 * 60 * 1000;
+/** Lifetime Drive requests for thumbnails and previews; the server default. */
+export const SIGNED_LINK_TTL_SECONDS = 60 * 60;
+
+const SIGNED_LINK_REFRESH_MARGIN_MS = 10 * 60 * 1000;
+
+/**
+ * Downloads at or above this size are still buffered in memory: the share
+ * route cannot sign a link with a download disposition, and a cross-origin
+ * anchor ignores its download attribute.
+ */
+export const LARGE_DOWNLOAD_BYTES = 50 * 1024 * 1024;
+
+/** Revoking an object URL in the same task can cancel the save in Safari. */
+const OBJECT_URL_REVOKE_DELAY_MS = 60 * 1000;
+
+/**
+ * How long a signed link stays fresh: its lifetime minus a refresh margin
+ * (at most half the lifetime). An unreported lifetime falls back to the one
+ * requested, which the server never clamps below the default.
+ */
+export function getSignedLinkStaleTime(
+  expiresIn: number | null | undefined,
+  requestedSeconds = SIGNED_LINK_TTL_SECONDS
+) {
+  const lifetimeMs = (expiresIn || requestedSeconds) * 1000;
+  return lifetimeMs - Math.min(SIGNED_LINK_REFRESH_MARGIN_MS, lifetimeMs / 2);
 }
+
+/** Keeps an unused signed link cached for its whole lifetime. */
+export const SIGNED_LINK_GC_TIME_MS = SIGNED_LINK_TTL_SECONDS * 1000;
 
 export function getDriveObjectPath(path: string, item: StorageObject) {
   return path ? `${path}/${item.name ?? ''}` : (item.name ?? '');
+}
+
+export function hasLargeDownload(files: StorageObject[]) {
+  return files.some((file) => {
+    const size = file.metadata?.size;
+    return typeof size === 'number' && size >= LARGE_DOWNLOAD_BYTES;
+  });
 }
 
 export function createDriveDownloadUrl(
@@ -54,6 +87,6 @@ export async function downloadDriveFiles(
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_REVOKE_DELAY_MS);
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import {
   classifyDriveUploadError,
   driveUploadReducer,
@@ -155,6 +155,15 @@ export function useDriveUploads({
   }, []);
 
   const summary = useMemo(() => summarizeDriveUploads(items), [items]);
+
+  // Leaving the page aborts every transfer, so ask first while any run.
+  const uploading = summary.activeCount > 0;
+  useEffect(() => {
+    if (!uploading) return;
+    const guard = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', guard);
+    return () => window.removeEventListener('beforeunload', guard);
+  }, [uploading]);
 
   return { cancel, cancelAll, clearFinished, enqueue, items, retry, summary };
 }

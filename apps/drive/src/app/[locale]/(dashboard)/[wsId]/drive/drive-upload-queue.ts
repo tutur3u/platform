@@ -6,6 +6,8 @@ export type DriveUploadFailure =
   | 'type'
   | 'denied'
   | 'network'
+  | 'rejected'
+  | 'unavailable'
   | 'unknown';
 
 export type DriveUploadStatus =
@@ -135,15 +137,30 @@ export function classifyDriveUploadError(error: unknown): DriveUploadFailure {
     if (error.status === 401 || error.status === 403) return 'denied';
     return 'unknown';
   }
+  if (error instanceof DriveUploadProviderError) {
+    if (error.status === 413) return 'too_large';
+    if (error.status === 415) return 'type';
+    if (error.status >= 500) return 'unavailable';
+    if (error.status >= 400) return 'rejected';
+    return 'unknown';
+  }
   if (error instanceof DriveUploadNetworkError) return 'network';
   return 'unknown';
 }
 
-/** The storage provider rejected or dropped the file transfer. */
+/** The file transfer never got a response: offline, blocked or dropped. */
 export class DriveUploadNetworkError extends Error {
   constructor(message = 'Upload transfer failed') {
     super(message);
     this.name = 'DriveUploadNetworkError';
+  }
+}
+
+/** The storage provider answered the signed PUT with an error status. */
+export class DriveUploadProviderError extends Error {
+  constructor(public readonly status: number) {
+    super(`Upload rejected (${status})`);
+    this.name = 'DriveUploadProviderError';
   }
 }
 

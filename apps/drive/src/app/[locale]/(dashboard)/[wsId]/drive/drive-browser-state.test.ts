@@ -13,6 +13,7 @@ const pdf = { id: '2', name: 'b-guide.pdf', metadata: { size: 20 } };
 const input = (overrides: Partial<DriveBrowserInput>): DriveBrowserInput => ({
   access: 'manage',
   error: null,
+  hasMore: false,
   items: [],
   path: '',
   query: '',
@@ -67,6 +68,24 @@ describe('resolveDriveBrowserState', () => {
     expect(
       resolveDriveBrowserState(input({ items: [image], type: 'pdf' }))
     ).toEqual({ kind: 'no-results', query: '', type: 'pdf' });
+  });
+
+  it('offers more pages instead of no results while a type chip matches nothing loaded', () => {
+    expect(
+      resolveDriveBrowserState(
+        input({ hasMore: true, items: [image], type: 'pdf' })
+      )
+    ).toEqual({ kind: 'filtering-more', type: 'pdf' });
+    expect(
+      resolveDriveBrowserState(
+        input({ hasMore: true, items: [], query: 'x', type: null })
+      ).kind
+    ).toBe('no-results');
+    expect(
+      resolveDriveBrowserState(
+        input({ hasMore: false, items: [image], type: 'pdf' })
+      ).kind
+    ).toBe('no-results');
   });
 
   it('splits folders from files and filters loaded files by type', () => {

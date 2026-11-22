@@ -2,7 +2,10 @@ import {
   createWorkspaceStorageUploadUrl,
   finalizeWorkspaceStorageUpload,
 } from '@tuturuuu/internal-api';
-import { DriveUploadNetworkError } from './drive-upload-queue';
+import {
+  DriveUploadNetworkError,
+  DriveUploadProviderError,
+} from './drive-upload-queue';
 
 type UploadTarget = Awaited<ReturnType<typeof createWorkspaceStorageUploadUrl>>;
 
@@ -34,7 +37,7 @@ function putFile(
     xhr.onload = () =>
       xhr.status >= 200 && xhr.status < 300
         ? settle()
-        : settle(new DriveUploadNetworkError(`Upload failed (${xhr.status})`));
+        : settle(new DriveUploadProviderError(xhr.status));
     xhr.onerror = () => settle(new DriveUploadNetworkError());
     xhr.onabort = () => settle(new DriveUploadAbortedError());
 
@@ -44,6 +47,14 @@ function putFile(
     }
     xhr.send(file);
   });
+}
+
+/** Only a 400 or 415 can mean the signed upload refused the Content-Type. */
+export function isContentTypeRejection(error: unknown) {
+  return (
+    error instanceof DriveUploadProviderError &&
+    (error.status === 400 || error.status === 415)
+  );
 }
 
 /**
@@ -84,7 +95,7 @@ export async function transferDriveUpload({
   try {
     await putFile(file, target, headers, signal, onProgress);
   } catch (error) {
-    if (error instanceof DriveUploadAbortedError) throw error;
+    if (!isContentTypeRejection(error)) throw error;
     // Some providers reject an explicit Content-Type on signed uploads.
     const { 'Content-Type': _ignored, ...fallbackHeaders } = headers;
     await putFile(file, target, fallbackHeaders, signal, onProgress);

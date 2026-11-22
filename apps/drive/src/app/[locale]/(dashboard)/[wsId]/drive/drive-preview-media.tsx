@@ -8,8 +8,18 @@ import { Button } from '@tuturuuu/ui/button';
 import { FloatingBar, FloatingBarSeparator } from '@tuturuuu/ui/floating-bar';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { getDriveObjectPath, getSignedLinkStaleTime } from './drive-download';
+import {
+  getDriveObjectPath,
+  getSignedLinkStaleTime,
+  SIGNED_LINK_GC_TIME_MS,
+  SIGNED_LINK_TTL_SECONDS,
+} from './drive-download';
 import { getDriveFileKind } from './drive-file-kind';
+import {
+  fetchPreviewText,
+  isTextTooLargeToPreview,
+  PreviewTooLargeError,
+} from './drive-preview-text';
 import { FilePreviewRenderer } from './file-preview-renderer';
 import { getFileType } from './file-preview-utils';
 import { getStorageObjectDisplayName } from './storage-display-name';
@@ -37,8 +47,14 @@ export function useDrivePreviewUrl(
   return useQuery({
     queryKey: ['drive-file-preview-url', wsId, objectPath],
     queryFn: () =>
-      createWorkspaceStorageShareLink(wsId, objectPath, undefined, { fetch }),
+      createWorkspaceStorageShareLink(
+        wsId,
+        objectPath,
+        { expiresIn: SIGNED_LINK_TTL_SECONDS },
+        { fetch }
+      ),
     staleTime: (query) => getSignedLinkStaleTime(query.state.data?.expiresIn),
+    gcTime: SIGNED_LINK_GC_TIME_MS,
     retry: 1,
     select: (link) => link.url,
   });
@@ -126,16 +142,20 @@ export function DrivePreviewMedia({
   const urlQuery = useDrivePreviewUrl(wsId, path, file);
   const fileType = getFileType(file.name ?? '');
   const isText = fileType === 'text' || fileType === 'code';
+  const textTooLarge = isText && isTextTooLargeToPreview(file);
   const textQuery = useQuery({
-    queryKey: ['drive-file-preview-text', urlQuery.data],
-    queryFn: async () => {
-      const response = await fetch(urlQuery.data ?? '', { cache: 'no-store' });
-      if (!response.ok) throw new Error('Failed to load file preview');
-      return response.text();
-    },
-    enabled: isText && Boolean(urlQuery.data),
-    retry: 1,
+    // The signed URL rotates; the text belongs to the object, not the link.
+    queryKey: ['drive-file-preview-text', wsId, getDriveObjectPath(path, file)],
+    queryFn: () => fetchPreviewText(urlQuery.data ?? ''),
+    enabled: isText && !textTooLarge && Boolean(urlQuery.data),
+    retry: (count, error) =>
+      !(error instanceof PreviewTooLargeError) && count < 1,
   });
+  // Oversized text falls through to the renderer's Download fallback.
+  const previewType =
+    textTooLarge || textQuery.error instanceof PreviewTooLargeError
+      ? 'other'
+      : fileType;
 
   if (urlQuery.isPending) {
     return (
@@ -157,8 +177,8 @@ export function DrivePreviewMedia({
     <div className="flex size-full min-h-0 flex-col overflow-auto">
       <FilePreviewRenderer
         cleanFileName={name}
-        fileType={fileType}
-        loading={isText && textQuery.isPending}
+        fileType={previewType}
+        loading={previewType !== 'other' && isText && textQuery.isPending}
         onDownload={onDownload}
         onOpenExternal={() =>
           urlQuery.data && window.open(urlQuery.data, '_blank', 'noopener')

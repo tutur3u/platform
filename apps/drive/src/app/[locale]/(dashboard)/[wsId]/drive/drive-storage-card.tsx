@@ -13,8 +13,8 @@ import {
 } from './drive-storage-quota';
 import { useWorkspaceStorageAnalyticsQuery } from './use-drive-queries';
 
-export function useDriveQuota(wsId: string) {
-  const query = useWorkspaceStorageAnalyticsQuery(wsId);
+export function useDriveQuota(wsId: string, { enabled = true } = {}) {
+  const query = useWorkspaceStorageAnalyticsQuery(wsId, { enabled });
   return {
     refetch: () => void query.refetch(),
     state: resolveDriveQuotaState(query),

@@ -88,6 +88,7 @@ export function DrivePreviewViewer({
               </span>
             </div>
             <Button
+              aria-label={t('actions.share')}
               onClick={() => actions.onShare(file)}
               size="sm"
               type="button"
@@ -97,6 +98,7 @@ export function DrivePreviewViewer({
               <span className="hidden sm:inline">{t('actions.share')}</span>
             </Button>
             <Button
+              aria-label={t('actions.download')}
               onClick={() => actions.onDownload([file])}
               size="sm"
               type="button"

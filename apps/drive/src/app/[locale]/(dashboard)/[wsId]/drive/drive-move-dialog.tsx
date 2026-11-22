@@ -29,7 +29,9 @@ export function getMoveFailureKey(error: unknown) {
   if (error instanceof InternalApiError) {
     if (error.code === 'DRIVE_MOVE_PROVIDER') return 'failed_provider';
     if (error.code === 'DRIVE_MOVE_CONFLICT') return 'failed_conflict';
-    if (error.code === 'DRIVE_MOVE_SIZE') return 'failed_size';
+    if (error.code === 'DRIVE_MOVE_SIZE' || error.status === 413)
+      return 'failed_size';
+    if (error.status === 404) return 'failed_missing';
   }
   return 'failed';
 }

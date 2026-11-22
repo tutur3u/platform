@@ -3,58 +3,18 @@
 import {
   CloudUpload,
   FolderOpen,
+  FolderPlus,
+  HardDrive,
+  ListFilter,
   Lock,
   RefreshCw,
   SearchX,
   TriangleAlert,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { DriveViewMode } from './search-params';
-
-export function DriveLoadingState({ view }: { view: DriveViewMode }) {
-  const t = useTranslations('drive');
-
-  return (
-    <div aria-busy="true" className="space-y-6" role="status">
-      <span className="sr-only">{t('states.loading')}</span>
-      {view === 'grid' ? (
-        <>
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-16" />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(13.75rem,1fr))]">
-              {Array.from({ length: 4 }, (_, index) => (
-                <Skeleton className="h-16 rounded-2xl" key={index} />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-12" />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] md:gap-4">
-              {Array.from({ length: 8 }, (_, index) => (
-                <Skeleton className="aspect-[4/3.9] rounded-2xl" key={index} />
-              ))}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="space-y-px overflow-hidden rounded-2xl border border-border bg-card">
-          {Array.from({ length: 8 }, (_, index) => (
-            <div className="flex h-14 items-center gap-3 px-3" key={index}>
-              <Skeleton className="size-4 rounded" />
-              <Skeleton className="size-8 rounded-lg" />
-              <Skeleton className="h-4 flex-1" />
-              <Skeleton className="hidden h-4 w-24 md:block" />
-              <Skeleton className="hidden h-4 w-16 sm:block" />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import type { DriveTypeFilter } from './drive-file-kind';
 
 function StateMessage({
   action,
@@ -89,10 +49,12 @@ function StateMessage({
 export function DriveEmptyState({
   canManage,
   inFolder,
+  onNewFolder,
   onUpload,
 }: {
   canManage: boolean;
   inFolder: boolean;
+  onNewFolder: () => void;
   onUpload: () => void;
 }) {
   const t = useTranslations('drive');
@@ -102,10 +64,16 @@ export function DriveEmptyState({
     <StateMessage
       action={
         canManage ? (
-          <Button onClick={onUpload} type="button">
-            <CloudUpload className="size-4" />
-            {t('actions.upload')}
-          </Button>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={onUpload} type="button">
+              <CloudUpload className="size-4" />
+              {t('actions.upload')}
+            </Button>
+            <Button onClick={onNewFolder} type="button" variant="outline">
+              <FolderPlus className="size-4" />
+              {t('actions.new_folder')}
+            </Button>
+          </div>
         ) : undefined
       }
       description={t(`states.${key}_description`)}
@@ -142,16 +110,61 @@ export function DriveNoResultsState({
   );
 }
 
-export function DriveErrorState({ onRetry }: { onRetry: () => void }) {
+/**
+ * The type chip matched nothing in the loaded pages. Later pages may match,
+ * so this offers more pages instead of claiming there are no results.
+ */
+export function DriveFilteringMoreState({
+  onClear,
+  type,
+}: {
+  onClear: () => void;
+  type: DriveTypeFilter;
+}) {
   const t = useTranslations('drive');
 
   return (
     <StateMessage
       action={
-        <Button onClick={onRetry} type="button" variant="outline">
-          <RefreshCw className="size-4" />
-          {t('states.retry')}
+        <Button onClick={onClear} type="button" variant="outline">
+          {t('states.clear_filters')}
         </Button>
+      }
+      description={t('states.filtering_more_description')}
+      icon={<ListFilter />}
+      title={t('states.filtering_more_title', {
+        kind: t(`chips.${type}`),
+      })}
+    />
+  );
+}
+
+export function DriveErrorState({
+  inFolder,
+  onGoHome,
+  onRetry,
+}: {
+  inFolder: boolean;
+  onGoHome: () => void;
+  onRetry: () => void;
+}) {
+  const t = useTranslations('drive');
+
+  return (
+    <StateMessage
+      action={
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button onClick={onRetry} type="button" variant="outline">
+            <RefreshCw className="size-4" />
+            {t('states.retry')}
+          </Button>
+          {inFolder ? (
+            <Button onClick={onGoHome} type="button" variant="ghost">
+              <HardDrive className="size-4" />
+              {t('states.go_to_files')}
+            </Button>
+          ) : null}
+        </div>
       }
       description={t('states.error_description')}
       icon={<TriangleAlert />}

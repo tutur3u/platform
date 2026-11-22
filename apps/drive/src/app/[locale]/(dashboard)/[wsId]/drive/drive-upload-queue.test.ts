@@ -4,9 +4,14 @@ import {
   classifyDriveUploadError,
   type DriveUploadItem,
   DriveUploadNetworkError,
+  DriveUploadProviderError,
   driveUploadReducer,
   summarizeDriveUploads,
 } from './drive-upload-queue';
+import {
+  DriveUploadAbortedError,
+  isContentTypeRejection,
+} from './drive-upload-transfer';
 
 const enqueue = (sizes: number[]) =>
   driveUploadReducer([], {
@@ -109,8 +114,28 @@ describe('classifyDriveUploadError', () => {
     [new InternalApiError('File type not allowed', 415), 'type'],
     [new InternalApiError('Insufficient permissions', 403), 'denied'],
     [new DriveUploadNetworkError(), 'network'],
+    [new DriveUploadProviderError(413), 'too_large'],
+    [new DriveUploadProviderError(415), 'type'],
+    [new DriveUploadProviderError(403), 'rejected'],
+    [new DriveUploadProviderError(503), 'unavailable'],
     [new Error('boom'), 'unknown'],
   ])('classifies %s as %s', (error, reason) => {
     expect(classifyDriveUploadError(error)).toBe(reason);
+  });
+});
+
+describe('isContentTypeRejection', () => {
+  it('retries without Content-Type only after a 400 or 415 from the provider', () => {
+    expect(isContentTypeRejection(new DriveUploadProviderError(400))).toBe(
+      true
+    );
+    expect(isContentTypeRejection(new DriveUploadProviderError(415))).toBe(
+      true
+    );
+    expect(isContentTypeRejection(new DriveUploadProviderError(403))).toBe(
+      false
+    );
+    expect(isContentTypeRejection(new DriveUploadNetworkError())).toBe(false);
+    expect(isContentTypeRejection(new DriveUploadAbortedError())).toBe(false);
   });
 });

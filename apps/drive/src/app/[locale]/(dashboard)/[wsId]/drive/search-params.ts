@@ -38,10 +38,19 @@ export const driveSearchParamParsers = {
   type: parseAsStringLiteral(driveTypeFilters).withOptions(
     driveNavigationOptions
   ),
-  view: parseAsStringLiteral(driveViewModes)
-    .withDefault('grid')
-    .withOptions(driveNavigationOptions),
+  // No default: phones fall back to the list and wider screens to the grid.
+  view: parseAsStringLiteral(driveViewModes).withOptions(
+    driveNavigationOptions
+  ),
 };
+
+/** Below md, without an explicit view in the URL. */
+export function resolveDriveViewMode(
+  view: DriveViewMode | null,
+  isPhone: boolean
+): DriveViewMode {
+  return view ?? (isPhone ? 'list' : 'grid');
+}
 
 export type DriveSearchState = {
   path: string;

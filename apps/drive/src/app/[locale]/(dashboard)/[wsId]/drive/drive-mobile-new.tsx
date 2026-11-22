@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 /**
- * The phone-only New action: a floating button above the product dock that
+ * The phone-only New action: a floating button in the Drive bottom stack that
  * opens a bottom sheet. The dock keeps destinations only; Back stays with
  * browser history.
  */
@@ -36,7 +36,7 @@ export function DriveMobileNew({
     <>
       <Button
         aria-label={t('actions.new')}
-        className="fixed right-4 bottom-[calc(var(--sorbet-content-bottom-clearance,0px)+1rem)] z-30 size-14 rounded-full shadow-elevation-2 md:hidden"
+        className="size-14 self-end rounded-full shadow-elevation-2 md:hidden"
         onClick={() => setOpen(true)}
         size="icon"
         type="button"

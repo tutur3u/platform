@@ -3,11 +3,12 @@
 import type { DriveBrowserState } from './drive-browser-state';
 import { DriveFileGrid } from './drive-grid-view';
 import { DriveListView } from './drive-list-view';
+import { DriveLoadingState } from './drive-loading-state';
 import {
   DriveDeniedState,
   DriveEmptyState,
   DriveErrorState,
-  DriveLoadingState,
+  DriveFilteringMoreState,
   DriveNoResultsState,
 } from './drive-state-views';
 import type { DriveCollectionProps } from './drive-view-helpers';
@@ -18,6 +19,8 @@ interface DriveBrowserViewProps extends Omit<
   'files' | 'folders'
 > {
   onClearFilters: () => void;
+  onGoHome: () => void;
+  onNewFolder: () => void;
   onRetry: () => void;
   onSelectAll: (checked: boolean) => void;
   onUpload: () => void;
@@ -27,6 +30,8 @@ interface DriveBrowserViewProps extends Omit<
 
 export function DriveBrowserView({
   onClearFilters,
+  onGoHome,
+  onNewFolder,
   onRetry,
   onSelectAll,
   onUpload,
@@ -40,19 +45,30 @@ export function DriveBrowserView({
     case 'loading':
       return <DriveLoadingState view={view} />;
     case 'error':
-      return <DriveErrorState onRetry={onRetry} />;
+      return (
+        <DriveErrorState
+          inFolder={Boolean(collection.path)}
+          onGoHome={onGoHome}
+          onRetry={onRetry}
+        />
+      );
     case 'empty-root':
     case 'empty-folder':
       return (
         <DriveEmptyState
           canManage={collection.actions.canManage}
           inFolder={state.kind === 'empty-folder'}
+          onNewFolder={onNewFolder}
           onUpload={onUpload}
         />
       );
     case 'no-results':
       return (
         <DriveNoResultsState onClear={onClearFilters} query={state.query} />
+      );
+    case 'filtering-more':
+      return (
+        <DriveFilteringMoreState onClear={onClearFilters} type={state.type} />
       );
     case 'ready':
       return view === 'grid' ? (

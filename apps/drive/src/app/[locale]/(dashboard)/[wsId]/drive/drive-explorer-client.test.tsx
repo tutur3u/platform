@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   deleteObjects: vi.fn(),
   directory: vi.fn(),
   invalidate: vi.fn(),
+  isPhone: false,
   queryState: {} as Record<string, unknown>,
   setQueryState: vi.fn(),
 }));
@@ -49,6 +50,10 @@ vi.mock('./use-drive-queries', () => ({
   useWorkspaceStorageDirectoryQuery: mocks.directory,
 }));
 
+vi.mock('@tuturuuu/ui/hooks/use-mobile', () => ({
+  useIsMobile: () => mocks.isPhone,
+}));
+
 vi.mock('./drive-grid-thumbnail', () => ({ DriveGridThumbnail: () => null }));
 vi.mock('./export-links-dialog', () => ({
   WorkspaceStorageExportLinksDialog: () => null,
@@ -85,6 +90,7 @@ function renderExplorer(access: 'manage' | 'denied' = 'manage') {
 describe('DriveExplorerClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isPhone = false;
     Object.assign(mocks.queryState, {
       path: '',
       q: '',
@@ -149,6 +155,38 @@ describe('DriveExplorerClient', () => {
     expect(
       screen.getByRole('button', { name: 'actions.upload' })
     ).toBeDisabled();
+    // The analytics endpoint needs manage_drive too.
+    expect(mocks.analytics).toHaveBeenCalledWith('ws-1', { enabled: false });
+  });
+
+  it('offers more pages while a type chip matches nothing loaded yet', () => {
+    mocks.queryState.type = 'pdf';
+    mocks.directory.mockReturnValue(
+      directory({
+        data: { items: [file], total: 40 },
+        hasNextPage: true,
+      })
+    );
+    renderExplorer();
+    expect(
+      screen.getByText('states.filtering_more_title:{"kind":"chips.pdf"}')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('states.no_results_title')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'paging.load_more' })
+    ).toBeInTheDocument();
+  });
+
+  it('opens phones in the list view unless the URL names one', () => {
+    mocks.isPhone = true;
+    mocks.queryState.view = null;
+    renderExplorer();
+    expect(screen.getByRole('radio', { name: 'filters.list' })).toHaveAttribute(
+      'aria-checked',
+      'true'
+    );
   });
 
   it('distinguishes an empty root from no search results', () => {

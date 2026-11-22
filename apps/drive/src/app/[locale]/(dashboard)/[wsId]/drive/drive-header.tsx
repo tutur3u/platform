@@ -61,7 +61,7 @@ export function DriveHeader({
         />
         <Input
           aria-label={t('search.label')}
-          className="h-10 pr-9 pl-9"
+          className="h-10 pr-9 pl-9 [&::-webkit-search-cancel-button]:appearance-none"
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder={t('search.placeholder')}
           type="search"

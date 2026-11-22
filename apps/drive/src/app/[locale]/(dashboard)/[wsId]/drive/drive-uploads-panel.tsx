@@ -131,7 +131,7 @@ export function DriveUploadsPanel({ uploads }: { uploads: DriveUploads }) {
   return (
     <section
       aria-label={t('uploads.label')}
-      className="fixed inset-x-4 bottom-[calc(var(--sorbet-content-bottom-clearance,0px)+1rem)] z-30 overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-3 md:inset-x-auto md:right-6 md:bottom-6 md:w-96"
+      className="w-full overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-3 md:w-96 md:self-end xl:absolute xl:right-0 xl:bottom-0"
     >
       <header className="flex items-center gap-1 border-border border-b py-2 pr-2 pl-4">
         <strong aria-live="polite" className="min-w-0 flex-1 truncate text-sm">

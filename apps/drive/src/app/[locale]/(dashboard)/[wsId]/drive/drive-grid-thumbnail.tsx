@@ -6,7 +6,11 @@ import { createWorkspaceStorageShareLink } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import { useState } from 'react';
-import { getSignedLinkStaleTime } from './drive-download';
+import {
+  getSignedLinkStaleTime,
+  SIGNED_LINK_GC_TIME_MS,
+  SIGNED_LINK_TTL_SECONDS,
+} from './drive-download';
 
 const IMAGE_MIME_PREFIX = 'image/';
 const imageExtensions = new Set([
@@ -87,13 +91,17 @@ export function DriveGridThumbnail({
         throw new Error('Missing file path');
       }
 
-      return createWorkspaceStorageShareLink(wsId, relativePath, undefined, {
-        fetch,
-      });
+      return createWorkspaceStorageShareLink(
+        wsId,
+        relativePath,
+        { expiresIn: SIGNED_LINK_TTL_SECONDS },
+        { fetch }
+      );
     },
     enabled: showImagePreview && !!relativePath,
-    // The server decides how long a signed link works.
+    // Re-sign shortly before the lifetime the server reports runs out.
     staleTime: (query) => getSignedLinkStaleTime(query.state.data?.expiresIn),
+    gcTime: SIGNED_LINK_GC_TIME_MS,
     select: (link) => link.url,
     refetchOnWindowFocus: false,
     retry: 1,

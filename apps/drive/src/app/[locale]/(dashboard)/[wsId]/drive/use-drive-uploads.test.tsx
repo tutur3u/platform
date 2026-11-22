@@ -88,4 +88,23 @@ describe('useDriveUploads', () => {
     });
     expect(transfer).toHaveBeenCalledTimes(3);
   });
+
+  it('asks before leaving the page only while uploads are active', async () => {
+    const { calls, transfer } = deferredTransfer();
+    const { result } = renderHook(() =>
+      useDriveUploads({ onSettled: vi.fn(), transfer, wsId: 'ws' })
+    );
+    const leave = () => {
+      const event = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+
+    expect(leave()).toBe(false);
+    act(() => result.current.enqueue([file('a.png')], ''));
+    expect(leave()).toBe(true);
+    await act(async () => calls[0]?.resolve());
+    await waitFor(() => expect(result.current.summary.activeCount).toBe(0));
+    expect(leave()).toBe(false);
+  });
 });

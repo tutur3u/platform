@@ -1,6 +1,7 @@
 'use client';
 
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
@@ -17,12 +18,18 @@ import {
   resolveDriveBrowserState,
 } from './drive-browser-state';
 import type { DriveDialogState, DrivePreviewState } from './drive-dialog-state';
-import { downloadDriveFiles, getDriveObjectPath } from './drive-download';
+import {
+  downloadDriveFiles,
+  getDriveObjectPath,
+  hasLargeDownload,
+} from './drive-download';
 import type { DriveItemActions } from './drive-item-menu';
 import { getPathSegments } from './drive-selection';
 import {
+  type DriveSearchState,
   type DriveSearchUpdate,
   driveSearchParamParsers,
+  resolveDriveViewMode,
 } from './search-params';
 import { getStoragePathSegmentDisplayName } from './storage-display-name';
 import { useDriveDeleteMutation } from './use-drive-delete-mutation';
@@ -35,7 +42,17 @@ import { useDriveUploads } from './use-drive-uploads';
 
 export function useDriveExplorerController(wsId: string, access: DriveAccess) {
   const t = useTranslations('drive');
-  const [searchState, setSearchState] = useQueryStates(driveSearchParamParsers);
+  const [rawSearchState, setSearchState] = useQueryStates(
+    driveSearchParamParsers
+  );
+  const isPhone = useIsMobile();
+  const searchState = useMemo<DriveSearchState>(
+    () => ({
+      ...rawSearchState,
+      view: resolveDriveViewMode(rawSearchState.view, isPhone),
+    }),
+    [isPhone, rawSearchState]
+  );
   const [dialog, setDialog] = useState<DriveDialogState>({ kind: 'none' });
   const [preview, setPreview] = useState<DrivePreviewState>({ kind: 'closed' });
   const fileInput = useRef<HTMLInputElement>(null);
@@ -54,18 +71,29 @@ export function useDriveExplorerController(wsId: string, access: DriveAccess) {
   );
   const items = directoryQuery.data?.items;
   const { error, status } = directoryQuery;
+  const hasMore = directoryQuery.hasNextPage ?? false;
   const browserState = useMemo(
     () =>
       resolveDriveBrowserState({
         access,
         error,
+        hasMore,
         items,
         path: currentPath,
         query: searchState.q,
         status,
         type: searchState.type,
       }),
-    [access, currentPath, error, items, searchState.q, searchState.type, status]
+    [
+      access,
+      currentPath,
+      error,
+      hasMore,
+      items,
+      searchState.q,
+      searchState.type,
+      status,
+    ]
   );
   const visibleFiles = useMemo(
     () => (browserState.kind === 'ready' ? browserState.files : []),
@@ -139,6 +167,8 @@ export function useDriveExplorerController(wsId: string, access: DriveAccess) {
       onDelete: (targets) => setDialog({ kind: 'delete', items: targets }),
       onDownload: (files) => {
         const onlyFiles = files.filter((file) => file.id);
+        if (hasLargeDownload(onlyFiles))
+          toast.warning(t('toasts.large_download'));
         toast.promise(downloadDriveFiles(wsId, currentPath, onlyFiles), {
           loading: t('toasts.downloading', { count: onlyFiles.length }),
           success: t('toasts.downloaded', { count: onlyFiles.length }),
@@ -177,7 +207,7 @@ export function useDriveExplorerController(wsId: string, access: DriveAccess) {
     directoryQuery,
     fileInput,
     folderLabel,
-    hasMore: directoryQuery.hasNextPage ?? false,
+    hasMore,
     invalidate,
     loadedCount: items?.length ?? 0,
     navigate,

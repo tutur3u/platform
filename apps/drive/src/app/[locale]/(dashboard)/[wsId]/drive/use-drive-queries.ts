@@ -129,11 +129,15 @@ export function useWorkspaceStorageDirectoryQuery(
   });
 }
 
-export function useWorkspaceStorageAnalyticsQuery(wsId: string) {
+export function useWorkspaceStorageAnalyticsQuery(
+  wsId: string,
+  { enabled = true }: { enabled?: boolean } = {}
+) {
   return useQuery({
     queryKey: driveAnalyticsQueryKey(wsId),
     queryFn: () => getWorkspaceStorageAnalytics(wsId, { fetch }),
     select: normalizeAnalyticsPayload,
+    enabled,
   });
 }
 

@@ -66,64 +66,57 @@ export function DriveSelectionBar({
   const only = selected.length === 1 ? selected[0] : undefined;
 
   return (
-    <div className="pointer-events-none fixed inset-x-4 bottom-[calc(var(--sorbet-content-bottom-clearance,0px)+1rem)] z-40 flex justify-center md:bottom-6">
-      <FloatingBar
-        aria-label={t('selection.toolbar')}
-        className="pointer-events-auto"
+    <FloatingBar aria-label={t('selection.toolbar')} className="max-w-full">
+      <Button
+        aria-label={t('selection.clear')}
+        onClick={onClear}
+        size="icon"
+        type="button"
+        variant="ghost"
       >
-        <Button
-          aria-label={t('selection.clear')}
-          onClick={onClear}
-          size="icon"
-          type="button"
-          variant="ghost"
-        >
-          <X className="size-4" />
-        </Button>
-        <strong aria-live="polite" className="px-2 text-sm">
-          {t('selection.count', { count: selected.length })}
-        </strong>
-        <FloatingBarSeparator />
-        <BarAction
-          disabledReason={
-            hasFolders ? t('selection.download_files_only') : null
-          }
-          label={t('actions.download')}
-          onClick={() => actions.onDownload(selected)}
-        >
-          <Download className="size-4" />
-        </BarAction>
-        <BarAction
-          disabledReason={only ? null : t('selection.share_one')}
-          label={t('actions.share_link')}
-          onClick={() => only && actions.onShare(only)}
-        >
-          <Link className="size-4" />
-        </BarAction>
-        <BarAction
-          disabledReason={
-            writeReason ??
-            (selected.length > MAX_WORKSPACE_STORAGE_MOVE_ENTRIES
-              ? t('selection.move_limit', {
-                  count: MAX_WORKSPACE_STORAGE_MOVE_ENTRIES,
-                })
-              : null)
-          }
-          label={t('actions.move')}
-          onClick={() => actions.onMove(selected)}
-        >
-          <FolderInput className="size-4" />
-        </BarAction>
-        <FloatingBarSeparator />
-        <BarAction
-          disabledReason={writeReason}
-          label={t('actions.delete_forever')}
-          onClick={() => actions.onDelete(selected)}
-          tone="destructive"
-        >
-          <Trash2 className="size-4" />
-        </BarAction>
-      </FloatingBar>
-    </div>
+        <X className="size-4" />
+      </Button>
+      <strong aria-live="polite" className="px-2 text-sm">
+        {t('selection.count', { count: selected.length })}
+      </strong>
+      <FloatingBarSeparator />
+      <BarAction
+        disabledReason={hasFolders ? t('selection.download_files_only') : null}
+        label={t('actions.download')}
+        onClick={() => actions.onDownload(selected)}
+      >
+        <Download className="size-4" />
+      </BarAction>
+      <BarAction
+        disabledReason={only ? null : t('selection.share_one')}
+        label={t('actions.share_link')}
+        onClick={() => only && actions.onShare(only)}
+      >
+        <Link className="size-4" />
+      </BarAction>
+      <BarAction
+        disabledReason={
+          writeReason ??
+          (selected.length > MAX_WORKSPACE_STORAGE_MOVE_ENTRIES
+            ? t('selection.move_limit', {
+                count: MAX_WORKSPACE_STORAGE_MOVE_ENTRIES,
+              })
+            : null)
+        }
+        label={t('actions.move')}
+        onClick={() => actions.onMove(selected)}
+      >
+        <FolderInput className="size-4" />
+      </BarAction>
+      <FloatingBarSeparator />
+      <BarAction
+        disabledReason={writeReason}
+        label={t('actions.delete_forever')}
+        onClick={() => actions.onDelete(selected)}
+        tone="destructive"
+      >
+        <Trash2 className="size-4" />
+      </BarAction>
+    </FloatingBar>
   );
 }

@@ -82,3 +82,20 @@ describe('DriveMoveDialog', () => {
     await waitFor(() => expect(onMoved).toHaveBeenCalled());
   });
 });
+
+describe('getMoveFailureKey', () => {
+  it('maps route codes and statuses to their messages', async () => {
+    const { InternalApiError } = await import('@tuturuuu/internal-api');
+    const { getMoveFailureKey } = await import('./drive-move-dialog');
+    expect(
+      getMoveFailureKey(new InternalApiError('x', 409, 'DRIVE_MOVE_CONFLICT'))
+    ).toBe('failed_conflict');
+    expect(getMoveFailureKey(new InternalApiError('too large', 413))).toBe(
+      'failed_size'
+    );
+    expect(getMoveFailureKey(new InternalApiError('gone', 404))).toBe(
+      'failed_missing'
+    );
+    expect(getMoveFailureKey(new Error('offline'))).toBe('failed');
+  });
+});

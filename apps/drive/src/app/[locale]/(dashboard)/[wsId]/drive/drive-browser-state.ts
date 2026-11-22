@@ -12,6 +12,8 @@ export type DriveBrowserState =
   | { kind: 'empty-root' }
   | { kind: 'empty-folder' }
   | { kind: 'no-results'; query: string; type: DriveTypeFilter | null }
+  /** The type chip matches nothing loaded, but later pages may match. */
+  | { kind: 'filtering-more'; type: DriveTypeFilter }
   | {
       kind: 'ready';
       folders: StorageObject[];
@@ -23,6 +25,8 @@ export type DriveBrowserState =
 export interface DriveBrowserInput {
   access: DriveAccess;
   error: unknown;
+  /** Whether the list endpoint has pages that are not loaded yet. */
+  hasMore: boolean;
   items: StorageObject[] | undefined;
   path: string;
   query: string;
@@ -44,6 +48,7 @@ export function splitDriveItems(items: StorageObject[]) {
 export function resolveDriveBrowserState({
   access,
   error,
+  hasMore,
   items,
   path,
   query,
@@ -64,6 +69,8 @@ export function resolveDriveBrowserState({
     : allFiles;
 
   if (folders.length === 0 && files.length === 0) {
+    // The type chip filters loaded items only; the query is server-side.
+    if (type && hasMore) return { kind: 'filtering-more', type };
     if (trimmedQuery || type) {
       return { kind: 'no-results', query: trimmedQuery, type };
     }

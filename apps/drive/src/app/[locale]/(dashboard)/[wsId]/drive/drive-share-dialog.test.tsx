@@ -47,7 +47,11 @@ describe('DriveShareDialog', () => {
   });
 
   it('copies a short-lived download link and shows the lifetime the server reports', async () => {
-    createLink.mockResolvedValue({ url: 'https://r2.test/x', expiresIn: 600 });
+    createLink.mockResolvedValue({
+      url: 'https://r2.test/x',
+      expiresIn: 600,
+      expiresAt: '2026-11-23T00:10:00.000Z',
+    });
     renderDialog();
 
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
@@ -70,7 +74,11 @@ describe('DriveShareDialog', () => {
   });
 
   it('says the link is short-lived when the server reports no lifetime', async () => {
-    createLink.mockResolvedValue({ url: 'https://r2.test/y', expiresIn: null });
+    createLink.mockResolvedValue({
+      url: 'https://r2.test/y',
+      expiresIn: null,
+      expiresAt: null,
+    });
     renderDialog();
     fireEvent.click(
       screen.getByRole('button', { name: 'share.copy_download_link' })

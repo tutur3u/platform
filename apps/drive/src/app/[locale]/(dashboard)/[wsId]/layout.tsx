@@ -16,7 +16,11 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
-import { getDriveUser, getDriveWorkspace } from '@/lib/workspace';
+import {
+  getDriveUser,
+  getDriveWorkspace,
+  getDriveWorkspacePermissions,
+} from '@/lib/workspace';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -61,6 +65,11 @@ export default async function Layout({ children, params }: LayoutProps) {
     personal: !!workspace.personal,
   });
 
+  const permissions = await getDriveWorkspacePermissions(wsId);
+  const canManageDrive = permissions
+    ? !permissions.withoutPermission('manage_drive')
+    : false;
+
   const cookieStore = await cookies();
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
   const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
@@ -76,6 +85,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
       >
         <Structure
+          canManageDrive={canManageDrive}
           wsId={wsId}
           workspace={workspace}
           defaultCollapsed={defaultCollapsed}
