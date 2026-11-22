@@ -107,7 +107,11 @@ export function MailSidebarPanel({
       connectedByDefault
     );
     const nextPath = resolveSelectionPathname(pathname, selection);
-    window.history.replaceState(null, '', mailHistoryHref(nextPath, params));
+    window.history.replaceState(
+      null,
+      '',
+      mailHistoryHref(nextPath, params.toString())
+    );
     closeOnMobile?.();
   };
   const manageAccounts = () => {
