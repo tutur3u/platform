@@ -18,6 +18,7 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
+import 'package:mobile/features/auth/widgets/auth_heading.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -211,7 +212,7 @@ void main() {
 
         final destination = cancel ? Routes.home : Routes.apps;
         if (cancel) {
-          await tester.tap(find.byIcon(Icons.arrow_back));
+          await tester.tap(find.byType(AuthBackButton));
         } else {
           await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
             SystemChannels.navigation.name,
