@@ -1011,6 +1011,17 @@ is checked again whenever the trusted record is used. A proof is rejected if
 the intervening history uses rollback or savepoints, or could change the type
 identity of a custom input. Removing or changing the
 remediation migration reopens the finding.
+
+The workspace storage ACL correction has a scoped proof for its exact pair
+of migration hashes. The corrective migration revokes `PUBLIC` and `anon`
+and retains `authenticated` and `service_role` execution for the RLS helper.
+Any other migration statement that names the routine, its schema or its
+input types invalidates this proof unless it is a revoke or an exact two-part
+grant to those roles. Any role-membership change (`ALTER GROUP`,
+`CREATE ROLE`, `GRANT <role> TO`) and any Unicode-escaped identifier also
+invalidate it. A new storage policy or helper that calls the
+routine therefore needs its own reviewed record. The same protected sign-off
+applies.
 A change may rebind a base record by changing only its `sourceDigest` for a
 migration it modifies. Every added or rebound record must match a finding the
 trusted guard recomputes over the head bytes.

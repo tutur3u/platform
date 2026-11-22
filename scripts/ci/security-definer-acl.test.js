@@ -3,7 +3,11 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { checkRepository, lintMigration } = require('./security-definer-guard');
+const {
+  checkRepository,
+  lintMigration,
+  verifyRemediation,
+} = require('./security-definer-guard');
 
 function definer(name = 'public.probe', type = 'uuid', kind = 'function') {
   return `create or replace ${kind} ${name}(user_id ${type})
@@ -362,6 +366,204 @@ test('the complete repository migration history matches the reviewed baseline', 
     checkRepository({ root: path.resolve(__dirname, '../..') }),
     []
   );
+});
+
+test('the reviewed storage ACL proof rejects changed access contracts', () => {
+  const entry = require('./security-definer-verified-findings.json').find(
+    (record) => record.remediationMode === 'acl-only'
+  );
+  const root = path.resolve(__dirname, '../..');
+  const original = fs.readFileSync(path.join(root, entry.file), 'utf8');
+  const remediation = fs.readFileSync(
+    path.join(root, entry.remediationMigration),
+    'utf8'
+  );
+  const proof = { original, entry, intervening: [], later: [] };
+  assert.equal(verifyRemediation(remediation, proof), true);
+  for (const rejected of [
+    remediation.replace('public, anon', 'public'),
+    remediation.replace('authenticated, service_role', 'authenticated, anon'),
+    remediation.replaceAll('object_access', 'actor_access'),
+  ]) {
+    assert.equal(verifyRemediation(rejected, proof), false);
+  }
+  for (const intervening of [
+    'create table private.fixture (id uuid primary key);',
+    'alter table private.fixture enable row level security;',
+    'drop table if exists private.fixture;',
+  ]) {
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, intervening: [intervening] }),
+      true,
+      intervening
+    );
+  }
+  for (const intervening of [
+    'create table fixture (id uuid primary key);',
+    'create table workspace_storage.fixture (id uuid primary key);',
+    'alter table private.fixture set schema workspace_storage;',
+    'drop table private.fixture cascade;',
+    'alter type workspace_storage.actor_access rename to moved;',
+    'create domain private.fixture as text;',
+  ]) {
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, intervening: [intervening] }),
+      false,
+      intervening
+    );
+  }
+  for (const later of [
+    'grant execute on function workspace_storage.object_access(text, text, workspace_storage.actor_access) to anon;',
+    'grant execute on all functions in schema workspace_storage to public;',
+  ]) {
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, later: [later] }),
+      false
+    );
+  }
+  assert.equal(
+    verifyRemediation(remediation, {
+      ...proof,
+      entry: { ...entry, remediationDigest: '0'.repeat(64) },
+    }),
+    false
+  );
+});
+
+test('the storage ACL proof rejects moves, re-grants and hidden identifiers around it', () => {
+  const entry = require('./security-definer-verified-findings.json').find(
+    (record) => record.remediationMode === 'acl-only'
+  );
+  const root = path.resolve(__dirname, '../..');
+  const original = fs.readFileSync(path.join(root, entry.file), 'utf8');
+  const remediation = fs.readFileSync(
+    path.join(root, entry.remediationMigration),
+    'utf8'
+  );
+  const proof = { original, entry, intervening: [], later: [] };
+  const routine =
+    'workspace_storage.object_access(text, text, workspace_storage.actor_access)';
+  assert.equal(
+    verifyRemediation(
+      remediation.replace('public, anon', '"public", anon'),
+      proof
+    ),
+    false
+  );
+  for (const later of [
+    `grant execute on function ${routine} to service_role;`,
+    'do $$ begin perform 1; end $$;',
+    'alter function public.other() set search_path = pg_catalog;',
+    'grant usage on schema private to authenticated;',
+    'create table private.periods (ws_id uuid, period tstzrange, exclude using gist (ws_id with =, period with &&));',
+    "select '{}'::jsonb ?& array['a'];",
+    'alter role authenticated set statement_timeout = 8000;',
+    "comment on table private.periods is 'it''s the owner''s -- note';",
+    "create function private.h() returns void language plpgsql as $$ begin raise exception 'can''t continue'; end $$;",
+    "do $$ begin execute format('alter table private.periods owner to %I', 'postgres'); end $$;",
+    'create function private.g() returns void language plpgsql as $$ begin grant select on private.periods to service_role; end $$;',
+  ]) {
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, later: [later] }),
+      true,
+      later
+    );
+  }
+  const scoped = [
+    `alter function ${routine} set schema public; grant execute on function public.object_access(text, text, workspace_storage.actor_access) to anon;`,
+    `alter function ${routine} rename to object_access_v2;`,
+    'alter schema workspace_storage rename to moved;',
+    `grant execute on function ${routine} to authenticated with grant option;`,
+    `grant execute on function ${routine} to dashboard_user;`,
+    'grant authenticated to anon;',
+    `do $$ begin execute 'grant execute on function ${routine} to anon'; end $$;`,
+    'grant execute on function postgres.workspace_storage.object_access(text, text, workspace_storage.actor_access) to anon;',
+    'grant execute on function postgres.workspace_storage.object_access to anon;',
+    'alter type workspace_storage.actor_access rename to actor_access_v2;',
+    'alter type workspace_storage.actor_access set schema public;',
+    'alter group authenticated add user anon;',
+    'create role custom_reader in role authenticated;',
+    "do $$ begin execute 'alter group authenticated add user anon'; end $$;",
+    'alter /* c */ group authenticated add user anon;',
+    'alter -- c\ngroup authenticated add user anon;',
+    'create role helper_role in /* c */ role authenticated;',
+    'create role helper_role in role /* ; */ authenticated;',
+    'grant pg_read_all_stats, authenticated to helper_role;',
+    'alter group authenticator add user anon;',
+    'alter /* -- */ group authenticated add user anon;',
+    'create /* -- */ role bridge in role authenticated role anon;',
+    "do $$ begin perform '--'; alter /* x */ group authenticated add user anon; end $$;",
+    'grant /* on -- */ authenticated to anon;',
+    'grant authenticated, "on" to anon;',
+    "create function public.f() returns void language sql as 'alter group authenticated add user anon';",
+    'create function private.f1() returns void language plpgsql as $d1$ begin create function private.f2() returns void language plpgsql as $d2$ begin create function private.f3() returns void language plpgsql as $d3$ begin create function private.f4() returns void language plpgsql as $d4$ begin create function private.f5() returns void language plpgsql as $d5$ begin create function private.f6() returns void language plpgsql as $d6$ begin create function private.f7() returns void language plpgsql as $d7$ begin create function private.f8() returns void language plpgsql as $d8$ begin create function private.f9() returns void language plpgsql as $d9$ begin alter /* x */ group authenticated add user anon; end $d9$; end $d8$; end $d7$; end $d6$; end $d5$; end $d4$; end $d3$; end $d2$; end $d1$;',
+    "create function private.f1() returns void language plpgsql as $d1$ begin create function private.f2() returns void language plpgsql as $d2$ begin perform E'\\''; alter /* x */ group authenticated add user anon; end; $d2$; end; $d1$;",
+    "create function public.f() returns void language sql as 'alter gro'\n'up authenticated add user anon';",
+    "do 'begin alter gro'\n'up authenticated add user anon; end;';",
+    "do E'begin alter \\x47roup authenticated add user anon; end;';",
+    "create function private.pwn() returns void language sql as E'alter \\x47roup authenticated add user anon';",
+    "do 'begin alter function workspace_'\n'storage.object_'\n'access(text, text, workspace_'\n'storage.actor_'\n'access) rename to helper; end;';",
+    "create function private.w() returns void language plpgsql as 'begin create function private.pwn() returns void language sql as U'\n'&''alter \\0047roup authenticated add user anon''; end;';",
+    "do $o$ begin create function private.pwn() returns void language plpgsql as $i$ begin execute 'alter ' || 'group authenticated add user anon'; end; $i$; end; $o$;",
+    "create function private.pwn() returns void language plpgsql as $o$ begin do $i$ begin execute format('%s %s authenticated add user anon', 'alter', 'group'); end; $i$; end; $o$;",
+    `create function public.reorg() returns void language plpgsql as $$ begin alter function ${routine} set schema public; end; $$;`,
+    "do $$ begin execute U&'grant \\0061'; end $$;",
+  ];
+  for (const sql of scoped) {
+    for (const key of ['intervening', 'later']) {
+      assert.equal(
+        verifyRemediation(remediation, { ...proof, [key]: [sql] }),
+        false,
+        `${key}: ${sql}`
+      );
+    }
+  }
+  for (const intervening of [
+    'alter table postgres.U&"workspace\\005fstorage".actor_access rename to old;',
+    'alter table private.fixture set schema U&"workspace\\005fstorage";',
+    'drop table private.fixture, actor_access;',
+    'alter table postgres.private.fixture rename to old;',
+  ]) {
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, intervening: [intervening] }),
+      false,
+      intervening
+    );
+  }
+});
+
+test('the storage ACL proof reads every versioned migration file', (t) => {
+  const { trustedRecordsForScan } = require('./security-definer-admission');
+  const entry = require('./security-definer-verified-findings.json').find(
+    (record) => record.remediationMode === 'acl-only'
+  );
+  const source = path.resolve(__dirname, '../..');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'definer-acl-scan-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const dir = path.join(root, path.dirname(entry.file));
+  fs.mkdirSync(dir, { recursive: true });
+  for (const file of [entry.file, entry.remediationMigration])
+    fs.copyFileSync(path.join(source, file), path.join(root, file));
+  const git = (...args) =>
+    require('node:child_process').execFileSync('git', args, {
+      cwd: root,
+      stdio: 'ignore',
+    });
+  git('init', '-q');
+  git('add', '.');
+  const scan = () =>
+    trustedRecordsForScan(root, [entry], verifyRemediation, {}).length;
+  assert.equal(scan(), 1);
+  const grant =
+    'grant execute on function workspace_storage.object_access(text, text, workspace_storage.actor_access) to dashboard_user;';
+  for (const name of ['20261123000000_storage_v2.0.sql', 'notes.sql']) {
+    const file = path.join(dir, name);
+    fs.writeFileSync(file, grant);
+    git('add', '.');
+    assert.equal(scan(), 0, name);
+    git('rm', '-q', '--cached', file);
+    fs.rmSync(file);
+  }
 });
 
 test('quoted argument names do not collide with a zero-argument overload', (t) => {

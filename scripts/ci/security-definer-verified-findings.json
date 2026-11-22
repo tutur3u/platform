@@ -1,5 +1,19 @@
 [
   {
+    "file": "apps/database/supabase/migrations/20261122181200_workspace_storage_ascii_roots.sql",
+    "line": 6,
+    "sourceDigest": "71caf459cd0aa9b657f2f02319f0df45ed77f783d089bda39fa792ba2d789cdc",
+    "rule": "public-execute",
+    "signature": "workspace_storage.object_access(text,text,workspace_storage . actor_access)",
+    "digest": "46155809c2116aea3d40ad013b661f0c4b8e8707eed9e2a9d7f1ba82961f8332",
+    "classification": "verified false positive",
+    "effectiveRoles": ["authenticated", "service_role"],
+    "remediationMode": "acl-only",
+    "remediationMigration": "apps/database/supabase/migrations/20261122182652_workspace_storage_ascii_root_grants.sql",
+    "remediationDigest": "f44dbb1fc517cf0aae39a38fe87a37806c5d62ae5dd734a17b17c1ff64fe374b",
+    "reason": "The storage RLS helper preserves its existing ACL on replacement. The exact follow-up revokes PUBLIC and anon and restates authenticated and service_role EXECUTE. Fresh replay verified the four role outcomes and all 515 storage RLS assertions."
+  },
+  {
     "file": "apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql",
     "line": 3,
     "sourceDigest": "9e42ece288d78db3626ed2d44a4966a9460177d1cedeab45fe90e345e02666ce",

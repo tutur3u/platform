@@ -247,6 +247,11 @@ const expectedVerifiedIdentities = [
     'public.has_workspace_permission(uuid,uuid,text)',
     'public-execute',
   ],
+  [
+    'apps/database/supabase/migrations/20261122181200_workspace_storage_ascii_roots.sql',
+    'workspace_storage.object_access(text,text,workspace_storage . actor_access)',
+    'public-execute',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>
@@ -269,7 +274,8 @@ test('verified findings remain separate from the historical debt inventory', () 
         ? ['PUBLIC', 'anon', 'authenticated', 'service_role']
         : entry.file.includes('20261101090000')
           ? ['anon', 'authenticated', 'service_role']
-          : entry.file.includes('030700')
+          : entry.file.includes('030700') ||
+              entry.remediationMode === 'acl-only'
             ? ['authenticated', 'service_role']
             : entry.file.includes('030500') ||
                 entry.file.includes('20261104213040') ||
@@ -288,7 +294,7 @@ test('verified findings remain separate from the historical debt inventory', () 
     );
   }
 });
-test('each reviewed finance finding binds file, line, rule and all source bytes', (t) => {
+test('each verified finding binds file, line, rule and all source bytes', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'verified-definers-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const files = [...new Set(verified.map((entry) => entry.file))];
