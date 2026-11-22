@@ -1899,6 +1899,7 @@
     "grid": "Grid",
     "grid_view": "Grid view",
     "guest_access": "Guest access",
+    "hidden": "Hidden",
     "hidden_workspaces": "Hidden workspaces",
     "hidden_workspaces_description": "Only you can see this list. Restore a workspace to show it in your workspace lists. Your access and other members are unchanged.",
     "hidden_workspaces_empty": "You have no Hidden workspaces",

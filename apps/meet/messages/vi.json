@@ -1899,6 +1899,7 @@
     "grid": "Lưới",
     "grid_view": "Xem dạng lưới",
     "guest_access": "Quyền khách",
+    "hidden": "Ẩn",
     "hidden_workspaces": "Không gian làm việc đã ẩn",
     "hidden_workspaces_description": "Chỉ bạn thấy danh sách này. Khôi phục để hiện lại trong danh sách không gian làm việc của bạn. Quyền truy cập của bạn và các thành viên khác không thay đổi.",
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",

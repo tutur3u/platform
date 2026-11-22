@@ -1898,6 +1898,7 @@
     "grid": "Lưới",
     "grid_view": "Xem dạng lưới",
     "guest_access": "Quyền khách",
+    "hidden": "Ẩn",
     "hidden_workspaces": "Không gian làm việc đã ẩn",
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",

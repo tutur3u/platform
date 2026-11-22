@@ -239,3 +239,44 @@ test('real Mind closure rejects pre-fix bundles and preserves canonical values',
       added
     );
 });
+
+test('Meet and Parley translate the rendered sidebar modes and the legacy Hidden label', () => {
+  const repo = path.resolve(__dirname, '..');
+  const menu = path.join(
+    repo,
+    'packages/ui/src/components/ui/custom/satellite-user-menu-items.tsx'
+  );
+  const modes = [
+    'common.sidebar',
+    'common.expanded',
+    'common.collapsed',
+    'common.expand_on_hover',
+    'common.minimal',
+  ];
+  const readBundle = (app, locale) =>
+    flatten(
+      JSON.parse(
+        fs.readFileSync(
+          path.join(repo, 'apps', app, 'messages', `${locale}.json`),
+          'utf8'
+        )
+      )
+    );
+  const rendered = collectRequirements(repo, [menu], readBundle('web', 'en'));
+  for (const key of modes) assert.ok(rendered.has(key), key);
+
+  for (const locale of ['en', 'vi']) {
+    const canonical = readBundle('web', locale);
+    for (const app of ['meet', 'parley']) {
+      const bundle = readBundle(app, locale);
+      for (const key of [...modes, 'common.hidden']) {
+        assert.equal(typeof canonical.get(key), 'string', `${locale} ${key}`);
+        assert.equal(
+          bundle.get(key),
+          canonical.get(key),
+          `${app} ${locale} ${key}`
+        );
+      }
+    }
+  }
+});

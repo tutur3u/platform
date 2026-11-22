@@ -1898,6 +1898,7 @@
     "grid": "Grid",
     "grid_view": "Grid view",
     "guest_access": "Guest access",
+    "hidden": "Hidden",
     "hidden_workspaces": "Hidden workspaces",
     "hidden_workspaces_empty": "You have no Hidden workspaces",
     "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
