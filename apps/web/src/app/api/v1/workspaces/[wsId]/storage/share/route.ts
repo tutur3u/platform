@@ -118,14 +118,18 @@ async function resolveSignedUrl(
   }
 
   try {
-    return await createWorkspaceStorageSignedReadUrl(
+    const expiresIn = clampSignedUrlTtl(input.expiresIn);
+    const signedAt = Date.now();
+    const signedUrl = await createWorkspaceStorageSignedReadUrl(
       normalizedWsId,
       sanitizedPath,
-      {
-        expiresIn: clampSignedUrlTtl(input.expiresIn),
-        transform: input.transform,
-      }
+      { expiresIn, transform: input.transform }
     );
+    return {
+      signedUrl,
+      expiresIn,
+      expiresAt: new Date(signedAt + expiresIn * 1000).toISOString(),
+    };
   } catch (error) {
     if (error instanceof WorkspaceStorageError) {
       return NextResponse.json(
@@ -166,18 +170,15 @@ async function createShareLink(
       );
     }
 
-    const signedUrl = await resolveSignedUrl(
-      request,
-      params,
-      parsed.data,
-      audit
-    );
+    const signed = await resolveSignedUrl(request, params, parsed.data, audit);
 
-    if (signedUrl instanceof NextResponse) {
-      return signedUrl;
+    if (signed instanceof NextResponse) {
+      return signed;
     }
 
-    return NextResponse.json({ signedUrl });
+    // expiresIn is the clamped lifetime actually signed, so clients can show
+    // and cache against it instead of the lifetime they requested.
+    return NextResponse.json(signed);
   } catch (error) {
     logWorkspaceStorageRouteError(
       'Unexpected error generating signed URL:',
@@ -233,7 +234,7 @@ async function redirectToSignedUrl(
       quality !== undefined ||
       format !== undefined;
 
-    const signedUrl = await resolveSignedUrl(
+    const signed = await resolveSignedUrl(
       request,
       params,
       {
@@ -245,12 +246,12 @@ async function redirectToSignedUrl(
       audit
     );
 
-    if (signedUrl instanceof NextResponse) {
-      return signedUrl;
+    if (signed instanceof NextResponse) {
+      return signed;
     }
 
     // The Location carries a short-lived bearer URL: never cache the redirect.
-    const redirect = NextResponse.redirect(signedUrl, { status: 307 });
+    const redirect = NextResponse.redirect(signed.signedUrl, { status: 307 });
     redirect.headers.set('Cache-Control', 'private, no-store');
     return redirect;
   } catch (error) {

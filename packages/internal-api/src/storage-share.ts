@@ -6,8 +6,9 @@ import {
 
 interface WorkspaceStorageShareLinkResponse {
   signedUrl?: string;
-  /** Effective lifetime in seconds after the server clamps the request. */
+  /** Lifetime in seconds after the server clamps the request. */
   expiresIn?: number;
+  /** ISO time the signed link stops working. */
   expiresAt?: string;
 }
 
@@ -15,26 +16,24 @@ export interface WorkspaceStorageShareLink {
   url: string;
   /** Effective lifetime in seconds, or null when the server does not say. */
   expiresIn: number | null;
+  /** ISO expiry time, or null when the server does not say. */
+  expiresAt: string | null;
 }
 
-function readEffectiveTtl(
-  payload: WorkspaceStorageShareLinkResponse,
-  requestedAt: number
-) {
-  if (
-    typeof payload.expiresIn === 'number' &&
-    Number.isFinite(payload.expiresIn) &&
-    payload.expiresIn > 0
-  ) {
-    return Math.trunc(payload.expiresIn);
-  }
-  if (typeof payload.expiresAt === 'string') {
-    const seconds = Math.trunc(
-      (Date.parse(payload.expiresAt) - requestedAt) / 1000
-    );
-    if (Number.isFinite(seconds) && seconds > 0) return seconds;
-  }
-  return null;
+function readEffectiveTtl(payload: WorkspaceStorageShareLinkResponse) {
+  const { expiresIn } = payload;
+  return typeof expiresIn === 'number' &&
+    Number.isFinite(expiresIn) &&
+    expiresIn > 0
+    ? Math.trunc(expiresIn)
+    : null;
+}
+
+function readExpiresAt(payload: WorkspaceStorageShareLinkResponse) {
+  const { expiresAt } = payload;
+  return typeof expiresAt === 'string' && Number.isFinite(Date.parse(expiresAt))
+    ? expiresAt
+    : null;
 }
 
 /**
@@ -49,7 +48,6 @@ export async function createWorkspaceStorageShareLink(
   clientOptions?: InternalApiClientOptions
 ): Promise<WorkspaceStorageShareLink> {
   const client = getInternalApiClient(clientOptions);
-  const requestedAt = Date.now();
   const payload = await client.json<WorkspaceStorageShareLinkResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/share`,
     {
@@ -66,6 +64,7 @@ export async function createWorkspaceStorageShareLink(
 
   return {
     url: payload.signedUrl,
-    expiresIn: readEffectiveTtl(payload, requestedAt),
+    expiresIn: readEffectiveTtl(payload),
+    expiresAt: readExpiresAt(payload),
   };
 }

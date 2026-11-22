@@ -184,6 +184,8 @@ describe('Drive sharing does not authorize private chat resources', () => {
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({
         signedUrl: 'https://storage.example/signed-object',
+        expiresIn: 3600,
+        expiresAt: expect.any(String),
       });
       expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
         'ws-123',
@@ -211,6 +213,29 @@ describe('Drive sharing does not authorize private chat resources', () => {
       'mira/notes.txt',
       expect.objectContaining({ expiresIn: expected })
     );
+  });
+
+  it('reports the clamped lifetime and expiry it signed', async () => {
+    vi.useFakeTimers({ now: Date.parse('2026-11-23T00:00:00Z') });
+    try {
+      const response = await POST(
+        new Request('http://localhost/api/v1/workspaces/ws-123/storage/share', {
+          method: 'POST',
+          body: JSON.stringify({
+            path: 'mira/notes.txt',
+            expiresIn: 31_536_000,
+          }),
+        }),
+        params
+      );
+      expect(await response.json()).toEqual({
+        signedUrl: 'https://storage.example/signed-object',
+        expiresIn: 604_800,
+        expiresAt: '2026-11-30T00:00:00.000Z',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('clamps GET redirect lifetimes too', async () => {
