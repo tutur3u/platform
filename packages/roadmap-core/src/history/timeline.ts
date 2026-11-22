@@ -21,6 +21,8 @@ export type TimelineDeliverable = {
   titleVi?: string;
   trackId: string;
   prs: number[];
+  /** Cited commits on main; such a row's deploy is never verified. */
+  commits?: string[];
   state: { status: Status; shippedAt: string | null };
 };
 

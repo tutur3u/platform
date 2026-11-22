@@ -449,7 +449,15 @@ function PeriodGroup({
                     t={t}
                     tipId={`tip-tl-${row.d.id}`}
                   />
-                  <PrLinks prs={row.d.prs.map((number) => ({ number }))} />
+                  {/* A cited commit proves the merge only (live/status.ts). */}
+                  {row.d.commits?.length &&
+                  row.d.state.status === 'waiting_for_prod_sync' ? (
+                    <span>{t.item.unverified}</span>
+                  ) : null}
+                  <PrLinks
+                    prs={row.d.prs.map((number) => ({ number }))}
+                    commits={row.d.commits}
+                  />
                 </span>
               </li>
             ) : (

@@ -127,13 +127,25 @@ test('readCitedCommits keeps only cited commits on the head history', (t) => {
   const found = readCitedCommits({
     cwd,
     cited: [second, first, first, side, 'f'.repeat(40), 'abc1234'],
+    mainRef: 'refs/heads/main',
   });
   assert.equal(found.head, second);
   assert.deepEqual(found.commits, [
     { sha: second, at: '2026-11-16T10:00:00+07:00' },
     { sha: first, at: '2026-11-15T10:00:00+07:00' },
   ]);
-  assert.deepEqual(readCitedCommits({ cwd, cited: [] }).commits, []);
+  assert.deepEqual(
+    readCitedCommits({ cwd, cited: [], mainRef: 'refs/heads/main' }).commits,
+    []
+  );
+  // Broken variants: without the main branch's remote-tracking ref nothing
+  // counts as merged, and no tag with a similar name stands in for it.
+  git('tag', 'origin/main', second);
+  git('tag', 'refs/remotes/origin/main', second);
+  assert.throws(
+    () => readCitedCommits({ cwd, cited: [first] }),
+    /refs\/remotes\/origin\/main/
+  );
 });
 
 test('broken variant: a pull request build does not count its own commits', (t) => {
@@ -146,7 +158,7 @@ test('broken variant: a pull request build does not count its own commits', (t) 
   const found = readCitedCommits({
     cwd,
     cited: [merged, proposed],
-    mainRef: 'trunk',
+    mainRef: 'refs/heads/trunk',
   });
   assert.deepEqual(
     found.commits.map((entry) => entry.sha),

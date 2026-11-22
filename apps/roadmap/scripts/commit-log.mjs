@@ -110,20 +110,30 @@ export function readCommits({
 
 /**
  * The commits curated deliverables cite (live/evidence.ts), whatever their
- * age: each one on `head`'s history and, where this checkout has it, on the
- * main branch (a pull-request build's synthetic merge also contains the
- * request's own commits), with its committer time. `head` is the commit the
- * history was read from. Cited commits not found are left out (no evidence).
+ * age: each one on `head`'s history and on the main branch (a pull-request
+ * build's checkout also contains the request's own commits), with its
+ * committer time. `head` is the commit the history was read from. Cited
+ * commits not found are left out (no evidence), and a checkout without the
+ * main branch ref gives none at all.
  */
 export function readCitedCommits({
   cwd,
   cited,
   head = 'HEAD',
-  mainRef = 'origin/main',
+  // The full ref name; it is resolved exactly, so no tag or branch with a
+  // similar name can stand in for the main branch.
+  mainRef = 'refs/remotes/origin/main',
 }) {
   if (git(['rev-parse', '--is-shallow-repository'], cwd).trim() === 'true')
     throw new Error('shallow checkout: commit history is not available');
-  const targets = [head, ...(exists(mainRef, cwd) ? [mainRef] : [])];
+  // The exact ref, with none of Git's name expansion, as an object id.
+  const main = spawnSync('git', ['show-ref', '--verify', '--hash', mainRef], {
+    cwd,
+    encoding: 'utf8',
+  });
+  if (main.status !== 0 || !SHA.test(main.stdout.trim()))
+    throw new Error(`no ${mainRef} ref: merged commits cannot be told apart`);
+  const targets = [head, main.stdout.trim()];
   const onMain = [...new Set(cited)].filter(
     (sha) =>
       SHA.test(sha) &&
