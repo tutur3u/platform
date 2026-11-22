@@ -7,7 +7,7 @@ import { WorkbenchFiles } from './workbench-files';
 
 afterEach(cleanup);
 const t = messages.programmingPlayground;
-function mount(onAdd?: (path: string) => void) {
+function mount(onAdd?: (path: string) => void, languageBadge?: boolean) {
   const onSelect = vi.fn();
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
@@ -16,6 +16,7 @@ function mount(onAdd?: (path: string) => void) {
         active="main.py"
         onSelect={onSelect}
         onAdd={onAdd}
+        languageBadge={languageBadge}
       />
     </NextIntlClientProvider>
   );
@@ -89,4 +90,15 @@ it('shows Mira and collaborator chips on their open file only', () => {
       .getByRole('tab', { name: 'solution.py' })
       .querySelector('[role="img"]')
   ).toBeNull();
+});
+
+it('badges only the active tab with its language code when asked to', () => {
+  mount(undefined, true);
+  const [main, util] = screen.getAllByRole('tab');
+  const badge = main!.querySelector('[data-language]');
+  expect(badge?.getAttribute('data-language')).toBe('python');
+  expect(badge?.querySelector('[aria-hidden="true"]')?.textContent).toBe('PY');
+  expect(badge?.className).toContain('bg-dynamic-blue/10');
+  expect(main!.textContent).toBe('main.pyPYPython');
+  expect(util!.querySelector('[data-language]')).toBeNull();
 });

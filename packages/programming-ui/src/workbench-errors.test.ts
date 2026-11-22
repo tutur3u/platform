@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   failureReason,
+  isRunnerUnavailable,
   WorkbenchStepError,
   workbenchFailure,
 } from './workbench-errors';
@@ -36,5 +37,17 @@ describe('workbench failures', () => {
       workbenchFailure({ result: status(500), test: status(403) })
     ).toEqual({ step: 'result', reason: 'unknown' });
     expect(workbenchFailure({})).toBeNull();
+  });
+
+  it('treats only a run the runner refused as the runner being unavailable', () => {
+    expect(isRunnerUnavailable(status(503))).toBe(true);
+    expect(isRunnerUnavailable(status(502))).toBe(true);
+    expect(isRunnerUnavailable(status(500))).toBe(false);
+    expect(
+      isRunnerUnavailable(new WorkbenchStepError('save', status(503)))
+    ).toBe(false);
+    expect(
+      isRunnerUnavailable(new WorkbenchStepError('run', status(504)))
+    ).toBe(true);
   });
 });

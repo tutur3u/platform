@@ -7,6 +7,12 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { classNames as cn } from './class-names';
 import { MiraFileBadge } from './mira-code-presence';
+import {
+  LANGUAGE_CODES,
+  LANGUAGE_LABELS,
+  LANGUAGE_TONES,
+  languageForPath,
+} from './workbench-language';
 import { type NewFileError, newFilePathError } from './workbench-layout';
 
 /** Compact file tab strip with inline file creation; no separate form or helper copy. */
@@ -18,6 +24,7 @@ export function WorkbenchFiles({
   collaborators = [],
   miraFile,
   miraMark,
+  languageBadge = false,
 }: {
   files: readonly string[];
   active: string | undefined;
@@ -25,6 +32,8 @@ export function WorkbenchFiles({
   collaborators?: CollaborationPresence[];
   miraFile?: string;
   miraMark?: ReactNode;
+  /** Marks the active tab with its runtime's short code (PY, JS, C++). */
+  languageBadge?: boolean;
   /** Absent when the participant may not add files (viewer, Learn problem, offline). */
   onAdd?: (path: string) => void;
 }) {
@@ -61,6 +70,7 @@ export function WorkbenchFiles({
             )}
           >
             {path}
+            {languageBadge && path === active && <LanguageBadge path={path} />}
             {miraFile === path && (
               <MiraFileBadge
                 label={t('miraFileOpen', { path })}
@@ -110,6 +120,24 @@ export function WorkbenchFiles({
         </span>
       )}
     </div>
+  );
+}
+
+function LanguageBadge({ path }: { path: string }) {
+  const language = languageForPath(path);
+  if (!language) return null;
+  return (
+    <span
+      data-language={language}
+      title={LANGUAGE_LABELS[language]}
+      className={cn(
+        'rounded-sm px-1 font-bold font-sans text-[10px] leading-4',
+        LANGUAGE_TONES[language]
+      )}
+    >
+      <span aria-hidden="true">{LANGUAGE_CODES[language]}</span>
+      <span className="sr-only">{LANGUAGE_LABELS[language]}</span>
+    </span>
   );
 }
 

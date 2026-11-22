@@ -17,6 +17,10 @@ import { classNames as cn } from './class-names';
 import { WorkbenchFailureNotice } from './workbench-failure-notice';
 import type { SaveState } from './workbench-layout';
 import { WorkbenchOutput, type WorkbenchPreview } from './workbench-output';
+import {
+  type WorkbenchRunner,
+  WorkbenchRunnerUnavailable,
+} from './workbench-runner-unavailable';
 
 export type WorkbenchTestRun = {
   submissionId: string;
@@ -38,6 +42,7 @@ export function WorkbenchMeetingOutput({
   failureLink,
   checkpoint,
   preview,
+  runner,
   ...output
 }: Omit<SharedOutput, 'open' | 'onToggle' | 'embedded' | 'preview'> & {
   tab: OutputTab;
@@ -50,6 +55,8 @@ export function WorkbenchMeetingOutput({
   failureLink?: { index: number; line: number; jump: () => void };
   checkpoint?: { pending: boolean; save: () => void; state: SaveState };
   preview?: WorkbenchPreview;
+  /** Set once Meet's runner reported it cannot take runs; the card stays above every tab. */
+  runner?: WorkbenchRunner;
 }) {
   const t = useTranslations('programmingPlayground');
   const id = useId();
@@ -119,6 +126,11 @@ export function WorkbenchMeetingOutput({
           </button>
         ))}
       </div>
+      {runner && (
+        <div className="shrink-0 border-b p-2">
+          <WorkbenchRunnerUnavailable {...runner} />
+        </div>
+      )}
       <div
         id={`${id}-panel`}
         role="tabpanel"

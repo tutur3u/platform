@@ -1,20 +1,16 @@
 'use client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import {
-  checkpointHostedPlayground,
-  getHostedPlaygroundRun,
   hostedPlaygroundPreviewUrl,
   joinHostedPlayground,
   type ProgrammingCollaborationJoin,
-  runHostedPlayground,
 } from '@tuturuuu/internal-api/playgrounds';
 import {
   type CollaborationPresence,
   replaceProgrammingText,
 } from '@tuturuuu/realtime';
-import type { PlaygroundExecutionResult } from '@tuturuuu/types/primitives/playgrounds';
 import { useTranslations } from 'next-intl';
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useState } from 'react';
 import * as Y from 'yjs';
 import { classNames as cn } from './class-names';
 import {
@@ -24,11 +20,12 @@ import {
 } from './mira-code-presence';
 import { isRunShortcut } from './run-shortcut';
 import { useProgrammingRoom } from './use-programming-room';
+import { useWorkbenchRun, type WorkbenchExecution } from './use-workbench-run';
 import { WorkbenchEditorStage } from './workbench-editor-stage';
-import { WorkbenchStepError, workbenchFailure } from './workbench-errors';
+import { WorkbenchEditorStatus } from './workbench-editor-status';
+import { workbenchFailure } from './workbench-errors';
 import { WorkbenchFiles, WorkbenchFileTree } from './workbench-files';
 import {
-  isRunActive,
   outputView,
   saveState,
   type WorkbenchAction,
@@ -62,14 +59,7 @@ export function ProgrammingWorkbench({
   join?: () => Promise<ProgrammingCollaborationJoin>;
   checkpoint?: () => Promise<unknown>;
   previewUrl?: (port: number) => string;
-  execution?: {
-    run: (payload: {
-      operation: 'run' | 'stop';
-      requestId: string;
-      stdin?: string;
-    }) => Promise<{ runId: string }>;
-    read: (runId: string) => Promise<PlaygroundExecutionResult>;
-  };
+  execution?: WorkbenchExecution;
   problem?: { title: string; prompt: string };
   onTest?: (source: string) => Promise<string>;
   meeting?: {
@@ -79,6 +69,9 @@ export function ProgrammingWorkbench({
       language: import('@tuturuuu/types/primitives/playgrounds').PlaygroundLanguage
     ) => void;
     runtimePending?: boolean;
+    /** The runner refused a run earlier in this call, so Run starts disabled. */
+    runnerUnavailable?: boolean;
+    onRunnerUnavailable?: (unavailable: boolean) => void;
   };
   /** Host-owned entries for the overflow menu, e.g. changing or closing the meeting resource. */
   actions?: WorkbenchAction[];
@@ -89,7 +82,6 @@ export function ProgrammingWorkbench({
     join ?? (() => joinHostedPlayground(projectId))
   );
   const [selected, setSelected] = useState('');
-  const [runId, setRunId] = useState<string | null>(null);
   const [stdin, setStdin] = useState('');
   const [port, setPort] = useState('3000');
   const [preview, setPreview] = useState(false);
@@ -132,60 +124,19 @@ export function ProgrammingWorkbench({
       });
     }
   }, [activePath, collaborationClient, collaborationOpen]);
-  // Wall time for runs this browser started; the run record has no timestamps.
-  const timing = useRef<{
-    runId: string;
-    startedAt: number;
-    finishedAt?: number;
-  } | null>(null);
-  const result = useQuery({
-    queryKey: ['playground-run', roomKey, runId],
-    queryFn: async () => {
-      const data = execution
-        ? await execution.read(runId!)
-        : await getHostedPlaygroundRun(projectId, runId!);
-      const started = timing.current;
-      if (
-        started &&
-        started.runId === data.runId &&
-        !started.finishedAt &&
-        !isRunActive(data.status)
-      )
-        started.finishedAt = Date.now();
-      return data;
-    },
-    enabled: !!runId && !problem,
-    refetchInterval: (query) =>
-      isRunActive(query.state.data?.status ?? 'queued') ? 300 : false,
-    retry: false,
-  });
-  // A started run is busy from the moment it has an id: until its first status
-  // arrives nothing else may start, from the button or the shortcut.
-  const busy =
-    isRunActive(result.data?.status) ||
-    (!!runId && !problem && !result.data && !result.isError);
-  const checkpointRoom =
-    checkpoint ?? (() => checkpointHostedPlayground(projectId));
-  const save = useMutation({ mutationFn: checkpointRoom });
-  const run = useMutation({
-    mutationFn: async (operation: 'run' | 'stop') => {
-      if (operation === 'run' && owner)
-        await checkpointRoom().catch((error: unknown) => {
-          throw new WorkbenchStepError('save', error);
-        });
-      const payload = { operation, requestId: crypto.randomUUID(), stdin };
-      const startedAt = Date.now();
-      const queued = execution
-        ? await execution.run(payload)
-        : await runHostedPlayground(projectId, payload);
-      if (operation === 'run')
-        timing.current = { runId: queued.runId, startedAt };
-      setRunId(queued.runId);
+  const { result, busy, save, run, runner, durationMs } = useWorkbenchRun({
+    projectId,
+    roomKey,
+    execution,
+    checkpoint,
+    problem: !!problem,
+    owner,
+    stdin,
+    meeting,
+    onStarted: () => {
       setOutputTab('console');
       setOutputOpen(true);
     },
-    // A run saves the room first, so an older save failure no longer applies.
-    onSuccess: () => save.reset(),
   });
   const test = useMutation({
     mutationFn: async (): Promise<WorkbenchTestRun | undefined> => {
@@ -253,18 +204,18 @@ export function ProgrammingWorkbench({
     else if (runFailure.step === 'result') void result.refetch();
     else run.mutate(run.variables ?? 'run');
   };
-  const runTiming = timing.current;
   const output = {
     view: outputView(!!problem, testOutput, result.data),
     save: selectedSave,
-    failure: runFailure,
+    // The runner card explains a refused run; other failures still show.
+    failure:
+      runner.unavailable && runFailure?.reason === 'unavailable'
+        ? null
+        : runFailure,
     onRetry: retry,
     retrying:
       save.isPending || run.isPending || test.isPending || result.isFetching,
-    durationMs:
-      runTiming?.runId === runId && runTiming.finishedAt
-        ? runTiming.finishedAt - runTiming.startedAt
-        : null,
+    durationMs,
     run: problem
       ? undefined
       : {
@@ -326,7 +277,13 @@ export function ProgrammingWorkbench({
     if (!editable) return;
     if (problem) {
       if ((onTest || meeting?.runTests) && !test.isPending) test.mutate();
-    } else if (canExecute && !busy && !run.isPending && !save.isPending)
+    } else if (
+      canExecute &&
+      !busy &&
+      !runner.unavailable &&
+      !run.isPending &&
+      !save.isPending
+    )
       run.mutate('run');
   };
   const onShortcut = (event: KeyboardEvent<HTMLElement>) => {
@@ -377,6 +334,7 @@ export function ProgrammingWorkbench({
                   onRun: () => run.mutate('run'),
                   onStop: () => run.mutate('stop'),
                   onSave: canCheckpoint ? () => save.mutate() : undefined,
+                  unavailable: runner.unavailable,
                 }
               : { kind: 'none' }
         }
@@ -417,6 +375,7 @@ export function ProgrammingWorkbench({
             collaborators={meeting ? collaborators : undefined}
             miraFile={miraFile}
             miraMark={mira?.mark}
+            languageBadge={!!meeting}
             onAdd={
               !problem && editable
                 ? (path) => {
@@ -474,6 +433,12 @@ export function ProgrammingWorkbench({
                 : undefined
             }
           />
+          {meeting && (
+            <WorkbenchEditorStatus
+              language={project.language}
+              editable={editable}
+            />
+          )}
           {mira && (
             <MiraCodeReview
               mira={mira}
@@ -525,6 +490,16 @@ export function ProgrammingWorkbench({
                 : undefined
             }
             preview={previewSettings}
+            runner={
+              runner.unavailable
+                ? {
+                    id: runner.unavailable,
+                    file: active,
+                    onRetry: () => run.mutate('run'),
+                    retrying: run.isPending || save.isPending,
+                  }
+                : undefined
+            }
           />
         )}
       </div>

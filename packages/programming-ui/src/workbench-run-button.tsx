@@ -15,11 +15,14 @@ export function WorkbenchRunButton({
   disabled,
   busy,
   onRun,
+  describedBy,
 }: {
   label: string;
   disabled: boolean;
   busy: boolean;
   onRun: () => void;
+  /** The element explaining why Run is disabled, e.g. the runner-unavailable card. */
+  describedBy?: string;
 }) {
   const t = useTranslations('programmingPlayground');
   // The platform is only known in the browser; the server renders Ctrl.
@@ -33,6 +36,7 @@ export function WorkbenchRunButton({
           size="sm"
           className="h-8 gap-1.5 rounded-full px-3.5"
           disabled={disabled}
+          aria-describedby={describedBy}
           aria-keyshortcuts={apple ? 'Meta+Enter' : 'Control+Enter'}
           onClick={onRun}
         >

@@ -79,6 +79,9 @@ export function ProgrammingPanel({
   const [language, setLanguage] = useState<ProgrammingLanguage>('python');
   // Hosts land in the open dialog when nothing is open yet.
   const [setupOpen, setSetupOpen] = useState(canManage && !selection);
+  // Survives the workbench remount on a language switch, so a runner that
+  // refused a run keeps Run disabled for the rest of the call.
+  const [runnerUnavailable, setRunnerUnavailable] = useState(false);
   const key = [
     'meet-programming',
     meetingId,
@@ -323,6 +326,8 @@ export function ProgrammingPanel({
                   }
                 : undefined,
               runtimePending: switchRuntime.isPending,
+              runnerUnavailable,
+              onRunnerUnavailable: setRunnerUnavailable,
             }}
             actions={
               canManage

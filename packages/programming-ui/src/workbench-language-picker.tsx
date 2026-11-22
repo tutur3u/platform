@@ -10,25 +10,24 @@ import {
 import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
 import { classNames as cn } from './class-names';
+import { LANGUAGE_LABELS } from './workbench-language';
 
-export const LANGUAGE_LABELS: Record<PlaygroundLanguage, string> = {
-  python: 'Python',
-  javascript: 'JavaScript',
-  typescript: 'TypeScript',
-  c: 'C',
-  cpp: 'C++',
-  java: 'Java',
-  rust: 'Rust',
-  go: 'Go',
-  ruby: 'Ruby',
-  php: 'PHP',
-  shell: 'Shell',
-};
+export { LANGUAGE_LABELS };
 
 const PRIMARY = ['python', 'javascript', 'typescript'] as const;
 
-const segment =
-  'inline-flex h-7 items-center gap-1 rounded-full px-3 font-semibold text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60 motion-reduce:transition-none aria-checked:bg-background aria-checked:text-foreground aria-checked:shadow-xs';
+// The active runtime is a filled pill with a check, so it reads at a glance.
+const segment = (checked: boolean) =>
+  cn(
+    'inline-flex h-7 items-center gap-1 rounded-full px-3 font-semibold text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60 motion-reduce:transition-none',
+    checked
+      ? 'bg-primary text-primary-foreground shadow-xs'
+      : 'text-muted-foreground hover:text-foreground'
+  );
+
+function Selected({ checked }: { checked: boolean }) {
+  return checked ? <Check aria-hidden="true" className="size-3.5" /> : null;
+}
 
 /**
  * Python, JavaScript and TypeScript as one segmented control with the other
@@ -49,8 +48,12 @@ export function WorkbenchLanguagePicker({
   const t = useTranslations('programmingPlayground');
   if (!onChange)
     return (
-      <span className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 font-semibold text-muted-foreground text-xs">
-        <CodeXml aria-hidden="true" className="size-3.5" />
+      <span
+        data-language={language}
+        title={t('languageHostOnly')}
+        className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 font-semibold text-foreground text-xs"
+      >
+        <CodeXml aria-hidden="true" className="size-3.5 text-primary" />
         <span className="sr-only">{t('language')}: </span>
         {LANGUAGE_LABELS[language]}
       </span>
@@ -101,8 +104,9 @@ export function WorkbenchLanguagePicker({
             disabled={pending}
             onClick={() => choose(value)}
             onKeyDown={(event) => onKeyDown(event, index)}
-            className={segment}
+            className={segment(language === value)}
           >
+            <Selected checked={language === value} />
             {LANGUAGE_LABELS[value]}
           </button>
         ))}
@@ -111,12 +115,17 @@ export function WorkbenchLanguagePicker({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label={t('moreLanguages')}
+                aria-label={
+                  otherSelected
+                    ? `${LANGUAGE_LABELS[language]}, ${t('moreLanguages')}`
+                    : t('moreLanguages')
+                }
                 aria-checked={otherSelected}
                 role="radio"
                 disabled={pending}
-                className={segment}
+                className={segment(otherSelected)}
               >
+                <Selected checked={otherSelected} />
                 {otherSelected
                   ? LANGUAGE_LABELS[language]
                   : t('moreLanguagesShort')}

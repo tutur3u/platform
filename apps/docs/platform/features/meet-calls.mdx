@@ -2120,6 +2120,12 @@ Learn uses the same workbench without the meeting-only controls.
   that language, with its code; the host's browser tab remembers them for the
   session. Every playground stays in the host's projects. Other participants see
   the language but cannot change it.
+- **Language at a glance.** The active language shows in three places: the
+  header control (a filled pill with a check, exposed as a checked radio; a
+  read-only pill for participants who cannot switch it), a short code such as
+  PY, JS or C++ on the active file tab, derived from the file extension and
+  omitted for docs and data files, and the full language name in the editor
+  footer. Learn's hosted playground keeps its plain header chip.
 - **Run.** Cmd+Enter on macOS and Ctrl+Enter elsewhere runs the playground, or
   runs the tests for a problem. The Run control shows the shortcut. The shortcut
   works while focus is in the editor or elsewhere in the workbench, and nowhere
@@ -2132,9 +2138,19 @@ Learn uses the same workbench without the meeting-only controls.
   a retry. The reason follows the HTTP status of the failed step: 502, 503 and
   504 say that running code is temporarily unavailable (a Playground pool with
   no ready runner answers a run with 503), and 429 says the service is busy.
+- **Runner unavailable.** In a meeting, once starting a run answers 502, 503 or
+  504, Run stays visible but disabled for the rest of the call, including after a
+  language switch. A status card above the output tabs says running code is not
+  available yet, that the code is saved with the meeting, and offers Copy code,
+  Download for the active file and Retry; the Run button's `aria-describedby`
+  points at it. A run that starts again re-enables Run. A failure while saving
+  the room first does not count. Learn's hosted playground keeps the retry
+  notice for every failure.
 
 Regression coverage: `editor-colors.test.ts`, `run-shortcut.test.ts`,
-`workbench-errors.test.ts` and `programming-panel.test.tsx`.
+`workbench-errors.test.ts`, `workbench-language.test.ts`,
+`workbench-language-picker.test.tsx`, `workbench-files.test.tsx`,
+`workbench-runner-unavailable.test.tsx` and `programming-panel.test.tsx`.
 
 Web screen capture depends on browser getDisplayMedia support. Android and iOS
 browsers that lack it can receive screens and co-program, but cannot open a

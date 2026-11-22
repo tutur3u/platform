@@ -63,3 +63,16 @@ export function workbenchFailure(errors: {
   }
   return null;
 }
+
+/**
+ * Whether a failed run means the code runner itself cannot take runs (it
+ * answered 502/503/504), not that saving the room first failed.
+ */
+export function isRunnerUnavailable(error: unknown) {
+  if (error instanceof WorkbenchStepError)
+    return (
+      error.step === 'run' &&
+      failureReason(error.reasonSource) === 'unavailable'
+    );
+  return failureReason(error) === 'unavailable';
+}

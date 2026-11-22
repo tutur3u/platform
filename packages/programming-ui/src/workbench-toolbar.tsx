@@ -37,6 +37,8 @@ export type WorkbenchControls =
       onStop: () => void;
       onSave?: () => void;
       pending: boolean;
+      /** Id of the card explaining that runs are unavailable; Run stays visible but disabled. */
+      unavailable?: string;
     }
   | {
       kind: 'problem';
@@ -138,7 +140,13 @@ export function WorkbenchToolbar({
             <WorkbenchRunButton
               label={t('run')}
               busy={controls.busy || controls.pending}
-              disabled={controls.pending || !controls.editable || controls.busy}
+              disabled={
+                controls.pending ||
+                !controls.editable ||
+                controls.busy ||
+                !!controls.unavailable
+              }
+              describedBy={controls.unavailable}
               onRun={controls.onRun}
             />
             <Button
@@ -147,7 +155,9 @@ export function WorkbenchToolbar({
               className={iconButton}
               aria-label={t('stop')}
               title={t('stop')}
-              disabled={controls.pending || !controls.editable}
+              disabled={
+                controls.pending || !controls.editable || !!controls.unavailable
+              }
               onClick={controls.onStop}
             >
               <Square className="size-3.5" />

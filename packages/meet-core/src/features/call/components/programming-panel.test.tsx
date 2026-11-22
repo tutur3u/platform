@@ -282,3 +282,16 @@ it('wires matching room presence and host actions to the workbench', async () =>
     expect(client.changeMira).toHaveBeenCalledWith('meeting', selection, action)
   );
 });
+
+it('keeps a refused runner disabled for the call across workbench remounts', async () => {
+  mount({ canManage: false, active: true });
+  await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
+  const meeting = () =>
+    workbench.calls.at(-1)!.meeting as {
+      runnerUnavailable: boolean;
+      onRunnerUnavailable: (value: boolean) => void;
+    };
+  expect(meeting().runnerUnavailable).toBe(false);
+  act(() => meeting().onRunnerUnavailable(true));
+  await waitFor(() => expect(meeting().runnerUnavailable).toBe(true));
+});
