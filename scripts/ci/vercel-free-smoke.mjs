@@ -30,6 +30,8 @@ export const DEFAULT_TARGETS = [
   'https://track.tuturuuu.com/',
   'https://infrastructure.tuturuuu.com/',
   'https://apps.tuturuuu.com/',
+  // apps.tuturuuu.com proxies unredirected paths to the apex from its Worker.
+  'https://apps.tuturuuu.com/api/json',
   'https://contacts.tuturuuu.com/',
   'https://mind.tuturuuu.com/',
   'https://www.tuturuuu.com/',
