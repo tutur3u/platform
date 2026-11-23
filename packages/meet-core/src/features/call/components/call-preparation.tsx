@@ -44,7 +44,7 @@ export function CallPreparation({
 }) {
   const t = useTranslations('meet.call');
   const slow = useWaitDeadline(busy, SLOW_HINT_MS);
-  const { step, key } = usePreparationStep(busy, lifecycle);
+  const { step, key } = usePreparationStep(busy);
   const spinning = busy && !slow;
   const status = slow
     ? t('join_loading_slow_title')

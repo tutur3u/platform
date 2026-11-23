@@ -49,16 +49,18 @@ it('shows the meeting name, one short status line, a quiet progress bar and a wa
   expect(screen.queryByRole('button', { name: copy.join_retry })).toBeNull();
 });
 
-it('advances through at most three human steps', () => {
+it('advances through three human steps and never goes back when busy toggles', () => {
   vi.useFakeTimers();
-  render(localized(<CallPreparation lifecycle="joining" />));
-  expect(screen.getByRole('status').textContent).toBe(
-    copy.join_step_connecting
-  );
+  const ui = render(localized(<CallPreparation />));
+  const status = () => screen.getByRole('status').textContent;
+  expect(status()).toBe(copy.join_step_setup);
   act(() => vi.advanceTimersByTime(STEP_ADVANCE_MS));
-  expect(screen.getByRole('status').textContent).toBe(copy.join_step_ready);
-  act(() => vi.advanceTimersByTime(STEP_ADVANCE_MS * 2));
-  expect(screen.getByRole('status').textContent).not.toBe(copy.join_step_setup);
+  expect(status()).toBe(copy.join_step_connecting);
+  act(() => vi.advanceTimersByTime(STEP_ADVANCE_MS));
+  expect(status()).toBe(copy.join_step_ready);
+  ui.rerender(localized(<CallPreparation busy={false} />));
+  ui.rerender(localized(<CallPreparation busy />));
+  expect(status()).toBe(copy.join_step_ready);
 });
 
 it('never uses technical jargon in the waiting, slow or failure copy', () => {

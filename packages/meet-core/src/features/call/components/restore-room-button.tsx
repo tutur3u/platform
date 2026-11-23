@@ -3,32 +3,22 @@ import {
   getMeetCallRoomState,
   restoreMeetCallRoom,
 } from '@tuturuuu/internal-api';
-import { RotateCcw } from '@tuturuuu/icons';
 import { Button, type ButtonProps } from '@tuturuuu/ui/button';
-import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { forgetEndedRoom } from '../lib/ended-room-cache';
 
 type Scope = { accountId: string; meetingId: string; attempt: object | null };
-export function RestoreRoomButton({
-  accountId,
-  meetingId,
-  disabled,
-  variant,
-  size,
-  menuItem = false,
-  onRestored = () => window.location.reload(),
-}: {
-  accountId: string;
-  meetingId: string;
-  disabled?: boolean;
-  variant?: ButtonProps['variant'];
-  size?: ButtonProps['size'];
-  /** Render as an item of an open dropdown menu. */
-  menuItem?: boolean;
-  onRestored?: () => void;
-}) {
+
+/**
+ * Restore state and the restore call. Mount it outside any menu or popover
+ * content so closing that surface cannot cancel an attempt in flight.
+ */
+export function useRestoreRoom(
+  accountId: string,
+  meetingId: string,
+  onRestored: () => void = () => window.location.reload()
+) {
   const t = useTranslations('meet.call');
   const scope = useRef<Scope>({ accountId, meetingId, attempt: null });
   if (
@@ -87,40 +77,47 @@ export function RestoreRoomButton({
       }
     }
   }
-  const label = t(currentStatus?.pending ? 'restoring_call' : 'restore_call');
-  if (menuItem)
-    return (
-      <>
-        <DropdownMenuItem
-          disabled={disabled || currentStatus?.pending}
-          onSelect={(event) => {
-            event.preventDefault();
-            void restore();
-          }}
-        >
-          <RotateCcw className="size-4" />
-          {label}
-        </DropdownMenuItem>
-        {currentStatus?.error && (
-          <p role="alert" className="px-2 py-1.5 text-destructive text-xs">
-            {currentStatus.error}
-          </p>
-        )}
-      </>
-    );
+  return {
+    restore: () => void restore(),
+    pending: currentStatus?.pending ?? false,
+    error: currentStatus?.error,
+  };
+}
+
+export function RestoreRoomButton({
+  accountId,
+  meetingId,
+  disabled,
+  variant,
+  size,
+  onRestored,
+}: {
+  accountId: string;
+  meetingId: string;
+  disabled?: boolean;
+  variant?: ButtonProps['variant'];
+  size?: ButtonProps['size'];
+  onRestored?: () => void;
+}) {
+  const t = useTranslations('meet.call');
+  const { restore, pending, error } = useRestoreRoom(
+    accountId,
+    meetingId,
+    onRestored
+  );
   return (
     <div className="space-y-2">
       <Button
         variant={variant}
         size={size}
-        onClick={() => void restore()}
-        disabled={disabled || currentStatus?.pending}
+        onClick={restore}
+        disabled={disabled || pending}
       >
-        {label}
+        {t(pending ? 'restoring_call' : 'restore_call')}
       </Button>
-      {currentStatus?.error && (
+      {error && (
         <p role="alert" className="text-destructive text-sm">
-          {currentStatus.error}
+          {error}
         </p>
       )}
     </div>
