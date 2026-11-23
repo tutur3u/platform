@@ -21,7 +21,7 @@ defaults never satisfy it.
 
 | Requirement | Rule |
 | --- | --- |
-| Deployment | The raw Worker binding `MEET_AI_DISABLED` must be exactly `false` or `0`. Source configuration keeps `true`, so enabling is an explicit release-time override. The API key stays server-side in `GOOGLE_GENERATIVE_AI_API_KEY`. |
+| Deployment | The raw Worker binding `MEET_AI_DISABLED` must be exactly `false` or `0`. Source configuration carries `false`; a `contained` release overrides it to `true` on both Workers. The API key stays server-side in `GOOGLE_GENERATIVE_AI_API_KEY`. |
 | Workspace gate | The meeting workspace must pass the Meet AI gate described in [Meet calls](/platform/features/meet-calls): hard denies (the workspace excluded in code and `MEET_AI_PROTECTED_WORKSPACE_IDS`), the kill switch and `MEET_AI_DISABLED_WORKSPACE_IDS` always apply, then either the allowlist or the reviewed opt-in `MEET_AI_ALL_WORKSPACES=reviewed-allow-all-2026-11-20`. |
 | Account | The same rule as Meet hosting (`canVerifiedAccountHostMeeting`): a verified @tuturuuu.com staff session (`isVerifiedTuturuuuStaffSession`), or a confirmed account whose own Personal subscription is Plus, Pro or Enterprise while `MEET_PAID_TIER_HOSTING_ENABLED` is exactly `true`. Free accounts are denied even in an attested workspace. |
 | Membership and presence | Workspace membership and current admitted meeting participation are required independently. |
@@ -216,10 +216,11 @@ authorized operation from the owning surface. Access to private notes and
 tutor chats is blocked in the room permissions card.
 
 Deploy `tuturuuu-meet-realtime` with the choice protocol, the room Mira fence and
-the room Live denials before `tuturuuu-meet`. Enabling requires an explicit
-runtime override because the source configuration retains
-`MEET_AI_DISABLED: 'true'`, and `scripts/check-meet-ai-containment.js` rejects a
-source config that declares `MEET_AI_ALL_WORKSPACES`. Both Workers must run the
+the room Live denials before `tuturuuu-meet`. `MEET_AI_RELEASE=paid-and-staff`
+keeps the source `MEET_AI_DISABLED: 'false'` and requires the
+`MEET_AI_ALL_WORKSPACES` secret; `contained` overrides the kill switch to
+`true`. `scripts/check-meet-ai-containment.js` rejects a source config that
+declares `MEET_AI_ALL_WORKSPACES`. Both Workers must run the
 qualified source. Enabling these settings does not re-enable room Live voice.
 
 Regression coverage includes `demo-admission.test.ts` (account rule, payer,

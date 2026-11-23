@@ -1714,10 +1714,18 @@ For operators: to enable Meet AI for a workspace, add its id to
 `MEET_AI_ENABLED_WORKSPACE_IDS` on **all three surfaces**. To stop AI, set
 `MEET_AI_DISABLED=true` on all three surfaces. To exclude specific workspaces,
 set the same `MEET_AI_DISABLED_WORKSPACE_IDS` list on each. Removing or blanking
-the allowlist turns Meet AI off; it never widens access. Containment pins `MEET_AI_DISABLED="true"` and an empty allowlist in
-both Meet and realtime deploy configs. `scripts/check-meet-ai-containment.js`
-enforces these pins in CI; lifting containment requires reviewing its single
-`CONTAINMENT_IN_FORCE` flag and the corresponding config changes. The release operator must read
+the allowlist turns Meet AI off; it never widens access.
+
+Source deploy configs for both the Meet and realtime Workers carry
+`MEET_AI_DISABLED="false"` and an empty allowlist. `MEET_AI_RELEASE` in
+`meet-cloudflare.yaml` decides what deploys: `contained` (the default)
+overrides `MEET_AI_DISABLED` to `true` on both Workers, and `paid-and-staff`
+keeps it `false` and requires the `MEET_AI_ALL_WORKSPACES` secret on
+`tuturuuu-meet`. `scripts/check-meet-ai-containment.js` enforces in CI that
+`MEET_AI_DISABLED` is exactly `"true"` or `"false"`, the allowlist is empty,
+`MEET_AI_ALL_WORKSPACES` never appears in source, and the deny and protected
+secrets are required. Its `CONTAINMENT_IN_FORCE` flag (off) would require
+`"true"` again; changing it is a reviewed change. The release operator must read
 back vars after every Meet deploy. Real secret values are provisioned separately.
 
 ### Transcript and notes availability
@@ -1730,11 +1738,79 @@ Worker vars. `readMeetTranscriptionAvailability`
 is the single source of that decision for the state read, the meet-ai POST
 routes and the consent notice.
 
-Transcription stays off in code until a reviewed release opens it. Turning off
-the kill switch, allowlisting a workspace, or setting the reviewed
-`MEET_AI_ALL_WORKSPACES` opt-in opens Private Mira, but not the transcript.
-In that state the state read reports `available: false`, both meet-ai POST
-routes answer 403 and the meeting provider transport refuses.
+Decision (23 November 2026): the transcript and notes are on for every
+workspace the Meet AI gate admits, under the paid-and-staff entitlement model.
+Checks run in this order, and the first failure wins:
+
+1. `MEET_AI_DISABLED` on the Meet Worker is exactly `false` or `0`.
+2. The workspace passes the full Meet AI gate above. A `paid-and-staff` release
+   admits every workspace through the reviewed `MEET_AI_ALL_WORKSPACES` opt-in;
+   protected and denylisted workspaces stay off. No other wildcard exists.
+3. The workspace has a stored 18+ audience attestation.
+4. Paid work (start, audio chunks, notes, live drafts) checks the host's
+   entitlement with the room Mira rule (`readMiraDemoAuthority`). The host must
+   be a workspace member, and either verified @tuturuuu.com staff or a Plus,
+   Pro or Enterprise Personal plan while `MEET_PAID_TIER_HOSTING_ENABLED` is
+   exactly `true`. Free accounts are refused with `MEET_AI_ACCOUNT_UNAVAILABLE`
+   before any session row, credit or provider work. Staff drain the Tuturuuu
+   root workspace (`00000000-0000-0000-0000-000000000000`); paid hosts charge
+   the meeting workspace. Only the meeting host can start or submit audio, so
+   guests never pay.
+5. Per audio chunk: the chunk's session is the one the room shows as
+   recording, the consent fence below is ready, and every source account has a
+   current Allow. Every clip must name its speaker account and source kind;
+   unattributed audio is refused. This runs before any limiter, credit, row or
+   provider work.
+
+Parley stays off. Meet uses its own Worker key.
+
+Billing follows the room Mira model (decision 23 November 2026): a paid host's
+transcript, live drafts and notes are charged to the meeting workspace, staff
+usage drains the Tuturuuu root workspace, and guests never pay. So any Plus, Pro
+or Enterprise member who hosts a meeting in a workspace that confirmed 18+ can
+spend that workspace's AI credits. Each workspace is bounded by the Meet AI
+usage limiter (`packages/ai/src/meetings/usage-limit.ts`), which refuses with
+503 when it cannot decide:
+
+| Scope | Default limit | Override |
+| --- | --- | --- |
+| Workspace audio | 144,000 seconds per day | `MEET_AI_LIMIT_WORKSPACE_AUDIO_SECONDS_PER_DAY` |
+| Workspace notes and drafts | 500 runs per day | `MEET_AI_LIMIT_WORKSPACE_NOTES_PER_DAY` |
+| Meeting audio | 3,600 seconds per 10 minutes, 43,200 per day | `MEET_AI_LIMIT_MEETING_*` |
+| Meeting notes and drafts | 12 runs per hour | `MEET_AI_LIMIT_MEETING_NOTES_PER_HOUR` |
+| Host audio | 20 requests per minute and 1,800 seconds per 10 minutes per meeting; 28,800 seconds per day | `MEET_AI_LIMIT_USER_*` |
+| Host notes and drafts | 6 runs per meeting per hour | `MEET_AI_LIMIT_USER_MEETING_NOTES_PER_HOUR` |
+
+A workspace admin who does not want members to spend its credits this way
+withdraws **Everyone in this workspace is 18 or older** in **Meeting settings →
+Mira**. That turns off the transcript, notes and room Mira for the workspace at
+the next request. Tuturuuu administrators can also deny one workspace through
+`MEET_AI_DISABLED_WORKSPACE_IDS`.
+
+Operating requirements:
+
+- Deploy `tuturuuu-meet-realtime` with the consent fence before `tuturuuu-meet`.
+  An older room rejects the consent commands and every chunk is refused.
+- Release with `MEET_AI_RELEASE=paid-and-staff`. A `contained` release turns
+  the kill switch back on for both Workers.
+- Each workspace owner turns on **Everyone in this workspace is 18 or older** in
+  **Meeting settings → Mira**. Until then that workspace shows the `audience`
+  reason.
+- `tuturuuu-meet` needs `GOOGLE_GENERATIVE_AI_API_KEY`. It also needs
+  `ABUSE_GUARD_FAMILIES` to include `meet` (source config: `proxy,meet`) and a
+  valid `ABUSE_GUARD_KEY_PEPPER`. Otherwise the Meet AI usage limiter refuses
+  every chunk and notes run with 503 `MEET_AI_LIMITER_UNAVAILABLE`.
+- `tuturuuu-meet-realtime` has no `MEET_AI_ALL_WORKSPACES` secret, so its
+  room settings gate admits only allowlisted workspaces. Turning on post-call
+  note sharing stays denied for other workspaces until that secret is
+  provisioned on the room Worker. The host's own notes and the transcript are
+  unaffected.
+- Follow-up tasks and events created from notes keep their own gate in
+  `followup-create.ts`.
+
+To stop the transcript, release with `MEET_AI_RELEASE=contained`, or deny the
+workspace through `MEET_AI_DISABLED_WORKSPACE_IDS`. Either control closes
+chunks and notes at the next request.
 
 A live call that shows "Meet AI is temporarily unavailable." and "No transcript
 yet." with the kill switch lifted is this code gate, not the Worker vars. A
@@ -1774,8 +1850,14 @@ session ends, even after leaving. The older socket `transcription.state` and
 `transcription.consent` messages have no client and do not gate anything.
 
 Regression coverage: `room-transcript-consent.test.ts` (`packages/realtime`),
-`transcript-consent/route.test.ts`, `meeting-ai-unavailable.test.tsx` and
-`sessions.test.ts`.
+`transcript-consent/route.test.ts`, `meeting-ai-unavailable.test.tsx`,
+`sessions.test.ts`, `sessions-indicator.test.ts`, `transcription-availability.test.ts` (every workspace under the reviewed
+opt-in, non-allowlisted workspaces off without it, 18+), `transcript-fence.test.ts`,
+`chunks-fence.test.ts`, `audio-input.test.ts` (unattributed audio refused), `transcript-authority.test.ts` (free accounts refused,
+staff root billing), `credit-admission.test.ts`, `containment.test.ts`,
+`phase-a-denial.test.ts`, `check-meet-ai-containment.test.js`,
+`meet-cf-publication-workflow.test.js` and
+`verify-meet-abuse-guard-families.test.js`.
 
 Regression coverage: `ai-workspace-gate.test.ts` and `ai-gate-containment.test.ts`
 (`packages/realtime`), `containment.test.ts`, `workspace-gate.test.ts`,
