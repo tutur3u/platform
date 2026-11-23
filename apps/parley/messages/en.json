@@ -5204,7 +5204,9 @@
       "board_closed": "This whiteboard is no longer available in this meeting.",
       "board_unavailable": "The whiteboard could not be opened.",
       "board_retry": "Try again",
-      "board_error": "The connection to the board was lost."
+      "board_error": "The connection to the board was lost.",
+      "board_full": "The board is full. Remove something before adding more.",
+      "board_unsupported": "Images and embeds can't be added to this board."
     },
     "details": {
       "back": "Back to meetings",

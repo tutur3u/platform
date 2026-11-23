@@ -9,7 +9,10 @@ class FakeSocket {
   onmessage: ((event: { data: string }) => void) | null = null;
   onclose: (() => void) | null = null;
   onerror: (() => void) | null = null;
-  constructor(public url: string) {
+  constructor(
+    public url: string,
+    public protocols: string[] = []
+  ) {
     FakeSocket.all.push(this);
   }
   send(data: string) {
@@ -50,7 +53,8 @@ function setup(join = vi.fn(async () => session())) {
     join,
     onRole: calls.role,
     onClosed: calls.closed,
-    createSocket: (url) => new FakeSocket(url) as unknown as WebSocket,
+    createSocket: (url, protocols) =>
+      new FakeSocket(url, protocols) as unknown as WebSocket,
     retryDelaysMs: [100, 200],
   });
   const disconnect = transport.connect({
@@ -75,7 +79,8 @@ describe('board socket transport', () => {
     const { calls } = setup();
     await tick();
     const socket = FakeSocket.all[0]!;
-    expect(new URL(socket.url).searchParams.get('token')).toBe('t1');
+    expect(socket.url).toBe('wss://rt.example.invalid/whiteboard');
+    expect(socket.protocols).toEqual(['tuturuuu.whiteboard', 'bearer.t1']);
     socket.open();
     expect(calls.status).toHaveBeenLastCalledWith('connected');
     socket.receive({
@@ -90,6 +95,30 @@ describe('board socket transport', () => {
       type: 'insert',
       element: rect,
     });
+  });
+
+  it('reports edits the room refused', async () => {
+    const onRejected = vi.fn();
+    const transport = createBoardSocketTransport({
+      join: async () => session(),
+      onRole: vi.fn(),
+      onClosed: vi.fn(),
+      onRejected,
+      createSocket: (url, protocols) =>
+        new FakeSocket(url, protocols) as unknown as WebSocket,
+    });
+    transport.connect({
+      user: { id: 'u', displayName: 'U' },
+      onStatus: vi.fn(),
+      onElementChanges: vi.fn(),
+      onCursor: vi.fn(),
+      onSelection: vi.fn(),
+    });
+    await tick();
+    const socket = FakeSocket.all.at(-1)!;
+    socket.open();
+    socket.receive({ type: 'rejected', reason: 'size' });
+    expect(onRejected).toHaveBeenCalledWith('size');
   });
 
   it('sends batches only while open and reports offline sends', async () => {

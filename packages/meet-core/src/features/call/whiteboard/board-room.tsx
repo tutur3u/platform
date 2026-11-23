@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/internal-api/meet-whiteboard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { type WhiteboardPresenceMember } from '@tuturuuu/whiteboard';
 import { WhiteboardEditor } from '@tuturuuu/whiteboard/react';
 import { useTheme } from 'next-themes';
@@ -107,6 +108,10 @@ function LiveBoard({
       },
       onRole: setRole,
       onClosed: () => closedRef.current(),
+      onRejected: (reason) =>
+        toast.error(
+          t(reason === 'unsupported' ? 'board_unsupported' : 'board_full')
+        ),
     });
     next.subscribePresence(setMembers);
     return next;

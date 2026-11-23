@@ -1,4 +1,6 @@
 import {
+  BOARD_SOCKET_PROTOCOL,
+  BOARD_TOKEN_PROTOCOL_PREFIX,
   boardServerMessage,
   type BoardMember,
   type BoardRole,
@@ -22,9 +24,11 @@ export interface BoardTransportOptions {
   onRole: (role: BoardRole) => void;
   onSaved?: () => void;
   onSaveError?: () => void;
+  /** The room refused edits: the board is full, or the elements are unsupported. */
+  onRejected?: (reason: 'size' | 'count' | 'unsupported') => void;
   /** The board was unlinked, archived, or access was withdrawn. */
   onClosed: () => void;
-  createSocket?: (url: string) => WebSocket;
+  createSocket?: (url: string, protocols: string[]) => WebSocket;
   /** Reconnect delays in milliseconds; the transport gives up after the last. */
   retryDelaysMs?: readonly number[];
 }
@@ -45,7 +49,9 @@ export function createBoardSocketTransport(
   options: BoardTransportOptions
 ): BoardTransport {
   const retry = options.retryDelaysMs ?? DEFAULT_RETRY;
-  const make = options.createSocket ?? ((url: string) => new WebSocket(url));
+  const make =
+    options.createSocket ??
+    ((url: string, protocols: string[]) => new WebSocket(url, protocols));
   const listeners = new Set<(members: BoardMember[]) => void>();
   let socket: WebSocket | null = null;
   let handlers: WhiteboardTransportHandlers | null = null;
@@ -121,6 +127,9 @@ export function createBoardSocketTransport(
       case 'save-error':
         options.onSaveError?.();
         return;
+      case 'rejected':
+        options.onRejected?.(message.reason);
+        return;
       case 'closed':
         stop();
         status('disconnected');
@@ -147,9 +156,11 @@ export function createBoardSocketTransport(
     }
     if (mine !== generation) return;
     options.onRole(session.role);
-    const url = new URL(session.endpoint);
-    url.searchParams.set('token', session.token);
-    const next = make(url.toString());
+    // The ticket travels as a subprotocol so it never lands in a URL log.
+    const next = make(session.endpoint, [
+      BOARD_SOCKET_PROTOCOL,
+      `${BOARD_TOKEN_PROTOCOL_PREFIX}${session.token}`,
+    ]);
     socket = next;
     next.onopen = () => {
       attempts = 0;

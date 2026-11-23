@@ -5204,7 +5204,9 @@
       "board_closed": "Bảng trắng này không còn khả dụng trong cuộc họp.",
       "board_unavailable": "Không thể mở bảng trắng.",
       "board_retry": "Thử lại",
-      "board_error": "Đã mất kết nối với bảng."
+      "board_error": "Đã mất kết nối với bảng.",
+      "board_full": "Bảng đã đầy. Hãy xóa bớt trước khi thêm.",
+      "board_unsupported": "Không thể thêm hình ảnh hoặc nội dung nhúng vào bảng này."
     },
     "details": {
       "back": "Quay lại danh sách cuộc họp",
