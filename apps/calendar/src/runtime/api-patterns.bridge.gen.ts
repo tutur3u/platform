@@ -48,6 +48,7 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/guests/[guestId]",
   "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/guests/notify",
   "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/link-preview",
+  "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/meet",
   "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/response",
   "/api/v1/workspaces/[wsId]/calendar/habit-events",
   "/api/v1/workspaces/[wsId]/calendar/invitation-capabilities",

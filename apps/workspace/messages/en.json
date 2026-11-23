@@ -3663,7 +3663,8 @@
       "title_label": "Title",
       "title_placeholder": "Add title",
       "unlocked_hint": "Auto-scheduling may move this event",
-      "warning_title": "Some events were not saved"
+      "warning_title": "Some events were not saved",
+      "guests_invite_failed": "The event was created, but its guests were not invited. Open the event to add them again."
     },
     "event_preview": {
       "close": "Close preview",
@@ -3969,7 +3970,38 @@
     "workspace_timezone": "Workspace Timezone",
     "workspace_timezone_desc": "Set the default timezone for this workspace. Members can override this in their personal settings.",
     "year": "Year",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "native_guests": {
+      "title": "Guests",
+      "email_placeholder": "Add guest email",
+      "email_label": "Guest email",
+      "add_email": "Add",
+      "organizer": "Organizer",
+      "optional": "Optional",
+      "required": "Required",
+      "remove": "Remove {name}",
+      "rsvp_accepted": "Going",
+      "rsvp_declined": "Declined",
+      "rsvp_tentative": "Maybe",
+      "rsvp_pending": "Awaiting",
+      "summary": "{accepted} yes, {tentative} maybe, {declined} no, {pending} awaiting",
+      "permissions": "Guest permissions",
+      "can_modify": "Modify event",
+      "can_invite": "Invite others",
+      "can_see_list": "See guest list",
+      "send_update": "Email guests",
+      "sent_title": "Guests notified",
+      "sent": "{count, plural, one {# email sent} other {# emails sent}}",
+      "loading": "Loading guests…",
+      "load_error": "Could not load guests.",
+      "retry": "Try again",
+      "error_title": "Guests not updated",
+      "error": "Something went wrong. Try again.",
+      "meet_toggle": "Add Tuturuuu Meet",
+      "meet_join": "Join Tuturuuu Meet",
+      "meet_error": "Could not update the Tuturuuu Meet link.",
+      "task_link": "Task: {name}"
+    }
   },
   "calendar_category_reorder_pilot": {
     "cancel": "Returned {label} to position {position} of {total}.",

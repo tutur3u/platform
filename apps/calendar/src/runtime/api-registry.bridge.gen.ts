@@ -52,6 +52,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/guests/notify", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/guests/notify/route'), ["POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/guests", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/guests/route'), ["GET","POST","PATCH"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/link-preview", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/link-preview/route'), ["GET"]) },
+  { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/meet", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/meet/route'), ["POST","DELETE"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/response", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/response/route'), ["POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route'), ["GET","PUT","DELETE"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/route'), ["GET","POST"]) },

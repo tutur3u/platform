@@ -36,6 +36,8 @@ import { EventQuickEntry } from './event-dialog/event-quick-entry';
 import { EventWhenSection } from './event-dialog/event-when-section';
 import { useEventDateHandlers } from './event-dialog/use-event-date-handlers';
 import { useEventPromptCapture } from './event-dialog/use-event-prompt-capture';
+import { PendingGuestsProvider } from './native-guests/pending-native-guests';
+import { usePendingGuestInvites } from './native-guests/use-pending-guest-invites';
 import { eventModalDraft, eventModalSavePayload } from './event-save-payload';
 import {
   eventSourceChanged,
@@ -187,12 +189,26 @@ export function LegacyEventModal() {
     if (object?.events && !isLoading) receiveGeneratedEvents();
   }, [object, isLoading]);
 
+  const pendingGuests = usePendingGuestInvites({
+    addEvent,
+    source: selectedSourceOption,
+    display: { allDay: isAllDay, ...(tz ? { timeZone: tz } : {}) },
+    onInviteError: () =>
+      toast({
+        title: t('error_title'),
+        description: t('guests_invite_failed'),
+        variant: 'destructive',
+      }),
+  });
+
   // Initialize once per dialog session; live calendar refreshes must not erase edits.
   useEventDraftSession({
     isOpen: isModalOpen,
     eventId: activeEvent?.id,
     workspaceId: activeEvent?.ws_id,
     initialize: () => {
+      pendingGuests.setGuests([]);
+      pendingGuests.setAddMeet(false);
       if (activeEvent) {
         const cleanEventData = eventModalDraft(activeEvent);
 
@@ -254,7 +270,7 @@ export function LegacyEventModal() {
         sourceInputFromOption(selectedSourceOption),
         eventSourceChanged(sourceOptions, activeEvent ?? {}, selectedSourceId)
       ),
-    addEvent,
+    addEvent: pendingGuests.addEventWithGuests,
     updateEvent,
     closeModal,
     setIsSaving,
@@ -505,97 +521,102 @@ export function LegacyEventModal() {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
-      <EventDialogContent onSubmitShortcut={submitActiveTab}>
-        <Tabs
-          value={activeTab === 'preview' ? 'ai' : activeTab}
-          onValueChange={(value) => setActiveTab(value as 'manual' | 'ai')}
-          className="flex min-h-0 flex-1 flex-col gap-0"
-        >
-          <EventDialogHeader
-            event={event}
-            isEditing={isEditing}
-            showModeTabs={!isEditing}
-          />
-          <TabsContent
-            value="manual"
-            className="mt-0 flex min-h-0 flex-1 flex-col"
+      <PendingGuestsProvider value={pendingGuests}>
+        <EventDialogContent onSubmitShortcut={submitActiveTab}>
+          <Tabs
+            value={activeTab === 'preview' ? 'ai' : activeTab}
+            onValueChange={(value) => setActiveTab(value as 'manual' | 'ai')}
+            className="flex min-h-0 flex-1 flex-col gap-0"
           >
-            <EventQuickEntry
+            <EventDialogHeader
               event={event}
-              setEvent={setEvent}
               isEditing={isEditing}
-              workspaceId={wsId}
-              timeZone={tz}
-              when={
-                <EventWhenSection
-                  startAt={event.start_at}
-                  endAt={event.end_at}
-                  isAllDay={isAllDay}
-                  timeZone={tz}
-                  onStartChange={handleStartDateChange}
-                  onEndChange={handleEndDateChange}
-                  onAllDayChange={handleAllDayChange}
-                  startPickerRef={startPickerRef}
-                  endPickerRef={endPickerRef}
-                />
-              }
-              sourceOptions={sourceOptions}
-              selectedSource={selectedSourceOption}
-              onSourceChange={(sourceId) => {
-                setSelectedSourceId(sourceId);
-                setEvent((previous) => ({
-                  ...previous,
-                  providerColor: undefined,
-                }));
-              }}
-              isSaving={isSaving}
-              isDeleting={isDeleting}
-              dateError={dateError}
-              overlappingEvents={overlappingEvents}
-              showOverlapWarning={showOverlapWarning}
-              recoveryNotice={draftSave.recoveryNotice}
-              onSave={handleManualSave}
-              onCancel={closeModal}
-              onDelete={handleDelete}
-              onToggleLock={toggleLock}
+              showModeTabs={!isEditing}
             />
-          </TabsContent>
-          <TabsContent value="ai" className="mt-0 flex min-h-0 flex-1 flex-col">
-            {activeTab === 'preview' ? (
-              <EventAiPreview
-                events={generatedEvents ?? []}
-                index={currentEventIndex}
-                timeFormat={settings?.appearance?.timeFormat}
-                suggestions={aiSuggestions}
+            <TabsContent
+              value="manual"
+              className="mt-0 flex min-h-0 flex-1 flex-col"
+            >
+              <EventQuickEntry
+                event={event}
+                setEvent={setEvent}
+                isEditing={isEditing}
+                workspaceId={wsId}
+                timeZone={tz}
+                when={
+                  <EventWhenSection
+                    startAt={event.start_at}
+                    endAt={event.end_at}
+                    isAllDay={isAllDay}
+                    timeZone={tz}
+                    onStartChange={handleStartDateChange}
+                    onEndChange={handleEndDateChange}
+                    onAllDayChange={handleAllDayChange}
+                    startPickerRef={startPickerRef}
+                    endPickerRef={endPickerRef}
+                  />
+                }
+                sourceOptions={sourceOptions}
+                selectedSource={selectedSourceOption}
+                onSourceChange={(sourceId) => {
+                  setSelectedSourceId(sourceId);
+                  setEvent((previous) => ({
+                    ...previous,
+                    providerColor: undefined,
+                  }));
+                }}
+                isSaving={isSaving}
+                isDeleting={isDeleting}
+                dateError={dateError}
                 overlappingEvents={overlappingEvents}
                 showOverlapWarning={showOverlapWarning}
-                isSaving={isSaving}
-                onPrevious={goToPreviousEvent}
-                onNext={goToNextEvent}
-                onBack={() => setActiveTab('ai')}
-                onEditDetails={transferGeneratedEvent}
-                onSave={handleAISave}
-              />
-            ) : (
-              <EventAiEntry
-                form={aiForm}
-                onGenerate={handleGenerateEvent}
-                isGenerating={isLoading}
-                error={error}
-                isRecording={capture.isRecording}
-                isProcessingAudio={capture.isProcessingAudio}
-                isProcessingImage={capture.isProcessingImage}
-                onStartRecording={capture.startRecording}
-                onStopRecording={capture.stopRecording}
-                onPickImage={capture.pickImage}
-                onImageSelected={capture.handleImageSelected}
-                fileInputRef={capture.fileInputRef}
+                recoveryNotice={draftSave.recoveryNotice}
+                onSave={handleManualSave}
                 onCancel={closeModal}
+                onDelete={handleDelete}
+                onToggleLock={toggleLock}
               />
-            )}
-          </TabsContent>
-        </Tabs>
-      </EventDialogContent>
+            </TabsContent>
+            <TabsContent
+              value="ai"
+              className="mt-0 flex min-h-0 flex-1 flex-col"
+            >
+              {activeTab === 'preview' ? (
+                <EventAiPreview
+                  events={generatedEvents ?? []}
+                  index={currentEventIndex}
+                  timeFormat={settings?.appearance?.timeFormat}
+                  suggestions={aiSuggestions}
+                  overlappingEvents={overlappingEvents}
+                  showOverlapWarning={showOverlapWarning}
+                  isSaving={isSaving}
+                  onPrevious={goToPreviousEvent}
+                  onNext={goToNextEvent}
+                  onBack={() => setActiveTab('ai')}
+                  onEditDetails={transferGeneratedEvent}
+                  onSave={handleAISave}
+                />
+              ) : (
+                <EventAiEntry
+                  form={aiForm}
+                  onGenerate={handleGenerateEvent}
+                  isGenerating={isLoading}
+                  error={error}
+                  isRecording={capture.isRecording}
+                  isProcessingAudio={capture.isProcessingAudio}
+                  isProcessingImage={capture.isProcessingImage}
+                  onStartRecording={capture.startRecording}
+                  onStopRecording={capture.stopRecording}
+                  onPickImage={capture.pickImage}
+                  onImageSelected={capture.handleImageSelected}
+                  fileInputRef={capture.fileInputRef}
+                  onCancel={closeModal}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
+        </EventDialogContent>
+      </PendingGuestsProvider>
     </Dialog>
   );
 }

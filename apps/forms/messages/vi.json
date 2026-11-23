@@ -833,7 +833,8 @@
       "title_label": "Tiêu đề",
       "title_placeholder": "Thêm tiêu đề",
       "unlocked_hint": "Tự động xếp lịch có thể dời sự kiện này",
-      "warning_title": "Một số sự kiện chưa được lưu"
+      "warning_title": "Một số sự kiện chưa được lưu",
+      "guests_invite_failed": "Sự kiện đã được tạo nhưng chưa mời được khách. Mở sự kiện để thêm lại khách mời."
     },
     "event_preview": {
       "close": "Đóng xem nhanh",
@@ -1088,7 +1089,38 @@
     "workspace_timezone": "Múi giờ làm việc",
     "workspace_timezone_desc": "Đặt múi giờ mặc định cho không gian làm việc này. Thành viên có thể ghi đè cài đặt này trong cài đặt cá nhân.",
     "year": "Năm",
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "native_guests": {
+      "title": "Khách mời",
+      "email_placeholder": "Thêm email khách mời",
+      "email_label": "Email khách mời",
+      "add_email": "Thêm",
+      "organizer": "Người tổ chức",
+      "optional": "Không bắt buộc",
+      "required": "Bắt buộc",
+      "remove": "Xoá {name}",
+      "rsvp_accepted": "Tham gia",
+      "rsvp_declined": "Từ chối",
+      "rsvp_tentative": "Có thể",
+      "rsvp_pending": "Chờ phản hồi",
+      "summary": "{accepted} có, {tentative} có thể, {declined} không, {pending} chờ phản hồi",
+      "permissions": "Quyền của khách mời",
+      "can_modify": "Sửa sự kiện",
+      "can_invite": "Mời người khác",
+      "can_see_list": "Xem danh sách khách mời",
+      "send_update": "Gửi email cho khách mời",
+      "sent_title": "Đã thông báo khách mời",
+      "sent": "Đã gửi {count} email",
+      "loading": "Đang tải khách mời…",
+      "load_error": "Không thể tải khách mời.",
+      "retry": "Thử lại",
+      "error_title": "Chưa cập nhật khách mời",
+      "error": "Đã có lỗi xảy ra. Vui lòng thử lại.",
+      "meet_toggle": "Thêm Tuturuuu Meet",
+      "meet_join": "Tham gia Tuturuuu Meet",
+      "meet_error": "Không thể cập nhật liên kết Tuturuuu Meet.",
+      "task_link": "Công việc: {name}"
+    }
   },
   "calendar_category_reorder_pilot": {
     "cancel": "Đã trả {label} về vị trí {position} trên {total}.",

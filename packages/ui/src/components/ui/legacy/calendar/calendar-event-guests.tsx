@@ -17,6 +17,8 @@ import {
   EventDescriptionInput,
   EventLocationInput,
 } from './event-form-components';
+import { NativeEventGuests } from './native-guests/native-event-guests';
+import { PendingNativeGuests } from './native-guests/pending-native-guests';
 
 export function CalendarEventDetails({
   event,
@@ -91,7 +93,20 @@ export function CalendarEventParticipants({
             source={source}
           />
         )}
-      {!isEditing && workspaceId && (
+      {workspaceId &&
+        source?.provider === 'tuturuuu' &&
+        source.writable &&
+        (isEditing && event.id && event.id !== 'new' ? (
+          <NativeEventGuests
+            key={`${workspaceId}:${event.id}`}
+            workspaceId={workspaceId}
+            eventId={event.id}
+            timeZone={timeZone}
+          />
+        ) : !isEditing ? (
+          <PendingNativeGuests workspaceId={workspaceId} />
+        ) : null)}
+      {!isEditing && workspaceId && source?.provider !== 'tuturuuu' && (
         <CalendarEventGuests
           event={event}
           onChange={onChange}

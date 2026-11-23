@@ -36,6 +36,11 @@
       "import": "./dist/calendar-invitation-capabilities.js",
       "require": "./dist/calendar-invitation-capabilities.js"
     },
+    "./calendar-guests": {
+      "types": "./dist/calendar-guests.d.ts",
+      "import": "./dist/calendar-guests.js",
+      "require": "./dist/calendar-guests.js"
+    },
     "./user-bootstrap": {
       "types": "./dist/user-bootstrap.d.ts",
       "import": "./dist/user-bootstrap.js",

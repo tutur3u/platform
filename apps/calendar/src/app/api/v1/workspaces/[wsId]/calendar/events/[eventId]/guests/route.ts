@@ -32,12 +32,17 @@ export async function GET(request: Request, { params }: Params) {
   if ('error' in access) return access.error;
   if (!z.guid().safeParse(eventId).success) return invalid('Invalid event ID');
   try {
-    const { settings, guests } = await getEventInvitation(access.sbAdmin, {
-      wsId: access.wsId,
-      eventId,
-    });
+    const { settings, guests, links, native } = await getEventInvitation(
+      access.sbAdmin,
+      {
+        wsId: access.wsId,
+        eventId,
+      }
+    );
     return NextResponse.json(
       {
+        native,
+        links,
         settings: settings
           ? {
               guestsCanModify: settings.guests_can_modify,

@@ -17,6 +17,7 @@ import {
   dispatchInvitationDeliveries,
   queueInvitationDeliveries,
 } from './delivery';
+import { loadEventLinks } from './meet-link';
 import type { InvitationKind } from './snapshot';
 
 export const MAX_GUESTS_PER_EVENT = 100;
@@ -225,7 +226,7 @@ export async function getEventInvitation(
   sbAdmin: TypedSupabaseClient,
   input: { wsId: string; eventId: string }
 ) {
-  await loadInvitationEvent(sbAdmin, input.wsId, input.eventId);
+  const event = await loadInvitationEvent(sbAdmin, input.wsId, input.eventId);
   const [{ data: settings, error }, guests] = await Promise.all([
     sbAdmin
       .from('calendar_event_invitation_settings')
@@ -235,7 +236,17 @@ export async function getEventInvitation(
     listEventGuests(sbAdmin, input.eventId),
   ]);
   if (error) throw error;
-  return { settings, guests };
+  const links = await loadEventLinks(sbAdmin, {
+    wsId: input.wsId,
+    event,
+    meetMeetingId: settings?.meet_meeting_id ?? null,
+  });
+  return {
+    settings,
+    guests,
+    links,
+    native: !event.provider || event.provider === 'tuturuuu',
+  };
 }
 
 async function queueAndDispatch(
