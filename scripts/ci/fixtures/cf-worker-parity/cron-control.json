@@ -38,9 +38,10 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
+      "FORMS_UPLOAD_CLEANUP_MODE": "delete",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
       "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
       "PAY_ORIGIN": "https://pay.tuturuuu.com",
@@ -65,7 +66,13 @@
     "durableObjectClasses": {
       "CronLedger": "sqlite"
     },
-    "unmapped": {}
+    "unmapped": {},
+    "services": {
+      "MEET_ATTENDANCE_ERASURE": {
+        "service": "tuturuuu-meet-realtime",
+        "entrypoint": "AttendanceErasure"
+      }
+    }
   },
   "previousIdentity": {
     "name": "tuturuuu-cron-control",
@@ -105,7 +112,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
@@ -135,8 +142,8 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "QA-CLEANUP-CRON-CONTROL-1: enable qa-test-user-cleanup (every 15 minutes, at most 25 expired QA test accounts per slot, one deletion at a time under the ledger lease with the cleanup and Cron Control stop fences checked before every destructive request) so Cron Control finishes expired and stuck QA test accounts; the previous stage is the live MOBILE-DISCOVERY identity.",
-    "fields": ["vars"]
+    "decision": "MEET-FORMS-ATTENDANCE-ACTIVATION-1: enable forms-upload-cleanup (every 30 minutes, at most four claims of 20 expired Forms respondent uploads, FORMS_UPLOAD_CLEANUP_MODE 'delete', Cron Control stop fence checked before every claim and delete) and the meet-attendance-retention and meet-attendance-erasure jobs, which stay no-ops until the database owner opens private.meet_attendance_retention_control, and bind MEET_ATTENDANCE_ERASURE to the tuturuuu-meet-realtime AttendanceErasure entrypoint; the previous stage is the live QA-CLEANUP-CRON-CONTROL-1 identity.",
+    "fields": ["services", "vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
 }

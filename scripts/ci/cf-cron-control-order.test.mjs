@@ -74,15 +74,30 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
   assertCronSet(baseline.previousIdentity.crons, TARGET_ORDER);
-  assert.deepEqual(baseline.transition.fields, ['vars']);
+  assert.deepEqual(baseline.transition.fields, ['services', 'vars']);
   assert.deepEqual(
     baseline.previousIdentity.compatibilityFlags,
     baseline.identity.compatibilityFlags
   );
   assert.deepEqual(baseline.identity.vars, {
     ...baseline.previousIdentity.vars,
-    CRON_CONTROL_ENABLED_JOBS: `${baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS},qa-test-user-cleanup`,
+    CRON_CONTROL_ENABLED_JOBS: `${baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS},forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure`,
+    FORMS_UPLOAD_CLEANUP_MODE: 'delete',
   });
+  assert.equal(baseline.previousIdentity.services, undefined);
+  assert.deepEqual(baseline.identity.services, {
+    MEET_ATTENDANCE_ERASURE: {
+      entrypoint: 'AttendanceErasure',
+      service: 'tuturuuu-meet-realtime',
+    },
+  });
+  assert.deepEqual(emitted.services, [
+    {
+      binding: 'MEET_ATTENDANCE_ERASURE',
+      service: 'tuturuuu-meet-realtime',
+      entrypoint: 'AttendanceErasure',
+    },
+  ]);
   assert.deepEqual(
     emitted.compatibility_flags,
     baseline.identity.compatibilityFlags
@@ -127,6 +142,9 @@ test('installed cf reports no drift against the reviewed target settings', async
     durable_objects: {
       bindings: [{ name: 'CRON_LEDGER', class_name: 'CronLedger' }],
     },
+    services: Object.entries(baseline.identity.services).map(
+      ([binding, { service, entrypoint }]) => ({ binding, service, entrypoint })
+    ),
     observability: {
       enabled: true,
       head_sampling_rate: 0.05,

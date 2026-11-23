@@ -683,3 +683,75 @@ for (const phase of ['before', 'after']) {
     assert.equal(api.calls.filter((url) => url.endsWith('/secrets')).length, 1);
   });
 }
+
+test('a declared service binding must target the recorded Worker entrypoint', async () => {
+  const target = {
+    ...identity,
+    vars: { MODE: 'on' },
+    services: {
+      ERASURE: { service: 'realtime-fixture', entrypoint: 'Erasure' },
+    },
+  };
+  const settings = (service) => ({
+    settings: {
+      compatibility_date: target.compatibilityDate,
+      compatibility_flags: target.compatibilityFlags,
+      observability: { enabled: true, head_sampling_rate: 0.05 },
+      bindings: [
+        { name: 'MODE', type: 'plain_text', text: 'on' },
+        { name: 'TOKEN', type: 'secret_text' },
+        ...(service ? [{ name: 'ERASURE', type: 'service', ...service }] : []),
+      ],
+    },
+  });
+  const captured = await captureSettings(
+    options(
+      fixture(
+        settings({
+          service: 'realtime-fixture',
+          entrypoint: 'Erasure',
+          environment: 'production',
+        }),
+        target
+      ),
+      target
+    )
+  );
+  assert.deepEqual(captured.bindings.vars, ['MODE']);
+  for (const [service, message] of [
+    [null, /service bindings differ/],
+    [
+      { service: 'realtime-fixture', entrypoint: 'Other' },
+      /service bindings differ/,
+    ],
+    [
+      { service: 'another-worker', entrypoint: 'Erasure' },
+      /service bindings differ/,
+    ],
+    [
+      {
+        service: 'realtime-fixture',
+        entrypoint: 'Erasure',
+        environment: 'staging',
+      },
+      /targets another environment/,
+    ],
+  ])
+    await assert.rejects(
+      captureSettings(options(fixture(settings(service), target), target)),
+      message
+    );
+  const undeclared = { ...target, services: undefined };
+  await assert.rejects(
+    captureSettings(
+      options(
+        fixture(
+          settings({ service: 'realtime-fixture', entrypoint: 'Erasure' }),
+          target
+        ),
+        undeclared
+      )
+    ),
+    /undeclared service binding/
+  );
+});

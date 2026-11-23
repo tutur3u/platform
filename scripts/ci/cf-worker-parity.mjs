@@ -176,6 +176,9 @@ function finish(identity) {
     Object.entries(identity.durableObjects)
   );
   identity.unmapped = sortedObject(Object.entries(identity.unmapped));
+  // Service bindings appear only on identities that declare one.
+  if (identity.services)
+    identity.services = sortedObject(Object.entries(identity.services));
   return JSON.parse(JSON.stringify(identity));
 }
 
@@ -296,6 +299,14 @@ function cfBinding(identity, workerName, name, binding) {
         `env.${name}`,
         extraKeys(binding, new Set(['type']))
       );
+      return;
+    case 'worker':
+      identity.services ??= {};
+      identity.services[name] = {
+        service: binding.worker,
+        entrypoint: binding.exportName,
+        extra: extraKeys(binding, new Set(['type', 'worker', 'exportName'])),
+      };
       return;
     case 'durable-object':
       identity.durableObjects[name] = {

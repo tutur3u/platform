@@ -32,8 +32,7 @@ export default defineConfig({
       '*/5 * * * *',
       // ai-studio-retention: 02:43 GMT+7.
       '43 19 * * *',
-      // meet-attendance-retention: 01:17 GMT+7. The job stays disabled until
-      // CRON_CONTROL_ENABLED_JOBS names it.
+      // meet-attendance-retention: 01:17 GMT+7.
       '17 18 * * *',
     ].map((schedule) => triggers.scheduled({ schedule })),
     env: {
@@ -44,8 +43,10 @@ export default defineConfig({
       INVENTORY_ORIGIN: bindings.text('https://inventory.tuturuuu.com'),
       PAY_ORIGIN: bindings.text('https://pay.tuturuuu.com'),
       TASKS_ORIGIN: bindings.text('https://tasks.tuturuuu.com'),
+      // The meet-attendance-* jobs are no-ops until the database owner opens
+      // private.meet_attendance_retention_control.
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
-        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup'
+        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure'
       ),
       // Cron Control is web's only scheduler (apps/web/vercel.json has no
       // crons). 'active' dispatches the five web-* jobs; 'off' stops only
@@ -54,6 +55,8 @@ export default defineConfig({
       // Counts only until a reviewed change sets 'delete'; 'off' is the kill
       // switch. Any other value (including unset or padded) means off.
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
+      // Exactly 'delete' runs forms-upload-cleanup; any other value is off.
+      FORMS_UPLOAD_CLEANUP_MODE: bindings.text('delete'),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(
         'inventory-checkout-expiry'
       ),
@@ -68,6 +71,11 @@ export default defineConfig({
       CRON_SECRET_INFRASTRUCTURE: bindings.secret(),
       CRON_SECRET_INVENTORY: bindings.secret(),
       CRON_SECRET_PAY: bindings.secret(),
+      // Erases attendance room copies for meet-attendance-erasure.
+      MEET_ATTENDANCE_ERASURE: bindings.worker({
+        worker: 'tuturuuu-meet-realtime',
+        exportName: 'AttendanceErasure',
+      }),
       CRON_LEDGER: bindings.durableObject({
         worker: 'tuturuuu-cron-control',
         exportName: 'CronLedger',

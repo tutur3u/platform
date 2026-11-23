@@ -9,6 +9,7 @@ import { sweepUnauthorizedDevboxRuns } from './devbox-unauthorized-run-sweep';
 import { purgeExternalAppExchangeAudit } from './external-app-exchange-audit-retention';
 import { dispatchBillSplitReminders } from './finance-bill-split-reminders';
 import { consumeFleetIntents } from './fleet-access-consumer';
+import { cleanupFormUploads } from './forms-upload-cleanup';
 import { collectShip } from './mastermind-ship';
 import { collectMobileIssues, MOBILE_ISSUES_JOB } from './mobile-issues';
 import { eraseMeetAttendance } from './meet-attendance-erasure';
@@ -44,6 +45,7 @@ export const WORKER_PROCESSORS: Record<
   'external-app-exchange-audit-retention': purgeExternalAppExchangeAudit,
   'finance-bill-split-reminders': dispatchBillSplitReminders,
   'fleet-access-consumer': consumeFleetIntents,
+  'forms-upload-cleanup': cleanupFormUploads,
   'mastermind-ship': collectShip,
   [MOBILE_ISSUES_JOB]: collectMobileIssues,
   'meet-attendance-erasure': eraseMeetAttendance,

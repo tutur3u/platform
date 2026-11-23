@@ -55,7 +55,9 @@ it('forwards the exact meeting, launch, response and upload parameters', async (
   });
 });
 
-it('routes bounded upload POSTs and exposes no cleanup or maintenance HTTP entry', async () => {
+// Expired upload cleanup runs on Cron Control's forms-upload-cleanup job with
+// the service key, so Meet exposes no HTTP entry that could trigger it.
+it('routes bounded upload POSTs and leaves cleanup to the scheduled job', async () => {
   const response = await dispatchMeetEndpoint(
     new NextRequest(`${prefix}/uploads`, { method: 'POST' })
   );
@@ -63,9 +65,10 @@ it('routes bounded upload POSTs and exposes no cleanup or maintenance HTTP entry
     meetingId: 'meeting',
     launchId: 'launch',
   });
-  expect(
-    await dispatchMeetEndpoint(
-      new NextRequest(`${prefix}/uploads/cleanup`, { method: 'POST' })
-    )
-  ).toBeNull();
+  for (const path of ['uploads/cleanup', 'uploads/maintenance'])
+    expect(
+      await dispatchMeetEndpoint(
+        new NextRequest(`${prefix}/${path}`, { method: 'POST' })
+      )
+    ).toBeNull();
 });

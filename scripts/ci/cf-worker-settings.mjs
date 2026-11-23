@@ -80,6 +80,7 @@ function declaredNames(identity) {
   return new Set([
     ...Object.keys(identity.vars ?? {}),
     ...Object.keys(identity.durableObjects ?? {}),
+    ...Object.keys(identity.services ?? {}),
     ...(identity.secrets ?? []),
   ]);
 }
@@ -295,6 +296,11 @@ const REVIEWED_BINDING_ATTRIBUTES = new Map([
     'durable_object_namespace',
     new Set(['name', 'type', 'class_name', 'script_name', 'namespace_id']),
   ],
+  // Service bindings to another Worker's named entrypoint.
+  [
+    'service',
+    new Set(['name', 'type', 'service', 'entrypoint', 'environment']),
+  ],
 ]);
 
 /** Summarize text and Durable Object bindings; text values keep only a digest. */
@@ -306,10 +312,12 @@ function verifyBindings(settings, identity) {
   );
   const declaredVars = new Set(Object.keys(identity.vars ?? {}));
   const declaredObjects = new Set(Object.keys(identity.durableObjects ?? {}));
+  const declaredServices = new Set(Object.keys(identity.services ?? {}));
   const declared = declaredNames(identity);
   const seen = new Set();
   const vars = new Map();
   const durableObjects = new Map();
+  const services = new Map();
   for (const [index, binding] of bindings.entries()) {
     const name = bindingLabel(binding?.name, declared, index);
     assert.ok(
@@ -342,6 +350,22 @@ function verifyBindings(settings, identity) {
         // Secret values are never read; declared names are checked through
         // the secrets endpoint, which tolerates operator-installed extras.
         break;
+      case 'service':
+        assert.ok(
+          declaredServices.has(binding.name),
+          `undeclared service binding ${name}`
+        );
+        assert.ok(
+          binding.environment === undefined ||
+            binding.environment === null ||
+            binding.environment === 'production',
+          `service binding ${name} targets another environment`
+        );
+        services.set(binding.name, {
+          service: binding.service,
+          entrypoint: binding.entrypoint ?? undefined,
+        });
+        break;
       default:
         assert.ok(
           declaredObjects.has(binding.name),
@@ -363,6 +387,19 @@ function verifyBindings(settings, identity) {
   assert.ok(
     differing.length === 0,
     `Worker vars differ: ${differing.join(', ')}`
+  );
+  const observedServices = canonical(Object.fromEntries(services));
+  same(
+    observedServices,
+    canonical(
+      Object.fromEntries(
+        Object.entries(identity.services ?? {}).map(([name, target]) => [
+          name,
+          { service: target.service, entrypoint: target.entrypoint },
+        ])
+      )
+    ),
+    'service bindings differ'
   );
   const observedObjects = canonical(Object.fromEntries(durableObjects));
   same(
@@ -512,6 +549,7 @@ const TRANSITION_FIELDS = new Set([
   'vars',
   'durableObjects',
   'durableObjectClasses',
+  'services',
 ]);
 
 /**

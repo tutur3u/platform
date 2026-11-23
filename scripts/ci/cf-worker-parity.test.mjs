@@ -403,3 +403,37 @@ for (const app of ['devbox-control', 'coordination']) {
     ]);
   });
 }
+
+test('service bindings to a named entrypoint normalize identically in both shapes', () => {
+  const cf = normalizeCfConfig({
+    worker: {
+      name: 'svc',
+      env: {
+        ERASURE: {
+          type: 'worker',
+          worker: 'realtime-fixture',
+          exportName: 'Erasure',
+        },
+      },
+    },
+  });
+  const wrangler = normalizeWranglerConfig({
+    name: 'svc',
+    services: [
+      {
+        binding: 'ERASURE',
+        service: 'realtime-fixture',
+        entrypoint: 'Erasure',
+      },
+    ],
+  });
+  assert.deepEqual(cf.services, {
+    ERASURE: { service: 'realtime-fixture', entrypoint: 'Erasure' },
+  });
+  assert.deepEqual(wrangler.services, cf.services);
+  assert.deepEqual(cf.unmapped, {});
+  assert.equal(
+    normalizeCfConfig({ worker: { name: 'svc' } }).services,
+    undefined
+  );
+});

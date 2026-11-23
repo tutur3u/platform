@@ -30,6 +30,7 @@ export type WorkerProcessorId =
   | 'external-app-exchange-audit-retention'
   | 'finance-bill-split-reminders'
   | 'fleet-access-consumer'
+  | 'forms-upload-cleanup'
   | typeof MOBILE_ISSUES_JOB
   | 'mastermind-ship'
   | 'meet-attendance-erasure'
@@ -59,6 +60,9 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
   'external-app-exchange-audit-retention': 'purge_external_app_exchange_events',
   'finance-bill-split-reminders': 'dispatch_finance_bill_split_reminders',
+  // Claims expired Forms respondent uploads; the Worker then deletes their
+  // storage objects and reservation rows.
+  'forms-upload-cleanup': 'claim_expired_form_respondent_uploads',
   'meet-attendance-erasure': 'advance_meet_attendance_erasure_intents',
   'meet-attendance-retention': 'purge_expired_meet_attendance',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
@@ -202,6 +206,16 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/purge_expired_meet_attendance',
     'idempotent',
     { workerProcessor: 'meet-attendance-retention', timeoutMs: 30_000 }
+  ),
+  // Every 30 minutes. At most four claims of 20 expired Forms respondent
+  // uploads per slot; FORMS_UPLOAD_CLEANUP_MODE must also be 'delete'.
+  job(
+    'forms-upload-cleanup',
+    '*/30 * * * *',
+    'web',
+    '/rest/v1/rpc/claim_expired_form_respondent_uploads',
+    'claim-fenced',
+    { workerProcessor: 'forms-upload-cleanup', timeoutMs: 60_000 }
   ),
   // Every 10 minutes. Erases room copies for confirmed attendance erasure
   // intents through the Meet realtime binding. Room claims carry a lease, so

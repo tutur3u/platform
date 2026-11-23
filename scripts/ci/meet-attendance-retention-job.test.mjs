@@ -167,3 +167,33 @@ test('production attendance requires enabled Cloudflare retention and erasure jo
     'Keep production attendance disabled until Cron Control enables meet-attendance-retention and meet-attendance-erasure with the AttendanceErasure binding.'
   );
 });
+
+const PROOF = `${JOB_ID}:${CRON}:${RPC}+${ERASURE_JOB_ID}`;
+const enabled =
+  /^\s*(?:export\s+)?["']?MEET_CLASS_ATTENDANCE_ENABLED["']?\s*[:=]\s*(?:'true'|"true"|true)\s*[,;]?\s*(?:(?:\/\/|#).*)?$/u;
+
+test('a production attendance flag ships with the retention and erasure proof', () => {
+  const matches = execFileSync(
+    'git',
+    ['grep', '-n', '-I', '-F', flag, '--', 'apps', '.github/workflows'],
+    { cwd: root, encoding: 'utf8' }
+  );
+  const files = new Set(
+    matches
+      .trimEnd()
+      .split('\n')
+      .flatMap((match) => {
+        const [, file, , source] = /^([^:]+):(\d+):(.*)$/u.exec(match);
+        return productionConfig(file) && enabled.test(source) ? [file] : [];
+      })
+  );
+  const proof = new RegExp(
+    `["']?MEET_ATTENDANCE_RETENTION_VERIFIED["']?\\s*[:=]\\s*["']${PROOF.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}["']`,
+    'u'
+  );
+  assert.deepEqual(
+    [...files].filter((file) => !proof.test(read(file))),
+    [],
+    `Set MEET_ATTENDANCE_RETENTION_VERIFIED to ${PROOF} wherever production enables attendance.`
+  );
+});

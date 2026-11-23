@@ -13,6 +13,8 @@ export interface ProcessorEnv {
   CLOUDFLARE_ACCOUNT_ID?: string;
   /** Read-only Account Analytics token for the Cloudflare collector. */
   CLOUDFLARE_ANALYTICS_API_TOKEN?: string;
+  /** Exactly 'delete' runs Forms upload cleanup; any other value is off. */
+  FORMS_UPLOAD_CLEANUP_MODE?: string;
   /** Read-only Actions token for the GitHub Actions collector. */
   GITHUB_ACTIONS_READ_TOKEN?: string;
   /** Service binding to the Meet realtime `AttendanceErasure` entrypoint. */
