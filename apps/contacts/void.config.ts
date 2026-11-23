@@ -14,6 +14,16 @@ export default defineConfig({
     workers_dev: false,
     preview_urls: false,
     upload_source_maps: false,
+    // Cached IP blocks and the API proxy limiter reach their store over RPC.
+    // The family is assigned in production-profile.json; without the
+    // ABUSE_GUARD_KEY_PEPPER secret the family resolves to off.
+    services: [
+      {
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
+    ],
     vars: productionVars,
     assets: {
       binding: 'ASSETS',

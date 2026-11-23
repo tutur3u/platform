@@ -32,6 +32,14 @@ def load():
         **module.NORMALIZED_DEFAULTS,
         "topLevelName": WORKER,
         "upload_source_maps": False,
+        # Exact service binding from apps/contacts/void.config.ts. Any other list fails.
+        "services": [
+            {
+                "binding": "ABUSE_GUARD",
+                "service": "tuturuuu-abuse-guard",
+                "entrypoint": "AbuseGuardEntrypoint",
+            },
+        ],
     }
     module.RECEIPT = "contacts-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES

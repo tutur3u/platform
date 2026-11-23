@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { hasContactsBindings } from './native-profile';
+import { configureContactsAbuseGuard } from '../src/runtime/abuse-guard';
 import { config as proxyConfig, proxy } from '../src/proxy';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
@@ -18,6 +19,10 @@ import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 
 export interface ContactsEnvironment {
   ASSETS: AssetsBinding;
+  ABUSE_GUARD?: import('@tuturuuu/utils/abuse-guard/client').AbuseGuardBinding;
+  ABUSE_GUARD_KEY_PEPPER?: string;
+  ABUSE_GUARD_FAMILIES?: string;
+  ABUSE_GUARD_TIMEOUT_MS?: string;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -88,6 +93,7 @@ export default {
     async (request: Request, env: ContactsEnvironment, ctx: WorkerContext) => {
       let response: Response;
       try {
+        configureContactsAbuseGuard(env);
         if (!hasContactsBindings(env)) {
           response = new Response('Contacts configuration unavailable', {
             status: 503,

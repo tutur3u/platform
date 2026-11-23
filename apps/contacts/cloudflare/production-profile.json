@@ -6,5 +6,6 @@
   "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
   "WEB_APP_URL": "https://tuturuuu.com",
   "TTR_URL": "https://tuturuuu.com",
-  "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com"
+  "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+  "ABUSE_GUARD_FAMILIES": "proxy"
 }

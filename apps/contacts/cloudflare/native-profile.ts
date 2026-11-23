@@ -7,8 +7,8 @@ const requiredBindings = [
   'TUTURUUU_APP_COORDINATION_SECRET',
 ];
 
-// The API proxy rate-limit store is optional: without it the proxy limiter
-// fails open (the Chat precedent) and the edge abuse guard still applies.
+// The legacy Upstash store is optional: the proxy family (cached IP blocks
+// and the API proxy limiter) reaches its store over the ABUSE_GUARD binding.
 const optionalRateLimitBindings = [
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
@@ -30,7 +30,7 @@ export function hasContactsBindings(env: object): boolean {
     reportedMissingRateLimitStore = true;
     // Names only, once per isolate; never a value.
     console.warn(
-      `[contacts] proxy rate-limit store not configured (${missing.join(', ')}); the API proxy rate limit fails open`
+      `[contacts] legacy Upstash store not configured (${missing.join(', ')}); the proxy family needs ABUSE_GUARD and its pepper`
     );
   }
   return true;
