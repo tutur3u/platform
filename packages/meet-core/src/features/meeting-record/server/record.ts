@@ -20,6 +20,8 @@ export type MeetingRecordTask = {
   id: string;
   name: string;
   done: boolean;
+  /** When the task was completed or closed. */
+  doneAt: string | null;
   dueAt: string | null;
   boardId: string | null;
   boardName: string | null;
@@ -85,6 +87,7 @@ export function toRecordTask(link: LinkRow, task: TaskRow): MeetingRecordTask {
       task.closed_at !== null ||
       status === 'done' ||
       status === 'closed',
+    doneAt: task.completed_at ?? task.closed_at,
     dueAt: task.end_date,
     boardId: task.task_lists?.board_id ?? null,
     boardName: task.task_lists?.workspace_boards?.name ?? null,

@@ -68,6 +68,7 @@ export type MeetingRecordTask = {
   id: string;
   name: string;
   done: boolean;
+  doneAt: string | null;
   dueAt: string | null;
   boardId: string | null;
   boardName: string | null;
@@ -132,4 +133,39 @@ export function deleteMeetingRecordItem(
   id: string
 ) {
   return sendRecordChange('DELETE', wsId, meetingId, { id });
+}
+
+export type SinceLastTimeTask = MeetingRecordTask & { fromMeetingId: string };
+
+export type SinceLastTime = {
+  previousMeeting: { id: string; name: string; time: string } | null;
+  open: SinceLastTimeTask[];
+  resolved: SinceLastTimeTask[];
+  canCarry: boolean;
+};
+
+function sinceEndpoint(wsId: string, meetingId: string) {
+  return `${recordEndpoint(wsId, meetingId)}/since`;
+}
+
+export function getSinceLastTime(wsId: string, meetingId: string) {
+  return getInternalApiClient().json<SinceLastTime>(
+    sinceEndpoint(wsId, meetingId),
+    { cache: 'no-store' }
+  );
+}
+
+export function carryOverMeetingItems(
+  wsId: string,
+  meetingId: string,
+  taskIds: string[]
+) {
+  return getInternalApiClient().json<{ carried: number }>(
+    sinceEndpoint(wsId, meetingId),
+    {
+      method: 'POST',
+      body: JSON.stringify({ taskIds }),
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 }

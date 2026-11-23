@@ -6249,6 +6249,18 @@
         "unavailable": "Boards and members are unavailable right now",
         "uncertain": "This item may already be saved. Check the board before saving it again."
       },
+      "since": {
+        "carried": "{count, plural, =0 {Nothing left to carry over} one {Carried over # item} other {Carried over # items}}",
+        "carry_all": "{count, plural, one {Carry over # open item} other {Carry over # open items}}",
+        "carry_failed": "Could not carry items over",
+        "done": "Done",
+        "empty": "Everything from last time is settled",
+        "from": "From {name}",
+        "open": "Open",
+        "resolved": "{count, plural, one {# resolved since} other {# resolved since}}",
+        "title": "Since last time",
+        "unassigned": "Unassigned"
+      },
       "title": "Meeting record",
       "unavailable": "The meeting record is unavailable right now"
     },

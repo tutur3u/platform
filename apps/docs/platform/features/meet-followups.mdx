@@ -44,6 +44,16 @@ whose save may have happened stays marked for the host to check instead of being
 retried. A Project chip under the meeting title opens the Project in Tasks; see
 [Workspace Projects](/platform/features/workspace-projects).
 
+## Since last time
+
+When earlier meetings share a Project with this one, the meeting record opens
+with **Since last time**. It lists, live from Tasks, the items still open from the
+most recent earlier meetings, grouped by owner, and those resolved since the
+previous meeting started. The host or a workspace admin can carry every open item
+over in one click. A carried item keeps its task and names the meeting it came
+from. Items already on this meeting are not repeated. Recurring Calendar series
+are not yet a source; until then, link the meetings of a series to one Project.
+
 ## Identity, destination and time
 
 The review defaults to the signed-in user's personal workspace and saved calendar
@@ -109,7 +119,7 @@ end-to-end coverage. The meeting record needs migration
 `20261124013000_project_links_and_meeting_records`. Its regression tests are the
 pgTAP contract `project-links-meeting-records.sql` and the Meet Core
 `meeting-record` tests (`action-items`, `save-action-item`, `source-link`,
-`project-links`).
+`project-links`, `since-last-time`).
 
 ## Public meeting details and long calls
 

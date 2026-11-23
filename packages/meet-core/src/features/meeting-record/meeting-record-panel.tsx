@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ActionItemsSheet } from './action-items-sheet';
 import { RecordItemList } from './record-item-list';
+import { SinceLastTime } from './since-last-time';
 import { taskHref, useMeetingRecord } from './use-meeting-record';
 
 export type MeetingRecordLinks = {
@@ -42,6 +43,7 @@ export function MeetingRecordPanel(props: MeetingRecordLinks) {
           <p className="text-muted-foreground text-sm">{t('unavailable')}</p>
         ) : (
           <>
+            <SinceLastTime {...props} />
             <section className="space-y-2">
               <h3 className="font-medium text-sm">{t('agenda')}</h3>
               <RecordItemList
