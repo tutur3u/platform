@@ -1,10 +1,16 @@
 'use client';
 
-import { User } from '@tuturuuu/icons';
+import { Trash2, User } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import type { ReactNode } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
-import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
+import {
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 
 /** A saved account's avatar in the account switcher, with initials fallback. */
 export function AccountSwitcherAvatar({
@@ -61,5 +67,48 @@ export function ManageAccountsItem({
         <span>{label}</span>
       </a>
     </DropdownMenuItem>
+  );
+}
+
+/** Remove account: every saved account except the active one can be removed. */
+export function RemoveAccountSubmenu({
+  accounts,
+  activeAccountId,
+  disabled,
+  label,
+  onRemove,
+}: {
+  accounts: { id: string; label: string }[];
+  activeAccountId: string | null;
+  disabled: boolean;
+  label: string;
+  onRemove: (accountId: string) => void;
+}) {
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger disabled={disabled}>
+        <Trash2 className="h-4 w-4 text-dynamic-red" />
+        <span>{label}</span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent sideOffset={4} className="w-72">
+          {accounts.map((account) => {
+            const isActive = account.id === activeAccountId;
+            return (
+              <DropdownMenuItem
+                key={account.id}
+                disabled={isActive || disabled}
+                onSelect={() => {
+                  if (!isActive) onRemove(account.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4 text-dynamic-red" />
+                <span className="truncate">{account.label}</span>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
   );
 }

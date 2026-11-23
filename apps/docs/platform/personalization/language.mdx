@@ -30,7 +30,7 @@ Exceptions:
 - Web and Workspace public pages are English at unprefixed addresses and Vietnamese under `/vi`, whatever the cookie says, so search engines see one fixed locale per address.
 - An app mounted under `tuturuuu.com/<app>` stores its choice only under its own path. **System** there clears that choice and then follows the choice made on tuturuuu.com, when one exists, rather than the browser.
 
-Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`) and the public `LanguageToggle`. Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`.
+Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`) the public `LanguageToggle`, and Settings → Appearance, the Women in Tech page and Rewise tools, which use the same `reloadForLocaleChange`. Login and onboarding switch locale through next-intl's locale-aware navigation, which also lands on the prefixed address. Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`.
 
 ### Contribute
 

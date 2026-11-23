@@ -17,9 +17,10 @@ describe('readLocalePreference', () => {
     expect(readLocalePreference('MY_NEXT_LOCALE=vi')).toBeNull();
   });
 
-  it('uses the first supported copy, which the browser lists most specific first', () => {
+  it('uses only the first copy, which the browser lists most specific first', () => {
     expect(readLocalePreference('NEXT_LOCALE=en; NEXT_LOCALE=vi')).toBe('en');
-    expect(readLocalePreference('NEXT_LOCALE=%ZZ; NEXT_LOCALE=vi')).toBe('vi');
+    expect(readLocalePreference('NEXT_LOCALE=fr; NEXT_LOCALE=vi')).toBeNull();
+    expect(readLocalePreference('NEXT_LOCALE=%ZZ; NEXT_LOCALE=vi')).toBeNull();
   });
 });
 
@@ -65,6 +66,9 @@ describe('localeChangePath', () => {
     ['/vi/about', 'en', '/en/about'],
     ['/en/personal/meetings', 'vi', '/vi/personal/meetings'],
     ['/video', 'vi', '/vi/video'],
+    // Never a protocol-relative (cross-origin) target.
+    ['/vi//evil.example', 'en', '/en/evil.example'],
+    ['//evil.example', 'vi', '/vi/evil.example'],
   ])('loads %s under %s as %s', (pathname, locale, expected) => {
     expect(localeChangePath(pathname, locale)).toBe(expected);
   });

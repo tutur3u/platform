@@ -42,17 +42,18 @@ export function readLocalePreference(
   locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES,
   cookieName = DEFAULT_LOCALE_COOKIE_NAME
 ): string | null {
+  // Like the proxies, only the first copy counts; the browser lists the most
+  // specific path first.
   for (const pair of cookieHeader.split(';')) {
     const separator = pair.indexOf('=');
     if (separator < 0 || pair.slice(0, separator).trim() !== cookieName)
       continue;
-    let value = pair.slice(separator + 1).trim();
     try {
-      value = decodeURIComponent(value);
+      const value = decodeURIComponent(pair.slice(separator + 1).trim());
+      return locales.includes(value) ? value : null;
     } catch {
-      continue;
+      return null;
     }
-    if (locales.includes(value)) return value;
   }
   return null;
 }
@@ -111,7 +112,10 @@ export function localeChangePath(
   const mounted =
     base && (stripped === base || stripped.startsWith(`${base}/`));
   const rest = mounted ? stripped.slice(base.length) : stripped;
-  const suffix = rest === '/' || rest === '' ? '' : rest;
+  // Collapse leading slashes so the result can never become a
+  // protocol-relative URL such as `//example.com`.
+  const path = rest.replace(/^\/+/u, '/');
+  const suffix = path === '/' || path === '' ? '' : path;
   return `${mounted ? base : ''}/${locale}${suffix}`;
 }
 

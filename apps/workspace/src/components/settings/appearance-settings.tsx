@@ -1,7 +1,10 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
+import {
+  persistLocalePreference,
+  reloadForLocaleChange,
+} from '@tuturuuu/ui/custom/locale-preference';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { ExperimentalUiSetting } from '@tuturuuu/ui/custom/settings/experimental-ui-setting';
@@ -24,7 +27,6 @@ import {
   detectLocaleTimeFormat,
   detectSystemTimezone,
 } from '@tuturuuu/utils/calendar-settings-resolver';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useTransition } from 'react';
@@ -37,7 +39,6 @@ export default function AppearanceSettings({
   const t = useTranslations();
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
@@ -93,7 +94,7 @@ export default function AppearanceSettings({
   const handleLocaleChange = (newLocale: string) => {
     persistLocalePreference(newLocale);
     startTransition(() => {
-      router.refresh();
+      reloadForLocaleChange(newLocale);
     });
   };
 

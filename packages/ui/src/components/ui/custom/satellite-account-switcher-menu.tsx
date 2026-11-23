@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ExternalLink, Trash2, Users } from '@tuturuuu/icons';
+import { Check, ExternalLink, Users } from '@tuturuuu/icons';
 import type {
   WebAccountMutationResponse,
   WebAccountSummary,
@@ -26,6 +26,7 @@ import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 import {
   AccountSwitcherAvatar,
   ManageAccountsItem,
+  RemoveAccountSubmenu,
 } from './account-switcher-items';
 
 interface SatelliteAccountSwitcherMenuProps {
@@ -48,6 +49,8 @@ interface SatelliteAccountSwitcherMenuProps {
   onAccountChanged?: (response: WebAccountMutationResponse) => void;
   /** Opens account management in-app instead of the central settings link. */
   onManageAccounts?: () => void;
+  /** Shares a host's accounts query, so every account list updates together. */
+  queryKey?: readonly unknown[];
 }
 
 const accountQueryKey = (centralUrl: string) =>
@@ -80,9 +83,10 @@ export function SatelliteAccountSwitcherMenu({
   t,
   onAccountChanged = () => window.location.reload(),
   onManageAccounts,
+  queryKey: hostQueryKey,
 }: SatelliteAccountSwitcherMenuProps) {
   const queryClient = useQueryClient();
-  const queryKey = accountQueryKey(centralUrl);
+  const queryKey = hostQueryKey ?? accountQueryKey(centralUrl);
   const accountsQuery = useQuery({
     queryFn: () =>
       listWebAccountsWithInternalApi({ baseUrl: centralUrl || undefined }),
@@ -196,35 +200,19 @@ export function SatelliteAccountSwitcherMenu({
             );
           })}
           <DropdownMenuSeparator />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger disabled={isMutating}>
-              <Trash2 className="h-4 w-4 text-dynamic-red" />
-              <span>{t('remove_account')}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent sideOffset={4} className="w-72">
-                {accounts.map((account) => {
-                  const isActive = account.id === activeAccountId;
-                  const label = accountLabel(account, t('unknown_user'));
-
-                  return (
-                    <DropdownMenuItem
-                      key={account.id}
-                      disabled={isActive || isMutating}
-                      onSelect={() => {
-                        if (!isActive) removeMutation.mutate(account.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-dynamic-red" />
-                      <span className="truncate">
-                        {isActive ? t('current_account') : label}
-                      </span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
+          <RemoveAccountSubmenu
+            accounts={accounts.map((account) => ({
+              id: account.id,
+              label:
+                account.id === activeAccountId
+                  ? t('current_account')
+                  : accountLabel(account, t('unknown_user')),
+            }))}
+            activeAccountId={activeAccountId}
+            disabled={isMutating}
+            label={t('remove_account')}
+            onRemove={(accountId) => removeMutation.mutate(accountId)}
+          />
           <ManageAccountsItem
             href={webAccountSettingsUrl(centralUrl, workspaceId)}
             icon={<ExternalLink className="h-4 w-4" />}

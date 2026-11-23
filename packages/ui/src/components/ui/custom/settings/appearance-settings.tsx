@@ -9,10 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
-import { persistLocalePreference } from '../locale-preference';
+import {
+  persistLocalePreference,
+  reloadForLocaleChange,
+} from '../locale-preference';
 import { VersionBadgeSetting, VersionInfoSetting } from '../version-badge';
 import { ExperimentalUiSetting } from './experimental-ui-setting';
 import { ThemeModeSetting } from './theme-mode-setting';
@@ -29,13 +31,12 @@ export function AppearanceSettings({
 }) {
   const t = useTranslations();
   const locale = useLocale();
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const handleLocaleChange = (newLocale: string) => {
     persistLocalePreference(newLocale);
     startTransition(() => {
-      router.refresh();
+      reloadForLocaleChange(newLocale);
     });
   };
 

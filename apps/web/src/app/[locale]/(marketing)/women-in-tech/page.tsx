@@ -21,12 +21,14 @@ import {
 } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
+import {
+  persistLocalePreference,
+  reloadForLocaleChange,
+} from '@tuturuuu/ui/custom/locale-preference';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { type ComponentProps, useEffect, useMemo, useState } from 'react';
 
@@ -74,7 +76,6 @@ function LanguageSwitcher({
   reduceEffects?: boolean;
 }) {
   const t = useTranslations('vietnameseWomensDay');
-  const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const isVietnamese = currentLocale === 'vi';
@@ -82,8 +83,9 @@ function LanguageSwitcher({
   const switchLocale = () => {
     setLoading(true);
     try {
-      persistLocalePreference(isVietnamese ? 'en' : 'vi');
-      router.refresh();
+      const nextLocale = isVietnamese ? 'en' : 'vi';
+      persistLocalePreference(nextLocale);
+      reloadForLocaleChange(nextLocale);
     } finally {
       setLoading(false);
     }

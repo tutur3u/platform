@@ -3,8 +3,10 @@
 import { ArrowRight, Globe } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
-import { useRouter } from 'next/navigation';
+import {
+  persistLocalePreference,
+  reloadForLocaleChange,
+} from '@tuturuuu/ui/custom/locale-preference';
 import { use, useState } from 'react';
 
 export default function ClientLayout({
@@ -16,7 +18,6 @@ export default function ClientLayout({
     locale: string;
   }>;
 }) {
-  const router = useRouter();
   const { locale } = use(params);
 
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ export default function ClientLayout({
   const updateLocale = () => {
     setLoading(true);
     persistLocalePreference('en');
-    router.refresh();
+    reloadForLocaleChange('en');
     setLoading(false);
   };
 
