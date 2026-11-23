@@ -1,9 +1,14 @@
 {
+  "apps/contacts/src/app/[locale]/[wsId]/users/database/[userId]/contact-account-invitation.tsx": 1,
+  "apps/contacts/src/app/[locale]/[wsId]/users/database/[userId]/contact-account-picker.tsx": 1,
   "packages/meet-core/src/features/call/components/call-preparation.tsx": 1,
+  "packages/meet-core/src/features/call/components/guest-human-check.tsx": 1,
   "packages/meet-core/src/features/call/components/polls-panel.tsx": 1,
   "packages/meet-core/src/features/call/components/room-media-health.tsx": 1,
   "packages/meet-core/src/features/meeting-ai/followup-destination.tsx": 2,
   "packages/meet-core/src/features/meeting-ai/followup-review-form.tsx": 1,
   "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": 1,
-  "packages/ui/src/components/ui/custom/workspace-select.tsx": 1
+  "packages/ui/src/components/ui/custom/workspace-select.tsx": 1,
+  "packages/ui/src/components/ui/legacy/calendar/native-guests/guest-adder.tsx": 1,
+  "packages/ui/src/components/ui/legacy/calendar/native-guests/native-event-guests.tsx": 1
 }
