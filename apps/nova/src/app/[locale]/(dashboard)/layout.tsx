@@ -20,6 +20,7 @@ import {
   requireNovaAppSessionUser,
   requireNovaEnabledRole,
 } from '@/lib/app-session';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import NavbarActions from '../(marketing)/navbar-actions';
 import { UserNav } from '../(marketing)/user-nav';
 
@@ -109,6 +110,15 @@ export default async function RootLayout({
           }
         >
           <NavbarActions userId={user.id} />
+        </Suspense>
+      }
+      notificationPopover={
+        <Suspense
+          fallback={
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <NotificationPopover userId={user.id} />
         </Suspense>
       }
       userPopover={

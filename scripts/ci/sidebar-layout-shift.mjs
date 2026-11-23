@@ -29,12 +29,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { sidebarEvidencePath } from './sidebar-evidence-path.mjs';
 import {
-  BOTTOM_CLUSTER,
   ICON_TOLERANCE,
   maxShift,
   measureIconMatrix,
   moved,
-  TOP_ANCHORED,
 } from './sidebar-layout-geometry.mjs';
 import { installProbes } from './sidebar-layout-probes.mjs';
 
@@ -252,11 +250,7 @@ try {
       moved(restingGeometry.icons[key], openGeometry.icons[key])
     ),
     movedExtras: Object.keys(restingGeometry.extras).filter((key) =>
-      moved(
-        restingGeometry.extras[key],
-        openGeometry.extras[key],
-        !TOP_ANCHORED.has(key)
-      )
+      moved(restingGeometry.extras[key], openGeometry.extras[key])
     ),
     iconShiftPx: {
       icons: Object.fromEntries(
@@ -302,8 +296,7 @@ try {
           ...openGeometry.icons,
           ...openGeometry.extras,
           logo: openGeometry.logo ?? { x: 0, y: 0 },
-        },
-        BOTTOM_CLUSTER
+        }
       ),
     },
     revealAnimations,
@@ -549,7 +542,14 @@ try {
       'avatars and footer icons must keep their position on open'
     );
     if (behavior === 'hover') {
-      for (const key of ['workspaceAvatar', 'accountAvatar']) {
+      for (const key of [
+        'workspaceAvatar',
+        'accountAvatar',
+        'settings',
+        'footerAction0',
+        'footerAction1',
+        'bell',
+      ]) {
         assert.ok(
           restingGeometry.extras[key] && openGeometry.extras[key],
           `${key} is measured in the rail and the open panel`

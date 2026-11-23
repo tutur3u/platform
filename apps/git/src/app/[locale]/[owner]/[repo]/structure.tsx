@@ -14,6 +14,7 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { useSidebarFooter } from '@tuturuuu/ui/custom/sidebar-footer-context';
 import { Structure as SidebarStructure } from '@tuturuuu/ui/custom/structure';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
@@ -87,37 +88,15 @@ export function Structure({
   const closeOnMobile = () => {
     if (window.innerWidth < 768) setIsCollapsed(true);
   };
-  const adminAction = (
-    <Button
-      asChild
-      className="h-9 w-full justify-start gap-0 px-0"
-      size="sm"
-      variant="ghost"
-    >
-      <Link href="/-/internal/repositories" aria-label={t('admin')}>
-        <span className="flex w-[var(--sidebar-rail-slot,2.9375rem)] shrink-0 justify-center">
-          <Settings2 className="h-4 w-4" />
-        </span>
-        <span className="-ml-2">{t('admin')}</span>
-      </Link>
-    </Button>
-  );
-  const adminIcon = (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button asChild className="h-9 w-9" size="icon" variant="ghost">
-          <Link href="/-/internal/repositories" aria-label={t('admin')}>
-            <Settings2 className="h-4 w-4" />
-          </Link>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right">{t('admin')}</TooltipContent>
-    </Tooltip>
-  );
+  const adminLink = <AdminFooterLink label={t('admin')} />;
 
   return (
     <SidebarStructure
-      actions={<div className="w-full">{adminAction}</div>}
+      actions={
+        <div className="w-full">
+          <AdminFooterLink label={t('admin')} showLabel />
+        </div>
+      }
       isCollapsed={isCollapsed}
       mobileHeader={
         <RepositoryBrand
@@ -211,7 +190,7 @@ export function Structure({
           repository={repository}
         />
       }
-      userPopover={adminIcon}
+      userPopover={adminLink}
     >
       <div className="mx-auto w-full max-w-[1600px]">{children}</div>
     </SidebarStructure>
@@ -248,5 +227,43 @@ function RepositoryBrand({
         </span>
       ) : null}
     </Link>
+  );
+}
+
+/**
+ * The admin link in the sidebar footer: one icon column in the rail and the
+ * panel, with its label revealed beside the icon when expanded.
+ */
+function AdminFooterLink({
+  label,
+  showLabel = false,
+}: {
+  label: string;
+  showLabel?: boolean;
+}) {
+  const expanded = useSidebarFooter().expanded || showLabel;
+  const link = (
+    <Button
+      asChild
+      className="h-9 w-full justify-start gap-0 px-0"
+      size="sm"
+      variant="ghost"
+    >
+      <Link href="/-/internal/repositories" aria-label={label}>
+        <span className="flex w-[var(--sidebar-rail-slot,2.9375rem)] shrink-0 justify-center">
+          <Settings2 className="h-4 w-4" />
+        </span>
+        {expanded ? <span className="-ml-2">{label}</span> : null}
+      </Link>
+    </Button>
+  );
+
+  if (expanded) return link;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   );
 }

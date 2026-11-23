@@ -84,7 +84,8 @@ describe('framework-independent satellite shell', () => {
     expect(
       screen.getByRole('link', { name: 'Workshop' }).getAttribute('href')
     ).toBe('/room');
-    expect(screen.getByText('Account settings')).toBeTruthy();
+    // On desktop the footer is the stacked icon column, not the combined row.
+    expect(screen.getByText('Avatar')).toBeTruthy();
     fireEvent.click(screen.getAllByRole('button', { name: 'Apps' })[0]!);
     expect(openApps).toHaveBeenCalledOnce();
   });
@@ -410,7 +411,7 @@ describe('shared account chrome', () => {
       screen.getByRole('link', { name: 'Discord' }).getAttribute('href')
     ).toBe('https://discord.gg/example');
   });
-  it('renders expanded feedback as a compact icon button with a tooltip', async () => {
+  it('renders expanded feedback as a labelled row in the icon column', () => {
     const feedback = vi.fn();
     render(
       <SatelliteFooterActions
@@ -422,14 +423,31 @@ describe('shared account chrome', () => {
       />
     );
     const button = screen.getByRole('button', { name: 'Feedback' });
+    expect(button.textContent).toBe('Feedback');
+    expect(button.className).toContain('w-full');
+    expect(button.querySelector('span')?.className).toContain(
+      'w-[var(--sidebar-rail-slot'
+    );
+    fireEvent.click(button);
+    expect(feedback).toHaveBeenCalledOnce();
+  });
+
+  it('renders collapsed feedback as an icon with a tooltip in the same column', async () => {
+    render(
+      <SatelliteFooterActions
+        wsId=""
+        isCollapsed
+        showUpgrade={false}
+        labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
+        onFeedback={vi.fn()}
+      />
+    );
+    const button = screen.getByRole('button', { name: 'Feedback' });
     expect(button.textContent).toBe('');
-    expect(button.className).toContain('w-9');
+    expect(button.className).toContain('w-full');
     fireEvent.focus(button);
     expect((await screen.findByRole('tooltip')).textContent).toContain(
       'Feedback'
     );
-    fireEvent.keyDown(button, { key: 'Enter' });
-    fireEvent.click(button);
-    expect(feedback).toHaveBeenCalledOnce();
   });
 });

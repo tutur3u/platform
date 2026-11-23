@@ -144,11 +144,24 @@ expand-on-hover, or expanded (decided 2026-11-23). The shell defines
 0.5rem gutters); navigation rows, the workspace avatar, the account avatar, the
 footer actions and the brand logo all center their icon in that slot, and rows
 use identical left padding in both states, so expanding only reveals labels and
-trailing controls. Scope: Web, Workspace, Colab and every satellite sidebar;
-Nova's fixed sidebar uses the same rows. Coverage: the Chromium harness
-(`scripts/ci/sidebar-layout-shift.mjs`) measures the logo, navigation icons,
-workspace avatar, account avatar and footer icons in the rail and the open
-panel, and fails when any differs by more than 0.01px.
+trailing controls.
+
+The footer follows the same rule (decided 2026-11-23): Settings, Upgrade,
+Feedback, the account row and Notifications are one vertical column in the rail
+and in the panel, in the same order, at the same x and y. Expanding reveals each
+row's label to the right of its fixed icon (the account row shows the name and
+email); Upgrade stays tinted but sits in the column. The expanded footer relies
+on the account and notification slots, so an app that passes only the combined
+`actions` row keeps that row. Phones keep the combined row.
+
+Scope: Web, Workspace, Colab and every satellite sidebar, in Sorbet/Minimal mode
+too; Nova's fixed sidebar is excluded, and the Git sidebar uses the same icon
+column for its navigation. Known exception: when **Show navigation labels** is on, the rail
+adds a caption under each icon, so rows are taller than in the panel. Coverage:
+the Chromium harness (`scripts/ci/sidebar-layout-shift.mjs`) measures the logo,
+navigation icons, workspace avatar, Settings, Upgrade, Feedback, account avatar
+and bell in the rail and the open panel at 1024, 1440 and 1920px in both themes,
+and fails when any x or y differs by more than 0.01px.
 
 ## Preference precedence
 

@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 import {
-  Bell,
   Calendar,
   ChartColumn,
   Clock,
@@ -8,6 +7,7 @@ import {
   Settings,
   Users,
 } from '@tuturuuu/icons';
+import { NotificationPopoverTriggerButton } from '@tuturuuu/ui/custom/notification-popover-trigger';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Popover } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { type ReactNode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -245,7 +246,14 @@ function Harness() {
       homeLabel="Home"
       isCollapsed={shell.isCollapsed}
       mobileSidebarOpen={shell.mobileSidebarOpen}
-      notificationPopover={<Bell className="size-4" />}
+      notificationPopover={
+        <Popover>
+          <NotificationPopoverTriggerButton
+            notificationsText="Notifications"
+            unreadCount={3}
+          />
+        </Popover>
+      }
       onMouseEnter={shell.onMouseEnter}
       onMouseLeave={shell.onMouseLeave}
       overlayOnExpand
@@ -284,7 +292,7 @@ function Harness() {
           />
         </button>
       }
-      userPopover={shell.isCollapsed ? <Account hideMetadata /> : null}
+      userPopover={<Account hideMetadata />}
     >
       <CalendarGrid />
     </SatelliteShell>

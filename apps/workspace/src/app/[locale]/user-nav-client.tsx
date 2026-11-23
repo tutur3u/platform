@@ -19,6 +19,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { AnimatedSlotText } from '@tuturuuu/ui/custom/animated-slot-text';
 import { PublicProfileMenuItem } from '@tuturuuu/ui/custom/satellite-user-menu-items';
+import { useSidebarFooter } from '@tuturuuu/ui/custom/sidebar-footer-context';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -116,7 +117,7 @@ function useUserNavSettingsDialogComponent(enabled: boolean) {
 export default function UserNavClient({
   user,
   locale,
-  hideMetadata = false,
+  hideMetadata: hideMetadataProp = false,
   workspace,
   renderCommandLauncher = true,
   renderSettingsDialog = true,
@@ -132,6 +133,8 @@ export default function UserNavClient({
 }) {
   const t = useTranslations();
   const params = useParams();
+  // In the expanded sidebar footer the name and email return beside the avatar.
+  const hideMetadata = hideMetadataProp && !useSidebarFooter().expanded;
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const sidebar = useContext(SidebarContext);

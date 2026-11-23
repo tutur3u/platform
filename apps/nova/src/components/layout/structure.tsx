@@ -25,6 +25,7 @@ interface StructureProps {
   defaultCollapsed?: boolean;
   navItems: NavItem[];
   actions: ReactNode;
+  notificationPopover?: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
 }
@@ -35,6 +36,7 @@ export default function Structure({
   defaultCollapsed = false,
   navItems,
   actions,
+  notificationPopover,
   userPopover,
   children,
 }: StructureProps) {
@@ -94,6 +96,7 @@ export default function Structure({
         }
         isCollapsed={isCollapsed}
         mobileHeader={mobileHeader}
+        notificationPopover={notificationPopover}
         setIsCollapsed={setIsCollapsed}
         sidebarContent={sidebarContent}
         sidebarHeader={sidebarHeader}

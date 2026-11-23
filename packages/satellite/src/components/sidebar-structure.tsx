@@ -217,7 +217,7 @@ export function SidebarStructure({
             ),
             actions: brandActions,
           }}
-          userPopover={isCollapsed ? userPopover : null}
+          userPopover={userPopover}
           sidebarUtility={
             showSettingsButton ? (
               <SidebarSettingsButton

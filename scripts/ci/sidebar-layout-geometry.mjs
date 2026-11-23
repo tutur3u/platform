@@ -2,31 +2,22 @@
 
 // Icons must hold the exact same position (sub-pixel rounding only).
 export const ICON_TOLERANCE = 0.01;
-// Extras anchored to the top of the sidebar: compared on both axes. The
-// bottom cluster (Settings, account avatar) is compared on x only: it stacks
-// vertically in the rail but lays out as a row in the panel.
-export const TOP_ANCHORED = new Set(['workspaceAvatar']);
-export const BOTTOM_CLUSTER = new Set(['settings', 'accountAvatar']);
-
-export const moved = (a, b, xOnly = false) =>
+export const moved = (a, b) =>
   !a ||
   !b ||
   Math.abs(a.x - b.x) > ICON_TOLERANCE ||
-  (!xOnly && Math.abs(a.y - b.y) > ICON_TOLERANCE) ||
+  Math.abs(a.y - b.y) > ICON_TOLERANCE ||
   Math.abs(a.width - b.width) > ICON_TOLERANCE ||
   Math.abs(a.height - b.height) > ICON_TOLERANCE;
 
 /** Largest per-icon shift between the resting rail and the open panel. */
-export const maxShift = (a, b, xOnly = new Set()) =>
+export const maxShift = (a, b) =>
   Math.max(
     0,
     ...Object.keys(a)
       .filter((key) => b[key])
       .map((key) =>
-        Math.max(
-          Math.abs(a[key].x - b[key].x),
-          xOnly.has(key) ? 0 : Math.abs(a[key].y - b[key].y)
-        )
+        Math.max(Math.abs(a[key].x - b[key].x), Math.abs(a[key].y - b[key].y))
       )
   );
 
@@ -61,9 +52,7 @@ export async function measureIconMatrix(page) {
         measured:
           Object.keys(resting.icons).length +
           Object.keys(resting.extras).length,
-        maxShiftPx: Number(
-          maxShift(flat(resting), flat(open), BOTTOM_CLUSTER).toFixed(4)
-        ),
+        maxShiftPx: Number(maxShift(flat(resting), flat(open)).toFixed(4)),
       });
       await page.mouse.move(900, 450);
       await page.waitForFunction(

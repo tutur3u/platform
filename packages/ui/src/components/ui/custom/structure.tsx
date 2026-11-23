@@ -14,6 +14,7 @@ import {
   useRef,
 } from 'react';
 import { observeMobileHeaderHeight } from './mobile-header-height';
+import { SidebarFooterContext } from './sidebar-footer-context';
 import { SidebarMinimalTrigger } from './sidebar-minimal-trigger';
 import { SidebarOverlayContext } from './sidebar-overlay-context';
 import { useSidebarOverlayClose } from './use-sidebar-overlay-close';
@@ -385,39 +386,31 @@ export function Structure({
                     {(sidebarUtility || feedbackButton) && (
                       <div
                         data-slot="sidebar-utility-row"
-                        className={cn(
-                          'flex border-foreground/10 border-t',
-                          isCollapsed
-                            ? 'flex-col items-center gap-1 p-2'
-                            : 'items-center gap-1 p-2'
-                        )}
+                        // One vertical icon column in the rail and the panel:
+                        // the same rows at the same y, labels revealed only.
+                        className="flex flex-col gap-1 border-foreground/10 border-t p-2"
                       >
                         {sidebarUtility && (
-                          <div
-                            className={cn(
-                              'flex',
-                              isCollapsed
-                                ? 'w-full justify-center'
-                                : 'min-w-0 flex-1'
-                            )}
-                          >
-                            {sidebarUtility}
-                          </div>
+                          <div className="flex w-full">{sidebarUtility}</div>
                         )}
                         {feedbackButton}
                       </div>
                     )}
-                    <div
-                      className={cn(
-                        'mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]',
-                        isCollapsed ? 'justify-center' : ''
-                      )}
-                    >
-                      {isCollapsed ? (
-                        <div className="flex w-full flex-col items-center gap-1">
-                          {!accountInTopBar && userPopover}
-                          {notificationPopover}
-                        </div>
+                    <div className="mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
+                      {isCollapsed || (!isMobile && userPopover) ? (
+                        <SidebarFooterContext
+                          value={{ expanded: !isCollapsed }}
+                        >
+                          <div
+                            className={cn(
+                              'flex w-full flex-col gap-1',
+                              isCollapsed && 'items-center'
+                            )}
+                          >
+                            {!accountInTopBar && userPopover}
+                            {notificationPopover}
+                          </div>
+                        </SidebarFooterContext>
                       ) : (
                         actions
                       )}

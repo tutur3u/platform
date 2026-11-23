@@ -151,10 +151,10 @@ describe('Structure', () => {
     );
   });
 
-  it('renders the combined account actions only once when expanded', () => {
+  it('stacks the account and notifications in one column when expanded', () => {
     const { container } = render(
       <Structure
-        actions={<span>Expanded account actions</span>}
+        actions={<span>Fallback account actions</span>}
         isCollapsed={false}
         notificationPopover={<button type="button">Notifications</button>}
         setIsCollapsed={vi.fn()}
@@ -164,21 +164,35 @@ describe('Structure', () => {
       </Structure>
     );
 
-    const sidebar = container.querySelector('aside');
-    expect(sidebar).not.toBeNull();
-    const sidebarQueries = within(sidebar as HTMLElement);
+    const sidebar = within(container.querySelector('aside') as HTMLElement);
 
-    expect(sidebarQueries.getByText('Expanded account actions')).toBeVisible();
+    expect(sidebar.queryByText('Fallback account actions')).toBeNull();
+    expect(sidebar.getByRole('button', { name: 'Account' })).toBeVisible();
     expect(
-      sidebarQueries.queryByRole('button', { name: 'Notifications' })
-    ).not.toBeInTheDocument();
+      sidebar.getByRole('button', { name: 'Notifications' })
+    ).toBeVisible();
+  });
+
+  it('falls back to the combined actions when no account slot is given', () => {
+    const { container } = render(
+      <Structure
+        actions={<span>Fallback account actions</span>}
+        isCollapsed={false}
+        setIsCollapsed={vi.fn()}
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+
     expect(
-      sidebarQueries.queryByRole('button', { name: 'Account' })
-    ).not.toBeInTheDocument();
+      within(container.querySelector('aside') as HTMLElement).getByText(
+        'Fallback account actions'
+      )
+    ).toBeVisible();
   });
 
   it.each([false, true])(
-    'puts Settings and the footer actions on one row (collapsed: %s)',
+    'stacks Settings and the footer actions in one column (collapsed: %s)',
     (isCollapsed) => {
       const { container } = render(
         <Structure
@@ -202,7 +216,7 @@ describe('Structure', () => {
       const row = within(rows[0] as HTMLElement);
       expect(row.getByRole('button', { name: 'Settings' })).toBeVisible();
       expect(row.getByRole('button', { name: 'Feedback' })).toBeVisible();
-      expect(rows[0]).toHaveClass(isCollapsed ? 'flex-col' : 'items-center');
+      expect(rows[0]).toHaveClass('flex-col');
     }
   );
 

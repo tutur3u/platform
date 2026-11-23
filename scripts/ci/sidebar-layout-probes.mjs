@@ -54,10 +54,8 @@ export function installProbes() {
     }
     const settings = aside.querySelector('[aria-label="Settings"] svg');
     if (settings && shown(settings)) out.extras.settings = box(settings);
-    // Workspace avatar and account avatar. The workspace avatar is anchored to
-    // the top like the logo and icons; the account avatar and Settings sit in
-    // the bottom cluster, which stacks vertically in the rail but lays out as
-    // a row in the panel, so only their x position is compared.
+    // Workspace avatar, then the footer column: Upgrade and Feedback rows,
+    // the account avatar and the notifications bell.
     const firstShown = (selector) =>
       [...aside.querySelectorAll(selector)].find(shown);
     const workspaceAvatar = firstShown(
@@ -68,6 +66,13 @@ export function installProbes() {
       '[aria-label="Account"] [data-slot="avatar"]'
     );
     if (accountAvatar) out.extras.accountAvatar = box(accountAvatar);
+    [...aside.querySelectorAll('[data-slot="sidebar-footer-actions"] svg')]
+      .filter(shown)
+      .forEach((icon, index) => {
+        out.extras[`footerAction${index}`] = box(icon);
+      });
+    const bell = firstShown('button[aria-label^="Notifications"] svg');
+    if (bell) out.extras.bell = box(bell);
 
     // Labels that do not fit (the fixture's labels all fit the panel).
     out.truncatedLabels = [

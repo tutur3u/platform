@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { AnimatedSlotText } from './animated-slot-text';
+import { useSidebarFooter } from './sidebar-footer-context';
 
 /** Shared profile trigger and menu frame; adapters supply account services and preferences. */
 export function SatelliteUserMenu({
@@ -20,7 +21,7 @@ export function SatelliteUserMenu({
   email,
   avatarUrl,
   secondaryLabel,
-  hideMetadata = false,
+  hideMetadata: hideMetadataProp = false,
   online = false,
   label,
   loading = false,
@@ -38,6 +39,8 @@ export function SatelliteUserMenu({
   triggerRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
 }) {
+  // In the expanded sidebar footer the name and email return beside the avatar.
+  const hideMetadata = hideMetadataProp && !useSidebarFooter().expanded;
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>

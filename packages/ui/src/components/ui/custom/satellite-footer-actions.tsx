@@ -47,14 +47,16 @@ export function SatelliteFooterActions({
   upgradeHref,
   upgradeExternal = false,
 }: SatelliteFooterActionsProps) {
-  const tooltipSide = isCollapsed ? 'right' : 'top';
+  const tooltipSide = 'right';
+  const showLabel = !isCollapsed;
 
   return (
     <div
       data-slot="sidebar-footer-actions"
       className={cn(
-        'flex shrink-0 items-center gap-1',
-        isCollapsed && 'w-full flex-col'
+        // A vertical icon column in the rail and the panel: expanding only
+        // reveals each row's label, so no icon moves.
+        'flex w-full shrink-0 flex-col gap-1'
       )}
     >
       {showUpgrade && (
@@ -63,7 +65,7 @@ export function SatelliteFooterActions({
           href={upgradeHref ?? `/${wsId}/billing`}
           external={upgradeExternal}
           label={labels.upgrade}
-          showLabel={!isCollapsed}
+          showLabel={showLabel}
           tooltipSide={tooltipSide}
           variant="upgrade"
         >
@@ -76,6 +78,7 @@ export function SatelliteFooterActions({
           href={discordHref}
           external
           label="Discord"
+          showLabel={showLabel}
           tooltipSide={tooltipSide}
         >
           <DiscordIcon className="size-4 shrink-0" />
@@ -85,6 +88,7 @@ export function SatelliteFooterActions({
         LinkComponent={LinkComponent}
         label={labels.feedback}
         onClick={onFeedback}
+        showLabel={showLabel}
         tooltipSide={tooltipSide}
       >
         <MessageSquareWarning className="size-4 shrink-0" />
@@ -106,8 +110,8 @@ interface FooterActionProps {
 }
 
 /**
- * A compact footer action: a 36px icon button (Upgrade may keep its label in
- * the expanded sidebar). The tooltip and accessible name carry the label.
+ * A footer row: a fixed icon slot (the rail's icon column) with the label
+ * revealed to its right when the sidebar is expanded. Upgrade stays tinted.
  */
 function FooterAction({
   LinkComponent: Link,
@@ -122,17 +126,29 @@ function FooterAction({
 }: FooterActionProps) {
   const isUpgrade = variant === 'upgrade';
   const className = cn(
-    'inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring',
-    showLabel ? 'px-2.5' : 'w-9',
+    'flex h-9 w-full shrink-0 items-center justify-start gap-0 rounded-md px-0 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring',
     isUpgrade
       ? 'border border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:border-dynamic-purple/40 hover:bg-dynamic-purple/15'
       : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
   );
+  // The upgrade border takes 1px each side; the slot compensates so the icon
+  // keeps the rail's column.
   const inner = (
     <>
-      {children}
+      <span
+        className={cn(
+          'flex shrink-0 justify-center',
+          isUpgrade
+            ? 'w-[calc(var(--sidebar-rail-slot,2.9375rem)-2px)]'
+            : 'w-[var(--sidebar-rail-slot,2.9375rem)]'
+        )}
+      >
+        {children}
+      </span>
       {showLabel && (
-        <span className="truncate font-medium text-sm">{label}</span>
+        <span className="-ml-2 min-w-0 flex-1 truncate pr-2 text-start font-medium text-sm">
+          {label}
+        </span>
       )}
     </>
   );
@@ -163,6 +179,9 @@ function FooterAction({
       {inner}
     </button>
   );
+
+  // The label is visible when expanded; the rail needs the tooltip.
+  if (showLabel) return control;
 
   return (
     <Tooltip>
