@@ -4,6 +4,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
+import { GuestLobbyUpgrade } from './guest-lobby-upgrade';
 import { Lobby, type LobbyParticipant } from './lobby';
 
 type MediaDevice = 'microphone' | 'camera';
@@ -117,6 +118,9 @@ export function ConnectedLobby({
       participants={participants}
       transcriptionNotice={transcriptionNotice}
       waiting={room.state.admission === 'waiting'}
+      waitingExtra={
+        <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
+      }
     />
   );
 }

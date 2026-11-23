@@ -52,7 +52,11 @@ import {
   resolveMeetRoomMediaRole,
 } from './room-media-role';
 import { denied, outcome } from './room-outcome';
-import { isGuestRemovalBlocked } from './room-removed-guests';
+import {
+  isGuestRemovalBlocked,
+  pruneRemovedGuests,
+  recordRemovedGuest,
+} from './room-removed-guests';
 import { recordingMessage } from './room-recording';
 import { transcriptionAnnouncements } from './transcription';
 
@@ -101,7 +105,8 @@ export function admitOrHold(
     (token.guest || token.admission === 'lobby') &&
     !state.presence[token.userId] &&
     !state.approved?.[token.accountId ?? token.userId] &&
-    !(!token.guest && skipsLobby(state, token.accountId ?? token.userId))
+    !(!token.guest && skipsLobby(state, token.accountId ?? token.userId)) &&
+    !skipsLobbyAsVerifiedGuest(state, token, Date.parse(now))
   ) {
     if (
       Object.keys(state.waiting).length >= 104 &&
@@ -272,8 +277,18 @@ function decideParticipant(
   delete waiting[targetId];
 
   if (!admit) {
+    const blocked = blockAutoAdmission(state, pending.accountId ?? targetId);
+    // With verified-guest auto-admit on, a denied guest is banned like a
+    // removed one, which also pauses auto-admit for new guest ids.
     const next = {
-      ...blockAutoAdmission(state, pending.accountId ?? targetId),
+      ...(pending.guest && state.settings?.autoAdmitVerifiedGuests
+        ? recordRemovedGuest(
+            blocked,
+            pending.accountId ?? targetId,
+            Date.parse(now),
+            true
+          )
+        : blocked),
       waiting,
     };
     return outcome(next, {
@@ -478,6 +493,35 @@ export function skipsLobby(state: MeetRoomSnapshot, accountId: string) {
     !!state.settings?.skipLobby &&
     !state.settings.admissionClosed &&
     !state.deniedAutoAdmission?.includes(accountId) &&
+    (state.deniedAutoAdmission?.length ?? 0) < 256
+  );
+}
+
+/**
+ * Whether an anonymous guest skips the lobby: the host allows guests and
+ * explicitly admits verified guests automatically, admission is open, the
+ * guest passed a human check, and nobody removed or denied this guest.
+ * While any guest removal ban is active the room pauses guest auto-admit,
+ * because a removed guest can verify again under a new id.
+ * Separate from `skipsLobby`, which covers signed-in people only.
+ */
+export function skipsLobbyAsVerifiedGuest(
+  state: MeetRoomSnapshot,
+  token: Pick<
+    MeetRealtimeTokenPayload,
+    'guest' | 'guestTurnstileVerified' | 'accountId' | 'userId'
+  >,
+  nowMs: number
+) {
+  const id = token.accountId ?? token.userId;
+  return (
+    !pruneRemovedGuests(state.removedGuests, nowMs) &&
+    token.guest === true &&
+    token.guestTurnstileVerified === true &&
+    !!state.settings?.allowAnonymousGuests &&
+    !!state.settings.autoAdmitVerifiedGuests &&
+    !state.settings.admissionClosed &&
+    !state.deniedAutoAdmission?.includes(id) &&
     (state.deniedAutoAdmission?.length ?? 0) < 256
   );
 }

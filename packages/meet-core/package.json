@@ -408,6 +408,8 @@
     "./features/call/lib/guest-rate-limit.ts": "./src/features/call/lib/guest-rate-limit.ts",
     "./features/call/lib/guest-unverified-limit": "./src/features/call/lib/guest-unverified-limit.ts",
     "./features/call/lib/guest-unverified-limit.ts": "./src/features/call/lib/guest-unverified-limit.ts",
+    "./features/call/components/guest-verification-context": "./src/features/call/components/guest-verification-context.tsx",
+    "./features/call/components/guest-verification-context.tsx": "./src/features/call/components/guest-verification-context.tsx",
     "./features/call/components/guest-join": "./src/features/call/components/guest-join.tsx",
     "./features/call/components/guest-join.tsx": "./src/features/call/components/guest-join.tsx",
     "./features/call/lib/call-access": "./src/features/call/lib/call-access.ts",

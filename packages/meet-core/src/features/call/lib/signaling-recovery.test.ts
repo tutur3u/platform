@@ -118,3 +118,26 @@ it('keeps the first connection attempt as connecting while it retries', async ()
   expect(getSignalingRecovery('reconnecting')).toBe('reconnecting');
   signaling.close();
 });
+
+it('renews the session at once with a freshly resolved URL', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('WebSocket', Socket);
+  const urls = ['ws://first', 'ws://verified'];
+  const resolveUrl = vi.fn(() => urls.shift() ?? 'ws://later');
+  const signaling = new MeetSignaling({ resolveUrl, onMessage: vi.fn() });
+  signaling.connect();
+  await Promise.resolve();
+  Socket.instances[0]!.open();
+  const closed = vi.spyOn(Socket.instances[0]!, 'close');
+
+  signaling.renew();
+  await Promise.resolve();
+  expect(closed).toHaveBeenCalledWith(1000, 'session_renewed');
+  expect(resolveUrl).toHaveBeenCalledTimes(2);
+  expect(Socket.instances).toHaveLength(2);
+
+  signaling.close();
+  signaling.renew();
+  await Promise.resolve();
+  expect(Socket.instances).toHaveLength(2);
+});

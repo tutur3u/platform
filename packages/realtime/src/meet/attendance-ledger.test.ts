@@ -102,6 +102,100 @@ describe('attendance ledger', () => {
     expect(member.state.waiting[GUEST_ID]?.unverified).toBeUndefined();
   });
 
+  it('admits a verified guest at once only when the host opted in', () => {
+    const base = {
+      accountId: GUEST_ID,
+      admission: 'lobby' as const,
+      displayName: 'Lan',
+      guest: true as const,
+      role: 'speaker' as const,
+      userId: GUEST_ID,
+    };
+    const room = (settings: Record<string, boolean>) => ({
+      ...createMeetRoomSnapshot(),
+      settings: { shareNotes: false, ...settings },
+    });
+    const optedIn = room({
+      allowAnonymousGuests: true,
+      autoAdmitVerifiedGuests: true,
+    });
+    const verified = token({ ...base, guestTurnstileVerified: true });
+    const admitted = admitOrHold(optedIn as never, verified, NOW);
+    expect(admitted.state.presence[GUEST_ID]).toBeDefined();
+    expect(admitted.state.waiting[GUEST_ID]).toBeUndefined();
+
+    const unverified = admitOrHold(optedIn as never, token(base), NOW);
+    expect(unverified.state.waiting[GUEST_ID]?.unverified).toBe(true);
+    expect(unverified.state.presence[GUEST_ID]).toBeUndefined();
+
+    const afterRemoval = {
+      ...optedIn,
+      removedGuests: {
+        '11111111-1111-4111-8111-111111111111': Date.parse(NOW) + 60_000,
+      },
+    };
+    expect(
+      admitOrHold(afterRemoval as never, verified, NOW).state.presence[GUEST_ID]
+    ).toBeUndefined();
+
+    for (const settings of [
+      { allowAnonymousGuests: true },
+      { allowAnonymousGuests: true, skipLobby: true },
+      {
+        allowAnonymousGuests: true,
+        autoAdmitVerifiedGuests: true,
+        admissionClosed: true,
+      },
+    ] as Record<string, boolean>[]) {
+      const held = admitOrHold(room(settings) as never, verified, NOW);
+      expect(held.state.presence[GUEST_ID]).toBeUndefined();
+    }
+  });
+
+  it('pauses verified-guest auto-admit after the host denies a guest', () => {
+    const settings = {
+      shareNotes: false,
+      allowAnonymousGuests: true,
+      autoAdmitVerifiedGuests: true,
+    };
+    const host = token();
+    const unverified = token({
+      accountId: GUEST_ID,
+      admission: 'lobby',
+      displayName: 'Lan',
+      guest: true,
+      role: 'speaker',
+      userId: GUEST_ID,
+    });
+    const waiting = admitOrHold(
+      { ...createMeetRoomSnapshot(), settings } as never,
+      unverified,
+      NOW
+    );
+    const room = admitOrHold(waiting.state, host, NOW).state;
+    const denied = applyMeetRoomCommand(room, {
+      message: { type: 'admission.decide', admit: false, userId: GUEST_ID },
+      now: NOW,
+      token: host,
+    });
+    expect(denied.state.removedGuests?.[GUEST_ID]).toBeGreaterThan(
+      Date.parse(NOW)
+    );
+    const otherId = '22222222-2222-4222-8222-222222222222';
+    const rotated = token({
+      accountId: otherId,
+      admission: 'lobby',
+      displayName: 'Lan again',
+      guest: true,
+      guestTurnstileVerified: true,
+      role: 'speaker',
+      userId: otherId,
+    });
+    const retry = admitOrHold(denied.state, rotated, NOW);
+    expect(retry.state.presence[otherId]).toBeUndefined();
+    expect(retry.state.waiting[otherId]).toBeDefined();
+  });
+
   it('keeps lobby guests out until they are admitted, then stores the guest id and name', () => {
     const host = token();
     const guest = token({

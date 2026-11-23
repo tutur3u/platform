@@ -20,6 +20,8 @@ export interface UseMeetRoomOptions {
 export interface MeetRoomController extends ReturnType<
   typeof createRoomActions
 > {
+  /** Reconnects with a fresh token, e.g. after a waiting guest verified. */
+  renewSession: () => void;
   getAudioProcessing: () => import('./audio-processing').AudioProcessing;
   getAudioProcessingSettings: () => MediaTrackSettings | null;
   setAudioProcessing: (

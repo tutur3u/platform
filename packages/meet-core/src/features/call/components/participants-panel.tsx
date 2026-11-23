@@ -350,6 +350,23 @@ export function RoomPermissionToggles({
           )}
         </SettingsField>
       )}
+      {isHost && onSettingsChange && settings?.allowAnonymousGuests && (
+        <SettingsField
+          label={guestCopy('auto_admit_verified_title')}
+          description={guestCopy('auto_admit_verified_hint')}
+          layout="compact"
+        >
+          {(field) => (
+            <Switch
+              {...field}
+              checked={settings?.autoAdmitVerifiedGuests ?? false}
+              onCheckedChange={(value) =>
+                onSettingsChange({ autoAdmitVerifiedGuests: value })
+              }
+            />
+          )}
+        </SettingsField>
+      )}
     </>
   );
 }

@@ -10,7 +10,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { MAX_DISPLAY_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   filterDevicesByKind,
   startMicrophoneMeter,
@@ -136,7 +136,10 @@ export function Lobby({
   capturePending = false,
   presenceOnly = false,
   onPresenceChange,
+  waitingExtra,
 }: {
+  /** Shown under the admission notice while waiting for the host. */
+  waitingExtra?: ReactNode;
   defaultDisplayName: string;
   avatarUrl?: string;
   isGuest?: boolean;
@@ -541,6 +544,7 @@ export function Lobby({
               error={connectionError}
               waiting={waiting}
             />
+            {waiting ? waitingExtra : null}
 
             {isGuest ? (
               <div className="mt-5 space-y-2">

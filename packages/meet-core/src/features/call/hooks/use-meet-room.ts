@@ -662,6 +662,7 @@ export function useMeetRoom({
         publishPcRef.current,
         subscribePcRef.current
       ),
+    renewSession: () => signalingRef.current?.renew(),
     reconnectReceivingMedia: resetSubscriber,
     reconnectMedia: () => {
       resetSubscriber();

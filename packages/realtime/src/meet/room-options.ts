@@ -47,6 +47,8 @@ export const meetRoomSettingsPatchSchema = z.object({
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
+  /** Guests who passed a human check skip the lobby; off unless the host opts in. */
+  autoAdmitVerifiedGuests: z.boolean().optional(),
   admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
@@ -67,6 +69,8 @@ export const meetRoomSettingsSchema = z.object({
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
+  /** Guests who passed a human check skip the lobby; off unless the host opts in. */
+  autoAdmitVerifiedGuests: z.boolean().optional(),
   admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),

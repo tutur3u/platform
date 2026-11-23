@@ -471,6 +471,24 @@ export class MeetSignaling {
       });
   }
 
+  /**
+   * Reconnects at once with a freshly resolved URL, e.g. after the session
+   * gained verification while waiting, so the room sees the new token.
+   */
+  renew() {
+    if (this.closedByUs) return;
+    const socket = this.socket;
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    this.clearReadiness();
+    this.clearSocketWatch();
+    this.socket = null;
+    this.failAllPending(new Error('signaling_closed'));
+    socket?.close(1000, 'session_renewed');
+    this.lastAdmissionReconnectAt = null;
+    this.connect();
+  }
+
   close() {
     this.closedByUs = true;
     this.clearReadiness();

@@ -1,6 +1,7 @@
 import { CallEnded } from '@tuturuuu/meet-core/features/call/components/call-ended';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
 import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
+import { GuestVerificationProvider } from '@tuturuuu/meet-core/features/call/components/guest-verification-context';
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useTranslations } from 'next-intl';
@@ -27,7 +28,9 @@ export function RoomView({
         meetingTitle={model.meetingTitle}
         returnTo={model.returnTo}
         siteKey={model.siteKey}
-        scriptNonce={model.scriptNonce}
+        // The server render reads the response nonce like the root head
+        // scripts do; the browser never needs it again.
+        scriptNonce={model.scriptNonce ?? globalThis.__meetCspNonce?.()}
       />
     );
   if (model.kind === 'public-invite')
@@ -82,22 +85,33 @@ export function RoomView({
         siteKey={model.formsTurnstileSiteKey}
       />
     );
+  const guestVerification =
+    requiresAccount && model.formsTurnstileSiteKey
+      ? {
+          meetingId: meeting.id,
+          siteKey: model.formsTurnstileSiteKey,
+          verified:
+            'turnstileVerified' in access && access.turnstileVerified === true,
+        }
+      : null;
   return (
     <WorkspaceVisibilityProvider actorId={user.id}>
-      <CallShell
-        accountId={user.id}
-        defaultDisplayName={access.displayName}
-        defaultAvatarUrl={access.avatarUrl}
-        leaveHref={leaveHref}
-        canReadWorkspace={canReadWorkspace}
-        requiresAccount={requiresAccount}
-        formsEnabled={model.formsEnabled}
-        formsTurnstileSiteKey={model.formsTurnstileSiteKey}
-        classroomToolsEnabled={model.classroomToolsEnabled}
-        meetingId={meeting.id}
-        meetingName={meetingName}
-        wsId={meeting.ws_id}
-      />
+      <GuestVerificationProvider value={guestVerification}>
+        <CallShell
+          accountId={user.id}
+          defaultDisplayName={access.displayName}
+          defaultAvatarUrl={access.avatarUrl}
+          leaveHref={leaveHref}
+          canReadWorkspace={canReadWorkspace}
+          requiresAccount={requiresAccount}
+          formsEnabled={model.formsEnabled}
+          formsTurnstileSiteKey={model.formsTurnstileSiteKey}
+          classroomToolsEnabled={model.classroomToolsEnabled}
+          meetingId={meeting.id}
+          meetingName={meetingName}
+          wsId={meeting.ws_id}
+        />
+      </GuestVerificationProvider>
     </WorkspaceVisibilityProvider>
   );
 }
