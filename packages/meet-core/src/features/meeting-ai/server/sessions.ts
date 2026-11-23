@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/ai/meetings/transcript';
 import { MEETING_APP } from '../../../runtime';
 import { generateBilledMeetArtifact } from './artifact-billing';
+import { draftMeetAiNotes } from './draft-notes';
 import { meetingProviderTransport } from './provider-transport';
 import { readMeetingRoomPolicy } from './room-access';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
@@ -186,7 +187,7 @@ const actionSchema = z.object({
       }
     })
     .optional(),
-  action: z.enum(['start', 'finish', 'sharing']),
+  action: z.enum(['start', 'finish', 'sharing', 'draft']),
   shareNotes: z.boolean().optional(),
   shareNotesAfterMeeting: z.boolean().optional(),
   sessionId: z.uuid().optional(),
@@ -214,6 +215,18 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
   if (MEETING_APP !== 'parley' && !process.env.GOOGLE_GENERATIVE_AI_API_KEY)
     throw new MeetAiError(503, 'Meeting AI is not configured');
   const { action, sessionId } = parsed.data;
+  if (action === 'draft') {
+    if (!sessionId) throw new MeetAiError(400, 'Missing session');
+    return draftMeetAiNotes({
+      db,
+      meetingId,
+      wsId,
+      userId: user.id,
+      sessionId,
+      meetingStartedAt,
+      timezone: parsed.data.timezone,
+    });
+  }
   if (action === 'start') {
     const { data, error } = await db
       .from('meet_ai_sessions')

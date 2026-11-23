@@ -117,6 +117,28 @@ export function updateMeetAiSession(
     }
   );
 }
+export type MeetAiDraft = {
+  sessionId: string;
+  /** Completed transcript chunks the draft covers. */
+  basedOnChunks: number;
+  notes: MeetAiNotes | null;
+};
+/** Live notes for the host's running session; nothing is stored. */
+export function draftMeetAiNotes(
+  wsId: string,
+  meetingId: string,
+  payload: { sessionId: string; timezone?: string },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MeetAiDraft>(
+    path(wsId, meetingId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'draft', ...payload }),
+    }
+  );
+}
 export function uploadMeetAiChunk(
   wsId: string,
   meetingId: string,
