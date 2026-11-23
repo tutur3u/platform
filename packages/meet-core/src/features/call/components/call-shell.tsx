@@ -586,6 +586,7 @@ function CallShellContent({
             onMentionHandled={onMentionHandled}
             meetingId={meetingId}
             miraActive={!!state.liveAssistant}
+            qaLive={stage.isOpen(toolActivityId('live-qa'))}
             canManage={canManage}
             chat={state.chat}
             onClose={() => setDrawer(null)}

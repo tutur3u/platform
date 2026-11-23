@@ -3,6 +3,7 @@
 import { Ban, Check, ShieldCheck, TriangleAlert } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Switch } from '@tuturuuu/ui/switch';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
@@ -17,7 +18,8 @@ export type MiraPermissionsProps = {
 export function MiraPermissionsCard({
   enabled,
   onToggle,
-}: MiraPermissionsProps) {
+  className,
+}: MiraPermissionsProps & { className?: string }) {
   const t = useTranslations('meet.call.miraEverywhere.permissions');
   const inFlight = useRef(false);
   const [phase, setPhase] = useState<'idle' | 'pending' | 'error'>('idle');
@@ -39,7 +41,7 @@ export function MiraPermissionsCard({
   return (
     <section
       aria-label={t('title')}
-      className="rounded-xl border bg-muted/25 p-3"
+      className={cn('rounded-xl border bg-muted/25 p-3', className)}
     >
       <header className="mb-2 flex flex-wrap items-center gap-2">
         <ShieldCheck aria-hidden className="size-4 text-dynamic-purple" />

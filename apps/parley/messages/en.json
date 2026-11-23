@@ -4303,7 +4303,7 @@
       "cancel": "Cancel",
       "chat": "Chat",
       "chat_empty": "No messages yet. Say hello.",
-      "chat_placeholder": "Message everyone, or ask @Tuturuuu / @ttr / @mira",
+      "chat_placeholder": "Message everyone · @mira to ask Mira",
       "chat_send_failed": "Could not send your message.",
       "chat_sources": "Sources ({count})",
       "chat_usage_hint": "Mira uses your AI quota. Files use the room creator’s Drive storage.",
@@ -4962,7 +4962,11 @@
           "title": "Q&A",
           "unpin": "Unpin",
           "upvote": "Upvote. {count, plural, one {# vote} other {# votes}}",
-          "you_voted": "You voted"
+          "you_voted": "You voted",
+          "empty_all_answered": "All questions answered",
+          "empty_all_answered_hint": "New questions will show up here.",
+          "empty_hidden": "{count, plural, one {# question is hidden} other {# questions are hidden}}",
+          "empty_hidden_hint": "Choose Moderate to review them."
         },
         "penboard": {
           "title": "Pen whiteboard"
@@ -5182,7 +5186,14 @@
       "focus_view": "Focus on screen",
       "exit_focus_view": "Exit focus",
       "browser_fullscreen": "Browser full screen",
-      "exit_browser_fullscreen": "Exit full screen"
+      "exit_browser_fullscreen": "Exit full screen",
+      "chat_placeholder_qa": "Message everyone · questions go to Q&A",
+      "room_mira_chip_choose": "Mira · choose Continue",
+      "room_mira_chip_paused": "Mira · paused",
+      "room_mira_chip_pausing": "Mira · pausing",
+      "room_mira_chip_ready": "Mira · ready",
+      "room_mira_chip_waiting": "Mira · waiting for {count}",
+      "room_mira_details": "Details"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

@@ -69,6 +69,15 @@ When a workspace policy blocks Mira, the owner can open the setting directly
 if the workspace lacks a declaration. Other participants can ask the owner to
 check the setting. Each Mira feature still applies its own access policy.
 
+Room chat shows room Mira as one chip, for example **Mira · waiting for 2 ·
+Details**, with an icon for its state: choose Continue, waiting, ready, pausing
+or paused. **Details** opens a popover (Escape closes it and returns focus to the
+chip) that holds the full status, the 18+ note, **Continue** and **Pause** for
+the viewer, the Continue progress, and the capabilities the host sets. The
+consent rules are the same as before the chip: 18+, a per-person Continue, host
+set capabilities and Pause. Without room Mira the chip opens only the
+capabilities.
+
 Regression coverage (`*.test.tsx`): `mira-audience-settings`,
 `mira-workspace-off`, `call-settings-mira`, `private-notice`, `personal-chat`,
 `chat-assistant-notice` and `room-mira-notice`.

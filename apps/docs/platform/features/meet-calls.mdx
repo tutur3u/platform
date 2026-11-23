@@ -760,6 +760,13 @@ Text loses control and bidirectional override characters before it is stored.
   guest, so the panel marks a vote with a filled button and a **You voted**
   chip. Pages from before this change read the empty list and show 0 votes
   until they reload.
+- **Empty states.** With no open question, a list that has answered questions
+  reads **All questions answered**; **No questions yet** appears only when
+  nothing was asked. A host whose questions are all hidden by moderation sees
+  how many are hidden and is pointed to **Moderate**; participants never see
+  hidden questions. While the Q&A is open on a person's stage, the room chat
+  placeholder reads **Message everyone · questions go to Q&A**. Coverage:
+  `qa-empty.test.tsx` and `chat-placeholder.test.tsx`.
 - **Answers.** By default everyone admitted may answer. A host can limit answers
   to hosts. Answers hold up to 1,000 characters and up to four files; a question
   takes up to 20 answers. The author or a host can delete an answer. Questions

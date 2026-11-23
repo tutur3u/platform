@@ -23,6 +23,7 @@ export function SidePanel({
   onMentionHandled,
   meetingId,
   miraActive = false,
+  qaLive = false,
   approved,
   onForget,
   canManage,
@@ -48,6 +49,8 @@ export function SidePanel({
   onMentionHandled?: () => void;
   meetingId: string;
   miraActive?: boolean;
+  /** The Q&A is open on this person's stage. */
+  qaLive?: boolean;
   approved: MeetApprovedParticipant[];
   onForget: (userId: string) => void;
   canManage: boolean;
@@ -96,6 +99,7 @@ export function SidePanel({
           mentionRequest={mentionRequest}
           onMentionHandled={onMentionHandled}
           solo={participants.length === 1}
+          qaLive={qaLive}
           meetingId={meetingId}
           chat={chat}
           onSendChat={onSendChat}

@@ -4303,7 +4303,7 @@
       "cancel": "Hủy",
       "chat": "Trò chuyện",
       "chat_empty": "Chưa có tin nhắn. Hãy chào mọi người.",
-      "chat_placeholder": "Nhắn cho mọi người hoặc hỏi @Tuturuuu / @ttr / @mira",
+      "chat_placeholder": "Nhắn cho mọi người · @mira để hỏi Mira",
       "chat_send_failed": "Không thể gửi tin nhắn.",
       "chat_sources": "Nguồn ({count})",
       "chat_usage_hint": "Mira dùng hạn mức AI của bạn. Tệp dùng dung lượng Drive của người tạo phòng.",
@@ -4962,7 +4962,11 @@
           "title": "Hỏi đáp",
           "unpin": "Bỏ ghim",
           "upvote": "Bình chọn. {count} lượt bình chọn",
-          "you_voted": "Bạn đã bình chọn"
+          "you_voted": "Bạn đã bình chọn",
+          "empty_all_answered": "Đã trả lời hết các câu hỏi",
+          "empty_all_answered_hint": "Câu hỏi mới sẽ hiện ở đây.",
+          "empty_hidden": "{count, plural, other {# câu hỏi đang bị ẩn}}",
+          "empty_hidden_hint": "Chọn Kiểm duyệt để xem lại."
         },
         "penboard": {
           "title": "Bảng vẽ bút"
@@ -5182,7 +5186,14 @@
       "focus_view": "Tập trung vào màn hình",
       "exit_focus_view": "Thoát chế độ tập trung",
       "browser_fullscreen": "Toàn màn hình trình duyệt",
-      "exit_browser_fullscreen": "Thoát toàn màn hình"
+      "exit_browser_fullscreen": "Thoát toàn màn hình",
+      "chat_placeholder_qa": "Nhắn cho mọi người · câu hỏi gửi vào Hỏi đáp",
+      "room_mira_chip_choose": "Mira · chọn Tiếp tục",
+      "room_mira_chip_paused": "Mira · đã tạm dừng",
+      "room_mira_chip_pausing": "Mira · đang tạm dừng",
+      "room_mira_chip_ready": "Mira · sẵn sàng",
+      "room_mira_chip_waiting": "Mira · đang chờ {count}",
+      "room_mira_details": "Chi tiết"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

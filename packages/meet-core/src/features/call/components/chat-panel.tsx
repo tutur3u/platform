@@ -149,6 +149,7 @@ export function ChatPanel({
   meetingId,
   wsId,
   mira,
+  qaLive = false,
 }: {
   mentionRequest?: number;
   onMentionHandled?: () => void;
@@ -161,6 +162,8 @@ export function ChatPanel({
   /** The meeting workspace, whose owner decides whether Mira is on. */
   wsId?: string;
   mira?: RoomMira;
+  /** The Q&A is open on this person's stage, so questions belong there. */
+  qaLive?: boolean;
 }) {
   const t = useTranslations('meet.call');
   const tm = useTranslations('meet.call.miraEverywhere');
@@ -449,10 +452,15 @@ export function ChatPanel({
         )}
         <div ref={bottom} />
         <div className="mt-3">
-          <RoomMiraNotice meetingId={meetingId} />
-        </div>
-        <div className="mt-3">
-          <MiraPermissionsCard {...mira?.permissions} />
+          <RoomMiraNotice
+            meetingId={meetingId}
+            details={
+              <MiraPermissionsCard
+                {...mira?.permissions}
+                className="border-0 bg-transparent p-0"
+              />
+            }
+          />
         </div>
       </ScrollArea>
       <form
@@ -562,7 +570,7 @@ export function ChatPanel({
           rows={2}
           disabled={busy}
           aria-label={t('chat')}
-          placeholder={t('chat_placeholder')}
+          placeholder={t(qaLive ? 'chat_placeholder_qa' : 'chat_placeholder')}
           className="max-h-32 min-h-16 resize-none"
           onKeyDown={(event) => {
             if (event.nativeEvent.isComposing) return;

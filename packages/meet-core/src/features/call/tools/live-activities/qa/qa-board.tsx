@@ -10,9 +10,15 @@ import { useActivityPane } from '../../../stage-layout/activity-pane-context';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ToolAction } from '../../tool-ui';
 import { QaComposer } from './qa-composer';
+import { QaEmpty, qaEmptyKind } from './qa-empty';
 import type { QaBoardContext } from './qa-parts';
 import { QaQuestionCard } from './qa-question-card';
-import { LIVE_QA_SORTS, type LiveQaSort, sortLiveQa } from './qa-sort';
+import {
+  LIVE_QA_SORTS,
+  type LiveQaSort,
+  liveQaCounts,
+  sortLiveQa,
+} from './qa-sort';
 import type { LiveQaView } from './qa-store';
 
 const ERRORS: Record<string, string> = {
@@ -111,7 +117,8 @@ export function QaBoard({
   const questions = sortLiveQa(snapshot.questions, sort, {
     includeHidden: reviewing,
   });
-  const hiddenCount = snapshot.questions.filter((q) => q.hidden).length;
+  const counts = liveQaCounts(snapshot.questions);
+  const hiddenCount = counts.hidden;
   const error = localError ?? view.error;
   const allowAnonymous = !!settings?.anonymous;
   // The controls always sit at the top of the list's own container, so crossing
@@ -220,9 +227,10 @@ export function QaBoard({
             ))}
           </ul>
         ) : (
-          <p className="rounded-2xl border border-dashed px-4 py-8 text-center text-muted-foreground text-sm">
-            {t(sort === 'answered' ? 'empty_answered' : 'empty')}
-          </p>
+          <QaEmpty
+            kind={qaEmptyKind(sort, counts, { isHost, reviewing })}
+            hiddenCount={counts.hidden}
+          />
         )}
       </div>
       <div
