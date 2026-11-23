@@ -2,12 +2,20 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(15);
+select plan(21);
 
 select has_table(
   'private',
   'external_account_links',
   'external account link table exists'
+);
+
+select has_index(
+  'private',
+  'external_account_links',
+  'external_account_links_user_idx',
+  'user_id',
+  'every link of a user is indexed, revoked history included'
 );
 
 select ok(
@@ -112,6 +120,56 @@ select throws_ok(
   '23514',
   null,
   'a revoked link names who revoked it'
+);
+
+select throws_ok(
+  $$
+    insert into private.external_account_links (user_id, provider, external_subject, revoked_by)
+    values ('e3a10000-0000-4000-8000-00000000000b', 'upskii', 'upskii-user-8', 'user')
+  $$,
+  '23514',
+  null,
+  'a link that is not revoked names no revoker'
+);
+
+select throws_ok(
+  $$
+    insert into private.external_account_links (user_id, provider, external_subject)
+    values ('e3a10000-0000-4000-8000-00000000000b', 'other-app', 'other-user-1')
+  $$,
+  '23514',
+  null,
+  'only registered providers can link'
+);
+
+select throws_ok(
+  $$
+    insert into private.external_account_links (user_id, provider, external_subject)
+    values ('e3a10000-0000-4000-8000-00000000000b', 'upskii', '')
+  $$,
+  '23514',
+  null,
+  'an external subject is never empty'
+);
+
+select throws_ok(
+  $$
+    insert into private.external_account_links (user_id, provider, external_subject)
+    values ('e3a10000-0000-4000-8000-00000000000b', 'upskii', repeat('s', 129))
+  $$,
+  '23514',
+  null,
+  'an external subject is at most 128 characters'
+);
+
+select throws_ok(
+  $$
+    insert into private.external_account_links (user_id, provider, external_subject, external_email)
+    values ('e3a10000-0000-4000-8000-00000000000b', 'upskii', 'upskii-user-6', repeat('e', 321))
+  $$,
+  '23514',
+  null,
+  'an external email is at most 320 characters'
 );
 
 update private.external_account_links

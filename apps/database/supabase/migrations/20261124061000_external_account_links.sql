@@ -7,6 +7,14 @@
 -- enabled with no policies, so any role other than the service role is denied.
 -- Rows hold no credentials. Revoked rows are kept as the link history, with
 -- external_email cleared on revoke.
+--
+-- The foreign key to auth.users takes a SHARE ROW EXCLUSIVE lock on that table
+-- while it is created, so the migration fails fast instead of queueing sign-ins
+-- behind a lock it cannot get.
+
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
 
 create table private.external_account_links (
   id uuid primary key default gen_random_uuid(),
@@ -42,6 +50,11 @@ create unique index external_account_links_active_subject_idx
   on private.external_account_links (provider, external_subject)
   where revoked_at is null;
 
+-- Not partial: deleting a Tuturuuu account finds every link it owns, revoked
+-- history included, without scanning the table while holding a lock.
+create index external_account_links_user_idx
+  on private.external_account_links (user_id);
+
 alter table private.external_account_links enable row level security;
 
 grant usage on schema private to service_role;
@@ -51,3 +64,5 @@ from public, anon, authenticated, service_role;
 
 grant select, insert, update on table private.external_account_links
 to service_role;
+
+commit;

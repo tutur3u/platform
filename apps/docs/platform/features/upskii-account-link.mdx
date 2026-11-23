@@ -96,12 +96,15 @@ that started it.
 ## Storage
 
 Tuturuuu stores `private.external_account_links`
-(migration `20261124020000_external_account_links.sql`), one row per link:
+(migration `20261124061000_external_account_links.sql`), one row per link:
 `id`, `user_id` (references `auth.users` with `on delete cascade`), `provider`
 (`upskii` only), `external_subject` (the Upskii user id), `external_email`,
 `scopes` (read scopes only), `linked_at`, `revoked_at`, `revoked_by` (`user`,
 `provider` or `admin`). Partial unique indexes on `(user_id, provider)` and
-`(provider, external_subject)` apply only while `revoked_at` is null. RLS is
+`(provider, external_subject)` apply only while `revoked_at` is null; a plain
+index on `user_id` keeps account deletion from scanning revoked history. The
+migration runs with a 5-second lock timeout so it never queues sign-ins behind
+the `auth.users` foreign key. RLS is
 on with no policies; `anon` and `authenticated` have no access, and
 `service_role` has `select`, `insert` and `update` only, so history cannot be
 deleted through the API. Revoking a link clears `external_email`; the revoked
