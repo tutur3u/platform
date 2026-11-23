@@ -110,6 +110,10 @@ const allowedSatelliteLocalApiRoutes = new Set([
   // Account-free guest join: host opt-in, plan check and per-room rate limit in
   // meet-core guest-access, admitted through the room lobby.
   'apps/meet/src/app/api/meet-call/[meetingId]/guest/route.ts',
+  // Account-free jigsaw human check: per-network, cross-meeting and per-room
+  // budgets, adaptive abuse scoring, sealed single-use challenges and passes.
+  'apps/meet/src/app/api/meet-call/[meetingId]/guest/human-check/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/guest/human-check/verify/route.ts',
   // Meet room services use app-session auth plus the signed Durable Object admission/admin policy.
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/route.ts',
   // Requester-only AI: no room history or room publication.
