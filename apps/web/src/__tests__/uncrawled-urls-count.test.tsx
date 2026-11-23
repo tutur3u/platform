@@ -44,7 +44,7 @@ describe('UncrawledUrlsCount', () => {
       wrapper: createWrapper(),
     });
     // Look for the skeleton class or structure
-    expect(container.querySelector('.animate-pulse')).toBeTruthy();
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeTruthy();
   });
 
   it('renders data correctly after fetch', async () => {

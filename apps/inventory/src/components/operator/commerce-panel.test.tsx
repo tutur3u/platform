@@ -66,7 +66,7 @@ describe('CommercePanel', () => {
     expect(html).not.toContain('trigger-sales');
     expect(html).not.toContain('promotions');
     expect(html).toContain('revenueShare');
-    expect(html).toContain('animate-pulse');
+    expect(html).toContain('data-slot="skeleton"');
     expect(html).not.toContain('emptyDescriptions.sales');
   });
   it.each([

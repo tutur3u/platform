@@ -1,13 +1,27 @@
-import { cn } from '@tuturuuu/utils/format';
-
-function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="skeleton"
-      className={cn('animate-pulse rounded-md bg-primary/10', className)}
-      {...props}
-    />
-  );
-}
-
-export { Skeleton };
+/**
+ * Shared loading-skeleton kit. Prefer seeding real data (SSR or initial query
+ * data) so no placeholder is needed; when one is, show a layout-matched
+ * skeleton inside a `LoadingRegion` instead of visible loading copy.
+ */
+export {
+  SkeletonCard,
+  SkeletonList,
+  SkeletonListRow,
+  SkeletonSelectorTrigger,
+  SkeletonSidebarItem,
+  SkeletonTableRows,
+} from './skeleton-layouts';
+export type {
+  LoadingRegionProps,
+  SkeletonLineProps,
+  SkeletonTextSize,
+} from './skeleton-primitive';
+export {
+  FadeIn,
+  LoadingRegion,
+  Skeleton,
+  SkeletonAvatar,
+  SkeletonLine,
+  SkeletonText,
+  skeletonClassName,
+} from './skeleton-primitive';

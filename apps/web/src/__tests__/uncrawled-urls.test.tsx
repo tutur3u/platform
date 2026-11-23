@@ -72,7 +72,7 @@ describe('UncrawledUrls', () => {
     });
 
     // Check for skeleton elements
-    expect(container.querySelector('.animate-pulse')).toBeTruthy();
+    expect(container.querySelector('[data-slot="skeleton"]')).toBeTruthy();
   });
 
   it('renders list of urls after fetch', async () => {

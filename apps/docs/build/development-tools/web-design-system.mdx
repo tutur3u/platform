@@ -316,6 +316,41 @@ bundles and the app and package sources and fails on a brand-prefixed home label
 | Saving | Pending action and duplicate-submission prevention. | Success and failure feedback match the existing save model. |
 | Read-only or denied | Readable values and an understandable permission state. | No misleading editable control or inaccessible copy affordance. |
 
+### Loading states
+
+Loading states show placeholders, not visible "Loading" copy. In order of
+preference:
+
+1. Seed real data so nothing loads on first paint: render on the server, or
+   pass `initialData` / an `initialWorkspace`-style prop into the client query.
+2. Otherwise render a layout-matched skeleton from `@tuturuuu/ui/skeleton`
+   inside `LoadingRegion`. Its `srLabel` (translated) is the only loading
+   text, and only screen readers get it (`role="status"`, which is polite). Put
+   `aria-busy` on the container whose content is loading, never on the status
+   region itself, because a busy live region suppresses its own announcement.
+3. "Load more" and pending buttons keep their label and add an inline spinner.
+   They do not swap the label for loading text.
+
+The kit's `Skeleton`, `SkeletonLine`, `SkeletonText` and `SkeletonAvatar`
+primitives copy line-box and avatar sizes. `SkeletonCard`, `SkeletonList` /
+`SkeletonListRow`, `SkeletonTableRows`, `SkeletonSidebarItem` and
+`SkeletonSelectorTrigger` copy the padding and height of the shared component
+they stand in for, so swapping in the real content causes no layout shift.
+The shimmer is a transform on a pseudo-element over `bg-primary/10`, and it
+stops under `prefers-reduced-motion`. Wrap the real content in `FadeIn`
+(200 ms, CSS only) when it replaces a skeleton. Never add an artificial delay.
+
+`scripts/check-visible-loading-text.js` enforces this rule and runs in the
+root script tests. Its baseline
+(`scripts/visible-loading-text-baseline.json`) lists the files that still
+render loading copy. A file that gains occurrences fails the check; removals
+only print a notice. Run
+`node scripts/check-visible-loading-text.js --write-baseline` to tighten the
+baseline, or after moving existing text between files. It refuses to raise the
+repo-wide total. For text that
+is real content, such as a "still connecting, check your network" notice, mark
+the line `// loading-text-allowed: <reason>`.
+
 ### Not-found and error pages
 
 Every app renders unknown paths (404) and uncaught render errors (500) with
