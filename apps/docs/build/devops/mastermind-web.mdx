@@ -1,7 +1,7 @@
 ---
 title: "Mastermind web"
 description: "Owner command center, request authentication, apex-path security design and held Worker publication."
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-23"
 audience: developers
 ---
 
@@ -90,8 +90,15 @@ TanStack Query; route changes between locales show a fixed skeleton.
 
 ## Request admission
 
-The Worker is the only gate: no Cloudflare Access application fronts the host,
-and no unsigned header names the user. The session comes from the host cookie
+The Worker is the authorization gate, and no unsigned header names the user.
+A Cloudflare Access application (`Mastermind`, owner email only, email
+one-time code, 24-hour session) has fronted the host since 21 Nov 2026 as an
+outer fence. It is temporary: it adds a second, separate login, against the
+one-central-session policy, and is held only until the SEC-01 and SEC-03
+sign-in enforcement switches are on and verified. Removing it is a
+release-authority packet that captures the application as its preimage first.
+The Worker never reads `Cf-Access-*` headers, so admission does not depend on
+it. The session comes from the host cookie
 or a Bearer credential, signed for target `mastermind` either way. Tuturuuu Auth, with its MFA, decides who
 signed in; the Worker decides what each verified session may open. Every
 path, including assets and server functions, passes the Worker first.
@@ -447,9 +454,12 @@ Provisioned outside the source, by name: the Worker custom domain
 `mastermind.tuturuuu.com` (DNS), the three Worker secrets, the
 `mastermind-production` environment with `MASTERMIND_CLOUDFLARE_API_TOKEN`,
 the variable `MASTERMIND_HOST_ATTACHED` and, on the gateway,
-`GATEWAY_MASTERMIND_REDIRECT`. No Cloudflare Access application covers the
-host: Tuturuuu Auth, with MFA, is the only sign-in, so Access would only add a
-second login without adding an authority the Worker lacks.
+`GATEWAY_MASTERMIND_REDIRECT`. The temporary Cloudflare Access application
+described under Request admission also covers the host. Because Access sits
+before the Worker, a curl probe without an Access session gets a 302 to the
+Access login rather than the Worker's answer. Verify the Worker's own
+behaviour (the 308 for `/en/...`, notices, sign-in) with the emitted-Worker
+acceptance or with an owner browser session.
 
 A real-browser smoke that loads, refreshes and answers through the compiled
 server functions, MFA and live permission acceptance, and the revocation
