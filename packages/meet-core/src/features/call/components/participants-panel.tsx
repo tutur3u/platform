@@ -322,7 +322,9 @@ export function RoomPermissionToggles({
           <SettingsField
             key={key}
             label={labels(label)}
-            description={key === 'skipLobby' ? labels('skip_lobby_hint') : undefined}
+            description={
+              key === 'skipLobby' ? labels('skip_lobby_hint') : undefined
+            }
             layout="compact"
           >
             {(field) => (

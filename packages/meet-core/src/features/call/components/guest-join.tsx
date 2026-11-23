@@ -49,6 +49,15 @@ export function guestJoinFailure(
   return 'network';
 }
 
+/** The nonce of the server-rendered Turnstile script, in the browser only. */
+function renderedScriptNonce() {
+  if (typeof document === 'undefined') return undefined;
+  const script = document.getElementById('cf-turnstile-script');
+  if (!(script instanceof HTMLScriptElement)) return undefined;
+  // Browsers hide the attribute after parsing and expose the property.
+  return script.nonce || script.getAttribute('nonce') || undefined;
+}
+
 export function MeetGuestJoin({
   meetingId,
   meetingTitle,
@@ -68,6 +77,9 @@ export function MeetGuestJoin({
   // included) so the check starts loading while the guest types a name.
   preconnect(TURNSTILE_ORIGIN);
   prefetchDNS(TURNSTILE_ORIGIN);
+  // The browser renders the same early script the server sent (its nonce is
+  // readable from the element), so hydration never replaces the form.
+  const earlyScriptNonce = scriptNonce ?? renderedScriptNonce();
   const t = useTranslations('meet.call.guest_join');
   const router = useRouter();
   const [name, setName] = useState('');
@@ -140,11 +152,11 @@ export function MeetGuestJoin({
 
   return (
     <main className="grid min-h-dvh place-items-center bg-background p-4">
-      {scriptNonce ? (
+      {earlyScriptNonce ? (
         <script
           async
           id="cf-turnstile-script"
-          nonce={scriptNonce}
+          nonce={earlyScriptNonce}
           src={GUEST_TURNSTILE_SCRIPT_SRC}
         />
       ) : null}
@@ -177,7 +189,7 @@ export function MeetGuestJoin({
           />
           <p className="text-muted-foreground text-xs">{t('name_hint')}</p>
         </div>
-        <div className="space-y-2">
+        <div className="min-h-[93px] space-y-2">
           <GuestTurnstile
             key={widget}
             meetingId={meetingId}
@@ -196,7 +208,12 @@ export function MeetGuestJoin({
             }
           >
             {state.kind === 'verified' || state.kind === 'submitting' ? (
-              <ShieldCheck aria-hidden="true" className="size-4" />
+              <ShieldCheck aria-hidden="true" className="size-4 text-primary" />
+            ) : state.kind === 'verifying' ? (
+              <Loader2
+                aria-hidden="true"
+                className="size-4 motion-safe:animate-spin"
+              />
             ) : null}
             {status}
           </p>

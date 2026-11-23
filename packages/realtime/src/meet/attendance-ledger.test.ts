@@ -209,7 +209,10 @@ describe('attendance ledger', () => {
         role: 'speaker',
         userId,
       });
-    let room = { ...createMeetRoomSnapshot(), settings: { shareNotes: false, allowAnonymousGuests: true } } as never;
+    let room = {
+      ...createMeetRoomSnapshot(),
+      settings: { shareNotes: false, allowAnonymousGuests: true },
+    } as never;
     room = admitOrHold(room, guest(GUEST_ID, true), NOW).state as never;
     room = admitOrHold(room, guest(otherId, false), NOW).state as never;
     room = admitOrHold(room, host, NOW).state as never;
@@ -226,7 +229,10 @@ describe('attendance ledger', () => {
   it('keeps a legacy waiting guest without the verified flag waiting when Admit everyone turns on', () => {
     const host = token();
     const legacyId = '44444444-4444-4444-8444-444444444444';
-    let room = { ...createMeetRoomSnapshot(), settings: { shareNotes: false, allowAnonymousGuests: true } } as never;
+    let room = {
+      ...createMeetRoomSnapshot(),
+      settings: { shareNotes: false, allowAnonymousGuests: true },
+    } as never;
     room = admitOrHold(room, host, NOW).state as never;
     const state = room as unknown as { waiting: Record<string, unknown> };
     state.waiting = {

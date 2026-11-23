@@ -27,9 +27,15 @@ function fixture(include, routes) {
 test('reports route handlers missing from the Meet app tsconfig', () => {
   const root = fixture(
     ['src/app/api/a/route.ts'],
-    ['src/app/api/a/route.ts', 'src/app/api/[id]/b/route.ts', 'src/app/page.tsx']
+    [
+      'src/app/api/a/route.ts',
+      'src/app/api/[id]/b/route.ts',
+      'src/app/page.tsx',
+    ]
   );
-  assert.deepEqual(findUnlistedMeetRoutes(root), ['src/app/api/[id]/b/route.ts']);
+  assert.deepEqual(findUnlistedMeetRoutes(root), [
+    'src/app/api/[id]/b/route.ts',
+  ]);
 });
 
 test('passes when every route handler is listed', () => {

@@ -318,3 +318,26 @@ it('server-renders the Turnstile script under the CSP nonce', () => {
     'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&amp;render=explicit'
   );
 });
+
+it('hydrates the server-rendered early script without replacing the form', async () => {
+  const props = {
+    meetingId: '7f2a528e-3bff-40ee-bfda-5b944ad03ed8',
+    returnTo: '/r/abc',
+    siteKey: 'site-key',
+  };
+  const host = document.createElement('div');
+  host.innerHTML = renderToString(
+    <MeetGuestJoin {...props} scriptNonce="n-1" />
+  );
+  document.body.append(host);
+  const input = host.querySelector('input') as HTMLInputElement;
+  const recoverable = vi.fn();
+  await act(async () => {
+    hydrateRoot(host, <MeetGuestJoin {...props} />, {
+      onRecoverableError: recoverable,
+    });
+  });
+  expect(recoverable).not.toHaveBeenCalled();
+  expect(host.querySelector('input')).toBe(input);
+  host.remove();
+});

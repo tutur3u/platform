@@ -927,8 +927,12 @@ next token.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.
-- The join page preconnects to `challenges.cloudflare.com` from the document
-  head, so the check starts loading while the guest types a name.
+- The join page server-renders the Turnstile script under the response's CSP
+  nonce and preconnects to `challenges.cloudflare.com`, so the check starts
+  loading while the page hydrates. A name typed before hydration is kept, and
+  the browser renders the same early script so hydration never replaces the
+  form. The status line shows a spinner until a token arrives, then
+  **Verified**; the widget area keeps its height so nothing jumps.
 - The join page never leaves a guest on an empty check. **Ask the host to let
   you in** is always shown as a secondary action next to the Turnstile widget.
   If no Turnstile token arrives within 5 seconds, the page keeps the widget (the
