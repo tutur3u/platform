@@ -88,6 +88,18 @@ vi.mock('@tuturuuu/ui/avatar', () => ({
   AvatarImage: () => null,
 }));
 
+vi.mock('@tuturuuu/ui/custom/satellite-account-switcher-menu', () => ({
+  SatelliteAccountSwitcherMenu: ({
+    onManageAccounts,
+  }: {
+    onManageAccounts?: () => void;
+  }) => (
+    <button type="button" onClick={onManageAccounts}>
+      account_switcher.manage_accounts
+    </button>
+  ),
+}));
+
 vi.mock('@tuturuuu/ui/custom/workspace-select', () => ({
   WorkspaceSelect: () => null,
 }));
@@ -188,7 +200,7 @@ vi.mock('@/components/settings/settings-dialog', () => ({
 }));
 
 vi.mock('@/context/account-switcher-context', () => ({
-  useAccountSwitcher: () => ({ accounts: [] }),
+  useAccountSwitcher: () => ({ accounts: [], logout: vi.fn() }),
 }));
 
 vi.mock('@/lib/api-fetch', () => ({
@@ -198,13 +210,6 @@ vi.mock('@/lib/api-fetch', () => ({
 vi.mock('../../app/[locale]/(dashboard)/_components/language-wrapper', () => ({
   LanguageWrapper: () => null,
 }));
-
-vi.mock(
-  '../../app/[locale]/(dashboard)/_components/logout-dropdown-item',
-  () => ({
-    LogoutDropdownItem: () => null,
-  })
-);
 
 vi.mock(
   '../../app/[locale]/(dashboard)/_components/system-language-wrapper',

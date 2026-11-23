@@ -1,47 +1,23 @@
 'use client';
 
-import {
-  Globe,
-  Home,
-  Medal,
-  Palette,
-  Settings,
-  Trophy,
-  User,
-} from '@tuturuuu/icons';
+import { Home, Medal, Trophy, User } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import {
-  AccountHubActionItems,
-  AccountNotificationsMenuItem,
-  AccountUnreadBadge,
-  useAccountHubLabel,
-} from '@tuturuuu/ui/custom/account-hub-ui';
-import {
-  useAccountHub,
-  useSidebarFooter,
-} from '@tuturuuu/ui/custom/sidebar-footer-context';
+import { SatelliteAccountSwitcherMenu } from '@tuturuuu/ui/custom/satellite-account-switcher-menu';
+import { SatelliteUserMenu } from '@tuturuuu/ui/custom/satellite-user-menu';
+import { SatelliteUserMenuItems } from '@tuturuuu/ui/custom/satellite-user-menu-items';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import { createLogoutConfirmationUrl } from '@tuturuuu/utils/logout-target';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { TTR_URL } from '@/constants/common';
 import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
 import UserSettingsDialog from './settings-dialog';
@@ -50,177 +26,127 @@ import UserPresenceIndicator from './user-presence-indicator';
 export default function UserNavClient({
   user,
   locale,
-  hideMetadata: hideMetadataProp = false,
+  hideMetadata = false,
 }: {
   user: WorkspaceUser | null;
   locale: string | undefined;
   hideMetadata?: boolean;
 }) {
   const t = useTranslations();
-  const [open, setOpen] = useState(false);
-  // In the expanded sidebar footer the name and email return beside the avatar.
-  const hideMetadata = hideMetadataProp && !useSidebarFooter().expanded;
-  const hub = useAccountHub();
-  const displayName = user?.display_name || user?.handle || undefined;
-  const triggerLabel = useAccountHubLabel(
-    hideMetadata ? displayName : undefined,
-    displayName || user?.email || ''
-  );
-  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const accountT = useTranslations('account_switcher');
+  const router = useRouter();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const name = user?.display_name || user?.handle || t('common.unnamed');
+
+  const logout = () => {
+    router.push(
+      createLogoutConfirmationUrl({
+        centralUrl: TTR_URL,
+        appOrigin: window.location.origin,
+        locale: document.documentElement.lang,
+      })
+    );
+  };
 
   return (
     <>
       {user && (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
           <UserSettingsDialog user={user} />
         </Dialog>
       )}
-
-      <DropdownMenu
-        modal={false}
-        onOpenChange={(open) => {
-          if (open && hub) hub.anchorRef.current = menuTrigger.current;
-        }}
+      <SatelliteUserMenu
+        name={name}
+        email={user?.email}
+        avatarUrl={user?.avatar_url}
+        hideMetadata={hideMetadata}
+        online={Boolean(user)}
+        presence={
+          user ? (
+            <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
+          ) : undefined
+        }
       >
-        <DropdownMenuTrigger asChild>
-          <button
-            ref={menuTrigger}
-            aria-label={triggerLabel}
-            data-slot="account-trigger"
-            type="button"
-            className={cn(
-              'flex h-10 w-full gap-0 rounded-md p-0 text-start transition',
-              hideMetadata
-                ? 'items-center justify-center'
-                : 'items-center justify-start hover:bg-foreground/5'
-            )}
-          >
-            <span className="flex h-full w-[var(--sidebar-rail-slot,2.5rem)] shrink-0 items-center justify-center">
-              <Avatar className="relative cursor-pointer overflow-visible font-semibold">
-                <AvatarImage
-                  src={user?.avatar_url ?? undefined}
-                  className="overflow-clip rounded-lg"
-                />
-                <AvatarFallback className="rounded-lg font-semibold">
-                  {user?.display_name ? (
-                    getInitials(user.display_name)
-                  ) : (
-                    <User className="h-5 w-5" />
-                  )}
-                </AvatarFallback>
-                <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
-                <AccountUnreadBadge />
-              </Avatar>
-            </span>
-            {hideMetadata || (
-              <div className="flex w-full flex-col items-start justify-center pr-1">
-                <div className="line-clamp-1 break-all font-semibold text-sm">
-                  {user?.display_name || user?.handle || t('common.unnamed')}
-                </div>
-                <div className="line-clamp-1 break-all text-xs opacity-70">
-                  {user?.email}
-                </div>
-              </div>
-            )}
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="w-56"
-          side="right"
-          align="end"
-          forceMount
-        >
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col">
-              <Link
-                href={user ? `/profile/${user.id}` : '/settings/account'}
-                className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
+        <SatelliteUserMenuItems
+          t={t}
+          signedIn={Boolean(user)}
+          settings={
+            user
+              ? {
+                  label: t('common.settings'),
+                  onOpen: () => setSettingsOpen(true),
+                }
+              : undefined
+          }
+          appItems={
+            <>
+              <NovaLink href="/home" icon={<Home className="h-4 w-4" />}>
+                {t('common.home')}
+              </NovaLink>
+              {user && (
+                <NovaLink
+                  href={`/profile/${user.id.replace(/-/g, '')}`}
+                  icon={<User className="h-4 w-4" />}
+                >
+                  {t('common.profile')}
+                </NovaLink>
+              )}
+              <NovaLink
+                href="/challenges"
+                icon={<Trophy className="h-4 w-4" />}
               >
-                {user?.display_name || user?.handle || t('common.unnamed')}
-              </Link>
-              <p className="line-clamp-1 break-all text-muted-foreground text-xs">
-                {user?.email}
-              </p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <AccountNotificationsMenuItem />
-          <DropdownMenuGroup>
-            <Link href="/home">
-              <DropdownMenuItem className="flex cursor-pointer gap-4">
-                <Home className="h-4 w-4" />
-                <span>{t('common.home')}</span>
-              </DropdownMenuItem>
-            </Link>
-            {user && (
-              <Link href={`/profile/${user.id.replace(/-/g, '')}`}>
-                <DropdownMenuItem className="flex cursor-pointer gap-4">
-                  <User className="h-4 w-4" />
-                  <span>{t('common.profile')}</span>
-                </DropdownMenuItem>
-              </Link>
-            )}
-            <Link href="/challenges">
-              <DropdownMenuItem className="flex cursor-pointer gap-4">
-                <Trophy className="h-4 w-4" />
-                <span>{t('nova.challenges')}</span>
-              </DropdownMenuItem>
-            </Link>
-            <Link href="/leaderboard">
-              <DropdownMenuItem className="flex cursor-pointer gap-4">
-                <Medal className="h-4 w-4" />
-                <span>{t('nova.leaderboard')}</span>
-              </DropdownMenuItem>
-            </Link>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Palette className="h-4 w-4" />
-                <span className="text-foreground">{t('common.theme')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <ThemeDropdownItems />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Globe className="h-4 w-4" />
-                <span className="text-foreground">{t('common.language')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <LanguageWrapper
-                    locale="en"
-                    label="English"
-                    currentLocale={locale}
-                  />
-                  <LanguageWrapper
-                    locale="vi"
-                    label="Tiếng Việt"
-                    currentLocale={locale}
-                  />
-                  <DropdownMenuSeparator />
-                  <SystemLanguageWrapper currentLocale={locale} />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => setOpen(true)}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>{t('common.settings')}</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <AccountHubActionItems />
-          <DropdownMenuSeparator />
-          <LogoutDropdownItem />
-        </DropdownMenuContent>
-      </DropdownMenu>
+                {t('nova.challenges')}
+              </NovaLink>
+              <NovaLink
+                href="/leaderboard"
+                icon={<Medal className="h-4 w-4" />}
+              >
+                {t('nova.leaderboard')}
+              </NovaLink>
+            </>
+          }
+          languageItems={
+            <>
+              <LanguageWrapper
+                locale="en"
+                label="English"
+                currentLocale={locale}
+              />
+              <LanguageWrapper
+                locale="vi"
+                label="Tiếng Việt"
+                currentLocale={locale}
+              />
+              <DropdownMenuSeparator />
+              <SystemLanguageWrapper currentLocale={locale} />
+            </>
+          }
+          themeItems={<ThemeDropdownItems />}
+          accountItems={
+            <SatelliteAccountSwitcherMenu centralUrl={TTR_URL} t={accountT} />
+          }
+          onLogout={logout}
+        />
+      </SatelliteUserMenu>
     </>
+  );
+}
+
+function NovaLink({
+  href,
+  icon,
+  children,
+}: {
+  href: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <DropdownMenuItem asChild className="cursor-pointer">
+      <Link href={href}>
+        {icon}
+        <span>{children}</span>
+      </Link>
+    </DropdownMenuItem>
   );
 }

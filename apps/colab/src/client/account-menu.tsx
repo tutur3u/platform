@@ -64,7 +64,6 @@ export function AccountMenu({
         </>
       )}
       <SatelliteUserMenuItems
-        centralUrl="https://tuturuuu.com"
         t={t}
         sidebar={sidebar}
         signedIn={signedIn}

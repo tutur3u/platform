@@ -256,7 +256,6 @@ export default function UserNavClient({
         online={Boolean(user)}
       >
         <SatelliteUserMenuItems
-          centralUrl={centralUrl}
           t={t}
           sidebar={sidebar}
           signedIn={Boolean(user)}

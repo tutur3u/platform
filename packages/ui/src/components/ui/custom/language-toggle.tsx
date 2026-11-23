@@ -1,10 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '../button';
 import { LoadingIndicator } from './loading-indicator';
-import { persistLocalePreference } from './locale-preference';
+import {
+  persistLocalePreference,
+  reloadForLocaleChange,
+} from './locale-preference';
 
 export function LanguageToggle({
   forceDisplay = false,
@@ -14,14 +16,13 @@ export function LanguageToggle({
   currentLocale: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const updateLocale = () => {
     setLoading(true);
 
     try {
       persistLocalePreference(currentLocale === 'en' ? 'vi' : 'en');
-      router.refresh();
+      reloadForLocaleChange();
     } catch (error) {
       console.error('Failed to update locale', error);
     } finally {

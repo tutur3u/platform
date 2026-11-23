@@ -45,40 +45,46 @@ export function AccountNotificationsMenuItem() {
   const { unreadCount } = hub.state;
 
   return (
-    <>
-      <DropdownMenuItem
-        className="cursor-pointer"
-        onSelect={() => {
-          // Let the menu close first so focus lands on the popover.
-          setTimeout(() => hub.patch({ notificationsOpen: true }), 0);
-        }}
-      >
-        <Bell className="h-4 w-4 text-dynamic-pink" />
-        <span className="min-w-0 flex-1 truncate">{notifications.label}</span>
-        {unreadCount > 0 && (
-          <span className="min-w-4 rounded-full bg-dynamic-red px-1 text-center font-semibold text-[10px] text-background leading-4 tabular-nums">
-            <span aria-hidden>{unreadCount > 99 ? '99+' : unreadCount}</span>
-            <span className="sr-only">
-              {fillCount(notifications.unreadText, unreadCount)}
-            </span>
+    <DropdownMenuItem
+      className="cursor-pointer"
+      onSelect={() => {
+        // Let the menu close first so focus lands on the popover.
+        setTimeout(() => hub.patch({ notificationsOpen: true }), 0);
+      }}
+    >
+      <Bell className="h-4 w-4 text-dynamic-pink" />
+      <span className="min-w-0 flex-1 truncate">{notifications.label}</span>
+      {unreadCount > 0 && (
+        <span className="min-w-4 rounded-full bg-dynamic-red px-1 text-center font-semibold text-[10px] text-background leading-4 tabular-nums">
+          <span aria-hidden>{unreadCount > 99 ? '99+' : unreadCount}</span>
+          <span className="sr-only">
+            {fillCount(notifications.unreadText, unreadCount)}
           </span>
-        )}
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-    </>
+        </span>
+      )}
+    </DropdownMenuItem>
   );
 }
 
 /**
- * Upgrade, Feedback and Discord: the one place the sidebar offers them. Renders
- * nothing when the sidebar has published none, so a menu can fall back to its
- * own feedback entry.
+ * Upgrade, Feedback, Notifications and Discord, in that order: the one place
+ * the account menu offers them. Feedback comes from the sidebar's account hub,
+ * or from `fallbackFeedback` where no hub publishes it. Renders nothing when
+ * there is no entry.
  */
-export function AccountHubActionItems() {
+export function AccountHubActionItems({
+  fallbackFeedback,
+}: {
+  fallbackFeedback?: { label: string; onOpen: () => void };
+} = {}) {
   const hub = useAccountHub();
-  if (!hub) return null;
-  const { upgrade, discord, feedback } = hub.state;
-  if (!upgrade && !discord && !feedback) return null;
+  const upgrade = hub?.state.upgrade;
+  const discord = hub?.state.discord;
+  const feedback = hub?.state.feedback
+    ? { label: hub.state.feedback.label, onOpen: hub.state.feedback.open }
+    : fallbackFeedback;
+  const notifications = hub?.state.notifications;
+  if (!upgrade && !discord && !feedback && !notifications) return null;
 
   const Link = upgrade?.Link;
   return (
@@ -108,12 +114,13 @@ export function AccountHubActionItems() {
         {feedback && (
           <DropdownMenuItem
             className="cursor-pointer"
-            onSelect={() => setTimeout(feedback.open, 0)}
+            onSelect={() => setTimeout(feedback.onOpen, 0)}
           >
             <MessageSquare className="h-4 w-4 text-dynamic-yellow" />
             {feedback.label}
           </DropdownMenuItem>
         )}
+        <AccountNotificationsMenuItem />
         {discord && (
           <DropdownMenuItem asChild className="cursor-pointer">
             <a href={discord.href} target="_blank" rel="noopener noreferrer">

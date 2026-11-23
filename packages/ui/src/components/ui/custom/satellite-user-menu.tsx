@@ -13,11 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { AnimatedSlotText } from './animated-slot-text';
-import {
-  AccountNotificationsMenuItem,
-  AccountUnreadBadge,
-  useAccountHubLabel,
-} from './account-hub-ui';
+import { AccountUnreadBadge, useAccountHubLabel } from './account-hub-ui';
 import { useAccountHub, useSidebarFooter } from './sidebar-footer-context';
 
 /** Shared profile trigger and menu frame; adapters supply account services and preferences. */
@@ -31,6 +27,8 @@ export function SatelliteUserMenu({
   label,
   loading = false,
   triggerRef,
+  presence,
+  onNameClick,
   children,
 }: {
   name: string;
@@ -42,6 +40,10 @@ export function SatelliteUserMenu({
   label?: string;
   loading?: boolean;
   triggerRef?: Ref<HTMLButtonElement>;
+  /** Replaces the online dot, e.g. with a live presence indicator. */
+  presence?: ReactNode;
+  /** Makes the name in the menu header a button, e.g. to open the profile. */
+  onNameClick?: () => void;
   children: ReactNode;
 }) {
   // In the expanded sidebar footer the name and email return beside the avatar.
@@ -88,9 +90,10 @@ export function SatelliteUserMenu({
                 {name ? getInitials(name) : <User className="h-5 w-5" />}
               </AvatarFallback>
               <AccountUnreadBadge />
-              {online && (
-                <div className="pointer-events-none absolute right-0 bottom-0 z-20 size-2.5 rounded-full bg-dynamic-green ring-2 ring-background" />
-              )}
+              {presence ??
+                (online && (
+                  <div className="pointer-events-none absolute right-0 bottom-0 z-20 size-2.5 rounded-full bg-dynamic-green ring-2 ring-background" />
+                ))}
             </Avatar>
           </span>
           {!hideMetadata && (
@@ -109,14 +112,23 @@ export function SatelliteUserMenu({
       <DropdownMenuContent className="w-56" side="right" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
-            <span className="line-clamp-1 break-all font-medium text-sm">
-              {name}
-            </span>
+            {onNameClick ? (
+              <button
+                type="button"
+                onClick={onNameClick}
+                className="line-clamp-1 w-fit break-all text-start font-medium text-sm hover:underline"
+              >
+                {name}
+              </button>
+            ) : (
+              <span className="line-clamp-1 break-all font-medium text-sm">
+                {name}
+              </span>
+            )}
             <p className="line-clamp-1 break-all text-xs opacity-70">{email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <AccountNotificationsMenuItem />
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

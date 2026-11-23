@@ -136,6 +136,32 @@ account menu show the workspace name and plan. Coverage:
 `workspace-select-invitations.test.tsx` under
 `packages/ui/src/components/ui/custom/__tests__/`.
 
+## Account menu
+
+Every app opens the same account menu from the avatar (`SatelliteUserMenu` with
+`SatelliteUserMenuItems` in `@tuturuuu/ui`), with this order:
+
+1. Name and email. In Web and Workspace the name opens profile settings.
+2. Workspace switcher, where the app has workspaces.
+3. Public profile, **Settings**, then the app's own actions: the command palette
+   in Web and Workspace, **Invite members** in Workspace, and Nova's Home,
+   Profile, Challenges and Leaderboard.
+4. **Sidebar**, **Language** and **Theme**.
+5. **Upgrade**, **Feedback**, **Notifications** (with the unread count) and
+   **Discord**, each shown only where the app offers it. Notifications sit
+   directly below Feedback.
+6. **Switch Account**: every saved account with its avatar, or initials when it
+   has none, a check on the current account, **Remove account** and **Manage
+   Accounts**. Web and Workspace open Manage Accounts in their settings dialog;
+   satellites open it on tuturuuu.com.
+7. **Logout**.
+
+The menu has no Dashboard link; the app switcher in the sidebar header reaches
+other apps. Coverage: `satellite-user-menu-items.test.tsx` and
+`satellite-account-switcher-avatars.test.tsx` under
+`packages/ui/src/components/ui/custom/`, and
+`apps/web/src/components/settings/settings-dialog-shortcuts.test.tsx`.
+
 ## Hover lock
 
 In expand-on-hover, the panel stays open while any overlay opened from it is

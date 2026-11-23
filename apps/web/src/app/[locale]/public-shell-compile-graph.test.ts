@@ -19,7 +19,7 @@ const marketingNavShellSource = source(
 const marketingNavDropdownSource = source(
   'src/app/[locale]/marketing-nav/nav-dropdown.tsx'
 );
-const userNavClientSource = source('src/app/[locale]/user-nav-client.tsx');
+const userNavMenuSource = source('src/app/[locale]/user-nav-menu.tsx');
 const reportProblemHostSource = source(
   'src/app/[locale]/report-problem-host.tsx'
 );
@@ -407,10 +407,7 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps shell dropdown icons on the static lucide subpath', () => {
-    for (const sourceText of [
-      dropdownMenuSource,
-      userNavClientSource,
-    ] as const) {
+    for (const sourceText of [dropdownMenuSource, userNavMenuSource] as const) {
       expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
       expect(staticImportModules(sourceText)).not.toContain(
         '@tuturuuu/icons/lucide'

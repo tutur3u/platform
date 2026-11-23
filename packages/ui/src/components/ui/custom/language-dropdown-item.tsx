@@ -1,12 +1,16 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { persistLocalePreference } from './locale-preference';
+import {
+  persistLocalePreference,
+  reloadForLocaleChange,
+} from './locale-preference';
 import { SatelliteLanguageItem } from './satellite-language-item';
+import { useLocalePreference } from './use-locale-preference';
 
 interface Props {
   label: string;
   locale: string;
+  /** Server-rendered selection, used until the browser cookie is readable. */
   selected?: boolean;
   onLocaleChange?: (locale: string) => Promise<void> | void;
 }
@@ -17,23 +21,20 @@ export function LanguageDropdownItem({
   selected,
   onLocaleChange,
 }: Props) {
-  const router = useRouter();
+  const preference = useLocalePreference();
+  const isSelected =
+    preference === undefined ? selected : preference === locale;
 
   const useLocale = async () => {
-    if (onLocaleChange) {
-      await onLocaleChange(locale);
-      router.refresh();
-      return;
-    }
-
-    persistLocalePreference(locale);
-    router.refresh();
+    if (onLocaleChange) await onLocaleChange(locale);
+    else persistLocalePreference(locale);
+    reloadForLocaleChange();
   };
 
   return (
     <SatelliteLanguageItem
       label={label}
-      selected={selected}
+      selected={isSelected}
       onSelect={useLocale}
     />
   );

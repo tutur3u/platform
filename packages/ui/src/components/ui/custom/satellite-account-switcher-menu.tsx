@@ -1,8 +1,11 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ExternalLink, Trash2, User, Users } from '@tuturuuu/icons';
-import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
+import { Check, ExternalLink, Trash2, Users } from '@tuturuuu/icons';
+import type {
+  WebAccountMutationResponse,
+  WebAccountSummary,
+} from '@tuturuuu/internal-api/auth';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   listWebAccountsWithInternalApi,
@@ -20,8 +23,13 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { announceSessionEnding } from '@tuturuuu/utils/session-events';
+import {
+  AccountSwitcherAvatar,
+  ManageAccountsItem,
+} from './account-switcher-items';
 
 interface SatelliteAccountSwitcherMenuProps {
+  /** The central web origin; empty when the menu runs inside the web app. */
   centralUrl: string;
   workspaceId?: string;
   currentRoute?: string;
@@ -36,7 +44,10 @@ interface SatelliteAccountSwitcherMenuProps {
       | 'switch_account_error'
       | 'unknown_user'
   ) => string;
-  onAccountChanged?: () => void;
+  /** Runs after a switch, or after removing the active account. Reloads by default. */
+  onAccountChanged?: (response: WebAccountMutationResponse) => void;
+  /** Opens account management in-app instead of the central settings link. */
+  onManageAccounts?: () => void;
 }
 
 const accountQueryKey = (centralUrl: string) =>
@@ -68,12 +79,13 @@ export function SatelliteAccountSwitcherMenu({
   currentRoute,
   t,
   onAccountChanged = () => window.location.reload(),
+  onManageAccounts,
 }: SatelliteAccountSwitcherMenuProps) {
   const queryClient = useQueryClient();
   const queryKey = accountQueryKey(centralUrl);
   const accountsQuery = useQuery({
-    enabled: Boolean(centralUrl),
-    queryFn: () => listWebAccountsWithInternalApi({ baseUrl: centralUrl }),
+    queryFn: () =>
+      listWebAccountsWithInternalApi({ baseUrl: centralUrl || undefined }),
     queryKey,
     retry: 1,
     staleTime: 30_000,
@@ -87,7 +99,7 @@ export function SatelliteAccountSwitcherMenu({
           currentRoute:
             currentRoute ?? window.location.pathname + window.location.search,
         },
-        { baseUrl: centralUrl }
+        { baseUrl: centralUrl || undefined }
       ),
     onSuccess: async (response) => {
       if (!response.success) {
@@ -99,7 +111,7 @@ export function SatelliteAccountSwitcherMenu({
       }
       await invalidateAccounts();
       announceSessionEnding();
-      onAccountChanged();
+      onAccountChanged(response);
     },
     onError: (error) => {
       toast.error(t('switch_account_error'), {
@@ -109,14 +121,16 @@ export function SatelliteAccountSwitcherMenu({
   });
   const removeMutation = useMutation({
     mutationFn: (accountId: string) =>
-      removeWebAccountWithInternalApi(accountId, { baseUrl: centralUrl }),
+      removeWebAccountWithInternalApi(accountId, {
+        baseUrl: centralUrl || undefined,
+      }),
     onSuccess: async (response, accountId) => {
       await invalidateAccounts();
       if (
         response.success &&
         accountId === accountsQuery.data?.activeAccountId
       ) {
-        onAccountChanged();
+        onAccountChanged(response);
       }
     },
   });
@@ -135,17 +149,12 @@ export function SatelliteAccountSwitcherMenu({
 
   if (accounts.length === 0) {
     return (
-      <DropdownMenuItem asChild>
-        <a
-          href={webAccountSettingsUrl(centralUrl, workspaceId)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="cursor-pointer"
-        >
-          <Users className="h-4 w-4 text-dynamic-orange" />
-          <span>{t('manage_accounts')}</span>
-        </a>
-      </DropdownMenuItem>
+      <ManageAccountsItem
+        href={webAccountSettingsUrl(centralUrl, workspaceId)}
+        icon={<Users className="h-4 w-4 text-dynamic-orange" />}
+        label={t('manage_accounts')}
+        onOpen={onManageAccounts}
+      />
     );
   }
 
@@ -170,7 +179,10 @@ export function SatelliteAccountSwitcherMenu({
                   if (!isActive) switchMutation.mutate(account.id);
                 }}
               >
-                <User className="h-4 w-4" />
+                <AccountSwitcherAvatar
+                  avatarUrl={account.metadata.avatarUrl}
+                  name={label}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{label}</span>
                   {account.email && (
@@ -213,17 +225,12 @@ export function SatelliteAccountSwitcherMenu({
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
-          <DropdownMenuItem asChild>
-            <a
-              href={webAccountSettingsUrl(centralUrl, workspaceId)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer"
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span>{t('manage_accounts')}</span>
-            </a>
-          </DropdownMenuItem>
+          <ManageAccountsItem
+            href={webAccountSettingsUrl(centralUrl, workspaceId)}
+            icon={<ExternalLink className="h-4 w-4" />}
+            label={t('manage_accounts')}
+            onOpen={onManageAccounts}
+          />
         </DropdownMenuSubContent>
       </DropdownMenuPortal>
     </DropdownMenuSub>

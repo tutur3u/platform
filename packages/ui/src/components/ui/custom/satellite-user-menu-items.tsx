@@ -1,18 +1,6 @@
 'use client';
 
-import {
-  MessageSquare,
-  Check,
-  ExternalLink,
-  Globe,
-  LogOut,
-  Palette,
-  PanelLeft,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-  SquareMousePointer,
-} from '@tuturuuu/icons';
+import { Globe, LogOut, Palette, Settings } from '@tuturuuu/icons';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -26,21 +14,25 @@ import {
 import type { ReactNode } from 'react';
 import { AccountHubActionItems } from './account-hub-ui';
 import { PublicProfileMenuItem } from './public-profile-menu-item';
-import { useAccountHub } from './sidebar-footer-context';
 import type { SidebarBehavior } from './sidebar-behavior';
+import { SatelliteSidebarBehaviorMenu } from './satellite-sidebar-behavior-menu';
 
 export { PublicProfileMenuItem } from './public-profile-menu-item';
 
 export type { SidebarBehavior } from './sidebar-behavior';
 
-/** One menu definition for the Next.js satellite and framework adapters. */
+/**
+ * The account menu body every app renders, in one order: workspace, profile
+ * and settings (plus app actions), preferences, Upgrade/Feedback/Notifications/
+ * Discord, accounts, Logout.
+ */
 export function SatelliteUserMenuItems({
-  centralUrl,
   t,
   sidebar,
   languageItems,
   themeItems,
   accountItems,
+  appItems,
   workspaceSelect,
   signedIn,
   publicProfile,
@@ -48,11 +40,9 @@ export function SatelliteUserMenuItems({
   onReport,
   onLogout,
 }: {
-  centralUrl: string;
   t: (
     key:
       | 'common.collapsed'
-      | 'common.dashboard'
       | 'common.expand_on_hover'
       | 'common.expanded'
       | 'common.minimal'
@@ -69,17 +59,19 @@ export function SatelliteUserMenuItems({
   languageItems: ReactNode;
   themeItems: ReactNode;
   accountItems: ReactNode;
+  /** App-specific actions listed after Settings, such as a command palette. */
+  appItems?: ReactNode;
   workspaceSelect?: ReactNode;
   signedIn: boolean;
   publicProfile?: { href: string; label: string };
   /** Opens the in-app settings dialog (shared `?settingsTab=` contract). */
   settings?: { label: string; onOpen: () => void; shortcut?: string };
-  onReport: () => void;
+  /** Feedback where the sidebar's account hub does not publish one. */
+  onReport?: () => void;
   onLogout: () => void;
 }) {
-  // The sidebar's account hub offers Feedback once; fall back to the report
-  // entry only where no hub is hosting it.
-  const hasHubFeedback = Boolean(useAccountHub()?.state.feedback);
+  const showProfile = signedIn && publicProfile;
+  const showSettings = signedIn && settings;
   return (
     <>
       {workspaceSelect ? (
@@ -90,91 +82,34 @@ export function SatelliteUserMenuItems({
           <DropdownMenuSeparator />
         </>
       ) : null}
-      <DropdownMenuGroup>
-        {signedIn && publicProfile && (
-          <PublicProfileMenuItem {...publicProfile} />
-        )}
-        {signedIn && settings && (
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={(event) => {
-              event.preventDefault();
-              settings.onOpen();
-            }}
-          >
-            <Settings className="h-4 w-4 text-dynamic-blue" />
-            <span>{settings.label}</span>
-            {settings.shortcut && (
-              <DropdownMenuShortcut>{settings.shortcut}</DropdownMenuShortcut>
+      {showProfile || showSettings || appItems ? (
+        <>
+          <DropdownMenuGroup>
+            {showProfile && <PublicProfileMenuItem {...publicProfile} />}
+            {showSettings && (
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={(event) => {
+                  event.preventDefault();
+                  settings.onOpen();
+                }}
+              >
+                <Settings className="h-4 w-4 text-dynamic-blue" />
+                <span>{settings.label}</span>
+                {settings.shortcut && (
+                  <DropdownMenuShortcut>
+                    {settings.shortcut}
+                  </DropdownMenuShortcut>
+                )}
+              </DropdownMenuItem>
             )}
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem asChild>
-          <a
-            href={centralUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer"
-          >
-            <ExternalLink className="h-4 w-4 text-dynamic-green" />
-            <span>{t('common.dashboard')}</span>
-          </a>
-        </DropdownMenuItem>
-      </DropdownMenuGroup>
-      <DropdownMenuSeparator />
+            {appItems}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+        </>
+      ) : null}
       <DropdownMenuGroup>
-        {sidebar && (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="hidden md:flex">
-              <PanelLeft className="h-4 w-4 text-dynamic-purple" />
-              <span>{t('common.sidebar')}</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent sideOffset={4}>
-                <DropdownMenuItem
-                  onClick={() => sidebar.handleBehaviorChange('expanded')}
-                  disabled={sidebar.behavior === 'expanded'}
-                >
-                  <PanelLeftOpen className="h-4 w-4 text-dynamic-purple" />
-                  <span>{t('common.expanded')}</span>
-                  {sidebar.behavior === 'expanded' && (
-                    <Check className="ml-auto h-4 w-4" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => sidebar.handleBehaviorChange('collapsed')}
-                  disabled={sidebar.behavior === 'collapsed'}
-                >
-                  <PanelLeftClose className="h-4 w-4 text-dynamic-purple" />
-                  <span>{t('common.collapsed')}</span>
-                  {sidebar.behavior === 'collapsed' && (
-                    <Check className="ml-auto h-4 w-4" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => sidebar.handleBehaviorChange('hover')}
-                  disabled={sidebar.behavior === 'hover'}
-                >
-                  <SquareMousePointer className="h-4 w-4 text-dynamic-purple" />
-                  <span>{t('common.expand_on_hover')}</span>
-                  {sidebar.behavior === 'hover' && (
-                    <Check className="ml-auto h-4 w-4" />
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => sidebar.handleBehaviorChange('minimal')}
-                  disabled={sidebar.behavior === 'minimal'}
-                >
-                  <PanelLeft className="h-4 w-4 text-dynamic-purple" />
-                  <span>{t('common.minimal')}</span>
-                  {sidebar.behavior === 'minimal' && (
-                    <Check className="ml-auto h-4 w-4" />
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-        )}
+        {sidebar && <SatelliteSidebarBehaviorMenu sidebar={sidebar} t={t} />}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Globe className="h-4 w-4 text-dynamic-indigo" />
@@ -197,26 +132,20 @@ export function SatelliteUserMenuItems({
             </DropdownMenuSubContent>
           </DropdownMenuPortal>
         </DropdownMenuSub>
-        {!hasHubFeedback && (
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault();
-              onReport();
-            }}
-          >
-            <MessageSquare className="h-4 w-4 text-dynamic-yellow" />
-            <span>{t('common.report-problem')}</span>
-          </DropdownMenuItem>
-        )}
       </DropdownMenuGroup>
-      <AccountHubActionItems />
-      {signedIn && (
+      <AccountHubActionItems
+        fallbackFeedback={
+          onReport
+            ? { label: t('common.report-problem'), onOpen: onReport }
+            : undefined
+        }
+      />
+      {signedIn && accountItems ? (
         <>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>{accountItems}</DropdownMenuGroup>
         </>
-      )}
+      ) : null}
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
         <LogOut className="h-4 w-4 text-dynamic-red" />

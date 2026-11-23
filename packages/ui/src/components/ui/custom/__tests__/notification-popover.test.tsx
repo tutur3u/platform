@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AccountHubActionItems } from '../account-hub-ui';
 import { SatelliteUserMenu } from '../satellite-user-menu';
 import { useAccountHub } from '../sidebar-footer-context';
 import { SIDEBAR_OVERLAY_HANDOFF_MS } from '../sidebar-overlay-context';
@@ -86,7 +87,7 @@ function HoverSidebar({
       userPopover={
         userMenu ? (
           <SatelliteUserMenu email="ada@example.com" label="Account" name="Ada">
-            <span />
+            <AccountHubActionItems />
           </SatelliteUserMenu>
         ) : (
           <AccountEntry />

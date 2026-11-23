@@ -1,7 +1,7 @@
 ---
 title: 'Language'
 description: 'View Tuturuuu in your preferred language.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-11-24'
 audience: users
 ---
 
@@ -18,7 +18,14 @@ Currently, we provide first-class support for the following languages:
 
 ### How to Change Language
 
-[Tuturuuu](https://tuturuuu.com) will automatically detect your browser's language and set the language accordingly. If you want to change the language, you can do so by clicking on the language switcher in your profile avatar (located at the top right corner of the page).
+[Tuturuuu](https://tuturuuu.com) detects your browser's language automatically. To choose one yourself, open the account menu from your avatar and pick **Language**: **English**, **Tiếng Việt** or **System**.
+
+- Picking a language stores it in the shared `NEXT_LOCALE` cookie, so every Tuturuuu app on the same domain follows it.
+- **System** removes that choice. The app then follows your browser's languages again (`Accept-Language`), falling back to English.
+- The menu marks the stored choice, or **System** when there is none, whatever locale the current URL shows.
+- After a change the page loads again as a full document at its address without a `/en` or `/vi` prefix. A locale prefix outranks the cookie, and only a document load lets each app's proxy negotiate the language; a client refresh on the native Start runtime cannot.
+
+Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`). Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`.
 
 <Note>The language switcher is only available after you have logged in.</Note>
 

@@ -1,7 +1,27 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
+import type { AccountHubState } from './sidebar-footer-context';
 import { SatelliteUserMenuItems } from './satellite-user-menu-items';
+
+const hub = vi.hoisted(() => ({
+  state: null as Partial<AccountHubState> | null,
+}));
+
+vi.mock('./sidebar-footer-context', () => ({
+  useAccountHub: () =>
+    hub.state
+      ? {
+          state: { unreadCount: 0, notificationsOpen: false, ...hub.state },
+          patch: vi.fn(),
+          anchorRef: { current: null },
+        }
+      : null,
+}));
+
+beforeEach(() => {
+  hub.state = null;
+});
 
 vi.mock('@tuturuuu/ui/dropdown-menu', () => {
   const Container = ({ children }: { children: ReactNode }) => <>{children}</>;
@@ -19,7 +39,6 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => {
   );
 });
 const props: ComponentProps<typeof SatelliteUserMenuItems> = {
-  centralUrl: 'https://tuturuuu.com',
   t: (key) => key,
   languageItems: null,
   themeItems: null,
@@ -41,7 +60,38 @@ it('renders a labelled public profile link separately from private account setti
   expect(html).toContain('href="https://tuturuuu.com/u/creator"');
   expect(html).toContain('Public profile');
   expect(html).toContain('rel="noopener noreferrer"');
-  expect(html).toContain('common.dashboard');
+});
+it('has no Dashboard link to the central app', () => {
+  const html = renderToStaticMarkup(<SatelliteUserMenuItems {...props} />);
+  expect(html).not.toContain('common.dashboard');
+  expect(html).not.toContain('href="https://tuturuuu.com"');
+});
+it('lists Notifications directly below the fallback Feedback entry', () => {
+  hub.state = {
+    unreadCount: 5,
+    notifications: { label: 'Notifications', unreadText: '{count} unread' },
+  };
+  const html = renderToStaticMarkup(<SatelliteUserMenuItems {...props} />);
+  const order = ['common.theme', 'common.report-problem', 'Notifications'];
+  const positions = order.map((label) => html.indexOf(label));
+  expect(positions.every((position) => position >= 0)).toBe(true);
+  expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+  expect(html.indexOf('common.logout')).toBeGreaterThan(positions[2]!);
+});
+it('lists Notifications directly below the account hub Feedback entry', () => {
+  hub.state = {
+    feedback: { label: 'Feedback', open: vi.fn() },
+    discord: { href: 'https://discord.gg/example' },
+    notifications: { label: 'Notifications', unreadText: '{count} unread' },
+  };
+  const html = renderToStaticMarkup(<SatelliteUserMenuItems {...props} />);
+  expect(html).not.toContain('common.report-problem');
+  const feedback = html.indexOf('Feedback');
+  const notifications = html.indexOf('Notifications');
+  const discord = html.indexOf('Discord');
+  expect(feedback).toBeGreaterThan(html.indexOf('common.theme'));
+  expect(notifications).toBeGreaterThan(feedback);
+  expect(discord).toBeGreaterThan(notifications);
 });
 it('does not invent a profile link for users without a username', () => {
   const html = renderToStaticMarkup(<SatelliteUserMenuItems {...props} />);
