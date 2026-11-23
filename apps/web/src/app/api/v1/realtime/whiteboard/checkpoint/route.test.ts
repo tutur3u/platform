@@ -145,6 +145,7 @@ describe('whiteboard checkpoint route', () => {
     expect(await response.json()).toEqual({
       updatedAt: 't1',
       elements: [rect('a')],
+      preservedIds: ['img'],
     });
   });
 
@@ -192,6 +193,7 @@ describe('whiteboard checkpoint route', () => {
     expect(await response.json()).toEqual({
       updatedAt: 't2',
       elements: [rect('a')],
+      preservedIds: ['img'],
     });
     expect(state.updates).toHaveLength(0);
   });
@@ -250,6 +252,36 @@ describe('whiteboard checkpoint route', () => {
       (e: any) => e.id
     );
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('keeps a stored element that grew past the room limit unless the room copy is newer', async () => {
+    const grown = { ...rect('grew', 5), text: 'x'.repeat(70_000) };
+    state.board!.snapshot = { elements: [rect('a'), grown], appState: {} };
+    const loaded = await (await call({ op: 'load' })).json();
+    expect(loaded.elements.map((e: any) => e.id)).toEqual(['a']);
+    expect(loaded.preservedIds).toContain('grew');
+    // The room still holds an older, smaller copy of `grew`.
+    const stale = await call(flush([rect('a'), rect('grew', 3)], 't1'));
+    expect(stale.status).toBe(200);
+    const kept = (state.updates[0]!.snapshot as any).elements;
+    expect(kept.filter((e: any) => e.id === 'grew')).toEqual([grown]);
+    // A newer room copy replaces it.
+    state.updates = [];
+    await call(flush([rect('a'), rect('grew', 9)], 't1'));
+    const next = (state.updates[0]!.snapshot as any).elements;
+    expect(next.find((e: any) => e.id === 'grew').version).toBe(9);
+    expect(next.filter((e: any) => e.id === 'grew')).toHaveLength(1);
+  });
+
+  it('reports the preserved ids with a conflict', async () => {
+    state.board!.snapshot = {
+      elements: [rect('a'), { ...rect('grew', 5), text: 'x'.repeat(70_000) }],
+      appState: {},
+    };
+    state.board!.updated_at = 't2';
+    const response = await call(flush([rect('z')], 't1'));
+    expect(response.status).toBe(409);
+    expect((await response.json()).preservedIds).toEqual(['grew']);
   });
 
   it('rejects a body whose hash does not match and malformed bodies', async () => {

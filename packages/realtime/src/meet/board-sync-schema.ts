@@ -219,5 +219,7 @@ export const boardCheckpointResultSchema = z.object({
     .array(boardElementSchema)
     .max(BOARD_LIMITS.maxElements)
     .optional(),
+  /** Ids of stored elements the room cannot hold; the room never treats them as deleted. */
+  preservedIds: z.array(z.string().max(64)).max(100_000).optional(),
 });
 export type BoardCheckpointResult = z.infer<typeof boardCheckpointResultSchema>;

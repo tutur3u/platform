@@ -16,6 +16,33 @@ export function supersedes(candidate: BoardElement, existing: BoardElement) {
 
 export type BoardScene = Map<string, BoardElement>;
 
+/**
+ * What the room keeps of a deleted element: its identity and version, which is
+ * all a stale peer's copy needs to lose against, without the content, so
+ * deleting something frees space.
+ */
+export function stripTombstone(element: BoardElement): BoardElement {
+  if (!element.isDeleted) return element;
+  const { id, type, version, versionNonce, updated } =
+    element as BoardElement & {
+      updated?: number;
+    };
+  return {
+    id,
+    type,
+    version,
+    versionNonce,
+    isDeleted: true,
+    ...(updated === undefined ? {} : { updated }),
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    angle: 0,
+    ...('points' in element ? { points: [] } : {}),
+  } as BoardElement;
+}
+
 export function sceneFrom(elements: readonly BoardElement[]): BoardScene {
   const scene: BoardScene = new Map();
   mergeElements(scene, elements);
@@ -31,7 +58,7 @@ export function mergeElements(
   for (const element of elements) {
     const existing = scene.get(element.id);
     if (!existing || supersedes(element, existing)) {
-      scene.set(element.id, element);
+      scene.set(element.id, stripTombstone(element));
       applied.push(element);
     }
   }
@@ -103,13 +130,14 @@ export function applyBoundedChanges(
       rejected = 'count';
       continue;
     }
+    const held = stripTombstone(element);
     const before = tracker.sizes.get(element.id) ?? 0;
-    const bytes = byteLength(element);
+    const bytes = byteLength(held);
     if (bytes > before && tracker.total - before + bytes > maxBytes) {
       rejected ??= 'size';
       continue;
     }
-    scene.set(element.id, element);
+    scene.set(element.id, held);
     tracker.sizes.set(element.id, bytes);
     tracker.total += bytes - before;
     applied.push(change);
@@ -149,12 +177,12 @@ export function pruneTombstones(scene: BoardScene, tracker?: SceneSizes) {
 
 /** Marks an element deleted with a version above any peer's copy of it. */
 export function tombstone(element: BoardElement): BoardElement {
-  return {
+  return stripTombstone({
     ...element,
     isDeleted: true,
     version: element.version + 1,
     versionNonce: Math.floor(Math.random() * 2 ** 31),
-  };
+  });
 }
 
 /** Splits a scene into messages that each stay under `maxBytes` of element JSON. */

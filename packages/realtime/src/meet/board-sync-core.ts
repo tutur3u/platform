@@ -88,6 +88,7 @@ export function createBoardRoom(deps: BoardRoomDeps) {
   let armedAt: number | null = null;
   let loaded = false;
   let flushing: Promise<void> | null = null;
+  let loading: Promise<unknown> | null = null;
 
   const fenced = () => boardFlushFenced(deps.fenceValue());
 
@@ -172,7 +173,12 @@ export function createBoardRoom(deps: BoardRoomDeps) {
         throw new BoardLoadError(413);
       replaceScene(elements);
       dirty = new Set();
-      meta = { ...emptyMeta(), baseUpdatedAt: answer.result.updatedAt };
+      meta = {
+        ...emptyMeta(),
+        baseUpdatedAt: answer.result.updatedAt,
+        // Stale chunk keys of the previous scene are deleted by the next persist.
+        sceneChunks: meta.sceneChunks,
+      };
       loaded = true;
       if (!fenced()) await persist();
       return 'loaded' as const;
@@ -227,7 +233,8 @@ export function createBoardRoom(deps: BoardRoomDeps) {
     if (answer.status === 409 && answer.result?.elements) {
       await mergeConcurrentSave(
         answer.result.elements as BoardElement[],
-        answer.result.updatedAt
+        answer.result.updatedAt,
+        answer.result.preservedIds ?? []
       );
       return;
     }
@@ -245,20 +252,30 @@ export function createBoardRoom(deps: BoardRoomDeps) {
    * Someone else saved the board. Their scene wins for anything this room did
    * not edit since its last flush: an element missing from it was deleted there
    * and stays deleted. Everything else merges by version, then the union is
-   * flushed once.
+   * flushed once. An element the platform keeps but the room cannot hold (it
+   * grew past a budget) is absent from `remote` without being deleted: the room
+   * never tombstones it and drops its own copy unless it holds an unflushed
+   * edit, which the route compares by version.
    */
   async function mergeConcurrentSave(
     remote: BoardElement[],
-    updatedAt: string
+    updatedAt: string,
+    preservedIds: readonly string[]
   ) {
     const remoteIds = new Set(remote.map((element) => element.id));
+    const preserved = new Set(preservedIds);
     const changes: BoardChange[] = [];
-    for (const [id, element] of scene)
+    for (const [id, element] of [...scene]) {
+      if (preserved.has(id)) {
+        if (!dirty.has(id)) scene.delete(id);
+        continue;
+      }
       if (!remoteIds.has(id) && !dirty.has(id) && !element.isDeleted) {
         const removed = tombstone(element);
         scene.set(id, removed);
         changes.push({ type: 'update', element: removed });
       }
+    }
     for (const element of mergeElements(scene, remote))
       changes.push({ type: 'update', element });
     tracker = sizesFrom(scene);
@@ -315,7 +332,12 @@ export function createBoardRoom(deps: BoardRoomDeps) {
      */
     async prepare() {
       if (!loaded) {
-        await adopt();
+        // Concurrent first joins share one load, so a later load can never
+        // replace a scene that someone has already drawn on.
+        loading ??= adopt().finally(() => {
+          loading = null;
+        });
+        await loading;
         return;
       }
       if (meta.closed || (deps.connections() === 0 && !needsFlush(meta)))

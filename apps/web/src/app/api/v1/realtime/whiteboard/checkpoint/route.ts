@@ -45,6 +45,17 @@ async function readBody(request: Request) {
 }
 
 /** Splits a stored snapshot into elements the room can edit and ones it must preserve. */
+/** Whether the room's copy supersedes a stored one: higher version, then lower nonce. */
+function roomIsNewer(room: BoardElement, stored: Row) {
+  const version = typeof stored.version === 'number' ? stored.version : -1;
+  const nonce =
+    typeof stored.versionNonce === 'number' ? stored.versionNonce : 0;
+  return (
+    room.version > version ||
+    (room.version === version && room.versionNonce < nonce)
+  );
+}
+
 function splitStored(snapshot: unknown) {
   const parsed =
     typeof snapshot === 'string'
@@ -164,36 +175,56 @@ export async function POST(request: Request) {
 
     const stored = (row: Row) => splitStored(row.snapshot);
     const conflict = (row: Row) => {
-      const { supported } = stored(row);
-      return { supported, updatedAt: String(row.updated_at) };
+      const { supported, preserved } = stored(row);
+      return {
+        supported,
+        updatedAt: String(row.updated_at),
+        preservedIds: preserved.flatMap((element) => {
+          const id = (element as { id?: unknown })?.id;
+          return typeof id === 'string' && id.length <= 64 ? [id] : [];
+        }),
+      };
     };
 
     if (body.data.op === 'load') {
-      const { supported, updatedAt } = conflict(first.facts.board!);
-      return respond({ updatedAt, elements: supported });
+      const { supported, updatedAt, preservedIds } = conflict(
+        first.facts.board!
+      );
+      return respond({ updatedAt, elements: supported, preservedIds });
     }
 
     const flush = body.data;
     if (sha256(canonicalScene(flush.elements as BoardElement[])) !== flush.hash)
       return fail(400);
     const settle = (row: Row) => {
-      const { supported, updatedAt } = conflict(row);
+      const { supported, updatedAt, preservedIds } = conflict(row);
       // The same content already stored means an earlier attempt landed.
       return sha256(canonicalScene(supported)) === flush.hash
         ? respond({ updatedAt })
-        : respond({ updatedAt, elements: supported }, 409);
+        : respond({ updatedAt, elements: supported, preservedIds }, 409);
     };
 
     const board = first.facts.board!;
     if (flush.baseUpdatedAt !== String(board.updated_at)) return settle(board);
 
     const { preserved, appState } = stored(board);
-    // The room owns every element it sent; only the ones it never held remain.
-    const sent = new Set(flush.elements.map((element) => element.id));
+    // The room owns every element it sent, except where the stored copy is one
+    // the room cannot hold (it grew past a budget since the room last read it)
+    // and the room's copy is not newer: that stored copy is kept as it is.
+    const storedPreserved = new Map<string, Row>();
+    for (const element of preserved) {
+      const id = (element as { id?: unknown })?.id;
+      if (typeof id === 'string') storedPreserved.set(id, element as Row);
+    }
+    const sentElements = flush.elements.filter((element) => {
+      const held = storedPreserved.get(element.id);
+      return !held || roomIsNewer(element, held);
+    });
+    const sent = new Set(sentElements.map((element) => element.id));
     const kept = preserved.filter(
       (element) => !sent.has((element as { id?: string })?.id ?? '')
     );
-    const snapshot = { elements: [...flush.elements, ...kept], appState };
+    const snapshot = { elements: [...sentElements, ...kept], appState };
     if (
       byteLength(flush.elements) > BOARD_LIMITS.maxSnapshotBytes ||
       byteLength(snapshot) > BOARD_LIMITS.maxSnapshotBytes * 4
