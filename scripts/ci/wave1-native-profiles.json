@@ -248,7 +248,7 @@
           "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
           "APPS_CANONICAL_HOST_ENABLED": "1",
           "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
-          "TUTURUUU_NOINDEX": "0"
+          "TUTURUUU_NOINDEX": "1"
         },
         "publicInputPins": [],
         "publicationPolicyKey": "productionPublicationPolicy",

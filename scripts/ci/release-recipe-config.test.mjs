@@ -148,6 +148,60 @@ for (const [label, mutate] of [
     assert.throws(() => validateReleaseRecipe(candidate));
   });
 
+const appsRecipe = JSON.parse(
+  readFileSync(new URL('./wave1-native-profiles.json', import.meta.url))
+).apps.apps.releaseRecipe;
+const readRepoFile = (path) =>
+  readFileSync(new URL(path, import.meta.url), 'utf8');
+const voidConfigPinsNoindex = (text) => /TUTURUUU_NOINDEX:\s*'1'/.test(text);
+const artifactCheckerPinsNoindex = (text) =>
+  /"TUTURUUU_NOINDEX":\s*"1"/.test(text);
+
+test('Apps recipe accepts its production noindex pin', () => {
+  assert.equal(validateReleaseRecipe(structuredClone(appsRecipe)).app, 'apps');
+  assert.equal(appsRecipe.allowedVars.TUTURUUU_NOINDEX, '1');
+  assert.equal(appsRecipe.cf.sourceVars.TUTURUUU_NOINDEX, '1');
+});
+
+for (const [label, mutate] of [
+  [
+    'an indexable production flag',
+    (r) => {
+      r.allowedVars.TUTURUUU_NOINDEX = '0';
+    },
+  ],
+  [
+    'a missing noindex flag',
+    (r) => {
+      delete r.allowedVars.TUTURUUU_NOINDEX;
+    },
+  ],
+])
+  test(`rejects an Apps recipe with ${label}`, () => {
+    const candidate = structuredClone(appsRecipe);
+    mutate(candidate);
+    assert.throws(() => validateReleaseRecipe(candidate));
+  });
+
+test('Apps build config and artifact checker pin TUTURUUU_NOINDEX to 1', () => {
+  assert.ok(
+    voidConfigPinsNoindex(readRepoFile('../../apps/apps/void.config.ts'))
+  );
+  assert.ok(
+    artifactCheckerPinsNoindex(readRepoFile('./apps-native-artifact.py'))
+  );
+});
+
+test('the Apps noindex pin checks reject a value other than 1', () => {
+  assert.equal(voidConfigPinsNoindex("vars: { TUTURUUU_NOINDEX: '0' }"), false);
+  assert.equal(voidConfigPinsNoindex('vars: {}'), false);
+  assert.equal(
+    artifactCheckerPinsNoindex('"vars": {"TUTURUUU_NOINDEX": "0"}'),
+    false
+  );
+  assert.equal(artifactCheckerPinsNoindex('"vars": {}'), false);
+});
+
 const policy = JSON.parse(
   readFileSync(new URL('./wave1-native-profiles.json', import.meta.url))
 );

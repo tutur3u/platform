@@ -75,7 +75,18 @@ export function assertProductionOnlyVars(app, allowedVars, sourceVars) {
   );
 }
 
+// Apps serves noindex on every path in production, so its recipe pins the flag
+// to '1' explicitly. Every other app is indexable ('0'), except ai, which may
+// pin '1'.
 export function assertAllowedNoindex(app, allowedVars) {
+  if (app === 'apps') {
+    assert.ok(
+      Object.hasOwn(allowedVars, 'TUTURUUU_NOINDEX') &&
+        allowedVars.TUTURUUU_NOINDEX === '1',
+      'Apps production noindex flag must be 1'
+    );
+    return;
+  }
   if (!Object.hasOwn(allowedVars, 'TUTURUUU_NOINDEX')) return;
   const value = allowedVars.TUTURUUU_NOINDEX;
   assert.ok(
