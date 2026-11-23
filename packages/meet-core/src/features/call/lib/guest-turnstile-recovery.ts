@@ -5,12 +5,12 @@ import {
 } from '@tuturuuu/cloudflare/turnstile/client';
 
 /**
- * How long a guest waits for the Turnstile widget to load and settle before
- * the join page retries with a fresh widget. Safari's tracking protections,
- * iCloud Private Relay, Lockdown Mode and content blockers can stall or
- * block challenges.cloudflare.com without any callback firing.
+ * How long a guest waits for a Turnstile token before the join page explains
+ * why the check may be stuck and offers a manual retry. Safari's tracking
+ * protections, iCloud Private Relay, Lockdown Mode and content blockers can
+ * leave the widget loaded but never issuing a token, with no callback firing.
  */
-export const GUEST_TURNSTILE_WATCHDOG_MS = 12_000;
+export const GUEST_TURNSTILE_WATCHDOG_MS = 5000;
 /** Automatic fresh-widget retries before the page offers the fallback. */
 export const GUEST_TURNSTILE_MAX_RETRIES = 2;
 /** First fresh-widget delay; it doubles per retry. */

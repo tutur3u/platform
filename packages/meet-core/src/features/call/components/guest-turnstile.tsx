@@ -41,11 +41,14 @@ export function GuestTurnstile({
   const [phase, setPhase] = useState<GuestTurnstilePhase>('loading');
   const [stallReason, setStallReason] =
     useState<GuestTurnstileStallReason>('blocked');
+  // True only once a token has arrived for the current widget.
   const settled = useRef(false);
+  const [slow, setSlow] = useState(false);
 
   const remount = useCallback(() => {
     dropFailedTurnstileScript();
     settled.current = false;
+    setSlow(false);
     setPhase('loading');
     setGeneration((value) => value + 1);
   }, []);
@@ -70,16 +73,18 @@ export function GuestTurnstile({
     [onTokenLost, remount]
   );
 
-  // Watchdog: a widget that neither issues a token nor asks the guest to
-  // interact in time is treated as stalled and replaced.
+  // Watchdog keyed on token arrival: a widget that has not issued a token in
+  // time keeps running (the guest may be mid-click), and the page shows why it
+  // may be stuck plus a manual retry next to it. Errors, timeouts and
+  // unsupported browsers still replace the widget through `recovery`.
   // biome-ignore lint/correctness/useExhaustiveDependencies: restart per widget
   useEffect(() => {
     if (phase === 'stalled') return;
     const timer = setTimeout(() => {
-      if (!settled.current) recovery.onStall('watchdog');
+      if (!settled.current) setSlow(true);
     }, GUEST_TURNSTILE_WATCHDOG_MS);
     return () => clearTimeout(timer);
-  }, [generation, phase, recovery]);
+  }, [generation]);
 
   const retryNow = () => {
     recovery.scheduler.cancel();
@@ -119,6 +124,7 @@ export function GuestTurnstile({
         }}
         onSuccess={(token) => {
           settled.current = true;
+          setSlow(false);
           recovery.scheduler.onSuccess();
           setPhase('loading');
           onToken(token);
@@ -127,10 +133,7 @@ export function GuestTurnstile({
           settled.current = false;
           onTokenLost();
         }}
-        onBeforeInteractive={() => {
-          settled.current = true;
-          setPhase('interactive');
-        }}
+        onBeforeInteractive={() => setPhase('interactive')}
         onError={(code) => {
           settled.current = false;
           onTokenLost();
@@ -150,6 +153,21 @@ export function GuestTurnstile({
         <p aria-live="polite" className="text-muted-foreground text-sm">
           {t('verification_retrying')}
         </p>
+      ) : slow ? (
+        <div
+          role="status"
+          className="space-y-2 rounded-lg border border-dashed p-3 text-sm"
+          data-testid="guest-turnstile-slow"
+        >
+          <p className="font-medium">{t('verification_slow')}</p>
+          <p className="text-muted-foreground">
+            {t('verification_blocked_hint')}
+          </p>
+          <Button type="button" variant="outline" size="sm" onClick={retryNow}>
+            <RefreshCw aria-hidden="true" className="size-4" />
+            {t('verification_retry')}
+          </Button>
+        </div>
       ) : null}
     </div>
   );

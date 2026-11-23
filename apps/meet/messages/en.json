@@ -4552,6 +4552,7 @@
         "verification_blocked_hint": "A content blocker, Safari Lockdown Mode or iCloud Private Relay may be blocking Cloudflare's check (challenges.cloudflare.com). Allow it for this page and retry, or ask the host to let you in.",
         "verification_retry": "Retry verification",
         "verification_retrying": "Verification is taking longer than usual. Retrying with a fresh check...",
+        "verification_slow": "Verification is taking longer than usual",
         "verification_unavailable": "Verification didn't load",
         "verification_unsupported_hint": "This browser can't run Cloudflare's check. Try another browser, sign in, or ask the host to let you in.",
         "verified": "Human check passed",

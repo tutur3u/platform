@@ -115,30 +115,21 @@ it('joins with the Turnstile token once the check passes', async () => {
   );
 });
 
-it('replaces a widget that never loads, then offers retry and the host fallback', async () => {
+it('offers the host at once and explains a slow check after the watchdog without replacing the widget', async () => {
   setup();
-  expect(mocks.mounts).toBe(1);
+  const askHost = screen.getByRole('button', {
+    name: 'ask_host_without_verification',
+  });
+  expect(askHost).toHaveProperty('disabled', false);
+  expect(screen.queryByTestId('guest-turnstile-slow')).toBeNull();
   await act(async () => {
     vi.advanceTimersByTime(GUEST_TURNSTILE_WATCHDOG_MS);
   });
-  expect(screen.getByText('verification_retrying')).toBeTruthy();
-  await act(async () => {
-    vi.advanceTimersByTime(1000);
-  });
-  expect(mocks.mounts).toBe(2);
-  await act(async () => {
-    vi.advanceTimersByTime(GUEST_TURNSTILE_WATCHDOG_MS + 2000);
-  });
-  expect(mocks.mounts).toBe(3);
-  await act(async () => {
-    vi.advanceTimersByTime(GUEST_TURNSTILE_WATCHDOG_MS);
-  });
-  expect(screen.getByTestId('guest-turnstile-stalled')).toBeTruthy();
+  expect(screen.getByTestId('guest-turnstile-slow')).toBeTruthy();
   expect(screen.getByText('verification_blocked_hint')).toBeTruthy();
+  expect(mocks.mounts).toBe(1);
 
-  fireEvent.click(
-    screen.getByRole('button', { name: 'ask_host_without_verification' })
-  );
+  fireEvent.click(askHost);
   await waitFor(() =>
     expect(mocks.join).toHaveBeenCalledWith(expect.any(String), {
       displayName: 'Safari guest',
@@ -147,8 +138,43 @@ it('replaces a widget that never loads, then offers retry and the host fallback'
   );
 
   fireEvent.click(screen.getByRole('button', { name: 'verification_retry' }));
-  expect(screen.getByTestId('turnstile-widget')).toBeTruthy();
-  expect(mocks.mounts).toBe(4);
+  expect(mocks.mounts).toBe(2);
+  expect(screen.queryByTestId('guest-turnstile-slow')).toBeNull();
+});
+
+it('hides the slow notice once a token arrives', async () => {
+  setup();
+  await act(async () => {
+    vi.advanceTimersByTime(GUEST_TURNSTILE_WATCHDOG_MS);
+  });
+  act(() => widget().onSuccess('late-token'));
+  expect(screen.queryByTestId('guest-turnstile-slow')).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'ask_host_without_verification' })
+  ).toBeNull();
+});
+
+it('stalls after repeated errors and keeps the host path', async () => {
+  setup();
+  act(() => {
+    widget().onError('600010');
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(1000);
+  });
+  act(() => {
+    widget().onError('600010');
+  });
+  await act(async () => {
+    vi.advanceTimersByTime(2000);
+  });
+  act(() => {
+    widget().onError('600010');
+  });
+  expect(screen.getByTestId('guest-turnstile-stalled')).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: 'ask_host_without_verification' })
+  ).toBeTruthy();
 });
 
 it('treats a Turnstile error as handled and retries with a fresh widget', async () => {
@@ -190,14 +216,8 @@ it('keeps an interactive challenge on screen past the watchdog', async () => {
     vi.advanceTimersByTime(GUEST_TURNSTILE_WATCHDOG_MS * 3);
   });
   expect(mocks.mounts).toBe(1);
+  expect(screen.getByTestId('turnstile-widget')).toBeTruthy();
   expect(screen.queryByTestId('guest-turnstile-stalled')).toBeNull();
-});
-
-it('does not offer the host fallback while the check can still load', () => {
-  setup();
-  expect(
-    screen.queryByRole('button', { name: 'ask_host_without_verification' })
-  ).toBeNull();
 });
 
 it('maps the verification-required refusal', () => {

@@ -67,7 +67,9 @@ export function MeetGuestJoin({
   const [refreshing, startTransition] = useTransition();
   const busy = state.kind === 'submitting' || refreshing;
   const canSubmit = state.kind === 'verified' && !!name.trim() && !busy;
-  const canAskHost = stalled && !!name.trim() && !busy;
+  // Asking the host is always available: no browser is ever left without a
+  // way in. It stays secondary to the verified join.
+  const canAskHost = state.kind !== 'verified' && !!name.trim() && !busy;
   const onToken = useCallback(
     (token: string) => setState({ kind: 'verified', token }),
     []
@@ -172,11 +174,11 @@ export function MeetGuestJoin({
           {busy && <Loader2 aria-hidden="true" className="animate-spin" />}
           {t('ask_to_join')}
         </Button>
-        {stalled ? (
+        {state.kind !== 'verified' ? (
           <div className="space-y-2">
             <Button
               type="button"
-              variant="secondary"
+              variant={stalled ? 'secondary' : 'ghost'}
               size="lg"
               className="w-full"
               disabled={!canAskHost}

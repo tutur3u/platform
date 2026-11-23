@@ -919,14 +919,16 @@ next token.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.
-- The join page never leaves a guest on an empty check. A 12-second watchdog and
-  Turnstile's error, timeout and unsupported callbacks replace the widget with a
-  fresh one (two automatic retries with growing delays, never a synchronous
-  reset). A script that never loaded is removed so the retry injects it again.
-  When retries run out or the browser is unsupported, the page explains that a
-  content blocker, Safari Lockdown Mode or iCloud Private Relay may block
-  `challenges.cloudflare.com`, and offers **Retry verification** and **Ask the
-  host to let you in**.
+- The join page never leaves a guest on an empty check. **Ask the host to let
+  you in** is always shown as a secondary action next to the Turnstile widget.
+  If no Turnstile token arrives within 5 seconds, the page keeps the widget (the
+  guest may be about to click it) and adds a note that a content blocker, Safari
+  Lockdown Mode or iCloud Private Relay may block `challenges.cloudflare.com`,
+  with **Retry verification**. Turnstile's error, timeout and unsupported
+  callbacks replace the widget with a fresh one (two automatic retries with
+  growing delays, never a synchronous reset); a script that never loaded is
+  removed so the retry injects it again. When retries run out or the browser is
+  unsupported, the widget gives way to the same explanation and retry.
 - **Ask the host to let you in** sends the join request without a Turnstile
   token. The server accepts it only after the ordinary join limit and every
   guest-join gate pass, the adaptive abuse decision does not mark the network
