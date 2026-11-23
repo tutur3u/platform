@@ -329,7 +329,8 @@ export function InventoryMergeDialog({
                         product:
                           resolvedLabels.find(
                             (product) => product.id === row.productId
-                          )?.name || '…',
+                          )?.name ||
+                          (productLabels.isFetching ? '…' : row.productId),
                         warehouse: recordName(
                           row.warehouseId,
                           labels?.warehouses

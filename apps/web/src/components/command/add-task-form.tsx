@@ -38,6 +38,7 @@ import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { cn } from '@tuturuuu/utils/format';
 import { formatInTimezone } from '@tuturuuu/utils/task-date-timezone';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import {
@@ -66,6 +67,7 @@ export function AddTaskForm({
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Multi-step state
+  const tCommon = useTranslations('common');
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
 
   // Step 1: Basic Info
@@ -128,8 +130,7 @@ export function AddTaskForm({
   // Fetch board config for estimation settings
   const { data: boardConfig } = useBoardConfig(selectedBoardId, wsId);
 
-  // This form is not localised yet; screen readers hear the pending state.
-  const busy = <LoadingPlaceholder srLabel="Loading" />;
+  const busy = <LoadingPlaceholder srLabel={tCommon('loading')} />;
 
   // Fetch workspace labels (only after board and list are selected)
   const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({

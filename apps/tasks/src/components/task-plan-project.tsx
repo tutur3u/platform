@@ -51,10 +51,11 @@ export function TaskPlanProject({
         <>
           {/* The select below stays in place (disabled) while projects load,
               so only screen readers hear the loading state: no layout jump on
-              background refetches. */}
-          {plan.query.isFetching && (
-            <p role="status" className="sr-only">{t('projectsLoading')}</p>
-          )}
+              background refetches. The status stays mounted so the text
+              change is announced. */}
+          <p role="status" className="sr-only">
+            {plan.query.isFetching ? t('projectsLoading') : null}
+          </p>
           {plan.query.isError && (
             <div role="alert">
               <p>{t('projectsFailed')}</p>
