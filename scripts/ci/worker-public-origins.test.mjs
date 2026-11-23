@@ -52,6 +52,17 @@ const PENDING = new Map([
   ['apps/turbo-cache/cloudflare.config.ts', 'preview_urls unset'],
 ]);
 
+// Deliberate staging-only origins: the exact violation each config may report.
+// Production must still be literal false, which the config's own test asserts.
+const STAGING_ONLY = new Map([
+  [
+    'apps/playground-execution/cloudflare.config.ts',
+    // Staging is served on workers.dev only, behind its bearer secret;
+    // apps/playground-execution/src/qualification.test.mjs checks prod.
+    'workers_dev is staging',
+  ],
+]);
+
 const FLAGS = [
   {
     name: 'workers_dev',
@@ -127,7 +138,7 @@ test('every Worker config disables workers.dev and preview URLs', () => {
   for (const config of configs) {
     const violations = publicOriginViolations(
       readFileSync(path.join(repoRoot, config), 'utf8')
-    );
+    ).filter((violation) => STAGING_ONLY.get(config) !== violation);
     const pending = PENDING.has(config);
     if (pending && violations.length === 0) {
       failures.push(`${config}: compliant; remove it from PENDING`);

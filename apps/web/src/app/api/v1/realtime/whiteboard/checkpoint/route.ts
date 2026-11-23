@@ -17,7 +17,10 @@ import { noStore } from '../../route-utils';
 
 const MAX_BODY_BYTES = 3_000_000;
 type Row = Record<string, any>;
-type Db = Awaited<ReturnType<typeof createAdminClient>>;
+const adminDb = () => createAdminClient({ noCookie: true });
+// Derived from the call site: ReturnType of the generic createAdminClient
+// resolves its Database parameter to unknown.
+type Db = Awaited<ReturnType<typeof adminDb>>;
 
 const respond = (body: unknown, status = 200) =>
   NextResponse.json(body, { status, headers: noStore });
@@ -154,7 +157,7 @@ export async function POST(request: Request) {
     if (raw === 'too-large') return fail(413);
     const body = boardCheckpointRequestSchema.safeParse(raw);
     if (!body.success) return fail(400);
-    const db = await createAdminClient({ noCookie: true });
+    const db = await adminDb();
     const { meetingId, boardId, wsId } = ticket.data;
 
     const read = async () => {
