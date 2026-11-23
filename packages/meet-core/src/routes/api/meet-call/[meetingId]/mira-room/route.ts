@@ -81,7 +81,8 @@ export async function GET(
       if (!(error instanceof MeetCallAccessError) || error.status !== 403)
         throw error;
       const [joinDefault, joinRevision] = await Promise.all([
-        readMiraBoxTickedByDefault(access.meeting.ws_id),
+        // A failed lookup shows the box unticked, never fails the read.
+        readMiraBoxTickedByDefault(access.meeting.ws_id).catch(() => false),
         readOpenMiraAcceptanceRevision(access.meeting.id),
       ]);
       return { available: false, joinDefault, joinRevision };
@@ -117,6 +118,8 @@ export async function POST(
       choice: data.choice,
       version: data.version,
       acceptanceRevision: data.acceptanceRevision,
+      // The room refuses a Join state that would turn an earlier off on.
+      source: data.source,
     });
     try {
       await recordMiraChoice({

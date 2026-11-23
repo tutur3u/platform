@@ -111,6 +111,7 @@ it('records the caller final state, notice, text hash and locale as their own ch
     choice: 'off',
     version,
     acceptanceRevision: 1,
+    source: 'join',
   });
   expect(f.record).toHaveBeenCalledWith({
     meetingId: 'room',
@@ -153,6 +154,18 @@ it('falls back to off when an on choice cannot be stored durably', async () => {
   );
 });
 
+it('records no evidence for a Join state the room refuses to turn back on', async () => {
+  const { MeetCallAccessError } =
+    await import('@tuturuuu/meet-core/features/call/lib/call-access');
+  f.room.mockRejectedValue(new MeetCallAccessError(409, 'Confirm in the call'));
+  await expect(post(choice())).rejects.toMatchObject({ status: 409 });
+  expect(f.room).toHaveBeenCalledWith(
+    guestAccess,
+    expect.objectContaining({ choice: 'on', source: 'join' })
+  );
+  expect(f.record).not.toHaveBeenCalled();
+});
+
 it('routes acceptance, turning off and minor reports to the acceptance flow', async () => {
   await post({
     action: 'accept',
@@ -178,6 +191,12 @@ it('gives a participant who is not admitted yet the join box default and the ope
     joinDefault: false,
     joinRevision: 4,
   });
+  // A failed default lookup shows the box unticked instead of failing.
+  f.room.mockRejectedValue(new MeetCallAccessError(403, 'Join first'));
+  f.boxDefault.mockRejectedValue(new Error('db'));
+  expect(
+    await (await GET(new Request('https://meet.test/x'), params)).json()
+  ).toEqual({ available: false, joinDefault: false, joinRevision: 4 });
   f.room.mockRejectedValue(new MeetCallAccessError(503, 'Down'));
   await expect(
     GET(new Request('https://meet.test/x'), params)

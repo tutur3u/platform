@@ -42,6 +42,9 @@ const command = z.discriminatedUnion('action', [
     version: z.literal(MIRA_ROOM_NOTICE_VERSION),
     // The acceptance the participant saw; 0 when none was current.
     acceptanceRevision: z.number().int().nonnegative(),
+    // Where the choice was made. A choice carried from the join screen never
+    // turns an earlier off back on; only an action in the call does.
+    source: z.enum(['join', 'confirm', 'toggle']).optional(),
   }),
   // Brackets every provider request that carries room-derived content.
   z.object({
@@ -144,10 +147,14 @@ export function applyMiraRoomConsent(
   if (parsed.data.action === 'mira.room.read') return reply(settled);
   if (parsed.data.action === 'mira.room.dispatch')
     return miraRoomDispatch(settled, token, accountId, parsed.data, now);
-  const { choice, acceptanceRevision } = parsed.data;
+  const { choice, acceptanceRevision, source } = parsed.data;
   const currentRevision = currentMiraRoomAcceptance(settled)?.revision ?? 0;
-  // An on choice counts only for the acceptance the participant saw.
-  if (choice === 'on' && acceptanceRevision !== currentRevision)
+  // An on choice counts only for an acceptance that exists and that the
+  // participant saw.
+  if (
+    choice === 'on' &&
+    (!currentRevision || acceptanceRevision !== currentRevision)
+  )
     return {
       state: settled,
       body: { error: 'Mira acceptance changed', code: 'MIRA_ROOM_STALE' },
@@ -156,6 +163,19 @@ export function applyMiraRoomConsent(
   if (choice === 'off') return reply(turnOff(settled, token, accountId, now));
   const own = settled.miraRoom?.choices[accountId];
   const pending = settled.miraRoom?.pending?.[accountId];
+  // A Join state never turns an earlier off, from any acceptance, back on.
+  if (
+    source === 'join' &&
+    (pending || (own?.choice === 'off' && own.meetingId === token.meetingId))
+  )
+    return {
+      state: settled,
+      body: {
+        error: 'Confirm in the call to turn Mira back on',
+        code: 'MIRA_ROOM_JOIN_OVER_OFF',
+      },
+      status: 409,
+    };
   // On while pausing cancels the pause with a new revision, so requests
   // reserved before it stay stale.
   if (

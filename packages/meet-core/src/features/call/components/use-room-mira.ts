@@ -181,8 +181,14 @@ export function useRoomMira(meetingId: string) {
     )
       return;
     // A workspace that unticks the box by default never counts a box that
-    // started ticked on a join screen; the participant confirms instead.
-    if (pendingJoin.ticked && !data.boxTickedByDefault) return;
+    // started ticked on a join screen, and neither does a box that started
+    // ticked for someone whose own last choice here was off (a new device or
+    // cleared storage); the participant confirms instead.
+    if (
+      pendingJoin.ticked &&
+      (!data.boxTickedByDefault || data.lastChoice === 'off')
+    )
+      return;
     applying.add(flight);
     // Settled through the promise, not per-call callbacks: those are dropped
     // when the component unmounts mid-flight, which would leave this Join

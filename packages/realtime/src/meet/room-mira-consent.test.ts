@@ -204,6 +204,48 @@ describe('room Mira per-person consent', () => {
     expect(view(bob)).toMatchObject({ choice: 'on', lastChoice: 'on' });
   });
 
+  it('refuses an on choice while no acceptance is current', () => {
+    expect(
+      act(bob, {
+        action: 'mira.room.choice',
+        choice: 'on',
+        version,
+        acceptanceRevision: 0,
+      })
+    ).toMatchObject({ status: 409, body: { code: 'MIRA_ROOM_STALE' } });
+    expect(room.miraRoom?.choices[bob]).toBeUndefined();
+  });
+
+  it('never lets a Join state turn an earlier off back on, in any revision', () => {
+    accept();
+    choose(bob, 'off');
+    room = endMira(room, host, 'turned_off').state;
+    accept();
+    expect(room.miraRoom?.acceptance?.revision).toBe(2);
+    // A new device carries a ticked join box for the new revision.
+    const joined = act(bob, { ...miraChoice(room, 'on'), source: 'join' });
+    expect(joined).toMatchObject({
+      status: 409,
+      body: { code: 'MIRA_ROOM_JOIN_OVER_OFF' },
+    });
+    expect(view(bob)).toMatchObject({
+      choice: null,
+      lastChoice: 'off',
+      ready: false,
+    });
+    // An action in the call does turn it on.
+    act(bob, { ...miraChoice(room, 'on'), source: 'confirm' });
+    expect(view(bob)).toMatchObject({ choice: 'on', ready: true });
+  });
+
+  it('lets a Join state turn on for someone with no earlier off', () => {
+    accept();
+    expect(
+      act(carol, { ...miraChoice(room, 'on'), source: 'join' }).status ?? 200
+    ).toBe(200);
+    expect(view(carol)).toMatchObject({ choice: 'on', ready: true });
+  });
+
   it('refuses an on choice for an acceptance the participant did not see', () => {
     accept();
     expect(

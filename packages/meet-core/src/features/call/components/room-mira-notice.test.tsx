@@ -304,6 +304,23 @@ it('asks for a confirm when the join screen saw a different acceptance', async (
   expect(f.choose).not.toHaveBeenCalled();
 });
 
+it('never turns a ticked Join box on for someone whose last choice here was off', async () => {
+  // A new device or cleared storage: the join screen could not know the off.
+  rememberMiraJoinChoice('room', {
+    ticked: true,
+    textHash: 'b'.repeat(64),
+    locale: 'en',
+    seenRevision: 4,
+  });
+  f.read.mockResolvedValue({ ...acceptedLater, lastChoice: 'off' });
+  show();
+  const box = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(box.getAttribute('aria-checked')).toBe('false');
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(f.choose).not.toHaveBeenCalled();
+  expect(f.transcript).not.toHaveBeenCalled();
+});
+
 it('starts unticked from the server last choice when nothing is stored', async () => {
   f.read.mockResolvedValue({ ...acceptedLater, lastChoice: 'off' });
   show();
