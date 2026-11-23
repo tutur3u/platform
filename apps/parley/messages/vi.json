@@ -5149,7 +5149,11 @@
       "join_step_connecting": "Đang kết nối",
       "join_step_ready": "Sắp xong",
       "join_slow_hint": "Việc này đang lâu hơn bình thường. Hãy kiểm tra kết nối internet hoặc thử lại.",
-      "join_retry": "Thử lại"
+      "join_retry": "Thử lại",
+      "focus_view": "Tập trung vào màn hình",
+      "exit_focus_view": "Thoát chế độ tập trung",
+      "browser_fullscreen": "Toàn màn hình trình duyệt",
+      "exit_browser_fullscreen": "Thoát toàn màn hình"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

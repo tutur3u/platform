@@ -5149,7 +5149,11 @@
       "join_step_connecting": "Connecting",
       "join_step_ready": "Almost ready",
       "join_slow_hint": "This is taking longer than usual. Check your internet connection, or try again.",
-      "join_retry": "Try again"
+      "join_retry": "Try again",
+      "focus_view": "Focus on screen",
+      "exit_focus_view": "Exit focus",
+      "browser_fullscreen": "Browser full screen",
+      "exit_browser_fullscreen": "Exit full screen"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
