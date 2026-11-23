@@ -26,6 +26,8 @@
     "./hive": "./src/hive/index.ts",
     "./hive/yjs": "./src/hive/yjs.ts",
     "./meet": "./src/meet/index.ts",
+    "./meet/board-sync-access": "./src/meet/board-sync-access.ts",
+    "./meet/board-sync-schema": "./src/meet/board-sync-schema.ts",
     "./meet/classroom-tools-schema": "./src/meet/classroom-tools-schema.ts",
     "./meet/room-breakouts": "./src/meet/room-breakouts.ts",
     "./meet/room-whiteboard": "./src/meet/room-whiteboard.ts",
