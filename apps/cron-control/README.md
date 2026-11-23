@@ -67,6 +67,16 @@ operations in the release approval.
    Retain the attempt and clear the secret under the approved release packet
    before advancing the production pin.
 
+The approval's `runId` must name a `push` run of the Cron Control workflow on
+`main` whose head commit is the production SHA, and `artifactId` must be that
+run's `cron-control-worker-<sha>` artifact. The workflow starts only when a
+commit changes a path in its `paths` filter, such as this directory,
+`packages/realtime`, the Cron parity files, `bun.lock` or `package.json`. A
+production SHA that changed none of them has no producer run and cannot carry
+an approval, so pin a commit that changes one. When that run's `index.js` is
+byte-identical to the serving module, issue the approval for the new SHA with
+the unchanged deployment and version IDs; no publication is needed.
+
 GitHub artifact and run metadata are public reads. Cloudflare reads use the
 Cron workflow's existing token for settings and version metadata, including
 module content.
