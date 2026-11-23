@@ -4407,7 +4407,16 @@
         "sign_in": "Đăng nhập bằng Tuturuuu",
         "title": "Tham gia cuộc họp",
         "verified": "Đã xác minh người thật",
-        "verifying": "Đang xác minh bạn là người thật..."
+        "verifying": "Đang xác minh bạn là người thật...",
+        "verification_unavailable": "Không tải được bước xác minh",
+        "verification_blocked_hint": "Trình chặn nội dung, Chế độ phong tỏa (Lockdown Mode) của Safari hoặc iCloud Private Relay có thể đang chặn bước kiểm tra của Cloudflare (challenges.cloudflare.com). Hãy cho phép nó trên trang này rồi thử lại, hoặc nhờ người chủ trì cho bạn vào.",
+        "verification_unsupported_hint": "Trình duyệt này không chạy được bước kiểm tra của Cloudflare. Hãy thử trình duyệt khác, đăng nhập, hoặc nhờ người chủ trì cho bạn vào.",
+        "verification_retry": "Thử xác minh lại",
+        "verification_retrying": "Bước xác minh đang lâu hơn bình thường. Đang thử lại với bước kiểm tra mới...",
+        "ask_host_without_verification": "Nhờ người chủ trì cho vào",
+        "ask_host_without_verification_hint": "Bạn sẽ chờ trong phòng chờ, được đánh dấu là chưa xác minh, cho đến khi người chủ trì cho vào.",
+        "error_verification_required": "Mạng này không được gửi yêu cầu chưa xác minh. Hãy thử xác minh lại hoặc đăng nhập.",
+        "unverified_badge": "Chưa xác minh"
       },
       "guest_transcription_notice": "Chủ phòng có thể bật chép lời trực tiếp bằng Gemini và lưu ghi chú cho thành viên không gian làm việc.",
       "hand_raised": "Đã giơ tay",

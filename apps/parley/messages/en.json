@@ -4407,7 +4407,16 @@
         "sign_in": "Sign in with Tuturuuu",
         "title": "Join meeting",
         "verified": "Human check passed",
-        "verifying": "Verifying you are human..."
+        "verifying": "Verifying you are human...",
+        "verification_unavailable": "Verification didn't load",
+        "verification_blocked_hint": "A content blocker, Safari Lockdown Mode or iCloud Private Relay may be blocking Cloudflare's check (challenges.cloudflare.com). Allow it for this page and retry, or ask the host to let you in.",
+        "verification_unsupported_hint": "This browser can't run Cloudflare's check. Try another browser, sign in, or ask the host to let you in.",
+        "verification_retry": "Retry verification",
+        "verification_retrying": "Verification is taking longer than usual. Retrying with a fresh check...",
+        "ask_host_without_verification": "Ask the host to let you in",
+        "ask_host_without_verification_hint": "You'll wait in the lobby, marked as unverified, until the host admits you.",
+        "error_verification_required": "Requests without verification aren't accepted from this network. Retry verification or sign in.",
+        "unverified_badge": "Unverified"
       },
       "guest_transcription_notice": "The host can enable live transcription with Gemini and save notes for workspace members.",
       "hand_raised": "Hand raised",

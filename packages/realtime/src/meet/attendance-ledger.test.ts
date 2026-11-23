@@ -76,6 +76,32 @@ describe('attendance ledger', () => {
     expect(rejoined.state.attendance?.[0]?.leftAt).toBeUndefined();
   });
 
+  it('flags a lobby guest that skipped Turnstile as unverified for the host', () => {
+    const base = {
+      accountId: GUEST_ID,
+      admission: 'lobby' as const,
+      displayName: 'Lan',
+      guest: true as const,
+      role: 'speaker' as const,
+      userId: GUEST_ID,
+    };
+    const unverified = admitOrHold(createMeetRoomSnapshot(), token(base), NOW);
+    expect(unverified.state.presence[GUEST_ID]).toBeUndefined();
+    expect(unverified.state.waiting[GUEST_ID]?.unverified).toBe(true);
+    const verified = admitOrHold(
+      createMeetRoomSnapshot(),
+      token({ ...base, guestTurnstileVerified: true }),
+      NOW
+    );
+    expect(verified.state.waiting[GUEST_ID]?.unverified).toBeUndefined();
+    const member = admitOrHold(
+      createMeetRoomSnapshot(),
+      token({ admission: 'lobby', role: 'speaker', userId: GUEST_ID }),
+      NOW
+    );
+    expect(member.state.waiting[GUEST_ID]?.unverified).toBeUndefined();
+  });
+
   it('keeps lobby guests out until they are admitted, then stores the guest id and name', () => {
     const host = token();
     const guest = token({

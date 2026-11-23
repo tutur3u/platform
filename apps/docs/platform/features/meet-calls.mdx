@@ -919,8 +919,27 @@ next token.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.
+- The join page never leaves a guest on an empty check. A 12-second watchdog and
+  Turnstile's error, timeout and unsupported callbacks replace the widget with a
+  fresh one (two automatic retries with growing delays, never a synchronous
+  reset). A script that never loaded is removed so the retry injects it again.
+  When retries run out or the browser is unsupported, the page explains that a
+  content blocker, Safari Lockdown Mode or iCloud Private Relay may block
+  `challenges.cloudflare.com`, and offers **Retry verification** and **Ask the
+  host to let you in**.
+- **Ask the host to let you in** sends the join request without a Turnstile
+  token. The server accepts it only after the ordinary join limit and every
+  guest-join gate pass, the adaptive abuse decision does not mark the network
+  restricted or challenge-required, and a separate unverified budget passes:
+  three per network per meeting every ten minutes (scaled down, never up, by the
+  abuse trust multiplier) and twenty per meeting across networks. Every
+  unverified request is recorded as an abuse signal. The session is never marked
+  verified, so the guest always waits in the lobby, and hosts see an
+  **Unverified** badge next to **Guest** before deciding. A meeting with no host
+  present keeps the guest waiting; there is no automatic admission.
 - Guests can vote in live polls while they are admitted to the call. The server
-  binds one response per poll to the verified guest session across devices.
+  binds one response per poll to the verified guest session across devices;
+  unverified guests cannot vote.
   Guests cannot create or manage polls.
 - Documents, Quiz Arena, notes, recordings and other account-backed features
   show **Sign in to use this** for guests instead of failing loudly.
@@ -932,7 +951,9 @@ next token.
   both, guest join stays closed. Development uses Cloudflare's test key.
 
 Regression coverage: `guest-session.test.ts`, `guest-access.test.ts`,
-`guest-rate-limit.test.ts`, `guest-admission.ts`, the guest `route.test.ts`,
+`guest-rate-limit.test.ts`, `guest-unverified-limit.test.ts`,
+`guest-unverified-risk.test.ts`, `guest-turnstile-recovery.test.ts`,
+`guest-join.test.tsx`, the unverified lobby flag in `attendance-ledger.test.ts`, `guest-admission.ts`, the guest `route.test.ts`,
 `room-guest.test.ts`, `room-removed-guests.test.ts`, `room-polls` guest voting,
 the guest cases in the Meet `page-model.server.test.ts` and room `page.test.ts`.
 

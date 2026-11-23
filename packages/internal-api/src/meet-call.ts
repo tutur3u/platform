@@ -30,7 +30,12 @@ export function createMeetCallRealtimeToken(
 /** Anonymous guest join: the server verifies Turnstile and sets a signed cookie. */
 export function joinMeetCallAsGuest(
   meetingId: string,
-  input: { displayName: string; turnstileToken?: string }
+  input: {
+    displayName: string;
+    turnstileToken?: string;
+    /** Turnstile could not load: ask the host, landing unverified in the lobby. */
+    hostApproval?: true;
+  }
 ) {
   return getInternalApiClient().json<{ ok: true }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/guest`,

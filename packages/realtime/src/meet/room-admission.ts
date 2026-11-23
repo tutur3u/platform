@@ -126,6 +126,10 @@ export function admitOrHold(
             ? { canManageParticipants: true }
             : {}),
           ...(token.guest ? { guest: true as const } : {}),
+          // Asked to join without passing Turnstile; the host decides.
+          ...(token.guest && !token.guestTurnstileVerified
+            ? { unverified: true as const }
+            : {}),
           ...(token.participantKind
             ? { participantKind: token.participantKind }
             : {}),

@@ -1,10 +1,5 @@
 'use client';
 
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
-import {
-  readTurnstileScriptNonce,
-  SAFARI_SAFE_TURNSTILE_OPTIONS,
-} from '@tuturuuu/cloudflare/turnstile/client';
 import { Loader2, LockKeyhole, ShieldCheck, Video } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api';
 import { joinMeetCallAsGuest } from '@tuturuuu/internal-api/meet-call';
@@ -15,18 +10,21 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useRef, useState, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
+import { GuestTurnstile } from './guest-turnstile';
 
 /** One state at a time: the check and the request never disagree. */
 export type GuestJoinState =
   | { kind: 'verifying' }
   | { kind: 'verified'; token: string }
-  | { kind: 'submitting'; token: string }
+  /** `token: null` asks the host without a Turnstile token. */
+  | { kind: 'submitting'; token: string | null }
   | {
       kind: 'failed';
       reason:
         | 'turnstile'
+        | 'verification_required'
         | 'rate_limited'
         | 'removed'
         | 'unavailable'
@@ -37,10 +35,13 @@ export function guestJoinFailure(
   error: unknown
 ): Extract<GuestJoinState, { kind: 'failed' }>['reason'] {
   if (!(error instanceof InternalApiError)) return 'network';
-  if (error.code === 'MEET_GUEST_RATE_LIMITED') return 'rate_limited';
-  if (error.code === 'MEET_GUEST_TURNSTILE_FAILED') return 'turnstile';
-  if (error.code === 'MEET_GUEST_REMOVED') return 'removed';
-  if (error.status === 403 || error.status === 404) return 'unavailable';
+  const { code, status } = error as { code?: string; status?: number };
+  if (code === 'MEET_GUEST_RATE_LIMITED') return 'rate_limited';
+  if (code === 'MEET_GUEST_TURNSTILE_FAILED') return 'turnstile';
+  if (code === 'MEET_GUEST_VERIFICATION_REQUIRED')
+    return 'verification_required';
+  if (code === 'MEET_GUEST_REMOVED') return 'removed';
+  if (status === 403 || status === 404) return 'unavailable';
   return 'network';
 }
 
@@ -58,12 +59,40 @@ export function MeetGuestJoin({
 }) {
   const t = useTranslations('meet.call.guest_join');
   const router = useRouter();
-  const captcha = useRef<TurnstileInstance | null>(null);
   const [name, setName] = useState('');
   const [state, setState] = useState<GuestJoinState>({ kind: 'verifying' });
+  const [stalled, setStalled] = useState(false);
+  // A Turnstile token is single-use: a fresh widget issues the next one.
+  const [widget, setWidget] = useState(0);
   const [refreshing, startTransition] = useTransition();
   const busy = state.kind === 'submitting' || refreshing;
   const canSubmit = state.kind === 'verified' && !!name.trim() && !busy;
+  const canAskHost = stalled && !!name.trim() && !busy;
+  const onToken = useCallback(
+    (token: string) => setState({ kind: 'verified', token }),
+    []
+  );
+  const onTokenLost = useCallback(
+    () =>
+      setState((current) =>
+        current.kind === 'verified' ? { kind: 'verifying' } : current
+      ),
+    []
+  );
+
+  const join = async (token: string | null) => {
+    setState({ kind: 'submitting', token });
+    try {
+      await joinMeetCallAsGuest(meetingId, {
+        displayName: name.trim(),
+        ...(token ? { turnstileToken: token } : { hostApproval: true }),
+      });
+      startTransition(() => router.refresh());
+    } catch (error) {
+      if (token) setWidget((value) => value + 1);
+      setState({ kind: 'failed', reason: guestJoinFailure(error) });
+    }
+  };
 
   const status = (() => {
     switch (state.kind) {
@@ -85,22 +114,10 @@ export function MeetGuestJoin({
     <main className="grid min-h-dvh place-items-center bg-background p-4">
       <form
         className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm sm:p-8"
-        onSubmit={async (event) => {
+        onSubmit={(event) => {
           event.preventDefault();
           if (state.kind !== 'verified' || !name.trim() || busy) return;
-          const token = state.token;
-          setState({ kind: 'submitting', token });
-          try {
-            await joinMeetCallAsGuest(meetingId, {
-              displayName: name.trim(),
-              turnstileToken: token,
-            });
-            startTransition(() => router.refresh());
-          } catch (error) {
-            // A Turnstile token is single-use; every retry needs a fresh check.
-            captcha.current?.reset();
-            setState({ kind: 'failed', reason: guestJoinFailure(error) });
-          }
+          void join(state.token);
         }}
       >
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -125,14 +142,12 @@ export function MeetGuestJoin({
           <p className="text-muted-foreground text-xs">{t('name_hint')}</p>
         </div>
         <div className="space-y-2">
-          <Turnstile
-            ref={captcha}
+          <GuestTurnstile
+            key={widget}
             siteKey={siteKey}
-            options={{ ...SAFARI_SAFE_TURNSTILE_OPTIONS, size: 'flexible' }}
-            scriptOptions={{ nonce: readTurnstileScriptNonce() }}
-            onSuccess={(token) => setState({ kind: 'verified', token })}
-            onExpire={() => setState({ kind: 'verifying' })}
-            onError={() => setState({ kind: 'failed', reason: 'turnstile' })}
+            onToken={onToken}
+            onTokenLost={onTokenLost}
+            onStalledChange={setStalled}
           />
           <p
             aria-live="polite"
@@ -157,6 +172,26 @@ export function MeetGuestJoin({
           {busy && <Loader2 aria-hidden="true" className="animate-spin" />}
           {t('ask_to_join')}
         </Button>
+        {stalled ? (
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
+              className="w-full"
+              disabled={!canAskHost}
+              onClick={() => void join(null)}
+            >
+              {state.kind === 'submitting' && state.token === null && (
+                <Loader2 aria-hidden="true" className="animate-spin" />
+              )}
+              {t('ask_host_without_verification')}
+            </Button>
+            <p className="text-muted-foreground text-xs">
+              {t('ask_host_without_verification_hint')}
+            </p>
+          </div>
+        ) : null}
         <div className="flex items-center gap-3 text-muted-foreground text-xs">
           <Separator className="flex-1" />
           {t('or')}

@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   cookie: vi.fn(),
   verify: vi.fn(),
   limit: vi.fn(),
+  unverifiedLimit: vi.fn(),
+  risk: vi.fn(),
 }));
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: mocks.cookie }),
@@ -16,6 +18,13 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-rate-limit', () => ({
   checkMeetGuestJoinLimit: mocks.limit,
 }));
+vi.mock('@tuturuuu/meet-core/features/call/lib/guest-unverified-limit', () => ({
+  checkMeetGuestUnverifiedLimit: mocks.unverifiedLimit,
+}));
+vi.mock(
+  '@tuturuuu/meet-core/features/call/server/guest-unverified-risk',
+  () => ({ assessMeetGuestUnverifiedJoin: mocks.risk })
+);
 vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/usage-limit', () => ({
   meetAiUsageGuard: vi.fn(async () => ({ selection: { kind: 'off' } })),
 }));
@@ -45,7 +54,23 @@ beforeEach(() => {
   mocks.limit.mockResolvedValue({ ok: true });
   mocks.resolve.mockResolvedValue({ kind: 'available', meeting: {} });
   mocks.verify.mockResolvedValue(undefined);
+  mocks.unverifiedLimit.mockResolvedValue({ ok: true });
+  mocks.risk.mockResolvedValue({
+    allowed: true,
+    networkLimit: 3,
+    decision: null,
+  });
 });
+
+async function cookieSession(response: Response) {
+  const header = response.headers.get('Set-Cookie') ?? '';
+  const value = header.split(';')[0]?.split('=').slice(1).join('=');
+  return verifyMeetGuestSession(
+    value,
+    meetingId,
+    'meet-local-development-token-secret'
+  );
+}
 
 it('refuses cross-origin requests before any check', async () => {
   const response = await POST(
@@ -157,4 +182,77 @@ it('binds the same verified challenge to one identity and keeps the existing ver
   expect(repeated.status).toBe(200);
   expect(repeated.headers.get('Set-Cookie')).toBeNull();
   expect(mocks.verify).toHaveBeenCalledTimes(2);
+});
+
+it('still requires Turnstile when a tokenless request does not ask the host', async () => {
+  mocks.verify.mockRejectedValue(new Error('missing'));
+  const response = await POST(request({ displayName: 'An' }), params);
+  expect(response.status).toBe(403);
+  expect((await response.json()).code).toBe('MEET_GUEST_TURNSTILE_FAILED');
+  expect(mocks.risk).not.toHaveBeenCalled();
+});
+
+it('lets a tokenless host-approval request into the lobby unverified', async () => {
+  const response = await POST(
+    request({ displayName: 'Safari guest', hostApproval: true }),
+    params
+  );
+  expect(response.status).toBe(200);
+  expect(mocks.verify).not.toHaveBeenCalled();
+  expect(mocks.limit).toHaveBeenCalled();
+  expect(mocks.risk).toHaveBeenCalledWith(expect.any(Request), {
+    meetingId,
+    network: '203.0.113.4',
+  });
+  expect(mocks.unverifiedLimit).toHaveBeenCalledWith(
+    { meetingId, network: '203.0.113.4', networkLimit: 3 },
+    null
+  );
+  const session = await cookieSession(response);
+  expect(session).toMatchObject({ meetingId, displayName: 'Safari guest' });
+  expect(session?.turnstileVerified).toBeUndefined();
+});
+
+it('refuses a tokenless request the abuse policy flags', async () => {
+  mocks.risk.mockResolvedValue({ allowed: false, decision: {} });
+  const response = await POST(
+    request({ displayName: 'An', hostApproval: true }),
+    params
+  );
+  expect(response.status).toBe(403);
+  expect((await response.json()).code).toBe('MEET_GUEST_VERIFICATION_REQUIRED');
+  expect(response.headers.get('Set-Cookie')).toBeNull();
+  expect(mocks.unverifiedLimit).not.toHaveBeenCalled();
+});
+
+it('rate-limits tokenless requests separately', async () => {
+  mocks.unverifiedLimit.mockResolvedValue({ ok: false, retryAfterSeconds: 60 });
+  const response = await POST(
+    request({ displayName: 'An', hostApproval: true }),
+    params
+  );
+  expect(response.status).toBe(429);
+  expect(response.headers.get('Retry-After')).toBe('60');
+  expect(response.headers.get('Set-Cookie')).toBeNull();
+});
+
+it('keeps the ordinary join limit and gates ahead of the tokenless path', async () => {
+  mocks.resolve.mockResolvedValue({ kind: 'unavailable' });
+  const response = await POST(
+    request({ displayName: 'An', hostApproval: true }),
+    params
+  );
+  expect(response.status).toBe(403);
+  expect(mocks.risk).not.toHaveBeenCalled();
+});
+
+it('verifies a token even when hostApproval is also sent', async () => {
+  mocks.verify.mockRejectedValue(new Error('bad'));
+  const response = await POST(
+    request({ displayName: 'An', turnstileToken: 't', hostApproval: true }),
+    params
+  );
+  expect(response.status).toBe(403);
+  expect((await response.json()).code).toBe('MEET_GUEST_TURNSTILE_FAILED');
+  expect(mocks.risk).not.toHaveBeenCalled();
 });

@@ -141,6 +141,11 @@ export function ParticipantsPanel({
                           {t('guest_join.badge')}
                         </Badge>
                       ) : null}
+                      {entry.unverified ? (
+                        <Badge variant="destructive" className="ml-1.5">
+                          {t('guest_join.unverified_badge')}
+                        </Badge>
+                      ) : null}
                     </span>
                     <Button
                       aria-label={`${t('admit')}: ${entry.displayName}`}

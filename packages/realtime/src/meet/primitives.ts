@@ -166,6 +166,8 @@ export const meetRealtimeWaitingParticipantSchema = z.object({
   canManageParticipants: z.boolean().optional(),
   accountId: z.uuid().optional(),
   guest: z.literal(true).optional(),
+  /** An anonymous guest whose join request did not pass Turnstile. */
+  unverified: z.literal(true).optional(),
   avatarUrl: z
     .url()
     .max(2048)
