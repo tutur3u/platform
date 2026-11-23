@@ -146,22 +146,27 @@ footer actions and the brand logo all center their icon in that slot, and rows
 use identical left padding in both states, so expanding only reveals labels and
 trailing controls.
 
-The footer follows the same rule (decided 2026-11-23): Settings, Upgrade,
-Feedback, the account row and Notifications are one vertical column in the rail
-and in the panel, in the same order, at the same x and y. Expanding reveals each
-row's label to the right of its fixed icon (the account row shows the name and
-email); Upgrade stays tinted but sits in the column. The expanded footer relies
-on the account and notification slots, so an app that passes only the combined
-`actions` row keeps that row. Phones keep the combined row.
+The footer is two items: Settings and the account avatar, at the same x and y
+in the rail and the panel (decided 2026-11-23). Expanding reveals the Settings
+label and the name and email beside the avatar. Notifications, Upgrade, Discord
+and Feedback have no footer controls: the avatar shows the unread count as a
+badge, includes it in its accessible name, and its menu lists Notifications
+(which opens the notifications popover beside the avatar, with focus returning
+to the avatar on close), Upgrade, Discord and Feedback above the account items.
+The same menu serves the phone top bar. An app that passes no account slot keeps
+its combined actions row.
 
-Scope: Web, Workspace, Colab and every satellite sidebar, in Sorbet/Minimal mode
-too; Nova's fixed sidebar is excluded, and the Git sidebar uses the same icon
-column for its navigation. Known exception: when **Show navigation labels** is on, the rail
-adds a caption under each icon, so rows are taller than in the panel. Coverage:
-the Chromium harness (`scripts/ci/sidebar-layout-shift.mjs`) measures the logo,
-navigation icons, workspace avatar, Settings, Upgrade, Feedback, account avatar
-and bell in the rail and the open panel at 1024, 1440 and 1920px in both themes,
-and fails when any x or y differs by more than 0.01px.
+Scope: Web, Workspace, Colab, Nova and every satellite sidebar, in Sorbet/Minimal
+mode too. Nova keeps its own navigation rows, and the Git sidebar's footer is its
+admin link. Known exception: when **Show navigation labels** is on, the rail adds
+a caption under each icon, so rows are taller than in the panel. Coverage: the
+Chromium harness (`scripts/ci/sidebar-layout-shift.mjs`) measures the logo,
+navigation icons, workspace avatar, Settings and the account avatar in the rail
+and the open panel at 1024, 1440 and 1920px in both themes and fails when any x
+or y differs by more than 0.01px; it also checks the avatar badge and accessible
+name, the menu items, the notifications popover and focus return.
+`structure.test.tsx` and `satellite-shell.test.tsx` cover the footer slots and
+the account hub.
 
 ## Preference precedence
 

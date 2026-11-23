@@ -11,7 +11,15 @@ import {
 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { useSidebarFooter } from '@tuturuuu/ui/custom/sidebar-footer-context';
+import {
+  AccountHubMenuItems,
+  AccountUnreadBadge,
+  useAccountHubLabel,
+} from '@tuturuuu/ui/custom/account-hub-ui';
+import {
+  useAccountHub,
+  useSidebarFooter,
+} from '@tuturuuu/ui/custom/sidebar-footer-context';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
@@ -30,7 +38,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
@@ -51,6 +59,13 @@ export default function UserNavClient({
   const [open, setOpen] = useState(false);
   // In the expanded sidebar footer the name and email return beside the avatar.
   const hideMetadata = hideMetadataProp && !useSidebarFooter().expanded;
+  const hub = useAccountHub();
+  const displayName = user?.display_name || user?.handle || undefined;
+  const triggerLabel = useAccountHubLabel(
+    hideMetadata ? displayName : undefined,
+    displayName || user?.email || ''
+  );
+  const menuTrigger = useRef<HTMLButtonElement>(null);
 
   return (
     <>
@@ -60,9 +75,17 @@ export default function UserNavClient({
         </Dialog>
       )}
 
-      <DropdownMenu modal={false}>
+      <DropdownMenu
+        modal={false}
+        onOpenChange={(open) => {
+          if (open && hub) hub.anchorRef.current = menuTrigger.current;
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <button
+            ref={menuTrigger}
+            aria-label={triggerLabel}
+            data-slot="account-trigger"
             type="button"
             className={cn(
               'flex h-10 w-full gap-0 rounded-md p-0 text-start transition',
@@ -85,6 +108,7 @@ export default function UserNavClient({
                   )}
                 </AvatarFallback>
                 <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
+                <AccountUnreadBadge />
               </Avatar>
             </span>
             {hideMetadata || (
@@ -119,6 +143,7 @@ export default function UserNavClient({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <AccountHubMenuItems />
           <DropdownMenuGroup>
             <Link href="/home">
               <DropdownMenuItem className="flex cursor-pointer gap-4">

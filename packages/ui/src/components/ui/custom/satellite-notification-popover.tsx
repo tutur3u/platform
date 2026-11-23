@@ -7,11 +7,12 @@ import {
   useUnreadCount,
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
-import { Popover, PopoverContent } from '@tuturuuu/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent } from '@tuturuuu/ui/popover';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   lazy,
   Suspense,
+  useEffect,
   useCallback,
   useId,
   useMemo,
@@ -35,6 +36,11 @@ import {
 } from './notification-placement';
 import { NotificationPopoverTriggerButton } from './notification-popover-trigger';
 import { useNotificationRuntime } from './notification-runtime';
+import {
+  focusAccountAnchor,
+  useAccountHub,
+  usePublishAccountHub,
+} from './sidebar-footer-context';
 
 const NOTIFICATION_POLL_INTERVAL_MS = 2 * 60_000;
 const PAGE_SIZE = 20;
@@ -74,7 +80,14 @@ export default function SatelliteNotificationPopover({
   side,
   align,
 }: NotificationPopoverClientProps) {
-  const [open, setOpen] = useState(false);
+  // Inside the shared sidebar the avatar is the entry: its menu opens this
+  // popover and its badge shows the unread count, so no bell is rendered.
+  const hub = useAccountHub();
+  const merged = hub !== null;
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = merged ? hub.state.notificationsOpen : localOpen;
+  const setOpen = (next: boolean) =>
+    merged ? hub.patch({ notificationsOpen: next }) : setLocalOpen(next);
   const [placement, setPlacement] = useState<NotificationPlacement>({
     side: 'bottom',
     align: 'end',
@@ -102,6 +115,16 @@ export default function SatelliteNotificationPopover({
     apiOptions,
   });
   useNotificationSubscription(routeWsId || '', realtime ? userId || '' : '');
+  const hubLabels = useMemo(
+    () => ({ label: labels.notifications, unreadText: labels.unreadCount }),
+    [labels.notifications, labels.unreadCount]
+  );
+  usePublishAccountHub('notifications', userId ? hubLabels : undefined);
+  const publishUnread = hub?.patch;
+  useEffect(() => {
+    publishUnread?.({ unreadCount });
+    return () => publishUnread?.({ unreadCount: 0 });
+  }, [publishUnread, unreadCount]);
 
   const onIntent = useCallback(() => {
     if (!userId) return;
@@ -117,13 +140,16 @@ export default function SatelliteNotificationPopover({
     );
   }, [queryClient, userId, routeWsId, apiOptions]);
 
-  const onOpenChange = (next: boolean) => {
-    if (next) {
-      setPlacement(
-        resolveNotificationPlacement(triggerRef.current, window.innerWidth)
-      );
-    }
-    if (next && userId) {
+  // Runs whenever the popover opens, whether from its own bell or from the
+  // avatar menu.
+  const prepareOpen = () => {
+    setPlacement(
+      resolveNotificationPlacement(
+        merged ? hub.anchorRef.current : triggerRef.current,
+        window.innerWidth
+      )
+    );
+    if (userId) {
       // Closed lists reopen on their first page instead of refetching every
       // page they had loaded.
       for (const { queryKey } of actorLists(queryClient, userId)) {
@@ -134,8 +160,14 @@ export default function SatelliteNotificationPopover({
         if (!observers) trimClosedList(queryClient, queryKey);
       }
     }
+  };
+  const onOpenChange = (next: boolean) => {
+    if (next && !merged) prepareOpen();
     setOpen(next);
   };
+  useEffect(() => {
+    if (merged && open) prepareOpen();
+  }, [merged, open]);
 
   if (!userId) return null;
 
@@ -146,15 +178,27 @@ export default function SatelliteNotificationPopover({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <NotificationPopoverTriggerButton
-        notificationsText={labels.notifications}
-        unreadCount={unreadCount}
-        unreadCountText={labels.unreadCount}
-        onIntent={onIntent}
-        triggerRef={triggerRef}
-      />
+      {merged ? (
+        <PopoverAnchor virtualRef={hub.anchorRef} />
+      ) : (
+        <NotificationPopoverTriggerButton
+          notificationsText={labels.notifications}
+          unreadCount={unreadCount}
+          unreadCountText={labels.unreadCount}
+          onIntent={onIntent}
+          triggerRef={triggerRef}
+        />
+      )}
       <PopoverContent
         ref={contentRef}
+        onCloseAutoFocus={
+          merged
+            ? (event) => {
+                event.preventDefault();
+                focusAccountAnchor(hub.anchorRef.current);
+              }
+            : undefined
+        }
         tabIndex={-1}
         side={side ?? placement.side}
         align={align ?? placement.align}

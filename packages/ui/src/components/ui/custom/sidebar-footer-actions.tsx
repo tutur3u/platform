@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ReportProblemDialog } from '../report-problem-dialog';
 import {
   SatelliteFooterActions,
@@ -15,13 +15,14 @@ export function SidebarFooterActions(
 ) {
   const t = useTranslations('common');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const openFeedback = useCallback(() => setFeedbackOpen(true), []);
   return (
     <>
       <SatelliteFooterActions
         {...props}
         labels={{ upgrade: t('upgrade'), feedback: t('feedback') }}
         discordHref={process.env.NEXT_PUBLIC_DISCORD_LINK}
-        onFeedback={() => setFeedbackOpen(true)}
+        onFeedback={openFeedback}
         LinkComponent={Link}
       />
       <ReportProblemDialog

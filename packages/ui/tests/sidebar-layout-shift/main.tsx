@@ -7,7 +7,6 @@ import {
   Settings,
   Users,
 } from '@tuturuuu/icons';
-import { NotificationPopoverTriggerButton } from '@tuturuuu/ui/custom/notification-popover-trigger';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
@@ -17,6 +16,11 @@ import {
   SidebarNavigationItemContent,
   satelliteNavigationItemClass,
 } from '@tuturuuu/ui/custom/satellite-navigation';
+import {
+  focusAccountAnchor,
+  useAccountHub,
+  usePublishAccountHub,
+} from '@tuturuuu/ui/custom/sidebar-footer-context';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import {
@@ -26,9 +30,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { Popover } from '@tuturuuu/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { WorkspaceSelectTrigger } from '../../src/components/ui/custom/workspace-select-trigger';
 import './style.css';
@@ -166,6 +170,37 @@ const Account = ({ hideMetadata }: { hideMetadata?: boolean }) => (
   </SatelliteUserMenu>
 );
 
+/** Stands in for the real popover: it publishes to the account hub and opens from the avatar menu. */
+function NotificationsStandIn() {
+  const hub = useAccountHub();
+  const labels = useMemo(
+    () => ({ label: 'Notifications', unreadText: '{count} unread' }),
+    []
+  );
+  usePublishAccountHub('notifications', labels);
+  const patch = hub?.patch;
+  useEffect(() => patch?.({ unreadCount: 3 }), [patch]);
+  if (!hub) return null;
+  return (
+    <Popover
+      open={hub.state.notificationsOpen}
+      onOpenChange={(open) => hub.patch({ notificationsOpen: open })}
+    >
+      <PopoverAnchor virtualRef={hub.anchorRef} />
+      <PopoverContent
+        align="end"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          focusAccountAnchor(hub.anchorRef.current);
+        }}
+        side="right"
+      >
+        <p data-testid="notifications-panel">Notifications panel</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function CalendarGrid(): ReactNode {
   return (
     <div
@@ -246,14 +281,7 @@ function Harness() {
       homeLabel="Home"
       isCollapsed={shell.isCollapsed}
       mobileSidebarOpen={shell.mobileSidebarOpen}
-      notificationPopover={
-        <Popover>
-          <NotificationPopoverTriggerButton
-            notificationsText="Notifications"
-            unreadCount={3}
-          />
-        </Popover>
-      }
+      notificationPopover={<NotificationsStandIn />}
       onMouseEnter={shell.onMouseEnter}
       onMouseLeave={shell.onMouseLeave}
       overlayOnExpand

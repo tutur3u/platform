@@ -1,3 +1,6 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+
 // Icon-position comparison helpers for sidebar-layout-shift.mjs.
 
 // Icons must hold the exact same position (sub-pixel rounding only).
@@ -67,4 +70,61 @@ export async function measureIconMatrix(page) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(300);
   return matrix;
+}
+
+/**
+ * The footer is Settings and the account avatar only. Notifications, Upgrade
+ * and Feedback live in the avatar menu, and the avatar carries the unread
+ * count in its badge and accessible name.
+ */
+export async function checkAccountHub(page, shots) {
+  const aside = page.locator('aside');
+  assert.equal(
+    await aside
+      .getByRole('button', { name: /^(Feedback|Upgrade|Notifications)/ })
+      .count(),
+    0,
+    'the footer has no Feedback, Upgrade or Notifications controls'
+  );
+  await page.mouse.move(900, 450);
+  await page.waitForTimeout(500);
+  const rail = aside.getByRole('button', { name: 'Account, 3 unread' });
+  await rail.waitFor();
+  assert.equal(
+    await rail.locator('[data-slot="account-unread-badge"]').textContent(),
+    '3',
+    'the rail avatar shows the unread count'
+  );
+  await page.mouse.move(24, 400);
+  await page.locator('aside[data-overlay-state="open"]').waitFor();
+  await page.waitForTimeout(500);
+  const account = aside.getByRole('button', { name: 'Account, 3 unread' });
+  await account.click();
+  const menu = page.getByRole('menu');
+  for (const name of [/^Notifications/, /^Upgrade/, /^Feedback/]) {
+    await menu.getByRole('menuitem', { name }).waitFor();
+  }
+  await page.waitForTimeout(300);
+  if (shots)
+    await page.screenshot({ path: path.join(shots, '6-account-menu.png') });
+  await menu.getByRole('menuitem', { name: /^Notifications/ }).click();
+  await page.getByTestId('notifications-panel').waitFor();
+  await page.waitForTimeout(300);
+  if (shots)
+    await page.screenshot({ path: path.join(shots, '7-notifications.png') });
+  // The pointer stays on the sidebar, as it does when the avatar is clicked.
+  await page.mouse.move(24, 420);
+  await page.keyboard.press('Escape');
+  await page.getByTestId('notifications-panel').waitFor({ state: 'hidden' });
+  await page.waitForTimeout(200);
+  const focused = await page.evaluate(
+    () => document.activeElement?.outerHTML.slice(0, 160) ?? ''
+  );
+  assert.match(
+    focused,
+    /aria-label="Account/,
+    `focus returns to the avatar after the notifications close (was ${focused})`
+  );
+  await page.mouse.move(900, 450);
+  await page.waitForTimeout(400);
 }

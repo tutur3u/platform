@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useAccountHub } from '../sidebar-footer-context';
 import { Structure } from '../structure';
 import {
   fakeApi,
@@ -53,11 +54,28 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** Stands in for the account avatar, which opens the sidebar's notifications. */
+function AccountEntry() {
+  const hub = useAccountHub();
+  return (
+    <button
+      type="button"
+      ref={(node) => {
+        if (hub) hub.anchorRef.current = node;
+      }}
+      onClick={() => hub?.patch({ notificationsOpen: true })}
+    >
+      Notifications
+    </button>
+  );
+}
+
 function HoverSidebar({ popover }: { popover: ReactNode }) {
   const [collapsed, setCollapsed] = useState(true);
   return (
     <Structure
-      actions={popover}
+      notificationPopover={popover}
+      userPopover={<AccountEntry />}
       isCollapsed={collapsed}
       onMouseEnter={() => setCollapsed(false)}
       onMouseLeave={() => setCollapsed(true)}

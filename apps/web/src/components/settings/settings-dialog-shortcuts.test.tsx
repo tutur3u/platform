@@ -492,7 +492,7 @@ describe('settings dialog shortcut', () => {
   ])(
     'passes the account trigger when opening %s in the workspace host',
     (label, tab) => {
-      const { getByRole, getByTestId } = render(
+      const { getAllByRole, getByTestId } = render(
         <>
           <SettingsDialogHost user={user as unknown as WorkspaceUser} />
           <UserNavClient
@@ -507,7 +507,10 @@ describe('settings dialog shortcut', () => {
       const accountTrigger = getByTestId('account-menu-trigger').querySelector(
         'button'
       );
-      const item = getByRole('button', { name: label });
+      // The icon-only trigger is also named after the account; the menu item is the other match.
+      const item = getAllByRole('button', { name: label }).find(
+        (element) => element !== accountTrigger
+      ) as HTMLElement;
       const onIntent = vi.fn();
       window.addEventListener(SETTINGS_DIALOG_OPEN_INTENT_EVENT, onIntent, {
         once: true,

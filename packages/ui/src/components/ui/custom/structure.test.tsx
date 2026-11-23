@@ -103,12 +103,12 @@ describe('Structure', () => {
     );
   });
 
-  it('keeps the account and notification controls in the collapsed footer', () => {
+  it('keeps only the account in the collapsed footer', () => {
     const { container } = render(
       <Structure
         actions={<span>Expanded account actions</span>}
         isCollapsed
-        notificationPopover={<button type="button">Notifications</button>}
+        notificationPopover={<span data-testid="notifications-host" />}
         setIsCollapsed={vi.fn()}
         userPopover={<button type="button">Account</button>}
       >
@@ -116,20 +116,20 @@ describe('Structure', () => {
       </Structure>
     );
 
-    const sidebar = container.querySelector('aside');
-    expect(sidebar).not.toBeNull();
-    const sidebarQueries = within(sidebar as HTMLElement);
+    const sidebarQueries = within(
+      container.querySelector('aside') as HTMLElement
+    );
 
     expect(
       sidebarQueries.getByRole('button', { name: 'Account' })
     ).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Account' })).toHaveLength(1);
     expect(
-      sidebarQueries.getByRole('button', { name: 'Notifications' })
-    ).toBeVisible();
-    expect(
       sidebarQueries.queryByText('Expanded account actions')
     ).not.toBeInTheDocument();
+    expect(
+      container.querySelector('[data-slot="account-hub-host"] [data-testid]')
+    ).not.toBeNull();
   });
 
   it('mounts the compact account in the top bar only on a phone', () => {
@@ -151,12 +151,13 @@ describe('Structure', () => {
     );
   });
 
-  it('stacks the account and notifications in one column when expanded', () => {
+  it('shows only the account in the desktop footer and hosts the hub controls once', () => {
     const { container } = render(
       <Structure
         actions={<span>Fallback account actions</span>}
+        feedbackButton={<span data-testid="feedback-host" />}
         isCollapsed={false}
-        notificationPopover={<button type="button">Notifications</button>}
+        notificationPopover={<span data-testid="notifications-host" />}
         setIsCollapsed={vi.fn()}
         userPopover={<button type="button">Account</button>}
       >
@@ -168,9 +169,12 @@ describe('Structure', () => {
 
     expect(sidebar.queryByText('Fallback account actions')).toBeNull();
     expect(sidebar.getByRole('button', { name: 'Account' })).toBeVisible();
+    const host = container.querySelector('[data-slot="account-hub-host"]');
+    expect(host).toHaveAttribute('hidden');
+    expect(host?.querySelectorAll('[data-testid]')).toHaveLength(2);
     expect(
-      sidebar.getByRole('button', { name: 'Notifications' })
-    ).toBeVisible();
+      container.querySelectorAll('[data-slot="sidebar-account-row"]')
+    ).toHaveLength(1);
   });
 
   it('falls back to the combined actions when no account slot is given', () => {
@@ -192,15 +196,11 @@ describe('Structure', () => {
   });
 
   it.each([false, true])(
-    'stacks Settings and the footer actions in one column (collapsed: %s)',
+    'renders only Settings in the utility row (collapsed: %s)',
     (isCollapsed) => {
       const { container } = render(
         <Structure
-          feedbackButton={
-            <button aria-label="Feedback" type="button">
-              !
-            </button>
-          }
+          feedbackButton={<span data-testid="feedback-host" />}
           isCollapsed={isCollapsed}
           setIsCollapsed={vi.fn()}
           sidebarUtility={<button type="button">Settings</button>}
@@ -215,8 +215,9 @@ describe('Structure', () => {
       expect(rows).toHaveLength(1);
       const row = within(rows[0] as HTMLElement);
       expect(row.getByRole('button', { name: 'Settings' })).toBeVisible();
-      expect(row.getByRole('button', { name: 'Feedback' })).toBeVisible();
-      expect(rows[0]).toHaveClass('flex-col');
+      expect(
+        rows[0]?.querySelector('[data-testid="feedback-host"]')
+      ).toBeNull();
     }
   );
 

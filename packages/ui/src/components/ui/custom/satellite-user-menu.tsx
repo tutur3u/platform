@@ -3,7 +3,7 @@
 import { User } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import type { ReactNode, Ref } from 'react';
+import { type ReactNode, type Ref, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import {
   DropdownMenu,
@@ -13,7 +13,12 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { AnimatedSlotText } from './animated-slot-text';
-import { useSidebarFooter } from './sidebar-footer-context';
+import {
+  AccountHubMenuItems,
+  AccountUnreadBadge,
+  useAccountHubLabel,
+} from './account-hub-ui';
+import { useAccountHub, useSidebarFooter } from './sidebar-footer-context';
 
 /** Shared profile trigger and menu frame; adapters supply account services and preferences. */
 export function SatelliteUserMenu({
@@ -41,13 +46,29 @@ export function SatelliteUserMenu({
 }) {
   // In the expanded sidebar footer the name and email return beside the avatar.
   const hideMetadata = hideMetadataProp && !useSidebarFooter().expanded;
+  const hub = useAccountHub();
+  const buttonLabel = useAccountHubLabel(
+    label ?? (hideMetadata ? name : undefined),
+    name
+  );
+  const localTrigger = useRef<HTMLButtonElement | null>(null);
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu
+      modal={false}
+      onOpenChange={(open) => {
+        if (open && hub) hub.anchorRef.current = localTrigger.current;
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <button
-          ref={triggerRef}
+          ref={(node) => {
+            localTrigger.current = node;
+            if (typeof triggerRef === 'function') triggerRef(node);
+            else if (triggerRef) triggerRef.current = node;
+          }}
           type="button"
-          aria-label={label}
+          data-slot="account-trigger"
+          aria-label={buttonLabel}
           aria-busy={loading || undefined}
           disabled={loading}
           className={cn(
@@ -66,6 +87,7 @@ export function SatelliteUserMenu({
               <AvatarFallback className="rounded-lg font-semibold">
                 {name ? getInitials(name) : <User className="h-5 w-5" />}
               </AvatarFallback>
+              <AccountUnreadBadge />
               {online && (
                 <div className="pointer-events-none absolute right-0 bottom-0 z-20 size-2.5 rounded-full bg-dynamic-green ring-2 ring-background" />
               )}
@@ -94,6 +116,7 @@ export function SatelliteUserMenu({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <AccountHubMenuItems />
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

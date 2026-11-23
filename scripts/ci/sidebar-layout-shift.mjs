@@ -29,6 +29,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { sidebarEvidencePath } from './sidebar-evidence-path.mjs';
 import {
+  checkAccountHub,
   ICON_TOLERANCE,
   maxShift,
   measureIconMatrix,
@@ -380,6 +381,7 @@ try {
   }
 
   if (behavior === 'hover') {
+    await checkAccountHub(page, shots);
     const aside = page.locator('aside');
     const picker = page.getByRole('dialog', { name: 'Select workspace' });
     const switcher = aside.getByRole('button', { name: 'Switch workspace' });
@@ -542,14 +544,7 @@ try {
       'avatars and footer icons must keep their position on open'
     );
     if (behavior === 'hover') {
-      for (const key of [
-        'workspaceAvatar',
-        'accountAvatar',
-        'settings',
-        'footerAction0',
-        'footerAction1',
-        'bell',
-      ]) {
+      for (const key of ['workspaceAvatar', 'accountAvatar', 'settings']) {
         assert.ok(
           restingGeometry.extras[key] && openGeometry.extras[key],
           `${key} is measured in the rail and the open panel`

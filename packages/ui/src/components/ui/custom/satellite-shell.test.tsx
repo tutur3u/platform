@@ -5,13 +5,20 @@ import {
   render,
   renderHook,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react';
+import { useEffect, useMemo } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DropdownMenuItem } from '../dropdown-menu';
 import type { NavLink } from './navigation';
 import { SatelliteFooterActions } from './satellite-footer-actions';
+import {
+  AccountHubProvider,
+  useAccountHub,
+  usePublishAccountHub,
+} from './sidebar-footer-context';
 import { SidebarNavigation } from './satellite-navigation';
 import { SatelliteShell } from './satellite-shell';
 import { SatelliteUserMenu } from './satellite-user-menu';
@@ -393,61 +400,84 @@ describe('shared account chrome', () => {
       screen.getByRole('menuitem', { name: 'My profile' }).getAttribute('href')
     ).toBe('/profile');
   });
-  it('keeps collapsed feedback and community actions accessible', () => {
+  it('shows the unread count on the avatar and lists the hub actions in its menu', async () => {
     const feedback = vi.fn();
+    function Notifications() {
+      const hub = useAccountHub();
+      const patch = hub?.patch;
+      const labels = useMemo(
+        () => ({ label: 'Notifications', unreadText: '{count} unread' }),
+        []
+      );
+      usePublishAccountHub('notifications', labels);
+      useEffect(() => patch?.({ unreadCount: 4 }), [patch]);
+      return null;
+    }
     render(
-      <SatelliteFooterActions
-        wsId=""
-        isCollapsed
-        showUpgrade={false}
-        labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
-        discordHref="https://discord.gg/example"
-        onFeedback={feedback}
-      />
+      <AccountHubProvider>
+        <Notifications />
+        <SatelliteFooterActions
+          wsId="ws"
+          showUpgrade
+          discordHref="https://discord.gg/example"
+          labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
+          onFeedback={feedback}
+        />
+        <SatelliteUserMenu name="Ngoc" email="ngoc@example.com" label="Account">
+          <span />
+        </SatelliteUserMenu>
+      </AccountHubProvider>
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Feedback' }));
-    expect(feedback).toHaveBeenCalledOnce();
+    const trigger = await screen.findByRole('button', {
+      name: 'Account, 4 unread',
+    });
     expect(
-      screen.getByRole('link', { name: 'Discord' }).getAttribute('href')
+      trigger.querySelector('[data-slot="account-unread-badge"]')?.textContent
+    ).toBe('4');
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    expect(
+      screen.getByRole('menuitem', { name: /Notifications/ })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('menuitem', { name: 'Upgrade' }).getAttribute('href')
+    ).toBe('/ws/billing');
+    expect(
+      screen.getByRole('menuitem', { name: 'Discord' }).getAttribute('href')
     ).toBe('https://discord.gg/example');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Feedback' }));
+    await waitFor(() => expect(feedback).toHaveBeenCalledOnce());
   });
-  it('renders expanded feedback as a labelled row in the icon column', () => {
+  it('publishes Upgrade, Discord and Feedback to the account menu instead of rendering footer controls', () => {
     const feedback = vi.fn();
-    render(
-      <SatelliteFooterActions
-        wsId=""
-        isCollapsed={false}
-        showUpgrade={false}
-        labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
-        onFeedback={feedback}
-      />
+    function Probe() {
+      const hub = useAccountHub();
+      return (
+        <output data-testid="hub">
+          {JSON.stringify({
+            upgrade: hub?.state.upgrade?.href,
+            discord: hub?.state.discord?.href,
+            feedback: hub?.state.feedback?.label,
+          })}
+        </output>
+      );
+    }
+    const { container } = render(
+      <AccountHubProvider>
+        <SatelliteFooterActions
+          wsId="ws"
+          showUpgrade
+          discordHref="https://discord.example/invite"
+          labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
+          onFeedback={feedback}
+        />
+        <Probe />
+      </AccountHubProvider>
     );
-    const button = screen.getByRole('button', { name: 'Feedback' });
-    expect(button.textContent).toBe('Feedback');
-    expect(button.className).toContain('w-full');
-    expect(button.querySelector('span')?.className).toContain(
-      'w-[var(--sidebar-rail-slot'
-    );
-    fireEvent.click(button);
-    expect(feedback).toHaveBeenCalledOnce();
-  });
-
-  it('renders collapsed feedback as an icon with a tooltip in the same column', async () => {
-    render(
-      <SatelliteFooterActions
-        wsId=""
-        isCollapsed
-        showUpgrade={false}
-        labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
-        onFeedback={vi.fn()}
-      />
-    );
-    const button = screen.getByRole('button', { name: 'Feedback' });
-    expect(button.textContent).toBe('');
-    expect(button.className).toContain('w-full');
-    fireEvent.focus(button);
-    expect((await screen.findByRole('tooltip')).textContent).toContain(
-      'Feedback'
-    );
+    expect(JSON.parse(screen.getByTestId('hub').textContent ?? '{}')).toEqual({
+      upgrade: '/ws/billing',
+      discord: 'https://discord.example/invite',
+      feedback: 'Feedback',
+    });
+    expect(container.querySelector('button, a')).toBeNull();
   });
 });

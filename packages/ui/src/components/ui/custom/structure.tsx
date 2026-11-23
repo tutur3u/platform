@@ -14,7 +14,10 @@ import {
   useRef,
 } from 'react';
 import { observeMobileHeaderHeight } from './mobile-header-height';
-import { SidebarFooterContext } from './sidebar-footer-context';
+import {
+  AccountHubProvider,
+  SidebarFooterContext,
+} from './sidebar-footer-context';
 import { SidebarMinimalTrigger } from './sidebar-minimal-trigger';
 import { SidebarOverlayContext } from './sidebar-overlay-context';
 import { useSidebarOverlayClose } from './use-sidebar-overlay-close';
@@ -185,7 +188,7 @@ export function Structure({
   }, [isCollapsed, isMobile, mobileSidebarOpen, sidebarHidden]);
 
   return (
-    <>
+    <AccountHubProvider>
       {!sidebarHidden && (
         <nav
           ref={mobileNavRef}
@@ -273,6 +276,13 @@ export function Structure({
                 ref={overlayClose.panelRef}
                 style={sidebarStyle}
               >
+                {/* The account menu hosts notifications, Upgrade and Feedback;
+                    their popovers and dialogs mount here, once, so they
+                    survive the rail and panel swapping. */}
+                <div hidden data-slot="account-hub-host">
+                  {notificationPopover}
+                  {feedbackButton}
+                </div>
                 {isMinimal && (
                   <SidebarMinimalTrigger
                     controls={panelId}
@@ -383,38 +393,34 @@ export function Structure({
                     <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
                       {sidebarContent}
                     </div>
-                    {(sidebarUtility || feedbackButton) && (
+                    {sidebarUtility && (
                       <div
                         data-slot="sidebar-utility-row"
-                        // One vertical icon column in the rail and the panel:
-                        // the same rows at the same y, labels revealed only.
-                        className="flex flex-col gap-1 border-foreground/10 border-t p-2"
+                        className="flex flex-col gap-1 border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]"
                       >
-                        {sidebarUtility && (
-                          <div className="flex w-full">{sidebarUtility}</div>
-                        )}
-                        {feedbackButton}
+                        <div className="flex w-full">{sidebarUtility}</div>
                       </div>
                     )}
-                    <div className="mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
-                      {isCollapsed || (!isMobile && userPopover) ? (
-                        <SidebarFooterContext
-                          value={{ expanded: !isCollapsed }}
-                        >
+                    {userPopover
+                      ? !accountInTopBar && (
                           <div
-                            className={cn(
-                              'flex w-full flex-col gap-1',
-                              isCollapsed && 'items-center'
-                            )}
+                            data-slot="sidebar-account-row"
+                            className="mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]"
                           >
-                            {!accountInTopBar && userPopover}
-                            {notificationPopover}
+                            <SidebarFooterContext
+                              value={{ expanded: !isCollapsed }}
+                            >
+                              <div className="flex w-full flex-col">
+                                {userPopover}
+                              </div>
+                            </SidebarFooterContext>
                           </div>
-                        </SidebarFooterContext>
-                      ) : (
-                        actions
-                      )}
-                    </div>
+                        )
+                      : !isCollapsed && (
+                          <div className="mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
+                            {actions}
+                          </div>
+                        )}
                   </div>
                 )}
 
@@ -481,6 +487,6 @@ export function Structure({
           </main>
         </div>
       </TooltipProvider>
-    </>
+    </AccountHubProvider>
   );
 }
