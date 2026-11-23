@@ -60,6 +60,7 @@ import * as z from 'zod';
 import { fetchAdmins } from './actions';
 import { DateTimePicker } from './DateTimePicker';
 import { DurationDisplay } from './DurationDisplay';
+import { AdminListLoading, AdminSummary } from './admin-select-loading';
 
 const criteriaSchema = z.object({
   id: z.string().nullable(),
@@ -593,11 +594,10 @@ export default function ChallengeForm({
                                         'text-muted-foreground'
                                     )}
                                   >
-                                    {isLoadingAdmins
-                                      ? 'Loading admins...'
-                                      : (field.value?.length ?? 0) > 0
-                                        ? `${field.value!.length} admin${field.value!.length > 1 ? 's' : ''} selected`
-                                        : 'Select administrators'}
+                                    <AdminSummary
+                                      count={field.value?.length ?? 0}
+                                      loading={isLoadingAdmins}
+                                    />
                                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </FormControl>
@@ -615,9 +615,7 @@ export default function ChallengeForm({
                                   />
 
                                   {isLoadingAdmins ? (
-                                    <div className="p-4 text-center text-sm">
-                                      Loading administrators...
-                                    </div>
+                                    <AdminListLoading />
                                   ) : (
                                     <>
                                       <CommandEmpty>

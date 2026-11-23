@@ -8,6 +8,7 @@ import {
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
@@ -102,7 +103,11 @@ export function TaskPlanComposer({
         <h1 className="font-semibold text-2xl">{t('title')}</h1>
         <p className="mt-2 text-muted-foreground">{t('hint')}</p>
       </header>
-      {query.isPending && <p role="status">{t('loading')}</p>}
+      {query.isPending && (
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonList rows={3} withAvatar={false} />
+        </LoadingRegion>
+      )}
       {query.isError && (
         <div role="alert">
           <p>{t('loadFailed')}</p>

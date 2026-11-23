@@ -13,6 +13,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import CriteriaEvaluation from '@/components/common/CriteriaEvaluation';
 import ScoreBadge from '@/components/common/ScoreBadge';
@@ -33,6 +34,7 @@ export function SubmissionCard({
   isLoading = false,
   queuePosition,
 }: SubmissionCardProps) {
+  const t = useTranslations('common');
   const [activeTab, setActiveTab] = useState<string>('test-cases');
 
   useEffect(() => {
@@ -70,8 +72,9 @@ export function SubmissionCard({
               <Badge variant="secondary" className="animate-pulse text-xs">
                 {queuePosition === 0 ? (
                   <>
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Loading details...
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none" />
+                    <Skeleton aria-hidden="true" className="h-3 w-16" />
+                    <span className="sr-only">{t('loading')}</span>
                   </>
                 ) : (
                   <>

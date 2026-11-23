@@ -15,6 +15,7 @@ import { SpaceArtwork } from './space-artwork';
 import { belongsToSpace, type CreativeSpace } from './spaces';
 import { useLettinMutation } from './use-lettin';
 import { WorldShelf } from './world-shelf';
+import { LettinPageLoading } from './lettin-loading';
 
 export function Studio({
   wsId,
@@ -31,12 +32,7 @@ export function Studio({
     queryFn: () => getLettinOverview(wsId),
   });
   const mutation = useLettinMutation(wsId);
-  if (query.isPending)
-    return (
-      <p className="p-10" role="status">
-        {t('loading')}
-      </p>
-    );
+  if (query.isPending) return <LettinPageLoading className="p-10" />;
   if (query.isError)
     return (
       <div className="p-10" role="alert">

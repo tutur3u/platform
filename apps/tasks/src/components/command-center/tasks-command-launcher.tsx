@@ -52,6 +52,7 @@ export function TasksCommandLauncher({
         emptyDescription: t('try_searching'),
         errorWorkspaces: launcherT('error_workspaces'),
         guest: launcherT('guest'),
+        // loading-text-allowed: the launcher renders this as a screen-reader label beside a skeleton
         loadingWorkspaces: t('loading_workspaces'),
         match: launcherT('match'),
         navigate: launcherT('navigate'),

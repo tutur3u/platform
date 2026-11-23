@@ -1,6 +1,6 @@
 'use client';
 
-import { EyeIcon, Headphones } from '@tuturuuu/icons';
+import { EyeIcon, Headphones, Loader2 } from '@tuturuuu/icons';
 import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
@@ -74,10 +74,18 @@ export function RecordingSessionActions({
           variant="ghost"
           size="sm"
           onClick={handlePlayRecording}
+          aria-busy={isLoadingChunks}
           disabled={isLoadingChunks}
         >
-          <Headphones className="mr-1 h-3 w-3" />
-          {isLoadingChunks ? 'Loading...' : 'Play'}
+          {isLoadingChunks ? (
+            <Loader2 className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none" />
+          ) : (
+            <Headphones className="mr-1 h-3 w-3" />
+          )}
+          Play
+          {isLoadingChunks ? (
+            <span className="sr-only">{t('loading_recording')}</span>
+          ) : null}
         </Button>
         {session.can_manage && (
           <Button

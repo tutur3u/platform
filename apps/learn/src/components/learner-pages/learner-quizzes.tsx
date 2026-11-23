@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, X } from '@tuturuuu/icons';
+import { Check, Loader2, X } from '@tuturuuu/icons';
 import {
   resetTulearnQuizSubmissions,
   submitTulearnQuizAnswer,
@@ -524,13 +524,18 @@ export function LearnerQuizzes({
                 </span>
               )}
               <Button
+                aria-busy={isSubmitting}
                 onClick={handleSubmit}
                 disabled={!canSubmit || isSubmitting || isDeadlinePassed}
                 className="h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                {isSubmitting
-                  ? t('common.loading')
-                  : t('courses.quizSubmitAnswer')}
+                {isSubmitting ? (
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+                ) : null}
+                {t('courses.quizSubmitAnswer')}
+                {isSubmitting ? (
+                  <span className="sr-only">{t('common.loading')}</span>
+                ) : null}
               </Button>
             </div>
           ) : (

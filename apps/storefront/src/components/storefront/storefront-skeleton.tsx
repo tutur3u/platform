@@ -1,10 +1,10 @@
 const SKELETON_CARD_KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 export function StorefrontSkeleton({
-  label,
+  srLabel,
   withinSharedShell = false,
 }: {
-  label?: string;
+  srLabel?: string;
   withinSharedShell?: boolean;
 }) {
   return (
@@ -16,7 +16,7 @@ export function StorefrontSkeleton({
           : 'min-h-dvh bg-background'
       }
     >
-      {label ? <span className="sr-only">{label}</span> : null}
+      {srLabel ? <span className="sr-only">{srLabel}</span> : null}
       {withinSharedShell ? null : (
         <header className="border-border border-b">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">

@@ -27,6 +27,7 @@ vi.mock('@tuturuuu/icons', () => ({
   EyeIcon: () => null,
   FileText: () => null,
   Headphones: () => null,
+  Loader2: () => null,
 }));
 vi.mock('@tuturuuu/ui/button', () => ({
   Button: ({ children, onClick, disabled }: ComponentProps<'button'>) => (

@@ -8,6 +8,7 @@ import {
   Music,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -54,22 +55,15 @@ export function FilePreviewRenderer({
 
   if (loading) {
     return (
-      <div className={previewAreaClass}>
-        {fileType === 'image' ? (
-          <div className="absolute inset-0 animate-pulse rounded-lg bg-linear-to-br from-muted/40 to-muted/10" />
-        ) : null}
+      <LoadingRegion className={previewAreaClass} srLabel={t('common.loading')}>
+        <Skeleton aria-hidden="true" className="absolute inset-0 rounded-lg" />
         {fileType === 'pdf' ? (
-          <div className="absolute inset-0 flex animate-pulse items-center justify-center rounded-lg bg-linear-to-br from-muted/40 to-muted/10">
-            <FileText className="h-16 w-16 text-muted-foreground/30" />
-          </div>
+          <FileText
+            aria-hidden="true"
+            className="relative h-16 w-16 text-muted-foreground/30"
+          />
         ) : null}
-        <div className="z-10 flex flex-col items-center justify-center">
-          <Loader2 className="mb-4 h-10 w-10 animate-spin text-dynamic-blue" />
-          <span className="font-medium text-muted-foreground text-sm">
-            {t('common.loading')}...
-          </span>
-        </div>
-      </div>
+      </LoadingRegion>
     );
   }
 

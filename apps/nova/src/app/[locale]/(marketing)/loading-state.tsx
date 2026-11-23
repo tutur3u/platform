@@ -1,30 +1,28 @@
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { motion } from 'framer-motion';
-import LoadingIndicator from './loading-indicator';
 
 interface LoadingStateProps {
-  message?: string;
+  /** Translated text announced to screen readers while the page loads. */
+  srLabel: string;
 }
 
-export default function LoadingState({
-  message = 'Loading...',
-}: LoadingStateProps) {
+export default function LoadingState({ srLabel }: LoadingStateProps) {
   return (
     <div className="m-4 flex min-h-screen md:m-8">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="flex min-h-[200px] w-full flex-col items-center justify-center gap-4 rounded-lg border border-primary/10 bg-primary/5 p-8"
+        className="flex min-h-[200px] w-full flex-col justify-center rounded-lg border border-primary/10 bg-primary/5 p-8"
       >
-        <LoadingIndicator size="lg" />
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-muted-foreground"
-        >
-          {message}
-        </motion.p>
+        <LoadingRegion className="space-y-4" srLabel={srLabel}>
+          <SkeletonLine barClassName="w-1/3" size="xl" />
+          <SkeletonText lines={4} />
+        </LoadingRegion>
       </motion.div>
     </div>
   );

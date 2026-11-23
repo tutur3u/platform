@@ -13,6 +13,7 @@ import { CreatorAboutView } from './creator-about-view';
 import { useNavigationGuard } from './navigation-guard';
 import { RichEditor } from './rich-editor';
 import { WikiThemeEditor } from './wiki-theme-editor';
+import { LettinListLoading } from './lettin-loading';
 
 export function CreatorAboutEditor({ wsId }: { wsId: string }) {
   const t = useTranslations('lettin');
@@ -20,7 +21,7 @@ export function CreatorAboutEditor({ wsId }: { wsId: string }) {
     queryKey: ['lettin-about', wsId],
     queryFn: () => getLettinCreatorAbout(wsId),
   });
-  if (query.isPending) return <p role="status">{t('loading')}</p>;
+  if (query.isPending) return <LettinListLoading />;
   if (!query.data)
     return (
       <p role="alert">

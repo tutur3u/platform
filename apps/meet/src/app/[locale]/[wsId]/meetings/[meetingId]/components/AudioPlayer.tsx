@@ -17,7 +17,9 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Slider } from '@tuturuuu/ui/slider';
+import { LoadingRegion, Skeleton, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AudioRecording {
@@ -42,6 +44,7 @@ export function AudioPlayer({
   loadError,
   onRetry,
 }: AudioPlayerProps) {
+  const t = useTranslations('meet.transcription');
   // Audio playback state
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -387,15 +390,13 @@ export function AudioPlayer({
 
           {/* Loading State */}
           {isLoading && (
-            <div className="rounded-lg border bg-muted/20 p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
-                <div>
-                  <p className="font-medium text-sm">Loading recording...</p>
-                  <p className="text-muted-foreground text-xs">Please wait</p>
-                </div>
-              </div>
-            </div>
+            <LoadingRegion
+              className="space-y-3 rounded-lg border bg-muted/20 p-4"
+              srLabel={t('loading_recording')}
+            >
+              <SkeletonLine barClassName="w-1/3" />
+              <Skeleton className="h-2 w-full rounded-full" />
+            </LoadingRegion>
           )}
 
           {/* Error State */}

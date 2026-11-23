@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { PageLoading } from '@/components/common/page-loading';
 import TeamClient, { type TeamData } from './client';
 
 export default async function TeamPage({
@@ -14,9 +15,7 @@ export default async function TeamPage({
   const { teamId: id } = await params;
 
   return (
-    <Suspense
-      fallback={<div className="p-8 text-center">Loading team data...</div>}
-    >
+    <Suspense fallback={<PageLoading />}>
       <TeamPageContent teamId={id} />
     </Suspense>
   );

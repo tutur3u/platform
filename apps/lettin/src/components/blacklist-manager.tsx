@@ -18,6 +18,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useNavigationGuard } from './navigation-guard';
+import { LettinPageLoading } from './lettin-loading';
 
 const empty = { displayName: '', reason: '', referenceUrl: '' };
 export function BlacklistManager({ wsId }: { wsId: string }) {
@@ -42,12 +43,7 @@ export function BlacklistManager({ wsId }: { wsId: string }) {
       await client.invalidateQueries({ queryKey: ['lettin-blacklist', wsId] });
     },
   });
-  if (query.isPending)
-    return (
-      <p role="status" className="p-10">
-        {t('loading')}
-      </p>
-    );
+  if (query.isPending) return <LettinPageLoading className="p-10" />;
   if (!query.data)
     return (
       <div role="alert" className="p-10">

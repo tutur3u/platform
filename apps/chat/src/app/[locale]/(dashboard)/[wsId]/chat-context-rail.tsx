@@ -15,6 +15,7 @@ import {
   normalizeChatConversationScope,
 } from '@tuturuuu/ui/chat/utils';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { LoadingRegion, SkeletonAvatar } from '@tuturuuu/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
@@ -70,11 +71,9 @@ export function ChatContextRail({
       workspacesQuery.isFetchingNextPage ||
       workspacesQuery.hasNextPage);
   const personalUnavailable = !personalWorkspace && !personalPending;
-  const personalLabel = personalPending
-    ? t('loading_workspaces')
-    : personalUnavailable
-      ? t('scope_personal_unavailable')
-      : t('scope_personal');
+  const personalLabel = personalUnavailable
+    ? t('scope_personal_unavailable')
+    : t('scope_personal');
   const workspaceCount = railWorkspaces.length;
   const workspaceVirtualizer = useVirtualizer({
     count: workspaceCount,
@@ -143,6 +142,7 @@ export function ChatContextRail({
         disabled={personalUnavailable}
         label={personalLabel}
         onClick={selectPersonal}
+        srLabel={personalPending ? t('loading_workspaces') : undefined}
       >
         <MessageCircle className="size-5" />
       </RailButton>
@@ -150,7 +150,14 @@ export function ChatContextRail({
       <div className="my-1 h-px w-8 bg-border" />
 
       {workspacesQuery.isLoading && railWorkspaces.length === 0 ? (
-        <LoaderCircle className="mt-2 size-4 animate-spin text-muted-foreground" />
+        <LoadingRegion
+          className="mt-2 flex flex-col items-center gap-2"
+          srLabel={t('loading_workspaces')}
+        >
+          <SkeletonAvatar size="lg" shape="square" />
+          <SkeletonAvatar size="lg" shape="square" />
+          <SkeletonAvatar size="lg" shape="square" />
+        </LoadingRegion>
       ) : (
         <div
           className="scrollbar-none min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
@@ -241,18 +248,22 @@ function RailButton({
   disabled = false,
   label,
   onClick,
+  srLabel,
 }: {
   active: boolean;
   children: ReactNode;
   disabled?: boolean;
   label: string;
   onClick: () => void;
+  /** Announced instead of the label while the button's data loads. */
+  srLabel?: string;
 }) {
   return (
-    <Tooltip>
+    <Tooltip open={srLabel ? false : undefined}>
       <TooltipTrigger asChild>
         <Button
-          aria-label={label}
+          aria-busy={srLabel ? true : undefined}
+          aria-label={srLabel ?? label}
           className={cn(
             'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 transition-colors',
             active

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -265,9 +266,13 @@ export function CodingConsole({
                   ) : null}
                 </div>
               ))
+            ) : historyLoading ? (
+              <LoadingRegion srLabel={t('loadingHistory')}>
+                <SkeletonList rows={3} withAvatar={false} />
+              </LoadingRegion>
             ) : (
               <p className="text-muted-foreground text-sm">
-                {historyLoading ? t('loadingHistory') : t('emptyHistory')}
+                {t('emptyHistory')}
               </p>
             )}
             {hasMore ? (

@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
@@ -214,9 +215,9 @@ export function AttendancePanel({
                 {t('retrySchedule')}
               </Button>
             ) : sessionsQuery.isPending ? (
-              <p role="status" className="text-muted-foreground text-sm">
-                {t('loading')}
-              </p>
+              <LoadingRegion srLabel={t('loading')}>
+                <SkeletonList rows={3} withAvatar={false} />
+              </LoadingRegion>
             ) : upcomingDates.length ? (
               <ul className="space-y-1">
                 {upcomingDates.map((day) => (

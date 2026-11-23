@@ -142,10 +142,15 @@ export function CmsMediaLibraryClient({
           </section>
           <div ref={loadMoreRef} className="flex min-h-16 justify-center py-2">
             {mediaQuery.isFetchingNextPage ? (
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Loader2 className="size-4 animate-spin" />
-                {t('epm.media_library_loading_more')}
-              </div>
+              <Button
+                aria-busy="true"
+                aria-label={t('epm.media_library_loading_more')}
+                disabled
+                variant="outline"
+              >
+                <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+                {t('epm.media_library_load_more')}
+              </Button>
             ) : mediaQuery.hasNextPage ? (
               <Button variant="outline" onClick={loadMore}>
                 {t('epm.media_library_load_more')}

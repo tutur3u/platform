@@ -2,6 +2,7 @@
 
 import type { MeetAiState } from '@tuturuuu/internal-api';
 import { endedNotesAvailability } from '@tuturuuu/meet-core/features/call/lib/ended-meeting-facts';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
@@ -83,9 +84,9 @@ export function MeetingNotesView({
       </div>
       {visibility}
       {isLoading ? (
-        <output className="block text-muted-foreground text-sm">
-          {t('loading')}
-        </output>
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonText lines={5} />
+        </LoadingRegion>
       ) : error && !data ? (
         <p role="alert" className="text-destructive text-sm">
           {t('unavailable')}

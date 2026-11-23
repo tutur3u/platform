@@ -42,14 +42,20 @@ export function DriveLoadMore({
         {t('paging.loaded', { loaded, total })}
       </span>
       <Button
+        aria-busy={isLoading}
         disabled={isLoading}
         onClick={onLoadMore}
         size="sm"
         type="button"
         variant="outline"
       >
-        {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
-        {isLoading ? t('paging.loading') : t('paging.load_more')}
+        {isLoading ? (
+          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+        ) : null}
+        {t('paging.load_more')}
+        {isLoading ? (
+          <span className="sr-only">{t('paging.loading')}</span>
+        ) : null}
       </Button>
     </div>
   );

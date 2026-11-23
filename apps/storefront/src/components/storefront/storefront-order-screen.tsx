@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/icons';
 import type { InventoryCheckoutSession } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { ReturnToStoreButton } from './return-to-store-button';
@@ -56,7 +57,7 @@ export function StorefrontOrderScreen({
         ? t('orderNeedsAttention')
         : t('orderPending');
   const description = !order
-    ? t('loading')
+    ? null
     : state === 'confirmed'
       ? t('orderConfirmedDescription')
       : state === 'needs_attention'
@@ -124,7 +125,9 @@ export function StorefrontOrderScreen({
               {title}
             </h1>
             <p className="mx-auto mt-2 max-w-sm text-muted-foreground text-sm leading-6">
-              {description}
+              {description ?? (
+                <LoadingPlaceholder className="w-48" srLabel={t('loading')} />
+              )}
             </p>
             {order ? (
               <span
@@ -136,9 +139,10 @@ export function StorefrontOrderScreen({
                 })}
               </span>
             ) : (
-              <p className="mt-4 text-muted-foreground text-sm">
-                {t('loading')}
-              </p>
+              <LoadingPlaceholder
+                className="mt-4 h-6 w-32 rounded-full"
+                srLabel={t('loading')}
+              />
             )}
             {state === 'needs_attention' ? (
               <Button

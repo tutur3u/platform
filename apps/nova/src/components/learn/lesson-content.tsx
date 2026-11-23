@@ -5,6 +5,7 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
+import { PageLoading } from '@/components/common/page-loading';
 import { useEffect, useRef, useState } from 'react';
 
 interface LessonSection {
@@ -55,9 +56,7 @@ export function LessonContent({ lesson }: LessonProps) {
   // If no lesson data is provided, show a loading state
   if (!lesson) {
     return (
-      <div className="flex h-[calc(100vh-6rem)] items-center justify-center">
-        <p className="text-muted-foreground">Loading lesson content...</p>
-      </div>
+      <PageLoading className="h-[calc(100vh-6rem)]" />
     );
   }
 

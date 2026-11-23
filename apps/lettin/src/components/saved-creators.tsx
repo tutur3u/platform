@@ -14,6 +14,7 @@ import {
   useSavedLibraryFilters,
 } from './saved-library-filters';
 import { orderSavedLibrary } from './saved-library-ordering';
+import { LettinListLoading } from './lettin-loading';
 export function SavedCreators({ actorId }: { actorId: string }) {
   return <SavedCreatorsList key={actorId} actorId={actorId} />;
 }
@@ -50,7 +51,7 @@ function SavedCreatorsList({ actorId }: { actorId: string }) {
     <section className="mx-auto max-w-5xl space-y-6 px-5 py-10">
       <h2 className="text-4xl">{t('savedCreators')}</h2>
       <p>{t('savedCreatorsHint')}</p>
-      {query.isPending && <p role="status">{t('loading')}</p>}
+      {query.isPending && <LettinListLoading />}
       {query.isError && (
         <div role="alert">
           {t('requestFailed')}{' '}

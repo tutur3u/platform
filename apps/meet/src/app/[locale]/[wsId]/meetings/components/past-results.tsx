@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { PastDayGroups } from './day-groups';
@@ -119,12 +120,19 @@ function OlderFooter({
         <span role="alert">{t('load_older_failed')}</span>
       )}
       <Button
+        aria-busy={older.kind === 'loading'}
         disabled={older.kind === 'loading'}
         onClick={onLoadOlder}
         size="sm"
         variant="ghost"
       >
-        {older.kind === 'loading' ? t('loading_older') : t('load_older')}
+        {older.kind === 'loading' ? (
+          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+        ) : null}
+        {t('load_older')}
+        {older.kind === 'loading' ? (
+          <span className="sr-only">{t('loading_older')}</span>
+        ) : null}
       </Button>
     </div>
   );

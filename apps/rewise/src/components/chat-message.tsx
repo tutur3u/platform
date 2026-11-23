@@ -9,6 +9,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { ChatMessageActions } from '@/components/chat-message-actions';
+import { DiagramLoading } from '@/components/diagram-loading';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
@@ -114,9 +115,7 @@ const MermaidRenderer = ({ content }: { content: string }) => {
     );
   }
 
-  if (!svgContent) {
-    return <div className="animate-pulse">Loading diagram...</div>;
-  }
+  if (!svgContent) return <DiagramLoading />;
 
   return (
     <div

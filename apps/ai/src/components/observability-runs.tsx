@@ -121,7 +121,7 @@ export function ObservabilityRuns({
           hasNextPage={hasNextPage}
           isFetchingNextPage={isFetchingMore}
           loadedLabel={t('loaded_count', { count: runs.length })}
-          loadingLabel={t('loading')}
+          srLabel={t('loading')}
           loadMoreLabel={t('load_more')}
           onLoadMore={onLoadMore}
           retryLabel={t('retry')}

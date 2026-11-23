@@ -8,6 +8,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
+import {
+  LoadingRegion,
+  SkeletonSelectorTrigger,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -74,23 +78,28 @@ export function TaskBoardSettingsPicker({
         }
       >
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Combobox
-            ariaLabel={t('board_picker_placeholder')}
-            className="min-w-0 flex-1"
-            disabled={isLoading || isEmpty}
-            emptyText={t('board_picker_empty')}
-            onChange={(value) =>
-              setSelectedBoardId(typeof value === 'string' ? value : '')
-            }
-            options={options}
-            placeholder={
-              isLoading
-                ? t('board_picker_loading')
-                : t('board_picker_placeholder')
-            }
-            searchPlaceholder={t('board_picker_search')}
-            selected={selectedBoardId}
-          />
+          {isLoading ? (
+            <LoadingRegion
+              className="min-w-0 flex-1"
+              srLabel={t('board_picker_loading')}
+            >
+              <SkeletonSelectorTrigger />
+            </LoadingRegion>
+          ) : (
+            <Combobox
+              ariaLabel={t('board_picker_placeholder')}
+              className="min-w-0 flex-1"
+              disabled={isEmpty}
+              emptyText={t('board_picker_empty')}
+              onChange={(value) =>
+                setSelectedBoardId(typeof value === 'string' ? value : '')
+              }
+              options={options}
+              placeholder={t('board_picker_placeholder')}
+              searchPlaceholder={t('board_picker_search')}
+              selected={selectedBoardId}
+            />
+          )}
           <Button
             className="gap-2 sm:shrink-0"
             disabled={!selectedBoard}

@@ -28,11 +28,8 @@ export function PricingSection() {
   /** Shared vocabulary between the cards and the comparison matrix. */
   const soonLabel = t('matrix.values.soon');
 
-  const priceNotice = catalog.isError
-    ? t('pricesUnavailable')
-    : !prices
-      ? t('pricesLoading')
-      : null;
+  const priceNotice = catalog.isError ? t('pricesUnavailable') : null;
+  const pricesPending = !catalog.isError && !prices;
   const tiers = [
     {
       id: 'free',
@@ -196,6 +193,9 @@ export function PricingSection() {
           >
             {priceNotice}
           </p>
+        )}
+        {pricesPending && (
+          <p role="status" className="sr-only">{t('pricesLoading')}</p>
         )}
         <FeatureMatrix />
       </Reveal>

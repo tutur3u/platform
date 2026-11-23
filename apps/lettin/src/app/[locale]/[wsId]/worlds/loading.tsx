@@ -1,11 +1,6 @@
 'use client';
-import { useTranslations } from 'next-intl';
+import { LettinPageLoading } from '@/components/lettin-loading';
 
 export default function Loading() {
-  const t = useTranslations('lettin');
-  return (
-    <p role="status" className="p-10">
-      {t('loading')}
-    </p>
-  );
+  return <LettinPageLoading className="p-10" />;
 }

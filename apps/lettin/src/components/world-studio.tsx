@@ -24,6 +24,7 @@ import { sectionKind, type WikiSection, wikiOf } from './wiki-model';
 import { WikiSidebar } from './wiki-sidebar';
 import { WorkProgressControl } from './work-progress-control';
 import { WorkProgressSummary } from './work-progress-summary';
+import { LettinPageLoading } from './lettin-loading';
 export function WorldStudio({
   wsId,
   worldId,
@@ -54,12 +55,7 @@ export function WorldStudio({
     else url.searchParams.delete('entry');
     window.history.replaceState(null, '', url);
   };
-  if (query.isPending)
-    return (
-      <p role="status" className="p-10">
-        {t('loading')}
-      </p>
-    );
+  if (query.isPending) return <LettinPageLoading className="p-10" />;
   if (query.isError && !query.data)
     return (
       <div role="alert" className="p-10">

@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -330,9 +331,9 @@ export function LessonDetailClient({
 
             <div className="max-h-72 overflow-auto rounded-lg border border-border bg-card p-2">
               {attachFilesQuery.isLoading && (
-                <div className="p-4 text-muted-foreground text-sm">
-                  {t('loadingFiles')}
-                </div>
+                <LoadingRegion srLabel={t('loadingFiles')}>
+                  <SkeletonList rows={3} withAvatar={false} />
+                </LoadingRegion>
               )}
               {attachFilesQuery.isError && (
                 <div className="p-4 text-muted-foreground text-sm">

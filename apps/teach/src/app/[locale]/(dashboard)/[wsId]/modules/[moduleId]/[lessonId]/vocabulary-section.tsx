@@ -1,6 +1,7 @@
 'use client';
 import { mountedFetch } from '@/lib/mounted-api';
 
+import { Loader2 } from '@tuturuuu/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -17,6 +18,7 @@ import {
   type VocabularySuggestion,
 } from '@/components/vocabulary/vocabulary-form-utils';
 import { VocabularySectionIntro } from '@/components/vocabulary/vocabulary-section-intro';
+import { EntriesLoading, SuggestionsLoading } from './vocabulary-loading';
 
 export default function LessonVocabularySection({
   wsId,
@@ -391,9 +393,7 @@ export default function LessonVocabularySection({
                 draft.word.trim().length >= 2 ? (
                   <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-border bg-card">
                     {isSuggesting ? (
-                      <div className="px-3 py-2 text-muted-foreground text-sm">
-                        {t('loadingSuggestions')}
-                      </div>
+                      <SuggestionsLoading />
                     ) : (
                       suggestions.map((suggestion) => (
                         <button
@@ -430,7 +430,13 @@ export default function LessonVocabularySection({
                 onClick={() => fetchDictionaryDetails(draft.word.trim())}
                 type="button"
               >
-                {isFetchingDetails ? t('fetching') : t('fetch')}
+                {isFetchingDetails ? (
+                  <Loader2 className="mr-2 inline size-3.5 animate-spin motion-reduce:animate-none" />
+                ) : null}
+                {t('fetch')}
+                {isFetchingDetails ? (
+                  <span className="sr-only">{t('fetching')}</span>
+                ) : null}
               </button>
             </div>
           </div>
@@ -622,7 +628,7 @@ export default function LessonVocabularySection({
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground text-sm">{t('loading')}</p>
+        <EntriesLoading />
       ) : entries.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('empty')}</p>
       ) : (

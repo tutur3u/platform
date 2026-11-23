@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -77,12 +78,13 @@ export function TestSubmissionDetailDialog({
         </DialogHeader>
 
         {isLoading && (
-          <div className="flex h-64 flex-col items-center justify-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="font-bold text-muted-foreground text-sm">
-              {t('teachModules.loadingSubmission')}
-            </span>
-          </div>
+          <LoadingRegion
+            className="my-4 space-y-4"
+            srLabel={t('teachModules.loadingSubmission')}
+          >
+            <SkeletonText lines={4} />
+            <SkeletonText lines={3} />
+          </LoadingRegion>
         )}
 
         {isError && (

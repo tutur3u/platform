@@ -41,7 +41,8 @@ export function FlatThreadList({
   // A first page read from the browser cache while the machine is away.
   const cachedAt = pages.data?.pages[0]?.cachedAt;
   const slow = environmentId
-    ? t('projects.loadingSlow', { machine: machineLabel })
+    ? // loading-text-allowed: tells the reader a linked machine is slow to answer
+      t('projects.loadingSlow', { machine: machineLabel })
     : undefined;
 
   if (pages.isPending) return <LoadingRows slowLabel={slow} />;

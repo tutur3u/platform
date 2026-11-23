@@ -6,6 +6,7 @@ import { getWorkspaceMeetingRecordings } from '@tuturuuu/internal-api';
 import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { RecordingSessionActions } from './recording-session-actions';
@@ -109,9 +110,10 @@ export function RecordingSessionsOverview({
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
-          <p className="mt-2 text-muted-foreground">Loading recordings...</p>
+        <CardContent className="py-4">
+          <LoadingRegion srLabel={tRecorder('loading_recordings')}>
+            <SkeletonList rows={3} withAvatar={false} />
+          </LoadingRegion>
         </CardContent>
       </Card>
     );

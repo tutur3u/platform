@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -190,7 +191,9 @@ function ModuleQuestionsManager({
       )}
 
       {isLoading ? (
-        <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
+        <LoadingRegion srLabel={t('common.loading')}>
+          <SkeletonList rows={3} withAvatar={false} />
+        </LoadingRegion>
       ) : isError ? (
         <p className="text-muted-foreground text-sm">
           {t('ws-quizzes.load_error')}

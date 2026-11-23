@@ -8,7 +8,6 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  Loader2,
   Zap,
 } from '@tuturuuu/icons';
 import type {
@@ -17,6 +16,7 @@ import type {
 } from '@tuturuuu/internal-api/ai-studio';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -88,10 +88,10 @@ export function PlaygroundCredential({
               : t('key_verified', { count: models.length })}
           </span>
         ) : isCredentialLoading ? (
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground text-xs">
-            <Loader2 className="size-3 animate-spin" />
-            {t('loading_credential')}
-          </span>
+          <LoadingPlaceholder
+            className="h-5 w-24 rounded-full"
+            srLabel={t('loading_credential')}
+          />
         ) : null
       }
       description={t('credential_description_saved')}

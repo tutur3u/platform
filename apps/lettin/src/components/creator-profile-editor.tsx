@@ -16,6 +16,7 @@ import { CreatorAboutEditor } from './creator-about-editor';
 import { CreatorProfileHeader } from './creator-profile-header';
 import { useNavigationGuard } from './navigation-guard';
 import { ProfileMediaField } from './profile-media-field';
+import { LettinPageLoading } from './lettin-loading';
 export function CreatorProfileEditor({
   hasPublishedWorlds,
   wsId,
@@ -32,12 +33,7 @@ export function CreatorProfileEditor({
     queryKey: ['lettin-profile'],
     queryFn: () => getCurrentUserProfile(),
   });
-  if (query.isPending)
-    return (
-      <p role="status" className="p-10">
-        {t('loading')}
-      </p>
-    );
+  if (query.isPending) return <LettinPageLoading className="p-10" />;
   if (!query.data)
     return (
       <div role="alert" className="p-10">

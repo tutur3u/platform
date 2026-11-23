@@ -203,7 +203,7 @@ export function ShipLoading() {
           </div>
         ))}
       </Card>
-      <p className="text-muted-foreground text-xs">{t('ship.loading')}</p>
+      <p className="sr-only">{t('ship.loading')}</p>
     </div>
   );
 }

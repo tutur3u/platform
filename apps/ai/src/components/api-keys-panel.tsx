@@ -37,6 +37,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -123,11 +124,16 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
           actions={
             <>
               <Badge variant={approved ? 'default' : 'secondary'}>
-                {keysQuery.isPending
-                  ? t('loading')
-                  : approved
-                    ? t('approved')
-                    : t('not_approved')}
+                {keysQuery.isPending ? (
+                  <LoadingPlaceholder
+                    className="w-14"
+                    srLabel={t('loading')}
+                  />
+                ) : approved ? (
+                  t('approved')
+                ) : (
+                  t('not_approved')
+                )}
               </Badge>
               <CollapsibleTrigger asChild>
                 <Button size="sm" type="button" variant="outline">
@@ -142,11 +148,13 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
             </>
           }
           description={
-            keysQuery.isPending
-              ? t('loading')
-              : approved
-                ? t('approved_description')
-                : t('approval_required')
+            keysQuery.isPending ? (
+              <LoadingPlaceholder className="w-40" srLabel={t('loading')} />
+            ) : approved ? (
+              t('approved_description')
+            ) : (
+              t('approval_required')
+            )
           }
           flush
           icon={KeyRound}
@@ -295,7 +303,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               hasNextPage={Boolean(keysQuery.hasNextPage)}
               isFetchingNextPage={keysQuery.isFetchingNextPage}
               loadedLabel={t('loaded_count', { count: keys.length })}
-              loadingLabel={t('loading_more')}
+              srLabel={t('loading_more')}
               loadMoreLabel={t('load_more')}
               onLoadMore={() => void keysQuery.fetchNextPage()}
               retryLabel={t('refresh')}
@@ -308,7 +316,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
           {keysQuery.isPending ? (
             <StudioSkeletonRows
               count={3}
-              label={t('loading')}
+              srLabel={t('loading')}
               rowClassName="h-[4.625rem]"
             />
           ) : keysQuery.isError && keys.length === 0 ? (

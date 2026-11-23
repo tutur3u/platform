@@ -1,10 +1,14 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
 import { exportWorkspaceStorageLinks } from '@tuturuuu/internal-api';
 import { revokeWorkspaceStorageExportLinks } from '@tuturuuu/internal-api/storage';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonList,
+} from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -65,10 +69,13 @@ export function ExportLinksDialogContent({
 
   if (exportQuery.isLoading || revokeMutation.isPending) {
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-2xl border border-dynamic-border border-dashed bg-muted/20 text-center">
-        <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
-        <p className="font-medium text-sm">{t('loading')}</p>
-      </div>
+      <LoadingRegion
+        className="flex min-h-56 flex-col gap-3 rounded-2xl border border-dynamic-border border-dashed bg-muted/20 p-4"
+        srLabel={t('loading')}
+      >
+        <SkeletonLine barClassName="w-1/3" />
+        <SkeletonList rows={3} withAvatar={false} />
+      </LoadingRegion>
     );
   }
 

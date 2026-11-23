@@ -493,6 +493,7 @@
     "credit_source_personal": "Personal",
     "credits_remaining": "AI credits remaining",
     "default_chat": "Default chat",
+    "diagram_loading": "Loading diagram",
     "example_1": "Explain technical concepts",
     "example_1_prompt": "What is quantum computing?",
     "example_2": "Generate math problems",

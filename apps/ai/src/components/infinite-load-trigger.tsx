@@ -11,7 +11,7 @@ export function InfiniteLoadTrigger({
   hasNextPage,
   isFetchingNextPage,
   loadedLabel,
-  loadingLabel,
+  srLabel,
   loadMoreLabel,
   onLoadMore,
   retryLabel,
@@ -22,7 +22,8 @@ export function InfiniteLoadTrigger({
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   loadedLabel: string;
-  loadingLabel: string;
+  /** Screen-reader text announced while the next page loads. */
+  srLabel: string;
   loadMoreLabel: string;
   onLoadMore: () => void;
   retryLabel?: string;
@@ -81,10 +82,17 @@ export function InfiniteLoadTrigger({
           </Button>
         </div>
       ) : isFetchingNextPage ? (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="size-4 animate-spin" />
-          {loadingLabel}
-        </div>
+        <Button
+          aria-busy="true"
+          disabled
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" />
+          {loadMoreLabel}
+          <span className="sr-only">{srLabel}</span>
+        </Button>
       ) : hasNextPage ? (
         <Button onClick={onLoadMore} size="sm" type="button" variant="outline">
           <ChevronDown className="mr-2 size-4" />

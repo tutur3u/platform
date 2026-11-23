@@ -33,7 +33,12 @@ export function FreshnessLine({
         ? t(live ? 'fresh.live' : 'fresh.stale', {
             age: formatAge(t, now - Date.parse(receivedAt)),
           })
-        : t('fresh.loading')}
+        : (
+          <>
+            <Skeleton aria-hidden="true" className="h-3 w-24" />
+            <span className="sr-only">{t('fresh.loading')}</span>
+          </>
+        )}
     </div>
   );
 }

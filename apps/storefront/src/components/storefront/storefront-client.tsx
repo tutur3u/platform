@@ -342,7 +342,7 @@ export function StorefrontClient({
   if (storefrontQuery.isLoading) {
     return (
       <StorefrontSkeleton
-        label={t('loading')}
+        srLabel={t('loading')}
         withinSharedShell={withinSharedShell}
       />
     );

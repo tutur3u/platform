@@ -1,5 +1,6 @@
 import { AlertCircle, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType, ReactNode } from 'react';
 
@@ -73,29 +74,23 @@ export function StudioErrorState({
 export function StudioSkeletonRows({
   className,
   count = 4,
-  label,
+  srLabel,
   rowClassName = 'h-14',
 }: {
   className?: string;
   count?: number;
-  label: string;
+  srLabel: string;
   rowClassName?: string;
 }) {
   return (
-    <div
-      aria-label={label}
-      className={cn('space-y-2', className)}
-      role="status"
-    >
+    <LoadingRegion className={cn('space-y-2', className)} srLabel={srLabel}>
       {Array.from({ length: count }, (_, index) => (
-        <div
-          className={cn(
-            'animate-pulse rounded-lg bg-foreground/5',
-            rowClassName
-          )}
+        <Skeleton
+          aria-hidden="true"
+          className={cn('rounded-lg', rowClassName)}
           key={index}
         />
       ))}
-    </div>
+    </LoadingRegion>
   );
 }

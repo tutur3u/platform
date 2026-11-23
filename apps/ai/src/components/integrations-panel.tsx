@@ -6,6 +6,7 @@ import {
   getAiStudioProviderCosts,
   getAiStudioProviderInvoices,
 } from '@tuturuuu/internal-api/ai-studio';
+import { LoadingRegion, Skeleton, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useLocale, useTranslations } from 'next-intl';
 import type { DisplayCurrency } from '@/lib/display-currency';
 import { useObservabilityFilters } from './observability-filters';
@@ -82,7 +83,16 @@ export function IntegrationsPanel({
         {invoices.isError || usage.isError ? (
           <p role="alert">{t('error')}</p>
         ) : invoices.isPending || usage.isPending ? (
-          <p role="status">{t('loading')}</p>
+          <LoadingRegion
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            srLabel={t('loading')}
+          >
+            {[0, 1, 2].map((key) => (
+              <div className="rounded-lg border p-4" key={key}>
+                <SkeletonText lines={3} />
+              </div>
+            ))}
+          </LoadingRegion>
         ) : !providers.size ? (
           <p>{t('empty')}</p>
         ) : (
@@ -111,7 +121,13 @@ export function IntegrationsPanel({
         {invoices.isError ? (
           <p role="alert">{t('error')}</p>
         ) : invoices.isPending ? (
-          <p role="status">{t('loading')}</p>
+          <LoadingRegion className="space-y-3" srLabel={t('loading')}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Skeleton className="h-[5.5rem] rounded-lg" />
+              <Skeleton className="h-[5.5rem] rounded-lg" />
+            </div>
+            <SkeletonText lines={4} />
+          </LoadingRegion>
         ) : (
           <>
             <div className="mb-5 grid gap-3 sm:grid-cols-2">

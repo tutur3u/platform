@@ -3,6 +3,7 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { getAiStudioProviderCosts } from '@tuturuuu/internal-api/ai-studio';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import type { DisplayCurrency } from '@/lib/display-currency';
 import { SectionCard } from './studio/section-card';
@@ -48,7 +49,9 @@ export function ProviderCostPanel({
             {t('error')}
           </p>
         ) : query.isPending ? (
-          <p role="status">{t('loading')}</p>
+          <LoadingRegion srLabel={t('loading')}>
+            <SkeletonText lines={5} />
+          </LoadingRegion>
         ) : !query.data.rows.length ? (
           <p className="text-muted-foreground text-sm">{t('empty')}</p>
         ) : (

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FileText, FolderOpen, Loader2, Sparkles, X } from '@tuturuuu/icons';
 import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -217,15 +218,13 @@ export function ModuleStorageDialog({
 
         <div className="space-y-4">
           {storageQuery.isLoading ? (
-            <div className="flex items-center gap-3 rounded-lg border border-border border-dashed bg-muted/50 px-4 py-5">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <div>
-                <p className="font-bold text-sm">{t('loading')}</p>
-                <p className="text-muted-foreground text-xs">
-                  {t('description')}
-                </p>
-              </div>
-            </div>
+            <LoadingRegion
+              className="space-y-2 rounded-lg border border-border border-dashed bg-muted/50 px-4 py-5"
+              srLabel={t('loading')}
+            >
+              <SkeletonLine barClassName="w-1/3" />
+              <SkeletonLine barClassName="w-2/3" size="xs" />
+            </LoadingRegion>
           ) : storageQuery.isError ? (
             <div className="space-y-3 rounded-lg border border-border border-dashed bg-muted/50 px-4 py-5">
               <div>

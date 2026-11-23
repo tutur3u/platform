@@ -76,7 +76,7 @@ export function CatalogPanel({
             hasNextPage={Boolean(query.hasNextPage)}
             isFetchingNextPage={query.isFetchingNextPage}
             loadedLabel={t('loaded_count', { count: items.length })}
-            loadingLabel={t('loading_more')}
+            srLabel={t('loading_more')}
             loadMoreLabel={t('load_more')}
             onLoadMore={() => void query.fetchNextPage()}
             retryLabel={t('retry')}
@@ -88,7 +88,7 @@ export function CatalogPanel({
     >
       <div className="p-4">
         {query.isPending ? (
-          <StudioSkeletonRows count={5} label={t('loading')} />
+          <StudioSkeletonRows count={5} srLabel={t('loading')} />
         ) : query.isError && items.length === 0 ? (
           <StudioErrorState
             description={t('error_description')}
