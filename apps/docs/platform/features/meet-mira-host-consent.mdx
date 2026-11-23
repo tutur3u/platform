@@ -28,7 +28,7 @@ and accepts the terms for that meeting.
 | Mid-call changes | When Mira is turned on during a call, or the acceptance changes, everyone already present sees the same tick box and notice, preset to the workspace default, and confirms it. Until they confirm, they count as off. |
 | Default setting | Workspace settings → Mira: **Mira consent box ticked by default** (on unless the workspace changes it). The setting needs `manage_workspace_settings`, records who changed it and when, and applies to joins after the change. |
 | Per-person opt-out | At any time, a participant can turn Mira off for themselves. While it is off, their speech is not transcribed or sent to a model and Mira does not read their messages. **Mute Mira for me** (stop hearing Mira's voice replies) and **Leave** stay available. Only the participant can turn it back on. |
-| Effect of one opt-out | It affects only that participant's content. Mira keeps running for everyone else. |
+| Effect of one opt-out | Room Mira excludes only that participant's content and keeps running for everyone else. Live transcription pauses for everyone while anyone is off, because host capture cannot separate one voice from the room audio; nothing the participant says is captured or uploaded. |
 | Guests | Guest choices are keyed to the server-issued guest participant id, never to a display name or label. A new guest join always starts without a choice. |
 | Reporting a minor | Any participant can report that someone under 18 is present. The report ends the acceptance; turning Mira on again needs a new acceptance and new choices. |
 
@@ -126,8 +126,8 @@ coverage:
 6. Context excludes quoted and reply-to bodies, attachments, poll answers and reactions from participants who are off, and excludes Mira's own replies.
 7. Two guests with the same label get separate choices, and a new guest starts without one.
 8. A rejoin keeps a choice only within the same revision and notice version.
-9. Chunk upload without the uploader's current `allow` revision is refused, and there is no mixed-audio path.
-10. Notes exclude opted-out tracks, and an erase redacts the mixed notes.
+9. The server refuses a clip without a speaker account, a clip whose speaker has no current Allow, and a clip outside the active recording; audio heard while anyone was off or undecided never leaves the host device.
+10. Turning Mira off for yourself withdraws your transcript consent and pauses transcription, notes never list opted-out participants as speakers, and an erase redacts the mixed notes.
 11. A workspace without the 18+ declaration cannot accept, and neither can a guest or an absent admin.
 12. A capability or visibility expansion requires a new acceptance.
 13. Acceptance and choice evidence survives a room restore, is anonymized on account deletion, and blocks deletion via RESTRICT.
