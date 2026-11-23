@@ -1,15 +1,10 @@
 'use client';
 
-import { ShieldCheck } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
-import {
-  AccountAvatarCard,
-  CoBrandRow,
-  StatusChip,
-} from './continue-card-parts';
+import { AccountAvatarCard, CoBrandRow } from './continue-card-parts';
 import {
   ConfirmationCard,
   getDisplayName,
@@ -106,12 +101,6 @@ export function InternalAppAccountConfirmation({
 
       <AccountAvatarCard
         avatarUrl={currentAvatarUrl}
-        chip={
-          <StatusChip>
-            <ShieldCheck aria-hidden className="mr-1.5 size-3.5" />
-            {t('login.profile_source_label')}
-          </StatusChip>
-        }
         detail={showCurrentEmail ? currentEmail : null}
         name={currentAccountName}
       />

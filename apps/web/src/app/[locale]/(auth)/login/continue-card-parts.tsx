@@ -4,7 +4,6 @@ import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
 import {
   getAvatarUrl,
@@ -40,15 +39,13 @@ export function CoBrandRow({ appName }: { appName: string }) {
   );
 }
 
-/** The signed-in account as a centred card: avatar, name and a status chip. */
+/** The signed-in account as a centred card: avatar, name and detail. */
 export function AccountAvatarCard({
   avatarUrl,
-  chip,
   detail,
   name,
 }: {
   avatarUrl?: string | null;
-  chip?: ReactNode;
   detail?: ReactNode;
   name: string;
 }) {
@@ -66,29 +63,7 @@ export function AccountAvatarCard({
           <p className="truncate text-muted-foreground text-sm">{detail}</p>
         ) : null}
       </div>
-      {chip}
     </div>
-  );
-}
-
-export function StatusChip({
-  children,
-  tone = 'green',
-}: {
-  children: ReactNode;
-  tone?: 'green' | 'gray';
-}) {
-  return (
-    <span
-      className={cn(
-        'inline-flex h-7 items-center rounded-full px-3 font-bold text-xs',
-        tone === 'green'
-          ? 'bg-calendar-bg-green text-dynamic-green'
-          : 'bg-secondary text-muted-foreground'
-      )}
-    >
-      {children}
-    </span>
   );
 }
 
