@@ -5794,6 +5794,7 @@
         "title": "Find a Time Everyone Can Meet"
       }
     },
+    "plan_count": "{count, plural, one {# plan} other {# plans}}",
     "qr": {
       "closing": {
         "description": "Paste the link, set the colors, and download a file you can print.",

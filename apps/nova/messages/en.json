@@ -2191,6 +2191,7 @@
     "new_plan": "New plan",
     "new_plan_desc": "This plan will help you find the best time to meet together with your friends, family, or colleagues.",
     "no_plans_yet": "You don't have any plans yet.",
+    "plan_count": "{count, plural, one {# plan} other {# plans}}",
     "select-time-zone": "Select time zone",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",

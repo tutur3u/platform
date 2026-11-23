@@ -252,11 +252,11 @@ export default function SelectableDayTime({
                   ? isSelected
                     ? isDraft
                       ? isTentative
-                        ? 'bg-yellow-500/50'
-                        : 'bg-green-500/50'
+                        ? 'bg-dynamic-yellow/50'
+                        : 'bg-dynamic-green/50'
                       : isTentative
-                        ? 'bg-yellow-500/70'
-                        : 'bg-green-500/70'
+                        ? 'bg-dynamic-yellow/70'
+                        : 'bg-dynamic-green/70'
                     : isDraft
                       ? 'bg-dynamic-red/50'
                       : 'bg-dynamic-red/20'

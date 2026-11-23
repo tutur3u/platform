@@ -2,27 +2,27 @@
 
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 
-// Loading skeleton component for plans
-export function PlansLoadingSkeleton({ view = 'grid' }: { view?: string }) {
-  if (view === 'list') {
+const ROWS = [0, 1, 2, 3, 4, 5];
+
+/** Placeholder with the geometry of the plans list or grid. */
+export function PlansLoadingSkeleton({ view = 'list' }: { view?: string }) {
+  if (view === 'grid') {
     return (
-      <div className="mt-8 w-full max-w-6xl space-y-4">
-        {Array.from({ length: 6 }, (_, i) => i).map((index) => (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {ROWS.map((row) => (
           <div
-            key={`skeleton-${Date.now()}-${index}`}
-            className="flex items-center gap-6 rounded-xl border border-foreground/10 bg-background p-6 shadow-sm"
+            className="space-y-3 rounded-xl border bg-card p-4 shadow-elevation-1 md:p-5"
+            key={row}
           >
-            <Skeleton className="h-16 w-16 rounded-lg" />
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-6 w-1/3" />
-                <Skeleton className="h-5 w-12 rounded-full" />
-              </div>
-              <Skeleton className="h-4 w-2/3" />
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-20" />
-              </div>
+            <div className="flex items-start justify-between gap-3">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-5 w-14" />
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="flex gap-1.5">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
             </div>
           </div>
         ))}
@@ -31,29 +31,14 @@ export function PlansLoadingSkeleton({ view = 'grid' }: { view?: string }) {
   }
 
   return (
-    <div className="mt-8 grid w-full max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }, (_, i) => i).map((index) => (
-        <div
-          key={`skeleton-${Date.now()}-${index}`}
-          className="group rounded-xl border border-foreground/10 bg-background p-6 shadow-sm transition-all duration-300"
-        >
-          <div className="mb-5 flex w-full items-start justify-between gap-3">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-5 w-12 rounded-full" />
+    <div className="divide-y overflow-hidden rounded-xl border bg-card">
+      {ROWS.map((row) => (
+        <div className="space-y-2 px-4 py-3 md:px-5" key={row}>
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-5 w-1/3" />
+            <Skeleton className="h-5 w-14" />
           </div>
-          <Skeleton className="mb-3 h-4 w-full" />
-          <Skeleton className="mb-5 h-4 w-2/3" />
-
-          <div className="mb-4 space-y-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-32" />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-6 w-16 rounded-full" />
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-6 w-18 rounded-full" />
-          </div>
+          <Skeleton className="h-4 w-1/2" />
         </div>
       ))}
     </div>

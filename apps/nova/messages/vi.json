@@ -2191,6 +2191,7 @@
     "new_plan": "Kế hoạch mới",
     "new_plan_desc": "Kế hoạch này sẽ giúp bạn tìm thời điểm tốt nhất để gặp bạn bè, gia đình hoặc đồng nghiệp của bạn.",
     "no_plans_yet": "Bạn chưa có kế hoạch nào",
+    "plan_count": "{count} kế hoạch",
     "select-time-zone": "Chọn múi giờ",
     "something_went_wrong": "Đã có lỗi xảy ra",
     "soonest-time-to-meet": "Giờ sớm nhất",

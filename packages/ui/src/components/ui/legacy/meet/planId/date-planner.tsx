@@ -102,7 +102,7 @@ function DatePlanner({
                 value="available"
                 className={cn(
                   'flex items-center gap-2 transition-all duration-300',
-                  'data-[state=active]:bg-background data-[state=active]:text-dynamic-green data-[state=active]:shadow-md',
+                  'data-[state=active]:bg-background data-[state=active]:text-dynamic-green',
                   'hover:border-border/50 hover:bg-accent/60',
                   'rounded-md border border-transparent px-4 py-2'
                 )}
@@ -113,7 +113,7 @@ function DatePlanner({
                 value="tentative"
                 className={cn(
                   'flex items-center gap-2 transition-all duration-300',
-                  'data-[state=active]:bg-background data-[state=active]:text-dynamic-yellow data-[state=active]:shadow-md',
+                  'data-[state=active]:bg-background data-[state=active]:text-dynamic-yellow',
                   'hover:border-border/50 hover:bg-accent/60',
                   'rounded-md border border-transparent px-4 py-2'
                 )}

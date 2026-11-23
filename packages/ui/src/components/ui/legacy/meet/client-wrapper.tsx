@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { MeetTogetherPlanWithParticipants } from './page';
 import MeetTogetherPagination from './pagination';
@@ -19,6 +18,7 @@ interface MeetTogetherClientProps {
   path?: string;
 }
 
+/** The viewer's plans in a grid or a list, with the view choice and paging. */
 export function MeetTogetherClient({
   plans,
   locale,
@@ -29,46 +29,28 @@ export function MeetTogetherClient({
   user,
   path,
 }: MeetTogetherClientProps) {
-  const t = useTranslations('meet-together');
-  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [view, setView] = useState<'grid' | 'list'>('list');
 
   return (
-    <>
-      {/* View toggle */}
-      <div className="mb-6 flex justify-end">
-        <ViewToggle currentView={view} onViewChange={setView} />
-      </div>
-
-      {/* Plans content */}
-      {view === 'list' ? (
-        <PlansListView
-          path={path}
-          plans={plans}
-          locale={locale}
-          t={t}
-          user={user}
-        />
-      ) : (
-        <PlansGrid
-          path={path}
-          plans={plans}
-          locale={locale}
-          t={t}
-          user={user}
-        />
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-8">
-          <MeetTogetherPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalCount={totalCount}
-            pageSize={pageSize}
-          />
+    <div className="space-y-4">
+      {plans.length > 0 && (
+        <div className="flex justify-end">
+          <ViewToggle currentView={view} onViewChange={setView} />
         </div>
       )}
-    </>
+      {view === 'list' ? (
+        <PlansListView locale={locale} path={path} plans={plans} user={user} />
+      ) : (
+        <PlansGrid locale={locale} path={path} plans={plans} user={user} />
+      )}
+      {totalPages > 1 && (
+        <MeetTogetherPagination
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          totalPages={totalPages}
+        />
+      )}
+    </div>
   );
 }

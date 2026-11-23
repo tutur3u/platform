@@ -1,8 +1,8 @@
 'use client';
 
 import { Grid3x3, Rows3 } from '@tuturuuu/icons';
+import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { useTranslations } from 'next-intl';
-import { Tabs, TabsList, TabsTrigger } from '../../tabs';
 
 interface ViewToggleProps {
   currentView: 'grid' | 'list';
@@ -16,29 +16,33 @@ export default function ViewToggle({
   const t = useTranslations('common');
 
   return (
-    <Tabs
+    <ToggleGroup
+      aria-label={t('view')}
+      className="w-fit gap-0.5 bg-muted p-0.5"
+      onValueChange={(value) => {
+        if (value === 'grid' || value === 'list') onViewChange(value);
+      }}
+      size="sm"
+      type="single"
       value={currentView}
-      onValueChange={(value) => onViewChange(value as 'grid' | 'list')}
+      variant="default"
     >
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger
-          value="grid"
-          className="flex items-center gap-2"
-          aria-label={t('grid_view')}
-        >
-          <Grid3x3 />
-          <span className="hidden sm:inline">{t('grid')}</span>
-        </TabsTrigger>
-
-        <TabsTrigger
-          value="list"
-          className="flex items-center gap-2"
-          aria-label={t('list_view')}
-        >
-          <Rows3 />
-          <span className="hidden sm:inline">{t('list')}</span>
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+      <ToggleGroupItem
+        aria-label={t('grid_view')}
+        className="gap-2 px-3"
+        value="grid"
+      >
+        <Grid3x3 aria-hidden className="size-4" />
+        <span className="hidden sm:inline">{t('grid')}</span>
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        aria-label={t('list_view')}
+        className="gap-2 px-3"
+        value="list"
+      >
+        <Rows3 aria-hidden className="size-4" />
+        <span className="hidden sm:inline">{t('list')}</span>
+      </ToggleGroupItem>
+    </ToggleGroup>
   );
 }

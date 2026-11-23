@@ -5794,6 +5794,7 @@
         "title": "Tìm giờ họp hợp cho tất cả"
       }
     },
+    "plan_count": "{count} kế hoạch",
     "qr": {
       "closing": {
         "description": "Dán đường liên kết, chọn màu, và tải về tệp bạn có thể đem in.",

@@ -2,7 +2,6 @@
 
 import type { User } from '@tuturuuu/types';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
@@ -51,73 +50,55 @@ export default function Form({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-8 px-2 text-center md:mb-8 md:px-4 lg:text-left">
-      {/* Date Selector */}
-      <div className="flex flex-col items-center justify-center gap-2">
-        <p className="font-semibold">{t('dates-to-meet-together')}</p>
-        <div>
-          <DateSelector
-            value={dates}
-            onSelect={setDates}
-            className="bg-background/50"
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <p className="font-medium text-sm">{t('dates-to-meet-together')}</p>
+        <DateSelector value={dates} onSelect={setDates} />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <p className="font-medium text-sm">{t('soonest-time-to-meet')}</p>
+          <TimeSelector
+            value={startTime}
+            onValueChange={setStartTime}
+            disabledTime={endTime}
+            isStartTime={true}
+          />
+        </div>
+        <div className="space-y-2">
+          <p className="font-medium text-sm">{t('latest-time-to-meet')}</p>
+          <TimeSelector
+            value={endTime}
+            onValueChange={setEndTime}
+            disabledTime={startTime}
+            isStartTime={false}
           />
         </div>
       </div>
-
-      {/* Time and Timezone Controls */}
-      <div className="flex flex-col items-center gap-4 lg:items-start">
-        <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="grid gap-1">
-            <p className="w-full font-semibold">{t('soonest-time-to-meet')}</p>
-            <TimeSelector
-              value={startTime}
-              onValueChange={setStartTime}
-              disabledTime={endTime}
-              isStartTime={true}
-            />
-          </div>
-          <div className="grid gap-1">
-            <p className="w-full font-semibold">{t('latest-time-to-meet')}</p>
-            <TimeSelector
-              value={endTime}
-              onValueChange={setEndTime}
-              disabledTime={startTime}
-              isStartTime={false}
-            />
-          </div>
-        </div>
-        <Separator className="my-2" />
-        <div className="grid w-full gap-1">
-          <p className="w-full font-semibold">{t('time-zone')}</p>
-          <TimezoneSelector value={timezone} onValueChange={setTimezone} />
-        </div>
-        <div className="grid w-full gap-2">
-          <p className="w-full font-semibold">{t('duration')}</p>
-          <Tabs
-            value={String(durationMinutes)}
-            onValueChange={(value) => setDurationMinutes(Number(value))}
-          >
-            <TabsList className="grid h-auto w-full grid-cols-4">
-              {[30, 45, 60, 90].map((minutes) => (
-                <TabsTrigger key={minutes} value={String(minutes)}>
-                  {minutes}m
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-        <div className="flex w-full justify-center lg:justify-start">
-          {user?.id ? (
-            <CreatePlanDialog
-              plan={plan}
-              user={user}
-              planBasePath={planBasePath}
-            />
-          ) : (
-            <CreatePlanSignInPrompt />
-          )}
-        </div>
+      <div className="space-y-2">
+        <p className="font-medium text-sm">{t('time-zone')}</p>
+        <TimezoneSelector value={timezone} onValueChange={setTimezone} />
       </div>
+      <div className="space-y-2">
+        <p className="font-medium text-sm">{t('duration')}</p>
+        <Tabs
+          value={String(durationMinutes)}
+          onValueChange={(value) => setDurationMinutes(Number(value))}
+        >
+          <TabsList className="grid h-auto w-full grid-cols-4">
+            {[30, 45, 60, 90].map((minutes) => (
+              <TabsTrigger key={minutes} value={String(minutes)}>
+                {minutes}m
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
+      {user?.id ? (
+        <CreatePlanDialog plan={plan} user={user} planBasePath={planBasePath} />
+      ) : (
+        <CreatePlanSignInPrompt />
+      )}
     </div>
   );
 }

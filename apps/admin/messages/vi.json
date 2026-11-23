@@ -11216,6 +11216,7 @@
     "no-timezone-found": "Không tìm thấy múi giờ",
     "participant_count": "{count} người tham gia",
     "participants": "Người tham gia",
+    "plan_count": "{count} kế hoạch",
     "registered_users": "Người dùng đã đăng ký",
     "select-time-zone": "Chọn múi giờ",
     "sign_in_to_create_plan": "Đăng nhập để tạo kế hoạch",

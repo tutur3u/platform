@@ -23,7 +23,7 @@ const ProgressBar = memo(({ totalUserCount }: { totalUserCount: number }) => {
       >
         <div
           className={`h-full w-full ${cn(
-            i === 0 ? 'bg-foreground/10' : 'bg-green-500/70',
+            i === 0 ? 'bg-foreground/10' : 'bg-dynamic-green/70',
             i === (totalUserCount || 1) && 'rounded-r-[0.175rem]'
           )}`}
           style={{

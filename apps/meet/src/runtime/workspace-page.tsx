@@ -36,11 +36,9 @@ export default function WorkspacePage({
     case 'workspace-plans':
       return (
         <WorkspaceView {...shell}>
-          <div className="-m-4">
-            <Suspense fallback={null}>
-              <PlansView model={model} />
-            </Suspense>
-          </div>
+          <Suspense fallback={null}>
+            <PlansView model={model} />
+          </Suspense>
         </WorkspaceView>
       );
     case 'meeting':

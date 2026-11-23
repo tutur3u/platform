@@ -84,10 +84,9 @@ export default function PlanDetailsClient({
 
   return (
     <>
-      <main className="relative min-h-dvh w-full overflow-hidden bg-background text-foreground">
-        <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-72 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.10),transparent_52%)]" />
-        <div className="relative mx-auto flex w-full max-w-[1560px] flex-col gap-5 px-3 py-4 sm:px-5 lg:px-8">
-          <header className="rounded-2xl border bg-background/90 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+      <main className="min-h-dvh w-full bg-background text-foreground">
+        <div className="mx-auto flex w-full max-w-[1560px] flex-col gap-5 px-3 py-4 sm:px-5 lg:px-8">
+          <header className="rounded-xl border bg-card p-4 shadow-elevation-1 sm:p-5">
             <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start">
               <div className="min-w-0">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -139,7 +138,7 @@ export default function PlanDetailsClient({
 
           <div id="plan-ref">
             <Tabs defaultValue="availability" className="space-y-5">
-              <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl border bg-muted/30 p-1 sm:w-fit sm:min-w-[28rem]">
+              <TabsList className="grid h-auto w-full grid-cols-3 sm:w-fit sm:min-w-[28rem]">
                 <TabsTrigger value="availability" className="gap-2 py-2.5">
                   <CalendarClock className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('availability')}</span>
@@ -155,7 +154,7 @@ export default function PlanDetailsClient({
 
               <TabsContent value="availability" className="mt-0">
                 <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-                  <section className="min-w-0 rounded-2xl border bg-background/80 p-3 sm:p-5">
+                  <section className="min-w-0 rounded-xl border bg-card p-3 sm:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
                       <div>
                         <h2 className="font-semibold">
@@ -191,7 +190,7 @@ export default function PlanDetailsClient({
                       showBestTimes={showBestTimes}
                     />
                   </section>
-                  <aside className="rounded-2xl border bg-background/80 p-2 xl:sticky xl:top-4">
+                  <aside className="rounded-xl border bg-card p-2 xl:sticky xl:top-4">
                     <SidebarDisplay plan={plan} polls={polls} users={users} />
                   </aside>
                 </div>
@@ -217,7 +216,7 @@ export default function PlanDetailsClient({
             </Tabs>
           </div>
 
-          <section className="rounded-2xl border bg-background/80 p-4 sm:p-5">
+          <section className="rounded-xl border bg-card p-4 sm:p-5">
             <AgendaDetails plan={plan} />
           </section>
           {isCreator && plan.id && <GuestPasswordReset planId={plan.id} />}

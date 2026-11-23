@@ -193,7 +193,7 @@ export function MeetSuggestionsPanel({
   if (plan.is_confirmed) {
     return (
       <section className="space-y-4">
-        <div className="rounded-2xl border bg-primary/[0.04] p-5">
+        <div className="rounded-xl border bg-primary/5 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <Badge className="mb-3 gap-1">
@@ -361,7 +361,7 @@ export function MeetSuggestionsPanel({
                 setSelected((current) => [...current, key]);
               }}
               className={cn(
-                'flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition duration-200 active:scale-[0.995]',
+                'flex w-full items-center gap-4 rounded-xl border p-4 text-left transition duration-200 active:scale-[0.995]',
                 active
                   ? 'border-primary bg-primary/[0.06]'
                   : 'bg-background hover:border-primary/40'
@@ -398,12 +398,12 @@ export function MeetSuggestionsPanel({
       </div>
 
       {visible.length === 0 && (
-        <div className="rounded-2xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+        <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
           {t('no_matching_suggestions')}
         </div>
       )}
 
-      <aside className="h-fit space-y-5 rounded-2xl border bg-muted/20 p-4 lg:sticky lg:top-4">
+      <aside className="h-fit space-y-5 rounded-xl border bg-muted/20 p-4 lg:sticky lg:top-4">
         <div>
           <div className="mb-2 flex items-center justify-between text-sm">
             <span>{t('minimum_confirmed')}</span>

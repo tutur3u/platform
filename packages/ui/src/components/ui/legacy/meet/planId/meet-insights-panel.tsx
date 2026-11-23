@@ -58,7 +58,7 @@ export function MeetInsightsPanel({
 
   return (
     <section className="space-y-5" aria-label={t('meeting_insights')}>
-      <div className="grid gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-px overflow-hidden rounded-xl border bg-border sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(({ icon: Icon, label, value, detail }) => (
           <article key={label} className="bg-background p-5">
             <div className="mb-5 flex items-center justify-between text-muted-foreground">
@@ -73,7 +73,7 @@ export function MeetInsightsPanel({
         ))}
       </div>
 
-      <div className="rounded-2xl border bg-background/70 p-5">
+      <div className="rounded-xl border bg-card p-5">
         <div className="mb-5">
           <h3 className="font-semibold">{t('best_overlap_by_day')}</h3>
           <p className="text-muted-foreground text-sm">
@@ -103,7 +103,7 @@ export function MeetInsightsPanel({
       <Accordion
         type="single"
         collapsible
-        className="rounded-2xl border bg-background/70 px-5"
+        className="rounded-xl border bg-card px-5"
       >
         <AccordionItem value="hourly" className="border-0">
           <AccordionTrigger>{t('hourly_availability')}</AccordionTrigger>

@@ -19,7 +19,7 @@ export function GuestPasswordReset({ planId }: { planId: string }) {
 
   return (
     <form
-      className="space-y-3 rounded-2xl border bg-background/80 p-4"
+      className="space-y-3 rounded-xl border bg-card p-4"
       onSubmit={async (event) => {
         event.preventDefault();
         if (!guestName || !password || pending) return;

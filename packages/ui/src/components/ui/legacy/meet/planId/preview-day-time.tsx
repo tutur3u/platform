@@ -184,7 +184,7 @@ function PreviewDayTime({
           if (i + hourSplits < array.length) {
             if (showBestTimes) {
               if (bestBlockIndices.has(i)) {
-                cellClass = 'bg-green-500/70';
+                cellClass = 'bg-dynamic-green/70';
                 cellStyle = { opacity: 1 };
               } else {
                 cellClass = 'bg-foreground/10';

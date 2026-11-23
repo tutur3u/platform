@@ -31,15 +31,13 @@ export default async function TumeetPage({
   const { workspace, wsId } = await getMeetWorkspaceContext(id);
 
   return (
-    <div className="-m-4">
-      <Suspense>
-        <MeetTogetherPage
-          scope={workspace?.personal ? 'personal-consolidated' : 'workspace'}
-          wsId={wsId}
-          path="/plans"
-          searchParams={searchParams}
-        />
-      </Suspense>
-    </div>
+    <Suspense>
+      <MeetTogetherPage
+        scope={workspace?.personal ? 'personal-consolidated' : 'workspace'}
+        wsId={wsId}
+        path="/plans"
+        searchParams={searchParams}
+      />
+    </Suspense>
   );
 }
