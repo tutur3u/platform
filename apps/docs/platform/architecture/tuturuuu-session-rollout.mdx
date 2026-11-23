@@ -2,7 +2,7 @@
 title: "Tuturuuu session rollout"
 description: "Database access, revocation bounds, migration phases, threat model and stop fence for the first-party Tuturuuu session."
 audience: developers
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-24"
 ---
 
 **Status: design, pending independent security review.** This page completes
@@ -31,7 +31,47 @@ a Supabase token.
 | A. Upstream Supabase session per request | **Use through P2.** The session service decrypts the grant and gives its access token only to the trusted data adapter for one request |
 | C. Claims-bound transactions over Hyperdrive | **Target from P3, gated on the parity work below** |
 | B. A Tuturuuu-held key trusted by Supabase | **Rejected.** For a Tuturuuu-minted Data API token, Supabase needs an imported, activated project key or a configured third-party auth issuer. Such a key can mint any role, including `service_role`, which bypasses RLS for every tenant. A standby key in the JWKS is not evidence that the Data API accepts it |
-| D. Service role plus explicit authorization | **Rejected for user requests.** One missed check exposes every tenant. The service role stays limited to an allowlist of system jobs |
+| D. Service role plus explicit authorization | **Rejected for user requests against Postgres.** One missed check exposes every tenant. The service role stays limited to an allowlist of system jobs. **Superseded for domains that move to D1** (see below) |
+
+### Option D for domains on D1
+
+**Owner decision, 2026-11-23:** every data domain moves from Supabase Postgres
+to Cloudflare D1, and authorization is rewritten in code. D1 has no row-level
+security, so for a domain that has moved, the model is authorization in code
+behind privileged storage bindings that only data Workers hold. That is option D,
+and for those domains it replaces options A and C.
+
+- **Scope.** A domain is covered from its first D1 read cutover. Until then it stays
+  on Postgres, where options A and C apply and option D stays rejected for user
+  requests.
+- **Compensating controls,** each required before a domain's read cutover:
+  - `@tuturuuu/authz`, a typed, deny-by-default policy engine (a missing
+    policy, an unknown permission or an evaluation error denies, with no
+    admin bypass), and
+    `@tuturuuu/data`, tenant-scoped repositories. No query runs without a
+    resolved workspace scope.
+  - Storage bindings (D1, and the Durable Object, R2, Vectorize and KV
+    namespaces that hold domain data) are declared only by per-domain data
+    Workers. A CI binding guard enforces this; the existing meet and chat
+    Durable Objects are listed exceptions, each with an owner.
+  - The calling app is identified by the `ctx.props` of its service binding,
+    never by the request, and each data Worker enforces an app → domain →
+    action allowlist.
+  - System jobs reach data only through a separate `SystemDataEntrypoint`,
+    bound by Cron Control and Queue consumers only, and every call is audited
+    with its job name. Work deferred from a user request runs as a
+    delegated-job principal signed at enqueue time, never as
+    `SystemCapability`.
+  - Every Vectorize query carries a `ws_id` namespace or filter, enforced by
+    the repository.
+  - Parity is proven per request before cutover: an RLS policy oracle, a
+    definer-RPC differential suite, a request-level differential against the
+    old route, and a fuzz harness. Every `createAdminClient` call site is
+    mapped to a policy or a named system capability.
+  - Sensitive domains get separate databases and Workers.
+- **Residual risk.** A missing policy is still a cross-tenant exposure. The
+  controls above shrink that risk to one engine and one repository layer
+  that are reviewed and mutation-tested. They do not remove it.
 
 ### Trusted data adapter
 
