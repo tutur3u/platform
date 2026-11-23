@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -103,6 +109,61 @@ test('compare-counts writes a failed report when input cannot be parsed', () => 
   }
 });
 
+test('compare-storage uses the optional live listing and prints no keys', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'backup-storage-cli-'));
+  try {
+    mkdirSync(join(dir, 'tree', 'avatars'), { recursive: true });
+    writeFileSync(join(dir, 'tree', 'avatars', 'late.png'), 'late');
+    writeFileSync(join(dir, 'buckets.csv'), 'id\navatars\n');
+    writeFileSync(
+      join(dir, 'keys.csv'),
+      'bucket,name,size\navatars,gone.png,3\n'
+    );
+    writeFileSync(join(dir, 'excluded.csv'), 'bucket,name\n');
+    writeFileSync(
+      join(dir, 'live.csv'),
+      'bucket,name,size\navatars,late.png,4\n'
+    );
+    const base = [
+      cli,
+      'compare-storage',
+      join(dir, 'keys.csv'),
+      join(dir, 'excluded.csv'),
+      join(dir, 'tree'),
+      join(dir, 'buckets.csv'),
+      join(dir, 'report.json'),
+    ];
+    const run = (args) => {
+      try {
+        return { status: 0, stdout: execFileSync('node', args).toString() };
+      } catch (error) {
+        return { status: error.status, stdout: error.stdout.toString() };
+      }
+    };
+
+    const strict = run(base);
+    assert.equal(strict.status, 1);
+    assert.equal(
+      JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8')).liveChecked,
+      false
+    );
+
+    const withLive = run([
+      ...base,
+      join(dir, 'live.csv'),
+      join(dir, 'excluded.csv'),
+    ]);
+    assert.equal(withLive.status, 0);
+    assert.match(withLive.stdout, /^Storage parity: ok/);
+    assert.doesNotMatch(withLive.stdout, /gone|late|avatars/);
+    const report = JSON.parse(readFileSync(join(dir, 'report.json'), 'utf8'));
+    assert.equal(report.counts.deletedSinceSnapshot, 1);
+    assert.equal(report.counts.createdSinceSnapshot, 1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('buildManifest hashes each file and records parity without row data', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'backup-manifest-'));
   try {
@@ -125,6 +186,34 @@ test('buildManifest hashes each file and records parity without row data', async
     assert.deepEqual(manifest.parity, { ok: true, tables: 2, rows: 3 });
     assert.deepEqual(manifest.storage, { ok: true, objects: 4 });
     assert.equal(manifest.restore, null);
+
+    const failed = await buildManifest({
+      target: 'production',
+      files: [file],
+      storage: {
+        ok: false,
+        objects: 4,
+        liveChecked: true,
+        missing: ['workspaces/secret/key.png'],
+        counts: { missing: 1, createdSinceSnapshot: 2, bogus: 9, unsafe: -1 },
+        byBucket: {
+          workspaces: { missing: 1, note: 'workspaces/secret/key.png' },
+          constructor: { createdSinceSnapshot: 2 },
+          'Bad/Id': { missing: 1 },
+        },
+      },
+    });
+    assert.deepEqual(failed.storage, {
+      ok: false,
+      objects: 4,
+      liveChecked: true,
+      counts: { missing: 1, createdSinceSnapshot: 2 },
+      byBucket: {
+        workspaces: { missing: 1 },
+        constructor: { createdSinceSnapshot: 2 },
+      },
+    });
+    assert.doesNotMatch(JSON.stringify(failed), /secret/);
 
     const catalog = await buildManifest({
       target: 'staging',

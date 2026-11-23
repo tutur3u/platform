@@ -208,6 +208,15 @@ in_snapshot() {
     -c 'commit;' >/dev/null 2>"$PLAIN/query.err" ||
     fail_with "A snapshot query failed" "$PLAIN/query.err"
 }
+# A read outside the snapshot, for the post-copy storage listing only.
+live_query() {
+  "$PSQL" "$DB_URL" -X -q -v ON_ERROR_STOP=1 \
+    -c 'set default_transaction_read_only = on;' \
+    -c 'set statement_timeout = 0;' \
+    -c 'set row_security = off;' \
+    -c "\\copy ($(one_line "$1")) to '$2' with (format csv, header)" \
+    >/dev/null 2>>"$PLAIN/live-query.err"
+}
 in_snapshot "$COUNTS_SQL" "$PLAIN/counts.csv"
 in_snapshot "$SIZES_SQL" "$PLAIN/sizes.csv"
 in_snapshot "$STORAGE_SQL" "$PLAIN/storage-stats.csv"
@@ -265,9 +274,18 @@ if [ "$MODE" = export ]; then
       --endpoint-url "$STORAGE_S3_ENDPOINT" "s3://$bucket" "$PLAIN/storage/$bucket" \
       >/dev/null 2>>"$PLAIN/storage-sync.err" || echo "sync exit $? for one bucket" >>"$PLAIN/storage-sync.err"
   done < <(tail -n +2 "$PLAIN/buckets.csv")
+  # Read storage.objects again, outside the snapshot, so keys that live
+  # traffic moved between the snapshot and the copy are told apart from real
+  # losses. If this read fails, parity runs without it and every difference
+  # fails.
+  live_args=()
+  if live_query "$STORAGE_KEYS_SQL" "$PLAIN/live-keys.csv" &&
+    live_query "$STORAGE_EXCLUDED_KEYS_SQL" "$PLAIN/live-excluded-keys.csv"; then
+    live_args=("$PLAIN/live-keys.csv" "$PLAIN/live-excluded-keys.csv")
+  fi
   node "$HERE/backup-manifest.mjs" compare-storage "$PLAIN/storage-keys.csv" \
     "$PLAIN/storage-excluded-keys.csv" "$PLAIN/storage" "$PLAIN/buckets.csv" \
-    "$PLAIN/storage-report.json" || storage_ok=$?
+    "$PLAIN/storage-report.json" "${live_args[@]}" || storage_ok=$?
   [ "${storage_skipped:-0}" = 0 ] || storage_ok=1
   # Stream the archive straight into age so no plaintext tar is written.
   { tar -C "$PLAIN" -cf - storage | age "${RECIPIENT_ARGS[@]}" -o "$OUT/storage.tar.age"; } \
@@ -312,14 +330,14 @@ if [ "$MODE" = export ]; then
   # A missing or truncated report reads as a failed result; nothing from it
   # reaches the log.
   summary() {
-    node -e 'try{const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(JSON.stringify({ok:r.ok===true,tables:r.tables,rows:r.rows,objects:r.objects}))}catch{console.log("{\"ok\":false}")}' \
+    node -e 'try{const r=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(JSON.stringify({ok:r.ok===true,tables:r.tables,rows:r.rows,objects:r.objects,liveChecked:r.liveChecked,counts:r.counts,byBucket:r.byBucket}))}catch{console.log("{\"ok\":false}")}' \
       "$1" 2>/dev/null || echo '{"ok":false}'
   }
   PARITY="$(summary "$PLAIN/parity-report.json")"
   STORAGE_REPORT="$(summary "$PLAIN/storage-report.json")"
   RESTORE_REPORT="{\"errorsIgnored\":$errors}"
   for file in database.dump roles.sql buckets.csv storage-keys.csv storage-excluded-keys.csv \
-    storage-report.json storage-sync.err restored-counts.csv parity-report.json \
+    storage-report.json storage-sync.err live-query.err restored-counts.csv parity-report.json \
     restore.log restore-server.log; do
     [ -f "$PLAIN/$file" ] || continue
     encrypt "$PLAIN/$file"

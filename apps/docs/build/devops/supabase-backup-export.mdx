@@ -28,8 +28,10 @@ manifest lists each file's sha256, the git SHA, the run and the parity results.
 It is uploaded last, so a partial upload can be recognised.
 
 The manifest is not encrypted, so the hashes can be checked before
-decryption. It carries only totals (tables, rows, objects) and no names, and
-it sits in the locked, private backup bucket.
+decryption. It carries only totals (tables, rows, objects) and the storage
+parity category counts, overall and per bucket id. Bucket ids are its only
+names; no table, object or key name appears. A failed run can be diagnosed from it without decrypting. It sits in
+the locked, private backup bucket.
 
 ## Consistency and verification
 
@@ -55,7 +57,14 @@ it sits in the locked, private backup bucket.
   - a sync error, for example an excluded row with no backend object, is
     recorded in the encrypted bundle, and the key comparison decides the
     outcome;
-  - an upload between the snapshot and the copy fails the run. Re-run it;
+  - after the copy, `storage.objects` is read again outside the snapshot. A key
+    deleted, created or overwritten between the snapshot and the copy is
+    counted as `deletedSinceSnapshot`, `createdSinceSnapshot` or
+    `changedSinceSnapshot` and does not fail parity: the archive holds the
+    bytes current at copy time, so a restored dump can name an object that
+    live traffic deleted. Only differences the live listing cannot explain
+    (`missing`, `sizeMismatch`, `unexpected`) fail. If that read fails, every
+    difference fails (`liveChecked: false`);
   - a bucket whose id is not a safe directory name, or that holds a key with a
     leading `/` or an empty, `.` or `..` segment, is **not synced**, so nothing
     can be written outside its directory. Storage parity then fails, and the
@@ -144,6 +153,22 @@ Each environment holds:
 | `STORAGE_S3_ENDPOINT`, `STORAGE_S3_ACCESS_KEY_ID`, `STORAGE_S3_SECRET_ACCESS_KEY` | secret | Supabase Storage S3 access keys, used only in `export` mode |
 | `BACKUP_AGE_RECIPIENTS` | variable | Two or more space-separated `age1…` X25519 public keys. Plugin recipients are not accepted |
 
+**Recipients and key custody.** Each export is encrypted to every key in
+`BACKUP_AGE_RECIPIENTS`, and only the matching identities can decrypt it.
+Both environments hold the same set. Every identity needs an offline,
+passphrase-wrapped copy held apart from the machine that uses it; a key with
+no such copy is one loss away from making every export unreadable.
+
+| Recipient set | Keys | Encrypts | Identities |
+| --- | --- | --- | --- |
+| 1 | `age1hlexwnhzra8sx0cz24ey7c6xtrzluh3ewy64g7da42u9ga0spqqs4hxd3m`, `age1kmhefmh0rrsxw6098kc3t3mzh3k4g3sa345javfl7w4e293e3phqfhwp6c` | Exports dispatched before 2026-11-24 | **Lost.** Those exports cannot be decrypted unless an identity is found. They stay in the bucket under its lock and expire with it; none is a usable backup |
+| 2 | Owner `age1t42fgpjax0yptgsgee4z7s35astc4n3u27slxlyt4qnl8rjesywqvgxwmg`, escrow `age1gu6dkdtqgm6qu7u7yrvdcg7lyt3kv0fzvkk4d24yzlhsd2g7csxqft0wvp` | Exports from 2026-11-24 | Both on the release authority's production Mac (`~/.config/tuturuuu-production/backup-age-{owner,escrow}.key`, mode 0600). **Open release item:** no offline copy exists yet and the escrow identity has no second holder, so one machine loss makes these exports unreadable too. Until the escrow identity is with its holder and each identity has an offline copy, set 2 does not meet the custody rule above |
+
+To rotate, generate new identities on the key holder's machine (only the
+public keys leave it), set `BACKUP_AGE_RECIPIENTS` in both environments, add a
+row here, then run a staging export and decrypt-test it with each new identity.
+Existing exports stay encrypted to the set that was current when they ran.
+
 **The bucket lock.** The backup bucket's lock rule keeps every object for 90
 days, so the job's token cannot delete or overwrite an export. An account
 administrator can still remove the lock rule itself, so R2 admin rights belong
@@ -164,7 +189,8 @@ The helper tests in `scripts/backup/backup-manifest.test.mjs` cover:
 - count parsing, including quoted names;
 - parse errors that never echo values;
 - failed reports for unparseable input;
-- key-level storage parity (missing, resized, unexpected and excluded keys);
+- key-level storage parity (missing, resized, unexpected and excluded keys), and
+  keys the post-copy live listing explains;
 - disk sizing;
 - manifest hashing.
 

@@ -163,23 +163,79 @@ export function listDownloads(root, buckets) {
 }
 
 // Every sized key must be downloaded with its exact size. A downloaded file
-// that is not a sized key is allowed only if the snapshot excluded it. The
-// report keeps key-level detail (it is encrypted); its summary has counts only.
-export function compareStorageKeys(expected, excluded, downloaded) {
+// that is not a sized key is allowed only if the snapshot excluded it.
+//
+// The copy runs after the snapshot, so live traffic moves keys in between.
+// `live` is storage.objects read again after the copy (outside the
+// snapshot). A key that is gone there was deleted after the snapshot; one
+// that appears there was created after it; one whose live size matches the
+// download changed after it. Those are reported but do not fail parity, since
+// the copy holds the bytes current at copy time. Only keys the live listing
+// cannot explain fail. Without `live`, every difference fails.
+//
+// The report keeps key-level detail (it is encrypted). `counts` and
+// `byBucket` hold numbers only, for the plaintext manifest.
+export const STORAGE_CATEGORIES = [
+  'unsafe',
+  'missing',
+  'sizeMismatch',
+  'unexpected',
+  'deletedSinceSnapshot',
+  'changedSinceSnapshot',
+  'createdSinceSnapshot',
+];
+
+export function compareStorageKeys(expected, excluded, downloaded, live) {
   const unsafe = [...expected.keys(), ...excluded].filter((key) =>
     isUnsafeKey(key.split('\u0000')[1])
   );
+  const liveHas = (key) =>
+    live !== undefined && (live.keys.has(key) || live.excluded.has(key));
   const missing = [];
   const sizeMismatch = [];
   const unexpected = [];
+  const deletedSinceSnapshot = [];
+  const changedSinceSnapshot = [];
+  const createdSinceSnapshot = [];
   for (const [key, size] of expected) {
-    if (!downloaded.has(key)) missing.push(key);
-    else if (downloaded.get(key) !== size) sizeMismatch.push(key);
+    if (!downloaded.has(key)) {
+      if (live !== undefined && !liveHas(key)) deletedSinceSnapshot.push(key);
+      else missing.push(key);
+    } else if (downloaded.get(key) !== size) {
+      if (live?.keys.get(key) === downloaded.get(key)) {
+        changedSinceSnapshot.push(key);
+      } else sizeMismatch.push(key);
+    }
   }
-  for (const key of downloaded.keys()) {
-    if (!expected.has(key) && !excluded.has(key)) unexpected.push(key);
+  for (const [key, size] of downloaded) {
+    if (expected.has(key) || excluded.has(key)) continue;
+    if (live?.excluded.has(key) || live?.keys.get(key) === size) {
+      createdSinceSnapshot.push(key);
+    } else unexpected.push(key);
   }
   const readable = (key) => key.replace('\u0000', '/');
+  const lists = {
+    unsafe,
+    missing,
+    sizeMismatch,
+    unexpected,
+    deletedSinceSnapshot,
+    changedSinceSnapshot,
+    createdSinceSnapshot,
+  };
+  const counts = {};
+  // A Map, so a bucket id such as `constructor` is an ordinary key.
+  const perBucket = new Map();
+  for (const [category, keys] of Object.entries(lists)) {
+    counts[category] = keys.length;
+    for (const key of keys) {
+      const id = key.split('\u0000')[0];
+      if (!perBucket.has(id)) perBucket.set(id, {});
+      const bucket = perBucket.get(id);
+      bucket[category] = (bucket[category] ?? 0) + 1;
+    }
+  }
+  const byBucket = Object.fromEntries(perBucket);
   let bytes = 0;
   for (const size of expected.values()) bytes += size;
   return {
@@ -190,10 +246,15 @@ export function compareStorageKeys(expected, excluded, downloaded) {
       unexpected.length === 0,
     objects: expected.size,
     bytes,
-    unsafe: unsafe.map(readable).sort(),
-    missing: missing.map(readable).sort(),
-    sizeMismatch: sizeMismatch.map(readable).sort(),
-    unexpected: unexpected.map(readable).sort(),
+    liveChecked: live !== undefined,
+    counts,
+    byBucket,
+    ...Object.fromEntries(
+      Object.entries(lists).map(([category, keys]) => [
+        category,
+        keys.map(readable).sort(),
+      ])
+    ),
   };
 }
 

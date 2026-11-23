@@ -85,6 +85,116 @@ test('compareStorageKeys fails on missing, resized or unexpected files', () => {
   }
 });
 
+test('the live listing explains keys moved after the snapshot', () => {
+  const root = fixture();
+  try {
+    // Created after the snapshot, and listed live with its size.
+    writeFileSync(join(root, 'avatars', 'new.png'), 'four');
+    // Overwritten after the snapshot: live size matches the download.
+    writeFileSync(join(root, 'avatars', 'u1', 'a.webp'), 'abcdef');
+    const snapshot = parseExpectedKeys(`${expectedCsv}avatars,gone.png,2\n`);
+    const live = {
+      keys: parseExpectedKeys(
+        'bucket,name,size\navatars,u1/a.webp,6\navatars,new.png,4\nworkspaces,"ws/docs/r, 1.pdf",5\n'
+      ),
+      excluded: parseExcludedKeys('bucket,name\n'),
+    };
+    const report = compareStorageKeys(
+      snapshot,
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces']),
+      live
+    );
+    assert.equal(report.ok, true);
+    assert.equal(report.liveChecked, true);
+    assert.deepEqual(report.deletedSinceSnapshot, ['avatars/gone.png']);
+    assert.deepEqual(report.changedSinceSnapshot, ['avatars/u1/a.webp']);
+    assert.deepEqual(report.createdSinceSnapshot, ['avatars/new.png']);
+    assert.deepEqual(report.byBucket, {
+      avatars: {
+        deletedSinceSnapshot: 1,
+        changedSinceSnapshot: 1,
+        createdSinceSnapshot: 1,
+      },
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('keys the live listing cannot explain still fail, with counts', () => {
+  const root = fixture();
+  try {
+    writeFileSync(join(root, 'avatars', 'stray.bin'), 'x');
+    const report = compareStorageKeys(
+      parseExpectedKeys(
+        `${expectedCsv}changelog,post.png,9\n`.replace(',3\n', ',4\n')
+      ),
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces', 'changelog']),
+      {
+        // Still listed live: a missing backend object, not a delete. The live
+        // size disagrees with the download, and the stray file is unknown.
+        keys: parseExpectedKeys(
+          'bucket,name,size\navatars,u1/a.webp,4\nchangelog,post.png,9\navatars,stray.bin,7\n'
+        ),
+        excluded: parseExcludedKeys('bucket,name\n'),
+      }
+    );
+    assert.equal(report.ok, false);
+    assert.deepEqual(report.missing, ['changelog/post.png']);
+    assert.deepEqual(report.sizeMismatch, ['avatars/u1/a.webp']);
+    assert.deepEqual(report.unexpected, ['avatars/stray.bin']);
+    assert.equal(report.counts.missing, 1);
+    assert.equal(report.counts.sizeMismatch, 1);
+    assert.equal(report.counts.unexpected, 1);
+    assert.equal(report.counts.deletedSinceSnapshot, 0);
+    assert.deepEqual(report.byBucket, {
+      changelog: { missing: 1 },
+      avatars: { sizeMismatch: 1, unexpected: 1 },
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a key listed live without a size is never treated as deleted', () => {
+  const root = fixture();
+  try {
+    writeFileSync(join(root, 'avatars', 'late.bin'), 'zz');
+    const report = compareStorageKeys(
+      parseExpectedKeys(
+        `${expectedCsv}avatars,pending.png,2\n`.replace(',3\n', ',4\n')
+      ),
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces']),
+      {
+        keys: parseExpectedKeys('bucket,name,size\n'),
+        excluded: parseExcludedKeys(
+          'bucket,name\navatars,pending.png\navatars,u1/a.webp\navatars,late.bin\nworkspaces,"ws/docs/r, 1.pdf"\n'
+        ),
+      }
+    );
+    assert.equal(report.ok, false);
+    assert.deepEqual(report.missing, ['avatars/pending.png']);
+    assert.deepEqual(report.sizeMismatch, ['avatars/u1/a.webp']);
+    assert.deepEqual(report.createdSinceSnapshot, ['avatars/late.bin']);
+    assert.deepEqual(report.deletedSinceSnapshot, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a bucket id named like an Object property is counted', () => {
+  const report = compareStorageKeys(
+    parseExpectedKeys('bucket,name,size\nconstructor,a.png,1\n'),
+    parseExcludedKeys('bucket,name\n'),
+    new Map()
+  );
+  assert.deepEqual(report.byBucket, { constructor: { missing: 1 } });
+  assert.equal(report.liveChecked, false);
+});
+
 test('an excluded key that was downloaded does not fail parity', () => {
   const root = fixture();
   try {

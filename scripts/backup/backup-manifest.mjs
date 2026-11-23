@@ -14,6 +14,7 @@ import {
   exportDiskBytes,
   findUnsafeBuckets,
   listDownloads,
+  STORAGE_CATEGORIES,
   parseExcludedKeys,
   parseExpectedKeys,
   parseTable,
@@ -103,10 +104,39 @@ export async function buildManifest({
     parity: parity
       ? { ok: parity.ok, tables: parity.tables ?? 0, rows: parity.rows ?? 0 }
       : null,
-    storage: storage ? { ok: storage.ok, objects: storage.objects ?? 0 } : null,
+    storage: storage ? storageSummary(storage) : null,
     restore: restore ? { errorsIgnored: restore.errorsIgnored } : null,
     files: entries.sort((a, b) => a.name.localeCompare(b.name)),
   };
+}
+
+const BUCKET_ID = /^[a-z0-9][a-z0-9._-]*$/;
+const isCount = (value) => Number.isSafeInteger(value) && value >= 0;
+
+function categoryCounts(source) {
+  const out = {};
+  for (const category of STORAGE_CATEGORIES) {
+    if (isCount(source?.[category])) out[category] = source[category];
+  }
+  return out;
+}
+
+// Numbers only: ok, objects, whether the live listing ran, and category
+// counts overall and per bucket id. Key lists never enter the manifest.
+function storageSummary(storage) {
+  const summary = { ok: storage.ok, objects: storage.objects ?? 0 };
+  if (typeof storage.liveChecked === 'boolean') {
+    summary.liveChecked = storage.liveChecked;
+  }
+  if (storage.counts) summary.counts = categoryCounts(storage.counts);
+  if (storage.byBucket && typeof storage.byBucket === 'object') {
+    summary.byBucket = Object.fromEntries(
+      Object.entries(storage.byBucket)
+        .filter(([id]) => BUCKET_ID.test(id))
+        .map(([id, counts]) => [id, categoryCounts(counts)])
+    );
+  }
+  return summary;
 }
 
 function writeReport(path, report) {
@@ -162,15 +192,35 @@ async function main(argv) {
     );
   }
   if (command === 'compare-storage') {
-    const [expectedPath, excludedPath, root, bucketsPath, reportPath] = args;
+    // The two live-listing paths are optional: without them every
+    // difference from the snapshot fails.
+    const [
+      expectedPath,
+      excludedPath,
+      root,
+      bucketsPath,
+      reportPath,
+      liveKeysPath,
+      liveExcludedPath,
+    ] = args;
     return guarded(reportPath, 'Storage parity', () => {
       const buckets = parseTable(readFileSync(bucketsPath, 'utf8'), ['id']).map(
         ([id]) => id
       );
+      const live =
+        liveKeysPath && liveExcludedPath
+          ? {
+              keys: parseExpectedKeys(readFileSync(liveKeysPath, 'utf8')),
+              excluded: parseExcludedKeys(
+                readFileSync(liveExcludedPath, 'utf8')
+              ),
+            }
+          : undefined;
       return compareStorageKeys(
         parseExpectedKeys(readFileSync(expectedPath, 'utf8')),
         parseExcludedKeys(readFileSync(excludedPath, 'utf8')),
-        listDownloads(root, buckets)
+        listDownloads(root, buckets),
+        live
       );
     });
   }
