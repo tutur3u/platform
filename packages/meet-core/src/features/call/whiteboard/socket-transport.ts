@@ -28,6 +28,8 @@ export interface BoardTransportOptions {
   onRejected?: (reason: 'size' | 'count' | 'unsupported') => void;
   /** The board was unlinked, archived, or access was withdrawn. */
   onClosed: () => void;
+  /** Every reconnect attempt failed; the transport stays closed. */
+  onFailed?: () => void;
   createSocket?: (url: string, protocols: string[]) => WebSocket;
   /** Reconnect delays in milliseconds; the transport gives up after the last. */
   retryDelaysMs?: readonly number[];
@@ -157,10 +159,19 @@ export function createBoardSocketTransport(
     if (mine !== generation) return;
     options.onRole(session.role);
     // The ticket travels as a subprotocol so it never lands in a URL log.
-    const next = make(session.endpoint, [
-      BOARD_SOCKET_PROTOCOL,
-      `${BOARD_TOKEN_PROTOCOL_PREFIX}${session.token}`,
-    ]);
+    let next: WebSocket;
+    try {
+      next = make(session.endpoint, [
+        BOARD_SOCKET_PROTOCOL,
+        `${BOARD_TOKEN_PROTOCOL_PREFIX}${session.token}`,
+      ]);
+    } catch (error) {
+      // The browser refuses an unusable URL or ticket before any request is
+      // made, so no connection attempt is ever visible; report it.
+      return scheduleRetry(
+        error instanceof Error ? error : new Error('Whiteboard socket refused')
+      );
+    }
     socket = next;
     next.onopen = () => {
       attempts = 0;
@@ -206,6 +217,7 @@ export function createBoardSocketTransport(
     const delay = retry[attempts];
     if (delay === undefined) {
       status('error', error);
+      options.onFailed?.();
       return;
     }
     attempts++;

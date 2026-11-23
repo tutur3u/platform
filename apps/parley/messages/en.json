@@ -5205,6 +5205,7 @@
       "board": "Saved whiteboard",
       "board_all": "All boards",
       "board_connecting": "Connecting to the board",
+      "board_failed": "Could not connect",
       "board_live": "Live",
       "board_offline": "Reconnecting",
       "board_view_only": "View only",

@@ -5205,6 +5205,7 @@
       "board": "Bảng trắng đã lưu",
       "board_all": "Tất cả bảng",
       "board_connecting": "Đang kết nối với bảng",
+      "board_failed": "Không thể kết nối",
       "board_live": "Trực tiếp",
       "board_offline": "Đang kết nối lại",
       "board_view_only": "Chỉ xem",

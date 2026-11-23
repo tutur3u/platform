@@ -5697,6 +5697,7 @@
       "board_empty_manage": "Liên kết một bảng trắng của không gian làm việc hoặc tạo bảng mới để cùng vẽ.",
       "board_empty_member": "Chưa có bảng trắng nào được chia sẻ trong cuộc họp này.",
       "board_error": "Đã mất kết nối với bảng.",
+      "board_failed": "Không thể kết nối",
       "board_full": "Bảng đã đầy. Hãy xóa bớt trước khi thêm.",
       "board_guests": "Khách",
       "board_link": "Liên kết",

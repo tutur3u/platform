@@ -2535,6 +2535,14 @@ whiteboard and the pen whiteboard, which end with the room.
   or archives closes for everyone with a short notice.
 - Images cannot be added on the room board, and a very full board refuses new
   elements until something is removed.
+- The header reads **Reconnecting** while the board retries its connection, a
+  bounded number of times with growing delays. When every attempt fails, or the
+  browser refuses to open the connection at all, it reads **Could not connect**
+  and stays that way until the person reopens the board.
+
+Regression coverage: `socket-transport.test.ts` and `board-room.test.tsx` under
+`packages/meet-core/src/features/call/whiteboard` (ticket as a subprotocol,
+refused sockets, exhausted retries).
 
 Operators: see [Saved whiteboard activity](/platform/applications/meet#saved-whiteboard-activity)
 for the write budget and the `MEET_WHITEBOARD_FLUSH_DISABLED` stop fence.

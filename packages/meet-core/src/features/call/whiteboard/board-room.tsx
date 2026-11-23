@@ -18,7 +18,7 @@ import { useMemo, useRef, useState } from 'react';
 import { BoardError } from './board-error';
 import { createBoardSocketTransport } from './socket-transport';
 
-type Connection = 'connecting' | 'live' | 'offline';
+type Connection = 'connecting' | 'live' | 'offline' | 'failed';
 
 /**
  * One linked board: the Excalidraw editor on the room's whiteboard socket.
@@ -95,6 +95,7 @@ function LiveBoard({
   const [role, setRole] = useState<MeetWhiteboardRole>(initial.role);
   const [members, setMembers] = useState<WhiteboardPresenceMember[]>([]);
   const [connection, setConnection] = useState<Connection>('connecting');
+  const [failed, setFailed] = useState(false);
   const unused = useRef<MeetWhiteboardJoin | null>(initial);
   const closedRef = useRef(onClosed);
   closedRef.current = onClosed;
@@ -108,6 +109,7 @@ function LiveBoard({
       },
       onRole: setRole,
       onClosed: () => closedRef.current(),
+      onFailed: () => setFailed(true),
       onRejected: (reason) =>
         toast.error(
           t(reason === 'unsupported' ? 'board_unsupported' : 'board_full')
@@ -143,7 +145,9 @@ function LiveBoard({
           className="text-muted-foreground text-xs"
           title={t('board_saved_note')}
         >
-          {t(`board_${connection}`)}
+          {t(
+            `board_${failed && connection !== 'live' ? 'failed' : connection}`
+          )}
         </span>
       </div>
       <div className="min-h-0 flex-1">
@@ -151,9 +155,10 @@ function LiveBoard({
           theme={dark ? 'dark' : 'light'}
           readOnly={role === 'view'}
           collaboration={{ transport, user, presence: members }}
-          onStatusChange={(status) =>
-            setConnection(status.isConnected ? 'live' : 'offline')
-          }
+          onStatusChange={(status) => {
+            if (status.isConnected) setFailed(false);
+            setConnection(status.isConnected ? 'live' : 'offline');
+          }}
           fallback={
             <p className="px-6 py-4 text-muted-foreground text-sm">
               {t('board_connecting')}

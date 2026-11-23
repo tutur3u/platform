@@ -188,4 +188,56 @@ describe('board socket transport', () => {
     await vi.advanceTimersByTimeAsync(120_000);
     expect(FakeSocket.all[0]!.sent).toEqual([]);
   });
+
+  it('reports a socket the browser refuses to open instead of staying silent', async () => {
+    const status = vi.fn();
+    const onFailed = vi.fn();
+    const transport = createBoardSocketTransport({
+      join: async () => session(),
+      onRole: vi.fn(),
+      onClosed: vi.fn(),
+      onFailed,
+      createSocket: () => {
+        throw new SyntaxError('The subprotocol is invalid');
+      },
+      retryDelaysMs: [100],
+    });
+    transport.connect({
+      user: { id: 'u', displayName: 'U' },
+      onStatus: status,
+      onElementChanges: vi.fn(),
+      onCursor: vi.fn(),
+      onSelection: vi.fn(),
+    });
+    await tick();
+    expect(onFailed).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(status).toHaveBeenLastCalledWith('error', expect.any(SyntaxError));
+    expect(onFailed).toHaveBeenCalledTimes(1);
+  });
+
+  it('tells the board when every reconnect attempt failed', async () => {
+    const onFailed = vi.fn();
+    const transport = createBoardSocketTransport({
+      join: async () => session(),
+      onRole: vi.fn(),
+      onClosed: vi.fn(),
+      onFailed,
+      createSocket: (url, protocols) =>
+        new FakeSocket(url, protocols) as unknown as WebSocket,
+      retryDelaysMs: [100],
+    });
+    transport.connect({
+      user: { id: 'u', displayName: 'U' },
+      onStatus: vi.fn(),
+      onElementChanges: vi.fn(),
+      onCursor: vi.fn(),
+      onSelection: vi.fn(),
+    });
+    await tick();
+    FakeSocket.all[0]!.drop();
+    await vi.advanceTimersByTimeAsync(100);
+    FakeSocket.all[1]!.drop();
+    expect(onFailed).toHaveBeenCalledTimes(1);
+  });
 });

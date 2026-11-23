@@ -5697,6 +5697,7 @@
       "board_empty_manage": "Link a workspace whiteboard or create a new one to draw together.",
       "board_empty_member": "No whiteboard has been shared in this meeting yet.",
       "board_error": "The connection to the board was lost.",
+      "board_failed": "Could not connect",
       "board_full": "The board is full. Remove something before adding more.",
       "board_guests": "Guests",
       "board_link": "Link",
