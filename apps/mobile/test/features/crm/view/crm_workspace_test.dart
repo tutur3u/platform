@@ -570,6 +570,61 @@ void main() {
     });
   }
 
+  testWidgets('approved item leaves the queue when the reload fails', (
+    tester,
+  ) async {
+    permissions.allowed.add('approve_posts');
+    const pending = ContactSectionRecord(
+      id: 'post-1',
+      title: 'Weekly post',
+      approval: ContactApprovalDetails(kind: ContactApprovalKind.posts),
+    );
+    var loads = 0;
+    when(() => repository.loadApprovals('ws')).thenAnswer((_) async {
+      loads += 1;
+      if (loads > 1) throw Exception('offline');
+      return const [
+        pending,
+        ContactSectionRecord(
+          id: 'post-1',
+          title: 'Same id report',
+          approval: ContactApprovalDetails(kind: ContactApprovalKind.reports),
+        ),
+      ];
+    });
+    when(
+      () => repository.updateApproval(
+        'ws',
+        itemId: 'post-1',
+        kind: ContactApprovalKind.posts,
+        decision: ContactApprovalDecision.approve,
+      ),
+    ).thenAnswer((_) async {});
+    final chrome = ShellChromeActionsCubit();
+    addTearDown(chrome.close);
+    await tester.pumpApp(BlocProvider.value(value: chrome, child: page()));
+    await tester.pumpAndSettle();
+    chrome.state
+        .resolveForLocation(Routes.contacts)
+        .firstWhere((action) => action.id == 'crm-tools')
+        .onPressed!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sections'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Approvals'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Weekly post'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Approve'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Approve').last);
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(find.text('Weekly post'), findsNothing);
+    expect(find.text('Same id report'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('public detail lists linked platform accounts', (tester) async {
     repository.read = (_, _, _) async => const CrmUsersResult(
       users: [

@@ -174,6 +174,17 @@ extension _CrmSections on _CrmPageState {
                     reason: reason,
                   );
                   if (mounted && _wsId == wsId && _section == section) {
+                    // Drop the reviewed item first so a failed reload cannot
+                    // leave it in the pending queue.
+                    _updateState(
+                      () => _sectionRecords = _sectionRecords
+                          .where(
+                            (item) =>
+                                item.id != record.id ||
+                                item.approval?.kind != approval.kind,
+                          )
+                          .toList(growable: false),
+                    );
                     await _reloadSection();
                   }
                 }
