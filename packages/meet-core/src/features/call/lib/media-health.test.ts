@@ -335,7 +335,6 @@ describe('media quality recorder expiry', () => {
     );
     const policy = {
       smallModePreference: 'auto' as const,
-      audioOnly: false,
       visibility: 'visible' as const,
     };
     now = 6000;
@@ -382,7 +381,6 @@ describe('media quality recorder', () => {
     now = 30_000;
     const sample = recorder.take({
       smallModePreference: 'auto',
-      audioOnly: false,
       visibility: 'visible',
     });
     expect(sample).toEqual({
@@ -410,7 +408,6 @@ describe('media quality recorder', () => {
     expect(
       recorder.take({
         smallModePreference: 'auto',
-        audioOnly: false,
         visibility: 'visible',
       }).freezes
     ).toBe(0);
@@ -422,7 +419,6 @@ describe('media quality recorder', () => {
     expect(
       recorder.take({
         smallModePreference: 'auto',
-        audioOnly: true,
         visibility: 'visible',
       })
     ).toMatchObject({

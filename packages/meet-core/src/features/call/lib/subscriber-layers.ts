@@ -8,7 +8,6 @@ import {
 import { useEffect } from 'react';
 import {
   initialReceiverGovernor,
-  isReceiverCongested,
   layerForTile,
   nextReceiverGovernor,
   planLayerChanges,
@@ -19,10 +18,7 @@ import {
 import { readMeetMediaFlags } from './media-flags';
 import {
   applyMediaPolicy,
-  initialAudioOnly,
   type MediaPolicy,
-  nextAudioOnly,
-  startAudioOnly,
   type VisibilityPhase,
 } from './media-policy';
 import type { RemoteTrackOwner } from './remote-playback';
@@ -201,7 +197,6 @@ export function useSubscriberLayers({
     let lastSampleAt = 0;
     let busy = false;
     let pausedUntil = 0;
-    let audio = initialAudioOnly();
     let epoch = 0;
     let dispatching = false;
     let restoring = false;
@@ -321,21 +316,6 @@ export function useSubscriberLayers({
     };
     const step = async (result: { recorded: boolean }) => {
       const now = Date.now();
-      // The audio-only pause belongs to the link, not to any receiving peer:
-      // its probe runs even while no receiver exists, because closing every
-      // camera may leave nothing to subscribe to. A pause in the store
-      // without a probe deadline gets one.
-      if (policy?.getSnapshot().audioOnly && !audio.active)
-        audio = startAudioOnly(audio, now);
-      if (audio.active) {
-        // A participant who resumes video manually starts a fresh probe.
-        audio = policy?.getSnapshot().audioOnly
-          ? nextAudioOnly(audio, null, now)
-          : { ...initialAudioOnly(), probedAt: now };
-        if (!audio.active) policy?.setAudioOnly(false);
-        idle();
-        return;
-      }
       const pc = peer.current;
       const sessionId = sessionRef.current;
       if (!pc || !sessionId || pc.connectionState !== 'connected') return;
@@ -387,7 +367,6 @@ export function useSubscriberLayers({
             sessionRef.current !== sessionId ||
             !capable() ||
             (policy?.getSnapshot().visibility ?? 'visible') !== 'visible' ||
-            policy?.getSnapshot().audioOnly ||
             // A camera opened or closed meanwhile: the sample no longer
             // matches the receivers it would be attributed to.
             liveCameras.map(({ mid }) => mid).join() !==
@@ -405,26 +384,6 @@ export function useSubscriberLayers({
           lastSampleAt = now;
           governor = nextReceiverGovernor(governor, sample, now);
           if (ceilingRef) ceilingRef.current = governor.ceiling;
-          // Severe congestion counts only once every camera is confirmed on
-          // the lowest layer, not merely requested there.
-          const confirmedLow = cameras.every(({ owner }) => {
-            const confirmed = requestedLayers.current.get(
-              owner.subscriptionKey
-            );
-            return confirmed?.peer === pc && confirmed.layer === 'low';
-          });
-          audio = nextAudioOnly(
-            audio,
-            {
-              congested: isReceiverCongested(sample),
-              ceiling: confirmedLow ? governor.ceiling : 'mid',
-            },
-            now
-          );
-          if (audio.active) {
-            policy?.setAudioOnly(true);
-            return;
-          }
         } else {
           // Nothing is measured while dimmed: clear the reading now, before
           // any queued layer change, and restart the baseline so hidden-time

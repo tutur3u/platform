@@ -23,6 +23,14 @@ import {
   clampToStreamCap,
   streamCapFor,
 } from './stream-entitlement';
+import {
+  floorLimits,
+  floorScale,
+  initialVideoLadder,
+  nextVideoStep,
+  videoStepDemand,
+  type VideoStep,
+} from './video-ladder';
 
 export type BandwidthMode = 'auto' | 'saver' | 'quality';
 type Audience = {
@@ -132,18 +140,32 @@ export function planSenderEncodings(
   hasAudience: boolean,
   encodings: RTCRtpEncodingParameters[],
   videoSenders = 1,
-  recovering = false,
-  cpuLimited = false
+  videoStep?: number,
+  cpuLimited = false,
+  captureHeightPx?: number | null
 ) {
+  const visual = kind === 'video' || kind === 'screen';
+  // A weak link steps the camera down the ladder; it never switches it off.
+  const step: VideoStep =
+    kind === 'video'
+      ? ((videoStep ??
+          videoStepDemand(
+            network,
+            videoSenders,
+            mode === 'saver' ||
+              (network.available !== null && network.available < 650000) ||
+              (network.rtt !== null && network.rtt > 500) ||
+              (network.loss ?? 0) >= 0.05
+          )) as VideoStep)
+      : 0;
   const budget = encodingBudget(
     kind,
-    mode,
+    step >= 1 ? 'saver' : mode,
     network.available,
     network.rtt,
     audience,
     network.loss
   );
-  const visual = kind === 'video' || kind === 'screen';
   const availableShare =
     visual && network.available !== null
       ? Math.max(
@@ -152,20 +174,13 @@ export function planSenderEncodings(
         )
       : Infinity;
   const maxBitrate = Math.min(budget.maxBitrate ?? Infinity, availableShare);
-  const severe =
-    maxBitrate <
-      (kind === 'video' && (audience.participants ?? 0) >= 50
-        ? 95000
-        : 32000) ||
-    (kind === 'video' &&
-      ((network.loss ?? 0) >= 0.14 || (network.rtt ?? 0) >= 1000));
   return encodings.map((encoding) => {
     const layerIndex =
       kind === 'video' && encodings.length > 1
         ? cameraLayerIndex(encodings, encoding.rid)
         : -1;
     const layer = layerIndex < 0 ? undefined : CAMERA_LAYERS[layerIndex];
-    const cheap = mode === 'saver' || maxBitrate < 360000;
+    const cheap = step >= 1 || mode === 'saver' || maxBitrate < 360000;
     // A CPU-bound encoder sheds the full layer and frame rate; a screen keeps
     // its resolution and gives up frames.
     const cpu =
@@ -185,6 +200,18 @@ export function planSenderEncodings(
               : {}),
           }
         : {};
+    // From step 2 the lowest layer carries the camera alone at the floor.
+    const floored = kind === 'video' && step >= 2;
+    const lowest = layerIndex < 0 || layerIndex === CAMERA_LAYERS.length - 1;
+    const floor = floored
+      ? {
+          ...floorLimits(step, availableShare),
+          scaleResolutionDownBy: Math.max(
+            layer?.scale ?? encoding.scaleResolutionDownBy ?? 1,
+            floorScale(captureHeightPx)
+          ),
+        }
+      : {};
     return {
       ...encoding,
       ...budget,
@@ -198,15 +225,16 @@ export function planSenderEncodings(
             ...(layer ? { scaleResolutionDownBy: layer.scale } : {}),
           }
         : {}),
+      ...(floored && lowest ? floor : {}),
       active:
         hasAudience &&
-        (!visual || (!severe && !(kind === 'video' && recovering))) &&
+        !(floored && !lowest) &&
         !(layerIndex === 0 && (cheap || cpuLimited || audience.thumbnailOnly)),
     };
   });
 }
 
-/** Change sender limits in-place so speech continues during video suspension. */
+/** Change sender limits in-place: weak links step video down, never off. */
 export function watchSenderBandwidth({
   readPeer,
   readSenders,
@@ -227,10 +255,9 @@ export function watchSenderBandwidth({
 }) {
   let active = true;
   let running = false;
-  let suspended = false;
+  let ladder = initialVideoLadder();
   let constrained = false;
   let healthy = 0;
-  let recoverySamples = 0;
   let previousPeer: RTCPeerConnection | null = null;
   let cpu = initialCpuPressure();
   let lastCpuSampleAt = -Infinity;
@@ -248,8 +275,7 @@ export function watchSenderBandwidth({
     if (previousPeer !== pc) {
       previousPeer = pc;
       sent = null;
-      suspended = false;
-      recoverySamples = 0;
+      ladder = initialVideoLadder();
       constrained = false;
       healthy = 0;
       cpu = initialCpuPressure();
@@ -387,24 +413,12 @@ export function watchSenderBandwidth({
         if (++healthy >= 4) constrained = false;
       } else healthy = 0;
       const currentMode = constrained ? 'saver' : mode();
-      const cameraActive = planSenderEncodings(
-        'video',
-        currentMode,
-        network,
-        room,
-        true,
-        [{}],
-        videos
-      )[0]?.active;
-      if (!cameraActive) {
-        suspended = true;
-        recoverySamples = 0;
-      } else if (
-        suspended &&
+      ladder = nextVideoStep(
+        ladder,
         Object.values(network).some((value) => value !== null)
-      ) {
-        if (++recoverySamples >= 3) suspended = false;
-      }
+          ? videoStepDemand(network, videos, currentMode === 'saver')
+          : null
+      );
       let sendLayers = 0;
       for (const [name, sender] of senders) {
         if (!active || readPeer() !== pc) break;
@@ -432,8 +446,9 @@ export function watchSenderBandwidth({
             hasAudience(),
             parameters.encodings,
             videos,
-            suspended,
-            cpu.limited
+            ladder.step,
+            cpu.limited,
+            captureHeight(sender.track)
           ),
           streamCapFor(streamLimits?.(), kind),
           captureHeight(sender.track)

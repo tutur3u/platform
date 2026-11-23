@@ -33,7 +33,6 @@ function tile(stream: MediaStream, cameraEnabled = true) {
         }}
         stream={stream}
         resumePlaybackLabel="Play audio"
-        onRetry={() => undefined}
       />
     </NextIntlClientProvider>
   );
@@ -97,17 +96,13 @@ afterEach(() => {
     'cancelVideoFrameCallback'
   );
 });
-it('removes the avatar and reconnect action when a muted receiver presents video frames', () => {
+it('removes the avatar when a muted receiver presents video frames', () => {
   const { container } = render(tile(makeStream()));
   expect(screen.getByText('P')).toBeTruthy();
-  expect(
-    screen.getByRole('button', { name: 'Reconnect incoming video' })
-  ).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /reconnect|retry/i })).toBeNull();
   presentFrame();
   expect(screen.queryByText('P')).toBeNull();
-  expect(
-    screen.queryByRole('button', { name: 'Reconnect incoming video' })
-  ).toBeNull();
+  expect(screen.queryByRole('button', { name: /reconnect|retry/i })).toBeNull();
   expect(container.querySelector('video')?.className).not.toContain(
     'opacity-0'
   );
@@ -125,13 +120,11 @@ it('does not reuse presentation evidence for a replacement stream or a disabled 
   expect(screen.getByText('P')).toBeTruthy();
   expect(container.querySelector('video')?.className).toContain('opacity-0');
 });
-it('restores recovery for stalled muted video and clears it when frames resume', () => {
+it('keeps the avatar for stalled muted video, with no manual action, and clears it when frames resume', () => {
   render(tile(makeStream()));
   presentFrame();
   act(() => vi.advanceTimersByTime(4000));
-  expect(
-    screen.getByRole('button', { name: 'Reconnect incoming video' })
-  ).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /reconnect|retry/i })).toBeNull();
   presentFrame();
   expect(screen.queryByText('P')).toBeNull();
 });
@@ -176,9 +169,7 @@ it('expires camera presentation even if the receiver stays unmuted', () => {
   render(tile(stream));
   presentFrame();
   act(() => vi.advanceTimersByTime(4000));
-  expect(
-    screen.getByRole('button', { name: 'Reconnect incoming video' })
-  ).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /reconnect|retry/i })).toBeNull();
 });
 it('retains a presented static screen without inventing a camera stall', () => {
   render(
@@ -191,14 +182,11 @@ it('retains a presented static screen without inventing a camera stall', () => {
         kind="screen"
         stream={makeStream()}
         resumePlaybackLabel="Play audio"
-        onRetry={() => undefined}
       />
     </NextIntlClientProvider>
   );
   presentFrame();
   act(() => vi.advanceTimersByTime(10000));
   expect(screen.queryByText('P')).toBeNull();
-  expect(
-    screen.queryByRole('button', { name: 'Reconnect incoming video' })
-  ).toBeNull();
+  expect(screen.queryByRole('button', { name: /reconnect|retry/i })).toBeNull();
 });

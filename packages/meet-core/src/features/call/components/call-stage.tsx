@@ -10,7 +10,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { VideoPausedNotice } from './video-paused-notice';
+import { IncomingVideoStatus } from './incoming-video-status';
 import {
   type CSSProperties,
   useCallback,
@@ -273,7 +273,6 @@ export function CallStage({
       focusKey={tile.key}
       onFocus={share && tile.kind === 'camera' ? undefined : focusTile}
       onFocusView={setFocusView}
-      onRetry={room.reconnectReceivingMedia}
       onRenderedHeight={room.reportTileHeight}
       onMute={
         (room.state.canManageParticipants ?? room.state.role === 'host')
@@ -321,7 +320,7 @@ export function CallStage({
         !focusView && '[container-type:size]'
       )}
     >
-      <VideoPausedNotice policy={room.mediaPolicy} />
+      <IncomingVideoStatus status={room.receiveStatus} />
       {!compact && !spotlight && count > 1 && (
         <div className="flex shrink-0 justify-end p-1">
           <Select

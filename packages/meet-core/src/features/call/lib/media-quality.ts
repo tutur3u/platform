@@ -101,7 +101,9 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
         layers,
         sendLayers: Math.min(3, sender?.sendLayers ?? 0),
         cpuLimited: sender?.cpuLimited ?? false,
-        audioOnly: policy.audioOnly,
+        // Receivers never pause video for the link; the field stays for the
+        // room report contract.
+        audioOnly: false,
         smallMode,
         visibility: policy.visibility,
         intervalMs: Math.min(600_000, Math.max(1000, now - since)),

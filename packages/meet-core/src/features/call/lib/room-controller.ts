@@ -44,7 +44,8 @@ export interface MeetRoomController extends ReturnType<
   connectionStatus: MeetSignalingStatus;
   getMediaDiagnostics: () => Promise<MediaDiagnostics>;
   reconnectMedia: () => void;
-  reconnectReceivingMedia: () => void;
+  /** `unavailable` once automatic receive recovery has used its retries. */
+  receiveStatus: import('./receive-recovery').ReceiveStatus;
   decideAdmission: (userId: string, admit: boolean) => void;
   localStream: MediaStream | null;
   localPreview: MediaStream | null;

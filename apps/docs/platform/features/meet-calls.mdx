@@ -1850,6 +1850,12 @@ is available, the publication is closed at the SFU and republished on camera-on.
 Stopped screen shares are explicitly closed at the SFU with `force: true`,
 removed from the publication ledger, and published afresh when sharing resumes.
 
+Video stays on. A weak link steps outgoing cameras down to about 180p at
+10 fps and back up with hysteresis; it never pauses or stops video. Incoming
+video that stops arriving is rebuilt automatically with capped backoff and a
+quiet status after the cap, without a manual reconnect button. See
+[media quality](/platform/features/meet-media-quality#video-floor-and-automatic-recovery).
+
 Media connectivity is independent of the signaling WebSocket. Meet rebuilds a
 failed peer after one second, a disconnected peer after ten seconds, or an
 unfinished connection handshake after twenty seconds. Brief disconnections that

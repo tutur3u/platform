@@ -1,5 +1,5 @@
 'use client';
-import { AudioLines, Loader2, Video } from '@tuturuuu/icons';
+import { AudioLines, Video } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useSyncExternalStore } from 'react';
@@ -108,11 +108,7 @@ export function MediaReceivingStatus({
                     : 'text-dynamic-orange'
               )}
             >
-              {ready !== false ? (
-                <Icon className="size-3" />
-              ) : (
-                <Loader2 className="size-3 motion-safe:animate-spin" />
-              )}
+              <Icon className="size-3" />
             </span>
           )
       )}

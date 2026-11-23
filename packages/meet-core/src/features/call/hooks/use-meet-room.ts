@@ -45,6 +45,7 @@ export type {
   MeetRoomController,
   UseMeetRoomOptions,
 } from '../lib/room-controller';
+import { useReceiveRecovery } from './use-receive-recovery';
 import { useLockedMediaRelease } from './use-locked-media-release';
 import { releaseIdleVideoTrack } from '../lib/idle-video-track';
 import {
@@ -139,7 +140,6 @@ export function useMeetRoom({
     publishedRef.current = [];
     if (recover) setConnectionGeneration((value) => value + 1);
   }, []);
-  const lastReceiveRecovery = useRef(0);
   const resetSubscriber = useCallback(() => {
     subscribePcRef.current?.close();
     subscribePcRef.current = null;
@@ -148,6 +148,8 @@ export function useMeetRoom({
     subscribedRef.current.clear();
     setRemoteMedia({});
   }, []);
+  const { receiveRecovery, receiveStatus } =
+    useReceiveRecovery(resetSubscriber);
   useEffect(() => {
     activeRef.current = true;
     let usedInitialToken = false;
@@ -298,13 +300,8 @@ export function useMeetRoom({
       trackOwnersRef.current,
       () => stateRef.current.participants,
       () => subscribePcRef.current === pc,
-      () => {
-        // A persistent network failure must not create a tight session churn loop.
-        if (Date.now() - lastReceiveRecovery.current < 60_000) return;
-        lastReceiveRecovery.current = Date.now();
-        console.warn('Meet receiving media stalled; rebuilding subscriber');
-        resetSubscriber();
-      }
+      receiveRecovery.stalled,
+      receiveRecovery.healthy
     );
     listenRemotePlayback(
       pc,
@@ -320,7 +317,7 @@ export function useMeetRoom({
       signalingRef,
       resetSubscriber
     );
-  }, [resetSubscriber, mediaAllowed]);
+  }, [resetSubscriber, mediaAllowed, receiveRecovery]);
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
     async (stream: MediaStream, next: MeetMediaState) => {
@@ -659,7 +656,7 @@ export function useMeetRoom({
         subscribePcRef.current
       ),
     renewSession: () => signalingRef.current?.renew(),
-    reconnectReceivingMedia: resetSubscriber,
+    receiveStatus,
     reconnectMedia: () => {
       resetSubscriber();
       resetPublisher(true);

@@ -136,52 +136,6 @@ it('rebuilds the receiver if a layer update demands renegotiation', async () => 
   expect(request).toHaveBeenCalledTimes(1);
 });
 
-it('keeps a paused camera state across a receiver rebuild and probes later', async () => {
-  const { refs, request } = setup();
-  const policy = (await import('./media-policy')).createMediaPolicy(null);
-  policy.setAudioOnly(true);
-  refs.owners.current.clear();
-  const { unmount } = renderHook(() =>
-    useSubscriberLayers({
-      active: true,
-      resetSubscriber: vi.fn(),
-      policy,
-      ...refs,
-    })
-  );
-  refs.peer.current = {
-    connectionState: 'connected',
-    getStats: vi.fn(async () => new Map()),
-  } as unknown as RTCPeerConnection;
-  await act(() => vi.advanceTimersByTimeAsync(28_000));
-  expect(policy.getSnapshot().audioOnly).toBe(true);
-  await act(() => vi.advanceTimersByTimeAsync(4000));
-  expect(policy.getSnapshot().audioOnly).toBe(false);
-  expect(request).not.toHaveBeenCalled();
-  unmount();
-});
-
-it('ends an audio-only pause even when no receiver exists', async () => {
-  const { refs } = setup();
-  const policy = (await import('./media-policy')).createMediaPolicy(null);
-  policy.setAudioOnly(true);
-  refs.peer.current = null;
-  refs.sessionRef.current = null;
-  refs.owners.current.clear();
-  const { unmount } = renderHook(() =>
-    useSubscriberLayers({
-      active: true,
-      resetSubscriber: vi.fn(),
-      policy,
-      ...refs,
-    })
-  );
-  await act(() => vi.advanceTimersByTimeAsync(32_000));
-  expect(policy.getSnapshot().audioOnly).toBe(false);
-  expect(policy.quality.take(policy.getSnapshot()).recvVideoKbps).toBeNull();
-  unmount();
-});
-
 it('keeps a rebuilt receiver at the link ceiling until it earns an upgrade', async () => {
   const ceilingRef = { current: 'low' as 'high' | 'mid' | 'low' };
   const { refs, request } = setup(undefined, undefined, { ceilingRef });

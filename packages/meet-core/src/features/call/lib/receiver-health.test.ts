@@ -1,6 +1,9 @@
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
-import { describe, expect, it } from 'vitest';
-import { createReceiverHealthCheck } from './receiver-health';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  createReceiverHealthCheck,
+  watchReceiverHealth,
+} from './receiver-health';
 import { receiverPacketState } from './receiver-packet-state';
 import type { RemoteTrackOwner } from './remote-playback';
 
@@ -218,4 +221,35 @@ it('ignores invalid sibling counters when video has no inbound report', () => {
     f.sample(0, 0, false, options);
     expect(f.sample(30_000, 0, false, options)).toBe(false);
   }
+});
+
+describe('watchReceiverHealth', () => {
+  it('reports a healthy tick when nothing is stalled', async () => {
+    vi.useFakeTimers();
+    try {
+      const pc = {
+        connectionState: 'connected',
+        getStats: async () => new Map(),
+        getTransceivers: () => [],
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      } as unknown as RTCPeerConnection;
+      const recover = vi.fn();
+      const healthy = vi.fn();
+      const stop = watchReceiverHealth(
+        pc,
+        new Map(),
+        () => ({}),
+        () => true,
+        recover,
+        healthy
+      );
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(healthy).toHaveBeenCalledOnce();
+      expect(recover).not.toHaveBeenCalled();
+      stop();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -3,8 +3,6 @@ import { planSenderEncodings } from './bandwidth';
 import {
   applyMediaPolicy,
   createMediaPolicy,
-  initialAudioOnly,
-  nextAudioOnly,
   resolveSmallMode,
   SMALL_MODE_STORAGE_KEY,
   visibilityPhaseAfter,
@@ -19,7 +17,6 @@ const window = {
 };
 const snapshot = {
   smallModePreference: 'auto' as const,
-  audioOnly: false,
   visibility: 'visible' as const,
 };
 
@@ -90,13 +87,17 @@ describe('applyMediaPolicy', () => {
     ).toMatchObject({ spotlightUserId: undefined, smallMode: true });
   });
 
-  it('closes camera and screen video in the background and when audio-only', () => {
+  it('closes camera and screen video only for a hidden page, never for network quality', () => {
     expect(
       applyMediaPolicy(window, { ...snapshot, visibility: 'background' }, 4)
     ).toMatchObject({ cameraUserIds: [], screenVideo: false });
-    expect(
-      applyMediaPolicy(window, { ...snapshot, audioOnly: true }, 4)
-    ).toMatchObject({ cameraUserIds: [], screenVideo: true });
+    expect(applyMediaPolicy(window, snapshot, 4, true)).toMatchObject({
+      cameraUserIds: ['a', 'b'],
+      screenVideo: true,
+    });
+    expect(Object.keys(createMediaPolicy(null).getSnapshot())).not.toContain(
+      'audioOnly'
+    );
   });
 
   it('keeps remote audio and drops screen video from a background window', () => {
@@ -126,36 +127,6 @@ describe('applyMediaPolicy', () => {
       'a-audio',
       'a-screen_audio',
     ]);
-  });
-});
-
-describe('audio-only fallback', () => {
-  const bad = { congested: true, ceiling: 'low' as const };
-  it('pauses cameras after three congested samples at the lowest layer', () => {
-    let state = initialAudioOnly();
-    state = nextAudioOnly(state, { congested: true, ceiling: 'mid' }, 0);
-    expect(state.severe).toBe(0);
-    state = nextAudioOnly(state, bad, 2000);
-    state = nextAudioOnly(state, bad, 4000);
-    expect(state.active).toBe(false);
-    state = nextAudioOnly(state, bad, 6000);
-    expect(state).toMatchObject({ active: true, until: 36_000 });
-  });
-
-  it('probes after the pause and doubles it on a quick relapse', () => {
-    let state = { ...initialAudioOnly(), active: true, until: 30_000 };
-    expect(nextAudioOnly(state, null, 29_000).active).toBe(true);
-    state = nextAudioOnly(state, null, 30_000);
-    expect(state).toMatchObject({ active: false, probedAt: 30_000 });
-    for (const now of [32_000, 34_000, 36_000])
-      state = nextAudioOnly(state, bad, now);
-    expect(state).toMatchObject({ active: true, probeMs: 60_000 });
-  });
-
-  it('resets the severe run on any healthy sample', () => {
-    let state = nextAudioOnly(initialAudioOnly(), bad, 0);
-    state = nextAudioOnly(state, { congested: false, ceiling: 'low' }, 2000);
-    expect(state.severe).toBe(0);
   });
 });
 

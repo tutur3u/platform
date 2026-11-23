@@ -121,7 +121,8 @@ export function watchReceiverHealth(
   owners: Map<string, RemoteTrackOwner>,
   participants: () => Record<string, MeetRealtimePresence>,
   isCurrent: () => boolean,
-  recover: () => void
+  recover: () => void,
+  healthy?: () => void
 ) {
   const check = createReceiverHealthCheck();
   let busy = false;
@@ -141,8 +142,10 @@ export function watchReceiverHealth(
     busy = true;
     try {
       const stats = await pc.getStats();
-      if (isCurrent() && check(pc, stats, owners, participants(), Date.now()))
-        recover();
+      if (isCurrent()) {
+        if (check(pc, stats, owners, participants(), Date.now())) recover();
+        else healthy?.();
+      }
     } catch {
       /* Missing statistics must not disrupt a call. */
     } finally {

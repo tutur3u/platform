@@ -66,20 +66,20 @@ describe('media bandwidth budgets', () => {
     }
   });
 
-  test('shares constrained capacity across video senders and restores quality gradually', async () => {
+  test('shares constrained capacity across video senders, floors instead of pausing, and restores gradually', async () => {
     let available: number | undefined = 220000;
-    const applied: RTCRtpSendParameters[] = [];
-    const makeSender = () =>
+    const camera: RTCRtpSendParameters[] = [];
+    const makeSender = (log: RTCRtpSendParameters[]) =>
       ({
         track: { kind: 'video' },
         getParameters: () => ({ encodings: [{}] }),
         setParameters: async (value: RTCRtpSendParameters) => {
-          applied.push(value);
+          log.push(value);
         },
       }) as unknown as RTCRtpSender;
     const senders = new Map([
-      ['camera', makeSender()],
-      ['screen', makeSender()],
+      ['camera', makeSender(camera)],
+      ['screen', makeSender([])],
     ]);
     const peer = {
       connectionState: 'connected',
@@ -103,28 +103,34 @@ describe('media bandwidth budgets', () => {
       mode: () => 'auto',
       hasAudience: () => true,
     });
+    const refresh = async (times = 1) => {
+      for (let i = 0; i < times; i++) {
+        watcher.refresh();
+        await settle();
+      }
+    };
+    const last = () => camera.at(-1)?.encodings[0];
     try {
       await settle();
-      expect(applied[0]?.encodings[0]?.maxBitrate).toBe(30400);
+      expect(last()).toMatchObject({
+        active: true,
+        maxBitrate: 40000,
+        maxFramerate: 10,
+        scaleResolutionDownBy: 4,
+      });
       available = 100000;
-      watcher.refresh();
-      await settle();
-      expect(applied.at(-2)?.encodings[0]?.active).toBe(false);
+      await refresh();
+      expect(last()?.active).toBe(true);
       available = undefined;
-      for (let i = 0; i < 5; i++) {
-        watcher.refresh();
-        await settle();
-      }
-      expect(applied.at(-2)?.encodings[0]?.scaleResolutionDownBy).toBe(2);
+      await refresh(5);
+      expect(last()).toMatchObject({ active: true, maxFramerate: 10 });
       available = 4000000;
-      watcher.refresh();
-      await settle();
-      expect(applied.at(-2)?.encodings[0]?.scaleResolutionDownBy).toBe(2);
-      for (let i = 0; i < 3; i++) {
-        watcher.refresh();
-        await settle();
-      }
-      expect(applied.at(-2)?.encodings[0]?.scaleResolutionDownBy).toBe(1);
+      await refresh();
+      expect(last()?.scaleResolutionDownBy).toBe(4);
+      await refresh(7);
+      expect(last()?.scaleResolutionDownBy).toBe(2);
+      await refresh(1);
+      expect(last()).toMatchObject({ active: true, scaleResolutionDownBy: 1 });
     } finally {
       watcher.dispose();
     }
@@ -169,25 +175,37 @@ it.each([
   { available: 180000, rtt: 250, loss: 0 },
   { available: 1000000, rtt: 1200, loss: 0 },
   { available: 1000000, rtt: 250, loss: 0.18 },
-])('suspends video under congestion without suspending audio', (network) => {
-  const room = { participants: 50, visibleTiles: 9 };
-  const camera = initialSendEncodings('video', 50);
-  expect(
-    planSenderEncodings('video', 'auto', network, room, true, camera).every(
-      (layer) => !layer.active
-    )
-  ).toBe(true);
-  expect(
-    planSenderEncodings('audio', 'auto', network, room, true, [{}])
-  ).toMatchObject([{ active: true, maxBitrate: 48000 }]);
-  expect(
-    planSenderEncodings(
+  { available: 0, rtt: 5000, loss: 1 },
+])(
+  'steps video to the floor under congestion instead of suspending it',
+  (network) => {
+    const room = { participants: 50, visibleTiles: 9 };
+    const camera = initialSendEncodings('video', 50);
+    const plan = planSenderEncodings(
       'video',
       'auto',
-      { available: 1000000, rtt: 100, loss: 0 },
+      network,
       room,
       true,
       camera
-    ).some((layer) => layer.active)
-  ).toBe(true);
-});
+    );
+    expect(plan.map((layer) => layer.active)).toEqual([false, false, true]);
+    expect(plan[2]).toMatchObject({
+      maxFramerate: 10,
+      scaleResolutionDownBy: 4,
+    });
+    expect(
+      planSenderEncodings('audio', 'auto', network, room, true, [{}])
+    ).toMatchObject([{ active: true, maxBitrate: 48000 }]);
+    expect(
+      planSenderEncodings(
+        'video',
+        'auto',
+        { available: 1000000, rtt: 100, loss: 0 },
+        room,
+        true,
+        camera
+      ).some((layer) => layer.active)
+    ).toBe(true);
+  }
+);

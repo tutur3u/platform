@@ -4,7 +4,7 @@ description: Prepare, run and record a live Meet session with about 50 volunteer
 ---
 
 Use this checklist for a hosted Meet session with real people, devices and
-networks. For how layers, thumbnail mode and audio-only fallback behave, see
+networks. For how layers, thumbnail mode and the video floor behave, see
 [Meet media quality](/platform/features/meet-media-quality). The hosted
 rehearsal steps are in [Meet calls](/platform/features/meet-calls).
 
@@ -82,7 +82,7 @@ Every 30 seconds, the host records from **Room media health**:
 - Packet loss p95 and round-trip time p95.
 - Freezes per device-minute.
 - Layer counts.
-- Counts of CPU-limited, audio-only, hidden and thumbnail devices.
+- Counts of CPU-limited, hidden and thumbnail devices.
 
 Volunteers note anything perceptible, with the time and their device:
 
@@ -123,7 +123,7 @@ measures nothing in these cases:
 
 - `layerSwitching` is off.
 - The room server lacks `layer-update`.
-- The device is hidden or audio-only.
+- The device is hidden.
 - The device has no camera feed.
 
 Score the receive rate only when **Devices measuring cameras** covers every

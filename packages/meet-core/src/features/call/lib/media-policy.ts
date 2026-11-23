@@ -1,4 +1,3 @@
-import type { MeetVideoLayer } from '@tuturuuu/realtime/meet';
 import { createMediaQualityRecorder } from './media-quality';
 import type { StageVideoWindow } from './room-actions';
 
@@ -19,8 +18,6 @@ export const BACKGROUND_AFTER_HIDDEN_MS = 20_000;
 
 export type MediaPolicySnapshot = {
   smallModePreference: SmallModePreference;
-  /** Cameras are paused on this receiver to keep speech intelligible. */
-  audioOnly: boolean;
   visibility: VisibilityPhase;
 };
 
@@ -58,14 +55,12 @@ export function createMediaPolicy(storage: Storage | null = browserStorage()) {
   };
   let snapshot: MediaPolicySnapshot = {
     smallModePreference: read(),
-    audioOnly: false,
     visibility: 'visible',
   };
   const listeners = new Set<() => void>();
   const set = (next: Partial<MediaPolicySnapshot>) => {
     const merged = { ...snapshot, ...next };
     if (
-      merged.audioOnly === snapshot.audioOnly &&
       merged.smallModePreference === snapshot.smallModePreference &&
       merged.visibility === snapshot.visibility
     )
@@ -88,7 +83,6 @@ export function createMediaPolicy(storage: Storage | null = browserStorage()) {
       }
       set({ smallModePreference });
     },
-    setAudioOnly: (audioOnly: boolean) => set({ audioOnly }),
     setVisibility: (visibility: VisibilityPhase) => set({ visibility }),
   };
 }
@@ -106,7 +100,7 @@ export function applyMediaPolicy(
   const dimmed = policy.visibility === 'dimmed';
   return {
     ...window,
-    cameraUserIds: policy.audioOnly || background ? [] : window.cameraUserIds,
+    cameraUserIds: background ? [] : window.cameraUserIds,
     spotlightUserId: dimmed ? undefined : window.spotlightUserId,
     screenVideo: !background,
     smallMode:
@@ -211,66 +205,4 @@ export function watchPageVisibility(
     pip?.removeEventListener('enter', update);
     pip?.removeEventListener('enter', onPipEnter);
   };
-}
-
-export type AudioOnlyState = {
-  active: boolean;
-  /** Consecutive congested samples already at the lowest layer. */
-  severe: number;
-  until: number;
-  probeMs: number;
-  probedAt: number;
-};
-
-const AUDIO_ONLY_SEVERE_SAMPLES = 3;
-const AUDIO_ONLY_BASE_PROBE_MS = 30_000;
-const AUDIO_ONLY_MAX_PROBE_MS = 240_000;
-
-export function initialAudioOnly(): AudioOnlyState {
-  return {
-    active: false,
-    severe: 0,
-    until: 0,
-    probeMs: AUDIO_ONLY_BASE_PROBE_MS,
-    probedAt: -Infinity,
-  };
-}
-
-/** Begin a pause with a fresh probe deadline. */
-export function startAudioOnly(
-  state: AudioOnlyState,
-  now: number
-): AudioOnlyState {
-  return {
-    ...state,
-    active: true,
-    severe: 0,
-    until: now + state.probeMs,
-  };
-}
-
-/**
- * Last-resort receiver fallback: when cameras stay congested even at the
- * lowest layer, pause them so speech and screen share keep the link. With no
- * camera to measure, recovery is a timed probe at the lowest layer; a probe
- * that relapses within 30 seconds doubles the next pause, up to four minutes.
- */
-export function nextAudioOnly(
-  state: AudioOnlyState,
-  signal: { congested: boolean; ceiling: MeetVideoLayer } | null,
-  now: number
-): AudioOnlyState {
-  if (state.active)
-    return now < state.until
-      ? state
-      : { ...state, active: false, severe: 0, probedAt: now };
-  if (!signal?.congested || signal.ceiling !== 'low')
-    return { ...state, severe: 0 };
-  const severe = state.severe + 1;
-  if (severe < AUDIO_ONLY_SEVERE_SAMPLES) return { ...state, severe };
-  const relapse = now - state.probedAt < AUDIO_ONLY_BASE_PROBE_MS;
-  const probeMs = relapse
-    ? Math.min(AUDIO_ONLY_MAX_PROBE_MS, state.probeMs * 2)
-    : AUDIO_ONLY_BASE_PROBE_MS;
-  return { ...state, active: true, severe: 0, until: now + probeMs, probeMs };
 }

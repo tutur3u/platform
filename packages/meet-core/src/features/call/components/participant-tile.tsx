@@ -7,7 +7,6 @@ import {
   Minimize,
   MonitorUp,
   Pin,
-  RefreshCw,
   Volume2,
   VolumeX,
 } from '@tuturuuu/icons';
@@ -49,7 +48,6 @@ function ParticipantTileImpl({
   onFocus,
   onFocusView,
   onMute,
-  onRetry,
   focused,
   focusKey,
   onRenderedHeight,
@@ -75,7 +73,6 @@ function ParticipantTileImpl({
   /** Reports when the tile enters or leaves the in-app focus view. */
   onFocusView?: (active: boolean) => void;
   onMute?: (userId: string) => void;
-  onRetry?: () => void;
   focusKey?: string;
   focused?: boolean;
   /** Receives this camera tile's device-pixel height for layer selection. */
@@ -269,22 +266,6 @@ function ParticipantTileImpl({
           {resumePlaybackLabel}
         </Button>
       )}
-      {!isSelf &&
-        !showVideo &&
-        (kind === 'screen'
-          ? participant.media.screenEnabled
-          : participant.media.videoEnabled) &&
-        onRetry && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="absolute bottom-16 left-1/2 -translate-x-1/2"
-            onClick={onRetry}
-          >
-            <RefreshCw className="size-3.5" />
-            {t('retry_video')}
-          </Button>
-        )}
       {handRaised && kind === 'camera' && (
         <div
           role="status"
@@ -509,6 +490,5 @@ export const ParticipantTile = memo(
     a.focusKey === b.focusKey &&
     a.onFocus === b.onFocus &&
     a.onFocusView === b.onFocusView &&
-    a.onMute === b.onMute &&
-    a.onRetry === b.onRetry
+    a.onMute === b.onMute
 );

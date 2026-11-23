@@ -135,18 +135,34 @@ Audio and screen share are unaffected.
 Participants choose the setting under **Settings → Media**. Each device
 remembers its own choice. Network and CPU limits still apply on top of it.
 
-## Audio-only fallback
+## Video floor and automatic recovery
 
-When cameras stay congested for three consecutive samples after every one is
-confirmed on the lowest layer, the receiver closes camera subscriptions. Speech, screen share and screen audio
-continue. The stage shows that video is paused, with a control to resume it.
+Meet never pauses or closes camera video because of network quality. A weak
+link steps quality down and back up instead.
 
-With no camera to measure, recovery is a timed probe on the lowest layer after
-30 seconds. A probe that relapses within 30 seconds doubles the next pause, up
-to four minutes. Resuming manually starts a fresh probe. The pause belongs to
-the link rather than the receiving peer, so it and its probe deadline survive
-a receiver rebuild. The probe runs even when no receiver exists, because
-closing every camera can leave nothing to subscribe to.
+Outgoing cameras follow a four-rung ladder: full, then at most 360p at 15 fps,
+then 180p at 15 fps, and finally the floor of about 180p at 10 fps. From the
+third rung only the quarter-resolution layer keeps sending, with its own bitrate
+cap, so the camera is never inactive. A single-encoding fallback scales down by
+capture height to reach the same floor. Rungs follow available bitrate per
+video sender, round-trip time and loss. Stepping down is immediate. Stepping up
+takes three healthy samples (about nine seconds) per rung, so a flapping link
+does not oscillate. A sample with no measurements leaves the rung unchanged.
+Microphone and screen-audio protection are separate and unchanged: audio keeps
+its own bitrate and priority.
+
+Incoming cameras step through the high, mid and low layers on receiver
+congestion. The lowest layer is the floor; the receiver does not close camera
+subscriptions to protect speech.
+
+When incoming media stops arriving (no packets, or bytes without decoded
+frames, for about 20 seconds), the receiving peer is rebuilt automatically on a
+backoff of 0, 10, 30, 60 and 120 seconds, at most five attempts. There is no
+button or spinner. Thirty seconds of healthy media clears the count. After the
+last attempt the stage shows a quiet one-line status; it blocks nothing, and the
+browser's `online` event grants a fresh set of attempts. The legacy
+`audioOnly` field in media quality reports stays in the schema and is always
+`false`.
 
 ## Hidden tab
 
@@ -298,7 +314,7 @@ tokens:
 - New freezes.
 - How many tiles use each requested layer.
 - Active send layers.
-- CPU limitation, audio-only, thumbnail mode and visibility phase.
+- CPU limitation, thumbnail mode and visibility phase.
 
 The numbers come from the publisher and subscriber loops above, so reporting
 adds no `getStats()` call.
@@ -314,7 +330,7 @@ seconds, and a refusal made at admission never causes one. Any other change to
 room state is always persisted.
 
 A camera that is not being measured reports no receive rate, loss or layers.
-That covers a hidden tab, an audio-only pause and a receiver with no cameras.
+That covers a hidden tab and a receiver with no cameras.
 Every reading also expires six seconds after it was last measured, so a closed
 publisher or receiver never repeats an old value. A sample that resolves after
 its receiver, session or camera set changed is discarded.
@@ -332,7 +348,7 @@ without participant management:
 - Loss and round-trip p95.
 - Freezes per device-minute.
 - Layer counts.
-- Counts of CPU-limited, audio-only, hidden and thumbnail devices.
+- Counts of CPU-limited, hidden and thumbnail devices.
 
 Other participants are refused. Load tests can read a device's latest numbers
 from `globalThis.__meetMediaStats`.
