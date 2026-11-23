@@ -34,6 +34,11 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ['APP_SESSION_SCOPE', 'APP_SESSION_REFRESH_SCOPE'],
   },
+  // Upskii's link-write bearer: its own target app and the link scope only.
+  'apps/web/src/app/api/v1/integrations/upskii/link/route.ts': {
+    calls: 1,
+    gates: ['UPSKII_APP_ID', 'UPSKII_LINK_WRITE_SCOPE'],
+  },
   'apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts': {
     calls: 1,
     gates: ['INVITATION_ACTION_SCOPE'],

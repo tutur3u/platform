@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   APP_COORDINATION_SECRET_ENV_NAMES,
   createAppCoordinationToken,
+  createExternalLinkReadToken,
   createSessionAssuranceTransferToken,
   getServerTokenSecretCandidates,
   verifyAppCoordinationToken,
+  verifyExternalLinkReadToken,
   verifySessionAssuranceTransferToken,
 } from './app-coordination-token';
 import {
@@ -286,5 +288,28 @@ describe('app coordination secret chain', () => {
     expect(
       verifySessionAssuranceTransferToken(transferAfter, { secret: CURRENT }).ok
     ).toBe(false);
+  });
+});
+
+describe('external link read tokens', () => {
+  const secret = 'external-link-read-secret-with-enough-length';
+  const payload = {
+    scopes: ['upskii:classes:read'],
+    targetApp: 'upskii',
+    userId: 'user-1',
+  };
+
+  it('round-trips only through the link read verifier', () => {
+    const { token } = createExternalLinkReadToken(payload, { secret });
+    expect(verifyExternalLinkReadToken(token, { secret })).toMatchObject({
+      claims: { typ: 'external_link_read' },
+      ok: true,
+    });
+    expect(verifyAppCoordinationToken(token, { secret }).ok).toBe(false);
+  });
+
+  it('refuses an app bearer as a link read token', () => {
+    const { token } = createAppCoordinationToken(payload, { secret });
+    expect(verifyExternalLinkReadToken(token, { secret }).ok).toBe(false);
   });
 });

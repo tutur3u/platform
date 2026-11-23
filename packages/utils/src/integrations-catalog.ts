@@ -42,6 +42,10 @@ export const ACCOUNT_INTEGRATIONS_SETTINGS_TAB = 'account_integrations';
 
 export const UPSKII_LOGO_PATH = '/media/integrations/upskii.png';
 
+/** Upskii settings, where every Tuturuuu account link starts. */
+export const UPSKII_CONNECT_URL =
+  'https://app.upskii.com/settings?connect=tuturuuu';
+
 export const integrationsCatalog = [
   {
     id: 'upskii',

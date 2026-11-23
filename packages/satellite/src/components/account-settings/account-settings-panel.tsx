@@ -2,7 +2,6 @@
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SHARED_SETTINGS_TAB_IDS } from '@tuturuuu/ui/hooks/settings-dialog-url';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { SatelliteProfileSettingsPanel } from '../profile-settings/profile-settings-panel';
 import { AccountIntegrationsPanel } from './account-integrations-panel';
 import { AccountSettingsLinkOut } from './account-settings-link-out';
@@ -27,12 +26,7 @@ export function SatelliteAccountSettingsPanel({
   }
 
   if (activeTab === SHARED_SETTINGS_TAB_IDS.accountIntegrations) {
-    return (
-      <AccountIntegrationsPanel
-        centralUrl={centralUrl}
-        isStaff={isExactTuturuuuDotComEmail(user.email)}
-      />
-    );
+    return <AccountIntegrationsPanel centralUrl={centralUrl} />;
   }
 
   if (isWebManagedAccountTab(activeTab)) {

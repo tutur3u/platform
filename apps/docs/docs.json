@@ -58,6 +58,7 @@
               "platform/features/calendar-scheduling-summary",
               "platform/features/calendar-event-invitations",
               "platform/features/integrations-catalog",
+              "platform/features/upskii-account-link",
               "platform/features/shared-secret-password-reset",
               "platform/applications/chat",
               "platform/applications/cms",

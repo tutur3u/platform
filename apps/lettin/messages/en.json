@@ -1947,13 +1947,22 @@
     "calendar_description": "Google Calendar and Outlook Calendar",
     "coming_soon": "Coming soon",
     "description": "Services connected to your account",
-    "early_access": "Early access",
     "mail": "Mail",
     "mail_description": "Gmail and Outlook Mail",
     "manage": "Manage",
     "manage_label": "Manage {name}",
     "title": "Integrations",
     "upskii": "Upskii",
-    "upskii_description": "Your classes, lessons and assessments"
+    "upskii_description": "Your classes, lessons and assessments",
+    "cancel": "Cancel",
+    "connect": "Connect",
+    "connected": "Connected",
+    "disconnect": "Disconnect",
+    "retry": "Retry",
+    "upskii_disconnect_description": "Tuturuuu stops reading your Upskii classes, lessons and assessments. You can connect again from Upskii settings.",
+    "upskii_disconnect_failed": "Could not disconnect Upskii. Try again.",
+    "upskii_disconnect_title": "Disconnect Upskii?",
+    "upskii_disconnected": "Upskii disconnected",
+    "upskii_linked_as": "Linked to {email}"
   }
 }

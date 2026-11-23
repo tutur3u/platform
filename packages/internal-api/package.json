@@ -446,6 +446,11 @@
       "import": "./dist/time-tracking.js",
       "require": "./dist/time-tracking.js"
     },
+    "./integrations": {
+      "types": "./dist/integrations.d.ts",
+      "import": "./dist/integrations.js",
+      "require": "./dist/integrations.js"
+    },
     "./users": {
       "types": "./dist/users.d.ts",
       "import": "./dist/users.js",

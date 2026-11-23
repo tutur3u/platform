@@ -1,0 +1,205 @@
+import {
+  createExternalLinkReadToken,
+  verifyExternalLinkReadToken,
+} from '@tuturuuu/utils/app-coordination-token';
+import {
+  EXTERNAL_LINK_ID_SCOPE_PREFIX,
+  isUpskiiReadScope,
+  UPSKII_APP_ID,
+  UPSKII_READ_TOKEN_TTL_SECONDS,
+  type UpskiiReadScope,
+} from './constants';
+import type {
+  ExternalAccountLinkRow,
+  ExternalAccountLinkStore,
+} from './link-store';
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+export function isLinkId(value: string) {
+  return UUID_PATTERN.test(value);
+}
+
+export type UpskiiLinkSummary = {
+  linkedAt: string;
+  linkId: string;
+  scopes: string[];
+  upskiiEmail: string | null;
+};
+
+export type LinkUpskiiResult =
+  | { created: boolean; link: ExternalAccountLinkRow; ok: true }
+  | { code: 'LINK_CONFLICT'; ok: false; side: 'tuturuuu' | 'upskii' };
+
+export function summarizeLink(link: ExternalAccountLinkRow): UpskiiLinkSummary {
+  return {
+    linkedAt: link.linked_at,
+    linkId: link.id,
+    scopes: link.scopes,
+    upskiiEmail: link.external_email,
+  };
+}
+
+export function auditLinkEvent(
+  event: string,
+  fields: {
+    linkId?: string;
+    reason?: string;
+    side?: string;
+    userId?: string;
+  }
+) {
+  // Ids only: emails and tokens never reach logs.
+  const log = fields.reason ? console.warn : console.info;
+  log('[upskii-link]', { event, provider: UPSKII_APP_ID, ...fields });
+}
+
+/**
+ * Creates the one active link between a Tuturuuu user and an Upskii account,
+ * or refreshes it when the same pair links again.
+ */
+export async function linkUpskiiAccount(
+  store: ExternalAccountLinkStore,
+  input: {
+    scopes: UpskiiReadScope[];
+    upskiiEmail: string | null;
+    upskiiUserId: string;
+    userId: string;
+  }
+): Promise<LinkUpskiiResult> {
+  const scopes = [...new Set(input.scopes)].sort();
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const [byUser, bySubject] = await Promise.all([
+      store.findActiveByUser(input.userId),
+      store.findActiveBySubject(input.upskiiUserId),
+    ]);
+
+    if (byUser && byUser.external_subject !== input.upskiiUserId) {
+      return { code: 'LINK_CONFLICT', ok: false, side: 'tuturuuu' };
+    }
+    if (bySubject && bySubject.user_id !== input.userId) {
+      return { code: 'LINK_CONFLICT', ok: false, side: 'upskii' };
+    }
+    if (byUser) {
+      const link = await store.updateActive(byUser.id, {
+        external_email: input.upskiiEmail,
+        scopes,
+      });
+      return { created: false, link, ok: true };
+    }
+
+    const link = await store.insert({
+      external_email: input.upskiiEmail,
+      external_subject: input.upskiiUserId,
+      scopes,
+      user_id: input.userId,
+    });
+    if (link) return { created: true, link, ok: true };
+    // A concurrent link took a unique slot; re-read to classify it.
+  }
+
+  throw new Error('external_account_links: link did not settle');
+}
+
+export async function revokeUpskiiLinkForUser(
+  store: ExternalAccountLinkStore,
+  userId: string
+) {
+  const link = await store.findActiveByUser(userId);
+  if (!link) return null;
+  return (await store.revoke(link.id, 'user')) ? link : null;
+}
+
+/** Upskii-initiated unlink. The link must belong to the named Upskii user. */
+export async function revokeUpskiiLinkFromProvider(
+  store: ExternalAccountLinkStore,
+  { linkId, upskiiUserId }: { linkId: string; upskiiUserId: string }
+): Promise<'not_found' | 'revoked'> {
+  if (!isLinkId(linkId)) return 'not_found';
+  const link = await store.findById(linkId);
+  if (!link || link.external_subject !== upskiiUserId) return 'not_found';
+  if (link.revoked_at) return 'revoked';
+  await store.revoke(link.id, 'provider');
+  return 'revoked';
+}
+
+/** Mints the 60-second, single-scope token for one read through a link. */
+export function createUpskiiReadToken(
+  link: ExternalAccountLinkRow,
+  scope: UpskiiReadScope,
+  options: { now?: Date; secret?: string } = {}
+) {
+  if (link.revoked_at || !link.scopes.includes(scope)) {
+    throw new Error('Link does not grant this scope');
+  }
+  return createExternalLinkReadToken(
+    {
+      expiresInSeconds: UPSKII_READ_TOKEN_TTL_SECONDS,
+      scopes: [scope, `${EXTERNAL_LINK_ID_SCOPE_PREFIX}${link.id}`],
+      targetApp: UPSKII_APP_ID,
+      userId: link.user_id,
+    },
+    options
+  );
+}
+
+export type UpskiiIntrospection =
+  | {
+      active: true;
+      linkId: string;
+      scopes: UpskiiReadScope[];
+      tuturuuuUserId: string;
+      upskiiUserId: string;
+    }
+  | { active: false };
+
+/**
+ * Answers Upskii's check of a read token: active only when the token is a
+ * valid link read token for Upskii and its link is still active, belongs to
+ * the token's user and still grants every scope the token carries.
+ */
+export async function introspectUpskiiReadToken(
+  store: ExternalAccountLinkStore,
+  token: string,
+  options: { now?: Date; secret?: string } = {}
+): Promise<UpskiiIntrospection> {
+  const verified = verifyExternalLinkReadToken(token, options);
+  if (!verified.ok || verified.claims.target_app !== UPSKII_APP_ID) {
+    return { active: false };
+  }
+
+  const { scopes: tokenScopes, sub } = verified.claims;
+  const linkScopes = tokenScopes.filter((scope) =>
+    scope.startsWith(EXTERNAL_LINK_ID_SCOPE_PREFIX)
+  );
+  const readScopes = tokenScopes.filter(isUpskiiReadScope);
+  if (
+    linkScopes.length !== 1 ||
+    readScopes.length === 0 ||
+    readScopes.length + linkScopes.length !== tokenScopes.length
+  ) {
+    return { active: false };
+  }
+
+  const linkId = linkScopes[0]!.slice(EXTERNAL_LINK_ID_SCOPE_PREFIX.length);
+  if (!isLinkId(linkId)) return { active: false };
+  const link = await store.findById(linkId);
+  if (
+    !link ||
+    link.revoked_at ||
+    link.user_id !== sub ||
+    !readScopes.every((scope) => link.scopes.includes(scope))
+  ) {
+    return { active: false };
+  }
+
+  return {
+    active: true,
+    linkId: link.id,
+    scopes: readScopes,
+    tuturuuuUserId: link.user_id,
+    upskiiUserId: link.external_subject,
+  };
+}

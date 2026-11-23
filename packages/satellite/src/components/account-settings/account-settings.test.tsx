@@ -49,6 +49,11 @@ vi.mock('@tuturuuu/ui/custom/settings-dialog-shell', () => ({
     </>
   ),
 }));
+vi.mock('./account-integrations-panel', () => ({
+  AccountIntegrationsPanel: ({ centralUrl }: { centralUrl: string }) => (
+    <div data-testid="integrations-panel">{centralUrl}</div>
+  ),
+}));
 vi.mock('../profile-settings/profile-settings-panel', () => ({
   SatelliteProfileSettingsPanel: ({ user }: { user: WorkspaceUser }) => (
     <div data-testid="profile-panel">{user.id}</div>
@@ -184,7 +189,9 @@ describe('shared satellite account settings', () => {
         user={user}
       />
     );
-    expect(screen.getByText('upskii')).toBeDefined();
+    expect(screen.getByTestId('integrations-panel').textContent).toBe(
+      'https://tuturuuu.com'
+    );
     expect(screen.queryByRole('link', { name: /open_in_tuturuuu/ })).toBeNull();
   });
 

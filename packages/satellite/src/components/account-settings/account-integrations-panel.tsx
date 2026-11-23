@@ -1,7 +1,6 @@
 'use client';
 
 import { CalendarDays, ExternalLink, Mail } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
@@ -11,6 +10,7 @@ import {
   UPSKII_LOGO_PATH,
 } from '@tuturuuu/utils/integrations-catalog';
 import { useLocale, useTranslations } from 'next-intl';
+import { UpskiiLinkAction, useUpskiiLinkedEmail } from './upskii-link-row';
 
 function webOrigin(centralUrl?: string) {
   if (!centralUrl) return '';
@@ -55,14 +55,12 @@ function ManageLink({
  */
 export function AccountIntegrationsPanel({
   centralUrl,
-  isStaff,
 }: {
   /** Web origin serving the catalog and the official marks; relative if unset. */
   centralUrl?: string;
-  /** Display-only early-access hint; connection routes enforce access. */
-  isStaff: boolean;
 }) {
   const t = useTranslations('account-integrations');
+  const upskiiEmail = useUpskiiLinkedEmail();
   const origin = webOrigin(centralUrl);
   const calendar = t('calendar');
   const mail = t('mail');
@@ -71,7 +69,11 @@ export function AccountIntegrationsPanel({
     <div className="space-y-4">
       <SettingsSection>
         <SettingItemTab
-          description={t('upskii_description')}
+          description={
+            upskiiEmail
+              ? t('upskii_linked_as', { email: upskiiEmail })
+              : t('upskii_description')
+          }
           icon={
             <img
               alt=""
@@ -84,9 +86,7 @@ export function AccountIntegrationsPanel({
           layout="compact"
           title={t('upskii')}
         >
-          <Badge variant={isStaff ? 'outline' : 'secondary'}>
-            {isStaff ? t('early_access') : t('coming_soon')}
-          </Badge>
+          <UpskiiLinkAction />
         </SettingItemTab>
         <SettingItemTab
           description={t('calendar_description')}

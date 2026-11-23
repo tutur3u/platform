@@ -2175,13 +2175,22 @@
     "calendar_description": "Google Calendar và Outlook Calendar",
     "coming_soon": "Sắp ra mắt",
     "description": "Các dịch vụ kết nối với tài khoản của bạn",
-    "early_access": "Truy cập sớm",
     "mail": "Thư",
     "mail_description": "Gmail và Outlook Mail",
     "manage": "Quản lý",
     "manage_label": "Quản lý {name}",
     "title": "Tích hợp",
     "upskii": "Upskii",
-    "upskii_description": "Lớp học, bài học và bài đánh giá của bạn"
+    "upskii_description": "Lớp học, bài học và bài đánh giá của bạn",
+    "cancel": "Hủy",
+    "connect": "Kết nối",
+    "connected": "Đã kết nối",
+    "disconnect": "Ngắt kết nối",
+    "retry": "Thử lại",
+    "upskii_disconnect_description": "Tuturuuu sẽ ngừng đọc lớp học, bài học và bài đánh giá Upskii của bạn. Bạn có thể kết nối lại trong phần cài đặt Upskii.",
+    "upskii_disconnect_failed": "Không thể ngắt kết nối Upskii. Hãy thử lại.",
+    "upskii_disconnect_title": "Ngắt kết nối Upskii?",
+    "upskii_disconnected": "Đã ngắt kết nối Upskii",
+    "upskii_linked_as": "Đã liên kết với {email}"
   }
 }

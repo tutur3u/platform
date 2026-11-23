@@ -121,8 +121,12 @@ other Account tabs.
 - Calendar and Mail rows hand off to the panels that already own those
   connections (Calendar's `calendar_integrations` tab, Mail settings) in a new
   tab. The list never duplicates a connect flow.
-- The Upskii row shows Early access to `@tuturuuu.com` accounts and Coming soon
-  to everyone else. The badge is display-only; the link routes enforce access.
+- The Upskii row reads the user's link from
+  `GET /api/v1/integrations/upskii/link`. It shows **Connect** (opens Upskii
+  settings, where every link starts) when the server allows linking, Coming
+  soon when it does not, and the linked Upskii email with **Disconnect** (after
+  a confirmation) when linked. A failed read offers Retry. See
+  [Upskii account link](/platform/features/upskii-account-link).
 - The official Upskii mark is served from the web origin
   (`/media/integrations/upskii.png`), so every app shows the same asset.
 - The workspace **Developer → Integrations** tab (`integrations`) is a separate,

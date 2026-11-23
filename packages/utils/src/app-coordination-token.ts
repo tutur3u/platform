@@ -46,11 +46,25 @@ export type SessionAssuranceTransferTokenClaims = Omit<
   'typ'
 > & { typ: typeof SESSION_ASSURANCE_TRANSFER_TOKEN_TYPE };
 
+/**
+ * Purpose-bound token for one server-to-server read through an external
+ * account link. Only `verifyExternalLinkReadToken` accepts it, so the external
+ * app that receives it can never use it as an app session or API bearer.
+ */
+export const EXTERNAL_LINK_READ_TOKEN_TYPE = 'external_link_read';
+
+export type ExternalLinkReadTokenClaims = Omit<
+  AppCoordinationTokenClaims,
+  'typ'
+> & { typ: typeof EXTERNAL_LINK_READ_TOKEN_TYPE };
+
 type TokenType =
   | AppCoordinationTokenClaims['typ']
+  | ExternalLinkReadTokenClaims['typ']
   | SessionAssuranceTransferTokenClaims['typ'];
 type TokenClaims =
   | AppCoordinationTokenClaims
+  | ExternalLinkReadTokenClaims
   | SessionAssuranceTransferTokenClaims;
 type TokenOptions = { now?: Date; secret?: string };
 
@@ -350,6 +364,29 @@ export function createSessionAssuranceTransferToken(
   options: TokenOptions = {}
 ) {
   return signToken(payload, SESSION_ASSURANCE_TRANSFER_TOKEN_TYPE, options);
+}
+
+/** Only the external account link read path may mint link read tokens. */
+export function createExternalLinkReadToken(
+  payload: AppCoordinationTokenPayload,
+  options: TokenOptions = {}
+) {
+  return signToken(payload, EXTERNAL_LINK_READ_TOKEN_TYPE, options) as {
+    claims: ExternalLinkReadTokenClaims;
+    expiresAt: string;
+    token: string;
+  };
+}
+
+export function verifyExternalLinkReadToken(
+  token: string,
+  options: TokenOptions = {}
+):
+  | { claims: ExternalLinkReadTokenClaims; ok: true }
+  | { error: string; ok: false } {
+  return verifyToken(token, EXTERNAL_LINK_READ_TOKEN_TYPE, options) as
+    | { claims: ExternalLinkReadTokenClaims; ok: true }
+    | { error: string; ok: false };
 }
 
 function signToken(
