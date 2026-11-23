@@ -24,8 +24,9 @@ and accepts the terms for that meeting.
 | Acceptance evidence | Each acceptance is an append-only, revisioned record: acceptor account, meeting, server time, notice version, capabilities and revision. Turning Mira off, a new notice version, or any capability or visibility expansion (for example sharing notes to the workspace) ends the acceptance and starts a new revision. |
 | 18+ | The meeting workspace needs its stored 18+ audience declaration; meetings in workspaces without it cannot turn Mira on. The acceptor's per-meeting confirmation adds to that declaration. There is no exception for minors. Education workspaces with learners under 18 do not make the declaration. |
 | Notice | Every participant, guests included, sees **Mira is on, turned on by {acceptor}** (the acceptor's server-side profile name) before joining and as a persistent in-call indicator that cannot be hidden. Turning Mira on posts a system line in room chat. |
-| Joining | The pre-join screen offers **Join — I'm 18 or older** (Mira on for you) and **Join with Mira off for me**, with equal visual weight and no preselected choice. Either is one click. The notice says: *Under 18? Choose Join with Mira off for me.* Choosing Mira off never limits anything else in the meeting. |
-| Mid-call changes | When Mira is turned on during a call, or the acceptance changes, everyone already present sees the same two choices with no default. Until they choose, they count as off. |
+| Joining | The pre-join screen shows a tick box: **Mira, our AI assistant, may be turned on in this meeting to provide a helpful experience (notes, captions, answers).** Beside it, an info button explains what Mira does, who can read transcripts and notes (the host and workspace admins), retention, and how to turn Mira off at any time, with links to the Privacy Policy, the Terms of Service and the Mira AI page. The box is ticked by default; a workspace setting can make it unticked by default. Joining with the box ticked turns Mira on for you; unticking it means Mira is off for you. The notice also says: *Mira is for people 18 or older. Under 18? Untick the box.* Mira off never limits anything else in the meeting. At join, the participant's final box state, the notice version, a hash of the shown text and the locale are recorded as that participant's own choice. |
+| Mid-call changes | When Mira is turned on during a call, or the acceptance changes, everyone already present sees the same tick box and notice, preset to the workspace default, and confirms it. Until they confirm, they count as off. |
+| Default setting | Workspace settings → Mira: **Mira consent box ticked by default** (on unless the workspace changes it). The setting needs `manage_workspace_settings`, records who changed it and when, and applies to joins after the change. |
 | Per-person opt-out | At any time, a participant can turn Mira off for themselves. While it is off, their speech is not transcribed or sent to a model and Mira does not read their messages. **Mute Mira for me** (stop hearing Mira's voice replies) and **Leave** stay available. Only the participant can turn it back on. |
 | Effect of one opt-out | It affects only that participant's content. Mira keeps running for everyone else. |
 | Guests | Guest choices are keyed to the server-issued guest participant id, never to a display name or label. A new guest join always starts without a choice. |
@@ -37,13 +38,17 @@ The notice (EN and VI) names the controller (the meeting workspace), the
 processor (Tuturuuu), the model sub-processor (Google Gemini) and the
 cross-border transfer; the purpose; the data types (speech, transcripts, chat
 messages); retention (transcripts as configured, audio not kept); who can read
-notes; the participant's rights and how to turn Mira off; and a reminder not to
+transcripts and notes (the host and workspace admins); the participant's rights and how to turn Mira off; and a reminder not to
 share sensitive data. It also states two limits: other participants' speech or
 messages that mention you are processed, and your voice can be picked up by
 another participant's microphone.
 
 The notice wording and the consent form are subject to legal review against
-Vietnam's personal data protection rules before production use.
+Vietnam's personal data protection rules before production use. Advisory: a
+pre-ticked box can be weaker evidence of express consent under Decree
+13/2023 than an unticked box that the participant ticks. The workspace default
+setting and the recorded final state at join exist so a workspace can choose
+the stricter form; counsel review covers which default production uses.
 
 ### Enforcement model
 
@@ -126,4 +131,4 @@ coverage:
 11. A workspace without the 18+ declaration cannot accept, and neither can a guest or an absent admin.
 12. A capability or visibility expansion requires a new acceptance.
 13. Acceptance and choice evidence survives a room restore, is anonymized on account deletion, and blocks deletion via RESTRICT.
-14. Both buttons have equal weight with no consent-implying default focus, and the EN and VI notice includes every required item.
+14. The tick box follows the workspace default (ticked unless changed), unticking records off, the final state, notice version, text hash and locale are recorded at join, and the EN and VI notice and info panel include every required item and link.
