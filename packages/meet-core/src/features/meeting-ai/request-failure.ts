@@ -13,6 +13,7 @@ const codes = new Set([
   'MEET_AI_CREDITS_UNAVAILABLE',
   'MEET_AI_RATE_LIMITED',
   'MEET_AI_LIMITER_UNAVAILABLE',
+  'MEET_TRANSCRIPT_CONSENT_REQUIRED',
 ]);
 const creditReasons: Record<string, MeetingAiCreditReason> = {
   MEET_AI_CREDITS_EXHAUSTED: 'credits_exhausted',
@@ -56,6 +57,13 @@ export function meetingAiRequestFailure(error: unknown) {
               ? 'failure_unavailable'
               : null;
   return { status, code, key } as const;
+}
+
+/** The room refused a chunk because someone has not allowed the transcript. */
+export function isTranscriptConsentRefusal(error: unknown) {
+  return (
+    meetingAiRequestFailure(error).code === 'MEET_TRANSCRIPT_CONSENT_REQUIRED'
+  );
 }
 
 /** A 402 is a billing refusal that every later upload window would repeat. */

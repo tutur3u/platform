@@ -25,6 +25,7 @@ import { MeetAudioBatcher } from './audio-batches';
 import { createMeetCaptureRuntime } from './capture-runtime';
 import { recoverMeetChunk } from './chunk-recovery';
 import {
+  isTranscriptConsentRefusal,
   type MeetingAiCreditReason,
   meetingAiCreditReason,
 } from './request-failure';
@@ -36,7 +37,12 @@ export function useMeetingAi(
   live = true,
   enabled = true,
   expectedActorId?: string,
-  settings: { language?: TranscriptionHints['language']; title?: string } = {}
+  settings: {
+    language?: TranscriptionHints['language'];
+    title?: string;
+    /** False while someone present has not allowed the transcript. */
+    consentReady?: boolean;
+  } = {}
 ) {
   const actor = useWorkspaceActor();
   // TODO(M1-C/F): expose the locale suggestion in the transcription language picker.
@@ -157,6 +163,7 @@ export function useMeetingAi(
     retry: false,
   });
   const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<'starting' | 'finishing' | null>(null);
   const [ownsSession, setOwnsSession] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState(false);
@@ -190,6 +197,7 @@ export function useMeetingAi(
     runtime.active = true;
     runtime.mounted.current = true;
     setBusy(false);
+    setPhase(null);
     setOwnsSession(false);
     setCapturing(false);
     setCaptureError(false);
@@ -226,6 +234,7 @@ export function useMeetingAi(
       throw new Error('Previous transcription is still finishing');
     runtime.recovery.current = new AbortController();
     runtime.busyRef.current = true;
+    setPhase('starting');
     let finishStarting!: () => void;
     runtime.starting.current = new Promise<void>((resolve) => {
       finishStarting = resolve;
@@ -256,6 +265,8 @@ export function useMeetingAi(
     const batcher = new MeetAudioBatcher((clips) => {
       const sessionId = runtime.session.current;
       if (!current() || !sessionId) return;
+      // Audio heard while the consent fence is not ready never leaves the device.
+      if (hints.current.consentReady === false) return;
       const bytes = clips.reduce((sum, clip) => sum + clip.audio.size, 0);
       if (
         runtime.pendingBytes.current + bytes > MEET_AUDIO_PENDING_MAX_BYTES ||
@@ -309,6 +320,9 @@ export function useMeetingAi(
             }
           );
         } catch (error) {
+          // Someone stopped allowing the transcript after this window was
+          // captured; the room dropped it, which is a pause, not a failure.
+          if (isTranscriptConsentRefusal(error)) return;
           const credits = meetingAiCreditReason(error);
           if (current() && runtime.mounted.current) {
             setCaptureError(true);
@@ -382,7 +396,10 @@ export function useMeetingAi(
         runtime.starting.current = null;
       }
       finishStarting();
-      if (current() && runtime.mounted.current) setBusy(false);
+      if (current() && runtime.mounted.current) {
+        setBusy(false);
+        setPhase(null);
+      }
     }
   }, [query.refetch, startSession, uploadChunk, runtime, admitted]);
 
@@ -399,6 +416,7 @@ export function useMeetingAi(
         throw new Error('Meeting AI is already processing');
       runtime.busyRef.current = true;
       setBusy(true);
+      setPhase('finishing');
       try {
         if (target === runtime.session.current) {
           if (runtime.durationTimer.current)
@@ -445,7 +463,10 @@ export function useMeetingAi(
         if (current()) throw error;
       } finally {
         if (current()) runtime.busyRef.current = false;
-        if (current()) setBusy(false);
+        if (current()) {
+          setBusy(false);
+          setPhase(null);
+        }
       }
     },
     [query.refetch, finishSession, runtime, admitted]
@@ -459,6 +480,7 @@ export function useMeetingAi(
     wsId,
     ...query,
     busy,
+    phase,
     capturing,
     captureError,
     creditFailure,
