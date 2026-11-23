@@ -816,7 +816,12 @@ answers, pins or files still read the snapshot. Regression coverage lives in
 `live-qa.test.ts`, `live-qa-privacy.test.ts`, `live-qa-delivery.test.ts`,
 `live-qa-broadcast.test.ts` and `room-attachments.test.ts` under
 `packages/realtime/src/meet`, the meet-call files route test, and the `qa.test.tsx`
-and `qa-panel.test.tsx` files under `tools/live-activities/qa`.
+and `qa-panel.test.tsx` files under `tools/live-activities/qa`. In the composer,
+Enter asks the question and Shift+Enter adds a line; Enter while an IME
+composition is open confirms the candidate instead (`qa-composer-keys.test.tsx`).
+On narrow panes the sort tabs span their own row above **Moderate**, with 44 px
+targets on touch screens, and the phone header drops the open and answered
+counts.
 
 ## Viewer admission for large classes
 
@@ -1359,6 +1364,29 @@ dialog. Regression coverage: `call-more-menu.test.tsx`.
 People keeps join requests and the participant list ahead of optional room
 settings. Moderators use a per-person menu for mute, media permissions and
 removal. Removing someone requires confirmation.
+
+### Default activity
+
+Scope: one Meet or Parley room, on the web. A host or co-host (anyone with
+participant management) picks **Open for everyone who joins** under
+Settings → Activities. The value is the room setting `defaultActivity`, a
+registered tool id (`tool:<id>`, for example `tool:live-qa`) kept in the room's
+realtime state with the other room settings, so no database column holds it.
+
+- Default: none. Choosing **None** sends `defaultActivity: null` and clears it.
+- Everyone who joins, host included, gets that activity open when their call goes
+  live, as if a host had summoned them: it is available to them for the session
+  even when Activity visibility is Hosts and co-hosts.
+- It opens once per join. Setting, changing or clearing it never moves people
+  already in the call (use Summon for that), and closing it is the person's
+  choice for the rest of the session.
+- The room rejects any other value (`programming`, `document`, unknown shapes),
+  and a client ignores a tool id it does not know.
+
+Regression coverage: `room-controls.test.ts` under `packages/realtime/src/meet`
+(who may set and clear it, rejected values) and `use-default-activity.test.tsx`
+under `packages/meet-core/src/features/call/stage-layout` (opens once on join,
+leaves people already in the call alone).
 
 ### Follow and Summon
 

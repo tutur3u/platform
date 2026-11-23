@@ -4839,6 +4839,9 @@
       "camera_effects_preview_off": "Bật camera để xem trước hiệu ứng",
       "effects_done": "Xong",
       "activities_settings": {
+        "default_activity": "Mở sẵn cho mọi người tham gia",
+        "default_activity_hint": "Người tham gia sau sẽ thấy hoạt động này đã được mở sẵn. Người đang ở trong cuộc gọi giữ nguyên những gì họ đang mở.",
+        "default_activity_none": "Không có",
         "participant_navigation": "Cho phép người tham gia triệu tập nhau",
         "participant_navigation_hint": "Người được mời luôn cần chấp nhận"
       },

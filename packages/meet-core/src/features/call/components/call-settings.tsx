@@ -80,6 +80,8 @@ export function CallSettings({
     onMode: (mode: RoomToolsMode) => void;
     participantNavigation?: boolean;
     onParticipantNavigation: (enabled: boolean) => void;
+    defaultActivity?: string | null;
+    onDefaultActivity?: (activityId: string | null) => void;
   };
   room: MeetRoomController;
   meetingId: string;
@@ -337,6 +339,8 @@ export function CallSettings({
             onMode={activities.onMode}
             participantNavigation={activities.participantNavigation}
             onParticipantNavigation={activities.onParticipantNavigation}
+            defaultActivity={activities.defaultActivity}
+            onDefaultActivity={activities.onDefaultActivity}
           />
         )}
         {activeTab === 'connection' && (

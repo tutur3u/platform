@@ -59,17 +59,20 @@ import { SharedAudioControl } from './shared-audio-control';
 import { ShareMeetingButton } from './share-meeting';
 import { SidePanel } from './side-panel';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
-import { meetTools } from '../tools/registry';
+import { findMeetTool, meetTools } from '../tools/registry';
 import { useMeetTools } from '../tools/use-meet-tools';
 import {
   DOCUMENT_ACTIVITY,
   BOARD_ACTIVITY,
   PROGRAMMING_ACTIVITY,
+  toolActivityId,
+  toolIdOf,
 } from '../stage-layout/activity-ids';
 import { useStageAvailability } from '../stage-layout/use-stage-availability';
 import { RoomStage } from '../stage-layout/room-stage';
 import { useStageLayout } from '../stage-layout/use-stage-layout';
 import { useStageNavigation } from '../stage-layout/use-stage-navigation';
+import { useDefaultActivity } from '../stage-layout/use-default-activity';
 import { FollowBanner } from './room-navigation-controls';
 function CallShellContent({
   accountId,
@@ -308,6 +311,20 @@ function CallShellContent({
       account: !requiresAccount,
       tools: liveTools,
       toolIds: meetTools.map((tool) => tool.id),
+    },
+  });
+  // The host's default activity opens for everyone who joins, as a Summon
+  // would: it is theirs for this session even where tools are for hosts.
+  const defaultTool = toolIdOf(state.settings.defaultActivity ?? null);
+  useDefaultActivity({
+    live: liveTools,
+    activityId:
+      defaultTool && findMeetTool(defaultTool)
+        ? toolActivityId(defaultTool)
+        : null,
+    open: (activityId) => {
+      availability.summon(activityId);
+      stage.open(activityId);
     },
   });
   if (lifecycle === 'error')

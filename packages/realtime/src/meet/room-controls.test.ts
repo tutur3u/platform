@@ -70,6 +70,30 @@ describe('persistent room controls', () => {
     });
   });
 
+  it('lets room managers set and clear the activity that opens on join', () => {
+    const state = admitted();
+    const set = {
+      type: 'room.settings.update',
+      settings: { defaultActivity: 'tool:live-qa' },
+    } satisfies MeetRealtimeClientMessage;
+    expect(
+      run(state, set, guest).state.settings?.defaultActivity
+    ).toBeUndefined();
+    const withDefault = run(state, set).state;
+    expect(withDefault.settings?.defaultActivity).toBe('tool:live-qa');
+    const cleared = run(withDefault, {
+      type: 'room.settings.update',
+      settings: { defaultActivity: null },
+    }).state;
+    expect(cleared.settings?.defaultActivity).toBeNull();
+    expect(
+      meetRealtimeClientMessageSchema.safeParse({
+        type: 'room.settings.update',
+        settings: { defaultActivity: 'programming' },
+      }).success
+    ).toBe(false);
+  });
+
   it('limits activity visibility changes to admitted room managers', () => {
     const state = admitted();
     const patch = {

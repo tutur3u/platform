@@ -228,7 +228,14 @@ export function QaComposer({
       )}
       onChange={(event) => setDraft(event.target.value)}
       onKeyDown={(event) => {
-        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        // Enter sends; Shift+Enter adds a line. An IME composition keeps its
+        // Enter for confirming the candidate (keyCode 229 covers Safari).
+        if (
+          event.key === 'Enter' &&
+          !event.shiftKey &&
+          !event.nativeEvent.isComposing &&
+          event.keyCode !== 229
+        ) {
           event.preventDefault();
           void submit();
         }

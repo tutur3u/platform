@@ -27,6 +27,15 @@ const mediaSettings = {
 const advancedTools = z.enum(['hosts', 'showcase', 'everyone']).optional();
 /** Off: only hosts and co-hosts may send Follow and Summon requests. Unset means on. */
 const participantNavigation = z.boolean().optional();
+/**
+ * The registered tool (`tool:<id>`) that opens for everyone who joins. Null
+ * clears it; hosts and co-hosts set it.
+ */
+const defaultActivity = z
+  .string()
+  .regex(/^tool:[a-z0-9-]{1,64}$/)
+  .nullable()
+  .optional();
 export const meetRoomSettingsPatchSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
   viewersByDefault: z.boolean().optional(),
@@ -34,6 +43,7 @@ export const meetRoomSettingsPatchSchema = z.object({
   transport: z.enum(['media', 'presence']).optional(),
   advancedTools,
   participantNavigation,
+  defaultActivity,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
@@ -53,6 +63,7 @@ export const meetRoomSettingsSchema = z.object({
   transport: z.enum(['media', 'presence']).default('media').optional(),
   advancedTools,
   participantNavigation,
+  defaultActivity,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),

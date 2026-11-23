@@ -5,7 +5,9 @@ import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { useTranslations } from 'next-intl';
 import { type ComponentProps, useId } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
+import { meetTools } from '../tools/registry';
 import type { RoomToolsMode } from './call-room-tools';
+import { DefaultActivitySetting } from './default-activity-setting';
 import {
   MeetSettingsCard,
   MeetSettingsHeading,
@@ -21,12 +23,17 @@ export function CallActivitySettings({
   onMode,
   participantNavigation,
   onParticipantNavigation,
+  defaultActivity,
+  onDefaultActivity,
 }: {
   mode?: RoomToolsMode;
   onMode: (mode: RoomToolsMode) => void;
   /** Whether participants may send Follow and Summon (hosts always may). */
   participantNavigation?: boolean;
   onParticipantNavigation?: (enabled: boolean) => void;
+  /** The activity that opens for everyone who joins (`tool:<id>`). */
+  defaultActivity?: string | null;
+  onDefaultActivity?: (activityId: string | null) => void;
 }) {
   const t = useTranslations('meet.call.room_tools');
   const settingsT = useTranslations('meet.call.activities_settings');
@@ -80,6 +87,13 @@ export function CallActivitySettings({
           />
         </MeetSettingsCard>
       )}
+      {onDefaultActivity && (
+        <DefaultActivitySetting
+          value={defaultActivity}
+          tools={meetTools}
+          onChange={onDefaultActivity}
+        />
+      )}
     </MeetSettingsStack>
   );
 }
@@ -96,5 +110,8 @@ export function roomActivitySettings(room: MeetRoomController): ComponentProps<
     participantNavigation: room.state.settings.participantNavigation !== false,
     onParticipantNavigation: (participantNavigation) =>
       room.updateSettings({ participantNavigation }),
+    defaultActivity: room.state.settings.defaultActivity,
+    onDefaultActivity: (defaultActivity) =>
+      room.updateSettings({ defaultActivity }),
   };
 }

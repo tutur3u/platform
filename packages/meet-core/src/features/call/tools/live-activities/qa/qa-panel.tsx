@@ -41,7 +41,9 @@ export function QaPanel({
   const meta = (
     <>
       <QaLiveChip />
-      <span className="min-w-0 truncate whitespace-nowrap text-muted-foreground text-xs">
+      {/* A phone header keeps the title, Live and its actions; the counts
+          return from the small breakpoint up. */}
+      <span className="min-w-0 truncate whitespace-nowrap text-muted-foreground text-xs max-sm:hidden">
         {t('counts', { open: counts.open, answered: counts.answered })}
       </span>
     </>

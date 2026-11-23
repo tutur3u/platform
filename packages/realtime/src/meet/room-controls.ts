@@ -136,7 +136,9 @@ export function applyRoomControl(
   const managesAdvancedTools =
     activityKeys.length > 0 &&
     activityKeys.every((key) =>
-      ['advancedTools', 'participantNavigation'].includes(key)
+      ['advancedTools', 'participantNavigation', 'defaultActivity'].includes(
+        key
+      )
     );
   const requiresParticipantManagement = managesMedia || managesAdvancedTools;
   if (

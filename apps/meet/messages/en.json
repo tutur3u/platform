@@ -4246,6 +4246,9 @@
         "title": "Activities"
       },
       "activities_settings": {
+        "default_activity": "Open for everyone who joins",
+        "default_activity_hint": "People who join see this activity already open. Those already here keep what they have open.",
+        "default_activity_none": "None",
         "participant_navigation": "Let participants summon each other",
         "participant_navigation_hint": "They always need the other person to accept"
       },

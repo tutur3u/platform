@@ -125,21 +125,25 @@ export function QaBoard({
         sticky && 'sticky top-0 z-10 mb-0 bg-card pb-3'
       )}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Narrow: the sort track spans the row and Moderate sits below it.
+          Wide: both share one row. The track grows with its pills, so a
+          44px touch target never overflows it. */}
+      <div className="flex flex-col items-stretch gap-2 @min-[480px]:flex-row @min-[480px]:items-center">
         <Tabs
           value={sort}
           onValueChange={(value) => setSort(value as LiveQaSort)}
-          className="min-w-0 flex-1"
+          className="min-w-0 @min-[480px]:flex-1"
         >
           <TabsList
             aria-label={t('sort_label')}
-            className="w-full @min-[360px]:w-auto"
+            data-testid="qa-sort-tabs"
+            className="grid h-auto w-full grid-cols-3 @min-[480px]:inline-grid @min-[480px]:w-auto"
           >
             {LIVE_QA_SORTS.map((value) => (
               <TabsTrigger
                 key={value}
                 value={value}
-                className="pointer-coarse:min-h-11"
+                className="min-h-8 px-3 pointer-coarse:min-h-11"
               >
                 {t(`sort.${value}`)}
               </TabsTrigger>
@@ -156,7 +160,7 @@ export function QaBoard({
             }
             aria-pressed={moderating}
             variant={moderating ? 'secondary' : 'outline'}
-            className="pointer-coarse:h-11"
+            className="self-start pointer-coarse:h-11"
             onClick={() => setModerating((value) => !value)}
           />
         ) : null}
