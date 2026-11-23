@@ -19,6 +19,8 @@ import {
   serializeAnswerForStorage,
   validateSubmittedAnswers,
 } from '@/features/forms/server';
+import { commitSharedFormResponse } from '@/features/forms/server/commit-response';
+import { describeCommitRejection } from '@/features/forms/server/commit-rejection';
 import { loadSharedFormSnapshot } from '@/features/forms/shared-form-loader';
 
 async function loadSharedForm(shareCode: string) {
@@ -250,7 +252,7 @@ export async function POST(
 
     const { data: session } = await formsClient
       .from('form_sessions')
-      .select('id, viewed_at, submitted_at')
+      .select('id, submitted_at')
       .eq('id', parsed.data.sessionId)
       .eq('form_id', form.id)
       .maybeSingle();
@@ -266,57 +268,6 @@ export async function POST(
       );
     }
 
-    if (definition.settings.oneResponsePerUser && responder.user?.id) {
-      const { data: existingResponse } = await formsClient
-        .from('form_responses')
-        .select('id')
-        .eq('form_id', form.id)
-        .eq('respondent_user_id', responder.user.id)
-        .maybeSingle();
-
-      if (existingResponse) {
-        return NextResponse.json(
-          { error: 'Only one response is allowed for this form' },
-          { status: 409 }
-        );
-      }
-    }
-
-    const { count } = await formsClient
-      .from('form_responses')
-      .select('id', { count: 'exact', head: true })
-      .eq('form_id', form.id);
-
-    if (form.max_responses && (count ?? 0) >= form.max_responses) {
-      return NextResponse.json(
-        { error: 'This form has reached its response limit' },
-        { status: 409 }
-      );
-    }
-
-    const now = new Date();
-    const durationSeconds = Math.max(
-      0,
-      Math.round((now.getTime() - new Date(session.viewed_at).getTime()) / 1000)
-    );
-
-    const { data: response, error: responseError } = await formsClient
-      .from('form_responses')
-      .insert({
-        form_id: form.id,
-        share_link_id: shareLink.id,
-        session_id: session.id,
-        respondent_user_id: responder.user?.id ?? null,
-        respondent_email: responder.respondentEmail,
-        duration_seconds: durationSeconds,
-      })
-      .select('id')
-      .single();
-
-    if (responseError) {
-      throw new Error(responseError.message);
-    }
-
     const questionMap = new Map(
       definition.sections.flatMap((section) =>
         section.questions.map((question) => [question.id, question] as const)
@@ -328,7 +279,6 @@ export async function POST(
         const question = questionMap.get(questionId);
         const serialized = serializeAnswerForStorage(value);
         return {
-          response_id: response.id,
           question_id: question?.id ?? null,
           question_title:
             normalizeMarkdownToText(question?.title) || 'Untitled question',
@@ -338,31 +288,43 @@ export async function POST(
         };
       });
 
-    if (answerRows.length > 0) {
-      const { error: answersError } = await formsClient
-        .from('form_response_answers')
-        .insert(answerRows);
+    const committed = await commitSharedFormResponse(adminClient, {
+      form,
+      shareLinkId: shareLink.id,
+      sessionId: session.id,
+      respondentUserId: responder.user?.id ?? null,
+      respondentEmail: responder.respondentEmail,
+      lastSectionId:
+        definition.sections.at(-1)?.id ?? definition.sections[0]?.id ?? null,
+      answers: answerRows,
+    });
 
-      if (answersError) {
-        throw new Error(answersError.message);
-      }
+    if (committed.kind !== 'submitted' || committed.replayed) {
+      const rejection = await describeCommitRejection(committed, {
+        respondentUserId: responder.user?.id ?? null,
+        onePerRespondent:
+          definition.settings.oneResponsePerUser ||
+          !definition.settings.allowMultipleSubmissions,
+        hasResponse: async (respondentUserId) => {
+          const { data, error } = await formsClient
+            .from('form_responses')
+            .select('id')
+            .eq('form_id', form.id)
+            .eq('respondent_user_id', respondentUserId)
+            .limit(1)
+            .maybeSingle();
+          if (error) throw new Error(error.message);
+          return Boolean(data);
+        },
+      });
+      return NextResponse.json(
+        { error: rejection.error },
+        { status: rejection.status }
+      );
     }
 
-    const lastSectionId =
-      definition.sections.at(-1)?.id ?? definition.sections[0]?.id ?? null;
-
-    await formsClient
-      .from('form_sessions')
-      .update({
-        respondent_user_id: responder.user?.id ?? null,
-        respondent_email: responder.respondentEmail,
-        started_at: new Date(session.viewed_at).toISOString(),
-        submitted_at: now.toISOString(),
-        last_section_id: lastSectionId,
-      })
-      .eq('id', session.id);
-
-    const submittedAtIso = now.toISOString();
+    const response = { id: committed.response_id };
+    const submittedAtIso = new Date(committed.submitted_at).toISOString();
     let responseCopySentTo: string | null = null;
     let responseCopyStatus: 'sent' | 'rate_limited' | 'failed' | null = null;
 
