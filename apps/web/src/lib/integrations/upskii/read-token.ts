@@ -18,11 +18,14 @@ export type MintUpskiiReadTokenResult =
  */
 export async function mintUpskiiReadTokenForUser({
   admin,
+  classId,
   scope,
   store,
   userId,
 }: {
   admin: TypedSupabaseClient;
+  /** The class a lessons or assessments read is for; the token names it. */
+  classId?: string | null;
   scope: UpskiiReadScope;
   store: ExternalAccountLinkStore;
   userId: string;
@@ -38,7 +41,7 @@ export async function mintUpskiiReadTokenForUser({
   return {
     linkId: link.id,
     ok: true,
-    token: createUpskiiReadToken(link, scope).token,
+    token: createUpskiiReadToken(link, scope, { classId }).token,
     upskiiUserId: link.external_subject,
   };
 }

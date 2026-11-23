@@ -42,6 +42,7 @@ export const GET = withSessionAuth(
     const admin = (await createAdminClient()) as TypedSupabaseClient;
     const minted = await mintUpskiiReadTokenForUser({
       admin,
+      classId,
       scope: UPSKII_CONTENT_SCOPES[kind],
       store: createExternalAccountLinkStore(admin),
       userId: user.id,

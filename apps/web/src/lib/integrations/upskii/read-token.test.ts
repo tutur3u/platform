@@ -52,6 +52,25 @@ describe('mintUpskiiReadTokenForUser', () => {
     });
   });
 
+  it('binds a lessons or assessments token to its class', async () => {
+    const minted = await mintUpskiiReadTokenForUser({
+      admin: {} as never,
+      classId: 'class-1',
+      scope: 'upskii:classes:read',
+      store: store(LINK),
+      userId: 'user-1',
+    });
+    if (!minted.ok) throw new Error('expected a token');
+    const claims = JSON.parse(
+      Buffer.from(minted.token.split('.')[1]!, 'base64url').toString()
+    ) as { scopes: string[] };
+    expect(claims.scopes).toEqual([
+      'upskii:classes:read',
+      `external-link:${LINK.id}`,
+      'upskii-class:class-1',
+    ]);
+  });
+
   it('answers NOT_LINKED without a link', async () => {
     expect(await mint(null)).toEqual({ code: 'NOT_LINKED', ok: false });
   });

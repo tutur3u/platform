@@ -115,7 +115,9 @@ describe('fetchUpskiiContent', () => {
     [401, 'NOT_LINKED', 404],
     [403, 'SCOPE_NOT_GRANTED', 403],
     [404, 'CLASS_NOT_FOUND', 404],
+    [429, 'UPSKII_UNAVAILABLE', 502],
     [500, 'UPSKII_UNAVAILABLE', 502],
+    [503, 'UPSKII_UNAVAILABLE', 502],
   ])('maps Upskii %i to %s', async (status, code, mapped) => {
     const { fetchImpl } = answer({}, status);
     expect(

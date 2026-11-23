@@ -181,20 +181,30 @@ Meet calls one server-only route with the user's session:
   at most 100 items with titles cut to 300 characters; there is no paging yet.
   Each `url` must be on Upskii's exact origin with no credentials; anything
   else (including `javascript:` and other hosts) is dropped. Bodies and
-  answers are never included. Upskii failures answer `404 NOT_LINKED`,
-  `403 SCOPE_NOT_GRANTED`, `404 CLASS_NOT_FOUND` or `502 UPSKII_UNAVAILABLE`.
+  answers are never included. Upskii failures answer `404 NOT_LINKED`
+  (Upskii confirmed the link is inactive), `403 SCOPE_NOT_GRANTED` (including an
+  educator who is no longer eligible), `404 CLASS_NOT_FOUND` or
+  `502 UPSKII_UNAVAILABLE`. Anything Upskii could not answer or confirm (a
+  timeout, `429`, `5xx` or a check Upskii could not make of this token) is
+  `UPSKII_UNAVAILABLE`, never `NOT_LINKED`, so an outage is not shown as an
+  unlinked account.
 - In a Meet room only the presenter's session fetches. Other participants see
   only what the presenter shares.
 
 The read token is a purpose-bound `external_link_read` token, not an
 app-coordination bearer: `target_app: "upskii"`, `sub` set to the Tuturuuu
-user, one read scope, and `external-link:<linkId>`. It expires 60 seconds after
-issue, with no clock-skew allowance. Tuturuuu sends it to Upskii's
+user, one read scope, `external-link:<linkId>`, and for `lessons` and
+`assessments` one `upskii-class:<classId>` scope naming the class it was minted
+for. It expires 60 seconds after issue, with no clock-skew allowance. Introspection
+returns that `classId`, and Upskii opens only that class with the token. The
+token's `jti` is not consumed: with the 60-second life and the class binding, a
+captured token can only re-read one class's metadata inside that minute. Consuming
+it needs a shared store on the Upskii side and is a follow-up. Tuturuuu sends it to Upskii's
 `GET /api/integrations/tuturuuu/v1/<kind>`. Upskii checks it with the
 introspect route, which answers
-`{ active, tuturuuuUserId, upskiiUserId, linkId, scopes }`. The answer is
+`{ active, tuturuuuUserId, upskiiUserId, linkId, scopes, classId? }`. The answer is
 active only when the token is valid and unexpired, carries exactly one link
-id and only read scopes, and names an active link owned by its user that
+id, at most one class and only read scopes, and names an active link owned by its user that
 still grants those scopes. Upskii serves the request only when its own row for
 that `linkId` and user is still active.
 
@@ -213,7 +223,9 @@ reason }`, with no emails or tokens. Revoked rows keep the history.
   another user's link, carrying two link ids or an unknown scope, signed with
   another key, or replaced by an app bearer.
 - `apps/web/src/lib/integrations/upskii/read-token.test.ts`: minting needs an
-  active link, the staff gate and a granted scope.
+  active link, the staff gate and a granted scope, and a class-bound token names
+  its class. `link-service.test.ts` also covers a token naming two classes or an
+  invalid class.
 - `apps/web/src/lib/integrations/upskii/access.test.ts`: the staff gate (missing
   catalog entry, unconfirmed email, lookalike domain, QA account, another Azure
   tenant, failed lookup, explicit `available`) and Basic credential parsing.

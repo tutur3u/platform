@@ -54,6 +54,7 @@ describe('GET /api/v1/integrations/upskii/content', () => {
     expect(response.status).toBe(200);
     expect(mocks.mint).toHaveBeenCalledWith(
       expect.objectContaining({
+        classId: 'c-1',
         scope: 'upskii:lessons:read',
         userId: 'session-user',
       })

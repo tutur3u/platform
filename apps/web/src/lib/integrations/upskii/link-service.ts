@@ -4,8 +4,10 @@ import {
 } from '@tuturuuu/utils/app-coordination-token';
 import {
   EXTERNAL_LINK_ID_SCOPE_PREFIX,
+  isUpskiiClassId,
   isUpskiiReadScope,
   UPSKII_APP_ID,
+  UPSKII_CLASS_SCOPE_PREFIX,
   UPSKII_READ_TOKEN_TTL_SECONDS,
   type UpskiiReadScope,
 } from './constants';
@@ -157,25 +159,35 @@ export async function getUpskiiLinkStatusForProvider(
 export function createUpskiiReadToken(
   link: ExternalAccountLinkRow,
   scope: UpskiiReadScope,
-  options: { now?: Date; secret?: string } = {}
+  options: { classId?: string | null; now?: Date; secret?: string } = {}
 ) {
   if (link.revoked_at || !link.scopes.includes(scope)) {
     throw new Error('Link does not grant this scope');
   }
+  const { classId, ...tokenOptions } = options;
+  if (classId && !isUpskiiClassId(classId)) {
+    throw new Error('Invalid class id');
+  }
   return createExternalLinkReadToken(
     {
       expiresInSeconds: UPSKII_READ_TOKEN_TTL_SECONDS,
-      scopes: [scope, `${EXTERNAL_LINK_ID_SCOPE_PREFIX}${link.id}`],
+      scopes: [
+        scope,
+        `${EXTERNAL_LINK_ID_SCOPE_PREFIX}${link.id}`,
+        ...(classId ? [`${UPSKII_CLASS_SCOPE_PREFIX}${classId}`] : []),
+      ],
       targetApp: UPSKII_APP_ID,
       userId: link.user_id,
     },
-    options
+    tokenOptions
   );
 }
 
 export type UpskiiIntrospection =
   | {
       active: true;
+      /** The one class the token was minted for, when it names one. */
+      classId?: string;
       linkId: string;
       scopes: UpskiiReadScope[];
       tuturuuuUserId: string;
@@ -209,11 +221,18 @@ export async function introspectUpskiiReadToken(
   const linkScopes = tokenScopes.filter((scope) =>
     scope.startsWith(EXTERNAL_LINK_ID_SCOPE_PREFIX)
   );
+  const classScopes = tokenScopes.filter((scope) =>
+    scope.startsWith(UPSKII_CLASS_SCOPE_PREFIX)
+  );
   const readScopes = tokenScopes.filter(isUpskiiReadScope);
+  const classId = classScopes[0]?.slice(UPSKII_CLASS_SCOPE_PREFIX.length);
   if (
     linkScopes.length !== 1 ||
+    classScopes.length > 1 ||
+    (classId !== undefined && !isUpskiiClassId(classId)) ||
     readScopes.length === 0 ||
-    readScopes.length + linkScopes.length !== tokenScopes.length
+    readScopes.length + linkScopes.length + classScopes.length !==
+      tokenScopes.length
   ) {
     return { active: false };
   }
@@ -237,6 +256,7 @@ export async function introspectUpskiiReadToken(
 
   return {
     active: true,
+    ...(classId ? { classId } : {}),
     linkId: link.id,
     scopes: readScopes,
     tuturuuuUserId: link.user_id,

@@ -405,6 +405,58 @@ describe('Upskii account link', () => {
       }
     });
 
+    it('names the one class a read token was minted for', async () => {
+      const row = await activeLink();
+      const { token } = createUpskiiReadToken(row, 'upskii:lessons:read', {
+        classId: 'class-1',
+        secret: SECRET,
+      });
+      expect(
+        await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
+      ).toEqual({
+        active: true,
+        classId: 'class-1',
+        linkId: row.id,
+        scopes: ['upskii:lessons:read'],
+        tuturuuuUserId: TUTURUUU_A,
+        upskiiUserId: 'u-1',
+      });
+    });
+
+    it('refuses a read token that names two classes or an invalid class', async () => {
+      const row = await activeLink();
+      for (const scopes of [
+        [
+          'upskii:lessons:read',
+          `external-link:${row.id}`,
+          'upskii-class:class-1',
+          'upskii-class:class-2',
+        ],
+        ['upskii:lessons:read', `external-link:${row.id}`, 'upskii-class:../x'],
+      ]) {
+        const { token } = createExternalLinkReadToken(
+          {
+            expiresInSeconds: 60,
+            scopes,
+            targetApp: 'upskii',
+            userId: TUTURUUU_A,
+          },
+          { secret: SECRET }
+        );
+        expect(
+          await introspectUpskiiReadToken(memory.store, token, {
+            secret: SECRET,
+          })
+        ).toEqual({ active: false });
+      }
+      expect(() =>
+        createUpskiiReadToken(row, 'upskii:lessons:read', {
+          classId: '../x',
+          secret: SECRET,
+        })
+      ).toThrow('Invalid class id');
+    });
+
     it('refuses a read token whose user does not own the link', async () => {
       const row = await activeLink();
       const { token } = createUpskiiReadToken(

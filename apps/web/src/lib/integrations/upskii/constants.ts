@@ -20,4 +20,17 @@ export function isUpskiiReadScope(value: string): value is UpskiiReadScope {
 /** Read tokens name their link with this scope prefix. */
 export const EXTERNAL_LINK_ID_SCOPE_PREFIX = 'external-link:';
 
+/**
+ * A read token for one class's lessons or assessments also names that class
+ * with this scope prefix, so a token minted for one class opens no other.
+ */
+export const UPSKII_CLASS_SCOPE_PREFIX = 'upskii-class:';
+
+/** The shape of a class id Upskii accepts, enforced before a token names it. */
+const UPSKII_CLASS_ID_PATTERN = /^[\w-]{1,128}$/u;
+
+export function isUpskiiClassId(value: string) {
+  return UPSKII_CLASS_ID_PATTERN.test(value);
+}
+
 export const UPSKII_READ_TOKEN_TTL_SECONDS = 60;
