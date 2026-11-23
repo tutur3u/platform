@@ -3,6 +3,7 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -25,6 +26,10 @@ import {
   summarizeLink,
 } from '@/lib/integrations/upskii/link-service';
 import { createExternalAccountLinkStore } from '@/lib/integrations/upskii/link-store';
+import {
+  admitAccountLinkRequest,
+  limitVerifiedAccountLinkRequest,
+} from '@/lib/integrations/upskii/rate-limit';
 
 const linkSchema = z.object({
   scopes: z.array(z.enum(UPSKII_READ_SCOPES)).min(1).max(3),
@@ -38,19 +43,37 @@ const linkSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   const token = getBearerAppCoordinationToken(request);
+  const admission = await admitAccountLinkRequest({
+    appId: UPSKII_APP_ID,
+    appSecret: token ?? undefined,
+    ip: extractIPFromRequest(request.headers),
+    route: 'link',
+  });
+  if (admission) return admission;
+
   const verified = token ? verifyAppCoordinationToken(token) : null;
   if (
     !verified?.ok ||
     verified.claims.target_app !== UPSKII_APP_ID ||
     !verified.claims.scopes.includes(UPSKII_LINK_WRITE_SCOPE)
   ) {
-    auditLinkEvent('link_refused', { reason: 'bearer' });
+    console.warn('[upskii-link] credential refused', {
+      reason: 'bearer',
+      route: 'link',
+    });
     return jsonNoStore({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
   const live = await requireLiveExternalApp(admin, verified.claims);
   if (!live.ok) return live.response;
+
+  const limited = await limitVerifiedAccountLinkRequest({
+    appId: UPSKII_APP_ID,
+    route: 'link',
+    userId: verified.claims.sub,
+  });
+  if (limited) return limited;
 
   const parsed = linkSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

@@ -32,6 +32,13 @@ export const EXTERNAL_APP_RATE_LIMITS = {
   exchangeSecretFailure: { windowMs: MINUTE_MS, maxRequests: 30 },
   exchangeTokenFailure: { windowMs: MINUTE_MS, maxRequests: 30 },
   exchange: { windowMs: MINUTE_MS, maxRequests: 600 },
+  // Account-link routes (link, unlink, introspect): per client IP and per
+  // app plus secret digest before credentials are checked, per verified app
+  // after, and per user for link writes.
+  accountLinkIp: { windowMs: MINUTE_MS, maxRequests: 120 },
+  accountLinkAttempt: { windowMs: MINUTE_MS, maxRequests: 600 },
+  accountLinkApp: { windowMs: MINUTE_MS, maxRequests: 600 },
+  accountLinkUser: { windowMs: MINUTE_MS, maxRequests: 10 },
 } as const satisfies Record<string, RateLimitConfig>;
 
 export type ExternalAppRateLimitBucket = keyof typeof EXTERNAL_APP_RATE_LIMITS;

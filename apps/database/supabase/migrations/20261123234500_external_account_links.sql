@@ -5,11 +5,13 @@
 -- service role. The link, unlink and introspect routes in apps/web authorise
 -- the user session or the external app's secret before touching rows. RLS is
 -- enabled with no policies, so any role other than the service role is denied.
--- Rows hold no credentials. Revoked rows are kept as the link history.
+-- Rows hold no credentials. Revoked rows are kept as the link history, with
+-- external_email cleared on revoke.
 
 create table private.external_account_links (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.users (id) on delete cascade,
+  -- Deleting the Tuturuuu account deletes its links.
+  user_id uuid not null references auth.users (id) on delete cascade,
   provider text not null check (provider in ('upskii')),
   external_subject text not null
     check (char_length(external_subject) between 1 and 128),
@@ -40,7 +42,10 @@ create unique index external_account_links_active_subject_idx
 
 alter table private.external_account_links enable row level security;
 
-revoke all on table private.external_account_links
-from public, anon, authenticated;
+grant usage on schema private to service_role;
 
-grant all on table private.external_account_links to service_role;
+revoke all on table private.external_account_links
+from public, anon, authenticated, service_role;
+
+grant select, insert, update on table private.external_account_links
+to service_role;

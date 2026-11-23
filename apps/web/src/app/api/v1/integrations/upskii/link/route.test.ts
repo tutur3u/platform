@@ -8,6 +8,10 @@ const mocks = vi.hoisted(() => ({
   requireLiveExternalApp: vi.fn(async () => ({ ok: true })),
 }));
 
+vi.mock('@/lib/integrations/upskii/rate-limit', () => ({
+  admitAccountLinkRequest: vi.fn(async () => null),
+  limitVerifiedAccountLinkRequest: vi.fn(async () => null),
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({})),
 }));

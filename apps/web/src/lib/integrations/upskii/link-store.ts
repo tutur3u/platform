@@ -109,7 +109,13 @@ export function createExternalAccountLinkStore(
       const now = new Date().toISOString();
       const row = await readOne(
         table(admin)
-          .update({ revoked_at: now, revoked_by: by, updated_at: now })
+          // The email is only for display while linked; history keeps ids.
+          .update({
+            external_email: null,
+            revoked_at: now,
+            revoked_by: by,
+            updated_at: now,
+          })
           .eq('id', id)
           .is('revoked_at', null)
           .select(COLUMNS)

@@ -28,7 +28,7 @@ const ADMISSION_SUBKEY_LABEL = 'tuturuuu/external-app-exchange-admission/v1';
  * app-coordination signing secret, never that secret itself, so the counter
  * keys in the limiter store are no signing oracle over caller-chosen input.
  */
-function secretKeyPart(appSecret?: string) {
+export function secretKeyPart(appSecret?: string) {
   if (!appSecret) return 'none';
   const [signingKey] = getServerTokenSecretCandidates();
   const subkey = createHmac('sha256', signingKey!)

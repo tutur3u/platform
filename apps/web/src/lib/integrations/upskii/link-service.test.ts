@@ -1,4 +1,7 @@
-import { createAppCoordinationToken } from '@tuturuuu/utils/app-coordination-token';
+import {
+  createAppCoordinationToken,
+  createExternalLinkReadToken,
+} from '@tuturuuu/utils/app-coordination-token';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createUpskiiReadToken,
@@ -232,6 +235,90 @@ describe('Upskii account link', () => {
         },
         { secret: SECRET }
       );
+      expect(
+        await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
+      ).toEqual({ active: false });
+    });
+
+    it("refuses a token naming another user's link", async () => {
+      await activeLink();
+      const other = await linkUpskiiAccount(memory.store, {
+        scopes: [...ALL_SCOPES],
+        upskiiEmail: null,
+        upskiiUserId: 'u-2',
+        userId: TUTURUUU_B,
+      });
+      const otherId = other.ok ? other.link.id : '';
+      const { token } = createExternalLinkReadToken(
+        {
+          scopes: ['upskii:classes:read', `external-link:${otherId}`],
+          targetApp: 'upskii',
+          userId: TUTURUUU_A,
+        },
+        { secret: SECRET }
+      );
+      expect(
+        await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
+      ).toEqual({ active: false });
+    });
+
+    it.each([
+      [
+        'two link scopes',
+        (id: string) => [
+          `external-link:${id}`,
+          `external-link:${id}`,
+          'upskii:classes:read',
+        ],
+      ],
+      [
+        'an unknown scope',
+        (id: string) => [
+          `external-link:${id}`,
+          'upskii:classes:read',
+          'users:profile:read',
+        ],
+      ],
+      ['no read scope', (id: string) => [`external-link:${id}`]],
+      [
+        'a malformed link id',
+        () => ['external-link:not-a-uuid', 'upskii:classes:read'],
+      ],
+    ])('refuses a token with %s', async (_label, scopes) => {
+      const row = await activeLink();
+      const { token } = createExternalLinkReadToken(
+        { scopes: scopes(row.id), targetApp: 'upskii', userId: TUTURUUU_A },
+        { secret: SECRET }
+      );
+      expect(
+        await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
+      ).toEqual({ active: false });
+    });
+
+    it('expires a read token after 60 seconds', async () => {
+      const row = await activeLink();
+      const issuedAt = new Date('2026-11-24T00:00:00.000Z');
+      const { token } = createUpskiiReadToken(row, 'upskii:classes:read', {
+        now: issuedAt,
+        secret: SECRET,
+      });
+      const at = (seconds: number) => ({
+        now: new Date(issuedAt.getTime() + seconds * 1000),
+        secret: SECRET,
+      });
+      expect(
+        (await introspectUpskiiReadToken(memory.store, token, at(59))).active
+      ).toBe(true);
+      expect(
+        (await introspectUpskiiReadToken(memory.store, token, at(61))).active
+      ).toBe(false);
+    });
+
+    it('refuses a token signed with another key', async () => {
+      const row = await activeLink();
+      const { token } = createUpskiiReadToken(row, 'upskii:classes:read', {
+        secret: 'another-secret-with-enough-length-for-tests',
+      });
       expect(
         await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
       ).toEqual({ active: false });

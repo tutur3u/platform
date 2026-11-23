@@ -11,24 +11,22 @@ import {
 import { createExternalAccountLinkStore } from '@/lib/integrations/upskii/link-store';
 
 const unlinkSchema = z.object({
-  appId: z.string().trim().toLowerCase().max(64),
-  appSecret: z.string().min(1).max(200),
   linkId: z.string().trim().max(64),
   upskiiUserId: z.string().trim().min(1).max(128),
 });
 
-/** Upskii-initiated disconnect, authenticated with Upskii's app secret. */
+/**
+ * Upskii-initiated disconnect. Upskii authenticates with
+ * `Authorization: Basic base64(upskii:<app secret>)`.
+ */
 export async function POST(request: NextRequest) {
+  const auth = await requireUpskiiAppCredentials(request, 'unlink');
+  if (!auth.ok) return auth.response;
+
   const parsed = unlinkSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return jsonNoStore({ error: 'Invalid unlink payload' }, { status: 400 });
   }
-
-  const auth = await requireUpskiiAppCredentials(
-    parsed.data.appId,
-    parsed.data.appSecret
-  );
-  if (!auth.ok) return auth.response;
 
   const result = await revokeUpskiiLinkFromProvider(
     createExternalAccountLinkStore(auth.admin),
