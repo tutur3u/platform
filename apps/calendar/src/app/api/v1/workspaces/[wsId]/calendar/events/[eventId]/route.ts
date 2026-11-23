@@ -20,6 +20,7 @@ import {
 } from '@/lib/calendar/google-color-operations/route-handlers';
 import { refreshOwnedGoogleSourceColor } from '@/lib/calendar/google-source-color-refresh';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
+import { cancelGuestInvitationsBeforeDelete } from '@/lib/calendar/invitations/route-support';
 import { applyProviderSyncFields } from '@/lib/calendar/provider-sync-fields';
 import {
   createProviderEvent,
@@ -660,6 +661,13 @@ export async function DELETE(request: Request, { params }: Params) {
       });
     }
 
+    await cancelGuestInvitationsBeforeDelete({
+      sbAdmin,
+      request,
+      wsId,
+      eventId,
+      userId,
+    });
     const { error } = await sbAdmin
       .from('workspace_calendar_events')
       .delete()
