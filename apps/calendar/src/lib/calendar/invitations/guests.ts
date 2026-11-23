@@ -484,7 +484,11 @@ export async function updateInvitationSettings(
     eventId: input.eventId,
     organizerUserId: input.actorUserId,
   });
-  const update: Record<string, boolean> = {};
+  const update: {
+    guests_can_modify?: boolean;
+    guests_can_invite_others?: boolean;
+    guests_can_see_guest_list?: boolean;
+  } = {};
   if (input.patch.guestsCanModify !== undefined)
     update.guests_can_modify = input.patch.guestsCanModify;
   if (input.patch.guestsCanInviteOthers !== undefined)
