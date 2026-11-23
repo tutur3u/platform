@@ -633,7 +633,9 @@ The scene is bounded at 2000 elements and 2,000,000 bytes and stored in
 256 KB chunks, so a full board costs at most about nine storage rows per persist.
 The platform route does two database reads and one compare-and-set write per
 flush. `MEET_WHITEBOARD_FLUSH_DISABLED` (`true` or `1`) halts storage writes and
-flushes at every wake; the room then relays live traffic only.
+flushes at every wake; the room then relays live traffic only. The expiry sweep
+alarm (about one per 60 seconds per connected room, no writes) keeps running so
+withdrawn access still ends.
 
 `packages/realtime/src/meet/board-sync-core.test.ts` counts storage writes, alarm
 sets and flushes for a 500-edit burst and ten minutes of continuous edits, and

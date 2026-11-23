@@ -618,7 +618,11 @@ host acts.
   the board is available again (relinked or unarchived).
 - **Large boards.** Elements past the room's 2000-element or 2,000,000-byte budget
   are not loaded into the room. The route writes them back untouched on every
-  flush, so a large board is saved in full and never trimmed. The room stores its
+  flush, so a large board is saved in full and never trimmed. The load and
+  conflict answers list the ids of those elements; the room never reads one as
+  deleted, so an element that grows past a budget on the web survives a flush
+  unless the room holds a newer copy of it. A deleted element keeps only its
+  identity and version in the room, so deleting content frees space. The room stores its
   scene in 256 KB chunks, so no single Durable Object storage value nears the
   per-value limit, and a revision counts as persisted only after its write
   succeeded. After an eviction the room restores its scene, the ids it edited
@@ -643,9 +647,9 @@ unfinished work once and then goes quiet.
 The stop fence is the Worker variable `MEET_WHITEBOARD_FLUSH_DISABLED`. Exactly
 `true` or `1` halts every scene write, database flush and the identity write; live
 relay and the expiry sweep continue, and unsaved edits exist only in the running
-room. The sweep stays on because it is how a withdrawn guest or member loses a
-live board: it is one alarm per connected room per 60 seconds and stops with the
-last socket. The room stores its identity on the first join after the fence
+room. The sweep alarm (about one `setAlarm` per 60 seconds per connected room) keeps
+running while the fence is on. It is how a withdrawn guest or member loses a live
+board, it writes nothing, and it stops with the last socket. The room stores its identity on the first join after the fence
 lifts. Any
 other value (the default is `false`) leaves flushing on. To stop spend: set the
 variable to `true` in `apps/meet-realtime/wrangler.jsonc` (and the staging
