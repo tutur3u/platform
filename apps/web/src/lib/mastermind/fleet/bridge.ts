@@ -10,8 +10,8 @@ import {
   verify,
 } from 'node:crypto';
 import {
-  getAppSessionTokenFromRequest,
-  verifyAppSessionRequestWithToken,
+  hasAppLogoutFence,
+  verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session-core';
 import {
   createAdminClient,
@@ -197,20 +197,28 @@ export async function readAssurance(
 
 const OWNER_LIVE_MFA_MAX_AGE_SECONDS = 24 * 60 * 60;
 
-/** No socket can outlive its verified access credential or MFA proof. */
+/**
+ * No socket can outlive its verified access credential or MFA proof. The
+ * lease reads exactly the credential the route wrapper admitted: its app
+ * session token when it admitted one, otherwise the Supabase session, never a
+ * second app token the request happens to carry.
+ */
 export async function ownerLiveLease(
   request: Pick<NextRequest, 'headers' | 'url'>,
-  principal: { userId: string; supabase: ClaimsReader },
+  principal: FleetAssurancePrincipal,
   now = Date.now()
 ) {
-  const session = getAppSessionTokenFromRequest(request)
-    ? verifyAppSessionRequestWithToken(request, { targetApp: 'mastermind' })
+  const admittedToken = principal.appSessionToken;
+  const session = admittedToken
+    ? hasAppLogoutFence(request)
+      ? ({ ok: false } as const)
+      : verifyAppSessionToken(admittedToken, { targetApp: 'mastermind' })
     : null;
   if (session && (!session.ok || session.claims.sub !== principal.userId))
     return { status: 'required' } as const;
   const assurance = await replyAssurance(
     request,
-    { ...principal, appSessionToken: session?.token },
+    { ...principal, appSessionToken: admittedToken },
     OWNER_LIVE_MFA_MAX_AGE_SECONDS,
     Math.floor(now / 1000)
   );

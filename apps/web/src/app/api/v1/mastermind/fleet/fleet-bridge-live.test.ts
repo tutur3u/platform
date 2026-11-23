@@ -1,4 +1,5 @@
 import {
+  APP_LOGOUT_COOKIE_NAME,
   APP_SESSION_COOKIE_NAME,
   createAppSessionToken,
   verifyAppSessionToken,
@@ -19,6 +20,7 @@ const NOW_S = () => Math.floor(Date.now() / 1000);
 
 const mocks = vi.hoisted(() => ({
   user: { id: '' },
+  appToken: undefined as string | undefined,
   getClaims: vi.fn(),
 
   granted: [] as string[],
@@ -33,6 +35,7 @@ vi.mock('@/lib/api-auth', () => ({
       handler(
         request,
         {
+          appSessionToken: mocks.appToken,
           user: mocks.user,
           supabase: { auth: { getClaims: mocks.getClaims } },
         },
@@ -102,6 +105,7 @@ beforeEach(() => {
   vi.stubEnv('MASTERMIND_FLEET_PUBLISHER_SECRET', SECRET);
   vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', OWNER);
   mocks.user = { id: OWNER };
+  mocks.appToken = undefined;
   mocks.granted = ['manage_mastermind', 'view_infrastructure'];
   mocks.store = createMemoryMastermindStore();
   mocks.bridge = {
@@ -199,6 +203,7 @@ describe('fleet bridge tickets and live state', () => {
         verifiedAt: Math.floor(Date.now() / 1000),
       },
     }).token;
+    mocks.appToken = platform;
     const ticket = await import('./live/ticket/route');
     const response = await ticket.POST(
       new NextRequest(
@@ -208,6 +213,91 @@ describe('fleet bridge tickets and live state', () => {
           headers: {
             authorization: `Bearer ${platform}`,
             cookie: `${APP_SESSION_COOKIE_NAME}=${mastermindToken}`,
+          },
+        }
+      )
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.bridge!.ticket).not.toHaveBeenCalled();
+  });
+
+  it('leases the admitted Mastermind app session until it expires', async () => {
+    const issued = createAppSessionToken({
+      targetApp: 'mastermind',
+      userId: OWNER,
+      mfa: { sessionId: 'mm-mfa', verifiedAt: NOW_S() },
+    });
+    mocks.appToken = issued.token;
+    const exp = verifyAppSessionToken(issued.token);
+    if (!exp.ok) throw new Error('fixture token did not verify');
+    const ticket = await import('./live/ticket/route');
+    const response = await ticket.POST(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/mastermind/fleet/live/ticket',
+        {
+          method: 'POST',
+          headers: { authorization: `Bearer ${issued.token}` },
+        }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.getClaims).not.toHaveBeenCalled();
+    const lastCall = mocks.bridge?.ticket?.mock.lastCall as
+      | [{ leaseExpiresAt: number }]
+      | undefined;
+    if (!lastCall) throw new Error('no ticket was issued');
+    const [{ leaseExpiresAt }] = lastCall;
+    expect(leaseExpiresAt).toBeGreaterThan(Date.now());
+    expect(leaseExpiresAt).toBeLessThanOrEqual(exp.claims.exp * 1000);
+  });
+
+  it('ignores an app token the wrapper did not admit', async () => {
+    // The wrapper admitted the Supabase session; a Mastermind app cookie on
+    // the same request must not set the lease or its MFA proof.
+    const sessionExpiresAt = NOW_S() + 30;
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { sub: OWNER, exp: sessionExpiresAt } },
+      error: null,
+    });
+    // A fresh MFA proof on the stray token must not stand in for the
+    // Supabase session's own proof.
+    const stray = createAppSessionToken({
+      targetApp: 'mastermind',
+      userId: OWNER,
+      mfa: { sessionId: 'stray-mfa', verifiedAt: NOW_S() },
+    }).token;
+    const ticket = await import('./live/ticket/route');
+    const response = await ticket.POST(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/mastermind/fleet/live/ticket',
+        {
+          method: 'POST',
+          headers: { cookie: `${APP_SESSION_COOKIE_NAME}=${stray}` },
+        }
+      )
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.bridge!.ticket).toHaveBeenLastCalledWith(
+      expect.objectContaining({ leaseExpiresAt: sessionExpiresAt * 1000 })
+    );
+  });
+
+  it('refuses the admitted app session after app sign-out', async () => {
+    const issued = createAppSessionToken({
+      targetApp: 'mastermind',
+      userId: OWNER,
+      mfa: { sessionId: 'mm-mfa', verifiedAt: NOW_S() },
+    });
+    mocks.appToken = issued.token;
+    const ticket = await import('./live/ticket/route');
+    const response = await ticket.POST(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/mastermind/fleet/live/ticket',
+        {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${issued.token}`,
+            cookie: `${APP_LOGOUT_COOKIE_NAME}=1`,
           },
         }
       )

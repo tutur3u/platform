@@ -17,9 +17,13 @@ import { FLEET_NO_STORE, fleetError } from '@/lib/mastermind/fleet/http';
  * accepts no input, so it grants nothing beyond what the owner can read.
  */
 export const POST = withSessionAuth(
-  async (request, { supabase, user }) => {
+  async (request, { appSessionToken, supabase, user }) => {
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
-    const lease = await ownerLiveLease(request, { supabase, userId: user.id });
+    const lease = await ownerLiveLease(request, {
+      appSessionToken,
+      supabase,
+      userId: user.id,
+    });
     if (lease.status === 'unavailable') return fleetError('unavailable', 503);
     if (lease.status !== 'allowed') return fleetError('mfa_required', 403);
     const bridge = fleetBridge();
