@@ -193,6 +193,17 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Owners of any non-Meet red fix it on main. Any other failure is outside this grant.',
   },
+  {
+    // Type Check and Test may be red only outside Meet's closure (calendar
+    // invitation routes and root-script drift). Security Checks and Meet
+    // Cloudflare stay required on this exact source.
+    id: 'RA-20261124-0100-MEET-TRANSCRIPT-2',
+    source: 'bacab61e463c6a6ef728f8c9e538958800e14d2f',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-24T07:59:00Z',
+    followUp:
+      'Owners of any non-Meet red fix it on main. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
