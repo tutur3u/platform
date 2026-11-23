@@ -73,6 +73,8 @@
     "src/app/api/meet-call/[meetingId]/forms/results/route.ts",
     "src/app/api/meet-call/[meetingId]/forms/route.ts",
     "src/app/api/meet-call/[meetingId]/guest/route.ts",
+    "src/app/api/meet-call/[meetingId]/guest/human-check/route.ts",
+    "src/app/api/meet-call/[meetingId]/guest/human-check/verify/route.ts",
     "src/app/api/meet-call/[meetingId]/mira-room/route.ts",
     "src/app/api/meet-call/[meetingId]/polls/route.ts",
     "src/app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts",
