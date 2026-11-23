@@ -38,7 +38,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
@@ -105,7 +105,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
@@ -135,7 +135,7 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "CRON-MOBILE-DISCOVERY: admit the default-off mobile Crashlytics collector on the existing half-hour trigger.",
+    "decision": "QA-CLEANUP-CRON-CONTROL-1: enable qa-test-user-cleanup (every 15 minutes, at most 25 expired QA test accounts per slot, one deletion at a time under the ledger lease with the cleanup and Cron Control stop fences checked before every destructive request) so Cron Control finishes expired and stuck QA test accounts; the previous stage is the live MOBILE-DISCOVERY identity.",
     "fields": ["vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."

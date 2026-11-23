@@ -1,7 +1,7 @@
 ---
 title: "QA test users"
 description: "Provision disposable signed-in test accounts for agent-driven QA with ttr qa users, mint automation sessions, and rely on automatic expiry cleanup."
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-23"
 ---
 
 `ttr qa users` gives agents real, signed-in accounts in a deployed environment
@@ -144,9 +144,10 @@ immediately; run it when a QA pass ends.
 | Pause provisioning | `update private.qa_test_user_control set provisioning_enabled = false` |
 | Stop the schedule | Cron Control operator `stop` for `qa-test-user-cleanup`, or remove it from `CRON_CONTROL_ENABLED_JOBS` |
 
-The job is off until `qa-test-user-cleanup` is listed in
-`CRON_CONTROL_ENABLED_JOBS`. Until then, run `ttr qa users cleanup --expired`
-after each run: Auth does not expire the accounts by itself.
+`qa-test-user-cleanup` is listed in `CRON_CONTROL_ENABLED_JOBS`
+(`apps/cron-control/cloudflare.config.ts`), so Cron Control runs it every 15
+minutes. Auth does not expire the accounts by itself; `ttr qa users cleanup
+--expired` runs the same cleanup immediately through the web operator path.
 
 ## Audit
 
