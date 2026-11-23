@@ -1022,6 +1022,12 @@ grant to those roles. Any role-membership change (`ALTER GROUP`,
 invalidate it. A new storage policy or helper that calls the
 routine therefore needs its own reviewed record. The same protected sign-off
 applies.
+The check skips a later migration whose exact SHA-256 appears, with a reason,
+in `storageAclReviewedLater` in `scripts/ci/security-definer-blocks.js`. Any
+edit to that file brings the full check back. Pin a file only after an
+independent review confirms that it leaves the routine's ACL unchanged. Land
+the pin in its own push before the migration: CI loads the guard from the
+base commit, so a pin added in the same push has no effect.
 A change may rebind a base record by changing only its `sourceDigest` for a
 migration it modifies. Every added or rebound record must match a finding the
 trusted guard recomputes over the head bytes.

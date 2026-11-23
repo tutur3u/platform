@@ -532,6 +532,73 @@ test('the storage ACL proof rejects moves, re-grants and hidden identifiers arou
   }
 });
 
+test('reviewed later migrations bypass the storage proof only at their exact digest', () => {
+  const { withoutReviewedLater } = require('./security-definer-blocks');
+  const crypto = require('node:crypto');
+  const source =
+    'create role fixture_reviewed nologin; grant fixture_reviewed to authenticator;';
+  const digest = crypto.createHash('sha256').update(source).digest('hex');
+  const reviewed = [{ file: 'x.sql', sourceDigest: digest, reason: 'fixture' }];
+  assert.deepEqual(withoutReviewedLater([source], reviewed), []);
+  assert.deepEqual(withoutReviewedLater([source + ' '], reviewed), [
+    source + ' ',
+  ]);
+  assert.deepEqual(
+    withoutReviewedLater([source], [{ ...reviewed[0], reason: ' ' }]),
+    [source]
+  );
+});
+
+test('the pinned memory migration is the only reviewed exception to the storage proof', (t) => {
+  const { storageAclReviewedLater } = require('./security-definer-blocks');
+  const entry = require('./security-definer-verified-findings.json').find(
+    (record) => record.remediationMode === 'acl-only'
+  );
+  const root = path.resolve(__dirname, '../..');
+  const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+  const remediation = read(entry.remediationMigration);
+  const proof = {
+    original: read(entry.file),
+    entry,
+    intervening: [],
+    later: [],
+  };
+  const unlisted =
+    'create role fixture_unlisted nologin; grant fixture_unlisted to authenticator;';
+  assert.equal(
+    verifyRemediation(remediation, { ...proof, later: [unlisted] }),
+    false
+  );
+  for (const pinned of storageAclReviewedLater) {
+    assert.ok(pinned.reason.trim().length > 0);
+    assert.ok(pinned.file > entry.remediationMigration, pinned.file);
+    if (!fs.existsSync(path.join(root, pinned.file))) {
+      t.diagnostic(`${pinned.file} is not in this checkout yet`);
+      continue;
+    }
+    const source = read(pinned.file);
+    assert.equal(
+      require('node:crypto').createHash('sha256').update(source).digest('hex'),
+      pinned.sourceDigest
+    );
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, later: [source] }),
+      true
+    );
+    assert.equal(
+      verifyRemediation(remediation, {
+        ...proof,
+        later: [source + '\n-- edited'],
+      }),
+      false
+    );
+    assert.equal(
+      verifyRemediation(remediation, { ...proof, later: [source, unlisted] }),
+      false
+    );
+  }
+});
+
 test('the storage ACL proof reads every versioned migration file', (t) => {
   const { trustedRecordsForScan } = require('./security-definer-admission');
   const entry = require('./security-definer-verified-findings.json').find(

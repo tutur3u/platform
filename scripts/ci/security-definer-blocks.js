@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -305,6 +306,32 @@ const storageAclProof = {
     'f44dbb1fc517cf0aae39a38fe87a37806c5d62ae5dd734a17b17c1ff64fe374b',
 };
 
+// Exact later migrations reviewed not to change the storage helper's ACL.
+// The pin is the file's SHA-256, so any edit falls back to the full proof.
+const storageAclReviewedLater = [
+  {
+    file: 'apps/database/supabase/migrations/20261123061000_memory_postgrest.sql',
+    sourceDigest:
+      'b000a7c599fb12c06b4b4edbc792a6ef4be9b829434bb0910d206d4a86121c75',
+    reason:
+      'Creates the NOLOGIN memory roles and schemas. It never names workspace_storage, grants authenticated or service_role, or runs dynamic SQL; its execute literals are PostgREST paths and privilege-check arguments.',
+  },
+];
+
+function withoutReviewedLater(sources, reviewed = storageAclReviewedLater) {
+  return sources.filter((source) => {
+    const digest = crypto.createHash('sha256').update(source).digest('hex');
+    return !reviewed.some(
+      (entry) =>
+        entry.sourceDigest === digest &&
+        typeof entry.reason === 'string' &&
+        entry.reason.trim().length > 0
+    );
+  });
+}
+module.exports.storageAclReviewedLater = storageAclReviewedLater;
+module.exports.withoutReviewedLater = withoutReviewedLater;
+
 // Statements around the follow-up that name the routine, its schema or its
 // input types may only be revokes or exact two-part grants to the allowed
 // roles.
@@ -486,7 +513,7 @@ function verifyStorageAcl(
     revoked.has('anon') &&
     allowed.every((role) => granted.has(role)) &&
     storageAclStaysScoped(
-      [...intervening, ...later],
+      [...intervening, ...withoutReviewedLater(later)],
       target,
       parseAcl,
       targetMatches
