@@ -9,8 +9,8 @@ class _Api extends Mock implements ApiClient {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() => CacheStore.instance.clearScope());
-  tearDown(() => CacheStore.instance.clearScope());
+  setUp(CacheStore.instance.clearScope);
+  tearDown(CacheStore.instance.clearScope);
 
   test('repeated transaction reads fetch only the requested page', () async {
     final api = _Api();
