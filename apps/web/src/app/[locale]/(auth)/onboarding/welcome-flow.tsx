@@ -24,6 +24,8 @@ export type WelcomeFlowProps = {
   avatarUser: WorkspaceUser;
   calendarOrigin: string;
   displayName: string;
+  /** Steps already saved, so a remount (a language switch) never loses them. */
+  initialCompleted?: readonly string[];
   initialStep: WelcomeStep;
   tasksOrigin: string;
 };
@@ -37,7 +39,9 @@ export function WelcomeFlow(props: WelcomeFlowProps) {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const [screen, setScreen] = useState<WelcomeScreen>(props.initialStep);
-  const [completed, setCompleted] = useState<WelcomeStep[]>([]);
+  const [completed, setCompleted] = useState<string[]>(() => [
+    ...new Set(props.initialCompleted ?? []),
+  ]);
   const [profile, setProfile] = useState<ProfileDraft>({
     language: locale,
     name: props.displayName,

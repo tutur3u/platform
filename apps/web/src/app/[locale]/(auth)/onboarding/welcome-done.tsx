@@ -9,7 +9,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { Link } from '@/i18n/routing';
 import { DoneScene } from './onboarding-illustrations';
 import { FOCUS_RING } from './welcome-controls';
@@ -44,6 +44,13 @@ export function WelcomeDone({
   workspaceSlug: string;
 }) {
   const t = useTranslations('onboarding_flow');
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // The closing screen replaces the step, so focus follows to its heading.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
   const steps: NextStep[] = [
     {
       chip: 'bg-calendar-bg-green text-dynamic-green',
@@ -69,10 +76,14 @@ export function WelcomeDone({
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col items-center bg-root-background px-4 py-8 text-foreground sm:px-7 sm:py-10">
+    <main className="flex min-h-dvh flex-col items-center bg-root-background px-4 py-8 text-foreground sm:px-7 sm:py-10">
       <DoneScene className="w-44 sm:w-[220px]" />
       <div className="mt-3 flex flex-col gap-1.5 text-center">
-        <h1 className="text-balance font-extrabold text-3xl leading-tight tracking-[-0.025em] sm:text-4xl">
+        <h1
+          className="text-balance font-extrabold text-3xl leading-tight tracking-[-0.025em] focus:outline-none sm:text-4xl"
+          ref={headingRef}
+          tabIndex={-1}
+        >
           {name ? t('done_title', { name }) : t('done_title_anonymous')}
         </h1>
         <p className="text-muted-foreground">
@@ -124,6 +135,6 @@ export function WelcomeDone({
           {t('replay_hint')}
         </p>
       </div>
-    </div>
+    </main>
   );
 }

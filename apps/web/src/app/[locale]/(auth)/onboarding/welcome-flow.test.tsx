@@ -23,7 +23,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations: () => (key: string) => key,
+  // Only the step announcement carries its values, so its wording is testable.
+  useTranslations: () => (key: string, values?: Record<string, unknown>) =>
+    key === 'step_announcement' && values
+      ? `${key}:${values.current}/${values.total}:${values.title}`
+      : key,
 }));
 vi.mock('next-themes', () => ({
   useTheme: () => ({ setTheme: mocks.setTheme, theme: 'system' }),
@@ -172,6 +176,80 @@ describe('profile step', () => {
   });
 });
 
+describe('step changes for assistive technology', () => {
+  it('does not steal focus on first mount, then announces the step', () => {
+    renderFlow();
+    expect(screen.getByRole('heading')).not.toHaveFocus();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'step_announcement:1/3:profile_title'
+    );
+  });
+
+  it('moves focus to the new heading and announces it when the step changes', async () => {
+    renderFlow();
+    click('skip_for_now');
+    const heading = await screen.findByRole('heading', { name: 'space_title' });
+    await waitFor(() => expect(heading).toHaveFocus());
+    expect(heading).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'step_announcement:2/3:space_title'
+    );
+  });
+
+  it('exposes the progress as a named progressbar with a text value', async () => {
+    renderFlow({ initialStep: 'space' });
+    const bar = screen.getByRole('progressbar', { name: 'progress_label' });
+    expect(bar).toHaveAttribute('aria-valuemin', '1');
+    expect(bar).toHaveAttribute('aria-valuemax', '3');
+    expect(bar).toHaveAttribute('aria-valuenow', '2');
+    expect(bar).toHaveAttribute('aria-valuetext', 'step_of');
+    expect(bar).not.toHaveAttribute('aria-hidden');
+  });
+
+  it('focuses the closing heading and makes it the main landmark', async () => {
+    renderFlow({ initialStep: 'interests' });
+    click('skip_for_now');
+    const heading = await screen.findByRole('heading', { name: /done_title/ });
+    await waitFor(() => expect(heading).toHaveFocus());
+    expect(screen.getByRole('main')).toContainElement(heading);
+  });
+});
+
+describe('progress survives a language switch', () => {
+  it('keeps the steps already saved when the flow remounts on a later step', async () => {
+    renderFlow({ initialCompleted: ['profile'], initialStep: 'space' });
+    click('continue');
+    await screen.findByText('interests_title');
+    expect(lastProgress()).toMatchObject({
+      completed_steps: ['profile', 'space'],
+      current_step: 'interests',
+    });
+  });
+
+  it('keeps them through a skip too, without duplicating one', async () => {
+    renderFlow({
+      initialCompleted: ['profile', 'profile'],
+      initialStep: 'space',
+    });
+    click('skip_for_now');
+    await screen.findByText('interests_title');
+    expect(lastProgress()).toEqual({
+      completed_steps: ['profile'],
+      current_step: 'interests',
+    });
+  });
+
+  it('writes the same progress call as before when nothing was saved yet', async () => {
+    renderFlow({ initialStep: 'space' });
+    click('continue');
+    await screen.findByText('interests_title');
+    expect(lastProgress()).toEqual({
+      completed_steps: ['space'],
+      current_step: 'interests',
+    });
+  });
+});
+
 describe('skipping', () => {
   it('persists a skip at every step and never marks the step done', async () => {
     renderFlow();
@@ -308,7 +386,25 @@ describe('space step', () => {
     await waitFor(() =>
       expect(mocks.acceptInvite).toHaveBeenCalledWith('ws-9')
     );
-    expect(await screen.findByRole('status')).toHaveTextContent('joined');
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('status').map((node) => node.textContent)
+      ).toContain('joined')
+    );
+  });
+
+  it('uses the shared radio group, so the radio keyboard pattern applies', () => {
+    renderFlow({ initialStep: 'space' });
+    const group = screen.getByRole('radiogroup', { name: 'workspace_group' });
+    const [solo, team] = screen.getAllByRole('radio');
+    expect(group).toHaveAttribute('data-slot', 'radio-group');
+    expect(group).toContainElement(solo ?? null);
+    expect(group).toContainElement(team ?? null);
+    expect(solo).toHaveAttribute('aria-checked', 'true');
+    expect(team).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(team as HTMLElement);
+    expect(team).toHaveAttribute('aria-checked', 'true');
+    expect(solo).toHaveAttribute('aria-checked', 'false');
   });
 });
 

@@ -92,7 +92,7 @@ export function StepInterests({
                     'flex size-5 items-center justify-center rounded-full border-2',
                     selected
                       ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input'
+                      : 'border-muted-foreground/75'
                   )}
                 >
                   {selected ? <Check className="size-3" /> : null}

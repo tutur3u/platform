@@ -57,6 +57,7 @@ export async function WelcomeRuntime({
       }}
       calendarOrigin={getCalendarAppOrigin()}
       displayName={user.display_name?.trim() || ''}
+      initialCompleted={progress?.completed_steps ?? []}
       initialStep={parseWelcomeStep(firstValue(params.step))}
       tasksOrigin={getTasksAppOrigin()}
     />

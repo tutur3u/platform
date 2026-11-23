@@ -71,6 +71,20 @@ describe('/onboarding gate', () => {
     });
   });
 
+  it('seeds the flow with the steps already saved', async () => {
+    mocks.getUserOnboardingProgress.mockResolvedValue({
+      completed_steps: ['profile'],
+    });
+    const result = (await run({ step: 'space' })) as ReactElement<
+      Record<string, unknown>
+    >;
+    expect(result.props.initialCompleted).toEqual(['profile']);
+
+    mocks.getUserOnboardingProgress.mockResolvedValue(null);
+    const fresh = (await run()) as ReactElement<Record<string, unknown>>;
+    expect(fresh.props.initialCompleted).toEqual([]);
+  });
+
   it('resumes the step a language switch asked for', async () => {
     const result = (await run({ step: 'space' })) as ReactElement<
       Record<string, unknown>

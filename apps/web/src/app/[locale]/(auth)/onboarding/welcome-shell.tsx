@@ -4,7 +4,7 @@ import { ChevronLeft } from '@tuturuuu/icons/lucide-static';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { FOCUS_RING, HIT_AREA } from './welcome-controls';
 import { WELCOME_STEPS, type WelcomeStep } from './welcome-model';
 
@@ -35,6 +35,19 @@ export function WelcomeShell({
 }) {
   const t = useTranslations('onboarding_flow');
   const index = WELCOME_STEPS.indexOf(step);
+  const stepLabel = t('step_of', {
+    current: index + 1,
+    total: WELCOME_STEPS.length,
+  });
+  const cardRef = useRef<HTMLDivElement>(null);
+  const shownStep = useRef(step);
+
+  // Move focus to the new step's heading, but never on first mount.
+  useEffect(() => {
+    if (shownStep.current === step) return;
+    shownStep.current = step;
+    cardRef.current?.querySelector<HTMLElement>('h1')?.focus();
+  }, [step]);
 
   return (
     <div className="flex min-h-dvh flex-col bg-root-background px-4 py-5 text-foreground sm:px-7">
@@ -61,14 +74,24 @@ export function WelcomeShell({
         </div>
         <div className="flex w-32 flex-col gap-1.5 sm:w-52">
           <span className="text-center text-muted-foreground text-xs">
-            {t('step_of', { current: index + 1, total: WELCOME_STEPS.length })}
+            {stepLabel}
           </span>
-          <div aria-hidden="true" className="flex gap-1.5">
+          <div
+            aria-label={t('progress_label')}
+            aria-valuemax={WELCOME_STEPS.length}
+            aria-valuemin={1}
+            aria-valuenow={index + 1}
+            aria-valuetext={stepLabel}
+            className="flex gap-1.5"
+            role="progressbar"
+          >
             {WELCOME_STEPS.map((id, position) => (
               <i
                 className={cn(
                   'h-1.5 flex-1 rounded-full',
-                  position <= index ? 'bg-primary' : 'bg-secondary'
+                  // 75% of the muted text tone reaches 3:1 on the ground tone
+                  // in light and dark; --secondary vanishes against it.
+                  position <= index ? 'bg-primary' : 'bg-muted-foreground/75'
                 )}
                 key={id}
               />
@@ -88,7 +111,15 @@ export function WelcomeShell({
       </header>
 
       <main className="mx-auto mt-6 flex w-full max-w-[500px] flex-1 flex-col gap-4 pb-8">
+        <p aria-live="polite" className="sr-only" role="status">
+          {t('step_announcement', {
+            current: index + 1,
+            title: t(`${step}_title`),
+            total: WELCOME_STEPS.length,
+          })}
+        </p>
         <div
+          ref={cardRef}
           className="fade-in-0 slide-in-from-bottom-2 flex animate-in flex-col gap-5 rounded-[28px] border bg-card p-5 duration-300 sm:p-7 motion-reduce:animate-none"
           data-slot="card"
         >
@@ -114,7 +145,10 @@ export function StepHeading({
     <div className="flex items-center gap-4">
       {scene}
       <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="text-balance font-extrabold text-2xl leading-tight tracking-[-0.02em]">
+        <h1
+          className="text-balance font-extrabold text-2xl leading-tight tracking-[-0.02em] focus:outline-none"
+          tabIndex={-1}
+        >
           {title}
         </h1>
         <p className="text-muted-foreground text-sm">{subtitle}</p>

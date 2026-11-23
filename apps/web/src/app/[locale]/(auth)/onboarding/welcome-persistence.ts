@@ -10,7 +10,6 @@ import {
   goalsFromInterests,
   type InterestId,
   type WelcomeScreen,
-  type WelcomeStep,
 } from './welcome-model';
 
 /**
@@ -28,7 +27,7 @@ export function saveProgress(update: ConnectedOnboardingUpdate) {
  * `completed`; reaching the closing screen completes the flow.
  */
 export function saveStepPosition(input: {
-  completed: readonly WelcomeStep[];
+  completed: readonly string[];
   next: WelcomeScreen;
   teamWorkspaceId?: string;
 }) {

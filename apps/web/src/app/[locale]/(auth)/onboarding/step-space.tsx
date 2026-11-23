@@ -4,14 +4,15 @@ import { useMutation } from '@tanstack/react-query';
 import { inviteWorkspaceMembers } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { createWorkspaceFromOnboarding } from './actions';
 import { SpaceScene } from './onboarding-illustrations';
 import { type JoinedWorkspace, SpaceInvites } from './space-invites';
 import { SpaceTeamForm } from './space-team-form';
-import { FOCUS_RING, InlineAlert } from './welcome-controls';
+import { InlineAlert } from './welcome-controls';
 import { WORKSPACE_LIMIT_CODE } from './welcome-model';
 import { StepHeading } from './welcome-shell';
 
@@ -33,43 +34,42 @@ class SpaceError extends Error {
   }
 }
 
+/**
+ * One tile of the radio group. The Radix item brings the radio keyboard
+ * pattern (one tab stop, arrow keys move and select); the label makes the
+ * whole tile the click target.
+ */
 function ModeOption({
   checked,
   description,
   label,
-  onSelect,
+  value,
 }: {
   checked: boolean;
   description: string;
   label: string;
-  onSelect: () => void;
+  value: SpaceDraft['mode'];
 }) {
+  const id = useId();
   return (
-    <button
-      aria-checked={checked}
+    <label
       className={cn(
-        FOCUS_RING,
-        'flex w-full items-center gap-3.5 rounded-2xl border px-3.5 py-3 text-left transition-colors motion-reduce:transition-none',
+        'flex w-full cursor-pointer items-center gap-3.5 rounded-2xl border px-3.5 py-3 text-left transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ring has-[:focus-visible]:outline-offset-2 motion-reduce:transition-none',
         checked ? 'border-primary bg-calendar-bg-pink' : 'hover:bg-accent'
       )}
-      onClick={onSelect}
-      role="radio"
-      type="button"
+      htmlFor={id}
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-full border-2',
-          checked ? 'border-primary bg-primary' : 'border-input'
-        )}
-      >
-        {checked ? <span className="size-1.5 rounded-full bg-card" /> : null}
-      </span>
+      {/* 75% of the muted text tone keeps the empty ring at 3:1 or better. */}
+      <RadioGroupItem
+        className="size-5 border-2 border-muted-foreground/75 shadow-none data-[state=checked]:border-primary focus-visible:ring-0 focus-visible:outline-none"
+        id={id}
+        value={value}
+      />
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="font-semibold text-sm">{label}</span>
         <span className="text-muted-foreground text-xs">{description}</span>
       </span>
-    </button>
+    </label>
   );
 }
 
@@ -143,24 +143,27 @@ export function StepSpace({
         title={t('space_title')}
       />
       <SpaceInvites onJoined={onJoined} />
-      <div
+      <RadioGroup
         aria-label={t('workspace_group')}
-        className="flex flex-col gap-2.5"
-        role="radiogroup"
+        className="gap-2.5"
+        onValueChange={(mode) =>
+          onChange({ ...draft, mode: mode === 'team' ? 'team' : 'solo' })
+        }
+        value={draft.mode}
       >
         <ModeOption
           checked={draft.mode === 'solo'}
           description={t('just_me_description')}
           label={t('just_me')}
-          onSelect={() => onChange({ ...draft, mode: 'solo' })}
+          value="solo"
         />
         <ModeOption
           checked={draft.mode === 'team'}
           description={t('with_team_description')}
           label={t('with_team')}
-          onSelect={() => onChange({ ...draft, mode: 'team' })}
+          value="team"
         />
-      </div>
+      </RadioGroup>
       {draft.mode === 'team' ? (
         <SpaceTeamForm
           emails={draft.emails}

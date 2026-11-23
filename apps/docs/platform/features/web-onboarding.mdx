@@ -17,14 +17,16 @@ Sorbet scope and the `/onboarding` URL) and never gates product access.
 | Finished means `completed_at` or `dismissed_at` is set on the account's `onboarding_progress` row. | Reaching the closing screen sets `completed_at`; Skip setup or dismissing the home banner sets `dismissed_at`. | `/onboarding`, workspace home. | None. |
 | Every step and the whole flow can be skipped. | "Skip for now" skips the current step and saves the position without marking the step done. "Skip setup and go to my workspace" records `dismissed_at`. | Top bar and card footer of every step. | A failed save never traps the person; skipping always continues. |
 | Product news by email ships disabled and off, with a "Coming soon" note, and stores nothing. | The switch cannot be turned on, and the flow makes no write to the notification preferences, on Continue, on skip or on Skip setup. | Step 1. | None until the audited consent record (per-user consent with who, when, source surface and policy version) is applied in production. The enabling code lands after that. |
-| The account notification settings show the marketing email toggle off and disabled with the same "Coming soon" note. | The event type, the web and push channels, the API and the stored rows are unchanged; only the email cell is read-only. | Account notification settings in `apps/web` and `apps/workspace`. | The group bulk actions and the first-load row creation still write this row; the consent record supersedes it. |
-| The three picks of step 3 are saved as journey `goals` on the progress row. | Calendar, Tasks and Mira map to `focus`; Chat to `collaborate`; Education to `learn`; Finance to `operate`. An empty pick changes nothing. | `PATCH /api/v1/user/onboarding-progress`. | The row has no per-tile column, so a replay starts the tiles empty. |
+| The account notification settings show the marketing email toggle off and disabled with the same "Coming soon" note. | The event type, the web and push channels, the API and the stored rows are unchanged; only the email cell is read-only. | Account notification settings in `apps/web` and `apps/workspace`. | The group bulk actions (Enable all, Disable all) and the first-load row creation skip this pair, and the group counts leave it out; it is never written until the consent record applies. |
+| Step 3 is choose-any from six tiles (including none) and the picks are saved as journey `goals` on the progress row. | Calendar, Tasks and Mira map to `focus`; Chat to `collaborate`; Education to `learn`; Finance to `operate`. An empty pick changes nothing. | `PATCH /api/v1/user/onboarding-progress`. | The row has no per-tile column, so a replay starts the tiles empty. |
 | "Teach or learn" selects the education audience mode. | The web has no audience-mode concept; the choice writes the account config `MOBILE_AUDIENCE_MODE` the Flutter app reads, unless a mode is already stored. | Step 3, mobile home. | A stored `general` or `education` value is never overwritten. |
-| A language choice applies when the person continues. | The locale cookie is set and the flow resumes at the next step in the new language (`?step=space`). | Step 1. | Appearance applies immediately through the app theme provider. |
+| A language choice applies when the person continues. | The locale cookie is set and the flow resumes at the next step in the new language (`?step=space`). | Step 1. | Appearance applies immediately through the app theme provider, also when the step is skipped, and is saved only when the person presses Continue. |
+| A step change is announced and focus follows it. | The heading of the new step takes focus (not on first mount), a polite live region reads "Step N of 3: title", the progress bar is a named `progressbar` with a text value, and the closing screen focuses its heading and is the `main` landmark. | Every step and the closing screen. | None. |
+| A language switch keeps earlier progress. | The flow is seeded with the `completed_steps` already saved, so the next save is the union and never drops a finished step. The write itself is unchanged. | Step 1 to Step 2, `?step=`. | None. |
 | A pending workspace invitation is shown as a card with Join. | Join calls the existing accept-invite API. | Step 2. | Personal workspaces are never listed. |
 | "With my team" creates a workspace through the existing server action, then invites by email. | The action's workspace limit failure (`WORKSPACE_LIMIT_REACHED`) shows inline, localized. A retry never creates a second workspace. | Step 2. | If invites fail after the workspace exists, the person sees a note and Continue moves on. |
 | New accounts that have not finished see a dismissible "Finish setting up" banner. | Personal workspace home only, for accounts created within 30 days. | Workspace home. | Older accounts never see it. |
-| Replay from Settings › Onboarding › Restart full journey opens `/onboarding?replay=1`. | It clears `dismissed_at` and `replay_app`. | Settings dialog (every app that ships it), Colab settings. | "Replay this app guide" is unchanged and still dispatches `tuturuuu:onboarding-replay`. |
+| Replay from Settings › Guidance and learning › Restart full journey opens `/onboarding?replay=1`. | It clears `dismissed_at` and `replay_app`. | Settings dialog (every app that ships it), Colab settings. | "Replay this app guide" is unchanged and still dispatches `tuturuuu:onboarding-replay`. |
 
 The post-sign-in landing has no onboarding-aware hook (the callback, hand-off
 and return-URL code is frozen), so the web reaches the welcome through the
@@ -42,10 +44,12 @@ redirect.
   every step persists the skip, the product news switch is disabled, off and
   never written, workspace errors show inline, no second
   workspace on retry, invitations, interests saved as goals and the education
-  mode.
+  mode; step changes move focus and announce; saved progress survives a
+  remount.
 - `apps/web/src/components/notifications/notification-preferences-table.test.tsx`
   (and the `apps/workspace` copy): the marketing email switch is off, disabled
-  and described by the note; other switches stay enabled; no save on click.
+  and described by the note; other switches stay enabled; no save on click;
+  Enable all, Disable all and first-load creation never write that pair.
 - `apps/web/src/app/[locale]/(auth)/onboarding/actions.test.ts`: the limit
   error code reaches the UI.
 - `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/welcome-nudge.test.tsx`:
