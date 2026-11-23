@@ -126,7 +126,7 @@ it('pauses for consent and says how many people it waits for', async () => {
   expect(await screen.findByText(ai.status_paused_title)).toBeTruthy();
   expect(
     screen.getByText(
-      'Waiting for 2 people to allow the transcript. Audio stays on this device until then.'
+      'Waiting for 2 people to allow the transcript. Audio heard until then is discarded, not saved or sent.'
     )
   ).toBeTruthy();
   expect(screen.getByText('1 person declined.')).toBeTruthy();

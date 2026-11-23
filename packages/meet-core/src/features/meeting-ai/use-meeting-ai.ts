@@ -30,6 +30,11 @@ import {
   meetingAiCreditReason,
 } from './request-failure';
 
+/** When a 16 kHz mono PCM16 WAV clip that just arrived began. */
+function capturedSince(audio: Blob, now = Date.now()) {
+  return now - Math.max(0, audio.size - 44) / 32;
+}
+
 export function useMeetingAi(
   wsId: string,
   meetingId: string,
@@ -51,7 +56,14 @@ export function useMeetingAi(
       ? 'vi'
       : 'en';
   const hints = useRef(settings);
+  // When the consent fence last became ready; null while it is not.
+  const consentReadySince = useRef<number | null>(
+    settings.consentReady === false ? null : Date.now()
+  );
   useLayoutEffect(() => {
+    if (settings.consentReady === false) consentReadySince.current = null;
+    else if (consentReadySince.current === null)
+      consentReadySince.current = Date.now();
     hints.current = settings;
   });
 
@@ -345,6 +357,11 @@ export function useMeetingAi(
     }, overflow);
     const recorder = new MeetAudioCapture((audio, startSeconds, source) => {
       if (!current()) return;
+      // Only attributed audio captured entirely after everyone allowed the
+      // transcript may leave the device; anything else is discarded here.
+      if (!source?.accountId) return;
+      const readySince = consentReadySince.current;
+      if (readySince === null || readySince > capturedSince(audio)) return;
       batcher.add({
         audio,
         startSeconds,

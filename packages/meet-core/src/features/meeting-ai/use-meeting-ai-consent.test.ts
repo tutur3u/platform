@@ -10,7 +10,13 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   stop: vi.fn(),
   refetch: vi.fn(),
-  onChunk: null as null | ((audio: Blob, seconds: number) => void),
+  onChunk: null as
+    | null
+    | ((
+        audio: Blob,
+        seconds: number,
+        source?: { accountId?: string; kind: 'microphone' | 'shared_audio' }
+      ) => void),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   getMeetAiState: vi.fn(),
@@ -30,8 +36,14 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 vi.mock('./audio', () => ({
   MeetAudioCapture: class {
-    constructor(callback: typeof mocks.onChunk) {
-      mocks.onChunk = callback;
+    constructor(callback: NonNullable<typeof mocks.onChunk>) {
+      // Real capture attributes every clip to an account.
+      mocks.onChunk = (audio, seconds, source) =>
+        callback(
+          audio,
+          seconds,
+          source ?? { accountId: 'acct', kind: 'microphone' }
+        );
     }
     async start() {}
     update() {}
@@ -122,5 +134,43 @@ it('reports the starting and finishing phases', async () => {
     await started;
   });
   expect(hook.result.current.phase).toBeNull();
+  hook.unmount();
+});
+
+it('drops a window that began before everyone allowed, even if it arrives after', async () => {
+  vi.useFakeTimers();
+  let consentReady = false;
+  const hook = renderHook(
+    () =>
+      useMeetingAi('workspace', 'meeting', [], true, true, 'actor-a', {
+        consentReady,
+      }),
+    { wrapper }
+  );
+  await act(() => hook.result.current.start());
+  consentReady = true;
+  hook.rerender();
+  // Ten seconds of 16 kHz PCM16 audio that started while someone was undecided.
+  const tenSeconds = new Blob([new Uint8Array(44 + 32_000 * 10)]);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2000);
+    mocks.onChunk?.(tenSeconds, 0);
+    await vi.advanceTimersByTimeAsync(10_100);
+  });
+  expect(mocks.upload).not.toHaveBeenCalled();
+  hook.unmount();
+});
+
+it('never sends audio that cannot be attributed to an account', async () => {
+  vi.useFakeTimers();
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper,
+  });
+  await act(() => hook.result.current.start());
+  await act(async () => {
+    mocks.onChunk?.(new Blob(['audio']), 0, { kind: 'microphone' });
+    await vi.advanceTimersByTimeAsync(10_100);
+  });
+  expect(mocks.upload).not.toHaveBeenCalled();
   hook.unmount();
 });

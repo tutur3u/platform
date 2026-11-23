@@ -10,7 +10,13 @@ const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   stop: vi.fn(),
   refetch: vi.fn(),
-  onChunk: null as null | ((audio: Blob, seconds: number) => void),
+  onChunk: null as
+    | null
+    | ((
+        audio: Blob,
+        seconds: number,
+        source?: { accountId?: string; kind: 'microphone' | 'shared_audio' }
+      ) => void),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   getMeetAiState: vi.fn(),
@@ -30,8 +36,14 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 vi.mock('./audio', () => ({
   MeetAudioCapture: class {
-    constructor(callback: typeof mocks.onChunk) {
-      mocks.onChunk = callback;
+    constructor(callback: NonNullable<typeof mocks.onChunk>) {
+      // Real capture attributes every clip to an account.
+      mocks.onChunk = (audio, seconds, source) =>
+        callback(
+          audio,
+          seconds,
+          source ?? { accountId: 'acct', kind: 'microphone' }
+        );
     }
     async start() {}
     update() {}

@@ -1798,8 +1798,13 @@ The host opens **Transcript & notes** and starts the live transcript. Starting
 records the host's own Allow. Every other participant sees a **Transcribing**
 indicator in the call header that opens the consent notice on its own until they
 choose **Allow** or **Decline**. Until everyone present allows it, the panel shows
-**Paused until everyone allows it** with the number still waiting and declined,
-and audio windows stay on the host's device. The server also refuses any chunk
+**Paused until everyone allows it** with the number still waiting and declined.
+Audio captured before everyone allowed, including any window that began before
+the last Allow, and audio without a speaker account is discarded on the host's
+device, never saved or sent. The notice tells each participant that the host and
+the meeting workspace's admins can read the transcript and notes, and that
+Decline pauses it for everyone while lines already transcribed stay and feed the
+notes. The server also refuses any chunk
 while the fence is not ready, so the transcript shows a gap rather than
 unconsented speech.
 

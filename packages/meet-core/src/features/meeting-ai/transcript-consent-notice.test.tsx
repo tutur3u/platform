@@ -57,6 +57,8 @@ it('asks a participant who has not chosen and records only their Allow', async (
   );
   show();
   expect(await screen.findByText(ai.consent_body)).toBeTruthy();
+  // Everyone learns who can read it and what Decline does before choosing.
+  expect(screen.getByText(ai.consent_readers)).toBeTruthy();
   expect(screen.getByText('Waiting for 2 people.')).toBeTruthy();
   expect(screen.getByText('1/3 allowed')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: ai.consent_allow }));

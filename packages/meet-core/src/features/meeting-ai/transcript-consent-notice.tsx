@@ -55,6 +55,9 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
         <div className="space-y-1">
           <h2 className="font-medium">{t('consent_title')}</h2>
           <p className="text-muted-foreground">{t('consent_body')}</p>
+          <p className="text-muted-foreground text-xs">
+            {t('consent_readers')}
+          </p>
         </div>
         <p role="status" className="flex items-center gap-1.5 text-xs">
           <Users aria-hidden className="size-3.5 text-muted-foreground" />
