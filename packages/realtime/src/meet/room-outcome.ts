@@ -32,4 +32,6 @@ export const ENDED_ROOM_TOOLS = {
   liveActivityLimits: undefined,
   penboard: undefined,
   penboardLimits: undefined,
+  upskiiPresentation: undefined,
+  upskiiPresentationLimits: undefined,
 } satisfies Partial<MeetRoomSnapshot>;

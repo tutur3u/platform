@@ -5,6 +5,10 @@ import {
 } from './live-activities-schema';
 import { penboardClientMessages, type PenboardServerMessage } from './penboard';
 import {
+  upskiiPresentationClientMessages,
+  type UpskiiPresentationServerMessage,
+} from './room-upskii-presentation';
+import {
   liveQaClientMessages,
   type LiveQaServerMessage,
 } from './live-qa-schema';
@@ -95,6 +99,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   transcriptionConsentMessageSchema,
   ...liveActivityClientMessages,
   ...penboardClientMessages,
+  ...upskiiPresentationClientMessages,
   ...liveQaClientMessages,
   z.object({
     type: z.literal('media.quality'),
@@ -296,6 +301,7 @@ export type MeetRealtimeRoomTrack = {
 export type MeetRealtimeServerMessage =
   | LiveActivitiesServerMessage
   | PenboardServerMessage
+  | UpskiiPresentationServerMessage
   | LiveQaServerMessage
   | TranscriptionStateMessage
   | TranscriptionConsentMessage

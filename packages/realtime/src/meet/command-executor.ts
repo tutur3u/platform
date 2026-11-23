@@ -1,6 +1,7 @@
 import { applyLiveActivities } from './live-activities';
 import { liveActivityAttemptRefusal } from './live-activity-rate';
 import { applyPenboard } from './penboard';
+import { applyUpskiiPresentation } from './room-upskii-presentation';
 import { applyLiveQa } from './live-qa';
 import type { MeetRealtimeServerMessage } from './messages';
 import {
@@ -107,7 +108,9 @@ export class MeetCommandExecutor {
       }
     }
     const tool =
-      applyLiveActivities(state, command) ?? applyPenboard(state, command);
+      applyLiveActivities(state, command) ??
+      applyPenboard(state, command) ??
+      applyUpskiiPresentation(state, command);
     if (tool) {
       if (tool.state !== state || !options.replyOnly)
         return Promise.resolve(options.commit(tool));
