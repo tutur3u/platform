@@ -24,6 +24,7 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Tooltip,
@@ -105,9 +106,10 @@ export function BoardPublicLinkSection({
   const publicUrl = buildPublicBoardUrl(locale, publicLink);
   const isMutating = enableMutation.isPending || disableMutation.isPending;
   const statusBadge = publicLinkQuery.isLoading ? (
-    <LoadingRegion srLabel={t('common.loading')}>
-      <Skeleton aria-hidden="true" className="h-5 w-14 rounded-full" />
-    </LoadingRegion>
+    <LoadingPlaceholder
+      srLabel={t('common.loading')}
+      className="h-5 w-14 rounded-full"
+    />
   ) : publicLink ? (
     <Badge className="bg-dynamic-green/10 px-2 py-0.5 text-[10px] text-dynamic-green">
       {t('common.enabled')}

@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -50,10 +49,11 @@ export function TaskPlanProject({
       <p className="text-muted-foreground text-sm">{t('projectConsent')}</p>
       {plan.enabled && (
         <>
+          {/* The select below stays in place (disabled) while projects load,
+              so only screen readers hear the loading state: no layout jump on
+              background refetches. */}
           {plan.query.isFetching && (
-            <LoadingRegion srLabel={t('projectsLoading')}>
-              <SkeletonList rows={2} withAvatar={false} />
-            </LoadingRegion>
+            <p role="status" className="sr-only">{t('projectsLoading')}</p>
           )}
           {plan.query.isError && (
             <div role="alert">

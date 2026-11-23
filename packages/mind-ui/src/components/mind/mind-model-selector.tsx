@@ -151,14 +151,12 @@ export function MindModelSelector({ model, onModelChange }: Props) {
                   onClick={() => modelsQuery.fetchNextPage()}
                 >
                   {modelsQuery.isFetchingNextPage ? (
-                    <LoadingRegion
-                      srLabel={t('ai.loadingMoreModels')}
-                      className="inline-flex"
-                    >
-                      <Loader2 className="animate-spin motion-reduce:animate-none" />
-                    </LoadingRegion>
+                    <Loader2 className="animate-spin motion-reduce:animate-none" />
                   ) : null}
                   {t('ai.loadMoreModels')}
+                  {modelsQuery.isFetchingNextPage ? (
+                    <span className="sr-only">{t('ai.loadingMoreModels')}</span>
+                  ) : null}
                 </Button>
               </div>
             )}

@@ -18,7 +18,8 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
-import { LoadingRegion, Skeleton, SkeletonList } from '@tuturuuu/ui/skeleton';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -151,9 +152,10 @@ export function BoardShareSettingsPanel({
     : undefined;
   const membersCount = members?.length;
   const membersStatusBadge = viewableMembersQuery.isLoading ? (
-    <LoadingRegion srLabel={t('common.loading')}>
-      <Skeleton aria-hidden="true" className="h-5 w-8 rounded-full" />
-    </LoadingRegion>
+    <LoadingPlaceholder
+      srLabel={t('common.loading')}
+      className="h-5 w-8 rounded-full"
+    />
   ) : typeof membersCount === 'number' ? (
     <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
       {membersCount}
@@ -164,9 +166,10 @@ export function BoardShareSettingsPanel({
     </Badge>
   );
   const guestsStatusBadge = sharesQuery.isLoading ? (
-    <LoadingRegion srLabel={t('common.loading')}>
-      <Skeleton aria-hidden="true" className="h-5 w-8 rounded-full" />
-    </LoadingRegion>
+    <LoadingPlaceholder
+      srLabel={t('common.loading')}
+      className="h-5 w-8 rounded-full"
+    />
   ) : shares.length ? (
     <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
       {shares.length}

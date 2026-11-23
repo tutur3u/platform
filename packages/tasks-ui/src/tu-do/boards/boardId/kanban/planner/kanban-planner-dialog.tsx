@@ -23,7 +23,7 @@ import { PlannerSection } from './planner-section';
 import { PlannerSharePanel } from './planner-share-dialog';
 import { PlannerTargetControls } from './planner-target-controls';
 import { useKanbanPlannerState } from './use-kanban-planner-state';
-import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 
 interface KanbanPlannerDialogProps {
   boardId: string | null;
@@ -80,12 +80,10 @@ export function KanbanPlannerDialog({
               defaultOpen
               badge={
                 planner.plansQuery.isLoading ? (
-                  <LoadingRegion srLabel={t('loading')}>
-                    <Skeleton
-                      aria-hidden="true"
-                      className="h-5 w-6 rounded-full"
-                    />
-                  </LoadingRegion>
+                  <LoadingPlaceholder
+                    srLabel={t('loading')}
+                    className="h-5 w-6 rounded-full"
+                  />
                 ) : (
                   <Badge variant="secondary">{planCount}</Badge>
                 )

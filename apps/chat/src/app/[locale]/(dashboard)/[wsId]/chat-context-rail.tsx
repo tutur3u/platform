@@ -258,27 +258,30 @@ function RailButton({
   /** Announced instead of the label while the button's data loads. */
   srLabel?: string;
 }) {
+  const button = (
+    <Button
+      aria-busy={srLabel ? true : undefined}
+      aria-label={srLabel ?? label}
+      className={cn(
+        'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 transition-colors',
+        active
+          ? 'bg-foreground text-background hover:bg-foreground/90'
+          : 'bg-background hover:bg-accent',
+        disabled && 'cursor-not-allowed opacity-50 hover:bg-background'
+      )}
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+      variant="ghost"
+    >
+      {children}
+    </Button>
+  );
+  // No tooltip while loading: the label is announced through aria-label.
+  if (srLabel) return button;
   return (
-    <Tooltip open={srLabel ? false : undefined}>
-      <TooltipTrigger asChild>
-        <Button
-          aria-busy={srLabel ? true : undefined}
-          aria-label={srLabel ?? label}
-          className={cn(
-            'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 transition-colors',
-            active
-              ? 'bg-foreground text-background hover:bg-foreground/90'
-              : 'bg-background hover:bg-accent',
-            disabled && 'cursor-not-allowed opacity-50 hover:bg-background'
-          )}
-          disabled={disabled}
-          onClick={onClick}
-          type="button"
-          variant="ghost"
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
