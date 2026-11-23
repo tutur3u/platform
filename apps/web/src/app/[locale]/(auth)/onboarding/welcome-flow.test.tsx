@@ -26,7 +26,7 @@ vi.mock('next-intl', () => ({
   // Only the step announcement carries its values, so its wording is testable.
   useTranslations: () => (key: string, values?: Record<string, unknown>) =>
     key === 'step_announcement' && values
-      ? `${key}:${values.current}/${values.total}:${values.title}`
+      ? `${key}:${values.current}/${values.total}`
       : key,
 }));
 vi.mock('next-themes', () => ({
@@ -181,7 +181,7 @@ describe('step changes for assistive technology', () => {
     renderFlow();
     expect(screen.getByRole('heading')).not.toHaveFocus();
     expect(screen.getByRole('status')).toHaveTextContent(
-      'step_announcement:1/3:profile_title'
+      'step_announcement:1/3'
     );
   });
 
@@ -192,7 +192,7 @@ describe('step changes for assistive technology', () => {
     await waitFor(() => expect(heading).toHaveFocus());
     expect(heading).toHaveAttribute('tabindex', '-1');
     expect(screen.getByRole('status')).toHaveTextContent(
-      'step_announcement:2/3:space_title'
+      'step_announcement:2/3'
     );
   });
 

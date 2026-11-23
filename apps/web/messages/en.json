@@ -12834,7 +12834,7 @@
     "skip_setup": "Skip setup and go to my workspace",
     "space_subtitle": "Your personal workspace is ready. Add a team now or later.",
     "space_title": "Set up your space",
-    "step_announcement": "Step {current} of {total}: {title}",
+    "step_announcement": "Step {current} of {total}",
     "step_of": "Step {current} of {total}",
     "theme_dark": "Dark",
     "theme_light": "Light",

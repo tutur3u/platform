@@ -72,7 +72,7 @@ export function WelcomeShell({
             />
           )}
         </div>
-        <div className="flex w-32 flex-col gap-1.5 sm:w-52">
+        <div className="flex w-24 min-w-0 flex-col gap-1.5 sm:w-52">
           <span className="text-center text-muted-foreground text-xs">
             {stepLabel}
           </span>
@@ -114,7 +114,6 @@ export function WelcomeShell({
         <p aria-live="polite" className="sr-only" role="status">
           {t('step_announcement', {
             current: index + 1,
-            title: t(`${step}_title`),
             total: WELCOME_STEPS.length,
           })}
         </p>
@@ -142,7 +141,7 @@ export function StepHeading({
   title: string;
 }) {
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
       {scene}
       <div className="flex min-w-0 flex-col gap-1">
         <h1
