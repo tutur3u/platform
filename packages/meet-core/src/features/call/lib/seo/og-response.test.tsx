@@ -1,16 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// Mirrors next/og: a year-long immutable default merged with caller headers.
+// Mirrors next/og: caller headers are spread over its lowercase defaults.
 vi.mock('next/og', () => ({
   ImageResponse: class extends Response {
-    constructor(_element: unknown, options: { headers?: HeadersInit } = {}) {
-      const headers = new Headers({
-        'content-type': 'image/png',
-        'cache-control': 'public, immutable, no-transform, max-age=31536000',
+    constructor(
+      _element: unknown,
+      options: { headers?: Record<string, string> } = {}
+    ) {
+      super('png', {
+        headers: {
+          'content-type': 'image/png',
+          'cache-control': 'public, immutable, no-transform, max-age=31536000',
+          ...options.headers,
+        },
       });
-      for (const [key, value] of new Headers(options.headers))
-        headers.append(key, value);
-      super('png', { headers });
     }
   },
 }));

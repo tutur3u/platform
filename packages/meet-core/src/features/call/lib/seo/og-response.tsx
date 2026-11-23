@@ -14,12 +14,16 @@ export function meetOgCacheControl(content: MeetOgContent) {
 }
 
 export function renderMeetOgImage(content: MeetOgContent) {
-  const response = new ImageResponse(<MeetOgCard content={content} />, OG_SIZE);
-  // ImageResponse ships its own year-long immutable policy; replace it rather
-  // than merge, or a revoked detail card could outlive its five minutes.
-  response.headers.set('Cache-Control', meetOgCacheControl(content));
+  // ImageResponse spreads these over its own lowercase defaults, including a
+  // year-long immutable cache-control, so the keys must be lowercase to
+  // replace them instead of being merged beside them.
+  const headers: Record<string, string> = {
+    'cache-control': meetOgCacheControl(content),
+  };
   // Room cards stay out of image search; the landing card may be indexed.
-  if (content.variant !== 'landing')
-    response.headers.set('X-Robots-Tag', 'noindex');
-  return response;
+  if (content.variant !== 'landing') headers['x-robots-tag'] = 'noindex';
+  return new ImageResponse(<MeetOgCard content={content} />, {
+    ...OG_SIZE,
+    headers,
+  });
 }
