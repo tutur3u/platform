@@ -12,6 +12,7 @@ import { MeetAiError, type MeetAiParams } from './access';
 import { followupAccess } from './followup-context';
 import { prepareCalendarFollowup } from './followup-event';
 import { prepareTaskFollowup } from './followup-task';
+import { linkSourceMeeting } from '../../meeting-record/server/source-link';
 import { meetAiAvailable } from './workspace-gate';
 
 export const followupInputSchema = z.object({
@@ -204,6 +205,8 @@ async function createFollowupAttempt(
     );
   const resultId =
     'task' in confirmed.data ? confirmed.data.task.id : confirmed.data.event.id;
+  if ('task' in confirmed.data)
+    await linkSourceMeeting(access, confirmed.data.task.id);
   const base = `https://${task ? 'tasks' : 'calendar'}.tuturuuu.com/${encodeURIComponent(access.workspaceId)}`;
   const saved = {
     url:
