@@ -1,4 +1,4 @@
--- Contract for 20261124013000_project_links_and_meeting_records.sql.
+-- Contract for 20261124052000_project_links_and_meeting_records.sql.
 -- The tables are private and reached only by service_role; product servers
 -- enforce membership and edit rights. W1 holds meetings M1 and M3, event E1,
 -- project P1, board B1 and task T1/T3. W2 holds M9, E9, P9 and T9 for
