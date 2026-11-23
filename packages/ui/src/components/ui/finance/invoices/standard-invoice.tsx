@@ -29,6 +29,7 @@ import {
   InvoiceProductsPermissionWarning,
   isPermissionRequestError,
 } from './components/invoice-products-permission-warning';
+import { StandardInvoiceTuitionWarning } from './components/standard-invoice-tuition-warning';
 import { InvoiceUserHistoryAccordion } from './components/invoice-user-history-accordion';
 import { CreatePromotionDialog } from './create-promotion-dialog';
 import type { AvailablePromotion } from './hooks';
@@ -502,6 +503,10 @@ export function StandardInvoice({
             />
           )}
         </InvoiceCustomerSelectCard>
+
+        {selectedUser && (
+          <StandardInvoiceTuitionWarning wsId={wsId} userId={selectedUser.id} />
+        )}
 
         {!isBlocked && (
           <div className="space-y-3">

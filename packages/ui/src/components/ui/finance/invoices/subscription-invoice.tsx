@@ -54,6 +54,7 @@ import {
 import { useBestPromotionSelection } from './hooks/use-best-promotion-selection';
 import { useInvoiceRounding } from './hooks/use-invoice-rounding';
 import { useInvoiceSubtotal } from './hooks/use-invoice-subtotal';
+import { usePrepaidMonthCount } from './hooks/use-prepaid-month-count';
 import { useSubscriptionAutoSelection } from './hooks/use-subscription-auto-selection';
 import { useSubscriptionCreate } from './hooks/use-subscription-create';
 import { useSubscriptionGroupSelection } from './hooks/use-subscription-group-selection';
@@ -125,8 +126,7 @@ export function SubscriptionInvoice({
     defaultValue: getCurrentMonthValue(workspaceTimezone),
     shallow: true,
   });
-  const [prepaidMonthCount, setPrepaidMonthCount] = useState(1);
-
+  const [prepaidMonthCount, setPrepaidMonthCount] = usePrepaidMonthCount();
   const [customerSearch, setCustomerSearch] = useState('');
   const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
   const [subscriptionSelectedProducts, setSubscriptionSelectedProducts] =

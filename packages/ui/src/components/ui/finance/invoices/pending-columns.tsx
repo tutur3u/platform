@@ -15,6 +15,7 @@ import {
   FINANCE_HIDDEN_AMOUNT,
   useFinanceConfidentialVisibility,
 } from '../shared/use-finance-confidential-visibility';
+import { getPendingInvoiceCoverage } from './pending-invoice-coverage';
 
 type PendingInvoiceRow = PendingInvoice & {
   group_ids?: string[];
@@ -25,7 +26,7 @@ export function buildPendingInvoiceCreateUrl({
   attendanceDays,
   financePrefix,
   groupIds,
-  month,
+  monthsOwed,
   potentialTotal,
   useAttendanceBased,
   userId,
@@ -34,7 +35,7 @@ export function buildPendingInvoiceCreateUrl({
   attendanceDays: number;
   financePrefix: string;
   groupIds: string[];
-  month: string;
+  monthsOwed: readonly string[];
   potentialTotal: number;
   useAttendanceBased: boolean;
   userId: string;
@@ -45,8 +46,16 @@ export function buildPendingInvoiceCreateUrl({
     user_id: userId,
   });
 
-  if (month) searchParams.set('month', month);
-  if (useAttendanceBased) {
+  const coverage = getPendingInvoiceCoverage(monthsOwed, {
+    singleMonth: groupIds.length > 1,
+  });
+  if (coverage.month) searchParams.set('month', coverage.month);
+  if (coverage.monthCount > 1) {
+    searchParams.set('prepaid_month_count', String(coverage.monthCount));
+  }
+  // The row's attendance total spans every owed month, so it only describes a
+  // single-month invoice; multi-month invoices compute each month themselves.
+  if (useAttendanceBased && new Set(monthsOwed).size <= 1) {
     searchParams.set('billable_quantity', String(attendanceDays));
   }
   searchParams.set('suggested_total', String(potentialTotal));
@@ -304,19 +313,13 @@ export const pendingInvoiceColumns = (
         const attendanceDays = row.getValue<number>('attendance_days');
         const potentialTotal = row.getValue<number>('potential_total') || 0;
 
-        // Get the LAST (most recent) unpaid month from the array
-        const lastUnpaidMonth =
-          monthsOwed && monthsOwed.length > 0
-            ? monthsOwed[monthsOwed.length - 1]
-            : '';
-
         if (!wsId) return null;
 
         const createInvoiceUrl = buildPendingInvoiceCreateUrl({
           attendanceDays,
           financePrefix,
           groupIds,
-          month: lastUnpaidMonth ?? '',
+          monthsOwed: monthsOwed ?? [],
           potentialTotal,
           useAttendanceBased,
           userId,

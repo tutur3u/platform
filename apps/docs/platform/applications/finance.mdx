@@ -559,6 +559,26 @@ it cannot reconstruct a historical omission without the original export or
 its date and filters. Pending eligibility still depends on configured group
 exclusions, class schedules and attendance calculation settings.
 
+A pending row's Create invoice action opens the subscription invoice at the
+row's earliest owed month with the unbroken run of owed months after it
+pre-selected (`month` and `prepaid_month_count` in the link, at most twelve).
+The default invoice therefore covers the whole range the row shows, using the
+same per-month attendance and session quantities as any prepaid invoice; the
+operator can still reduce the month count. A paid month between two owed months
+ends the run, so it is never recorded twice and the later months stay pending.
+A row that spans several classes pre-selects only its earliest month, because
+one invoice records its months for every linked class. The row's attendance
+total describes every owed month, so the link carries it as the billable
+quantity only for a single owed month; a multi-month default invoice (and a
+range the operator reduces) computes each month's quantity itself.
+The standard invoice page shows a warning with a class-invoice link when the
+selected customer has pending tuition: a standard invoice has no class link and
+no tuition months, so it never settles tuition. Both behaviors apply to the
+shared Finance UI in web and Finance, and have no data side effects. Regression
+coverage: `pending-invoice-coverage.test.ts`, `pending-columns.test.ts`,
+`standard-invoice-tuition-warning.test.tsx` and `use-prepaid-month-count.test.tsx`
+under `packages/ui/src/components/ui/finance/invoices`.
+
 Pending tuition begins no earlier than the student's recorded class membership
 date or the class start date, whichever is later. A class's earlier scheduled
 sessions and attendance are never assigned to a student who joined later,
