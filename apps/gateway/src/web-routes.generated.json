@@ -1007,6 +1007,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/integrations/upskii/content"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/integrations/upskii/introspect"
     },
     {

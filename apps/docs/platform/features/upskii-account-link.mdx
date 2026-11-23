@@ -6,8 +6,8 @@ audience: developers
 ---
 
 <Note>
-Status: the Tuturuuu routes, storage, login confirmation and settings row are
-implemented. Linking starts working once the `upskii` app is registered and
+Status: the Tuturuuu routes, storage, login confirmation, settings row and
+Meet read route are implemented. Linking starts working once the `upskii` app is registered and
 Upskii ships its side. The catalog lists Upskii as internal early access.
 </Note>
 
@@ -172,11 +172,17 @@ Meet calls one server-only route with the user's session:
   `mintUpskiiReadTokenForUser`, which re-checks the staff gate. It answers
   `404 NOT_LINKED`, `403 EARLY_ACCESS_ONLY` or `403 SCOPE_NOT_GRANTED`.
 - The Upskii base URL is pinned in server configuration, never taken from the
-  request, so the route cannot be pointed at another host.
-- Response: `{ items: Array<{ id, title, updatedAt, url, kind, classId? }>,
-  nextCursor? }`. Each `url` must be `https` on Upskii's exact origin;
-  anything else (including `javascript:` and redirects through other hosts)
-  is dropped. Bodies and answers are never included.
+  request, so the route cannot be pointed at another host. Production always
+  uses `https://app.upskii.com`; other runtimes may set `UPSKII_API_ORIGIN`.
+- Listings cover what the linked user teaches: the classes they own or teach,
+  and every lesson (including drafts) and assessment of one of those classes.
+  Classes the user only attends as a learner are out of scope.
+- Response: `{ items: Array<{ id, title, updatedAt, url, kind, classId? }> }`,
+  at most 100 items with titles cut to 300 characters; there is no paging yet.
+  Each `url` must be on Upskii's exact origin with no credentials; anything
+  else (including `javascript:` and other hosts) is dropped. Bodies and
+  answers are never included. Upskii failures answer `404 NOT_LINKED`,
+  `403 SCOPE_NOT_GRANTED`, `404 CLASS_NOT_FOUND` or `502 UPSKII_UNAVAILABLE`.
 - In a Meet room only the presenter's session fetches. Other participants see
   only what the presenter shares.
 
@@ -225,6 +231,10 @@ reason }`, with no emails or tokens. Revoked rows keep the history.
   confirmation names the link.
 - `packages/utils/src/app-coordination-token.test.ts`: read tokens and app
   bearers never verify as each other.
+- `apps/web/src/lib/integrations/upskii/content.test.ts` and
+  `apps/web/src/app/api/v1/integrations/upskii/content/route.test.ts`: the pinned
+  origin, links narrowed to Upskii's origin, the item and title caps, status
+  mapping, and a route that reads only for the session user.
 - `apps/database/supabase/tests/external-account-links.sql`: RLS, no `anon` or
   `authenticated` access, no `service_role` delete, unique-active indexes,
   read-only scopes, and the account-deletion cascade.
