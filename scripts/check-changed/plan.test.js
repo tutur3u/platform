@@ -64,6 +64,7 @@ test('always runs cheap repository guards and flags bad branch names', () => {
     'source-size',
     'docs-inventory',
     'app-seo',
+    'meet-tsconfig-routes',
   ]);
   assert.equal(plan.steps[0].inline(), false);
   assert.deepEqual(plan.steps[1].args, [
@@ -89,6 +90,7 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
     'source-size',
     'docs-inventory',
     'app-seo',
+    'meet-tsconfig-routes',
     'sdk-portable',
     'oxfmt',
     'oxlint',

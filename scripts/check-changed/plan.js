@@ -272,6 +272,9 @@ function planChecks(changes, context) {
     nodeStep('app-seo', 'generated app SEO assets', [
       'scripts/generate-app-seo.js',
       '--check',
+    ]),
+    nodeStep('meet-tsconfig-routes', 'Meet route handlers listed in tsconfig', [
+      'scripts/check-meet-tsconfig-routes.js',
     ])
   );
   if (selected.has('docs-audit')) {
