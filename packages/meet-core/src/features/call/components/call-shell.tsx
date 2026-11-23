@@ -298,8 +298,7 @@ function CallShellContent({
     requiresAccount,
     canManage,
     enabled: liveTools,
-    // Whoever runs activities reaches those, and only those, when browsing
-    // the tools is for hosts only.
+    // Activity runners reach only activities when tool browsing is host-only.
     ...toolAccess,
     canRunActivities: runsRoomActivities(state),
     selfUserId: state.selfUserId,
@@ -379,6 +378,7 @@ function CallShellContent({
         defaultDisplayName={defaultDisplayName}
         joined={joined}
         meetingName={meetingName}
+        miraMeetingId={meetingId}
         onJoined={() => setJoined(true)}
         onLeave={() => {
           room.leave();
