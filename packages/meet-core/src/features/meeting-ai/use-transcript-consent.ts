@@ -45,13 +45,13 @@ export function useTranscriptConsent(meetingId: string, enabled = true) {
    * it has not loaded, so a host who starts at once is never left pending.
    */
   const ensureAllowed = async () => {
-    const current =
+    const current: MeetTranscriptConsent | undefined =
       consent ??
-      (await queryClient.fetchQuery({
+      (await queryClient.fetchQuery<MeetTranscriptConsent>({
         queryKey: transcriptConsentKey(meetingId),
         queryFn: () => readMeetTranscriptConsent(meetingId),
       }));
-    if (!current.available || current.choice === 'allow') return;
+    if (!current?.available || current.choice === 'allow') return;
     const next = await setMeetTranscriptChoice(
       meetingId,
       'allow',
