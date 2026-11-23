@@ -79,74 +79,34 @@ Explicit privacy erasure can proceed without a replacement.
 ### Worker schema and stop controls
 
 The gated Supabase workflows apply the schema in the main database. The
-`memory_storage` schema starts empty and stays outside the Data API. The
-`memory_api` schema contains the reservation and execution RPCs. Keep
-`memory_gateway` outside the Data API. Its dispatcher preserves the existing
-account and MFA hook for ordinary API roles.
-
-The `memory_rpc` role has login disabled and can execute only the scoped API
-routines. The Auth custodian provisions separate assistant and People machine
-identities with that role, records their immutable subjects in
-`memory_storage.principals`, and configures the reviewed access-token hook.
-The hook leaves ordinary account claims unchanged and adds the fixed caller
-claim and a token expiry capped at 60 seconds for a mapped machine subject.
+preparatory migration installs the private `memory_gateway` schema and its
+`postgres`-owned ACL and reader-membership verifier routines (`public_role_access`,
+`ordinary_hook_access`, `assert_reader_memberships`, `assert_default_acl`,
+`assert_account_hook_acl`, and `assert_effective_acl`) with all `PUBLIC`,
+`anon`, `authenticated`, and `service_role` privileges revoked. Keep
+`memory_gateway` outside the Data API. The main PostgREST storage and RPC
+migration is held for a follow-up migration after hosted role-membership
+qualification.
 
 The separate `memory-db-production` environment is retired. Leave its
 password secret unset. The sidecar SQL belongs to its Docker database.
 Confirm production migration readback before enabling the Data API profile,
 issuer hook or Worker caller.
 
-Managed Supabase grants `PUBLIC` access to the `net` and `pgsodium` extension
-schemas and controls those grants. The apply accepts that access only for
-those two schemas, owned by `supabase_admin` with their extension installed.
-Staging showed the `pgsodium` grant. Keep both schemas outside the exposed
-Data API schemas. The memory role has no login.
-The pre-request hook allows it to issue only POST requests to the two memory
-RPC paths in the schema negotiated by PostgREST. Both RPCs require the
-`authenticator` session identity. A Storage admin SQL connection keeps its
-original session identity when it switches roles, so the RPCs refuse it.
-The apply checks role
-membership, access to existing schemas and objects, and the configured
-database exposure. Verify the managed API configuration during staging.
-
-The membership check accepts these grants on the memory roles:
-
-- Any grant to a superuser, `postgres`, or a role that can switch to
-  `postgres`. Hosted role creation can give `postgres` extra options, and
-  those roles already own the memory objects.
-- `authenticator` as a member of `memory_rpc`, with SET only.
-
-The memory roles must not be members of any role. Apart from a superuser or
-an equivalent of `postgres`, a role can switch to `memory_rpc` only through
-`authenticator`, and no role can switch to or inherit `memory_rpc_owner`.
-A failed apply lists the offending roles and grant options, schemas or
-functions by name, but no other data.
-[Supabase pg_net permissions](https://supabase.com/kb/troubleshooting/revoking-access-to-pg_net-objects-has-no-effect-0bbc16)
-
-Supabase Dashboard read-only users and managed ETL can read memory plaintext
-through PostgreSQL's database-wide reader role. The migration restricts this
-exception to the managed readers' inherited schema lookup and reads. It
-rejects app or custom roles that can inherit or assume a platform reader.
+Supabase Dashboard read-only users and managed ETL can read database tables
+through PostgreSQL's database-wide reader role. The verifier routines audit
+this exception against the managed readers' inherited schema lookup and reads
+and reject app or custom roles that can inherit or assume a platform reader.
 [Supabase Dashboard access](https://supabase.com/docs/guides/platform/access-control)
-
-The migration preserves the existing public schema ACL and rejects an
-unexpected grant. The database reversal verifies that ACL, closes admission,
-and restores the account pre-request hook from the apply receipt. It retains
-memory rows and receipts. Apply the reversal as a separately reviewed gated
-migration.
 
 Each caller starts stopped with zero budget. An operator supplies a finite
 request budget and opens that caller's admission row. A stop changes the
 persisted epoch. The Worker charges one unit before starting its data transaction,
-checks the stop and ticket under lock, and keeps the charge when a data operation fails.
+rechecks the epoch under lock, and keeps the charge when a data operation fails.
 Setting the admission row to stopped fences queued work after any transaction
 holding its lock completes. Turning off the Worker flag prevents new database
 connections. Stop the calling feature as well to stop its metered embedding
 requests. Recovery requires explicit operator admission.
-
-An exact retry while its ticket is pending returns that ticket. Each admitted
-request ID is retained with its caller so an intervening reservation or an
-epoch change cannot debit it again.
 
 The Worker caps requests at 256 KiB, list/search results at 500, search candidates
 at 500, list candidates at 1,000, and purge batches at 50. It has no background continuation and performs
