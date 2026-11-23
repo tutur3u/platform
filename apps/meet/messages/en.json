@@ -6195,6 +6195,20 @@
       "sign_in": "Sign in to continue",
       "transcription_hint": "Each transcription session lasts up to 3 hours. Start a new session to continue taking notes during a longer call."
     },
+    "record": {
+      "projects": {
+        "add_another": "Link another project",
+        "change_failed": "Could not update the project link",
+        "clear": "No project",
+        "empty": "No projects in this workspace",
+        "label": "Projects",
+        "loading": "Loading projects",
+        "placeholder": "Link a project",
+        "search": "Search projects",
+        "unavailable": "Projects are unavailable right now",
+        "unlink": "Unlink {name}"
+      }
+    },
     "recording_permissions": {
       "denied": "Only the recording creator or a workspace admin can stop this recording. The recording is still active."
     },

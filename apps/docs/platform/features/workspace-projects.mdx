@@ -1,0 +1,53 @@
+---
+title: Workspace Projects
+updatedAt: '2026-11-24'
+description: Group a workspace's tasks, meetings and calendar events under one Project, with linking limited to project managers who can edit the linked item.
+audience: users
+---
+
+## What a Project holds
+
+A Project belongs to one workspace. Every product labels it **Projects**. It
+groups the work for one outcome:
+
+- **Tasks**: from any board in the workspace. Tasks keep their ticket numbers
+  and project history.
+- **Meetings**: a Meet meeting shows its Projects under the meeting title. Each
+  Project chip opens the Project in Tasks.
+- **Calendar events**: the link model already accepts events. The Calendar
+  surface ships separately.
+
+A meeting or event can belong to several Projects. An item and its Project are
+always in the same workspace, and links never cross workspaces.
+
+## Who can link
+
+Two rights are needed to link or unlink an item:
+
+1. **Manage projects** in the workspace.
+2. Edit rights on the item in its own product:
+   - **Meeting**: the meeting host, or a workspace admin.
+   - **Calendar event**: manage calendar.
+   - **Task**: the existing task rules.
+
+The default is that only these people can link. Members with only one of the two
+rights see the linked Projects, but no linking controls.
+
+## Who can see links
+
+Full workspace members see a meeting's Projects. Guests do not, even when they can
+join the call. Event links also need calendar access. Removing a meeting or event
+removes its links. Deleting a Project removes every link to it.
+
+## Reserved kinds
+
+Drive files, Docs, Upskii classes and mail threads are reserved for later. Each
+needs its own edit-right rule before it is accepted. No surface links them yet.
+
+## Regression coverage
+
+- Database rules: `apps/database/supabase/tests/project-links-meeting-records.sql`
+  covers same-workspace integrity, the two-right linking rule, member-only reads,
+  immutability and cleanup when an item is deleted.
+- Meet API client: `packages/internal-api/src/meet-record.test.ts`.
+- Shared picker and chip: `packages/ui/src/components/ui/custom/project-picker.test.tsx`.

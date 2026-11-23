@@ -6,6 +6,8 @@ import {
   Users,
   Video,
 } from '@tuturuuu/icons';
+import { TASKS_URL } from '@tuturuuu/meet-core/constants/common';
+import { MeetingProjects } from '@tuturuuu/meet-core/features/meeting-record/meeting-projects';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -155,6 +157,14 @@ export default async function MeetingDetailPage({
                 <Users className="h-4 w-4" />
                 {meeting.creator.display_name}
               </div>
+            </div>
+            <div className="mt-3">
+              <MeetingProjects
+                meetingId={meetingId}
+                tasksUrl={TASKS_URL}
+                workspaceSlug={workspaceSlug}
+                wsId={wsId}
+              />
             </div>
           </div>
         </div>

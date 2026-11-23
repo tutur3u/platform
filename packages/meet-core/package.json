@@ -623,7 +623,15 @@
     "./features/call/components/meet-phone-study-sheet": "./src/features/call/components/meet-phone-study-sheet.tsx",
     "./features/call/components/meet-phone-study-sheet.tsx": "./src/features/call/components/meet-phone-study-sheet.tsx",
     "./features/call/hooks/use-phone-call-ui": "./src/features/call/hooks/use-phone-call-ui.ts",
-    "./features/call/hooks/use-phone-call-ui.ts": "./src/features/call/hooks/use-phone-call-ui.ts"
+    "./features/call/hooks/use-phone-call-ui.ts": "./src/features/call/hooks/use-phone-call-ui.ts",
+    "./features/meeting-record/server/access": "./src/features/meeting-record/server/access.ts",
+    "./features/meeting-record/server/access.ts": "./src/features/meeting-record/server/access.ts",
+    "./features/meeting-record/server/project-links": "./src/features/meeting-record/server/project-links.ts",
+    "./features/meeting-record/server/project-links.ts": "./src/features/meeting-record/server/project-links.ts",
+    "./routes/api/meet-record/[wsId]/[meetingId]/projects/route": "./src/routes/api/meet-record/[wsId]/[meetingId]/projects/route.ts",
+    "./routes/api/meet-record/[wsId]/[meetingId]/projects/route.ts": "./src/routes/api/meet-record/[wsId]/[meetingId]/projects/route.ts",
+    "./features/meeting-record/meeting-projects": "./src/features/meeting-record/meeting-projects.tsx",
+    "./features/meeting-record/meeting-projects.tsx": "./src/features/meeting-record/meeting-projects.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.cloudflare.json",

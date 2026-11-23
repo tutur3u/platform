@@ -6195,6 +6195,20 @@
       "sign_in": "Đăng nhập để tiếp tục",
       "transcription_hint": "Mỗi phiên chép lời kéo dài tối đa 3 giờ. Bạn có thể bắt đầu phiên mới để tiếp tục ghi chú trong cuộc họp dài hơn."
     },
+    "record": {
+      "projects": {
+        "add_another": "Liên kết thêm dự án",
+        "change_failed": "Không thể cập nhật liên kết dự án",
+        "clear": "Không có dự án",
+        "empty": "Không gian làm việc chưa có dự án",
+        "label": "Dự án",
+        "loading": "Đang tải dự án",
+        "placeholder": "Liên kết dự án",
+        "search": "Tìm dự án",
+        "unavailable": "Hiện không thể tải dự án",
+        "unlink": "Bỏ liên kết {name}"
+      }
+    },
     "recording_permissions": {
       "denied": "Chỉ người tạo bản ghi hoặc quản trị viên không gian làm việc mới có thể dừng bản ghi này. Bản ghi vẫn đang hoạt động."
     },

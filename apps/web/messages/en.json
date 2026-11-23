@@ -17573,7 +17573,7 @@
       "open_tasks_in_page": "Full page",
       "open_tasks_in_sidebar": "Right sidebar",
       "projects": "Projects",
-      "projects_description": "Create and manage task projects",
+      "projects_description": "Create and manage projects",
       "quick_create_target_list": "Quick-create target",
       "quick_create_target_list_default": "Default task list",
       "quick_create_target_list_description": "Choose which task list receives new tasks when you press C on a board",
@@ -18903,8 +18903,8 @@
       "title": "Link Tasks to Project"
     },
     "metadata": {
-      "page_description": "View and manage task project details.",
-      "page_title": "Task Project"
+      "page_description": "View and manage project details.",
+      "page_title": "Project"
     },
     "overview": {
       "describe_placeholder": "Describe your project...",
@@ -19379,7 +19379,7 @@
       "cancel": "Cancel",
       "create_project": "Create Project",
       "creating": "Creating...",
-      "description": "Create a new task project to organize tasks across multiple boards.",
+      "description": "Create a new project to organize tasks across multiple boards.",
       "description_label": "Description (Optional)",
       "description_placeholder": "Enter project description",
       "project_name": "Project Name",
@@ -19436,11 +19436,11 @@
       "reference_materials": "Reference material",
       "risk_watch": "Risk watch"
     },
-    "page_description": "Manage and track task projects across your workspace.",
-    "page_heading": "Task Projects",
+    "page_description": "Manage and track projects across your workspace.",
+    "page_heading": "Projects",
     "page_kicker": "Project operations",
-    "page_subheading": "Manage and track cross-functional task projects across your workspace.",
-    "page_title": "Task Projects",
+    "page_subheading": "Manage and track cross-functional projects across your workspace.",
+    "page_title": "Projects",
     "project_card": {
       "actions": "Project actions",
       "complete": "Complete",

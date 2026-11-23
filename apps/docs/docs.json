@@ -122,6 +122,7 @@
               "platform/features/tasks-fleet-cockpit",
               "platform/features/task-board-sprints",
               "platform/features/task-recurrence",
+              "platform/features/workspace-projects",
               "platform/features/tasks-side-panel",
               "platform/features/tasks-quick-create",
               "platform/features/mobile-chat",
