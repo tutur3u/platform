@@ -1207,7 +1207,10 @@ the requested date range, completed page or cursor page during normal use; older
 history loads on demand. Full offline history comes only from the explicit
 downloads, which, like every marked bulk read, return 503 while download
 protection is inactive. The Inventory catalog backfill is the remaining
-background bulk read on a normal visit; it runs at most once per 15 minutes.
+background bulk read on a normal visit. Its 15-minute throttle belongs to each
+repository instance and is not keyed by workspace, so each surface that creates
+a new repository and lists products, such as a newly opened Inventory products
+page or the Finance invoice editor's product lookup, can start it again.
 
 Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
 when the gateway and owning app both enforce the guard. Ordinary unmarked
