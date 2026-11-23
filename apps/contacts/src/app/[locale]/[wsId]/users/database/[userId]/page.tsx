@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { WEB_APP_URL } from '@/constants/common';
 import {
   getContactsWorkspace,
   getContactsWorkspacePermissions,
@@ -24,6 +25,7 @@ import {
 } from './data';
 import EditUserDialog from './edit-user-dialog';
 import { partitionUserGroupsBySchedule } from './group-schedule';
+import { ContactAccountInvitationCard } from './contact-account-invitation';
 import { LinkedContactAccounts } from './linked-contact-accounts';
 import LinkedPromotionsClient from './linked-promotions-client';
 import { ProfileHeader } from './profile-header';
@@ -227,6 +229,14 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
               actorId={actor.id}
               canUpdateUsers={canUpdateUsers}
               contactId={userId}
+              workspaceId={wsId}
+            />
+          ) : null}
+          {hasPublicInfo && hasPrivateInfo && canUpdateUsers ? (
+            <ContactAccountInvitationCard
+              contactId={userId}
+              isLinked={Boolean(data.linked_users?.length)}
+              webAppUrl={WEB_APP_URL}
               workspaceId={wsId}
             />
           ) : null}

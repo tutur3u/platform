@@ -1,7 +1,7 @@
 ---
 title: "Contacts"
 description: "CRM users, groups, reports, attendance, workforce, and module access."
-updatedAt: '2026-10-08'
+updatedAt: '2026-11-23'
 audience: users
 ---
 
@@ -95,6 +95,18 @@ link**. Select one workspace account, create the invitation, then share it with
 that account holder. This action requires permission to update contacts and view
 both public and private contact information.
 
+The web Contacts app offers the same action on a contact's details page:
+**Invite account owner to link** (**Mời chủ tài khoản liên kết**). It uses the
+same invitation API and consent page as mobile, with the same permissions. The
+card shows the latest invitation state: pending, accepted, declined, expired,
+cancelled, or not completed. A pending invitation shows its link to copy and an
+expiry time. Operators can resend to the same account, invite a different
+account, or cancel a pending invitation after an in-app confirmation. Resending
+issues a new link and invalidates the earlier one. For a linked contact, the
+card shows only an accepted state. The state read returns only the state,
+invitation and account identifiers, and timestamps. A pending state is the only
+one that returns the invitation identifier.
+
 The recipient signs into Tuturuuu to review the inviter, contact display name,
 workspace, and expiration. They can confirm or decline. An authorized operator
 can revoke an active invitation. Issuing a new invitation replaces any active
@@ -130,6 +142,10 @@ The contact-link route and confirmation tests cover explicit consent and
 permission failures. The Supabase contact-account-link-confirmation test
 covers direct write denial, edited email matches, recipient binding, audit
 attribution, and replay.
+The repair route status tests cover the invitation-state read permissions. The
+web `contact-account-invitation` component test covers invite, resend, cancel,
+and state display. The Supabase contact-account-link-invitation-status test
+covers each state, permission denial, and direct client denial.
 
 ## Mobile audit activity
 

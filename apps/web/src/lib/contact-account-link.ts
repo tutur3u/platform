@@ -28,6 +28,10 @@ export type ContactLinkDatabase = {
         };
         Returns: string;
       };
+      read_contact_account_link_invitation: {
+        Args: LinkParameters;
+        Returns: unknown;
+      };
       confirm_contact_account_link: {
         Args: LinkParameters & { p_invitation_id: string };
         Returns: string;
