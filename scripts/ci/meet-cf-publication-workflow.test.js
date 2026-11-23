@@ -50,6 +50,70 @@ test('every Meet release carries the shared-origin repository variables', () => 
   );
 });
 
+test('Mira stays contained unless the release opts in to paid-and-staff', () => {
+  const publish = step('deploy', 'Deploy the verified frontend');
+  assert.equal(
+    publish.env.MEET_AI_RELEASE,
+    "${{ vars.MEET_AI_RELEASE || 'contained' }}"
+  );
+  assert.match(
+    publish.run,
+    /case "\$MEET_AI_RELEASE" in contained\|paid-and-staff\) ;; \*\) echo '::error::[^']*'; exit 1 ;; esac/
+  );
+  // The default arguments carry no Mira override; only paid-and-staff appends one.
+  assert.doesNotMatch(
+    publish.run.split('if [ "$MEET_AI_RELEASE"')[0],
+    /MEET_AI_DISABLED/
+  );
+  assert.equal(publish.run.match(/MEET_AI_DISABLED=false/g).length, 1);
+  assert.match(
+    publish.run,
+    /if \[ "\$MEET_AI_RELEASE" = paid-and-staff \]; then\n\s+output_args\+=\(--var MEET_AI_DISABLED=false\)/
+  );
+  // Paid-tier hosting is a var unless a same-named secret exists.
+  assert.equal(
+    publish.env.PAID_TIER_SECRET,
+    '${{ steps.secret-names.outputs.paid_tier_secret }}'
+  );
+  assert.match(
+    publish.run,
+    /if \[ "\$PAID_TIER_SECRET" = true \]; then\n\s+echo '::notice::paid-tier hosting comes from the Worker secret'\n\s+else\n\s+output_args\+=\(--var MEET_PAID_TIER_HOSTING_ENABLED=true\)/
+  );
+  assert.equal(
+    publish.run.match(/MEET_PAID_TIER_HOSTING_ENABLED=true/g).length,
+    1
+  );
+  assert.match(publish.run, /void-cf-output\.mjs "\$\{output_args\[@\]\}"/);
+});
+
+test('paid-and-staff requires the Mira secret names on the frontend only', () => {
+  const verify = step('deploy', 'Verify required production secret names');
+  assert.equal(
+    verify.env.MEET_AI_RELEASE,
+    "${{ vars.MEET_AI_RELEASE || 'contained' }}"
+  );
+  assert.match(
+    verify.run,
+    /if \[ "\$MEET_AI_RELEASE" = paid-and-staff \]; then\n\s+jq -e --argjson required '\["MEET_AI_ALL_WORKSPACES","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_PROTECTED_WORKSPACE_IDS"\]'[^\n]*meet-secrets\.json[^\n]*::error::/
+  );
+});
+
+test('the secret-names step reports whether paid-tier hosting is a secret', () => {
+  const verify = step('deploy', 'Verify required production secret names');
+  assert.equal(verify.id, 'secret-names');
+  assert.match(verify.run, /index\("MEET_PAID_TIER_HOSTING_ENABLED"\)/);
+  assert.match(verify.run, /paid_tier_secret=true' >> "\$GITHUB_OUTPUT"/);
+  assert.match(verify.run, /paid_tier_secret=false' >> "\$GITHUB_OUTPUT"/);
+});
+
+test('the realtime Worker never receives the Mira override', () => {
+  const signaling = step('deploy', 'Deploy signaling before the frontend');
+  assert.doesNotMatch(
+    JSON.stringify(signaling),
+    /MEET_AI_RELEASE|MEET_AI_DISABLED=false/
+  );
+});
+
 test('validation dry-runs the converted output without credentials', () => {
   const qualify = step(
     'validate',

@@ -676,10 +676,12 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
         run: bun packages/meet-core/scripts/verify-schema.ts
       - name: Verify required production secret names
+        id: secret-names
         if: steps.admission.outputs.superseded != 'true'
         working-directory: apps/meet
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+          MEET_AI_RELEASE: ${{ vars.MEET_AI_RELEASE || 'contained' }}
           CLOUDFLARE_API_TOKEN: ${{
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
@@ -688,6 +690,16 @@ jobs:
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_DISABLED_WORKSPACE_IDS","MEET_AI_PROTECTED_WORKSPACE_IDS","TURNSTILE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
+          if [ "$MEET_AI_RELEASE" = paid-and-staff ]; then
+            jq -e --argjson required '["MEET_AI_ALL_WORKSPACES","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_PROTECTED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null || { echo '::error::MEET_AI_RELEASE=paid-and-staff requires the tuturuuu-meet secret names MEET_AI_ALL_WORKSPACES, GOOGLE_GENERATIVE_AI_API_KEY and MEET_AI_PROTECTED_WORKSPACE_IDS'; exit 1; }
+            # A same-named Worker var would clash with the secret, so the
+            # deploy step only adds the var when no secret carries the name.
+            if jq -e 'map(.name) | index("MEET_PAID_TIER_HOSTING_ENABLED") != null' "$RUNNER_TEMP/meet-secrets.json" > /dev/null; then
+              echo 'paid_tier_secret=true' >> "$GITHUB_OUTPUT"
+            else
+              echo 'paid_tier_secret=false' >> "$GITHUB_OUTPUT"
+            fi
+          fi
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN","MEET_AI_DISABLED_WORKSPACE_IDS","MEET_AI_PROTECTED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Capture existing frontend and realtime rollback versions
         if: steps.admission.outputs.superseded != 'true'
@@ -726,6 +738,9 @@ jobs:
           # every release carries the current cutover stage.
           TTR_ONE_ORIGIN_MEET: ${{ vars.TTR_ONE_ORIGIN_MEET || 'off' }}
           TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS: ${{ vars.TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS || '302' }}
+          # Private Mira stays contained unless the release opts in.
+          MEET_AI_RELEASE: ${{ vars.MEET_AI_RELEASE || 'contained' }}
+          PAID_TIER_SECRET: ${{ steps.secret-names.outputs.paid_tier_secret }}
         id: frontend
         working-directory: apps/meet
         timeout-minutes: 20
@@ -733,12 +748,21 @@ jobs:
           GITHUB_SHA="$SOURCE_SHA" node ../../scripts/ci/verify-meet-start-output.js verify . meet-artifact.json
           case "$TTR_ONE_ORIGIN_MEET" in off|shadow|on) ;; *) echo '::error::TTR_ONE_ORIGIN_MEET must be off, shadow or on'; exit 1 ;; esac
           case "$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS" in 301|302|307) ;; *) echo '::error::TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS must be 301, 302 or 307'; exit 1 ;; esac
+          case "$MEET_AI_RELEASE" in contained|paid-and-staff) ;; *) echo '::error::MEET_AI_RELEASE must be contained or paid-and-staff'; exit 1 ;; esac
           export CF_SEND_TELEMETRY=false
           out="$RUNNER_TEMP/meet-cf-output"
-          node ../../scripts/ci/void-cf-output.mjs --config "${{ steps.meet-output.outputs.config }}" \
-            --out "$out" --sha "$SOURCE_SHA" \
-            --var "TTR_ONE_ORIGIN_MEET=$TTR_ONE_ORIGIN_MEET" \
-            --var "TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS"
+          output_args=(--config "${{ steps.meet-output.outputs.config }}" --out "$out" --sha "$SOURCE_SHA"
+            --var "TTR_ONE_ORIGIN_MEET=$TTR_ONE_ORIGIN_MEET"
+            --var "TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS")
+          if [ "$MEET_AI_RELEASE" = paid-and-staff ]; then
+            output_args+=(--var MEET_AI_DISABLED=false)
+            if [ "$PAID_TIER_SECRET" = true ]; then
+              echo '::notice::paid-tier hosting comes from the Worker secret'
+            else
+              output_args+=(--var MEET_PAID_TIER_HOSTING_ENABLED=true)
+            fi
+          fi
+          node ../../scripts/ci/void-cf-output.mjs "${output_args[@]}"
           # Publish captures the serving version it verified against; traffic
           # moves only while that version is still serving.
           node ../../scripts/ci/void-cf-publisher.mjs publish --build "$out" --worker tuturuuu-meet --message "$SOURCE_SHA" > "$RUNNER_TEMP/meet-cf-publish.json"

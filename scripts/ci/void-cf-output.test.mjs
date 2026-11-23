@@ -50,6 +50,15 @@ const meetLike = () => ({
   queues: { producers: [], consumers: [] },
 });
 
+test('a --var override replaces a var the config already declares', () => {
+  const config = workerConfigFrom(meetLike(), { vars: { FLAG: 'true' } });
+  assert.deepEqual(config.env.FLAG, { type: 'text', value: 'true' });
+  assert.deepEqual(config.env.PUBLIC_URL, {
+    type: 'text',
+    value: 'https://app.example.com',
+  });
+});
+
 test('maps every serving binding into its Workers API wire shape', () => {
   const config = workerConfigFrom(meetLike(), {
     vars: { TTR_ONE_ORIGIN_APP: 'shadow' },

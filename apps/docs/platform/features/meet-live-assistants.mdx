@@ -427,21 +427,26 @@ Apply the additive `meet_private_ai_memory` and
 repository's normal migration pipeline. The attestation migration only adds one
 service-only private table, so it is independent of other batches.
 
-Release configuration for paid and staff Mira (set by the release owner; the
-source keeps every value off):
+To enable paid and staff Mira, set the repository variable
+`MEET_AI_RELEASE=paid-and-staff` and dispatch a Meet release. The frontend
+deploy then adds `MEET_AI_DISABLED=false` to `tuturuuu-meet` only, and the
+release fails unless the secret names below exist. To stop it, set the variable
+back to `contained` (the default) and release again. The source keeps every
+value off.
+
+Worker configuration for paid and staff Mira:
 
 | Worker | Setting | Value |
 | --- | --- | --- |
-| `tuturuuu-meet` (including its Live Durable Object) | `MEET_AI_DISABLED` (var override at deploy) | `false` |
+| `tuturuuu-meet` (including its Live Durable Object) | `MEET_AI_DISABLED` (set by `MEET_AI_RELEASE=paid-and-staff`) | `false` |
 | `tuturuuu-meet` | `MEET_AI_ALL_WORKSPACES` (secret) | `reviewed-allow-all-2026-11-20` |
-| `tuturuuu-meet` | `MEET_PAID_TIER_HOSTING_ENABLED` | `true` (shared with Meet hosting) |
+| `tuturuuu-meet` | `MEET_PAID_TIER_HOSTING_ENABLED` | `true` (shared with paid-tier Meet hosting; the release adds it as a var unless a Worker secret of that name exists) |
 | `tuturuuu-meet` | `MEET_AI_PROTECTED_WORKSPACE_IDS`, `GOOGLE_GENERATIVE_AI_API_KEY` | existing required secrets, nonempty |
 
 `MEET_AI_ENABLED_WORKSPACE_IDS` can stay empty with the reviewed opt-in.
 `tuturuuu-meet-realtime` needs only the new source for the fence; its Meet AI
 variables still gate note sharing and can stay contained. To stop Mira
-everywhere, deploy without the `MEET_AI_DISABLED` override (or set it to
-`true`); to exclude one workspace, list it in `MEET_AI_DISABLED_WORKSPACE_IDS`.
+everywhere, release with `MEET_AI_RELEASE=contained`; to exclude one workspace, list it in `MEET_AI_DISABLED_WORKSPACE_IDS`.
 The Tuturuuu root workspace needs AI credits for staff usage. The Worker needs its existing Supabase configuration,
 `MEET_REALTIME_TOKEN_SECRET`, and `GOOGLE_GENERATIVE_AI_API_KEY`; no key is sent
 to another Worker or to the browser. Wrangler's `meet-live-v1` migration creates
