@@ -143,6 +143,70 @@ production traffic as soon as the deploy finishes, so:
    version at 100% (`POST .../deployments` with
    `{"strategy":"percentage","versions":[{"version_id":"<previous>","percentage":100}]}`).
 
+### Manual version-only publication: verified API behavior
+
+When families are published with an operator-run, version-only driver
+(upload a version, verify it, then deploy it at 100%) instead of `cf deploy`,
+these Cloudflare API behaviors apply. A driver that assumes otherwise stops
+fail-closed (traffic unchanged), so handle each one before the write window.
+
+- **Asset upload buckets.** `POST /accounts/<account>/workers/assets/upload`
+  answers `202 Accepted` for every non-final bucket and `201` with
+  `result.jwt` only for the final one. Accept 200, 201 and 202 with
+  `success: true`, and take the completion JWT from the final non-empty
+  bucket only.
+- **Secret inheritance.** `{"type":"inherit","name":N,"version_id":V}` is
+  rejected (HTTP 400, code 10057 once per secret). Only name-only
+  `{"type":"inherit","name":N}` is accepted, and it copies values from the
+  Worker's **latest** version. Require latest == serving before the upload
+  (and again immediately before the version POST) so secrets come from the
+  version serving traffic.
+- **Module readback.** `GET .../workers/scripts/<worker>/versions/<id>?include=modules`
+  returns no `modules` or `main_module`. Two sources do return bytes:
+  - `GET .../workers/scripts/<worker>/content/v2` (multipart/form-data, one
+    part per module, `cf-entrypoint: index.mjs`). It **ignores `?version=`**
+    and returns the latest version, so bracket the read with
+    latest == the new version immediately before and after it.
+  - `GET .../workers/workers/<worker>/versions/<id>?include=modules` (the
+    Workers API path) returns `modules[].content_base64`, `main_module`,
+    `migration_tag` and bindings. Cron Control's CI verifier
+    (`apps/cron-control/scripts/verify-already-serving.mjs`) and any serving
+    proof generator must use this path.
+- **Leftover versions.** A run that stops after the version POST leaves a 0%
+  version that becomes latest, so the latest == serving fence refuses later
+  runs. Record it, and let the release authority accept that exact version id
+  by name for the next run (its secrets were inherited while latest == serving).
+
+### Partial round recovery
+
+Publishing several families in one run can stop after earlier families are
+already at 100%. The driver must then print a rollback command for every
+family it already deployed, newest first, in addition to the stopped family's
+own outcome. Operator procedure:
+
+1. Halt; do not re-run the publish. Keep stdout, stderr, the preimage and the
+   run ledger.
+2. Read live state for all families (deployments and latest version) against
+   the preimage. A ledger `deploy-start` without `deployed` means that deploy
+   is uncertain: trust only the live readback.
+3. With the release authority, roll forward the rest (new packet and ACK) or
+   roll back every family whose live version differs from its preimage
+   serving version, newest first. Use `curl --fail-with-body`, confirm
+   `success: true`, then re-read every family at 100%.
+
+### Operator host notes
+
+- Keep the driver directory and its `state/` run directory at mode `0700`.
+  A recursive `chmod 600 <dir>/*` strips the directory execute bit, and the
+  publish then refuses before any write because it cannot create its run
+  directory.
+- `gh` cannot read the macOS keychain over a non-interactive SSH session. Do
+  not copy GitHub tokens between machines: download a producer artifact on a
+  host where `gh` is signed in and have the proof tool verify it against
+  GitHub's published artifact digest.
+- Non-interactive SSH has a minimal `PATH`; add the directories that hold
+  `node` (`/usr/local/bin` on the Macbook hosts) explicitly.
+
 ## Gateway routing
 
 The gateway routes each family from

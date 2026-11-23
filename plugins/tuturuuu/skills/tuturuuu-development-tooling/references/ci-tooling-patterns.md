@@ -708,6 +708,11 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   versions and gateway routes, then writes the marker through the job token.
   Keep the planner, reusable producer, proof and recorder blob pins reviewed
   together. See the [Web proof and cutover plan](../../../../../apps/docs/build/devops/web-vinext-families.mdx#production-migration-deployment-proof).
+- Operator-run version-only family publication depends on verified Workers API
+  behavior: 202 for non-final asset buckets, name-only secret inherit from the
+  latest version, `content/v2` ignoring `?version=`, and module bytes only from
+  `/workers/workers/<worker>/versions/<id>?include=modules`. Follow the
+  [verified API behavior and partial-round recovery](../../../../../apps/docs/build/devops/web-vinext-families.mdx#manual-version-only-publication-verified-api-behavior).
 
 - Avoid reusable configuration jobs when the caller already has to allocate a
   runner. Platform preview resolves changed files and configuration inside its
