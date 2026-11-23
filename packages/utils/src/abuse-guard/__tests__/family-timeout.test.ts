@@ -14,6 +14,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** Families whose callers refuse requests when the store cannot answer. */
+const FAIL_CLOSED = new Set<AbuseGuardFamily>(['replay', 'meet']);
+
 function read(client: AbuseGuardClient, family: AbuseGuardFamily) {
   return family === 'integrity'
     ? client.nativeIntegrity(['key'], { action: 'read-key' })
@@ -30,7 +33,7 @@ function readReply(family: AbuseGuardFamily) {
 
 describe('family timeout selection', () => {
   it.each(ABUSE_GUARD_FAMILIES)(
-    'uses a replay-only higher HTTP timeout for %s',
+    'uses the fail-closed HTTP timeout only for replay and meet: %s',
     async (family) => {
       const timeout = vi.spyOn(AbortSignal, 'timeout');
       vi.stubGlobal(
@@ -46,7 +49,7 @@ describe('family timeout selection', () => {
       if (selection.kind !== 'durable-object') throw new Error('unconfigured');
       await read(selection.client, family);
       expect(timeout).toHaveBeenLastCalledWith(
-        family === 'replay' ? 2000 : 750
+        FAIL_CLOSED.has(family) ? 2000 : 750
       );
     }
   );
@@ -66,7 +69,7 @@ describe('family timeout selection', () => {
       if (selection.kind !== 'durable-object') throw new Error('unconfigured');
       await read(selection.client, family);
       expect(timer.mock.calls.at(-1)?.[1]).toBe(
-        family === 'replay' ? 2000 : 750
+        FAIL_CLOSED.has(family) ? 2000 : 750
       );
     }
   );
@@ -84,7 +87,7 @@ describe('family timeout selection', () => {
       }
       for (const input of [undefined, '', 'invalid', 'Infinity']) {
         expect(parseAbuseGuardTimeout(input, family)).toBe(
-          family === 'replay' ? 2000 : 750
+          FAIL_CLOSED.has(family) ? 2000 : 750
         );
       }
     }

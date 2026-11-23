@@ -1799,7 +1799,17 @@ Operating requirements:
 - `tuturuuu-meet` needs `GOOGLE_GENERATIVE_AI_API_KEY`. It also needs
   `ABUSE_GUARD_FAMILIES` to include `meet` (source config: `proxy,meet`) and a
   valid `ABUSE_GUARD_KEY_PEPPER`. Otherwise the Meet AI usage limiter refuses
-  every chunk and notes run with 503 `MEET_AI_LIMITER_UNAVAILABLE`.
+  every chunk and notes run with 503 `MEET_AI_LIMITER_UNAVAILABLE`. The `meet`
+  family, like `replay`, fails closed, so its store calls default to a
+  two-second timeout (not 750 ms) to let a cold Durable Object answer;
+  `ABUSE_GUARD_TIMEOUT_MS` still overrides it, clamped to 100–2000 ms.
+- Room polling through `/api/meet-*` is rate limited by the Meet proxy guard.
+  A request whose session cookie (Supabase or `tuturuuu_app_session`) the
+  guard verifies is limited as its user with the authenticated budget
+  (`API_PROXY_SESSION_ACTOR_ENABLED=0` turns this off). Unverified, forged or
+  other-project cookies stay on the anonymous per-IP budget (240 reads an
+  hour), which an open room's polling uses up in a few minutes. Regression
+  coverage: `packages/utils/src/__tests__/api-proxy-meet-session-actor.test.ts`.
 - `tuturuuu-meet-realtime` has no `MEET_AI_ALL_WORKSPACES` secret, so its
   room settings gate admits only allowlisted workspaces. Turning on post-call
   note sharing stays denied for other workspaces until that secret is

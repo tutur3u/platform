@@ -46,6 +46,18 @@ export const ABUSE_GUARD_DEFAULT_TIMEOUT_MS = 750;
 /** Fail-closed replay calls allow cold-object admission, bounded to two seconds. */
 export const ABUSE_GUARD_REPLAY_TIMEOUT_MS = 2000;
 
+/**
+ * Families whose callers refuse the request when the store cannot answer
+ * (replay admission, the paid Meet AI limiter). A cold Durable Object can take
+ * longer than the default to answer its first call, and a timeout there turns
+ * into a user-facing refusal, so these families allow the same two-second
+ * bound as replay. Fail-open families keep the shorter default.
+ */
+const FAIL_CLOSED_FAMILIES: ReadonlySet<AbuseGuardFamily> = new Set([
+  'replay',
+  'meet',
+]);
+
 const warnedFamilyNames = new Set<string>();
 
 /**
@@ -76,7 +88,7 @@ export function parseAbuseGuardTimeout(
 ) {
   const parsed = Number(value);
   if (!value?.trim() || !Number.isFinite(parsed)) {
-    return family === 'replay'
+    return family && FAIL_CLOSED_FAMILIES.has(family)
       ? ABUSE_GUARD_REPLAY_TIMEOUT_MS
       : ABUSE_GUARD_DEFAULT_TIMEOUT_MS;
   }
