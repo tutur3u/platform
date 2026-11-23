@@ -71,7 +71,10 @@ export async function linkEventMeeting(
       .from('workspace_meetings')
       .insert({
         ws_id: input.wsId,
-        name: (event.title || 'Meeting').slice(0, 255),
+        // Meeting names are not encrypted, so never copy an encrypted title.
+        name: stored.is_encrypted
+          ? 'Meeting'
+          : (event.title || 'Meeting').slice(0, 255),
         time: event.start_at,
         creator_id: input.actorUserId,
       })

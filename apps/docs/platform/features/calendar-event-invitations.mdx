@@ -37,7 +37,9 @@ audience: developers
   recipients beyond the guest list.
 - Mail goes through `@tuturuuu/email-service` with the platform sender
   (root-workspace credentials) and `Reply-To` set to the organizer, so that
-  service's rate limits, blacklist and email audit apply.
+  service's rate limits, blacklist and email audit apply. The manager who
+  sends is the organizer and `Reply-To` of that message, so no manager can
+  send under another member's name or address.
 - Each email carries an RFC 5545 attachment: `METHOD:REQUEST` for invitations
   and updates, `METHOD:CANCEL` for cancellations, a stable `UID`, and a
   `SEQUENCE` that increases on every update or cancellation.
@@ -78,7 +80,12 @@ recipients are recorded as `suppressed` and never mailed.
   and kind; re-sending the same version is a no-op.
 - The Calendar Worker request that queues a send claims and sends a bounded
   batch with a two-minute lease. Retries back off exponentially for at most
-  five attempts. An ambiguous provider outcome is terminal and never resent.
+  five attempts. An ambiguous provider outcome, or a send whose lease expired,
+  is settled as `unknown` and never resent.
+- Quotas are checked and deliveries inserted in one transaction
+  (`calendar_invite_enqueue`) under locks on the requester and workspace.
+- Suppressions are checked when a delivery is queued and again right before
+  it is sent.
 - A row in `calendar_invite_send_fences` (per workspace, or global with a null
   `ws_id`) stops both new sends and claims of queued deliveries.
 - Queued rows left by an interrupted request are claimed by the next send. A
@@ -104,7 +111,8 @@ Calendar API authorises `manage_calendar` before using the service role. RLS
 policies remain as defence in depth: calendar managers read and write guests
 of their workspace, and a signed-in guest reads only their own row.
 `calendar_respond_to_event` lets a signed-in guest answer their own
-invitation.
+invitation. For encrypted events, a delivery's event snapshot is cleared once
+the delivery settles, and a linked meeting gets a generic name.
 
 ## Regression coverage
 

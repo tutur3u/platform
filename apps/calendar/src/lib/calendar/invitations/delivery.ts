@@ -181,46 +181,7 @@ export async function queueInvitationDeliveries(
   });
 
   const sendable = classified.filter((row) => row.status === 'queued').length;
-  if (sendable > 0) {
-    const { data: blocked, error } = await sbAdmin.rpc(
-      'calendar_invite_quota_check',
-      {
-        p_ws_id: snapshot.wsId,
-        p_requested_by: actorUserId,
-        // Cancellations only tell existing guests; they never widen reach.
-        p_new_recipients: kind === 'cancel' ? 0 : sendable,
-        p_user_hourly_limit: INVITATION_LIMITS.userHourly,
-        p_user_daily_limit: INVITATION_LIMITS.userDaily,
-        p_workspace_daily_limit: INVITATION_LIMITS.workspaceDaily,
-      }
-    );
-    if (error) throw error;
-    if (blocked) {
-      await audit(sbAdmin, [
-        {
-          ws_id: snapshot.wsId,
-          event_id: snapshot.eventId,
-          guest_id: null,
-          actor_user_id: actorUserId,
-          action:
-            blocked === 'stopped'
-              ? 'invite_blocked_fence'
-              : 'invite_blocked_quota',
-          detail: { reason: blocked, recipients: sendable, kind },
-        },
-      ]);
-      throw new InvitationError(
-        blocked === 'stopped'
-          ? 'Invitation email is paused for this workspace'
-          : 'Invitation sending limit reached. Try again later',
-        429,
-        blocked === 'stopped' ? 'invitations_paused' : `quota_${blocked}`
-      );
-    }
-  }
-
   const rows = classified.map((row) => ({
-    ws_id: snapshot.wsId,
     event_id: snapshot.eventId,
     guest_id: row.guestId,
     recipient_email: row.email,
@@ -233,16 +194,53 @@ export async function queueInvitationDeliveries(
       sequence: snapshot.sequence,
       kind,
     }),
-    requested_by: actorUserId,
-    event_snapshot: snapshot as unknown as Json,
+    event_snapshot: snapshot,
     status: row.status,
   }));
 
-  const { data: inserted, error: insertError } = await sbAdmin
-    .from('calendar_invite_deliveries')
-    .upsert(rows, { onConflict: 'idempotency_key', ignoreDuplicates: true })
-    .select('id, guest_id, status');
-  if (insertError) throw insertError;
+  const { data: enqueued, error } = await sbAdmin.rpc(
+    'calendar_invite_enqueue',
+    {
+      p_ws_id: snapshot.wsId,
+      p_requested_by: actorUserId,
+      p_rows: rows as unknown as Json,
+      // Cancellations only tell existing guests; they never widen reach.
+      p_new_recipients: kind === 'cancel' ? 0 : sendable,
+      p_check_quota: sendable > 0,
+      p_user_hourly_limit: INVITATION_LIMITS.userHourly,
+      p_user_daily_limit: INVITATION_LIMITS.userDaily,
+      p_workspace_daily_limit: INVITATION_LIMITS.workspaceDaily,
+    }
+  );
+  if (error) throw error;
+  const result = enqueued as unknown as {
+    blocked: string | null;
+    rows: Array<{ id: string; guest_id: string | null; status: string }>;
+  };
+  const blocked = result.blocked;
+  if (blocked) {
+    await audit(sbAdmin, [
+      {
+        ws_id: snapshot.wsId,
+        event_id: snapshot.eventId,
+        guest_id: null,
+        actor_user_id: actorUserId,
+        action:
+          blocked === 'stopped'
+            ? 'invite_blocked_fence'
+            : 'invite_blocked_quota',
+        detail: { reason: blocked, recipients: sendable, kind },
+      },
+    ]);
+    throw new InvitationError(
+      blocked === 'stopped'
+        ? 'Invitation email is paused for this workspace'
+        : 'Invitation sending limit reached. Try again later',
+      429,
+      blocked === 'stopped' ? 'invitations_paused' : `quota_${blocked}`
+    );
+  }
+  const inserted = result.rows;
 
   for (const row of inserted ?? []) {
     if (row.status === 'queued') summary.queued += 1;
@@ -321,10 +319,18 @@ export async function dispatchInvitationDeliveries(
       action: string,
       detail: Record<string, Json> = {}
     ) => {
+      // Encrypted events keep no plaintext copy once a row is settled.
+      const settled = !(
+        patch.status === 'failed' && patch.next_attempt_at !== 'infinity'
+      );
+      const encrypted =
+        (delivery.event_snapshot as { encrypted?: unknown } | null)
+          ?.encrypted === true;
       await sbAdmin
         .from('calendar_invite_deliveries')
         .update({
           ...patch,
+          ...(settled && encrypted ? { event_snapshot: {} } : {}),
           lease_expires_at: null,
           updated_at: new Date().toISOString(),
         })
@@ -360,6 +366,20 @@ export async function dispatchInvitationDeliveries(
     }
 
     const snapshot = parsed.data;
+    // Honour an unsubscribe that arrived after this row was queued.
+    const suppressedNow = await suppressedEmails(sbAdmin, {
+      wsId: delivery.ws_id,
+      senderUserId: snapshot.organizer.userId,
+      emails: [delivery.recipient_email],
+    });
+    if (suppressedNow.size > 0) {
+      results.suppressed += 1;
+      await finish(
+        { status: 'suppressed', last_error: 'recipient suppressed' },
+        'invite_suppressed'
+      );
+      continue;
+    }
     const eventEnd = new Date(snapshot.end);
     try {
       const rsvpToken =

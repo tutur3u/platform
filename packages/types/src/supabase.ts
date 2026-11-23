@@ -61003,6 +61003,19 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      calendar_invite_enqueue: {
+        Args: {
+          p_check_quota: boolean;
+          p_new_recipients: number;
+          p_requested_by: string;
+          p_rows: Json;
+          p_user_daily_limit?: number;
+          p_user_hourly_limit?: number;
+          p_workspace_daily_limit?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       calendar_invite_quota_check: {
         Args: {
           p_new_recipients: number;

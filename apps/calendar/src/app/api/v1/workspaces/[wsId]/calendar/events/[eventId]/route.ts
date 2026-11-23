@@ -603,6 +603,15 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
+    if (!existingEvent.provider || existingEvent.provider === 'tuturuuu')
+      await cancelGuestInvitationsBeforeDelete({
+        sbAdmin,
+        request,
+        wsId,
+        eventId,
+        userId,
+      });
+
     if (googleColorOperationModeEnabled() || retained) {
       if (existingEvent.provider === 'google')
         return handleRecoverableGoogleDelete({ request, rawWsId, eventId });
@@ -661,13 +670,6 @@ export async function DELETE(request: Request, { params }: Params) {
       });
     }
 
-    await cancelGuestInvitationsBeforeDelete({
-      sbAdmin,
-      request,
-      wsId,
-      eventId,
-      userId,
-    });
     const { error } = await sbAdmin
       .from('workspace_calendar_events')
       .delete()

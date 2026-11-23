@@ -669,6 +669,16 @@ begin
     raise exception 'claim limit out of range' using errcode = '22023';
   end if;
 
+  -- A lease that expired mid-send may already have reached the provider.
+  -- Settle it as unknown instead of sending a possible duplicate.
+  update public.calendar_invite_deliveries
+  set status = 'unknown',
+      last_error = 'send lease expired',
+      lease_expires_at = null,
+      updated_at = now()
+  where status = 'sending'
+    and lease_expires_at < now();
+
   return query
   update public.calendar_invite_deliveries d
   set status = 'sending',
@@ -678,10 +688,8 @@ begin
   where d.id in (
     select c.id
     from public.calendar_invite_deliveries c
-    where (
-        (c.status in ('queued', 'failed') and c.next_attempt_at <= now())
-        or (c.status = 'sending' and c.lease_expires_at < now())
-      )
+    where c.status in ('queued', 'failed')
+      and c.next_attempt_at <= now()
       and c.attempts < 5
       and not exists (
         select 1 from public.calendar_invite_send_fences f
@@ -699,3 +707,74 @@ revoke all on function public.calendar_invite_claim_deliveries(integer, integer)
   from public, anon, authenticated;
 grant execute on function public.calendar_invite_claim_deliveries(integer, integer)
   to service_role;
+
+-- Check quotas and queue deliveries in one transaction. Advisory locks on
+-- the requester and the workspace serialise concurrent requests, so
+-- parallel sends cannot all pass the same quota snapshot (service role).
+create or replace function public.calendar_invite_enqueue(
+  p_ws_id uuid,
+  p_requested_by uuid,
+  p_rows jsonb,
+  p_new_recipients integer,
+  p_check_quota boolean,
+  p_user_daily_limit integer default 200,
+  p_workspace_daily_limit integer default 1000,
+  p_user_hourly_limit integer default 60
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_blocked text;
+  v_rows jsonb;
+begin
+  if jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) > 101 then
+    raise exception 'invalid delivery batch' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(p_requested_by::text, 7312));
+  perform pg_advisory_xact_lock(hashtextextended(p_ws_id::text, 7313));
+
+  if p_check_quota then
+    v_blocked := public.calendar_invite_quota_check(
+      p_ws_id, p_requested_by, p_new_recipients,
+      p_user_daily_limit, p_workspace_daily_limit, p_user_hourly_limit
+    );
+    if v_blocked is not null then
+      return jsonb_build_object('blocked', v_blocked, 'rows', '[]'::jsonb);
+    end if;
+  end if;
+
+  with inserted as (
+    insert into public.calendar_invite_deliveries (
+      ws_id, event_id, guest_id, recipient_email, method, kind,
+      ical_sequence, idempotency_key, requested_by, event_snapshot, status
+    )
+    select p_ws_id, r.event_id, r.guest_id, r.recipient_email, r.method,
+           r.kind, r.ical_sequence, r.idempotency_key, p_requested_by,
+           r.event_snapshot, r.status
+    from jsonb_to_recordset(p_rows) as r (
+      event_id uuid, guest_id uuid, recipient_email text, method text,
+      kind text, ical_sequence integer, idempotency_key text,
+      event_snapshot jsonb, status text
+    )
+    where r.status in ('queued', 'suppressed', 'throttled')
+    on conflict (idempotency_key) do nothing
+    returning id, guest_id, status
+  )
+  select coalesce(jsonb_agg(to_jsonb(inserted)), '[]'::jsonb)
+  into v_rows
+  from inserted;
+
+  return jsonb_build_object('blocked', null, 'rows', v_rows);
+end;
+$$;
+
+revoke all on function public.calendar_invite_enqueue(
+  uuid, uuid, jsonb, integer, boolean, integer, integer, integer
+) from public, anon, authenticated;
+grant execute on function public.calendar_invite_enqueue(
+  uuid, uuid, jsonb, integer, boolean, integer, integer, integer
+) to service_role;

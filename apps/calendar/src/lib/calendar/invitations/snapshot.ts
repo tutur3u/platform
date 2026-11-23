@@ -36,6 +36,8 @@ export const InvitationSnapshotSchema = z.object({
     userId: z.guid().nullable(),
   }),
   guestsCanSeeGuestList: z.boolean(),
+  /** The source event is encrypted at rest; settled rows drop this copy. */
+  encrypted: z.boolean().optional(),
   attendees: z
     .array(
       z.object({

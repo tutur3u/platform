@@ -200,6 +200,7 @@ export function buildInvitationSnapshot(input: {
       userId: organizer.userId,
     },
     guestsCanSeeGuestList: settings.guests_can_see_guest_list,
+    encrypted: event.is_encrypted === true,
     attendees: guests.slice(0, 101).map((guest) => ({
       email: guest.email,
       name: guest.display_name,

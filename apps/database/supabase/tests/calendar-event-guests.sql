@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(30);
 
 -- Fixtures: 8701 manager, 8702 external guest (not a member), 8703 stranger.
 insert into auth.users (id)
@@ -261,6 +261,38 @@ select is(
   (select count(*) from public.calendar_invite_claim_deliveries(10, 60)),
   0::bigint,
   'a leased delivery is not claimed twice'
+);
+
+update public.calendar_invite_deliveries
+set lease_expires_at = now() - interval '1 minute'
+where idempotency_key = 'fixture-8721-8732-0-REQUEST';
+
+select is(
+  (select count(*) from public.calendar_invite_claim_deliveries(10, 60)),
+  0::bigint,
+  'an expired send lease is never re-sent'
+);
+select is(
+  (select status from public.calendar_invite_deliveries
+   where idempotency_key = 'fixture-8721-8732-0-REQUEST'),
+  'unknown',
+  'an expired send lease settles as unknown'
+);
+
+select ok(
+  not has_function_privilege('authenticated',
+    'public.calendar_invite_enqueue(uuid,uuid,jsonb,integer,boolean,integer,integer,integer)',
+    'EXECUTE'),
+  'authenticated cannot enqueue deliveries'
+);
+select is(
+  public.calendar_invite_enqueue(
+    '00000000-0000-4000-8000-000000008711',
+    '00000000-0000-4000-8000-000000008701',
+    '[]'::jsonb, 60, true
+  ) ->> 'blocked',
+  'user_hourly',
+  'enqueue applies the quota inside its transaction'
 );
 
 -- Guest-facing RLS and RPCs, with rollback-only grants for the policy checks.

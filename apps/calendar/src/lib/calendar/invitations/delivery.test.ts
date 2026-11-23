@@ -45,10 +45,16 @@ function fakeClient(responder: Responder, rpc: Record<string, unknown>) {
         resolve(responder(table, calls));
       return builder;
     },
-    rpc: vi.fn(async (name: string) => ({
-      data: rpc[name] ?? null,
-      error: null,
-    })),
+    rpc: vi.fn(async (name: string, args: Record<string, unknown>) => {
+      const value = rpc[name];
+      return {
+        data:
+          typeof value === 'function'
+            ? (value as (input: Record<string, unknown>) => unknown)(args)
+            : (value ?? null),
+        error: null,
+      };
+    }),
   };
   return {
     client: client as unknown as TypedSupabaseClient,
@@ -100,43 +106,43 @@ const recipients = [
 describe('queueInvitationDeliveries', () => {
   it('skips the organizer, suppresses opted-out and throttles repeat recipients', async () => {
     let upserted: Array<Record<string, unknown>> = [];
-    const { client, rpc } = fakeClient((table, calls) => {
-      if (table === 'calendar_invite_suppressions')
-        return {
-          data: [
-            {
-              email: 'b@example.com',
-              scope: 'all',
-              sender_user_id: null,
-              ws_id: null,
-            },
-          ],
-          error: null,
-        };
-      if (
-        table === 'calendar_invite_deliveries' &&
-        calls.some((c) => c.op === 'upsert')
-      ) {
-        upserted = calls.find((c) => c.op === 'upsert')
-          ?.args[0] as typeof upserted;
-        return {
-          data: upserted.map((row, index) => ({
-            id: `d${index}`,
-            guest_id: row.guest_id,
-            status: row.status,
-          })),
-          error: null,
-        };
+    const { client, rpc } = fakeClient(
+      (table, calls) => {
+        if (table === 'calendar_invite_suppressions')
+          return {
+            data: [
+              {
+                email: 'b@example.com',
+                scope: 'all',
+                sender_user_id: null,
+                ws_id: null,
+              },
+            ],
+            error: null,
+          };
+        if (table === 'calendar_invite_deliveries')
+          return {
+            data: Array.from({ length: 5 }, () => ({
+              recipient_email: 'c@example.com',
+            })),
+            error: null,
+          };
+        return { data: null, error: null };
+      },
+      {
+        calendar_invite_enqueue: (args: Record<string, unknown>) => {
+          upserted = args.p_rows as typeof upserted;
+          return {
+            blocked: null,
+            rows: upserted.map((row, index) => ({
+              id: `d${index}`,
+              guest_id: row.guest_id,
+              status: row.status,
+            })),
+          };
+        },
       }
-      if (table === 'calendar_invite_deliveries')
-        return {
-          data: Array.from({ length: 5 }, () => ({
-            recipient_email: 'c@example.com',
-          })),
-          error: null,
-        };
-      return { data: null, error: null };
-    }, {});
+    );
 
     const summary = await queueInvitationDeliveries(
       { sbAdmin: client },
@@ -158,14 +164,14 @@ describe('queueInvitationDeliveries', () => {
       `cal-invite-v1:${snapshot.eventId}:a@example.com:1:update`
     );
     expect(rpc).toHaveBeenCalledWith(
-      'calendar_invite_quota_check',
-      expect.objectContaining({ p_new_recipients: 1 })
+      'calendar_invite_enqueue',
+      expect.objectContaining({ p_new_recipients: 1, p_check_quota: true })
     );
   });
 
   it('refuses to queue when the quota or fence blocks the send', async () => {
     const { client } = fakeClient(() => ({ data: [], error: null }), {
-      calendar_invite_quota_check: 'stopped',
+      calendar_invite_enqueue: { blocked: 'stopped', rows: [] },
     });
     await expect(
       queueInvitationDeliveries(
@@ -198,7 +204,8 @@ describe('dispatchInvitationDeliveries', () => {
     result: Awaited<
       ReturnType<Parameters<typeof dispatchInvitationDeliveries>[0]['send']>
     >,
-    attempts = 1
+    attempts = 1,
+    options: { suppressed?: boolean; encrypted?: boolean } = {}
   ) {
     const updates: Array<Record<string, unknown>> = [];
     const { client } = fakeClient(
@@ -206,9 +213,31 @@ describe('dispatchInvitationDeliveries', () => {
         const update = calls.find((c) => c.op === 'update');
         if (table === 'calendar_invite_deliveries' && update)
           updates.push(update.args[0] as Record<string, unknown>);
+        if (table === 'calendar_invite_suppressions' && options.suppressed)
+          return {
+            data: [
+              {
+                email: 'a@example.com',
+                scope: 'all',
+                sender_user_id: null,
+                ws_id: null,
+              },
+            ],
+            error: null,
+          };
         return { data: null, error: null };
       },
-      { calendar_invite_claim_deliveries: [claimed(attempts)] }
+      {
+        calendar_invite_claim_deliveries: [
+          {
+            ...claimed(attempts),
+            event_snapshot: {
+              ...snapshot,
+              encrypted: options.encrypted === true,
+            },
+          },
+        ],
+      }
     );
     const send = vi.fn(async (_message: InvitationMessage) => result);
     return {
@@ -267,5 +296,27 @@ describe('dispatchInvitationDeliveries', () => {
     const { updates, promise } = run({ status: 'unknown', error: 'timeout' });
     await promise;
     expect(updates[0]).toMatchObject({ status: 'unknown' });
+  });
+
+  it('honours an unsubscribe that arrived after queueing', async () => {
+    const { send, updates, promise } = run({ status: 'sent' }, 1, {
+      suppressed: true,
+    });
+    expect(await promise).toMatchObject({ suppressed: 1, sent: 0 });
+    expect(send).not.toHaveBeenCalled();
+    expect(updates[0]).toMatchObject({ status: 'suppressed' });
+  });
+
+  it('drops the plaintext snapshot of an encrypted event once settled', async () => {
+    const sent = run({ status: 'sent' }, 1, { encrypted: true });
+    await sent.promise;
+    expect(sent.updates[0]).toMatchObject({
+      status: 'sent',
+      event_snapshot: {},
+    });
+
+    const retry = run({ status: 'retry', error: 'x' }, 1, { encrypted: true });
+    await retry.promise;
+    expect(retry.updates[0]).not.toHaveProperty('event_snapshot');
   });
 });

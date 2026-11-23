@@ -265,10 +265,9 @@ async function queueAndDispatch(
     eventId: input.event.id,
     organizerUserId: input.actorUserId,
   });
-  const organizer = await loadOrganizerIdentity(
-    sbAdmin,
-    settings.organizer_user_id ?? input.actorUserId
-  );
+  // The manager who sends is the visible organizer and Reply-To, so no
+  // manager can send under another member's name or address.
+  const organizer = await loadOrganizerIdentity(sbAdmin, input.actorUserId);
   const guests = await listEventGuests(sbAdmin, input.event.id);
   const snapshot = buildInvitationSnapshot({
     event: input.event,

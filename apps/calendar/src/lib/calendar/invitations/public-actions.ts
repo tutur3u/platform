@@ -90,7 +90,9 @@ export async function lookupInviteToken(
             snapshot.data.organizer.name || snapshot.data.organizer.email,
         }
       : null,
-    organizerUserId: settings?.organizer_user_id ?? null,
+    organizerUserId: snapshot.success
+      ? snapshot.data.organizer.userId
+      : (settings?.organizer_user_id ?? null),
   };
 }
 
