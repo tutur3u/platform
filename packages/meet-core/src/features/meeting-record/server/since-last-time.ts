@@ -28,7 +28,11 @@ const carrySchema = z.object({
 });
 
 /** Earlier meetings that share a Project with this one, newest first. */
-async function earlierProjectMeetings(access: MeetingRecordAccess) {
+type EarlierMeeting = { id: string; name: string; time: string };
+
+async function earlierProjectMeetings(
+  access: MeetingRecordAccess
+): Promise<EarlierMeeting[]> {
   const projects = await listLinkedProjects(access);
   if (!projects.length) return [];
   const links = await access.db
@@ -46,7 +50,13 @@ async function earlierProjectMeetings(access: MeetingRecordAccess) {
     .limit(500);
   if (links.error)
     throw new MeetingRecordError(500, 'Earlier meetings unavailable');
-  const ids = [...new Set((links.data ?? []).map((link) => link.entity_id))];
+  const ids = [
+    ...new Set(
+      ((links.data ?? []) as Array<{ entity_id: string }>).map(
+        (link) => link.entity_id
+      )
+    ),
+  ];
   if (!ids.length) return [];
   const meetings = await access.db
     .from('workspace_meetings')
@@ -58,7 +68,7 @@ async function earlierProjectMeetings(access: MeetingRecordAccess) {
     .limit(MAX_EARLIER_MEETINGS);
   if (meetings.error)
     throw new MeetingRecordError(500, 'Earlier meetings unavailable');
-  return meetings.data ?? [];
+  return (meetings.data ?? []) as EarlierMeeting[];
 }
 
 async function collect(access: MeetingRecordAccess) {

@@ -57,6 +57,14 @@ const updateSchema = z
   .refine((body) => body.content !== undefined || body.completed !== undefined);
 const deleteSchema = z.object({ id: z.uuid() });
 
+type RecordItemRow = {
+  id: string;
+  kind: string;
+  content: string;
+  position: number;
+  completed_at: string | null;
+};
+
 type LinkRow = {
   meeting_id: string;
   task_id: string;
@@ -112,7 +120,7 @@ export async function listMeetingTasks(
   db: MeetingRecordAccess['db'],
   wsId: string,
   meetingIds: string[]
-) {
+): Promise<Array<{ meetingId: string; task: MeetingRecordTask }>> {
   const links = await db
     .schema('private')
     .from('meeting_task_links')
@@ -195,14 +203,14 @@ export async function readMeetingRecord(
   return {
     canEdit: access.canEditRecord,
     isHost: access.isHost,
-    items: (items.data ?? []).map((item) => ({
+    items: ((items.data ?? []) as RecordItemRow[]).map((item) => ({
       id: item.id,
       kind: item.kind === 'decision' ? 'decision' : 'agenda',
       content: item.content,
       position: item.position,
       completedAt: item.completed_at,
     })),
-    tasks: tasks.map((entry) => entry.task),
+    tasks: tasks.map((entry: { task: MeetingRecordTask }) => entry.task),
     defaultBoardId,
   };
 }

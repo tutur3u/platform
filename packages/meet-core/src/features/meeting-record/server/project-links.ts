@@ -39,7 +39,7 @@ const toProject = (row: ProjectRow): MeetingProject => ({
 
 export async function listLinkedProjects(
   access: Pick<MeetingRecordAccess, 'db' | 'wsId' | 'meeting'>
-) {
+): Promise<MeetingProject[]> {
   const links = await access.db
     .schema('private')
     .from('task_project_links')
@@ -51,8 +51,8 @@ export async function listLinkedProjects(
     .limit(100);
   if (links.error)
     throw new MeetingRecordError(500, 'Project links unavailable');
-  const ids = (links.data ?? []).map(
-    (link: { project_id: string }) => link.project_id
+  const ids = ((links.data ?? []) as Array<{ project_id: string }>).map(
+    (link) => link.project_id
   );
   if (!ids.length) return [];
   // Links live in private; projects are read separately in their workspace.
