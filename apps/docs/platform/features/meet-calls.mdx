@@ -1794,9 +1794,47 @@ membership; only the meeting creator can start transcription, submit audio, or
 finalize notes. The server independently verifies the signed Meet app session,
 workspace membership, meeting ownership, and same-origin mutation requests.
 
-The host opens **Transcript & notes**, tells participants that audio will be sent
-to Gemini, then starts live transcription. The panel and call header show an
-active-session indicator to members. The browser mixes its current microphone
+The host opens **Transcript & notes** and starts the live transcript. Starting
+records the host's own Allow. Every other participant sees a **Transcribing**
+indicator in the call header that opens the consent notice on its own until they
+choose **Allow** or **Decline**. Until everyone present allows it, the panel shows
+**Paused until everyone allows it** with the number still waiting and declined,
+and audio windows stay on the host's device. The server also refuses any chunk
+while the fence is not ready, so the transcript shows a gap rather than
+unconsented speech.
+
+The panel shows exactly one state, with its next action. Off states explain the
+reason and who can change it.
+
+| State | Meaning | Host action |
+| --- | --- | --- |
+| Ready to transcribe | Nothing running | Start live transcript |
+| Starting | Preparing capture on this device | None |
+| Transcribing live | Capturing and sending audio | Stop & generate notes |
+| Paused until everyone allows it | Someone present has not allowed it | Stop & generate notes |
+| Transcript open elsewhere | A session is open but this device is not capturing | Stop & generate notes |
+| Writing notes | Final notes are being generated | None |
+| Notes ready | Final notes are saved | Start a new transcript |
+| Notes could not be written | Billing stopped capture, or notes failed | Generate missing notes, when retrying can help |
+
+The transcript groups consecutive lines by speaker, with the server-resolved
+label and a timestamp per line. It follows new lines unless the reader scrolled
+up; then **Jump to latest** appears.
+
+While a session runs, the **Notes** tab drafts live notes from the saved
+transcript. A draft is generated automatically every 90 completed chunks, about
+fifteen minutes of speech, or when the host selects **Update notes** after new
+transcript arrives. Drafts are not stored; the final notes replace them when the
+session stops. Each draft is one billed notes run, keyed by the number of chunks
+it covers so the same transcript is never charged twice, and it counts against
+the hourly notes limit. That cadence leaves room for the final notes.
+
+Regression coverage: `meeting-ai-status.test.ts`, `meeting-ai-panel.test.tsx`,
+`transcript-consent-notice.test.tsx`, `transcript-blocks.test.ts`,
+`meeting-live-notes.test.tsx`, `draft-notes.test.ts` and
+`use-meeting-ai-consent.test.ts`.
+
+The browser mixes its current microphone
 track with received participant audio; it does not request another microphone or
 capture unrelated desktop audio. Muted tracks contribute silence. AudioWorklet
 emits independent mono 16 kHz WAV chunks about every ten seconds, skipping silence.

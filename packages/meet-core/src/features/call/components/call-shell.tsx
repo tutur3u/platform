@@ -12,6 +12,8 @@ import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { canTranscribeMeet } from '../../meeting-ai/eligibility';
 import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
+import { TranscriptConsentNotice } from '../../meeting-ai/transcript-consent-notice';
+import { useTranscriptConsent } from '../../meeting-ai/use-transcript-consent';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useCallMediaActions } from '../hooks/call-media-actions';
 import { useMeetRoom } from '../hooks/use-meet-room';
@@ -196,6 +198,10 @@ function CallShellContent({
       state.selfUserId,
     ]
   );
+  const { consent: transcriptConsent } = useTranscriptConsent(
+    meetingId,
+    joined && !left
+  );
   const ai = useMeetingAi(
     wsId,
     meetingId,
@@ -203,7 +209,11 @@ function CallShellContent({
     canTranscribeMeet(left, Object.keys(state.participants).length),
     canReadNotes,
     accountId,
-    { title: state.title ?? meetingName }
+    {
+      title: state.title ?? meetingName,
+      consentReady:
+        !!transcriptConsent?.available && transcriptConsent.fence.ready,
+    }
   );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({
@@ -406,6 +416,7 @@ function CallShellContent({
         onRetry={retryConnection}
         actions={
           <>
+            <TranscriptConsentNotice meetingId={meetingId} />
             <RoomAssistantAudio
               room={room}
               audioSuppressed={sharedAudio.shared}
