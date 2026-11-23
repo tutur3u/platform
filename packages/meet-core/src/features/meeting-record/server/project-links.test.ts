@@ -32,11 +32,11 @@ const project = {
   ticket_key: 'EDU',
 };
 
-function query(result: unknown) {
+function query(result: unknown, single: unknown = result) {
   const q: Record<string, unknown> = {};
-  for (const name of ['select', 'eq', 'not', 'order', 'limit', 'delete'])
+  for (const name of ['select', 'eq', 'in', 'not', 'order', 'limit', 'delete'])
     q[name] = vi.fn(() => q);
-  q.maybeSingle = vi.fn(async () => result);
+  q.maybeSingle = vi.fn(async () => single);
   q.insert = vi.fn(async () => ({ error: null }));
   q.then = (resolve: (value: unknown) => unknown) => resolve(result);
   return q;
@@ -45,7 +45,7 @@ function query(result: unknown) {
 function access(canLinkProjects: boolean, tables: Record<string, unknown>) {
   const from = vi.fn((table: string) => tables[table]);
   mocks.access.mockResolvedValue({
-    db: { from },
+    db: { from, schema: vi.fn(() => ({ from })) },
     user: { id: userId },
     wsId,
     meeting: { id: meetingId },
@@ -66,7 +66,11 @@ describe('meeting project links', () => {
 
   it('lists links without offering projects to members who cannot link', async () => {
     const from = access(false, {
-      task_project_links: query({ data: [{ project }], error: null }),
+      task_project_links: query({
+        data: [{ project_id: projectId }],
+        error: null,
+      }),
+      task_projects: query({ data: [project], error: null }),
     });
     await expect(readMeetingProjects(request(), params)).resolves.toEqual({
       linked: [
@@ -75,7 +79,7 @@ describe('meeting project links', () => {
       available: [],
       canLink: false,
     });
-    expect(from).not.toHaveBeenCalledWith('task_projects');
+    expect(from).toHaveBeenCalledTimes(2);
   });
 
   it('refuses to link without both linking rights', async () => {
@@ -92,9 +96,12 @@ describe('meeting project links', () => {
   });
 
   it('links a same-workspace project as the caller', async () => {
-    const links = query({ data: [{ project }], error: null });
+    const links = query({ data: [{ project_id: projectId }], error: null });
     access(true, {
-      task_projects: query({ data: { id: projectId }, error: null }),
+      task_projects: query(
+        { data: [project], error: null },
+        { data: { id: projectId }, error: null }
+      ),
       task_project_links: links,
     });
     await linkMeetingProject(request({ projectId }), params);
@@ -117,6 +124,21 @@ describe('meeting project links', () => {
       linkMeetingProject(request({ projectId }), params)
     ).rejects.toMatchObject({ status: 404 });
     expect(links.insert).not.toHaveBeenCalled();
+  });
+
+  it('reports a meeting deleted since the access check as not found', async () => {
+    const links = query({ data: [], error: null });
+    links.insert = vi.fn(async () => ({ error: { code: '23503' } }));
+    access(true, {
+      task_projects: query(
+        { data: [], error: null },
+        { data: { id: projectId }, error: null }
+      ),
+      task_project_links: links,
+    });
+    await expect(
+      linkMeetingProject(request({ projectId }), params)
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   it('rejects a malformed project id before writing', async () => {

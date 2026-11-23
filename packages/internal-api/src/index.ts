@@ -1132,7 +1132,6 @@ export {
   type WorkspaceMeetingStream,
   type WorkspaceMeetingStreamResponse,
 } from './meet';
-export * from './meet-record';
 export * from './meetings';
 export {
   applyMindAiPatch,

@@ -91,6 +91,7 @@
     "src/app/api/meet-live/[meetingId]/review/route.ts",
     "src/app/api/meet-live/[meetingId]/route.ts",
     "src/app/api/meet-live/memory/route.ts",
+    "src/app/api/meet-record/[wsId]/[meetingId]/projects/route.ts",
     "src/app/og/route.ts",
     "src/i18n/routing.ts"
   ],

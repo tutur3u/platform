@@ -58,7 +58,7 @@ export function ProjectPicker({
   if (state.status === 'loading') {
     return (
       <LoadingRegion className={className} srLabel={labels.loading}>
-        <SkeletonLine barClassName="w-full" size="md" />
+        <SkeletonLine barClassName="w-full" size="base" />
       </LoadingRegion>
     );
   }

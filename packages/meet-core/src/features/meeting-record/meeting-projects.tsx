@@ -5,8 +5,9 @@ import {
   getMeetingProjectLinks,
   linkMeetingProject,
   type MeetingProjectLinks,
+  type MeetingProjectSummary,
   unlinkMeetingProject,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/meet-record';
 import { ProjectChip } from '@tuturuuu/ui/custom/project-chip';
 import { ProjectPicker } from '@tuturuuu/ui/custom/project-picker';
 import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
@@ -44,17 +45,20 @@ export function MeetingProjects({
     queryKey,
     queryFn: () => getMeetingProjectLinks(wsId, meetingId),
   });
-  const change = useMutation({
-    mutationFn: ({ projectId, link }: { projectId: string; link: boolean }) =>
-      (link ? linkMeetingProject : unlinkMeetingProject)(
-        wsId,
-        meetingId,
-        projectId
-      ),
-    onSuccess: ({ linked }) =>
+  const change = useMutation<
+    { linked: MeetingProjectSummary[] },
+    Error,
+    { projectId: string; link: boolean }
+  >({
+    mutationFn: ({ projectId, link }) =>
+      link
+        ? linkMeetingProject(wsId, meetingId, projectId)
+        : unlinkMeetingProject(wsId, meetingId, projectId),
+    onSuccess: (result: { linked: MeetingProjectSummary[] }) => {
       queryClient.setQueryData<MeetingProjectLinks>(queryKey, (current) =>
-        current ? { ...current, linked } : current
-      ),
+        current ? { ...current, linked: result.linked } : current
+      );
+    },
     onError: () => toast.error(t('change_failed')),
   });
   const linkedIds = useMemo(

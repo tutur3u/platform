@@ -16264,6 +16264,77 @@ export type Database = {
         };
         Relationships: [];
       };
+      meeting_record_items: {
+        Row: {
+          completed_at: string | null;
+          content: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          meeting_id: string;
+          position: number;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string | null;
+          content: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind: string;
+          meeting_id: string;
+          position?: number;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          meeting_id?: string;
+          position?: number;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meeting_task_links: {
+        Row: {
+          carried_from_meeting_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          link_kind: string;
+          meeting_id: string;
+          task_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          carried_from_meeting_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          link_kind?: string;
+          meeting_id: string;
+          task_id: string;
+          ws_id: string;
+        };
+        Update: {
+          carried_from_meeting_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          link_kind?: string;
+          meeting_id?: string;
+          task_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       mfa_verification_failures: {
         Row: {
           failed_count: number;
@@ -22422,6 +22493,37 @@ export type Database = {
           },
         ];
       };
+      task_project_links: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          entity_id: string;
+          entity_kind: string;
+          id: string;
+          project_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          entity_id: string;
+          entity_kind: string;
+          id?: string;
+          project_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          entity_id?: string;
+          entity_kind?: string;
+          id?: string;
+          project_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       task_recurrence_active_slots: {
         Row: {
           owner_id: string;
@@ -27996,6 +28098,18 @@ export type Database = {
             referencedColumns: ['user_id'];
           },
         ];
+      };
+      task_project_entity_links: {
+        Row: {
+          created_at: string | null;
+          created_by: string | null;
+          entity_id: string | null;
+          entity_kind: string | null;
+          project_id: string | null;
+          ws_id: string | null;
+        };
+        ComputedFields: never;
+        Relationships: [];
       };
       time_tracking_request_activity_with_users: {
         Row: {
@@ -42635,135 +42749,6 @@ export type Database = {
           },
         ];
       };
-      meeting_record_items: {
-        Row: {
-          completed_at: string | null;
-          content: string;
-          created_at: string;
-          created_by: string | null;
-          id: string;
-          kind: string;
-          meeting_id: string;
-          position: number;
-          updated_at: string;
-          ws_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          completed_at?: string | null;
-          content: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          kind: string;
-          meeting_id: string;
-          position?: number;
-          updated_at?: string;
-          ws_id: string;
-        };
-        Update: {
-          completed_at?: string | null;
-          content?: string;
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          kind?: string;
-          meeting_id?: string;
-          position?: number;
-          updated_at?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'meeting_record_items_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meeting_record_items_meeting_id_fkey';
-            columns: ['meeting_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_meetings';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meeting_record_items_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      meeting_task_links: {
-        Row: {
-          carried_from_meeting_id: string | null;
-          created_at: string;
-          created_by: string | null;
-          link_kind: string;
-          meeting_id: string;
-          task_id: string;
-          ws_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          carried_from_meeting_id?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          link_kind?: string;
-          meeting_id: string;
-          task_id: string;
-          ws_id: string;
-        };
-        Update: {
-          carried_from_meeting_id?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          link_kind?: string;
-          meeting_id?: string;
-          task_id?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'meeting_task_links_carried_from_meeting_id_fkey';
-            columns: ['carried_from_meeting_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_meetings';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meeting_task_links_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meeting_task_links_meeting_id_fkey';
-            columns: ['meeting_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_meetings';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meeting_task_links_task_id_fkey';
-            columns: ['task_id'];
-            isOneToOne: false;
-            referencedRelation: 'tasks';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'meeting_task_links_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       mira_daily_stats: {
         Row: {
           created_at: string;
@@ -47786,59 +47771,6 @@ export type Database = {
             columns: ['project_id'];
             isOneToOne: false;
             referencedRelation: 'task_projects';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      task_project_links: {
-        Row: {
-          created_at: string;
-          created_by: string | null;
-          entity_id: string;
-          entity_kind: string;
-          id: string;
-          project_id: string;
-          ws_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          created_at?: string;
-          created_by?: string | null;
-          entity_id: string;
-          entity_kind: string;
-          id?: string;
-          project_id: string;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string;
-          created_by?: string | null;
-          entity_id?: string;
-          entity_kind?: string;
-          id?: string;
-          project_id?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'task_project_links_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_project_links_project_fkey';
-            columns: ['project_id', 'ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'task_projects';
-            referencedColumns: ['id', 'ws_id'];
-          },
-          {
-            foreignKeyName: 'task_project_links_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -59873,18 +59805,6 @@ export type Database = {
           first_created: string | null;
           last_created: string | null;
           link_count: number | null;
-        };
-        ComputedFields: never;
-        Relationships: [];
-      };
-      task_project_entity_links: {
-        Row: {
-          created_at: string | null;
-          created_by: string | null;
-          entity_id: string | null;
-          entity_kind: string | null;
-          project_id: string | null;
-          ws_id: string | null;
         };
         ComputedFields: never;
         Relationships: [];

@@ -40,17 +40,37 @@ const toProject = (row: ProjectRow): MeetingProject => ({
 export async function listLinkedProjects(
   access: Pick<MeetingRecordAccess, 'db' | 'wsId' | 'meeting'>
 ) {
-  const { data, error } = await access.db
+  const links = await access.db
+    .schema('private')
     .from('task_project_links')
-    .select('project:task_projects!inner(id, name, status, ticket_key)')
+    .select('project_id')
     .eq('ws_id', access.wsId)
     .eq('entity_kind', 'meeting')
     .eq('entity_id', access.meeting.id)
-    .order('created_at', { ascending: true });
-  if (error) throw new MeetingRecordError(500, 'Project links unavailable');
-  return (data ?? []).flatMap((row) =>
-    row.project ? [toProject(row.project as ProjectRow)] : []
+    .order('created_at', { ascending: true })
+    .limit(100);
+  if (links.error)
+    throw new MeetingRecordError(500, 'Project links unavailable');
+  const ids = (links.data ?? []).map(
+    (link: { project_id: string }) => link.project_id
   );
+  if (!ids.length) return [];
+  // Links live in private; projects are read separately in their workspace.
+  const projects = await access.db
+    .from('task_projects')
+    .select('id, name, status, ticket_key')
+    .eq('ws_id', access.wsId)
+    .in('id', ids)
+    .not('archived', 'is', true)
+    .not('deleted', 'is', true);
+  if (projects.error) throw new MeetingRecordError(500, 'Projects unavailable');
+  const byId = new Map(
+    (projects.data ?? []).map((project: ProjectRow) => [project.id, project])
+  );
+  return ids.flatMap((id: string) => {
+    const project = byId.get(id);
+    return project ? [toProject(project)] : [];
+  });
 }
 
 export async function readMeetingProjects(
@@ -109,18 +129,25 @@ export async function linkMeetingProject(
     .select('id')
     .eq('id', projectId)
     .eq('ws_id', access.wsId)
+    .not('archived', 'is', true)
     .not('deleted', 'is', true)
     .maybeSingle();
   if (projectError) throw new MeetingRecordError(500, 'Project lookup failed');
   if (!project) throw new MeetingRecordError(404, 'Project not found');
-  const { error } = await access.db.from('task_project_links').insert({
-    project_id: projectId,
-    ws_id: access.wsId,
-    entity_kind: 'meeting',
-    entity_id: access.meeting.id,
-    created_by: access.user.id,
-  });
-  // A repeated link is already in the requested state.
+  const { error } = await access.db
+    .schema('private')
+    .from('task_project_links')
+    .insert({
+      project_id: projectId,
+      ws_id: access.wsId,
+      entity_kind: 'meeting',
+      entity_id: access.meeting.id,
+      created_by: access.user.id,
+    });
+  // A repeated link is already in the requested state. A meeting deleted
+  // since the access check fails the workspace check.
+  if (error?.code === '23503')
+    throw new MeetingRecordError(404, 'Meeting not found');
   if (error && error.code !== '23505')
     throw new MeetingRecordError(500, 'Project link failed');
   return { linked: await listLinkedProjects(access) };
@@ -133,6 +160,7 @@ export async function unlinkMeetingProject(
   const access = await mutationAccess(request, params);
   const projectId = await readLinkBody(request);
   const { error } = await access.db
+    .schema('private')
     .from('task_project_links')
     .delete()
     .eq('project_id', projectId)

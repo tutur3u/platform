@@ -36,8 +36,12 @@ rights see the linked Projects, but no linking controls.
 ## Who can see links
 
 Full workspace members see a meeting's Projects. Guests do not, even when they can
-join the call. Event links also need calendar access. Removing a meeting or event
-removes its links. Deleting a Project removes every link to it.
+join the call. Removing a meeting or event removes its links, and deleting a
+Project removes every link to it.
+
+Links are stored privately and are read and written only through product servers.
+The server applies these rules before any read or write, and the database keeps
+every link inside one workspace.
 
 ## Reserved kinds
 
@@ -46,8 +50,9 @@ needs its own edit-right rule before it is accepted. No surface links them yet.
 
 ## Regression coverage
 
-- Database rules: `apps/database/supabase/tests/project-links-meeting-records.sql`
-  covers same-workspace integrity, the two-right linking rule, member-only reads,
-  immutability and cleanup when an item is deleted.
+- Database contract: `apps/database/supabase/tests/project-links-meeting-records.sql`
+  covers private access only, same-workspace integrity, duplicate links,
+  immutability and cleanup when an item or Project is deleted.
+- Linking rules: `packages/meet-core/src/features/meeting-record/server/project-links.test.ts`.
 - Meet API client: `packages/internal-api/src/meet-record.test.ts`.
 - Shared picker and chip: `packages/ui/src/components/ui/custom/project-picker.test.tsx`.

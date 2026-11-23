@@ -506,6 +506,11 @@
       "import": "./dist/meet-call.js",
       "require": "./dist/meet-call.js"
     },
+    "./meet-record": {
+      "types": "./dist/meet-record.d.ts",
+      "import": "./dist/meet-record.js",
+      "require": "./dist/meet-record.js"
+    },
     "./meet-guest-human-check": {
       "types": "./dist/meet-guest-human-check.d.ts",
       "import": "./dist/meet-guest-human-check.js",

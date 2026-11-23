@@ -1,27 +1,37 @@
 -- Workspace Projects link meetings and calendar events, and meetings keep a
 -- persistent record (agenda, decisions) plus the tasks they produced.
 --
--- task_project_links holds non-task project links. Task membership stays in
--- task_project_tasks, which owns ticket numbers, history triggers and the
--- create_task_with_relationship RPC; task_project_entity_links reads both as
--- one surface (entity_kind 'task' comes from task_project_tasks). Reserved
--- kinds (drive_file, doc, upskii_class, mail_thread) are admitted per product
--- by widening task_project_links_entity_kind_check together with the matching
--- RLS edit-right clause.
+-- The tables live in private and only service_role can reach them. Product
+-- servers (the Meet worker's meeting-record API) resolve the signed-in
+-- principal and enforce the rules before writing:
+--   read            -> full (MEMBER) workspace membership
+--   link a Project  -> manage_projects plus the item's edit right
+--                      (meeting: host or workspace admin;
+--                       calendar_event: manage_calendar)
+--   edit the record -> meeting host or workspace admin
+-- RLS stays enabled with no policies, so a future client grant exposes
+-- nothing until a policy is written for it.
 --
--- Linking needs manage_projects plus the owning product's edit right:
---   meeting        -> meeting creator or workspace admin
---   calendar_event -> manage_calendar
--- meeting_task_links keeps tasks and their source meeting in one workspace, so
--- a meeting never lists tasks from another workspace. Reads need full
--- (MEMBER) workspace membership; guests see none of these rows.
+-- private.task_project_links holds non-task project links. Task membership
+-- stays in public.task_project_tasks, which owns ticket numbers, history
+-- triggers and the create_task_with_relationship RPC;
+-- private.task_project_entity_links reads both as one surface (entity_kind
+-- 'task' comes from task_project_tasks). Reserved kinds (drive_file, doc,
+-- upskii_class, mail_thread) are admitted per product by widening
+-- task_project_links_entity_kind_check together with that product's
+-- server-side edit-right check.
+--
+-- The triggers below keep every row inside one workspace for all writers.
+-- Each existence check takes a key-share lock on the referenced row, so a
+-- concurrent delete makes the insert fail with 23503 instead of leaving a
+-- dangling link.
 
 begin;
 
 alter table public.task_projects
   add constraint task_projects_id_ws_id_key unique (id, ws_id);
 
-create table public.task_project_links (
+create table private.task_project_links (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null,
   ws_id uuid not null references public.workspaces(id) on delete cascade,
@@ -37,9 +47,9 @@ create table public.task_project_links (
 );
 
 create index task_project_links_entity_idx
-  on public.task_project_links (ws_id, entity_kind, entity_id);
+  on private.task_project_links (ws_id, entity_kind, entity_id);
 
-create table public.meeting_task_links (
+create table private.meeting_task_links (
   meeting_id uuid not null references public.workspace_meetings(id) on delete cascade,
   task_id uuid not null references public.tasks(id) on delete cascade,
   ws_id uuid not null references public.workspaces(id) on delete cascade,
@@ -58,13 +68,13 @@ create table public.meeting_task_links (
   )
 );
 
-create index meeting_task_links_task_idx on public.meeting_task_links (task_id);
-create index meeting_task_links_ws_idx on public.meeting_task_links (ws_id);
+create index meeting_task_links_task_idx on private.meeting_task_links (task_id);
+create index meeting_task_links_ws_idx on private.meeting_task_links (ws_id);
 create index meeting_task_links_carried_from_idx
-  on public.meeting_task_links (carried_from_meeting_id)
+  on private.meeting_task_links (carried_from_meeting_id)
   where carried_from_meeting_id is not null;
 
-create table public.meeting_record_items (
+create table private.meeting_record_items (
   id uuid primary key default gen_random_uuid(),
   meeting_id uuid not null references public.workspace_meetings(id) on delete cascade,
   ws_id uuid not null references public.workspaces(id) on delete cascade,
@@ -82,9 +92,8 @@ create table public.meeting_record_items (
 );
 
 create index meeting_record_items_meeting_idx
-  on public.meeting_record_items (meeting_id, kind, position);
+  on private.meeting_record_items (meeting_id, kind, position);
 
--- Integrity holds for every role, including service_role writes from Meet.
 create function private.validate_task_project_link()
 returns trigger
 language plpgsql
@@ -95,23 +104,26 @@ begin
   if tg_op = 'UPDATE' then
     raise exception 'Project links are immutable' using errcode = '55000';
   end if;
-  if new.entity_kind = 'meeting' and not exists (
-    select 1 from public.workspace_meetings m
+  if new.entity_kind = 'meeting' then
+    perform 1 from public.workspace_meetings m
     where m.id = new.entity_id and m.ws_id = new.ws_id
-  ) then
-    raise exception 'Meeting is not in the project workspace' using errcode = '23503';
-  end if;
-  if new.entity_kind = 'calendar_event' and not exists (
-    select 1 from public.workspace_calendar_events e
+    for key share of m;
+    if not found then
+      raise exception 'Meeting is not in the project workspace' using errcode = '23503';
+    end if;
+  elsif new.entity_kind = 'calendar_event' then
+    perform 1 from public.workspace_calendar_events e
     where e.id = new.entity_id and e.ws_id = new.ws_id
-  ) then
-    raise exception 'Event is not in the project workspace' using errcode = '23503';
+    for key share of e;
+    if not found then
+      raise exception 'Event is not in the project workspace' using errcode = '23503';
+    end if;
   end if;
   return new;
 end $$;
 
 create trigger task_project_links_validate
-before insert or update on public.task_project_links
+before insert or update on private.task_project_links
 for each row execute function private.validate_task_project_link();
 
 create function private.validate_meeting_task_link()
@@ -136,29 +148,34 @@ begin
   if new.link_kind = 'carried_over' and new.carried_from_meeting_id is null then
     raise exception 'A carried-over link names its earlier meeting' using errcode = '23514';
   end if;
-  if not exists (
-    select 1 from public.workspace_meetings m
-    where m.id = new.meeting_id and m.ws_id = new.ws_id
-  ) or (new.carried_from_meeting_id is not null and not exists (
-    select 1 from public.workspace_meetings m
-    where m.id = new.carried_from_meeting_id and m.ws_id = new.ws_id
-  )) then
+  perform 1 from public.workspace_meetings m
+  where m.id = new.meeting_id and m.ws_id = new.ws_id
+  for key share of m;
+  if not found then
     raise exception 'Meeting is not in this workspace' using errcode = '23503';
   end if;
-  if not exists (
-    select 1
-    from public.tasks t
-    join public.task_lists tl on tl.id = t.list_id
-    join public.workspace_boards wb on wb.id = tl.board_id
-    where t.id = new.task_id and wb.ws_id = new.ws_id
-  ) then
+  if new.carried_from_meeting_id is not null then
+    perform 1 from public.workspace_meetings m
+    where m.id = new.carried_from_meeting_id and m.ws_id = new.ws_id
+    for key share of m;
+    if not found then
+      raise exception 'Earlier meeting is not in this workspace' using errcode = '23503';
+    end if;
+  end if;
+  perform 1
+  from public.tasks t
+  join public.task_lists tl on tl.id = t.list_id
+  join public.workspace_boards wb on wb.id = tl.board_id
+  where t.id = new.task_id and wb.ws_id = new.ws_id
+  for key share of t;
+  if not found then
     raise exception 'Task is not in the meeting workspace' using errcode = '23503';
   end if;
   return new;
 end $$;
 
 create trigger meeting_task_links_validate
-before insert or update on public.meeting_task_links
+before insert or update on private.meeting_task_links
 for each row execute function private.validate_meeting_task_link();
 
 create function private.validate_meeting_record_item()
@@ -177,18 +194,20 @@ begin
   ) then
     raise exception 'Meeting record ownership is immutable' using errcode = '55000';
   end if;
-  if tg_op = 'INSERT' and not exists (
-    select 1 from public.workspace_meetings m
+  if tg_op = 'INSERT' then
+    perform 1 from public.workspace_meetings m
     where m.id = new.meeting_id and m.ws_id = new.ws_id
-  ) then
-    raise exception 'Meeting is not in this workspace' using errcode = '23503';
+    for key share of m;
+    if not found then
+      raise exception 'Meeting is not in this workspace' using errcode = '23503';
+    end if;
   end if;
   new.updated_at := now();
   return new;
 end $$;
 
 create trigger meeting_record_items_validate
-before insert or update on public.meeting_record_items
+before insert or update on private.meeting_record_items
 for each row execute function private.validate_meeting_record_item();
 
 -- Polymorphic project links have no foreign key; remove them with the entity.
@@ -199,7 +218,7 @@ security definer
 set search_path = ''
 as $$
 begin
-  delete from public.task_project_links
+  delete from private.task_project_links
   where ws_id = old.ws_id and entity_kind = tg_argv[0] and entity_id = old.id;
   return old;
 end $$;
@@ -217,208 +236,29 @@ revoke all on function private.validate_meeting_task_link() from public, anon, a
 revoke all on function private.validate_meeting_record_item() from public, anon, authenticated;
 revoke all on function private.delete_project_links_for_entity() from public, anon, authenticated;
 
-alter table public.task_project_links enable row level security;
-alter table public.meeting_task_links enable row level security;
-alter table public.meeting_record_items enable row level security;
+alter table private.task_project_links enable row level security;
+alter table private.meeting_task_links enable row level security;
+alter table private.meeting_record_items enable row level security;
 
-revoke all on table public.task_project_links, public.meeting_task_links,
-  public.meeting_record_items from public, anon, authenticated;
-grant select, insert, delete on table public.task_project_links to authenticated;
-grant select, insert, delete on table public.meeting_task_links to authenticated;
-grant select, insert, update, delete on table public.meeting_record_items to authenticated;
-grant all on table public.task_project_links, public.meeting_task_links,
-  public.meeting_record_items to service_role;
+revoke all on table private.task_project_links, private.meeting_task_links,
+  private.meeting_record_items from public, anon, authenticated;
+grant select, insert, delete on table private.task_project_links to service_role;
+grant select, insert, delete on table private.meeting_task_links to service_role;
+grant select, insert, update, delete on table private.meeting_record_items to service_role;
 
--- task_project_links -------------------------------------------------------
-
-create policy task_project_links_select on public.task_project_links
-for select to authenticated
-using (
-  exists (
-    select 1 from public.workspace_members wm
-    where wm.ws_id = task_project_links.ws_id
-      and wm.user_id = (select auth.uid())
-      and wm.type = 'MEMBER'
-  )
-  and (
-    task_project_links.entity_kind = 'meeting'
-    or public.has_workspace_permission(
-      task_project_links.ws_id, (select auth.uid()), 'manage_calendar')
-  )
-);
-
-create policy task_project_links_insert on public.task_project_links
-for insert to authenticated
-with check (
-  created_by = (select auth.uid())
-  and public.has_workspace_permission(
-    task_project_links.ws_id, (select auth.uid()), 'manage_projects')
-  and (
-    (task_project_links.entity_kind = 'meeting' and exists (
-      select 1 from public.workspace_meetings m
-      where m.id = task_project_links.entity_id
-        and m.ws_id = task_project_links.ws_id
-        and (m.creator_id = (select auth.uid())
-          or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-    ))
-    or (task_project_links.entity_kind = 'calendar_event'
-      and public.has_workspace_permission(
-        task_project_links.ws_id, (select auth.uid()), 'manage_calendar')
-      and exists (
-        select 1 from public.workspace_calendar_events e
-        where e.id = task_project_links.entity_id
-          and e.ws_id = task_project_links.ws_id
-      ))
-  )
-);
-
-create policy task_project_links_delete on public.task_project_links
-for delete to authenticated
-using (
-  public.has_workspace_permission(
-    task_project_links.ws_id, (select auth.uid()), 'manage_projects')
-  and (
-    (task_project_links.entity_kind = 'meeting' and exists (
-      select 1 from public.workspace_meetings m
-      where m.id = task_project_links.entity_id
-        and (m.creator_id = (select auth.uid())
-          or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-    ))
-    or (task_project_links.entity_kind = 'calendar_event'
-      and public.has_workspace_permission(
-        task_project_links.ws_id, (select auth.uid()), 'manage_calendar'))
-  )
-);
-
--- meeting_task_links -------------------------------------------------------
-
-create policy meeting_task_links_select on public.meeting_task_links
-for select to authenticated
-using (
-  exists (
-    select 1 from public.workspace_members wm
-    where wm.ws_id = meeting_task_links.ws_id
-      and wm.user_id = (select auth.uid())
-      and wm.type = 'MEMBER'
-  )
-);
-
--- A member links a task they created to a meeting in the same workspace;
--- carrying an item over to another meeting is a host action.
-create policy meeting_task_links_insert on public.meeting_task_links
-for insert to authenticated
-with check (
-  created_by = (select auth.uid())
-  and exists (
-    select 1 from public.workspace_members wm
-    where wm.ws_id = meeting_task_links.ws_id
-      and wm.user_id = (select auth.uid())
-      and wm.type = 'MEMBER'
-  )
-  and (
-    exists (
-      select 1 from public.workspace_meetings m
-      where m.id = meeting_task_links.meeting_id
-        and m.ws_id = meeting_task_links.ws_id
-        and (m.creator_id = (select auth.uid())
-          or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-    )
-    or (meeting_task_links.link_kind = 'source' and exists (
-      select 1 from public.tasks t
-      where t.id = meeting_task_links.task_id
-        and t.creator_id = (select auth.uid())
-    ))
-  )
-);
-
-create policy meeting_task_links_delete on public.meeting_task_links
-for delete to authenticated
-using (
-  exists (
-    select 1 from public.workspace_meetings m
-    where m.id = meeting_task_links.meeting_id
-      and (m.creator_id = (select auth.uid())
-        or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-  )
-  or (meeting_task_links.created_by = (select auth.uid()) and exists (
-    select 1 from public.workspace_members wm
-    where wm.ws_id = meeting_task_links.ws_id
-      and wm.user_id = (select auth.uid())
-      and wm.type = 'MEMBER'
-  ))
-);
-
--- meeting_record_items -----------------------------------------------------
-
-create policy meeting_record_items_select on public.meeting_record_items
-for select to authenticated
-using (
-  exists (
-    select 1 from public.workspace_members wm
-    where wm.ws_id = meeting_record_items.ws_id
-      and wm.user_id = (select auth.uid())
-      and wm.type = 'MEMBER'
-  )
-);
-
-create policy meeting_record_items_insert on public.meeting_record_items
-for insert to authenticated
-with check (
-  created_by = (select auth.uid())
-  and exists (
-    select 1 from public.workspace_meetings m
-    where m.id = meeting_record_items.meeting_id
-      and m.ws_id = meeting_record_items.ws_id
-      and (m.creator_id = (select auth.uid())
-        or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-  )
-);
-
-create policy meeting_record_items_update on public.meeting_record_items
-for update to authenticated
-using (
-  exists (
-    select 1 from public.workspace_meetings m
-    where m.id = meeting_record_items.meeting_id
-      and (m.creator_id = (select auth.uid())
-        or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-  )
-)
-with check (
-  exists (
-    select 1 from public.workspace_meetings m
-    where m.id = meeting_record_items.meeting_id
-      and m.ws_id = meeting_record_items.ws_id
-      and (m.creator_id = (select auth.uid())
-        or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-  )
-);
-
-create policy meeting_record_items_delete on public.meeting_record_items
-for delete to authenticated
-using (
-  exists (
-    select 1 from public.workspace_meetings m
-    where m.id = meeting_record_items.meeting_id
-      and (m.creator_id = (select auth.uid())
-        or public.has_workspace_permission(m.ws_id, (select auth.uid()), 'admin'))
-  )
-);
-
--- One read surface over task and non-task project links. security_invoker
--- applies each base table's RLS to the caller.
-create view public.task_project_entity_links
+-- One read surface over task and non-task project links for servers.
+create view private.task_project_entity_links
 with (security_invoker = true)
 as
 select l.project_id, l.ws_id, l.entity_kind, l.entity_id, l.created_by, l.created_at
-from public.task_project_links l
+from private.task_project_links l
 union all
 select tpt.project_id, tp.ws_id, 'task'::text, tpt.task_id, null::uuid,
   coalesce(tpt.created_at, tp.created_at)
 from public.task_project_tasks tpt
 join public.task_projects tp on tp.id = tpt.project_id;
 
-revoke all on table public.task_project_entity_links from public, anon, authenticated;
-grant select on table public.task_project_entity_links to authenticated, service_role;
+revoke all on table private.task_project_entity_links from public, anon, authenticated;
+grant select on table private.task_project_entity_links to service_role;
 
 commit;
