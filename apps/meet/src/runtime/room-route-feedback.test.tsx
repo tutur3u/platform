@@ -78,7 +78,7 @@ it.each(['en', 'vi'] as const)(
     const copy = (locale === 'vi' ? vietnamese : en).meet.call;
     const view = render(<Pending />);
     expect(
-      screen.getByRole('heading', { name: copy.preparing_call })
+      screen.getByRole('heading', { name: copy.join_step_setup })
     ).toBeTruthy();
     expect(screen.queryByText(copy.resource_limits_hint)).toBeNull();
     act(() => vi.advanceTimersByTime(30_000));
