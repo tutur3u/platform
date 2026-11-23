@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import {
   getAvatarUrl,
   getDisplayName,
@@ -86,6 +87,9 @@ export function FocusedContinueStep({
   session: { avatarUrl: string | null; name: string | null } | null;
 }) {
   const t = useTranslations();
+  // Cancel unmounts on press; hand focus to Continue so a keyboard user
+  // lands on the next action instead of the page body.
+  const focusContinueRef = useRef(false);
   const auto = useAutoContinue({
     eligible: autoContinue && canContinue && !busy,
     onContinue,
@@ -112,6 +116,12 @@ export function FocusedContinueStep({
             className="h-12 w-full rounded-2xl px-6 font-bold"
             disabled={!canContinue || busy}
             onClick={onContinue}
+            ref={(element) => {
+              if (element && focusContinueRef.current) {
+                focusContinueRef.current = false;
+                element.focus();
+              }
+            }}
             type="button"
           >
             <span className="min-w-0 truncate">
@@ -123,7 +133,10 @@ export function FocusedContinueStep({
           <button
             className={FOCUSED_LINK_CLASS}
             key="cancel"
-            onClick={auto.cancel}
+            onClick={() => {
+              focusContinueRef.current = true;
+              auto.cancel();
+            }}
             type="button"
             {...auto.holdHandlers}
           >

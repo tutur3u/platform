@@ -443,6 +443,7 @@ describe('LoginForm focused sign-in auto-continue', () => {
     await new Promise((resolve) => setTimeout(resolve, 1800));
     expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
     expect(continueButton).toBeEnabled();
+    expect(continueButton).toHaveFocus();
   });
 
   it('holds the countdown while Cancel has focus', async () => {
