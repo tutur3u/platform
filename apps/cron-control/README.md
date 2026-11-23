@@ -77,6 +77,12 @@ an approval, so pin a commit that changes one. When that run's `index.js` is
 byte-identical to the serving module, issue the approval for the new SHA with
 the unchanged deployment and version IDs; no publication is needed.
 
+The approval binds one SHA. If the release moves the pin past a commit that
+had a producer run, the new pin needs its own producer run and a fresh
+approval; an earlier run in the range does not carry forward. When no Cron
+path changed between the current production SHA and the new pin, the
+planner's affected gate skips the Cron deploy and no approval is consumed.
+
 GitHub artifact and run metadata are public reads. Cloudflare reads use the
 Cron workflow's existing token for settings and version metadata, including
 module content.
