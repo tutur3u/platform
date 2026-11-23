@@ -170,6 +170,18 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Calendar native-guests owner fixes the packages/ui type error. Any other failure is outside this grant.',
   },
+  {
+    // Type Check fails only in apps/web calendar invitation routes and the
+    // packages/ui calendar guests code, outside Meet's closure; Test may carry
+    // the known root-script drift. Security Checks and Meet Cloudflare stay
+    // required on this exact source.
+    id: 'RA-20261123-2305-MEET-MEDIA-POLISH-2',
+    source: '5c1246963632399a9f1c2d5a230cc541686e63fd',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-23T19:59:00Z',
+    followUp:
+      'Calendar invitations owner fixes the apps/web type errors. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
