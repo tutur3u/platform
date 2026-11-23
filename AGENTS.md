@@ -25,6 +25,8 @@ Define completion from the request: implementation and required checks, plus PR,
 merge, or production evidence only when that delivery is authorized.
 
 For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
+Orchestrator threads delegate long commands, resume limited work on any admitted
+seat, and remove fleet worktrees only when safe; see the [fleet rules](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/fleet-orchestration.md).
 Route and switch accounts per its [account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation) and [cross-orchestrator quota and storage coordination](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination).
 
 Send inter-thread messages with mode `auto` by default; check the target queue first and consolidate
