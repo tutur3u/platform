@@ -5,6 +5,5 @@
   "packages/meet-core/src/features/meeting-ai/followup-destination.tsx": 2,
   "packages/meet-core/src/features/meeting-ai/followup-review-form.tsx": 1,
   "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": 1,
-  "packages/ui/src/components/ui/custom/workspace-select.tsx": 1,
-  "packages/ui/src/components/ui/finance/transactions/transaction-attachments-field.tsx": 1
+  "packages/ui/src/components/ui/custom/workspace-select.tsx": 1
 }

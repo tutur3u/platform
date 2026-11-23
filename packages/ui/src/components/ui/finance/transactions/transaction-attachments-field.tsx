@@ -733,7 +733,7 @@ export function TransactionAttachmentsField({
               {existingAttachmentsHasMore || existingAttachmentsLoadingMore ? (
                 <LoadMoreAttachmentsButton
                   label={t('common.load_more')}
-                  loadingLabel={t('common.loading')}
+                  srLabel={t('common.loading')}
                   loading={existingAttachmentsLoadingMore}
                   onLoadMore={onLoadMoreExisting}
                 />

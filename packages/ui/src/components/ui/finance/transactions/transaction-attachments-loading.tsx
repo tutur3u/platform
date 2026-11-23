@@ -23,12 +23,12 @@ export function ExistingAttachmentsLoading({ srLabel }: { srLabel: string }) {
 /** "Load more" keeps its label; a spinner and sr-only text show progress. */
 export function LoadMoreAttachmentsButton({
   label,
-  loadingLabel,
+  srLabel,
   loading,
   onLoadMore,
 }: {
   label: string;
-  loadingLabel: string;
+  srLabel: string;
   loading: boolean;
   onLoadMore?: () => void;
 }) {
@@ -46,7 +46,7 @@ export function LoadMoreAttachmentsButton({
         <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
       ) : null}
       {label}
-      {loading ? <span className="sr-only">{loadingLabel}</span> : null}
+      {loading ? <span className="sr-only">{srLabel}</span> : null}
     </Button>
   );
 }
