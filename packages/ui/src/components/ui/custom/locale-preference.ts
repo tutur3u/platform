@@ -76,20 +76,60 @@ export function stripLocalePrefix(
   return `${mounted ? base : ''}${stripped === '/' && mounted ? '' : stripped}`;
 }
 
+/** The first supported locale among the browser's preferred languages. */
+export function matchBrowserLocale(
+  languages: readonly string[],
+  locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES,
+  fallback = locales[0] ?? 'en'
+): string {
+  for (const language of languages) {
+    const tag = language.toLowerCase();
+    const exact = locales.find((locale) => locale.toLowerCase() === tag);
+    if (exact) return exact;
+    const base = locales.find(
+      (locale) => locale.toLowerCase() === tag.split('-')[0]
+    );
+    if (base) return base;
+  }
+  return fallback;
+}
+
 /**
- * Loads the current page again as a document so the app proxy resolves the
- * locale from the cookie, or from `Accept-Language` when the cookie is gone.
- * A client refresh cannot do that everywhere: native Start loaders run without
- * the proxy's locale negotiation, and a locale path prefix outranks the cookie.
+ * The path to load after a locale change: the current page under the chosen
+ * locale's prefix, keeping an app mount base. A prefix outranks the cookie and
+ * every proxy's defaults, including Web's English-only unprefixed public pages,
+ * so next-intl never rewrites the cookie to a different locale on that load.
+ * Proxies that serve the locale unprefixed redirect there themselves.
+ */
+export function localeChangePath(
+  pathname: string,
+  locale: string,
+  locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES,
+  base = ''
+): string {
+  const stripped = stripLocalePrefix(pathname, locales, base);
+  const mounted =
+    base && (stripped === base || stripped.startsWith(`${base}/`));
+  const rest = mounted ? stripped.slice(base.length) : stripped;
+  const suffix = rest === '/' || rest === '' ? '' : rest;
+  return `${mounted ? base : ''}/${locale}${suffix}`;
+}
+
+/**
+ * Loads the current page as a document under `locale`, or under the browser's
+ * own language for the system choice (`null`), so the app proxy renders it with
+ * the stored preference. A client refresh cannot do that everywhere: native
+ * Start loaders run without the proxy's locale negotiation, and a locale path
+ * prefix outranks the cookie.
  */
 export function reloadForLocaleChange(
+  locale: string | null,
   locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES
 ) {
   const { hash, pathname, search } = window.location;
-  const target = stripLocalePrefix(pathname, locales, browserMountedAppBase());
-  if (target === pathname) {
-    window.location.reload();
-    return;
-  }
-  window.location.assign(`${target || '/'}${search}${hash}`);
+  const target =
+    locale ?? matchBrowserLocale(window.navigator.languages ?? [], locales);
+  window.location.assign(
+    `${localeChangePath(pathname, target, locales, browserMountedAppBase())}${search}${hash}`
+  );
 }

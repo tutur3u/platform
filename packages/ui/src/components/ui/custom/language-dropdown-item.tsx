@@ -28,7 +28,7 @@ export function LanguageDropdownItem({
   const useLocale = async () => {
     if (onLocaleChange) await onLocaleChange(locale);
     else persistLocalePreference(locale);
-    reloadForLocaleChange();
+    reloadForLocaleChange(locale);
   };
 
   return (

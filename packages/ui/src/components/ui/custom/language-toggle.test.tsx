@@ -3,15 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageToggle } from './language-toggle';
 
 const originalLocation = window.location;
-const reload = vi.fn();
+const assign = vi.fn();
 
 describe('LanguageToggle', () => {
   beforeEach(() => {
-    reload.mockReset();
+    assign.mockReset();
     vi.restoreAllMocks();
     Object.defineProperty(window, 'location', {
       configurable: true,
-      value: { pathname: '/', search: '', hash: '', reload, assign: vi.fn() },
+      value: { pathname: '/', search: '', hash: '', assign, reload: vi.fn() },
     });
   });
 
@@ -22,13 +22,13 @@ describe('LanguageToggle', () => {
     });
   });
 
-  it('reloads after persisting the next locale without an app API route', () => {
+  it('loads the page under the next locale after persisting it, without an app API route', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
     render(<LanguageToggle currentLocale="en" forceDisplay />);
     fireEvent.click(screen.getByRole('button', { name: 'enToggle language' }));
 
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(assign).toHaveBeenCalledWith('/vi');
     expect(document.cookie).toContain('NEXT_LOCALE=vi');
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(

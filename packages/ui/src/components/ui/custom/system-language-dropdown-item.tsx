@@ -22,7 +22,7 @@ export function SystemLanguageDropdownItem({ selected, onResetLocale }: Props) {
   const useDefaultLocale = async () => {
     if (onResetLocale) await onResetLocale();
     else clearLocalePreference();
-    reloadForLocaleChange();
+    reloadForLocaleChange(null);
   };
 
   return (

@@ -21,8 +21,9 @@ export function LanguageToggle({
     setLoading(true);
 
     try {
-      persistLocalePreference(currentLocale === 'en' ? 'vi' : 'en');
-      reloadForLocaleChange();
+      const nextLocale = currentLocale === 'en' ? 'vi' : 'en';
+      persistLocalePreference(nextLocale);
+      reloadForLocaleChange(nextLocale);
     } catch (error) {
       console.error('Failed to update locale', error);
     } finally {

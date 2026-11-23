@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { readLocalePreference, stripLocalePrefix } from './locale-preference';
+import {
+  localeChangePath,
+  matchBrowserLocale,
+  readLocalePreference,
+  stripLocalePrefix,
+} from './locale-preference';
 
 describe('readLocalePreference', () => {
   it('returns the stored supported locale', () => {
@@ -38,4 +43,42 @@ describe('stripLocalePrefix', () => {
   ])('keeps the mount base: %s to %s', (pathname, expected) => {
     expect(stripLocalePrefix(pathname, ['en', 'vi'], '/meet')).toBe(expected);
   });
+});
+
+describe('matchBrowserLocale', () => {
+  it('picks the first supported browser language by tag or base', () => {
+    expect(matchBrowserLocale(['fr-FR', 'vi-VN', 'en'])).toBe('vi');
+    expect(matchBrowserLocale(['en-US', 'vi'])).toBe('en');
+  });
+
+  it('falls back to the first supported locale', () => {
+    expect(matchBrowserLocale(['fr', 'de'])).toBe('en');
+    expect(matchBrowserLocale([])).toBe('en');
+  });
+});
+
+describe('localeChangePath', () => {
+  it.each([
+    // Web's unprefixed public pages are English-only; Vietnamese needs /vi.
+    ['/about', 'vi', '/vi/about'],
+    ['/', 'vi', '/vi'],
+    ['/vi/about', 'en', '/en/about'],
+    ['/en/personal/meetings', 'vi', '/vi/personal/meetings'],
+    ['/video', 'vi', '/vi/video'],
+  ])('loads %s under %s as %s', (pathname, locale, expected) => {
+    expect(localeChangePath(pathname, locale)).toBe(expected);
+  });
+
+  it.each([
+    ['/meet/personal', 'vi', '/meet/vi/personal'],
+    ['/meet/vi/personal', 'en', '/meet/en/personal'],
+    ['/meet', 'vi', '/meet/vi'],
+  ])(
+    'keeps the mount base: %s under %s as %s',
+    (pathname, locale, expected) => {
+      expect(localeChangePath(pathname, locale, ['en', 'vi'], '/meet')).toBe(
+        expected
+      );
+    }
+  );
 });

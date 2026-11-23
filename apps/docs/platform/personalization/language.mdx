@@ -18,16 +18,19 @@ Currently, we provide first-class support for the following languages:
 
 ### How to Change Language
 
-[Tuturuuu](https://tuturuuu.com) detects your browser's language automatically. To choose one yourself, open the account menu from your avatar and pick **Language**: **English**, **Tiếng Việt** or **System**.
+[Tuturuuu](https://tuturuuu.com) detects your browser's language automatically. To choose one yourself, open the account menu from your avatar and pick **Language**: **English**, **Tiếng Việt** or **System**. Signed-out visitors use the language toggle in the public navigation bar.
 
-- Picking a language stores it in the shared `NEXT_LOCALE` cookie, so every Tuturuuu app on the same domain follows it.
-- **System** removes that choice. The app then follows your browser's languages again (`Accept-Language`), falling back to English.
+- Picking a language stores it in the `NEXT_LOCALE` cookie. At an app's own host the cookie is shared across Tuturuuu subdomains, so every app follows it.
+- **System** removes that choice. The app then follows your browser's languages (`Accept-Language`), falling back to English.
 - The menu marks the stored choice, or **System** when there is none, whatever locale the current URL shows.
-- After a change the page loads again as a full document at its address without a `/en` or `/vi` prefix. A locale prefix outranks the cookie, and only a document load lets each app's proxy negotiate the language; a client refresh on the native Start runtime cannot.
+- After a change the page loads again as a full document under the chosen locale's prefix (`/vi/...`, `/en/...`); for **System**, under your browser's language. A locale prefix outranks the cookie, so this is the one load every app's proxy renders in the chosen language. Apps that serve a locale unprefixed redirect there. A client refresh cannot do this on the native Start runtime, whose loaders skip the proxy's locale negotiation.
 
-Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`). Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`.
+Exceptions:
 
-<Note>The language switcher is only available after you have logged in.</Note>
+- Web and Workspace public pages are English at unprefixed addresses and Vietnamese under `/vi`, whatever the cookie says, so search engines see one fixed locale per address.
+- An app mounted under `tuturuuu.com/<app>` stores its choice only under its own path. **System** there clears that choice and then follows the choice made on tuturuuu.com, when one exists, rather than the browser.
+
+Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`) and the public `LanguageToggle`. Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`.
 
 ### Contribute
 
