@@ -10,6 +10,7 @@ import {
 // Each endpoint module loads on its first request. Importing them statically
 // put every API dependency (AI SDKs, S3, OG image rendering) into the worker
 // entry, so a cold isolate evaluated all of them before serving any page.
+const landingOg = () => import('../app/og/route');
 const roomPreview = () => import('../app/[locale]/r/[code]/preview/route');
 const api0 = () => import('../app/api/auth/logout/route');
 const api1 = () => import('../app/api/auth/refresh-app-session/route');
@@ -494,6 +495,10 @@ export const meetEndpoints: Endpoint[] = [
       GET: async () => (await api22()).GET(),
       POST: async (request) => (await api22()).POST(request),
     },
+  },
+  {
+    pattern: '/og',
+    methods: { GET: async (request) => (await landingOg()).GET(request) },
   },
   {
     pattern: '/[locale]/r/[code]/preview',

@@ -15,17 +15,14 @@ import {
   meetGuestTurnstileSiteKey,
   resolveMeetGuestJoin,
 } from '@tuturuuu/meet-core/features/call/lib/guest-access';
-import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
+import { buildMeetSeo } from '@tuturuuu/meet-core/features/call/lib/seo/metadata';
 import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
 import {
   type MeetingPublicInfo,
   resolveMeetingPublicInfo,
 } from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
-import {
-  decodeRoomCode,
-  encodeRoomCode,
-} from '@tuturuuu/meet-core/features/call/lib/room-code';
+import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
@@ -96,28 +93,15 @@ function roomSources(meetingId: string) {
 async function roomModel(code: string, locale: string, url: URL) {
   const meetingId = decodeRoomCode(code);
   if (!meetingId) throw notFound();
-  const [t, publicCopy] = await Promise.all([
-    getTranslations('meet.call'),
-    getTranslations('meet.public'),
-  ]);
+  const t = await getTranslations('meet.call');
   const sources = roomSources(meetingId);
   // Never rejects: any lookup failure keeps the meeting private.
   const infoPromise = resolveMeetingPublicInfo({
     ...sources,
     isParleySession: () => sources.isParleySession(false),
   });
-  const canonical = meetPublicUrl(
-    `${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`
-  );
-  const roomMeta = (info: MeetingPublicInfo | null): MeetPageMeta => ({
-    title: info?.title || publicCopy('meta_title'),
-    description: info
-      ? publicCopy(info.ended ? 'meta_ended' : 'meta_join')
-      : publicCopy('meta_private'),
-    indexable: Boolean(info),
-    canonical,
-    image: `${canonical}/preview?lang=${locale}`,
-  });
+  const roomMeta = (info: MeetingPublicInfo | null): MeetPageMeta =>
+    buildMeetSeo({ kind: 'room', code, info }, locale);
   const guestSources = {
     ...sources,
     isParleySession: () => sources.isParleySession(false),
@@ -400,17 +384,12 @@ async function loadResolvedPageModel(url: URL) {
     locale,
     actorId: actor?.id,
     showVersionBadge: isVerifiedTuturuuuStaffSession(badgeIdentity),
-    meta: {
-      title: 'Tuturuuu Meet',
-      description:
-        locale === 'vi'
-          ? 'Họp với âm thanh rõ ràng, chép lời trực tiếp và ghi chú kết nối với Tuturuuu Tasks và Calendar.'
-          : 'Meet with clear audio, live transcription, and meeting notes connected to Tuturuuu Tasks and Calendar.',
-      indexable: false,
-      canonical: meetPublicUrl(
-        `${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : ''}`
-      ),
-    } satisfies MeetPageMeta,
+    meta: buildMeetSeo(
+      segments.length
+        ? { kind: 'page', path: `/${segments.join('/')}` }
+        : { kind: 'landing' },
+      locale
+    ) satisfies MeetPageMeta,
   };
   if (segments[0] === 'login' && segments.length === 1) {
     const { default: LoginPage } =
@@ -448,10 +427,14 @@ async function loadResolvedPageModel(url: URL) {
       kind: 'plan' as const,
       snapshot: { ...snapshot, polls: meetPlanPolls.parse(snapshot.polls) },
       profile,
-      meta: {
-        ...common.meta,
-        title: `${snapshot.plan.name || (locale === 'vi' ? 'Kế hoạch' : 'Plan')} - Tuturuuu Meet`,
-      },
+      meta: buildMeetSeo(
+        {
+          kind: 'page',
+          path: `/${segments.join('/')}`,
+          title: snapshot.plan.name || (locale === 'vi' ? 'Kế hoạch' : 'Plan'),
+        },
+        locale
+      ),
     };
   }
   if (segments.length === 0) {
@@ -463,7 +446,6 @@ async function loadResolvedPageModel(url: URL) {
     return {
       ...common,
       kind: 'public-plans' as const,
-      meta: { ...common.meta, indexable: true },
       paging,
       plans: { data: [], totalCount: 0, user: null },
     };

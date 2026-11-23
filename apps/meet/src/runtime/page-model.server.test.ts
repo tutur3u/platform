@@ -191,7 +191,7 @@ describe('room page', () => {
         ended: false,
       },
       returnTo: `/r/${code}`,
-      meta: { title: 'Weekly sync', indexable: true },
+      meta: { title: 'Weekly sync | Tuturuuu Meet', indexable: false },
     });
     expect(model).not.toHaveProperty('info');
     expect(reads('workspace_meetings')).toBe(1);
@@ -213,8 +213,8 @@ describe('room page', () => {
       kind: 'account-required',
       returnTo: `/r/${code}`,
       meta: {
-        title: 'meet.public.meta_title',
-        description: 'meet.public.meta_private',
+        title: 'Join a meeting | Tuturuuu Meet',
+        description: 'Join a meeting on Tuturuuu Meet.',
         indexable: false,
       },
     });
@@ -226,7 +226,7 @@ describe('room page', () => {
     const model = await loadPageModel(`/r/${code}`);
     expect(model).toMatchObject({
       kind: 'room',
-      meta: { title: 'Weekly sync', indexable: true },
+      meta: { title: 'Weekly sync | Tuturuuu Meet', indexable: false },
       policy: guestPolicy,
       access: {
         user: { id: 'guest' },
@@ -275,7 +275,7 @@ describe('room page', () => {
     const model = await loadPageModel(`/r/${code}`);
     expect(model).toMatchObject({
       kind: 'room',
-      meta: { title: 'Weekly sync', indexable: true },
+      meta: { title: 'Weekly sync | Tuturuuu Meet', indexable: false },
       policy: hostPolicy,
       access: { isHost: true, admission: 'open', canReadWorkspace: true },
     });
@@ -299,7 +299,7 @@ describe('room page', () => {
     expect(model).toMatchObject({
       kind: 'room',
       policy: privatePolicy,
-      meta: { title: 'meet.public.meta_title', indexable: false },
+      meta: { title: 'Join a meeting | Tuturuuu Meet', indexable: false },
     });
   });
 
@@ -591,7 +591,7 @@ describe('anonymous guest join', () => {
       expect(model).toMatchObject({
         kind: 'account-required',
         returnTo: `/r/${code}`,
-        meta: { title: 'meet.public.meta_title', indexable: false },
+        meta: { title: 'Join a meeting | Tuturuuu Meet', indexable: false },
       });
       expect(JSON.stringify(model)).not.toContain('Weekly sync');
     } finally {

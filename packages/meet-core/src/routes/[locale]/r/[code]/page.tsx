@@ -17,7 +17,8 @@ import {
   resolveMeetGuestJoin,
 } from '@tuturuuu/meet-core/features/call/lib/guest-access';
 import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
-import { meetingMetadata } from '@tuturuuu/meet-core/features/call/lib/meeting-metadata';
+import { buildMeetSeo } from '@tuturuuu/meet-core/features/call/lib/seo/metadata';
+import { meetSeoToNextMetadata } from '@tuturuuu/meet-core/features/call/lib/seo/next-metadata';
 import { getMeetingPublicInfo } from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
 import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
@@ -34,13 +35,10 @@ export async function generateMetadata({
 }: RoomPageProps): Promise<Metadata> {
   await connection();
   const { code, locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'meet.public' });
-  return meetingMetadata(code, locale, await getMeetingPublicInfo(code), {
-    title: t('meta_title'),
-    privateDescription: t('meta_private'),
-    join: t('meta_join'),
-    ended: t('meta_ended'),
-  });
+  const info = await getMeetingPublicInfo(code);
+  return meetSeoToNextMetadata(
+    buildMeetSeo({ kind: 'room', code, info }, locale)
+  );
 }
 
 interface RoomPageProps {

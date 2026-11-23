@@ -84,7 +84,9 @@ function isPublicLegacyPlanPath(pathname: string) {
 }
 
 function isPublicMeetPath(pathname: string) {
+  const segments = getPathSegmentsWithoutLocale(pathname);
   return (
+    (segments.length === 1 && segments[0] === 'og') ||
     isPublicLegacyPlanPath(pathname) ||
     !!normalizeMeetInvite(pathname) ||
     (pathname.endsWith('/preview') &&

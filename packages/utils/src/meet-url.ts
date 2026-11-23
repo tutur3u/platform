@@ -36,3 +36,12 @@ export function meetBrowserPath(path: string) {
 export function meetPublicUrl(path = '/') {
   return joinAppUrl(getAppProductionBaseUrl('meet', MEET_LEGACY_ORIGIN), path);
 }
+
+/**
+ * Canonical public Meet URL for SEO, link previews and sharing. Always the
+ * shared-origin mount (`https://tuturuuu.com/meet/...`), whatever mounts are
+ * active, so metadata never advertises the legacy subdomain.
+ */
+export function meetCanonicalUrl(path = '/') {
+  return joinAppUrl(`${MEET_CANONICAL_ORIGIN}${MEET_BASE_PATH}`, path);
+}

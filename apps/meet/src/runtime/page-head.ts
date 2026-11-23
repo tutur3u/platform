@@ -1,13 +1,9 @@
+import { meetSeoToHeadMeta } from '@tuturuuu/meet-core/features/call/lib/seo/page-meta';
+import type { MeetSeo } from '@tuturuuu/meet-core/features/call/lib/seo/metadata';
 import { fontPreloads } from './font-preloads';
 import { localeMessagesPreload } from './locale-messages';
 
-export interface MeetPageMeta {
-  title: string;
-  description: string;
-  indexable: boolean;
-  canonical: string;
-  image?: string;
-}
+export type MeetPageMeta = MeetSeo;
 
 export function pageHead({
   meta,
@@ -16,30 +12,11 @@ export function pageHead({
   meta: MeetPageMeta;
   locale: string;
 }) {
+  const head = meetSeoToHeadMeta(meta);
   return {
-    meta: [
-      { title: meta.title },
-      { name: 'description', content: meta.description },
-      {
-        name: 'robots',
-        content: meta.indexable ? 'index,follow' : 'noindex,nofollow',
-      },
-      { property: 'og:title', content: meta.title },
-      { property: 'og:description', content: meta.description },
-      { property: 'og:url', content: meta.canonical },
-      { property: 'og:site_name', content: 'Tuturuuu Meet' },
-      { property: 'og:type', content: 'website' },
-      { property: 'og:locale', content: locale === 'vi' ? 'vi_VN' : 'en_US' },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      ...(meta.image
-        ? [
-            { property: 'og:image', content: meta.image },
-            { name: 'twitter:image', content: meta.image },
-          ]
-        : []),
-    ],
+    meta: head.meta,
     links: [
-      { rel: 'canonical', href: meta.canonical },
+      ...head.links,
       localeMessagesPreload(locale),
       ...fontPreloads(locale),
     ],
