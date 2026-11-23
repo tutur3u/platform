@@ -54,11 +54,13 @@ export async function createInlineLaunch(
     operation: 'reserve' | 'materialize' | 'finalize',
     value: Json
   ) {
-    const { data, error } = await db.rpc('meet_form_creation', {
-      p_scope: scope,
-      p_operation: operation,
-      p_value: value,
-    });
+    const { data, error } = await db
+      .schema('private')
+      .rpc('meet_form_creation', {
+        p_scope: scope,
+        p_operation: operation,
+        p_value: value,
+      });
     const parsed = creationResult.safeParse(data);
     if (error || !parsed.success)
       throw new MeetCallAccessError(

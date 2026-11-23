@@ -15962,6 +15962,61 @@ export type Database = {
         };
         Relationships: [];
       };
+      meet_form_creation_intents: {
+        Row: {
+          actor_id: string;
+          commitment: string;
+          created_at: string;
+          form_id: string;
+          launch: Json | null;
+          launch_id: string;
+          meeting_id: string;
+          published_at: string | null;
+          request_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          commitment: string;
+          created_at: string;
+          form_id: string;
+          launch?: Json | null;
+          launch_id: string;
+          meeting_id: string;
+          published_at?: string | null;
+          request_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          commitment?: string;
+          created_at?: string;
+          form_id?: string;
+          launch?: Json | null;
+          launch_id?: string;
+          meeting_id?: string;
+          published_at?: string | null;
+          request_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_form_creation_intents_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_form_creation_intents_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       meet_short_link_audit: {
         Row: {
           action: string;
@@ -33348,6 +33403,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      meet_form_creation: {
+        Args: { p_operation: string; p_scope: Json; p_value: Json };
+        Returns: Json;
+      };
       meet_whiteboard_can_manage: {
         Args: { p_actor_id: string; p_meeting_id: string };
         Returns: boolean;
@@ -34489,6 +34548,10 @@ export type Database = {
           p_submission_id: string;
           p_ws_id: string;
         };
+        Returns: Json;
+      };
+      read_contact_account_link_invitation: {
+        Args: { p_actor_id: string; p_contact_id: string; p_ws_id: string };
         Returns: Json;
       };
       read_finance_bill_split_activity: {

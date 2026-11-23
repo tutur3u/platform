@@ -124,6 +124,7 @@ const db = {
   rpc: mocks.rpc,
   from: mocks.from,
   schema: () => ({
+    rpc: mocks.rpc,
     from: (table: string) => {
       if (table === 'form_sessions') {
         const query = {
