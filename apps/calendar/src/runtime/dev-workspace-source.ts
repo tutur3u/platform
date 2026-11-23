@@ -89,7 +89,11 @@ export function resolveWorkspaceSource(
     // Like Node's export matcher, a capture may not leave the package.
     if (value.split('/').some((segment) => segment === '..' || segment === '.'))
       return null;
-    return sourceFor(packageDir, path.replace('*', value));
+    // Node substitutes the capture for every `*` in the target.
+    return sourceFor(
+      packageDir,
+      path.replaceAll('*', () => value)
+    );
   }
   return null;
 }

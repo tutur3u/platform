@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
@@ -125,5 +128,23 @@ describe('dev workspace source resolution', () => {
 
   it('applies only to the dev server, never to builds', () => {
     expect(devWorkspaceSourcePlugin(packagesRoot).apply).toBe('serve');
+  });
+
+  it('substitutes the capture for every wildcard in an export target', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dev-workspace-source-'));
+    try {
+      const packageDir = join(root, 'masonry');
+      mkdirSync(join(packageDir, 'src', 'button'), { recursive: true });
+      writeFileSync(join(packageDir, 'src', 'button', 'button.ts'), '');
+      writeFileSync(
+        join(packageDir, 'package.json'),
+        JSON.stringify({ exports: { './*': './dist/*/*.js' } })
+      );
+      expect(resolveWorkspaceSource(root, '@tuturuuu/masonry/button')).toBe(
+        join(packageDir, 'src', 'button', 'button.ts')
+      );
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
   });
 });

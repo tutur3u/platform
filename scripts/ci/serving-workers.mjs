@@ -19,7 +19,9 @@ import { execFileSync } from 'node:child_process';
 import {
   appendFileSync,
   existsSync,
+  mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -237,29 +239,38 @@ export function restore(app, sha, artifactDir, outDir, exec = run) {
     ).emittedConfig;
   } else {
     const { script, profile, env } = config.restore;
-    const receipt = path.join(tmpdir(), `${app}-${sha}-restored.json`);
+    // A private directory: a predictable shared temp path could be
+    // pre-created as a symlink or rewritten to redirect configPath.
+    const receiptDir = mkdtempSync(
+      path.join(process.env.RUNNER_TEMP || tmpdir(), 'serving-workers-restore-')
+    );
+    const receipt = path.join(receiptDir, `${app}-${sha}-restored.json`);
     const flags = profile ? ['--profile', 'production'] : [];
     const options = { env: { ...process.env, ...env(sha) } };
-    exec(
-      'python3',
-      [
-        script,
-        ...flags,
-        'restore',
-        appDir,
-        '--archive',
-        archive,
-        '--receipt',
-        receipt,
-      ],
-      options
-    );
-    exec(
-      'python3',
-      [script, ...flags, 'verify', appDir, '--receipt', receipt],
-      options
-    );
-    emitted = readJson(receipt).configPath;
+    try {
+      exec(
+        'python3',
+        [
+          script,
+          ...flags,
+          'restore',
+          appDir,
+          '--archive',
+          archive,
+          '--receipt',
+          receipt,
+        ],
+        options
+      );
+      exec(
+        'python3',
+        [script, ...flags, 'verify', appDir, '--receipt', receipt],
+        options
+      );
+      emitted = readJson(receipt).configPath;
+    } finally {
+      rmSync(receiptDir, { force: true, recursive: true });
+    }
   }
   if (typeof emitted !== 'string' || emitted.includes('..'))
     throw new Error('sealed receipt names no emitted config');
@@ -577,8 +588,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       await import('./production-publication-policy.ts');
     const result = await publish(app, sha, outDir, {
       hold: productionPublicationHold(`${app}-cloudflare.yaml`),
+      // RUNNER_TEMP is per-job; elsewhere use a private directory, never a
+      // predictable path in the shared temp dir.
       receiptPath: path.join(
-        process.env.RUNNER_TEMP ?? tmpdir(),
+        process.env.RUNNER_TEMP ||
+          mkdtempSync(path.join(tmpdir(), 'serving-workers-')),
         `${app}-serving-publication.json`
       ),
       isAncestor: gitAncestor,

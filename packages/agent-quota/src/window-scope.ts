@@ -40,10 +40,13 @@ function modelFamiliesInLabel(label: string): ModelFamily[] {
 }
 
 export function normalizeModelId(model: string): string {
-  return model
-    .toLowerCase()
-    .replace(/\[[^\]]*\]/g, '')
-    .replace(/opusplan/g, 'opus');
+  return (
+    model
+      .toLowerCase()
+      // Excluding '[' keeps the scan linear on runs of unmatched brackets.
+      .replace(/\[[^\][]*\]/g, '')
+      .replace(/opusplan/g, 'opus')
+  );
 }
 
 function escapeRegExp(value: string): string {
