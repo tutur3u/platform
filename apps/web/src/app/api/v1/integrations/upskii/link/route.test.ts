@@ -139,6 +139,18 @@ describe('POST /api/v1/integrations/upskii/link', () => {
     });
   });
 
+  it('refuses a link bearer that was already used', async () => {
+    mocks.linkUpskiiAccount.mockResolvedValue({
+      code: 'LINK_BEARER_USED',
+      ok: false,
+    });
+    const response = await POST(
+      request(bearer('upskii', ['upskii-link:write']))
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ code: 'LINK_BEARER_USED' });
+  });
+
   it('links the bearer user, never a user named in the body', async () => {
     const response = await POST(
       request(bearer('upskii', ['upskii-link:write']), {
@@ -149,6 +161,7 @@ describe('POST /api/v1/integrations/upskii/link', () => {
     expect(response.status).toBe(201);
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(mocks.linkUpskiiAccount).toHaveBeenCalledWith(expect.anything(), {
+      bearerJti: expect.stringMatching(/^[0-9a-f-]{36}$/u),
       scopes: ['upskii:classes:read'],
       upskiiEmail: 'learner@upskii.test',
       upskiiUserId: 'u-1',

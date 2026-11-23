@@ -61,7 +61,9 @@ the consent. The Tuturuuu **Connect** button opens Upskii settings.
    `{ upskiiUserId, upskiiEmail, scopes }`. Tuturuuu checks that the bearer
    belongs to the enabled `upskii` app, carries `upskii-link:write` and
    postdates the app's current secret. It applies the staff gate and stores
-   the link for the bearer's user, never a user named in the body.
+   the link for the bearer's user, never a user named in the body. Each bearer
+   links once: its `jti` is recorded on the row (`link_jti`, unique), and a
+   later request with the same bearer gets `401 LINK_BEARER_USED`.
 5. Upskii stores its own row `{ U, tuturuuuUserId, linkId, scopes, linkedAt }`
    and discards the bearer.
 
@@ -73,6 +75,11 @@ Registry settings for the `upskii` app: `requirePkce=true` (only after
 migration `20261101090000` is confirmed applied in production),
 `callbackPaths: ["/api/upskii/integrations/tuturuuu/callback"]` and
 `allowedScopes: ["upskii-link:write"]`.
+
+The handoff confirmation is enforced by the login page, not by a
+server-side nonce. A server nonce would add a second store and round trip,
+while PKCE and Upskii's sealed state already bind the handoff to the browser
+that started it.
 
 ## Mismatch and conflict handling
 
@@ -111,6 +118,7 @@ Upskii stores the matching row in its own database. Neither row holds a token.
 | `DELETE /api/v1/integrations/upskii/link` | The user: web session or a first-party satellite app session | Disconnect. |
 | `POST /api/v1/integrations/upskii/unlink` | Upskii server, `Authorization: Basic base64(upskii:<app secret>)` | Disconnect from Upskii. |
 | `POST /api/v1/integrations/upskii/introspect` | Upskii server, same Basic credentials | Check a read token. |
+| `POST /api/v1/integrations/upskii/link-status` | Upskii server, same Basic credentials | `{ active }` for `{ linkId, upskiiUserId }`, so Upskii's settings stop showing a link disconnected on Tuturuuu. |
 
 The app secret is read only from the `Authorization` header, never from a
 body. Each route admits requests per client IP and per app and secret digest

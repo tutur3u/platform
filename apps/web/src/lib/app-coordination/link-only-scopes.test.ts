@@ -9,7 +9,13 @@ import {
   CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH,
   CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
 } from '@/legacy-api-routes/v1/users/me/session-auth';
+import { verifyConfiguredAppSessionRequest } from '@/lib/api-auth-app-session';
 import { appTokenHasRequiredScope } from '@/lib/external-projects/access-mode';
+
+const adminClient = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: adminClient,
+}));
 
 const webSrc = join(__dirname, '../..');
 
@@ -57,6 +63,27 @@ describe('link-only bearers', () => {
     ]) {
       expect(verifyAppSessionToken(token, options).ok).toBe(false);
     }
+  });
+
+  it.each([
+    ['current-user profile reads', CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH],
+    [
+      'current-user profile writes',
+      CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
+    ],
+    ['first-party satellite sessions', CURRENT_USER_APP_SESSION_AUTH],
+  ] as const)('gets 401 from the %s route gate', async (_label, options) => {
+    const { token } = bearer();
+    const result = await verifyConfiguredAppSessionRequest(
+      {
+        headers: new Headers({ authorization: `Bearer ${token}` }),
+        url: 'https://tuturuuu.com/api/v1/users/me/profile',
+      } as never,
+      options
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(401);
+    expect(adminClient).not.toHaveBeenCalled();
   });
 
   it('is refused by every external-project scope mode', () => {

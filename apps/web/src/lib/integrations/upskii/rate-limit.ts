@@ -6,7 +6,7 @@ import {
   keyPart,
 } from '@/lib/external-apps/rate-limit-core';
 
-export type AccountLinkRoute = 'introspect' | 'link' | 'unlink';
+export type AccountLinkRoute = 'introspect' | 'link' | 'link-status' | 'unlink';
 
 function prefix(route: AccountLinkRoute) {
   return `${KEY_PREFIX}:account-link:${route}`;

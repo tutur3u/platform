@@ -25,6 +25,8 @@ create table private.external_account_links (
         'upskii:lessons:read'
       ]::text[]
     ),
+  -- jti of the link-only bearer that last wrote this row; a bearer links once.
+  link_jti uuid unique,
   linked_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   revoked_at timestamptz,

@@ -2,6 +2,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export type ExternalAccountLinkRow = {
   external_email: string | null;
+  link_jti?: string | null;
   external_subject: string;
   id: string;
   linked_at: string;
@@ -17,21 +18,26 @@ export type LinkRevoker = NonNullable<ExternalAccountLinkRow['revoked_by']>;
 export type NewExternalAccountLink = Pick<
   ExternalAccountLinkRow,
   'external_email' | 'external_subject' | 'scopes' | 'user_id'
->;
+> & { link_jti: string };
 
 /** Storage for `private.external_account_links`, injectable for tests. */
 export type ExternalAccountLinkStore = {
   findActiveBySubject(subject: string): Promise<ExternalAccountLinkRow | null>;
   findActiveByUser(userId: string): Promise<ExternalAccountLinkRow | null>;
   findById(id: string): Promise<ExternalAccountLinkRow | null>;
+  /** Whether a link bearer with this jti already wrote a row. */
+  hasLinkJti(jti: string): Promise<boolean>;
   /** Null when a concurrent link took one of the unique active slots. */
   insert(link: NewExternalAccountLink): Promise<ExternalAccountLinkRow | null>;
   /** True when this call revoked an active link. */
   revoke(id: string, by: LinkRevoker): Promise<boolean>;
+  /** Null when the bearer's jti was used concurrently. */
   updateActive(
     id: string,
-    patch: Pick<ExternalAccountLinkRow, 'external_email' | 'scopes'>
-  ): Promise<ExternalAccountLinkRow>;
+    patch: Pick<ExternalAccountLinkRow, 'external_email' | 'scopes'> & {
+      link_jti: string;
+    }
+  ): Promise<ExternalAccountLinkRow | null>;
 };
 
 const COLUMNS =
@@ -96,6 +102,12 @@ export function createExternalAccountLinkStore(
           .eq('id', id)
           .maybeSingle()
       ),
+    async hasLinkJti(jti) {
+      const row = await readOne(
+        table(admin).select('id').eq('link_jti', jti).maybeSingle()
+      );
+      return row !== null;
+    },
     async insert(link) {
       const { data, error } = await table(admin)
         .insert({ ...link, provider: PROVIDER })
@@ -124,16 +136,16 @@ export function createExternalAccountLinkStore(
       return row !== null;
     },
     async updateActive(id, patch) {
-      const row = await readOne(
-        table(admin)
-          .update({ ...patch, updated_at: new Date().toISOString() })
-          .eq('id', id)
-          .is('revoked_at', null)
-          .select(COLUMNS)
-          .single()
-      );
-      if (!row) throw new Error('external_account_links: link not active');
-      return row;
+      const { data, error } = await table(admin)
+        .update({ ...patch, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .is('revoked_at', null)
+        .select(COLUMNS)
+        .single();
+      if (error?.code === UNIQUE_VIOLATION) return null;
+      if (error) throw new Error(`external_account_links: ${error.message}`);
+      if (!data) throw new Error('external_account_links: link not active');
+      return data;
     },
   };
 }

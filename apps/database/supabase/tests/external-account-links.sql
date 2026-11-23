@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(15);
 
 select has_table(
   'private',
@@ -53,13 +53,24 @@ values
   ('e3a10000-0000-4000-8000-00000000000a', 'link-a@example.com', now(), '{}'::jsonb, '{}'::jsonb),
   ('e3a10000-0000-4000-8000-00000000000b', 'link-b@example.com', now(), '{}'::jsonb, '{}'::jsonb);
 
-insert into private.external_account_links (id, user_id, provider, external_subject, scopes)
+insert into private.external_account_links (id, user_id, provider, external_subject, scopes, link_jti)
 values (
   'e3a10000-0000-4000-9000-000000000001',
   'e3a10000-0000-4000-8000-00000000000a',
   'upskii',
   'upskii-user-1',
-  array['upskii:classes:read']
+  array['upskii:classes:read'],
+  'e3a10000-0000-4000-a000-000000000001'
+);
+
+select throws_ok(
+  $$
+    insert into private.external_account_links (user_id, provider, external_subject, link_jti)
+    values ('e3a10000-0000-4000-8000-00000000000b', 'upskii', 'upskii-user-7', 'e3a10000-0000-4000-a000-000000000001')
+  $$,
+  '23505',
+  null,
+  'a link bearer writes at most one link'
 );
 
 select throws_ok(

@@ -92,12 +92,20 @@ export async function POST(request: NextRequest) {
   const result = await linkUpskiiAccount(
     createExternalAccountLinkStore(admin),
     {
+      bearerJti: verified.claims.jti,
       scopes: parsed.data.scopes,
       upskiiEmail: parsed.data.upskiiEmail ?? null,
       upskiiUserId: parsed.data.upskiiUserId,
       userId,
     }
   );
+  if (!result.ok && result.code === 'LINK_BEARER_USED') {
+    auditLinkEvent('link_refused', { reason: 'bearer_reused', userId });
+    return jsonNoStore(
+      { code: result.code, error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
   if (!result.ok) {
     auditLinkEvent('link_refused', {
       reason: 'conflict',

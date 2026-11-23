@@ -30,7 +30,8 @@ export type UpskiiLinkSummary = {
 
 export type LinkUpskiiResult =
   | { created: boolean; link: ExternalAccountLinkRow; ok: true }
-  | { code: 'LINK_CONFLICT'; ok: false; side: 'tuturuuu' | 'upskii' };
+  | { code: 'LINK_CONFLICT'; ok: false; side: 'tuturuuu' | 'upskii' }
+  | { code: 'LINK_BEARER_USED'; ok: false };
 
 export function summarizeLink(link: ExternalAccountLinkRow): UpskiiLinkSummary {
   return {
@@ -57,11 +58,15 @@ export function auditLinkEvent(
 
 /**
  * Creates the one active link between a Tuturuuu user and an Upskii account,
- * or refreshes it when the same pair links again.
+ * or refreshes it when the same pair links again. Each link-only bearer
+ * writes once: its jti is recorded on the row, and a later request with the
+ * same bearer is refused.
  */
 export async function linkUpskiiAccount(
   store: ExternalAccountLinkStore,
   input: {
+    /** jti of the link-only bearer making the request. */
+    bearerJti: string;
     scopes: UpskiiReadScope[];
     upskiiEmail: string | null;
     upskiiUserId: string;
@@ -69,6 +74,9 @@ export async function linkUpskiiAccount(
   }
 ): Promise<LinkUpskiiResult> {
   const scopes = [...new Set(input.scopes)].sort();
+  if (await store.hasLinkJti(input.bearerJti)) {
+    return { code: 'LINK_BEARER_USED', ok: false };
+  }
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const [byUser, bySubject] = await Promise.all([
@@ -85,14 +93,17 @@ export async function linkUpskiiAccount(
     if (byUser) {
       const link = await store.updateActive(byUser.id, {
         external_email: input.upskiiEmail,
+        link_jti: input.bearerJti,
         scopes,
       });
+      if (!link) return { code: 'LINK_BEARER_USED', ok: false };
       return { created: false, link, ok: true };
     }
 
     const link = await store.insert({
       external_email: input.upskiiEmail,
       external_subject: input.upskiiUserId,
+      link_jti: input.bearerJti,
       scopes,
       user_id: input.userId,
     });
@@ -123,6 +134,23 @@ export async function revokeUpskiiLinkFromProvider(
   if (link.revoked_at) return 'revoked';
   await store.revoke(link.id, 'provider');
   return 'revoked';
+}
+
+/**
+ * Upskii's check of its own row: active only while Tuturuuu holds the same
+ * link for the same Upskii user.
+ */
+export async function getUpskiiLinkStatusForProvider(
+  store: ExternalAccountLinkStore,
+  { linkId, upskiiUserId }: { linkId: string; upskiiUserId: string }
+): Promise<{ active: boolean }> {
+  if (!isLinkId(linkId)) return { active: false };
+  const link = await store.findById(linkId);
+  return {
+    active: Boolean(
+      link && !link.revoked_at && link.external_subject === upskiiUserId
+    ),
+  };
 }
 
 /** Mints the 60-second, single-scope token for one read through a link. */

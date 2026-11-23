@@ -5,6 +5,7 @@ import {
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createUpskiiReadToken,
+  getUpskiiLinkStatusForProvider,
   introspectUpskiiReadToken,
   linkUpskiiAccount,
   revokeUpskiiLinkForUser,
@@ -30,13 +31,15 @@ function memoryStore() {
     findActiveByUser: async (userId) =>
       rows.find((row) => active(row) && row.user_id === userId) ?? null,
     findById: async (id) => rows.find((row) => row.id === id) ?? null,
+    hasLinkJti: async (jti) => rows.some((row) => row.link_jti === jti),
     async insert(link) {
       if (
         rows.some(
           (row) =>
-            active(row) &&
-            (row.user_id === link.user_id ||
-              row.external_subject === link.external_subject)
+            row.link_jti === link.link_jti ||
+            (active(row) &&
+              (row.user_id === link.user_id ||
+                row.external_subject === link.external_subject))
         )
       ) {
         return null;
@@ -65,6 +68,10 @@ function memoryStore() {
         (candidate) => candidate.id === id && active(candidate)
       );
       if (!row) throw new Error('not active');
+      if (
+        rows.some((other) => other !== row && other.link_jti === patch.link_jti)
+      )
+        return null;
       Object.assign(row, patch);
       return row;
     },
@@ -87,6 +94,7 @@ describe('Upskii account link', () => {
 
   async function link(userId: string, upskiiUserId: string) {
     return linkUpskiiAccount(memory.store, {
+      bearerJti: crypto.randomUUID(),
       scopes: [...ALL_SCOPES],
       upskiiEmail: `${upskiiUserId}@upskii.test`,
       upskiiUserId,
@@ -159,6 +167,42 @@ describe('Upskii account link', () => {
     expect(memory.rows[0]?.revoked_by).toBe('provider');
   });
 
+  it('accepts each link bearer once', async () => {
+    const bearerJti = crypto.randomUUID();
+    const input = {
+      bearerJti,
+      scopes: [...ALL_SCOPES],
+      upskiiEmail: null,
+      upskiiUserId: 'u-1',
+      userId: TUTURUUU_A,
+    };
+    expect(await linkUpskiiAccount(memory.store, input)).toMatchObject({
+      ok: true,
+    });
+    expect(
+      await linkUpskiiAccount(memory.store, { ...input, upskiiUserId: 'u-9' })
+    ).toEqual({ code: 'LINK_BEARER_USED', ok: false });
+    expect(await linkUpskiiAccount(memory.store, input)).toEqual({
+      code: 'LINK_BEARER_USED',
+      ok: false,
+    });
+  });
+
+  it('confirms a link to Upskii only while it is active and theirs', async () => {
+    const result = await link(TUTURUUU_A, 'u-1');
+    const linkId = result.ok ? result.link.id : '';
+    const status = (upskiiUserId: string, id = linkId) =>
+      getUpskiiLinkStatusForProvider(memory.store, {
+        linkId: id,
+        upskiiUserId,
+      });
+    expect(await status('u-1')).toEqual({ active: true });
+    expect(await status('u-2')).toEqual({ active: false });
+    expect(await status('u-1', 'not-a-uuid')).toEqual({ active: false });
+    await revokeUpskiiLinkForUser(memory.store, TUTURUUU_A);
+    expect(await status('u-1')).toEqual({ active: false });
+  });
+
   describe('read token introspection', () => {
     async function activeLink() {
       const result = await link(TUTURUUU_A, 'u-1');
@@ -213,6 +257,7 @@ describe('Upskii account link', () => {
         secret: SECRET,
       });
       await linkUpskiiAccount(memory.store, {
+        bearerJti: crypto.randomUUID(),
         scopes: ['upskii:classes:read'],
         upskiiEmail: null,
         upskiiUserId: 'u-1',
@@ -246,6 +291,7 @@ describe('Upskii account link', () => {
     it("refuses a token naming another user's link", async () => {
       await activeLink();
       const other = await linkUpskiiAccount(memory.store, {
+        bearerJti: crypto.randomUUID(),
         scopes: [...ALL_SCOPES],
         upskiiEmail: null,
         upskiiUserId: 'u-2',
@@ -325,6 +371,38 @@ describe('Upskii account link', () => {
       expect(
         await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
       ).toEqual({ active: false });
+    });
+
+    it('names a revoked link only for a valid token of its own user', async () => {
+      const row = await activeLink();
+      await revokeUpskiiLinkForUser(memory.store, TUTURUUU_A);
+      const tokens = [
+        createUpskiiReadToken(
+          { ...row, revoked_at: null },
+          'upskii:classes:read',
+          { secret: 'another-secret-with-enough-length-for-tests' }
+        ).token,
+        createUpskiiReadToken(
+          { ...row, revoked_at: null },
+          'upskii:classes:read',
+          {
+            now: new Date(Date.now() - 120_000),
+            secret: SECRET,
+          }
+        ).token,
+        createUpskiiReadToken(
+          { ...row, revoked_at: null, user_id: TUTURUUU_B },
+          'upskii:classes:read',
+          { secret: SECRET }
+        ).token,
+      ];
+      for (const token of tokens) {
+        const answer = await introspectUpskiiReadToken(memory.store, token, {
+          secret: SECRET,
+        });
+        expect(answer).toEqual({ active: false });
+        expect(answer).not.toHaveProperty('revoked');
+      }
     });
 
     it('refuses a read token whose user does not own the link', async () => {
