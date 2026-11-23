@@ -8,6 +8,11 @@ import { collaborationRequest } from './collaboration-worker';
 
 export { CollaborationRoomDurableObject } from './collaboration-room-do';
 
+import type { WhiteboardRoomEnv } from './whiteboard-room-do';
+import { whiteboardRequest } from './whiteboard-worker';
+
+export { WhiteboardRoomDurableObject } from './whiteboard-room-do';
+
 import { ATTENDANCE_DIRECTORY_ROOM } from '../../../packages/realtime/src/meet/attendance-directory';
 import { verifyMeetServiceCredential } from '../../../packages/realtime/src/meet/service-credential';
 import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
@@ -26,7 +31,10 @@ export { AttendanceErasure } from './attendance-erasure-entrypoint';
 export default {
   async fetch(
     request: Request,
-    env: MeetRoomEnv & CollaborationRoomEnv & ChannelRoomEnv
+    env: MeetRoomEnv &
+      CollaborationRoomEnv &
+      ChannelRoomEnv &
+      WhiteboardRoomEnv
   ): Promise<Response> {
     const url = new URL(request.url);
     if (
@@ -46,6 +54,8 @@ export default {
       ].includes(url.pathname)
     )
       return collaborationRequest(request, env);
+
+    if (url.pathname === '/whiteboard') return whiteboardRequest(request, env);
 
     if (url.pathname === '/health') {
       return Response.json({ ok: true });

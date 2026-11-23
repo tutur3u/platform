@@ -23,6 +23,10 @@ if (process.env.MEET_REALTIME_TEST_CONFIG) {
       name: 'COLLABORATION_ROOM',
       class_name: 'CollaborationRoomDurableObject',
     },
+    {
+      name: 'WHITEBOARD_ROOM',
+      class_name: 'WhiteboardRoomDurableObject',
+    },
     { name: 'MEET_ROOM', class_name: 'MeetRoomDurableObject' },
   ]);
   assert.deepEqual(config.migrations, [
@@ -32,6 +36,10 @@ if (process.env.MEET_REALTIME_TEST_CONFIG) {
       new_sqlite_classes: ['CollaborationRoomDurableObject'],
     },
     { tag: 'v3-channels', new_sqlite_classes: ['ChannelRoomDurableObject'] },
+    {
+      tag: 'v4-whiteboard',
+      new_sqlite_classes: ['WhiteboardRoomDurableObject'],
+    },
   ]);
 }
 const secret = randomUUID() + randomUUID();

@@ -44,6 +44,8 @@
     "../meet-realtime/src/room-service.ts",
     "../meet-realtime/src/room-sfu-intent.ts",
     "../meet-realtime/src/turn-credentials.ts",
+    "../meet-realtime/src/whiteboard-room-do.ts",
+    "../meet-realtime/src/whiteboard-worker.ts",
     "../meet-realtime/src/worker.ts",
     "cloudflare/live/session.ts",
     "cloudflare/one-origin.ts",

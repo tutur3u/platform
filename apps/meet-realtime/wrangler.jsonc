@@ -20,6 +20,7 @@
     "MEET_AI_ENABLED_WORKSPACE_IDS": "",
     "MEET_CLASS_ATTENDANCE_ENABLED": "false",
     "MEET_CLASS_TIMER_ENABLED": "true",
+    "MEET_WHITEBOARD_FLUSH_DISABLED": "false",
   },
   "durable_objects": {
     "bindings": [
@@ -27,6 +28,10 @@
       {
         "name": "COLLABORATION_ROOM",
         "class_name": "CollaborationRoomDurableObject",
+      },
+      {
+        "name": "WHITEBOARD_ROOM",
+        "class_name": "WhiteboardRoomDurableObject",
       },
       {
         "name": "MEET_ROOM",
@@ -46,6 +51,10 @@
     {
       "tag": "v3-channels",
       "new_sqlite_classes": ["ChannelRoomDurableObject"],
+    },
+    {
+      "tag": "v4-whiteboard",
+      "new_sqlite_classes": ["WhiteboardRoomDurableObject"],
     },
   ],
   "secrets": {
