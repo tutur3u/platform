@@ -62,7 +62,13 @@ test('security dependency overrides retain consumer behavior', async () => {
     'PASS mailauth Joi validation and Nodemailer MIME/envelope composition'
   );
   const web = createRequire(resolve(root, 'apps/web/package.json'));
-  const excalidraw = createRequire(web.resolve('@excalidraw/excalidraw'));
+  // Excalidraw moved from apps/web into @tuturuuu/whiteboard (36f4b2b722).
+  const whiteboard = createRequire(
+    resolve(root, 'packages/whiteboard/package.json')
+  );
+  const excalidraw = createRequire(
+    whiteboard.resolve('@excalidraw/excalidraw')
+  );
   const mermaid = dependencyRequire(
     excalidraw,
     '@excalidraw/mermaid-to-excalidraw'

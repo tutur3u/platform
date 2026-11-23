@@ -253,6 +253,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'playground-execution_0',
+    app: 'playground-execution',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'meet-realtime_0',
     app: 'meet-realtime',
     category: 'internal',

@@ -50,6 +50,13 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ['MOBILE_CLIENT_SCOPE', 'claims.sub === userId'],
   },
+  // Rate limiting only: a verified bearer keys the per-app and per-workspace
+  // counters; an invalid one is left to the handler, which still applies its
+  // own scope gate. It never grants access.
+  'apps/web/src/lib/external-apps/rate-limit.ts': {
+    calls: 1,
+    gates: ['if (!verification.ok) return undefined'],
+  },
   'apps/web/src/lib/external-apps/workspace-cron.ts': {
     calls: 1,
     gates: ['hasScope(verification.claims.scopes'],
