@@ -241,10 +241,10 @@ test('real Mind closure rejects pre-fix bundles and preserves canonical values',
 
 test('Meet and Parley translate the rendered sidebar modes and the legacy Hidden label', () => {
   const repo = path.resolve(__dirname, '..');
-  const menu = path.join(
-    repo,
-    'packages/ui/src/components/ui/custom/satellite-user-menu-items.tsx'
-  );
+  const menus = [
+    'packages/ui/src/components/ui/custom/satellite-user-menu-items.tsx',
+    'packages/ui/src/components/ui/custom/satellite-sidebar-behavior-menu.tsx',
+  ].map((file) => path.join(repo, file));
   const modes = [
     'common.sidebar',
     'common.expanded',
@@ -261,8 +261,18 @@ test('Meet and Parley translate the rendered sidebar modes and the legacy Hidden
         )
       )
     );
-  const rendered = collectRequirements(repo, [menu], readBundle('web', 'en'));
-  for (const key of modes) assert.ok(rendered.has(key), key);
+  // The behavior menu passes these keys through a typed label table, which the
+  // static translator scan cannot follow, so require each key as a translator
+  // call or a table label in the source.
+  const menuSource = menus
+    .map((file) => fs.readFileSync(file, 'utf8'))
+    .join('\n');
+  for (const key of modes) {
+    const rendered =
+      menuSource.includes(`t('${key}')`) ||
+      menuSource.includes(`label: '${key}'`);
+    assert.ok(rendered, key);
+  }
 
   for (const locale of ['en', 'vi']) {
     const canonical = readBundle('web', locale);
