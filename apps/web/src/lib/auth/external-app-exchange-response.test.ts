@@ -127,3 +127,41 @@ describe('external app bearer lifetime', () => {
     expect(fresh).not.toBe(family);
   });
 });
+
+describe('link-only exchanges', () => {
+  beforeEach(() => {
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('issues no refresh token and a bearer of at most 120 seconds', () => {
+    const body = issue({
+      maxBearerTtlSeconds: 900,
+      scopes: ['upskii-link:write'],
+      targetApp: 'upskii',
+    });
+    expect(body).not.toHaveProperty('refreshToken');
+    expect(body).not.toHaveProperty('refreshExpiresAt');
+    expect(body.expiresIn).toBeLessThanOrEqual(120);
+    expect(body.refreshEarlySeconds).toBe(0);
+  });
+
+  it('narrows a mixed grant to the link scope', () => {
+    const body = issue({
+      scopes: ['upskii-link:write', 'users:profile:read'],
+      targetApp: 'upskii',
+    });
+    const verified = verifyAppCoordinationToken(body.accessToken);
+    expect(body.scopes).toEqual(['upskii-link:write']);
+    expect(verified.ok && verified.claims.scopes).toEqual([
+      'upskii-link:write',
+    ]);
+  });
+
+  it('keeps refresh tokens for every other grant', () => {
+    expect(issue({})).toHaveProperty('refreshToken');
+  });
+});

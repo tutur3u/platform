@@ -4,6 +4,11 @@ import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import type { SessionAssurance } from '@tuturuuu/utils/session-assurance';
 import { NextResponse } from 'next/server';
 import {
+  hasLinkOnlyScope,
+  isLinkOnlyScope,
+  LINK_ONLY_BEARER_TTL_SECONDS,
+} from '@/lib/app-coordination/link-only-scopes';
+import {
   newRefreshFamily,
   refreshTokenScopes,
 } from '@/lib/app-coordination/refresh-family';
@@ -86,32 +91,42 @@ export function createExchangeTokenBody({
   const assuranceClaims = assurance
     ? { aal: assurance.aal, amr: assurance.amr }
     : {};
-  const bearerLifetime = getExternalAppBearerLifetime(
-    policy,
-    maxBearerTtlSeconds
-  );
+  // A link ceremony gets one short bearer and nothing to refresh it with.
+  const linkOnly = hasLinkOnlyScope(scopes);
+  const issuedScopes = linkOnly ? scopes.filter(isLinkOnlyScope) : scopes;
+  const bearerLifetime = linkOnly
+    ? {
+        refreshEarlySeconds: 0,
+        ttlSeconds: Math.min(
+          LINK_ONLY_BEARER_TTL_SECONDS,
+          getExternalAppBearerLifetime(policy, maxBearerTtlSeconds).ttlSeconds
+        ),
+      }
+    : getExternalAppBearerLifetime(policy, maxBearerTtlSeconds);
   const accessToken = createAppCoordinationToken({
     ...assuranceClaims,
     email,
     mfa: mfa ?? undefined,
     expiresInSeconds: bearerLifetime.ttlSeconds,
     originApp: 'web',
-    scopes,
+    scopes: issuedScopes,
     targetApp,
     userId,
     workspaceId: normalizedWorkspaceId ?? undefined,
   });
-  const refreshToken = createAppCoordinationToken({
-    ...assuranceClaims,
-    email,
-    mfa: mfa ?? undefined,
-    expiresInSeconds: policy.internalAppRefreshTtlSeconds,
-    originApp: 'web',
-    scopes: refreshTokenScopes(refreshFamily),
-    targetApp,
-    userId,
-    workspaceId: normalizedWorkspaceId ?? undefined,
-  });
+  const refreshToken = linkOnly
+    ? null
+    : createAppCoordinationToken({
+        ...assuranceClaims,
+        email,
+        mfa: mfa ?? undefined,
+        expiresInSeconds: policy.internalAppRefreshTtlSeconds,
+        originApp: 'web',
+        scopes: refreshTokenScopes(refreshFamily),
+        targetApp,
+        userId,
+        workspaceId: normalizedWorkspaceId ?? undefined,
+      });
 
   return {
     ...(assurance
@@ -127,10 +142,14 @@ export function createExchangeTokenBody({
     expiresAt: accessToken.expiresAt,
     expiresIn: accessToken.claims.exp - accessToken.claims.iat,
     refreshEarlySeconds: bearerLifetime.refreshEarlySeconds,
-    refreshExpiresAt: refreshToken.expiresAt,
-    refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
-    refreshToken: refreshToken.token,
-    scopes,
+    ...(refreshToken
+      ? {
+          refreshExpiresAt: refreshToken.expiresAt,
+          refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
+          refreshToken: refreshToken.token,
+        }
+      : {}),
+    scopes: issuedScopes,
     tokenType: 'Bearer',
     user: userProfile,
     workspaceId: normalizedWorkspaceId,
