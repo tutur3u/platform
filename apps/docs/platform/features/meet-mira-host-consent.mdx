@@ -75,13 +75,18 @@ anyone's content available to Mira.
 - **Context.** Context includes only content authored by participants whose
   current choice is on: messages, quoted and reply-to bodies, attachments, poll
   answers and reactions. Mira's own earlier replies stay omitted.
-- **Transcription and notes** stay off under this decision until per-account
-  (`self_v1`) capture ships. Each account then uploads only its own microphone,
-  with echo cancellation on, and the server refuses any chunk without the
-  uploader's current `allow` revision. There is no mixed-audio path. Notes and
-  summaries use only tracks from participants who chose on, and never list
-  opted-out participants as speakers. Erasing anyone's content redacts the whole
-  mixed notes.
+- **Transcription and notes** use host capture with per-speaker attribution.
+  The host's device uploads short clips, and every clip names the account that
+  spoke. Transcription runs only while every admitted participant has chosen
+  Allow in the transcript consent notice. A decline, or anyone who has not chosen
+  yet, pauses it for everyone, and audio heard while anyone was undecided is
+  discarded on the device. The server refuses a clip without a speaker account, a
+  clip whose speaker has no current Allow, and a clip from a session that is not
+  the room's active recording. Turning Mira off for yourself also withdraws your
+  transcript consent. Notes and summaries use only transcribed lines and never
+  list opted-out participants as speakers. Erasing anyone's content redacts the
+  whole mixed notes. Per-account capture (`self_v1`), where each account
+  uploads only its own microphone, is a later hardening of this path.
 
 Room Live voice (mixed room audio) remains denied on the server; this decision
 does not enable it.
