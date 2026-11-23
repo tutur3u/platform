@@ -312,7 +312,7 @@ const storageAclReviewedLater = [
   {
     file: 'apps/database/supabase/migrations/20261123061000_memory_postgrest.sql',
     sourceDigest:
-      '892f282c96371c9b813ca8eb143ddff9367f4c8b68540c9fbe9b6961407cc1f6',
+      '61d5fdb82345f491276d1ef1e8138a1d5a74886b2e9ab57474813d088847700a',
     reason:
       'Creates the NOLOGIN memory roles and schemas. It never names workspace_storage, grants authenticated or service_role, or runs dynamic SQL; its execute literals are PostgREST paths and privilege-check arguments.',
   },
