@@ -3256,6 +3256,10 @@
     "digest": "3168b59059bb0515ef08bcadea8b8515f97331472b99b4e00d83fe6f70461cf6"
   },
   {
+    "file": "apps/meet/src/app/api/meet-call/[meetingId]/whiteboard/route.ts",
+    "digest": "c0a22f63f10ddbd0ec4436e5ab3688a44a94fd32b6618c119d6b6c9becde482c"
+  },
+  {
     "file": "apps/meet/src/app/api/meet-live/[meetingId]/review/route.ts",
     "digest": "adab0568b0c332ad3e98593cf090ea2b8d63f51045847ef3bd64df6814a4cac6"
   },
@@ -4959,6 +4963,10 @@
   {
     "file": "apps/web/src/app/api/v1/realtime/programming/checkpoint/route.ts",
     "digest": "97ae8c0e1c73bb18b3fdf9d12b3adae63a0533b784b0e709e842a224d75375f4"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/realtime/whiteboard/checkpoint/route.ts",
+    "digest": "3c4027f9a8bb172a2a1a80c412a3cce9ffcdeb2ee2bca849c44eddab89d5c26d"
   },
   {
     "file": "apps/web/src/app/api/v1/sso/saml/[clientId]/metadata/route.ts",
