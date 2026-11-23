@@ -89,11 +89,7 @@ export function InternalAppAccountConfirmation({
   return (
     <ConfirmationCard>
       <div className="space-y-2 text-center">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
-          <ShieldCheck className="size-3.5" />
-          {t('login.profile_source_label')}
-        </div>
-        <div className="relative mx-auto size-20">
+        <div className="relative mx-auto mb-4 size-20">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-dynamic-blue/20 via-dynamic-green/20 to-dynamic-red/20 blur-md" />
           <Avatar className="relative size-20 border border-border/70 shadow-lg">
             <AvatarImage
