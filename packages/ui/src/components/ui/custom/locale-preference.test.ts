@@ -4,6 +4,7 @@ import {
   matchBrowserLocale,
   readLocalePreference,
   stripLocalePrefix,
+  systemLocaleTarget,
 } from './locale-preference';
 
 describe('readLocalePreference', () => {
@@ -28,6 +29,28 @@ describe('readLocalePreference', () => {
     expect(
       readLocalePreference(header, ['en', 'vi'], 'NEXT_LOCALE', 'first')
     ).toBe('vi');
+  });
+
+  it('treats an undecodable first copy in a mounted app as no choice', () => {
+    expect(
+      readLocalePreference(
+        'NEXT_LOCALE=%ZZ; NEXT_LOCALE=en',
+        ['en', 'vi'],
+        'NEXT_LOCALE',
+        'first'
+      )
+    ).toBeNull();
+  });
+});
+
+describe('systemLocaleTarget', () => {
+  it("follows Web's surviving choice on a mounted app", () => {
+    expect(systemLocaleTarget('NEXT_LOCALE=en', ['vi'], true)).toBe('en');
+  });
+
+  it("follows the browser's languages when no choice survives", () => {
+    expect(systemLocaleTarget('', ['vi-VN', 'en'], false)).toBe('vi');
+    expect(systemLocaleTarget('theme=dark', ['fr'], true)).toBe('en');
   });
 });
 

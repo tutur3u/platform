@@ -26,7 +26,6 @@ import {
 } from '@tuturuuu/utils/calendar-settings-resolver';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useTransition } from 'react';
 
 export default function AppearanceSettings({
   canManageVersionBadge = false,
@@ -36,7 +35,6 @@ export default function AppearanceSettings({
   const t = useTranslations();
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
-  const [isPending, startTransition] = useTransition();
   const queryClient = useQueryClient();
 
   // Fetch user calendar settings
@@ -87,10 +85,6 @@ export default function AppearanceSettings({
       });
     },
   });
-
-  const handleLocaleChange = (newLocale: string) => {
-    startTransition(() => switchLocalePreference(newLocale));
-  };
 
   const handleTimezoneChange = (timezone: string) => {
     updateCalendarSettings.mutate({ timezone });
@@ -179,8 +173,7 @@ export default function AppearanceSettings({
         >
           <Select
             defaultValue={locale}
-            onValueChange={handleLocaleChange}
-            disabled={isPending}
+            onValueChange={(next) => switchLocalePreference(next)}
           >
             <SelectTrigger className="w-50">
               <SelectValue placeholder={t('common.select-language')} />

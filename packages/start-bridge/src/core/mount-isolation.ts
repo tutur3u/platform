@@ -86,6 +86,29 @@ function parseCookieHeader(header: string | null) {
   return cookies;
 }
 
+/**
+ * `header` with only the first `NEXT_LOCALE` copy. The browser lists the
+ * mount's own `Path=<base>` locale before Web's `Path=/` copy, while request
+ * parsers keep the last duplicate, which would let Web's choice override the
+ * app's. Every mounted request path applies this, including app handlers that
+ * filter cookies themselves.
+ */
+export function keepFirstLocaleCookie(header: string | null): string | null {
+  if (header === null) return null;
+  let seen = false;
+  return header
+    .split(';')
+    .filter((part) => {
+      const equals = part.indexOf('=');
+      if (equals < 0 || part.slice(0, equals).trim() !== LOCALE_COOKIE_NAME)
+        return true;
+      if (seen) return false;
+      seen = true;
+      return true;
+    })
+    .join(';');
+}
+
 function base64UrlToUtf8(value: string) {
   const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
   const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
@@ -144,9 +167,7 @@ function splitSessionCookies(header: string | null) {
   for (const cookie of parseCookieHeader(header)) {
     const session = SUPABASE_AUTH_COOKIE.exec(cookie.name);
     if (!session?.groups?.key) {
-      // The browser lists the mount's own `Path=<base>` locale before Web's
-      // `Path=/` copy. Keep only that first copy: request parsers keep the
-      // last duplicate, which would let Web's choice override the app's.
+      // Keep only the mount's own locale copy; see keepFirstLocaleCookie.
       if (cookie.name === LOCALE_COOKIE_NAME) {
         if (localeSeen) continue;
         localeSeen = true;

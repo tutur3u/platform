@@ -28,7 +28,9 @@ import {
 } from 'react';
 import { isPersistableMultiAccountRoutePath } from '@/lib/auth/account-switch-routes';
 
-const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
+// Shared by the account menu, Settings and the Cmd+Shift+A dialog, so they
+// list the same accounts.
+export const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
 const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
 
 export interface AccountOperationResult {

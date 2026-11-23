@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/start-bridge/csp';
 import {
   admitMountedMutation,
-  isMountedForbiddenCookieName,
   isMountedLogoutPath,
   prefixHtmlAssets,
   refuseCrossOriginMountedLogout,
@@ -21,6 +20,7 @@ import {
 } from '../lib/legacy-meet-ai-api';
 import { proxy } from '../proxy';
 import { meetRequestBase } from './app-base';
+import { mountedMeetCookieHeader } from './mounted-cookies';
 import { dispatchMeetEndpoint } from './api-registry';
 import { createLoginRedirectProbe } from './login-redirect-diagnostics';
 import { MEET_FUNCTION_BASE } from './native-function-config';
@@ -78,16 +78,7 @@ async function dispatchMeetRequest(
     const headers = new Headers(request.headers);
     const cookies = headers.get('cookie');
     if (cookies) {
-      headers.set(
-        'cookie',
-        cookies
-          .split(';')
-          .filter(
-            (pair) =>
-              !isMountedForbiddenCookieName(pair.split('=', 1)[0]?.trim() ?? '')
-          )
-          .join(';')
-      );
+      headers.set('cookie', mountedMeetCookieHeader(cookies));
     }
     request = new Request(request, { headers });
   }

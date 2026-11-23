@@ -30,7 +30,9 @@ import { runSwitchIntent } from '@/lib/auth/multi-account/switch-intent';
 import { isPersistableMultiAccountRoutePath } from '@/lib/auth/multi-account/routes';
 import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 
-const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
+// Shared by the account menu, Settings and the Cmd+Shift+A dialog, so they
+// list the same accounts.
+export const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
 const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
 
 export interface AccountOperationResult {

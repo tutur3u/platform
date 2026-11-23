@@ -57,6 +57,9 @@ export function readLocalePreference(
     try {
       value = decodeURIComponent(pair.slice(separator + 1).trim());
     } catch {
+      // Next skips an undecodable copy; the mount bridge keeps the first copy
+      // whatever it holds, so the server then has no valid locale.
+      if (pick === 'first') return null;
       continue;
     }
     if (pick === 'first') break;
@@ -66,8 +69,7 @@ export function readLocalePreference(
 
 /**
  * `pathname` without its locale segment, keeping an app mount base
- * (`/meet/vi/x` → `/meet/x`). A locale prefix outranks the cookie in every
- * proxy, so a locale change must land on the unprefixed path.
+ * (`/meet/vi/x` → `/meet/x`).
  */
 export function stripLocalePrefix(
   pathname: string,
@@ -135,20 +137,48 @@ export function localeChangePath(
 }
 
 /**
- * Loads the current page as a document under `locale`, or under the browser's
- * own language for the system choice (`null`), so the app proxy renders it with
- * the stored preference. A client refresh cannot do that everywhere: native
- * Start loaders run without the proxy's locale negotiation, and a locale path
- * prefix outranks the cookie.
+ * The locale a page loads under for the system choice, read after the app's
+ * own copy is cleared: a cookie that still applies (Web's choice on a mounted
+ * app), else the browser's own language.
+ */
+export function systemLocaleTarget(
+  cookieHeader: string,
+  languages: readonly string[],
+  mounted: boolean,
+  locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES
+): string {
+  return (
+    readLocalePreference(
+      cookieHeader,
+      locales,
+      DEFAULT_LOCALE_COOKIE_NAME,
+      mounted ? 'first' : 'last'
+    ) ?? matchBrowserLocale(languages, locales)
+  );
+}
+
+/**
+ * Loads the current page as a document under `locale`, or under the system
+ * choice's locale (`null`), so the app proxy renders it with the stored
+ * preference. A client refresh cannot do that everywhere: native Start loaders
+ * run without the proxy's locale negotiation, and a locale path prefix
+ * outranks the cookie.
  */
 export function reloadForLocaleChange(
   locale: string | null,
   locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES
 ) {
   const { hash, pathname, search } = window.location;
+  const base = browserMountedAppBase();
   const target =
-    locale ?? matchBrowserLocale(window.navigator.languages ?? [], locales);
+    locale ??
+    systemLocaleTarget(
+      document.cookie,
+      window.navigator.languages ?? [],
+      Boolean(base),
+      locales
+    );
   window.location.assign(
-    `${localeChangePath(pathname, target, locales, browserMountedAppBase())}${search}${hash}`
+    `${localeChangePath(pathname, target, locales, base)}${search}${hash}`
   );
 }

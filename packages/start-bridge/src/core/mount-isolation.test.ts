@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assertMountIsolationConfig,
   isolateMountedCookieHeader,
+  keepFirstLocaleCookie,
   reduceMountedSessionCookieHeader,
   reduceSupabaseSessionValue,
   scopeMountedResponseCookies,
@@ -154,6 +155,15 @@ describe('reduceMountedSessionCookieHeader', () => {
     expect(
       reduceMountedSessionCookieHeader('a=1; NEXT_LOCALE=vi; NEXT_LOCALE=en')
     ).toBe('a=1; NEXT_LOCALE=vi');
+  });
+});
+
+describe('keepFirstLocaleCookie', () => {
+  it('drops every later locale copy and keeps other cookies', () => {
+    expect(
+      keepFirstLocaleCookie('NEXT_LOCALE=vi; a=1; NEXT_LOCALE=en; NEXT_LOCALEx')
+    ).toBe('NEXT_LOCALE=vi; a=1; NEXT_LOCALEx');
+    expect(keepFirstLocaleCookie(null)).toBeNull();
   });
 });
 

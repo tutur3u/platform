@@ -1,7 +1,4 @@
 import { LanguageDropdownWrapper } from '@tuturuuu/ui/custom/language-dropdown-wrapper';
-import { getTuturuuuBrowserSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
-import { setCookie } from 'cookies-next';
-import { LOCALE_COOKIE_NAME } from '../constants/common';
 import { supportedLocales } from '../i18n/routing';
 
 interface Props {
@@ -10,18 +7,6 @@ interface Props {
   currentLocale: string | undefined;
 }
 
-const handleLocaleChange = (newLocale: string) => {
-  setCookie(
-    LOCALE_COOKIE_NAME,
-    newLocale,
-    getTuturuuuBrowserSharedCookieOptions({
-      maxAge: 365 * 24 * 60 * 60,
-      path: '/',
-      sameSite: 'lax',
-    })
-  );
-};
-
 export function LanguageWrapper({ label, locale, currentLocale }: Props) {
   return (
     <LanguageDropdownWrapper
@@ -29,7 +14,6 @@ export function LanguageWrapper({ label, locale, currentLocale }: Props) {
       locale={locale}
       currentLocale={currentLocale}
       supportedLocales={supportedLocales}
-      onLocaleChange={handleLocaleChange}
     />
   );
 }

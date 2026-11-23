@@ -16,7 +16,10 @@ import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getPublicProfilePath } from '@tuturuuu/utils/public-profile-url';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, type RefObject, useContext } from 'react';
-import { useAccountSwitcher } from '@/context/account-switcher-context';
+import {
+  ACCOUNTS_QUERY_KEY,
+  useAccountSwitcher,
+} from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
 import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
@@ -25,9 +28,6 @@ import { fetchWorkspaces } from './(dashboard)/[wsId]/workspace-list-actions';
 import UserPresenceIndicator from './user-presence-indicator';
 
 const REPORT_PROBLEM_OPEN_INTENT = 'tuturuuu:report-problem-open-intent';
-// The account switcher context's query, so the menu, Settings and the
-// Cmd+Shift+A dialog list the same accounts.
-const WEB_ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
 
 /** The Web account menu: the shared account menu with Web's adapters. */
 export function UserNavMenu({
@@ -130,7 +130,7 @@ export function UserNavMenu({
             workspaceId={wsId}
             t={accountT}
             onManageAccounts={() => onOpenSettings('accounts')}
-            queryKey={WEB_ACCOUNTS_QUERY_KEY}
+            queryKey={ACCOUNTS_QUERY_KEY}
             onAccountChanged={(response) => {
               const target = response.redirectTo?.trim();
               if (target) window.location.assign(target);

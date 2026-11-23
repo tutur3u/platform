@@ -49,6 +49,7 @@ import {
 export type { AssetsBinding } from '../core/assets';
 export {
   isolateMountedRequest,
+  keepFirstLocaleCookie,
   scopeMountedResponseCookies,
 } from '../core/mount-isolation';
 export { admitMountedMutation } from './csrf-admission';
