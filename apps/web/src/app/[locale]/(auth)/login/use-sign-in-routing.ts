@@ -64,7 +64,11 @@ export function useSignInRouting({
     !initialized || !user || user.id === initialView?.session?.id;
   const focusedSignIn =
     focusedSessionMatches &&
-    isFocusedExternalSignIn(initialView, isMultiAccountLogin);
+    isFocusedExternalSignIn(
+      initialView,
+      isMultiAccountLogin,
+      anotherAccountRequested
+    );
   const focusedCanContinue =
     initialized &&
     (user ? user.id === initialView?.session?.id : serverSession);
@@ -111,6 +115,8 @@ export function useSignInRouting({
 
   return {
     anotherAccountRequested,
+    /** A strict PKCE app lets the matching session continue on its own. */
+    focusedAutoContinue: initialView?.returnApp?.autoContinue === true,
     /** The account a confirmation applies to: browser, else server-seen. */
     selfId: user?.id ?? initialView?.session?.id ?? null,
     focusedCanContinue,

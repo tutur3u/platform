@@ -1,30 +1,30 @@
 'use client';
 
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
-import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { AccountAvatarCard, StatusChip } from './continue-card-parts';
+import { getAuthOAuthProviderOptions } from '@/lib/auth/oauth-providers';
+import {
+  FOCUSED_LINK_CLASS,
+  FocusedContinueStep,
+} from './focused-continue-step';
 import {
   ConfirmationCard,
-  getDisplayName,
   StoredAccountSwitchList,
 } from './internal-app-account-confirmation-parts';
-import type { FocusedSignInStep } from './login-view';
-import { PendingLabel, usePendingPhase } from './pending-label';
+import { SocialImageLogo, SocialLogoMask } from './login-form-parts';
+import { type FocusedSignInStep, withoutProviderHint } from './login-view';
+import { SocialLoginButton } from './social-login-button';
 
-/**
- * Every step shares this fixed-height frame, so switching steps never
- * shifts layout; a long saved-account list scrolls inside it.
- */
+type FocusedProvider = 'apple' | 'github' | 'google';
+
+/** Every step shares this frame, so the card keeps one shape and rhythm. */
 function FocusedFrame({ children }: { children: ReactNode }) {
   return (
     <ConfirmationCard>
-      <div
-        aria-live="polite"
-        className="flex h-[22rem] flex-col justify-center gap-4 overflow-hidden"
-      >
+      <div aria-live="polite" className="flex flex-col justify-center gap-4">
         {children}
       </div>
     </ConfirmationCard>
@@ -34,27 +34,34 @@ function FocusedFrame({ children }: { children: ReactNode }) {
 export function FocusedSignInSkeleton() {
   return (
     <FocusedFrame>
-      <div className="flex animate-pulse flex-col items-center gap-4">
-        <div className="size-16 rounded-full bg-muted" />
-        <div className="h-5 w-40 rounded-full bg-muted" />
+      <div className="flex animate-pulse items-center gap-3 rounded-2xl border p-3 motion-reduce:animate-none">
+        <div className="size-11 rounded-full bg-muted" />
+        <div className="h-4 w-40 rounded-full bg-muted" />
       </div>
-      <div className="space-y-3">
-        <div className="h-12 w-full animate-pulse rounded-2xl bg-muted" />
-        <div className="h-11 w-full animate-pulse rounded-2xl bg-muted/60" />
-      </div>
+      <div className="h-12 w-full animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
+      <div className="mx-auto h-4 w-36 animate-pulse rounded-full bg-muted/60 motion-reduce:animate-none" />
     </FocusedFrame>
   );
 }
 
+function ProviderIcon({ provider }: { provider: FocusedProvider }) {
+  if (provider === 'google') {
+    return <SocialImageLogo alt="Google" src="/media/logos/google.svg" />;
+  }
+  const name = getAuthOAuthProviderOptions(provider).name;
+  return <SocialLogoMask alt={name} src={`/media/logos/${provider}.svg`} />;
+}
+
 export function FocusedSignInCard({
   appName,
+  autoContinue,
   canContinue,
   continuing,
   onContinue,
   onStartProvider,
   onSwitchAccount,
   onUseAnotherAccount,
-  providerName,
+  provider,
   savedAccounts,
   session,
   startingProvider,
@@ -62,13 +69,14 @@ export function FocusedSignInCard({
   switchingAccountId,
 }: {
   appName: string;
+  autoContinue: boolean;
   canContinue: boolean;
   continuing: boolean;
   onContinue: () => void;
   onStartProvider: () => void;
   onSwitchAccount: (accountId: string) => void;
   onUseAnotherAccount: () => void;
-  providerName: string;
+  provider: FocusedProvider;
   savedAccounts: WebAccountSummary[];
   session: { avatarUrl: string | null; name: string | null } | null;
   startingProvider: boolean;
@@ -76,29 +84,44 @@ export function FocusedSignInCard({
   switchingAccountId: string | null;
 }) {
   const t = useTranslations();
+  const router = useRouter();
   const busy = continuing || startingProvider || switchingAccountId !== null;
-  const continuePhase = usePendingPhase(continuing);
+  const providerName = getAuthOAuthProviderOptions(provider).name;
 
   if (step === 'provider') {
     return (
       <FocusedFrame>
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex size-16 items-center justify-center rounded-full bg-muted">
-            <LoadingIndicator className="size-6" />
-          </div>
-          <p className="font-bold text-foreground" role="status">
-            {t('login.continuing_with_provider', { provider: providerName })}
-          </p>
-        </div>
-        <Button
-          className="h-12 w-full rounded-2xl font-bold"
+        <SocialLoginButton
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
           disabled={startingProvider}
+          icon={
+            startingProvider ? (
+              <LoadingIndicator className="size-5 text-primary-foreground" />
+            ) : (
+              // The label names the provider; the logo is decoration.
+              <span aria-hidden className="flex">
+                <ProviderIcon provider={provider} />
+              </span>
+            )
+          }
           onClick={onStartProvider}
-          type="button"
-          variant="outline"
+          variant="default"
         >
-          {t('login.continue_with_provider', { provider: providerName })}
-        </Button>
+          {startingProvider
+            ? t('login.continuing_with_provider', { provider: providerName })
+            : t('login.continue_with_provider', { provider: providerName })}
+        </SocialLoginButton>
+        <button
+          className={FOCUSED_LINK_CLASS}
+          disabled={startingProvider}
+          // Keeps the return and its challenge; shows every method.
+          onClick={() =>
+            router.replace(withoutProviderHint(window.location.href))
+          }
+          type="button"
+        >
+          {t('login.more_sign_in_options')}
+        </button>
       </FocusedFrame>
     );
   }
@@ -106,10 +129,10 @@ export function FocusedSignInCard({
   if (step === 'choose') {
     return (
       <FocusedFrame>
-        <h2 className="text-center font-extrabold text-2xl tracking-[-0.02em]">
+        <h2 className="text-center font-extrabold text-xl tracking-[-0.01em]">
           {t('login.choose_account_title')}
         </h2>
-        <div className="min-h-0 overflow-y-auto">
+        <div className="max-h-[17rem] min-h-0 overflow-y-auto">
           <StoredAccountSwitchList
             accounts={savedAccounts}
             disabled={busy}
@@ -119,74 +142,30 @@ export function FocusedSignInCard({
             switchingAccountId={switchingAccountId}
           />
         </div>
-        <Button
-          className="h-12 w-full shrink-0 rounded-2xl font-bold"
+        <button
+          className={FOCUSED_LINK_CLASS}
           disabled={busy}
           onClick={onUseAnotherAccount}
           type="button"
-          variant="outline"
         >
           {t('login.use_another_account')}
-        </Button>
+        </button>
       </FocusedFrame>
     );
   }
 
-  const name = getDisplayName({
-    displayName: session?.name,
-    fallback: t('login.unknown_account'),
-  });
-
   return (
     <FocusedFrame>
-      <p className="text-center text-muted-foreground text-sm">
-        {t('login.signed_in_on_browser')}
-      </p>
-      <AccountAvatarCard
-        avatarUrl={session?.avatarUrl}
-        chip={<StatusChip>{t('login.signed_in_chip')}</StatusChip>}
-        name={name}
+      <FocusedContinueStep
+        appName={appName}
+        autoContinue={autoContinue}
+        busy={busy}
+        canContinue={canContinue}
+        continuing={continuing}
+        onContinue={onContinue}
+        onUseAnotherAccount={onUseAnotherAccount}
+        session={session}
       />
-      <div className="flex flex-col gap-2.5">
-        <Button
-          className="relative h-12 w-full rounded-2xl px-12 font-bold"
-          disabled={!canContinue || busy}
-          onClick={onContinue}
-          type="button"
-        >
-          {continuing ? (
-            <>
-              <span
-                aria-hidden
-                className="absolute top-1/2 left-4 flex -translate-y-1/2"
-              >
-                <LoadingIndicator className="size-4" />
-              </span>
-              <PendingLabel
-                labels={[
-                  t('login.continuing'),
-                  t('login.securing_session'),
-                  t('login.opening_app', { app: appName }),
-                ]}
-                phase={continuePhase}
-              />
-            </>
-          ) : (
-            <span className="min-w-0 truncate">
-              {t('login.continue_as', { name })}
-            </span>
-          )}
-        </Button>
-        <Button
-          className="h-12 w-full rounded-2xl font-bold"
-          disabled={busy}
-          onClick={onUseAnotherAccount}
-          type="button"
-          variant="outline"
-        >
-          {t('login.use_another_account')}
-        </Button>
-      </div>
     </FocusedFrame>
   );
 }

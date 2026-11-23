@@ -8,6 +8,7 @@ import {
   resolveFocusedSignInStep,
   shouldOfferSavedAccountChooser,
   shouldResolveLoginView,
+  withoutProviderHint,
 } from './login-view';
 
 const account = {
@@ -56,7 +57,11 @@ describe('focused external sign-in', () => {
   const view = {
     hasSession: false,
     providerHint: 'google' as const,
-    returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
+    returnApp: {
+      autoContinue: false,
+      id: 'edufest',
+      name: 'EduFest Booth Hall',
+    },
     sessionStatus: 'absent' as const,
     savedAccounts: [],
     session: null,
@@ -72,6 +77,35 @@ describe('focused external sign-in', () => {
     ).toBe(false);
     expect(isFocusedExternalSignIn(view, true)).toBe(false);
     expect(isFocusedExternalSignIn(undefined, false)).toBe(false);
+  });
+
+  it('focuses a hint-less return only for an existing session', () => {
+    const landing = {
+      ...view,
+      hasSession: true,
+      providerHint: null,
+      sessionStatus: 'present' as const,
+    };
+    expect(isFocusedExternalSignIn(landing, false)).toBe(true);
+    // "Use another account" goes to the full form, never a provider loop.
+    expect(isFocusedExternalSignIn(landing, false, true)).toBe(false);
+    expect(isFocusedExternalSignIn(landing, true)).toBe(false);
+    expect(
+      isFocusedExternalSignIn({ ...landing, sessionStatus: 'unknown' }, false)
+    ).toBe(false);
+    expect(
+      isFocusedExternalSignIn({ ...landing, returnApp: null }, false)
+    ).toBe(false);
+  });
+
+  it('drops only the provider hint for "More options"', () => {
+    expect(
+      withoutProviderHint(
+        `https://tuturuuu.com/vi/login?provider=google&returnUrl=${encodeURIComponent(edufest)}&code_challenge=c&code_challenge_method=S256`
+      )
+    ).toBe(
+      `/vi/login?returnUrl=${encodeURIComponent(edufest)}&code_challenge=c&code_challenge_method=S256`
+    );
   });
 
   it('reserves the focused frame only for absolute returns with a hint', () => {

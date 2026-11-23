@@ -2,7 +2,10 @@ import type { LoginViewResponse } from '@tuturuuu/internal-api/auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
-import { matchesRegisteredCallbackPath } from '@/lib/auth/cross-app-pkce';
+import {
+  matchesRegisteredCallbackPath,
+  parseCrossAppPkceChallenge,
+} from '@/lib/auth/cross-app-pkce';
 import { peekWebAccounts } from '@/lib/auth/multi-account/vault';
 import { readProviderHint } from './login-view';
 
@@ -103,9 +106,16 @@ function decodeOuterReturnUrl(returnUrl: string) {
 /**
  * Only a registry-validated external app (origin and callback path) names
  * the return target; a label in the query never does.
+ *
+ * `autoContinue` lets an existing session continue without a click. It holds
+ * only for a strictly registered app: exact callback paths (no legacy
+ * origin-only match), required S256 PKCE, and a valid S256 challenge on this
+ * very request, so the handoff token can only be redeemed by the browser
+ * that started the sign-in.
  */
 async function readReturnApp(
-  returnUrl: string | null
+  returnUrl: string | null,
+  params: URLSearchParams
 ): Promise<LoginViewResponse['returnApp']> {
   if (!returnUrl || returnUrl.length > MAX_URL_LENGTH) return null;
 
@@ -115,7 +125,18 @@ async function readReturnApp(
     if (!app || !matchesRegisteredCallbackPath(decoded, app.callbackPaths)) {
       return null;
     }
-    return { id: app.id, name: app.displayName };
+    const challenge = parseCrossAppPkceChallenge({
+      codeChallenge: params.get('code_challenge'),
+      codeChallengeMethod: params.get('code_challenge_method'),
+    });
+    return {
+      autoContinue:
+        app.requirePkce === true &&
+        app.callbackPaths.length > 0 &&
+        Boolean(challenge),
+      id: app.id,
+      name: app.displayName,
+    };
   } catch {
     return null;
   }
@@ -134,7 +155,7 @@ export async function resolveLoginView(
   const [{ session, status }, savedAccounts, returnApp] = await Promise.all([
     readSession(),
     readSavedAccounts(request),
-    readReturnApp(params.get('returnUrl')),
+    readReturnApp(params.get('returnUrl'), params),
   ]);
 
   return {

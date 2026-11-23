@@ -54,14 +54,30 @@ export function shouldResolveLoginView({
 
 /**
  * A focused external sign-in: a registered external app asks for a provider
- * sign-in. The page then offers only the existing Tuturuuu account, the
- * saved accounts or the hinted provider, in one fixed card.
+ * sign-in, or returns to a browser that already has a Tuturuuu session (the
+ * landing after the provider round trip, which drops the hint so a failed
+ * sign-in can never restart the provider in a loop). The page then offers
+ * only the existing account, the saved accounts or the hinted provider, in
+ * one card. Without a hint, "Use another account" leaves for the full form.
  */
 export function isFocusedExternalSignIn(
   view: InitialLoginView | undefined,
-  multiAccount: boolean
+  multiAccount: boolean,
+  anotherAccountRequested = false
 ) {
-  return Boolean(view?.providerHint && view.returnApp && !multiAccount);
+  if (!view?.returnApp || multiAccount) return false;
+  if (view.providerHint) return true;
+  return view.sessionStatus === 'present' && !anotherAccountRequested;
+}
+
+/**
+ * The current login URL without its provider hint: "More options" keeps the
+ * return target and its challenge but shows every sign-in method.
+ */
+export function withoutProviderHint(href: string) {
+  const url = new URL(href);
+  url.searchParams.delete('provider');
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 /** A request that may become a focused sign-in once its view resolves. */

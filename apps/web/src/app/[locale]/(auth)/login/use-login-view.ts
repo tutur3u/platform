@@ -20,6 +20,8 @@ export function useLoginView(): LoginViewState {
   const searchParams = useSearchParams();
   const provider = searchParams.get('provider');
   const returnUrl = searchParams.get('returnUrl');
+  const codeChallenge = searchParams.get('code_challenge');
+  const codeChallengeMethod = searchParams.get('code_challenge_method');
   const enabled = shouldResolveLoginView({
     multiAccount: searchParams.get('multiAccount') === 'true',
     provider,
@@ -28,8 +30,21 @@ export function useLoginView(): LoginViewState {
   const query = useQuery({
     enabled,
     gcTime: 0,
-    queryFn: () => getLoginViewWithInternalApi({ provider, returnUrl }),
-    queryKey: ['auth', 'login-view', provider, returnUrl],
+    queryFn: () =>
+      getLoginViewWithInternalApi({
+        codeChallenge,
+        codeChallengeMethod,
+        provider,
+        returnUrl,
+      }),
+    queryKey: [
+      'auth',
+      'login-view',
+      provider,
+      returnUrl,
+      codeChallenge,
+      codeChallengeMethod,
+    ],
     retry: 1,
     staleTime: 0,
   });

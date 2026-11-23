@@ -29,7 +29,11 @@ function view(overrides: Partial<InitialLoginView> = {}): InitialLoginView {
     hasSession: false,
     sessionStatus: 'absent',
     providerHint: 'google',
-    returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
+    returnApp: {
+      autoContinue: false,
+      id: 'edufest',
+      name: 'EduFest Booth Hall',
+    },
     savedAccounts: [],
     session: null,
     ...overrides,
@@ -85,7 +89,7 @@ describe('LoginForm focused external sign-in', () => {
     renderLoginFormSearch(search, { initialView: view() });
 
     expect(
-      screen.getByText('login.continuing_with_provider')
+      await screen.findByText('login.continuing_with_provider')
     ).toBeInTheDocument();
     expectOnlyFocusedCard();
     await waitFor(() => {
@@ -361,13 +365,152 @@ describe('LoginForm focused external sign-in', () => {
       fireEvent.click(continueButton);
     });
 
-    // The exact name: the spinner adds nothing, in any language.
-    const pending = await screen.findByRole('button', {
-      name: 'login.continuing',
-    });
-    expect(pending).toBeDisabled();
+    // The card says where it is going until the browser leaves.
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'login.returning_to_app'
+    );
+    expect(
+      screen.queryByRole('button', { name: 'login.continue_as' })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'login.use_another_account' })
     ).toBeDisabled();
+  });
+});
+
+describe('LoginForm focused sign-in auto-continue', () => {
+  const sessionView = (autoContinue: boolean, providerHint = true) =>
+    view({
+      hasSession: true,
+      providerHint: providerHint ? 'google' : null,
+      returnApp: { autoContinue, id: 'edufest', name: 'EduFest Booth Hall' },
+      sessionStatus: 'present',
+      session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
+    });
+  const tokenized = `${returnUrl}&token=t&originApp=web&targetApp=edufest`;
+
+  beforeEach(() => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: 'person@example.com', id: 'user-1' } },
+    });
+    mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      returnUrl: tokenized,
+      targetApp: 'edufest',
+    });
+  });
+
+  it('continues a strict PKCE app on its own, after a cancellable pause', async () => {
+    renderLoginFormSearch(search, { initialView: sessionView(true) });
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'login.signing_you_in_to'
+    );
+    expect(
+      screen.getByRole('button', { name: 'login.auto_continue_cancel' })
+    ).toBeEnabled();
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(tokenized), {
+      timeout: 4000,
+    });
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledTimes(
+      1
+    );
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedUserId: 'user-1', returnUrl })
+    );
+  });
+
+  it('never continues on its own for an app without the strict gate', async () => {
+    renderLoginFormSearch(search, { initialView: sessionView(false) });
+
+    const continueButton = await screen.findByRole('button', {
+      name: 'login.continue_as',
+    });
+    await waitFor(() => expect(continueButton).toBeEnabled());
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(screen.queryByText('login.signing_you_in_to')).toBeNull();
+  });
+
+  it('stops for good on Cancel and leaves the explicit Continue', async () => {
+    renderLoginFormSearch(search, { initialView: sessionView(true) });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'login.auto_continue_cancel' })
+    );
+    const continueButton = await screen.findByRole('button', {
+      name: 'login.continue_as',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(continueButton).toBeEnabled();
+  });
+
+  it('never continues on its own for a session the browser does not hold', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { email: 'other@example.com', id: 'user-2' } },
+    });
+
+    renderLoginFormSearch(search, { initialView: sessionView(true) });
+
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+  });
+
+  it('lands on the focused card after the provider round trip, without a hint', async () => {
+    renderLoginFormSearch(`?returnUrl=${encodeURIComponent(returnUrl)}`, {
+      initialView: sessionView(false, false),
+    });
+
+    expect(
+      await screen.findByRole('button', { name: 'login.continue_as' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Person Example')).toBeInTheDocument();
+    expectOnlyFocusedCard();
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it('sends "Use another account" without a hint to the full sign-in form', async () => {
+    renderLoginFormSearch(`?returnUrl=${encodeURIComponent(returnUrl)}`, {
+      initialView: sessionView(false, false),
+    });
+    await waitFor(() => expect(mocks.getUser).toHaveBeenCalled());
+
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'login.use_another_account' })
+      );
+    });
+
+    expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(
+      await screen.findByPlaceholderText('login.email_username_placeholder')
+    ).toBeInTheDocument();
+    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+  });
+});
+
+describe('LoginForm focused provider step', () => {
+  it('keeps the return and challenge when "More options" drops the hint', async () => {
+    const pkce =
+      'code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256';
+    mocks.getUser.mockReturnValue(new Promise(() => {}));
+    renderLoginFormSearch(`${search}&${pkce}`, {
+      initialView: view({ sessionStatus: 'unknown' }),
+    });
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'login.more_sign_in_options' })
+    );
+
+    expect(mocks.routerReplace).toHaveBeenCalledTimes(1);
+    const next = new URL(
+      mocks.routerReplace.mock.calls[0]?.[0] as string,
+      'https://tuturuuu.com'
+    );
+    expect(next.pathname).toBe('/login');
+    expect(next.searchParams.has('provider')).toBe(false);
+    expect(next.searchParams.get('returnUrl')).toBe(returnUrl);
+    expect(next.searchParams.get('code_challenge_method')).toBe('S256');
   });
 });

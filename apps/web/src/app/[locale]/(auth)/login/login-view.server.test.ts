@@ -83,7 +83,11 @@ describe('resolveLoginView', () => {
     expect(view).toEqual({
       hasSession: false,
       providerHint: 'google',
-      returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
+      returnApp: {
+        autoContinue: false,
+        id: 'edufest',
+        name: 'EduFest Booth Hall',
+      },
       sessionStatus: 'absent',
       savedAccounts: [
         {
@@ -138,6 +142,66 @@ describe('resolveLoginView', () => {
       name: 'Person Example',
     });
     expect(JSON.stringify(view)).not.toContain('active@example.com');
+  });
+
+  describe('auto-continue gate', () => {
+    const CHALLENGE = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
+    const strictApp = {
+      callbackPaths: ['/edufest/verify-token'],
+      displayName: 'EduFest Booth Hall',
+      id: 'edufest',
+      requirePkce: true,
+    };
+    const pkce = { code_challenge: CHALLENGE, code_challenge_method: 'S256' };
+    const gate = async (
+      app: Record<string, unknown> | null,
+      search: Record<string, string>
+    ) => {
+      mocks.getExternalAppByReturnUrl.mockResolvedValue(app);
+      return (await resolveLoginView(request(search))).returnApp;
+    };
+
+    it('holds only for a strict PKCE registration with a valid S256 challenge', async () => {
+      expect(
+        await gate(strictApp, { ...pkce, returnUrl: EDUFEST })
+      ).toMatchObject({ autoContinue: true, id: 'edufest' });
+    });
+
+    it.each([
+      ['PKCE is not required', { ...strictApp, requirePkce: false }, pkce],
+      [
+        'the registration is origin-only',
+        { ...strictApp, callbackPaths: [] },
+        pkce,
+      ],
+      ['the request has no challenge', strictApp, {}],
+      [
+        'the challenge is plain',
+        strictApp,
+        { code_challenge: CHALLENGE, code_challenge_method: 'plain' },
+      ],
+      [
+        'the challenge is malformed',
+        strictApp,
+        { code_challenge: 'short', code_challenge_method: 'S256' },
+      ],
+    ])('is off when %s', async (_name, app, search) => {
+      expect(await gate(app, { ...search, returnUrl: EDUFEST })).toMatchObject({
+        autoContinue: false,
+      });
+    });
+
+    it.each([
+      'https://showcase.ieeai.net.evil.test/edufest/verify-token',
+      'https://showcase-ieeai.net/edufest/verify-token',
+      'https://showcase.ieeai.net/edufest/verify-token-evil',
+    ])('names no app for the lookalike %s', async (returnUrl) => {
+      mocks.getExternalAppByReturnUrl.mockImplementation(async (url: string) =>
+        new URL(url).origin === 'https://showcase.ieeai.net' ? strictApp : null
+      );
+      const view = await resolveLoginView(request({ ...pkce, returnUrl }));
+      expect(view.returnApp).toBeNull();
+    });
   });
 
   it('marks unreadable saved accounts as unknown rather than empty', async () => {

@@ -260,6 +260,7 @@ export default function LoginForm({
     null
   );
   const {
+    focusedAutoContinue,
     focusedCanContinue,
     selfId,
     focusedPending,
@@ -1461,6 +1462,7 @@ export default function LoginForm({
     return (
       <FocusedSignInCard
         appName={initialView?.returnApp?.name ?? returnAppName}
+        autoContinue={focusedAutoContinue}
         canContinue={focusedCanContinue}
         continuing={
           focusedContinueClicked && (confirmingReturn || redirectingAfterAuth)
@@ -1477,9 +1479,7 @@ export default function LoginForm({
           requestAnotherAccount();
           if (hasKnownSession) void handleUseAnotherAccount();
         }}
-        providerName={
-          getAuthOAuthProviderOptions(providerHint ?? 'google').name
-        }
+        provider={providerHint ?? 'google'}
         savedAccounts={savedAccounts}
         session={initialView?.session ?? null}
         startingProvider={loading}

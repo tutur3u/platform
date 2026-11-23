@@ -1,5 +1,5 @@
 /*
-  Sign-in stage illustration: colours are token roles (SVG presentation
+  Auth illustrations: colours are token roles (SVG presentation
   attributes cannot read var(), so they are classes), and every motion is
   opt-in and stops under reduced motion.
 */
@@ -51,24 +51,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .auth-float {
-    animation: auth-float 6s cubic-bezier(0.2, 0, 0, 1) infinite alternate;
-  }
-  .auth-float-2 {
-    animation: auth-float 7s cubic-bezier(0.2, 0, 0, 1) infinite
-      alternate-reverse;
-  }
   .auth-twinkle {
     animation: auth-twinkle 2.8s ease-in-out infinite;
-  }
-}
-
-@keyframes auth-float {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-8px);
   }
 }
 

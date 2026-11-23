@@ -1,23 +1,22 @@
 'use client';
 
 import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
-import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 import { DEV_MODE } from '@/constants/env';
 // Imported eagerly so the form renders with the shell; a lazy chunk would
 // swap a shorter skeleton for it and move the centered column.
 import LoginForm from './form';
-import { AuthStagePanel } from './auth-stage-panel';
 import { AuthTopControls } from './auth-top-controls';
-import { LoginFooter } from './login-footer';
 import {
-  isFocusedExternalSignIn,
-  mayBeFocusedExternalSignIn,
-} from './login-view';
+  type LoginBrandApp,
+  LoginAppDisclaimer,
+  LoginBrandHeader,
+} from './login-brand';
+import { LoginFooter } from './login-footer';
+import { isAbsoluteHttpUrl } from './login-view';
 import { useLoginView } from './use-login-view';
 
 export type LoginDomain = {
@@ -114,17 +113,6 @@ function getSafeLocalRedirectPath(value: string | null) {
   }
 }
 
-function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
-  return (
-    <span
-      aria-label={`${domain.name} Logo`}
-      className="block size-12 bg-center bg-contain bg-no-repeat"
-      role="img"
-      style={{ backgroundImage: `url(${domain.logo})` }}
-    />
-  );
-}
-
 function LoginFormFallback() {
   return (
     <div className="animate-pulse space-y-3 motion-reduce:animate-none">
@@ -144,7 +132,6 @@ export function LoginContent({
   localE2EAuthBypass,
   runtimeSupabaseConfig,
 }: LoginContentProps) {
-  const t = useTranslations();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl');
   const multiAccount = searchParams.get('multiAccount') === 'true';
@@ -162,15 +149,28 @@ export function LoginContent({
   const deferAuthSurfaceUntilSessionCheck = Boolean(
     returnUrl && !multiAccount && !getSafeLocalRedirectPath(returnUrl)
   );
-  const tuturuuuDomain = DOMAINS.TUTURUUU;
   const loginView = useLoginView();
-  const provider = searchParams.get('provider');
-  const focusedAppName = isFocusedExternalSignIn(loginView.data, multiAccount)
-    ? (loginView.data?.returnApp?.name ?? null)
-    : null;
-  const focusedPending =
+  const partnerDomain =
+    currentDomain && currentDomain.href !== DOMAINS.TUTURUUU.href
+      ? currentDomain
+      : null;
+  // Only the registry (through the private view) or the static first-party
+  // list names the app; nothing in the query string ever does.
+  const registeredApp = multiAccount
+    ? null
+    : (loginView.data?.returnApp ?? null);
+  const brandApp: LoginBrandApp | null = registeredApp
+    ? { logo: null, name: registeredApp.name }
+    : partnerDomain
+      ? { logo: partnerDomain.logo, name: partnerDomain.name }
+      : null;
+  // An unknown absolute return may still be a registered app: hold the
+  // header's space until the view answers, so it never flashes Tuturuuu.
+  const brandPending =
     loginView.pending &&
-    mayBeFocusedExternalSignIn({ multiAccount, provider, returnUrl });
+    !partnerDomain &&
+    !multiAccount &&
+    isAbsoluteHttpUrl(returnUrl);
 
   useEffect(() => {
     if (!callbackCode) {
@@ -182,97 +182,41 @@ export function LoginContent({
     redirect(`/api/auth/callback?${callbackSearch}`);
   }, [authCallbackRedirect, callbackCode, callbackSearch]);
 
-  const isPartnerDomain =
-    currentDomain !== null && currentDomain.href !== tuturuuuDomain.href;
-  const usesTuturuuuLogo = currentDomain?.logo === tuturuuuDomain.logo;
-
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <div className="relative mx-auto flex min-h-dvh max-w-[1440px] flex-col gap-4 p-4 lg:grid lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]">
-        <AuthStagePanel />
+      <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-4 py-4 sm:px-6">
+        <div className="flex justify-end">
+          <AuthTopControls />
+        </div>
 
-        <section className="flex min-w-0 flex-1 flex-col lg:px-6 lg:py-2">
-          {/* Over the hero on phones and tablets; first in the tab order. */}
-          <div className="absolute top-7 right-7 z-10 lg:static">
-            <AuthTopControls />
+        <main className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12">
+          <div className="fade-in-0 slide-in-from-bottom-2 flex w-full max-w-[400px] animate-in flex-col gap-8 duration-300 motion-reduce:animate-none">
+            <LoginBrandHeader
+              app={brandApp}
+              multiAccount={multiAccount}
+              pending={brandPending}
+            />
+
+            {callbackCode ? (
+              <LoginFormFallback />
+            ) : (
+              <LoginForm
+                deferAuthSurfaceUntilSessionCheck={
+                  deferAuthSurfaceUntilSessionCheck
+                }
+                loginView={loginView}
+                localE2EAuthBypass={localE2EAuthBypass}
+                runtimeSupabaseConfig={runtimeSupabaseConfig}
+              />
+            )}
+
+            {brandApp && !multiAccount ? (
+              <LoginAppDisclaimer appName={brandApp.name} />
+            ) : null}
           </div>
+        </main>
 
-          <div className="flex flex-1 flex-col items-center justify-center py-6 md:py-8">
-            <div className="fade-in-0 slide-in-from-bottom-4 flex w-full max-w-[400px] animate-in flex-col gap-6 duration-300 motion-reduce:animate-none md:max-w-[440px] lg:max-w-[400px]">
-              {focusedAppName || focusedPending ? (
-                <div className="flex flex-col gap-4">
-                  <LoginDomainLogo domain={tuturuuuDomain} />
-                  {focusedAppName ? (
-                    <h1 className="text-balance font-extrabold text-[32px] leading-[1.08] tracking-[-0.025em]">
-                      {t('login.sign_in_to_continue_to', {
-                        app: focusedAppName,
-                      })}
-                    </h1>
-                  ) : (
-                    <div
-                      aria-hidden="true"
-                      className="h-9 w-72 max-w-full animate-pulse rounded-full bg-muted motion-reduce:animate-none"
-                    />
-                  )}
-                </div>
-              ) : isPartnerDomain ? (
-                <div className="flex flex-col gap-3">
-                  {usesTuturuuuLogo ? (
-                    <div className="flex items-center gap-3">
-                      <LoginDomainLogo domain={tuturuuuDomain} />
-                      <span className="inline-flex h-7 items-center rounded-full bg-secondary px-3 font-bold text-muted-foreground text-xs">
-                        {currentDomain.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <LoginDomainLogo domain={tuturuuuDomain} />
-                      <XIcon
-                        aria-hidden
-                        className="size-5 text-muted-foreground"
-                      />
-                      <LoginDomainLogo domain={currentDomain} />
-                    </div>
-                  )}
-                  <h1 className="text-balance font-extrabold text-[32px] leading-[1.08] tracking-[-0.025em]">
-                    {t('login.welcome_to_tuturuuu')}
-                  </h1>
-                  <p className="text-muted-foreground text-sm">
-                    {t('login.powered-by', { domain: currentDomain.name })}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <h1 className="text-balance font-extrabold text-[32px] leading-[1.08] tracking-[-0.025em]">
-                    {multiAccount
-                      ? t('account_switcher.add_account')
-                      : t('login.welcome_to_tuturuuu')}
-                  </h1>
-                  <p className="text-[15px] text-muted-foreground leading-relaxed">
-                    {multiAccount
-                      ? t('account_switcher.add_account_description')
-                      : t('login.sign_in_or_create')}
-                  </p>
-                </div>
-              )}
-
-              {callbackCode ? (
-                <LoginFormFallback />
-              ) : (
-                <LoginForm
-                  deferAuthSurfaceUntilSessionCheck={
-                    deferAuthSurfaceUntilSessionCheck
-                  }
-                  loginView={loginView}
-                  localE2EAuthBypass={localE2EAuthBypass}
-                  runtimeSupabaseConfig={runtimeSupabaseConfig}
-                />
-              )}
-            </div>
-          </div>
-
-          <LoginFooter />
-        </section>
+        <LoginFooter />
       </div>
     </div>
   );

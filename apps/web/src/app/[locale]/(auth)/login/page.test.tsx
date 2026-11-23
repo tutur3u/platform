@@ -13,7 +13,11 @@ const mocks = vi.hoisted(() => ({
       | {
           hasSession: boolean;
           providerHint: 'google' | null;
-          returnApp: { id: string; name: string } | null;
+          returnApp: {
+            autoContinue: boolean;
+            id: string;
+            name: string;
+          } | null;
           savedAccounts: never[];
           session: null;
         }
@@ -104,12 +108,12 @@ vi.mock('next-intl', async () => {
         'login.welcome_to_tuturuuu': 'Welcome to Tuturuuu',
       };
 
-      if (fullKey === 'login.sign_in_to_continue_to') {
-        return `Sign in to continue to ${values?.app ?? ''}`;
+      if (fullKey === 'login.sign_in_to_app') {
+        return `Sign in to ${values?.app ?? ''}`;
       }
 
-      if (fullKey === 'login.powered-by') {
-        return `Powered by ${values?.domain ?? ''}`;
+      if (fullKey === 'login.secured_by_tuturuuu') {
+        return `${values?.app ?? ''}’s sign-in is secured and powered by Tuturuuu`;
       }
 
       return messages[fullKey] ?? fullKey;
@@ -254,18 +258,19 @@ describe('Login page', () => {
     ).toHaveAttribute('href', '/auth/recovery');
   });
 
-  it('puts the corner controls before the form and hides the stage', async () => {
+  it('renders one centred column with no decorative stage', async () => {
     await renderLoginPage();
 
     const controls = screen.getByTestId('auth-top-controls');
     const form = screen.getByTestId('login-form');
-    const stage = screen.getByTestId('auth-stage');
     expect(
       controls.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(stage).toHaveAttribute('aria-hidden', 'true');
-    expect(stage.querySelector('a, button, input')).toBeNull();
-    expect(stage.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByTestId('auth-stage')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+    expect(
+      screen.queryByTestId('login-app-disclaimer')
+    ).not.toBeInTheDocument();
   });
 
   it('renders the partner app header for known returnUrl domains on the client', async () => {
@@ -273,8 +278,12 @@ describe('Login page', () => {
       returnUrl: 'https://learn.tuturuuu.com/courses',
     });
 
-    expect(screen.getByText('Learn')).toBeInTheDocument();
-    expect(screen.getByText('Powered by Learn')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to Learn' })
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('login-app-disclaimer')).toHaveTextContent(
+      'Learn’s sign-in is secured and powered by Tuturuuu'
+    );
     expect(screen.getByTestId('login-form')).toHaveAttribute(
       'data-defer-auth-surface',
       'true'
@@ -286,8 +295,9 @@ describe('Login page', () => {
       returnUrl: 'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
     });
 
-    expect(screen.getByText('Chat')).toBeInTheDocument();
-    expect(screen.getByText('Powered by Chat')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to Chat' })
+    ).toBeInTheDocument();
   });
 
   it('renders add-account copy for multi-account login shells', async () => {
@@ -332,7 +342,11 @@ describe('Login page', () => {
       data: {
         hasSession: false,
         providerHint: 'google',
-        returnApp: { id: 'edufest', name: 'EduFest Booth Hall' },
+        returnApp: {
+          autoContinue: false,
+          id: 'edufest',
+          name: 'EduFest Booth Hall',
+        },
         savedAccounts: [],
         session: null,
       },
@@ -345,11 +359,67 @@ describe('Login page', () => {
     });
 
     expect(
-      screen.getByRole('heading', {
-        name: 'Sign in to continue to EduFest Booth Hall',
-      })
+      screen.getByRole('heading', { name: 'Sign in to EduFest Booth Hall' })
     ).toBeInTheDocument();
     expect(screen.queryByText('Welcome to Tuturuuu')).not.toBeInTheDocument();
+    expect(screen.getByTestId('login-app-disclaimer')).toHaveTextContent(
+      'EduFest Booth Hall’s sign-in is secured and powered by Tuturuuu'
+    );
+  });
+
+  it('names the app only from the server registry, never the query string', async () => {
+    mocks.loginView = {
+      data: {
+        hasSession: false,
+        providerHint: 'google',
+        returnApp: null,
+        savedAccounts: [],
+        session: null,
+      },
+      pending: false,
+    };
+
+    // A lookalike host the registry refused, with a forged label.
+    await renderLoginPage({
+      appName: 'EduFest Booth Hall',
+      provider: 'google',
+      returnUrl:
+        'https://showcase.ieeai.net.evil.test/edufest/verify-token?state=s',
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'Welcome to Tuturuuu' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/EduFest/u)).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('login-app-disclaimer')
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders a registered app name in the disclaimer as text, never markup', async () => {
+    const hostile = '<img src=x onerror="alert(1)"><b>Booth</b>';
+    mocks.loginView = {
+      data: {
+        hasSession: false,
+        providerHint: 'google',
+        returnApp: { autoContinue: false, id: 'edufest', name: hostile },
+        savedAccounts: [],
+        session: null,
+      },
+      pending: false,
+    };
+
+    await renderLoginPage({
+      provider: 'google',
+      returnUrl: 'https://showcase.ieeai.net/edufest/verify-token?state=s',
+    });
+
+    const disclaimer = screen.getByTestId('login-app-disclaimer');
+    expect(disclaimer).toHaveTextContent(
+      `${hostile}’s sign-in is secured and powered by Tuturuuu`
+    );
+    expect(document.querySelector('img[src="x"]')).toBeNull();
+    expect(disclaimer.querySelector('b')).toBeNull();
   });
 
   it('reserves the header while a focused sign-in view resolves', async () => {

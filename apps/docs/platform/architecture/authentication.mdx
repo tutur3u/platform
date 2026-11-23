@@ -53,12 +53,25 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   accounts never touches the device row, whose `last_seen_at` is the account
   switch's compare-and-set version, an allowed hint (`google`, `apple`, `github`)
   and the return app, named only when the external-app registry matches its
-  origin and callback path.
-- **Focused external sign-in.** A hint plus a registered external return app
-  shows one fixed-size card with one decision per step and no other
-  providers or email form:
-  - a session: `Continue to <app>` as that account, or "Use another
-    account", which signs out locally and starts the hinted provider.
+  origin and callback path. The app name always comes from the registry (or
+  the static first-party domain list), never from the query string.
+- **One calm column.** The login page is a single centred column on every
+  screen size, with no decorative illustration. A plain sign-in shows the
+  Tuturuuu mark and welcome. A sign-in for a registered or first-party app
+  shows that app's mark (a monogram tile when the registry stores no icon)
+  and `Sign in to <app>`, and a small line under the card:
+  `<app>'s sign-in is secured and powered by Tuturuuu` (VI `Đăng nhập vào
+  <app> được bảo mật và vận hành bởi Tuturuuu`) with the Tuturuuu mark, so a
+  visitor coming from the app knows why Tuturuuu appears. The name renders
+  as text. Terms, Privacy and recovery stay in the footer.
+- **Focused external sign-in.** A registered external return app with a
+  hint, or with an existing session (the landing after the provider round
+  trip, which carries no hint), shows one card with one decision per step
+  and no other providers or email form:
+  - a session: `Continue as <name>`, or a "Use another account" link, which
+    signs out locally and starts the hinted provider (without a hint it
+    opens the full sign-in form instead, so a failed sign-in never loops
+    through the provider).
     Continue is enabled only when the browser session is the account the
     card names, and it sends that account's id with the mint; the
     cross-app return route answers `409 ACCOUNT_CHANGED` instead of minting
@@ -67,12 +80,23 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
     confirmation;
   - saved accounts and no session: one-tap saved accounts, or "Use another
     account";
-  - neither: the hinted provider starts at once, with a manual button only
-    as a fallback.
-  The header reads `Sign in to continue to <app>`. While the view loads, a
-  skeleton of the same size holds the card and header. When the view names
+  - neither: the hinted provider starts at once; its button (the only
+    primary action) is the manual fallback, and "More options" drops only
+    the hint, keeping the return and its challenge, to show every method.
+  While the view loads, a skeleton of the same size holds the card and
+  header. When the view names
   the return app it is the only validator for it: the browser runs no second
   cross-app resolve that could disagree.
+- **Auto-continue.** For a strict registration only, the matching session
+  continues without a click after a 1.2 s "Signing you in to <app>…" pause
+  with a Cancel link: the registry requires S256 PKCE and lists exact
+  callback paths (no origin-only match), and the login request carries a
+  valid S256 challenge, so the minted token is redeemable only by the
+  browser that started the sign-in. The login view returns this as
+  `returnApp.autoContinue`; it is off for every other app, for an
+  unregistered or lookalike host (which gets no app name at all), for a
+  browser session other than the one the card names, and after Cancel. It
+  fires at most once per page.
 - The login view reports `sessionStatus` as `present`, `absent` or
   `unknown`; a failed server read is `unknown`, never "no session". A hinted
   provider starts without a click only on a definitive `absent` with no
@@ -80,12 +104,11 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   confirmation, and Continue binds the mint to the server-seen account even
   when the browser cannot read the session.
 - Pending actions on the login card never sit as a silent grey button.
-  Continue shows a spinner in its icon lane and steps from "Continuing…" to
-  "Securing your session…" (after 2s) and `Opening <app>…` (after 5s), with
-  every phase label stacked in one cell so the button keeps its size; both
-  card actions are disabled meanwhile. A chosen first-step provider shows a
-  spinner in its icon lane. A failed handoff lands on the error card with
-  Retry.
+  Once Continue (or auto-continue) starts the handoff, the actions give way
+  to a `Returning to <app>…` status line at the same height until the
+  browser leaves, so the redirect never shows a blank page. A chosen
+  provider shows a spinner in its icon lane. A failed handoff lands on the
+  error card with Retry.
 - A hinted provider never starts while the return target is still
   resolving or beside an invalid-link or handoff error card.
 - Elsewhere a hint is advisory: it starts the provider automatically only
@@ -126,9 +149,8 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the email field (focused on open), the Turnstile check and the passkey
   button, which both need the check; going back focuses the first method.
 - Turnstile renders in a fixed 300 by 65 slot that is reserved while the
-  OTP settings still resolve, and every focused step uses
-  one fixed-height frame (a long saved-account list scrolls inside it), so
-  nothing shifts as the widget or the view loads.
+  OTP settings still resolve, and every focused step shares one card frame
+  (a long saved-account list scrolls inside it).
 
 Exceptions: `multiAccount=true` (add-account) never shows the chooser and
 never starts a provider without a click, and "Use another account" applies
