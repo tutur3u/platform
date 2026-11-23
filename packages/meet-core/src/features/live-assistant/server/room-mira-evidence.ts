@@ -104,3 +104,22 @@ export async function readMiraBoxTickedByDefault(wsId: string) {
   if (error) throw new Error('Mira consent default lookup failed');
   return data?.box_ticked ?? true;
 }
+
+/**
+ * The join box default for a meeting's guest page. A failed lookup shows the
+ * box unticked, the stricter form, rather than guessing ticked.
+ */
+export async function readMiraBoxTickedByDefaultForMeeting(meetingId: string) {
+  try {
+    const db = await createAdminClient({ noCookie: true });
+    const { data, error } = await db
+      .from('workspace_meetings')
+      .select('ws_id')
+      .eq('id', meetingId)
+      .maybeSingle();
+    if (error || !data) return false;
+    return await readMiraBoxTickedByDefault(data.ws_id);
+  } catch {
+    return false;
+  }
+}

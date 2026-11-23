@@ -1,5 +1,6 @@
 import { CallEnded } from '@tuturuuu/meet-core/features/call/components/call-ended';
 import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
+import { readMiraBoxTickedByDefaultForMeeting } from '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
 import {
@@ -81,7 +82,12 @@ export default async function RoomPage({
             (await resolveMeetGuestJoin(meetingId)).kind === 'available'
           )
             return {
-              guestJoin: { siteKey, title: info?.title },
+              guestJoin: {
+                siteKey,
+                title: info?.title,
+                miraBoxTickedByDefault:
+                  await readMiraBoxTickedByDefaultForMeeting(meetingId),
+              },
               returnTo: invite,
             };
           if (info) return { publicInvite: info, returnTo: invite };
@@ -99,6 +105,7 @@ export default async function RoomPage({
         meetingTitle={access.guestJoin.title}
         returnTo={access.returnTo}
         siteKey={access.guestJoin.siteKey}
+        miraBoxTickedByDefault={access.guestJoin.miraBoxTickedByDefault}
       />
     );
   if ('publicInvite' in access && access.publicInvite)
