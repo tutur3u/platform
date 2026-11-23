@@ -102,7 +102,9 @@ const post = (taskIds: string[]) =>
   });
 
 describe('since last time', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('lists open and resolved items from earlier meetings in the project', async () => {
     setup(false);

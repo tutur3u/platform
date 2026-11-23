@@ -62,7 +62,9 @@ const request = (body?: unknown) =>
   });
 
 describe('meeting project links', () => {
-  beforeEach(() => mocks.access.mockReset());
+  beforeEach(() => {
+    mocks.access.mockReset();
+  });
 
   it('lists links without offering projects to members who cannot link', async () => {
     const from = access(false, {

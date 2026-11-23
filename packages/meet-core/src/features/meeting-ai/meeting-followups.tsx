@@ -8,7 +8,6 @@ import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import { TASKS_URL } from '../../constants/common';
 import { ActionItemsSheet } from '../meeting-record/action-items-sheet';
 import { FollowupReview } from './followup-review';
 import type { MeetingFollowup } from './followup-types';
@@ -145,8 +144,6 @@ export function MeetingFollowups({
                 ]
               : []
           )}
-          tasksUrl={TASKS_URL}
-          workspaceSlug={wsId}
           wsId={wsId}
         />
       )}

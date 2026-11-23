@@ -20,7 +20,7 @@ import {
   readReceipt,
   savable,
 } from './action-items';
-import type { MeetingRecordLinks } from './meeting-record-panel';
+import type { ActionItemsTarget } from './meeting-record-panel';
 import { saveActionItem } from './save-action-item';
 import { meetingRecordQueryKey } from './use-meeting-record';
 
@@ -41,7 +41,7 @@ export function ActionItemsForm({
   defaultBoardId,
   suggestions,
   onClose,
-}: MeetingRecordLinks & {
+}: ActionItemsTarget & {
   context: MeetFollowupContext;
   defaultBoardId: string | null;
   suggestions: ActionSuggestion[];

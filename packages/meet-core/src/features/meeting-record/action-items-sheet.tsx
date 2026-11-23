@@ -13,7 +13,7 @@ import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { ActionItemsForm } from './action-items-form';
 import type { ActionSuggestion } from './action-items';
-import type { MeetingRecordLinks } from './meeting-record-panel';
+import type { ActionItemsTarget } from './meeting-record-panel';
 import { useMeetingRecord } from './use-meeting-record';
 
 /**
@@ -25,7 +25,7 @@ export function ActionItemsSheet({
   suggestions,
   onClose,
   ...links
-}: MeetingRecordLinks & {
+}: ActionItemsTarget & {
   suggestions: ActionSuggestion[];
   onClose: () => void;
 }) {

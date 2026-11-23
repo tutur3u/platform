@@ -1,6 +1,5 @@
 import {
   createMeetFollowup,
-  InternalApiError,
   type MeetFollowupContext,
 } from '@tuturuuu/internal-api';
 import {
@@ -21,6 +20,16 @@ export type SaveTarget = {
   /** Lists of a board in the meeting workspace. */
   readLists: (boardId: string) => Promise<MeetFollowupContext['lists']>;
 };
+
+/** The server confirmed that nothing was written, so a retry is safe. */
+export function isFollowupNotSaved(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'FOLLOWUP_NOT_SAVED'
+  );
+}
 
 export type SaveOutcome = Pick<ActionDraft, 'status' | 'url' | 'requestId'>;
 
@@ -80,11 +89,7 @@ export async function saveActionItem(
     }
     return { status: 'saved', url, requestId: draft.requestId };
   } catch (error) {
-    if (
-      error instanceof InternalApiError &&
-      'code' in error &&
-      error.code === 'FOLLOWUP_NOT_SAVED'
-    ) {
+    if (isFollowupNotSaved(error)) {
       try {
         target.storage?.removeItem(key);
       } catch {

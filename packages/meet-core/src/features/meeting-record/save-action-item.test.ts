@@ -45,7 +45,9 @@ const target = (storage: Storage) => ({
 });
 
 describe('saveActionItem', () => {
-  beforeEach(() => mocks.create.mockReset());
+  beforeEach(() => {
+    mocks.create.mockReset();
+  });
 
   it('saves into the meeting workspace on the first open list and keeps a receipt', async () => {
     mocks.create.mockResolvedValue({
@@ -90,12 +92,12 @@ describe('saveActionItem', () => {
   });
 
   it('allows a retry with a new request id only after a confirmed rejection', async () => {
-    mocks.create.mockRejectedValue(
-      new (InternalApiError as unknown as new (m: string, c: string) => Error)(
-        'not saved',
-        'FOLLOWUP_NOT_SAVED'
-      )
-    );
+    mocks.create.mockImplementation(async () => {
+      throw new (InternalApiError as unknown as new (
+        m: string,
+        c: string
+      ) => Error)('not saved', 'FOLLOWUP_NOT_SAVED');
+    });
     const storage = memoryStorage();
     const outcome = await saveActionItem(draft, target(storage));
     expect(outcome.status).toBe('rejected');
@@ -104,7 +106,9 @@ describe('saveActionItem', () => {
   });
 
   it('treats an unconfirmed failure as possibly saved', async () => {
-    mocks.create.mockRejectedValue(new Error('network'));
+    mocks.create.mockImplementation(async () => {
+      throw new Error('network');
+    });
     const storage = memoryStorage();
     await expect(saveActionItem(draft, target(storage))).resolves.toMatchObject(
       {

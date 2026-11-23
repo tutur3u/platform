@@ -21,6 +21,12 @@ export type MeetingRecordLinks = {
   sourceUrl: string;
 };
 
+/** What the action item review needs to save tasks for a meeting. */
+export type ActionItemsTarget = Pick<
+  MeetingRecordLinks,
+  'wsId' | 'meetingId' | 'sourceUrl'
+>;
+
 /** The persistent meeting record: agenda, decisions and action items. */
 export function MeetingRecordPanel(props: MeetingRecordLinks) {
   const { wsId, meetingId } = props;
