@@ -1,8 +1,9 @@
 'use client';
 
-import { CircleAlert, Loader2, Plus, RefreshCw, X } from '@tuturuuu/icons';
+import { CircleAlert, Plus, RefreshCw, X } from '@tuturuuu/icons';
 import type { MindBoardSummary } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -94,10 +95,21 @@ export function BoardLibrary({
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         <div className="space-y-1.5">
           {loading ? (
-            <div className="flex items-center gap-2 rounded-md border border-border/80 border-dashed px-3 py-2.5 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>{t('loadingBoards')}</span>
-            </div>
+            <LoadingRegion
+              srLabel={t('loadingBoards')}
+              className="space-y-1.5"
+            >
+              {Array.from({ length: 4 }, (_, index) => (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders
+                  key={index}
+                  aria-hidden="true"
+                  className="rounded-md border border-border/80 px-3 py-2.5"
+                >
+                  <SkeletonLine size="sm" barClassName="w-2/3" />
+                </div>
+              ))}
+            </LoadingRegion>
           ) : error ? (
             <div className="space-y-2 rounded-md border border-dynamic-red/30 bg-dynamic-red/5 px-3 py-2.5 text-sm">
               <div className="flex items-start gap-2 text-dynamic-red">

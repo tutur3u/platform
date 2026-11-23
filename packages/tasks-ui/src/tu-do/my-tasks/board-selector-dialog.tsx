@@ -20,6 +20,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef } from 'react';
+import { LoadSelect } from '../shared/load-select';
 
 interface BoardSelectorDialogProps {
   open: boolean;
@@ -170,21 +171,24 @@ export function BoardSelectorDialog({
               <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
               {t('ws-tasks.board')}
             </Label>
-            <Combobox
-              t={t}
-              mode="single"
-              options={boardsData.map((board: any) => ({
-                value: board.id,
-                label: board.name || 'Unnamed Board',
-              }))}
-              label={boardsLoading ? t('ws-tasks.loading') : undefined}
-              placeholder={t('ws-tasks.select_a_board')}
-              selected={selectedBoardId}
-              onChange={(value) => onBoardChange(value as string)}
-              onCreate={onCreateBoard}
-              disabled={boardsLoading || isSubmitting}
-              className="w-full"
-            />
+            {boardsLoading ? (
+              <LoadSelect srLabel={t('ws-tasks.loading')} />
+            ) : (
+              <Combobox
+                t={t}
+                mode="single"
+                options={boardsData.map((board: any) => ({
+                  value: board.id,
+                  label: board.name || 'Unnamed Board',
+                }))}
+                placeholder={t('ws-tasks.select_a_board')}
+                selected={selectedBoardId}
+                onChange={(value) => onBoardChange(value as string)}
+                onCreate={onCreateBoard}
+                disabled={isSubmitting}
+                className="w-full"
+              />
+            )}
           </div>
 
           {/* List Selection */}

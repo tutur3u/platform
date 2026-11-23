@@ -1,7 +1,7 @@
 'use client';
 
 import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
-import { Check, ChevronDown } from '@tuturuuu/icons';
+import { Check, ChevronDown, Loader2 } from '@tuturuuu/icons';
 import { listAiGatewayModelsPage } from '@tuturuuu/internal-api/infrastructure/ai';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -15,6 +15,7 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -91,9 +92,18 @@ export function MindModelSelector({ model, onModelChange }: Props) {
             onValueChange={setSearch}
           />
           <CommandList className="max-h-80">
-            <CommandEmpty>
-              {modelsQuery.isLoading ? t('ai.loadingModels') : t('ai.noModels')}
-            </CommandEmpty>
+            {modelsQuery.isLoading && groups.length === 0 ? (
+              <LoadingRegion srLabel={t('ai.loadingModels')} className="p-1">
+                <SkeletonList
+                  rows={5}
+                  withSubtitle={false}
+                  className="gap-0.5"
+                  rowClassName="px-2 py-1.5"
+                />
+              </LoadingRegion>
+            ) : (
+              <CommandEmpty>{t('ai.noModels')}</CommandEmpty>
+            )}
             {groups.map(([provider, providerModels]) => (
               <CommandGroup
                 heading={provider}
@@ -132,6 +142,7 @@ export function MindModelSelector({ model, onModelChange }: Props) {
             {modelsQuery.hasNextPage && (
               <div className="border-t p-2">
                 <Button
+                  aria-busy={modelsQuery.isFetchingNextPage}
                   className="w-full"
                   disabled={modelsQuery.isFetchingNextPage}
                   size="sm"
@@ -139,9 +150,15 @@ export function MindModelSelector({ model, onModelChange }: Props) {
                   variant="ghost"
                   onClick={() => modelsQuery.fetchNextPage()}
                 >
-                  {modelsQuery.isFetchingNextPage
-                    ? t('ai.loadingMoreModels')
-                    : t('ai.loadMoreModels')}
+                  {modelsQuery.isFetchingNextPage ? (
+                    <LoadingRegion
+                      srLabel={t('ai.loadingMoreModels')}
+                      className="inline-flex"
+                    >
+                      <Loader2 className="animate-spin motion-reduce:animate-none" />
+                    </LoadingRegion>
+                  ) : null}
+                  {t('ai.loadMoreModels')}
                 </Button>
               </div>
             )}

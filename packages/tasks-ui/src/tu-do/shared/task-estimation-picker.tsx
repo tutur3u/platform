@@ -16,6 +16,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Label } from '@tuturuuu/ui/label';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
 import {
@@ -142,10 +143,9 @@ export function TaskEstimationPicker({
 
   if (isLoading || !boardConfig) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-        <Calculator className="h-4 w-4" />
-        <span>Loading estimation config...</span>
-      </div>
+      <LoadingRegion srLabel="Loading estimation config">
+        <Skeleton aria-hidden="true" className="h-9 w-full" />
+      </LoadingRegion>
     );
   }
 

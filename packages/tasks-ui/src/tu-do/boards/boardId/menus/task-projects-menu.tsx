@@ -1,4 +1,4 @@
-import { Box, Check, Loader2, Plus } from '@tuturuuu/icons';
+import { Box, Check, Plus } from '@tuturuuu/icons';
 import {
   Command,
   CommandGroup,
@@ -10,6 +10,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import {
@@ -62,6 +63,7 @@ export function TaskProjectsMenu({
   const t = {
     projects: translations?.projects ?? 'Projects',
     searchProjects: translations?.searchProjects ?? 'Search projects...',
+    // loading-text-allowed: fallback is only the sr-only label of the skeleton
     loading: translations?.loading ?? 'Loading...',
     noProjectsFound: translations?.noProjectsFound ?? 'No projects found',
     noProjectsAvailable:
@@ -111,10 +113,15 @@ export function TaskProjectsMenu({
           <CommandList className="max-h-64">
             {/* Projects List */}
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 px-2 py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground text-xs">{t.loading}</p>
-              </div>
+              <LoadingRegion srLabel={t.loading} className="p-1">
+                <SkeletonList
+                  rows={4}
+                  withSubtitle={false}
+                  withAvatar={false}
+                  className="gap-0.5"
+                  rowClassName="px-2 py-1.5"
+                />
+              </LoadingRegion>
             ) : filteredProjects.length === 0 ? (
               <div className="px-2 py-6 text-center text-muted-foreground text-xs">
                 {searchQuery ? t.noProjectsFound : t.noProjectsAvailable}

@@ -24,6 +24,7 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
@@ -104,10 +105,9 @@ export function BoardPublicLinkSection({
   const publicUrl = buildPublicBoardUrl(locale, publicLink);
   const isMutating = enableMutation.isPending || disableMutation.isPending;
   const statusBadge = publicLinkQuery.isLoading ? (
-    <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
-      <Loader2 className="h-3 w-3 animate-spin" />
-      {t('common.loading')}
-    </Badge>
+    <LoadingRegion srLabel={t('common.loading')}>
+      <Skeleton aria-hidden="true" className="h-5 w-14 rounded-full" />
+    </LoadingRegion>
   ) : publicLink ? (
     <Badge className="bg-dynamic-green/10 px-2 py-0.5 text-[10px] text-dynamic-green">
       {t('common.enabled')}
@@ -179,10 +179,9 @@ export function BoardPublicLinkSection({
 
       <CollapsibleContent className="border-t p-3">
         {publicLinkQuery.isLoading ? (
-          <div className="flex items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('common.loading')}
-          </div>
+          <LoadingRegion srLabel={t('common.loading')} className="space-y-2">
+            <Skeleton aria-hidden="true" className="h-9 w-full" />
+          </LoadingRegion>
         ) : publicLinkQuery.isError ? (
           <ShareSectionError
             error={publicLinkQuery.error}

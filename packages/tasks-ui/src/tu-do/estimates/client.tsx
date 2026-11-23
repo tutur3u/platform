@@ -10,6 +10,7 @@ import {
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -62,10 +63,9 @@ export default function TaskEstimatesClient({ wsId }: Props) {
   if (isLoading) {
     return (
       <Card className="border border-border/60 bg-background p-8 shadow-sm">
-        <div className="flex items-center justify-center gap-3 text-muted-foreground">
-          <Calculator className="h-5 w-5 animate-spin" />
-          <span>{t('loading_estimates')}</span>
-        </div>
+        <LoadingRegion srLabel={t('loading_estimates')}>
+          <SkeletonList rows={3} withAvatar={false} withTrailing />
+        </LoadingRegion>
       </Card>
     );
   }

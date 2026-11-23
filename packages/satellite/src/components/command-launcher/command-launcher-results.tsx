@@ -1,7 +1,8 @@
 'use client';
 
-import { Loader2, Search } from '@tuturuuu/icons';
+import { Search } from '@tuturuuu/icons';
 import { CommandEmpty, CommandGroup, CommandItem } from '@tuturuuu/ui/command';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
 import type { IntentSearchResult } from '@tuturuuu/utils/search';
 import type { ReactNode } from 'react';
@@ -89,8 +90,13 @@ export function CommandLauncherResults({
         <CommandGroup heading={labels.workspaces}>
           {isLoadingWorkspaces || isSearchingWorkspaces ? (
             <CommandItem disabled value="loading-workspaces">
-              <Loader2 className="size-4 animate-spin" />
-              <span>{labels.loadingWorkspaces}</span>
+              <LoadingRegion
+                srLabel={labels.loadingWorkspaces}
+                className="flex w-full items-center gap-2"
+              >
+                <Skeleton aria-hidden="true" className="size-4 shrink-0" />
+                <Skeleton aria-hidden="true" className="h-3.5 w-32" />
+              </LoadingRegion>
             </CommandItem>
           ) : null}
           {workspaceError ? (

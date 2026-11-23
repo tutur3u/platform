@@ -90,6 +90,7 @@ export function BoardSwitcher({
   const updateUserWorkspaceConfig = useUpdateUserWorkspaceConfig();
 
   const t = {
+    // loading-text-allowed: fallback is only the sr-only label while boards load
     loadingBoards: translations?.loadingBoards ?? 'Loading boards...',
     noOtherBoards: translations?.noOtherBoards ?? 'No other boards',
     activeBoards: translations?.activeBoards ?? 'Active boards',
@@ -316,10 +317,13 @@ export function BoardSwitcher({
       createText={canCreateBoard ? t.createBoard : undefined}
       creatingText={canCreateBoard ? t.creatingBoard : undefined}
       disabled={isFetchingBoards}
-      emptyText={isFetchingBoards ? t.loadingBoards : t.noOtherBoards}
+      emptyText={t.noOtherBoards}
       label={
         <span className="truncate font-medium text-foreground text-sm">
           {translateBoardName(board.name)}
+          {isFetchingBoards ? (
+            <span className="sr-only">{t.loadingBoards}</span>
+          ) : null}
         </span>
       }
       onChange={selectBoard}

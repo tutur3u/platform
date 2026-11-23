@@ -7,6 +7,7 @@ import {
   LockKeyhole,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, Skeleton, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
   getLaunchableApp,
@@ -75,9 +76,10 @@ export function PersonalToolsPanel({
         onClose={onClose}
       />
       {query.isPending ? (
-        <p role="status" className="p-4 text-muted-foreground text-sm">
-          {t('loading')}
-        </p>
+        <LoadingRegion srLabel={t('loading')} className="space-y-3 p-4">
+          <Skeleton aria-hidden="true" className="h-9 w-full" />
+          <SkeletonList rows={4} withAvatar={false} />
+        </LoadingRegion>
       ) : !data ? (
         <p role="status" className="p-4 text-muted-foreground text-sm">
           {t('unavailable')}

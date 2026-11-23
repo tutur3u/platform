@@ -37,6 +37,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingRegion, Skeleton, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
@@ -295,12 +296,17 @@ export function TaskActions({
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Loading Task</DialogTitle>
+            <DialogTitle className="sr-only">Loading Task</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center p-6">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Loading task...</span>
-          </div>
+          <LoadingRegion srLabel="Loading task" className="space-y-4">
+            <Skeleton aria-hidden="true" className="h-9 w-full" />
+            <SkeletonText lines={4} />
+            <div aria-hidden="true" className="flex gap-2">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </LoadingRegion>
         </DialogContent>
       </Dialog>
     );

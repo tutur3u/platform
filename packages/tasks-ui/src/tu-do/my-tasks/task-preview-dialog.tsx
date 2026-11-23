@@ -1380,7 +1380,7 @@ export function TaskPreviewDialog({
                                         searchLabels: t(
                                           'ws-tasks.ctx_search_labels'
                                         ),
-                                        loading: t('ws-tasks.loading'),
+                                        loading: t('ws-tasks.loading'), // loading-text-allowed: sr-only skeleton label
                                         noLabelsFound: t(
                                           'ws-tasks.ctx_no_labels_found'
                                         ),

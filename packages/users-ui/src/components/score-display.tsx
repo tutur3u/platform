@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -140,9 +141,9 @@ export default function ScoreDisplay({
   // Loading state
   if (isNew && userGroupMetricsLoading) {
     return (
-      <div className="text-muted-foreground text-sm">
-        {t('common.loading')}...
-      </div>
+      <LoadingRegion srLabel={t('common.loading')}>
+        <SkeletonLine size="sm" barClassName="w-24" />
+      </LoadingRegion>
     );
   }
 
@@ -152,14 +153,16 @@ export default function ScoreDisplay({
       variant="outline"
       onClick={() => handleFetch()}
       disabled={isFetchingNewScores}
+      aria-busy={isFetchingNewScores}
       className="gap-2"
     >
       <RefreshCw
-        className={`h-4 w-4 ${isFetchingNewScores ? 'animate-spin' : ''}`}
+        className={`h-4 w-4 ${isFetchingNewScores ? 'animate-spin motion-reduce:animate-none' : ''}`}
       />
-      {isFetchingNewScores
-        ? t('common.loading')
-        : t('ws-reports.fetch_new_scores')}
+      {isFetchingNewScores ? (
+        <span className="sr-only">{t('common.loading')}</span>
+      ) : null}
+      {t('ws-reports.fetch_new_scores')}
     </Button>
   );
 

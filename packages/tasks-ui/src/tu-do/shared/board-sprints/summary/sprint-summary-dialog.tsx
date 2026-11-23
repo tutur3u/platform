@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   formatSprintDateRange,
@@ -175,7 +176,9 @@ function SummaryBody({
               </Button>
             </>
           ) : (
-            <span>{t('loading_tasks')}</span>
+            <LoadingRegion srLabel={t('loading_tasks')} className="w-full">
+              <SkeletonText lines={3} />
+            </LoadingRegion>
           )}
         </section>
       ) : live ? (

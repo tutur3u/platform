@@ -50,6 +50,7 @@ export function MeetMailShare({
             trigger: t('add'),
             search: t('search'),
             minimumQuery: t('minimum_query'),
+            // loading-text-allowed: the picker renders this as the sr-only label of its skeleton
             loading: t('loading'),
             empty: t('empty'),
             error: t('error'),

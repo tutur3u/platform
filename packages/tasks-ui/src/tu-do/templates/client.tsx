@@ -6,7 +6,6 @@ import {
   Globe,
   KanbanSquare,
   ListTodo,
-  Loader2,
   Lock,
   Plus,
   Search,
@@ -41,6 +40,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonSelectorTrigger,
+} from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -388,10 +392,13 @@ function ChooseSourceBoardDialog({
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            <span>{t('gallery.loading_boards')}</span>
-          </div>
+          <LoadingRegion
+            srLabel={t('gallery.loading_boards')}
+            className="space-y-2 py-2"
+          >
+            <SkeletonLine size="sm" barClassName="w-1/3" />
+            <SkeletonSelectorTrigger />
+          </LoadingRegion>
         ) : boards.length === 0 ? (
           <div className="space-y-1 rounded-md border border-dashed px-4 py-6 text-center">
             <p className="font-medium text-sm">

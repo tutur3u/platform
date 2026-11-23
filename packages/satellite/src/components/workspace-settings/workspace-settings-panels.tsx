@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
   ExternalLink,
-  Loader2,
   RefreshCw,
 } from '@tuturuuu/icons';
 import {
@@ -21,7 +20,7 @@ import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
 import { Progress } from '@tuturuuu/ui/progress';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, Skeleton, SkeletonCard } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { GuestSelfJoinSetting } from './guest-self-join-setting';
 import { InviteLinksSection } from './invite-links-section';
@@ -88,7 +87,7 @@ export function SatelliteWorkspaceSettingsPanel({
     return (
       <div className="space-y-8">
         {activeTab === 'workspace_general' && <HiddenWorkspacesSettings />}
-        <PanelLoading label={t('loading')} />
+        <PanelLoading srLabel={t('loading')} />
       </div>
     );
   }
@@ -276,12 +275,12 @@ function RestrictedNotice() {
   );
 }
 
-function PanelLoading({ label }: { label: string }) {
+function PanelLoading({ srLabel }: { srLabel: string }) {
   return (
-    <div className="flex min-h-48 items-center justify-center gap-2 text-muted-foreground">
-      <Loader2 className="animate-spin" />
-      {label}
-    </div>
+    <LoadingRegion srLabel={srLabel} className="space-y-4">
+      <SkeletonCard lines={3} />
+      <SkeletonCard lines={2} />
+    </LoadingRegion>
   );
 }
 

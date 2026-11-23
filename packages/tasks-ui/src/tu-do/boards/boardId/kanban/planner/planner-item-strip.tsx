@@ -4,6 +4,7 @@ import type { TaskPlan } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 import { PlannerScopeBadge } from './planner-scope-badge';
+import { LoadingRegion, Skeleton, SkeletonLine } from '@tuturuuu/ui/skeleton';
 
 interface PlannerItemStripProps {
   personalWorkspaceId: string;
@@ -21,9 +22,25 @@ export function PlannerItemStrip({
 
   return (
     <div className="flex min-h-20 gap-2 overflow-x-auto">
-      {items.length === 0 ? (
+      {items.length === 0 && plansLoading ? (
+        <LoadingRegion srLabel={t('loading')} className="flex gap-2">
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              aria-hidden="true"
+              className="min-w-56 max-w-72 rounded-md border bg-card p-2"
+            >
+              <SkeletonLine size="sm" barClassName="w-3/4" />
+              <div className="mt-2 flex gap-1">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-12 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </LoadingRegion>
+      ) : items.length === 0 ? (
         <div className="flex min-h-16 items-center rounded-md border border-dashed px-3 text-muted-foreground text-sm">
-          {plansLoading ? t('loading') : t('no_items')}
+          {t('no_items')}
         </div>
       ) : (
         items.map((item) => (

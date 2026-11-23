@@ -18,6 +18,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, Skeleton, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -150,10 +151,9 @@ export function BoardShareSettingsPanel({
     : undefined;
   const membersCount = members?.length;
   const membersStatusBadge = viewableMembersQuery.isLoading ? (
-    <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
-      <Loader2 className="h-3 w-3 animate-spin" />
-      {t('common.loading')}
-    </Badge>
+    <LoadingRegion srLabel={t('common.loading')}>
+      <Skeleton aria-hidden="true" className="h-5 w-8 rounded-full" />
+    </LoadingRegion>
   ) : typeof membersCount === 'number' ? (
     <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
       {membersCount}
@@ -164,10 +164,9 @@ export function BoardShareSettingsPanel({
     </Badge>
   );
   const guestsStatusBadge = sharesQuery.isLoading ? (
-    <Badge variant="secondary" className="gap-1 px-2 py-0.5 text-[10px]">
-      <Loader2 className="h-3 w-3 animate-spin" />
-      {t('common.loading')}
-    </Badge>
+    <LoadingRegion srLabel={t('common.loading')}>
+      <Skeleton aria-hidden="true" className="h-5 w-8 rounded-full" />
+    </LoadingRegion>
   ) : shares.length ? (
     <Badge variant="secondary" className="px-2 py-0.5 text-[10px]">
       {shares.length}
@@ -205,10 +204,9 @@ export function BoardShareSettingsPanel({
         statusBadge={membersStatusBadge}
       >
         {viewableMembersQuery.isLoading ? (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('common.loading')}
-          </div>
+          <LoadingRegion srLabel={t('common.loading')}>
+            <SkeletonList rows={3} withSubtitle={false} />
+          </LoadingRegion>
         ) : viewableMembersQuery.isError ? (
           <ShareSectionError
             error={viewableMembersQuery.error}
@@ -316,9 +314,17 @@ export function BoardShareSettingsPanel({
           </div>
 
           {sharesQuery.isLoading ? (
-            <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-              {t('common.loading')}
-            </div>
+            <LoadingRegion
+              srLabel={t('common.loading')}
+              className="divide-y rounded-md border"
+            >
+              <SkeletonList
+                rows={2}
+                withTrailing
+                className="divide-y"
+                rowClassName="p-3"
+              />
+            </LoadingRegion>
           ) : sharesQuery.isError ? (
             <ShareSectionError
               error={sharesQuery.error}

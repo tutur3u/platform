@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -86,10 +87,9 @@ export function MindHiveLauncher({
     },
   });
   const serverSummary = useMemo(() => {
-    if (serversQuery.isLoading) return t('loadingServers');
     if (!servers.length) return t('noServers');
     return t('serverCount', { count: servers.length });
-  }, [servers.length, serversQuery.isLoading, t]);
+  }, [servers.length, t]);
 
   useEffect(() => {
     if (!open || serverId || servers.length === 0) return;
@@ -136,7 +136,15 @@ export function MindHiveLauncher({
             </Select>
           </label>
           <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-muted-foreground text-xs">
-            {isAdmin ? serverSummary : t('adminRequired')}
+            {isAdmin && serversQuery.isLoading ? (
+              <LoadingRegion srLabel={t('loadingServers')}>
+                <SkeletonLine size="xs" barClassName="w-1/3" />
+              </LoadingRegion>
+            ) : isAdmin ? (
+              serverSummary
+            ) : (
+              t('adminRequired')
+            )}
           </div>
         </div>
         <DialogFooter>

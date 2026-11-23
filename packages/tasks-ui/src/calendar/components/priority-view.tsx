@@ -29,6 +29,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Progress } from '@tuturuuu/ui/progress';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -682,17 +683,15 @@ export default function PriorityView({
 
                                 {/* Duration */}
                                 {isScheduleInfoLoading && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/40 px-1 py-0.5 text-[10px] text-muted-foreground">
-                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                        {t('loading')}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      {t('loading_schedule')}
-                                    </TooltipContent>
-                                  </Tooltip>
+                                  <LoadingRegion
+                                    srLabel={t('loading_schedule')}
+                                    className="inline-flex shrink-0"
+                                  >
+                                    <Skeleton
+                                      aria-hidden="true"
+                                      className="h-4 w-12 rounded"
+                                    />
+                                  </LoadingRegion>
                                 )}
 
                                 {hasScheduleSettings && (

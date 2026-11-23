@@ -18,6 +18,7 @@ import { useCallback, useId, useMemo, useState } from 'react';
 import { CreateListDialog } from '../shared/create-list-dialog';
 import { TaskBoardForm } from './form';
 import { tasksApiPath } from '../shared/tasks-paths';
+import { LoadingRegion, SkeletonSelectorTrigger } from '@tuturuuu/ui/skeleton';
 
 interface Board {
   id: string;
@@ -138,11 +139,14 @@ export function BoardSelector({
             <DialogTitle>
               {tc('move_tasks_title', { count: taskCount })}
             </DialogTitle>
-            <DialogDescription>{tc('loading_boards')}</DialogDescription>
+            <DialogDescription className="sr-only">
+              {tc('move_tasks_description', { count: taskCount })}
+            </DialogDescription>
           </DialogHeader>
-          <div className="flex h-32 items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-dynamic-blue/20 border-t-dynamic-blue"></div>
-          </div>
+          <LoadingRegion srLabel={tc('loading_boards')} className="space-y-3">
+            <SkeletonSelectorTrigger />
+            <SkeletonSelectorTrigger />
+          </LoadingRegion>
         </DialogContent>
       </Dialog>
     );

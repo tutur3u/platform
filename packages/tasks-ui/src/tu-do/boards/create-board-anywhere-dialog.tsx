@@ -23,6 +23,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
+import { LoadSelect } from '../shared/load-select';
 import { useTasksHref } from '../tasks-route-context';
 
 interface CreateBoardAnywhereDialogProps {
@@ -169,30 +170,26 @@ export function CreateBoardAnywhereDialog({
         <div className="grid gap-5 py-2">
           <div className="grid gap-2">
             <Label>{t('workspace')}</Label>
-            <Combobox
-              ariaLabel={t('workspace')}
-              disabled={
-                visible.isLoading ||
-                workspacesQuery.isLoading ||
-                !hasWorkspaceOptions
-              }
-              emptyText={
-                visible.error || workspacesQuery.isError
-                  ? t('workspace_error')
-                  : t('workspace_empty')
-              }
-              onChange={(value) =>
-                setWorkspaceId(typeof value === 'string' ? value : '')
-              }
-              options={workspaceOptions}
-              placeholder={
-                visible.isLoading || workspacesQuery.isLoading
-                  ? t('workspace_loading')
-                  : t('workspace_placeholder')
-              }
-              searchPlaceholder={t('workspace_search')}
-              selected={effectiveWorkspaceId}
-            />
+            {visible.isLoading || workspacesQuery.isLoading ? (
+              <LoadSelect srLabel={t('workspace_loading')} />
+            ) : (
+              <Combobox
+                ariaLabel={t('workspace')}
+                disabled={!hasWorkspaceOptions}
+                emptyText={
+                  visible.error || workspacesQuery.isError
+                    ? t('workspace_error')
+                    : t('workspace_empty')
+                }
+                onChange={(value) =>
+                  setWorkspaceId(typeof value === 'string' ? value : '')
+                }
+                options={workspaceOptions}
+                placeholder={t('workspace_placeholder')}
+                searchPlaceholder={t('workspace_search')}
+                selected={effectiveWorkspaceId}
+              />
+            )}
           </div>
 
           <div className="grid gap-2">

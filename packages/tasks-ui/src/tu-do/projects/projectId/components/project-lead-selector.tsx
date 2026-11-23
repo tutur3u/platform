@@ -11,6 +11,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
+import { LoadSelect } from '../../../shared/load-select';
 import type { ProjectLeadSelectorProps } from '../types';
 
 export function ProjectLeadSelector({
@@ -21,15 +22,14 @@ export function ProjectLeadSelector({
   compact = false,
 }: ProjectLeadSelectorProps) {
   const t = useTranslations('task_project_detail.lead_selector');
+  if (isLoading) return <LoadSelect srLabel={t('loading')} />;
   return (
     <Select
       value={leadId || 'none'}
       onValueChange={(value) => onChange(value === 'none' ? null : value)}
     >
       <SelectTrigger className={cn('bg-background', compact && 'h-9')}>
-        <SelectValue
-          placeholder={isLoading ? t('loading') : t('select_lead')}
-        />
+        <SelectValue placeholder={t('select_lead')} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="none">

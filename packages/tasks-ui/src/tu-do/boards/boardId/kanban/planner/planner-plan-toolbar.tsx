@@ -16,6 +16,7 @@ import {
   TASK_PLAN_PERIODS,
   TASK_PLAN_STATUSES,
 } from './planner-utils';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 
 interface PlannerPlanToolbarProps {
   createPending: boolean;
@@ -97,9 +98,13 @@ function PlannerPlanBrowser({
             {selectedPlan.shares?.length ?? 0} {t('share_plan')}
           </Badge>
         </div>
+      ) : plansLoading ? (
+        <LoadingRegion srLabel={t('loading')} className="md:col-span-2">
+          <Skeleton aria-hidden="true" className="h-12 w-full" />
+        </LoadingRegion>
       ) : (
         <div className="rounded-md border border-dashed p-3 text-muted-foreground text-sm md:col-span-2">
-          {plansLoading ? t('loading') : t('no_plans')}
+          {t('no_plans')}
         </div>
       )}
     </div>

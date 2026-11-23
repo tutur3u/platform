@@ -44,6 +44,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useApprovals } from '../hooks/use-approvals';
 import { ApprovalDetailDialog } from './approval-detail-dialog';
+import { ApprovalsListLoading } from './approvals-list-loading';
 
 interface ApprovalsViewProps {
   wsId: string;
@@ -506,14 +507,7 @@ export function ApprovalsView({
 
       {/* Approvals List */}
       {loading ? (
-        <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
-            <p className="mt-4 text-muted-foreground text-sm">
-              {t('list.loading')}
-            </p>
-          </CardContent>
-        </Card>
+        <ApprovalsListLoading srLabel={t('list.loading')} />
       ) : items.length === 0 ? (
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
           <CardContent className="flex flex-col items-center justify-center py-16">

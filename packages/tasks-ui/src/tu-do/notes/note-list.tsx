@@ -44,6 +44,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { TaskRichTextEditor } from '../../text-editor/task-rich-text-editor';
 import { NoteEditDialog } from './note-edit-dialog';
+import { LoadSelect } from '../shared/load-select';
 import { tasksApiPath } from '../shared/tasks-paths';
 
 interface Note {
@@ -717,18 +718,16 @@ export default function NoteList({ wsId }: { wsId: string }) {
                       ))}
                     </SelectContent>
                   </Select>
+                ) : boardsLoading ? (
+                  <LoadSelect srLabel={t('conversion_dialog.loading_lists')} />
                 ) : (
                   <div className="rounded-md border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center">
                     <p className="text-muted-foreground text-sm">
-                      {boardsLoading
-                        ? t('conversion_dialog.loading_lists')
-                        : t('conversion_dialog.no_lists')}
+                      {t('conversion_dialog.no_lists')}
                     </p>
-                    {!boardsLoading && (
-                      <p className="mt-1 text-muted-foreground text-xs">
-                        {t('conversion_dialog.create_list_hint')}
-                      </p>
-                    )}
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      {t('conversion_dialog.create_list_hint')}
+                    </p>
                   </div>
                 )}
               </div>

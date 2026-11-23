@@ -195,7 +195,7 @@ export function MyTaskContextMenu({
             translations={{
               labels: t('cmd_labels'),
               searchLabels: t('ctx_search_labels'),
-              loading: t('loading'),
+              loading: t('loading'), // loading-text-allowed: sr-only skeleton label
               noLabelsFound: t('ctx_no_labels_found'),
               noLabelsAvailable: t('ctx_no_labels_available'),
               applied: t('ctx_applied'),

@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -85,9 +86,9 @@ export function MeetMemorySettings({
         )}
       </div>
       {query.isLoading && (
-        <p role="status" className="text-muted-foreground text-sm">
-          {t('loading')}
-        </p>
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonList rows={3} withAvatar={false} withSubtitle={false} />
+        </LoadingRegion>
       )}
       {(query.error || mutation.error) && (
         <div

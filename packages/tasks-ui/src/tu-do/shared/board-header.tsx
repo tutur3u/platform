@@ -249,7 +249,7 @@ export function BoardHeader({
       board={{ ...board, ws_id: workspaceId }}
       className="w-auto max-w-[min(22rem,60vw)] [&_button]:h-8 [&_button]:min-h-8 [&_button]:border-transparent [&_button]:bg-transparent [&_button]:px-2 [&_button]:shadow-none hover:[&_button]:bg-muted"
       translations={{
-        loadingBoards: t('common.loading'),
+        loadingBoards: t('common.loading'), // loading-text-allowed: sr-only label inside the switcher
         noOtherBoards: t('common.no_other_boards'),
         activeBoards: t('common.active_boards'),
         archivedBoards: t('common.archived_boards'),

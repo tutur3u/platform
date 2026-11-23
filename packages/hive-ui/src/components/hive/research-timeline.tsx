@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
@@ -95,10 +96,17 @@ export function ResearchTimeline({ onClose, serverId }: ResearchTimelineProps) {
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {!serverId ? (
           <p className="text-muted-foreground text-sm">{t('no_server')}</p>
+        ) : items.length === 0 && timelineQuery.isLoading ? (
+          <LoadingRegion srLabel={t('loading')} className="space-y-2">
+            <SkeletonList
+              rows={4}
+              withAvatar={false}
+              className="gap-2"
+              rowClassName="rounded-lg border border-border p-3"
+            />
+          </LoadingRegion>
         ) : items.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
-            {timelineQuery.isLoading ? t('loading') : t('empty')}
-          </p>
+          <p className="text-muted-foreground text-sm">{t('empty')}</p>
         ) : (
           <ol className="space-y-2">
             {items.map((item) => {

@@ -2161,7 +2161,7 @@ function TaskCardInner({
                     translations={{
                       labels: t('labels'),
                       searchLabels: t('search_labels'),
-                      loading: t('loading'),
+                      loading: t('loading'), // loading-text-allowed: sr-only skeleton label
                       noLabelsFound: t('no_labels_found'),
                       noLabelsAvailable: t('no_labels_available'),
                       applied: t('applied'),
@@ -2183,7 +2183,7 @@ function TaskCardInner({
                     translations={{
                       projects: t('projects'),
                       searchProjects: t('search_projects'),
-                      loading: t('loading'),
+                      loading: t('loading'), // loading-text-allowed: sr-only skeleton label
                       noProjectsFound: t('no_projects_found'),
                       noProjectsAvailable: t('no_projects_available'),
                       assigned: t('assigned'),
@@ -2352,7 +2352,7 @@ function TaskCardInner({
                       translations={{
                         assignees: t('assignees'),
                         searchMembers: t('task_contacts.search'),
-                        loading: t('loading'),
+                        loading: t('loading'), // loading-text-allowed: sr-only skeleton label
                         noMembersFound: t('no_members_found'),
                         noMembersAvailable: t('no_members_available'),
                         assigned: t('assigned'),

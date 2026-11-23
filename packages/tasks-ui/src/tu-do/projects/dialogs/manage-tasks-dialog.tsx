@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { LoadSelect } from '../../shared/load-select';
 import type { TaskOption, TaskProject } from '../types';
 
 interface ManageTasksDialogProps {
@@ -133,41 +134,39 @@ export function ManageTasksDialog({
 
             <div className="space-y-2">
               <Label className="font-medium text-sm">{t('link_a_task')}</Label>
-              <Select
-                value={taskToLink}
-                onValueChange={setTaskToLink}
-                disabled={
-                  tasksLoading || filteredTaskOptions.length === 0 || isLinking
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('select_task_placeholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {tasksLoading ? (
-                    <SelectItem disabled value="loading">
-                      {t('loading_tasks')}
-                    </SelectItem>
-                  ) : filteredTaskOptions.length === 0 ? (
-                    <SelectItem disabled value="none">
-                      {t('no_available_tasks')}
-                    </SelectItem>
-                  ) : (
-                    filteredTaskOptions.map((task) => (
-                      <SelectItem key={task.id} value={task.id}>
-                        <div className="flex items-center gap-2">
-                          <span className="truncate">{task.name}</span>
-                          {task.listName && (
-                            <span className="text-muted-foreground text-xs">
-                              · {task.listName}
-                            </span>
-                          )}
-                        </div>
+              {tasksLoading ? (
+                <LoadSelect srLabel={t('loading_tasks')} />
+              ) : (
+                <Select
+                  value={taskToLink}
+                  onValueChange={setTaskToLink}
+                  disabled={filteredTaskOptions.length === 0 || isLinking}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('select_task_placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTaskOptions.length === 0 ? (
+                      <SelectItem disabled value="none">
+                        {t('no_available_tasks')}
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : (
+                      filteredTaskOptions.map((task) => (
+                        <SelectItem key={task.id} value={task.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="truncate">{task.name}</span>
+                            {task.listName && (
+                              <span className="text-muted-foreground text-xs">
+                                · {task.listName}
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
               {tasksError ? (
                 <p className="text-dynamic-red text-sm">{tasksError.message}</p>
               ) : filteredTaskOptions.length === 0 && !tasksLoading ? (

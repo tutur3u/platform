@@ -1,4 +1,4 @@
-import { Check, Loader2, UserStar, UserX } from '@tuturuuu/icons';
+import { Check, UserStar, UserX } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   Command,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useMemo, useState } from 'react';
@@ -66,6 +67,7 @@ export function TaskAssigneesMenu({
   const t = {
     assignees: translations?.assignees ?? 'Assignees',
     searchMembers: translations?.searchMembers ?? 'Search members...',
+    // loading-text-allowed: fallback is only the sr-only label of the skeleton
     loading: translations?.loading ?? 'Loading...',
     noMembersFound: translations?.noMembersFound ?? 'No members found',
     noMembersAvailable:
@@ -149,10 +151,14 @@ export function TaskAssigneesMenu({
           <CommandList className="max-h-56">
             {/* Members List */}
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 px-2 py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground text-xs">{t.loading}</p>
-              </div>
+              <LoadingRegion srLabel={t.loading} className="p-1">
+                <SkeletonList
+                  rows={4}
+                  withSubtitle={false}
+                  className="gap-0.5"
+                  rowClassName="px-2 py-1.5"
+                />
+              </LoadingRegion>
             ) : filteredMembers.length === 0 ? (
               <CommandEmpty className="px-2 py-6 text-center text-muted-foreground text-xs">
                 {searchQuery ? t.noMembersFound : t.noMembersAvailable}

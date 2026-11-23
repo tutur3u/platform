@@ -1,4 +1,4 @@
-import { Check, Loader2, Plus, Tag } from '@tuturuuu/icons';
+import { Check, Plus, Tag } from '@tuturuuu/icons';
 import {
   Command,
   CommandGroup,
@@ -10,6 +10,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { LabelChip, type TaskLabel } from '../../../shared/label-chip';
@@ -56,6 +57,7 @@ export function TaskLabelsMenu({
   const t = {
     labels: translations?.labels ?? 'Labels',
     searchLabels: translations?.searchLabels ?? 'Search labels...',
+    // loading-text-allowed: fallback is only the sr-only label of the skeleton
     loading: translations?.loading ?? 'Loading...',
     noLabelsFound: translations?.noLabelsFound ?? 'No labels found',
     noLabelsAvailable: translations?.noLabelsAvailable ?? 'No labels available',
@@ -103,10 +105,15 @@ export function TaskLabelsMenu({
           />
           <CommandList className="max-h-64">
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 px-2 py-6">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                <p className="text-muted-foreground text-xs">{t.loading}</p>
-              </div>
+              <LoadingRegion srLabel={t.loading} className="p-1">
+                <SkeletonList
+                  rows={4}
+                  withSubtitle={false}
+                  withAvatar={false}
+                  className="gap-0.5"
+                  rowClassName="px-2 py-1.5"
+                />
+              </LoadingRegion>
             ) : filteredLabels.length === 0 ? (
               <div className="px-2 py-6 text-center text-muted-foreground text-xs">
                 {searchQuery ? t.noLabelsFound : t.noLabelsAvailable}

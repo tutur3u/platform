@@ -14,6 +14,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import type { useTranslations } from 'next-intl';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 
 type Translate = ReturnType<typeof useTranslations>;
 
@@ -187,9 +188,9 @@ export function TaskProgressIntelligencePanel({
               </div>
             </div>
           ) : catchupLoading ? (
-            <p className="text-muted-foreground text-sm">
-              {t('intelligence.catchup.loading')}
-            </p>
+            <LoadingRegion srLabel={t('intelligence.catchup.loading')}>
+              <SkeletonText lines={4} />
+            </LoadingRegion>
           ) : catchupError || !catchup ? (
             <p className="text-muted-foreground text-sm">
               {t('intelligence.catchup.error')}
