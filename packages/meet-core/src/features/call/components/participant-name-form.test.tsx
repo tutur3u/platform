@@ -2,6 +2,7 @@
 import {
   act,
   cleanup,
+  configure,
   fireEvent,
   render,
   screen,
@@ -101,13 +102,26 @@ vi.mock('@marsidev/react-turnstile', () => ({
   },
 }));
 
+// The default 1s findBy/waitFor budget is shorter than a cold jsdom render on a
+// loaded CI runner. Waits still resolve as soon as the condition holds.
+configure({ asyncUtilTimeout: 15_000 });
+vi.setConfig({ testTimeout: 30_000 });
+
 const challenge = () =>
   new mocks.InternalApiError('Forbidden', 403, 'ABUSE_CHALLENGE_REQUIRED');
 const saveButton = () =>
   screen.getByRole<HTMLButtonElement>('button', { name: 'save_name_continue' });
 const submit = () => fireEvent.click(saveButton());
-const press = async (name: string) =>
-  fireEvent.click(await screen.findByRole('button', { name }));
+/**
+ * findBy resolves on the DOM mutation, which can precede React's passive
+ * effects. The check only reports outcomes once its mount effect has run, so
+ * flush effects before pressing or the press is dropped.
+ */
+const press = async (name: string) => {
+  const button = await screen.findByRole('button', { name });
+  await act(async () => {});
+  fireEvent.click(button);
+};
 const renderForm = (siteKey: string | undefined = 'site-key') =>
   render(
     <ParticipantNameForm
@@ -126,6 +140,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   document.getElementById('cf-turnstile-script')?.remove();
 });
 
@@ -361,7 +376,6 @@ it('uses the compact check where the flexible one cannot fit', async () => {
 
   expect(matchMedia).toHaveBeenCalledWith('(min-width: 24rem)');
   expect(mocks.widget?.options.size).toBe('compact');
-  vi.unstubAllGlobals();
 });
 
 it('reports the challenge when no site key is configured', async () => {
