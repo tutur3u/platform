@@ -6,7 +6,7 @@ import {
   joinMeetWhiteboard,
   type MeetWhiteboardJoin,
   type MeetWhiteboardRole,
-} from '@tuturuuu/internal-api/meet-call';
+} from '@tuturuuu/internal-api/meet-whiteboard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { type WhiteboardPresenceMember } from '@tuturuuu/whiteboard';
@@ -100,7 +100,8 @@ function LiveBoard({
   const transport = useMemo(() => {
     const next = createBoardSocketTransport({
       join: async () => {
-        const ready = unused.current ?? (await joinMeetWhiteboard(meetingId, boardId));
+        const ready =
+          unused.current ?? (await joinMeetWhiteboard(meetingId, boardId));
         unused.current = null;
         return ready;
       },

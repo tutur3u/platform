@@ -21,16 +21,28 @@ import {
 } from './board-sync-schema';
 
 const el = (id: string, version = 1, nonce = 1, extra: object = {}) =>
-  ({ id, type: 'rectangle', version, versionNonce: nonce, ...extra }) as BoardElement;
+  ({
+    id,
+    type: 'rectangle',
+    version,
+    versionNonce: nonce,
+    ...extra,
+  }) as BoardElement;
 
 describe('access', () => {
   it('lets live members edit and caps everyone else by guest access', () => {
-    expect(boardRoleFor({ kind: 'member', workspaceMember: true }, 'none')).toBe('edit');
-    expect(boardRoleFor({ kind: 'member', workspaceMember: false }, 'view')).toBe('view');
+    expect(
+      boardRoleFor({ kind: 'member', workspaceMember: true }, 'none')
+    ).toBe('edit');
+    expect(
+      boardRoleFor({ kind: 'member', workspaceMember: false }, 'view')
+    ).toBe('view');
     expect(boardRoleFor({ kind: 'guest' }, 'draw')).toBe('edit');
     expect(boardRoleFor({ kind: 'guest' }, 'view')).toBe('view');
     expect(boardRoleFor({ kind: 'guest' }, 'none')).toBeNull();
-    expect(boardRoleFor({ kind: 'member', workspaceMember: false }, 'none')).toBeNull();
+    expect(
+      boardRoleFor({ kind: 'member', workspaceMember: false }, 'none')
+    ).toBeNull();
   });
 
   it('refuses a missing link, missing or archived board and cross-workspace rows', () => {
@@ -40,8 +52,14 @@ describe('access', () => {
       meetingWsId: 'w',
     };
     expect(checkBoardOpen(ok)).toEqual({ ok: true, guestAccess: 'view' });
-    expect(checkBoardOpen({ ...ok, link: null })).toEqual({ ok: false, reason: 'link-missing' });
-    expect(checkBoardOpen({ ...ok, board: null })).toEqual({ ok: false, reason: 'board-missing' });
+    expect(checkBoardOpen({ ...ok, link: null })).toEqual({
+      ok: false,
+      reason: 'link-missing',
+    });
+    expect(checkBoardOpen({ ...ok, board: null })).toEqual({
+      ok: false,
+      reason: 'board-missing',
+    });
     expect(
       checkBoardOpen({ ...ok, board: { ws_id: 'w', archived_at: 'now' } })
     ).toEqual({ ok: false, reason: 'board-archived' });
@@ -99,7 +117,9 @@ describe('merge', () => {
     );
     expect(pruneTombstones(full)).toBeGreaterThan(0);
     expect([...full.values()].some((e) => !e.isDeleted)).toBe(true);
-    expect(full.size).toBeLessThanOrEqual(Math.floor(BOARD_LIMITS.maxElements * 0.9));
+    expect(full.size).toBeLessThanOrEqual(
+      Math.floor(BOARD_LIMITS.maxElements * 0.9)
+    );
   });
 
   it('splits a scene into bounded chunks without losing elements', () => {
@@ -115,7 +135,9 @@ describe('merge', () => {
 
 describe('schema', () => {
   it('rejects image elements and oversized elements', () => {
-    expect(boardElementSchema.safeParse({ ...el('i'), type: 'image' }).success).toBe(false);
+    expect(
+      boardElementSchema.safeParse({ ...el('i'), type: 'image' }).success
+    ).toBe(false);
     expect(
       boardElementSchema.safeParse(
         el('big', 1, 1, { text: 'x'.repeat(BOARD_LIMITS.maxElementBytes) })
@@ -125,16 +147,24 @@ describe('schema', () => {
   });
 
   it('rejects unknown message shapes and oversized batches', () => {
-    expect(boardClientMessage.safeParse({ type: 'cursor', x: 1, y: 2 }).success).toBe(true);
-    expect(boardClientMessage.safeParse({ type: 'cursor', x: Number.NaN, y: 2 }).success).toBe(false);
+    expect(
+      boardClientMessage.safeParse({ type: 'cursor', x: 1, y: 2 }).success
+    ).toBe(true);
+    expect(
+      boardClientMessage.safeParse({ type: 'cursor', x: Number.NaN, y: 2 })
+        .success
+    ).toBe(false);
     expect(boardClientMessage.safeParse({ type: 'nope' }).success).toBe(false);
     expect(
       boardClientMessage.safeParse({
         type: 'elements',
-        changes: Array.from({ length: BOARD_LIMITS.maxChangesPerMessage + 1 }, (_, i) => ({
-          type: 'insert',
-          element: el(`e${i}`),
-        })),
+        changes: Array.from(
+          { length: BOARD_LIMITS.maxChangesPerMessage + 1 },
+          (_, i) => ({
+            type: 'insert',
+            element: el(`e${i}`),
+          })
+        ),
       }).success
     ).toBe(false);
   });
@@ -153,7 +183,11 @@ describe('schema', () => {
       exp: 1,
     };
     expect(boardTicketSchema.safeParse(base).success).toBe(true);
-    expect(boardTicketSchema.safeParse({ ...base, extra: 1 }).success).toBe(false);
-    expect(boardTicketSchema.safeParse({ ...base, role: 'owner' }).success).toBe(false);
+    expect(boardTicketSchema.safeParse({ ...base, extra: 1 }).success).toBe(
+      false
+    );
+    expect(
+      boardTicketSchema.safeParse({ ...base, role: 'owner' }).success
+    ).toBe(false);
   });
 });

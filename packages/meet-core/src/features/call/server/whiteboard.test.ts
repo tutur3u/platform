@@ -47,7 +47,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => {
         fx.inserted.push(value);
         return c;
       },
-      delete: () => ({ eq: async (_k: string, v: unknown) => fx.deleted.push(v) }),
+      delete: () => ({
+        eq: async (_k: string, v: unknown) => fx.deleted.push(v),
+      }),
       single: async () => ({
         data: fx.insertError ? null : { id: 'new-board' },
         error: fx.insertError,
@@ -149,25 +151,33 @@ describe('join', () => {
 
   it('refuses an unlinked, archived or missing board', async () => {
     fx.links = [];
-    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject({
-      status: 404,
-    });
+    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject(
+      {
+        status: 404,
+      }
+    );
     fx.links = [{ whiteboard_id: b1, ws_id: wsId, guest_access: 'view' }];
     fx.boards[0]!.archived_at = 'now';
-    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject({
-      status: 404,
-    });
+    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject(
+      {
+        status: 404,
+      }
+    );
     fx.boards = [];
-    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject({
-      status: 404,
-    });
+    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject(
+      {
+        status: 404,
+      }
+    );
   });
 
   it('stops at the room when admission is refused', async () => {
     fx.room.mockRejectedValue(Object.assign(new Error('no'), { status: 403 }));
-    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject({
-      status: 403,
-    });
+    await expect(mod.joinMeetingWhiteboard(member(), b1)).rejects.toMatchObject(
+      {
+        status: 403,
+      }
+    );
   });
 });
 
@@ -185,7 +195,9 @@ describe('list', () => {
   it('shows guests only boards they may open, without link settings', async () => {
     const result = await mod.listMeetingWhiteboards(guest());
     expect(result.canManage).toBe(false);
-    expect(result.links).toEqual([{ boardId: b1, title: 'Plan', role: 'view' }]);
+    expect(result.links).toEqual([
+      { boardId: b1, title: 'Plan', role: 'view' },
+    ]);
     expect(result.available).toEqual([]);
     fx.links[0]!.guest_access = 'none';
     expect((await mod.listMeetingWhiteboards(guest())).links).toEqual([]);
@@ -227,23 +239,31 @@ describe('actions', () => {
   });
 
   it('treats a second unlink as success', async () => {
-    const { AccountServiceError } = await import(
-      '@tuturuuu/utils/account-benefits-server'
-    );
+    const { AccountServiceError } =
+      await import('@tuturuuu/utils/account-benefits-server');
     fx.rpc.mockRejectedValue(new AccountServiceError(404));
     await expect(
-      mod.runMeetingWhiteboardAction(member(), { action: 'unlink', boardId: b1 })
+      mod.runMeetingWhiteboardAction(member(), {
+        action: 'unlink',
+        boardId: b1,
+      })
     ).resolves.toEqual({ boardId: b1, unlinked: true });
     fx.rpc.mockRejectedValue(new AccountServiceError(403));
     await expect(
-      mod.runMeetingWhiteboardAction(member(), { action: 'unlink', boardId: b1 })
+      mod.runMeetingWhiteboardAction(member(), {
+        action: 'unlink',
+        boardId: b1,
+      })
     ).rejects.toMatchObject({ status: 403 });
   });
 
   it('refuses every management action for guests and non-members', async () => {
     for (const access of [guest(), member({ canReadWorkspace: false })])
       await expect(
-        mod.runMeetingWhiteboardAction(access, { action: 'unlink', boardId: b1 })
+        mod.runMeetingWhiteboardAction(access, {
+          action: 'unlink',
+          boardId: b1,
+        })
       ).rejects.toMatchObject({ status: 403 });
     expect(fx.rpc).not.toHaveBeenCalled();
   });
@@ -261,9 +281,8 @@ describe('actions', () => {
   });
 
   it('removes a new board when linking is refused and refuses non-managers', async () => {
-    const { AccountServiceError } = await import(
-      '@tuturuuu/utils/account-benefits-server'
-    );
+    const { AccountServiceError } =
+      await import('@tuturuuu/utils/account-benefits-server');
     fx.rpc.mockRejectedValue(new AccountServiceError(403));
     await expect(
       mod.runMeetingWhiteboardAction(member(), { action: 'create', title: 'x' })
@@ -284,7 +303,9 @@ describe('actions', () => {
     expect(parse({ action: 'join', boardId: b1 }).success).toBe(true);
     expect(parse({ action: 'join', boardId: b1, wsId }).success).toBe(false);
     expect(parse({ action: 'link', boardId: 'nope' }).success).toBe(false);
-    expect(parse({ action: 'guest-access', boardId: b1, guestAccess: 'x' }).success).toBe(false);
+    expect(
+      parse({ action: 'guest-access', boardId: b1, guestAccess: 'x' }).success
+    ).toBe(false);
     expect(parse({ action: 'create', title: '  ' }).success).toBe(false);
   });
 });

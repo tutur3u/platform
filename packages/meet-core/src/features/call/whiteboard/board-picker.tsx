@@ -4,7 +4,7 @@ import { PenTool, Unlink } from '@tuturuuu/icons';
 import type {
   MeetWhiteboardGuestAccess,
   MeetWhiteboardLink,
-} from '@tuturuuu/internal-api/meet-call';
+} from '@tuturuuu/internal-api/meet-whiteboard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

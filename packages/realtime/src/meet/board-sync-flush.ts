@@ -56,7 +56,8 @@ export function recordIdle(meta: BoardRoomMeta, now: number): BoardRoomMeta {
   const at = now + BOARD_LIMITS.idleFlushMs;
   return {
     ...meta,
-    persistDueAt: meta.persistDueAt === null ? at : Math.min(meta.persistDueAt, at),
+    persistDueAt:
+      meta.persistDueAt === null ? at : Math.min(meta.persistDueAt, at),
     flushDueAt: meta.flushDueAt === null ? at : Math.min(meta.flushDueAt, at),
   };
 }

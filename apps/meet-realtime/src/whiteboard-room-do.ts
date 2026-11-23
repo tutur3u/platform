@@ -102,7 +102,9 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   private sockets() {
     return this.state
       .getWebSockets()
-      .filter((socket) => socket.readyState === undefined || socket.readyState === 1);
+      .filter(
+        (socket) => socket.readyState === undefined || socket.readyState === 1
+      );
   }
 
   private attachment(socket: WebSocket) {
@@ -133,7 +135,9 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   }
 
   private platformOrigin() {
-    const base = new URL(this.env.PLATFORM_API_BASE_URL ?? 'https://tuturuuu.com');
+    const base = new URL(
+      this.env.PLATFORM_API_BASE_URL ?? 'https://tuturuuu.com'
+    );
     if (
       base.protocol !== 'https:' &&
       !['localhost', '127.0.0.1'].includes(base.hostname)
@@ -158,13 +162,16 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       } satisfies BoardTicket,
       this.env.MEET_REALTIME_TOKEN_SECRET
     );
-    const response = await fetch(new URL(CHECKPOINT_PATH, this.platformOrigin()), {
-      method: 'POST',
-      headers: serviceRequestHeaders(token),
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-      redirect: 'manual',
-    });
+    const response = await fetch(
+      new URL(CHECKPOINT_PATH, this.platformOrigin()),
+      {
+        method: 'POST',
+        headers: serviceRequestHeaders(token),
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30_000),
+        redirect: 'manual',
+      }
+    );
     if (response.status !== 200 && response.status !== 409)
       return { status: response.status };
     const parsed = boardCheckpointResultSchema.safeParse(await response.json());
@@ -258,7 +265,10 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     switch (message.type) {
       case 'authenticate': {
         const next = boardTicketSchema.safeParse(
-          verifyRealtimePayload(message.token, this.env.MEET_REALTIME_TOKEN_SECRET)
+          verifyRealtimePayload(
+            message.token,
+            this.env.MEET_REALTIME_TOKEN_SECRET
+          )
         );
         if (
           !next.success ||
@@ -300,7 +310,8 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           socket
         );
       case 'elements': {
-        if (ticket.role !== 'edit') return socket.close(1008, 'Read-only board');
+        if (ticket.role !== 'edit')
+          return socket.close(1008, 'Read-only board');
         const applied = await this.room.edit(message.changes);
         if (applied.length > 0)
           this.broadcast(

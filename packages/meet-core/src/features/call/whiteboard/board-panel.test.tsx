@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
@@ -11,7 +17,7 @@ const api = vi.hoisted(() => ({
   join: vi.fn(),
   editor: vi.fn(),
 }));
-vi.mock('@tuturuuu/internal-api/meet-call', () => ({
+vi.mock('@tuturuuu/internal-api/meet-whiteboard', () => ({
   listMeetWhiteboards: api.list,
   updateMeetWhiteboards: api.update,
   joinMeetWhiteboard: api.join,
@@ -29,7 +35,9 @@ const { BoardPanel } = await import('./board-panel');
 const boardId = '33333333-4444-4555-8666-777777777777';
 
 function mount() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
     <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={messages}>
@@ -50,7 +58,9 @@ describe('BoardPanel', () => {
     api.list.mockResolvedValue({ canManage: false, links: [], available: [] });
     mount();
     expect(
-      await screen.findByText('No whiteboard has been shared in this meeting yet.')
+      await screen.findByText(
+        'No whiteboard has been shared in this meeting yet.'
+      )
     ).toBeTruthy();
     expect(screen.queryByLabelText('New whiteboard name')).toBeNull();
   });
@@ -76,7 +86,10 @@ describe('BoardPanel', () => {
     );
     fireEvent.click(screen.getByLabelText('Remove from this meeting'));
     await waitFor(() =>
-      expect(api.update).toHaveBeenCalledWith('m', { action: 'unlink', boardId })
+      expect(api.update).toHaveBeenCalledWith('m', {
+        action: 'unlink',
+        boardId,
+      })
     );
   });
 
@@ -112,11 +125,15 @@ describe('BoardPanel', () => {
       links: [{ boardId, title: 'Plan', role: 'view' }],
       available: [],
     });
-    api.join.mockRejectedValue(Object.assign(new Error('gone'), { status: 404 }));
+    api.join.mockRejectedValue(
+      Object.assign(new Error('gone'), { status: 404 })
+    );
     mount();
     fireEvent.click(await screen.findByText('Open'));
     expect(
-      await screen.findByText('This whiteboard is no longer available in this meeting.')
+      await screen.findByText(
+        'This whiteboard is no longer available in this meeting.'
+      )
     ).toBeTruthy();
   });
 });

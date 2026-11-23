@@ -78,7 +78,13 @@ describe('board socket transport', () => {
     expect(new URL(socket.url).searchParams.get('token')).toBe('t1');
     socket.open();
     expect(calls.status).toHaveBeenLastCalledWith('connected');
-    socket.receive({ type: 'sync', elements: [rect], chunk: 0, chunks: 1, role: 'view' });
+    socket.receive({
+      type: 'sync',
+      elements: [rect],
+      chunk: 0,
+      chunks: 1,
+      role: 'view',
+    });
     expect(calls.role).toHaveBeenLastCalledWith('view');
     expect(calls.elements.mock.calls[0]![0].changes[0]).toEqual({
       type: 'insert',

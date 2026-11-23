@@ -5,7 +5,7 @@ import {
   listMeetWhiteboards,
   type MeetWhiteboardGuestAccess,
   updateMeetWhiteboards,
-} from '@tuturuuu/internal-api/meet-call';
+} from '@tuturuuu/internal-api/meet-whiteboard';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -46,7 +46,11 @@ export function BoardPanel({
     onSuccess: () => client.invalidateQueries({ queryKey: key }),
     onError: (error) =>
       toast.error(
-        t(boardErrorStatus(error) === 429 ? 'board_rate_limited' : 'board_action_failed')
+        t(
+          boardErrorStatus(error) === 429
+            ? 'board_rate_limited'
+            : 'board_action_failed'
+        )
       ),
   });
   const active = list.data?.links.find((link) => link.boardId === activeId);

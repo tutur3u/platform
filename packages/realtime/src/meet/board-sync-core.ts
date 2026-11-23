@@ -141,7 +141,12 @@ export function createBoardRoom(deps: BoardRoomDeps) {
         (await deps.hash(canonicalScene(remote)));
       meta = { ...meta, baseUpdatedAt: answer.result.updatedAt };
       meta = converged
-        ? recordFlushed(meta, meta.revision, answer.result.updatedAt, deps.now())
+        ? recordFlushed(
+            meta,
+            meta.revision,
+            answer.result.updatedAt,
+            deps.now()
+          )
         : {
             ...meta,
             revision: meta.revision + 1,
@@ -216,7 +221,11 @@ export function createBoardRoom(deps: BoardRoomDeps) {
         sweepDueAt = deps.connections() > 0 ? now + BOARD_LIMITS.sweepMs : null;
       }
       if (!fenced() && !meta.closed) {
-        if (needsFlush(meta) && meta.flushDueAt !== null && meta.flushDueAt <= now) {
+        if (
+          needsFlush(meta) &&
+          meta.flushDueAt !== null &&
+          meta.flushDueAt <= now
+        ) {
           flushing ??= runFlush().finally(() => {
             flushing = null;
           });

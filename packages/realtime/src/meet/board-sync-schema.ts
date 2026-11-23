@@ -113,7 +113,10 @@ export const boardClientMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sync') }),
   z.object({
     type: z.literal('elements'),
-    changes: z.array(boardChangeSchema).min(1).max(BOARD_LIMITS.maxChangesPerMessage),
+    changes: z
+      .array(boardChangeSchema)
+      .min(1)
+      .max(BOARD_LIMITS.maxChangesPerMessage),
     timestamp: finite.optional(),
   }),
   z.object({
@@ -122,7 +125,10 @@ export const boardClientMessage = z.discriminatedUnion('type', [
     y: finite,
     tool: z.string().max(24).optional(),
   }),
-  z.object({ type: z.literal('selection'), selectedElementIds: selectionSchema }),
+  z.object({
+    type: z.literal('selection'),
+    selectedElementIds: selectionSchema,
+  }),
 ]);
 export type BoardClientMessage = z.infer<typeof boardClientMessage>;
 
@@ -161,7 +167,10 @@ export const boardServerMessage = z.discriminatedUnion('type', [
     selectedElementIds: selectionSchema,
     timestamp: finite,
   }),
-  z.object({ type: z.literal('presence'), members: z.array(boardMemberSchema) }),
+  z.object({
+    type: z.literal('presence'),
+    members: z.array(boardMemberSchema),
+  }),
   z.object({ type: z.literal('role'), role: boardRoleSchema }),
   z.object({ type: z.literal('saved'), revision: z.number().int() }),
   z.object({ type: z.literal('save-error') }),
@@ -190,6 +199,9 @@ export const boardCheckpointRequestSchema = z.discriminatedUnion('op', [
 /** What the platform answers to a load or a flush. */
 export const boardCheckpointResultSchema = z.object({
   updatedAt: z.string().max(64),
-  elements: z.array(boardElementSchema).max(BOARD_LIMITS.maxElements).optional(),
+  elements: z
+    .array(boardElementSchema)
+    .max(BOARD_LIMITS.maxElements)
+    .optional(),
 });
 export type BoardCheckpointResult = z.infer<typeof boardCheckpointResultSchema>;

@@ -69,7 +69,9 @@ const rect = (id: string, version = 1) => ({
   versionNonce: 1,
 });
 const hash = (elements: unknown[]) =>
-  createHash('sha256').update(canonicalScene(elements as never)).digest('hex');
+  createHash('sha256')
+    .update(canonicalScene(elements as never))
+    .digest('hex');
 function call(body: unknown, over: Record<string, unknown> = {}) {
   const token = signRealtimePayload(
     {
@@ -112,7 +114,10 @@ describe('whiteboard checkpoint route', () => {
       archived_at: null,
       updated_at: 't1',
       snapshot: {
-        elements: [rect('a'), { id: 'img', type: 'image', version: 1, versionNonce: 1 }],
+        elements: [
+          rect('a'),
+          { id: 'img', type: 'image', version: 1, versionNonce: 1 },
+        ],
         appState: { viewBackgroundColor: '#fff' },
       },
     };
@@ -128,14 +133,19 @@ describe('whiteboard checkpoint route', () => {
     );
     expect(noToken.status).toBe(401);
     expect((await call({ op: 'load' }, { kind: 'join' })).status).toBe(401);
-    expect((await call({ op: 'load' }, { actorKind: 'guest' })).status).toBe(401);
+    expect((await call({ op: 'load' }, { actorKind: 'guest' })).status).toBe(
+      401
+    );
     expect((await call({ op: 'load' }, { exp: 1 })).status).toBe(401);
   });
 
   it('loads only the elements the room can edit', async () => {
     const response = await call({ op: 'load' });
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ updatedAt: 't1', elements: [rect('a')] });
+    expect(await response.json()).toEqual({
+      updatedAt: 't1',
+      elements: [rect('a')],
+    });
   });
 
   it('refuses a missing link, a foreign workspace and an archived board', async () => {
@@ -156,7 +166,9 @@ describe('whiteboard checkpoint route', () => {
     expect(state.updates).toHaveLength(1);
     const update = state.updates[0]!;
     expect((update.filters as any).updated_at).toBe('t1');
-    expect((update.snapshot as any).appState).toEqual({ viewBackgroundColor: '#fff' });
+    expect((update.snapshot as any).appState).toEqual({
+      viewBackgroundColor: '#fff',
+    });
     expect((update.snapshot as any).elements.map((e: any) => e.id)).toEqual([
       'a',
       'b',
@@ -177,7 +189,10 @@ describe('whiteboard checkpoint route', () => {
     state.board!.updated_at = 't2';
     const response = await call(flush([rect('z')], 't1'));
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ updatedAt: 't2', elements: [rect('a')] });
+    expect(await response.json()).toEqual({
+      updatedAt: 't2',
+      elements: [rect('a')],
+    });
     expect(state.updates).toHaveLength(0);
   });
 
@@ -189,7 +204,9 @@ describe('whiteboard checkpoint route', () => {
   });
 
   it('rejects a body whose hash does not match and malformed bodies', async () => {
-    expect((await call(flush([rect('a')], 't1', { hash: 'a'.repeat(64) }))).status).toBe(400);
+    expect(
+      (await call(flush([rect('a')], 't1', { hash: 'a'.repeat(64) }))).status
+    ).toBe(400);
     expect((await call({ op: 'flush' })).status).toBe(400);
     expect((await call({ op: 'load', extra: 1 })).status).toBe(400);
   });

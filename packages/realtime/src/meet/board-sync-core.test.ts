@@ -4,8 +4,17 @@ import type { BoardChange, BoardElement } from './board-sync-schema';
 import { BOARD_FLUSH_RETRY, BOARD_LIMITS } from './board-sync-schema';
 
 const el = (id: string, version = 1, extra: object = {}): BoardElement =>
-  ({ id, type: 'rectangle', version, versionNonce: 1, ...extra }) as BoardElement;
-const change = (element: BoardElement): BoardChange => ({ type: 'update', element });
+  ({
+    id,
+    type: 'rectangle',
+    version,
+    versionNonce: 1,
+    ...extra,
+  }) as BoardElement;
+const change = (element: BoardElement): BoardChange => ({
+  type: 'update',
+  element,
+});
 
 function harness(options: { fence?: string; connections?: number } = {}) {
   const store = new Map<string, unknown>();
@@ -14,7 +23,10 @@ function harness(options: { fence?: string; connections?: number } = {}) {
   let alarm: number | null = null;
   let connections = options.connections ?? 1;
   let fence = options.fence;
-  let flushAnswer: () => Promise<{ status: number; result?: any }> = async () => ({
+  let flushAnswer: () => Promise<{
+    status: number;
+    result?: any;
+  }> = async () => ({
     status: 200,
     result: { updatedAt: `t${ops.flushes}` },
   });
@@ -26,7 +38,8 @@ function harness(options: { fence?: string; connections?: number } = {}) {
       get: async (key) => structuredClone(store.get(key)) as never,
       put: async (entries) => {
         ops.puts++;
-        for (const [k, v] of Object.entries(entries)) store.set(k, structuredClone(v));
+        for (const [k, v] of Object.entries(entries))
+          store.set(k, structuredClone(v));
       },
       setAlarm: async (at) => {
         ops.alarms++;
@@ -94,7 +107,8 @@ describe('board room write budget', () => {
     await h.room.ensureLoaded();
     await h.room.connectionsChanged();
     const base = { ...h.ops };
-    for (let i = 0; i < 500; i++) await h.room.edit([change(el(`e${i % 20}`, i + 2))]);
+    for (let i = 0; i < 500; i++)
+      await h.room.edit([change(el(`e${i % 20}`, i + 2))]);
     expect(h.ops.alarms - base.alarms).toBeLessThanOrEqual(2);
     await h.advance(BOARD_LIMITS.flushWindowMs + 1000);
     expect(h.ops.flushes).toBe(1);
@@ -237,7 +251,10 @@ describe('failure handling', () => {
       return calls === 1
         ? {
             status: 409,
-            result: { updatedAt: 'theirs', elements: [el('seed'), el('remote', 4)] },
+            result: {
+              updatedAt: 'theirs',
+              elements: [el('seed'), el('remote', 4)],
+            },
           }
         : { status: 200, result: { updatedAt: 'mine' } };
     });
@@ -245,7 +262,12 @@ describe('failure handling', () => {
     await h.room.edit([change(el('local', 2))]);
     await h.advance(60 * 60_000);
     expect(calls).toBe(2);
-    expect(h.room.elements().map((e) => e.id).sort()).toEqual(['local', 'remote', 'seed']);
+    expect(
+      h.room
+        .elements()
+        .map((e) => e.id)
+        .sort()
+    ).toEqual(['local', 'remote', 'seed']);
     expect(h.room.snapshotMeta().baseUpdatedAt).toBe('mine');
     expect(h.alarm).toBeNull();
   });

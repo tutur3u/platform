@@ -65,7 +65,8 @@ function fixture(env: Record<string, string> = {}) {
       get: async (key: string) => structuredClone(values.get(key)),
       put: async (entries: Record<string, unknown>) => {
         ops.puts++;
-        for (const [k, v] of Object.entries(entries)) values.set(k, structuredClone(v));
+        for (const [k, v] of Object.entries(entries))
+          values.set(k, structuredClone(v));
       },
       setAlarm: async () => {
         ops.alarms++;
@@ -118,7 +119,10 @@ afterEach(() => {
 // A real Response with status 101 is not constructible in Node; the adapter
 // returns one only after the socket is accepted, so tests assert on the
 // accepted socket instead of the response.
-async function open(f: ReturnType<typeof fixture>, over: Partial<BoardTicket> = {}) {
+async function open(
+  f: ReturnType<typeof fixture>,
+  over: Partial<BoardTicket> = {}
+) {
   await f.join(over).catch(() => undefined);
   return f.sockets.at(-1)!;
 }
@@ -171,9 +175,7 @@ test('a refresh may lower the role but not change the actor', async () => {
       token: signRealtimePayload(ticket({ role: 'view' }), SECRET),
     })
   );
-  assert.ok(
-    socket.sent.some((m) => m.type === 'role' && m.role === 'view')
-  );
+  assert.ok(socket.sent.some((m) => m.type === 'role' && m.role === 'view'));
   const other = await open(f, { userId: 'u9' });
   await f.the.webSocketMessage(
     other as any,

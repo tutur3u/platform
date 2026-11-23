@@ -19,7 +19,10 @@ export function accountGatedCollaboration(
   showDocument: boolean,
   programming: ProgrammingProps | null,
   document: ComponentProps<typeof DocumentPanel> | null,
-  board: { show: boolean; props: ComponentProps<typeof BoardPanel> } | null = null
+  board: {
+    show: boolean;
+    props: ComponentProps<typeof BoardPanel>;
+  } | null = null
 ) {
   if (board?.show)
     return requiresAccount ? (

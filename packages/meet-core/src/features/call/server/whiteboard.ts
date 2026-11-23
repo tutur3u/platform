@@ -153,7 +153,8 @@ export async function listMeetingWhiteboards(access: Access) {
       .is('archived_at', null)
       .order('updated_at', { ascending: false })
       .limit(50);
-    if (error) throw new MeetCallAccessError(503, 'Whiteboards are unavailable');
+    if (error)
+      throw new MeetCallAccessError(503, 'Whiteboards are unavailable');
     const linked = new Set(links.map((link) => link.whiteboard_id));
     available = (data ?? []).filter((board) => !linked.has(board.id));
   }
@@ -250,7 +251,10 @@ export async function runMeetingWhiteboardAction(
   if (action.action === 'create') {
     const db = await adminDb();
     if (!(await canManage(access, db)))
-      throw new MeetCallAccessError(403, 'Only the host or an admin can add a board');
+      throw new MeetCallAccessError(
+        403,
+        'Only the host or an admin can add a board'
+      );
     const { data, error } = await db
       .from('workspace_whiteboards')
       .insert({

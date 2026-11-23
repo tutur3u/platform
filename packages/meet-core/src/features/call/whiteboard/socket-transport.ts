@@ -55,7 +55,7 @@ export function createBoardSocketTransport(
   let generation = 0;
 
   const status = (value: WhiteboardConnectionStatus, error?: Error) =>
-    (error ? handlers?.onStatus(value, error) : handlers?.onStatus(value));
+    error ? handlers?.onStatus(value, error) : handlers?.onStatus(value);
 
   function stop() {
     generation++;
@@ -178,7 +178,9 @@ export function createBoardSocketTransport(
     try {
       const session = await options.join();
       if (socket?.readyState === OPEN)
-        socket.send(JSON.stringify({ type: 'authenticate', token: session.token }));
+        socket.send(
+          JSON.stringify({ type: 'authenticate', token: session.token })
+        );
     } catch (error) {
       const code = (error as { status?: number }).status;
       if (code === 403 || code === 404 || code === 410) {

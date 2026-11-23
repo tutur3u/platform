@@ -31,10 +31,7 @@ export { AttendanceErasure } from './attendance-erasure-entrypoint';
 export default {
   async fetch(
     request: Request,
-    env: MeetRoomEnv &
-      CollaborationRoomEnv &
-      ChannelRoomEnv &
-      WhiteboardRoomEnv
+    env: MeetRoomEnv & CollaborationRoomEnv & ChannelRoomEnv & WhiteboardRoomEnv
   ): Promise<Response> {
     const url = new URL(request.url);
     if (

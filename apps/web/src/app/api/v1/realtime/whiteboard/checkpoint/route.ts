@@ -21,8 +21,10 @@ type Db = Awaited<ReturnType<typeof createAdminClient>>;
 
 const respond = (body: unknown, status = 200) =>
   NextResponse.json(body, { status, headers: noStore });
-const fail = (status: number) => new NextResponse(null, { status, headers: noStore });
-const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
+const fail = (status: number) =>
+  new NextResponse(null, { status, headers: noStore });
+const sha256 = (text: string) =>
+  createHash('sha256').update(text).digest('hex');
 
 async function readBody(request: Request) {
   const reader = request.body?.getReader();
@@ -54,7 +56,9 @@ function splitStored(snapshot: unknown) {
           }
         })()
       : snapshot;
-  const elements: unknown[] = Array.isArray(parsed?.elements) ? parsed.elements : [];
+  const elements: unknown[] = Array.isArray(parsed?.elements)
+    ? parsed.elements
+    : [];
   const supported: BoardElement[] = [];
   const preserved: unknown[] = [];
   for (const element of elements) {
@@ -72,7 +76,11 @@ function splitStored(snapshot: unknown) {
 async function readFacts(db: Db, meetingId: string, boardId: string) {
   const client = db as unknown as { schema(name: string): Db };
   const [meeting, link, board] = await Promise.all([
-    db.from('workspace_meetings').select('ws_id').eq('id', meetingId).maybeSingle(),
+    db
+      .from('workspace_meetings')
+      .select('ws_id')
+      .eq('id', meetingId)
+      .maybeSingle(),
     client
       .schema('private')
       .from('meet_whiteboards' as never)
@@ -86,7 +94,8 @@ async function readFacts(db: Db, meetingId: string, boardId: string) {
       .eq('id', boardId)
       .maybeSingle(),
   ]);
-  if (meeting.error || link.error || board.error) throw new Error('lookup failed');
+  if (meeting.error || link.error || board.error)
+    throw new Error('lookup failed');
   return {
     meetingWsId: (meeting.data as Row | null)?.ws_id as string | undefined,
     link: link.data as Row | null,
@@ -100,7 +109,9 @@ async function readFacts(db: Db, meetingId: string, boardId: string) {
  * `updated_at` and treats a replay of identical content as success.
  */
 export async function POST(request: Request) {
-  const raw = request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1];
+  const raw = request.headers
+    .get('Authorization')
+    ?.match(/^Bearer (\S+)$/)?.[1];
   const ticket = boardTicketSchema.safeParse(
     verifyRealtimePayload(raw ?? '', process.env.MEET_REALTIME_TOKEN_SECRET)
   );
@@ -176,7 +187,8 @@ export async function POST(request: Request) {
       .is('archived_at', null)
       .select('updated_at');
     if (error) throw new Error('write failed');
-    if (data?.length === 1) return respond({ updatedAt: String(data[0]!.updated_at) });
+    if (data?.length === 1)
+      return respond({ updatedAt: String(data[0]!.updated_at) });
     // Lost the compare-and-set race: report against what is stored now.
     const again = await read();
     if (!again.open.ok)

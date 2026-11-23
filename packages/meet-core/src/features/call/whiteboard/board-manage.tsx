@@ -1,7 +1,7 @@
 'use client';
 
 import { Link2, Plus } from '@tuturuuu/icons';
-import type { MeetWhiteboardGuestAccess } from '@tuturuuu/internal-api/meet-call';
+import type { MeetWhiteboardGuestAccess } from '@tuturuuu/internal-api/meet-whiteboard';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
