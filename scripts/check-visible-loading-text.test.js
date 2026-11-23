@@ -38,8 +38,26 @@ test('allows screen-reader-only text and non-loading keys', () => {
     "useState<'loading' | 'ready'>('loading');",
     '// loading-text-allowed: slow network notice is real content',
     "{t('join_loading_slow_title')}",
+    '<p role="status" className="sr-only">',
+    "  {t('pricesLoading')}",
+    '</p>',
+    'aria-label={',
+    "  isFetching ? t('common.loading') : undefined",
+    '}',
   ].join('\n');
   assert.deepEqual(findVisibleLoadingText(source), []);
+});
+
+test('wrapped visible text after an ordinary tag is still flagged', () => {
+  const source = [
+    '<p className="text-muted-foreground text-sm">',
+    "  {t('common.loading')}",
+    '</p>',
+    '<Button aria-label={label}>',
+    "  {t('loading')}",
+    '</Button>',
+  ].join('\n');
+  assert.deepEqual(findVisibleLoadingText(source), [2, 5]);
 });
 
 test('scans active JSX sources only', () => {

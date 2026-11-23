@@ -14,6 +14,9 @@
  * `loading-text-allowed: <reason>` on it or the line above (for text that is
  * real content, such as a "still loading, check your network" notice).
  *
+ * Content wrapped onto the lines right after an sr-only opening tag or an
+ * `aria-label={` expression also counts as screen-reader-only.
+ *
  * Known limits (heuristic, line based): only tracked `.tsx`/`.jsx` files are
  * scanned; JSX text split across lines and bare 'Loading' strings without an
  * ellipsis are not detected; `.ts` label maps are out of scope.
@@ -50,6 +53,17 @@ const LOADING_KEY =
   /(?:(?:^|[._-])(?:loading|fetching)(?:[A-Z_-]\w*)?|[a-z](?:Loading|Fetching))$/;
 const NOT_A_LOADING_STATE = /error|fail/i;
 const ALLOW_MARKER = /loading-text-allowed:/;
+// Formatters wrap long screen-reader-only content onto the following lines:
+// an sr-only element whose opening tag ends its line, or an
+// `aria-label={` / `aria-valuetext={` expression that continues below.
+const SCREEN_READER_OPENING =
+  /(?:className=(?:"|\{?['"`])[^"'`]*\bsr-only\b[^>]*>|aria-(?:label|valuetext)=\{)\s*$/;
+
+function opensScreenReaderContent(sourceLines, index) {
+  return [1, 2].some((back) =>
+    SCREEN_READER_OPENING.test(sourceLines[index - back] ?? '')
+  );
+}
 
 function isScannedPath(filePath) {
   return (
@@ -74,6 +88,7 @@ function findVisibleLoadingText(source) {
   const sourceLines = source.split(/\r?\n/);
   sourceLines.forEach((line, index) => {
     if (SCREEN_READER_ONLY.test(line)) return;
+    if (opensScreenReaderContent(sourceLines, index)) return;
     if (
       ALLOW_MARKER.test(line) ||
       ALLOW_MARKER.test(sourceLines[index - 1] ?? '')
