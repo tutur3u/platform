@@ -108,6 +108,20 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Same owners as RA-20261123-1100-MEET-A-PRIME. Any other failure is outside this grant.',
   },
+  {
+    // Release-authority exception (Iris, 23 Nov 2026): VIP shared screen
+    // focus view.
+    // Same non-Meet reds as RA-20261123-1100-MEET-A-PRIME: Type Check fails
+    // only @tuturuuu/playground-execution, and Test fails the known root
+    // script drift. Security Checks and Meet Cloudflare stay required on
+    // this exact source.
+    id: 'RA-20261123-1440-MEET-FOCUS-VIEW',
+    source: 'adc9721ba5647893dd4ffc7886b2e62f5fd81392',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-23T16:59:00Z',
+    followUp:
+      'Same owners as RA-20261123-1100-MEET-A-PRIME. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
