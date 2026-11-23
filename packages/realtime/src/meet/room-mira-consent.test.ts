@@ -212,8 +212,7 @@ describe('room Mira per-person consent', () => {
     room = ended.state;
     expect(ended.messages?.[0]).toMatchObject({ notice: { kind: 'mira.off' } });
     expect(
-      act(host, { action: 'mira.room.release', messageId: 'ask', leaseId })
-        .body
+      act(host, { action: 'mira.room.release', messageId: 'ask', leaseId }).body
     ).toEqual({ current: false });
     expect(
       act(host, {

@@ -151,8 +151,7 @@ export function applyMiraRoomAcceptance(
       parsed.data.reason === 'minor_reported'
         ? !state.ended && !!presenceOf(state, accountId)
         : canAcceptMiraRoom(state, token);
-    if (!allowed)
-      return { state, body: { error: 'Forbidden' }, status: 403 };
+    if (!allowed) return { state, body: { error: 'Forbidden' }, status: 403 };
     if (!current) return { state, body: { endedRevision: null } };
     const next = withoutTranscriptAllows({
       ...state,

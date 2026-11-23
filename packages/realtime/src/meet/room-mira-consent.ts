@@ -56,7 +56,6 @@ const command = z.discriminatedUnion('action', [
   }),
 ]);
 
-
 /** The participant's own view; acceptance details are shown to everyone. */
 function miraRoomView(
   state: RoomServiceState,
@@ -196,10 +195,7 @@ function turnOff(
   if (next.miraRoom?.pending?.[accountId]) return next;
   // Already-admitted sends carrying this account finish under their lease;
   // nothing new starts, and the opt-out takes effect when they settle.
-  if (
-    own?.choice === 'on' &&
-    activeMiraRoomLeases(next, accountId, now) > 0
-  )
+  if (own?.choice === 'on' && activeMiraRoomLeases(next, accountId, now) > 0)
     return {
       ...next,
       miraRoom: {

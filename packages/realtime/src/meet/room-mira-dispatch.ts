@@ -187,7 +187,10 @@ export function guardMeetTranscriptAllow(
     input && typeof input === 'object'
       ? (input as { action?: unknown; choice?: unknown })
       : {};
-  if (record.action !== 'transcript.consent.choice' || record.choice !== 'allow')
+  if (
+    record.action !== 'transcript.consent.choice' ||
+    record.choice !== 'allow'
+  )
     return null;
   const accountId = token.accountId ?? token.userId;
   return isCurrentMiraRoomOn(
