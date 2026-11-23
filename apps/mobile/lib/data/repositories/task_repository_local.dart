@@ -31,6 +31,8 @@ extension _TaskRepositoryLocal on TaskRepository {
               forceRefresh: true,
             ),
             allowChallenge: false,
+            // A foreground refresh of the viewed resource, not a bulk download.
+            markBulk: false,
           ).then<void>((_) {}, onError: (Object _) {}),
         );
         return local;
