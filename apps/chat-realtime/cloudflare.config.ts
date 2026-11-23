@@ -14,11 +14,14 @@ export default defineConfig({
     },
     limits: { cpuMs: 50 },
     env: {
-      // Stop fence: "true" rejects every connect and publish and closes open
-      // sockets on their next frame. A secret, so operators flip it with a
+      // Stop fence: "true" rejects every connect and publish, and each room
+      // closes open sockets on their next frame or expiry alarm. A secret, so operators flip it with a
       // secret update instead of a code deploy. Any other value runs.
       CHAT_REALTIME_STOPPED: bindings.secret(),
       CHAT_REALTIME_TOKEN_SECRET: bindings.secret(),
+      // Optional during a rotation: tickets signed with the previous secret
+      // stay valid until it is unset. Signers always use the current secret.
+      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: bindings.secret(),
       INBOX: bindings.durableObject({
         worker: 'tuturuuu-chat-realtime',
         exportName: 'ChatInboxRoom',

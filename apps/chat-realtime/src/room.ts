@@ -29,8 +29,14 @@ function safeClose(ws: WebSocket, code: number, reason: string) {
 }
 
 /**
- * Shared hibernating WebSocket room. Work happens only inside a request or a
- * socket event: no alarms, no outbound fetches and no timers.
+ * Shared hibernating WebSocket room. Work happens inside a request, a socket
+ * event or one expiry alarm; there are no outbound fetches or timers.
+ *
+ * The expiry alarm is the only scheduled wake. It fires at the earliest open
+ * socket's ticket expiry, closes expired sockets (or every socket while the
+ * stop fence is set) and reschedules only while open sockets remain, so an
+ * empty or stopped room schedules nothing further. Idle receive-only sockets
+ * therefore close within one ticket lifetime even if they never send a frame.
  */
 export abstract class ChatRoom extends DurableObject<Env> {
   protected abstract readonly maxSockets: number;
@@ -61,7 +67,7 @@ export abstract class ChatRoom extends DurableObject<Env> {
       ) as ChatRealtimeSubscribeTicket | null;
       if (!ticket || ticket.room !== this.roomKind)
         return json({ error: 'Unauthorized' }, 401);
-      return this.acceptTicket(ticket, url);
+      return await this.acceptTicket(ticket, url);
     }
     return json({ error: 'Not found' }, 404);
   }
@@ -81,7 +87,7 @@ export abstract class ChatRoom extends DurableObject<Env> {
   ) {}
   protected onLeave(_userId: string, _stillConnected: boolean) {}
 
-  private acceptTicket(ticket: ChatRealtimeSubscribeTicket, url: URL) {
+  private async acceptTicket(ticket: ChatRealtimeSubscribeTicket, url: URL) {
     const now = Date.now();
     if (isExpired(ticket, now) || !this.admission.mayConnect(ticket, now)) {
       return json({ error: 'Unauthorized' }, 401);
@@ -107,6 +113,9 @@ export abstract class ChatRoom extends DurableObject<Env> {
       if (oldest) safeClose(oldest, CLOSE.policy, 'replaced');
     }
 
+    // Schedule before accepting: if storage fails, no socket is left without
+    // an expiry wake. An alarm that finds no sockets schedules nothing.
+    await this.scheduleExpiry(ticket.exp * 1000);
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
     this.ctx.acceptWebSocket(server, [ticket.userId]);
@@ -124,6 +133,33 @@ export abstract class ChatRoom extends DurableObject<Env> {
       status: 101,
       webSocket: client,
     });
+  }
+
+  async alarm() {
+    if (isStopped(this.env)) {
+      // Terminal: a stopped room closes everything and schedules nothing.
+      this.closeAll(CLOSE.stopped, 'stopped');
+      return;
+    }
+    const now = Date.now();
+    this.evictExpired(now);
+    let next: number | null = null;
+    for (const ws of this.ctx.getWebSockets()) {
+      if (ws.readyState !== WebSocket.OPEN) continue;
+      const attachment = this.getAttachment(ws);
+      if (!attachment || isExpired(attachment, now)) continue;
+      const at = attachment.exp * 1000;
+      if (next === null || at < next) next = at;
+    }
+    if (next !== null) await this.ctx.storage.setAlarm(next);
+  }
+
+  /** Moves the single expiry alarm earlier; never adds a second wake. */
+  private async scheduleExpiry(atMs: number) {
+    const current = await this.ctx.storage.getAlarm();
+    if (current === null || current > atMs) {
+      await this.ctx.storage.setAlarm(atMs);
+    }
   }
 
   async webSocketMessage(ws: WebSocket, data: string | ArrayBuffer) {

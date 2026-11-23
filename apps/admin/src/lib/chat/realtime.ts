@@ -18,11 +18,8 @@ type ChatRealtimeEventInput = ChatRealtimeEvent extends infer Event
   : never;
 
 function getChatRealtimeTokenSecret() {
-  const secret =
-    process.env.CHAT_REALTIME_TOKEN_SECRET ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY;
+  // A dedicated secret only: a Supabase service key must never sign tokens.
+  const secret = process.env.CHAT_REALTIME_TOKEN_SECRET;
 
   if (secret?.trim()) {
     return secret.trim();
@@ -30,7 +27,7 @@ function getChatRealtimeTokenSecret() {
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'Chat realtime token signing requires CHAT_REALTIME_TOKEN_SECRET or the platform Supabase service secret in production'
+      'Chat realtime token signing requires CHAT_REALTIME_TOKEN_SECRET in production'
     );
   }
 

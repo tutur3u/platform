@@ -34,13 +34,11 @@ function getChatRealtimeTokenSecret() {
   ) {
     return null;
   }
-  const secret =
-    process.env.CHAT_REALTIME_TOKEN_SECRET ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY;
-
-  return secret?.trim() || 'chat-local-development-token-secret';
+  // A dedicated secret only: a Supabase service key must never sign tokens.
+  return (
+    process.env.CHAT_REALTIME_TOKEN_SECRET?.trim() ||
+    'chat-local-development-token-secret'
+  );
 }
 
 export function getChatRealtimeInternalBaseUrl() {

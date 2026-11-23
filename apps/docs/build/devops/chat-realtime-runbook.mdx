@@ -92,15 +92,38 @@ probe above.
    switch. Enable the Web origin only after the staged client and fallback
    behavior pass, including confirmation on mobile.
 
-The Worker runs on ingress and socket events. It schedules no alarms, retry
-queues or crons. Socket counts, frame sizes, frame rates and replay rows are
-bounded as documented in the [Chat realtime contract](/platform/features/chat-realtime#cost-bounds-and-stop-fence).
+The Worker runs on ingress, socket events and one expiry alarm per room. It
+schedules no retry queues or crons. Socket counts, frame sizes, frame rates and
+replay rows are bounded as documented in the [Chat realtime contract](/platform/features/chat-realtime#cost-bounds-and-stop-fence).
 An accepted publish addresses at most two rooms. Each room retains up to 200
 event IDs and ignores a duplicate while that event is retained. Connect
 throttles, revocations and replay survive Worker restarts. Presence broadcasts
-stop after the room budget for the current window. Expiry and revocation
-cleanup run during activity, with zero scheduled wakes. Hosted request volume
-and account cost require monitoring during acceptance.
+stop after the room budget for the current window. Each room keeps a single
+alarm at its earliest open socket's ticket expiry. The alarm closes expired
+sockets, or every socket while the stop fence is set, and reschedules only
+while open sockets remain, so an empty or stopped room has no further wakes.
+Wakes are bounded by accepted connects, which are throttled per user. Hosted
+request volume and account cost require monitoring during acceptance.
+
+### Ticket secret rotation
+
+Signers (`apps/web` and Cron Control) use `CHAT_REALTIME_TOKEN_SECRET`. The
+Worker also accepts tickets signed with the optional
+`CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`, which must be at least 32 characters
+when set.
+
+1. On the Worker, set `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET` to the current
+   secret and `CHAT_REALTIME_TOKEN_SECRET` to the new one.
+2. Update `CHAT_REALTIME_TOKEN_SECRET` on `apps/web` and Cron Control.
+3. After 15 minutes (the longest ticket lifetime), unset
+   `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`.
+
+For a suspected leak, skip the overlap: replace the secret everywhere and
+leave the previous secret unset. Clients re-ticket and reconnect.
+
+The retained Bun sidecar and the Admin and Web development token paths accept
+only `CHAT_REALTIME_TOKEN_SECRET`. They never fall back to a Supabase service
+key.
 
 ## Revocation recovery
 
@@ -122,11 +145,13 @@ tables using Cron Control’s database binding, and publishes body-bound tickets
 to the Chat Worker. Recovery checks the durable job fence and Worker health
 before reading Postgres. One invocation scans completed slots within the
 Worker's 15-minute event window and leaves time for processing and clock skew.
-It takes up to 32 undelivered records newest first, with at most four concurrent
+It takes up to 32 undelivered records oldest first, with at most four concurrent
 publishes. The job ledger retains up to 96 confirmed audit IDs until they age
 out, so later slots can reach older rows and retry failed deliveries. Overflow
 is degraded and does not charge the failure budget. Sustained overflow can
 outlast the event window.
+A record whose actor account was deleted has nobody to notify. Recovery
+records it as handled (`skipped`) without publishing.
 Archive recovery uses at most two membership reads per archive to notify up to
 1,500 members archived in the audit transaction, plus the actor. Cron Control
 dispatches this processor once per slot. The Worker deduplicates by audit ID during replay
@@ -147,8 +172,9 @@ Cron Control and the Web environment require separate deployment acceptance.
 
 - Set the Worker secret `CHAT_REALTIME_STOPPED=true` for an emergency stop.
   `GET /health` must report `stopped: true` and new authenticated upgrades
-  and publishes must return `503`. Send a frame on an existing connection
-  to verify that the room closes it.
+  and publishes must return `503`. Existing sockets close with `4503` on
+  their next frame or at the room's expiry alarm, within one ticket lifetime
+  (at most 15 minutes) even when idle.
 - Unset `CHAT_REALTIME_URL` at `apps/web` to stop Worker ticket minting and
   publishing. Confirm the ticket endpoint returns `enabled: false` and clients
   resume polling. Check that messages sent while stopped appear after refetch.

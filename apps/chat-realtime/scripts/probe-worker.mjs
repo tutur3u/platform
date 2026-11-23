@@ -17,6 +17,9 @@ const worker = await startCfViteWorker({
   secrets: {
     CHAT_REALTIME_STOPPED: 'false',
     CHAT_REALTIME_TOKEN_SECRET: secret,
+    // Disposable: the rotation overlap secret must be set, never signs.
+    CHAT_REALTIME_TOKEN_PREVIOUS_SECRET:
+      'local-fixture-only-chat-realtime-previous-000',
   },
 });
 

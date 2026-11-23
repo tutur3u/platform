@@ -61,6 +61,9 @@ export async function startLocalWorker(config) {
       secrets: {
         CHAT_REALTIME_STOPPED: stopped ? 'true' : 'false',
         CHAT_REALTIME_TOKEN_SECRET: config.realtimeSecret,
+        // Disposable: the rotation overlap secret must be set, never signs.
+        CHAT_REALTIME_TOKEN_PREVIOUS_SECRET:
+          'local-fixture-only-chat-realtime-previous-000',
       },
     });
     relay.point(Number(new URL(worker.origin).port));

@@ -181,20 +181,21 @@ it.each([false, true])(
     const published: string[] = [];
     const oldest = rows.at(-1)?.id;
     const newest = rows[0]?.id;
+    const ascending = [...rows].reverse();
     let failedOnce = false;
     const h = harness((url, init) => {
       if (url.pathname === '/health')
         return Response.json({ ok: true, stopped: false });
       if (url.pathname === '/rest/v1/chat_audit_events') {
-        expect(url.searchParams.get('order')).toBe('created_at.desc,id.desc');
+        expect(url.searchParams.get('order')).toBe('created_at.asc,id.asc');
         const delivered =
           url.searchParams.get('id')?.slice(8, -1).split(',') ?? [];
-        const remaining = rows.filter(({ id }) => !delivered.includes(id));
+        const remaining = ascending.filter(({ id }) => !delivered.includes(id));
         return Response.json(remaining.slice(0, 33));
       }
       const { id } = JSON.parse(String(init?.body));
       published.push(id);
-      if (partialFailure && id === newest && !failedOnce) {
+      if (partialFailure && id === oldest && !failedOnce) {
         failedOnce = true;
         return new Response(null, { status: 503 });
       }
@@ -208,8 +209,8 @@ it.each([false, true])(
     ]);
     const status = (await h.deps.ledger().status())[job];
     expect(status.consecutiveFailures).toBe(partialFailure ? 1 : 0);
-    expect(published).toContain(newest);
-    expect(published).not.toContain(oldest);
+    expect(published).toContain(oldest);
+    expect(published).not.toContain(newest);
     h.restart();
     expect(await h.run(job, 1)).toMatchObject([
       {
@@ -219,9 +220,31 @@ it.each([false, true])(
     ]);
     expect(published.slice(32).sort()).toEqual(
       (partialFailure
-        ? [newest, rows[32].id, oldest]
-        : [rows[32].id, oldest]
+        ? [oldest, rows[1].id, newest]
+        : [rows[1].id, newest]
       ).sort()
     );
   }
 );
+
+it('records an audit row whose actor was deleted without publishing it', async () => {
+  const published: string[] = [];
+  const orphan = { ...auditRows(1)[0], actor_id: null };
+  const h = harness((url, init) => {
+    if (url.pathname === '/health')
+      return Response.json({ ok: true, stopped: false });
+    if (url.pathname === '/rest/v1/chat_audit_events') {
+      const delivered = url.searchParams.get('id');
+      return Response.json(delivered ? [] : [orphan]);
+    }
+    published.push(JSON.parse(String(init?.body)).id);
+    return Response.json({ ok: true });
+  });
+  expect(await h.run()).toMatchObject([
+    { outcome: 'ok', detail: { delivered: 0, failed: 0, skipped: 1 } },
+  ]);
+  expect(await h.run(job, 1)).toMatchObject([
+    { outcome: 'ok', detail: { delivered: 0, skipped: 0 } },
+  ]);
+  expect(published).toEqual([]);
+});

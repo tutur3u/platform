@@ -75,5 +75,10 @@ export const GET = withSessionAuth<RouteParams>(
       return NextResponse.json({ enabled: false }, { headers: privateHeaders });
     }
   },
-  { allowAppSessionAuth: true, rateLimitKind: 'read' }
+  {
+    allowAppSessionAuth: true,
+    // Each ticket admits Worker connects, so minting is bounded per user.
+    rateLimit: { maxRequests: 60, windowMs: 60_000 },
+    rateLimitKind: 'read',
+  }
 );

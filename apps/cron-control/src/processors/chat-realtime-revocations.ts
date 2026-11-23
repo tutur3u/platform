@@ -115,7 +115,7 @@ export async function recoverChatRevocations(
     ...supplied,
     deadline: Math.min(supplied.deadline, now + RECOVERY_DEADLINE_MS),
   };
-  const detail = { capped: 0, delivered: 0, failed: 0 };
+  const detail = { capped: 0, delivered: 0, failed: 0, skipped: 0 };
   const fence = () => withinDeadline(context, context.fence);
   if (!(await fence())) return { detail, outcome: 'stopped' };
   const health = await requestJson(
@@ -161,7 +161,9 @@ export async function recoverChatRevocations(
     ['event_type', 'eq.conversation.deleted'],
     ['created_at', `gte.${lowerBound}`],
     ['created_at', `lt.${new Date(slot).toISOString()}`],
-    ['order', 'created_at.desc,id.desc'],
+    // Oldest first, so a burst of newer records cannot push older pending
+    // ones out of the event window before they are attempted.
+    ['order', 'created_at.asc,id.asc'],
     ['limit', String(BATCH_SIZE + 1)],
   ]).toString();
   if (cursor.length)
@@ -199,6 +201,11 @@ export async function recoverChatRevocations(
       rows
         .slice(start, Math.min(start + CONCURRENCY, BATCH_SIZE))
         .map(async (row) => {
+          // The actor's account is gone, so there is no user to notify and no
+          // revocation to send. Record the row as handled instead of failing
+          // every slot until it ages out.
+          if (!row.actor_id)
+            return { createdAt: row.created_at, id: row.id, skipped: true };
           const audience = await archiveAudience(context, database, row);
           if (audience === null) return false;
           const event = toChatRevocationEvent(row, audience);
@@ -229,15 +236,19 @@ export async function recoverChatRevocations(
             response.ok !== true
           )
             throw new Error('Chat recovery publish unconfirmed');
-          return { id: row.id, createdAt: row.created_at };
+          return { createdAt: row.created_at, id: row.id, skipped: false };
         })
     );
     let stopped = false;
     for (const result of results) {
       if (result.status === 'rejected') detail.failed += 1;
       else if (result.value) {
-        detail.delivered += 1;
-        cursor.push(result.value);
+        if (result.value.skipped) detail.skipped += 1;
+        else detail.delivered += 1;
+        cursor.push({
+          createdAt: result.value.createdAt,
+          id: result.value.id,
+        });
       } else stopped = true;
     }
     if (stopped) return finish('stopped');

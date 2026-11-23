@@ -56,10 +56,11 @@ tickets last up to five minutes. Conversation tickets also bind
 `conversationId` and last up to 15 minutes. The client offers the ticket in
 `Sec-WebSocket-Protocol` and keeps it out of the URL.
 
-The Worker requires a dedicated `CHAT_REALTIME_TOKEN_SECRET`; the Supabase
-service key fallback is local-only and is never given to Cloudflare. Rooms enforce expiry on the next socket or room event and close expired
-sockets with code `4001`. An idle socket can stay open after expiry until
-activity resumes. A new ticket requires a fresh authorization check.
+Every signer and verifier requires a dedicated `CHAT_REALTIME_TOKEN_SECRET`
+and never falls back to a Supabase service key. Rooms close expired sockets
+with code `4001` on the next socket or room event, or at the room's expiry
+alarm, so an idle socket closes when its ticket expires. A new ticket
+requires a fresh authorization check.
 When a conversation member is removed, `apps/web` publishes `member.removed`
 and the room closes that user’s sockets. A short-lived SQLite record also
 blocks reconnections with tickets issued before the removal, including the
@@ -99,8 +100,10 @@ conversations push only for direct mentions.
 
 ### Cost bounds and stop fence
 
-The Worker does work only when a request arrives. It has no alarms, cron
-triggers, queues or outbound fetches, so nothing can reschedule itself.
+The Worker does work when a request arrives and at one expiry alarm per room.
+It has no cron triggers, queues or outbound fetches. The alarm closes sockets
+whose ticket expired and reschedules only while open sockets remain, so an
+empty or stopped room never wakes again.
 
 | Bound | Value |
 | --- | --- |
@@ -108,6 +111,7 @@ triggers, queues or outbound fetches, so nothing can reschedule itself.
 | Client frames per socket | 20 per 10 s (typing, presence, read); excess closes with `1008` |
 | Sockets per user per room | 5; the oldest is closed |
 | Accepted connection attempts per user per room | 10 per minute |
+| Ticket requests per user (Web) | 60 per minute |
 | Presence and typing broadcasts per room | 20 per 10 s |
 | Sockets per room | 500 per conversation, 5,000 per workspace inbox |
 | Publish body | 64 KB, one event per request |
@@ -115,7 +119,8 @@ triggers, queues or outbound fetches, so nothing can reschedule itself.
 
 Two independent fences stop realtime delivery. Setting the Worker secret
 `CHAT_REALTIME_STOPPED=true` rejects upgrades and publishes with `503`. A room
-closes existing sockets on their next inbound frame. Removing `CHAT_REALTIME_URL` from `apps/web` stops
+closes existing sockets with `4503` on their next inbound frame or at its
+expiry alarm, so idle sockets close within one ticket lifetime. Removing `CHAT_REALTIME_URL` from `apps/web` stops
 both minting and publishing. Either fence alone returns clients to polling with
 no data loss. Regression tests cover both.
 

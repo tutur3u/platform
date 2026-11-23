@@ -6,10 +6,15 @@ type ChatRealtimeTokenPayloadInput = z.input<
   typeof chatRealtimeTokenPayloadSchema
 >;
 
+const SECRET_MIN_LENGTH = 32;
+const BASE64URL = /^[A-Za-z0-9_-]+$/u;
+
 function getSecret(secret?: string) {
   const resolvedSecret = secret?.trim();
-  if (!resolvedSecret) {
-    throw new Error('Chat realtime token signing requires a secret');
+  if (!resolvedSecret || resolvedSecret.length < SECRET_MIN_LENGTH) {
+    throw new Error(
+      `Chat realtime token signing requires a secret of at least ${SECRET_MIN_LENGTH} characters`
+    );
   }
 
   return resolvedSecret;
@@ -46,8 +51,15 @@ export function verifyChatRealtimeToken(
   secret?: string,
   nowMs = Date.now()
 ) {
-  const [encodedPayload, signature] = token.split('.');
-  if (!encodedPayload || !signature) {
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [encodedPayload, signature] = parts;
+  if (
+    !encodedPayload ||
+    !signature ||
+    !BASE64URL.test(encodedPayload) ||
+    !BASE64URL.test(signature)
+  ) {
     return null;
   }
 

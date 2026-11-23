@@ -52,6 +52,7 @@ jobs:
             and .exports.ChatInboxRoom.storage == "sqlite"
             and .exports.ChatConversationRoom.storage == "sqlite"
             and .env.CHAT_REALTIME_TOKEN_SECRET.type == "secret"
+            and .env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET.type == "secret"
             and .env.CHAT_REALTIME_STOPPED.type == "secret"' \
             workers/default/worker.config.json
           jq -e '.buildContext.isPreview == false' config.json

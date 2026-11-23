@@ -16,6 +16,7 @@ import {
 } from './runtime-client.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
+const PREVIOUS_SECRET = 'runtime-fixture-only-chat-realtime-previous-000';
 let server;
 const conversationTicket = (userId, extra = {}) =>
   subscribeTicket({
@@ -32,6 +33,7 @@ before(async () => {
     secrets: {
       CHAT_REALTIME_STOPPED: 'false',
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
+      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: PREVIOUS_SECRET,
     },
   });
 });
@@ -484,6 +486,7 @@ test('a live workerd room closes its existing socket when stopped', async () => 
     secrets: {
       CHAT_REALTIME_STOPPED: 'false',
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
+      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: PREVIOUS_SECRET,
     },
   });
   const client = await openSocket(
@@ -498,6 +501,45 @@ test('a live workerd room closes its existing socket when stopped', async () => 
   assert.equal((await client.closed).code, 4503);
 });
 
+// The bounded wait is on the server frame the alarm sends before closing;
+// local workerd can take ~10 s to deliver the close handshake that follows.
+const ALARM_FRAME_MS = 10_000;
+
+const silentConversation = (index) =>
+  `00000000-0000-4000-8000-0000000000c${index}`;
+
+test('an idle socket closes at its ticket expiry without sending', async () => {
+  const conversationId = silentConversation(2);
+  const now = Math.floor(Date.now() / 1000);
+  const client = await openSocket(
+    server.origin,
+    await conversationTicket(ALICE, { conversationId, exp: now + 2, iat: now })
+  );
+  await client.next((frame) => frame.t === 'expired', ALARM_FRAME_MS);
+  assert.equal((await client.closed).code, 4001);
+});
+
+test('a stopped room closes idle sockets at its expiry alarm', async () => {
+  const conversationId = silentConversation(3);
+  const now = Math.floor(Date.now() / 1000);
+  const longLived = await openSocket(
+    server.origin,
+    await conversationTicket(ALICE, { conversationId })
+  );
+  const shortLived = await openSocket(
+    server.origin,
+    await conversationTicket(BOB, { conversationId, exp: now + 2, iat: now })
+  );
+  const endpoint =
+    '/fixture/arm-stop?room=' + encodeURIComponent(`${WS}:${conversationId}`);
+  assert.equal((await server.fetch(endpoint)).status, 204);
+  // Neither socket sends: the alarm alone must close both.
+  await longLived.next((frame) => frame.t === 'stopped', ALARM_FRAME_MS);
+  await shortLived.next((frame) => frame.t === 'stopped', ALARM_FRAME_MS);
+  assert.equal((await longLived.closed).code, 4503);
+  assert.equal((await shortLived.closed).code, 4503);
+});
+
 test('the Worker stop fence rejects new connects and publishes', async () => {
   await server.close();
   server = await startCfViteWorker({
@@ -506,6 +548,7 @@ test('the Worker stop fence rejects new connects and publishes', async () => {
     secrets: {
       CHAT_REALTIME_STOPPED: 'true',
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
+      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: PREVIOUS_SECRET,
     },
   });
   assert.deepEqual(await (await server.fetch('/health')).json(), {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type ChatRealtimeTicket,
   chatRealtimeBodyDigest,
+  chatRealtimeDigestsEqual,
   signChatRealtimeTicket,
   verifyChatRealtimeTicket,
 } from './ticket';
@@ -120,5 +121,46 @@ describe('chat realtime tickets', () => {
       SECRET
     );
     expect(await verifyChatRealtimeTicket(legacy, SECRET, NOW)).toBeNull();
+  });
+
+  it('verifies the previous secret during a rotation', async () => {
+    const previous = `${SECRET}-previous`;
+    const oldToken = await signChatRealtimeTicket(inbox(), previous);
+    const newToken = await signChatRealtimeTicket(inbox(), SECRET);
+    for (const token of [oldToken, newToken]) {
+      expect(
+        await verifyChatRealtimeTicket(token, [SECRET, previous], NOW)
+      ).toEqual(inbox());
+    }
+    expect(
+      await verifyChatRealtimeTicket(oldToken, [SECRET, undefined], NOW)
+    ).toBeNull();
+    await expect(
+      verifyChatRealtimeTicket(newToken, [SECRET, 'short'], NOW)
+    ).rejects.toThrow(/at least/u);
+    await expect(
+      verifyChatRealtimeTicket(newToken, [undefined, SECRET], NOW)
+    ).rejects.toThrow(/at least/u);
+  });
+
+  it('rejects non-canonical signature encodings', async () => {
+    const token = await signChatRealtimeTicket(inbox(), SECRET);
+    const [payload, signature] = token.split('.') as [string, string];
+    const alphabet =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const last = alphabet.indexOf(signature.at(-1) ?? '');
+    const variant = `${signature.slice(0, -1)}${alphabet[last + 1]}`;
+    expect(
+      await verifyChatRealtimeTicket(`${payload}.${variant}`, SECRET, NOW)
+    ).toBeNull();
+  });
+
+  it('compares body digests by value', async () => {
+    const digest = await chatRealtimeBodyDigest('{"a":1}');
+    expect(chatRealtimeDigestsEqual(digest, digest)).toBe(true);
+    expect(
+      chatRealtimeDigestsEqual(digest, await chatRealtimeBodyDigest('{"a":2}'))
+    ).toBe(false);
+    expect(chatRealtimeDigestsEqual(digest, 'short')).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import { chatRealtimeEventSchema } from '@tuturuuu/realtime/chat';
 import {
   CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS,
   chatRealtimeBodyDigest,
+  chatRealtimeDigestsEqual,
   verifyChatRealtimeTicket,
 } from '@tuturuuu/realtime/chat/ticket';
 import {
@@ -26,7 +27,10 @@ function room(namespace: DurableObjectNamespace, name: string) {
 
 async function verify(token: string | null, env: Env) {
   if (!token) return null;
-  return verifyChatRealtimeTicket(token, env.CHAT_REALTIME_TOKEN_SECRET);
+  return verifyChatRealtimeTicket(token, [
+    env.CHAT_REALTIME_TOKEN_SECRET,
+    env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET,
+  ]);
 }
 
 async function connect(request: Request, env: Env, url: URL) {
@@ -88,7 +92,12 @@ async function publish(request: Request, env: Env) {
   } catch {
     return json({ error: 'Payload too large' }, 413);
   }
-  if ((await chatRealtimeBodyDigest(body)) !== ticket.bodySha256) {
+  if (
+    !chatRealtimeDigestsEqual(
+      await chatRealtimeBodyDigest(body),
+      ticket.bodySha256
+    )
+  ) {
     return json({ error: 'Unauthorized' }, 401);
   }
 

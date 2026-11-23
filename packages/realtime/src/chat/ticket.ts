@@ -16,6 +16,8 @@ export const CHAT_REALTIME_TICKET_MAX_LENGTH = 4096;
 export const CHAT_REALTIME_SECRET_MIN_LENGTH = 32;
 export const CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS = 30;
 const SIGNATURE_DOMAIN = 'tuturuuu.chat-realtime.ticket.v1.';
+/** 32-byte HMAC as unpadded base64url whose last character has no spare bits. */
+const CANONICAL_SIGNATURE = /^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/u;
 
 const uuid = z.string().uuid();
 const epochSeconds = z.number().int().positive();
@@ -151,30 +153,50 @@ export async function signChatRealtimeTicket(
   return `${encoded}.${toBase64Url(new Uint8Array(signature))}`;
 }
 
+function verificationSecrets(
+  secrets: string | undefined | readonly (string | undefined)[]
+) {
+  const [current, ...previous] = Array.isArray(secrets) ? secrets : [secrets];
+  const keys = [requireSecret(current)];
+  for (const candidate of previous) {
+    // An unset previous secret is the steady state; a set one must be strong.
+    if (candidate?.trim()) keys.push(requireSecret(candidate));
+  }
+  return keys;
+}
+
 /**
  * Returns the verified ticket, or null for any malformed, forged, expired or
  * over-long ticket. Throws only when the verifier itself is misconfigured.
+ *
+ * `secrets` is the current secret, optionally followed by previous secrets
+ * that stay valid during a rotation. Signers always use the current secret.
  */
 export async function verifyChatRealtimeTicket(
   token: string,
-  secret: string | undefined,
+  secrets: string | undefined | readonly (string | undefined)[],
   nowMs = Date.now()
 ): Promise<ChatRealtimeTicket | null> {
-  const key = await hmacKey(requireSecret(secret), 'verify');
+  const keys = await Promise.all(
+    verificationSecrets(secrets).map((secret) => hmacKey(secret, 'verify'))
+  );
   if (!token || token.length > CHAT_REALTIME_TICKET_MAX_LENGTH) return null;
   const parts = token.split('.');
   if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
   const [encoded, signature] = parts as [string, string];
+  if (!CANONICAL_SIGNATURE.test(signature)) return null;
   const signatureBytes = fromBase64Url(signature);
   const payloadBytes = fromBase64Url(encoded);
   if (!signatureBytes || !payloadBytes) return null;
 
-  const valid = await crypto.subtle.verify(
-    'HMAC',
-    key,
-    signatureBytes,
-    encoder.encode(SIGNATURE_DOMAIN + encoded)
-  );
+  const signed = encoder.encode(SIGNATURE_DOMAIN + encoded);
+  let valid = false;
+  // Check every key so timing does not reveal which key matched.
+  for (const key of keys) {
+    if (await crypto.subtle.verify('HMAC', key, signatureBytes, signed)) {
+      valid = true;
+    }
+  }
   if (!valid) return null;
 
   let payload: unknown;
@@ -188,4 +210,15 @@ export async function verifyChatRealtimeTicket(
   return withinLifetime(parsed.data, Math.floor(nowMs / 1000))
     ? parsed.data
     : null;
+}
+
+/** Constant-time comparison of two base64url SHA-256 digests. */
+export function chatRealtimeDigestsEqual(left: string, right: string) {
+  const a = fromBase64Url(left);
+  const b = fromBase64Url(right);
+  if (!a || !b || a.length !== 32 || b.length !== 32) return false;
+  let diff = 0;
+  for (let index = 0; index < 32; index += 1)
+    diff |= (a[index] ?? 0) ^ (b[index] ?? 0);
+  return diff === 0;
 }
