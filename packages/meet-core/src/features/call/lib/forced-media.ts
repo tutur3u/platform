@@ -17,9 +17,10 @@ export function applyForcedMute(
       for (const track of local?.getAudioTracks() ?? []) track.enabled = false;
     }
     if (kind === 'video') {
+      // Stopping (not just disabling) releases the camera device.
       disableEffects();
       next.videoEnabled = false;
-      for (const track of local?.getVideoTracks() ?? []) track.enabled = false;
+      for (const track of local?.getVideoTracks() ?? []) track.stop();
     }
     if (kind === 'screen_audio')
       for (const track of screen?.getAudioTracks() ?? []) track.stop();

@@ -45,6 +45,12 @@ export type {
   MeetRoomController,
   UseMeetRoomOptions,
 } from '../lib/room-controller';
+import { useLockedMediaRelease } from './use-locked-media-release';
+import { releaseIdleVideoTrack } from '../lib/idle-video-track';
+import {
+  settleCameraState,
+  stopLockedPreviewTracks,
+} from '../lib/camera-release';
 import { applyForcedMute } from '../lib/forced-media';
 import {
   diffLocalTracks,
@@ -125,6 +131,7 @@ export function useMeetRoom({
   const publishEpoch = useRef(0);
   const resetPublisher = useCallback((recover = false) => {
     publishEpoch.current++;
+    releaseIdleVideoTrack();
     publishPcRef.current?.close();
     publishPcRef.current = null;
     publishSessionRef.current = null;
@@ -196,7 +203,7 @@ export function useMeetRoom({
             message.kinds,
             localStreamRef.current,
             screenStreamRef.current,
-            () => effects.setEnabled(false)
+            () => effects.dispose()
           );
           if (message.kinds.includes('screen')) {
             setScreenStream(null);
@@ -543,7 +550,15 @@ export function useMeetRoom({
         if (activeRef.current) {
           for (const track of localStreamRef.current?.getAudioTracks() ?? [])
             track.enabled = restored.audioEnabled;
-          effects.setEnabled(restored.videoEnabled);
+          const settled = settleCameraState(
+            restored.videoEnabled,
+            localStreamRef.current,
+            effects
+          );
+          if (settled) {
+            localStreamRef.current = settled;
+            setLocalStream(settled);
+          }
           publishPresence(restored);
           resetPublisher(true);
         }
@@ -579,29 +594,14 @@ export function useMeetRoom({
     if (state.presenceNeedsResync && connectionStatus === 'open')
       signalingRef.current?.send({ type: 'presence.resync' });
   }, [connectionStatus, state.presenceNeedsResync]);
-  useEffect(() => {
-    if (locks.audio) {
-      localControls.cancelPendingMicrophone();
-      for (const track of localStreamRef.current?.getAudioTracks() ?? [])
-        track.stop();
-    }
-    if (locks.video) {
-      for (const track of localStreamRef.current?.getVideoTracks() ?? [])
-        track.stop();
-      effects.dispose();
-    }
-    if (locks.audio || locks.video || locks.screen)
-      void applyMedia({ ...mediaRef.current }, localStreamRef.current).catch(
-        () => undefined
-      );
-  }, [
-    applyMedia,
+  useLockedMediaRelease({
+    locks,
     effects,
-    localControls,
-    locks.audio,
-    locks.video,
-    locks.screen,
-  ]);
+    cancelPendingMicrophone: localControls.cancelPendingMicrophone,
+    localStreamRef,
+    mediaRef,
+    applyMedia,
+  });
   const sharingUsers = Object.values(state.participants)
     .filter((entry) => entry.media.screenEnabled)
     .map((entry) => entry.userId)
@@ -643,11 +643,7 @@ export function useMeetRoom({
         for (const track of stream?.getTracks() ?? []) track.stop();
         return;
       }
-      const { audio, video } = localMediaLocks(stateRef.current);
-      if (audio)
-        for (const track of stream?.getAudioTracks() ?? []) track.stop();
-      if (video)
-        for (const track of stream?.getVideoTracks() ?? []) track.stop();
+      stopLockedPreviewTracks(stream, localMediaLocks(stateRef.current));
       await adoptPreview(stream);
     },
     leave,

@@ -6,6 +6,7 @@ import {
   NativeAudioProcessing,
 } from './audio-processing';
 import type { CameraEffects } from './camera-effects';
+import { releaseCameraTracks } from './camera-release';
 import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
 type Ref<T> = { current: T };
@@ -185,8 +186,27 @@ export function createLocalMediaControls({
     });
   };
 
+  /** Camera off releases the device instead of blanking frames. */
+  const turnCameraOff = async () => {
+    const stream = releaseCameraTracks(localStreamRef.current, effects);
+    localStreamRef.current = stream;
+    setLocalStream(stream);
+    try {
+      await applyMedia({ ...mediaRef.current, videoEnabled: false }, stream);
+    } catch (error) {
+      // A failed publish must not restore "camera on" without a capture.
+      if (mediaRef.current.videoEnabled)
+        await applyMedia(
+          { ...mediaRef.current, videoEnabled: false },
+          stream
+        ).catch(() => undefined);
+      throw error;
+    }
+  };
+
   const toggleCamera = async () => {
     if (!canCapture()) return;
+    if (mediaRef.current.videoEnabled) return turnCameraOff();
     let stream = localStreamRef.current;
     if (
       !stream?.getVideoTracks().some((track) => track.readyState === 'live')
@@ -227,14 +247,9 @@ export function createLocalMediaControls({
       localStreamRef.current = stream;
       setLocalStream(stream);
     }
-    effects.setEnabled(!mediaRef.current.videoEnabled);
-    for (const track of stream.getVideoTracks()) {
-      track.enabled = !mediaRef.current.videoEnabled;
-    }
-    await applyMedia(
-      { ...mediaRef.current, videoEnabled: !mediaRef.current.videoEnabled },
-      stream
-    );
+    effects.setEnabled(true);
+    for (const track of stream.getVideoTracks()) track.enabled = true;
+    await applyMedia({ ...mediaRef.current, videoEnabled: true }, stream);
   };
 
   const toggleScreenShare = async () => {
