@@ -180,7 +180,7 @@ async function create(options: QaCliOptions, deps: QaCliDeps) {
             `Failed ${result.failed.length} (cleanup: ${result.failed.map((f) => f.cleanup).join(', ')}):`,
             ...result.failed.map(
               (f) =>
-                `  ${f.email}  ${f.userId}${f.stage ? `  step: ${f.stage}` : ''}`
+                `  ${f.email}  ${f.userId}${f.stage ? `  step: ${f.stage}` : ''}${f.code ? `  code: ${f.code}` : ''}`
             ),
           ]
         : []),

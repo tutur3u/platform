@@ -237,6 +237,7 @@ describe('qa users', () => {
               userId: USER,
               email: EMAIL,
               stage: 'activate',
+              code: '40001',
               cleanup: 'pending',
             },
           ],
@@ -257,7 +258,7 @@ describe('qa users', () => {
       )
     ).rejects.toThrow(`No QA accounts were created in run ${created.runId}`);
     const text = out.join('');
-    expect(text).toContain('step: activate');
+    expect(text).toContain('step: activate  code: 40001');
     expect(text).toContain('cleanup: pending');
     expectNoSecrets(text);
   });

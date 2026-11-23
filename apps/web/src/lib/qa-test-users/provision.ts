@@ -21,7 +21,10 @@ export async function completeQaOnboarding(
     flow_type: 'personal',
     notifications_enabled: false,
   });
-  if (onboarding.error) throw new Error('Onboarding completion failed');
+  if (onboarding.error)
+    throw Object.assign(new Error('Onboarding completion failed'), {
+      code: onboarding.error.code,
+    });
 }
 
 export interface QaProvisionDeps extends QaDeletionDeps {
@@ -49,11 +52,35 @@ export interface QaProvisionResult {
     email: string;
     /** Fixed-vocabulary step that failed; never an error message. */
     stage: QaProvisionStage;
+    /** Postgres, PostgREST or Auth error code when the step reported one. */
+    code?: string;
     cleanup: string;
   }>;
 }
 
 export type QaProvisionStage = 'auth_create' | 'onboarding' | 'activate';
+
+class QaProvisionStepError extends Error {
+  constructor(
+    message: string,
+    readonly code?: string
+  ) {
+    super(message);
+    this.name = 'QaProvisionStepError';
+  }
+}
+
+/**
+ * A short machine code (Postgres/PostgREST SQLSTATE, Auth error code or HTTP
+ * status) that identifies why a step failed. Messages are never returned, as
+ * they can carry row data.
+ */
+function failureCode(error: unknown): string | undefined {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === 'string' && /^[A-Za-z0-9_]{1,32}$/.test(code)
+    ? code
+    : undefined;
+}
 
 /**
  * Reserves addresses in the ledger, creates each Auth account with the
@@ -111,18 +138,25 @@ export async function createQaUsers(
         app_metadata: marker,
       });
       if (created.error || created.data.user?.id !== user.userId)
-        throw new Error('Auth account creation failed');
+        throw new QaProvisionStepError(
+          'Auth account creation failed',
+          created.error?.code ??
+            (created.error?.status ? `http_${created.error.status}` : undefined)
+        );
       stage = 'onboarding';
       await completeQaOnboarding(deps.admin, user.userId);
       stage = 'activate';
       const activated = await deps.store.activate(user.userId, operatorUserId);
-      if (!activated) throw new Error('Activation refused');
+      if (!activated)
+        throw new QaProvisionStepError('Activation refused', 'refused');
       result.runWorkspaceId ??= activated.runWorkspaceId;
       result.users.push({ ...user, password });
     } catch (error) {
+      const code = failureCode(error);
       console.error('QA test account provisioning failed', {
         errorType: error instanceof Error ? error.name : 'unknown',
         stage,
+        code: code ?? null,
         userId: user.userId,
       });
       const cleanup = await deleteQaUser(
@@ -135,6 +169,7 @@ export async function createQaUsers(
         userId: user.userId,
         email: user.email,
         stage,
+        ...(code ? { code } : {}),
         cleanup,
       });
     }

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { deleteQaUser, deleteQaUsers, type QaDeletionDeps } from './deletion';
 import { createQaUsersSchema } from './policy';
 import { createQaUsers, type QaProvisionDeps } from './provision';
-import type { QaStore } from './store';
+import { QaStoreError, type QaStore } from './store';
 
 const operator = '11111111-1111-4111-8111-111111111111';
 const id = (n: number) =>
@@ -164,6 +164,55 @@ describe('createQaUsers', () => {
     expect(store.activate).toHaveBeenCalledTimes(3);
   });
 
+  it('reports the activation step and its database error code', async () => {
+    const store = fakeStore({ reserve: reserve(1) });
+    store.activate = vi.fn(async () => {
+      throw new QaStoreError('QA test user ledger unavailable', 503, '40001');
+    });
+    const { deps } = provisionDeps(store);
+    const result = await createQaUsers(
+      deps,
+      operator,
+      createQaUsersSchema.parse({
+        count: 1,
+        purpose: 'meet-rehearsal',
+        ttlSeconds: 3600,
+        tier: 'pro',
+        workspace: true,
+      })
+    );
+    expect(result.users).toEqual([]);
+    expect(result.failed).toEqual([
+      {
+        userId: id(1),
+        email: 'qa+abcd1234-1@tutur3u.com',
+        stage: 'activate',
+        code: '40001',
+        cleanup: 'deleted',
+      },
+    ]);
+  });
+
+  it('never returns an error message as the failure code', async () => {
+    const store = fakeStore({ reserve: reserve(1) });
+    store.activate = vi.fn(async () => {
+      throw Object.assign(new Error('row (a@b.c) violates check'), {
+        code: 'row (a@b.c) violates check',
+      });
+    });
+    const { deps } = provisionDeps(store);
+    const result = await createQaUsers(
+      deps,
+      operator,
+      createQaUsersSchema.parse({
+        count: 1,
+        purpose: 'meet-rehearsal',
+        ttlSeconds: 3600,
+      })
+    );
+    expect(result.failed[0]).not.toHaveProperty('code');
+  });
+
   it('rolls a failed account back through the marker-checked delete', async () => {
     const store = fakeStore({ reserve: reserve(2) });
     const createUser = vi.fn();
@@ -183,6 +232,7 @@ describe('createQaUsers', () => {
         userId: id(1),
         email: 'qa+abcd1234-1@tutur3u.com',
         stage: 'auth_create',
+        code: 'unexpected_failure',
         cleanup: 'deleted',
       },
     ]);

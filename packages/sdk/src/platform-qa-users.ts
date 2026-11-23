@@ -54,6 +54,8 @@ export interface CreateQaUsersResult {
     email: string;
     /** Which step failed: auth_create, onboarding or activate. */
     stage?: string;
+    /** Postgres, PostgREST or Auth error code, when reported. */
+    code?: string;
     cleanup: string;
   }>;
 }
