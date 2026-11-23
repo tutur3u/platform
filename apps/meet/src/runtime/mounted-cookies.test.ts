@@ -16,4 +16,8 @@ describe('mountedMeetCookieHeader', () => {
     expect(header).not.toContain('secret');
     expect(header).toContain('NEXT_LOCALE=en');
   });
+
+  it('returns an empty header when only forbidden cookies were sent', () => {
+    expect(mountedMeetCookieHeader('tuturuuu_app_session=secret')).toBe('');
+  });
 });

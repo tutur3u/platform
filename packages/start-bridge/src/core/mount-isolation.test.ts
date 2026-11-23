@@ -165,6 +165,17 @@ describe('keepFirstLocaleCookie', () => {
     ).toBe('NEXT_LOCALE=vi; a=1; NEXT_LOCALEx');
     expect(keepFirstLocaleCookie(null)).toBeNull();
   });
+
+  it('leaves malformed and empty headers unchanged', () => {
+    expect(keepFirstLocaleCookie('')).toBe('');
+    expect(keepFirstLocaleCookie('  ')).toBe('  ');
+    expect(keepFirstLocaleCookie('NEXT_LOCALE; NEXT_LOCALE')).toBe(
+      'NEXT_LOCALE; NEXT_LOCALE'
+    );
+    expect(keepFirstLocaleCookie(' NEXT_LOCALE =vi;NEXT_LOCALE=en')).toBe(
+      ' NEXT_LOCALE =vi'
+    );
+  });
 });
 
 describe('scopeMountedResponseCookies', () => {
