@@ -1930,6 +1930,36 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/integrations/upskii/introspect",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/integrations/upskii/introspect/route.ts",
+    "sourceSha256": "99969237ac1825c06c56794edc2fc4d370a3f82b360d0bff9b1f991f7dff305d",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/integrations/upskii/link",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/integrations/upskii/link/route.ts",
+    "sourceSha256": "cf024041ce4a9b56e781bb0d58a13093a43d77b81d7363c39270ecab3baf1b74",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/integrations/upskii/unlink",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/integrations/upskii/unlink/route.ts",
+    "sourceSha256": "88b9b018eb1ebef5a2868a6f1769657c4bf152c8ca8b70cd2b6d55d4560d4f85",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/internal/playground-execution/export",
     "sideEffects": "unknown",
     "shadow": "never",

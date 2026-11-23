@@ -1007,6 +1007,21 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/integrations/upskii/introspect"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/integrations/upskii/link"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/integrations/upskii/unlink"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/internal/playground-execution/export"
     },
     {

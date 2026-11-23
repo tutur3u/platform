@@ -3,7 +3,7 @@ import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
-import { integrationsCatalog } from '@tuturuuu/utils/integrations-catalog';
+import { getCatalogIntegrationStatus } from '@tuturuuu/utils/integrations-catalog';
 import { type NextRequest, NextResponse } from 'next/server';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { paceExternalAppExchangeFailure } from '@/lib/external-apps/exchange-rate-limit';
@@ -20,10 +20,7 @@ import {
  * verified staff.
  */
 export function isUpskiiLinkingOpen() {
-  return (
-    integrationsCatalog.find((entry) => entry.id === UPSKII_APP_ID)?.status ===
-    'available'
-  );
+  return getCatalogIntegrationStatus(UPSKII_APP_ID) === 'available';
 }
 
 /**

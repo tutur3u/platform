@@ -141,6 +141,19 @@ export const integrationsCatalog = [
 
 export type CatalogIntegration = (typeof integrationsCatalog)[number];
 
+export type IntegrationStatus = Integration['status'];
+
+/**
+ * The listed status of an integration, typed as every status so callers can
+ * test for any of them; null when the catalog does not list the id.
+ */
+export function getCatalogIntegrationStatus(
+  id: string
+): IntegrationStatus | null {
+  const catalog: readonly Integration[] = integrationsCatalog;
+  return catalog.find((entry) => entry.id === id)?.status ?? null;
+}
+
 export function getVisibleIntegrationStatus(
   status: Integration['status'],
   isVerifiedStaff: boolean

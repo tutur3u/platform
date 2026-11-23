@@ -104,7 +104,7 @@ describe('external app bearer lifetime', () => {
   it('signs the issuance workspace into both access and refresh bearers', () => {
     const workspaceId = '11111111-1111-4111-8111-111111111111';
     const body = issue({ normalizedWorkspaceId: workspaceId });
-    for (const token of [body.accessToken, body.refreshToken]) {
+    for (const token of [body.accessToken, body.refreshToken!]) {
       expect(verifyAppCoordinationToken(token)).toMatchObject({
         ok: true,
         claims: { workspace_id: workspaceId },
@@ -121,8 +121,8 @@ describe('external app bearer lifetime', () => {
         : null;
     };
 
-    expect(read(issue({ refreshFamily: family }).refreshToken)).toBe(family);
-    const fresh = read(issue({}).refreshToken);
+    expect(read(issue({ refreshFamily: family }).refreshToken!)).toBe(family);
+    const fresh = read(issue({}).refreshToken!);
     expect(fresh).toMatch(/^[0-9a-f-]{36}$/u);
     expect(fresh).not.toBe(family);
   });

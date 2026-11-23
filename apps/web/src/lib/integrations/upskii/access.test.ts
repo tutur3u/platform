@@ -9,11 +9,8 @@ vi.mock('@tuturuuu/supabase/next/user', () => ({
   getVerifiedAuthUser: mocks.getVerifiedAuthUser,
 }));
 vi.mock('@tuturuuu/utils/integrations-catalog', () => ({
-  get integrationsCatalog() {
-    return mocks.catalogStatus === null
-      ? []
-      : [{ id: 'upskii', status: mocks.catalogStatus }];
-  },
+  getCatalogIntegrationStatus: (id: string) =>
+    id === 'upskii' ? mocks.catalogStatus : null,
 }));
 
 const { canUserLinkUpskii, readBasicAppCredentials } = await import('./access');

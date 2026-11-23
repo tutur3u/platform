@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 890,
+    "total": 892,
     "categories": {
-      "api": 690,
+      "api": 692,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 878 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 880 }
   },
   "routes": [
     {
@@ -2984,6 +2984,30 @@
     {
       "pattern": "/api/v1/integrations/external-chat/widget.js",
       "source": "apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/integrations/upskii/introspect",
+      "source": "apps/web/src/app/api/v1/integrations/upskii/introspect/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/integrations/upskii/link",
+      "source": "apps/web/src/app/api/v1/integrations/upskii/link/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/integrations/upskii/unlink",
+      "source": "apps/web/src/app/api/v1/integrations/upskii/unlink/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getCatalogIntegrationStatus,
   getVisibleIntegrationStatus,
   integrationsCatalog,
   resolveIntegrationDestinationUrl,
@@ -76,5 +77,14 @@ describe('integration destination URLs', () => {
     ).toBe(
       'https://tuturuuu.com/personal?settingsDialog=open&settingsTab=account_integrations'
     );
+  });
+});
+
+describe('catalog status lookup', () => {
+  it('reads a listed status and answers null for an unlisted id', () => {
+    expect(getCatalogIntegrationStatus('upskii')).toBe('early_access');
+    expect(getCatalogIntegrationStatus('gmail')).toBe('early_access');
+    expect(getCatalogIntegrationStatus('google_calendar')).toBe('available');
+    expect(getCatalogIntegrationStatus('not-listed')).toBeNull();
   });
 });
