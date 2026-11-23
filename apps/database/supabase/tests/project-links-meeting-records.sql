@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(45);
+select plan(46);
 
 insert into auth.users (id) values
   ('5e510000-0000-4000-8000-000000000000'),
@@ -77,12 +77,15 @@ select ok(not exists (
   'client roles hold no privilege on the new relations');
 select ok(not exists (
   select 1
-  from unnest(array['anon', 'authenticated']) r(role)
+  from unnest(array['anon', 'authenticated', 'public']) r(role)
   cross join unnest(array['private.validate_task_project_link()',
     'private.validate_meeting_task_link()', 'private.validate_meeting_record_item()',
     'private.delete_project_links_for_entity()']) f(fn)
   where has_function_privilege(r.role, f.fn, 'EXECUTE')),
   'client roles cannot execute the private trigger functions');
+select ok(not has_schema_privilege('anon', 'private', 'USAGE')
+  and not has_schema_privilege('authenticated', 'private', 'USAGE'),
+  'client roles cannot use the private schema');
 select ok((select bool_and(has_table_privilege('service_role', g.rel, g.priv)) from (values
     ('private.task_project_links', 'SELECT'), ('private.task_project_links', 'INSERT'),
     ('private.task_project_links', 'DELETE'), ('private.meeting_task_links', 'SELECT'),

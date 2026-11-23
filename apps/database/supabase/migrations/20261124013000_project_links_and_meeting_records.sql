@@ -24,7 +24,10 @@
 -- The triggers below keep every row inside one workspace for all writers.
 -- Each existence check takes a key-share lock on the referenced row, so a
 -- concurrent delete makes the insert fail with 23503 instead of leaving a
--- dangling link.
+-- dangling link. A meeting task link locks its meeting, then the earlier
+-- meeting, then the task, always in that order. Key-share locks do not
+-- conflict with each other, so concurrent inserts never wait on one another;
+-- a delete of a locked row waits for the inserting transaction to finish.
 
 begin;
 

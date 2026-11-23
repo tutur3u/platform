@@ -154,8 +154,7 @@ export async function carryOverItems(
       onConflict: 'meeting_id,task_id',
       ignoreDuplicates: true,
     });
-  if (error?.code === '23503')
-    throw new MeetingRecordError(404, 'Meeting not found');
+  if (error?.code === '23503') throw new MeetingRecordError(404, 'Not found');
   if (error) throw new MeetingRecordError(500, 'Could not carry items over');
   return { carried: rows.length };
 }

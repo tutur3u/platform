@@ -126,7 +126,7 @@ describe('meeting project links', () => {
     expect(links.insert).not.toHaveBeenCalled();
   });
 
-  it('reports a meeting deleted since the access check as not found', async () => {
+  it('reports a meeting or Project deleted since the checks as not found', async () => {
     const links = query({ data: [], error: null });
     links.insert = vi.fn(async () => ({ error: { code: '23503' } }));
     access(true, {
@@ -139,6 +139,25 @@ describe('meeting project links', () => {
     await expect(
       linkMeetingProject(request({ projectId }), params)
     ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it('unlinks only this meeting in the caller workspace', async () => {
+    const links = query({ data: [], error: null });
+    access(true, { task_project_links: links });
+    await unlinkMeetingProject(request({ projectId }), params);
+    expect(links.delete).toHaveBeenCalled();
+    expect(links.eq).toHaveBeenCalledWith('project_id', projectId);
+    expect(links.eq).toHaveBeenCalledWith('ws_id', wsId);
+    expect(links.eq).toHaveBeenCalledWith('entity_kind', 'meeting');
+    expect(links.eq).toHaveBeenCalledWith('entity_id', meetingId);
+  });
+
+  it('refuses to unlink without both linking rights', async () => {
+    const from = access(false, {});
+    await expect(
+      unlinkMeetingProject(request({ projectId }), params)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(from).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed project id before writing', async () => {

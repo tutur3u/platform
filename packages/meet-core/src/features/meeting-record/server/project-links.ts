@@ -64,9 +64,10 @@ export async function listLinkedProjects(
     .not('archived', 'is', true)
     .not('deleted', 'is', true);
   if (projects.error) throw new MeetingRecordError(500, 'Projects unavailable');
-  const byId = new Map(
-    (projects.data ?? []).map((project: ProjectRow) => [project.id, project])
-  );
+  // The chained filters widen the selected row type, so the selected columns
+  // are restated here.
+  const rows = (projects.data ?? []) as ProjectRow[];
+  const byId = new Map(rows.map((project) => [project.id, project]));
   return ids.flatMap((id: string) => {
     const project = byId.get(id);
     return project ? [toProject(project)] : [];
@@ -144,10 +145,9 @@ export async function linkMeetingProject(
       entity_id: access.meeting.id,
       created_by: access.user.id,
     });
-  // A repeated link is already in the requested state. A meeting deleted
-  // since the access check fails the workspace check.
-  if (error?.code === '23503')
-    throw new MeetingRecordError(404, 'Meeting not found');
+  // A repeated link is already in the requested state. A meeting or Project
+  // deleted since the checks above fails a foreign key or workspace check.
+  if (error?.code === '23503') throw new MeetingRecordError(404, 'Not found');
   if (error && error.code !== '23505')
     throw new MeetingRecordError(500, 'Project link failed');
   return { linked: await listLinkedProjects(access) };

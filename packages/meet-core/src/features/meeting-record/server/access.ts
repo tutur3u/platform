@@ -28,9 +28,9 @@ export type MeetingRecordParams = {
  *
  * Reads need full (MEMBER) workspace membership. Editing the record belongs to
  * the meeting host or a workspace admin, and linking a Project also needs
- * manage_projects. The database policies on task_project_links,
- * meeting_task_links and meeting_record_items state the same rule; this check
- * applies it to the admin client the Meet worker uses.
+ * manage_projects. task_project_links, meeting_task_links and
+ * meeting_record_items are private and reachable only by service_role, with no
+ * RLS policies, so this check is the only enforcement of these rules.
  */
 export async function meetingRecordAccess(
   request: Request,
