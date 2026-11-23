@@ -10,6 +10,7 @@ import {
   fenceMiraRoomRequest,
 } from '../../../packages/realtime/src/meet/room-mira-consent';
 import { MIRA_ROOM_DENIED } from '../../../packages/realtime/src/meet/room-mira-private';
+import { applyMeetTranscriptConsent } from '../../../packages/realtime/src/meet/room-transcript-consent';
 import {
   type RoomServiceResult,
   type RoomServiceState,
@@ -41,6 +42,8 @@ export function roomService(
   if (classroom) return classroom;
   const consent = applyMiraRoomConsent(state, token, input);
   if (consent) return consent;
+  const transcript = applyMeetTranscriptConsent(state, token, input);
+  if (transcript) return transcript;
   return fenceMiraRoomRequest(state, token, input, () =>
     applyRoomService(state, token, input, features, formsEnv)
   );

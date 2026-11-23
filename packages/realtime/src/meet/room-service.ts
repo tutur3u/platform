@@ -57,6 +57,7 @@ import {
   roomAttachmentCommands,
 } from './room-attachments';
 
+import type { MeetTranscriptState } from './room-transcript-consent';
 export type { RoomAttachment } from './room-attachments';
 export type RoomChatMessage = Extract<
   MeetRealtimeServerMessage,
@@ -70,6 +71,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
   breakouts?: RoomBreakouts;
   miraPrivate?: MiraPrivateState;
   miraRoom?: MiraRoomState;
+  transcriptConsent?: MeetTranscriptState;
   programmingMira?: RoomProgrammingMira;
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];

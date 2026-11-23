@@ -303,6 +303,13 @@ export {
   type MiraRoomFence,
   miraRoomFence,
 } from './room-mira-consent';
+export {
+  MEET_TRANSCRIPT_CONSENT_REQUIRED,
+  MEET_TRANSCRIPT_NOTICE_VERSION,
+  type MeetTranscriptConsentView,
+  type MeetTranscriptFence,
+  meetTranscriptFence,
+} from './room-transcript-consent';
 
 export {
   canCloseMeetSubscriptions,

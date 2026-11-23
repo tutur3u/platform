@@ -44,6 +44,8 @@ const apiGuestHumanCheckVerify = () =>
 const apiPolls = () => import('../app/api/meet-call/[meetingId]/polls/route');
 const apiMiraRoom = () =>
   import('../app/api/meet-call/[meetingId]/mira-room/route');
+const apiTranscriptConsent = () =>
+  import('../app/api/meet-call/[meetingId]/transcript-consent/route');
 const apiQuizArena = () =>
   import('../app/api/meet-call/[meetingId]/quiz-arena/route');
 const api13 = () =>
@@ -316,6 +318,23 @@ export const meetEndpoints: Endpoint[] = [
         }),
       POST: async (request, params) =>
         (await apiMiraRoom()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/transcript-consent',
+    methods: {
+      GET: async (request, params) =>
+        (await apiTranscriptConsent()).GET(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      POST: async (request, params) =>
+        (await apiTranscriptConsent()).POST(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),
