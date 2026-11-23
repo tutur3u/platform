@@ -1,8 +1,4 @@
 import type { CloudflareSfuTrack } from '@tuturuuu/realtime/meet';
-import {
-  acquireIdleVideoTrack,
-  releaseIdleVideoTrack,
-} from './idle-video-track';
 import { type LocalTrackPlan, localTrackSource } from './negotiation';
 import { contentHintFor } from './sender-profile';
 import type { SfuTracksResponse } from './sfu-response';
@@ -46,21 +42,8 @@ async function updateSenders({
     const sender = senders.get(plan.trackName);
     const enabled = desired.some((entry) => entry.trackName === plan.trackName);
     const source = localTrackSource(plan.kind, stream, screenStream);
-    // A released camera keeps its SFU publication alive with black frames, so
-    // the next camera-on swaps a fresh track in without renegotiating. Without
-    // an idle track the publication is closed below and republished later.
-    if (plan.kind === 'video' && !enabled && sender) {
-      const idle =
-        source && source.readyState !== 'ended'
-          ? source
-          : acquireIdleVideoTrack();
-      if (idle) {
-        idle.contentHint = contentHintFor(plan.kind);
-        await sender.replaceTrack(idle);
-        remaining.push(plan);
-        continue;
-      }
-    }
+    // A released camera has no live source: its publication is closed at the
+    // SFU below, and camera-on publishes afresh.
     if (
       ((plan.kind === 'screen' || plan.kind === 'screen_audio') && !enabled) ||
       !source ||
@@ -78,7 +61,6 @@ async function updateSenders({
     // Disabled device tracks send silence/black frames, preventing SFU expiry.
     source.contentHint = contentHintFor(plan.kind);
     await sender?.replaceTrack(source);
-    if (plan.kind === 'video') releaseIdleVideoTrack();
     remaining.push(plan);
   }
   return remaining;

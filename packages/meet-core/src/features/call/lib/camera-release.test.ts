@@ -4,6 +4,8 @@ import { adoptCameraPreview } from './adopt-camera-preview';
 import { CameraEffects } from './camera-effects';
 import { applyForcedMute } from './forced-media';
 import { createLocalMediaControls } from './local-media-controls';
+import { diffLocalTracks } from './negotiation';
+import { stopLocalCapture } from './presence-transport';
 import { syncPublishedSenders } from './published-senders';
 
 class FakeTrack {
@@ -49,7 +51,6 @@ function stubCanvasPipeline() {
     getContext: () => ({
       filter: '',
       drawImage: () => undefined,
-      fillRect: () => undefined,
     }),
     captureStream: () => {
       const output = new FakeTrack('video');
@@ -234,38 +235,9 @@ function senderFixture() {
   };
 }
 
-it('keeps the SFU publication fed with black frames while the camera is released', async () => {
-  const { sender, video, closeTrack, base } = senderFixture();
-  const off = await syncPublishedSenders({
-    ...base,
-    published: [video],
-    desired: [],
-    stream: asStream(new FakeStream([new FakeTrack('audio')])),
-  });
-  const idle = vi.mocked(sender.replaceTrack).mock.calls.at(-1)?.[0];
-  // The idle track is a canvas track, never a camera capture.
-  expect(idle).toBe(processedTracks.at(-1));
-  expect(cameraTracks).toHaveLength(0);
-  expect(closeTrack).not.toHaveBeenCalled();
-  expect(off).toEqual([video]);
-
-  const fresh = new FakeTrack('video');
-  const on = await syncPublishedSenders({
-    ...base,
-    published: off,
-    desired: [video],
-    stream: asStream(new FakeStream([fresh])),
-  });
-  expect(sender.replaceTrack).toHaveBeenLastCalledWith(fresh);
-  expect(closeTrack).not.toHaveBeenCalled();
-  expect(on).toEqual([video]);
-  expect((idle as unknown as FakeTrack).readyState).toBe('ended');
-});
-
-it('closes the publication for a later fresh publish when no idle track is available', async () => {
-  vi.stubGlobal('document', undefined);
+it('closes the video publication when the camera is released and publishes afresh on camera-on', async () => {
   const { sender, video, senders, closeTrack, base } = senderFixture();
-  const remaining = await syncPublishedSenders({
+  const afterOff = await syncPublishedSenders({
     ...base,
     published: [video],
     desired: [],
@@ -274,5 +246,145 @@ it('closes the publication for a later fresh publish when no idle track is avail
   expect(closeTrack).toHaveBeenCalledOnce();
   expect(sender.replaceTrack).toHaveBeenCalledWith(null);
   expect(senders.size).toBe(0);
-  expect(remaining).toEqual([]);
+  expect(afterOff).toEqual([]);
+  // Nothing but camera tracks ever reach the sender: no keepalive canvas.
+  expect(cameraTracks).toHaveLength(0);
+  expect(processedTracks).toHaveLength(0);
+  expect(diffLocalTracks(afterOff, [video]).publish).toEqual([video]);
+});
+
+it('republishes after a host video lock is lifted', async () => {
+  const { video, closeTrack, base } = senderFixture();
+  // Lock: the room already retired the publication, so no close is sent, yet
+  // the plan must still leave the published ledger.
+  const locked = await syncPublishedSenders({
+    ...base,
+    published: [video],
+    desired: [],
+    stream: asStream(new FakeStream([new FakeTrack('audio')])),
+    closeTrack: () => Promise.resolve(),
+  });
+  expect(locked).toEqual([]);
+  expect(closeTrack).not.toHaveBeenCalled();
+  // Unlock and camera on: the ledger has no video, so it is published again.
+  const fresh = new FakeTrack('video');
+  const unlocked = await syncPublishedSenders({
+    ...base,
+    published: locked,
+    desired: [video],
+    stream: asStream(new FakeStream([fresh])),
+  });
+  expect(diffLocalTracks(unlocked, [video]).publish).toEqual([video]);
+});
+
+it('ends with one live camera after a quick off/on toggle', async () => {
+  const { controls, localStreamRef, applyMedia, mediaRef } = setup(
+    new CameraEffects()
+  );
+  await controls.toggleCamera();
+  const off = controls.toggleCamera();
+  const on = controls.toggleCamera();
+  await Promise.all([off, on]);
+  expect(mediaRef.current.videoEnabled).toBe(true);
+  expect(cameraTracks.filter((track) => track.readyState === 'live')).toEqual(
+    localStreamRef.current?.getVideoTracks()
+  );
+  expect(localStreamRef.current?.getVideoTracks()).toHaveLength(1);
+  expect(applyMedia.mock.calls.map(([next]) => next.videoEnabled)).toEqual([
+    true,
+    false,
+    true,
+  ]);
+});
+
+it('stops a camera that finishes opening after the user turned it off again', async () => {
+  let open!: (stream: FakeStream) => void;
+  getUserMedia.mockImplementationOnce(
+    () =>
+      new Promise<FakeStream>((resolve) => {
+        open = resolve;
+      })
+  );
+  const { controls, localStreamRef, applyMedia, mediaRef } = setup(
+    new CameraEffects()
+  );
+  const pendingOn = controls.toggleCamera();
+  await Promise.resolve();
+  const off = controls.toggleCamera();
+  const late = new FakeTrack('video');
+  open(new FakeStream([late]));
+  await Promise.all([pendingOn, off]);
+  expect(late.readyState).toBe('ended');
+  expect(mediaRef.current.videoEnabled).toBe(false);
+  expect(localStreamRef.current?.getVideoTracks()).toHaveLength(0);
+  expect(applyMedia.mock.calls.some(([next]) => next.videoEnabled)).toBe(false);
+});
+
+it('a failed camera-off publish cannot undo a newer camera-on', async () => {
+  const { controls, mediaRef, applyMedia } = setup(new CameraEffects());
+  await controls.toggleCamera();
+  applyMedia.mockImplementationOnce(async () => {
+    throw new Error('transport');
+  });
+  const off = controls.toggleCamera();
+  const on = controls.toggleCamera();
+  await expect(off).rejects.toThrow('transport');
+  await on;
+  expect(mediaRef.current.videoEnabled).toBe(true);
+});
+
+it('remembers a device chosen while the camera is off and uses it on camera-on', async () => {
+  const { controls } = setup(new CameraEffects());
+  await controls.toggleCamera();
+  await controls.toggleCamera();
+  getUserMedia.mockClear();
+  await controls.selectDevice('video', 'rear-camera');
+  expect(getUserMedia).not.toHaveBeenCalled();
+  await controls.toggleCamera();
+  expect(getUserMedia.mock.calls[0]?.[0].video).toMatchObject({
+    deviceId: { exact: 'rear-camera' },
+  });
+});
+
+it('stops a device that finishes opening after the camera was turned off', async () => {
+  const { controls, localStreamRef, mediaRef } = setup(new CameraEffects());
+  await controls.toggleCamera();
+  let open!: (stream: FakeStream) => void;
+  getUserMedia.mockImplementationOnce(
+    () =>
+      new Promise<FakeStream>((resolve) => {
+        open = resolve;
+      })
+  );
+  const switching = controls.selectDevice('video', 'rear-camera');
+  await controls.toggleCamera();
+  const late = new FakeTrack('video');
+  open(new FakeStream([late]));
+  await switching;
+  expect(mediaRef.current.videoEnabled).toBe(false);
+  expect(late.readyState).toBe('ended');
+  expect(localStreamRef.current?.getVideoTracks()).toHaveLength(0);
+  expect(cameraTracks.every((track) => track.readyState === 'ended')).toBe(
+    true
+  );
+  expect(controls.getSelectedDevices().video).toBe('rear-camera');
+});
+
+it('leaves no live camera track behind after leaving', async () => {
+  const effects = new CameraEffects();
+  await effects.setLook({ filter: 'warm', softness: 0 });
+  const { controls, localStreamRef } = setup(effects);
+  await controls.toggleCamera();
+  const setLocal = vi.fn();
+  stopLocalCapture(
+    effects,
+    localStreamRef,
+    { current: null },
+    setLocal,
+    vi.fn()
+  );
+  expect(setLocal).toHaveBeenCalledWith(null);
+  expect(localStreamRef.current).toBeNull();
+  for (const track of [...cameraTracks, ...processedTracks])
+    expect(track.readyState).toBe('ended');
 });

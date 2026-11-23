@@ -1835,18 +1835,21 @@ rapid microphone/camera activation, and media flowing in both directions.
 ### Muted tracks and media reconnection
 
 Cloudflare expires tracks after 30 seconds without media packets. Keep muted
-microphone/camera tracks attached with `enabled = false`, which sends silence or
+microphone tracks attached with `enabled = false`, which sends silence or
 black frames, so unmuting resumes the existing subscription. Detaching a sender
 with `replaceTrack(null)` silently invalidates that track after the timeout.
 Microphones follow that rule; cameras do not. Turning the camera off stops every
 camera track (the raw capture, the self-view, the effects output and a preview
 adopted from the join screen), which releases the device and its indicator light.
-A host mute of video does the same, and so do leaving, the ended screen and
-unmounting the room. The camera's SFU publication stays alive with a black,
-low-rate canvas track on the same sender, so no renegotiation or expiry follows.
+A host mute or lock of video does the same, and so do leaving, the ended screen
+and unmounting the room. A released camera has no source to keep the
+publication alive, so its video publication is closed at the SFU (or already
+retired by the room, for a lock) and drops out of the publication ledger.
 Turning the camera back on calls `getUserMedia` again with the selected device
-and constraints and swaps the fresh track in with `replaceTrack`. When no canvas
-is available, the publication is closed at the SFU and republished on camera-on.
+and constraints and publishes afresh. Rapid toggles are coalesced by a revision
+counter: the newest request wins, and a camera that finishes opening after a
+newer request is stopped immediately. A device chosen while the camera is off
+is remembered and used on the next camera-on.
 Stopped screen shares are explicitly closed at the SFU with `force: true`,
 removed from the publication ledger, and published afresh when sharing resumes.
 

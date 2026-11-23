@@ -47,8 +47,8 @@ export type {
 } from '../lib/room-controller';
 import { useReceiveRecovery } from './use-receive-recovery';
 import { useLockedMediaRelease } from './use-locked-media-release';
-import { releaseIdleVideoTrack } from '../lib/idle-video-track';
 import {
+  releaseCameraTracks,
   settleCameraState,
   stopLockedPreviewTracks,
 } from '../lib/camera-release';
@@ -132,7 +132,6 @@ export function useMeetRoom({
   const publishEpoch = useRef(0);
   const resetPublisher = useCallback((recover = false) => {
     publishEpoch.current++;
-    releaseIdleVideoTrack();
     publishPcRef.current?.close();
     publishPcRef.current = null;
     publishSessionRef.current = null;
@@ -501,8 +500,12 @@ export function useMeetRoom({
     async (next: MeetMediaState, stream: MediaStream | null) => {
       const previous = mediaRef.current;
       const allowed = clampLocalMedia(stateRef.current, next);
-      if (next.videoEnabled && !allowed.videoEnabled)
-        for (const track of stream?.getVideoTracks() ?? []) track.stop();
+      if (next.videoEnabled && !allowed.videoEnabled) {
+        // A locked camera is released, not just stopped on the stream.
+        stream = releaseCameraTracks(stream, effects);
+        localStreamRef.current = stream;
+        setLocalStream(stream);
+      }
       if (next.audioEnabled && !allowed.audioEnabled)
         for (const track of stream?.getAudioTracks() ?? [])
           track.enabled = false;

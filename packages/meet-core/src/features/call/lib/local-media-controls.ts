@@ -41,6 +41,8 @@ export function createLocalMediaControls({
     () => localStreamRef.current
   );
   let microphoneRevision = 0;
+  let cameraRevision = 0;
+  let requestedCamera: boolean | null = null;
   let requestedMicrophone: boolean | null = null;
   let audioQueue = Promise.resolve();
   let screenPending = false;
@@ -87,8 +89,14 @@ export function createLocalMediaControls({
         acquired.getAudioTracks?.()[0],
         audioProcessing.getPreferences()
       );
-    if (!activeRef.current || !canCapture()) {
+    // The camera may have been turned off while the device was opening.
+    if (
+      !activeRef.current ||
+      !canCapture() ||
+      (kind === 'video' && !mediaRef.current.videoEnabled)
+    ) {
       for (const track of acquired.getTracks()) track.stop();
+      if (kind === 'video') deviceIds.video = deviceId;
       return;
     }
     let committed = false;
@@ -98,8 +106,15 @@ export function createLocalMediaControls({
         kind === 'video' && source
           ? await effects.replaceSource(source)
           : source;
-      if (!activeRef.current || !canCapture()) {
-        if (kind === 'video') effects.dispose();
+      if (
+        !activeRef.current ||
+        !canCapture() ||
+        (kind === 'video' && !mediaRef.current.videoEnabled)
+      ) {
+        if (kind === 'video') {
+          effects.dispose();
+          deviceIds.video = deviceId;
+        }
         for (const track of acquired.getTracks()) track.stop();
         return;
       }
@@ -186,8 +201,11 @@ export function createLocalMediaControls({
     });
   };
 
-  /** Camera off releases the device instead of blanking frames. */
-  const turnCameraOff = async () => {
+  /**
+   * Camera off releases the device instead of blanking frames. A newer toggle
+   * (revision) always wins over this one's error recovery.
+   */
+  const turnCameraOff = async (revision: number) => {
     const stream = releaseCameraTracks(localStreamRef.current, effects);
     localStreamRef.current = stream;
     setLocalStream(stream);
@@ -195,18 +213,19 @@ export function createLocalMediaControls({
       await applyMedia({ ...mediaRef.current, videoEnabled: false }, stream);
     } catch (error) {
       // A failed publish must not restore "camera on" without a capture.
-      if (mediaRef.current.videoEnabled)
+      if (revision === cameraRevision && mediaRef.current.videoEnabled)
         await applyMedia(
           { ...mediaRef.current, videoEnabled: false },
-          stream
+          localStreamRef.current
         ).catch(() => undefined);
       throw error;
     }
   };
 
-  const toggleCamera = async () => {
-    if (!canCapture()) return;
-    if (mediaRef.current.videoEnabled) return turnCameraOff();
+  /** Re-acquire the selected camera; a newer toggle discards this attempt. */
+  const turnCameraOn = async (revision: number) => {
+    const superseded = () =>
+      !activeRef.current || !canCapture() || revision !== cameraRevision;
     let stream = localStreamRef.current;
     if (
       !stream?.getVideoTracks().some((track) => track.readyState === 'live')
@@ -219,10 +238,8 @@ export function createLocalMediaControls({
           frameRate: { ideal: 24 },
         },
       });
-      if (!activeRef.current || !canCapture()) {
-        video.getTracks().forEach((track) => {
-          track.stop();
-        });
+      if (superseded()) {
+        for (const track of video.getTracks()) track.stop();
         return;
       }
       const source = video.getVideoTracks()[0];
@@ -230,14 +247,16 @@ export function createLocalMediaControls({
       try {
         processed = source ? await effects.setSource(source) : null;
       } catch (error) {
+        for (const track of video.getTracks()) track.stop();
+        if (superseded()) return;
         if (error instanceof DOMException && error.name === 'AbortError')
           throw error;
         effects.dispose();
-        for (const track of video.getTracks()) track.stop();
         throw error;
       }
-      if (!activeRef.current || !canCapture()) {
+      if (superseded()) {
         effects.dispose();
+        for (const track of video.getTracks()) track.stop();
         return;
       }
       stream = new MediaStream([
@@ -250,6 +269,21 @@ export function createLocalMediaControls({
     effects.setEnabled(true);
     for (const track of stream.getVideoTracks()) track.enabled = true;
     await applyMedia({ ...mediaRef.current, videoEnabled: true }, stream);
+  };
+
+  const toggleCamera = async () => {
+    if (!canCapture()) return;
+    const revision = ++cameraRevision;
+    // Toggling during a pending acquisition flips the requested state, so two
+    // quick presses end with the camera off and nothing left capturing.
+    const enable = !(requestedCamera ?? mediaRef.current.videoEnabled);
+    requestedCamera = enable;
+    try {
+      if (enable) await turnCameraOn(revision);
+      else await turnCameraOff(revision);
+    } finally {
+      if (revision === cameraRevision) requestedCamera = null;
+    }
   };
 
   const toggleScreenShare = async () => {
