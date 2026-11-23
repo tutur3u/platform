@@ -2417,6 +2417,28 @@ audio session. [Apple's System Sound Services](https://developer.apple.com/libra
 owns sound-effects policy. Device mute/Focus behavior remains part of the user's
 post-merge physical acceptance.
 
+## Saved whiteboard
+
+The Activities menu lists **Saved whiteboard** with the other create activities.
+It opens a persistent Tuturuuu Whiteboard that everyone in the room draws on
+together and that stays in the workspace after the call, unlike the classroom
+whiteboard and the pen whiteboard, which end with the room.
+
+- The host or a workspace admin links an existing workspace whiteboard or creates
+  a new one, chooses what guests may do (no access, view or draw) and can remove
+  the board from the meeting.
+- Workspace members draw. Guests and signed-in people outside the workspace see
+  the boards the host allowed and are read-only unless the host chose draw.
+- The board saves itself to the workspace whiteboard a few seconds after changes
+  and once more when the last person leaves. If a teammate edits the same board
+  elsewhere, both sets of changes are kept.
+- Maximize the pane from its header for a full view. A board that the host removes
+  or archives closes for everyone with a short notice.
+- Images cannot be added on the room board.
+
+Operators: see [Saved whiteboard activity](/platform/applications/meet#saved-whiteboard-activity)
+for the write budget and the `MEET_WHITEBOARD_FLUSH_DISABLED` stop fence.
+
 ## Collaborative programming
 
 The in-call coding control opens the shared Learn programming/playground workbench

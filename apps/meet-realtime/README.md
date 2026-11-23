@@ -25,6 +25,7 @@ Set by name only — never commit values.
 | `CLOUDFLARE_REALTIME_APP_ID` | yes | Cloudflare Realtime SFU app id. Not sensitive. |
 | `CLOUDFLARE_REALTIME_APP_SECRET` | yes | Cloudflare Realtime SFU app secret. **Sensitive** — treat as a bearer token. |
 | `CLOUDFLARE_REALTIME_API_BASE_URL` | no | Defaults to `https://rtc.live.cloudflare.com/v1`. |
+| `MEET_WHITEBOARD_FLUSH_DISABLED` | no | Stop fence for saved whiteboards. `true` or `1` halts storage writes and database flushes; any other value, and the default `false`, leaves them on. |
 
 ### Local
 

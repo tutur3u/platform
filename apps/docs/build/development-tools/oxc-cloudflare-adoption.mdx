@@ -617,6 +617,30 @@ CI; a migration direction does not authorize production cutover.
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
 - [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
 
+### Meet saved whiteboard cost bounds
+
+The Meet realtime Worker declares `WhiteboardRoomDurableObject` (SQLite,
+migration `v4-whiteboard`), one object per meeting and board. Its alarm is the
+only scheduler and every wake is derived from durable state, so a quiet board
+schedules nothing.
+
+Per board, per participant message the room does no storage or network work.
+Under continuous editing it writes storage at most once per 5 seconds and calls
+the platform at most once per 15 seconds, each flush guarded by a persisted
+three-attempt, two-minute budget that survives restarts. A connected room adds
+one 60-second expiry sweep. The last disconnect schedules one flush and stops.
+The platform route does two database reads and one compare-and-set write per
+flush. `MEET_WHITEBOARD_FLUSH_DISABLED` (`true` or `1`) halts storage writes and
+flushes at every wake; the room then relays live traffic only.
+
+`packages/realtime/src/meet/board-sync-core.test.ts` counts storage writes, alarm
+sets and flushes for a 500-edit burst and ten minutes of continuous edits, and
+covers the fence, an outage that exhausts the budget, a persistent failure
+followed by a later edit, restart after unfinished work and a conflict.
+`apps/meet-realtime/src/whiteboard-room-do.test.ts` runs the Durable Object
+adapter against the fence. Hosted alarm behavior, account ingress budgets and
+the operator stop rehearsal remain activation evidence.
+
 ### Fleet Board coordination cost bounds
 
 The Ops Hub Fleet Board source declares a SQLite Durable Object and a follow-up
