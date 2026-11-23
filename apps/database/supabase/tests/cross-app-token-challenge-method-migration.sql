@@ -33,6 +33,10 @@ select lives_ok($$
     and code_challenge_method is not null
 $$, 'the normalization update runs against a violating row');
 
+-- Run queued deferred trigger checks first: ALTER TABLE refuses a table
+-- with pending trigger events.
+set constraints all immediate;
+set constraints all deferred;
 select lives_ok($$
   alter table private.cross_app_tokens
     add constraint cross_app_tokens_code_challenge_check check (

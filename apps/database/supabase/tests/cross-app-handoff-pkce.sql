@@ -66,6 +66,10 @@ reset role;
 set local role authenticated;
 select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,null,null) as malformed \gset
 reset role;
+-- Run queued deferred trigger checks first: ALTER TABLE refuses a table
+-- with pending trigger events.
+set constraints all immediate;
+set constraints all deferred;
 alter table private.cross_app_tokens drop constraint cross_app_tokens_code_challenge_check;
 update private.cross_app_tokens set code_challenge_method = 'S256' where token = :'malformed';
 set local role anon;
