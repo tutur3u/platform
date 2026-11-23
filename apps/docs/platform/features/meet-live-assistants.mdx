@@ -431,8 +431,17 @@ To enable paid and staff Mira, set the repository variable
 `MEET_AI_RELEASE=paid-and-staff` and dispatch a Meet release. The frontend
 deploy then adds `MEET_AI_DISABLED=false` to `tuturuuu-meet` only, and the
 release fails unless the secret names below exist. To stop it, set the variable
-back to `contained` (the default) and release again. The source keeps every
-value off.
+back to `contained` (the default) and release again. That release also drops
+the paid-hosting var (unless the Worker holds a secret of that name), so
+stopping Mira also stops paid-tier hosting and guest join for paid hosts. The
+source keeps every value off.
+
+For a fast global stop without a release, run
+`wrangler secret delete MEET_AI_ALL_WORKSPACES --name tuturuuu-meet` (the
+allowlist is empty, so every workspace is denied) or `wrangler rollback`. A
+variable with the same name on the `meet-production` or
+`meet-cloudflare-production` GitHub environment overrides the repository
+variable.
 
 Worker configuration for paid and staff Mira:
 

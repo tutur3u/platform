@@ -686,6 +686,7 @@ jobs:
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
         run: |
+          case "$MEET_AI_RELEASE" in contained|paid-and-staff) ;; *) echo '::error::MEET_AI_RELEASE must be contained or paid-and-staff'; exit 1 ;; esac
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
@@ -757,7 +758,7 @@ jobs:
           if [ "$MEET_AI_RELEASE" = paid-and-staff ]; then
             output_args+=(--var MEET_AI_DISABLED=false)
             if [ "$PAID_TIER_SECRET" = true ]; then
-              echo '::notice::paid-tier hosting comes from the Worker secret'
+              echo '::notice::paid-tier hosting comes from the Worker secret MEET_PAID_TIER_HOSTING_ENABLED; only its exact value true enables it'
             else
               output_args+=(--var MEET_PAID_TIER_HOSTING_ENABLED=true)
             fi

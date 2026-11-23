@@ -3,6 +3,8 @@ const { join } = require('node:path');
 const { parse, parseExpression } = require('@babel/parser');
 
 // SR-919: lifting containment requires a reviewed change to this single flag.
+// The reviewed release-time lever is MEET_AI_RELEASE in meet-cloudflare.yaml,
+// which overrides the deployed Worker var without touching these sources.
 const CONTAINMENT_IN_FORCE = true;
 
 function configFiles() {

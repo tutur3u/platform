@@ -77,7 +77,7 @@ test('Mira stays contained unless the release opts in to paid-and-staff', () => 
   );
   assert.match(
     publish.run,
-    /if \[ "\$PAID_TIER_SECRET" = true \]; then\n\s+echo '::notice::paid-tier hosting comes from the Worker secret'\n\s+else\n\s+output_args\+=\(--var MEET_PAID_TIER_HOSTING_ENABLED=true\)/
+    /if \[ "\$PAID_TIER_SECRET" = true \]; then\n\s+echo '::notice::paid-tier hosting comes from the Worker secret MEET_PAID_TIER_HOSTING_ENABLED; only its exact value true enables it'\n\s+else\n\s+output_args\+=\(--var MEET_PAID_TIER_HOSTING_ENABLED=true\)/
   );
   assert.equal(
     publish.run.match(/MEET_PAID_TIER_HOSTING_ENABLED=true/g).length,
@@ -101,6 +101,11 @@ test('paid-and-staff requires the Mira secret names on the frontend only', () =>
 test('the secret-names step reports whether paid-tier hosting is a secret', () => {
   const verify = step('deploy', 'Verify required production secret names');
   assert.equal(verify.id, 'secret-names');
+  // The mode is validated before any secret read or deploy step runs.
+  assert.match(
+    verify.run,
+    /^case "\$MEET_AI_RELEASE" in contained\|paid-and-staff\) ;; \*\) echo '::error::[^']*'; exit 1 ;; esac\n/
+  );
   assert.match(verify.run, /index\("MEET_PAID_TIER_HOSTING_ENABLED"\)/);
   assert.match(verify.run, /paid_tier_secret=true' >> "\$GITHUB_OUTPUT"/);
   assert.match(verify.run, /paid_tier_secret=false' >> "\$GITHUB_OUTPUT"/);
