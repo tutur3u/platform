@@ -68,6 +68,7 @@ function StatusLine({ label }: { label: string }) {
  * the card says where it is going, so the redirect never shows a blank page.
  */
 export function FocusedContinueStep({
+  accountLink = false,
   appName,
   autoContinue,
   busy,
@@ -77,6 +78,8 @@ export function FocusedContinueStep({
   onUseAnotherAccount,
   session,
 }: {
+  /** The handoff links this account to the app, so say so before Continue. */
+  accountLink?: boolean;
   appName: string;
   autoContinue: boolean;
   busy: boolean;
@@ -106,6 +109,11 @@ export function FocusedContinueStep({
         name={name}
         status={t('login.signed_in_on_browser')}
       />
+      {accountLink && (
+        <p className="text-balance text-center text-muted-foreground text-sm">
+          {t('login.account_link_notice', { app: appName })}
+        </p>
+      )}
       <div className="flex flex-col gap-3">
         {continuing ? (
           <StatusLine label={t('login.returning_to_app', { app: appName })} />

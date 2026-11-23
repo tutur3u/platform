@@ -10807,6 +10807,7 @@
     "workspace": "Không gian làm việc"
   },
   "login": {
+    "account_link_notice": "Tiếp tục sẽ liên kết tài khoản này với {app}. Sau đó {app} có thể chia sẻ lớp học, bài học và bài đánh giá của bạn với Tuturuuu.",
     "account_switch_failed": "Không thể chuyển tài khoản.",
     "account_switch_requires_reauth": "Phiên đăng nhập đã lưu của tài khoản đó đã hết hạn. Hãy chọn \"Dùng tài khoản khác\" để đăng nhập lại.",
     "auto_continue_cancel": "Hủy",

@@ -10807,6 +10807,7 @@
     "workspace": "Workspace"
   },
   "login": {
+    "account_link_notice": "Continuing links this account to {app}. {app} can then share your classes, lessons and assessments with Tuturuuu.",
     "account_switch_failed": "Could not switch account.",
     "account_switch_requires_reauth": "That account's saved sign-in has expired. Choose \"Use another account\" to sign into it again.",
     "auto_continue_cancel": "Cancel",

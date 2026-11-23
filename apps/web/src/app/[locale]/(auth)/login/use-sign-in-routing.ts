@@ -115,8 +115,14 @@ export function useSignInRouting({
 
   return {
     anotherAccountRequested,
-    /** A strict PKCE app lets the matching session continue on its own. */
-    focusedAutoContinue: initialView?.returnApp?.autoContinue === true,
+    /**
+     * A strict PKCE app lets the matching session continue on its own; an
+     * account-link app always waits for the click and says what it links.
+     */
+    focusedContinueMode: {
+      accountLink: initialView?.returnApp?.accountLink === true,
+      auto: initialView?.returnApp?.autoContinue === true,
+    },
     /** The account a confirmation applies to: browser, else server-seen. */
     selfId: user?.id ?? initialView?.session?.id ?? null,
     focusedCanContinue,

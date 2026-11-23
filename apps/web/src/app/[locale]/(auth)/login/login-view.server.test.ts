@@ -162,6 +162,18 @@ describe('resolveLoginView', () => {
       return (await resolveLoginView(request(search))).returnApp;
     };
 
+    it('never auto-continues an account-link app, even when strict', async () => {
+      expect(
+        await gate(
+          { ...strictApp, allowedScopes: ['upskii-link:write'] },
+          { ...pkce, returnUrl: EDUFEST }
+        )
+      ).toMatchObject({ accountLink: true, autoContinue: false });
+      expect(
+        await gate(strictApp, { ...pkce, returnUrl: EDUFEST })
+      ).not.toHaveProperty('accountLink');
+    });
+
     it('holds only for a strict PKCE registration with a valid S256 challenge', async () => {
       expect(
         await gate(strictApp, { ...pkce, returnUrl: EDUFEST })

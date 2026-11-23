@@ -52,8 +52,8 @@ function ProviderIcon({ provider }: { provider: FocusedProvider }) {
 
 export function FocusedSignInCard({
   appName,
-  autoContinue,
   canContinue,
+  continueMode,
   continuing,
   onContinue,
   onStartProvider,
@@ -67,8 +67,8 @@ export function FocusedSignInCard({
   switchingAccountId,
 }: {
   appName: string;
-  autoContinue: boolean;
   canContinue: boolean;
+  continueMode: { accountLink: boolean; auto: boolean };
   continuing: boolean;
   onContinue: () => void;
   onStartProvider: () => void;
@@ -155,8 +155,9 @@ export function FocusedSignInCard({
   return (
     <FocusedFrame>
       <FocusedContinueStep
+        accountLink={continueMode.accountLink}
         appName={appName}
-        autoContinue={autoContinue}
+        autoContinue={continueMode.auto}
         busy={busy}
         canContinue={canContinue}
         continuing={continuing}

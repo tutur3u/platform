@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { externalAppLogoPath } from '@/lib/app-coordination/external-app-logo';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { isLinkOnlyScope } from '@/lib/app-coordination/link-only-scopes';
 import {
   matchesRegisteredCallbackPath,
   parseCrossAppPkceChallenge,
@@ -112,7 +113,9 @@ function decodeOuterReturnUrl(returnUrl: string) {
  * only for a strictly registered app: exact callback paths (no legacy
  * origin-only match), required S256 PKCE, and a valid S256 challenge on this
  * very request, so the handoff token can only be redeemed by the browser
- * that started the sign-in.
+ * that started the sign-in. An app whose grant includes a link-only scope
+ * never auto-continues, so linking an account always takes an explicit click
+ * on the account the page shows.
  */
 async function readReturnApp(
   returnUrl: string | null,
@@ -130,8 +133,11 @@ async function readReturnApp(
       codeChallenge: params.get('code_challenge'),
       codeChallengeMethod: params.get('code_challenge_method'),
     });
+    const accountLink = (app.allowedScopes ?? []).some(isLinkOnlyScope);
     return {
+      ...(accountLink ? { accountLink: true as const } : {}),
       autoContinue:
+        !accountLink &&
         app.requirePkce === true &&
         app.callbackPaths.length > 0 &&
         Boolean(challenge),

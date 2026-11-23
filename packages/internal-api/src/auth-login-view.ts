@@ -16,6 +16,11 @@ export interface LoginViewResponse {
    * on the request; an existing session may then continue without a click.
    */
   returnApp: {
+    /**
+     * Set when the app may only link an account (its grant is a link-only
+     * scope). Such an app never auto-continues: the user confirms the account.
+     */
+    accountLink?: true;
     autoContinue: boolean;
     id: string;
     /** Same-origin logo path, or null for the neutral app glyph. */
