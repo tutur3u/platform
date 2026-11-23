@@ -182,6 +182,17 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Calendar invitations owner fixes the apps/web type errors. Any other failure is outside this grant.',
   },
+  {
+    // Type Check and Test may be red only outside Meet's closure (calendar
+    // invitation routes and root-script drift). Security Checks and Meet
+    // Cloudflare stay required on this exact source.
+    id: 'RA-20261123-2340-MEET-TRANSCRIPT',
+    source: 'cc95fb272f1a4d329b79525cf31700e8acbe3426',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-24T04:59:00Z',
+    followUp:
+      'Owners of any non-Meet red fix it on main. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
