@@ -5,11 +5,15 @@ import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import { useCallActivities } from './call-activities';
 
+const live = vi.hoisted(() => ({
+  poll: undefined as unknown,
+  arena: undefined as unknown,
+}));
 vi.mock('../lib/polls-client', () => ({
-  useCallPolls: () => ({ data: undefined }),
+  useCallPolls: () => ({ data: live.poll }),
 }));
 vi.mock('../lib/quiz-arena-client', () => ({
-  useCallQuizArena: () => ({ data: undefined }),
+  useCallQuizArena: () => ({ data: live.arena }),
 }));
 vi.mock('./forms/meet-forms-activity', () => ({
   MeetFormsActivity: ({ open }: { open: boolean }) => (
@@ -20,7 +24,7 @@ afterEach(cleanup);
 
 let activities: ReturnType<typeof useCallActivities>;
 const open = new Set<string>();
-function Harness() {
+function Harness({ shortcuts = false }: { shortcuts?: boolean }) {
   activities = useCallActivities({
     meetingId: 'm',
     accountId: 'a',
@@ -34,7 +38,12 @@ function Harness() {
       close: (id) => open.delete(id),
     },
   });
-  return <>{activities.dialog}</>;
+  return (
+    <>
+      {activities.dialog}
+      {shortcuts && activities.controls}
+    </>
+  );
 }
 const forms = () => activities.entries.find((entry) => entry.id === 'forms');
 const mount = () =>
@@ -58,4 +67,18 @@ it('keeps the forms dialog mounted once opened, so drafts survive closing it', a
   act(() => forms()?.toggle());
   expect(screen.getByTestId('forms')).toBe(dialog);
   expect(dialog.getAttribute('data-open')).toBe('true');
+});
+
+it('lists a live poll and a live Quiz Arena together in the shortcuts', () => {
+  live.poll = { polls: [{ status: 'active' }] };
+  live.arena = { kind: 'full', meta: { phase: 'question' } };
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <Harness shortcuts />
+    </NextIntlClientProvider>
+  );
+  live.poll = undefined;
+  live.arena = undefined;
+  expect(screen.getByRole('button', { name: /poll/i })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /quiz arena/i })).toBeTruthy();
 });

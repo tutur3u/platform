@@ -211,11 +211,37 @@ it('clears its tab when it closes so the next open starts on the overview', asyn
   await vi.waitFor(() =>
     expect(urls.at(-1)).toContain('activitiesTab=live-flashcards')
   );
+  expect(urls.some((url) => url.includes('settingsTab'))).toBe(false);
   fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
   expect(dialog()).toBeNull();
   await vi.waitFor(() => expect(urls.at(-1)).not.toContain('activitiesTab'));
   open();
   expect(screen.getByRole('heading', { name: a.all })).toBeTruthy();
+});
+
+it('shows the activity name and description on its detail page and resets the tab when it starts', async () => {
+  const urls: string[] = [];
+  const onTool = vi.fn();
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <NuqsTestingAdapter
+        searchParams="?activitiesTab=polls"
+        onUrlUpdate={(event) => urls.push(event.queryString)}
+      >
+        <ActivitiesMenu
+          tools={[polls, flashcards]}
+          openToolIds={[]}
+          onTool={onTool}
+        />
+      </NuqsTestingAdapter>
+    </NextIntlClientProvider>
+  );
+  open();
+  expect(screen.getAllByText(pollsLabel).length).toBeGreaterThan(1);
+  expect(screen.getAllByText(a.descriptions.polls).length).toBeGreaterThan(0);
+  fireEvent.click(screen.getByRole('button', { name: `Start ${pollsLabel}` }));
+  expect(onTool).toHaveBeenCalledWith('polls');
+  await vi.waitFor(() => expect(urls.at(-1)).not.toContain('activitiesTab'));
 });
 
 it('explains Start only to people who may Follow and Summon', async () => {

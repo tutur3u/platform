@@ -87,6 +87,8 @@ export function ActivitiesDialog({
     }
     // An activity already open for this person stays open.
     if (!tile.active) tile.open?.();
+    // Reopening Activities lands on the overview.
+    void setPersistedTab(null);
     onClose();
   };
   const current = tiles.find((tile) => tile.id === tab);

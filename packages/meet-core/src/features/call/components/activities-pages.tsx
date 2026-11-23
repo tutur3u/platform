@@ -191,7 +191,7 @@ export function AllActivitiesPage({
   );
 }
 
-/** One activity's page; the shell already shows its name and description. */
+/** One activity's page: its name, description, state and launch action. */
 export function ActivityDetailPage({
   tile,
   onLaunch,
@@ -203,7 +203,13 @@ export function ActivityDetailPage({
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-4">
       <ActivityIcon tile={tile} />
-      <div className="flex min-w-0 flex-1 items-center gap-2">
+      <div className="grid min-w-0 flex-1 gap-1">
+        <p className="font-medium text-sm">{tile.label}</p>
+        {tile.description && (
+          <p className="text-muted-foreground text-sm">{tile.description}</p>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
         {tile.active && <OpenBadge />}
         {!tile.open && !tile.page && (
           <Badge variant="outline">{roomT('preview')}</Badge>
