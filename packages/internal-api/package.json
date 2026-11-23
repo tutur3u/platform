@@ -51,6 +51,11 @@
       "import": "./dist/people.js",
       "require": "./dist/people.js"
     },
+    "./upskii-content": {
+      "types": "./dist/upskii-content.d.ts",
+      "import": "./dist/upskii-content.js",
+      "require": "./dist/upskii-content.js"
+    },
     "./cite": {
       "types": "./dist/cite.d.ts",
       "import": "./dist/cite.js",
