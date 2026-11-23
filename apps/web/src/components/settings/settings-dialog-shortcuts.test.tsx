@@ -200,6 +200,7 @@ vi.mock('@/components/settings/settings-dialog', () => ({
 }));
 
 vi.mock('@/context/account-switcher-context', () => ({
+  ACCOUNTS_QUERY_KEY: ['auth', 'web-accounts'],
   useAccountSwitcher: () => ({ accounts: [], logout: vi.fn() }),
 }));
 

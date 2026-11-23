@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { persistLocalePreference } from './locale-preference';
 
 const calls: string[] = [];
 
@@ -17,8 +18,6 @@ vi.mock('@tuturuuu/utils/shared-cookie', () => ({
   ],
   getTuturuuuBrowserSharedCookieOptions: (options: object) => options,
 }));
-
-const { persistLocalePreference } = await import('./locale-preference');
 
 describe('persistLocalePreference', () => {
   beforeEach(() => {
