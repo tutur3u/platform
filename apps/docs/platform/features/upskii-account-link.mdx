@@ -128,9 +128,10 @@ app (and per user for link writes). Over a limit it answers `429` with
   `{ linkId, upskiiUserId }`. Tuturuuu sets `revoked_by = 'provider'`. If that
   call fails, reads still stop, because Upskii refuses a link it no longer
   holds; Upskii retries the call.
-- **Upskii learns of a Tuturuuu disconnect** when introspection answers
-  `active: false` or the unlink route answers `LINK_NOT_FOUND`, and then
-  deletes its row.
+- **Upskii learns of a Tuturuuu disconnect** when introspection of a validly
+  signed token answers `active: false` with `revoked: { linkId, upskiiUserId }`,
+  or the unlink route answers `LINK_NOT_FOUND`. It then deletes exactly that
+  row. An invalid token never names a link, so it cannot delete anyone's row.
 - **Account deletion:** deleting the Tuturuuu account deletes its links.
   Deleting an Upskii account calls the unlink route first.
 - **Secret rotation or disabling the app** stops every read at once. Links

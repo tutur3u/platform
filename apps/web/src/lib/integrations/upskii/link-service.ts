@@ -153,7 +153,14 @@ export type UpskiiIntrospection =
       tuturuuuUserId: string;
       upskiiUserId: string;
     }
-  | { active: false };
+  | {
+      active: false;
+      /**
+       * Set only for a validly signed token whose link was revoked, so
+       * Upskii can delete exactly its matching row.
+       */
+      revoked?: { linkId: string; upskiiUserId: string };
+    };
 
 /**
  * Answers Upskii's check of a read token: active only when the token is a
@@ -186,9 +193,14 @@ export async function introspectUpskiiReadToken(
   const linkId = linkScopes[0]!.slice(EXTERNAL_LINK_ID_SCOPE_PREFIX.length);
   if (!isLinkId(linkId)) return { active: false };
   const link = await store.findById(linkId);
+  if (link?.revoked_at && link.user_id === sub) {
+    return {
+      active: false,
+      revoked: { linkId: link.id, upskiiUserId: link.external_subject },
+    };
+  }
   if (
     !link ||
-    link.revoked_at ||
     link.user_id !== sub ||
     !readScopes.every((scope) => link.scopes.includes(scope))
   ) {

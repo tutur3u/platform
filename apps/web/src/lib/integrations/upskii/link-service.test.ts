@@ -190,7 +190,10 @@ describe('Upskii account link', () => {
       await revokeUpskiiLinkForUser(memory.store, TUTURUUU_A);
       expect(
         await introspectUpskiiReadToken(memory.store, token, { secret: SECRET })
-      ).toEqual({ active: false });
+      ).toEqual({
+        active: false,
+        revoked: { linkId: row.id, upskiiUserId: 'u-1' },
+      });
     });
 
     it('refuses an expired read token', async () => {
