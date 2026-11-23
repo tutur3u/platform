@@ -159,6 +159,17 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Same owners as RA-20261123-1900-MEET-S9B-OG-QA. Any other failure is outside this grant.',
   },
+  {
+    // Type Check fails only in packages/ui calendar native-guests
+    // (event-links.tsx, outside Meet's closure); Test may carry the known
+    // root-script drift. Security Checks and Meet Cloudflare stay required.
+    id: 'RA-20261123-2145-MEET-MEDIA-POLISH',
+    source: 'a0f86b07f9ec0bad32ff55c93249a8429db4f19b',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-23T19:59:00Z',
+    followUp:
+      'Calendar native-guests owner fixes the packages/ui type error. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
