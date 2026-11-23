@@ -40,3 +40,22 @@ it('does not block optional cached content when offline', async () => {
   await waitFor(() => expect(getProfile).toHaveBeenCalledOnce());
   expect(screen.getByText('cached workspace')).toBeTruthy();
 });
+it('reuses a fresh check when the dashboard shell remounts it', async () => {
+  getProfile.mockResolvedValue({ id: 'actor' });
+  const client = new QueryClient();
+  const tree = (key: string) => (
+    <QueryClientProvider client={client}>
+      <AccountAssuranceRefresh key={key} />
+    </QueryClientProvider>
+  );
+  const view = render(tree('fallback'));
+  await waitFor(() => expect(getProfile).toHaveBeenCalledOnce());
+  for (const key of ['shell', 'structure', 'calendar-provider']) {
+    view.rerender(tree(key));
+  }
+  view.unmount();
+  render(tree('after-unmount'));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(getProfile).toHaveBeenCalledOnce();
+  expect(client.getQueryData(['account-assurance-refresh'])).toBe(true);
+});

@@ -39,6 +39,9 @@ function ownerControl(client: QueryClient, actorId: string) {
   return control;
 }
 
+/** Account denials (401/403/409) are final; the fetch layer retries rate limits. */
+const NON_RETRYABLE_STATUSES = new Set([401, 403, 409, 429]);
+
 type ActorScope = {
   actorId: string;
   lifetime: { active: boolean };
@@ -145,8 +148,15 @@ export function useWorkspaceVisibility(enabled = true) {
       }
       return response.hiddenWorkspaceIds;
     },
-    staleTime: 30_000,
-    retry: 1,
+    // Changes arrive through setHidden, which invalidates this key; many shell
+    // surfaces remount observers, so a short stale window only re-reads users/me.
+    staleTime: 5 * 60_000,
+    retry: (failureCount, error) =>
+      failureCount < 1 &&
+      !(
+        error instanceof InternalApiError &&
+        NON_RETRYABLE_STATUSES.has(error.status)
+      ),
   });
   const accountDenied =
     query.error instanceof InternalApiError &&
