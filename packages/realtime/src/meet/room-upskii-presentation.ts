@@ -30,7 +30,13 @@ export function resolveUpskiiOrigin(override?: string | null): string {
   }
 }
 
+/** Control, line-separator and bidirectional-override characters. */
+const controlCharacters =
+  /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/;
+
 const MAX_URL_LENGTH = 2048;
+
+const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 
 function decodeOnce(value: string) {
   try {
@@ -48,8 +54,14 @@ function decodeOnce(value: string) {
  */
 function pointsOffOrigin(value: string, origin: string) {
   for (const candidate of new Set([value, decodeOnce(value)])) {
+    const trimmed = candidate.trim();
     try {
-      if (new URL(candidate.trim(), origin).origin !== origin) return true;
+      // A value that names a scheme is resolved without a base: with one, a
+      // same-scheme value such as `https:evil.com` resolves as a relative path.
+      const target = hasScheme.test(trimmed)
+        ? new URL(trimmed)
+        : new URL(trimmed, origin);
+      if (target.origin !== origin) return true;
     } catch {
       return true;
     }
@@ -76,7 +88,12 @@ export function toSafeUpskiiUrl(
   raw: unknown,
   origin: string = UPSKII_ORIGIN
 ): string | null {
-  if (typeof raw !== 'string' || !raw || raw.length > MAX_URL_LENGTH)
+  if (
+    typeof raw !== 'string' ||
+    !raw ||
+    raw.length > MAX_URL_LENGTH ||
+    controlCharacters.test(raw)
+  )
     return null;
   let url: URL;
   try {
@@ -91,15 +108,13 @@ export function toSafeUpskiiUrl(
   if (
     hash &&
     (pointsOffOrigin(decodeOnce(hash), origin) ||
-      paramsPointOffOrigin(new URLSearchParams(hash), origin))
+      paramsPointOffOrigin(new URLSearchParams(hash), origin) ||
+      paramsPointOffOrigin(new URLSearchParams(decodeOnce(hash)), origin))
   )
     return null;
   return url.href;
 }
 
-/** Control, line-separator and bidirectional-override characters. */
-const controlCharacters =
-  /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/;
 const label = (max: number) =>
   z
     .string()
@@ -117,7 +132,10 @@ export const upskiiPresentationItemSchema = z.object({
   id: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
   title: label(160),
   classTitle: label(120).optional(),
-  url: z.string().max(MAX_URL_LENGTH),
+  url: z
+    .string()
+    .max(MAX_URL_LENGTH)
+    .refine((value) => !controlCharacters.test(value), 'Invalid link'),
 });
 export type UpskiiPresentationItem = z.infer<
   typeof upskiiPresentationItemSchema
