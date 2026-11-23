@@ -162,4 +162,17 @@ describe('ContactAccountInvitationCard', () => {
     expect(screen.queryByRole('button', { name: 'invite' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'resend' })).toBeNull();
   });
+
+  it('does not report accepted once the contact is no longer linked', async () => {
+    api.read.mockResolvedValue({
+      ...pending,
+      state: 'accepted',
+      invitationId: null,
+      expiresAt: null,
+    });
+    renderCard(false);
+    expect(await screen.findByText('none_sent')).toBeTruthy();
+    expect(screen.queryByText('states.accepted')).toBeNull();
+    expect(screen.getByRole('button', { name: 'invite' })).toBeTruthy();
+  });
 });

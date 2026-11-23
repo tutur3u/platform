@@ -58,7 +58,12 @@ export function ContactAccountInvitationCard({
     queryKey: statusKey,
     queryFn: () => readContactAccountInvitation(workspaceId, contactId),
   });
-  const invitation = status.data ?? null;
+  // A link can be removed without an audit event (merge transfer, account
+  // deletion), so "accepted" is shown only while the contact is still linked.
+  const invitation =
+    status.data?.state === 'accepted' && !isLinked
+      ? null
+      : (status.data ?? null);
   const accounts = useQuery({
     queryKey: ['contact-account-choices', workspaceId],
     queryFn: () => listContactAccountChoices(workspaceId),

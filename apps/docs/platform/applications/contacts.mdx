@@ -103,7 +103,11 @@ cancelled, or not completed. A pending invitation shows its link to copy and an
 expiry time. Operators can resend to the same account, invite a different
 account, or cancel a pending invitation after an in-app confirmation. Resending
 issues a new link and invalidates the earlier one. For a linked contact, the
-card shows only an accepted state. The state read returns only the state,
+card shows only an accepted state. Accepted appears only while the contact is
+still linked. An unlink clears the shown state. Known gap: when a duplicate
+merge moves a link onto a contact with a pending invitation and that link is
+then unlinked, the card hides the invitation. The invitation stays usable
+until it expires, within one day, and the account holder must still confirm. The state read returns only the state,
 invitation and account identifiers, and timestamps. A pending state is the only
 one that returns the invitation identifier.
 
