@@ -4374,6 +4374,7 @@
       "effects_hint": "Processed on your device and visible to everyone in the call.",
       "enable_notifications": "Enable notification sounds",
       "end_failed": "Could not end the meeting. Check your connection and try again.",
+      "settings_failed": "Could not save that setting. Check your connection and try again.",
       "end_for_everyone": "End for everyone",
       "ended_hint": "This room is closed. Notes are shared only by the room admin.",
       "ending_meeting": "Ending meeting…",

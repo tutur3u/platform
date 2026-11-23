@@ -5480,6 +5480,7 @@
       "send": "Send",
       "sending": "Sending",
       "settings_appearance": "Appearance & theme",
+      "settings_failed": "Could not save that setting. Check your connection and try again.",
       "settings_hint": "Tune your devices, review connectivity, and manage room preferences.",
       "settings_pages": {
         "activities": "Choose who can open activities and summon others.",

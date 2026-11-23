@@ -53,7 +53,11 @@ import {
   exceedsMeetStreamEntitlement,
   resolveMeetStreamEntitlement,
 } from './stream-tiers';
-import { blockAutoAdmission, decideRoomAdmission } from './room-admission';
+import {
+  admitWaitingSignedIn,
+  blockAutoAdmission,
+  decideRoomAdmission,
+} from './room-admission';
 
 export function applyMeetRoomCommand(
   state: MeetRoomSnapshot,
@@ -129,7 +133,12 @@ function dispatchMeetRoomCommand(
     notesEligible,
     classFeatures
   );
-  if (control) return control;
+  if (control)
+    return message.type === 'room.settings.update' &&
+      control.state.settings?.skipLobby &&
+      !state.settings?.skipLobby
+      ? admitWaitingSignedIn(control, token, now, classFeatures)
+      : control;
   const navigation = applyRoomNavigation(state, message, token, now);
   if (navigation) return navigation;
   switch (message.type) {

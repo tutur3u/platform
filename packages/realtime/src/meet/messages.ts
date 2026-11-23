@@ -333,7 +333,12 @@ export type MeetRealtimeServerMessage =
       forced: boolean;
       createdAt: string;
     }
-  | { type: 'room.settings'; settings: MeetRoomSettings }
+  | {
+      type: 'room.settings';
+      settings: MeetRoomSettings;
+      /** Set on the reply to a `room.settings.update`, so the sender sees it land. */
+      requestId?: string;
+    }
   | { type: 'room.title.changed'; title: string; requestId?: string }
   | { type: 'room.ended'; by?: string; requestId?: string }
   | { type: 'admission.approved'; participants: MeetApprovedParticipant[] }

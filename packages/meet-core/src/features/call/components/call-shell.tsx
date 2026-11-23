@@ -137,6 +137,14 @@ function CallShellContent({
     setLayout(key ? 'spotlight' : 'auto');
   }, []);
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId, deviceId });
+  const { watchSettingsFailures } = room;
+  useEffect(
+    () =>
+      watchSettingsFailures(() =>
+        toast.error(t('settings_failed'), { id: 'meet-settings-failed' })
+      ),
+    [watchSettingsFailures, t]
+  );
   const { state } = room;
   const retryConnection = () => {
     room.leave();

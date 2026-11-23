@@ -101,13 +101,7 @@ export function admitOrHold(
     (token.guest || token.admission === 'lobby') &&
     !state.presence[token.userId] &&
     !state.approved?.[token.accountId ?? token.userId] &&
-    !(
-      !token.guest &&
-      state.settings?.skipLobby &&
-      !state.settings.admissionClosed &&
-      !state.deniedAutoAdmission?.includes(token.accountId ?? token.userId) &&
-      (state.deniedAutoAdmission?.length ?? 0) < 256
-    )
+    !(!token.guest && skipsLobby(state, token.accountId ?? token.userId))
   ) {
     if (
       Object.keys(state.waiting).length >= 104 &&
@@ -472,6 +466,62 @@ export function decideRoomAdmission(
       result.toManagers.push(approvedParticipantsMessage(result.state));
   }
   return result;
+}
+
+/**
+ * Whether a signed-in person is admitted without waiting: the host turned on
+ * automatic admission, admission is open, and nobody removed or denied this
+ * account. Guests never qualify; the guest policy decides them.
+ */
+export function skipsLobby(state: MeetRoomSnapshot, accountId: string) {
+  return (
+    !!state.settings?.skipLobby &&
+    !state.settings.admissionClosed &&
+    !state.deniedAutoAdmission?.includes(accountId) &&
+    (state.deniedAutoAdmission?.length ?? 0) < 256
+  );
+}
+
+/**
+ * Admits the signed-in people already waiting, oldest first, once automatic
+ * admission turns on. `result` is the outcome that turned it on; what each
+ * admission would send is merged into it. People the room cannot seat yet stay
+ * waiting for a manual decision.
+ */
+export function admitWaitingSignedIn(
+  result: MeetRoomOutcome,
+  token: MeetRealtimeTokenPayload,
+  now: string,
+  features: MeetClassFeatures = meetClassFeatures()
+): MeetRoomOutcome {
+  const waiting = Object.values(result.state.waiting)
+    .filter(
+      (person) =>
+        !person.guest &&
+        skipsLobby(result.state, person.accountId ?? person.userId)
+    )
+    .sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
+  let admitted = 0;
+  const merged = { ...result };
+  for (const person of waiting) {
+    const next = decideParticipant(
+      merged.state,
+      person.userId,
+      true,
+      token,
+      now,
+      undefined,
+      features
+    );
+    if (next.reply.length) continue;
+    merged.state = next.state;
+    merged.broadcast = [...merged.broadcast, ...next.broadcast];
+    merged.direct = [...merged.direct, ...next.direct];
+    merged.disconnect = [...merged.disconnect, ...next.disconnect];
+    merged.toManagers = [...merged.toManagers, ...next.toManagers];
+    admitted++;
+  }
+  return admitted ? merged : result;
 }
 
 export function blockAutoAdmission(state: MeetRoomSnapshot, id: string) {

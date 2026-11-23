@@ -199,14 +199,14 @@ export function applyRoomControl(
         (message.settings.maxParticipants !== undefined &&
           message.settings.maxParticipants > maximum))
     )
-      return denied(state, 'permission_denied');
+      return denied(state, 'permission_denied', message.requestId);
     if (!notesEligible && enablesNoteSharing(message.settings))
       return denied(
         state,
         'permission_denied',
         'requestId' in message ? message.requestId : undefined
       );
-    return applyMeetRoomSettings(
+    const applied = applyMeetRoomSettings(
       state,
       {
         shareNotes: false,
@@ -216,6 +216,21 @@ export function applyRoomControl(
       token,
       now
     );
+    // The sender's request settles on the settings the room now holds, so a
+    // value the room did not keep is visible to the sender.
+    return message.requestId
+      ? {
+          ...applied,
+          reply: [
+            ...applied.reply,
+            {
+              type: 'room.settings' as const,
+              settings: applied.state.settings ?? { shareNotes: false },
+              requestId: message.requestId,
+            },
+          ],
+        }
+      : applied;
   }
   if (message.type === 'admission.forget') {
     const approved = { ...state.approved };

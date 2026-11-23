@@ -17,12 +17,28 @@ import { createMediaPolicy } from './media-policy';
 import { prepareParticipantName } from './participant-name';
 import type { MeetSignaling } from './signaling';
 
+/**
+ * Whether the settings the room holds include every value that was asked for.
+ * A room that predates a setting accepts the request and drops the value.
+ */
+export function settingsApplied(
+  asked: Partial<MeetRoomSettings>,
+  held: MeetRoomSettings
+) {
+  return (Object.keys(asked) as (keyof MeetRoomSettings)[]).every(
+    (key) =>
+      asked[key] === undefined ||
+      JSON.stringify(asked[key]) === JSON.stringify(held[key])
+  );
+}
+
 export function createRoomActions(
   signaling: {
     current: MeetSignaling | null;
   },
   stageWindow?: { current: StageVideoWindow | null }
 ) {
+  let settingsFailed: ((error: Error) => void) | undefined;
   let assistantAudio:
     | {
         microphoneEnabled: boolean;
@@ -174,8 +190,32 @@ export function createRoomActions(
         reportId,
         bytesReceived,
       }),
-    updateSettings: (settings: Partial<MeetRoomSettings>) =>
-      signaling.current?.send({ type: 'room.settings.update', settings }),
+    /**
+     * Reports host settings the room did not take (closed connection, refusal,
+     * no answer, or a value the room dropped), so the host can see them.
+     */
+    watchSettingsFailures: (handler: (error: Error) => void) => {
+      settingsFailed = handler;
+      return () => {
+        if (settingsFailed === handler) settingsFailed = undefined;
+      };
+    },
+    updateSettings: async (settings: Partial<MeetRoomSettings>) => {
+      try {
+        const connection = signaling.current;
+        if (!connection?.isOpen) throw new Error('signaling_closed');
+        const held = await connection.request<MeetRoomSettings>({
+          type: 'room.settings.update',
+          settings,
+        });
+        if (!settingsApplied(settings, held))
+          throw new Error('settings_not_applied');
+      } catch (error) {
+        settingsFailed?.(
+          error instanceof Error ? error : new Error('settings_failed')
+        );
+      }
+    },
     controlRecording: async (
       state: 'starting' | 'recording' | 'stopping' | 'idle' | 'error',
       sessionId?: string

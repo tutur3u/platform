@@ -1419,6 +1419,46 @@ Regression coverage: `room-controls.test.ts` under `packages/realtime/src/meet`
 under `packages/meet-core/src/features/call/stage-layout` (opens once on join,
 leaves people already in the call alone).
 
+### Room settings writes
+
+Scope: every host setting written through `room.updateSettings` (activities,
+automatic admission, locks, capacity, recording, chat), in Meet and Parley.
+
+- The client sends `room.settings.update` with a request id. The room answers the
+  sender with a `room.settings` frame carrying that id and the settings it now
+  holds, and still broadcasts the same settings to everyone admitted.
+- A refusal (`permission_denied`) names the request id too.
+- The write counts as saved only when the held settings include every value the
+  host asked for. A closed connection, a refusal, no answer in 15 seconds, or a
+  room that accepted the request and dropped a value (a room older than the page)
+  shows the toast "Could not save that setting" and leaves the control showing
+  what the room holds.
+
+Regression coverage: `settings-roundtrip.test.ts` under
+`packages/meet-core/src/features/call/lib` (client, signaling, room executor and
+state echo for every registered tool id, plus each failure), `room-do-settings.test.ts`
+under `apps/meet-realtime/src` (the real room object), and
+`default-activity-setting.test.tsx` (the control, by pointer and keyboard).
+
+### Automatic admission of signed-in people
+
+Scope: one Meet or Parley room. With **Admit signed-in participants
+automatically** on and admission open, a signed-in person who reaches the room
+is admitted without waiting, and the signed-in people already waiting are
+admitted the moment the host turns it on, oldest first, as far as capacity
+allows. Anyone the room cannot seat yet stays waiting for a manual decision.
+
+- Guests never qualify; the guest policy decides them.
+- A person the host denied or removed keeps waiting even after the setting
+  turns on again, until the host admits them or forgets the decision.
+- Turning it off admits and removes nobody.
+- No database column or workspace meeting default carries it; it lives in the
+  room's realtime state.
+
+Regression coverage: `room-skip-lobby.test.ts` under `packages/realtime/src/meet`
+(arrival, people already waiting, guests, denied accounts, closed admission) and
+`room-do-settings.test.ts` (the same through the real room object).
+
 ### Follow and Summon
 
 Scope: admitted participants of one Meet room, on the web. Both actions move

@@ -5480,6 +5480,7 @@
       "send": "Gửi",
       "sending": "Đang gửi",
       "settings_appearance": "Giao diện & chủ đề",
+      "settings_failed": "Không thể lưu cài đặt này. Kiểm tra kết nối và thử lại.",
       "settings_hint": "Điều chỉnh thiết bị, kiểm tra kết nối và quản lý tùy chọn phòng.",
       "settings_pages": {
         "activities": "Chọn ai được mở hoạt động và mời người khác cùng xem.",
