@@ -43,7 +43,7 @@ export function isRateLimited(error: unknown) {
   );
 }
 
-function backoffActive(now: number) {
+export function backoffActive(now: number) {
   try {
     return Number(window.localStorage.getItem(BACKOFF_KEY) ?? 0) > now;
   } catch {
@@ -51,7 +51,7 @@ function backoffActive(now: number) {
   }
 }
 
-function startBackoff(now: number) {
+export function startBackoff(now: number) {
   try {
     window.localStorage.setItem(
       BACKOFF_KEY,

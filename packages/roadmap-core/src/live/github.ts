@@ -32,6 +32,7 @@ type SearchItem = {
   draft?: boolean;
   user?: { type?: string } | null;
   pull_request?: { merged_at?: string | null };
+  labels?: ({ name?: string } | string)[];
 };
 
 function toFact(
@@ -64,11 +65,53 @@ async function search(
   token?: string,
   onTotal?: (total: number, fetched: number) => void
 ): Promise<SearchItem[]> {
+  const { items, total } = await searchPages(
+    fetcher,
+    `is:pr ${query}`,
+    maxPages,
+    token
+  );
+  onTotal?.(total, items.length);
+  return items;
+}
+
+/**
+ * Issues (never pull requests) matching `query`, with the search's own total
+ * so a caller can tell a complete list from a capped one.
+ */
+export async function searchIssues(
+  fetcher: Fetcher,
+  query: string,
+  maxPages: number,
+  token?: string
+): Promise<{ items: SearchItem[]; total: number }> {
+  const result = await searchPages(
+    fetcher,
+    `is:issue ${query}`,
+    maxPages,
+    token
+  );
+  const items = result.items.filter((item) => !item?.pull_request);
+  // A pull request that slips into the results counted toward the total
+  // too, so drop it from both and a complete list still reads as complete.
+  return {
+    items,
+    total: result.total - (result.items.length - items.length),
+  };
+}
+export type { SearchItem };
+
+async function searchPages(
+  fetcher: Fetcher,
+  query: string,
+  maxPages: number,
+  token?: string
+): Promise<{ items: SearchItem[]; total: number }> {
   const items: SearchItem[] = [];
   let total = 0;
   for (let page = 1; page <= maxPages; page += 1) {
     const params = new URLSearchParams({
-      q: `repo:${REPO} is:pr ${query}`,
+      q: `repo:${REPO} ${query}`,
       per_page: '100',
       page: String(page),
       sort: 'updated',
@@ -87,8 +130,7 @@ async function search(
     total = body.total_count ?? 0;
     if (batch.length < 100 || items.length >= total) break;
   }
-  onTotal?.(total, items.length);
-  return items;
+  return { items, total };
 }
 
 export async function fetchPullFacts(

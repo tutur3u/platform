@@ -131,13 +131,3 @@ export function voteReducer(state: VoteState, event: VoteEvent): VoteState {
       return VOTE_START;
   }
 }
-
-/** Agenda seat labels: who you are during each part of the session. */
-export const AGENDA_SEATS = {
-  join: 'everyone',
-  class: 'student',
-  assistant: 'student',
-  quiz: 'student',
-  behind: 'everyone',
-  plan: 'teacher',
-} as const;

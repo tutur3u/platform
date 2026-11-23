@@ -48,6 +48,7 @@ import {
 import { localDay } from '@tuturuuu/roadmap-core/live/feed.ts';
 import { commitWindow } from '@tuturuuu/roadmap-core/insights/commits.ts';
 import { citedCommits } from '@tuturuuu/roadmap-core/live/evidence.ts';
+import { fetchEdufestBugs } from '@tuturuuu/roadmap-core/live/edufest-bugs.ts';
 import { readCitedCommits, readCommits } from './commit-log.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -247,11 +248,49 @@ async function writeHosting() {
   );
 }
 
+const bugsTarget = join(
+  root,
+  '../../packages/roadmap-core/.generated/edufest-bugs.json'
+);
+
+/**
+ * Open EduFest bugs (public issues labelled edufest-2026), titles only
+ * (src/live/edufest-bugs.ts). Read after the core GitHub reads so it never
+ * spends their rate limit; a failure is written as unavailable, never as
+ * zero bugs.
+ */
+async function writeEdufestBugs() {
+  let feed = { state: 'unavailable', reason: 'not_observed' };
+  if (process.env.ROADMAP_OFFLINE !== '1') {
+    feed = await fetchEdufestBugs(fetch, now, {
+      token,
+      pages: 3,
+      source: 'build',
+    }).catch((error) => {
+      log(`EduFest bugs unavailable (${error.message})`);
+      return {
+        state: 'unavailable',
+        reason: /\bGitHub (403|429)\b/.test(error.message)
+          ? 'rate_limited'
+          : 'failed',
+      };
+    });
+  }
+  mkdirSync(dirname(bugsTarget), { recursive: true });
+  writeFileSync(bugsTarget, `${JSON.stringify(feed)}\n`);
+  log(
+    feed.state === 'observed'
+      ? `EduFest bugs: ${feed.issues.length} open`
+      : `EduFest bugs ${feed.reason}`
+  );
+}
+
 async function main() {
   await writeHosting();
   writeEvidence();
   if (process.env.ROADMAP_OFFLINE === '1') {
     writeActivity();
+    await writeEdufestBugs();
     log('ROADMAP_OFFLINE=1: keeping committed data');
     return;
   }
@@ -259,6 +298,7 @@ async function main() {
     await refreshLiveData();
   } finally {
     writeActivity();
+    await writeEdufestBugs();
   }
 }
 

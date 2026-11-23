@@ -319,14 +319,6 @@ export const USE_CASES: readonly UseCase[] = [
   uc('ai-spend', 'govern', 'ai-studio', ['admin'], 'ai-provider-expenses'),
 ];
 
-export const AGENDA = [
-  'join',
-  'class',
-  'assistant',
-  'quiz',
-  'behind',
-  'plan',
-] as const;
 /** The deliverable behind the AI-help demo. */
 export const AI_LEVELS_DELIVERABLE = 'meet-classroom-ai-levels';
 /** "What you'll learn" cards, after the hero. */

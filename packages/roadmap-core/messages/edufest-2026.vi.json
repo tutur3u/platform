@@ -1,7 +1,7 @@
 {
   "meta": {
-    "title": "Khi thầy cô làm học trò · EduFest 2026",
-    "description": "Workshop thực hành về AI cho giáo dục tại EduFest 2026, Đại học RMIT Việt Nam (SGS), 05/12/2026. Ngồi ghế học trò trong lớp học Agentic AI trực tuyến, nhận gợi ý thay vì đáp án, rồi đổi ghế. 40 suất."
+    "title": "Khi nhà giáo trở thành học sinh · EduFest 2026",
+    "description": "Workshop 4 về AI cho giáo dục tại EduFest 2026, Đại học RMIT Việt Nam (SGS), 05/12/2026. Học một lớp Agentic AI ở ghế học sinh, rồi đổi sang ghế giáo viên. 90 phút, 50 suất."
   },
   "seo": {
     "crumbHome": "Tuturuuu",
@@ -15,35 +15,35 @@
     }
   },
   "hero": {
-    "eyebrow": "EduFest 2026 · Workshop thực hành",
-    "title": "Khi thầy cô làm học trò",
-    "titleAccent": "Bên trong một lớp học AI trực tuyến",
-    "subtitle": "Phần lớn thầy cô vào một lớp học trực tuyến trong vai học trò, ngay trên điện thoại hoặc laptop của mình, còn vài đồng nghiệp đứng lớp. Nhờ trợ lý AI gợi ý thay vì cho đáp án và thi theo đội trong một lượt đố vui trực tiếp, với đáp án được giữ kín. Sau đó đổi ghế để xem giáo viên tạo, chấm và theo dõi bài kiểm tra, xem trước trợ lý AI Mira, và quyết định AI nên làm gì trước khi nhà trường bật AI.",
+    "eyebrow": "EduFest 2026 · Workshop 4",
+    "title": "Khi nhà giáo trở thành học sinh",
+    "titleAccent": "Trải nghiệm lớp học với tác nhân AI",
+    "subtitle": "Trong 90 phút, thầy cô học một lớp với tác nhân AI ở ghế học sinh ngay trên điện thoại hoặc laptop, rồi đổi sang ghế giáo viên để xem lớp được dựng thế nào. Bài học là Dạy học AI-native nhập môn: AI giúp học sinh học chứ không làm bài thay.",
     "date": "Thời gian",
     "venue": "Địa điểm",
     "toBeAnnounced": "Sẽ thông báo sớm",
-    "seats": "Chỉ 40 suất",
+    "seats": "Chỉ 50 suất",
     "cta": "Sắp mở đăng ký",
     "scarcity": "Phân bổ theo thứ tự đăng ký.",
     "dateValue": "Thứ Bảy, 05/12/2026",
     "venueValue": "Đại học RMIT Việt Nam, Cơ sở Nam Sài Gòn (SGS), 702 Nguyễn Văn Linh, Tòa nhà 2",
     "addToCalendar": "Thêm vào lịch",
     "openMap": "Mở bản đồ",
-    "titleMark": "học trò",
+    "titleMark": "học sinh",
     "stageLabel": "Minh hoạ một lớp học trực tuyến: thầy cô ngồi ở ghế học trò, còn AI Agent trả lời bằng một gợi ý thay vì đưa sẵn đáp án.",
-    "stageWindow": "Lớp học trực tuyến · AI Agent nhập môn",
+    "stageWindow": "Lớp học trực tuyến · Dạy học AI-native nhập môn",
     "stageLive": "Trực tiếp",
     "stageLesson": "Bài 1",
-    "stageLessonTitle": "Để AI Agent lên kế hoạch cho tuần học",
+    "stageLessonTitle": "Gợi ý, không đưa đáp án",
     "stageBullets": [
-      "Giao mục tiêu, không giao từng bước",
-      "Yêu cầu AI Agent tự rà soát kế hoạch",
-      "Quyết định phần việc nào cần đến con người"
+      "Hỏi ngược lại trước khi trả lời",
+      "Đưa gợi ý tiếp theo, không đưa đáp án",
+      "Để giáo viên tắt AI khi cần"
     ],
     "stageYou": "Thầy cô",
-    "stageTyping": "Làm sao để AI Agent tự kiểm tra lại kế hoạch của chính nó?",
+    "stageTyping": "Bạn cho mình đáp án câu 3 luôn được không?",
     "stageHint": "Gợi ý",
-    "stageReply": "Thử yêu cầu AI Agent liệt kê trước những điểm có thể sai, rồi sửa từng điểm một.",
+    "stageReply": "Câu hỏi muốn bạn tìm gì trước tiên? Bắt đầu từ đó, rồi mình gợi ý tiếp.",
     "factsLabel": "Thông tin sự kiện"
   },
   "status": {
@@ -52,39 +52,94 @@
     "planned": "Trong kế hoạch"
   },
   "agenda": {
-    "title": "Chương trình",
-    "subtitle": "Thực hành ngay từ phút đầu.",
+    "title": "Kịch bản buổi học",
+    "subtitle": "Từ cách dạy truyền thống đến lớp học trên nền tảng đám mây và AI. Upskii trước giờ học, Meet trong giờ học, Tasks sau giờ học.",
+    "host": "Workshop 4 · Ngày hội Nhà giáo sáng tạo 2026",
+    "timesNote": "Tính theo phút từ lúc bắt đầu",
     "items": {
-      "join": {
-        "title": "Vào lớp",
-        "body": "Quét mã và vào lớp học trực tuyến từ điện thoại hoặc laptop. Không cần cài đặt."
+      "s0": {
+        "title": "Đón khách: đăng nhập như học sinh",
+        "body": "Quét mã QR hoặc mở đường dẫn ngắn, rồi đăng nhập Upskii bằng Google hoặc Microsoft. Đội hỗ trợ và thẻ tài khoản dự phòng giúp kết nối Wi-Fi và đăng nhập."
       },
-      "class": {
-        "title": "Làm học trò",
-        "body": "Phần lớn thầy cô ngồi ghế học sinh để học một điều mới, vài đồng nghiệp đứng lớp và làm trợ giảng."
+      "s1": {
+        "title": "Hôm nay thầy cô là học sinh",
+        "body": "Một lớp học truyền thống trong 60 giây đặt cạnh một lớp học với tác nhân AI, và những gì cả phòng sẽ trải nghiệm trong 90 phút."
       },
-      "assistant": {
-        "title": "Hỏi trợ lý AI",
-        "body": "Cố tình bị \"bí\" và nhờ trợ giúp. Trong workshop, trợ lý chỉ gợi ý; tùy chọn cho giáo viên ở từng lớp đang trong kế hoạch."
+      "s2": {
+        "title": "Ở ghế học sinh",
+        "body": "Vào lớp bằng đường dẫn, đọc bài Gợi ý thay cho đáp án, hỏi gia sư AI (chỉ nhận gợi ý), làm bài kiểm tra AI năm câu và giải thích quy định dùng AI của lớp mình với trợ lý luyện tiếng Anh."
       },
-      "quiz": {
-        "title": "Kiểm tra trực tiếp và chấm điểm",
-        "body": "Chơi bài kiểm tra trực tiếp theo đội ngay trong phòng, đáp án được ẩn đến lúc công bố, rồi xem giáo viên chấm một bài kiểm tra."
+      "s3": {
+        "title": "Đổi sang ghế giáo viên",
+        "body": "Lớp học được dựng thế nào: bài học AI từ dàn ý năm dòng, ngay tại chỗ; bài kiểm tra do AI tạo; kết quả bài kiểm tra vừa làm; đường dẫn mời vào lớp."
       },
-      "behind": {
-        "title": "Hậu trường",
-        "body": "Cách một đội AI Agent xây dựng các công cụ này, với con người duyệt từng thay đổi, và vì sao video của Meet chạy trên mạng lưới toàn cầu của Cloudflare."
+      "s4": {
+        "title": "Lớp học chuyển sang trực tuyến",
+        "body": "Cài đặt → Tích hợp cho thấy Upskii đã liên kết với Tuturuuu, và bắt đầu lớp trực tuyến sẽ mở Meet. Mọi người vào bằng cùng đường dẫn, kể cả khách, và tự chọn có để Mira tham gia khi vào lớp."
       },
-      "plan": {
-        "title": "Lên kế hoạch bài học đầu tiên",
-        "body": "Đổi ghế, quyết định AI được làm gì trong lớp của bạn, và ra về với một kế hoạch cùng lời giải đáp cho các câu hỏi."
+      "s5": {
+        "title": "Lớp học trực tiếp với tác nhân AI",
+        "body": "Bài học về AI có trách nhiệm từ Upskii với Theo dõi tôi, bình chọn, hẹn giờ ba phút thảo luận cặp, bảng trắng và bài kiểm tra Upskii trong Quiz Arena. Hỏi đáp, bản ghi lời và ghi chú chạy suốt buổi."
+      },
+      "s6": {
+        "title": "Hỏi đáp khi lớp vẫn trực tuyến",
+        "body": "Cuộc họp vẫn mở trong khi người điều phối đưa lên các câu hỏi được bình chọn nhiều nhất từ Hỏi đáp trong Meet."
+      },
+      "s7": {
+        "title": "Sau giờ học",
+        "body": "Kết thúc cuộc họp: ghi chú AI thành việc cần làm trên bảng dự án của lớp, mỗi việc liên kết ngược về cuộc họp, kèm những gì thay đổi từ lần trước. Thầy cô giữ lại lớp học, kết quả bài kiểm tra và việc soạn giáo án."
       }
     },
     "seats": {
       "everyone": "Cả lớp",
       "student": "Ghế học sinh",
       "teacher": "Ghế giáo viên"
-    }
+    },
+    "leads": {
+      "phuc": "Phúc",
+      "cuong": "Cường",
+      "crew": "Đội hỗ trợ"
+    },
+    "leadBy": "Dẫn dắt: {lead}",
+    "time": {
+      "before": "{n} phút trước giờ",
+      "range": "Phút {start}–{end}",
+      "duration": "{n} phút"
+    },
+    "handover": "Chuyển tiếp",
+    "ready": {
+      "label": "Mức sẵn sàng",
+      "roadmap": "Lộ trình",
+      "rehearsal": "Diễn tập",
+      "noProduct": "Không cần sản phẩm",
+      "readiness": {
+        "ready": "Sẵn sàng",
+        "at_risk": "Có rủi ro",
+        "blocked": "Bị chặn",
+        "missing": "Chưa xây dựng"
+      },
+      "stale": "Cần kiểm tra lại",
+      "unchecked": "Chưa kiểm tra",
+      "overdue": "Quá hạn",
+      "next": "Hạn tiếp theo {date}",
+      "checked": "Kiểm tra {date}",
+      "lastChecked": "Kiểm tra lần cuối {date}",
+      "teams": {
+        "upskii": "Nhóm Upskii",
+        "meet": "Nhóm Meet",
+        "platform": "Nhóm Nền tảng",
+        "workshop": "Nhóm Workshop"
+      }
+    },
+    "bugs": {
+      "none": "Không có lỗi đang mở",
+      "one": "1 lỗi đang mở",
+      "many": "{n} lỗi đang mở",
+      "more": "+{n} lỗi khác",
+      "unavailable": "Không tải được danh sách lỗi",
+      "all": "Tất cả lỗi EduFest"
+    },
+    "updated": "Cập nhật {date}"
   },
   "capabilities": {
     "title": "Mọi tính năng, kèm trạng thái",
@@ -168,7 +223,12 @@
   },
   "tools": {
     "title": "Ai dẫn dắt workshop",
-    "subtitle": "Đội ngũ xây dựng Tuturuuu và Upskii trình diễn các demo trực tiếp và giới thiệu các bản xem trước. Tên diễn giả sẽ được thông báo tại đây.",
+    "subtitle": "Hai diễn giả dẫn dắt buổi học; đội ngũ xây dựng Tuturuuu và Upskii hỗ trợ tại chỗ và vận hành các demo trực tiếp.",
+    "speakersLabel": "Diễn giả",
+    "roles": {
+      "phuc": "Chủ tịch, Nhà sáng lập kiêm CEO, Tuturuuu",
+      "cuong": "Giám đốc Công nghệ (CTO), Upskii"
+    },
     "poweredBy": "Vận hành bởi",
     "roadmap": "Xem lộ trình công khai",
     "names": {
@@ -197,7 +257,7 @@
     "items": {
       "who": {
         "q": "Workshop này dành cho ai?",
-        "a": "Giáo viên, trợ giảng và cán bộ quản lý nhà trường muốn xem AI làm được gì trong một tiết học thật. Có 40 chỗ."
+        "a": "Giáo viên, trợ giảng và cán bộ quản lý nhà trường muốn xem AI làm được gì trong một tiết học thật. Có 50 chỗ."
       },
       "skills": {
         "q": "Tôi có cần kỹ năng công nghệ không?",
@@ -217,7 +277,7 @@
       },
       "registration": {
         "q": "Tôi đăng ký thế nào?",
-        "a": "Hiện chưa mở đăng ký. Số chỗ giới hạn 40, và thông tin đăng ký sẽ được thông báo tại đây."
+        "a": "Hiện chưa mở đăng ký. Số chỗ giới hạn 50, và thông tin đăng ký sẽ được thông báo tại đây."
       },
       "after": {
         "q": "Sau workshop thì sao?",
@@ -229,20 +289,20 @@
     "title": "Bạn sẽ học được gì",
     "items": {
       "classroom": {
-        "title": "Vận hành lớp học AI trực tuyến",
-        "body": "Chia sẻ màn hình, tổ chức biểu mẫu và bài kiểm tra trực tiếp, dùng chế độ Tiết kiệm dữ liệu để giảm chất lượng video khi mạng yếu."
+        "title": "Tiết học AI-native khác gì",
+        "body": "Chuẩn bị, luyện tập, phản hồi và theo dõi sau giờ học: cùng một bài học, theo cách truyền thống và theo cách AI-native."
       },
       "assistant": {
-        "title": "Giúp đỡ mà không lộ đáp án",
-        "body": "Xem trợ lý AI gợi ý thay vì đưa đáp án, và cách các tùy chọn cho giáo viên ở từng lớp đang được thiết kế."
+        "title": "Gợi ý, không đưa đáp án",
+        "body": "Dùng AI như một gia sư: hỏi ngược lại, gợi ý theo từng bậc, và biết khi nào nên tắt AI."
       },
       "assess": {
-        "title": "Kiểm tra và chấm điểm trong vài phút",
-        "body": "Tạo bài kiểm tra, tổ chức trực tiếp, chấm điểm và theo dõi tiến độ từng học viên."
+        "title": "Kiểm tra vẫn đo được việc học",
+        "body": "AI soạn nháp câu hỏi, thầy cô duyệt lại, và chấm cả quá trình lẫn sản phẩm."
       },
       "responsible": {
-        "title": "Quyết định trước khi bật AI",
-        "body": "AI được giúp ai, ghi nhớ những gì, dữ liệu nằm ở đâu và chi phí bao nhiêu."
+        "title": "AI có trách nhiệm trong lớp học",
+        "body": "Sự đồng ý, quy định 18+ và học sinh chưa đủ tuổi, dữ liệu nằm ở đâu, và nên trao đổi gì với phụ huynh."
       }
     }
   },
@@ -296,7 +356,7 @@
     },
     "items": {
       "time": "Giờ diễn ra sẽ được thông báo",
-      "seats": "40 suất, phân bổ theo thứ tự đăng ký",
+      "seats": "50 suất, phân bổ theo thứ tự đăng ký",
       "registration": "Chưa mở. Thông tin sẽ được thông báo tại đây.",
       "bring": "Điện thoại hoặc laptop đã sạc pin. Mọi thứ chạy trên trình duyệt."
     },

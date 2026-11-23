@@ -7,7 +7,6 @@ import vi from '../../../messages/edufest-2026.vi.json' with { type: 'json' };
 import { readStyles } from '../../style-source.ts';
 import { cssDeclarations } from '../../css-guards.ts';
 import {
-  AGENDA_SEATS,
   AGENT_STEPS,
   ASK_MODES,
   ASK_QUESTIONS,
@@ -25,7 +24,7 @@ import {
   voteReducer,
   WORKSHOP_ASK_MODE,
 } from './edufest-2026-demos.ts';
-import { AGENDA } from './edufest-2026.ts';
+import { RUN_OF_SHOW } from './edufest-2026-run.ts';
 
 const source = (file: string) =>
   readFileSync(
@@ -89,7 +88,8 @@ describe('EduFest demos: copy and honesty', () => {
           assert.ok(t.liveClass.ask.questions[q][mode], `${q}.${mode}`);
       for (const id of AGENT_STEPS)
         assert.ok(t.agentTeam.steps[id].title && t.agentTeam.steps[id].body);
-      for (const id of AGENDA) assert.ok(t.agenda.seats[AGENDA_SEATS[id]], id);
+      for (const step of RUN_OF_SHOW)
+        assert.ok(t.agenda.seats[step.seat], step.id);
       assert.match(t.booth.cast, /\{booth\}/);
       assert.match(t.booth.chosen, /\{booth\}/);
     }

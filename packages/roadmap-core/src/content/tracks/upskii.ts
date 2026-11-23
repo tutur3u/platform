@@ -7,6 +7,29 @@ export const upskiiTrack: Track = {
     'Education tools across Upskii and Tuturuuu Learn, Teach and Rewise.',
   milestones: [
     {
+      id: 'upskii-with-tuturuuu',
+      title: 'Upskii with your Tuturuuu account',
+      titleVi: 'Upskii cùng tài khoản Tuturuuu',
+      deliverables: [
+        {
+          id: 'upskii-account-linking',
+          title: 'Link your Upskii and Tuturuuu accounts',
+          titleVi: 'Liên kết tài khoản Upskii với tài khoản Tuturuuu',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+        {
+          id: 'upskii-integration-card',
+          title: 'Upskii in the Integrations catalog',
+          titleVi: 'Upskii trong danh mục Tích hợp',
+          prs: [],
+          app: null,
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
       id: 'learn-teach-together',
       title: 'Learn and Teach, together at tuturuuu.com',
       titleVi: 'Learn và Teach hợp nhất tại tuturuuu.com',

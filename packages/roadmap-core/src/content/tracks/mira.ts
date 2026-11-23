@@ -76,6 +76,16 @@ export const miraTrack: Track = {
           fallback: 'planned',
         },
         {
+          id: 'mira-owner-consent',
+          title:
+            'The meeting owner turns Mira on once, with a notice everyone sees',
+          titleVi:
+            'Chủ cuộc họp bật Mira một lần, kèm thông báo hiển thị cho mọi người',
+          prs: [],
+          app: 'meet-realtime',
+          fallback: 'planned',
+        },
+        {
           id: 'mira-memory-cloudflare',
           title: 'Mira memory moving to a dedicated Cloudflare service',
           titleVi: 'Bộ nhớ của Mira đang chuyển sang dịch vụ Cloudflare riêng',

@@ -28,6 +28,16 @@ export const BY_ID = new Map(USE_CASES.map((item) => [item.id, item]));
 
 export const UPSKII_URL = 'https://upskii.com';
 
+/** A message with `{name}` placeholders filled in. */
+export function fill(
+  template: string,
+  values: Record<string, string | number>
+): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    String(values[key] ?? '')
+  );
+}
+
 /** The official Upskii mark (upskii/platform official-logo.png), linked. */
 export function UpskiiLink({ children = 'Upskii' }: { children?: ReactNode }) {
   return (

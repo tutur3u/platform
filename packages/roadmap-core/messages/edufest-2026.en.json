@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "When Teachers Become Students · EduFest 2026",
-    "description": "Hands-on AI in education workshop at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Join a live AI class as a student, get hints, not answers, then swap seats. 40 seats."
+    "description": "Workshop 4 at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Take an agentic AI class as a student, then flip to the teacher seat. 90 minutes, 50 seats."
   },
   "seo": {
     "crumbHome": "Tuturuuu",
@@ -15,14 +15,14 @@
     }
   },
   "hero": {
-    "eyebrow": "EduFest 2026 · Hands-on workshop",
+    "eyebrow": "EduFest 2026 · Workshop 4",
     "title": "When Teachers Become Students",
-    "titleAccent": "Inside a Live AI Classroom",
-    "subtitle": "Most of the room joins a live online class as students, on their own phone or laptop, while a few colleagues teach. Ask an AI assistant for a hint instead of the answer and race a live team quiz with hidden answers. Then swap seats to see how teachers build, grade and track quizzes, preview the AI assistant Mira, and decide what AI should do before your school switches it on.",
+    "titleAccent": "Step Inside the Agentic AI Classroom",
+    "subtitle": "For 90 minutes, take an agentic AI class as a student on your own phone or laptop, then flip to the teacher seat to see how it was built. The lesson is AI-native teaching 101: AI that helps students learn rather than answer for them.",
     "date": "Date",
     "venue": "Venue",
     "toBeAnnounced": "To be announced",
-    "seats": "Only 40 seats",
+    "seats": "Only 50 seats",
     "cta": "Registration coming soon",
     "scarcity": "In order of registration.",
     "dateValue": "Saturday, 5 December 2026",
@@ -31,19 +31,19 @@
     "openMap": "Open map",
     "titleMark": "Students",
     "stageLabel": "An illustrated live class: you sit in a student seat while the AI agent answers with a hint, not the answer.",
-    "stageWindow": "Live class · Agentic AI 101",
+    "stageWindow": "Live class · AI-native teaching 101",
     "stageLive": "Live",
     "stageLesson": "Lesson 1",
-    "stageLessonTitle": "Let an agent plan your week",
+    "stageLessonTitle": "Hints, not answers",
     "stageBullets": [
-      "Give the agent a goal, not steps",
-      "Ask it to check its own plan",
-      "Decide what stays human"
+      "Ask a question back before answering",
+      "Give the next hint, never the answer",
+      "Let the teacher switch AI off"
     ],
     "stageYou": "You",
-    "stageTyping": "How do I get the agent to check its own plan?",
+    "stageTyping": "Can you just give me the answer to question 3?",
     "stageHint": "Hint",
-    "stageReply": "Ask it to list what could go wrong first, then to fix one thing.",
+    "stageReply": "What does the question ask you to find first? Start there, and I'll give the next hint.",
     "factsLabel": "Event details"
   },
   "status": {
@@ -52,39 +52,94 @@
     "planned": "Planned"
   },
   "agenda": {
-    "title": "Agenda",
-    "subtitle": "Hands-on from the first minute.",
+    "title": "Run of show",
+    "subtitle": "From a traditional setup to a cloud- and AI-native classroom. Upskii before class, Meet in class, Tasks after.",
+    "host": "Workshop 4 · Vietnam Education Festival 2026",
+    "timesNote": "Minutes from the start",
     "items": {
-      "join": {
-        "title": "Join the class",
-        "body": "Scan a code and join a live online class from your phone or laptop. No install needed."
+      "s0": {
+        "title": "Doors: sign in as a student",
+        "body": "Scan the QR code or open the short link, then sign in to Upskii with Google or Microsoft. Floor helpers and backup cards cover Wi-Fi and sign-in."
       },
-      "class": {
-        "title": "Become the student",
-        "body": "Most of the room learns something new as students, while a few colleagues teach and assist."
+      "s1": {
+        "title": "Today you are the students",
+        "body": "A traditional classroom in 60 seconds next to an agentic one, and what the room will try in the next 90 minutes."
       },
-      "assistant": {
-        "title": "Ask the AI assistant",
-        "body": "Get stuck on purpose and ask for help. For the workshop the assistant gives hints only; teacher controls for each class are planned."
+      "s2": {
+        "title": "In the student seat",
+        "body": "Join the class by link, read Hints, not answers, ask the AI tutor (hints only), take the five-question AI quiz and explain your class AI rule to the English coach."
       },
-      "quiz": {
-        "title": "Live quiz and grading",
-        "body": "Play a live team quiz in the room, with answers hidden until the reveal, then see how a teacher grades a test."
+      "s3": {
+        "title": "Flip to the teacher seat",
+        "body": "How the class was built: AI lessons from a five-line outline, live; AI-generated assessments; the results of the quiz you just took; the invite link."
       },
-      "behind": {
-        "title": "Behind the scenes",
-        "body": "How a team of AI agents builds these tools with people approving each change, and why Meet's video runs on Cloudflare's global network."
+      "s4": {
+        "title": "The class moves live",
+        "body": "Settings → Integrations shows Upskii linked to Tuturuuu, and starting the live class opens Meet. Everyone joins from the same link, guests included, and chooses at join whether Mira takes part."
       },
-      "plan": {
-        "title": "Plan your first lesson",
-        "body": "Swap seats, decide what AI may do in your class, and leave with a plan and your questions answered."
+      "s5": {
+        "title": "A live agentic classroom",
+        "body": "The responsible-AI lesson from Upskii with Follow me, a poll, a three-minute pair-talk timer, a whiteboard and the Upskii quiz in Quiz Arena. Q&A, transcript and notes run throughout."
+      },
+      "s6": {
+        "title": "Q&A, still live",
+        "body": "The meeting stays open while the moderator brings up the top-voted questions from Meet Q&A."
+      },
+      "s7": {
+        "title": "After class",
+        "body": "End the meeting: AI notes become action items on the class project board, each linked back to the meeting, with what changed since last time. Keep the class, your quiz result and your lesson-plan task."
       }
     },
     "seats": {
       "everyone": "Everyone",
       "student": "Student seat",
       "teacher": "Teacher seat"
-    }
+    },
+    "leads": {
+      "phuc": "Phúc",
+      "cuong": "Cường",
+      "crew": "Floor helpers"
+    },
+    "leadBy": "Led by {lead}",
+    "time": {
+      "before": "{n} min before",
+      "range": "{start}–{end} min",
+      "duration": "{n} min"
+    },
+    "handover": "Handover",
+    "ready": {
+      "label": "Readiness",
+      "roadmap": "Roadmap",
+      "rehearsal": "Rehearsal",
+      "noProduct": "No product needed",
+      "readiness": {
+        "ready": "Ready",
+        "at_risk": "At risk",
+        "blocked": "Blocked",
+        "missing": "Not built yet"
+      },
+      "stale": "Re-check due",
+      "unchecked": "Not checked yet",
+      "overdue": "Overdue",
+      "next": "Next by {date}",
+      "checked": "Checked {date}",
+      "lastChecked": "Last checked {date}",
+      "teams": {
+        "upskii": "Upskii team",
+        "meet": "Meet team",
+        "platform": "Platform team",
+        "workshop": "Workshop team"
+      }
+    },
+    "bugs": {
+      "none": "No open bugs",
+      "one": "1 open bug",
+      "many": "{n} open bugs",
+      "more": "+{n} more",
+      "unavailable": "Bug list unavailable",
+      "all": "All EduFest bugs"
+    },
+    "updated": "Updated {date}"
   },
   "capabilities": {
     "title": "Every capability, with its status",
@@ -168,7 +223,12 @@
   },
   "tools": {
     "title": "Who runs the session",
-    "subtitle": "The team that builds Tuturuuu and Upskii runs the live demos and walks through the previews. Speaker names will be announced here.",
+    "subtitle": "Two speakers lead the session; the teams that build Tuturuuu and Upskii run the floor and the live demos.",
+    "speakersLabel": "Speakers",
+    "roles": {
+      "phuc": "Chairman, Founder & CEO, Tuturuuu",
+      "cuong": "CTO, Upskii"
+    },
     "poweredBy": "Powered by",
     "roadmap": "See the public roadmap",
     "names": {
@@ -197,7 +257,7 @@
     "items": {
       "who": {
         "q": "Who is this workshop for?",
-        "a": "Teachers, teaching assistants and school leaders who want to see what AI can do in a real lesson. There are 40 seats."
+        "a": "Teachers, teaching assistants and school leaders who want to see what AI can do in a real lesson. There are 50 seats."
       },
       "skills": {
         "q": "Do I need technical skills?",
@@ -217,7 +277,7 @@
       },
       "registration": {
         "q": "How do I register?",
-        "a": "Registration is not open yet. Seats are limited to 40, and registration details will be announced here."
+        "a": "Registration is not open yet. Seats are limited to 50, and registration details will be announced here."
       },
       "after": {
         "q": "What happens after the workshop?",
@@ -229,20 +289,20 @@
     "title": "What you'll learn",
     "items": {
       "classroom": {
-        "title": "Run a live AI classroom",
-        "body": "Share your screen, run forms and live quizzes, and use Data saver to lower video quality when a connection is weak."
+        "title": "What changes in an AI-native lesson",
+        "body": "Prepare, practise, give feedback and follow up: the same lesson, run the traditional way and the AI-native way."
       },
       "assistant": {
-        "title": "Help without giving it away",
-        "body": "See an AI assistant hint instead of answer, and how per-class teacher controls are being designed."
+        "title": "Hints, not answers",
+        "body": "Use AI as a tutor: questions back, hint ladders, and when to switch AI off."
       },
       "assess": {
-        "title": "Assess in minutes",
-        "body": "Build a quiz, run it live, grade it and follow each learner's progress."
+        "title": "Assessment that still measures learning",
+        "body": "AI drafts the questions, you review them, and the process is graded as well as the product."
       },
       "responsible": {
-        "title": "Decide before you switch AI on",
-        "body": "Who it may help, what it remembers, where data lives and what it costs."
+        "title": "Responsible AI in your class",
+        "body": "Consent, the 18+ rule and minors, where data lives, and what to tell parents."
       }
     }
   },
@@ -296,7 +356,7 @@
     },
     "items": {
       "time": "Session time to be announced",
-      "seats": "40 seats, in order of registration",
+      "seats": "50 seats, in order of registration",
       "registration": "Not open yet. Details will be announced here.",
       "bring": "A charged phone or laptop. Everything runs in the browser."
     },

@@ -1,4 +1,4 @@
-/* EduFest workshop: the live-class demo, agenda timeline, agent flow, booth
+/* EduFest workshop: the live-class demo, agent flow, booth
    hall and venue. Colours come from the --rm-* tokens; motion is transform
    and opacity only, and anything infinite runs in the rich tier alone. */
 
@@ -50,59 +50,6 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-}
-
-/* Agenda timeline. */
-.ws-timeline {
-  position: relative;
-  display: grid;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.ws-timeline::before {
-  content: "";
-  position: absolute;
-  top: 18px;
-  bottom: 18px;
-  left: 17px;
-  width: 2px;
-  background: var(--rm-line);
-}
-.ws-tl-item {
-  position: relative;
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  gap: 14px;
-}
-.ws-tl-node {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 2px solid var(--rm-line);
-  border-radius: 999px;
-  background: var(--rm-panel);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.ws-tl-card {
-  padding: 14px 16px;
-  border: 1px solid var(--rm-line);
-  border-radius: var(--rm-radius);
-  background: var(--rm-panel);
-}
-.ws-tl-card h3 {
-  margin: 10px 0 4px;
-  font-size: 16px;
-  font-weight: 600;
-}
-.ws-tl-card p {
-  margin: 0;
-  color: var(--rm-muted);
-  font-size: 14.5px;
-  line-height: 1.55;
 }
 
 /* Agent team flow. */
@@ -384,22 +331,6 @@
   }
 }
 @media (min-width: 1200px) {
-  .ws-timeline {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 12px;
-  }
-  .ws-timeline::before {
-    top: 17px;
-    bottom: auto;
-    left: 18px;
-    right: calc((100% - 60px) / 6 - 18px);
-    width: auto;
-    height: 2px;
-  }
-  .ws-tl-item {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
-  }
   .ws-flowline {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 12px;

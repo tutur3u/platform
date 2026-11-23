@@ -171,7 +171,7 @@ export function workshopJsonLd({
           },
         },
         organizer: ORGANIZATION,
-        maximumAttendeeCapacity: 40,
+        maximumAttendeeCapacity: 50,
         offers: {
           '@type': 'Offer',
           url,

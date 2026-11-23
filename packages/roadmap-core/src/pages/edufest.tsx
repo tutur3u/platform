@@ -24,6 +24,7 @@ import {
   WsVenue,
 } from '../components/workshop';
 import { initialLiveData } from '../live/initial-data';
+import { initialBugFeed, useEdufestBugs } from '../live/use-edufest-bugs';
 import { useLiveData } from '../live/use-live-data';
 import { pagePath, ROUTE_PATHS } from '../seo';
 
@@ -40,6 +41,7 @@ export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
   const initialData = initialLiveData();
   const live = useLiveData(initialData);
   const statuses = useWorkshopStatuses(live.data);
+  const bugs = useEdufestBugs(useMemo(initialBugFeed, []));
   const shellT = useMemo(() => createTranslator(lang), [lang]);
 
   return (
@@ -75,10 +77,16 @@ export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
             <WsLearn t={t} />
           </Suspense>
           <Suspense>
-            <WsLiveClass t={t} statuses={statuses} />
+            <WsAgenda
+              t={t}
+              lang={lang}
+              statuses={statuses}
+              now={live.now}
+              bugs={bugs}
+            />
           </Suspense>
           <Suspense>
-            <WsAgenda t={t} />
+            <WsLiveClass t={t} statuses={statuses} />
           </Suspense>
           <Suspense>
             <WsDemos t={t} statuses={statuses} />

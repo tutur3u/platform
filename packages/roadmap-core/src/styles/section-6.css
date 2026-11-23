@@ -19,6 +19,28 @@
   object-fit: contain;
   vertical-align: -0.12em;
 }
+.ws-speakers {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.ws-speaker {
+  display: grid;
+  gap: 2px;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.ws-speaker strong {
+  font-size: 17px;
+}
+.ws-speaker span {
+  color: var(--rm-muted);
+  font-size: 14px;
+}
 .ws-brands {
   display: grid;
   gap: 12px;
@@ -58,6 +80,7 @@
   color: var(--rm-progress-text);
 }
 @media (min-width: 720px) {
+  .ws-speakers,
   .ws-brands {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

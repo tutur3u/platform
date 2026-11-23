@@ -140,20 +140,36 @@ describe('roadmap public proxy', () => {
     );
   });
 
-  it('redirects a localized mount to the unlocalized path without a slash', async () => {
-    const fetchImpl = vi.fn();
+  it.each([
+    ['/vi/roadmap?q=1', '/roadmap/vi?q=1'],
+    ['/vi/roadmap/', '/roadmap/vi'],
+    [
+      '/vi/roadmap/workshops/edufest-2026',
+      '/roadmap/vi/workshops/edufest-2026',
+    ],
+    [
+      '/vi/roadmap/vi/workshops/edufest-2026',
+      '/roadmap/vi/workshops/edufest-2026',
+    ],
+    ['/en/roadmap?q=1', '/roadmap?q=1'],
+    ['/en/roadmap/workshops/edufest-2026', '/roadmap/workshops/edufest-2026'],
+  ])(
+    'redirects the localized mount %s to the roadmap language path %s',
+    async (from, to) => {
+      const fetchImpl = vi.fn();
 
-    const response = await proxyRoadmapPublicRequest(
-      new NextRequest('https://tuturuuu.com/vi/roadmap?q=1'),
-      fetchImpl
-    );
+      const response = await proxyRoadmapPublicRequest(
+        new NextRequest(`https://tuturuuu.com${from}`),
+        fetchImpl
+      );
 
-    expect(response?.status).toBe(308);
-    expect(response?.headers.get('location')).toBe(
-      'https://tuturuuu.com/roadmap?q=1'
-    );
-    expect(fetchImpl).not.toHaveBeenCalled();
-  });
+      expect(response?.status).toBe(308);
+      expect(response?.headers.get('location')).toBe(
+        `https://tuturuuu.com${to}`
+      );
+      expect(fetchImpl).not.toHaveBeenCalled();
+    }
+  );
 
   it('does not treat a neighbouring private path as the roadmap', async () => {
     const fetchImpl = vi.fn();

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { collectTechStack } from './collect-tech-stack.ts';
 import { activityForBuild } from './insights/activity.ts';
+import { parseBugFeed } from './live/edufest-bugs.ts';
 import { parseEvidence } from './live/evidence.ts';
 import { snapshotForBuild } from './live/hosting.ts';
 
@@ -9,6 +10,7 @@ import { snapshotForBuild } from './live/hosting.ts';
 const HOSTING_FILE = new URL('../.generated/hosting.json', import.meta.url);
 const ACTIVITY_FILE = new URL('../.generated/activity.json', import.meta.url);
 const EVIDENCE_FILE = new URL('../.generated/evidence.json', import.meta.url);
+const BUGS_FILE = new URL('../.generated/edufest-bugs.json', import.meta.url);
 
 /** A generated JSON file, or null when it is absent or unreadable. */
 function generated(file: URL): unknown {
@@ -67,6 +69,11 @@ export function roadmapBuildDefines(
       command === 'build'
         ? parseEvidence(generated(EVIDENCE_FILE), { time: Date.now(), source })
         : null
+    ),
+    // Open EduFest bugs this build observed (src/live/edufest-bugs.ts); null
+    // shows the bug list as unavailable until the browser refresh reads it.
+    __ROADMAP_EDUFEST_BUGS__: JSON.stringify(
+      command === 'build' ? parseBugFeed(generated(BUGS_FILE)) : null
     ),
   };
 }

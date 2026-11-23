@@ -73,13 +73,22 @@ export function isRoadmapPublicPath(pathname: string): boolean {
   );
 }
 
+/**
+ * The roadmap Worker serves its own languages: English at `/roadmap/...`
+ * and Vietnamese at `/roadmap/vi/...`. A web locale prefix maps onto that,
+ * so `/vi/roadmap/x` keeps the reader in Vietnamese at `/roadmap/vi/x`.
+ */
 function canonicalRoadmapRedirectPath(pathname: string): string | null {
-  const { locale } = roadmapPathnameWithoutLocale(pathname);
+  const { locale, pathnameWithoutLocale } =
+    roadmapPathnameWithoutLocale(pathname);
 
   if (!isRoadmapPublicPath(pathname) || !locale) return null;
 
-  const unlocalized = pathname.slice(locale.length + 1) || '/';
-  return unlocalized.startsWith('/') ? unlocalized : `/${unlocalized}`;
+  const rest = pathnameWithoutLocale.slice('/roadmap'.length);
+  if (locale === 'vi' && !/^\/vi(?:\/|$)/.test(rest)) {
+    return `/roadmap/vi${rest}`;
+  }
+  return `/roadmap${rest}`;
 }
 
 /**

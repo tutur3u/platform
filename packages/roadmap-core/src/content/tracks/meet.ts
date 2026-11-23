@@ -45,6 +45,14 @@ export const meetTrack: Track = {
           app: 'meet',
           fallback: 'planned',
         },
+        {
+          id: 'meet-guest-join',
+          title: 'Guests join a class from a link without signing in',
+          titleVi: 'Khách vào lớp bằng đường dẫn mà không cần đăng nhập',
+          prs: [],
+          app: 'meet',
+          fallback: 'in_progress',
+        },
       ],
     },
     {
@@ -92,6 +100,16 @@ export const meetTrack: Track = {
           prs: [7522, 7523],
           app: 'meet',
           fallback: 'in_progress',
+        },
+        {
+          id: 'meet-action-items-roundtrip',
+          title:
+            'Meeting action items saved to a linked task board, with status back',
+          titleVi:
+            'Việc cần làm từ cuộc họp được lưu vào bảng công việc liên kết, kèm trạng thái',
+          prs: [],
+          app: 'meet',
+          fallback: 'planned',
         },
       ],
     },
@@ -177,6 +195,32 @@ export const meetTrack: Track = {
           prs: [],
           app: null,
           fallback: 'planned',
+        },
+        {
+          id: 'meet-upskii-presenter',
+          title: 'Present an Upskii lesson or quiz inside Meet',
+          titleVi:
+            'Trình chiếu bài học hoặc bài kiểm tra Upskii ngay trong Meet',
+          prs: [],
+          app: 'meet',
+          fallback: 'planned',
+        },
+        {
+          id: 'meet-follow-me',
+          title: 'Follow me: the class sees what the presenter shows',
+          titleVi:
+            'Theo dõi tôi: cả lớp cùng xem nội dung người trình bày đang mở',
+          prs: [],
+          app: 'meet',
+          fallback: 'in_progress',
+        },
+        {
+          id: 'meet-live-qa',
+          title: 'Live Q&A: the class asks and upvotes questions',
+          titleVi: 'Hỏi đáp trực tiếp: cả lớp đặt câu hỏi và bình chọn',
+          prs: [],
+          app: 'meet',
+          fallback: 'in_progress',
         },
         {
           id: 'meet-classroom-points',

@@ -4,6 +4,7 @@ import { ChevronDown } from '@tuturuuu/icons';
 // it renders at 16-40px, so the 998px original only cost page weight.
 import upskiiLogo from '../../assets/upskii-logo-96.png?no-inline';
 import { FAQ, TOOLS } from '../../content/workshops/edufest-2026';
+import { SPEAKERS } from '../../content/workshops/edufest-2026-run';
 import { type EduMessages, UPSKII_URL, UpskiiLink, UpskiiText } from './shared';
 
 export function WsTools({ t, logo }: { t: EduMessages; logo: string }) {
@@ -15,6 +16,14 @@ export function WsTools({ t, logo }: { t: EduMessages; logo: string }) {
           <UpskiiText text={t.tools.subtitle} />
         </p>
       </header>
+      <ul className="ws-speakers" aria-label={t.tools.speakersLabel}>
+        {SPEAKERS.map((speaker) => (
+          <li key={speaker.id} className="ws-speaker">
+            <strong>{speaker.name}</strong>
+            <span>{t.tools.roles[speaker.id]}</span>
+          </li>
+        ))}
+      </ul>
       <div className="ws-brands">
         <div className="ws-brand">
           <img src={logo} alt="" width={40} height={40} />

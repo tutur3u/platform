@@ -143,6 +143,14 @@ export const workspaceTrack: Track = {
           app: 'web',
           fallback: 'planned',
         },
+        {
+          id: 'settings-integrations-section',
+          title: 'Integrations in the settings of every app',
+          titleVi: 'Mục Tích hợp trong phần cài đặt của mọi ứng dụng',
+          prs: [],
+          app: 'web',
+          fallback: 'planned',
+        },
       ],
     },
     {

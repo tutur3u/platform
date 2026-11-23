@@ -186,6 +186,26 @@ deploy must contain them. Status is never written by hand;
 only with an approved replacement. Never add private products, client names,
 security incidents, operational notes or tokens to content.
 
+### EduFest run of show
+
+The EduFest workshop page lists the session's steps S0–S7
+(`content/workshops/edufest-2026-run.ts`, copy in `messages/edufest-2026.*.json`).
+Each step shows three independent signals:
+
+- **Roadmap**: the worst status of the deliverables the step depends on,
+  derived like every other status above.
+- **Rehearsal**: the latest signed-in check on production, curated in
+  `content/workshops/edufest-2026-readiness.ts` (readiness, check day, owning
+  team, next latest-by date and what is left, EN and VI). Name teams, never
+  people. A check older than three days reads as "Re-check due" and drops its
+  readiness, so an old "Ready" never stands in for a new check.
+- **Open bugs**: public issues labelled `edufest-2026` plus `edufest:s0` to
+  `edufest:s7`, read once at build time and refreshed in the browser
+  (`live/edufest-bugs.ts`). Only numbers and titles are shown. A failed,
+  rate-limited or capped search reads as "Bug list unavailable", never as zero
+  bugs. Never label security issues for EduFest; any issue with a security
+  label is dropped.
+
 ## Timeline and full history
 
 `scripts/generate-history.mjs` (run by `build`, `build:cloudflare` and

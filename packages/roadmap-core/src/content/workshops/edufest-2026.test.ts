@@ -14,7 +14,6 @@ import {
 } from '../../live/status.ts';
 import { tracks } from '../tracks.ts';
 import {
-  AGENDA,
   AI_LEVELS_DELIVERABLE,
   CAPABILITIES,
   DEMOS,
@@ -27,6 +26,7 @@ import {
   USE_CASES,
   WORKSHOP_EVENT,
 } from './edufest-2026.ts';
+import { RUN_STEPS } from './edufest-2026-run.ts';
 
 /** Every EduFest workshop component module (components/workshop/*), joined. */
 function workshopSource(file?: string) {
@@ -119,20 +119,31 @@ describe('EduFest workshop: copy', () => {
       for (const id of CAPABILITIES)
         assert.ok(messages.capabilities.groups[id]);
       for (const id of TOOLS) assert.ok(messages.tools.names[id]);
-      for (const id of AGENDA) assert.ok(messages.agenda.items[id]);
+      for (const id of RUN_STEPS)
+        assert.ok(
+          messages.agenda.items[id].title && messages.agenda.items[id].body,
+          id
+        );
     }
   });
 
-  it('the hero and page title stay brand-neutral; Vietnamese says AI Agent', () => {
+  it('the hero carries the official Workshop 4 title, brand-neutral', () => {
     for (const messages of [en, vi]) {
       const neutral = JSON.stringify([messages.hero, messages.meta]);
       assert.doesNotMatch(neutral, /Tuturuuu|Upskii/);
     }
     assert.doesNotMatch(JSON.stringify(vi), /tác tử/);
-    assert.equal(vi.hero.title, 'Khi thầy cô làm học trò');
-    assert.equal(vi.hero.titleAccent, 'Bên trong một lớp học AI trực tuyến');
+    // The official session title from the festival programme.
+    assert.equal(vi.hero.title, 'Khi nhà giáo trở thành học sinh');
+    assert.equal(vi.hero.titleAccent, 'Trải nghiệm lớp học với tác nhân AI');
     assert.equal(en.hero.title, 'When Teachers Become Students');
-    assert.equal(en.hero.titleAccent, 'Inside a Live AI Classroom');
+    assert.equal(en.hero.titleAccent, 'Step Inside the Agentic AI Classroom');
+    for (const messages of [en, vi]) {
+      assert.match(messages.hero.eyebrow, /Workshop 4/);
+      assert.ok(messages.hero.title.includes(messages.hero.titleMark));
+      assert.match(messages.hero.seats, /\b50\b/);
+      assert.doesNotMatch(JSON.stringify(messages), /\b40 (seats|suất|chỗ)/);
+    }
   });
 
   it('the date and venue are the confirmed ones; no price, form or link in the call to action', () => {
