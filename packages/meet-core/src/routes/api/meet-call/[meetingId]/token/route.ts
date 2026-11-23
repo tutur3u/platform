@@ -59,6 +59,11 @@ export async function POST(
     ]);
     const session = await getMeetCallSession({
       guest,
+      // A guest verified by Turnstile or the human check carries it into the
+      // realtime token, so the host's lobby shows no Unverified badge.
+      ...(guest && 'turnstileVerified' in resolved && resolved.turnstileVerified
+        ? { guestTurnstileVerified: true as const }
+        : {}),
       coHost: classRole.coHost,
       participantKind: classRole.participantKind,
       maxRoomDurationSeconds,
