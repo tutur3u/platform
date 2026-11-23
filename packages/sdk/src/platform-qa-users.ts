@@ -49,7 +49,13 @@ export interface CreateQaUsersResult {
   expiresAt: string;
   runWorkspaceId: string | null;
   users: CreatedQaUser[];
-  failed: Array<{ userId: string; email: string; cleanup: string }>;
+  failed: Array<{
+    userId: string;
+    email: string;
+    /** Which step failed: auth_create, onboarding or activate. */
+    stage?: string;
+    cleanup: string;
+  }>;
 }
 
 export interface QaSessionCookie {
@@ -109,8 +115,29 @@ export class QaUsersAdminClient {
     });
   }
 
-  create(payload: CreateQaUsersPayload) {
-    return this.api.json<CreateQaUsersResult>(BASE, jsonInit('POST', payload));
+  /**
+   * The server answers 503 with the run and per-account failures when every
+   * account fails. That body is returned (not thrown) so the caller can show
+   * the run ID, failed step and rollback state instead of a bare status.
+   */
+  async create(payload: CreateQaUsersPayload): Promise<CreateQaUsersResult> {
+    const response = await this.api.fetch(BASE, jsonInit('POST', payload));
+    const body = (await response.json().catch(() => null)) as
+      | (Partial<CreateQaUsersResult> & { error?: string })
+      | null;
+    if (
+      (response.status === 201 || response.status === 503) &&
+      body &&
+      typeof body.runId === 'string' &&
+      Array.isArray(body.users) &&
+      Array.isArray(body.failed)
+    )
+      return body as CreateQaUsersResult;
+    throw new Error(
+      typeof body?.error === 'string' && body.error
+        ? `${body.error} (HTTP ${response.status}).`
+        : `QA user create failed (HTTP ${response.status}).`
+    );
   }
 
   /** Not-found, busy and pending are outcomes, not errors. */

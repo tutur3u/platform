@@ -226,6 +226,59 @@ describe('qa users', () => {
     ]);
   });
 
+  it('shows the run, failed step and rollback when every account fails (503)', async () => {
+    const { client } = fixture(() =>
+      Response.json(
+        {
+          ...created,
+          users: [],
+          failed: [
+            {
+              userId: USER,
+              email: EMAIL,
+              stage: 'activate',
+              cleanup: 'pending',
+            },
+          ],
+        },
+        { status: 503 }
+      )
+    );
+    const { out, deps: d } = deps();
+    await expect(
+      runQaCommand(
+        {
+          client,
+          json: false,
+          positionals: ['users', 'create'],
+          flags: { count: '1', run: RUN, 'password-store': 'file' },
+        },
+        d
+      )
+    ).rejects.toThrow(`No QA accounts were created in run ${created.runId}`);
+    const text = out.join('');
+    expect(text).toContain('step: activate');
+    expect(text).toContain('cleanup: pending');
+    expectNoSecrets(text);
+  });
+
+  it('reports an opaque 503 with its server message', async () => {
+    const { client } = fixture(() =>
+      Response.json({ error: 'QA test users unavailable' }, { status: 503 })
+    );
+    await expect(
+      runQaCommand(
+        {
+          client,
+          json: false,
+          positionals: ['users', 'create'],
+          flags: { count: '1', run: RUN },
+        },
+        deps().deps
+      )
+    ).rejects.toThrow('QA test users unavailable (HTTP 503).');
+  });
+
   it('passes keychain passwords only on stdin', async () => {
     const runner = vi.fn<SecurityRunner>(async () => ({ code: 0 }));
     const { client } = fixture(() => Response.json(created, { status: 201 }));

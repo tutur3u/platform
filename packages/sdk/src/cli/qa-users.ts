@@ -178,13 +178,22 @@ async function create(options: QaCliOptions, deps: QaCliDeps) {
       ...(result.failed.length
         ? [
             `Failed ${result.failed.length} (cleanup: ${result.failed.map((f) => f.cleanup).join(', ')}):`,
-            ...result.failed.map((f) => `  ${f.email}  ${f.userId}`),
+            ...result.failed.map(
+              (f) =>
+                `  ${f.email}  ${f.userId}${f.stage ? `  step: ${f.stage}` : ''}`
+            ),
           ]
         : []),
       ...(stored ? [`Passwords stored in ${stored.location}`] : []),
-      `Mint a browser session: ttr qa users session <user-id>`,
+      ...(users.length
+        ? [`Mint a browser session: ttr qa users session <user-id>`]
+        : []),
     ].join('\n')
   );
+  if (!users.length)
+    throw new Error(
+      `No QA accounts were created in run ${result.runId}; see the failed steps above.`
+    );
 }
 
 async function session(options: QaCliOptions, deps: QaCliDeps, id?: string) {

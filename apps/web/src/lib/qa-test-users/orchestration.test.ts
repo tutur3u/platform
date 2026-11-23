@@ -179,7 +179,12 @@ describe('createQaUsers', () => {
     });
     const result = await createQaUsers(deps, operator, input);
     expect(result.failed).toEqual([
-      { userId: id(1), email: 'qa+abcd1234-1@tutur3u.com', cleanup: 'deleted' },
+      {
+        userId: id(1),
+        email: 'qa+abcd1234-1@tutur3u.com',
+        stage: 'auth_create',
+        cleanup: 'deleted',
+      },
     ]);
     expect(JSON.stringify(result.failed)).not.toContain('password');
     expect(store.beginDelete).toHaveBeenCalledWith(id(1), 'operator', operator);

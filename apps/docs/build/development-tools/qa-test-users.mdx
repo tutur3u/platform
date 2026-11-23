@@ -89,6 +89,14 @@ Directories are `0700`, files `0600`, and symlinked targets are refused.
 `TUTURUUU_QA_HOME` overrides the root for tests. Delete and cleanup remove the
 local files and Keychain items of deleted accounts.
 
+### When every account fails
+
+If no account is created, the API answers 503 with the run ID and, for each
+failed account, the step that failed (`auth_create`, `onboarding` or
+`activate`) and its rollback state. `ttr qa users create` prints them and exits
+non-zero; the failed step is also in the server log. A `cleanup: pending`
+account is retried by `ttr qa users cleanup --run <id>`.
+
 ### Sessions
 
 `session` mints a fresh session without the password: the server generates a

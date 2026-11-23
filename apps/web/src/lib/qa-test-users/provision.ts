@@ -44,8 +44,16 @@ export interface QaProvisionResult {
   expiresAt: string;
   runWorkspaceId: string | null;
   users: CreatedQaUser[];
-  failed: Array<{ userId: string; email: string; cleanup: string }>;
+  failed: Array<{
+    userId: string;
+    email: string;
+    /** Fixed-vocabulary step that failed; never an error message. */
+    stage: QaProvisionStage;
+    cleanup: string;
+  }>;
 }
+
+export type QaProvisionStage = 'auth_create' | 'onboarding' | 'activate';
 
 /**
  * Reserves addresses in the ledger, creates each Auth account with the
@@ -90,6 +98,7 @@ export async function createQaUsers(
   const [first, ...rest] = reservation.users;
   const provisionOne = async (user: (typeof reservation.users)[number]) => {
     const password = generateQaPassword();
+    let stage: QaProvisionStage = 'auth_create';
     try {
       const created = await deps.admin.auth.admin.createUser({
         id: user.userId,
@@ -103,7 +112,9 @@ export async function createQaUsers(
       });
       if (created.error || created.data.user?.id !== user.userId)
         throw new Error('Auth account creation failed');
+      stage = 'onboarding';
       await completeQaOnboarding(deps.admin, user.userId);
+      stage = 'activate';
       const activated = await deps.store.activate(user.userId, operatorUserId);
       if (!activated) throw new Error('Activation refused');
       result.runWorkspaceId ??= activated.runWorkspaceId;
@@ -111,6 +122,7 @@ export async function createQaUsers(
     } catch (error) {
       console.error('QA test account provisioning failed', {
         errorType: error instanceof Error ? error.name : 'unknown',
+        stage,
         userId: user.userId,
       });
       const cleanup = await deleteQaUser(
@@ -119,7 +131,12 @@ export async function createQaUsers(
         'operator',
         operatorUserId
       ).catch(() => 'pending' as const);
-      result.failed.push({ userId: user.userId, email: user.email, cleanup });
+      result.failed.push({
+        userId: user.userId,
+        email: user.email,
+        stage,
+        cleanup,
+      });
     }
   };
 
