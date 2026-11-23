@@ -722,6 +722,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/auth/external-app-logo/[appId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/auth/fleet-smoke"
     },
     {

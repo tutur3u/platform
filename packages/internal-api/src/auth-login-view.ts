@@ -15,7 +15,13 @@ export interface LoginViewResponse {
    * is true only for a strict PKCE registration with a valid S256 challenge
    * on the request; an existing session may then continue without a click.
    */
-  returnApp: { autoContinue: boolean; id: string; name: string } | null;
+  returnApp: {
+    autoContinue: boolean;
+    id: string;
+    /** Same-origin logo path, or null for the neutral app glyph. */
+    logo: string | null;
+    name: string;
+  } | null;
   /** Null when the device's saved accounts could not be read. */
   savedAccounts: WebAccountSummary[] | null;
   /** The id binds the displayed account to the browser session. */

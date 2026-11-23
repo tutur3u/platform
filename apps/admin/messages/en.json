@@ -6895,6 +6895,7 @@
       "display_name": "Display name",
       "enabled": "Enabled",
       "issue_secret": "Issue secret now",
+      "logo_url": "Logo URL (https)",
       "origins": "Allowed origins",
       "scopes": "Allowed API scopes",
       "scopes_create": "Add custom scope",

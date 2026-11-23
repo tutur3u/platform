@@ -45,6 +45,7 @@ type ExternalAppDraft = {
   enabled: boolean;
   id: string;
   issueSecret: boolean;
+  logoUrl: string;
   originsText: string;
 };
 
@@ -88,6 +89,7 @@ function draftFromApp(app?: ExternalAppRegistration): ExternalAppDraft {
     enabled: app?.enabled ?? true,
     id: app?.id ?? '',
     issueSecret: !app,
+    logoUrl: app?.logoUrl ?? '',
     originsText: app ? joinLines(app.origins) : '',
   };
 }
@@ -102,6 +104,7 @@ function serializeDraft(draft: ExternalAppDraft, includeIssueSecret: boolean) {
     enabled: draft.enabled,
     id: draft.id.trim().toLowerCase(),
     issueSecret: includeIssueSecret ? draft.issueSecret : false,
+    logoUrl: draft.logoUrl.trim(),
     origins: normalizeStringList(splitLines(draft.originsText)),
   });
 }
@@ -118,6 +121,7 @@ function payloadFromDraft(
     enabled: draft.enabled,
     id: appId ?? draft.id.trim().toLowerCase(),
     issueSecret: isCreate ? draft.issueSecret : false,
+    logoUrl: draft.logoUrl.trim() || null,
     origins: splitLines(draft.originsText),
   };
 }
@@ -128,6 +132,7 @@ export function appRenderKey(app: ExternalAppRegistration) {
     app.updatedAt ?? '',
     app.displayName,
     app.enabled ? '1' : '0',
+    app.logoUrl ?? '',
     app.origins.join('\n'),
     app.allowedScopes.join('\n'),
     app.allowedWorkspaceIds.join('\n'),
@@ -201,6 +206,19 @@ export function ExternalAppForm({
             onChange={(event) =>
               updateDraft({ id: event.target.value.toLowerCase() })
             }
+          />
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor={`${formId}-logoUrl`}>{t('fields.logo_url')}</Label>
+          <Input
+            id={`${formId}-logoUrl`}
+            inputMode="url"
+            name="logoUrl"
+            pattern="https://.*"
+            placeholder="https://example.com/logo.png"
+            type="url"
+            value={draft.logoUrl}
+            onChange={(event) => updateDraft({ logoUrl: event.target.value })}
           />
         </div>
       </div>

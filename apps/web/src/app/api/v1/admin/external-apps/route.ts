@@ -21,6 +21,7 @@ const payloadSchema = z.discriminatedUnion('action', [
       allowedScopes: z.array(z.string().trim().min(1).max(80)).max(50),
       allowedWorkspaceIds: z.array(z.uuid()).min(1).max(50),
       requirePkce: z.boolean().optional(),
+      logoUrl: z.string().trim().max(2048).nullable().optional(),
       maxBearerTtlSeconds: z
         .number()
         .int()

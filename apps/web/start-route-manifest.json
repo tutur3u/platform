@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 888,
+    "total": 889,
     "categories": {
-      "api": 688,
+      "api": 689,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 876 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 877 }
   },
   "routes": [
     {
@@ -2296,6 +2296,14 @@
     {
       "pattern": "/api/v1/auth/cross-app-token/verify",
       "source": "apps/web/src/app/api/v1/auth/cross-app-token/verify/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/auth/external-app-logo/[appId]",
+      "source": "apps/web/src/app/api/v1/auth/external-app-logo/[appId]/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

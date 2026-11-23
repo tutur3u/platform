@@ -4,6 +4,7 @@ export type { LucideIcon, LucideProps } from 'lucide-react';
 export {
   ActivitySquare,
   AlertTriangle,
+  AppWindow,
   ArrowLeft,
   ArrowRight,
   BarChart3,

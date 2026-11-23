@@ -6895,6 +6895,7 @@
       "display_name": "Tên hiển thị",
       "enabled": "Bật",
       "issue_secret": "Cấp secret ngay",
+      "logo_url": "URL logo (https)",
       "origins": "Origin được phép",
       "scopes": "Phạm vi API được phép",
       "scopes_create": "Thêm phạm vi tùy chỉnh",

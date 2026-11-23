@@ -4,6 +4,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   assertExternalAppRegistrationAllowed,
   isInternalAppScope,
+  parseExternalAppLogoUrl,
   parseMaxBearerTtlSeconds,
   resolveMaxBearerTtlFieldValue,
 } from '@tuturuuu/utils/external-app-registry-policy';
@@ -36,6 +37,8 @@ export type ExternalAppRegistration = {
   displayName: string;
   enabled: boolean;
   id: string;
+  /** Public https image for sign-in screens; null shows a neutral app glyph. */
+  logoUrl: string | null;
   /**
    * Upper bound on issued bearer lifetimes; null leaves the session policy's
    * external bearer TTL in force.
@@ -59,6 +62,8 @@ export type UpsertExternalAppPayload = {
   enabled: boolean;
   id: string;
   issueSecret?: boolean;
+  /** Omitted keeps the stored logo; null or an empty string clears it. */
+  logoUrl?: string | null;
   /** Null clears the cap; a new app without a value gets the default cap. */
   maxBearerTtlSeconds?: number | null;
   origins: string[];
@@ -121,6 +126,7 @@ function buildExternalAppRegistrations(rows: SecretRow[]) {
         displayName,
         enabled: values.enabled !== 'false',
         id,
+        logoUrl: parseExternalAppLogoUrl(values.logoUrl),
         maxBearerTtlSeconds: parseMaxBearerTtlSeconds(
           values.maxBearerTtlSeconds
         ),
@@ -328,6 +334,15 @@ export async function upsertExternalApp({
   });
   if (maxBearerTtlSeconds !== undefined) {
     fields.maxBearerTtlSeconds = maxBearerTtlSeconds;
+  }
+
+  if (payload.logoUrl !== undefined) {
+    const requested = payload.logoUrl?.trim() ?? '';
+    const logoUrl = parseExternalAppLogoUrl(requested);
+    if (requested && !logoUrl) {
+      throw new Error('invalid_logo_url');
+    }
+    fields.logoUrl = logoUrl ?? '';
   }
 
   if (payload.requirePkce !== undefined) {

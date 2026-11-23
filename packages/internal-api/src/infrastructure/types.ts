@@ -217,6 +217,8 @@ export interface ExternalAppRegistration {
   displayName: string;
   enabled: boolean;
   id: string;
+  /** Public https logo for sign-in screens; null shows a neutral glyph. */
+  logoUrl?: string | null;
   origins: string[];
   secretIssuedAt: string | null;
   secretLastFour: string | null;
@@ -458,6 +460,8 @@ export interface SaveExternalAppPayload {
   enabled: boolean;
   id: string;
   issueSecret?: boolean;
+  /** Omitted keeps the stored logo; null or an empty string clears it. */
+  logoUrl?: string | null;
   origins: string[];
 }
 

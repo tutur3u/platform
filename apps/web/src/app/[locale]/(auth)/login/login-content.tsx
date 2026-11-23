@@ -162,7 +162,7 @@ export function LoginContent({
     ? null
     : (loginView.data?.returnApp ?? null);
   const brandApp: LoginBrandApp | null = registeredApp
-    ? { logo: null, name: registeredApp.name }
+    ? { logo: registeredApp.logo ?? null, name: registeredApp.name }
     : partnerDomain
       ? { logo: partnerDomain.logo, name: partnerDomain.name }
       : null;

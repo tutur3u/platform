@@ -6,6 +6,7 @@ import {
   isInternalAppScope,
   isReservedExternalAppId,
   isReservedInternalAppName,
+  parseExternalAppLogoUrl,
   parseMaxBearerTtlSeconds,
   resolveMaxBearerTtlFieldValue,
   wasIssuedBeforeSecretRotation,
@@ -109,5 +110,30 @@ describe('secret rotation', () => {
     expect(wasIssuedBeforeSecretRotation({ iat: 1 }, null)).toBe(false);
     expect(wasIssuedBeforeSecretRotation({ iat: 1 }, 'garbage')).toBe(true);
     expect(wasIssuedBeforeSecretRotation({}, rotatedAt)).toBe(true);
+  });
+});
+
+describe('external app logo URL', () => {
+  it('keeps a public https URL', () => {
+    expect(
+      parseExternalAppLogoUrl(' https://showcase.example.net/edufest/logo.png ')
+    ).toBe('https://showcase.example.net/edufest/logo.png');
+  });
+
+  it.each([
+    null,
+    '',
+    'http://example.com/logo.png',
+    'javascript:alert(1)',
+    'data:image/png;base64,AAAA',
+    'https://user:pass@example.com/logo.png',
+    'https://127.0.0.1/logo.png',
+    'https://[::1]/logo.png',
+    'https://localhost/logo.png',
+    'https://printer.local/logo.png',
+    'https://db.internal/logo.png',
+    `https://example.com/${'a'.repeat(2100)}`,
+  ])('refuses %s', (value) => {
+    expect(parseExternalAppLogoUrl(value)).toBeNull();
   });
 });

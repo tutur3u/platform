@@ -2,12 +2,14 @@
 
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { useTranslations } from 'next-intl';
-import { getAppMonogram } from './continue-card-parts';
+import { useState } from 'react';
+import { AppGlyph } from './continue-card-parts';
 
 /**
  * The app a sign-in is for. `name` always comes from a server-validated
  * source (the external app registry or the static first-party domain list),
- * never from the query string; `logo` only from the static list.
+ * never from the query string; `logo` from the static list or the
+ * same-origin proxy path for a registered logo.
  */
 export type LoginBrandApp = {
   logo: string | null;
@@ -28,17 +30,23 @@ function LogoImage({ label, src }: { label: string; src: string }) {
   );
 }
 
-/** A registered app has no stored icon, so it gets a calm monogram tile. */
+/**
+ * The app's logo, or the neutral glyph when it has none or the image fails,
+ * so a missing logo never leaves a broken image in the header.
+ */
 function AppMark({ app }: { app: LoginBrandApp }) {
-  if (app.logo) return <LogoImage label={app.name} src={app.logo} />;
+  const [failedLogo, setFailedLogo] = useState<string | null>(null);
+  if (!app.logo || failedLogo === app.logo) {
+    return <AppGlyph className="size-12 xl:size-14" />;
+  }
 
   return (
-    <span
-      aria-hidden="true"
-      className="flex size-12 items-center justify-center rounded-2xl xl:size-14 xl:text-xl bg-calendar-bg-cyan font-extrabold text-dynamic-cyan text-lg"
-    >
-      {getAppMonogram(app.name)}
-    </span>
+    <img
+      alt={app.name}
+      className="size-12 rounded-2xl object-contain xl:size-14"
+      onError={() => setFailedLogo(app.logo)}
+      src={app.logo}
+    />
   );
 }
 

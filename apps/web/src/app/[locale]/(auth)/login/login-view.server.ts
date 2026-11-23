@@ -1,6 +1,7 @@
 import type { LoginViewResponse } from '@tuturuuu/internal-api/auth';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
+import { externalAppLogoPath } from '@/lib/app-coordination/external-app-logo';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
 import {
   matchesRegisteredCallbackPath,
@@ -135,6 +136,7 @@ async function readReturnApp(
         app.callbackPaths.length > 0 &&
         Boolean(challenge),
       id: app.id,
+      logo: app.logoUrl ? externalAppLogoPath(app.id) : null,
       name: app.displayName,
     };
   } catch {

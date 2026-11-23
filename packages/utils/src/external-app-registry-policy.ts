@@ -136,3 +136,43 @@ export function wasIssuedBeforeSecretRotation(
   // bearer minted in the rotation's second, after it, stays valid.
   return claims.iat < Math.floor(secretIssuedAtMs / 1000);
 }
+
+export const EXTERNAL_APP_LOGO_URL_MAX_LENGTH = 2048;
+
+const IPV4_LITERAL = /^\d{1,3}(?:\.\d{1,3}){3}$/u;
+const PRIVATE_HOST_SUFFIXES = ['.localhost', '.local', '.internal', '.lan'];
+
+/**
+ * A registered app's logo URL, or null when it is unset or not allowed.
+ * Only public https URLs pass: no credentials, IP literals or local hostnames,
+ * because the platform fetches the image server-side to serve it from its own
+ * origin.
+ */
+export function parseExternalAppLogoUrl(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.length > EXTERNAL_APP_LOGO_URL_MAX_LENGTH) {
+    return null;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  const host = url.hostname.toLowerCase();
+  if (
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    !host.includes('.') ||
+    host.startsWith('[') ||
+    IPV4_LITERAL.test(host) ||
+    PRIVATE_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))
+  ) {
+    return null;
+  }
+
+  return url.toString();
+}

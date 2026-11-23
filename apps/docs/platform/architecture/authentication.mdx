@@ -58,8 +58,12 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
 - **One calm column.** The login page is a single centred column on every
   screen size, with no decorative illustration. A plain sign-in shows the
   Tuturuuu mark and welcome. A sign-in for a registered or first-party app
-  shows that app's mark (a monogram tile when the registry stores no icon)
-  and `Sign in to <app>`, and a small line under the card:
+  shows that app's mark and `Sign in to <app>`, and a small line under the
+  card. A registered logo loads through the same-origin
+  `GET /api/v1/auth/external-app-logo/<appId>` proxy (see
+  [app coordination](/platform/architecture/app-coordination)); without a
+  logo, or when it fails to load, the header shows a neutral app glyph, never
+  letters:
   `<app>'s sign-in is secured and powered by Tuturuuu` (VI `Đăng nhập vào
   <app> được bảo mật và vận hành bởi Tuturuuu`) with the Tuturuuu mark, so a
   visitor coming from the app knows why Tuturuuu appears. The name renders

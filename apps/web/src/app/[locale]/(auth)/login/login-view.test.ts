@@ -60,6 +60,7 @@ describe('focused external sign-in', () => {
     returnApp: {
       autoContinue: false,
       id: 'edufest',
+      logo: null,
       name: 'EduFest Booth Hall',
     },
     sessionStatus: 'absent' as const,

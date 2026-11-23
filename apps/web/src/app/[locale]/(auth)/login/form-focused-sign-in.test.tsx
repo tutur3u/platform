@@ -32,6 +32,7 @@ function view(overrides: Partial<InitialLoginView> = {}): InitialLoginView {
     returnApp: {
       autoContinue: false,
       id: 'edufest',
+      logo: null,
       name: 'EduFest Booth Hall',
     },
     savedAccounts: [],
@@ -383,7 +384,12 @@ describe('LoginForm focused sign-in auto-continue', () => {
     view({
       hasSession: true,
       providerHint: providerHint ? 'google' : null,
-      returnApp: { autoContinue, id: 'edufest', name: 'EduFest Booth Hall' },
+      returnApp: {
+        autoContinue,
+        id: 'edufest',
+        logo: null,
+        name: 'EduFest Booth Hall',
+      },
       sessionStatus: 'present',
       session: { avatarUrl: null, id: 'user-1', name: 'Person Example' },
     });

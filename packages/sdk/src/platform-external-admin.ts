@@ -26,6 +26,8 @@ export interface ExternalAppConfiguration {
   requirePkce?: boolean;
   /** Exact return URL paths; empty keeps the origin-only check. */
   callbackPaths?: string[];
+  /** Public https logo for sign-in screens; null clears it. */
+  logoUrl?: string | null;
 }
 
 /** User-authenticated control plane. All operations retain server-side root gates. */

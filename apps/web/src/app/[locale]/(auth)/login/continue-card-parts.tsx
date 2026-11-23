@@ -1,20 +1,32 @@
 'use client';
 
-import { XIcon } from '@tuturuuu/icons/lucide-static';
+import { AppWindow, XIcon } from '@tuturuuu/icons/lucide-static';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
 import {
   getAvatarUrl,
   getInitials,
 } from './internal-app-account-confirmation-parts';
 
-/** Two letters for an app tile: "Le" for Learn, "Ed" for EduFest. */
-export function getAppMonogram(appName: string) {
-  const letters = appName.replace(/[^\p{L}\p{N}]/gu, '');
-  if (!letters) return '?';
-  return `${letters[0]?.toUpperCase() ?? ''}${letters[1]?.toLowerCase() ?? ''}`;
+/**
+ * The neutral tile for an app without a registered logo: one calm glyph
+ * rather than letters, which read as a placeholder. Decorative.
+ */
+export function AppGlyph({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex items-center justify-center rounded-2xl border bg-muted text-muted-foreground',
+        className
+      )}
+    >
+      <AppWindow className="size-1/2" strokeWidth={1.75} />
+    </span>
+  );
 }
 
 /**
@@ -32,9 +44,7 @@ export function CoBrandRow({ appName }: { appName: string }) {
         style={{ backgroundImage: `url(${TUTURUUU_LOCAL_LOGO_URL})` }}
       />
       <XIcon className="size-4 text-muted-foreground" />
-      <span className="flex size-9 items-center justify-center rounded-xl bg-calendar-bg-cyan font-extrabold text-dynamic-cyan text-sm">
-        {getAppMonogram(appName)}
-      </span>
+      <AppGlyph className="size-9 rounded-xl" />
     </div>
   );
 }

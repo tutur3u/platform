@@ -86,6 +86,7 @@ describe('resolveLoginView', () => {
       returnApp: {
         autoContinue: false,
         id: 'edufest',
+        logo: null,
         name: 'EduFest Booth Hall',
       },
       sessionStatus: 'absent',
@@ -189,6 +190,23 @@ describe('resolveLoginView', () => {
       expect(await gate(app, { ...search, returnUrl: EDUFEST })).toMatchObject({
         autoContinue: false,
       });
+    });
+
+    it('names the logo only through the same-origin proxy path', async () => {
+      expect(
+        await gate(
+          { ...strictApp, logoUrl: 'https://cdn.example.net/edufest.png' },
+          { returnUrl: EDUFEST }
+        )
+      ).toMatchObject({ logo: '/api/v1/auth/external-app-logo/edufest' });
+      expect(
+        JSON.stringify(
+          await gate(
+            { ...strictApp, logoUrl: 'https://cdn.example.net/edufest.png' },
+            { returnUrl: EDUFEST }
+          )
+        )
+      ).not.toContain('cdn.example.net');
     });
 
     it.each([

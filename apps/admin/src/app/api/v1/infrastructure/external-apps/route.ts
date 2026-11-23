@@ -22,6 +22,7 @@ const externalAppSchema = z.object({
     .toLowerCase()
     .regex(/^[a-z0-9_-]{1,64}$/u),
   issueSecret: z.boolean().optional(),
+  logoUrl: z.string().trim().max(2048).nullable().optional(),
   maxBearerTtlSeconds: z
     .number()
     .int()

@@ -1367,8 +1367,9 @@ ttr external binding get --workspace <workspace-id> --json
 
 App JSON requires `id`, `displayName`, `enabled`, `origins`, `allowedScopes`,
 and `allowedWorkspaceIds` (explicit UUID allowlist). Optional `requirePkce` and
-`callbackPaths` configure [PKCE-bound handoffs](/platform/architecture/app-coordination#pkce-bound-handoffs);
-omitting them keeps the stored values. Do not include secrets or
+`callbackPaths` configure [PKCE-bound handoffs](/platform/architecture/app-coordination#pkce-bound-handoffs),
+and optional `logoUrl` sets the public `https` image shown on sign-in screens
+(`null` clears it); omitting them keeps the stored values. Do not include secrets or
 audit fields.
 
 **Rollout rule:** Never set `requirePkce=true` for any app until migration

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginContent } from './login-content';
 import Login, * as pageModule from './page';
@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
           returnApp: {
             autoContinue: boolean;
             id: string;
+            logo?: string | null;
             name: string;
           } | null;
           savedAccounts: never[];
@@ -365,6 +366,42 @@ describe('Login page', () => {
     expect(screen.getByTestId('login-app-disclaimer')).toHaveTextContent(
       'EduFest Booth Hall’s sign-in is secured and powered by Tuturuuu'
     );
+  });
+
+  it('shows a registered logo, and the neutral glyph when it fails to load', async () => {
+    mocks.loginView = {
+      data: {
+        hasSession: false,
+        providerHint: 'google',
+        returnApp: {
+          autoContinue: false,
+          id: 'edufest',
+          logo: '/api/v1/auth/external-app-logo/edufest',
+          name: 'EduFest Booth Hall',
+        },
+        savedAccounts: [],
+        session: null,
+      },
+      pending: false,
+    };
+
+    await renderLoginPage({
+      provider: 'google',
+      returnUrl: 'https://showcase.ieeai.net/edufest/verify-token?state=s',
+    });
+
+    const logo = screen.getByRole('img', { name: 'EduFest Booth Hall' });
+    expect(logo).toHaveAttribute(
+      'src',
+      '/api/v1/auth/external-app-logo/edufest'
+    );
+    fireEvent.error(logo);
+    expect(
+      screen.queryByRole('img', { name: 'EduFest Booth Hall' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to EduFest Booth Hall' })
+    ).toBeInTheDocument();
   });
 
   it('names the app only from the server registry, never the query string', async () => {
