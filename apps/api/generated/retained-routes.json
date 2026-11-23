@@ -2760,6 +2760,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/realtime/whiteboard/checkpoint",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/realtime/whiteboard/checkpoint/route.ts",
+    "sourceSha256": "3c4027f9a8bb172a2a1a80c412a3cce9ffcdeb2ee2bca849c44eddab89d5c26d",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/sso/saml/{clientId}/metadata",
     "sideEffects": "unknown",
     "shadow": "never",

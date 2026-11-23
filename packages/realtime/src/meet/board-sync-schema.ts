@@ -172,6 +172,7 @@ export type BoardServerMessage = z.infer<typeof boardServerMessage>;
 /** The scene a flush stores: elements plus the board's existing app state. */
 export const boardCheckpointBodySchema = z
   .object({
+    op: z.literal('flush'),
     elements: z.array(boardElementSchema).max(BOARD_LIMITS.maxElements),
     revision: z.number().int().nonnegative(),
     baseUpdatedAt: z.string().max(64).nullable(),
@@ -180,7 +181,13 @@ export const boardCheckpointBodySchema = z
   .strict();
 export type BoardCheckpointBody = z.infer<typeof boardCheckpointBodySchema>;
 
-/** What the platform answers to a load (GET) or a flush (POST). */
+export const boardLoadBodySchema = z.object({ op: z.literal('load') }).strict();
+export const boardCheckpointRequestSchema = z.discriminatedUnion('op', [
+  boardCheckpointBodySchema,
+  boardLoadBodySchema,
+]);
+
+/** What the platform answers to a load or a flush. */
 export const boardCheckpointResultSchema = z.object({
   updatedAt: z.string().max(64),
   elements: z.array(boardElementSchema).max(BOARD_LIMITS.maxElements).optional(),

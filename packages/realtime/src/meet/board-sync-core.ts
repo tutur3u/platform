@@ -106,6 +106,7 @@ export function createBoardRoom(deps: BoardRoomDeps) {
     const revision = meta.revision;
     const elements = sceneElements(scene);
     const body: BoardCheckpointBody = {
+      op: 'flush',
       elements: elements as BoardCheckpointBody['elements'],
       revision,
       baseUpdatedAt: meta.baseUpdatedAt,

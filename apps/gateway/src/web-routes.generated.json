@@ -1422,6 +1422,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/realtime/whiteboard/checkpoint"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/sso/saml/[clientId]/metadata"
     },
     {

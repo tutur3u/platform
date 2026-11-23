@@ -9,6 +9,7 @@ import {
 const secret = 'disposable-test-secret';
 const DOCUMENT = '/api/v1/realtime/documents/checkpoint';
 const PROGRAMMING = '/api/v1/realtime/programming/checkpoint';
+const WHITEBOARD = '/api/v1/realtime/whiteboard/checkpoint';
 const SOURCE = '/api/v1/internal/playground-execution/source';
 const EXPORT = '/api/v1/internal/playground-execution/export';
 const future = Math.floor(Date.now() / 1000) + 30;
@@ -23,6 +24,11 @@ const documentTicket = sign({
 });
 const programmingTicket = sign({
   aud: 'tuturuuu.collaboration',
+  kind: 'checkpoint',
+  exp: future,
+});
+const whiteboardTicket = sign({
+  aud: 'tuturuuu.meet.whiteboard',
   kind: 'checkpoint',
   exp: future,
 });
@@ -193,7 +199,22 @@ describe('isTrustedRealtimeServiceRequest', () => {
       SOURCE,
       DOCUMENT,
       PROGRAMMING,
+      WHITEBOARD,
     ]);
+  });
+  it('trusts only a whiteboard checkpoint ticket on the whiteboard route', () => {
+    expect(trusted(WHITEBOARD, whiteboardTicket, 'POST')).toBe(true);
+    expect(trusted(WHITEBOARD, whiteboardTicket, 'GET')).toBe(false);
+    expect(trusted(WHITEBOARD, documentTicket, 'POST')).toBe(false);
+    expect(trusted(WHITEBOARD, programmingTicket, 'POST')).toBe(false);
+    expect(trusted(DOCUMENT, whiteboardTicket, 'POST')).toBe(false);
+    expect(
+      trusted(
+        WHITEBOARD,
+        sign({ aud: 'tuturuuu.meet.whiteboard', kind: 'join', exp: future }),
+        'POST'
+      )
+    ).toBe(false);
   });
   it('ignores the User-Agent: the ticket, not a spoofable header, is the credential', () => {
     expect(

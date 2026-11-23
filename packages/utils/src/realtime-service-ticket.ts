@@ -31,6 +31,10 @@ const SERVICE_ROUTES: Record<
     audience: 'tuturuuu.channels',
     kinds: new Set(['document-checkpoint']),
   },
+  '/api/v1/realtime/whiteboard/checkpoint': {
+    audience: 'tuturuuu.meet.whiteboard',
+    kinds: new Set(['checkpoint']),
+  },
   '/api/v1/realtime/programming/checkpoint': {
     audience: 'tuturuuu.collaboration',
     kinds: new Set(['checkpoint', 'runner-files']),

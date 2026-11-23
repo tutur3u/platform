@@ -71,12 +71,12 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         setAlarm: (at) => this.state.storage.setAlarm(at),
       },
       load: async () => {
-        const answer = await this.checkpointCall('GET');
+        const answer = await this.checkpointCall({ op: 'load' });
         if (answer.status !== 200 || !answer.result)
           throw new Error('Board load failed');
         return answer.result;
       },
-      flush: (body) => this.checkpointCall('POST', body),
+      flush: (body) => this.checkpointCall(body),
       hash: sha256,
       broadcast: (message) => this.broadcast(message),
       connections: () => this.sockets().length,
@@ -143,7 +143,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   }
 
   /** The platform rechecks link, archive state and workspace on every call. */
-  private async checkpointCall(method: 'GET' | 'POST', body?: BoardCheckpointBody) {
+  private async checkpointCall(body: BoardCheckpointBody | { op: 'load' }) {
     if (!this.identity) throw new Error('Board identity unknown');
     const token = signRealtimePayload(
       {
@@ -159,9 +159,9 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       this.env.MEET_REALTIME_TOKEN_SECRET
     );
     const response = await fetch(new URL(CHECKPOINT_PATH, this.platformOrigin()), {
-      method,
+      method: 'POST',
       headers: serviceRequestHeaders(token),
-      ...(body ? { body: JSON.stringify(body) } : {}),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(30_000),
       redirect: 'manual',
     });

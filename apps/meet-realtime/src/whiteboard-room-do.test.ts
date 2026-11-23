@@ -101,10 +101,11 @@ function fixture(env: Record<string, string> = {}) {
 beforeEach(() => {
   Date.now = () => now;
   globalThis.fetch = (async (_url: URL, init: RequestInit) => {
-    (globalThis as any).__fetches.push(init.method);
+    const op = JSON.parse(String(init.body)).op;
+    (globalThis as any).__fetches.push(op);
     return Response.json({
       updatedAt: 'u',
-      elements: init.method === 'GET' ? [rect('seed')] : undefined,
+      elements: op === 'load' ? [rect('seed')] : undefined,
     });
   }) as typeof fetch;
   (globalThis as any).__fetches = [];
@@ -131,7 +132,7 @@ test('loads the board once and sends the scene to a joiner', async () => {
     ['seed']
   );
   await open(f, { userId: 'u2' });
-  assert.deepEqual((globalThis as any).__fetches, ['GET']);
+  assert.deepEqual((globalThis as any).__fetches, ['load']);
 });
 
 test('refuses an expired or unsigned join and a different board', async () => {
@@ -212,7 +213,7 @@ test('flushes on the alarm after the last participant leaves', async () => {
   await f.the.webSocketClose();
   now += BOARD_LIMITS.idleFlushMs + 10;
   await f.the.alarm();
-  assert.deepEqual((globalThis as any).__fetches, ['GET', 'POST']);
+  assert.deepEqual((globalThis as any).__fetches, ['load', 'flush']);
 });
 
 test('the stop fence halts flushes and storage writes but keeps relaying', async () => {
@@ -230,6 +231,6 @@ test('the stop fence halts flushes and storage writes but keeps relaying', async
   assert.equal(peer.sent.filter((m) => m.type === 'elements').length, 20);
   now += 60 * 60_000;
   await f.the.alarm();
-  assert.deepEqual((globalThis as any).__fetches, ['GET']);
+  assert.deepEqual((globalThis as any).__fetches, ['load']);
   assert.equal(f.values.has('meta'), false);
 });
