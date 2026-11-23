@@ -81,6 +81,19 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Playground lane: playground-execution type-check, docs page, extra-edges 782, workers_dev 6374. Other root/utils drift to its owners. Any other failure is outside this grant.',
   },
+  {
+    // Release-authority exception (Iris, 23 Nov 2026) for the private Mira
+    // Live-socket origin hotfix. Same non-Meet reds as A-PRIME: Type Check
+    // fails only @tuturuuu/playground-execution, and Test fails the known
+    // root-script and utils drift. Security Checks and Meet Cloudflare stay
+    // required on this exact source.
+    id: 'RA-20261123-1300-MEET-LIVE-ORIGIN',
+    source: 'a99c13124f03ec8a5914bc9d72b3da934f1d2731',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-23T16:59:00Z',
+    followUp:
+      'Same owners as RA-20261123-1100-MEET-A-PRIME. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
