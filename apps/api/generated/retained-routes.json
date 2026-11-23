@@ -1940,11 +1940,21 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/integrations/upskii/link-status",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/integrations/upskii/link-status/route.ts",
+    "sourceSha256": "a189faa118d0628a3f6d2d9e1b956b364f6dc96a40d55c5d842f67246ac275a4",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/integrations/upskii/link",
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/integrations/upskii/link/route.ts",
-    "sourceSha256": "cf024041ce4a9b56e781bb0d58a13093a43d77b81d7363c39270ecab3baf1b74",
+    "sourceSha256": "c68850b7bcaae65b8b43f18c34d85a47f055e2d5c483311cd4e0e6e5068b49e5",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

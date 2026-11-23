@@ -1012,6 +1012,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/integrations/upskii/link-status"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/integrations/upskii/link"
     },
     {
