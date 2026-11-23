@@ -25,6 +25,8 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
   // Allow from anyone who is off).
   const mira = useRoomMiraConsent(meetingId);
   const miraOff = !!mira.data?.available && mira.data.choice !== 'on';
+  // Without a host acceptance nobody can turn Mira on for themselves.
+  const miraNotOn = !!mira.data?.available && !mira.data.acceptance;
   const miraPending = mira.isPending;
   if (!consent?.available || !consent.active) return null;
   const needsChoice = consent.choice === null;
@@ -90,7 +92,7 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
         {miraOff && consent.choice !== 'allow' && (
           <div className="space-y-2">
             <p role="status" className="text-xs">
-              {t('consent_mira_off')}
+              {miraNotOn ? t('consent_mira_not_on') : t('consent_mira_off')}
             </p>
             <RoomMiraSelfChoice meetingId={meetingId} />
           </div>

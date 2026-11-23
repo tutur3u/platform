@@ -16,13 +16,18 @@ import {
 } from '@tuturuuu/realtime/meet';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import {
   hashMiraConsentText,
   MIRA_BOX_RECORDS_TRANSCRIPT,
   useMiraConsentText,
 } from '../../live-assistant/mira-consent-box';
-import { takeMiraJoinChoice } from '../../live-assistant/mira-join-choice';
+import {
+  markMiraJoinChoiceApplied,
+  peekMiraJoinChoice,
+  prefersMiraOff,
+  rememberMiraPreference,
+} from '../../live-assistant/mira-join-choice';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
 
 export const roomMiraConsentKey = (meetingId: string) => [
@@ -62,10 +67,15 @@ export function useRoomMiraJoinDefault(meetingId: string | undefined) {
 export type RoomMiraAvailable = Extract<RoomMiraConsent, { available: true }>;
 type Source = 'join' | 'confirm' | 'toggle';
 
+/** Join states being recorded now, shared by every surface in the tab. */
+const applying = new Set<string>();
+
 /**
  * Room Mira state and actions for the caller. A box state remembered at Join
- * is recorded once, right after admission, only when an acceptance was
- * already current; a later acceptance asks the participant to confirm.
+ * is recorded once, after admission, only for an acceptance that was already
+ * current when the participant pressed Join; a later acceptance asks them to
+ * confirm. The Join state is never cleared before it is recorded, and every
+ * confirm box starts unticked while the participant's own last state is off.
  */
 export function useRoomMira(meetingId: string) {
   const t = useTranslations('meet.mira_consent');
@@ -98,6 +108,7 @@ export function useRoomMira(meetingId: string) {
       }),
     onSuccess: async (next, input) => {
       save(next);
+      rememberMiraPreference(meetingId, input.choice === 'on');
       // Off declines the transcript in the room itself; on also allows it
       // while the box covers the live transcript.
       if (
@@ -130,34 +141,54 @@ export function useRoomMira(meetingId: string) {
     onError: () => toast.error(t('host_failed')),
   });
 
-  // The Join box state applies once, to an acceptance current at admission.
-  const applied = useRef(false);
-  const [preferOff, setPreferOff] = useState(false);
+  // The Join box state applies once, to an acceptance current at Join.
+  const revision = data?.acceptance?.revision;
+  const pendingJoin =
+    !!data?.acceptance && data.choice === null
+      ? peekMiraJoinChoice(meetingId)
+      : null;
   useEffect(() => {
-    // Waits for the caller's admitted view; nothing applies before it.
-    if (applied.current || !query.data?.available) return;
-    applied.current = true;
-    const remembered = takeMiraJoinChoice(meetingId);
-    if (!remembered) return;
-    if (!remembered.ticked) setPreferOff(true);
-    if (!data?.acceptance || data.choice !== null) return;
+    if (!data?.acceptance || data.choice !== null || !pendingJoin) return;
+    const acceptance = data.acceptance;
+    const flight = `${meetingId}:${acceptance.revision}`;
+    if (
+      pendingJoin.appliedRevision === acceptance.revision ||
+      !/^[0-9a-f]{64}$/.test(pendingJoin.textHash) ||
+      acceptance.acceptedAt > pendingJoin.joinedAt ||
+      applying.has(flight)
+    )
+      return;
     // A workspace that unticks the box by default never counts a box that
     // started ticked on a join screen; the participant confirms instead.
-    if (remembered.ticked && !data.boxTickedByDefault) return;
-    choose.mutate({
-      choice: remembered.ticked ? 'on' : 'off',
-      source: 'join',
-      textHash: remembered.textHash,
-      locale: remembered.locale,
-    });
-  }, [query.data, data, meetingId, choose]);
+    if (pendingJoin.ticked && !data.boxTickedByDefault) return;
+    applying.add(flight);
+    choose.mutate(
+      {
+        choice: pendingJoin.ticked ? 'on' : 'off',
+        source: 'join',
+        textHash: pendingJoin.textHash,
+        locale: pendingJoin.locale,
+      },
+      {
+        onSuccess: () =>
+          markMiraJoinChoiceApplied(meetingId, acceptance.revision),
+        onSettled: () => applying.delete(flight),
+      }
+    );
+  }, [data, pendingJoin, meetingId, choose, revision]);
 
   return {
     loading: query.isLoading,
     available: query.data?.available === true,
     data,
-    /** Preset for a confirm box: the workspace default unless unticked at Join. */
-    presetTicked: !preferOff && (data?.boxTickedByDefault ?? true),
+    /**
+     * Preset for a confirm box: unticked while the participant's own last
+     * state is off, else the workspace default.
+     */
+    presetTicked: () =>
+      data?.choice !== 'off' &&
+      !prefersMiraOff(meetingId) &&
+      (data?.boxTickedByDefault ?? true),
     choose,
     acceptance,
   };

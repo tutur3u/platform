@@ -148,11 +148,15 @@ chat.
 may be turned on in this meeting to provide a helpful experience (notes,
 captions, answers).** with an info panel and the 18+ line. It starts from the
 workspace default. Joining happens before admission, so the final box state,
-the notice hash and the locale are kept for the tab and recorded through the
-mira-room route right after admission, when an acceptance is current; until
-then the participant is off. Under an unticked workspace default, a box that
-started ticked on a join screen never counts and the participant confirms in
-the call. When Mira is turned on mid-call, or the acceptance changes, everyone
+the notice hash and the locale are kept for the tab (in memory and session
+storage) and recorded through the mira-room route after admission, once, for
+an acceptance that was already current when the participant pressed Join;
+until then the participant is off. Under an unticked workspace default, a box
+that started ticked on a join screen never counts and the participant confirms
+in the call. Every later confirm box starts unticked while the participant's
+own last state is off, whether from Join or from turning Mira off in the call.
+The lobby seeds its box once, so a changed default never overwrites a box the
+participant already toggled. When Mira is turned on mid-call, or the acceptance changes, everyone
 present gets the same box preset to the workspace default and counts as off
 until they confirm. Each choice is stored in the room with its acceptance
 revision and notice version (`2026-11-24-room-v2`) and counts only while both

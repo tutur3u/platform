@@ -27,6 +27,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 
 import {
+  forgetMiraJoinChoice,
   peekMiraJoinChoice,
   rememberMiraJoinChoice,
 } from '../../live-assistant/mira-join-choice';
@@ -39,7 +40,12 @@ const m = en.meet.mira_consent;
 const accepted = {
   available: true,
   version: 'v',
-  acceptance: { revision: 2, acceptorName: 'Lan', capabilities: ['chat'] },
+  acceptance: {
+    revision: 2,
+    acceptorName: 'Lan',
+    capabilities: ['chat'],
+    acceptedAt: 0,
+  },
   choice: null,
   pausing: false,
   ready: false,
@@ -59,13 +65,10 @@ const room = {
   toggleCamera: vi.fn(async () => undefined),
 } as unknown as MeetRoomController;
 
+let client: QueryClient;
 function wrap(child: ReactNode) {
   return (
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+    <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
         {child}
       </NextIntlClientProvider>
@@ -101,6 +104,8 @@ const showCall = () =>
 beforeEach(() => {
   vi.resetAllMocks();
   sessionStorage.clear();
+  forgetMiraJoinChoice('room');
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   Element.prototype.scrollIntoView = vi.fn();
   HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
   f.read.mockResolvedValue(accepted);
@@ -145,9 +150,8 @@ it('keeps a guest-page untick unticked in the lobby and records off after admiss
 });
 
 it('still joins when the box cannot be remembered, and leaves the participant off', async () => {
-  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-    throw new Error('private mode');
-  });
+  // No evidence hash can be made, so nothing is remembered for the call.
+  vi.spyOn(crypto.subtle, 'digest').mockRejectedValue(new Error('no crypto'));
   const onJoined = showLobby();
   await screen.findByRole('checkbox', { name: m.box_label });
   fireEvent.click(screen.getByRole('button', { name: en.meet.call.join_now }));
@@ -159,4 +163,23 @@ it('still joins when the box cannot be remembered, and leaves the participant of
   expect(await screen.findByRole('button', { name: m.confirm })).toBeTruthy();
   expect(f.choose).not.toHaveBeenCalled();
   expect(f.transcript).not.toHaveBeenCalled();
+});
+
+it('seeds the lobby box once, so a changed default never overwrites the participant', async () => {
+  showLobby();
+  const box = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(box.getAttribute('aria-checked')).toBe('true');
+  fireEvent.click(box);
+  expect(box.getAttribute('aria-checked')).toBe('false');
+  for (const boxTickedByDefault of [false, true]) {
+    f.read.mockResolvedValue({ ...accepted, boxTickedByDefault });
+    await client.invalidateQueries();
+    await waitFor(() => expect(f.read).toHaveBeenCalled());
+  }
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(
+    screen
+      .getByRole('checkbox', { name: m.box_label })
+      .getAttribute('aria-checked')
+  ).toBe('false');
 });

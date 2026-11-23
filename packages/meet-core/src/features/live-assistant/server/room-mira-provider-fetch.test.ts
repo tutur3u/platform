@@ -39,13 +39,13 @@ const model = {
   cacheReadPricePerToken: null,
   tieredPricing: false,
 };
-const token = (id: string) =>
+const token = (id: string, role: 'host' | 'speaker' = 'speaker') =>
   meetRealtimeTokenPayloadSchema.parse({
     exp: 2000000000,
     limits: {},
     meetingId,
     mode: 'call',
-    role: 'speaker',
+    role,
     roomId: 'room',
     scopes: ['meet:server'],
     userId: id,
@@ -67,8 +67,13 @@ function apply(id: string, command: unknown) {
     throw Object.assign(new Error('room refused'), { status: result.status });
   return result.body;
 }
-const pause = () =>
-  apply(bob, { action: 'mira.room.choice', choice: 'mute', version });
+const choice = (choice: 'on' | 'off') => ({
+  action: 'mira.room.choice',
+  choice,
+  version,
+  acceptanceRevision: 1,
+});
+const pause = () => apply(bob, choice('off'));
 const access = { user: { id: alice } } as never;
 const answer = () =>
   new Response(
@@ -94,10 +99,17 @@ beforeEach(() => {
     return lifetime === undefined ? body : { ...body, expiresInMs: lifetime };
   });
   room = createMeetRoomSnapshot();
-  for (const id of [alice, bob]) {
+  for (const id of [alice, bob])
     room = admitOrHold(room, token(id), '2026-11-20T00:00:00Z').state;
-    apply(id, { action: 'mira.room.choice', choice: 'continue', version });
-  }
+  // Alice hosts and turns room Mira on; both then choose on for themselves.
+  room = roomService(room, token(alice, 'host'), {
+    action: 'mira.room.accept',
+    revision: 1,
+    capabilities: ['chat'],
+    noticeVersion: version,
+    audienceAdultConfirmed: true,
+  }).state;
+  for (const id of [alice, bob]) apply(id, choice('on'));
   room = {
     ...room,
     chat: [
@@ -144,7 +156,7 @@ it('sends nothing when a source pauses before admission', async () => {
   const provider = roomMiraProviderFetch(access, mention, model, upstream);
   pause();
   // No admitted send carries Bob, so the Pause is effective at once.
-  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('off');
   await expect(provider.fetch(url)).rejects.toMatchObject({
     status: 409,
     code: 'MIRA_ROOM_CONSENT_REQUIRED',
@@ -159,7 +171,7 @@ it('discards the response when a Pause lands after admission but before transpor
     // stays pending while this admitted send finishes.
     pause();
     expect(room.miraRoom?.pending?.[bob]).toBeDefined();
-    expect(room.miraRoom?.choices[bob]?.choice).toBe('continue');
+    expect(room.miraRoom?.choices[bob]?.choice).toBe('on');
     return answer();
   });
   const provider = roomMiraProviderFetch(access, mention, model, upstream);
@@ -172,7 +184,7 @@ it('discards the response when a Pause lands after admission but before transpor
   expect(upstream).toHaveBeenCalledTimes(1);
   expect(f.call.mock.calls.length).toBe(calls);
   // Releasing the last lease makes Bob's Pause effective.
-  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('off');
   expect(room.miraRoom?.pending?.[bob]).toBeUndefined();
   // The discarded answer's usage still settles.
   expect(provider.observed()?.usage).toMatchObject({
@@ -195,7 +207,7 @@ it('discards the response when a Pause lands while it is in flight', async () =>
     code: 'MIRA_ROOM_CONSENT_REQUIRED',
   });
   expect(room.aiRequests?.[mention]?.miraDispatches).toEqual({});
-  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('off');
 });
 
 it('counts a request that failed without an answer as unpriced, never zero', async () => {
@@ -279,7 +291,7 @@ it('stops waiting on usage observation at the deadline and settles a pending Pau
     usage: { available: false },
   });
   expect(leases()).toEqual({});
-  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('off');
   expect(room.miraRoom?.pending?.[bob]).toBeUndefined();
 });
 

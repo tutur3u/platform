@@ -18,6 +18,8 @@ export type RoomMiraConsent =
         revision: number;
         acceptorName: string;
         capabilities: Array<'chat' | 'captions' | 'notes'>;
+        /** Server time the acceptance started, in epoch milliseconds. */
+        acceptedAt: number;
       } | null;
       /** The caller's choice for the current acceptance; null is off. */
       choice: 'on' | 'off' | null;

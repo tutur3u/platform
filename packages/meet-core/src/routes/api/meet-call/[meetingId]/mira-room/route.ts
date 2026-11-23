@@ -54,7 +54,8 @@ const isGuest = (access: MeetCallRouteAccess) =>
 async function readView(access: MeetCallRouteAccess) {
   const [view, boxTickedByDefault] = await Promise.all([
     callRoomService<MiraRoomView>(access, { action: 'mira.room.read' }),
-    readMiraBoxTickedByDefault(access.meeting.ws_id),
+    // A failed default lookup shows the box unticked, never fails the view.
+    readMiraBoxTickedByDefault(access.meeting.ws_id).catch(() => false),
   ]);
   return { available: true as const, ...view, boxTickedByDefault };
 }

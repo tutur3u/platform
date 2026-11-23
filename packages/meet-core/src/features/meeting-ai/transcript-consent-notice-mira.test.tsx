@@ -102,3 +102,11 @@ it('offers Allow once Mira is on for the caller', async () => {
   await vi.waitFor(() => expect(allow()).toHaveProperty('disabled', false));
   expect(screen.queryByText(ai.consent_mira_off)).toBeNull();
 });
+
+it('says Mira is not on, without a dead end, when no host acceptance exists', async () => {
+  f.mira.mockResolvedValue({ ...mira(null), acceptance: null });
+  show();
+  expect(await screen.findByText(ai.consent_mira_not_on)).toBeTruthy();
+  expect(screen.queryByText(ai.consent_mira_off)).toBeNull();
+  expect(allow()).toBeNull();
+});

@@ -64,7 +64,10 @@ vi.mock('next/link', () => ({
     href: string;
   }) => <a href={href}>{children}</a>,
 }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
+  useTranslations: () => (key: string) => key,
+}));
 vi.mock('@marsidev/react-turnstile', async () => {
   const { useEffect } = await import('react');
   return {
@@ -121,6 +124,27 @@ it('joins with the Turnstile token once the check passes', async () => {
       turnstileToken: 'one-use',
     })
   );
+});
+
+it('(d) still joins when the Mira box cannot be stored', async () => {
+  const setItem = vi
+    .spyOn(Storage.prototype, 'setItem')
+    .mockImplementation(() => {
+      throw new Error('private mode');
+    });
+  try {
+    setup();
+    act(() => widget().onSuccess('one-use'));
+    fireEvent.click(screen.getByRole('button', { name: 'ask_to_join' }));
+    await waitFor(() =>
+      expect(mocks.join).toHaveBeenCalledWith(expect.any(String), {
+        displayName: 'Safari guest',
+        turnstileToken: 'one-use',
+      })
+    );
+  } finally {
+    setItem.mockRestore();
+  }
 });
 
 it('offers the host at once and explains a slow check after the watchdog without replacing the widget', async () => {

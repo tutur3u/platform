@@ -70,6 +70,8 @@
     "./cloudflare/live/session-tools.ts": "./src/cloudflare/live/session-tools.ts",
     "./cloudflare/live/reviews": "./src/cloudflare/live/reviews.ts",
     "./cloudflare/live/reviews.ts": "./src/cloudflare/live/reviews.ts",
+    "./features/live-assistant/server/room-mira-evidence": "./src/features/live-assistant/server/room-mira-evidence.ts",
+    "./features/live-assistant/server/room-mira-evidence.ts": "./src/features/live-assistant/server/room-mira-evidence.ts",
     "./features/live-assistant/memory-command": "./src/features/live-assistant/memory-command.ts",
     "./features/live-assistant/memory-command.ts": "./src/features/live-assistant/memory-command.ts",
     "./features/live-assistant/live-review-card": "./src/features/live-assistant/live-review-card.tsx",

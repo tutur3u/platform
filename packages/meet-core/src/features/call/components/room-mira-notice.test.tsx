@@ -14,6 +14,7 @@ const f = vi.hoisted(() => ({
   turnOff: vi.fn(),
   report: vi.fn(),
   transcript: vi.fn(),
+  transcriptRead: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   readRoomMiraConsent: f.read,
@@ -22,10 +23,15 @@ vi.mock('@tuturuuu/internal-api', () => ({
   turnOffRoomMira: f.turnOff,
   reportRoomMiraMinor: f.report,
   setMeetTranscriptChoice: f.transcript,
+  readMeetTranscriptConsent: f.transcriptRead,
 }));
 
 import { MIRA_CONSENT_INFO_KEYS } from '../../live-assistant/mira-consent-box';
-import { rememberMiraJoinChoice } from '../../live-assistant/mira-join-choice';
+import {
+  forgetMiraJoinChoice,
+  rememberMiraJoinChoice,
+} from '../../live-assistant/mira-join-choice';
+import { TranscriptConsentNotice } from '../../meeting-ai/transcript-consent-notice';
 import { RoomMiraNotice } from './room-mira-notice';
 
 const m = messages.meet.mira_consent;
@@ -42,29 +48,52 @@ const base = {
 };
 const accepted = {
   ...base,
-  acceptance: { revision: 3, acceptorName: 'Lan', capabilities: ['chat'] },
+  // Accepted before anyone in these tests pressed Join.
+  acceptance: {
+    revision: 3,
+    acceptorName: 'Lan',
+    capabilities: ['chat'],
+    acceptedAt: 0,
+  },
   status: { active: true, included: 0, admitted: 2 },
 };
-function show(placement: 'chat' | 'header' = 'header', details?: ReactNode) {
+/** An acceptance that started after the participant pressed Join. */
+const acceptedLater = {
+  ...accepted,
+  acceptance: { ...accepted.acceptance, acceptedAt: Date.now() + 60_000 },
+};
+function show(
+  placement: 'chat' | 'header' = 'header',
+  details?: ReactNode,
+  extra?: ReactNode
+) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+    <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={messages}>
         <RoomMiraNotice
           meetingId="room"
           placement={placement}
           details={details}
         />
+        {extra}
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
+  return client;
 }
+const untickAtJoin = () =>
+  rememberMiraJoinChoice('room', {
+    ticked: false,
+    textHash: 'b'.repeat(64),
+    locale: 'vi',
+  });
 beforeEach(() => {
   vi.resetAllMocks();
   sessionStorage.clear();
+  forgetMiraJoinChoice('room');
   f.transcript.mockResolvedValue({});
 });
 afterEach(cleanup);
@@ -224,4 +253,76 @@ it('ships every notice item and link in English and Vietnamese', () => {
   );
   expect(m.info_readers).toMatch(/host.*workspace admins/);
   expect(m.info_retention).toMatch(/Audio is not kept/);
+});
+
+it('(a) keeps a Join untick in every confirm box when Mira is turned on after admission', async () => {
+  untickAtJoin();
+  f.read.mockResolvedValue(acceptedLater);
+  f.transcriptRead.mockResolvedValue({
+    available: true,
+    version: 'v1',
+    choice: null,
+    fence: { ready: false, pending: 1, declined: 0, admitted: 2 },
+    active: true,
+    activeSince: 1,
+  });
+  show('header', undefined, <TranscriptConsentNotice meetingId="room" />);
+  // The header box and the transcript notice's Mira box both start unticked.
+  await vi.waitFor(() =>
+    expect(screen.getAllByRole('checkbox', { name: m.box_label })).toHaveLength(
+      2
+    )
+  );
+  for (const box of screen.getAllByRole('checkbox', { name: m.box_label }))
+    expect(box.getAttribute('aria-checked')).toBe('false');
+  // A later acceptance needs the participant's own confirm.
+  expect(f.choose).not.toHaveBeenCalled();
+  expect(f.transcript).not.toHaveBeenCalled();
+});
+
+it('(b) shows the box unticked after turning Mira off in the call', async () => {
+  f.read.mockResolvedValue({ ...accepted, choice: 'on', ready: true });
+  f.choose.mockResolvedValue({ ...accepted, choice: 'off' });
+  show();
+  const indicator = m.indicator_on.replace('{name}', 'Lan');
+  fireEvent.click(await screen.findByRole('button', { name: indicator }));
+  fireEvent.click(await screen.findByRole('button', { name: m.turn_off_me }));
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalled());
+  fireEvent.click(await screen.findByRole('button', { name: indicator }));
+  const box = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(box.getAttribute('aria-checked')).toBe('false');
+});
+
+it('(c) applies the Join state once, after the not-admitted read turns into the admitted view', async () => {
+  untickAtJoin();
+  f.read.mockResolvedValue({ available: false, joinDefault: true });
+  f.choose.mockResolvedValue({ ...accepted, choice: 'off' });
+  const client = show('header', undefined, <RoomMiraNotice meetingId="room" />);
+  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  expect(f.choose).not.toHaveBeenCalled();
+  f.read.mockResolvedValue(accepted);
+  await client.invalidateQueries();
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(1));
+  await client.invalidateQueries();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(f.choose).toHaveBeenCalledTimes(1);
+  expect(f.choose).toHaveBeenCalledWith(
+    'room',
+    expect.objectContaining({ choice: 'off', source: 'join' })
+  );
+});
+
+it('(e) keeps a Join untick when storage fails, and the call box starts unticked', async () => {
+  const setItem = vi
+    .spyOn(Storage.prototype, 'setItem')
+    .mockImplementation(() => {
+      throw new Error('private mode');
+    });
+  untickAtJoin();
+  setItem.mockRestore();
+  f.read.mockResolvedValue(acceptedLater);
+  show();
+  const box = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(box.getAttribute('aria-checked')).toBe('false');
+  expect(f.choose).not.toHaveBeenCalled();
 });

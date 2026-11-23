@@ -86,6 +86,7 @@ export function RoomMiraNotice({
       onOpenChange={placement === 'header' ? setOpen : undefined}
     >
       <ParticipantChoice
+        key={`${data.acceptance.revision}:${data.choice}`}
         data={data}
         mira={mira}
         onDone={() => setOpen(false)}
@@ -119,7 +120,12 @@ export function RoomMiraSelfChoice({ meetingId }: { meetingId: string }) {
   const mira = useRoomMira(meetingId);
   if (!mira.data?.acceptance) return null;
   return (
-    <ParticipantChoice data={mira.data} mira={mira} onDone={() => undefined} />
+    <ParticipantChoice
+      key={`${mira.data.acceptance.revision}:${mira.data.choice}`}
+      data={mira.data}
+      mira={mira}
+      onDone={() => undefined}
+    />
   );
 }
 

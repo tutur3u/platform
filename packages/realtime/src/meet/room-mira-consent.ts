@@ -76,6 +76,7 @@ function miraRoomView(
           revision: acceptance.revision,
           acceptorName: acceptance.acceptorName,
           capabilities: acceptance.capabilities,
+          acceptedAt: acceptance.acceptedAt,
         }
       : null,
     choice: current ? own!.choice : null,

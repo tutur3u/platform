@@ -13,6 +13,10 @@ const mocks = vi.hoisted(() => ({
 // The room page imports server-only modules; Vitest runs without the
 // react-server condition that makes that import a no-op.
 vi.mock('server-only', () => ({}));
+vi.mock(
+  '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence',
+  () => ({ readMiraBoxTickedByDefaultForMeeting: async () => false })
+);
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => ({ value: 'guest-cookie' }) }),
 }));
@@ -265,6 +269,7 @@ it('offers guest join without an account only when the gates allow it', async ()
     meetingId: id,
     siteKey: 'site-key',
     returnTo: `/r/${code}`,
+    miraBoxTickedByDefault: false,
   });
   expect(mocks.session).not.toHaveBeenCalled();
 });

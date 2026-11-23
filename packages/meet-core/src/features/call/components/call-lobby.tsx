@@ -63,14 +63,8 @@ export function ConnectedLobby({
   // Last name sent with presence.join, so a blur followed by join (or a
   // blur without edits) does not resend the same name.
   const sentDisplayName = useRef<string | null>(null);
-  // Seeded after mount, so server and client render the same markup: an
-  // earlier join screen's choice wins over the workspace default.
+  // The Mira box state; null until seeded, so the box renders on the client.
   const [miraTicked, setMiraTicked] = useState<boolean | null>(null);
-  const miraDefault = useRoomMiraJoinDefault(miraMeetingId);
-  useEffect(() => {
-    if (!miraMeetingId || miraDefault === undefined) return;
-    setMiraTicked(peekMiraJoinChoice(miraMeetingId)?.ticked ?? miraDefault);
-  }, [miraMeetingId, miraDefault]);
   const rememberMira = useRememberMiraJoin();
   const sendDisplayName = (name: string) => {
     if (name === sentDisplayName.current) return;
@@ -146,10 +140,39 @@ export function ConnectedLobby({
         <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
       }
       joinExtra={
-        miraTicked === null ? undefined : (
-          <MiraJoinBox checked={miraTicked} onCheckedChange={setMiraTicked} />
-        )
+        miraMeetingId ? (
+          <LobbyMiraBox
+            meetingId={miraMeetingId}
+            ticked={miraTicked}
+            onTickedChange={setMiraTicked}
+          />
+        ) : undefined
       }
     />
   );
+}
+
+/**
+ * Reads the join box default for one meeting and seeds the box once: a later
+ * default (a refetch, or the host changing the setting) never overwrites a
+ * box the participant already toggled. An earlier join screen's choice wins.
+ */
+function LobbyMiraBox({
+  meetingId,
+  ticked,
+  onTickedChange,
+}: {
+  meetingId: string;
+  ticked: boolean | null;
+  onTickedChange: (ticked: boolean) => void;
+}) {
+  const fallback = useRoomMiraJoinDefault(meetingId);
+  const seeded = useRef(false);
+  useEffect(() => {
+    if (seeded.current || fallback === undefined) return;
+    seeded.current = true;
+    onTickedChange(peekMiraJoinChoice(meetingId)?.ticked ?? fallback);
+  }, [meetingId, fallback, onTickedChange]);
+  if (ticked === null) return null;
+  return <MiraJoinBox checked={ticked} onCheckedChange={onTickedChange} />;
 }
