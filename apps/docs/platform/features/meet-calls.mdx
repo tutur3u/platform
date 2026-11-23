@@ -303,23 +303,49 @@ Cloudflare; Postgres runs no schedule for attendance:
   room copy through the Meet realtime `AttendanceErasure` entrypoint, and
   records which claims each room accepted.
 
-Both jobs stay out of `CRON_CONTROL_ENABLED_JOBS`, and the
-`private.meet_attendance_retention_control` stop fence starts closed. Only the
-database owner can open it; `service_role` can read it but not change it.
-**Release gate:** Keep attendance disabled in production until Cron Control
-enables both jobs and binds `MEET_ATTENDANCE_ERASURE` to the
-`tuturuuu-meet-realtime` `AttendanceErasure` entrypoint. The
+Cron Control lists both jobs in `CRON_CONTROL_ENABLED_JOBS` and binds
+`MEET_ATTENDANCE_ERASURE` to the `tuturuuu-meet-realtime` `AttendanceErasure`
+entrypoint. The `private.meet_attendance_retention_control` stop fence starts
+closed, so both jobs only report `fenced` until the database owner opens it;
+`service_role` can read it but not change it. While the fence is closed, each
+`meet-attendance-erasure` slot makes one RPC and each daily
+`meet-attendance-retention` slot makes two: the purge, which removes nothing,
+and the intent advance, which reports `fenced`.
+
+The server requires `MEET_ATTENDANCE_RETENTION_VERIFIED` to be exactly
+`meet-attendance-retention:17 18 * * *:purge_expired_meet_attendance+meet-attendance-erasure`
+before `MEET_CLASS_ATTENDANCE_ENABLED=true` has any effect. The
 `meet-attendance-retention-job` CI test refuses a production attendance flag
-before then, and the server also requires `MEET_ATTENDANCE_RETENTION_VERIFIED`
-to name both jobs. Those checks are static, so the database also requires
-runtime proof before it stores any attendance. Each erasure run erases a probe
-room that no meeting can have through the deployed binding. After its claim
-and advance calls succeed as `service_role`, it calls
+unless Cron Control enables both jobs with that binding, and refuses one that
+ships without the proof value in the same file. Those checks are static, so
+the database also requires runtime proof before it stores any attendance. Each
+erasure run erases a probe room that no meeting can have through the deployed
+binding. After its claim and advance calls succeed as `service_role`, it calls
 `private.record_meet_attendance_erasure_ready`. That function records the time
 only while the stop fence is open and the erasure functions have the required
 privileges and run as their owner. `private.commit_meet_attendance_upsert`
 refuses to store rows unless that proof is less than two days old, the fence
 is still open, and the privileges still hold.
+
+**Release gate.** Keep attendance disabled in production until these steps
+finish, in order:
+
+1. The gated production migration workflow has applied every attendance
+   migration, and the deployed Meet realtime Worker exports
+   `AttendanceErasure`.
+2. Cron Control is deployed with both jobs and the `MEET_ATTENDANCE_ERASURE`
+   binding. Both jobs report `fenced`.
+3. The database owner opens the fence as the table owner:
+   `update private.meet_attendance_retention_control set stopped = false where id;`
+   Setting `stopped = true` closes it again.
+4. After the next `meet-attendance-erasure` slot (every 10 minutes), the
+   database owner confirms that
+   `private.meet_attendance_erasure_readiness.verified_at` is less than two
+   days old and that `select private.meet_attendance_erasure_ready();` returns
+   `true`. Only the erasure run writes that proof; nobody records it by hand.
+5. Meet and Meet realtime set `MEET_CLASS_ATTENDANCE_ENABLED=true` and
+   `MEET_ATTENDANCE_RETENTION_VERIFIED` to the proof value above in one
+   reviewed change.
 
 Opening the panel also deletes expired rows for that meeting and workspace and
 pages the rest in stable `joined_at`, `source_key` order past the 1,000-row

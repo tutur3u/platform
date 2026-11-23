@@ -365,6 +365,19 @@ scan. Deletes are idempotent and the processor schedules no follow-up. The
 `meet-attendance-retention.test.ts` dispatch cases count calls through a full
 batch, deadline pressure and a stop between pages.
 
+The half-hourly `forms-upload-cleanup` slot makes one claim RPC when nothing
+has expired. Each full page adds one Storage bulk delete of at most 20 objects
+and one PostgREST delete, so a slot makes at most 12 database or Storage
+requests and 12 stop-fence checks, and deletes at most 80 objects, on an
+existing trigger. A page shorter than 20 ends the slot, and the fourth full
+page reports `degraded`. A refused or unknown request ends the slot without an
+in-slot retry; the claim counts one attempt per slot and stops at five.
+`FORMS_UPLOAD_CLEANUP_MODE` other than exactly `delete` makes no request. The
+`forms-upload-cleanup.test.ts` dispatch cases count requests through an empty
+claim, the page bound, a stop before the storage delete and before the
+reservation delete, a restart, a refusal of either delete, and a timeout during
+either delete. Hosted stop and billing evidence are still outstanding.
+
 The daily `external-app-exchange-audit-retention` slot makes at most eight
 1,000-row purge RPCs and ten ledger operations (claim, eight fence checks,
 outcome), on an existing trigger. While the purge function is missing it makes

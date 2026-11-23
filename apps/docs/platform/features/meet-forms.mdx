@@ -29,19 +29,47 @@ the current launch and pinned version.
 Meet and the Meet realtime Worker. The extended API also requires the
 core flag. Enable the same flags in both deployments after verification.
 
-Before enabling core Forms, verify the Forms transaction migrations and
-coordinate the public Forms writer cutover. Both submission paths must
-use the atomic response transaction to enforce shared response limits.
-Configure the Turnstile site key, secret, and exact requesting hostname.
-Verify a launch and submission with signed-in host and attendee accounts.
-Inline creation also requires the `meet_form_creation` RPC. Verify it
-exists on the target and exercise a host creating a form before activation.
+Both response writers use the atomic `commit_form_response` transaction.
+The Meet API calls it for call responses. The public share route
+(`/api/v1/shared/forms/[shareCode]`) calls it after its Turnstile and
+answer checks. The transaction locks the form row before it counts
+responses, so concurrent submissions cannot pass `max_responses` or the
+one-response settings. A retry of the same answers on a submitted session
+returns 409, like any other submitted session.
 
-Before enabling the extended API, verify the published-version and upload
-lifecycle migrations, private storage, and scheduled attachment cleanup.
-The standard call drawer uses the core launch list. Published-version
-discovery and extended uploads need a call UI integration before they
-are available there.
+Inline creation calls `private.meet_form_creation` in three phases keyed
+by meeting and request id. Reserve returns server-generated form and
+launch ids. Materialize stores the prepared definition as a draft. Finalize
+publishes it after the room stores the launch. Each phase checks that the
+actor is a workspace member with `manage_forms` before any replay. A room
+holds at most 50 creation intents. A definition that references another
+form's sections or questions is refused and writes nothing. A staged form
+whose launch never finalizes stays a draft in the workspace.
+
+Cron Control's `forms-upload-cleanup` job removes expired respondent
+uploads every 30 minutes. Each slot claims at most four pages of 20
+reservations. For each page it deletes the storage objects in one call,
+then deletes the reservation rows in one call. The claim marks the
+reservations, and the storage trigger then refuses writes to them, so a
+deleted object cannot be written again. A slot that stops between steps
+leaves the rows claimed; the next claim takes them again, and both deletes
+repeat safely. A reservation that fails five times is no longer claimed.
+The job runs only while `FORMS_UPLOAD_CLEANUP_MODE` is exactly `delete`.
+The Cron Control stop fence is checked before every claim and delete.
+
+Before enabling core Forms, apply the `meet_form_creation` migration and
+confirm the Turnstile site key, secret, and exact requesting hostname
+(`MEET_FORMS_TURNSTILE_HOSTNAME`) on both Workers. Then verify a launch,
+an inline creation, and a submission with signed-in host and attendee
+accounts. Before enabling the extended API, confirm that
+`forms-upload-cleanup` has run with `ok` outcomes. The standard call drawer
+uses the core launch list. Published-version discovery and extended
+uploads need a call UI integration before they are available there.
 
 Regression suites cover disabled routes, participant prefill, the call
 renderer, launch-scoped results, and published data isolation across rooms.
+`meet-form-creation.sql` covers creation authorization, bounds, replay and
+the room cap. `forms-share-response-commit.sql` and the share route test
+cover the response limit, including concurrent submissions.
+`forms-upload-cleanup.test.ts` in Cron Control counts every cleanup request,
+including the page bound and stops between steps.
