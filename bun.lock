@@ -1797,6 +1797,7 @@
     "apps/playground-execution": {
       "name": "@tuturuuu/playground-execution",
       "dependencies": {
+        "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "zod": "^4.6.7",
       },
