@@ -1,8 +1,14 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:mobile/data/sources/supabase_client.dart';
 
-String? currentCacheUserId() => maybeSupabase?.auth.currentUser?.id;
+/// Test-only cache owner, since tests cannot sign in through Supabase.
+@visibleForTesting
+String? Function()? debugCacheUserIdOverride;
+
+String? currentCacheUserId() =>
+    debugCacheUserIdOverride?.call() ?? maybeSupabase?.auth.currentUser?.id;
 
 String currentCachePartition({String fallback = 'anonymous'}) =>
     currentCacheUserId() ?? fallback;

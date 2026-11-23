@@ -63,7 +63,6 @@ class TaskRepository {
   final ApiClient _apiClient;
   final http.Client _httpClient;
   final TaskBoardDetailLoadPolicy _boardDetailLoadPolicy;
-  final Map<String, DateTime> _historyWarmups = {};
 
   Future<Map<String, dynamic>> _read(
     String wsId,
