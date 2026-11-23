@@ -400,6 +400,8 @@ export type MeetRealtimeServerMessage =
       createdAt: string;
       displayName: string;
       id: string;
+      /** A room Mira system line; clients show it in their own locale. */
+      notice?: { kind: 'mira.on' | 'mira.off'; by?: string };
       requestId?: string;
       type: 'chat.message';
       replayed?: boolean;

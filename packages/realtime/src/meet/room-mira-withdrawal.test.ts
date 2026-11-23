@@ -7,9 +7,9 @@ import {
 import {
   applyMiraRoomConsent,
   fenceMiraRoomRequest,
-  MIRA_ROOM_NOTICE_VERSION as version,
-  miraRoomFence,
+  miraRoomStatus,
 } from './room-mira-consent';
+import { acceptMira, miraChoice } from './room-mira.fixtures';
 import {
   type RoomChatMessage,
   roomService,
@@ -47,8 +47,8 @@ function act(id: string, input: unknown) {
   room = result.state;
   return result;
 }
-const choose = (id: string, choice: 'continue' | 'mute') =>
-  act(id, { action: 'mira.room.choice', choice, version });
+const choose = (id: string, choice: 'on' | 'off') =>
+  act(id, miraChoice(room, choice));
 const dispatch = (requester: string, messageId: string, n: number) =>
   act(requester, {
     action: 'mira.room.dispatch',
@@ -77,10 +77,10 @@ const blocked = { status: 409, body: { code: 'MIRA_ROOM_CONSENT_REQUIRED' } };
 beforeEach(() => {
   now = 1_800_000_000_000;
   room = createMeetRoomSnapshot();
-  for (const id of [alice, bob, carol]) {
+  for (const id of [alice, bob, carol])
     room = admitOrHold(room, token(id), '2026-11-20T00:00:00Z').state;
-    choose(id, 'continue');
-  }
+  room = acceptMira(room, alice, 1, now);
+  for (const id of [alice, bob, carol]) choose(id, 'on');
   // Two requests that both carry Bob's words: Alice's and Carol's.
   room = {
     ...room,
@@ -100,19 +100,24 @@ beforeEach(() => {
 
 describe('deferred room Mira withdrawal', () => {
   it('pauses at once when no admitted send carries the account', () => {
-    choose(bob, 'mute');
-    expect(view(bob)).toMatchObject({ choice: 'mute', pausing: false });
+    choose(bob, 'off');
+    expect(view(bob)).toMatchObject({ choice: 'off', pausing: false });
     expect(room.miraRoom?.choices[bob]?.revision).toBe(2);
   });
 
   it('refuses every new send after the button, before admission', () => {
     dispatch(alice, 'ask-a', 1);
-    choose(bob, 'mute');
-    expect(view(bob)).toMatchObject({ choice: 'continue', pausing: true });
+    choose(bob, 'off');
+    expect(view(bob)).toMatchObject({ choice: 'on', pausing: true });
     // No new provider send, reservation or publication starts.
     expect(dispatch(alice, 'ask-a', 2)).toMatchObject(blocked);
     expect(dispatch(carol, 'ask-c', 3)).toMatchObject(blocked);
-    expect(miraRoomFence(room, meetingId).ready).toBe(false);
+    // Bob is excluded at once; Alice and Carol keep Mira for their own words.
+    expect(miraRoomStatus(room, meetingId)).toEqual({
+      active: true,
+      included: 2,
+      admitted: 3,
+    });
     expect(
       act(alice, {
         action: 'ai.finish',
@@ -123,17 +128,17 @@ describe('deferred room Mira withdrawal', () => {
     ).toMatchObject(blocked);
   });
 
-  it('lets a send admitted before the button finish, then makes the Pause effective', () => {
+  it('lets a send admitted before the button finish, then makes the opt-out effective', () => {
     expect(dispatch(alice, 'ask-a', 1).body).toEqual({
       ok: true,
       leaseId: lease(1),
       expiresInMs: 120_000,
     });
-    choose(bob, 'mute');
-    expect(room.miraRoom?.choices[bob]?.choice).toBe('continue');
+    choose(bob, 'off');
+    expect(room.miraRoom?.choices[bob]?.choice).toBe('on');
     // The admitted send settles; its answer is not used after the button.
     expect(release(alice, 'ask-a', 1).body).toEqual({ current: false });
-    expect(view(bob)).toMatchObject({ choice: 'mute', pausing: false });
+    expect(view(bob)).toMatchObject({ choice: 'off', pausing: false });
     expect(room.miraRoom?.choices[bob]?.revision).toBe(2);
     expect(room.miraRoom?.pending?.[bob]).toBeUndefined();
   });
@@ -141,29 +146,29 @@ describe('deferred room Mira withdrawal', () => {
   it('waits for every overlapping request that carries the account', () => {
     dispatch(alice, 'ask-a', 1);
     dispatch(carol, 'ask-c', 2);
-    choose(bob, 'mute');
+    choose(bob, 'off');
     release(alice, 'ask-a', 1);
     // Carol's request still carries Bob's words.
     expect(view(bob)).toMatchObject({ pausing: true });
     release(carol, 'ask-c', 2);
-    expect(view(bob)).toMatchObject({ choice: 'mute', pausing: false });
+    expect(view(bob)).toMatchObject({ choice: 'off', pausing: false });
     // Alice and Carol keep their own effective choices.
-    expect(room.miraRoom?.choices[alice]?.choice).toBe('continue');
-    expect(room.miraRoom?.choices[carol]?.choice).toBe('continue');
+    expect(room.miraRoom?.choices[alice]?.choice).toBe('on');
+    expect(room.miraRoom?.choices[carol]?.choice).toBe('on');
   });
 
   it('becomes effective when an unreleased lease expires', () => {
     dispatch(alice, 'ask-a', 1);
-    choose(bob, 'mute');
+    choose(bob, 'off');
     now += 119_000;
     expect(view(bob)).toMatchObject({ pausing: true });
     now += 2_000;
-    expect(view(bob)).toMatchObject({ choice: 'mute', pausing: false });
+    expect(view(bob)).toMatchObject({ choice: 'off', pausing: false });
   });
 
   it('releases a lease even after the requester left', () => {
     dispatch(alice, 'ask-a', 1);
-    choose(bob, 'mute');
+    choose(bob, 'off');
     room = {
       ...room,
       presence: Object.fromEntries(
@@ -173,28 +178,28 @@ describe('deferred room Mira withdrawal', () => {
       ),
     };
     expect(release(alice, 'ask-a', 1).body).toEqual({ current: false });
-    expect(view(bob)).toMatchObject({ choice: 'mute', pausing: false });
+    expect(view(bob)).toMatchObject({ choice: 'off', pausing: false });
   });
 
-  it('cancels a pending Pause with a new revision so earlier requests stay stale', () => {
+  it('cancels a pending opt-out with a new revision so earlier requests stay stale', () => {
     dispatch(alice, 'ask-a', 1);
-    choose(bob, 'mute');
-    choose(bob, 'continue');
-    expect(view(bob)).toMatchObject({ choice: 'continue', pausing: false });
+    choose(bob, 'off');
+    choose(bob, 'on');
+    expect(view(bob)).toMatchObject({ choice: 'on', pausing: false });
     expect(room.miraRoom?.choices[bob]?.revision).toBe(2);
     expect(release(alice, 'ask-a', 1).body).toEqual({ current: false });
     expect(dispatch(alice, 'ask-a', 2)).toMatchObject(blocked);
   });
 
-  it('keeps a repeated Pause idempotent and never lets others choose for Bob', () => {
+  it('keeps a repeated opt-out idempotent and never lets others choose for Bob', () => {
     dispatch(alice, 'ask-a', 1);
-    choose(bob, 'mute');
+    choose(bob, 'off');
     const requestedAt = room.miraRoom?.pending?.[bob]?.requestedAt;
     now += 1000;
-    choose(bob, 'mute');
+    choose(bob, 'off');
     expect(room.miraRoom?.pending?.[bob]?.requestedAt).toBe(requestedAt);
-    choose(alice, 'mute');
-    expect(room.miraRoom?.choices[bob]?.choice).toBe('continue');
+    choose(alice, 'off');
+    expect(room.miraRoom?.choices[bob]?.choice).toBe('on');
     expect(room.miraRoom?.pending?.[alice]).toBeDefined();
   });
 });

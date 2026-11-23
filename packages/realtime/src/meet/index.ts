@@ -298,10 +298,16 @@ export {
   MIRA_ROOM_DENIED,
 } from './room-mira-private';
 export {
+  MIRA_ROOM_CAPABILITIES,
+  type MiraRoomCapability,
+  type MiraRoomEndReason,
+} from './room-mira-acceptance';
+export {
   MIRA_ROOM_CONSENT_REQUIRED,
   MIRA_ROOM_NOTICE_VERSION,
-  type MiraRoomFence,
-  miraRoomFence,
+  type MiraRoomStatus,
+  type MiraRoomView,
+  miraRoomStatus,
 } from './room-mira-consent';
 export {
   MEET_TRANSCRIPT_CONSENT_REQUIRED,

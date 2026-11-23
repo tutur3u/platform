@@ -8,8 +8,8 @@ import {
 import {
   applyMiraRoomConsent,
   fenceMiraRoomRequest,
-  MIRA_ROOM_NOTICE_VERSION as version,
 } from './room-mira-consent';
+import { acceptMira, miraChoice } from './room-mira.fixtures';
 import {
   type RoomChatMessage,
   roomService,
@@ -39,8 +39,8 @@ const service = (state: RoomServiceState, id: string, input: unknown) =>
   fenceMiraRoomRequest(state, token(id), input, () =>
     roomService(state, token(id), input)
   );
-const choose = (state: RoomServiceState, id: string, choice: string) =>
-  service(state, id, { action: 'mira.room.choice', choice, version }).state;
+const choose = (state: RoomServiceState, id: string, choice: 'on' | 'off') =>
+  service(state, id, miraChoice(state, choice)).state;
 const message = (id: string, accountId: string, body: string) =>
   ({
     type: 'chat.message',
@@ -88,7 +88,8 @@ beforeEach(() => {
     '2026-11-20T00:00:00Z'
   ).state;
   state = admitOrHold(state, token(bob), '2026-11-20T00:00:00Z').state;
-  state = choose(choose(state, alice, 'continue'), bob, 'continue');
+  state = acceptMira(state, alice);
+  state = choose(choose(state, alice, 'on'), bob, 'on');
   state = {
     ...state,
     chat: [
@@ -118,7 +119,7 @@ describe('room Mira source binding', () => {
   });
 
   it('never dispatches or publishes after a source author pauses and then leaves', () => {
-    const state = leave(choose(reserved, bob, 'mute'), bob);
+    const state = leave(choose(reserved, bob, 'off'), bob);
     for (const input of [
       dispatch(),
       { action: 'ai.finish', messageId: mention, body: 'Answer', costUsd: 0 },
@@ -141,9 +142,9 @@ describe('room Mira source binding', () => {
   });
 
   it('treats a rejoin with a new Continue revision as stale for the old request', () => {
-    let state = leave(choose(reserved, bob, 'mute'), bob);
+    let state = leave(choose(reserved, bob, 'off'), bob);
     state = admitOrHold(state, token(bob), '2026-11-20T00:01:00Z').state;
-    state = choose(state, bob, 'continue');
+    state = choose(state, bob, 'on');
     expect(state.miraRoom?.choices[bob]?.revision).toBe(3);
     expect(service(state, alice, dispatch())).toMatchObject(blocked);
     expect(
@@ -173,7 +174,7 @@ describe('room Mira source binding', () => {
         revision,
       }).status ?? 200
     ).toBe(200);
-    const stale = leave(choose(saved.state, bob, 'mute'), bob);
+    const stale = leave(choose(saved.state, bob, 'off'), bob);
     for (const action of ['ai.review.claim', 'ai.review.share'])
       expect(
         service(stale, alice, { action, messageId: mention, revision })
@@ -203,7 +204,7 @@ describe('room Mira source binding', () => {
   });
 
   it('never re-sends an earlier Mira reply that quotes an author who withdrew', () => {
-    let state = leave(choose(reserved, bob, 'mute'), bob);
+    let state = leave(choose(reserved, bob, 'off'), bob);
     // Settle the first request (cost only) so a new mention can reserve.
     state = service(state, alice, {
       action: 'ai.finish',
@@ -248,7 +249,7 @@ describe('room Mira source binding', () => {
     it('serializes a Pause after an admitted request and reports it stale on release', () => {
       // Admission happens first; the Pause lands while the request is in
       // flight and is ordered after it, so the response must be discarded.
-      const paused = choose(admitted(), bob, 'mute');
+      const paused = choose(admitted(), bob, 'off');
       expect(service(paused, alice, release()).body).toEqual({
         current: false,
       });
@@ -258,7 +259,7 @@ describe('room Mira source binding', () => {
     });
 
     it('reports a Pause and new Continue during the lease as stale', () => {
-      const flipped = choose(choose(admitted(), bob, 'mute'), bob, 'continue');
+      const flipped = choose(choose(admitted(), bob, 'off'), bob, 'on');
       expect(service(flipped, alice, release()).body).toEqual({
         current: false,
       });
@@ -266,7 +267,7 @@ describe('room Mira source binding', () => {
 
     it('refuses admission once consent is withdrawn before the request starts', () => {
       expect(
-        service(choose(reserved, bob, 'mute'), alice, dispatch())
+        service(choose(reserved, bob, 'off'), alice, dispatch())
       ).toMatchObject(blocked);
     });
 
