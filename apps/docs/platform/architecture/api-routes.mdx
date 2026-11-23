@@ -614,6 +614,27 @@ also propagates admin trusted-location overrides). Set
 `API_PROXY_EDGE_TRUST_ENABLED=0` to disable the edge trust cache and fall back to
 per-IP keying; tune the cache lifetime with `EDGE_TRUST_CACHE_TTL_SECONDS`.
 
+The trust cache is warmed only after a downstream route records the session, so
+a cold, expired or unsynced entry would leave a signed-in browser on the
+anonymous per-IP budget. The proxy therefore also uses the identity its
+required-MFA assurance step already verifies on every request. That step
+rejects a forged, revoked or MFA-failing Supabase session cookie (401/403)
+before any limiter runs, and skips an invalid or expired `ttr_app_`
+app-session cookie, which then adds no identity. When a
+request has no `Authorization` header and its usable cookie credentials (the
+Supabase session and any `ttr_app_` app session) verify with the auth provider
+or the app-token signer and all resolve to one user, the request is limited as
+`user:<id>` with the authenticated budget of its route policy (for example
+`users-me`). Usable credentials for different users, or any `Authorization`
+header, leave the request on the existing session/per-IP keying, so anonymous
+limits stay strict. One `user:<id>` bucket per route policy covers all of that
+user's browser sessions and devices. The session actor never admits a request
+to the offline-download guard, whose session partition is keyed on the Bearer
+credential; only a verified Bearer actor does. Set `API_PROXY_SESSION_ACTOR_ENABLED=0` to turn this off.
+Regression coverage:
+`packages/utils/src/__tests__/required-mfa-session-actor.test.ts` and
+`packages/utils/src/__tests__/api-proxy-session-actor.test.ts`.
+
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';

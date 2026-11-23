@@ -11,6 +11,10 @@ import {
 } from './abuse-protection/edge-trust';
 import { abuseSubject, isCloudflareIp } from './abuse-protection/abuse-subject';
 import { guardApiProxyBody } from './api-proxy-body';
+import {
+  edgeTrustEnabled,
+  verifiedSessionActorEnabled,
+} from './api-proxy-guard-flags';
 
 export { clearApiProxyGuardLimiterCache } from './api-proxy-rate-limiters';
 
@@ -35,25 +39,6 @@ import { enforceRequiredMfaRequest } from './required-mfa-runtime';
 const isDev = process.env.NODE_ENV !== 'production';
 
 const TRUST_MULTIPLIER_TIERS = [1, 1.5, 2, 3, 5, 10, 25, 100] as const;
-
-function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
-  const raw = process.env[name];
-  if (raw == null || raw.trim() === '') {
-    return defaultOn;
-  }
-
-  return !/^(0|false|off|no)$/i.test(raw.trim());
-}
-
-/**
- * Whether trusted accounts/locations get scaled read limits (and verified
- * sessions get their own per-session bucket) at the edge. Default on; set
- * `API_PROXY_EDGE_TRUST_ENABLED=0` to disable trust uplift and fall back to
- * per-IP keying for cache-based identities without a deploy.
- */
-function edgeTrustEnabled(): boolean {
-  return isEnvFlagEnabled('API_PROXY_EDGE_TRUST_ENABLED');
-}
 
 /**
  * Quantize uplift without ever reducing the base limit.
@@ -958,7 +943,8 @@ export async function guardApiProxyRequest(
   req: NextRequest,
   options: GuardOptions
 ): Promise<NextResponse | null> {
-  let authenticatedActor: string | null = null;
+  let bearerActor: string | null = null;
+  let sessionActor: string | null = null;
   if (
     !isTrustedProxyBypassRequest(
       req.nextUrl.pathname,
@@ -971,12 +957,22 @@ export async function guardApiProxyRequest(
       req,
       options.useVerifiedBearerActor
         ? (userId) => {
-            authenticatedActor = userId;
+            bearerActor = userId;
+          }
+        : undefined,
+      verifiedSessionActorEnabled()
+        ? {
+            onVerifiedSessionActor: (userId) => {
+              sessionActor = userId;
+            },
           }
         : undefined
     );
     if (assurance) return assurance;
   }
+  // Rate limits key either verified actor; offline admission keys a session
+  // partition on the Bearer credential, so only a Bearer actor may open it.
+  const authenticatedActor: string | null = bearerActor ?? sessionActor;
   const payloadResponse = await guardApiProxyBody(req, options.maxPayloadBytes);
   if (payloadResponse)
     return guardRejection(req, payloadResponse, 'proxy-payload-too-large');
@@ -999,7 +995,8 @@ export async function guardApiProxyRequest(
       req.method
     )
   ) {
-    // Credential presence alone never grants an authenticated budget.
+    // Credential presence alone never grants an authenticated budget: only an
+    // actor the assurance check verified with the provider or app-token signer.
     const callerClass: CallerClass = 'anonymous';
     const ip = extractIPFromRequest(req.headers);
     const identity = await resolveProxyIdentity(req, ip);
@@ -1117,7 +1114,7 @@ export async function guardApiProxyRequest(
   }
 
   const offlineResponse = await guardOfflineDownloadRequest(req, {
-    verifiedActor: authenticatedActor,
+    verifiedActor: bearerActor,
   });
   if (offlineResponse) return offlineResponse;
 

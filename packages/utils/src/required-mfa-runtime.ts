@@ -18,6 +18,12 @@ type RequestIdentity = Pick<NextRequest, 'headers' | 'url'> &
 type RequestAssurance = {
   response: NextResponse | null;
   bearerUser: SupabaseUser | null;
+  sessionUserId: string | null;
+};
+type RequestAssuranceListeners = {
+  /** Receives the one user every verified cookie credential resolves to, for a
+   * request without an Authorization header. */
+  onVerifiedSessionActor?: (userId: string) => void;
 };
 type CachedRequestAssurance = {
   fingerprint: string;
@@ -53,7 +59,8 @@ export function getVerifiedMfaBearerUser(
 }
 export async function enforceRequiredMfaRequest(
   request: NextRequest,
-  onVerifiedBearerActor?: (userId: string) => void
+  onVerifiedBearerActor?: (userId: string) => void,
+  listeners: RequestAssuranceListeners = {}
 ) {
   const identity = fingerprint(request);
   let cached = requestAssurance.get(request);
@@ -63,18 +70,27 @@ export async function enforceRequiredMfaRequest(
       pending: Promise.resolve<RequestAssurance>({
         response: null,
         bearerUser: null,
+        sessionUserId: null,
       }),
       verified: null,
     };
     entry.pending = (async () => {
       let bearerUser: SupabaseUser | null = null;
+      let sessionUserId: string | null = null;
       const response = await enforceUncachedRequiredMfaRequest(
         request,
         (user) => {
           bearerUser = user;
+        },
+        (userId) => {
+          sessionUserId = userId;
         }
       );
-      const result = { response, bearerUser: response ? null : bearerUser };
+      const result = {
+        response,
+        bearerUser: response ? null : bearerUser,
+        sessionUserId: response ? null : sessionUserId,
+      };
       entry.verified = result;
       return result;
     })();
@@ -85,16 +101,22 @@ export async function enforceRequiredMfaRequest(
   if (fingerprint(request) !== identity) return unauthenticated(request);
   if (!result.response && result.bearerUser)
     onVerifiedBearerActor?.(result.bearerUser.id);
+  if (!result.response && result.sessionUserId)
+    listeners.onVerifiedSessionActor?.(result.sessionUserId);
   return result.response;
 }
 
 /** Check every usable cookie identity, so downstream target-app fallback cannot
  * borrow another session's assurance. Cookie-only legacy handlers can ignore a
  * Bearer header, so ambient credentials must be checked as well.
- * Uses explicit access tokens and never rotates browser refresh cookies. */
+ * Uses explicit access tokens and never rotates browser refresh cookies.
+ * A request without an Authorization header whose verified cookie credentials
+ * all resolve to one user reports that user as its session actor; differing
+ * users report none. */
 async function enforceUncachedRequiredMfaRequest(
   request: NextRequest,
-  onVerifiedBearerUser: (user: SupabaseUser) => void
+  onVerifiedBearerUser: (user: SupabaseUser) => void,
+  onVerifiedSessionUser: (userId: string) => void
 ) {
   if (
     request.method === 'OPTIONS' ||
@@ -107,6 +129,7 @@ async function enforceUncachedRequiredMfaRequest(
     const admin = (await createAdminClient({
       noCookie: true,
     })) as TypedSupabaseClient;
+    const sessionUsers = new Set<string>();
     for (const token of credentials) {
       let userId: string;
       let providerUser: SupabaseUser | null = null;
@@ -127,7 +150,7 @@ async function enforceUncachedRequiredMfaRequest(
               ?.match(/^Bearer\s+(\S+)$/i)?.[1] === token
           )
             return unauthenticated(request);
-          continue; // An expired ambient app cookie cannot authenticate a route.
+          continue; // An invalid or expired ambient app cookie adds no identity.
         }
         userId = verified.claims.sub;
       } else {
@@ -191,7 +214,11 @@ async function enforceUncachedRequiredMfaRequest(
         providerUser
       )
         onVerifiedBearerUser(providerUser);
+      sessionUsers.add(userId);
     }
+    const [sessionUser] = sessionUsers;
+    if (!request.headers.has('authorization') && sessionUsers.size === 1)
+      onVerifiedSessionUser(sessionUser!);
     return null;
   } catch {
     return guardRejection(
