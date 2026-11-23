@@ -74,6 +74,7 @@ export function CallControlDock({
   activities,
   programming,
   document,
+  board,
   layout,
   setLayout,
   nav,
@@ -106,6 +107,7 @@ export function CallControlDock({
   };
   programming: Toggle;
   document: Toggle;
+  board: Toggle;
   layout: CallLayout;
   setLayout: (layout: CallLayout) => void;
   nav: RoomNavigation;
@@ -136,7 +138,9 @@ export function CallControlDock({
       extra={activities.entries}
       pages={pages}
       navigationAllowed={nav.allowed}
-      collaboration={roomTools.canUse ? { programming, document } : undefined}
+      collaboration={
+        roomTools.canUse ? { programming, document, board } : undefined
+      }
       preview={
         roomTools.showPreview
           ? { onFeedback: () => onDrawer('feedback') }

@@ -13,6 +13,7 @@ const TONES: Record<string, string> = {
   breakouts: 'bg-dynamic-teal/15 text-dynamic-teal',
   programming: 'bg-dynamic-gray/15 text-dynamic-gray',
   document: 'bg-dynamic-blue/15 text-dynamic-blue',
+  board: 'bg-dynamic-indigo/15 text-dynamic-indigo',
 };
 
 const NEUTRAL = 'bg-muted text-muted-foreground';

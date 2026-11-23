@@ -14,6 +14,17 @@ describe('stage availability', () => {
     expect(available('tool:live-assessment')).toBe(false);
   });
 
+  it('offers the saved whiteboard wherever Co-Programming and the document are offered', () => {
+    expect(isActivityAvailable('board', { ...base, toolIds: [] })).toBe(true);
+    expect(
+      isActivityAvailable('board', {
+        ...base,
+        collaboration: false,
+        toolIds: [],
+      })
+    ).toBe(false);
+  });
+
   it('drops a host-only tool when the person is demoted, even from a saved layout', () => {
     const host = allowedToolIds(['live-qa', 'live-game', 'timers'], []);
     const participant = allowedToolIds([], []);

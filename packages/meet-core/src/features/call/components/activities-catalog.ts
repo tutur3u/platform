@@ -28,6 +28,7 @@ const GROUP_OF: Readonly<Record<string, ActivityGroup>> = {
   whiteboard: 'create',
   programming: 'create',
   document: 'create',
+  board: 'create',
   'class-timer': 'run',
   timers: 'other',
   breakouts: 'run',

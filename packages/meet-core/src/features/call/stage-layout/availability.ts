@@ -1,4 +1,5 @@
 import {
+  BOARD_ACTIVITY,
   CLASSROOM_ACTIVITIES,
   DOCUMENT_ACTIVITY,
   PROGRAMMING_ACTIVITY,
@@ -20,7 +21,11 @@ export function isActivityAvailable(
   activityId: string,
   availability: ActivityAvailability
 ) {
-  if (activityId === PROGRAMMING_ACTIVITY || activityId === DOCUMENT_ACTIVITY)
+  if (
+    activityId === PROGRAMMING_ACTIVITY ||
+    activityId === DOCUMENT_ACTIVITY ||
+    activityId === BOARD_ACTIVITY
+  )
     return availability.collaboration;
   const toolId = toolIdOf(activityId);
   if (toolId) return availability.live && availability.toolIds.includes(toolId);

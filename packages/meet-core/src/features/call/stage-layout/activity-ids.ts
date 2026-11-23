@@ -7,6 +7,8 @@ export interface ActivityStage {
 
 export const PROGRAMMING_ACTIVITY = 'programming';
 export const DOCUMENT_ACTIVITY = 'document';
+/** The saved Tuturuuu Whiteboard, apart from the classroom whiteboard. */
+export const BOARD_ACTIVITY = 'board';
 
 const TOOL_PREFIX = 'tool:';
 

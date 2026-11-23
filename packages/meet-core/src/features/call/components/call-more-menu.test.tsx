@@ -128,6 +128,7 @@ function renderDock(props: Partial<ComponentProps<typeof CallControlDock>>) {
               activities={{ liveControl: null, controls: null, entries: [] }}
               programming={toggle}
               document={toggle}
+              board={toggle}
               layout="auto"
               setLayout={noop}
               nav={nav(2)}

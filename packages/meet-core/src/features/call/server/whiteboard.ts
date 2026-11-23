@@ -173,7 +173,8 @@ export async function joinMeetingWhiteboard(access: Access, id: string) {
     board: board ? { ws_id: wsId, archived_at: board.archived_at } : null,
     meetingWsId: wsId,
   });
-  if (!open.ok) throw new MeetCallAccessError(404, 'Whiteboard not found');
+  if (!open.ok || !board)
+    throw new MeetCallAccessError(404, 'Whiteboard not found');
   const role = roleOf(access, open.guestAccess);
   if (!role) throw new MeetCallAccessError(403, 'Whiteboard access denied');
   const ticket: BoardTicket = boardTicketSchema.parse({

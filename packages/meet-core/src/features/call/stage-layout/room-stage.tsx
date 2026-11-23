@@ -1,10 +1,17 @@
 'use client';
 
-import { CodeXml, FileText, LayoutGrid, PenTool } from '@tuturuuu/icons';
+import {
+  CodeXml,
+  FileText,
+  LayoutGrid,
+  PenTool,
+  Presentation,
+} from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import type { MeetToolDefinition } from '../tools/registry';
 import {
+  BOARD_ACTIVITY,
   CLASSROOM_ACTIVITIES,
   DOCUMENT_ACTIVITY,
   PROGRAMMING_ACTIVITY,
@@ -54,6 +61,15 @@ export function RoomStage({
           id,
           title: collaborationT('document'),
           icon: FileText,
+          content: renderCollaboration(id),
+        },
+      ];
+    if (id === BOARD_ACTIVITY)
+      return [
+        {
+          id,
+          title: collaborationT('board'),
+          icon: Presentation,
           content: renderCollaboration(id),
         },
       ];

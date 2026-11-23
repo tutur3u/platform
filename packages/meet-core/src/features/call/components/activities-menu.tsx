@@ -1,5 +1,5 @@
 'use client';
-import { CodeXml, FileText, LayoutGrid } from '@tuturuuu/icons';
+import { CodeXml, FileText, LayoutGrid, Presentation } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -52,6 +52,7 @@ export function ActivitiesMenu({
   collaboration?: {
     programming: { active: boolean; toggle: () => void };
     document: { active: boolean; toggle: () => void };
+    board?: { active: boolean; toggle: () => void };
   };
   preview?: { onFeedback: () => void };
   /** Whether this person may Follow and Summon (`nav.allowed`). */
@@ -101,6 +102,17 @@ export function ActivitiesMenu({
             active: !!collaboration?.document.active,
             open: collaboration?.document.toggle,
           },
+          ...(collaboration?.board
+            ? [
+                {
+                  id: 'board',
+                  label: collaborationT('board'),
+                  icon: Presentation,
+                  active: collaboration.board.active,
+                  open: collaboration.board.toggle,
+                },
+              ]
+            : []),
         ]
       : []),
     ...tools.map((tool) => ({

@@ -63,6 +63,7 @@ import { meetTools } from '../tools/registry';
 import { useMeetTools } from '../tools/use-meet-tools';
 import {
   DOCUMENT_ACTIVITY,
+  BOARD_ACTIVITY,
   PROGRAMMING_ACTIVITY,
 } from '../stage-layout/activity-ids';
 import { useStageAvailability } from '../stage-layout/use-stage-availability';
@@ -268,6 +269,7 @@ function CallShellContent({
   });
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
+  const showBoard = stage.isOpen(BOARD_ACTIVITY);
   const tools = useMeetTools({
     stage,
     meetingId,
@@ -488,6 +490,14 @@ function CallShellContent({
                   admitted: state.admission === 'admitted',
                   onRequestAccess: () =>
                     room.sendChat(collaborationT('document_access_message')),
+                },
+                {
+                  show: id === BOARD_ACTIVITY,
+                  props: {
+                    meetingId,
+                    accountId,
+                    admitted: state.admission === 'admitted',
+                  },
                 }
               )
             }
@@ -600,6 +610,10 @@ function CallShellContent({
         document={{
           active: showDocument,
           toggle: () => stage.toggle(DOCUMENT_ACTIVITY),
+        }}
+        board={{
+          active: showBoard,
+          toggle: () => stage.toggle(BOARD_ACTIVITY),
         }}
         layout={layout}
         setLayout={(next) => {

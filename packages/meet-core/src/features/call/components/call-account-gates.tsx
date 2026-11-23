@@ -5,6 +5,7 @@ import { MeetingAiPanel } from '@tuturuuu/meet-core/features/meeting-ai/meeting-
 import type { ComponentProps } from 'react';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { AccountRequiredState } from './account-required-state';
+import { BoardPanel } from '../whiteboard/board-panel';
 import { DocumentPanel } from './document-panel';
 import { PersonalToolsPanel } from './personal-tools-panel';
 import { ProgrammingPanel } from './programming-panel';
@@ -17,8 +18,15 @@ export function accountGatedCollaboration(
   showProgramming: boolean,
   showDocument: boolean,
   programming: ProgrammingProps | null,
-  document: ComponentProps<typeof DocumentPanel> | null
+  document: ComponentProps<typeof DocumentPanel> | null,
+  board: { show: boolean; props: ComponentProps<typeof BoardPanel> } | null = null
 ) {
+  if (board?.show)
+    return requiresAccount ? (
+      <AccountRequiredState />
+    ) : (
+      <BoardPanel {...board.props} />
+    );
   if (showProgramming)
     return requiresAccount ? (
       <AccountRequiredState />
