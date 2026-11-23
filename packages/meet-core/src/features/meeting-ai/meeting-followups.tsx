@@ -8,6 +8,8 @@ import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { TASKS_URL } from '../../constants/common';
+import { ActionItemsSheet } from '../meeting-record/action-items-sheet';
 import { FollowupReview } from './followup-review';
 import type { MeetingFollowup } from './followup-types';
 
@@ -32,6 +34,7 @@ export function MeetingFollowups({
 }) {
   const t = useTranslations('meet.ai');
   const [selected, setSelected] = useState<MeetingFollowup | null>(null);
+  const [reviewingAll, setReviewingAll] = useState(false);
   const suggestions = useMemo(() => {
     const tasks: MeetingFollowup[] = (session.notes?.actionItems ?? []).map(
       (item, index) => ({
@@ -76,7 +79,14 @@ export function MeetingFollowups({
   if (!suggestions.length) return null;
   return (
     <section className="space-y-3 rounded-lg border p-3">
-      <h4 className="font-semibold">{t('followup_heading')}</h4>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="font-semibold">{t('followup_heading')}</h4>
+        {suggestions.some((suggestion) => suggestion.kind === 'task') && (
+          <Button size="sm" onClick={() => setReviewingAll(true)}>
+            {t('followup_save_all')}
+          </Button>
+        )}
+      </div>
       <p className="text-muted-foreground text-xs">{t('followup_hint')}</p>
       {suggestions.map((suggestion) => (
         <div key={suggestion.key} className="space-y-2 border-t pt-3">
@@ -118,6 +128,28 @@ export function MeetingFollowups({
           </div>
         </div>
       ))}
+      {reviewingAll && (
+        <ActionItemsSheet
+          meetingId={meetingId}
+          onClose={() => setReviewingAll(false)}
+          sourceUrl={meetFollowupSource(wsId, meetingId)}
+          suggestions={suggestions.flatMap((suggestion) =>
+            suggestion.kind === 'task'
+              ? [
+                  {
+                    key: suggestion.key,
+                    title: suggestion.title,
+                    owner: suggestion.owner,
+                    ownerId: suggestion.ownerId,
+                  },
+                ]
+              : []
+          )}
+          tasksUrl={TASKS_URL}
+          workspaceSlug={wsId}
+          wsId={wsId}
+        />
+      )}
       {selected && (
         <FollowupReview
           key={selected.key}

@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/icons';
 import { TASKS_URL } from '@tuturuuu/meet-core/constants/common';
 import { MeetingProjects } from '@tuturuuu/meet-core/features/meeting-record/meeting-projects';
+import { MeetingRecordPanel } from '@tuturuuu/meet-core/features/meeting-record/meeting-record-panel';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -177,6 +179,17 @@ export default async function MeetingDetailPage({
           title={title}
           isHost={isHost}
           policy={policy}
+        />
+      </div>
+      <div className="mb-6">
+        <MeetingRecordPanel
+          meetingId={meetingId}
+          sourceUrl={meetPublicUrl(
+            `/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`
+          )}
+          tasksUrl={TASKS_URL}
+          workspaceSlug={workspaceSlug}
+          wsId={wsId}
         />
       </div>
       {/* Meeting Details */}

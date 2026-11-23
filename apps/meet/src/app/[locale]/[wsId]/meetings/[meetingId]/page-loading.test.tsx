@@ -38,6 +38,10 @@ vi.mock('@tuturuuu/meet-core/constants/common', () => ({
 vi.mock('@tuturuuu/meet-core/features/meeting-record/meeting-projects', () => ({
   MeetingProjects: () => null,
 }));
+vi.mock(
+  '@tuturuuu/meet-core/features/meeting-record/meeting-record-panel',
+  () => ({ MeetingRecordPanel: () => null })
+);
 vi.mock('next/server', () => ({ connection: async () => {} }));
 vi.mock('next/navigation', () => ({
   notFound: () => {

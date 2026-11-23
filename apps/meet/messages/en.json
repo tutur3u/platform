@@ -4183,6 +4183,7 @@
       "followup_review_event": "Review calendar event",
       "followup_review_hint": "Confirm who this is for, where it belongs, and when it should happen.",
       "followup_review_task": "Review task",
+      "followup_save_all": "Save all action items",
       "followup_saved": "Saved. Open it below to review the result.",
       "followup_schedule_time": "Reserve time for this",
       "followup_search": "Search…",
@@ -6196,6 +6197,21 @@
       "transcription_hint": "Each transcription session lasts up to 3 hours. Start a new session to continue taking notes during a longer call."
     },
     "record": {
+      "action_items": "Action items",
+      "add": "Add",
+      "add_agenda": "Add an agenda item",
+      "add_decision": "Add a decision",
+      "agenda": "Agenda",
+      "carried_over": "Carried over",
+      "change_failed": "Could not update the meeting record",
+      "decisions": "Decisions",
+      "done": "Done",
+      "empty_agenda": "No agenda yet",
+      "empty_decisions": "No decisions recorded",
+      "empty_tasks": "No action items saved yet",
+      "loading": "Loading the meeting record",
+      "mark_done": "Mark {item} done",
+      "open": "Open",
       "projects": {
         "add_another": "Link another project",
         "change_failed": "Could not update the project link",
@@ -6207,7 +6223,34 @@
         "search": "Search projects",
         "unavailable": "Projects are unavailable right now",
         "unlink": "Unlink {name}"
-      }
+      },
+      "remove": "Remove {item}",
+      "review_actions": "Add action items",
+      "sheet": {
+        "assignee": "Assignee",
+        "board": "Board",
+        "close": "Close",
+        "description": "Each item becomes a task in this workspace that links back to this meeting.",
+        "due": "Due date",
+        "empty": "No action items yet. Paste Mira /actions output or a list below.",
+        "include": "Include {title}",
+        "loading": "Loading boards and members",
+        "no_boards": "Create a board in Tasks to save action items.",
+        "no_list": "This board has no open list. Choose another board.",
+        "paste_add": "Add items",
+        "paste_label": "Paste Mira /actions output or a list, one item per line",
+        "rejected": "Not saved. Review it and save again.",
+        "save": "{count, plural, =0 {Save tasks} one {Save # task} other {Save # tasks}}",
+        "saved": "Saved",
+        "saving": "Saving…",
+        "title": "Save action items",
+        "title_label": "Task title",
+        "unassigned": "Unassigned",
+        "unavailable": "Boards and members are unavailable right now",
+        "uncertain": "This item may already be saved. Check the board before saving it again."
+      },
+      "title": "Meeting record",
+      "unavailable": "The meeting record is unavailable right now"
     },
     "recording_permissions": {
       "denied": "Only the recording creator or a workspace admin can stop this recording. The recording is still active."

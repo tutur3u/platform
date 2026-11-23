@@ -1,6 +1,6 @@
 ---
 title: Meeting follow-ups
-updatedAt: '2026-09-15'
+updatedAt: '2026-11-24'
 description: Review meeting-note suggestions and create personal tasks or calendar events with the correct identity and timezone.
 audience: users
 ---
@@ -21,6 +21,28 @@ The host must still have permission to create tasks in the chosen destination.
 Calendar suggestions are included in newly generated notes. Older saved notes still
 work and expose their existing action items. Dates resolve against the saved meeting start and supplied timezone. Unspecified dates, times, durations and owners
 stay unspecified; incomplete transcripts remain visibly marked.
+
+## Meeting record and saving every action item
+
+Meeting details keep a persistent record: the agenda, decisions and the action
+items saved from the meeting. The host or a workspace admin edits the agenda and
+decisions; full workspace members read them. Action items show live status from
+Tasks, with assignees and board.
+
+**Save all action items** reviews every AI note action item in one sheet. Pasted
+Mira `/actions` output or any list, one item per line, adds more. Each item has its
+own title, assignee, due date and board. Items are saved one at a time into the
+meeting's workspace, on the first open list of the chosen board. A suggested owner
+assigns only on an exact member or a unique name match. The board defaults to the
+board of the linked Project's most recently linked task.
+
+Each saved task has a link to the meeting in its description, and the meeting record
+lists it. Tasks saved into another workspace keep the link but are not listed, because
+records never cross workspaces. The sheet and the single-item review share one
+receipt per suggestion, so neither creates a second task for the same item. An item
+whose save may have happened stays marked for the host to check instead of being
+retried. A Project chip under the meeting title opens the Project in Tasks; see
+[Workspace Projects](/platform/features/workspace-projects).
 
 ## Identity, destination and time
 
@@ -83,7 +105,11 @@ Run the focused Meet and Meet Core follow-up tests and `bun check:changed`.
 The applicable Meet and internal API build checks run in exact-commit CI. Use `NODE_ENV=test` for tests when the shell
 inherits production mode. Verify authenticated task assignment, destination and
 calendar timestamps in a dedicated test workspace before claiming production
-end-to-end coverage. These changes require no database migration.
+end-to-end coverage. The meeting record needs migration
+`20261124013000_project_links_and_meeting_records`. Its regression tests are the
+pgTAP contract `project-links-meeting-records.sql` and the Meet Core
+`meeting-record` tests (`action-items`, `save-action-item`, `source-link`,
+`project-links`).
 
 ## Public meeting details and long calls
 

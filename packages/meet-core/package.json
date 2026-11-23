@@ -635,7 +635,9 @@
     "./features/meeting-record/server/record": "./src/features/meeting-record/server/record.ts",
     "./features/meeting-record/server/record.ts": "./src/features/meeting-record/server/record.ts",
     "./routes/api/meet-record/[wsId]/[meetingId]/route": "./src/routes/api/meet-record/[wsId]/[meetingId]/route.ts",
-    "./routes/api/meet-record/[wsId]/[meetingId]/route.ts": "./src/routes/api/meet-record/[wsId]/[meetingId]/route.ts"
+    "./routes/api/meet-record/[wsId]/[meetingId]/route.ts": "./src/routes/api/meet-record/[wsId]/[meetingId]/route.ts",
+    "./features/meeting-record/meeting-record-panel": "./src/features/meeting-record/meeting-record-panel.tsx",
+    "./features/meeting-record/meeting-record-panel.tsx": "./src/features/meeting-record/meeting-record-panel.tsx"
   },
   "scripts": {
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.cloudflare.json",

@@ -4183,6 +4183,7 @@
       "followup_review_event": "Xem lại lịch hẹn",
       "followup_review_hint": "Xác nhận người thực hiện, nơi lưu và thời gian phù hợp.",
       "followup_review_task": "Xem lại công việc",
+      "followup_save_all": "Lưu tất cả việc cần làm",
       "followup_saved": "Đã lưu. Mở bên dưới để kiểm tra kết quả.",
       "followup_schedule_time": "Dành thời gian làm việc này",
       "followup_search": "Tìm kiếm…",
@@ -6196,6 +6197,21 @@
       "transcription_hint": "Mỗi phiên chép lời kéo dài tối đa 3 giờ. Bạn có thể bắt đầu phiên mới để tiếp tục ghi chú trong cuộc họp dài hơn."
     },
     "record": {
+      "action_items": "Việc cần làm",
+      "add": "Thêm",
+      "add_agenda": "Thêm mục chương trình",
+      "add_decision": "Thêm quyết định",
+      "agenda": "Chương trình họp",
+      "carried_over": "Chuyển từ buổi trước",
+      "change_failed": "Không thể cập nhật biên bản cuộc họp",
+      "decisions": "Quyết định",
+      "done": "Xong",
+      "empty_agenda": "Chưa có chương trình họp",
+      "empty_decisions": "Chưa ghi nhận quyết định nào",
+      "empty_tasks": "Chưa lưu việc cần làm nào",
+      "loading": "Đang tải biên bản cuộc họp",
+      "mark_done": "Đánh dấu {item} đã xong",
+      "open": "Đang mở",
       "projects": {
         "add_another": "Liên kết thêm dự án",
         "change_failed": "Không thể cập nhật liên kết dự án",
@@ -6207,7 +6223,34 @@
         "search": "Tìm dự án",
         "unavailable": "Hiện không thể tải dự án",
         "unlink": "Bỏ liên kết {name}"
-      }
+      },
+      "remove": "Xóa {item}",
+      "review_actions": "Thêm việc cần làm",
+      "sheet": {
+        "assignee": "Người phụ trách",
+        "board": "Bảng",
+        "close": "Đóng",
+        "description": "Mỗi mục trở thành một công việc trong không gian làm việc này, có liên kết về cuộc họp.",
+        "due": "Hạn chót",
+        "empty": "Chưa có việc cần làm. Dán kết quả /actions của Mira hoặc một danh sách bên dưới.",
+        "include": "Chọn {title}",
+        "loading": "Đang tải bảng và thành viên",
+        "no_boards": "Hãy tạo một bảng trong Tasks để lưu việc cần làm.",
+        "no_list": "Bảng này không có danh sách đang mở. Hãy chọn bảng khác.",
+        "paste_add": "Thêm mục",
+        "paste_label": "Dán kết quả /actions của Mira hoặc một danh sách, mỗi dòng một mục",
+        "rejected": "Chưa lưu. Hãy kiểm tra và lưu lại.",
+        "save": "{count, plural, =0 {Lưu công việc} other {Lưu # công việc}}",
+        "saved": "Đã lưu",
+        "saving": "Đang lưu…",
+        "title": "Lưu việc cần làm",
+        "title_label": "Tên công việc",
+        "unassigned": "Chưa giao",
+        "unavailable": "Hiện không thể tải bảng và thành viên",
+        "uncertain": "Mục này có thể đã được lưu. Hãy kiểm tra bảng trước khi lưu lại."
+      },
+      "title": "Biên bản cuộc họp",
+      "unavailable": "Hiện không thể tải biên bản cuộc họp"
     },
     "recording_permissions": {
       "denied": "Chỉ người tạo bản ghi hoặc quản trị viên không gian làm việc mới có thể dừng bản ghi này. Bản ghi vẫn đang hoạt động."

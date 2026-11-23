@@ -7,6 +7,9 @@ import messages from '../../../../../apps/meet/messages/en.json';
 import { MeetingFollowups } from './meeting-followups';
 
 vi.mock('./followup-review', () => ({ FollowupReview: () => null }));
+vi.mock('../meeting-record/action-items-sheet', () => ({
+  ActionItemsSheet: () => null,
+}));
 afterEach(cleanup);
 
 it('preserves different owners and dates while removing exact duplicate suggestions', () => {
@@ -62,4 +65,5 @@ it('preserves different owners and dates while removing exact duplicate suggesti
   expect(screen.getAllByText('Design review')).toHaveLength(2);
   expect(screen.getByText('Sam · Tomorrow')).toBeTruthy();
   expect(screen.getByText('Alex · Friday')).toBeTruthy();
+  expect(screen.getByText('Save all action items')).toBeTruthy();
 });

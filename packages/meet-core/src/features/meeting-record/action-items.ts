@@ -11,7 +11,7 @@ export type ActionDraft = {
   dueDate: string;
   boardId: string;
   requestId: string;
-  status: 'idle' | 'saving' | 'saved' | 'rejected' | 'uncertain';
+  status: 'idle' | 'saving' | 'saved' | 'rejected' | 'no_list' | 'uncertain';
   url?: string;
 };
 
@@ -155,6 +155,8 @@ export function savable(draft: ActionDraft) {
     draft.include &&
     !!draft.title.trim() &&
     !!draft.boardId &&
-    (draft.status === 'idle' || draft.status === 'rejected')
+    (draft.status === 'idle' ||
+      draft.status === 'rejected' ||
+      draft.status === 'no_list')
   );
 }
