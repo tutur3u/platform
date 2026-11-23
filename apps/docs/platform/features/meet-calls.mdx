@@ -170,6 +170,29 @@ For a hosted rehearsal of the current call flow:
 Hosted join and frame times, SFU failures, CPU, memory, bitrate, loss, server
 errors, room usage and teardown under load remain unmeasured.
 
+## Classroom participant caps
+
+`MEET_CLASSROOM_LIMITS_ENABLED` is `true` for the Meet app. Each join token is
+signed with a participant cap taken from the stored meeting creator, never from
+the joining user:
+
+| Host | Cap |
+| --- | ---: |
+| Verified `@tuturuuu.com` staff account, whatever its personal tier | 100 |
+| Enterprise | 100 |
+| Plus or Pro | 50 |
+| Free, not staff | refused with 403 |
+
+A Free host who is not verified staff cannot open a classroom room. Parley rooms
+keep the default limits. When the entitlement lookup itself fails (database or
+auth error, missing meeting row), the room falls back to the flag-off defaults
+and logs a warning, so a transient outage does not stop every meeting.
+Only a policy refusal is returned to the caller.
+
+Decision, 23 November 2026 (owner): staff-hosted meetings have a hard cap of
+100 people for now. Regression coverage: `meet-classroom-policy.test.ts` in
+`packages/utils`.
+
 ## Empty rooms and owner restoration
 
 Meet and Parley calls end automatically after five consecutive minutes with no

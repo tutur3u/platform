@@ -80,10 +80,12 @@ const production = defineConfig({
       // Meet is mounted at tuturuuu.com/meet; server-built Meet links use it.
       NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS: 'meet',
       MEET_EDUCATION_ENABLED: 'true',
+      // Strict classroom participant caps: 100 for staff hosts and Enterprise,
+      // 50 for Plus/Pro, 10 for Free.
+      MEET_CLASSROOM_LIMITS_ENABLED: 'true',
       // Meet AI containment (A1, 3 Nov 2026). It must match the live Worker vars,
       // because a deploy replaces vars and dropping these would turn Meet AI back on.
-      // Lifting containment is a reviewed change to these two lines.
-      MEET_CLASSROOM_LIMITS_ENABLED: 'false',
+      // Lifting containment is a reviewed change to the two MEET_AI lines below.
       // Attendance stays off unless the exact string true. Timer commands are rechecked.
       MEET_CLASS_ATTENDANCE_ENABLED: 'false',
       MEET_CLASS_TIMER_ENABLED: 'true',

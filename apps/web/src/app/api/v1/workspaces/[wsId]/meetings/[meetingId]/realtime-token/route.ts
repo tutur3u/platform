@@ -154,13 +154,7 @@ export async function POST(request: Request, { params }: Params) {
     const deviceUserId = body.deviceId
       ? await meetDeviceIdentity(auth.user.id, body.deviceId)
       : auth.user.id;
-    const strictCapacity = process.env.MEET_CLASSROOM_LIMITS_ENABLED === 'true';
     const classification = await isParleySession(meetingId).catch(() => {
-      if (strictCapacity)
-        throw new MeetClassroomPolicyError(
-          503,
-          'Meeting capacity entitlement unavailable'
-        );
       console.warn('Meet room capacity classification unavailable');
       return undefined;
     });
@@ -175,11 +169,6 @@ export async function POST(request: Request, { params }: Params) {
       ? 7200
       : await getHostMeetingDurationSeconds(meeting.creator_id).catch(
           (error) => {
-            if (strictCapacity)
-              throw new MeetClassroomPolicyError(
-                503,
-                'Meeting capacity entitlement unavailable'
-              );
             console.warn('Meet room duration entitlement unavailable');
             return 7200;
           }

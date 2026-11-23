@@ -10,6 +10,9 @@ export class MeetClassroomPolicyError extends Error {
 }
 
 export const MEET_CLASSROOM_LIMITS_ENV = 'MEET_CLASSROOM_LIMITS_ENABLED';
+/** Hard cap for meetings hosted by a verified @tuturuuu.com staff account. */
+export const STAFF_CLASSROOM_PARTICIPANT_CAP = 100;
+
 export function classroomParticipantCap(tier: string) {
   return tier === 'ENTERPRISE'
     ? 100
@@ -18,7 +21,7 @@ export function classroomParticipantCap(tier: string) {
       : 10;
 }
 
-async function resolveHostTier(
+async function resolveHostCap(
   meetingId: string,
   wsId: string,
   strict: boolean
@@ -36,41 +39,37 @@ async function resolveHostTier(
     throw new Error('Meeting unavailable');
   const hostId = meeting.data.creator_id;
   const tier = await getHostMeetingTier(hostId);
-  if (strict && classroomParticipantCap(tier) === 10) {
-    const identity = await db.auth.admin.getUserById(hostId);
-    if (identity.error) throw new Error('Host unavailable');
-    if (
-      identity.data.user?.id !== hostId ||
-      !isVerifiedTuturuuuStaffSession(identity.data.user)
-    )
-      throw new MeetClassroomPolicyError(
-        403,
-        'Free meetings require a verified @tuturuuu.com host'
-      );
-  }
-  return tier;
+  const tierCap = classroomParticipantCap(tier);
+  if (!strict) return tierCap;
+  const identity = await db.auth.admin.getUserById(hostId);
+  if (identity.error) throw new Error('Host unavailable');
+  const staff =
+    identity.data.user?.id === hostId &&
+    isVerifiedTuturuuuStaffSession(identity.data.user);
+  if (staff) return STAFF_CLASSROOM_PARTICIPANT_CAP;
+  if (tierCap === 10)
+    throw new MeetClassroomPolicyError(
+      403,
+      'Free meetings require a verified @tuturuuu.com host'
+    );
+  return tierCap;
 }
 
-function strictCapacityError(error: unknown): never {
-  if (error instanceof MeetClassroomPolicyError) throw error;
-  throw new MeetClassroomPolicyError(
-    503,
-    'Meeting capacity entitlement unavailable'
-  );
-}
-
-/** Resolve the creator from the stored meeting, never from a caller's host claim. */
+/**
+ * Resolve the creator from the stored meeting, never from a caller's host claim.
+ * A failed lookup leaves the room uncapped; only a policy refusal propagates.
+ */
 export async function getClassroomParticipantCap(
   meetingId: string,
   wsId: string
 ) {
   if (process.env.MEET_CLASSROOM_LIMITS_ENABLED !== 'true') return undefined;
   try {
-    return classroomParticipantCap(
-      await resolveHostTier(meetingId, wsId, true)
-    );
+    return await resolveHostCap(meetingId, wsId, true);
   } catch (error) {
-    strictCapacityError(error);
+    if (error instanceof MeetClassroomPolicyError) throw error;
+    console.warn('Meet classroom capacity entitlement unavailable');
+    return undefined;
   }
 }
 
@@ -94,9 +93,7 @@ export async function getMeetRoomCapacityLimits({
   if (parley) return defaults;
   const strict = process.env.MEET_CLASSROOM_LIMITS_ENABLED === 'true';
   try {
-    const cap = classroomParticipantCap(
-      await resolveHostTier(meetingId, wsId, strict)
-    );
+    const cap = await resolveHostCap(meetingId, wsId, strict);
     if (!strict && cap === 10) return defaults;
     return {
       maxParticipants: strict ? cap : undefined,
@@ -104,7 +101,7 @@ export async function getMeetRoomCapacityLimits({
       maxViewers: webinar ? 250 : cap,
     };
   } catch (error) {
-    if (strict) strictCapacityError(error);
+    if (error instanceof MeetClassroomPolicyError) throw error;
     console.warn('Meet room capacity entitlement unavailable');
     return defaults;
   }

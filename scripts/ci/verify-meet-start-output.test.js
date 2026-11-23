@@ -721,7 +721,7 @@ test('capture remeasures complete loader/materializer state exactly twice', (t) 
   }
 });
 test('classroom flags are pinned in the production artifact without changing AI guards', () => {
-  assert.equal(identity.vars.MEET_CLASSROOM_LIMITS_ENABLED, 'false');
+  assert.equal(identity.vars.MEET_CLASSROOM_LIMITS_ENABLED, 'true');
   assert.equal(identity.vars.MEET_EDUCATION_ENABLED, 'true');
   assert.equal(identity.vars.MEET_AI_DISABLED, 'true');
   assert.equal(identity.vars.MEET_AI_ENABLED_WORKSPACE_IDS, '');
