@@ -103,7 +103,7 @@ export function NativeEventGuests({
         kind: 'update',
         display,
       }),
-    onSuccess: (result) =>
+    onSuccess: (result: { delivery: { queued: number } | null }) =>
       notifySave({
         title: t('sent_title'),
         description: t('sent', { count: result.delivery?.queued ?? 0 }),

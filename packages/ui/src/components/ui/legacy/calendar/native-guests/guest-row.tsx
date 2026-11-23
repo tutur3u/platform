@@ -6,16 +6,16 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '../../../badge';
 import { Button } from '../../../button';
 
-const RSVP_ICON = {
+const RSVP_ICON: Record<CalendarGuestRsvpStatus, typeof Check> = {
   accepted: Check,
   declined: X,
   tentative: HelpCircle,
   pending: Clock,
-} as const;
+};
 
 export function RsvpBadge({ status }: { status: CalendarGuestRsvpStatus }) {
   const t = useTranslations('calendar.native_guests');
-  const Icon = RSVP_ICON[status];
+  const Icon = RSVP_ICON[status] ?? Clock;
   return (
     <Badge
       variant={status === 'accepted' ? 'default' : 'outline'}

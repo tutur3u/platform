@@ -7,9 +7,9 @@ import {
 import type { InvitationSnapshot } from './snapshot';
 
 export type GuestRow =
-  Database['public']['Tables']['calendar_event_guests']['Row'];
+  Database['private']['Tables']['calendar_event_guests']['Row'];
 export type InvitationSettingsRow =
-  Database['public']['Tables']['calendar_event_invitation_settings']['Row'];
+  Database['private']['Tables']['calendar_event_invitation_settings']['Row'];
 export type CalendarEventRow =
   Database['public']['Tables']['workspace_calendar_events']['Row'];
 
@@ -125,6 +125,7 @@ export async function ensureInvitationSettings(
   input: { wsId: string; eventId: string; organizerUserId: string }
 ) {
   const { data: existing, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .select('*')
     .eq('event_id', input.eventId)
@@ -133,6 +134,7 @@ export async function ensureInvitationSettings(
   if (existing) return existing;
 
   const { data: created, error: insertError } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .upsert(
       {
@@ -150,6 +152,7 @@ export async function ensureInvitationSettings(
 
   // A concurrent request created it first.
   const { data: raced, error: racedError } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .select('*')
     .eq('event_id', input.eventId)
@@ -163,6 +166,7 @@ export async function listEventGuests(
   eventId: string
 ) {
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_guests')
     .select('*')
     .eq('event_id', eventId)

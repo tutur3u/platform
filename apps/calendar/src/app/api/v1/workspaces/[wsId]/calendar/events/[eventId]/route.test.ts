@@ -61,6 +61,10 @@ vi.mock('@/lib/workspace-encryption', () => ({
   getWorkspaceKey: mocks.getWorkspaceKey,
 }));
 
+const invitationMocks = vi.hoisted(() => ({ cancel: vi.fn() }));
+vi.mock('@/lib/calendar/invitations/route-support', () => ({
+  cancelGuestInvitationsBeforeDelete: invitationMocks.cancel,
+}));
 vi.mock('@/lib/calendar/recurrence/provider/readonly', () => ({
   providerReadonlyEventResponse: mocks.readonlyResponse,
 }));
@@ -292,6 +296,13 @@ describe('workspace calendar event item authorization', () => {
       skippedHabitId: null,
     });
     expect(removed.delete).toHaveBeenCalledOnce();
+    expect(invitationMocks.cancel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        wsId: WS_ID,
+        eventId: EVENT_ID,
+        userId: 'user-1',
+      })
+    );
   });
 });
 

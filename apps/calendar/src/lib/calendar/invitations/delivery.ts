@@ -78,6 +78,7 @@ async function audit(
 ) {
   if (!rows.length) return;
   const { error } = await sbAdmin
+    .schema('private')
     .from('calendar_invite_audit')
     .insert(rows.map((row) => ({ ...row, detail: row.detail ?? {} })));
   if (error)
@@ -90,6 +91,7 @@ async function suppressedEmails(
 ) {
   if (!input.emails.length) return new Set<string>();
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('calendar_invite_suppressions')
     .select('email, scope, sender_user_id, ws_id')
     .in('email', input.emails);
@@ -114,6 +116,7 @@ async function recentlyContacted(
 ) {
   if (!input.emails.length) return new Map<string, number>();
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('calendar_invite_deliveries')
     .select('recipient_email')
     .eq('event_id', input.eventId)
@@ -198,9 +201,9 @@ export async function queueInvitationDeliveries(
     status: row.status,
   }));
 
-  const { data: enqueued, error } = await sbAdmin.rpc(
-    'calendar_invite_enqueue',
-    {
+  const { data: enqueued, error } = await sbAdmin
+    .schema('private')
+    .rpc('calendar_invite_enqueue', {
       p_ws_id: snapshot.wsId,
       p_requested_by: actorUserId,
       p_rows: rows as unknown as Json,
@@ -210,8 +213,7 @@ export async function queueInvitationDeliveries(
       p_user_hourly_limit: INVITATION_LIMITS.userHourly,
       p_user_daily_limit: INVITATION_LIMITS.userDaily,
       p_workspace_daily_limit: INVITATION_LIMITS.workspaceDaily,
-    }
-  );
+    });
   if (error) throw error;
   const result = enqueued as unknown as {
     blocked: string | null;
@@ -271,18 +273,29 @@ export async function queueInvitationDeliveries(
 
 async function mintToken(
   sbAdmin: TypedSupabaseClient,
-  guestId: string,
+  recipient: {
+    guestId: string | null;
+    email: string;
+    wsId: string;
+    senderUserId: string | null;
+  },
   purpose: InviteTokenPurpose,
   eventEnd: Date,
   now: Date
 ) {
   const { token, tokenHash } = createInviteToken();
-  const { error } = await sbAdmin.from('calendar_invite_tokens').insert({
-    guest_id: guestId,
-    purpose,
-    token_hash: tokenHash,
-    expires_at: inviteTokenExpiry(purpose, eventEnd, now).toISOString(),
-  });
+  const { error } = await sbAdmin
+    .schema('private')
+    .from('calendar_invite_tokens')
+    .insert({
+      guest_id: recipient.guestId,
+      email: recipient.email,
+      ws_id: recipient.wsId,
+      sender_user_id: recipient.senderUserId,
+      purpose,
+      token_hash: tokenHash,
+      expires_at: inviteTokenExpiry(purpose, eventEnd, now).toISOString(),
+    });
   if (error) throw error;
   return token;
 }
@@ -302,13 +315,12 @@ export async function dispatchInvitationDeliveries(
 ) {
   const { sbAdmin } = deps;
   const now = deps.now?.() ?? new Date();
-  const { data: claimed, error } = await sbAdmin.rpc(
-    'calendar_invite_claim_deliveries',
-    {
+  const { data: claimed, error } = await sbAdmin
+    .schema('private')
+    .rpc('calendar_invite_claim_deliveries', {
       p_limit: Math.min(input.limit ?? INVITATION_LIMITS.dispatchBatch, 100),
       p_lease_seconds: 120,
-    }
-  );
+    });
   if (error) throw error;
 
   const results = { sent: 0, failed: 0, retrying: 0, suppressed: 0 };
@@ -327,6 +339,7 @@ export async function dispatchInvitationDeliveries(
         (delivery.event_snapshot as { encrypted?: unknown } | null)
           ?.encrypted === true;
       await sbAdmin
+        .schema('private')
         .from('calendar_invite_deliveries')
         .update({
           ...patch,
@@ -382,19 +395,25 @@ export async function dispatchInvitationDeliveries(
     }
     const eventEnd = new Date(snapshot.end);
     try {
+      const recipient = {
+        guestId: delivery.guest_id,
+        email: delivery.recipient_email,
+        wsId: delivery.ws_id,
+        senderUserId: snapshot.organizer.userId,
+      };
       const rsvpToken =
         delivery.guest_id && delivery.kind !== 'cancel'
-          ? await mintToken(sbAdmin, delivery.guest_id, 'rsvp', eventEnd, now)
+          ? await mintToken(sbAdmin, recipient, 'rsvp', eventEnd, now)
           : null;
-      const unsubscribeToken = delivery.guest_id
-        ? await mintToken(
-            sbAdmin,
-            delivery.guest_id,
-            'unsubscribe',
-            eventEnd,
-            now
-          )
-        : null;
+      // Every message, including a cancellation sent after its guest row is
+      // gone, carries a working unsubscribe link.
+      const unsubscribeToken = await mintToken(
+        sbAdmin,
+        recipient,
+        'unsubscribe',
+        eventEnd,
+        now
+      );
       const base = deps.linkBase.replace(/\/$/, '');
       const unsubscribeUrl = unsubscribeToken
         ? `${base}/api/v1/calendar/invitations/unsubscribe?token=${unsubscribeToken}`
@@ -467,6 +486,7 @@ export async function dispatchInvitationDeliveries(
         );
         if (delivery.guest_id && delivery.kind !== 'cancel')
           await sbAdmin
+            .schema('private')
             .from('calendar_event_guests')
             .update({ last_invited_sequence: delivery.ical_sequence })
             .eq('id', delivery.guest_id);

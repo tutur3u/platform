@@ -1,4 +1,5 @@
 import { connection, NextResponse } from 'next/server';
+import type { GuestRow } from '@/lib/calendar/invitations/context';
 import { z } from 'zod';
 import {
   AddGuestsSchema,
@@ -53,7 +54,7 @@ export async function GET(request: Request, { params }: Params) {
               cancelled: settings.cancelled_at !== null,
             }
           : null,
-        guests: guests.map((guest) => ({
+        guests: guests.map((guest: GuestRow) => ({
           id: guest.id,
           email: guest.email,
           displayName: guest.display_name,

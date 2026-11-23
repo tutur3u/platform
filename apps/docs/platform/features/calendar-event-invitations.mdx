@@ -25,10 +25,9 @@ audience: developers
 - The organizer is a guest row with `is_organizer` and RSVP `accepted`.
 - RSVP states are `pending`, `accepted`, `tentative` and `declined`.
 - Guest permissions default to: modify event **off**, invite others **on**,
-  see guest list **on**. "See guest list" is enforced in invitation email,
-  the `.ics` attendee list and `calendar_list_event_guests_for_guest`. The
-  modify and invite settings are stored and carried to clients; guests outside
-  the workspace have no edit surface.
+  see guest list **on**. "See guest list" is enforced in invitation email and
+  the `.ics` attendee list. The modify and invite settings are stored and
+  carried to clients; guests outside the workspace have no edit surface.
 
 ## Invitation email
 
@@ -45,12 +44,16 @@ audience: developers
   `SEQUENCE` that increases on every update or cancellation.
 - "Email guests" sends an update to guests who were already invited. Deleting
   an event with invited guests sends a cancellation first; removing an invited
-  guest sends that guest a cancellation.
+  guest sends that guest a cancellation. An event is cancelled once; repeat
+  cancellation requests send nothing.
 
 ## RSVP and unsubscribe links
 
 - Links carry a 256-bit random token; only its SHA-256 is stored. Each token
-  has one purpose (`rsvp` or `unsubscribe`) and one guest.
+  has one purpose (`rsvp` or `unsubscribe`) and one recipient. Unsubscribe
+  tokens store their own recipient, workspace and sender, so they keep
+  working after the guest or the event is deleted; every message, including
+  a late cancellation, carries one.
 - RSVP links expire a week after the event (60 days at most) and are revoked
   when the event is cancelled. Unsubscribe links last a year.
 - `GET` only shows a confirmation page; the answer is written on `POST`. Mail
@@ -58,7 +61,9 @@ audience: developers
 - Unsubscribe offers "block this organizer" and "stop all Tuturuuu calendar
   invitations". Messages include `List-Unsubscribe` and
   `List-Unsubscribe-Post` (RFC 8058).
-- Both pages are rate limited per client IP.
+- A `POST` with a well-formed token is rate limited per token, so one-click
+  unsubscribes from shared mailbox-provider addresses are never starved;
+  other requests are rate limited per client IP.
 
 ## Abuse limits
 
@@ -105,19 +110,20 @@ recipients are recorded as `suppressed` and never mailed.
 
 ## Data and access
 
-Guest, settings, token, suppression, outbox, fence and audit tables are
-proxy-only: anon and authenticated roles have no table grants, and the
-Calendar API authorises `manage_calendar` before using the service role. RLS
-policies remain as defence in depth: calendar managers read and write guests
-of their workspace, and a signed-in guest reads only their own row.
-`calendar_respond_to_event` lets a signed-in guest answer their own
-invitation. For encrypted events, a delivery's event snapshot is cleared once
-the delivery settles, and a linked meeting gets a generic name.
+Guest, settings, token, suppression, outbox, fence and audit tables, and the
+quota, claim and enqueue functions, live in the `private` schema and are
+reachable only by the service role. RLS is enabled with no policies. The
+Calendar API authorises `manage_calendar` for the event's workspace before
+using the service role, and guests act only through their link tokens. For
+encrypted events, a delivery's event snapshot is cleared once the delivery
+settles (including suppressed, throttled and expired-lease rows), and a linked
+meeting gets a generic name.
 
 ## Regression coverage
 
 - `apps/database/supabase/tests/calendar-event-guests.sql`: grants, RLS,
-  workspace match, guest cap, quotas, idempotency, fences and claims.
+  workspace match, guest cap, quotas, idempotency, fences, claims, lease
+  settlement and the atomic enqueue.
 - `apps/calendar/src/lib/calendar/invitations/*.test.ts`: `.ics` format and
   injection, email escaping and guest-list privacy, tokens, queue
   classification, retries and ambiguous outcomes.

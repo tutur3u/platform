@@ -46,7 +46,7 @@ const COPY = {
   },
 } as const;
 
-export type PublicPageCopy = (typeof COPY)['en'];
+export type PublicPageCopy = Record<keyof (typeof COPY)['en'], string>;
 
 export function publicPageLocale(request: Request): InvitationLocale {
   const header = request.headers.get('accept-language') ?? '';

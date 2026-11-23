@@ -1,6 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { hashInviteToken, isWellFormedInviteToken } from './tokens';
 import {
   applyRsvp,
   applyUnsubscribe,
@@ -22,16 +23,20 @@ const RSVP_VALUES = new Set<RsvpResponse>([
   'tentative',
 ]);
 
-/** Per-IP limit for unauthenticated invitation links. */
-async function publicLimit(request: Request, bucket: string) {
-  const ip = extractIPFromHeaders(request.headers);
-  const result = await checkRateLimit(
-    `calendar:invite-link:${bucket}:ip:${ip}`,
-    {
-      windowMs: 60_000,
-      maxRequests: 20,
-    }
-  );
+/**
+ * Unauthenticated link limits. A POST with a well-formed token is limited
+ * per token, so one-click unsubscribes from shared mailbox-provider IPs are
+ * never starved; everything else is limited per client IP.
+ */
+async function publicLimit(request: Request, bucket: string, token: unknown) {
+  const key =
+    request.method === 'POST' && isWellFormedInviteToken(token)
+      ? `token:${hashInviteToken(token)}`
+      : `ip:${extractIPFromHeaders(request.headers)}`;
+  const result = await checkRateLimit(`calendar:invite-link:${bucket}:${key}`, {
+    windowMs: 60_000,
+    maxRequests: 20,
+  });
   return 'allowed' in result;
 }
 
@@ -73,18 +78,18 @@ export async function handleRsvp(
 ) {
   const locale = publicPageLocale(request);
   const copy = publicCopy(locale);
-  if (!(await publicLimit(request, 'rsvp')))
+
+  const url = new URL(request.url);
+  const form = request.method === 'POST' ? await readForm(request) : null;
+  const token = form?.get('token') ?? url.searchParams.get('token');
+  const response = form?.get('response') ?? url.searchParams.get('response');
+  if (!(await publicLimit(request, 'rsvp', token)))
     return renderPublicPage({
       locale,
       title: copy.rsvpTitle,
       body: `<p>${copy.limited}</p>`,
       status: 429,
     });
-
-  const url = new URL(request.url);
-  const form = request.method === 'POST' ? await readForm(request) : null;
-  const token = form?.get('token') ?? url.searchParams.get('token');
-  const response = form?.get('response') ?? url.searchParams.get('response');
 
   const client = await sbAdmin();
   const lookup = await lookupInviteToken(client, token, 'rsvp');
@@ -118,7 +123,7 @@ export async function handleRsvp(
   const preselected =
     response && RSVP_VALUES.has(response as RsvpResponse)
       ? response
-      : lookup.guest.rsvp_status;
+      : (lookup.guest?.rsvp_status ?? null);
   return renderPublicPage({
     locale,
     title: copy.rsvpTitle,
@@ -136,19 +141,19 @@ export async function handleUnsubscribe(
 ) {
   const locale = publicPageLocale(request);
   const copy = publicCopy(locale);
-  if (!(await publicLimit(request, 'unsubscribe')))
-    return renderPublicPage({
-      locale,
-      title: copy.unsubscribeTitle,
-      body: `<p>${copy.limited}</p>`,
-      status: 429,
-    });
 
   const url = new URL(request.url);
   const form = request.method === 'POST' ? await readForm(request) : null;
   const token = form?.get('token') ?? url.searchParams.get('token');
   const scopeParam = form?.get('scope') ?? url.searchParams.get('scope');
   const scope = scopeParam === 'sender' ? 'sender' : 'all';
+  if (!(await publicLimit(request, 'unsubscribe', token)))
+    return renderPublicPage({
+      locale,
+      title: copy.unsubscribeTitle,
+      body: `<p>${copy.limited}</p>`,
+      status: 429,
+    });
 
   const client = await sbAdmin();
   const lookup = await lookupInviteToken(client, token, 'unsubscribe');
@@ -168,7 +173,7 @@ export async function handleUnsubscribe(
       body: `<p>${fillCopy(
         applied === 'sender' ? copy.blocked : copy.unsubscribed,
         {
-          email: lookup.guest.email,
+          email: lookup.email,
         }
       )}</p>`,
     });
@@ -190,6 +195,6 @@ export async function handleUnsubscribe(
             scope === 'sender'
           )
         : ''
-    }</p><p>${choice('all', fillCopy(copy.unsubscribeAll, { email: lookup.guest.email }), scope === 'all')}</p>`,
+    }</p><p>${choice('all', fillCopy(copy.unsubscribeAll, { email: lookup.email }), scope === 'all')}</p>`,
   });
 }

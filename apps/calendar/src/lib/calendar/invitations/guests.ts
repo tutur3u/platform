@@ -159,8 +159,14 @@ async function resolveGuests(
       name: row.users?.display_name ?? null,
     });
   }
+  type ContactRow = {
+    id: string;
+    email: string | null;
+    display_name: string | null;
+    full_name: string | null;
+  };
   const contactMap = new Map(
-    (contacts.data ?? []).map((row) => [row.id, row] as const)
+    ((contacts.data ?? []) as ContactRow[]).map((row) => [row.id, row] as const)
   );
 
   const resolved: ResolvedGuest[] = [];
@@ -229,6 +235,7 @@ export async function getEventInvitation(
   const event = await loadInvitationEvent(sbAdmin, input.wsId, input.eventId);
   const [{ data: settings, error }, guests] = await Promise.all([
     sbAdmin
+      .schema('private')
       .from('calendar_event_invitation_settings')
       .select('*')
       .eq('event_id', input.eventId)
@@ -321,7 +328,7 @@ export async function addEventGuests(
     if (guest.email !== organizer.email) unique.set(guest.email, guest);
 
   // The organizer is always the first guest row.
-  await sbAdmin.from('calendar_event_guests').upsert(
+  await sbAdmin.schema('private').from('calendar_event_guests').upsert(
     {
       ws_id: input.wsId,
       event_id: input.eventId,
@@ -338,6 +345,7 @@ export async function addEventGuests(
   );
 
   const { data: inserted, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_guests')
     .upsert(
       [...unique.values()].map((guest) => ({
@@ -361,16 +369,19 @@ export async function addEventGuests(
 
   const added = inserted ?? [];
   if (added.length) {
-    await sbAdmin.from('calendar_invite_audit').insert(
-      added.map((guest) => ({
-        ws_id: input.wsId,
-        event_id: input.eventId,
-        guest_id: guest.id,
-        actor_user_id: input.actorUserId,
-        action: 'guest_added',
-        detail: { source: guest.source },
-      }))
-    );
+    await sbAdmin
+      .schema('private')
+      .from('calendar_invite_audit')
+      .insert(
+        added.map((guest) => ({
+          ws_id: input.wsId,
+          event_id: input.eventId,
+          guest_id: guest.id,
+          actor_user_id: input.actorUserId,
+          action: 'guest_added',
+          detail: { source: guest.source },
+        }))
+      );
   }
 
   let delivery: QueueSummary | null = null;
@@ -400,6 +411,7 @@ export async function removeEventGuest(
   const { sbAdmin } = deps;
   const stored = await loadNativeEvent(sbAdmin, input.wsId, input.eventId);
   const { data: guest, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_guests')
     .select('*')
     .eq('id', input.guestId)
@@ -425,11 +437,12 @@ export async function removeEventGuest(
   }
 
   const { error: deleteError } = await sbAdmin
+    .schema('private')
     .from('calendar_event_guests')
     .delete()
     .eq('id', guest.id);
   if (deleteError) throw deleteError;
-  await sbAdmin.from('calendar_invite_audit').insert({
+  await sbAdmin.schema('private').from('calendar_invite_audit').insert({
     ws_id: input.wsId,
     event_id: input.eventId,
     guest_id: guest.id,
@@ -444,6 +457,7 @@ export async function updateEventGuest(
 ) {
   await loadNativeEvent(sbAdmin, input.wsId, input.eventId);
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_guests')
     .update({ is_optional: input.optional })
     .eq('id', input.guestId)
@@ -478,13 +492,14 @@ export async function updateInvitationSettings(
   if (input.patch.guestsCanSeeGuestList !== undefined)
     update.guests_can_see_guest_list = input.patch.guestsCanSeeGuestList;
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .update(update)
     .eq('event_id', input.eventId)
     .select('*')
     .single();
   if (error) throw error;
-  await sbAdmin.from('calendar_invite_audit').insert({
+  await sbAdmin.schema('private').from('calendar_invite_audit').insert({
     ws_id: input.wsId,
     event_id: input.eventId,
     actor_user_id: input.actorUserId,
@@ -513,12 +528,15 @@ export async function notifyEventGuests(
   const stored = await loadInvitationEvent(sbAdmin, input.wsId, input.eventId);
   if (stored.provider && stored.provider !== 'tuturuuu') return null;
   const { data: settings, error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .select('*')
     .eq('event_id', input.eventId)
     .maybeSingle();
   if (error) throw error;
   if (!settings) return null;
+  // An event is cancelled once; repeat requests send nothing.
+  if (input.kind === 'cancel' && settings.cancelled_at) return null;
 
   const guests = (await listEventGuests(sbAdmin, input.eventId)).filter(
     (guest) => !guest.is_organizer && guest.last_invited_sequence !== null
@@ -526,6 +544,7 @@ export async function notifyEventGuests(
   if (!guests.length) return null;
 
   const { error: bumpError } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .update({
       ical_sequence: settings.ical_sequence + 1,
@@ -538,7 +557,7 @@ export async function notifyEventGuests(
   if (bumpError) throw bumpError;
 
   if (input.kind === 'cancel') {
-    await sbAdmin.from('calendar_invite_audit').insert({
+    await sbAdmin.schema('private').from('calendar_invite_audit').insert({
       ws_id: input.wsId,
       event_id: input.eventId,
       actor_user_id: input.actorUserId,
@@ -546,6 +565,7 @@ export async function notifyEventGuests(
     });
     // Revoke outstanding RSVP links for a cancelled event.
     await sbAdmin
+      .schema('private')
       .from('calendar_invite_tokens')
       .update({ revoked_at: new Date().toISOString() })
       .in(

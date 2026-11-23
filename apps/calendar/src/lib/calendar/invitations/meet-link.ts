@@ -85,8 +85,11 @@ export async function linkEventMeeting(
     created = true;
   }
 
+  if (!meetingId)
+    throw new InvitationError('Meeting not found', 404, 'meeting_not_found');
   const url = meetingUrlFor(input.wsId, meetingId);
   const { error: settingsError } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .update({ meet_meeting_id: meetingId, conference_url: url })
     .eq('event_id', input.eventId);
@@ -120,6 +123,7 @@ export async function unlinkEventMeeting(
   const stored = await loadInvitationEvent(sbAdmin, input.wsId, input.eventId);
   assertNativeInvitationEvent(stored);
   const { error } = await sbAdmin
+    .schema('private')
     .from('calendar_event_invitation_settings')
     .update({ meet_meeting_id: null, conference_url: null })
     .eq('event_id', input.eventId);

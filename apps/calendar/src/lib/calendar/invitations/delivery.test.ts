@@ -56,6 +56,7 @@ function fakeClient(responder: Responder, rpc: Record<string, unknown>) {
       };
     }),
   };
+  Object.assign(client, { schema: () => client });
   return {
     client: client as unknown as TypedSupabaseClient,
     log,
