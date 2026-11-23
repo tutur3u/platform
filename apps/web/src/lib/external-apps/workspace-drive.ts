@@ -161,6 +161,15 @@ export async function requireExternalAppWorkspaceDriveAccess({
     return accessError('Forbidden', 403);
   }
 
+  // A bearer bound to one workspace never opens another workspace's Drive.
+  const boundWorkspaceId = verification.claims.workspace_id;
+  if (
+    boundWorkspaceId !== undefined &&
+    boundWorkspaceId.toLowerCase() !== normalizedWorkspaceId.toLowerCase()
+  ) {
+    return accessError('Token is not valid for this workspace', 403);
+  }
+
   if (!app.allowedWorkspaceIds.includes(normalizedWorkspaceId.toLowerCase())) {
     return accessError('App is not linked to this workspace', 403);
   }

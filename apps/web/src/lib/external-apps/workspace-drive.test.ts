@@ -1,3 +1,4 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -109,6 +110,68 @@ describe('external app workspace Drive', () => {
     });
     expect(missingScope.ok).toBe(false);
     if (!missingScope.ok) expect(missingScope.response.status).toBe(403);
+  });
+
+  it('refuses a workspace-bound bearer on any other workspace', async () => {
+    const otherWorkspaceId = '55555555-5555-4555-8555-555555555555';
+    mocks.getExternalAppById.mockResolvedValue({
+      allowedWorkspaceIds: [workspaceId, otherWorkspaceId],
+      enabled: true,
+      id: 'cybershield35',
+    });
+    const access = (wsId: string) =>
+      requireExternalAppWorkspaceDriveAccess({
+        request: new Request('https://tuturuuu.com', {
+          headers: { Authorization: 'Bearer app-token' },
+        }),
+        requiredScopes: ['workspace:drive:read'],
+        wsId,
+      });
+    const boundClaims = {
+      scopes: ['workspace:drive:read'],
+      sub: '11111111-1111-4111-8111-111111111111',
+      target_app: 'cybershield35',
+      workspace_id: workspaceId,
+    };
+
+    mocks.verifyToken.mockReturnValueOnce({ claims: boundClaims, ok: true });
+    const other = await access(otherWorkspaceId);
+    expect(other.ok).toBe(false);
+    if (!other.ok) expect(other.response.status).toBe(403);
+    expect(mocks.verifyMembership).not.toHaveBeenCalled();
+
+    mocks.verifyToken.mockReturnValueOnce({ claims: boundClaims, ok: true });
+    const bound = await access(workspaceId);
+    expect(bound.ok).toBe(true);
+
+    mocks.verifyToken.mockReturnValueOnce({ claims: boundClaims, ok: true });
+    const upperCaseRoute = await access(workspaceId.toUpperCase());
+    expect(upperCaseRoute.ok).toBe(true);
+  });
+
+  it('matches a root-bound bearer on the internal workspace alias', async () => {
+    mocks.getExternalAppById.mockResolvedValue({
+      allowedWorkspaceIds: [ROOT_WORKSPACE_ID],
+      enabled: true,
+      id: 'cybershield35',
+    });
+    mocks.verifyToken.mockReturnValueOnce({
+      claims: {
+        scopes: ['workspace:drive:read'],
+        sub: '11111111-1111-4111-8111-111111111111',
+        target_app: 'cybershield35',
+        workspace_id: ROOT_WORKSPACE_ID,
+      },
+      ok: true,
+    });
+    const result = await requireExternalAppWorkspaceDriveAccess({
+      request: new Request('https://tuturuuu.com', {
+        headers: { Authorization: 'Bearer app-token' },
+      }),
+      requiredScopes: ['workspace:drive:read'],
+      wsId: 'internal',
+    });
+    expect(result.ok).toBe(true);
   });
 
   it('denies bearers from a disabled app or minted before a secret rotation', async () => {
