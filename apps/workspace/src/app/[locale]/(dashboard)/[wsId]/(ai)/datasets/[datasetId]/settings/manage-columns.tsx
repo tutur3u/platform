@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Plus, X } from '@tuturuuu/icons';
+import { Pencil, Plus, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -11,7 +11,9 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { EditColumnDialog } from './edit-column-dialog';
@@ -27,6 +29,7 @@ interface Props {
 }
 
 export function ManageColumns({ wsId, datasetId }: Props) {
+  const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -165,10 +168,14 @@ export function ManageColumns({ wsId, datasetId }: Props) {
     <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
       <div className="space-y-4">
         {isLoading ? (
-          <div className="flex h-64 flex-col items-center justify-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-muted-foreground text-sm">Loading columns...</p>
-          </div>
+          <LoadingRegion
+            className="space-y-2"
+            srLabel={t('common.loading')}
+          >
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Skeleton key={index} aria-hidden className="h-12 w-full" />
+            ))}
+          </LoadingRegion>
         ) : columns.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">

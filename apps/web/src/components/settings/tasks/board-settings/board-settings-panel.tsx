@@ -273,9 +273,7 @@ function BoardSettingsBoardSwitcher({
               className="w-full md:w-80"
               contentWidth="lg"
               disabled={isLoading}
-              emptyText={
-                isLoading ? t('common.loading') : t('common.no_other_boards')
-              }
+              emptyText={t('common.no_other_boards')}
               label={
                 <span className="truncate text-left font-medium text-sm">
                   {selectedBoardName}

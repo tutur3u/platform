@@ -141,21 +141,16 @@ export function InternalAppAccountConfirmation({
       <div className="space-y-3">
         <Button
           className="group h-12 w-full rounded-2xl font-medium shadow-lg"
+          aria-busy={confirming}
           disabled={controlsDisabled}
           onClick={onContinue}
         >
+          {confirming ? <LoadingIndicator className="size-4" /> : null}
+          <span>{t('login.continue_to_internal_app', { app: appName })}</span>
           {confirming ? (
-            <div className="flex items-center gap-2">
-              <LoadingIndicator className="size-4" />
-              <span>{t('common.loading')}...</span>
-            </div>
+            <span className="sr-only">{t('common.loading')}</span>
           ) : (
-            <>
-              <span>
-                {t('login.continue_to_internal_app', { app: appName })}
-              </span>
-              <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
-            </>
+            <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
           )}
         </Button>
         <Button

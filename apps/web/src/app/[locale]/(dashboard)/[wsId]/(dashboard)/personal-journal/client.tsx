@@ -15,6 +15,7 @@ import { FeatureStatusBadge } from '@tuturuuu/ui/custom/feature-status-badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import JournalEditor from './editor';
@@ -216,7 +217,11 @@ export default function JournalClient({
       />
       <section aria-label={t('timeline')} className="space-y-4">
         <h2 className="font-semibold text-xl">{t('timeline')}</h2>
-        {query.isPending && <output>{t('loading')}</output>}
+        {query.isPending && (
+          <LoadingRegion srLabel={t('loading')}>
+            <SkeletonList rows={3} withAvatar={false} />
+          </LoadingRegion>
+        )}
         {query.isError && (
           <div role="alert">
             <p>{t('load_error')}</p>

@@ -466,16 +466,12 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
-                    disabled={!!datasetId}
+                    disabled={!!datasetId || loadingDatasets}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger aria-busy={loadingDatasets}>
                         <SelectValue
-                          placeholder={
-                            loadingDatasets
-                              ? t('common.loading')
-                              : t('cron-job-form.select_dataset')
-                          }
+                          placeholder={t('cron-job-form.select_dataset')}
                         />
                       </SelectTrigger>
                     </FormControl>

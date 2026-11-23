@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { DatasetCrawler } from './dataset-crawler';
@@ -397,11 +397,14 @@ export function DataExplorer({ wsId, dataset }: Props) {
       </div>
 
       {rowsQuery.isFetching && !data?.length ? (
-        <div className="flex h-64 items-center justify-center">
-          <span className="text-muted-foreground text-sm">
-            {t('common.loading')}...
-          </span>
-        </div>
+        <LoadingRegion
+          className="space-y-2 rounded-lg border p-2"
+          srLabel={t('common.loading')}
+        >
+          {Array.from({ length: 8 }).map((_, index) => (
+            <Skeleton key={index} aria-hidden className="h-9 w-full" />
+          ))}
+        </LoadingRegion>
       ) : (
         <TableContent />
       )}

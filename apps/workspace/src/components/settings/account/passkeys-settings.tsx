@@ -8,6 +8,7 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSectionMessage } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -157,9 +158,9 @@ export default function PasskeysSettings() {
       </SettingItemTab>
 
       {passkeysQuery.isLoading ? (
-        <SettingsSectionMessage icon={<LoadingIndicator className="size-4" />}>
-          {t('passkeys-loading')}
-        </SettingsSectionMessage>
+        <LoadingRegion srLabel={t('passkeys-loading')}>
+          <SkeletonList rows={2} withAvatar={false} withTrailing />
+        </LoadingRegion>
       ) : passkeysQuery.isError ? (
         <SettingsSectionMessage
           action={

@@ -1818,19 +1818,16 @@ export default function LoginForm({
                     )}
                   />
 
-                  <Button
+                  <Button aria-busy={loading}
                     type="submit"
                     className="h-12 w-full rounded-2xl font-medium shadow-lg"
                     disabled={loading || totpForm.watch('totp').length !== 6}
                   >
+                    {loading ? <LoadingIndicator className="h-4 w-4" /> : null}
+                    {t('login.verify_button')}
                     {loading ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingIndicator className="h-4 w-4" />
-                        <span>{t('common.loading')}...</span>
-                      </div>
-                    ) : (
-                      t('login.verify_button')
-                    )}
+                      <span className="sr-only">{t('common.loading')}</span>
+                    ) : null}
                   </Button>
                 </form>
               </Form>
@@ -1889,7 +1886,7 @@ export default function LoginForm({
                           </div>
                         </div>
                       ) : (
-                        <Button
+                        <Button aria-busy={createMobileMfaChallengeMutation.isPending}
                           type="button"
                           variant="secondary"
                           className="h-10 rounded-xl"
@@ -1901,14 +1898,11 @@ export default function LoginForm({
                             createMobileMfaChallengeMutation.mutate()
                           }
                         >
+                          {createMobileMfaChallengeMutation.isPending ? <LoadingIndicator className="size-4" /> : null}
+                          {t('login.mobile_mfa_button')}
                           {createMobileMfaChallengeMutation.isPending ? (
-                            <div className="flex items-center gap-2">
-                              <LoadingIndicator className="size-4" />
-                              <span>{t('common.loading')}...</span>
-                            </div>
-                          ) : (
-                            t('login.mobile_mfa_button')
-                          )}
+                            <span className="sr-only">{t('common.loading')}</span>
+                          ) : null}
                         </Button>
                       )}
                     </div>
@@ -2026,7 +2020,7 @@ export default function LoginForm({
                       </div>
                     ) : null}
 
-                    <Button
+                    <Button aria-busy={loading || isResolvingOtpEnablement}
                       type="submit"
                       className="h-12 w-full rounded-2xl font-medium shadow-lg"
                       disabled={
@@ -2037,14 +2031,11 @@ export default function LoginForm({
                           isCaptchaBlockingPasswordSubmit)
                       }
                     >
+                      {loading || isResolvingOtpEnablement ? <LoadingIndicator className="h-4 w-4" /> : null}
+                      {t('login.continue_with_email')}
                       {loading || isResolvingOtpEnablement ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingIndicator className="h-4 w-4" />
-                          <span>{t('common.loading')}...</span>
-                        </div>
-                      ) : (
-                        t('login.continue_with_email')
-                      )}
+                        <span className="sr-only">{t('common.loading')}</span>
+                      ) : null}
                     </Button>
 
                     {webOtpEnabled ? (
@@ -2144,19 +2135,16 @@ export default function LoginForm({
                       )}
                     />
 
-                    <Button
+                    <Button aria-busy={loading}
                       type="submit"
                       className="h-12 w-full rounded-2xl font-medium shadow-lg"
                       disabled={loading || otpValue.length !== 6}
                     >
+                      {loading ? <LoadingIndicator className="h-4 w-4" /> : null}
+                      {t('login.verify_button')}
                       {loading ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingIndicator className="h-4 w-4" />
-                          <span>{t('common.loading')}...</span>
-                        </div>
-                      ) : (
-                        t('login.verify_button')
-                      )}
+                        <span className="sr-only">{t('common.loading')}</span>
+                      ) : null}
                     </Button>
 
                     {turnstileClientState.isRequired ? (
@@ -2318,7 +2306,7 @@ export default function LoginForm({
                       </div>
                     ) : null}
 
-                    <Button
+                    <Button aria-busy={loading}
                       type="submit"
                       className="h-12 w-full rounded-2xl font-medium shadow-lg"
                       disabled={
@@ -2327,14 +2315,11 @@ export default function LoginForm({
                         isCaptchaBlockingPasswordSubmit
                       }
                     >
+                      {loading ? <LoadingIndicator className="h-4 w-4" /> : null}
+                      {t('login.sign_in')}
                       {loading ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingIndicator className="h-4 w-4" />
-                          <span>{t('common.loading')}...</span>
-                        </div>
-                      ) : (
-                        t('login.sign_in')
-                      )}
+                        <span className="sr-only">{t('common.loading')}</span>
+                      ) : null}
                     </Button>
 
                     {webOtpEnabled ? (

@@ -19,6 +19,7 @@ import {
 } from '@tuturuuu/internal-api/notes';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { useLocale, useTranslations } from 'next-intl';
 import { type MouseEvent, useCallback, useMemo, useRef, useState } from 'react';
@@ -453,7 +454,9 @@ export function NotesClient({ wsId }: { wsId: string }) {
             ))}
           </div>
           {isLoading && (
-            <p className="p-4 text-muted-foreground text-sm">{t('loading')}</p>
+            <LoadingRegion srLabel={t('loading')}>
+              <SkeletonList rows={5} withAvatar={false} />
+            </LoadingRegion>
           )}
           {error && (
             <p className="p-4 text-destructive text-sm">{t('load_error')}</p>

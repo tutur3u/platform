@@ -1,6 +1,6 @@
 'use client';
 
-import { Link2, Pencil } from '@tuturuuu/icons';
+import { Link2, Loader2, Pencil } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -178,14 +178,18 @@ export function InviteLinkFormDialog({
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? t('common.loading')
-                  : t(
-                      isEdit
-                        ? 'common.update_action'
-                        : 'ws-invite-links.create-link'
-                    )}
+              <Button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                ) : null}
+                {t(
+                  isEdit
+                    ? 'common.update_action'
+                    : 'ws-invite-links.create-link'
+                )}
+                {isSubmitting ? (
+                  <span className="sr-only">{t('common.loading')}</span>
+                ) : null}
               </Button>
             </div>
           </form>

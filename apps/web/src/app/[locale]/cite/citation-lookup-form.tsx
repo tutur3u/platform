@@ -52,9 +52,18 @@ export function CitationLookupForm({
             spellCheck={false}
             value={input}
           />
-          <Button disabled={!trimmed || loading} type="submit">
-            {loading ? <Loader2 className="animate-spin" /> : <Search />}
-            {loading ? t('loading') : t('submit')}
+          <Button
+            aria-busy={loading}
+            disabled={!trimmed || loading}
+            type="submit"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin motion-reduce:animate-none" />
+            ) : (
+              <Search />
+            )}
+            {t('submit')}
+            {loading ? <span className="sr-only">{t('loading')}</span> : null}
           </Button>
         </div>
       </form>

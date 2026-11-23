@@ -5,6 +5,12 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  LoadingRegion,
+  Skeleton,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { requiresFreshPrimaryForMfa } from '@tuturuuu/utils/required-mfa-policy';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
@@ -85,7 +91,16 @@ export function RequiredMfaEnrollment({
     );
   if (factors.data?.factors.length) return children;
   if (factors.isPending)
-    return <p role="status">{t('required_mfa_loading')}</p>;
+    return (
+      <LoadingRegion
+        className="space-y-4 rounded-3xl border bg-background p-6"
+        srLabel={t('required_mfa_loading')}
+      >
+        <SkeletonLine barClassName="w-1/2" size="xl" />
+        <SkeletonText lines={2} />
+        <Skeleton className="h-10 w-full rounded-md" />
+      </LoadingRegion>
+    );
   return (
     <section className="space-y-5 rounded-3xl border bg-background p-6">
       <h2 className="font-semibold text-2xl">

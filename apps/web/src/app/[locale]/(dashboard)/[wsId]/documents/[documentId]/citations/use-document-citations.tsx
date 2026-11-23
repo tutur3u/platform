@@ -78,6 +78,7 @@ function useCitationLabels(): CitationLabels {
       manualEntry: t('manual_entry'),
       completeManually: t('complete_manually'),
       saveAndUse: t('save_and_use'),
+      // loading-text-allowed: label prop; the citation library tab renders it
       loading: t('loading'),
       retry: t('retry'),
       errorGeneric: t('error_generic'),

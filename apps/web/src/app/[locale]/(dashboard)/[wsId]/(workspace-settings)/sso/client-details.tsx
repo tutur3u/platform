@@ -5,6 +5,11 @@ import {
   setSsoAssignment,
 } from '@tuturuuu/internal-api/sso';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  LoadingRegion,
+  SkeletonCard,
+  SkeletonList,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { SsoMutationError } from './mutation-error';
 import { PublicSetup } from './public-setup';
@@ -61,7 +66,13 @@ export function ClientDetails({
     }) => setSsoAssignment(wsId, clientId, input),
     onSuccess: () => cache.invalidateQueries({ queryKey: ssoKey(wsId) }),
   });
-  if (detail.isPending) return <p role="status">{t('loading')}</p>;
+  if (detail.isPending)
+    return (
+      <LoadingRegion className="space-y-6" srLabel={t('loading')}>
+        <SkeletonCard lines={3} />
+        <SkeletonList rows={3} withAvatar={false} withTrailing />
+      </LoadingRegion>
+    );
   if (detail.isError)
     return (
       <div role="alert">

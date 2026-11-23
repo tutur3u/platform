@@ -14,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -195,7 +196,9 @@ export function DocumentHierarchy({
         <CreateChild wsId={wsId} parentId={null} onCreated={refresh} />
       )}
       {query.isPending ? (
-        <p role="status">{t('loading')}</p>
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonList rows={6} withAvatar={false} withSubtitle={false} />
+        </LoadingRegion>
       ) : query.isError ? (
         <div role="alert">
           <p>{t('load-error')}</p>

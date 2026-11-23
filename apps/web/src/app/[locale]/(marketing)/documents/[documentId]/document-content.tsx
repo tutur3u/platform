@@ -1,7 +1,8 @@
 'use client';
 
-import { Globe2, Loader2 } from '@tuturuuu/icons';
+import { Globe2 } from '@tuturuuu/icons';
 import type { WorkspaceDocument } from '@tuturuuu/types';
+import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 
 interface Props {
@@ -13,10 +14,13 @@ export default function DocumentPageContent({ document }: Props) {
 
   if (!document) {
     return (
-      <div className="flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2">{t('common.loading')}...</span>
-      </div>
+      <LoadingRegion
+        className="mx-auto w-full max-w-(--breakpoint-xl) space-y-4 px-4 py-6"
+        srLabel={t('common.loading')}
+      >
+        <SkeletonLine barClassName="w-1/3" size="lg" />
+        <SkeletonText lines={6} />
+      </LoadingRegion>
     );
   }
 

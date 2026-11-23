@@ -10,6 +10,12 @@ import {
 } from '@tuturuuu/internal-api/product-feedback';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import {
+  LoadingRegion,
+  SkeletonCard,
+  SkeletonList,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { FeedbackMedia } from './feedback-media';
@@ -145,7 +151,13 @@ export function FeedbackInbox({
       ) : eligibility.isError || list.isError ? (
         <p role="alert">{t('load-error')}</p>
       ) : eligibility.isPending || list.isPending ? (
-        <p role="status">{t('loading')}</p>
+        <LoadingRegion
+          className="grid gap-4 md:grid-cols-2"
+          srLabel={t('loading')}
+        >
+          <SkeletonList rows={4} withAvatar={false} />
+          <SkeletonCard lines={4} />
+        </LoadingRegion>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -205,7 +217,9 @@ export function FeedbackInbox({
                 )}
               </p>
             ) : detail.isPending ? (
-              <p role="status">{t('loading')}</p>
+              <LoadingRegion srLabel={t('loading')}>
+                <SkeletonText lines={4} />
+              </LoadingRegion>
             ) : (
               detail.data && (
                 <>

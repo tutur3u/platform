@@ -11,6 +11,11 @@ import {
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { WorkspaceDeletionSettings } from '@tuturuuu/ui/custom/workspace-deletion-settings';
 import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
+import {
+  LoadingRegion,
+  SkeletonList,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
 import InviteLinksSection from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/invite-links-section';
@@ -32,14 +37,13 @@ function WorkspacePanelState({
 
   if (isLoadingWorkspace) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="mt-4 text-muted-foreground text-sm">
-            {t('settings.loading_workspace')}
-          </p>
-        </div>
-      </div>
+      <LoadingRegion
+        className="space-y-4 py-4"
+        srLabel={t('settings.loading_workspace')}
+      >
+        <SkeletonText lines={2} />
+        <SkeletonList rows={3} withAvatar={false} />
+      </LoadingRegion>
     );
   }
 

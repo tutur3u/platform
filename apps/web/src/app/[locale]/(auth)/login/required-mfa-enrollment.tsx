@@ -4,6 +4,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import {
+  LoadingRegion,
+  SkeletonAvatar,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { requiresFreshPrimaryForMfa } from '@tuturuuu/utils/required-mfa-policy';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
@@ -99,13 +105,14 @@ export function RequiredMfaEnrollment({
   if (factors.data?.factors.length) return children;
   if (factors.isPending)
     return (
-      <p
-        className="flex items-center justify-center gap-2 py-8 text-muted-foreground text-sm"
-        role="status"
+      <LoadingRegion
+        className="flex flex-col items-center gap-4 py-8"
+        srLabel={t('required_mfa_loading')}
       >
-        <LoadingIndicator aria-hidden className="size-4" />
-        {t('required_mfa_loading')}
-      </p>
+        <SkeletonAvatar className="size-16" />
+        <SkeletonLine barClassName="w-1/2" className="w-full" size="xl" />
+        <SkeletonText className="w-full" lines={2} />
+      </LoadingRegion>
     );
   const failed = factors.isError || enroll.isError || verify.isError;
   return (

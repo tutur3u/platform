@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
@@ -188,7 +189,9 @@ export function NoteEntityPicker({
         </div>
         <div className="max-h-72 min-h-20 space-y-1 overflow-y-auto">
           {activeQuery.isPending ? (
-            <p className="p-3 text-muted-foreground text-sm">{t('loading')}</p>
+            <LoadingRegion srLabel={t('loading')}>
+              <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+            </LoadingRegion>
           ) : activeQuery.isError ? (
             <p className="p-3 text-destructive text-sm">{t('load_error')}</p>
           ) : options.length === 0 ? (

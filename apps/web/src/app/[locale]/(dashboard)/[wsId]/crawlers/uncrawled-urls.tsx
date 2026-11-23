@@ -459,7 +459,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               selected={currentDomain}
               mode="single"
               className="w-75"
-              placeholder={loading ? 'Loading domains...' : 'Filter by domain'}
+              placeholder="Filter by domain"
               onChange={(value) => {
                 const selectedValue = Array.isArray(value) ? value[0] : value;
                 router.push(

@@ -8,6 +8,7 @@ import {
   SettingsSection,
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -42,7 +43,9 @@ export function NativePanelLoading() {
 
   return (
     <SettingsSection>
-      <SettingsSectionMessage>{t('common.loading')}</SettingsSectionMessage>
+      <LoadingRegion srLabel={t('common.loading')}>
+        <SkeletonList rows={3} withAvatar={false} withTrailing />
+      </LoadingRegion>
     </SettingsSection>
   );
 }

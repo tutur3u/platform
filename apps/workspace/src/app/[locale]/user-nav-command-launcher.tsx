@@ -77,6 +77,7 @@ export function UserNavCommandLauncher({
         emptyDescription: t('try_searching'),
         errorWorkspaces: launcherT('error_workspaces'),
         guest: launcherT('guest'),
+        // loading-text-allowed: label prop; packages/satellite renders the loading row
         loadingWorkspaces: t('loading_workspaces'),
         match: launcherT('match'),
         navigate: launcherT('navigate'),

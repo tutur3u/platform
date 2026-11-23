@@ -117,15 +117,13 @@ export function OtpStep({
             className="h-12 w-full rounded-2xl font-bold"
             disabled={loading || code.length !== 6}
             type="submit"
+            aria-busy={loading}
           >
+            {loading ? <LoadingIndicator className="size-4" /> : null}
+            {t('login.verify_button')}
             {loading ? (
-              <span className="flex items-center gap-2">
-                <LoadingIndicator className="size-4" />
-                {t('common.loading')}...
-              </span>
-            ) : (
-              t('login.verify_button')
-            )}
+              <span className="sr-only">{t('common.loading')}</span>
+            ) : null}
           </Button>
           <StepTurnstile turnstile={turnstile} />
           <div className="flex flex-wrap items-center justify-between gap-x-4">

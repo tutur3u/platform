@@ -671,13 +671,13 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                 <Label className="font-medium text-sm">
                   {t('conversion_dialog.list_label')}
                 </Label>
-                {listOptions.length > 0 ? (
+                {listOptions.length > 0 || boardsLoading ? (
                   <Select
                     value={selectedListId}
                     onValueChange={setSelectedListId}
-                    disabled={isConverting}
+                    disabled={isConverting || boardsLoading}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-busy={boardsLoading}>
                       <SelectValue
                         placeholder={t('conversion_dialog.list_placeholder')}
                       />
@@ -693,15 +693,11 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                 ) : (
                   <div className="rounded-md border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center">
                     <p className="text-muted-foreground text-sm">
-                      {boardsLoading
-                        ? t('conversion_dialog.loading_lists')
-                        : t('conversion_dialog.no_lists')}
+                      {t('conversion_dialog.no_lists')}
                     </p>
-                    {!boardsLoading && (
-                      <p className="mt-1 text-muted-foreground text-xs">
-                        {t('conversion_dialog.create_list_hint')}
-                      </p>
-                    )}
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      {t('conversion_dialog.create_list_hint')}
+                    </p>
                   </div>
                 )}
               </div>

@@ -20,6 +20,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, SkeletonCard } from '@tuturuuu/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -354,9 +355,11 @@ export function MemoriesClient({ wsId }: { wsId: string }) {
         ) : null}
 
         {memoriesQuery.isLoading ? (
-          <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground text-sm">
-            {t('loading')}
-          </div>
+          <LoadingRegion className="space-y-3" srLabel={t('loading')}>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonCard key={index} lines={2} withHeader={false} />
+            ))}
+          </LoadingRegion>
         ) : memoriesQuery.isError ? (
           <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground text-sm">
             {t('load_failed')}

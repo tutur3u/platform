@@ -889,6 +889,8 @@ export function BoardActivitySettings({
             {hasNextPage ? (
               <Button
                 className="h-8"
+                aria-busy={isFetchingNextPage}
+                aria-label={isFetchingNextPage ? t('common.loading') : undefined}
                 disabled={isFetchingNextPage}
                 onClick={() => void fetchNextPage()}
                 size="sm"
@@ -898,9 +900,7 @@ export function BoardActivitySettings({
                 {isFetchingNextPage ? (
                   <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : null}
-                {isFetchingNextPage
-                  ? t('common.loading')
-                  : t('common.load_more')}
+                {t('common.load_more')}
               </Button>
             ) : (
               <span className="py-1 text-muted-foreground text-xs">

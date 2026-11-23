@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, RefreshCw } from '@tuturuuu/icons';
+import { Plus, RefreshCw } from '@tuturuuu/icons';
 import {
   createWorkspaceInviteLink,
   deleteWorkspaceInviteLink,
@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { LoadingRegion, SkeletonCard } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
@@ -236,11 +237,11 @@ export default function InviteLinksSection({
         }
       >
         {linksQuery.isPending ? (
-          <SettingsSectionMessage
-            icon={<Loader2 className="h-4 w-4 animate-spin" />}
-          >
-            {t('common.loading')}
-          </SettingsSectionMessage>
+          <LoadingRegion className="space-y-3" srLabel={t('common.loading')}>
+            {Array.from({ length: 2 }).map((_, index) => (
+              <SkeletonCard key={index} lines={2} />
+            ))}
+          </LoadingRegion>
         ) : linksQuery.isError ? (
           <SettingsSectionMessage
             tone="error"

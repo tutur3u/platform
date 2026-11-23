@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getProductFeedbackMedia } from '@tuturuuu/internal-api/product-feedback';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -30,7 +31,9 @@ export function FeedbackMedia({ actor, id }: { actor: string; id: string }) {
         (media.isError ? (
           <p role="alert">{t('unavailable')}</p>
         ) : media.isPending ? (
-          <p role="status">{t('loading')}</p>
+          <LoadingRegion srLabel={t('loading')}>
+            <Skeleton aria-hidden className="h-48 w-full rounded-md" />
+          </LoadingRegion>
         ) : media.data?.media ? (
           <Image
             src={`data:image/webp;base64,${media.data.media.data}`}

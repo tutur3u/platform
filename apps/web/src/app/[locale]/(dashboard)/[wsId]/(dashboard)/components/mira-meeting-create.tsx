@@ -6,6 +6,7 @@ import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, Skeleton, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -42,9 +43,16 @@ export function MiraMeetingCreate({ wsId }: { wsId: string }) {
   });
   if (profile.isPending)
     return (
-      <p role="status" className="text-muted-foreground text-xs">
-        {t('loading')}
-      </p>
+      <LoadingRegion
+        className="space-y-3 rounded-lg bg-muted/40 p-3"
+        srLabel={t('loading')}
+      >
+        <SkeletonLine barClassName="w-1/4" />
+        <Skeleton aria-hidden className="h-9 w-full" />
+        <SkeletonLine barClassName="w-1/4" />
+        <Skeleton aria-hidden className="h-9 w-full" />
+        <Skeleton aria-hidden className="h-8 w-28" />
+      </LoadingRegion>
     );
   if (profile.isError)
     return (

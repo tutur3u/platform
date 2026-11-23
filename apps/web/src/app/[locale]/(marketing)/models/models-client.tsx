@@ -1,7 +1,7 @@
 'use client';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { LayoutGrid, LayoutList, Search } from '@tuturuuu/icons/lucide';
+import { LayoutGrid, LayoutList, Loader2, Search } from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -511,8 +511,15 @@ export default function ModelsClient({
               void fetchNextPage();
             }}
             disabled={isFetchingNextPage}
+            aria-busy={isFetchingNextPage}
           >
-            {isFetchingNextPage ? t('loading_more') : t('load_more')}
+            {isFetchingNextPage ? (
+              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+            ) : null}
+            {t('load_more')}
+            {isFetchingNextPage ? (
+              <span className="sr-only">{t('loading_more')}</span>
+            ) : null}
           </Button>
         </div>
       )}

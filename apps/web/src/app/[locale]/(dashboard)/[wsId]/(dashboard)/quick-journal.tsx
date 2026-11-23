@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
@@ -1287,10 +1288,9 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
                   {t('labels_disabled_notice')}
                 </p>
               ) : labelsLoading ? (
-                <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 px-3 py-2 text-dynamic-blue text-xs">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{t('labels_loading')}</span>
-                </div>
+                <LoadingRegion srLabel={t('labels_loading')}>
+                  <SkeletonLine barClassName="w-1/2 rounded-full" />
+                </LoadingRegion>
               ) : sortedLabels.length ? (
                 <>
                   <div className="flex flex-wrap gap-2">

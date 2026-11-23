@@ -6,6 +6,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
+import { LoadingRegion, SkeletonListRow } from '@tuturuuu/ui/skeleton';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';
@@ -52,12 +53,17 @@ export default function MemberList({
 
   if (loading && (!members || members.length === 0)) {
     return (
-      <div className="flex items-center justify-center rounded-lg border border-border bg-background/50 p-12">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
-          <p className="text-foreground/60 text-sm">{tCommon('loading')}</p>
-        </div>
-      </div>
+      <LoadingRegion
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+        srLabel={tCommon('loading')}
+      >
+        {Array.from({ length: 6 }).map((_, index) => (
+          <SkeletonListRow
+            key={index}
+            className="rounded-lg border bg-primary-foreground/20 p-4"
+          />
+        ))}
+      </LoadingRegion>
     );
   }
 

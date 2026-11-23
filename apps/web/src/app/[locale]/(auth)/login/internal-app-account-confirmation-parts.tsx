@@ -6,6 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import {
+  LoadingRegion,
+  Skeleton,
+  SkeletonAvatar,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -77,36 +84,29 @@ export function ProfileLoadingState({
 
   return (
     <ConfirmationCard>
-      <div className="space-y-4 text-center">
-        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-muted">
-          <LoadingIndicator className="size-5 text-muted-foreground" />
+      <LoadingRegion
+        className="flex flex-col gap-4"
+        srLabel={`${t('login.loading_account_profile_title')}. ${t('login.loading_account_profile_description', { app: appName })}`}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <SkeletonAvatar className="size-16" />
+          <SkeletonLine className="w-full" barClassName="mx-auto w-3/5" size="xl" />
+          <SkeletonText className="w-full" lines={2} />
         </div>
-        <div className="space-y-1.5">
-          <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
-            {t('login.loading_account_profile_title')}
-          </h2>
-          <p className="text-balance text-muted-foreground text-sm">
-            {t('login.loading_account_profile_description', { app: appName })}
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border p-4">
-        <div className="flex animate-pulse items-center gap-3 motion-reduce:animate-none">
-          <div className="size-11 rounded-full bg-muted" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="h-3 w-24 rounded-full bg-muted" />
-            <div className="h-4 w-40 rounded-full bg-muted" />
-            <div className="h-3 w-52 max-w-full rounded-full bg-muted" />
+        <div className="rounded-2xl border p-4">
+          <div className="flex items-center gap-3">
+            <SkeletonAvatar className="size-11" />
+            <div className="min-w-0 flex-1">
+              <SkeletonLine barClassName="w-24" size="xs" />
+              <SkeletonLine barClassName="w-40" size="sm" />
+              <SkeletonLine barClassName="w-52 max-w-full" size="xs" />
+            </div>
           </div>
         </div>
-      </div>
+      </LoadingRegion>
 
       <div className="space-y-3">
-        <Button className="h-12 w-full rounded-2xl font-bold" disabled>
-          <LoadingIndicator className="mr-2 size-4" />
-          {t('login.loading_profile')}
-        </Button>
+        <Skeleton aria-hidden className="h-12 w-full rounded-2xl" />
         <Button
           className="h-11 w-full rounded-2xl"
           disabled={disabled}

@@ -817,11 +817,9 @@ export function AddTaskForm({
                 }}
                 disabled={labelsLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-busy={labelsLoading}>
                   <SelectValue
-                    placeholder={
-                      labelsLoading ? 'Loading labels...' : 'Select labels...'
-                    }
+                    placeholder={labelsLoading ? '' : 'Select labels...'}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -895,13 +893,9 @@ export function AddTaskForm({
                 }}
                 disabled={projectsLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-busy={projectsLoading}>
                   <SelectValue
-                    placeholder={
-                      projectsLoading
-                        ? 'Loading projects...'
-                        : 'Select projects...'
-                    }
+                    placeholder={projectsLoading ? '' : 'Select projects...'}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -969,13 +963,9 @@ export function AddTaskForm({
                 }}
                 disabled={membersLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-busy={membersLoading}>
                   <SelectValue
-                    placeholder={
-                      membersLoading
-                        ? 'Loading members...'
-                        : 'Select assignees...'
-                    }
+                    placeholder={membersLoading ? '' : 'Select assignees...'}
                   />
                 </SelectTrigger>
                 <SelectContent>

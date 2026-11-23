@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { DomainItem } from './domain-item';
@@ -62,9 +63,9 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
         <main className="mx-auto w-full max-w-3xl space-y-8">
           {header}
           <SettingsSection>
-            <SettingsSectionMessage>
-              <span role="status">{t('loading')}</span>
-            </SettingsSectionMessage>
+            <LoadingRegion srLabel={t('loading')}>
+              <SkeletonList rows={3} withAvatar={false} withTrailing />
+            </LoadingRegion>
           </SettingsSection>
         </main>
       );

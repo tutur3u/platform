@@ -160,15 +160,13 @@ export function IdentifyStep({
             className="h-12 w-full rounded-full font-semibold text-[15px]"
             disabled={continueDisabled}
             type="submit"
+            aria-busy={pending}
           >
+            {pending ? <LoadingIndicator className="h-4 w-4" /> : null}
+            {t('login.continue_with_email')}
             {pending ? (
-              <span className="flex items-center gap-2">
-                <LoadingIndicator className="h-4 w-4" />
-                <span>{t('common.loading')}...</span>
-              </span>
-            ) : (
-              t('login.continue_with_email')
-            )}
+              <span className="sr-only">{t('common.loading')}</span>
+            ) : null}
           </Button>
 
           {usePasswordAvailable ? (

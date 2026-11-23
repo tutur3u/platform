@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { LoadingRegion, Skeleton, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -67,7 +68,10 @@ export function NoteTaskConversionDialog({
         </DialogHeader>
         <p className="line-clamp-2 text-muted-foreground text-sm">{name}</p>
         {boards.isPending ? (
-          <p className="py-4 text-muted-foreground text-sm">{t('loading')}</p>
+          <LoadingRegion className="space-y-4 py-4" srLabel={t('loading')}>
+            <SkeletonText lines={2} />
+            <Skeleton aria-hidden className="h-9 w-full" />
+          </LoadingRegion>
         ) : boards.isError ? (
           <p className="py-4 text-destructive text-sm">
             {t('task_load_error')}

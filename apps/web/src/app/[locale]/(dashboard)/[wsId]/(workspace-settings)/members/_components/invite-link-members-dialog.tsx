@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { LoadingRegion, Skeleton, SkeletonList } from '@tuturuuu/ui/skeleton';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';
@@ -142,14 +143,18 @@ export function InviteLinkMembersDialog({
 
         <div className="space-y-6 px-6 py-6">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
-                <p className="text-foreground/60 text-sm">
-                  {t('common.loading')}
-                </p>
+            <LoadingRegion srLabel={t('common.loading')}>
+              <div className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton
+                    key={index}
+                    aria-hidden
+                    className="min-h-30 rounded-2xl"
+                  />
+                ))}
               </div>
-            </div>
+              <SkeletonList className="mt-10" rows={3} />
+            </LoadingRegion>
           ) : isError ? (
             <div className="rounded-2xl border border-dynamic-red/30 border-dashed bg-dynamic-red/5 px-6 py-10 text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-dynamic-red/10">

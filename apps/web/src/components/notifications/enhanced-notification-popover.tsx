@@ -5,6 +5,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
@@ -171,9 +172,9 @@ export default function EnhancedNotificationPopover({
           }`}
         >
           {isLoading ? (
-            <div className="flex min-h-16 flex-col items-center justify-center">
-              <div className="text-foreground/80 text-xs">Loading...</div>
-            </div>
+            <LoadingRegion srLabel={t('loading')}>
+              <SkeletonList rows={3} withSubtitle />
+            </LoadingRegion>
           ) : notifications.length > 0 ? (
             notifications.map((notification) => (
               <NotificationItem

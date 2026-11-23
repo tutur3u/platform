@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -109,9 +110,7 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
       ? t('workspace_context_personal')
       : workspaces?.find((workspace) => workspace.id === workspaceContextId)
           ?.name ||
-        (isLoading
-          ? t('workspace_context_loading')
-          : t('workspace_context_unknown'));
+        (isLoading ? '' : t('workspace_context_unknown'));
 
   const Icon = Brain;
   const isPersonalWorkspaceContext = workspaceContextId === 'personal';
@@ -127,10 +126,15 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
             'h-8 gap-1.5 border-border/50 bg-background/60 text-xs backdrop-blur-sm',
             isPersonalWorkspaceContext ? 'px-2' : 'max-w-40 px-2'
           )}
+          aria-busy={isLoading && !workspaceName}
           aria-label={t('workspace_context_select')}
         >
           <Icon className="h-3 w-3 shrink-0" aria-hidden />
-          <span className="truncate">{workspaceName}</span>
+          {isLoading && !workspaceName ? (
+            <Skeleton aria-hidden className="h-3 w-16" />
+          ) : (
+            <span className="truncate">{workspaceName}</span>
+          )}
           <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

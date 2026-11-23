@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserPlus } from '@tuturuuu/icons';
+import { Loader2, UserPlus } from '@tuturuuu/icons';
 import { inviteWorkspaceMember } from '@tuturuuu/internal-api/workspaces';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
@@ -188,10 +188,19 @@ export default function InviteMemberButton({
                 )}
               />
 
-              <Button type="submit" className="w-full">
-                {inviteMutation.isPending
-                  ? tCommon('loading')
-                  : t('invite_submit')}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={inviteMutation.isPending}
+                aria-busy={inviteMutation.isPending}
+              >
+                {inviteMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                ) : null}
+                {t('invite_submit')}
+                {inviteMutation.isPending ? (
+                  <span className="sr-only">{tCommon('loading')}</span>
+                ) : null}
               </Button>
             </form>
           </Form>

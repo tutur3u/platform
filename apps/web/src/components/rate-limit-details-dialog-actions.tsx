@@ -123,6 +123,7 @@ export function RateLimitDetailsDialogFooterActions({
 
   const clearButton = canClearIpBlock ? (
     <Button
+      aria-busy={isClearingIpBlock}
       aria-label={t('rate_limited_clear_ip_block')}
       disabled={isClearingIpBlock}
       onClick={onClearIpBlock}
@@ -134,9 +135,7 @@ export function RateLimitDetailsDialogFooterActions({
       ) : (
         <Shield className="h-4 w-4" />
       )}
-      {isClearingIpBlock
-        ? t('rate_limited_clear_ip_block_loading')
-        : t('rate_limited_clear_ip_block')}
+      {t('rate_limited_clear_ip_block')}
     </Button>
   ) : null;
   const reviewButton = canRequestReview ? (

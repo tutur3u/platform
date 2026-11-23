@@ -9,6 +9,12 @@ import {
   updateSsoClient,
 } from '@tuturuuu/internal-api/sso';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  LoadingRegion,
+  SkeletonCard,
+  SkeletonList,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ClientDetails, ssoKey } from './client-details';
@@ -81,7 +87,17 @@ export function SsoManagement({ wsId }: { wsId: string }) {
       await refresh();
     },
   });
-  if (overview.isPending) return <p role="status">{t('loading')}</p>;
+  if (overview.isPending)
+    return (
+      <LoadingRegion
+        className="mx-auto w-full max-w-4xl space-y-6"
+        srLabel={t('loading')}
+      >
+        <SkeletonText lines={2} size="xl" />
+        <SkeletonCard lines={1} withHeader={false} />
+        <SkeletonList rows={3} withAvatar={false} withTrailing />
+      </LoadingRegion>
+    );
   if (overview.isError)
     return (
       <div role="alert">

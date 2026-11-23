@@ -5,6 +5,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import {
+  LoadingRegion,
+  SkeletonSelectorTrigger,
+} from '@tuturuuu/ui/skeleton';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -98,23 +102,29 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
       </div>
       <div className="flex items-center gap-2">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <Combobox
-          t={t}
-          options={comboboxOptions}
-          selected={currentDomain}
-          mode="single"
-          className="w-75"
-          placeholder={loading ? 'Loading domains...' : 'Filter by domain'}
-          onChange={(value) => {
-            const selectedValue = Array.isArray(value) ? value[0] : value;
-            router.push(
-              `${pathname}?${createQueryString({
-                domain: selectedValue === 'all' ? null : selectedValue || null,
-                page: '1',
-              })}`
-            );
-          }}
-        />
+        {loading ? (
+          <LoadingRegion className="w-75" srLabel={t('common.loading')}>
+            <SkeletonSelectorTrigger />
+          </LoadingRegion>
+        ) : (
+          <Combobox
+            t={t}
+            options={comboboxOptions}
+            selected={currentDomain}
+            mode="single"
+            className="w-75"
+            placeholder="Filter by domain"
+            onChange={(value) => {
+              const selectedValue = Array.isArray(value) ? value[0] : value;
+              router.push(
+                `${pathname}?${createQueryString({
+                  domain: selectedValue === 'all' ? null : selectedValue || null,
+                  page: '1',
+                })}`
+              );
+            }}
+          />
+        )}
         <Button
           variant="ghost"
           size="icon"

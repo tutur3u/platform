@@ -42,6 +42,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
@@ -169,12 +170,12 @@ export default function MembersSettings({
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center rounded-xl border border-border bg-background p-12">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
-          <p className="text-foreground/60 text-sm">{tCommon('loading')}</p>
-        </div>
-      </div>
+      <LoadingRegion
+        className="rounded-xl border border-border bg-background p-2"
+        srLabel={tCommon('loading')}
+      >
+        <SkeletonList rows={5} withSubtitle />
+      </LoadingRegion>
     );
   }
 

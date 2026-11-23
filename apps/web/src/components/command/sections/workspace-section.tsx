@@ -3,6 +3,7 @@
 import { Building2, ChevronRight, User } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
@@ -57,15 +58,9 @@ export function WorkspaceSection({
   if (isLoading) {
     return (
       <CommandGroup heading={t('workspaces')}>
-        <CommandItem
-          disabled
-          className="justify-center text-muted-foreground text-sm"
-        >
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-            {t('loading_workspaces')}
-          </div>
-        </CommandItem>
+        <LoadingRegion srLabel={t('loading_workspaces')}>
+          <SkeletonList rows={2} withAvatar={false} withSubtitle={false} />
+        </LoadingRegion>
       </CommandGroup>
     );
   }

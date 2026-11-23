@@ -146,15 +146,13 @@ export function PasswordStep({
             className="h-12 w-full rounded-2xl font-bold"
             disabled={submitDisabled}
             type="submit"
+            aria-busy={loading}
           >
+            {loading ? <LoadingIndicator className="size-4" /> : null}
+            {t('login.sign_in')}
             {loading ? (
-              <span className="flex items-center gap-2">
-                <LoadingIndicator className="size-4" />
-                {t('common.loading')}...
-              </span>
-            ) : (
-              t('login.sign_in')
-            )}
+              <span className="sr-only">{t('common.loading')}</span>
+            ) : null}
           </Button>
           {onUseCode ? (
             <AuthTextButton
