@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 894,
+    "total": 895,
     "categories": {
-      "api": 694,
+      "api": 695,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 882 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 883 }
   },
   "routes": [
     {

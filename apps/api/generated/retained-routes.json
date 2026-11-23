@@ -1934,7 +1934,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/integrations/upskii/content/route.ts",
-    "sourceSha256": "d356dfd0702e021ea08b769a0bc99ae5c62da24a47ecf566a2fe6e9cb7c8af3d",
+    "sourceSha256": "a82cba2a28156469a7ba42d0104a67ef634b0e6e9e0ab33d97d21bfff80f8043",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
