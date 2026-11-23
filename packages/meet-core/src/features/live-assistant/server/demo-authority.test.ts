@@ -225,7 +225,7 @@ it('requires the meeting workspace to pass the Meet AI workspace gate', async ()
   expect(f.gate).toHaveBeenCalledWith(workspace.id, { synthetic: 'env' });
 });
 
-it('admits a paid account in a team workspace with a stored attestation', async () => {
+it('requires the current owner to have attested before admitting a paid account to a team workspace', async () => {
   f.identity.mockResolvedValue({
     data: { user: { ...actor, email: 'synthetic@example.com' } },
     error: null,
@@ -248,6 +248,14 @@ it('admits a paid account in a team workspace with a stored attestation', async 
     allowed: true,
     authority: 'workspace-admin',
     payer: 'account',
+  });
+  f.workspace.mockResolvedValue({
+    data: { ...workspace, personal: false, creator_id: 'another-owner' },
+    error: null,
+  });
+  expect(await readMiraDemoAuthority(request)).toEqual({
+    allowed: false,
+    reason: 'workspace',
   });
 });
 

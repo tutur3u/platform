@@ -1,7 +1,10 @@
 import 'server-only';
 import { MEETING_APP } from '../../../runtime';
 import { hasMiraAdultAttestation } from '../../live-assistant/participant-consent';
-import { readMiraAdultAttestation } from '../../live-assistant/server/mira-attestation';
+import {
+  readMiraAdultAttestation,
+  readMiraWorkspaceOwnerId,
+} from '../../live-assistant/server/mira-attestation';
 import { isMeetAiEnabledForWorkspace, meetAiGateEnv } from './workspace-gate';
 
 /** Why the meeting transcript and notes cannot run; shown to the viewer. */
@@ -23,7 +26,8 @@ export type MeetTranscriptAvailability =
  * Whether room-wide transcription and notes may run for a meeting workspace.
  * In order: the kill switch, the full Meet AI workspace gate (protected ids,
  * denylist, then the reviewed MEET_AI_ALL_WORKSPACES opt-in or the
- * allowlist) and the workspace's stored 18+ audience attestation. The host's
+ * allowlist) and the 18+ audience attestation recorded by the workspace's
+ * current owner. The host's
  * account rule and payer, and each participant's own choice, are separate
  * checks on every paid request. Parley stays off.
  */
@@ -38,9 +42,14 @@ export async function readMeetTranscriptionAvailability(
       return { available: false, reason: 'disabled' };
     if (!isMeetAiEnabledForWorkspace(wsId, env))
       return { available: false, reason: 'workspace' };
+    const [attestation, workspaceOwnerId] = await Promise.all([
+      readMiraAdultAttestation(wsId),
+      readMiraWorkspaceOwnerId(wsId),
+    ]);
     const attested = hasMiraAdultAttestation({
       workspaceId: wsId,
-      attestation: await readMiraAdultAttestation(wsId),
+      workspaceOwnerId,
+      attestation,
     });
     if (!attested) return { available: false, reason: 'audience' };
     return { available: true };

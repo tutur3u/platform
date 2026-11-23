@@ -1,28 +1,14 @@
 /**
  * Runtime-injected, server-only Meet AI controls. Credit admission is separate.
  *
- * Meet AI is DEFAULT-OFF: a workspace is allowed only when it is listed by id
- * in MEET_AI_ENABLED_WORKSPACE_IDS and nothing else denies it. Evaluation
- * order, first match wins:
- *   1. missing workspace id                          -> deny
- *   2. Easy Center (in code, whatever the env says)  -> deny
- *   3. protected config missing/invalid or id listed -> deny
- *   4. MEET_AI_DISABLED not exactly 0/false          -> deny every workspace
- *   5. MEET_AI_DISABLED_WORKSPACE_IDS malformed      -> deny every workspace
- *      or listing the workspace                      -> deny
- *   6. MEET_AI_ALL_WORKSPACES is exactly the reviewed
- *      opt-in value (MEET_AI_ALL_WORKSPACES_REVIEWED) -> allow
- *      (any other non-empty value is ignored and logged)
- *   7. MEET_AI_ENABLED_WORKSPACE_IDS missing, empty,
- *      non-string, '*' or with any non-UUID entry    -> deny every workspace
- *   8. the workspace id is listed in the allowlist   -> allow
- *
- * '*' is NOT an allow-all value. It denies and is logged. The only allow-all
- * switch is the separately reviewed MEET_AI_ALL_WORKSPACES opt-in, which never
- * bypasses steps 1-5. Changing what it admits requires a new reviewed value.
+ * The Meet production Worker opts every eligible workspace in. Other runtimes
+ * use their own injected controls. The operator kill secret, exact enable
+ * binding, canonical workspace identity, protected list and denylist all take
+ * precedence over the rollout controls. Invalid configuration denies access.
  */
 export const MEET_AI_WORKSPACE_ALLOWLIST_ENV = 'MEET_AI_ENABLED_WORKSPACE_IDS';
 export const MEET_AI_DISABLED_ENV = 'MEET_AI_DISABLED';
+export const MEET_AI_KILL_SWITCH_ENV = 'MEET_AI_KILL_SWITCH';
 export const MEET_AI_WORKSPACE_DENYLIST_ENV = 'MEET_AI_DISABLED_WORKSPACE_IDS';
 
 export const MEET_AI_PROTECTED_WORKSPACES_ENV =
@@ -32,7 +18,7 @@ export const MEET_AI_PROTECTED_WORKSPACES_ENV =
 export const MEET_AI_ALL_WORKSPACES_ENV = 'MEET_AI_ALL_WORKSPACES';
 export const MEET_AI_ALL_WORKSPACES_REVIEWED = 'reviewed-allow-all-2026-11-20';
 
-/** Easy Center is never a Meet AI workspace. Checked before any env control. */
+/** Easy Center is never a Meet AI workspace. */
 export const EASY_CENTER_WORKSPACE_ID = '42529372-c669-4833-bb32-2cab1f4ffd83';
 
 export type MeetAiGateEnv = object | null | undefined;
@@ -65,47 +51,37 @@ export function resetMeetAiGateWarnings() {
   warned.clear();
 }
 
-/**
- * The explicitly allowed workspace ids. Empty (deny all) when the allowlist is
- * missing, not a string, blank, '*' or contains any entry that is not a UUID.
- */
-export function meetAiEnabledWorkspaceIds(env: MeetAiGateEnv) {
+/** Null distinguishes a malformed list from an absent or empty list. */
+function readAllowlist(env: MeetAiGateEnv) {
   const raw = binding(env, MEET_AI_WORKSPACE_ALLOWLIST_ENV);
+  if (raw === undefined) return new Set<string>();
   if (typeof raw !== 'string') {
-    if (raw !== undefined)
-      warnOnce(`${MEET_AI_WORKSPACE_ALLOWLIST_ENV} is not a string`);
-    return new Set<string>();
+    warnOnce(`${MEET_AI_WORKSPACE_ALLOWLIST_ENV} is not a string`);
+    return null;
   }
   const ids = workspaceIds(raw);
   if (ids.includes('*')) {
     warnOnce(
       `${MEET_AI_WORKSPACE_ALLOWLIST_ENV} contains '*', which is not an allow-all value`
     );
-    return new Set<string>();
+    return null;
   }
   if (ids.some((id) => !UUID.test(id))) {
     warnOnce(`${MEET_AI_WORKSPACE_ALLOWLIST_ENV} contains a non-UUID entry`);
-    return new Set<string>();
+    return null;
   }
   return new Set(ids);
 }
 
-/**
- * True only for the exact reviewed opt-in value. Absent or empty is the normal
- * allowlist mode; '*', 'true', '1' or a stale reviewed value is logged and
- * ignored, so a typo can never open every workspace.
- */
+/** The explicit workspace list. Malformed configuration admits no ids. */
+export function meetAiEnabledWorkspaceIds(env: MeetAiGateEnv) {
+  return readAllowlist(env) ?? new Set<string>();
+}
+
 export function isMeetAiAllWorkspacesOptIn(env: MeetAiGateEnv) {
-  const raw = binding(env, MEET_AI_ALL_WORKSPACES_ENV);
-  if (raw === undefined || raw === '') return false;
-  if (raw === MEET_AI_ALL_WORKSPACES_REVIEWED) return true;
-  if (!warned.has('all-workspaces')) {
-    warned.add('all-workspaces');
-    console.warn(
-      `[meet-ai-gate] ${MEET_AI_ALL_WORKSPACES_ENV} is not the reviewed opt-in value; using the workspace allowlist`
-    );
-  }
-  return false;
+  return (
+    binding(env, MEET_AI_ALL_WORKSPACES_ENV) === MEET_AI_ALL_WORKSPACES_REVIEWED
+  );
 }
 
 /**
@@ -116,6 +92,9 @@ export function isMeetAiHardDenied(
   wsId: string | null | undefined,
   env: MeetAiGateEnv
 ) {
+  if (env && Object.hasOwn(env, MEET_AI_KILL_SWITCH_ENV)) return true;
+  const disabled = binding(env, MEET_AI_DISABLED_ENV);
+  if (disabled !== 'false' && disabled !== '0') return true;
   const id = typeof wsId === 'string' ? wsId : '';
   if (id.length !== 36 || !UUID.test(id)) return true;
   if (id === EASY_CENTER_WORKSPACE_ID) return true;
@@ -124,9 +103,7 @@ export function isMeetAiHardDenied(
   const protectedIds = workspaceIds(protectedRaw);
   if (!protectedIds.length || protectedIds.some((entry) => !UUID.test(entry)))
     return true;
-  if (protectedIds.includes(id)) return true;
-  const disabled = binding(env, MEET_AI_DISABLED_ENV);
-  return disabled !== 'false' && disabled !== '0';
+  return protectedIds.includes(id);
 }
 
 export function isMeetAiEnabledForWorkspace(
@@ -150,6 +127,13 @@ export function isMeetAiEnabledForWorkspace(
     if (ids.includes(id)) return false;
   }
 
-  if (isMeetAiAllWorkspacesOptIn(env)) return true;
-  return meetAiEnabledWorkspaceIds(env).has(id);
+  const allWorkspaces = binding(env, MEET_AI_ALL_WORKSPACES_ENV);
+  const optedIn = isMeetAiAllWorkspacesOptIn(env);
+  if (allWorkspaces !== undefined && allWorkspaces !== '' && !optedIn) {
+    warnOnce(`${MEET_AI_ALL_WORKSPACES_ENV} is not the reviewed opt-in value`);
+    return false;
+  }
+
+  const allowed = readAllowlist(env);
+  return allowed !== null && (optedIn || allowed.has(id));
 }

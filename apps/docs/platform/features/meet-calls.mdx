@@ -1705,13 +1705,14 @@ Checks run in this order; the first match wins:
 
 | Order | Control | Behavior |
 | --- | --- | --- |
-| 1 | Workspace id | Only a canonical lowercase hyphenated UUID from the stored meeting is accepted. Missing, blank or noncanonical ids deny. |
-| 2 | `MEET_AI_PROTECTED_WORKSPACE_IDS` | Required nonempty comma/whitespace-separated UUID secret. Listed ids are always denied. Missing, blank, malformed or non-string configuration denies every workspace, including Parley. |
-| 3 | `MEET_AI_DISABLED` (kill switch) | Present and anything other than `0`/`false` (trimmed, case-insensitive) denies every workspace, including blank and non-string values. Unset, `0` or `false` moves on. |
-| 4 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. A listed workspace is denied; any malformed entry (including `*`) or a non-string value denies every workspace. Unset or blank moves on. |
-| 5 | `MEET_AI_ALL_WORKSPACES` | Reviewed allow-all opt-in (decision 20 November 2026). Only the exact value `reviewed-allow-all-2026-11-20` allows every workspace that passed rows 1-4. Unset or blank moves on; any other value (including `*`, `true` or `1`) is ignored and logged once per isolate. Changing what it admits requires a new reviewed value. |
-| 6 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Comma/whitespace-separated UUID allowlist, case-insensitive. Missing, blank, non-string, `*` or any non-UUID entry denies every workspace and is logged once per isolate (`[meet-ai-gate]`, no ids). `*` is **not** an allow-all value. |
-| 7 | Allowlist match | Allow; existing credit checks still apply. |
+| 1 | `MEET_AI_KILL_SWITCH` (operator shutdown secret) | On the `tuturuuu-meet` Worker (including its Live Durable Object) and the Meet realtime room Worker, present with any value, including blank, denies every workspace before any other check. Delete the secret to lift it. The Web notes-voice and legacy transcription adapters do not forward it; use `MEET_AI_DISABLED` there. |
+| 2 | `MEET_AI_DISABLED` (kill switch) | Only the exact strings `false` or `0` move on. Any other value, including unset, blank, `False`, a value with whitespace or a non-string, denies every workspace. |
+| 3 | Workspace id | Only a canonical lowercase hyphenated UUID from the stored meeting is accepted. Missing, blank or noncanonical ids deny. |
+| 4 | `MEET_AI_PROTECTED_WORKSPACE_IDS` | Required nonempty comma/whitespace-separated UUID secret. Listed ids are always denied. Missing, blank, malformed or non-string configuration denies every workspace, including Parley. |
+| 5 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. A listed workspace is denied; any malformed entry (including `*`) or a non-string value denies every workspace. Unset or blank moves on. |
+| 6 | `MEET_AI_ALL_WORKSPACES` | Reviewed allow-all opt-in (decision 20 November 2026). Only the exact value `reviewed-allow-all-2026-11-20` allows every workspace that passed rows 1-5. Unset or blank moves on. Any other value (including `*`, `true` or `1`) denies every workspace and is logged once per isolate. Changing what it admits requires a new reviewed value. |
+| 7 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Comma/whitespace-separated UUID allowlist, case-insensitive. Non-string, `*` or any non-UUID entry denies every workspace, even with the opt-in, and is logged once per isolate (`[meet-ai-gate]`, no ids). Missing or blank admits no listed ids. `*` is **not** an allow-all value. |
+| 8 | Opt-in or allowlist match | Allow; existing credit checks still apply. |
 
 The Worker and room DO read only injected bindings, never ambient `process.env`.
 If the Meet Worker cannot read its Cloudflare context, the gate fails closed as

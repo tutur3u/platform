@@ -1,5 +1,6 @@
 import 'server-only';
 import { MIRA_ROOM_CONSENT_REQUIRED } from '@tuturuuu/realtime/meet';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MeetCallAccessError } from '../../call/lib/call-access';
 import {
   callRoomService,
@@ -21,10 +22,24 @@ type MiraEnv = {
 };
 
 async function attested(workspaceId: string) {
-  return hasMiraAdultAttestation({
-    workspaceId,
-    attestation: await readMiraAdultAttestation(workspaceId),
-  });
+  const db = await createAdminClient({ noCookie: true });
+  const [workspace, attestation] = await Promise.all([
+    db
+      .from('workspaces')
+      .select('creator_id, deleted')
+      .eq('id', workspaceId)
+      .maybeSingle(),
+    readMiraAdultAttestation(workspaceId),
+  ]);
+  if (workspace.error) throw new Error('Mira workspace owner lookup failed');
+  return (
+    workspace.data?.deleted !== true &&
+    hasMiraAdultAttestation({
+      workspaceId,
+      workspaceOwnerId: workspace.data?.creator_id ?? null,
+      attestation,
+    })
+  );
 }
 
 /**

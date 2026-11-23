@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   maybeSingle: vi.fn(),
+  workspace: vi.fn(),
   upsert: vi.fn(),
   deleteEq: vi.fn(),
   tables: [] as string[],
@@ -18,6 +19,9 @@ vi.mock('@/lib/workspace-route-access', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: mocks.workspace }) }),
+    }),
     schema: (name: string) => ({
       from: (table: string) => {
         mocks.tables.push(`${name}.${table}`);
@@ -55,6 +59,10 @@ describe('Mira audience attestation route', () => {
       permissions: { wsId: WS },
     });
     mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
+    mocks.workspace.mockResolvedValue({
+      data: { creator_id: USER, deleted: false },
+      error: null,
+    });
     mocks.upsert.mockResolvedValue({ error: null });
     mocks.deleteEq.mockResolvedValue({ error: null });
   });
@@ -72,6 +80,20 @@ describe('Mira audience attestation route', () => {
       'manage_workspace_settings',
     ]);
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('forbids a settings manager who does not own the workspace from writing', async () => {
+    mocks.workspace.mockResolvedValue({
+      data: { creator_id: 'another-owner', deleted: false },
+      error: null,
+    });
+    expect(
+      (await GET(new Request('http://localhost/api'), params)).status
+    ).toBe(200);
+    for (const attested of [true, false])
+      expect((await put({ attested })).status).toBe(403);
+    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
   });
 
   it('reports the stored attestation of the resolved workspace', async () => {
@@ -93,6 +115,23 @@ describe('Mira audience attestation route', () => {
     expect(mocks.tables).toEqual([
       'private.workspace_mira_audience_attestations',
     ]);
+  });
+
+  it('reports a former owner or manager declaration as unset', async () => {
+    mocks.maybeSingle.mockResolvedValue({
+      data: {
+        audience: 'adults-only',
+        attested_by: 'other',
+        attested_at: '2026-11-20T00:00:00Z',
+      },
+      error: null,
+    });
+    const response = await GET(new Request('http://localhost/api'), params);
+    expect(await response.json()).toEqual({
+      attested: false,
+      attestedAt: null,
+      attestedByCurrentUser: false,
+    });
   });
 
   it('records the authenticated actor and server time, never request values', async () => {

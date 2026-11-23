@@ -6,8 +6,16 @@ const f = vi.hoisted(() => ({
   env: vi.fn(),
   gate: vi.fn(),
   room: vi.fn(),
+  workspace: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(async () => ({
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: f.workspace }) }),
+    }),
+  })),
+}));
 vi.mock('./demo-authority', () => ({ readMiraDemoAuthority: f.authority }));
 vi.mock('./mira-attestation', () => ({
   readMiraAdultAttestation: f.attestation,
@@ -43,7 +51,7 @@ const access = {
 } as never;
 const stored = {
   workspaceId: WS,
-  actorId: 'admin',
+  actorId: 'owner',
   attestedAt: 1000,
   audience: 'adults-only',
 };
@@ -55,6 +63,10 @@ beforeEach(() => {
     GOOGLE_GENERATIVE_AI_API_KEY: 'synthetic-key',
   });
   f.gate.mockReturnValue(true);
+  f.workspace.mockResolvedValue({
+    data: { creator_id: 'owner', deleted: false },
+    error: null,
+  });
   f.attestation.mockResolvedValue(stored);
   f.authority.mockResolvedValue({
     allowed: true,
@@ -118,6 +130,15 @@ it('maps denials and always requires the stored 18+ attestation', async () => {
   await expect(requireRoomMiraAuthority(access)).rejects.toMatchObject({
     status: 503,
   });
+});
+
+it('rejects a declaration written by a manager or former owner', async () => {
+  f.attestation.mockResolvedValue({ ...stored, actorId: 'manager' });
+  await expect(requireRoomMiraAuthority(access)).rejects.toMatchObject({
+    status: 403,
+    code: 'MIRA_WORKSPACE_UNAVAILABLE',
+  });
+  expect(await readRoomMiraAvailability(access)).toBe(false);
 });
 
 it('requires a current acceptance and the requester to be on', async () => {

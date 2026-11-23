@@ -71,6 +71,18 @@ it('keeps kill switch and absent explicit enable off for a qualified actor', asy
   }
   expect(f.sign).not.toHaveBeenCalled();
 });
+it('denies an eligible actor with persisted Continue when the operator kill secret is set', async () => {
+  bind('false', { MEET_AI_KILL_SWITCH: 'true' });
+  const response = await call(live, {
+    action: 'start',
+    mode: 'personal',
+    timezone: 'UTC',
+  });
+  expect(response.status).toBe(403);
+  expect(f.sign).not.toHaveBeenCalled();
+  expect(f.fetch).not.toHaveBeenCalled();
+});
+
 it('does not admit an unattested team or guest even when a choice exists', async () => {
   f.authorized = false;
   expect(

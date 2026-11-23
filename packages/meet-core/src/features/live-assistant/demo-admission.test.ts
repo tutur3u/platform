@@ -91,10 +91,11 @@ describe('Mira server admission', () => {
     ).toBe(false);
   });
 
-  it('requires an actual admin attestation outside the staff-owned Personal exception', () => {
+  it('requires a current owner attestation outside the staff-owned Personal exception', () => {
     const request = input();
     request.actor!.email = 'demo@example.com';
     request.personalWorkspace = false;
+    request.workspaceOwnerId = 'owner';
     request.paidAccount = true;
     expect(miraDemoAdmission(request)).toEqual({
       allowed: false,
@@ -102,7 +103,7 @@ describe('Mira server admission', () => {
     });
     request.attestation = {
       workspaceId: request.workspaceId,
-      actorId: 'admin',
+      actorId: 'owner',
       attestedAt: 1000,
       audience: 'adults-only',
     };
@@ -111,6 +112,12 @@ describe('Mira server admission', () => {
       authority: 'workspace-admin',
       payer: 'account',
     });
+    expect(
+      miraDemoAdmission({
+        ...request,
+        attestation: { ...request.attestation, actorId: 'manager' },
+      })
+    ).toEqual({ allowed: false, reason: 'workspace' });
     expect(
       miraDemoAdmission({
         ...request,
@@ -154,9 +161,10 @@ describe('Mira server admission', () => {
   it('bills staff to the root workspace even in an attested team workspace', () => {
     const request = input();
     request.personalWorkspace = false;
+    request.workspaceOwnerId = 'owner';
     request.attestation = {
       workspaceId: request.workspaceId,
-      actorId: 'admin',
+      actorId: 'owner',
       attestedAt: 1000,
       audience: 'adults-only',
     };

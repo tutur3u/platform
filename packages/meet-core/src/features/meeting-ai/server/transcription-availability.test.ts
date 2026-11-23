@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   context: vi.fn(),
   attestation: vi.fn(),
+  owner: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@opennextjs/cloudflare', () => ({
@@ -10,6 +11,7 @@ vi.mock('@opennextjs/cloudflare', () => ({
 }));
 vi.mock('../../live-assistant/server/mira-attestation', () => ({
   readMiraAdultAttestation: mocks.attestation,
+  readMiraWorkspaceOwnerId: mocks.owner,
 }));
 
 import { MEET_AI_ALL_WORKSPACES_REVIEWED } from '@tuturuuu/realtime/meet';
@@ -18,9 +20,10 @@ import { readMeetTranscriptionAvailability } from './transcription-availability'
 
 const PROTECTED = '00000000-0000-4000-8000-0000000000ee';
 const CUSTOMER = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
+const OWNER = '00000000-0000-4000-8000-0000000000a1';
 const attested = (workspaceId: string) => ({
   workspaceId,
-  actorId: '00000000-0000-4000-8000-0000000000a1',
+  actorId: OWNER,
   attestedAt: 1,
   audience: 'adults-only',
 });
@@ -38,6 +41,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   mocks.attestation.mockImplementation(async (id: string) => attested(id));
+  mocks.owner.mockResolvedValue(OWNER);
 });
 
 describe('meeting transcript availability', () => {
@@ -118,6 +122,29 @@ describe('meeting transcript availability', () => {
     expect(
       await readMeetTranscriptionAvailability(ROOT_WORKSPACE_ID)
     ).toMatchObject({ reason: 'audience' });
+  });
+
+  it('ignores a declaration not recorded by the current owner', async () => {
+    withEnv(RELEASED);
+    mocks.owner.mockResolvedValue('00000000-0000-4000-8000-0000000000b2');
+    expect(await readMeetTranscriptionAvailability(CUSTOMER)).toEqual({
+      available: false,
+      reason: 'audience',
+    });
+    // A deleted or ownerless workspace has no current owner.
+    mocks.owner.mockResolvedValue(null);
+    expect(await readMeetTranscriptionAvailability(CUSTOMER)).toMatchObject({
+      reason: 'audience',
+    });
+  });
+
+  it('reports a failed owner lookup as retryable', async () => {
+    withEnv(RELEASED);
+    mocks.owner.mockRejectedValue(new Error('lookup failed'));
+    expect(await readMeetTranscriptionAvailability(CUSTOMER)).toEqual({
+      available: false,
+      reason: 'error',
+    });
   });
 
   it('reports a failed attestation lookup as retryable', async () => {

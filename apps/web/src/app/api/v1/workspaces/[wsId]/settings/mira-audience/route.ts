@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 /**
- * Meet Mira 18+ audience attestation. Only workspace settings managers may read
- * or change it. The actor and time are always the authenticated caller and the
- * server clock; the request body carries only the requested state.
+ * Workspace settings managers may read the Meet Mira 18+ declaration. Only
+ * the workspace owner may change it. The server records the authenticated
+ * caller and the server time.
  */
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -20,23 +20,38 @@ async function access(req: Request, params: Params['params']) {
   return resolveWorkspaceRouteAccess(req, wsId, ['manage_workspace_settings']);
 }
 
-async function current(wsId: string) {
-  const db = await createAdminClient({ noCookie: true });
+type AdminClient = Awaited<ReturnType<typeof createAdminClient>>;
+
+async function readOwner(db: AdminClient, wsId: string) {
   const { data, error } = await db
-    .schema('private')
-    .from(TABLE)
-    .select('ws_id, audience, attested_by, attested_at')
-    .eq('ws_id', wsId)
+    .from('workspaces')
+    .select('creator_id, deleted')
+    .eq('id', wsId)
     .maybeSingle();
-  if (error) throw error;
-  return data;
+  if (error) throw new Error('Mira workspace owner lookup failed');
+  return data?.deleted !== true ? (data?.creator_id ?? null) : null;
+}
+
+async function current(db: AdminClient, wsId: string) {
+  const [attestation, ownerId] = await Promise.all([
+    db
+      .schema('private')
+      .from(TABLE)
+      .select('audience, attested_by, attested_at')
+      .eq('ws_id', wsId)
+      .maybeSingle(),
+    readOwner(db, wsId),
+  ]);
+  if (attestation.error) throw new Error('Mira audience setting lookup failed');
+  const row = attestation.data;
+  return row?.attested_by && row.attested_by === ownerId ? row : null;
 }
 
 function view(
   row: Awaited<ReturnType<typeof current>>,
   userId: string | undefined
 ) {
-  const attested = !!row?.attested_by && row.audience === 'adults-only';
+  const attested = !!row && row.audience === 'adults-only';
   return {
     attested,
     attestedAt: attested ? row!.attested_at : null,
@@ -49,8 +64,9 @@ export async function GET(req: Request, { params }: Params) {
   const result = await access(req, params);
   if (!result.ok) return result.response;
   try {
+    const db = await createAdminClient({ noCookie: true });
     return NextResponse.json(
-      view(await current(result.permissions.wsId), result.user?.id)
+      view(await current(db, result.permissions.wsId), result.user?.id)
     );
   } catch (error) {
     console.error('Failed to read Mira audience attestation', error);
@@ -67,26 +83,31 @@ export async function PUT(req: Request, { params }: Params) {
   const userId = result.user?.id;
   if (!userId)
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  const parsed = body.safeParse(await req.json().catch(() => null));
-  if (!parsed.success)
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
   const wsId = result.permissions.wsId;
   try {
     const db = await createAdminClient({ noCookie: true });
+    if ((await readOwner(db, wsId)) !== userId)
+      return NextResponse.json(
+        { message: 'Workspace owner permission required' },
+        { status: 403 }
+      );
+    const parsed = body.safeParse(await req.json().catch(() => null));
+    if (!parsed.success)
+      return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
     const { error } = parsed.data.attested
       ? await db.schema('private').from(TABLE).upsert(
           {
             ws_id: wsId,
             audience: 'adults-only',
             attested_by: userId,
-            // Re-attesting records the current manager and a fresh time.
+            // Re-attesting records the current owner and a fresh time.
             attested_at: new Date().toISOString(),
           },
           { onConflict: 'ws_id' }
         )
       : await db.schema('private').from(TABLE).delete().eq('ws_id', wsId);
-    if (error) throw error;
-    return NextResponse.json(view(await current(wsId), userId));
+    if (error) throw new Error('Mira audience setting write failed');
+    return NextResponse.json(view(await current(db, wsId), userId));
   } catch (error) {
     console.error('Failed to update Mira audience attestation', error);
     return NextResponse.json(

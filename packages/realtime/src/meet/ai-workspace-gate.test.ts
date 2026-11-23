@@ -18,7 +18,7 @@ const allow = (ids: string) => ({
   MEET_AI_ENABLED_WORKSPACE_IDS: ids,
 });
 
-describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
+describe('Meet AI workspace gate without the reviewed opt-in', () => {
   let warn: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
     resetMeetAiGateWarnings();
@@ -282,7 +282,9 @@ describe('Meet AI reviewed allow-all opt-in', () => {
     'reviewed-allow-all',
     ` ${'reviewed-allow-all-2026-11-20'}`,
     'REVIEWED-ALLOW-ALL-2026-11-20',
-  ])('ignores and logs the non-reviewed value %j', (value) => {
+    null,
+    true,
+  ])('fails closed and logs the non-reviewed value %j', (value) => {
     const env = { ...base, MEET_AI_ALL_WORKSPACES: value };
     expect(isMeetAiAllWorkspacesOptIn(env)).toBe(false);
     expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(false);
@@ -291,11 +293,39 @@ describe('Meet AI reviewed allow-all opt-in', () => {
         ...env,
         MEET_AI_ENABLED_WORKSPACE_IDS: WS,
       })
-    ).toBe(true);
+    ).toBe(false);
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('MEET_AI_ALL_WORKSPACES')
     );
   });
+
+  it.each(['', 'false', 'true', null, undefined])(
+    'denies every workspace when the operator kill binding exists (%j)',
+    (value) => {
+      const env = {
+        ...base,
+        MEET_AI_ALL_WORKSPACES: MEET_AI_ALL_WORKSPACES_REVIEWED,
+        MEET_AI_ENABLED_WORKSPACE_IDS: WS,
+        MEET_AI_KILL_SWITCH: value,
+      };
+      expect(isMeetAiHardDenied(WS, env)).toBe(true);
+      for (const ws of [WS, OTHER, PROTECTED, EASY_CENTER_WORKSPACE_ID])
+        expect(isMeetAiEnabledForWorkspace(ws, env)).toBe(false);
+    }
+  );
+
+  it.each(['*', 'garbage', null])(
+    'denies reviewed opt-in when the allowlist is malformed (%j)',
+    (value) => {
+      expect(
+        isMeetAiEnabledForWorkspace(WS, {
+          ...base,
+          MEET_AI_ALL_WORKSPACES: MEET_AI_ALL_WORKSPACES_REVIEWED,
+          MEET_AI_ENABLED_WORKSPACE_IDS: value,
+        })
+      ).toBe(false);
+    }
+  );
 
   it('never bypasses the kill switch, hard denies or the denylist', () => {
     const env = {

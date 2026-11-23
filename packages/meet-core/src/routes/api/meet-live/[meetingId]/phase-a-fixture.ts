@@ -1,3 +1,4 @@
+import { isMeetAiEnabledForWorkspace } from '@tuturuuu/realtime/meet';
 import { beforeEach, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   cloudflare: vi.fn(),
@@ -69,12 +70,17 @@ export const phaseAModules = {
   }),
   demoAuthority: () => ({
     readMiraDemoAuthority: async (input: {
+      workspaceId: string;
       disabledBinding: unknown;
       workspaceMember: boolean;
     }) =>
       mocks.authorized &&
       input.workspaceMember &&
-      input.disabledBinding === 'false'
+      input.disabledBinding === 'false' &&
+      isMeetAiEnabledForWorkspace(
+        input.workspaceId,
+        (await mocks.cloudflare()).env
+      )
         ? { allowed: true, authority: 'verified-personal', payer: mocks.payer }
         : { allowed: false, reason: 'workspace' },
   }),
@@ -103,7 +109,10 @@ export const call = (
     }),
     { params: Promise.resolve({ meetingId }) }
   );
-export const bind = (disabled: string | undefined) =>
+export const bind = (
+  disabled: string | undefined,
+  overrides?: Record<string, unknown>
+) =>
   mocks.cloudflare.mockResolvedValue({
     env: {
       MEET_LIVE: {
@@ -113,6 +122,9 @@ export const bind = (disabled: string | undefined) =>
       GOOGLE_GENERATIVE_AI_API_KEY: 'synthetic-key',
       MEET_REALTIME_TOKEN_SECRET: 'synthetic-secret',
       MEET_AI_DISABLED: disabled,
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+      MEET_AI_ALL_WORKSPACES: 'reviewed-allow-all-2026-11-20',
+      ...overrides,
     },
   });
 beforeEach(() => {

@@ -365,7 +365,10 @@ describe('durable disconnected recovery', () => {
     }
   });
 
-  async function revokedAttached() {
+  async function revokedAttached(
+    key = 'MEET_AI_DISABLED_WORKSPACE_IDS',
+    value?: string
+  ) {
     const saved = {
       ...fixture(),
       billing: {
@@ -387,7 +390,7 @@ describe('durable disconnected recovery', () => {
     const provider = await mocks.connect.mock.results[0]!.value;
     expect(provider).toBeDefined();
     const gate = env as unknown as Record<string, string | undefined>;
-    gate.MEET_AI_DISABLED_WORKSPACE_IDS = h.saved().identity.workspaceId!;
+    gate[key] = value ?? h.saved().identity.workspaceId!;
     return { h, provider, gate, object };
   }
   function expectRevokedSettlement(
@@ -406,6 +409,21 @@ describe('durable disconnected recovery', () => {
       h.saved().disconnectedRecoveryDeadline
     );
   }
+
+  it('closes an attached session on the periodic tick when the operator kill binding arrives', async () => {
+    const { h, provider, gate, object } = await revokedAttached(
+      'MEET_AI_KILL_SWITCH',
+      'true'
+    );
+    try {
+      now += 20_000;
+      await object.alarm();
+      await h.drain();
+      expectRevokedSettlement(h, provider);
+    } finally {
+      delete gate.MEET_AI_KILL_SWITCH;
+    }
+  });
 
   it('applies a gate denial before a client stop', async () => {
     const { h, provider, gate } = await revokedAttached();

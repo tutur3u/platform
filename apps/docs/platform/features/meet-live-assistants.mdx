@@ -48,10 +48,16 @@ Mira → Meeting audience is 18+** to holders of `manage_workspace_settings`
 (Personal workspace owners hold it). Turning it on opens a confirmation; turning
 it off withdraws immediately. The setting is stored in the service-only
 `private.workspace_mira_audience_attestations` table (one row per workspace).
-The settings route checks the permission, records the authenticated manager and
-server time and withdraws by deleting the row; browsers and the anon or
-authenticated roles have no table access. Erasing the attesting account clears `attested_by`, which invalidates
-the attestation until a current manager confirms again.
+The settings route lets only the current workspace owner (the workspace creator)
+confirm or withdraw; other managers can read the setting and receive 403 on a
+write. It records the owner and server time and withdraws by deleting the row;
+browsers and the anon or authenticated roles have no table access. Meet, Live
+and room Mira accept a declaration only when it was recorded by the current
+owner of a non-deleted workspace, so a declaration written by a manager or a
+former owner is ignored until the current owner confirms again. Erasing the
+attesting account clears `attested_by`, which invalidates the attestation the
+same way. Active Private sessions recheck owner attribution and the workspace
+gate periodically.
 
 ### 18+ notice and the in-call switch
 
@@ -61,10 +67,8 @@ says to proceed only if you are 18 or older and requires an explicit choice.
 
 In **Meeting settings → Mira**, the workspace owner can confirm or withdraw
 **Everyone in this workspace is 18 or older** with one switch. The owner is
-responsible for members' access and use. The Meet dialog checks workspace
-ownership before offering the switch. The legacy Web settings path above
-continues to use the workspace settings permission until the Web owner check
-is deployed. The setting starts off by default.
+responsible for members' access and use. The Meet dialog and the Web settings
+route both check workspace ownership. The setting starts off by default.
 When a workspace policy blocks Mira, the owner can open the setting directly
 if the workspace lacks a declaration. Other participants can ask the owner to
 check the setting. Each Mira feature still applies its own access policy.

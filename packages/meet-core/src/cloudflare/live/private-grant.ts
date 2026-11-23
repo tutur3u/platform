@@ -11,6 +11,7 @@ import {
 } from '../../features/live-assistant/mira-entitlement';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { liveRoomCommand } from './room';
+import { hasMiraAdultAttestation } from '../../features/live-assistant/participant-consent';
 import type { SavedSession } from './session-state';
 import { liveAuthUser, liveDatabase, type LiveEnvironment } from './storage';
 import { liveWorkspaceAllowed } from './workspace-gate';
@@ -39,6 +40,24 @@ export async function requireCurrentPrivateGrant(
     choice.revision !== saved.claims.consentRevision
   )
     throw new Error('Private Mira choice is unavailable');
+
+  if (saved.claims.workspaceAuthority === 'workspace-admin') {
+    const workspaceId = z.uuid().parse(saved.identity.workspaceId);
+    const { workspace, attestation } = await readLiveWorkspaceAudience(
+      env,
+      workspaceId
+    );
+    if (
+      !hasMiraAdultAttestation({
+        workspaceId,
+        workspaceOwnerId: workspace.creator_id,
+        attestation,
+      })
+    )
+      throw new Error(
+        'Private Mira workspace owner attestation is unavailable'
+      );
+  }
 }
 
 const authUser = z.object({
@@ -134,6 +153,31 @@ export async function readLivePaidAccount(
   );
 }
 
+async function readLiveWorkspaceAudience(
+  env: LiveEnvironment,
+  workspaceId: string
+) {
+  const [rawWorkspace, rawAttestation] = await Promise.all([
+    liveDatabase<unknown>(
+      env,
+      `workspaces?id=eq.${workspaceId}&select=id,personal,creator_id,deleted&limit=1`
+    ),
+    liveDatabase<unknown>(
+      env,
+      `workspace_mira_audience_attestations?ws_id=eq.${workspaceId}&select=ws_id,audience,attested_by,attested_at&limit=1`,
+      { schema: 'private' }
+    ),
+  ]);
+  const [workspace] = workspaceResult.parse(rawWorkspace);
+  if (!workspace || workspace.id !== workspaceId || workspace.deleted === true)
+    throw new Error('Private Mira workspace is unavailable');
+  const [attestation] = attestationResult.parse(rawAttestation);
+  return {
+    workspace,
+    attestation: miraAttestationFromRow(attestation ?? null, workspaceId),
+  };
+}
+
 /** The signed session records the grant at admission. Code tools need current authority. */
 export async function requireCurrentLiveDemoAuthority(
   env: LiveEnvironment,
@@ -143,33 +187,18 @@ export async function requireCurrentLiveDemoAuthority(
     throw new Error('Private Mira demo authority is unavailable');
   const ownerId = z.uuid().parse(saved.claims.ownerId);
   const workspaceId = z.uuid().parse(saved.identity.workspaceId);
-  const [rawUser, rawWorkspace, rawMembership, rawAttestation] =
+  const [rawUser, rawMembership, { workspace, attestation }] =
     await Promise.all([
       liveAuthUser(env, ownerId),
       liveDatabase<unknown>(
         env,
-        `workspaces?id=eq.${workspaceId}&select=id,personal,creator_id,deleted&limit=1`
-      ),
-      liveDatabase<unknown>(
-        env,
         `workspace_members?ws_id=eq.${workspaceId}&user_id=eq.${ownerId}&select=type&limit=1`
       ),
-      liveDatabase<unknown>(
-        env,
-        `workspace_mira_audience_attestations?ws_id=eq.${workspaceId}&select=ws_id,audience,attested_by,attested_at&limit=1`,
-        { schema: 'private' }
-      ),
+      readLiveWorkspaceAudience(env, workspaceId),
     ]);
   const actor = authResult.parse(rawUser);
-  const [workspace] = workspaceResult.parse(rawWorkspace);
   const [membership] = membershipResult.parse(rawMembership);
-  const [attestationRow] = attestationResult.parse(rawAttestation);
-  const attestation = miraAttestationFromRow(attestationRow, workspaceId);
-  if (
-    actor.id !== ownerId ||
-    workspace?.id !== workspaceId ||
-    workspace.deleted === true
-  )
+  if (actor.id !== ownerId)
     throw new Error('Private Mira demo authority is unavailable');
 
   const paidAccount = isVerifiedTuturuuuStaffSession(actor)

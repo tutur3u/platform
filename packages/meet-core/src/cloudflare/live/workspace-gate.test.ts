@@ -1,8 +1,12 @@
 import { expect, it, vi } from 'vitest';
 import { liveWorkspaceAllowed } from './workspace-gate';
 import { requireCurrentPrivateGrant } from './private-grant';
-const room = vi.hoisted(() => vi.fn());
+const { room, database } = vi.hoisted(() => ({
+  room: vi.fn(),
+  database: vi.fn(),
+}));
 vi.mock('./room', () => ({ liveRoomCommand: room }));
+vi.mock('./storage', () => ({ liveDatabase: database }));
 const claims = {
   mode: 'personal',
   ownerId: 'synthetic-owner',
@@ -46,9 +50,9 @@ it('requires explicit false, private authority and consent for Meet and Parley w
   expect(liveWorkspaceAllowed(on, parley)).toBe(true);
 });
 it('ends an ongoing session as soon as the workspace gate closes for it', () => {
-  // Newly added denylist entry, protected id, missing protection config,
-  // removed opt-in without an allowlist entry, or a noncanonical id.
+  // Operator shutdown, list changes, missing protection or rollout opt-in.
   for (const env of [
+    { ...on, MEET_AI_KILL_SWITCH: 'true' },
     { ...on, MEET_AI_DISABLED_WORKSPACE_IDS: WS },
     { ...on, MEET_AI_DISABLED_WORKSPACE_IDS: 'garbage' },
     { ...on, MEET_AI_PROTECTED_WORKSPACE_IDS: `${PROTECTED},${WS}` },
@@ -102,4 +106,45 @@ it('rechecks the exact durable own-account/meeting/version/revision before provi
   await expect(
     requireCurrentPrivateGrant({} as never, session as never)
   ).rejects.toThrow();
+});
+
+it('revokes an active workspace grant when its owner did not attest', async () => {
+  const owner = '00000000-0000-4000-8000-000000000011';
+  const manager = '00000000-0000-4000-8000-000000000012';
+  const current = {
+    ...session,
+    claims: { ...claims, workspaceAuthority: 'workspace-admin' },
+  };
+  room.mockResolvedValue({
+    choice: {
+      choice: 'continue',
+      accountId: claims.ownerId,
+      meetingId: claims.meetingId,
+      version: claims.consentVersion,
+      revision: 1,
+    },
+  });
+  const workspace = [
+    { id: WS, creator_id: owner, personal: false, deleted: false },
+  ];
+  const attestation = (actor: string) => [
+    {
+      ws_id: WS,
+      audience: 'adults-only',
+      attested_by: actor,
+      attested_at: '2026-11-20T00:00:00Z',
+    },
+  ];
+  database
+    .mockResolvedValueOnce(workspace)
+    .mockResolvedValueOnce(attestation(owner));
+  await expect(
+    requireCurrentPrivateGrant({} as never, current as never)
+  ).resolves.toBeUndefined();
+  database
+    .mockResolvedValueOnce(workspace)
+    .mockResolvedValueOnce(attestation(manager));
+  await expect(
+    requireCurrentPrivateGrant({} as never, current as never)
+  ).rejects.toThrow('Private Mira workspace owner attestation is unavailable');
 });

@@ -34,13 +34,16 @@ export function miraPromptDefault(
 }
 
 export function hasMiraAdultAttestation(
-  policy: Pick<MiraConsentPolicy, 'workspaceId' | 'attestation'>
+  policy: Pick<MiraConsentPolicy, 'workspaceId' | 'attestation'> & {
+    workspaceOwnerId: string | null;
+  }
 ) {
   const attestation = policy.attestation;
   return !!(
     attestation &&
     attestation.workspaceId === policy.workspaceId &&
     attestation.actorId &&
+    attestation.actorId === policy.workspaceOwnerId &&
     attestation.audience === 'adults-only' &&
     Number.isSafeInteger(attestation.attestedAt) &&
     attestation.attestedAt > 0
