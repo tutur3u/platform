@@ -1,6 +1,19 @@
-export type Provider = 'codex' | 'claude' | 'antigravity';
+export type Provider =
+  | 'codex'
+  | 'claude'
+  | 'antigravity'
+  | 'grok'
+  | 'cursor'
+  | 'opencode';
 export type WindowKind = 'short' | 'long' | 'session' | 'weekly';
 export type ModelFamily = 'opus' | 'sonnet' | 'haiku' | 'fable';
+export type TaskKind =
+  | 'implementation'
+  | 'analysis'
+  | 'review'
+  | 'research'
+  | 'design'
+  | 'ui';
 
 export interface UsageWindow {
   kind: WindowKind;
@@ -23,6 +36,17 @@ export interface UsageWindow {
   authoritative: boolean;
 }
 
+export interface BalanceTelemetry {
+  remaining?: number;
+  total?: number;
+  used?: number;
+  currency?: string;
+  unit?: string;
+  exhausted?: boolean;
+  label?: string;
+  source?: string;
+}
+
 export interface AccountUsage {
   instanceId: string;
   provider: Provider;
@@ -36,6 +60,10 @@ export interface AccountUsage {
   available?: boolean;
   recentTokens?: { input: number; output: number; observedAt: string };
   lastError?: string;
+  providerStatus?: string;
+  statusMessage?: string;
+  balance?: BalanceTelemetry;
+  neverUseModels?: string[];
 }
 
 export interface ActiveAssignment {
@@ -45,10 +73,12 @@ export interface ActiveAssignment {
 }
 
 export interface TaskRequest {
-  kind?: 'implementation' | 'analysis' | 'review' | 'research';
+  kind?: TaskKind;
   provider?: Provider | 'any';
   model?: string;
   weight?: number;
+  allowFable?: boolean;
+  nonPrivate?: boolean;
 }
 
 export interface AccountReserve {
@@ -60,6 +90,41 @@ export interface AccountReserve {
 export interface RecommendationReason {
   code: string;
   message: string;
+}
+
+export interface WindowPacing {
+  windowId: string;
+  label?: string;
+  kind: WindowKind;
+  remainingPercent: number | null;
+  usedPercent: number | null;
+  resetsAt: string | null;
+  msToReset: number | null;
+  hoursToReset: number | null;
+  glideFloorPercent: number | null;
+  headroomAboveFloorPercent: number | null;
+  burnRatePercentPerHour: number | null;
+  observationCount: number;
+  projectedExhaustionAt: string | null;
+  projectedExhaustionBeforeReset: boolean | null;
+  safeToAdmit: boolean;
+  reasons: string[];
+}
+
+export interface AccountPacing {
+  tightestRemainingPercent: number | null;
+  soonestResetAt: string | null;
+  soonestMsToReset: number | null;
+  effectiveGlideFloorPercent: number | null;
+  headroomAboveFloorPercent: number | null;
+  burnRatePercentPerHour: number | null;
+  projectedExhaustionAt: string | null;
+  projectedExhaustionBeforeReset: boolean | null;
+  safeToAdmit: boolean;
+  recommendedMaxConcurrentLanes: number;
+  remainingSafeLanes: number;
+  reasons: string[];
+  windows: WindowPacing[];
 }
 
 export interface RankedInstance {
@@ -76,6 +141,13 @@ export interface RankedInstance {
   unknownOrderHint?: number | null;
   eligible: boolean;
   reasons: RecommendationReason[];
+  pacing?: AccountPacing;
+  recommendedModel?: string;
+  eligibleModels?: string[];
+  excludedModels?: Array<{ model: string; reason: string }>;
+  providerStatus?: string;
+  statusMessage?: string;
+  balance?: BalanceTelemetry;
 }
 
 export interface Recommendation {

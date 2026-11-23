@@ -56,6 +56,14 @@ export function windowScope(
   label: string
 ): NonNullable<UsageWindow['scope']> {
   if (provider === 'antigravity') {
+    if (
+      /^gemini-argon(?:-|$)/i.test(id) ||
+      /\bgemini\s*4\s*argon\b/i.test(label)
+    )
+      return {
+        kind: 'models',
+        modelPrefixes: ['gemini-4-argon', 'gemini-pro-orchestrator-g1-pro'],
+      };
     if (id.startsWith('gemini-'))
       return {
         kind: 'models',
@@ -74,6 +82,23 @@ export function windowScope(
   if (provider === 'claude') {
     const modelFamilies = modelFamiliesInLabel(label);
     if (modelFamilies.length) return { kind: 'models', modelFamilies };
+  }
+  if (provider === 'opencode') {
+    if (id.startsWith('go_') || /\bgo\b/i.test(label))
+      return { kind: 'models', modelPrefixes: ['opencode-go/'] };
+    if (id.startsWith('zen_') || id.startsWith('opencode/'))
+      return { kind: 'models', modelPrefixes: ['opencode/'] };
+    return { kind: 'unknown' };
+  }
+  if (provider === 'cursor') {
+    if (id === 'autoPercentUsed' || /\bcursor models\b/i.test(label))
+      return { kind: 'models', modelPrefixes: ['default', 'composer-'] };
+    if (id === 'totalPercentUsed' || /\boverall\b/i.test(label))
+      return { kind: 'account' };
+    return { kind: 'account' };
+  }
+  if (provider === 'grok') {
+    return { kind: 'account' };
   }
   return { kind: 'account' };
 }
@@ -143,6 +168,15 @@ export function receiptWindowScope(
         `seven_day_${scoped[1]}`,
         `Weekly · ${scoped[1]}`
       );
+  }
+  if (provider === 'opencode') {
+    if (model?.startsWith('opencode-go/') || /opencode go/i.test(message))
+      return { kind: 'models', modelPrefixes: ['opencode-go/'] };
+    if (
+      model?.startsWith('opencode/') ||
+      /opencode models credits/i.test(message)
+    )
+      return { kind: 'models', modelPrefixes: ['opencode/'] };
   }
   return { kind: 'account' };
 }

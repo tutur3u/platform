@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "noTopUps": true,
+  "noCreditPurchases": true,
+  "pacing": {
+    "baseReservePercent": 3,
+    "perHourReservePercent": 4,
+    "referenceWindowMins": 300,
+    "laneHeadroomStepPercent": 15,
+    "defaultMaxConcurrentLanes": 4,
+    "shortHistoryLookbackMs": 3600000,
+    "longHistoryLookbackMs": 86400000
+  },
+  "providers": {
+    "gemini": {
+      "modelPriority": [
+        "gemini-4-hydrogen",
+        "gemini-4-neon",
+        "gemini-3.8-flash"
+      ],
+      "forbiddenModels": ["gemini-4-argon*", "gemini-pro-orchestrator-g1-pro*"]
+    },
+    "claude": {
+      "requireApprovalModels": ["*fable*"],
+      "designPreferredModels": ["claude-opus-*"]
+    },
+    "opencode": {
+      "requireNonPrivate": true,
+      "subscriptionPrefixes": ["opencode-go/"],
+      "paidZenPrefixes": ["opencode/"],
+      "freeModelSuffixes": ["-free"],
+      "forbidPaidZen": true
+    },
+    "grok": {
+      "allowCreditsTopUp": false
+    },
+    "cursor": {
+      "allowCreditsTopUp": false
+    }
+  },
+  "taskKinds": {
+    "implementation": {
+      "providerWeights": {
+        "codex": 4,
+        "claude": 2,
+        "antigravity": 2,
+        "opencode": 1,
+        "cursor": 1,
+        "grok": 1
+      },
+      "preferredModelPrefixes": []
+    },
+    "analysis": {
+      "providerWeights": {
+        "codex": 3,
+        "claude": 3,
+        "antigravity": 2,
+        "opencode": 1,
+        "cursor": 1,
+        "grok": 1
+      },
+      "preferredModelPrefixes": []
+    },
+    "review": {
+      "providerWeights": {
+        "codex": 4,
+        "claude": 3,
+        "antigravity": 2,
+        "opencode": 1,
+        "cursor": 1,
+        "grok": 1
+      },
+      "preferredModelPrefixes": []
+    },
+    "research": {
+      "providerWeights": {
+        "antigravity": 3,
+        "claude": 2,
+        "codex": 2,
+        "opencode": 1,
+        "cursor": 1,
+        "grok": 1
+      },
+      "preferredModelPrefixes": [
+        "gemini-4-hydrogen",
+        "gemini-4-neon",
+        "gemini-3.8-flash"
+      ]
+    },
+    "design": {
+      "providerWeights": {
+        "claude": 6,
+        "antigravity": 2,
+        "codex": 1,
+        "opencode": 1,
+        "cursor": 1,
+        "grok": 1
+      },
+      "preferredModelPrefixes": ["claude-opus-"]
+    },
+    "ui": {
+      "providerWeights": {
+        "claude": 6,
+        "antigravity": 2,
+        "codex": 1,
+        "opencode": 1,
+        "cursor": 1,
+        "grok": 1
+      },
+      "preferredModelPrefixes": ["claude-opus-"]
+    }
+  }
+}

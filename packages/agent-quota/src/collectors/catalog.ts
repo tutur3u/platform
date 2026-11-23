@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Provider } from '../types';
+import { driverToProvider } from './provider';
 
 export interface CatalogInstance {
   instanceId: string;
@@ -54,15 +55,17 @@ export function parseCatalog(value: unknown): CatalogInstance[] {
   const root = (envelope.structuredContent ?? value) as Record<string, unknown>;
   if (!Array.isArray(root.providers)) return [];
   return root.providers.flatMap((item: Record<string, unknown>) => {
-    const provider =
-      item.driverKind === 'claudeAgent' ? 'claude' : item.driverKind;
+    const provider = driverToProvider(item.driverKind);
+    if (!provider) return [];
+    if (typeof item.providerInstanceId !== 'string') return [];
+    const constraints = Array.isArray(item.constraints)
+      ? item.constraints.map(String)
+      : [];
     if (
-      provider !== 'codex' &&
-      provider !== 'claude' &&
-      provider !== 'antigravity'
+      item.canRunChildTask === false &&
+      constraints.some((c) => /disabled/i.test(c))
     )
       return [];
-    if (typeof item.providerInstanceId !== 'string') return [];
     return [
       {
         instanceId: item.providerInstanceId,

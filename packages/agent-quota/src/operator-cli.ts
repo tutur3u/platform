@@ -284,7 +284,14 @@ export async function runOperator(command: string, args: string[]) {
       args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined;
     const kind = get('--task-kind') ?? 'implementation';
     if (
-      !['implementation', 'analysis', 'review', 'research'].includes(kind) ||
+      ![
+        'implementation',
+        'analysis',
+        'review',
+        'research',
+        'design',
+        'ui',
+      ].includes(kind) ||
       (kind === 'review' && !get('--author-pool'))
     )
       throw new HookError('task-requirements-missing-or-invalid');

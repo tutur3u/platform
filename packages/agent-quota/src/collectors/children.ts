@@ -23,7 +23,10 @@ const scope = `WITH RECURSIVE descendants(thread_id) AS (
  SELECT s.child_thread_id FROM orchestration_v2_projection_subagents s JOIN descendants d ON s.thread_id=d.thread_id WHERE s.child_thread_id IS NOT NULL
 ) `;
 const receiptPrefixes = [
-  "LIKE 'usage limit reached%'",
+  "LIKE '%usage limit reached%'",
+  "LIKE '%usage balance exhausted%'",
+  "LIKE '%402 payment required%'",
+  "LIKE '%insufficient balance%'",
   "LIKE 'you''ve hit your limit%'",
   "LIKE 'you''ve hit your session limit%'",
   "LIKE 'you''ve hit your usage limit%'",

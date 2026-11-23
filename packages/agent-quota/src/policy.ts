@@ -1,5 +1,13 @@
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
+import { computeAccountPacing, type ObservationSample } from './pacing';
+import {
+  evaluateModelPolicy,
+  loadRoutingConfig,
+  type RoutingConfig,
+  selectAccountModels,
+  topUpsForbidden,
+} from './routing-config';
 import {
   compareSignalOrder,
   signalOrderRemainingPercent,
@@ -8,10 +16,12 @@ import type {
   AccountReserve,
   AccountUsage,
   ActiveAssignment,
+  Provider,
   RankedInstance,
   Recommendation,
   RecommendationReason,
   TaskRequest,
+  UsageWindow,
 } from './types';
 import { windowObservationIsFresh } from './window-freshness';
 import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
@@ -26,12 +36,17 @@ export interface RecommendOptions {
   now?: Date;
   staleAfterMs?: number;
   hardLimitPercent?: number;
+  history?: Record<string, Record<string, ObservationSample[]>>;
+  routingConfig?: RoutingConfig;
 }
 
-export const SIGNAL_TTL_MS = {
+export const SIGNAL_TTL_MS: Record<Provider, number> = {
   codex: 15 * 60_000,
   claude: 15 * 60_000,
   antigravity: 5 * 60_000,
+  grok: 5 * 60_000,
+  cursor: 5 * 60_000,
+  opencode: 5 * 60_000,
 };
 
 const DEFAULT_RESERVES: Record<string, AccountReserve> = {
@@ -44,6 +59,15 @@ function activeCount(id: string, active: ActiveAssignment[]): number {
     .reduce((sum, entry) => sum + Math.max(0, entry.count), 0);
 }
 
+function isIdleSessionWindow(window: UsageWindow): boolean {
+  return (
+    window.usedPercent === 0 &&
+    window.providerWindowKind === 'session' &&
+    !window.resetsAt &&
+    window.authoritative
+  );
+}
+
 function rankOne(
   account: AccountUsage,
   task: TaskRequest,
@@ -51,17 +75,33 @@ function rankOne(
   reserve: AccountReserve | undefined,
   now: Date,
   staleAfterMs: number,
-  hardLimitPercent: number
+  hardLimitPercent: number,
+  historyByWindow: Record<string, ObservationSample[]>,
+  blocks: QuotaBlock[],
+  routingConfig: RoutingConfig
 ): RankedInstance {
+  const modelSelection = selectAccountModels(account, task, routingConfig);
+  const effectiveModel =
+    task.model ??
+    (account.provider === 'antigravity' || account.provider === 'opencode'
+      ? modelSelection.recommendedModel
+      : undefined);
+  const policyCheck = evaluateModelPolicy(
+    account.provider,
+    task.model,
+    task,
+    routingConfig
+  );
+
   const observedWindows = account.windows;
-  account = {
+  const scopedAccount = {
     ...account,
     windows: account.windows.filter((window) =>
-      coversModel(window, task.model)
+      coversModel(window, effectiveModel)
     ),
   };
   const reasons: RecommendationReason[] = [];
-  const windows = account.windows.filter(
+  const windows = scopedAccount.windows.filter(
     (window): window is typeof window & { usedPercent: number } =>
       typeof window.usedPercent === 'number' &&
       Number.isFinite(window.usedPercent) &&
@@ -69,6 +109,9 @@ function rankOne(
       window.usedPercent <= 100
   );
   const isFresh = (window: (typeof windows)[number]): boolean => {
+    if (isIdleSessionWindow(window)) {
+      return windowObservationIsFresh(window, now, staleAfterMs);
+    }
     const resetAt = window.resetsAt ? Date.parse(window.resetsAt) : undefined;
     return (
       windowObservationIsFresh(window, now, staleAfterMs) &&
@@ -94,16 +137,27 @@ function rankOne(
   const known =
     freshWindows.length > 0 &&
     staleWindows.length === 0 &&
-    account.windows.filter((window) => typeof window.usedPercent === 'number')
-      .length === windows.length;
+    scopedAccount.windows.filter(
+      (window) => typeof window.usedPercent === 'number'
+    ).length === windows.length;
   const maximum = Math.max(...freshWindows.map((window) => window.usedPercent));
-  const state = !known
-    ? 'UNKNOWN'
-    : maximum >= 100
+  const noTopUps = topUpsForbidden(account.provider, routingConfig);
+  const balanceBlocked = Boolean(account.balance?.exhausted) && noTopUps;
+  const topUpPromptBlocked =
+    noTopUps &&
+    /\b(?:buy credits|top up|payment required|402|usage balance exhausted|insufficient balance)\b/i.test(
+      account.statusMessage ?? ''
+    );
+  const state =
+    balanceBlocked || topUpPromptBlocked
       ? 'exhausted'
-      : maximum >= hardLimitPercent
-        ? 'near'
-        : 'healthy';
+      : !known
+        ? 'UNKNOWN'
+        : maximum >= 100
+          ? 'exhausted'
+          : maximum >= hardLimitPercent
+            ? 'near'
+            : 'healthy';
   const weight = Math.max(0, task.weight ?? 1);
   const eligibleProvider =
     !task.provider ||
@@ -113,13 +167,51 @@ function rankOne(
     eligibleProvider &&
     reserve?.excluded !== true &&
     state === 'healthy' &&
-    account.available !== false;
+    account.available !== false &&
+    policyCheck.allowed;
+
   if (account.alias) reasons.push({ code: 'alias', message: account.alias });
   if (account.available === false)
     reasons.push({
       code: 'unavailable',
       message: 'Live catalog does not allow delegation to this instance.',
     });
+  if (balanceBlocked || topUpPromptBlocked) {
+    eligible = false;
+    reasons.push(
+      {
+        code: 'balance-exhausted',
+        message: 'Provider usage balance/credits exhausted.',
+      },
+      {
+        code: 'no-top-ups-policy',
+        message:
+          'Top-ups and credit purchases are forbidden by routing policy.',
+      }
+    );
+  } else if (account.balance?.exhausted) {
+    reasons.push({
+      code: 'balance-exhausted-topup-allowed',
+      message: 'Provider balance exhausted, but allowCreditsTopUp is enabled.',
+    });
+  }
+  for (const policyReason of policyCheck.reasons) {
+    reasons.push({
+      code: policyReason,
+      message: `Routing policy excludes this target (${policyReason}).`,
+    });
+  }
+  if (
+    !task.model &&
+    (account.models?.length ?? 0) > 0 &&
+    modelSelection.eligibleModels.length === 0
+  ) {
+    eligible = false;
+    reasons.push({
+      code: 'no-eligible-model',
+      message: 'All models on this instance are excluded by routing policy.',
+    });
+  }
   if (!windows.length)
     reasons.push({
       code: observedWindows.some((window) => window.scope?.kind === 'unknown')
@@ -131,9 +223,10 @@ function rankOne(
         ? 'A provider window exists, but its model scope is unverified; it cannot establish headroom or exhaustion for this task.'
         : 'No authoritative usage signal is exposed; eligibility is UNKNOWN.',
     });
+  const kind = task.kind ?? 'implementation';
   reasons.push({
     code: 'task-kind',
-    message: `${task.kind ?? 'implementation'}: quota policy is shared across task kinds; no model quality is inferred.`,
+    message: `${kind}: ranked via configured task-kind preferences and quota safety.`,
   });
   if (task.model && !account.models?.includes(task.model)) {
     eligible = false;
@@ -177,14 +270,15 @@ function rankOne(
       });
     }
     const remaining = Math.min(...headrooms);
-    if (reserve?.minRemainingPercent !== undefined) {
-      if (remaining < reserve.minRemainingPercent) {
-        eligible = false;
-        reasons.push({
-          code: 'reserve',
-          message: `Below the configured ${reserve.minRemainingPercent}% remaining reserve.`,
-        });
-      }
+    if (
+      reserve?.minRemainingPercent !== undefined &&
+      remaining < reserve.minRemainingPercent
+    ) {
+      eligible = false;
+      reasons.push({
+        code: 'reserve',
+        message: `Below the configured ${reserve.minRemainingPercent}% remaining reserve.`,
+      });
     }
     const reset = freshWindows
       .map((window) => window.resetsAt)
@@ -225,7 +319,9 @@ function rankOne(
       message:
         'No authoritative percentage is available; ranking is conservative.',
     });
-    if (account.windows.some((window) => window.estimated !== undefined)) {
+    if (
+      scopedAccount.windows.some((window) => window.estimated !== undefined)
+    ) {
       reasons.push({
         code: 'estimated-only',
         message:
@@ -240,7 +336,6 @@ function rankOne(
       message: `Cannot verify the configured ${reserve.minRemainingPercent}% remaining reserve.`,
     });
   }
-
   if (state === 'near' || state === 'exhausted')
     reasons.push({
       code: 'drain',
@@ -294,6 +389,49 @@ function rankOne(
   } else if (freshWindows.length) {
     reasons.push({ code: 'fresh', message: 'Quota percentage is current.' });
   }
+
+  const pacing = computeAccountPacing(
+    account,
+    count,
+    reserve,
+    historyByWindow,
+    now,
+    staleAfterMs,
+    {
+      model: effectiveModel,
+      blocks,
+      config: routingConfig.pacing,
+      routingConfig,
+      hardLimitPercent,
+    }
+  );
+  if (state === 'healthy' && !pacing.safeToAdmit) {
+    if (
+      pacing.reasons.includes('below-glide-floor') ||
+      pacing.reasons.includes('projected-exhaustion-before-reset')
+    ) {
+      eligible = false;
+      reasons.push({
+        code: pacing.reasons.includes('projected-exhaustion-before-reset')
+          ? 'projected-exhaustion-before-reset'
+          : 'below-glide-floor',
+        message:
+          'Pacing guard: remaining headroom is below glide floor or projects exhaustion before reset.',
+      });
+    }
+  }
+
+  const taskWeight =
+    routingConfig.taskKinds[kind]?.providerWeights[account.provider] ?? 1;
+  const designOpusBoost =
+    (kind === 'design' || kind === 'ui') &&
+    account.provider === 'claude' &&
+    modelSelection.recommendedModel?.toLowerCase().includes('opus')
+      ? 12
+      : 0;
+  if (state === 'healthy') {
+    score += taskWeight * 2 + designOpusBoost;
+  }
   score -= count * 30;
   reasons.push({
     code: 'in-flight',
@@ -308,6 +446,7 @@ function rankOne(
   }
   if (count > 0) score -= Math.min(15, count * 3);
   score = Math.max(-100, Math.min(100, score));
+
   return {
     instanceId: account.instanceId,
     provider: account.provider,
@@ -333,34 +472,60 @@ function rankOne(
     score,
     unknownOrderHint: signalOrderRemainingPercent(
       account.windows,
-      task.model,
+      effectiveModel,
       now
     ),
     eligible,
     reasons,
+    pacing,
+    ...(modelSelection.recommendedModel
+      ? { recommendedModel: modelSelection.recommendedModel }
+      : {}),
+    ...(modelSelection.eligibleModels.length
+      ? { eligibleModels: modelSelection.eligibleModels }
+      : {}),
+    ...(modelSelection.excludedModels.length
+      ? { excludedModels: modelSelection.excludedModels }
+      : {}),
+    ...(account.providerStatus
+      ? { providerStatus: account.providerStatus }
+      : {}),
+    ...(account.statusMessage ? { statusMessage: account.statusMessage } : {}),
+    ...(account.balance ? { balance: account.balance } : {}),
   };
 }
 
 export function recommend(options: RecommendOptions): Recommendation {
   const now = options.now ?? new Date();
-
   const hardLimitPercent = options.hardLimitPercent ?? 90;
   const reserves = { ...DEFAULT_RESERVES, ...options.reserves };
+  const routingConfig = options.routingConfig ?? loadRoutingConfig();
   const simulated = new Map(
     options.active.map((entry) => [entry.instanceId, entry.count])
   );
   const ranked = collapseAccounts(options.accounts, options.task.model)
-    .map((account) =>
-      rankOne(
+    .map((account) => {
+      const mergedHistory: Record<string, ObservationSample[]> = {};
+      for (const id of account.instanceIds ?? [account.instanceId]) {
+        const entry = options.history?.[id];
+        if (!entry) continue;
+        for (const [winId, samples] of Object.entries(entry)) {
+          mergedHistory[winId] = [...(mergedHistory[winId] ?? []), ...samples];
+        }
+      }
+      return rankOne(
         account,
         options.task,
         [...simulated].map(([instanceId, count]) => ({ instanceId, count })),
         mergeReserves(account.instanceIds ?? [account.instanceId], reserves),
         now,
         options.staleAfterMs ?? SIGNAL_TTL_MS[account.provider],
-        hardLimitPercent
-      )
-    )
+        hardLimitPercent,
+        mergedHistory,
+        options.blocks ?? [],
+        routingConfig
+      );
+    })
     .map((item) =>
       matchingBlocks(
         options.blocks ?? [],

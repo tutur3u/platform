@@ -69,13 +69,13 @@ export function failureClass(
   if (/selected model is at capacity/i.test(message)) return 'capacity';
   if (
     classification === 'usage_limit' ||
-    /usage.limit|session limit|hit your.*limit|quota.*exceed|rate.limit/i.test(
+    /usage.limit|session limit|hit your.*limit|quota.*exceed|rate.limit|usage balance exhausted|insufficient balance|402 payment required/i.test(
       message
     )
   )
     return 'usage-limit';
   if (
-    /unauthori[sz]ed|authentication|invalid.*(?:key|credential)|login|sign.in|oauth/i.test(
+    /unauthori[sz]ed|authenticat(?:e|ion)|invalid.*(?:key|credential)|login|sign.in|oauth/i.test(
       message
     )
   )
@@ -98,10 +98,17 @@ export function safeReceipt(
   const text = message
     .slice(0, 4096)
     .replace(/\bBearer\s+\S+/gi, 'Bearer [redacted]')
-    .replace(/\b(?:sk|sk-ant)-[A-Za-z0-9_-]+/g, '[redacted]')
+    .replace(
+      /\b(?:sk|sk-ant|xai)-[A-Za-z0-9_-]+|\b(?:ghp|gho|ghu|ghs|ghr|github_pat)_[A-Za-z0-9_]+|\bAIza[A-Za-z0-9_-]+|\beyJ[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]+){1,2}\b/g,
+      '[redacted]'
+    )
     .replace(
       /((?:api[_-]?key|access[_-]?token|refresh[_-]?token|password|secret|credential)\s*[=:]\s*)[^\s,;]+/gi,
       '$1[redacted]'
+    )
+    .replace(
+      /\b(?:[a-f0-9]{24,}|(?=[A-Za-z0-9+/=_]{24,}\b)(?=[A-Za-z0-9+/=_]*\d)(?=[A-Za-z0-9+/=_]*[A-Za-z])[A-Za-z0-9+/=_]{24,})\b/gi,
+      '[redacted]'
     );
   return { text, redacted: text !== message };
 }

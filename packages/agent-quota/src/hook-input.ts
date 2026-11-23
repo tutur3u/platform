@@ -63,7 +63,9 @@ export function admissionInput(input: Input): AdmissionRequest {
     capability !== 'implementation' &&
     capability !== 'analysis' &&
     capability !== 'review' &&
-    capability !== 'research'
+    capability !== 'research' &&
+    capability !== 'design' &&
+    capability !== 'ui'
   )
     throw new HookError('capability-invalid');
   const taskClass = requirements.taskClass ?? 'standard';

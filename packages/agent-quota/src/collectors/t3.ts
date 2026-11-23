@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { ActiveAssignment, Provider } from '../types';
 import { t3StateDatabase } from './paths';
+import { driverToProvider } from './provider';
 
 export interface T3SourceStatus {
   quotaSnapshotsFound: false;
@@ -31,12 +32,8 @@ export function collectT3State(
     `)
       .all() as Array<{ provider_instance_id: string; provider: string }>;
     for (const row of rows) {
-      if (
-        row.provider === 'codex' ||
-        row.provider === 'claude' ||
-        row.provider === 'antigravity'
-      )
-        byInstance.set(row.provider_instance_id, row.provider);
+      const provider = driverToProvider(row.provider);
+      if (provider) byInstance.set(row.provider_instance_id, provider);
     }
     const active = database
       .prepare(`

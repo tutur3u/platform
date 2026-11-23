@@ -1,12 +1,17 @@
 # Agent quota routing
 
-T3 quota snapshots, shared-pool routing and single-shot safeguards for Codex,
-Claude and Antigravity. Read the [routing runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/development-tools/agent-quota-routing.mdx)
+T3 quota snapshots, pacing telemetry, shared-pool routing, and single-shot
+safeguards for Codex, Claude Code, Antigravity, Grok, Cursor, and OpenCode. Read
+the [routing runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/development-tools/agent-quota-routing.mdx)
 for JSON contracts, telemetry coverage, limitations and activation gates.
 
 ```sh
+bun packages/agent-quota/src/cli.ts status --table
 bun packages/agent-quota/src/cli.ts status --snapshots-only --json
-bun packages/agent-quota/src/cli.ts recommend --provider antigravity --snapshots-only --json
+bun packages/agent-quota/src/cli.ts status --record --table
+bun packages/agent-quota/src/cli.ts recommend --task-kind design --table
+bun packages/agent-quota/src/cli.ts recommend --task-kind research --provider antigravity --table
+bun packages/agent-quota/src/cli.ts recommend --task-kind implementation --non-private --json
 bun packages/agent-quota/src/cli.ts admit < approved-admission.json
 bun packages/agent-quota/src/cli.ts observe < provider-outcome.json
 bun packages/agent-quota/src/cli.ts switch-lease acquire < transition-owner.json
@@ -15,44 +20,47 @@ bun packages/agent-quota/src/cli.ts handover-check < accepted-handover-evidence.
 bun packages/agent-quota/src/cli.ts reconcile-children --parent THREAD_ID --timezone Asia/Ho_Chi_Minh
 ```
 
-The hooks use only existing non-credential caches and read-only T3 projections.
-Admission, observations and transition leases write the tool's own host-wide
-ledger. Accounts remain shared; transitions are leased by owner thread only.
-`switch-check`, `handover-check` and `reconcile-children` never mutate threads.
-There is no automatic recovery, failover, reset-credit spending, timer or daemon.
+The hooks and collectors use only existing non-credential caches
+(`~/.t3/caches/<instanceId>.json`) and read-only T3 SQLite projections. They
+never read credentials or tokens, and never call provider APIs with secrets.
+Admission, observations, optional `--record` snapshots, and transition leases
+write only the tool's own host-wide ledger/history under
+`~/.t3/caches/agent-quota/`. Accounts remain shared; transitions are leased by
+owner thread only. There is no automatic recovery, failover, top-up, credit
+purchase, timer, or daemon.
 
-The older `status`/`recommend` commands retain optional transcript/app-server
-collection; use `--snapshots-only` to exclude it. Stale or missing quota never
-becomes measured headroom. Only `admit` supports explicitly bounded UNKNOWN
-admission. Preference weights reflect user planning, not telemetry.
+## Pacing & routing config
 
-`reroute-plan --parent THREAD_ID` reads admission JSON plus per-thread `rerouteEvidence` from stdin. It simulates admission without writing, lists queue cancellation and safe continuation operations, and distinguishes configured from resumed-on-provider. See the routing docs for the evidence schema and native reset-continuation gap.
+- **Pacing**: Per-account and per-window pacing computes `remainingPercent`,
+  `msToReset` / `hoursToReset`, `glideFloorPercent` (`3% + 4%` per
+  hour-to-reset, scaled by window duration), `burnRatePercentPerHour` from recent
+  observations (`pacing-history.json` and `import-usage` observations),
+  `projectedExhaustionAt` vs reset, `safeToAdmit`, and
+  `recommendedMaxConcurrentLanes`.
+- **Routing config** ([`routing.config.json`](./routing.config.json), override
+  via `AGENT_QUOTA_ROUTING_CONFIG`):
+  - Gemini priority order: `gemini-4-hydrogen`, then `gemini-4-neon`, then
+    `gemini-3.8-flash`; **never** `gemini-4-argon*`.
+  - Claude `*fable*` models require explicit `--allow-fable` approval;
+    `--task-kind design` / `--task-kind ui` prefer Claude Opus (`claude-opus-*`).
+  - OpenCode requires `--non-private` and allows only `opencode-go/*`
+    subscription models; paid `opencode/*` Zen models are marked `never-to-use`.
+  - No top-ups or credit purchases (`noTopUps: true`, `noCreditPurchases: true`).
 
-Admission scans terminal provider-limit receipts before selection. Only model-covering windows count as headroom; Antigravity third-party buckets do not cover Gemini. No-reset usage-limit receipts expire after seven days unless a fresh covering window clears them. Reservations without active native bindings expire after 30 minutes, with 30-day replay tombstones. Contention waits up to two seconds and returns retryable exit 3. See the runbook for receipt clearance and process-verified lease recovery.
+## Single-shot safeguards
 
-Orchestrator-invoked enforcement:
+`admit`, `observe`, `switch-lease`, `switch-check`, `handover-check`,
+`reconcile-children`, `reroute-plan`, `explain`, `dry-run route`, `import-usage`,
+`configure`, and positional `admit POOL MODEL` / `block` retain their existing
+contracts. Exit codes for positional `admit`: `0` ADMIT, `3` policy
+block/contention, `2` malformed/unverifiable state.
 
-```sh
-bun packages/agent-quota/src/cli.ts admit antigravity gemini-4-argon-high
-# Exit 0: ADMIT; exit 3: policy block/retryable contention; exit 2: malformed or unverifiable state.
-bun packages/agent-quota/src/cli.ts admit codex gpt-6.1-sol --reserve-owner
-bun packages/agent-quota/src/cli.ts block --pool antigravity --model-scope 'gemini-4-argon-*' --reason 'Usage Limit Reached resets in 6 days, 23 hours' --evidence 'thread/run/terminal-receipt'
-```
+## Follow-ups
 
-The gate reads `~/.local/share/tuturuuu/orchestration/quota/blocks.json` and
-cached signals; it never probes. `--reserve-owner` requires fresh headroom above
-30%; alternatively set `AGENT_QUOTA_OWNER_POOL` so matching aliases receive the
-same protection. This positional command is a preflight; use JSON `admit` for
-transactional task reservations and full task requirements. No native callback
-is installed: the orchestrator must invoke the gate before `delegate_task` and
-record provider failures with `block`.
-
-Usage parity and r2 corrections: `status`, `explain --pool ID --model MODEL`, and
-`dry-run route --model MODEL` are cache-only and read-only. `import-usage` accepts
-narrow supported usage/home-path exports or typed manual observations on stdin;
-`configure` validates per-pool reserve, near threshold, hysteresis, pacing,
-concurrency and preference and records a receipt without changing the writer.
-Positional `admit POOL MODEL` returns 0 admitted, 3 blocked, 2 malformed or
-unverifiable. Global usage-limit receipts cross orchestrator trees and preserve
-model-window scope. See the owning docs page for the dated five-account
-comparison, exact JSON schemas, supported source and native API boundary.
+- Propagate routing-config gates (Argon ban, Fable `--allow-fable` approval,
+  OpenCode non-private / paid-Zen ban, and pacing glide floor) into `admit` and
+  `gateDecision` in addition to `recommend`.
+- Auto-append usage snapshots to `pacing-history.json` during `observe` and
+  `import-usage` so burn-rate projections accumulate without explicit `--record`.
+- Preserve live `orchestrator_capabilities` option metadata parity when
+  `T3_ACP_MCP_NODE` is unavailable and cache discovery is used.

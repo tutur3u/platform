@@ -8,32 +8,47 @@ import { argumentValue } from './cli-args';
 import { collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { runOperator } from './operator-cli';
+import { computeAccountPacing } from './pacing';
+import {
+  appendPacingSnapshots,
+  mergeObservationsIntoHistory,
+  readPacingHistory,
+} from './pacing-history';
 import { recommend, recommendAssignments, SIGNAL_TTL_MS } from './policy';
 import { runPositionalAdmit } from './positional-admit';
 import { runReconcile } from './reconcile-cli';
 import { runReroute } from './reroute-cli';
 import { parseReserves } from './reserves';
-import type { Provider, TaskRequest } from './types';
+import { loadRoutingConfig } from './routing-config';
+import { formatRecommendTable, formatStatusTable } from './table';
+import type { Provider, TaskKind, TaskRequest } from './types';
 import { evaluateWatch, type WatchVerdict } from './watch';
 import {
   windowFreshnessTtlMs,
   windowObservationIsFresh,
 } from './window-freshness';
 
+const PROVIDERS = new Set<Provider>([
+  'codex',
+  'claude',
+  'antigravity',
+  'grok',
+  'cursor',
+  'opencode',
+]);
+const TASK_KINDS = new Set<TaskKind>([
+  'implementation',
+  'analysis',
+  'review',
+  'research',
+  'design',
+  'ui',
+]);
+
 const arg = (flag: string) => argumentValue(flag);
 
 function outputJson(): boolean {
   return process.argv.includes('--json');
-}
-
-function percent(
-  accountWindows: Array<{ kind: string; usedPercent?: number }>,
-  kind: string
-): string {
-  const window = accountWindows.find((item) => item.kind === kind);
-  return window?.usedPercent === undefined
-    ? '—'
-    : `${Math.round(window.usedPercent)}%`;
 }
 
 async function main(): Promise<void> {
@@ -130,17 +145,21 @@ async function main(): Promise<void> {
   }
   if (command !== 'status' && command !== 'recommend') {
     throw new Error(
-      'Usage: bun packages/agent-quota/src/cli.ts status|recommend [--provider codex|claude|antigravity] [--count N] [--json]'
+      'Usage: bun packages/agent-quota/src/cli.ts status|recommend [--provider codex|claude|antigravity|grok|cursor|opencode] [--task-kind implementation|analysis|review|research|design|ui] [--count N] [--table] [--json]'
     );
   }
   const provider = arg('--provider');
-  if (
-    provider &&
-    provider !== 'codex' &&
-    provider !== 'claude' &&
-    provider !== 'antigravity'
-  )
-    throw new Error('--provider must be codex, claude, or antigravity.');
+  if (provider && !PROVIDERS.has(provider as Provider)) {
+    throw new Error(
+      '--provider must be codex, claude, antigravity, grok, cursor, or opencode.'
+    );
+  }
+  const collected = await collectAll({
+    snapshotsOnly: !process.argv.includes('--live'),
+    catalog: process.argv.includes('--catalog-stdin')
+      ? JSON.parse(readFileSync(0, 'utf8'))
+      : undefined,
+  });
   const {
     accounts,
     active,
@@ -148,64 +167,99 @@ async function main(): Promise<void> {
     t3Error,
     blocks,
     invalidObservations = [],
-  } = await collectAll({
-    snapshotsOnly: true,
-    catalog: process.argv.includes('--catalog-stdin')
-      ? JSON.parse(readFileSync(0, 'utf8'))
-      : undefined,
-  });
+    manualObservations = [],
+  } = collected;
   const filtered = accounts.filter(
     (account) => !provider || account.provider === provider
   );
   const reserves = parseReserves();
+  const routingConfig = loadRoutingConfig();
+  const rawHistory = await readPacingHistory();
+  const history = mergeObservationsIntoHistory(rawHistory, manualObservations);
+
   if (command === 'status') {
     const observedAt = new Date();
+    if (process.argv.includes('--record')) {
+      await appendPacingSnapshots(filtered, observedAt);
+    }
     const ranking = active
       ? recommend({
-          task: {},
+          task: {
+            allowFable: process.argv.includes('--allow-fable'),
+            nonPrivate: process.argv.includes('--non-private'),
+          },
           active,
           accounts: filtered,
           blocks,
           reserves,
+          history,
+          routingConfig,
+          now: observedAt,
         }).ranked
       : [];
-    const result = collapseAccounts(filtered).map((account) => ({
-      ...account,
-      windows: account.windows.map((window) => ({
-        ...window,
-        ageMs: observedAt.getTime() - Date.parse(window.observedAt),
-        ttlMs: windowFreshnessTtlMs(window, SIGNAL_TTL_MS[account.provider]),
-        freshness: windowObservationIsFresh(
-          window,
-          observedAt,
-          SIGNAL_TTL_MS[account.provider]
-        )
-          ? 'FRESH'
-          : 'STALE',
-      })),
-      ...ranking.find((item) => item.instanceId === account.instanceId),
-      ...(!active
-        ? {
-            state: 'UNKNOWN',
-            eligible: false,
-            action: 'wait',
-            reasons: [
-              {
-                code: 't3-activity-unknown',
-                message: 'T3 activity state is unavailable.',
-              },
-            ],
-          }
-        : {}),
-      activeCount: active
+    const result = collapseAccounts(filtered).map((account) => {
+      const rankEntry = ranking.find(
+        (item) => item.instanceId === account.instanceId
+      );
+      const count = active
         ? (active.find((item) => item.instanceId === account.instanceId)
             ?.count ?? 0)
-        : 'unknown',
-      accountIdentityHash: undefined,
-      ...(reserves[account.instanceId]
-        ? { reserve: reserves[account.instanceId] }
-        : {}),
-    }));
+        : 0;
+      const pacing = computeAccountPacing(
+        account,
+        count,
+        reserves[account.instanceId],
+        history[account.instanceId] ?? {},
+        observedAt,
+        SIGNAL_TTL_MS[account.provider],
+        {
+          blocks,
+          config: routingConfig.pacing,
+          model:
+            account.provider === 'opencode'
+              ? (account.models?.find((m) => m.startsWith('opencode-go/')) ??
+                'opencode-go/')
+              : account.provider === 'antigravity'
+                ? (rankEntry?.recommendedModel ?? 'gemini-4-hydrogen')
+                : undefined,
+        }
+      );
+      return {
+        ...account,
+        windows: account.windows.map((window) => ({
+          ...window,
+          ageMs: observedAt.getTime() - Date.parse(window.observedAt),
+          ttlMs: windowFreshnessTtlMs(window, SIGNAL_TTL_MS[account.provider]),
+          freshness: windowObservationIsFresh(
+            window,
+            observedAt,
+            SIGNAL_TTL_MS[account.provider]
+          )
+            ? 'FRESH'
+            : 'STALE',
+        })),
+        ...rankEntry,
+        state: !active ? 'UNKNOWN' : (rankEntry?.state ?? 'UNKNOWN'),
+        pacing,
+        ...(!active
+          ? {
+              eligible: false,
+              action: 'wait',
+              reasons: [
+                {
+                  code: 't3-activity-unknown',
+                  message: 'T3 activity state is unavailable.',
+                },
+              ],
+            }
+          : {}),
+        activeCount: active ? count : 'unknown',
+        accountIdentityHash: undefined,
+        ...(reserves[account.instanceId]
+          ? { reserve: reserves[account.instanceId] }
+          : {}),
+      };
+    });
     if (outputJson())
       console.log(
         JSON.stringify(
@@ -221,46 +275,32 @@ async function main(): Promise<void> {
         )
       );
     else {
-      console.log(
-        'ACCOUNT        PROVIDER  SHORT  LONG  ESTIMATED TOKENS  ACTIVE  STATE  AGE(ms)  OBSERVED'
-      );
-      if (t3Error) console.log(`T3 activity unavailable: ${t3Error}`);
-      for (const account of result) {
-        const estimated = account.windows.find(
-          (window) => window.estimated !== undefined
-        )?.estimated;
-        const observed =
-          account.windows
-            .filter((window) => window.usedPercent !== undefined)
-            .map((window) => window.observedAt)
-            .sort()
-            .at(-1) ?? 'unknown';
-        console.log(
-          `${account.instanceId.padEnd(14)} ${account.provider.padEnd(8)} ${percent(account.windows, 'short').padEnd(6)} ${percent(account.windows, 'long').padEnd(5)} ${String(estimated ?? '—').padEnd(17)} ${String(account.activeCount).padEnd(6)} ${account.state} ${account.ageMs ?? 'unknown'} ${observed}`
-        );
-      }
+      console.log(formatStatusTable(result, t3Error));
       if (invalidObservations.length)
         console.log(`INVALID OBSERVATIONS  ${invalidObservations.join('; ')}`);
     }
     return;
   }
+
   if (!active)
     throw new Error('Cannot recommend while T3 activity state is unknown.');
   const count = Number(arg('--count') ?? '1');
   if (!Number.isInteger(count) || count < 1 || count > 50)
     throw new Error('--count must be an integer from 1 to 50.');
-  const kind = arg('--task-kind') ?? 'implementation';
-  if (!['implementation', 'analysis', 'review', 'research'].includes(kind))
+  const kind = (arg('--task-kind') ?? 'implementation') as TaskKind;
+  if (!TASK_KINDS.has(kind))
     throw new Error(
-      '--task-kind must be implementation, analysis, review, or research.'
+      '--task-kind must be implementation, analysis, review, research, design, or ui.'
     );
-  const task = {
-    kind: kind as TaskRequest['kind'],
+  const task: TaskRequest = {
+    kind,
     provider: (provider ?? 'any') as Provider | 'any',
     model: arg('--model'),
     weight: Number(arg('--weight') ?? '1'),
+    allowFable: process.argv.includes('--allow-fable'),
+    nonPrivate: process.argv.includes('--non-private'),
   };
-  if (!Number.isFinite(task.weight) || task.weight <= 0)
+  if (!Number.isFinite(task.weight ?? 1) || (task.weight ?? 1) <= 0)
     throw new Error('--weight must be positive.');
   const assignmentOptions = {
     task,
@@ -268,6 +308,8 @@ async function main(): Promise<void> {
     accounts: filtered,
     reserves,
     blocks,
+    history,
+    routingConfig,
   };
   const assignments = recommendAssignments({ ...assignmentOptions, count });
   const ranked = recommend({ ...assignmentOptions, count: 1 }).ranked;
@@ -279,20 +321,7 @@ async function main(): Promise<void> {
     invalidObservations,
   };
   if (outputJson()) console.log(JSON.stringify(result, null, 2));
-  else {
-    console.log(
-      'RANK  ACCOUNT        SCORE  STATE      AGE(ms)  ACTION  REASONS'
-    );
-    for (const [index, item] of ranked.entries()) {
-      const messages = item.reasons.map((reason) => reason.message).join(' ');
-      console.log(
-        `${String(index + 1).padEnd(5)} ${item.instanceId.padEnd(14)} ${String(Math.round(item.score)).padEnd(6)} ${item.state.padEnd(10)} ${item.ageMs ?? 'unknown'} ${item.action} ${messages}`
-      );
-    }
-    console.log(
-      `Assignments: ${assignments.map((item) => item.instanceId).join(', ') || 'none'}`
-    );
-  }
+  else console.log(formatRecommendTable(ranked, assignments, kind));
 }
 
 main().catch((error: unknown) => {

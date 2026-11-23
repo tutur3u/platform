@@ -6,10 +6,16 @@ import {
 import { type PoolSettings, parsePoolSettings } from '../pool-settings';
 import type { AccountUsage, ActiveAssignment, Provider } from '../types';
 import { DEFAULT_INSTANCE_LABELS } from '../types';
-import { applyImportedUsage, applyManualUsage } from '../usage-import';
+import {
+  applyImportedUsage,
+  applyManualUsage,
+  type ManualUsage,
+  parseManualUsage,
+} from '../usage-import';
 import { collectCatalog, parseCatalog } from './catalog';
 import { collectClaude } from './claude';
 import { collectCodex } from './codex';
+import { discoverSnapshotInstances } from './discover';
 import { collectSnapshot } from './snapshot';
 import { collectT3State, type T3SourceStatus } from './t3';
 
@@ -44,6 +50,7 @@ export interface CollectionResult {
   blocks: QuotaBlock[];
   poolSettings: Record<string, PoolSettings>;
   invalidObservations: string[];
+  manualObservations?: ManualUsage[];
 }
 
 type ExtendedLedger = Awaited<ReturnType<typeof readBlockLedger>> & {
@@ -75,16 +82,19 @@ export async function collectAllWith(
         ? collectors.collectCatalog()
         : Promise.resolve(parseCatalog(options.catalog)),
     ]);
+  const discovered = catalog.length ? [] : await discoverSnapshotInstances();
   const instances = catalog.length
     ? catalog
-    : Object.entries(DEFAULT_INSTANCE_LABELS).map(([instanceId, label]) => ({
-        instanceId,
-        label,
-        provider: providerForInstance(instanceId),
-        models: [],
-        modelOptions: {},
-        available: false,
-      }));
+    : discovered.length
+      ? discovered
+      : Object.entries(DEFAULT_INSTANCE_LABELS).map(([instanceId, label]) => ({
+          instanceId,
+          label,
+          provider: providerForInstance(instanceId),
+          models: [],
+          modelOptions: {},
+          available: false,
+        }));
   const snapshots = await Promise.all(
     instances.map((instance) =>
       collectors.collectSnapshot({
@@ -116,25 +126,35 @@ export async function collectAllWith(
       const blocked =
         matchingBlocks(blocks, aliases, undefined, now).length > 0;
       const account =
-        blocked || options.snapshotsOnly !== false
+        blocked ||
+        options.snapshotsOnly !== false ||
+        (provider !== 'claude' && provider !== 'codex')
           ? cache
           : provider === 'claude'
             ? await collectors.collectClaude(instanceId, label)
             : await collectors.collectCodex(instanceId, label);
       const snapshot =
         account === cache ? cache : await collectors.collectSnapshot(account);
+      const models = instance.models.length
+        ? instance.models
+        : (snapshot.models ?? []);
+      const modelOptions = Object.keys(instance.modelOptions).length
+        ? instance.modelOptions
+        : (snapshot.modelOptions ?? {});
       return {
         ...snapshot,
-        models: instance.models,
-        modelOptions: instance.modelOptions,
+        models,
+        modelOptions,
         available: instance.available,
       };
     })
   );
   const invalidObservations: string[] = [];
+  const rawObs = Array.isArray(observations) ? observations : [];
+  const parsedManual = parseManualUsage(rawObs, now).observations;
   const withManual = applyManualUsage(
     applyImportedUsage(accounts, usageImport),
-    Array.isArray(observations) ? observations : [],
+    rawObs,
     invalidObservations,
     now,
     blocks
@@ -148,10 +168,14 @@ export async function collectAllWith(
     blocks,
     poolSettings: parsePoolSettings(poolSettings),
     invalidObservations,
+    manualObservations: parsedManual,
   };
 }
 
 function providerForInstance(instanceId: string): Provider {
   if (instanceId === 'antigravity') return 'antigravity';
+  if (instanceId === 'grok') return 'grok';
+  if (instanceId === 'cursor') return 'cursor';
+  if (instanceId === 'opencode') return 'opencode';
   return instanceId.startsWith('claude') ? 'claude' : 'codex';
 }
