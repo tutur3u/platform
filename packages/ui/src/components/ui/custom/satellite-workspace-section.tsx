@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
+import type { WorkspaceSelectInitialWorkspace } from './workspace-select-helpers';
 import { WorkspaceSelectRevealProvider } from './workspace-select-reveal';
 
 interface SidebarWorkspaceSelectSectionProps {
   children?: ReactNode;
   id?: string;
+  /** The server-known current workspace, named until the list loads. */
+  initialWorkspace?: WorkspaceSelectInitialWorkspace | null;
   /** Renders nothing (no row at all) for apps without a workspace selector. */
   visible?: boolean;
 }
@@ -16,12 +19,13 @@ interface SidebarWorkspaceSelectSectionProps {
 export function SidebarWorkspaceSelectSection({
   children,
   id = 'sidebar-workspace-selector',
+  initialWorkspace,
   visible = true,
 }: SidebarWorkspaceSelectSectionProps) {
   if (!visible || !children) return null;
 
   return (
-    <WorkspaceSelectRevealProvider>
+    <WorkspaceSelectRevealProvider initialWorkspace={initialWorkspace}>
       <div
         className="shrink-0 border-b px-2 pb-2"
         data-sidebar-workspace-select

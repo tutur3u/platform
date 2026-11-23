@@ -804,9 +804,15 @@ export function StructureImpl({
     />
   );
 
+  const currentWorkspace: LaunchableWorkspace = {
+    id: workspace?.id ?? wsId,
+    name: workspace?.name ?? null,
+    personal: workspace?.personal ?? false,
+  };
+
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <SidebarWorkspaceSelectSection>
+      <SidebarWorkspaceSelectSection initialWorkspace={currentWorkspace}>
         <Suspense
           key={user?.id}
           fallback={
@@ -910,12 +916,6 @@ export function StructureImpl({
   );
 
   if (!initialized) return null;
-
-  const currentWorkspace: LaunchableWorkspace = {
-    id: workspace?.id ?? wsId,
-    name: workspace?.name ?? null,
-    personal: workspace?.personal ?? false,
-  };
 
   return (
     <>

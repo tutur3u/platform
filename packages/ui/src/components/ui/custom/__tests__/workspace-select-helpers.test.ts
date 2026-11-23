@@ -8,6 +8,7 @@ import {
   normalizeWorkspaceSwitchPath,
   resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
+  resolveWorkspaceSelectTriggerWorkspace,
 } from '../workspace-select-helpers';
 
 describe('buildWorkspaceSetupHandoffUrl', () => {
@@ -77,6 +78,56 @@ describe('resolveWorkspaceAvatarUrl', () => {
       })
     ).toBe('https://tuturuuu.com/media/logos/transparent.png');
     expect(resolveWorkspaceAvatarUrl(null)).toBeNull();
+  });
+});
+
+describe('resolveWorkspaceSelectTriggerWorkspace', () => {
+  const initialWorkspace = {
+    avatar_url: null,
+    id: 'workspace-1',
+    name: 'Server workspace',
+    personal: false,
+  };
+
+  it('prefers the listed workspace once the list has loaded', () => {
+    const listed = { ...initialWorkspace, name: 'Listed workspace' };
+    expect(
+      resolveWorkspaceSelectTriggerWorkspace({
+        initialWorkspace,
+        listedWorkspace: listed,
+        resolvedWorkspaceId: 'workspace-1',
+        wsId: 'workspace-1',
+      })
+    ).toBe(listed);
+  });
+
+  it('falls back to the server workspace only when it is the routed one', () => {
+    expect(
+      resolveWorkspaceSelectTriggerWorkspace({
+        initialWorkspace,
+        resolvedWorkspaceId: 'workspace-1',
+        wsId: 'workspace-1',
+      })
+    ).toBe(initialWorkspace);
+    expect(
+      resolveWorkspaceSelectTriggerWorkspace({
+        initialWorkspace,
+        resolvedWorkspaceId: 'workspace-2',
+        wsId: 'workspace-2',
+      })
+    ).toBeUndefined();
+    expect(
+      resolveWorkspaceSelectTriggerWorkspace({
+        initialWorkspace: { ...initialWorkspace, personal: true },
+        wsId: 'personal',
+      })
+    ).toEqual({ ...initialWorkspace, personal: true });
+    expect(
+      resolveWorkspaceSelectTriggerWorkspace({
+        initialWorkspace,
+        wsId: 'personal',
+      })
+    ).toBeUndefined();
   });
 });
 

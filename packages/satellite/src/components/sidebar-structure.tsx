@@ -197,6 +197,7 @@ export function SidebarStructure({
               setIsCollapsed={setIsCollapsed}
               setNavState={setNavState}
               workspaceSelect={workspaceSelect}
+              currentWorkspace={currentWorkspace}
               wsId={wsId}
             />
           }

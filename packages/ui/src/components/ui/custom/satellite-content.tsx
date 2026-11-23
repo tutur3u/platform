@@ -15,6 +15,7 @@ import type {
   WorkspaceSelectRenderer,
 } from './satellite-shell-utils';
 import { SidebarWorkspaceSelectSection } from './satellite-workspace-section';
+import type { WorkspaceSelectInitialWorkspace } from './workspace-select-helpers';
 
 export interface SatelliteContentProps {
   Navigation: ComponentType<{
@@ -33,6 +34,8 @@ export interface SatelliteContentProps {
   setIsCollapsed: Dispatch<SetStateAction<boolean>>;
   setNavState: Dispatch<SetStateAction<NavigationState>>;
   workspaceSelect?: WorkspaceSelectRenderer;
+  /** The server-known current workspace, named before the list loads. */
+  currentWorkspace?: WorkspaceSelectInitialWorkspace | null;
   wsId: string;
 }
 
@@ -47,6 +50,7 @@ export function SatelliteContent({
   setIsCollapsed,
   setNavState,
   workspaceSelect,
+  currentWorkspace,
   wsId,
 }: SatelliteContentProps) {
   const handleSubMenuClick = (
@@ -72,7 +76,10 @@ export function SatelliteContent({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <SidebarWorkspaceSelectSection visible={Boolean(workspaceSelect)}>
+      <SidebarWorkspaceSelectSection
+        initialWorkspace={currentWorkspace}
+        visible={Boolean(workspaceSelect)}
+      >
         {workspaceSelect ? (
           <Suspense
             fallback={

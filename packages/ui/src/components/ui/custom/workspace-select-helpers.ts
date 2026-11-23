@@ -1,4 +1,5 @@
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
+import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
 
 export function resolveWorkspaceAvatarUrl(
   avatarUrl: string | null | undefined,
@@ -9,6 +10,41 @@ export function resolveWorkspaceAvatarUrl(
   } = {}
 ) {
   return avatarUrl || rootWorkspaceLogoUrl || null;
+}
+
+export type WorkspaceSelectInitialWorkspace = {
+  avatar_url?: string | null;
+  id: string;
+  name?: string | null;
+  personal?: boolean | null;
+  tier?: InternalApiWorkspaceSummary['tier'];
+};
+
+/**
+ * The workspace the selector trigger names. A listed workspace wins; until the
+ * client-side list loads (including during server rendering), the
+ * server-provided current workspace is used when it is the routed one.
+ */
+export function resolveWorkspaceSelectTriggerWorkspace<
+  T extends WorkspaceSelectInitialWorkspace,
+>({
+  initialWorkspace,
+  listedWorkspace,
+  resolvedWorkspaceId,
+  wsId,
+}: {
+  initialWorkspace?: WorkspaceSelectInitialWorkspace | null;
+  listedWorkspace?: T | null;
+  resolvedWorkspaceId?: string;
+  wsId: string;
+}): T | WorkspaceSelectInitialWorkspace | undefined {
+  if (listedWorkspace) return listedWorkspace;
+  if (!initialWorkspace) return undefined;
+  const matchesRoute =
+    wsId === PERSONAL_WORKSPACE_SLUG
+      ? Boolean(initialWorkspace.personal)
+      : initialWorkspace.id === (resolvedWorkspaceId ?? wsId);
+  return matchesRoute ? initialWorkspace : undefined;
 }
 
 export function mergeWorkspaceSelectWorkspaces(

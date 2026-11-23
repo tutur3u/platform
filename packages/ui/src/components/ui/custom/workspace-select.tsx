@@ -63,12 +63,17 @@ import {
   normalizeWorkspaceSwitchPath,
   resolveGuestWorkspaceLanding,
   resolveWorkspaceAvatarUrl,
+  resolveWorkspaceSelectTriggerWorkspace,
+  type WorkspaceSelectInitialWorkspace,
 } from './workspace-select-helpers';
 import {
   useWorkspaceInvitations,
   WorkspaceInvitationItems,
 } from './workspace-select-invitations';
-import { useIsSidebarWorkspaceSelect } from './workspace-select-reveal';
+import {
+  useIsSidebarWorkspaceSelect,
+  useSidebarInitialWorkspace,
+} from './workspace-select-reveal';
 import { WorkspaceSelectTrigger } from './workspace-select-trigger';
 
 const FormSchema = z.object({
@@ -95,6 +100,7 @@ export function WorkspaceSelect({
   platformWorkspaceSetupUrl,
   cacheScope,
   presentation = 'dropdown',
+  initialWorkspace,
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -116,6 +122,13 @@ export function WorkspaceSelect({
   /** Authenticated identity used to isolate user-specific picker caches. */
   cacheScope?: string;
   presentation?: 'fullscreen' | 'dropdown';
+  /**
+   * The current workspace as the server already knows it. The trigger shows
+   * it until the client-side workspace list loads, so the server-rendered
+   * shell names the workspace instead of a loading label. Inside the
+   * sidebar section it defaults to the section's server-known workspace.
+   */
+  initialWorkspace?: WorkspaceSelectInitialWorkspace | null;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -303,6 +316,7 @@ export function WorkspaceSelect({
   const hasSelectableWorkspaces =
     workspaces.length > 0 || invitations.length > 0;
   const inSidebar = useIsSidebarWorkspaceSelect();
+  const sidebarInitialWorkspace = useSidebarInitialWorkspace();
   const openPicker = useCallback(() => {
     if (!hasSelectableWorkspaces) return;
     setOpen(true);
@@ -323,10 +337,15 @@ export function WorkspaceSelect({
       nextPath = normalizeWorkspaceSwitchPath(nextPath, nextSlug);
     router.push(nextPath);
   };
-  const workspace =
-    wsId === PERSONAL_WORKSPACE_SLUG
-      ? personalWorkspace
-      : workspaces.find((ws) => ws.id === resolvedWorkspaceId);
+  const workspace = resolveWorkspaceSelectTriggerWorkspace({
+    initialWorkspace: initialWorkspace ?? sidebarInitialWorkspace,
+    listedWorkspace:
+      wsId === PERSONAL_WORKSPACE_SLUG
+        ? personalWorkspace
+        : workspaces.find((ws) => ws.id === resolvedWorkspaceId),
+    resolvedWorkspaceId,
+    wsId,
+  });
   if (!wsId) return <div />;
 
   async function onJoinByHandleSubmit(
@@ -558,5 +577,7 @@ export function WorkspaceSelect({
 }
 
 export { HiddenWorkspacesSettings } from './hidden-workspaces-settings';
+
+export type { WorkspaceSelectInitialWorkspace } from './workspace-select-helpers';
 
 export { VisibleWorkspaceFilter } from './visible-workspace-filter';
