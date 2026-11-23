@@ -126,6 +126,7 @@
     "../../packages/realtime/src/meet/room-media-role.ts",
     "../../packages/realtime/src/meet/room-mira-private.ts",
     "../../packages/realtime/src/meet/room-transcript-consent.ts",
+    "../../packages/realtime/src/meet/room-upskii-presentation.ts",
     "../../packages/realtime/src/meet/room-navigation.ts",
     "../../packages/realtime/src/meet/room-options.ts",
     "../../packages/realtime/src/meet/room-outcome.ts",
