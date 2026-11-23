@@ -187,6 +187,8 @@
     "./features/call/server/personal-chat-body.ts": "./src/features/call/server/personal-chat-body.ts",
     "./features/call/server/room-service": "./src/features/call/server/room-service.ts",
     "./features/call/server/room-service.ts": "./src/features/call/server/room-service.ts",
+    "./features/call/server/whiteboard": "./src/features/call/server/whiteboard.ts",
+    "./features/call/server/whiteboard.ts": "./src/features/call/server/whiteboard.ts",
     "./features/call/server/attendance": "./src/features/call/server/attendance.ts",
     "./features/call/server/attendance.ts": "./src/features/call/server/attendance.ts",
     "./features/call/server/attendance-erasure": "./src/features/call/server/attendance-erasure.ts",
