@@ -10,8 +10,13 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { MAX_CARRY } from './limits';
 import type { MeetingRecordLinks } from './meeting-record-panel';
-import { meetingRecordQueryKey, taskHref } from './use-meeting-record';
+import {
+  meetingRecordQueryKey,
+  sinceLastTimeQueryKey,
+  taskHref,
+} from './use-meeting-record';
 
 /** Groups items by owner; unassigned items come last. */
 export function groupByOwner(tasks: SinceLastTimeTask[], unassigned: string) {
@@ -40,7 +45,7 @@ export function SinceLastTime({
 }: MeetingRecordLinks) {
   const t = useTranslations('meet.record.since');
   const queryClient = useQueryClient();
-  const queryKey = ['meeting-record-since', wsId, meetingId] as const;
+  const queryKey = sinceLastTimeQueryKey(wsId, meetingId);
   const since = useQuery({
     queryKey,
     queryFn: () => getSinceLastTime(wsId, meetingId),
@@ -75,10 +80,14 @@ export function SinceLastTime({
         {canCarry && open.length > 0 ? (
           <Button
             disabled={carry.isPending}
-            onClick={() => carry.mutate(open.map((task) => task.id))}
+            onClick={() =>
+              carry.mutate(open.slice(0, MAX_CARRY).map((task) => task.id))
+            }
             size="sm"
           >
-            {t('carry_all', { count: open.length })}
+            {open.length > MAX_CARRY
+              ? t('carry_first', { count: MAX_CARRY })
+              : t('carry_all', { count: open.length })}
           </Button>
         ) : null}
       </div>

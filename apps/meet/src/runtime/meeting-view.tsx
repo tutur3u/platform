@@ -6,6 +6,8 @@ import {
   Users,
   Video,
 } from '@tuturuuu/icons';
+import { MeetingProjects } from '@tuturuuu/meet-core/features/meeting-record/meeting-projects';
+import { MeetingRecordSection } from '@tuturuuu/meet-core/features/meeting-record/meeting-record-section';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -62,6 +64,14 @@ export function MeetingView({ model }: { model: DetailModel }) {
             sharingControl={false}
           />
         }
+        record={
+          <MeetingRecordSection
+            meetingId={meetingId}
+            withProjects
+            workspaceSlug={workspaceSlug}
+            wsId={wsId}
+          />
+        }
       />
     );
   const { calendarEvent, durationSeconds } = model.detail;
@@ -94,6 +104,9 @@ export function MeetingView({ model }: { model: DetailModel }) {
                 {meeting.creator.display_name}
               </div>
             </div>
+            <div className="mt-3">
+              <MeetingProjects meetingId={meetingId} wsId={wsId} />
+            </div>
           </div>
         </div>
       </div>
@@ -105,6 +118,13 @@ export function MeetingView({ model }: { model: DetailModel }) {
           title={title}
           isHost={isHost}
           policy={policy}
+        />
+      </div>
+      <div className="mb-6">
+        <MeetingRecordSection
+          meetingId={meetingId}
+          workspaceSlug={workspaceSlug}
+          wsId={wsId}
         />
       </div>
       <div className="grid gap-6 md:grid-cols-2">

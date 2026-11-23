@@ -32,6 +32,8 @@ export type MeetingRecordTask = {
 
 export type MeetingRecord = {
   canEdit: boolean;
+  /** Saving follow-up tasks from Meet is a host action. */
+  isHost: boolean;
   items: MeetingRecordItem[];
   tasks: MeetingRecordTask[];
   /** Board of the linked project's most recently linked task. */
@@ -39,6 +41,8 @@ export type MeetingRecord = {
 };
 
 const MAX_ITEMS_PER_MEETING = 200;
+/** Bounds the task id list sent in the follow-up query. */
+const MAX_LINKED_TASKS = 200;
 const content = z.string().trim().min(1).max(2000);
 const createSchema = z.object({
   kind: z.enum(['agenda', 'decision']),
@@ -115,11 +119,12 @@ export async function listMeetingTasks(
     .select('meeting_id, task_id, link_kind, carried_from_meeting_id')
     .eq('ws_id', wsId)
     .in('meeting_id', meetingIds)
-    .order('created_at', { ascending: true })
-    .limit(500);
+    .order('created_at', { ascending: false })
+    .limit(MAX_LINKED_TASKS);
   if (links.error)
     throw new MeetingRecordError(500, 'Meeting tasks unavailable');
-  const rows = (links.data ?? []) as LinkRow[];
+  // The newest links are kept when a Project has more; list them oldest first.
+  const rows = ((links.data ?? []) as LinkRow[]).reverse();
   if (!rows.length) return [];
   const tasks = await db
     .from('tasks')
@@ -189,6 +194,7 @@ export async function readMeetingRecord(
     throw new MeetingRecordError(500, 'Meeting record unavailable');
   return {
     canEdit: access.canEditRecord,
+    isHost: access.isHost,
     items: (items.data ?? []).map((item) => ({
       id: item.id,
       kind: item.kind === 'decision' ? 'decision' : 'agenda',
@@ -251,6 +257,8 @@ export async function addMeetingRecordItem(
     })
     .select('id')
     .single();
+  // A meeting deleted since the access check fails the workspace check.
+  if (error?.code === '23503') throw new MeetingRecordError(404, 'Not found');
   if (error) throw new MeetingRecordError(500, 'Could not add the item');
   return { id: data.id };
 }

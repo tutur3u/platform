@@ -6,9 +6,8 @@ import {
   Users,
   Video,
 } from '@tuturuuu/icons';
-import { TASKS_URL } from '@tuturuuu/meet-core/constants/common';
 import { MeetingProjects } from '@tuturuuu/meet-core/features/meeting-record/meeting-projects';
-import { MeetingRecordPanel } from '@tuturuuu/meet-core/features/meeting-record/meeting-record-panel';
+import { MeetingRecordSection } from '@tuturuuu/meet-core/features/meeting-record/meeting-record-section';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,7 +17,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -118,6 +116,14 @@ export default async function MeetingDetailPage({
             sharingControl={false}
           />
         }
+        record={
+          <MeetingRecordSection
+            meetingId={meetingId}
+            withProjects
+            workspaceSlug={workspaceSlug}
+            wsId={wsId}
+          />
+        }
       />
     );
   const permissionOutcome = await permissionsPromise;
@@ -161,12 +167,7 @@ export default async function MeetingDetailPage({
               </div>
             </div>
             <div className="mt-3">
-              <MeetingProjects
-                meetingId={meetingId}
-                tasksUrl={TASKS_URL}
-                workspaceSlug={workspaceSlug}
-                wsId={wsId}
-              />
+              <MeetingProjects meetingId={meetingId} wsId={wsId} />
             </div>
           </div>
         </div>
@@ -182,12 +183,8 @@ export default async function MeetingDetailPage({
         />
       </div>
       <div className="mb-6">
-        <MeetingRecordPanel
+        <MeetingRecordSection
           meetingId={meetingId}
-          sourceUrl={meetPublicUrl(
-            `/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`
-          )}
-          tasksUrl={TASKS_URL}
           workspaceSlug={workspaceSlug}
           wsId={wsId}
         />

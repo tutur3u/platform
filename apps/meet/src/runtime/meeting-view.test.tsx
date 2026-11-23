@@ -4,7 +4,16 @@ import { beforeEach, expect, test, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   section: vi.fn(() => null),
   ended: vi.fn(() => null),
+  projects: vi.fn(() => null),
+  record: vi.fn(() => null),
 }));
+vi.mock('@tuturuuu/meet-core/features/meeting-record/meeting-projects', () => ({
+  MeetingProjects: mocks.projects,
+}));
+vi.mock(
+  '@tuturuuu/meet-core/features/meeting-record/meeting-record-section',
+  () => ({ MeetingRecordSection: mocks.record })
+);
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -123,4 +132,35 @@ test('ended meetings keep notes closed for viewers the policy denies', () => {
   const view = MeetingView({ model: model({ kind: 'ended', policy }) });
   expect(view.props.canReadNotes).toBe(false);
   expect(view.props.initialShowNotes).toBe(false);
+});
+
+const recordProps = {
+  wsId: 'canonical-workspace',
+  meetingId,
+  workspaceSlug: 'personal',
+};
+
+test('active meetings show their Projects and the meeting record', () => {
+  const view = MeetingView({
+    model: model({
+      kind: 'active',
+      policy: { ended: false, canReadNotes: false },
+      calendarEvent: null,
+      durationSeconds: 0,
+    }),
+  });
+  const [projects] = findByType(view, mocks.projects);
+  expect(projects?.props).toEqual({ wsId: 'canonical-workspace', meetingId });
+  const [record] = findByType(view, mocks.record);
+  expect(record?.props).toEqual(recordProps);
+});
+
+test('ended meetings keep the meeting record and Projects for review', () => {
+  const policy = { ended: true, canReadNotes: false };
+  const view = MeetingView({ model: model({ kind: 'ended', policy }) });
+  expect(view.props.record.type).toBe(mocks.record);
+  expect(view.props.record.props).toEqual({
+    ...recordProps,
+    withProjects: true,
+  });
 });

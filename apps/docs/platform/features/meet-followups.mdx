@@ -27,9 +27,11 @@ stay unspecified; incomplete transcripts remain visibly marked.
 Meeting details keep a persistent record: the agenda, decisions and the action
 items saved from the meeting. The host or a workspace admin edits the agenda and
 decisions; full workspace members read them. Action items show live status from
-Tasks, with assignees and board.
+Tasks, with assignees and board. An ended meeting shows the same record and its
+Projects, whether or not notes exist.
 
-**Save all action items** reviews every AI note action item in one sheet. Pasted
+**Save all action items** reviews every AI note action item in one sheet; only the
+host saves from it, because Meet follow-ups are a host action. Pasted
 Mira `/actions` output or any list, one item per line, adds more. Each item has its
 own title, assignee, due date and board. Items are saved one at a time into the
 meeting's workspace, on the first open list of the chosen board. A suggested owner
@@ -41,7 +43,7 @@ lists it. Tasks saved into another workspace keep the link but are not listed, b
 records never cross workspaces. The sheet and the single-item review share one
 receipt per suggestion, so neither creates a second task for the same item. An item
 whose save may have happened stays marked for the host to check instead of being
-retried. A Project chip under the meeting title opens the Project in Tasks; see
+retried. The meeting's Projects show under its title; see
 [Workspace Projects](/platform/features/workspace-projects).
 
 ## Since last time
@@ -50,7 +52,7 @@ When earlier meetings share a Project with this one, the meeting record opens
 with **Since last time**. It lists, live from Tasks, the items still open from the
 most recent earlier meetings, grouped by owner, and those resolved since the
 previous meeting started. The host or a workspace admin can carry every open item
-over in one click. A carried item keeps its task and names the meeting it came
+over in one click, up to 100 at a time. A carried item keeps its task and names the meeting it came
 from. Items already on this meeting are not repeated. Recurring Calendar series
 are not yet a source; until then, link the meetings of a series to one Project.
 
@@ -122,7 +124,8 @@ end-to-end coverage. The meeting record needs migration
 `20261124013000_project_links_and_meeting_records`. Its regression tests are the
 pgTAP contract `project-links-meeting-records.sql` and the Meet Core
 `meeting-record` tests (`action-items`, `save-action-item`, `source-link`,
-`project-links`, `since-last-time`).
+`project-links`, `since-last-time`, `record`, `access`), plus the Meet Worker
+`api-registry-meet-record` and `meeting-view` tests.
 
 ## Public meeting details and long calls
 

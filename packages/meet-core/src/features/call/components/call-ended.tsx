@@ -37,6 +37,7 @@ export function CallEnded({
   backHref,
   saving = false,
   notes,
+  record,
 }: {
   accountId: string;
   /** `ended` when the room closed; any other value means this device left. */
@@ -54,6 +55,8 @@ export function CallEnded({
   saving?: boolean;
   /** Replaces the default notes reader, e.g. with the meeting page reader. */
   notes?: ReactNode;
+  /** The meeting record, shown whether or not notes exist. */
+  record?: ReactNode;
 }) {
   const ended = lifecycle === 'ended';
   useEndedRoom(accountId, meetingId, ended);
@@ -182,6 +185,7 @@ export function CallEnded({
             }
           />
           {!wide && !inline && content}
+          {record}
           <EndedMeetingRating accountId={accountId} meetingId={meetingId} />
         </div>
         {wide && content && <div className="min-w-0">{content}</div>}

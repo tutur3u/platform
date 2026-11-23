@@ -6253,6 +6253,7 @@
         "carried": "{count, plural, =0 {Không còn mục nào để chuyển} other {Đã chuyển # mục}}",
         "carry_all": "{count, plural, other {Chuyển # mục đang mở}}",
         "carry_failed": "Không thể chuyển các mục",
+        "carry_first": "{count, plural, other {Chuyển # mục đang mở đầu tiên}}",
         "done": "Xong",
         "empty": "Mọi việc từ buổi trước đã được giải quyết",
         "from": "Từ {name}",

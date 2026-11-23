@@ -6,11 +6,11 @@ import {
   type MeetingRecordParams,
   meetingRecordAccess,
 } from './access';
+import { MAX_CARRY } from '../limits';
 import { listLinkedProjects } from './project-links';
 import { listMeetingTasks, type MeetingRecordTask } from './record';
 
 const MAX_EARLIER_MEETINGS = 20;
-const MAX_CARRY = 100;
 
 export type SinceLastTimeTask = MeetingRecordTask & { fromMeetingId: string };
 
@@ -42,6 +42,7 @@ async function earlierProjectMeetings(access: MeetingRecordAccess) {
       projects.map((project) => project.id)
     )
     .neq('entity_id', access.meeting.id)
+    .order('created_at', { ascending: false })
     .limit(500);
   if (links.error)
     throw new MeetingRecordError(500, 'Earlier meetings unavailable');

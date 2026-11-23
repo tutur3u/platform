@@ -14,29 +14,21 @@ import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import {
+  meetingRecordQueryKey,
+  sinceLastTimeQueryKey,
+} from './use-meeting-record';
 
 export const meetingProjectsQueryKey = (wsId: string, meetingId: string) =>
   ['meeting-record-projects', wsId, meetingId] as const;
-
-export function projectHref(
-  tasksUrl: string,
-  workspaceSlug: string,
-  projectId: string
-) {
-  return `${tasksUrl}/${encodeURIComponent(workspaceSlug)}/projects/${encodeURIComponent(projectId)}`;
-}
 
 /** The Projects a meeting belongs to, with linking for project managers. */
 export function MeetingProjects({
   wsId,
   meetingId,
-  workspaceSlug,
-  tasksUrl,
 }: {
   wsId: string;
   meetingId: string;
-  workspaceSlug: string;
-  tasksUrl: string;
 }) {
   const t = useTranslations('meet.record.projects');
   const queryClient = useQueryClient();
@@ -58,6 +50,15 @@ export function MeetingProjects({
       queryClient.setQueryData<MeetingProjectLinks>(queryKey, (current) =>
         current ? { ...current, linked: result.linked } : current
       );
+      // The default board and earlier meetings follow the linked Projects.
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: meetingRecordQueryKey(wsId, meetingId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: sinceLastTimeQueryKey(wsId, meetingId),
+        }),
+      ]);
     },
     onError: () => toast.error(t('change_failed')),
   });
@@ -88,7 +89,6 @@ export function MeetingProjects({
         <ProjectChip
           key={project.id}
           disabled={change.isPending}
-          href={projectHref(tasksUrl, workspaceSlug, project.id)}
           name={project.name}
           onRemove={
             canLink

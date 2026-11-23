@@ -73,7 +73,7 @@ export function MeetingRecordPanel(props: MeetingRecordLinks) {
             <section className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-medium text-sm">{t('action_items')}</h3>
-                {record.data.canEdit ? (
+                {record.data.isHost ? (
                   <Button
                     onClick={() => setReviewing(true)}
                     size="sm"

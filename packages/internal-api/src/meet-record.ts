@@ -79,6 +79,7 @@ export type MeetingRecordTask = {
 
 export type MeetingRecord = {
   canEdit: boolean;
+  isHost: boolean;
   items: MeetingRecordItem[];
   tasks: MeetingRecordTask[];
   defaultBoardId: string | null;

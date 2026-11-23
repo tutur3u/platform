@@ -6253,6 +6253,7 @@
         "carried": "{count, plural, =0 {Nothing left to carry over} one {Carried over # item} other {Carried over # items}}",
         "carry_all": "{count, plural, one {Carry over # open item} other {Carry over # open items}}",
         "carry_failed": "Could not carry items over",
+        "carry_first": "{count, plural, one {Carry over the first # open item} other {Carry over the first # open items}}",
         "done": "Done",
         "empty": "Everything from last time is settled",
         "from": "From {name}",

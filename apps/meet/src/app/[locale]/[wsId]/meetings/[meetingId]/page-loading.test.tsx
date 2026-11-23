@@ -32,15 +32,12 @@ vi.mock('./meeting-calendar-event', () => ({
 vi.mock('@/constants/common', () => ({
   CALENDAR_URL: 'https://calendar.example.test',
 }));
-vi.mock('@tuturuuu/meet-core/constants/common', () => ({
-  TASKS_URL: 'https://tasks.example.test',
-}));
 vi.mock('@tuturuuu/meet-core/features/meeting-record/meeting-projects', () => ({
   MeetingProjects: () => null,
 }));
 vi.mock(
-  '@tuturuuu/meet-core/features/meeting-record/meeting-record-panel',
-  () => ({ MeetingRecordPanel: () => null })
+  '@tuturuuu/meet-core/features/meeting-record/meeting-record-section',
+  () => ({ MeetingRecordSection: () => null })
 );
 vi.mock('next/server', () => ({ connection: async () => {} }));
 vi.mock('next/navigation', () => ({

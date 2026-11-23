@@ -141,7 +141,7 @@ export function readReceipt(
     if (
       saved?.status === 'saved' &&
       typeof saved.url === 'string' &&
-      /^https:\/\//.test(saved.url)
+      /^https:\/\/(tasks|calendar)\.tuturuuu\.com\//.test(saved.url)
     )
       return { status: 'saved', url: saved.url };
   } catch {
