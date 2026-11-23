@@ -17,6 +17,7 @@ import {
   MiraJoinBox,
   useRememberMiraJoin,
 } from '../../live-assistant/mira-join-box';
+import { prefersMiraOff } from '../../live-assistant/mira-join-choice';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
 import { GUEST_TURNSTILE_SCRIPT_SRC } from '../lib/guest-turnstile-recovery';
 import { GuestTurnstile } from './guest-turnstile';
@@ -68,11 +69,14 @@ export function MeetGuestJoin({
   returnTo,
   siteKey,
   scriptNonce,
-  miraBoxTickedByDefault = true,
+  miraBoxTickedByDefault = false,
+  miraAcceptanceRevision = 0,
 }: {
   meetingId: string;
   /** The workspace default for the Mira box; the same on server and client. */
   miraBoxTickedByDefault?: boolean;
+  /** The Mira acceptance open when the page loaded; 0 when none. */
+  miraAcceptanceRevision?: number;
   /** The response's CSP nonce, for the server-rendered Turnstile script. */
   scriptNonce?: string;
   /** Shown only when the host made the meeting details public. */
@@ -99,6 +103,11 @@ export function MeetGuestJoin({
   }, []);
   const [state, setState] = useState<GuestJoinState>({ kind: 'verifying' });
   const [miraTicked, setMiraTicked] = useState(miraBoxTickedByDefault);
+  // An untick kept from an earlier visit in this tab stays unticked. It is
+  // read after hydration, so the server markup and the first render agree.
+  useEffect(() => {
+    if (prefersMiraOff(meetingId)) setMiraTicked(false);
+  }, [meetingId]);
   const rememberMira = useRememberMiraJoin();
   const [stalled, setStalled] = useState(false);
   // A Turnstile token is single-use: a fresh widget issues the next one.
@@ -128,8 +137,14 @@ export function MeetGuestJoin({
   const join = async (token: string | null, via?: 'human') => {
     setState({ kind: 'submitting', token });
     try {
-      // Recorded after admission; both join paths carry the final state.
-      await rememberMira(meetingId, miraTicked).catch(() => undefined);
+      // Recorded for after admission; both join paths carry the final state.
+      // It runs beside the join request and never rejects, so it cannot hold
+      // the join back; the page refreshes only once it has been kept.
+      const remembered = rememberMira(
+        meetingId,
+        miraTicked,
+        miraAcceptanceRevision
+      ).catch(() => undefined);
       await joinMeetCallAsGuest(meetingId, {
         displayName: name.trim(),
         ...(!token
@@ -138,6 +153,7 @@ export function MeetGuestJoin({
             ? { humanPassToken: token }
             : { turnstileToken: token }),
       });
+      await remembered;
       startTransition(() => router.refresh());
     } catch (error) {
       if (token) setWidget((value) => value + 1);

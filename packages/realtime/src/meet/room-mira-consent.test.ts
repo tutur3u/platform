@@ -57,6 +57,7 @@ const accept = (revision?: number, capabilities?: string[]) => {
 const view = (id: string) =>
   act(id, { action: 'mira.room.read' }).body as {
     choice: 'on' | 'off' | null;
+    lastChoice: 'on' | 'off' | null;
     ready: boolean;
     canAccept: boolean;
     acceptance: { revision: number; acceptorName: string } | null;
@@ -188,6 +189,19 @@ describe('room Mira per-person consent', () => {
     expect(view(bob)).toMatchObject({ choice: null, ready: false });
     choose(bob, 'on');
     expect(view(bob)).toMatchObject({ choice: 'on', ready: true });
+  });
+
+  it('keeps the latest own choice as lastChoice across a new acceptance', () => {
+    accept();
+    choose(bob, 'off');
+    expect(view(bob)).toMatchObject({ choice: 'off', lastChoice: 'off' });
+    room = endMira(room, host, 'turned_off').state;
+    accept();
+    // Current choice is gone with the old revision; the last one is not.
+    expect(view(bob)).toMatchObject({ choice: null, lastChoice: 'off' });
+    expect(view(carol)).toMatchObject({ choice: null, lastChoice: null });
+    choose(bob, 'on');
+    expect(view(bob)).toMatchObject({ choice: 'on', lastChoice: 'on' });
   });
 
   it('refuses an on choice for an acceptance the participant did not see', () => {

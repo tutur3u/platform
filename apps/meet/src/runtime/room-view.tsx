@@ -29,6 +29,7 @@ export function RoomView({
         returnTo={model.returnTo}
         siteKey={model.siteKey}
         miraBoxTickedByDefault={model.miraBoxTickedByDefault}
+        miraAcceptanceRevision={model.miraAcceptanceRevision}
         // The server render reads the response nonce like the root head
         // scripts do; the browser never needs it again.
         scriptNonce={model.scriptNonce ?? globalThis.__meetCspNonce?.()}

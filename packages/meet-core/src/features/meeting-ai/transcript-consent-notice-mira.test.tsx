@@ -36,6 +36,7 @@ const mira = (choice: 'on' | 'off' | null) => ({
   version: 'v',
   acceptance: { revision: 1, acceptorName: 'Lan', capabilities: ['chat'] },
   choice,
+  lastChoice: choice,
   pausing: false,
   ready: choice === 'on',
   canAccept: false,

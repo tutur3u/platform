@@ -64,6 +64,7 @@ function miraRoomView(
 ) {
   const acceptance = currentMiraRoomAcceptance(state);
   const own = state.miraRoom?.choices[accountId];
+  const pausing = !!state.miraRoom?.pending?.[accountId];
   const current =
     !!acceptance &&
     own?.version === MIRA_ROOM_NOTICE_VERSION &&
@@ -80,7 +81,16 @@ function miraRoomView(
         }
       : null,
     choice: current ? own!.choice : null,
-    pausing: !!state.miraRoom?.pending?.[accountId],
+    // The account's own latest choice in this meeting, kept across a new
+    // acceptance so the next box can start where the person left it. An
+    // opt-out still settling already counts as off.
+    lastChoice:
+      own && own.meetingId === token.meetingId
+        ? pausing
+          ? 'off'
+          : own.choice
+        : null,
+    pausing,
     ready: miraRoomRequesterReady(state, token.meetingId, accountId),
     canAccept: canAcceptMiraRoom(state, token),
     status: miraRoomStatus(state, token.meetingId),

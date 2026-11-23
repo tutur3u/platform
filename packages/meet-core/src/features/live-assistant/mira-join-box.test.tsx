@@ -29,11 +29,12 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 it('keeps an untick from the join screen to seed the lobby and record off', async () => {
-  await remember()('room', false);
+  await remember()('room', false, 5);
   // The lobby seeds its box from it without consuming it.
   expect(peekMiraJoinChoice('room')).toMatchObject({
     ticked: false,
     locale: 'en',
+    seenRevision: 5,
     textHash: expect.stringMatching(/^[0-9a-f]{64}$/),
   });
   // Peeking never consumes it; recording marks it for one acceptance only.
@@ -51,7 +52,15 @@ it('keeps an untick from the join screen to seed the lobby and record off', asyn
 it('never rejects, so remembering can never block a join', async () => {
   vi.spyOn(crypto.subtle, 'digest').mockRejectedValue(new Error('no crypto'));
   await expect(remember()('room', true)).resolves.toBeUndefined();
-  expect(peekMiraJoinChoice('room')).toBeNull();
+  // Without a hash the choice is kept but never evidenced as on.
+  expect(peekMiraJoinChoice('room')).toMatchObject({
+    ticked: true,
+    textHash: '',
+  });
+  // A failed hash still keeps an untick for every later box.
+  await remember()('room', false);
+  expect(prefersMiraOff('room')).toBe(true);
+  expect(peekMiraJoinChoice('room')?.textHash).toBe('');
   vi.restoreAllMocks();
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
     throw new Error('private mode');
@@ -66,6 +75,7 @@ it('ignores a stale or malformed remembered choice', () => {
     ticked: true,
     textHash: 'a'.repeat(64),
     locale: 'en',
+    seenRevision: 0,
   });
   const later = Date.now() + 7 * 60 * 60 * 1000;
   vi.spyOn(Date, 'now').mockReturnValue(later);
@@ -74,4 +84,33 @@ it('ignores a stale or malformed remembered choice', () => {
   forgetMiraJoinChoice('room');
   sessionStorage.setItem('meet-mira-join:room', '{"ticked":"yes"}');
   expect(peekMiraJoinChoice('room')).toBeNull();
+});
+
+it('keeps an untick through a reload, which keeps storage but not memory', async () => {
+  rememberMiraJoinChoice('room', {
+    ticked: false,
+    textHash: 'a'.repeat(64),
+    locale: 'en',
+    seenRevision: 1,
+  });
+  vi.resetModules();
+  const fresh = await import('./mira-join-choice');
+  expect(fresh.prefersMiraOff('room')).toBe(true);
+  expect(fresh.peekMiraJoinChoice('room')).toMatchObject({ seenRevision: 1 });
+});
+
+it('replaces the Join state outright when the person chooses in the call', () => {
+  rememberMiraJoinChoice('room', {
+    ticked: true,
+    textHash: 'a'.repeat(64),
+    locale: 'en',
+    seenRevision: 2,
+  });
+  rememberMiraPreference('room', false);
+  expect(peekMiraJoinChoice('room')).toMatchObject({
+    ticked: false,
+    textHash: '',
+    locale: 'en',
+    seenRevision: -1,
+  });
 });

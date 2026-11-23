@@ -10,6 +10,10 @@ import {
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import {
+  forgetMiraJoinChoice,
+  peekMiraJoinChoice,
+} from '../../live-assistant/mira-join-choice';
 import { GUEST_TURNSTILE_WATCHDOG_MS } from '../lib/guest-turnstile-recovery';
 import { guestJoinFailure, MeetGuestJoin } from './guest-join';
 
@@ -101,12 +105,22 @@ const widget = () => {
 
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
+  // The Mira checkbox sits inside the form, where Radix observes its size.
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  );
   mocks.mounts = 0;
   mocks.widget = null;
   mocks.join.mockResolvedValue({ ok: true });
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.clearAllMocks();
 });
@@ -145,6 +159,34 @@ it('(d) still joins when the Mira box cannot be stored', async () => {
   } finally {
     setItem.mockRestore();
   }
+});
+
+it('starts the Mira box unticked and keeps the revision seen on the page', async () => {
+  const meetingId = '7f2a528e-3bff-40ee-bfda-5b944ad03ed8';
+  forgetMiraJoinChoice(meetingId);
+  render(
+    <MeetGuestJoin
+      meetingId={meetingId}
+      returnTo="/r/abc"
+      siteKey="site-key"
+      miraAcceptanceRevision={4}
+    />
+  );
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'Safari guest' },
+  });
+  const box = screen.getByRole('checkbox');
+  expect(box.getAttribute('aria-checked')).toBe('false');
+  act(() => widget().onSuccess('one-use'));
+  fireEvent.click(screen.getByRole('button', { name: 'ask_to_join' }));
+  await waitFor(() => expect(mocks.join).toHaveBeenCalled());
+  await waitFor(() =>
+    expect(peekMiraJoinChoice(meetingId)).toMatchObject({
+      ticked: false,
+      seenRevision: 4,
+    })
+  );
+  forgetMiraJoinChoice(meetingId);
 });
 
 it('offers the host at once and explains a slow check after the watchdog without replacing the widget', async () => {

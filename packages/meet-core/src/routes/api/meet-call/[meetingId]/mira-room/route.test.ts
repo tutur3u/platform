@@ -7,6 +7,7 @@ const f = vi.hoisted(() => ({
   end: vi.fn(),
   record: vi.fn(),
   boxDefault: vi.fn(),
+  openRevision: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
@@ -23,6 +24,7 @@ vi.mock(
   () => ({
     recordMiraChoice: f.record,
     readMiraBoxTickedByDefault: f.boxDefault,
+    readOpenMiraAcceptanceRevision: f.openRevision,
   })
 );
 vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
@@ -164,15 +166,17 @@ it('routes acceptance, turning off and minor reports to the acceptance flow', as
   expect(f.end).toHaveBeenCalledWith(guestAccess, 'minor_reported');
 });
 
-it('gives a participant who is not admitted yet only the join box default', async () => {
+it('gives a participant who is not admitted yet the join box default and the open revision', async () => {
   const { MeetCallAccessError } =
     await import('@tuturuuu/meet-core/features/call/lib/call-access');
   f.room.mockRejectedValue(new MeetCallAccessError(403, 'Join first'));
   f.boxDefault.mockResolvedValue(false);
+  f.openRevision.mockResolvedValue(4);
   const response = await GET(new Request('https://meet.test/x'), params);
   expect(await response.json()).toEqual({
     available: false,
     joinDefault: false,
+    joinRevision: 4,
   });
   f.room.mockRejectedValue(new MeetCallAccessError(503, 'Down'));
   await expect(

@@ -9,6 +9,11 @@ export type RoomMiraConsent =
        * workspace default for the join box.
        */
       joinDefault?: boolean;
+      /**
+       * The acceptance revision open now, 0 when none or unknown. The join
+       * screen keeps it so a Join state applies only to that acceptance.
+       */
+      joinRevision?: number;
     }
   | {
       available: true;
@@ -23,6 +28,8 @@ export type RoomMiraConsent =
       } | null;
       /** The caller's choice for the current acceptance; null is off. */
       choice: 'on' | 'off' | null;
+      /** The caller's latest own choice in this meeting, whatever the revision. */
+      lastChoice: 'on' | 'off' | null;
       /** An opt-out waiting for already-admitted sends to settle. */
       pausing: boolean;
       /** The caller may send a room Mira request now. */

@@ -14,6 +14,12 @@ export type MiraJoinChoice = {
   textHash: string;
   locale: string;
   joinedAt: number;
+  /**
+   * The acceptance revision open on the join screen (0 when none or
+   * unknown). The Join state applies only to that acceptance; -1 marks a
+   * preference that never applies.
+   */
+  seenRevision: number;
   /** The acceptance revision this Join state was recorded for, once. */
   appliedRevision?: number;
 };
@@ -44,7 +50,11 @@ function fromStorage(meetingId: string): MiraJoinChoice | null {
       typeof parsed.joinedAt !== 'number'
     )
       return null;
-    return parsed as MiraJoinChoice;
+    return {
+      ...parsed,
+      seenRevision:
+        typeof parsed.seenRevision === 'number' ? parsed.seenRevision : 0,
+    } as MiraJoinChoice;
   } catch {
     return null;
   }
@@ -72,15 +82,16 @@ export function markMiraJoinChoiceApplied(meetingId: string, revision: number) {
 
 /**
  * Keeps the participant's latest own choice as the preset for later boxes:
- * turning Mira off in the call keeps every later box unticked.
+ * turning Mira off in the call keeps every later box unticked. A choice made
+ * in the call replaces the Join state outright, so the Join notice hash and
+ * revision never apply to it afterwards.
  */
 export function rememberMiraPreference(meetingId: string, ticked: boolean) {
-  const choice = peekMiraJoinChoice(meetingId);
   store(meetingId, {
-    textHash: choice?.textHash ?? '',
-    locale: choice?.locale ?? '',
-    appliedRevision: choice?.appliedRevision,
-    joinedAt: choice?.joinedAt ?? Date.now(),
+    textHash: '',
+    locale: peekMiraJoinChoice(meetingId)?.locale ?? '',
+    joinedAt: Date.now(),
+    seenRevision: -1,
     ticked,
   });
 }

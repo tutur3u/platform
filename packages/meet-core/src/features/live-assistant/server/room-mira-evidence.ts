@@ -123,3 +123,28 @@ export async function readMiraBoxTickedByDefaultForMeeting(meetingId: string) {
     return false;
   }
 }
+
+/**
+ * The acceptance revision open for a meeting now, 0 when none is open or the
+ * lookup fails. A join screen keeps it so a Join state applies only to the
+ * acceptance the participant could have seen; 0 never matches one.
+ */
+export async function readOpenMiraAcceptanceRevision(meetingId: string) {
+  try {
+    const db = await privateDb();
+    const { data, error } = await db
+      .from('meet_mira_host_acceptances')
+      .select('revision, event')
+      .eq('meeting_id', meetingId)
+      .order('revision', { ascending: false })
+      .limit(2);
+    if (error || !data?.length) return 0;
+    const latest = data[0]!.revision;
+    const ended = data.some(
+      (row) => row.revision === latest && row.event === 'end'
+    );
+    return ended ? 0 : latest;
+  } catch {
+    return 0;
+  }
+}

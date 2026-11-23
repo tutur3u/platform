@@ -23,7 +23,10 @@ import {
   resolveMeetingPublicInfo,
 } from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
 import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
-import { readMiraBoxTickedByDefaultForMeeting } from '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence';
+import {
+  readMiraBoxTickedByDefaultForMeeting,
+  readOpenMiraAcceptanceRevision,
+} from '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
@@ -152,6 +155,9 @@ async function roomModel(code: string, locale: string, url: URL) {
       scriptNonce: globalThis.__meetCspNonce?.(),
       meetingTitle: info?.title,
       miraBoxTickedByDefault: await readMiraBoxTickedByDefaultForMeeting(
+        guestJoin.meetingId
+      ),
+      miraAcceptanceRevision: await readOpenMiraAcceptanceRevision(
         guestJoin.meetingId
       ),
       returnTo,

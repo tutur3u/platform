@@ -28,7 +28,10 @@ vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('server-only', () => ({}));
 vi.mock(
   '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence',
-  () => ({ readMiraBoxTickedByDefaultForMeeting: async () => false })
+  () => ({
+    readMiraBoxTickedByDefaultForMeeting: async () => false,
+    readOpenMiraAcceptanceRevision: async () => 0,
+  })
 );
 vi.mock('@tanstack/react-router', () => ({
   notFound: () => ({ notFound: true }),
@@ -574,6 +577,7 @@ describe('anonymous guest join', () => {
         siteKey: 'site-key',
         returnTo: `/r/${code}`,
         miraBoxTickedByDefault: false,
+        miraAcceptanceRevision: 0,
       });
       expect(model).not.toHaveProperty('meetingTitle', 'Weekly sync');
       expect(mocks.responseHeaders.get('cache-control')).toBe(

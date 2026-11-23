@@ -35,19 +35,30 @@ export function MiraJoinBox({
 }
 
 /**
- * Keeps the final box state, notice hash and locale for after admission. It
- * never rejects, so remembering can never block a join.
+ * Keeps the final box state, notice hash, locale and the acceptance revision
+ * seen on the join screen for after admission. It never rejects, so
+ * remembering can never block a join. Without a hash the choice cannot be
+ * evidenced as on, but an untick is still kept: the participant stays off
+ * and every later box starts unticked.
  */
 export function useRememberMiraJoin() {
   const text = useMiraConsentText();
   const locale = useLocale();
   return useCallback(
-    async (meetingId: string, ticked: boolean) => {
+    async (meetingId: string, ticked: boolean, seenRevision = 0) => {
+      let textHash = '';
       try {
-        // Without a hash the choice cannot be evidenced; the participant
-        // then chooses in the call instead.
-        const textHash = await hashMiraConsentText(text);
-        rememberMiraJoinChoice(meetingId, { ticked, textHash, locale });
+        textHash = await hashMiraConsentText(text);
+      } catch {
+        // Without a hash the call asks the participant to confirm instead.
+      }
+      try {
+        rememberMiraJoinChoice(meetingId, {
+          ticked,
+          textHash,
+          locale,
+          seenRevision,
+        });
       } catch {
         // The participant stays off until they choose in the call.
       }

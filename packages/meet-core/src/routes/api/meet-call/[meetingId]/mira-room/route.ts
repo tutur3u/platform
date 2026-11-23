@@ -18,6 +18,7 @@ import {
 import { readRoomMiraAvailability } from '../../../../../features/live-assistant/server/room-mira-authority';
 import {
   readMiraBoxTickedByDefault,
+  readOpenMiraAcceptanceRevision,
   recordMiraChoice,
 } from '../../../../../features/live-assistant/server/room-mira-evidence';
 
@@ -79,10 +80,11 @@ export async function GET(
       // Not admitted yet: the join box needs only the workspace default.
       if (!(error instanceof MeetCallAccessError) || error.status !== 403)
         throw error;
-      return {
-        available: false,
-        joinDefault: await readMiraBoxTickedByDefault(access.meeting.ws_id),
-      };
+      const [joinDefault, joinRevision] = await Promise.all([
+        readMiraBoxTickedByDefault(access.meeting.ws_id),
+        readOpenMiraAcceptanceRevision(access.meeting.id),
+      ]);
+      return { available: false, joinDefault, joinRevision };
     }
   });
 }

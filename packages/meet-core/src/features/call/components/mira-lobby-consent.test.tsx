@@ -47,6 +47,7 @@ const accepted = {
     acceptedAt: 0,
   },
   choice: null,
+  lastChoice: null,
   pausing: false,
   ready: false,
   canAccept: false,
@@ -122,6 +123,7 @@ it('keeps a guest-page untick unticked in the lobby and records off after admiss
     ticked: false,
     textHash: 'c'.repeat(64),
     locale: 'en',
+    seenRevision: 2,
   });
   showLobby();
   const box = await screen.findByRole('checkbox', { name: m.box_label });
@@ -131,6 +133,8 @@ it('keeps a guest-page untick unticked in the lobby and records off after admiss
     expect(peekMiraJoinChoice('room')?.textHash).not.toBe('c'.repeat(64))
   );
   expect(peekMiraJoinChoice('room')?.ticked).toBe(false);
+  // The acceptance open on the lobby is the one the Join state applies to.
+  expect(peekMiraJoinChoice('room')?.seenRevision).toBe(2);
   cleanup();
 
   f.choose.mockResolvedValue({ ...accepted, choice: 'off' });

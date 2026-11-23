@@ -150,11 +150,17 @@ captions, answers).** with an info panel and the 18+ line. It starts from the
 workspace default. Joining happens before admission, so the final box state,
 the notice hash and the locale are kept for the tab (in memory and session
 storage) and recorded through the mira-room route after admission, once, for
-an acceptance that was already current when the participant pressed Join;
-until then the participant is off. Under an unticked workspace default, a box
-that started ticked on a join screen never counts and the participant confirms
-in the call. Every later confirm box starts unticked while the participant's
-own last state is off, whether from Join or from turning Mira off in the call.
+the acceptance revision that was open on the join screen (the server reads it
+for the join screen, so client clocks never decide it); until then the
+participant is off. A different revision, or one that cannot be compared,
+asks the participant to confirm in the call. Under an unticked workspace
+default, a box that started ticked on a join screen never counts and the
+participant confirms in the call. If the notice hash cannot be made the join
+still succeeds and an untick is still kept. Every later confirm box starts
+unticked while the participant's own last state is off: from Join, from
+turning Mira off in the call, or from another tab or device (the room view
+returns the account's `lastChoice`, kept across acceptance revisions). A Join
+recording that fails retries on the next read without a toast.
 The lobby seeds its box once, so a changed default never overwrites a box the
 participant already toggled. When Mira is turned on mid-call, or the acceptance changes, everyone
 present gets the same box preset to the workspace default and counts as off

@@ -2,16 +2,16 @@
 
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { type MutableRefObject, useEffect, useRef, useState } from 'react';
 import {
   MiraJoinBox,
   useRememberMiraJoin,
 } from '../../live-assistant/mira-join-box';
 import { peekMiraJoinChoice } from '../../live-assistant/mira-join-choice';
-import { useRoomMiraJoinDefault } from './use-room-mira';
 import type { MeetRoomController } from '../lib/room-controller';
 import { GuestLobbyUpgrade } from './guest-lobby-upgrade';
 import { Lobby, type LobbyParticipant } from './lobby';
+import { useRoomMiraJoinSeed } from './use-room-mira';
 
 type MediaDevice = 'microphone' | 'camera';
 
@@ -66,6 +66,8 @@ export function ConnectedLobby({
   // The Mira box state; null until seeded, so the box renders on the client.
   const [miraTicked, setMiraTicked] = useState<boolean | null>(null);
   const rememberMira = useRememberMiraJoin();
+  // The acceptance revision open on the join screen, kept by the Mira box.
+  const miraRevision = useRef(0);
   const sendDisplayName = (name: string) => {
     if (name === sentDisplayName.current) return;
     sentDisplayName.current = name;
@@ -106,7 +108,11 @@ export function ConnectedLobby({
         onOutputDeviceChange(nextOutputDeviceId);
         // Recorded after admission; until then the participant is off.
         if (miraMeetingId && miraTicked !== null)
-          void rememberMira(miraMeetingId, miraTicked).catch(() => undefined);
+          void rememberMira(
+            miraMeetingId,
+            miraTicked,
+            miraRevision.current
+          ).catch(() => undefined);
         if (!canReadWorkspace || displayName !== defaultDisplayName) {
           sendDisplayName(displayName);
         }
@@ -145,6 +151,7 @@ export function ConnectedLobby({
             meetingId={miraMeetingId}
             ticked={miraTicked}
             onTickedChange={setMiraTicked}
+            revisionRef={miraRevision}
           />
         ) : undefined
       }
@@ -161,18 +168,25 @@ function LobbyMiraBox({
   meetingId,
   ticked,
   onTickedChange,
+  revisionRef,
 }: {
   meetingId: string;
   ticked: boolean | null;
   onTickedChange: (ticked: boolean) => void;
+  revisionRef: MutableRefObject<number>;
 }) {
-  const fallback = useRoomMiraJoinDefault(meetingId);
+  const seed = useRoomMiraJoinSeed(meetingId);
   const seeded = useRef(false);
+  const seedTicked = seed?.ticked;
+  const seedRevision = seed?.revision;
   useEffect(() => {
-    if (seeded.current || fallback === undefined) return;
+    if (seedRevision !== undefined) revisionRef.current = seedRevision;
+  }, [seedRevision, revisionRef]);
+  useEffect(() => {
+    if (seeded.current || seedTicked === undefined) return;
     seeded.current = true;
-    onTickedChange(peekMiraJoinChoice(meetingId)?.ticked ?? fallback);
-  }, [meetingId, fallback, onTickedChange]);
+    onTickedChange(peekMiraJoinChoice(meetingId)?.ticked ?? seedTicked);
+  }, [meetingId, seedTicked, onTickedChange]);
   if (ticked === null) return null;
   return <MiraJoinBox checked={ticked} onCheckedChange={onTickedChange} />;
 }
