@@ -1202,11 +1202,12 @@ products again for eviction. A restored completion timestamp is historical and
 shows **Needs refresh**, never proof that all rows remain stored. Cache eviction, clearing cache, changing quota, or changing account/workspace
 invalidates readiness. A scope
 switch stops subsequent requests; an already-started request settles before
-another bulk run starts. Calendar and My Tasks read only the requested date
-range or completed page during normal use; older dates and completed pages load
-on demand. Full offline history comes only from the explicit downloads, which,
-like every marked bulk read, return 503 while download protection is inactive.
-Normal visits never start background bulk reads.
+another bulk run starts. Calendar, My Tasks and Finance transactions read only
+the requested date range, completed page or cursor page during normal use; older
+history loads on demand. Full offline history comes only from the explicit
+downloads, which, like every marked bulk read, return 503 while download
+protection is inactive. The Inventory catalog backfill is the remaining
+background bulk read on a normal visit; it runs at most once per 15 minutes.
 
 Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
 when the gateway and owning app both enforce the guard. Ordinary unmarked

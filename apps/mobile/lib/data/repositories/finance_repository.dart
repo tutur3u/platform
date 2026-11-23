@@ -97,8 +97,6 @@ class FinanceRepository
   static final Map<String, _WorkspaceCurrencyCacheEntry>
   _workspaceCurrencyCache = {};
   static final Map<String, Future<String>> _workspaceCurrencyInFlight = {};
-  static final Map<String, Future<void>> _historyBackfills = {};
-  static final Map<String, DateTime> _historyBackfillTimes = {};
 
   CacheKey _workspaceCurrencyCacheKey(String wsId) {
     return CacheKey(
@@ -575,12 +573,6 @@ class FinanceRepository
         walletId,
         query,
       );
-      if (cursor == null &&
-          (search == null || search.isEmpty) &&
-          walletId == null &&
-          query.isEmpty) {
-        _startHistoryBackfill(wsId);
-      }
       final rows = cursor == null
           ? overlayPendingTransactions(
               wsId,
