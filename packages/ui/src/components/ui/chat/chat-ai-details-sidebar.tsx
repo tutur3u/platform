@@ -14,12 +14,12 @@ import { ScrollArea } from '../scroll-area';
 import { toast } from '../sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../tabs';
 import {
-  LoadingState,
   SettingsPanel,
   SharedPanel,
   UsagePanel,
 } from './chat-ai-details-panels';
 import { resolveFallbackChatAiModelId } from './chat-ai-models';
+import { LoadingState } from './chat-loading-state';
 import {
   useChatAiObservability,
   useChatAiSettings,

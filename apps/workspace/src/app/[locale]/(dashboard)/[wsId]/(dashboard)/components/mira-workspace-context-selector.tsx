@@ -18,7 +18,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { skeletonClassName } from '@tuturuuu/ui/skeleton';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -131,7 +131,10 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
         >
           <Icon className="h-3 w-3 shrink-0" aria-hidden />
           {isLoading && !workspaceName ? (
-            <Skeleton aria-hidden className="h-3 w-16" />
+            <span
+              aria-hidden="true"
+              className={cn(skeletonClassName, 'inline-block h-3 w-16')}
+            />
           ) : (
             <span className="truncate">{workspaceName}</span>
           )}

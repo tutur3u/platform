@@ -81,13 +81,17 @@ export function ProfileLoadingState({
   onUseAnotherAccount: () => void;
 }) {
   const t = useTranslations();
+  const srLabelDetail = t('login.loading_account_profile_description', {
+    app: appName,
+  });
 
   return (
     <ConfirmationCard>
       <LoadingRegion
         className="flex flex-col gap-4"
-        srLabel={`${t('login.loading_account_profile_title')}. ${t('login.loading_account_profile_description', { app: appName })}`}
+        srLabel={t('login.loading_account_profile_title')}
       >
+        <span className="sr-only">{srLabelDetail}</span>
         <div className="flex flex-col items-center gap-3">
           <SkeletonAvatar className="size-16" />
           <SkeletonLine className="w-full" barClassName="mx-auto w-3/5" size="xl" />

@@ -120,18 +120,21 @@ export function RateLimitDetailsDialogFooterActions({
   onRequestReview: () => void;
 }) {
   const t = useTranslations('common');
+  const srLabelClearing = t('rate_limited_clear_ip_block_loading');
 
   const clearButton = canClearIpBlock ? (
     <Button
       aria-busy={isClearingIpBlock}
-      aria-label={t('rate_limited_clear_ip_block')}
+      aria-label={
+        isClearingIpBlock ? srLabelClearing : t('rate_limited_clear_ip_block')
+      }
       disabled={isClearingIpBlock}
       onClick={onClearIpBlock}
       type="button"
       variant="secondary"
     >
       {isClearingIpBlock ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
       ) : (
         <Shield className="h-4 w-4" />
       )}

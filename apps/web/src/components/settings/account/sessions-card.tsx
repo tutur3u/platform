@@ -20,7 +20,12 @@ import {
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
 import { Progress } from '@tuturuuu/ui/progress';
-import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  Skeleton,
+  skeletonClassName,
+} from '@tuturuuu/ui/skeleton';
+import { cn } from '@tuturuuu/utils/format';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -201,7 +206,15 @@ export default function SessionsCard() {
 
   if (loading) {
     return (
-      <SettingsSection title={t('title')}>
+      <SettingsSection
+        title={t('title')}
+        description={
+          <span
+            aria-hidden="true"
+            className={cn(skeletonClassName, 'inline-block h-3.5 w-64 max-w-full')}
+          />
+        }
+      >
         <LoadingRegion srLabel={t('loading_description')}>
           {[1, 2, 3].map((i) => (
             <SettingsSectionBlock className="space-y-2" key={i}>

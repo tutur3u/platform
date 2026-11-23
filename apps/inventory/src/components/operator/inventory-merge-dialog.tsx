@@ -329,7 +329,7 @@ export function InventoryMergeDialog({
                         product:
                           resolvedLabels.find(
                             (product) => product.id === row.productId
-                          )?.name || row.productId,
+                          )?.name || '…',
                         warehouse: recordName(
                           row.warehouseId,
                           labels?.warehouses

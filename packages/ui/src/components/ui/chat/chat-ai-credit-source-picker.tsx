@@ -6,7 +6,7 @@ import { cn } from '@tuturuuu/utils/format';
 import type { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { Progress } from '../progress';
-import { Skeleton } from '../skeleton';
+import { skeletonClassName } from '../skeleton';
 
 type ChatTranslations = ReturnType<typeof useTranslations>;
 
@@ -120,7 +120,13 @@ function CreditSourceCard({
             <span className="truncate">
               {state.isLoading ? (
                 <>
-                  <Skeleton className="inline-block h-3 w-24 align-middle" />
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      skeletonClassName,
+                      'inline-block h-3 w-24 align-middle'
+                    )}
+                  />
                   <span className="sr-only">{t('ai_credits_loading')}</span>
                 </>
               ) : unavailable ? (

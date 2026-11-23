@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { cn } from '@tuturuuu/utils/format';
 import { formatInTimezone } from '@tuturuuu/utils/task-date-timezone';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
@@ -126,6 +127,9 @@ export function AddTaskForm({
 
   // Fetch board config for estimation settings
   const { data: boardConfig } = useBoardConfig(selectedBoardId, wsId);
+
+  // This form is not localised yet; screen readers hear the pending state.
+  const busy = <LoadingPlaceholder srLabel="Loading" />;
 
   // Fetch workspace labels (only after board and list are selected)
   const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({
@@ -819,7 +823,7 @@ export function AddTaskForm({
               >
                 <SelectTrigger aria-busy={labelsLoading}>
                   <SelectValue
-                    placeholder={labelsLoading ? '' : 'Select labels...'}
+                    placeholder={labelsLoading ? busy : 'Select labels...'}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -895,7 +899,7 @@ export function AddTaskForm({
               >
                 <SelectTrigger aria-busy={projectsLoading}>
                   <SelectValue
-                    placeholder={projectsLoading ? '' : 'Select projects...'}
+                    placeholder={projectsLoading ? busy : 'Select projects...'}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -965,7 +969,7 @@ export function AddTaskForm({
               >
                 <SelectTrigger aria-busy={membersLoading}>
                   <SelectValue
-                    placeholder={membersLoading ? '' : 'Select assignees...'}
+                    placeholder={membersLoading ? busy : 'Select assignees...'}
                   />
                 </SelectTrigger>
                 <SelectContent>
