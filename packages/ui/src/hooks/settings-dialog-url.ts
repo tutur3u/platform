@@ -17,6 +17,7 @@ export const SETTINGS_DIALOG_CLOSE_INTENT_EVENT =
 
 /** Account-level tabs every app's settings dialog is expected to expose. */
 export const SHARED_SETTINGS_TAB_IDS = {
+  accountIntegrations: 'account_integrations',
   accounts: 'accounts',
   appearance: 'appearance',
   keyboardShortcuts: 'keyboard_shortcuts',

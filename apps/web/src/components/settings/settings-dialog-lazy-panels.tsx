@@ -3,6 +3,11 @@
 import { lazy } from 'react';
 import { withPanelSuspense } from './settings-dialog-lazy-panel-utils';
 
+const LazyAccountIntegrationsPanel = lazy(() =>
+  import('@tuturuuu/satellite/account-integrations-panel').then((module) => ({
+    default: module.AccountIntegrationsPanel,
+  }))
+);
 const LazyAccountManagementSettings = lazy(
   () => import('./account/account-management-settings')
 );
@@ -50,6 +55,9 @@ const LazySettingsDialogNativeRoutePanels = lazy(() =>
   import('./settings-dialog-native-route-panels').then((module) => ({
     default: module.SettingsDialogNativeRoutePanels,
   }))
+);
+export const AccountIntegrationsPanel = withPanelSuspense(
+  LazyAccountIntegrationsPanel
 );
 export const AccountManagementSettings = withPanelSuspense(
   LazyAccountManagementSettings

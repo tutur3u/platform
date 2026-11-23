@@ -1940,5 +1940,20 @@
     "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
     "view_workspace_domains": "Xem tên miền không gian làm việc",
     "view_workspace_domains_description": "Xem các tên miền tùy chỉnh của không gian làm việc, trạng thái xác minh và quyền sử dụng tên miền."
+  },
+  "account-integrations": {
+    "browse_all": "Xem tất cả tích hợp",
+    "calendar": "Lịch",
+    "calendar_description": "Google Calendar và Outlook Calendar",
+    "coming_soon": "Sắp ra mắt",
+    "description": "Các dịch vụ kết nối với tài khoản của bạn",
+    "early_access": "Truy cập sớm",
+    "mail": "Thư",
+    "mail_description": "Gmail và Outlook Mail",
+    "manage": "Quản lý",
+    "manage_label": "Quản lý {name}",
+    "title": "Tích hợp",
+    "upskii": "Upskii",
+    "upskii_description": "Lớp học, bài học và bài đánh giá của bạn"
   }
 }

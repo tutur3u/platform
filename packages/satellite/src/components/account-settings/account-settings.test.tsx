@@ -14,6 +14,7 @@ import { SatelliteAccountSettingsPanel } from './account-settings-panel';
 import { SatelliteDefaultSettingsDialog } from './default-settings-dialog';
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
 }));
 vi.mock('@tuturuuu/ui/custom/settings/appearance-settings', () => ({
@@ -106,7 +107,7 @@ describe('shared satellite account settings', () => {
     ).toBeDefined();
   });
 
-  it('exposes profile, accounts, security and sessions in one group', () => {
+  it('exposes profile, accounts, security, sessions and integrations in one group', () => {
     const group = createAccountSettingsNavGroup((key) => key);
     expect(group.label).toBe('satellite-account-settings.title');
     expect(group.items.map((item) => item.name)).toEqual([
@@ -117,6 +118,7 @@ describe('shared satellite account settings', () => {
       'accounts',
       'security',
       'sessions',
+      'account_integrations',
     ]);
   });
 
@@ -173,6 +175,18 @@ describe('shared satellite account settings', () => {
       expect(screen.queryByTestId('profile-panel')).toBeNull();
     }
   );
+
+  it('renders the integrations panel inline for the integrations tab', () => {
+    render(
+      <SatelliteAccountSettingsPanel
+        activeTab="account_integrations"
+        centralUrl="https://tuturuuu.com"
+        user={user}
+      />
+    );
+    expect(screen.getByText('upskii')).toBeDefined();
+    expect(screen.queryByRole('link', { name: /open_in_tuturuuu/ })).toBeNull();
+  });
 
   it('renders nothing for app tabs or signed-out users', () => {
     const { container, rerender } = render(

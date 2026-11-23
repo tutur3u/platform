@@ -41,6 +41,8 @@
     "./version-badge": "./src/components/version-badge-gate.tsx",
     "./workspace-invitation": "./src/components/workspace-invitation/index.ts",
     "./workspace-invitation/card": "./src/components/workspace-invitation/workspace-invitation-card.tsx",
+    "./account-integrations-navigation": "./src/components/account-settings/account-integrations-navigation.ts",
+    "./account-integrations-panel": "./src/components/account-settings/account-integrations-panel.tsx",
     "./account-settings": "./src/components/account-settings/index.ts",
     "./workspace-settings": "./src/components/workspace-settings/index.ts",
     "./accept-language": "./src/i18n/accept-language.ts",

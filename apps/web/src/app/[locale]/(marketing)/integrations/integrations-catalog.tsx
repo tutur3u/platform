@@ -6,6 +6,7 @@ import {
   Code,
   Contact,
   Files,
+  GraduationCap,
   ListTodo,
   Mail,
   MessagesSquare,
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import type { CatalogIntegration } from '@tuturuuu/utils/integrations-catalog';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -32,15 +34,17 @@ type CatalogEntry = Pick<
   'id' | 'category' | 'group' | 'status'
 > & {
   href?: string;
+  logo?: string;
 };
 
-const groups = ['google', 'microsoft', 'other'] as const;
+const groups = ['featured', 'google', 'microsoft', 'other'] as const;
 
 const categoryIcons = {
   calendar: CalendarDays,
   chat: MessagesSquare,
   contacts: Contact,
   development: Code,
+  education: GraduationCap,
   files: Files,
   mail: Mail,
   productivity: PanelsTopLeft,
@@ -137,9 +141,19 @@ export function IntegrationsCatalog({ entries }: { entries: CatalogEntry[] }) {
                   <li key={entry.id}>
                     <Card className="flex h-full flex-col gap-3 p-4">
                       <div className="flex items-start gap-3">
-                        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
-                          <Icon aria-hidden="true" className="size-4" />
-                        </div>
+                        {entry.logo ? (
+                          <Image
+                            alt=""
+                            className="size-9 shrink-0 rounded-lg"
+                            height={36}
+                            src={entry.logo}
+                            width={36}
+                          />
+                        ) : (
+                          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted">
+                            <Icon aria-hidden="true" className="size-4" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <h3 className="font-medium text-sm">{name}</h3>
                           <p className="text-muted-foreground text-sm">

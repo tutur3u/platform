@@ -9,11 +9,8 @@ import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-sess
 import {
   getVisibleIntegrationStatus,
   integrationsCatalog,
+  resolveIntegrationDestinationUrl,
 } from '@tuturuuu/utils/integrations-catalog';
-import {
-  getLaunchableApp,
-  resolveLaunchableAppUrl,
-} from '@tuturuuu/utils/launchable-apps';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -40,7 +37,6 @@ async function readStaffAccess() {
 async function IntegrationResults() {
   await connection();
   const [isStaff, locale] = await Promise.all([readStaffAccess(), getLocale()]);
-  const localePrefix = locale === 'vi' ? '/vi' : '';
 
   const entries = integrationsCatalog.map((entry) => {
     const status = getVisibleIntegrationStatus(entry.status, isStaff);
@@ -48,27 +44,16 @@ async function IntegrationResults() {
       id: entry.id,
       category: entry.category,
       group: entry.group,
+      logo: 'logo' in entry ? entry.logo : undefined,
       status,
     };
     if (status === 'coming_soon' || !('destination' in entry)) return result;
 
-    const app = getLaunchableApp(entry.destination);
-    if (!app) return result;
-
-    const mail = entry.destination === 'mail';
-    return {
-      ...result,
-      href: resolveLaunchableAppUrl({
-        app,
-        environment: 'production',
-        path: mail
-          ? `${localePrefix}/personal/inbox`
-          : `${localePrefix}/personal`,
-        searchParams: mail
-          ? { mailSettings: 'open', mailSettingsTab: 'source' }
-          : { settingsDialog: 'open', settingsTab: 'calendar_integrations' },
-      }),
-    };
+    const href = resolveIntegrationDestinationUrl(entry.destination, {
+      environment: 'production',
+      locale,
+    });
+    return href ? { ...result, href } : result;
   });
 
   return <IntegrationsCatalog entries={entries} />;

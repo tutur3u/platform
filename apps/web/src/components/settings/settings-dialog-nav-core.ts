@@ -10,6 +10,7 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
+import { createAccountIntegrationsNavItem } from '@tuturuuu/satellite/account-integrations-navigation';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import type { SettingsNavBuilderParams } from './settings-dialog-nav-types';
 
@@ -49,6 +50,7 @@ export function buildCoreSettingsNavGroups({
           description: t('settings-nav.accounts.description'),
           keywords: ['Accounts'],
         },
+        createAccountIntegrationsNavItem(t),
       ],
     },
     {

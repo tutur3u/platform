@@ -2,7 +2,9 @@
 
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
+  AccountIntegrationsPanel,
   AccountManagementSettings,
   AppearanceSettings,
   KeyboardShortcutsSettings,
@@ -70,6 +72,13 @@ export function SettingsDialogContent({
       {activeTab === 'accounts' && (
         <div className="h-full">
           <AccountManagementSettings />
+        </div>
+      )}
+      {activeTab === 'account_integrations' && user && (
+        <div className="h-full">
+          <AccountIntegrationsPanel
+            isStaff={isExactTuturuuuDotComEmail(user.email)}
+          />
         </div>
       )}
       {activeTab === 'appearance' && (

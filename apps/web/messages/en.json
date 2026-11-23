@@ -550,6 +550,21 @@
     "switch_failed_description": "This account has been removed. Please add it again to continue using it.",
     "unknown_user": "Unknown User"
   },
+  "account-integrations": {
+    "browse_all": "Browse all integrations",
+    "calendar": "Calendar",
+    "calendar_description": "Google Calendar and Outlook Calendar",
+    "coming_soon": "Coming soon",
+    "description": "Services connected to your account",
+    "early_access": "Early access",
+    "mail": "Mail",
+    "mail_description": "Gmail and Outlook Mail",
+    "manage": "Manage",
+    "manage_label": "Manage {name}",
+    "title": "Integrations",
+    "upskii": "Upskii",
+    "upskii_description": "Your classes, lessons and assessments"
+  },
   "admin-holidays": {
     "actions": "Actions",
     "add": "Add",
@@ -11159,6 +11174,7 @@
       "chat": "Messaging",
       "contacts": "Contacts",
       "development": "Development",
+      "education": "Education",
       "files": "File storage",
       "mail": "Email",
       "productivity": "Productivity",
@@ -11168,6 +11184,7 @@
     "empty": "No integrations match your search and filter.",
     "filter": "Filter by status",
     "groups": {
+      "featured": "Featured",
       "google": "Google",
       "microsoft": "Microsoft",
       "other": "Other providers"
@@ -11191,6 +11208,7 @@
       "outlook_calendar": "Outlook Calendar",
       "outlook_mail": "Outlook Mail",
       "slack": "Slack",
+      "upskii": "Upskii",
       "whatsapp": "WhatsApp",
       "zalo": "Zalo"
     },

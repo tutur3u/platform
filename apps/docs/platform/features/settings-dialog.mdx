@@ -1,5 +1,5 @@
 ---
-updatedAt: "2026-10-23"
+updatedAt: "2026-11-23"
 title: 'Settings dialog'
 description: 'Shared account tabs, settings deep links, URL state and history behavior across apps/web and satellites.'
 audience: users
@@ -101,6 +101,28 @@ so `?settingsTab=<tab>` means the same thing in every app.
 | `security` | Password, 2FA, passkeys, linked identities | Explains the tab and opens the same tab in apps/web. |
 | `sessions` | Devices and session revocation | Explains the tab and opens the same tab in apps/web. |
 | `appearance` | Theme, language, timezone, time format | Theme and language. |
+| `account_integrations` | Integrations list | Same list. |
+
+### Integrations tab
+
+Scope: apps/web and every satellite above. Default: the Account group ends
+with **Integrations** (`account_integrations`), listing Upskii first, then
+Calendar and Mail. Search finds it by service name (Upskii, Calendar, Mail,
+Gmail, Outlook, Google, Microsoft) and the mobile drawer lists it with the
+other Account tabs.
+
+- Calendar and Mail rows hand off to the panels that already own those
+  connections (Calendar's `calendar_integrations` tab, Mail settings) in a new
+  tab. The list never duplicates a connect flow.
+- The Upskii row shows Early access to `@tuturuuu.com` accounts and Coming soon
+  to everyone else. The badge is display-only; the link routes enforce access.
+- The official Upskii mark is served from the web origin
+  (`/media/integrations/upskii.png`), so every app shows the same asset.
+- The workspace **Developer → Integrations** tab (`integrations`) is a separate,
+  workspace-scoped admin surface.
+
+Coverage: `packages/satellite/src/components/account-settings/account-integrations-panel.test.tsx`
+and `account-settings.test.tsx` beside it.
 
 Apps with their own dialog (ai, calendar, cms, contacts, drive, finance, forms,
 git, infrastructure, inventory, mail, rewise, tasks, track) add the Account group with

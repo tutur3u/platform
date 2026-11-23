@@ -11372,5 +11372,20 @@
     "try_different_search_term": "Try a different search term",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
+  },
+  "account-integrations": {
+    "browse_all": "Browse all integrations",
+    "calendar": "Calendar",
+    "calendar_description": "Google Calendar and Outlook Calendar",
+    "coming_soon": "Coming soon",
+    "description": "Services connected to your account",
+    "early_access": "Early access",
+    "mail": "Mail",
+    "mail_description": "Gmail and Outlook Mail",
+    "manage": "Manage",
+    "manage_label": "Manage {name}",
+    "title": "Integrations",
+    "upskii": "Upskii",
+    "upskii_description": "Your classes, lessons and assessments"
   }
 }

@@ -550,6 +550,21 @@
     "switch_failed_description": "Tài khoản này đã bị xóa. Vui lòng thêm lại để tiếp tục sử dụng.",
     "unknown_user": "Người dùng không xác định"
   },
+  "account-integrations": {
+    "browse_all": "Xem tất cả tích hợp",
+    "calendar": "Lịch",
+    "calendar_description": "Google Calendar và Outlook Calendar",
+    "coming_soon": "Sắp ra mắt",
+    "description": "Các dịch vụ kết nối với tài khoản của bạn",
+    "early_access": "Truy cập sớm",
+    "mail": "Thư",
+    "mail_description": "Gmail và Outlook Mail",
+    "manage": "Quản lý",
+    "manage_label": "Quản lý {name}",
+    "title": "Tích hợp",
+    "upskii": "Upskii",
+    "upskii_description": "Lớp học, bài học và bài đánh giá của bạn"
+  },
   "admin-holidays": {
     "actions": "Thao tác",
     "add": "Thêm",
@@ -11159,6 +11174,7 @@
       "chat": "Nhắn tin",
       "contacts": "Danh bạ",
       "development": "Phát triển phần mềm",
+      "education": "Giáo dục",
       "files": "Lưu trữ tệp",
       "mail": "Email",
       "productivity": "Năng suất",
@@ -11168,6 +11184,7 @@
     "empty": "Không có dịch vụ tích hợp phù hợp với từ khóa và bộ lọc.",
     "filter": "Lọc theo trạng thái",
     "groups": {
+      "featured": "Nổi bật",
       "google": "Google",
       "microsoft": "Microsoft",
       "other": "Nhà cung cấp khác"
@@ -11191,6 +11208,7 @@
       "outlook_calendar": "Lịch Outlook",
       "outlook_mail": "Thư Outlook",
       "slack": "Slack",
+      "upskii": "Upskii",
       "whatsapp": "WhatsApp",
       "zalo": "Zalo"
     },

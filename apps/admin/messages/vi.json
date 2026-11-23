@@ -24762,5 +24762,20 @@
       "billing": "Thanh toán",
       "system": "Hệ thống"
     }
+  },
+  "account-integrations": {
+    "browse_all": "Xem tất cả tích hợp",
+    "calendar": "Lịch",
+    "calendar_description": "Google Calendar và Outlook Calendar",
+    "coming_soon": "Sắp ra mắt",
+    "description": "Các dịch vụ kết nối với tài khoản của bạn",
+    "early_access": "Truy cập sớm",
+    "mail": "Thư",
+    "mail_description": "Gmail và Outlook Mail",
+    "manage": "Quản lý",
+    "manage_label": "Quản lý {name}",
+    "title": "Tích hợp",
+    "upskii": "Upskii",
+    "upskii_description": "Lớp học, bài học và bài đánh giá của bạn"
   }
 }

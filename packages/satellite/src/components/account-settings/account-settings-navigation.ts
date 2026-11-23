@@ -1,6 +1,7 @@
 import { Laptop, Shield, User, Users } from '@tuturuuu/icons';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SHARED_SETTINGS_TAB_IDS } from '@tuturuuu/ui/hooks/settings-dialog-url';
+import { createAccountIntegrationsNavItem } from './account-integrations-navigation';
 
 export type AccountSettingsTranslator = (key: string) => string;
 
@@ -10,6 +11,7 @@ export const ACCOUNT_SETTINGS_TAB_IDS = [
   SHARED_SETTINGS_TAB_IDS.accounts,
   SHARED_SETTINGS_TAB_IDS.security,
   SHARED_SETTINGS_TAB_IDS.sessions,
+  SHARED_SETTINGS_TAB_IDS.accountIntegrations,
 ] as const;
 
 export type AccountSettingsTabId = (typeof ACCOUNT_SETTINGS_TAB_IDS)[number];
@@ -78,6 +80,7 @@ export function createAccountSettingsNavGroup(
         label: t('satellite-account-settings.sessions'),
         name: SHARED_SETTINGS_TAB_IDS.sessions,
       },
+      createAccountIntegrationsNavItem(t),
     ],
   };
 }

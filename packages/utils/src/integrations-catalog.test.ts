@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   getVisibleIntegrationStatus,
   integrationsCatalog,
+  resolveIntegrationDestinationUrl,
+  UPSKII_LOGO_PATH,
 } from './integrations-catalog';
 
 describe('integration status visibility', () => {
@@ -16,4 +18,63 @@ describe('integration status visibility', () => {
       );
     }
   );
+});
+
+describe('Upskii catalog entry', () => {
+  it('leads the catalog with the official mark in internal early access', () => {
+    expect(integrationsCatalog[0]).toMatchObject({
+      id: 'upskii',
+      group: 'featured',
+      category: 'education',
+      logo: UPSKII_LOGO_PATH,
+      status: 'early_access',
+      destination: 'account_integrations',
+    });
+    expect(getVisibleIntegrationStatus('early_access', false)).toBe(
+      'coming_soon'
+    );
+  });
+});
+
+describe('integration destination URLs', () => {
+  it.each([
+    [
+      'account_integrations',
+      '/personal',
+      { settingsDialog: 'open', settingsTab: 'account_integrations' },
+    ],
+    [
+      'calendar',
+      '/personal',
+      { settingsDialog: 'open', settingsTab: 'calendar_integrations' },
+    ],
+    [
+      'mail',
+      '/personal/inbox',
+      { mailSettings: 'open', mailSettingsTab: 'source' },
+    ],
+  ] as const)(
+    'opens the existing %s panel in production',
+    (destination, path, params) => {
+      const url = new URL(
+        resolveIntegrationDestinationUrl(destination, {
+          environment: 'production',
+          locale: 'vi',
+        }) ?? ''
+      );
+      expect(url.protocol).toBe('https:');
+      expect(url.pathname.endsWith(`/vi${path}`)).toBe(true);
+      expect(Object.fromEntries(url.searchParams)).toEqual(params);
+    }
+  );
+
+  it('serves account integrations from the web origin', () => {
+    expect(
+      resolveIntegrationDestinationUrl('account_integrations', {
+        environment: 'production',
+      })
+    ).toBe(
+      'https://tuturuuu.com/personal?settingsDialog=open&settingsTab=account_integrations'
+    );
+  });
 });

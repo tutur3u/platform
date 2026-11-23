@@ -1,3 +1,5 @@
+export { createAccountIntegrationsNavItem } from './account-integrations-navigation';
+export { AccountIntegrationsPanel } from './account-integrations-panel';
 export { AccountSettingsLinkOut } from './account-settings-link-out';
 export { buildWebAccountSettingsUrl } from './account-settings-links';
 export {

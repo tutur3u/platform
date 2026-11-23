@@ -11,6 +11,8 @@ description: Discover services you can connect to Tuturuuu and see which connect
 | Internal early access | Staff signed in with a verified account on the exact `@tuturuuu.com` domain. Other visitors see Coming soon. |
 | Coming soon | The catalog offers no connection action. |
 
+Upskii is listed first, under **Featured**, with the official Upskii mark. It is in internal early access: verified staff see **Manage**, which opens the **Integrations** tab of the web settings dialog (`/personal?settingsDialog=open&settingsTab=account_integrations`); everyone else sees Coming soon.
+
 Google Calendar and Outlook Calendar open Calendar's existing **Settings → Calendar → Integrations** panel. Standard workspace permissions and provider consent apply.
 
 Gmail and Outlook Mail open **Mail settings → Accounts** in the personal workspace. New connections and reconnects are in internal early access while the provider setup is in progress. Mail checks staff access before issuing OAuth state and checks it again before completing OAuth. Both checks use the current, subject-bound Auth record and the same verified staff policy as Meet vanity links. Unconfirmed addresses, subdomains, lookalike domains, and designated QA identities do not qualify. Azure-linked staff identities must also satisfy the configured directory policy.
@@ -21,4 +23,4 @@ Google Workspace and Microsoft 365 describe suite-wide integrations in the catal
 
 The catalog reserves the exact `/integrations` URL and its localized forms. A workspace with a pre-existing `integrations` handle can use its UUID-based workspace URL. Workspace subpaths still require their normal access checks.
 
-Coverage lives in `apps/mail/src/lib/mail/auth.test.ts`, `apps/mail/src/lib/mail/connected/route.test.ts`, and `apps/mail/src/app/api/v1/mail/connected/callback/route.test.ts`.
+Coverage lives in `packages/utils/src/integrations-catalog.test.ts` (statuses, the Upskii entry and destination URLs), `apps/mail/src/lib/mail/auth.test.ts`, `apps/mail/src/lib/mail/connected/route.test.ts`, and `apps/mail/src/app/api/v1/mail/connected/callback/route.test.ts`.

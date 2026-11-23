@@ -122,7 +122,8 @@
     "ws-tasks-labels",
     "satellite-account-settings",
     "calendar-list",
-    "workspace-usage-meters"
+    "workspace-usage-meters",
+    "account-integrations"
   ],
   "apps/rewise": [
     "invoice-subscriptions",
@@ -138,7 +139,8 @@
     "certificates",
     "inventory-finance-reconciliation",
     "satellite-account-settings",
-    "calendar-list"
+    "calendar-list",
+    "account-integrations"
   ],
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {

@@ -11,6 +11,7 @@ const satellite = 'packages/satellite/src/components/';
 
 // These components receive a scoped translator from their shared parent.
 const forwardedTranslators = {
+  [`${satellite}account-settings/account-integrations-navigation.ts`]: '',
   [`${satellite}account-settings/account-settings-navigation.ts`]: '',
   [`${satellite}workspace-settings/navigation.tsx`]: '',
   [`${ui}calendar-app/components/calendar-connections-settings-content.tsx`]:

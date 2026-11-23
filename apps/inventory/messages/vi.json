@@ -9,6 +9,21 @@
     "switch_account_error": "Không thể chuyển tài khoản. Vui lòng thử lại.",
     "unknown_user": "Người dùng không xác định"
   },
+  "account-integrations": {
+    "browse_all": "Xem tất cả tích hợp",
+    "calendar": "Lịch",
+    "calendar_description": "Google Calendar và Outlook Calendar",
+    "coming_soon": "Sắp ra mắt",
+    "description": "Các dịch vụ kết nối với tài khoản của bạn",
+    "early_access": "Truy cập sớm",
+    "mail": "Thư",
+    "mail_description": "Gmail và Outlook Mail",
+    "manage": "Quản lý",
+    "manage_label": "Quản lý {name}",
+    "title": "Tích hợp",
+    "upskii": "Upskii",
+    "upskii_description": "Lớp học, bài học và bài đánh giá của bạn"
+  },
   "calendar": {
     "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
     "creation_recovery_retry": "Thử lại lần tạo ban đầu",
