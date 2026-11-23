@@ -37,6 +37,88 @@ const webpage = CiteWorkSchema.parse({
   url: 'https://example.org/constellations',
 });
 
+function phase1Sources(): CiteWork[] {
+  return [
+    book,
+    article,
+    webpage,
+    CiteWorkSchema.parse({
+      ...book,
+      id: 'chapter',
+      type: 'book-chapter',
+      title: 'A synthetic chapter',
+      containerTitle: 'Invented collections',
+    }),
+    CiteWorkSchema.parse({
+      ...article,
+      id: 'news',
+      type: 'newspaper-article',
+      title: 'Imaginary tides reported',
+      containerTitle: 'Fictional Times',
+    }),
+    CiteWorkSchema.parse({
+      ...book,
+      id: 'report',
+      type: 'report',
+      title: 'Synthetic annual report',
+      reportNumber: 'R-1',
+    }),
+    CiteWorkSchema.parse({
+      ...book,
+      id: 'dataset',
+      type: 'dataset',
+      title: 'Invented ocean measurements',
+      medium: 'data set',
+    }),
+    CiteWorkSchema.parse({
+      ...webpage,
+      id: 'ai',
+      type: 'ai-generated',
+      title: 'Synthetic model response',
+      aiGenerated: {
+        modelName: 'Imaginary Model',
+        provider: 'Fictional Lab',
+        modelVersion: '1',
+      },
+    }),
+    CiteWorkSchema.parse({
+      ...book,
+      id: 'knowledge',
+      type: 'indigenous-knowledge',
+      title: 'Synthetic community knowledge',
+      indigenous: {
+        nationOrCommunity: 'Fictional Community',
+        protocolNote: 'Original synthetic fixture only',
+      },
+    }),
+    ...(['edited-book', 'thesis', 'standard', 'software'] as const).map(
+      (type) =>
+        CiteWorkSchema.parse({
+          ...book,
+          id: type,
+          type,
+          title: `Synthetic ${type} source`,
+        })
+    ),
+    ...(['magazine-article', 'conference-paper'] as const).map((type) =>
+      CiteWorkSchema.parse({
+        ...article,
+        id: type,
+        type,
+        title: `Synthetic ${type} source`,
+      })
+    ),
+    ...(['web-document', 'blog-post'] as const).map((type) =>
+      CiteWorkSchema.parse({
+        ...webpage,
+        id: type,
+        type,
+        title: `Synthetic ${type} source`,
+      })
+    ),
+  ];
+}
+
 describe('CSL-backed Phase 1 citation output', () => {
   it('formats a synthetic APA book as rich text with the established plain form', () => {
     const result = formatWork(book, 'apa');
@@ -130,100 +212,26 @@ describe('CSL-backed Phase 1 citation output', () => {
     );
   });
 
-  it.each(['apa', 'harvard'] as const)(
-    'formats all Phase 1 families in %s without losing their title',
+  // One case per style and family: each gets its own timeout budget (a cold
+  // CSL engine is built per work) and a failure names the family that broke.
+  describe.each(['apa', 'harvard'] as const)(
+    'Phase 1 families in %s',
     (style) => {
-      const sources: CiteWork[] = [
-        book,
-        article,
-        webpage,
-        CiteWorkSchema.parse({
-          ...book,
-          id: 'chapter',
-          type: 'book-chapter',
-          title: 'A synthetic chapter',
-          containerTitle: 'Invented collections',
-        }),
-        CiteWorkSchema.parse({
-          ...article,
-          id: 'news',
-          type: 'newspaper-article',
-          title: 'Imaginary tides reported',
-          containerTitle: 'Fictional Times',
-        }),
-        CiteWorkSchema.parse({
-          ...book,
-          id: 'report',
-          type: 'report',
-          title: 'Synthetic annual report',
-          reportNumber: 'R-1',
-        }),
-        CiteWorkSchema.parse({
-          ...book,
-          id: 'dataset',
-          type: 'dataset',
-          title: 'Invented ocean measurements',
-          medium: 'data set',
-        }),
-        CiteWorkSchema.parse({
-          ...webpage,
-          id: 'ai',
-          type: 'ai-generated',
-          title: 'Synthetic model response',
-          aiGenerated: {
-            modelName: 'Imaginary Model',
-            provider: 'Fictional Lab',
-            modelVersion: '1',
-          },
-        }),
-        CiteWorkSchema.parse({
-          ...book,
-          id: 'knowledge',
-          type: 'indigenous-knowledge',
-          title: 'Synthetic community knowledge',
-          indigenous: {
-            nationOrCommunity: 'Fictional Community',
-            protocolNote: 'Original synthetic fixture only',
-          },
-        }),
-        ...(['edited-book', 'thesis', 'standard', 'software'] as const).map(
-          (type) =>
-            CiteWorkSchema.parse({
-              ...book,
-              id: type,
-              type,
-              title: `Synthetic ${type} source`,
-            })
-        ),
-        ...(['magazine-article', 'conference-paper'] as const).map((type) =>
-          CiteWorkSchema.parse({
-            ...article,
-            id: type,
-            type,
-            title: `Synthetic ${type} source`,
-          })
-        ),
-        ...(['web-document', 'blog-post'] as const).map((type) =>
-          CiteWorkSchema.parse({
-            ...webpage,
-            id: type,
-            type,
-            title: `Synthetic ${type} source`,
-          })
-        ),
-      ];
-      for (const work of sources) {
-        const result = formatWork(work, style);
-        expect(toPlainText(result.reference).toLowerCase()).toContain(
-          work.title.toLowerCase()
-        );
-        expect(toPlainText(result.inText)).not.toBe('');
-        expect(toPlainText(result.reference)).not.toMatch(
-          /<\/?(?:div|i|span)\b/
-        );
-      }
-    },
-    30_000
+      it.each(phase1Sources().map((work) => [work.type, work] as const))(
+        'formats %s without losing its title',
+        (_type, work) => {
+          const result = formatWork(work, style);
+          expect(toPlainText(result.reference).toLowerCase()).toContain(
+            work.title.toLowerCase()
+          );
+          expect(toPlainText(result.inText)).not.toBe('');
+          expect(toPlainText(result.reference)).not.toMatch(
+            /<\/?(?:div|i|span)\b/
+          );
+        },
+        30_000
+      );
+    }
   );
 });
 
