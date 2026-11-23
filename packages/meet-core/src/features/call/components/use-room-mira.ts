@@ -184,22 +184,24 @@ export function useRoomMira(meetingId: string) {
     // started ticked on a join screen; the participant confirms instead.
     if (pendingJoin.ticked && !data.boxTickedByDefault) return;
     applying.add(flight);
-    choose.mutate(
-      {
+    // Settled through the promise, not per-call callbacks: those are dropped
+    // when the component unmounts mid-flight, which would leave this Join
+    // state marked as in flight for the rest of the tab.
+    void choose
+      .mutateAsync({
         choice: pendingJoin.ticked ? 'on' : 'off',
         source: 'join',
         textHash: pendingJoin.textHash,
         locale: pendingJoin.locale,
-      },
-      {
-        onSuccess: () => {
+      })
+      .then(
+        () => {
           failedAt.delete(flight);
           markMiraJoinChoiceApplied(meetingId, acceptance.revision);
         },
-        onError: () => failedAt.set(flight, dataUpdatedAt),
-        onSettled: () => applying.delete(flight),
-      }
-    );
+        () => failedAt.set(flight, dataUpdatedAt)
+      )
+      .finally(() => applying.delete(flight));
   }, [data, pendingJoin, meetingId, choose, revision, dataUpdatedAt]);
 
   return {
