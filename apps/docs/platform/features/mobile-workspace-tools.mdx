@@ -1203,9 +1203,11 @@ shows **Needs refresh**, never proof that all rows remain stored. Cache eviction
 invalidates readiness. A scope
 switch stops subsequent requests; an already-started request settles before
 another bulk run starts. Calendar reads only the requested date range during
-normal use. Navigating to older dates loads that range on demand, and Download
-Calendar still prepares the full offline history. This avoids background bulk
-requests on each foreground refresh while download protection is inactive.
+normal use, and navigating to older dates loads that range on demand. Full
+offline Calendar history comes only from Download Calendar, which, like every
+marked bulk read, returns 503 while download protection is inactive. Tasks
+visits still fill a bounded older completed-history window with 15-minute
+throttling, rather than rerunning Download all automatically.
 
 Bulk GETs are globally serialized on the device and spaced by at least 750 ms at the request boundary, using a monotonic clock after queued authentication preparation. Early timer wakeups are rechecked; regression coverage lives in `offline_api_pacer_test.dart` and `api_client_offline_preparation_test.dart`. This stays below the hourly session budget even
 when the gateway and owning app both enforce the guard. Ordinary unmarked
