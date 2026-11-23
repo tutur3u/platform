@@ -83,8 +83,10 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   - neither: the hinted provider starts at once; its button (the only
     primary action) is the manual fallback, and "More options" drops only
     the hint, keeping the return and its challenge, to show every method.
-  While the view loads, a skeleton of the same size holds the card and
-  header. When the view names
+  While the view for a hinted request loads, a skeleton of the same size
+  holds the card and header; the hint-less landing after the provider round
+  trip shows the regular confirmation until the view names the app. When the
+  view names
   the return app it is the only validator for it: the browser runs no second
   cross-app resolve that could disagree.
 - **Auto-continue.** For a strict registration only, the matching session
@@ -96,7 +98,8 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   `returnApp.autoContinue`; it is off for every other app, for an
   unregistered or lookalike host (which gets no app name at all), for a
   browser session other than the one the card names, and after Cancel. It
-  fires at most once per page.
+  fires at most once per card, and the countdown holds while Cancel has
+  focus or a pointer over it.
 - The login view reports `sessionStatus` as `present`, `absent` or
   `unknown`; a failed server read is `unknown`, never "no session". A hinted
   provider starts without a click only on a definitive `absent` with no

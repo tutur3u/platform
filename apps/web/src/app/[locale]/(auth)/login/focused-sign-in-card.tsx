@@ -24,9 +24,7 @@ type FocusedProvider = 'apple' | 'github' | 'google';
 function FocusedFrame({ children }: { children: ReactNode }) {
   return (
     <ConfirmationCard>
-      <div aria-live="polite" className="flex flex-col justify-center gap-4">
-        {children}
-      </div>
+      <div className="flex flex-col justify-center gap-4">{children}</div>
     </ConfirmationCard>
   );
 }

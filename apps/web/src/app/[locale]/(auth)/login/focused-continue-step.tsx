@@ -44,7 +44,10 @@ function AccountRow({
 function StatusLine({ label }: { label: string }) {
   return (
     <div className="flex h-12 items-center justify-center gap-2.5 rounded-2xl bg-muted/60 px-4">
-      <LoadingIndicator aria-hidden className="size-4 shrink-0" />
+      <LoadingIndicator
+        aria-hidden
+        className="size-4 shrink-0 motion-reduce:animate-none"
+      />
       <p
         aria-atomic="true"
         aria-live="polite"
@@ -119,7 +122,11 @@ export function FocusedContinueStep({
         {auto.counting && !continuing ? (
           <button
             className={FOCUSED_LINK_CLASS}
+            onBlur={auto.release}
             onClick={auto.cancel}
+            onFocus={auto.hold}
+            onPointerEnter={auto.hold}
+            onPointerLeave={auto.release}
             type="button"
           >
             {t('login.auto_continue_cancel')}

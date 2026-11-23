@@ -445,6 +445,22 @@ describe('LoginForm focused sign-in auto-continue', () => {
     expect(continueButton).toBeEnabled();
   });
 
+  it('holds the countdown while Cancel has focus', async () => {
+    renderLoginFormSearch(search, { initialView: sessionView(true) });
+
+    const cancel = await screen.findByRole('button', {
+      name: 'login.auto_continue_cancel',
+    });
+    act(() => cancel.focus());
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+
+    act(() => cancel.blur());
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledWith(tokenized), {
+      timeout: 4000,
+    });
+  });
+
   it('never continues on its own for a session the browser does not hold', async () => {
     mocks.getUser.mockResolvedValue({
       data: { user: { email: 'other@example.com', id: 'user-2' } },

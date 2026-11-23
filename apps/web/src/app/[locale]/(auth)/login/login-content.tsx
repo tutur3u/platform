@@ -141,8 +141,10 @@ export function LoginContent({
     const returnUrlDomain = getReturnUrlDomain(returnUrl);
 
     return returnUrlDomain
-      ? (Object.values(DOMAINS).find((domain) =>
-          domain.href.includes(returnUrlDomain)
+      ? (Object.values(DOMAINS).find(
+          // Exact host only: a substring match would brand a lookalike
+          // such as `nova.ai` as Nova (`nova.ai.vn`).
+          (domain) => getReturnUrlDomain(domain.href) === returnUrlDomain
         ) ?? null)
       : DOMAINS.TUTURUUU;
   }, [returnUrl]);

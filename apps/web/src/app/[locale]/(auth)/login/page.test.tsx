@@ -422,6 +422,30 @@ describe('Login page', () => {
     expect(disclaimer.querySelector('b')).toBeNull();
   });
 
+  it.each([
+    'https://nova.ai/callback',
+    'https://chat.tuturuuu.co/callback',
+    'https://tuturuuu.com.evil.test/callback',
+  ])('gives the lookalike %s no first-party branding', async (returnUrl) => {
+    mocks.loginView = {
+      data: {
+        hasSession: false,
+        providerHint: null,
+        returnApp: null,
+        savedAccounts: [],
+        session: null,
+      },
+      pending: false,
+    };
+
+    await renderLoginPage({ returnUrl });
+
+    expect(screen.queryByText(/Nova|Chat/u)).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('login-app-disclaimer')
+    ).not.toBeInTheDocument();
+  });
+
   it('reserves the header while a focused sign-in view resolves', async () => {
     mocks.loginView = { data: undefined, pending: true };
 
