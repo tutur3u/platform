@@ -96,7 +96,7 @@ that started it.
 ## Storage
 
 Tuturuuu stores `private.external_account_links`
-(migration `20261123234500_external_account_links.sql`), one row per link:
+(migration `20261124020000_external_account_links.sql`), one row per link:
 `id`, `user_id` (references `auth.users` with `on delete cascade`), `provider`
 (`upskii` only), `external_subject` (the Upskii user id), `external_email`,
 `scopes` (read scopes only), `linked_at`, `revoked_at`, `revoked_by` (`user`,
