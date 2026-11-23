@@ -253,28 +253,30 @@ export default function UserNavClient({
             ref={menuTrigger}
             type="button"
             className={cn(
-              'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
+              'flex h-10 w-full gap-0 rounded-md p-0 text-start transition',
               hideMetadata
                 ? 'items-center justify-center'
                 : 'items-center justify-start hover:bg-foreground/5'
             )}
           >
-            <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
-              <AvatarImage
-                src={user?.avatar_url ?? undefined}
-                className="aspect-square overflow-clip rounded-lg object-cover"
-              />
-              <AvatarFallback className="rounded-lg font-semibold">
-                {userName ? (
-                  getInitials(userName)
-                ) : (
-                  <User className="h-5 w-5" />
-                )}
-              </AvatarFallback>
-              <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
-            </Avatar>
+            <span className="flex h-full w-[var(--sidebar-rail-slot,2.5rem)] shrink-0 items-center justify-center">
+              <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
+                <AvatarImage
+                  src={user?.avatar_url ?? undefined}
+                  className="aspect-square overflow-clip rounded-lg object-cover"
+                />
+                <AvatarFallback className="rounded-lg font-semibold">
+                  {userName ? (
+                    getInitials(userName)
+                  ) : (
+                    <User className="h-5 w-5" />
+                  )}
+                </AvatarFallback>
+                <UserPresenceIndicator className="-right-1 -bottom-1 h-3 w-3 border-2" />
+              </Avatar>
+            </span>
             {hideMetadata || (
-              <div className="flex w-full flex-col items-start justify-center">
+              <div className="flex w-full flex-col items-start justify-center pr-1">
                 <div className="line-clamp-1 break-all font-semibold text-sm">
                   {userName || t('common.unnamed')}
                 </div>

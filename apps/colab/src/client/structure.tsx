@@ -15,7 +15,10 @@ import { AppsLauncherCoreDialog } from '@tuturuuu/satellite/apps-launcher-core';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
-import { satelliteNavigationItemClass } from '@tuturuuu/ui/custom/satellite-navigation';
+import {
+  SidebarNavigationItemContent,
+  satelliteNavigationItemClass,
+} from '@tuturuuu/ui/custom/satellite-navigation';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
 import { useSidebar } from '@tuturuuu/ui/custom/sidebar-context';
@@ -258,7 +261,6 @@ export function Structure({
             navState={navState}
             setNavState={setNavState}
             setIsCollapsed={setIsCollapsed}
-            workspaceSelectVisible={false}
           />
         }
         sidebarUtility={
@@ -272,10 +274,11 @@ export function Structure({
             })}
             onClick={(event) => openSettings(event.currentTarget)}
           >
-            <span className="flex min-h-5 min-w-0 items-center gap-2">
-              <Settings className="size-4 shrink-0" />
-              {!collapsed && <span className="truncate">{c.settings}</span>}
-            </span>
+            <SidebarNavigationItemContent
+              icon={<Settings className="size-4 shrink-0" />}
+              isCollapsed={collapsed}
+              title={c.settings}
+            />
           </button>
         }
         feedbackButton={

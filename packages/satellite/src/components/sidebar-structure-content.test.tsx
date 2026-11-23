@@ -24,7 +24,6 @@ describe('SidebarStructureContent', () => {
         workspaceSelect={({ standalone }) => (
           <span>{standalone ? 'Standalone workspace picker' : 'Inline'}</span>
         )}
-        workspaceSelectVisible
         wsId="workspace-id"
       />
     );
@@ -35,45 +34,12 @@ describe('SidebarStructureContent', () => {
       .closest('[data-sidebar-workspace-select]');
 
     expect(workspaceSection).toBeTruthy();
-    expect(workspaceSection?.getAttribute('aria-hidden')).toBe('false');
-    expect(workspaceSection?.getAttribute('data-state')).toBe('open');
-    expect(workspaceSection?.className).toContain('opacity-100');
-    expect(workspaceSection?.className).not.toContain('pointer-events-none');
+    expect(workspaceSection?.hasAttribute('aria-hidden')).toBe(false);
+    expect(workspaceSection?.hasAttribute('inert')).toBe(false);
+    expect(workspaceSection?.className).not.toContain('opacity-0');
   });
 
-  it('makes the workspace picker invisible and inert while closed', () => {
-    render(
-      <SidebarStructureContent
-        backButton={{ title: 'Back' }}
-        filteredCurrentLinks={[]}
-        isCollapsed={false}
-        navState={{
-          currentLinks: [],
-          direction: 'forward',
-          history: [],
-          titleHistory: [],
-        }}
-        setIsCollapsed={vi.fn()}
-        setNavState={vi.fn()}
-        workspaceSelect={() => <span>Hidden workspace picker</span>}
-        workspaceSelectVisible={false}
-        wsId="workspace-id"
-      />
-    );
-
-    const workspaceSection = screen
-      .getByText('Hidden workspace picker')
-      .closest('[data-sidebar-workspace-select]');
-
-    expect(workspaceSection?.getAttribute('aria-hidden')).toBe('true');
-    expect(workspaceSection?.getAttribute('data-state')).toBe('closed');
-    expect(workspaceSection?.hasAttribute('inert')).toBe(true);
-    expect(workspaceSection?.className).toContain('opacity-0');
-    expect(workspaceSection?.className).toContain('pointer-events-none');
-    expect(workspaceSection?.className).toContain('grid-rows-[0fr]');
-  });
-
-  it('keeps the same collapsed selector row for fixed-purpose apps', () => {
+  it('renders no workspace picker row for apps without one', () => {
     const { container } = render(
       <SidebarStructureContent
         backButton={{ title: 'Back' }}
@@ -87,20 +53,13 @@ describe('SidebarStructureContent', () => {
         }}
         setIsCollapsed={vi.fn()}
         setNavState={vi.fn()}
-        workspaceSelectVisible={false}
         wsId="workspace-id"
       />
     );
 
-    const workspaceSection = container.querySelector(
-      '[data-sidebar-workspace-select]'
-    );
-
-    expect(workspaceSection?.getAttribute('data-state')).toBe('closed');
-    expect(workspaceSection?.getAttribute('aria-hidden')).toBe('true');
-    expect(workspaceSection?.hasAttribute('inert')).toBe(true);
-    expect(workspaceSection?.className).toContain('grid-rows-[0fr]');
-    expect(workspaceSection?.className).toContain('pb-0');
+    expect(
+      container.querySelector('[data-sidebar-workspace-select]')
+    ).toBeNull();
   });
 
   it('slides navigation only after it changes while mounted', () => {
@@ -116,7 +75,6 @@ describe('SidebarStructureContent', () => {
       isCollapsed: false,
       setIsCollapsed: vi.fn(),
       setNavState: vi.fn(),
-      workspaceSelectVisible: false,
       wsId: 'workspace-id',
     };
     const { container, rerender } = render(

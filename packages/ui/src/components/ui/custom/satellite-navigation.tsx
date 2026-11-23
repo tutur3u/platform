@@ -25,11 +25,7 @@ export function SidebarNavigation({
   return (
     <div
       data-collapsed={isCollapsed}
-      className={cn(
-        'group flex flex-col gap-y-0.5',
-        isCollapsed ? 'px-1 py-2' : 'p-2',
-        className
-      )}
+      className={cn('group flex flex-col gap-y-0.5', 'p-2', className)}
     >
       <nav aria-label={label} className="grid grid-cols-1 gap-y-0.5">
         {links.map((link, index) => {
@@ -92,11 +88,12 @@ export function satelliteNavigationItemClass({
 }) {
   return cn(
     'group/navlink flex w-full cursor-pointer items-center rounded-md py-2 font-medium text-sm',
-    // Rail and panel rows share a height, and the panel's icon column lines
-    // up with the rail's centered icons, so expanding moves no icon.
+    // Rail and panel rows share a height, a left edge and an icon slot
+    // (`--sidebar-rail-slot`, see SidebarNavigationItemContent), so
+    // expanding moves no icon: only the label and trailing controls appear.
     isCollapsed
-      ? 'flex-col justify-center px-1'
-      : cn('justify-between pl-4', tightEnd ? 'pr-1' : 'pr-2'),
+      ? 'flex-col justify-center px-0'
+      : cn('justify-between pl-0', tightEnd ? 'pr-1' : 'pr-2'),
     isActive && 'bg-accent text-accent-foreground',
     isDisabled
       ? 'cursor-not-allowed opacity-50'
@@ -129,14 +126,28 @@ export function SidebarNavigationItemContent({
         'flex min-w-0 items-center',
         isCollapsed
           ? 'min-h-5 w-full flex-col justify-center gap-1'
-          : 'flex-1 gap-2'
+          : 'flex-1 gap-0'
       )}
     >
-      {icon && <span className="flex shrink-0">{icon}</span>}
+      {icon && (
+        <span
+          className={cn(
+            'flex shrink-0 justify-center',
+            // The expanded icon sits in the rail's icon column, centered, so
+            // it keeps the exact position it has in the collapsed rail.
+            isCollapsed ? 'w-full' : 'w-[var(--sidebar-rail-slot,2.9375rem)]'
+          )}
+        >
+          {icon}
+        </span>
+      )}
       <span
         data-slot="sidebar-item-label"
         className={cn(
           'truncate',
+          // Pull the label back toward the icon: the slot is wider than the
+          // icon, and this restores the previous icon-to-label gap.
+          !isCollapsed && '-ml-2',
           isCollapsed &&
             'hidden max-w-full text-[10px] leading-normal nav-labels:block',
           isCollapsed &&

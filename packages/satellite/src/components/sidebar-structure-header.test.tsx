@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { ComponentProps, ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SidebarStructureHeader } from './sidebar-structure-header';
@@ -33,12 +33,9 @@ const baseProps = {
   appHref: '/mail',
   appId: 'mail' as const,
   brandHref: '/',
-  hideWorkspaceSelectLabel: 'Hide workspace selector',
   isCollapsed: false,
   launcherLabel: 'Open apps',
   onOpenApps: vi.fn(),
-  showWorkspaceSelectLabel: 'Show workspace selector',
-  workspaceSelectVisible: false,
 };
 
 afterEach(cleanup);
@@ -63,35 +60,11 @@ describe('SidebarStructureHeader', () => {
     expect(screen.queryByRole('button', { name: 'Open apps' })).toBeNull();
   });
 
-  it('exposes an accessible workspace picker visibility control', () => {
-    const onToggleWorkspaceSelect = vi.fn();
-    const { rerender } = render(
-      <SidebarStructureHeader
-        {...baseProps}
-        onToggleWorkspaceSelect={onToggleWorkspaceSelect}
-      />
-    );
+  it('has no workspace picker show/hide control', () => {
+    render(<SidebarStructureHeader {...baseProps} />);
 
-    const showButton = screen.getByRole('button', {
-      name: 'Show workspace selector',
-    });
-    expect(showButton.getAttribute('aria-expanded')).toBe('false');
-    expect(showButton.getAttribute('aria-controls')).toBe(
-      'sidebar-workspace-selector'
-    );
-
-    fireEvent.click(showButton);
-    expect(onToggleWorkspaceSelect).toHaveBeenCalledOnce();
-
-    rerender(
-      <SidebarStructureHeader
-        {...baseProps}
-        onToggleWorkspaceSelect={onToggleWorkspaceSelect}
-        workspaceSelectVisible
-      />
-    );
     expect(
-      screen.getByRole('button', { name: 'Hide workspace selector' })
-    ).toBeTruthy();
+      screen.queryByRole('button', { name: /workspace selector/i })
+    ).toBeNull();
   });
 });

@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Building2 as BuildingIcon,
-  ChevronDown,
-  EyeDashed as EyeDashedIcon,
-} from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { ChevronDown } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentProps, ComponentType, ReactNode } from 'react';
 
@@ -14,49 +8,6 @@ export type ShellLinkComponent = ComponentType<
   ComponentProps<'a'> & { href: string }
 >;
 export const ShellAnchor: ShellLinkComponent = (props) => <a {...props} />;
-
-interface WorkspaceSelectVisibilityToggleProps {
-  controls?: string;
-  hideLabel: string;
-  onToggle: () => void;
-  showLabel: string;
-  visible: boolean;
-}
-
-export function WorkspaceSelectVisibilityToggle({
-  controls = 'sidebar-workspace-selector',
-  hideLabel,
-  onToggle,
-  showLabel,
-  visible,
-}: WorkspaceSelectVisibilityToggleProps) {
-  const label = visible ? hideLabel : showLabel;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          aria-controls={controls}
-          aria-expanded={visible}
-          aria-label={label}
-          className="size-8 shrink-0 text-muted-foreground shadow-none hover:text-foreground"
-          data-slot="workspace-select-visibility-toggle"
-          onClick={onToggle}
-          size="icon"
-          type="button"
-          variant="ghost"
-        >
-          {visible ? (
-            <EyeDashedIcon aria-hidden className="size-4" />
-          ) : (
-            <BuildingIcon aria-hidden className="size-4" />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export interface SatelliteBrandProps {
   LinkComponent?: ShellLinkComponent;

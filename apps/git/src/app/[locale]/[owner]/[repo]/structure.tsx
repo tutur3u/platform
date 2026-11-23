@@ -90,13 +90,15 @@ export function Structure({
   const adminAction = (
     <Button
       asChild
-      className="h-9 w-full justify-start gap-2"
+      className="h-9 w-full justify-start gap-0 px-0"
       size="sm"
       variant="ghost"
     >
       <Link href="/-/internal/repositories" aria-label={t('admin')}>
-        <Settings2 className="h-4 w-4" />
-        <span>{t('admin')}</span>
+        <span className="flex w-[var(--sidebar-rail-slot,2.9375rem)] shrink-0 justify-center">
+          <Settings2 className="h-4 w-4" />
+        </span>
+        <span className="-ml-2">{t('admin')}</span>
       </Link>
     </Button>
   );
@@ -162,16 +164,27 @@ export function Structure({
                   aria-label={t(item.labelKey)}
                   className={cn(
                     'flex h-9 items-center rounded-md text-muted-foreground text-sm transition-colors hover:bg-foreground/5 hover:text-foreground',
-                    isCollapsed ? 'justify-center px-0' : 'gap-2 px-2.5',
+                    'gap-0 px-0',
                     active &&
                       'bg-foreground/[0.065] font-medium text-foreground'
                   )}
                   href={`${basePath}${item.href}`}
                   onClick={closeOnMobile}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <span
+                    className={cn(
+                      'flex shrink-0 justify-center',
+                      isCollapsed
+                        ? 'w-full'
+                        : 'w-[var(--sidebar-rail-slot,2.9375rem)]'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                  </span>
                   {!isCollapsed ? (
-                    <span className="truncate">{t(item.labelKey)}</span>
+                    <span className="-ml-2 truncate pr-2">
+                      {t(item.labelKey)}
+                    </span>
                   ) : null}
                 </Link>
               );
@@ -221,11 +234,12 @@ function RepositoryBrand({
       aria-label={`${owner}/${repository}`}
       className={cn(
         'flex min-w-0 items-center rounded-md font-semibold transition-colors hover:bg-foreground/5',
-        collapsed ? 'justify-center p-1' : 'gap-2 p-1'
+        // Same 36px square at the rail's icon center in both states.
+        collapsed ? 'justify-center' : 'gap-2'
       )}
       href={basePath}
     >
-      <span className="grid size-8 shrink-0 place-items-center rounded-md border bg-muted/60">
+      <span className="grid size-9 shrink-0 place-items-center rounded-md border bg-muted/60">
         <GitBranch className="h-4 w-4" />
       </span>
       {!collapsed ? (

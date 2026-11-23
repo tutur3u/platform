@@ -48,26 +48,28 @@ export function SatelliteUserMenu({
           aria-busy={loading || undefined}
           disabled={loading}
           className={cn(
-            'flex h-10 w-full gap-2 rounded-md p-1 text-start transition pointer-coarse:h-11',
+            'flex h-10 w-full gap-0 rounded-md p-0 text-start transition pointer-coarse:h-11',
             hideMetadata
               ? 'items-center justify-center'
               : 'items-center justify-start hover:bg-foreground/5'
           )}
         >
-          <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
-            <AvatarImage
-              src={avatarUrl ?? undefined}
-              className="aspect-square overflow-clip rounded-lg object-cover"
-            />
-            <AvatarFallback className="rounded-lg font-semibold">
-              {name ? getInitials(name) : <User className="h-5 w-5" />}
-            </AvatarFallback>
-            {online && (
-              <div className="pointer-events-none absolute right-0 bottom-0 z-20 size-2.5 rounded-full bg-dynamic-green ring-2 ring-background" />
-            )}
-          </Avatar>
+          <span className="flex h-full w-[var(--sidebar-rail-slot,2.5rem)] shrink-0 items-center justify-center">
+            <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
+              <AvatarImage
+                src={avatarUrl ?? undefined}
+                className="aspect-square overflow-clip rounded-lg object-cover"
+              />
+              <AvatarFallback className="rounded-lg font-semibold">
+                {name ? getInitials(name) : <User className="h-5 w-5" />}
+              </AvatarFallback>
+              {online && (
+                <div className="pointer-events-none absolute right-0 bottom-0 z-20 size-2.5 rounded-full bg-dynamic-green ring-2 ring-background" />
+              )}
+            </Avatar>
+          </span>
           {!hideMetadata && (
-            <div className="flex w-full min-w-0 flex-col items-start justify-center">
+            <div className="flex w-full min-w-0 flex-col items-start justify-center pr-1">
               <div className="line-clamp-1 break-all font-semibold text-sm">
                 {name}
               </div>

@@ -5,7 +5,6 @@ import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
-import { useWorkspaceSelectSection } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
@@ -19,10 +18,7 @@ import {
   useSidebar,
 } from '../context/sidebar-context';
 import { AppsLauncherDialog } from './apps-launcher';
-import {
-  type AppBrandId,
-  WorkspaceSelectVisibilityToggle,
-} from './fixed-app-brand';
+import type { AppBrandId } from './fixed-app-brand';
 import { SidebarSettingsButton } from './sidebar-settings-button';
 import { SidebarStructureContent } from './sidebar-structure-content';
 
@@ -145,20 +141,6 @@ export function SidebarStructure({
     name: workspace?.name ?? null,
     personal: workspace?.personal ?? false,
   };
-  const workspaceSection = useWorkspaceSelectSection(isCollapsed);
-  const showWorkspaceSelect =
-    workspaceSection.visible && !(behavior === 'minimal' && isCollapsed);
-
-  const workspaceToggle = workspaceSelect ? (
-    <WorkspaceSelectVisibilityToggle
-      controls={workspaceSection.id}
-      hideLabel={t('command_launcher.hide_workspace_selector')}
-      showLabel={t('command_launcher.show_workspace_selector')}
-      onToggle={() => workspaceSection.toggle(expandSidebar)}
-      visible={showWorkspaceSelect}
-    />
-  ) : null;
-
   return (
     <>
       <AppsLauncherDialog
@@ -168,7 +150,7 @@ export function SidebarStructure({
       />
       <WorkspaceSelectorProvider
         renderWorkspaceSelect={workspaceSelect}
-        visible={showWorkspaceSelect}
+        visible
         workspace={currentWorkspace}
       >
         <SatelliteShell
@@ -215,9 +197,6 @@ export function SidebarStructure({
               setIsCollapsed={setIsCollapsed}
               setNavState={setNavState}
               workspaceSelect={workspaceSelect}
-              workspaceSelectId={workspaceSection.id}
-              workspaceSelectOpenRequest={workspaceSection.openRequest}
-              workspaceSelectVisible={showWorkspaceSelect}
               wsId={wsId}
             />
           }
@@ -236,14 +215,8 @@ export function SidebarStructure({
             logo: (
               <TuturuuLogo alt="" className="size-7" height={32} width={32} />
             ),
-            actions: (
-              <div className="flex items-center gap-1">
-                {brandActions}
-                {workspaceToggle}
-              </div>
-            ),
+            actions: brandActions,
           }}
-          mobileBrandActions={workspaceToggle}
           userPopover={isCollapsed ? userPopover : null}
           sidebarUtility={
             showSettingsButton ? (

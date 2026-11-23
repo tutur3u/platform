@@ -28,6 +28,15 @@ import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { sidebarEvidencePath } from './sidebar-evidence-path.mjs';
+import {
+  BOTTOM_CLUSTER,
+  ICON_TOLERANCE,
+  maxShift,
+  measureIconMatrix,
+  moved,
+  TOP_ANCHORED,
+} from './sidebar-layout-geometry.mjs';
+import { installProbes } from './sidebar-layout-probes.mjs';
 
 const require = createRequire(import.meta.url);
 const here = import.meta.dirname;
@@ -105,120 +114,6 @@ function sourceAliases() {
 
 const rectKey = (r) =>
   [r.x, r.y, r.width, r.height].map((n) => n.toFixed(3)).join(',');
-
-/** Runs in the page: records layout-shift entries and per-frame rects. */
-function installProbes() {
-  window.__shifts = [];
-  new PerformanceObserver((list) => {
-    const aside = document.querySelector('aside');
-    for (const entry of list.getEntries()) {
-      window.__shifts.push({
-        value: entry.value,
-        hadRecentInput: entry.hadRecentInput,
-        sources: entry.sources.map((source) => {
-          const node = source.node;
-          const testId = node?.getAttribute?.('data-testid');
-          return {
-            node: node
-              ? `${node.nodeName.toLowerCase()}${testId ? `[${testId}]` : ''}`
-              : 'detached',
-            inSidebar: Boolean(node && aside?.contains(node)),
-            previous: source.previousRect.toJSON(),
-            current: source.currentRect.toJSON(),
-          };
-        }),
-      });
-    }
-  }).observe({ type: 'layout-shift', buffered: true });
-  // Logo, reveal trigger and icons as the user sees them; the inert copy of
-  // the rail under a fading panel is not part of the page.
-  window.__geometry = () => {
-    const aside = document.querySelector('aside');
-    const shown = (el) =>
-      !el.closest('[data-slot="sidebar-rail-underlay"]') &&
-      (typeof el.checkVisibility !== 'function' ||
-        el.checkVisibility({ visibilityProperty: true }));
-    const box = (el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.x, y: r.y, width: r.width, height: r.height };
-    };
-    const out = { icons: {}, extras: {} };
-    const trigger = aside.querySelector('[data-sidebar-reveal-trigger]');
-    if (trigger && shown(trigger)) {
-      out.trigger = box(trigger);
-      out.triggerRadius = Number.parseFloat(
-        getComputedStyle(trigger).borderTopLeftRadius
-      );
-    }
-    const logo = [...aside.querySelectorAll('[data-testid="brand-logo"]')].find(
-      shown
-    );
-    if (logo) out.logo = box(logo);
-    for (const link of aside.querySelectorAll('nav a[href]')) {
-      const icon = link.querySelector('svg');
-      if (icon && shown(link)) out.icons[link.getAttribute('href')] = box(icon);
-    }
-    const settings = aside.querySelector('[aria-label="Settings"] svg');
-    if (settings && shown(settings)) out.extras.settings = box(settings);
-    // Labels that do not fit (the fixture's labels all fit the panel).
-    out.truncatedLabels = [
-      ...aside.querySelectorAll('[data-slot="sidebar-item-label"]'),
-    ]
-      .filter((label) => shown(label) && label.clientWidth > 0)
-      .filter((label) => label.scrollWidth > label.clientWidth + 0.5)
-      .map((label) => label.textContent);
-    const grid = document.querySelector('[data-testid="calendar-grid"]');
-    out.grid = box(grid);
-    return out;
-  };
-  // Properties animated inside the sidebar right now.
-  window.__animatedProperties = () => {
-    const aside = document.querySelector('aside');
-    return document
-      .getAnimations()
-      .filter((animation) => aside.contains(animation.effect?.target ?? null))
-      .map((animation) => ({
-        name:
-          animation.animationName ?? animation.transitionProperty ?? 'unknown',
-        properties: [
-          ...new Set(
-            animation.effect
-              .getKeyframes()
-              .flatMap((frame) =>
-                Object.keys(frame).filter(
-                  (key) =>
-                    ![
-                      'offset',
-                      'computedOffset',
-                      'easing',
-                      'composite',
-                    ].includes(key)
-                )
-              )
-          ),
-        ],
-      }));
-  };
-  window.__sample = (label, ms) =>
-    new Promise((resolve) => {
-      const frames = [];
-      const start = performance.now();
-      const box = (el) => {
-        const r = el?.getBoundingClientRect();
-        return r && { x: r.x, y: r.y, width: r.width, height: r.height };
-      };
-      const tick = () => {
-        frames.push({
-          t: Math.round(performance.now() - start),
-          grid: box(document.querySelector('[data-testid="calendar-grid"]')),
-          aside: box(document.querySelector('aside')),
-        });
-        if (performance.now() - start < ms) requestAnimationFrame(tick);
-        else resolve({ label, frames });
-      };
-      requestAnimationFrame(tick);
-    });
-}
 
 let server;
 let browser;
@@ -343,13 +238,6 @@ try {
     () => !document.querySelector('aside').dataset.overlayState
   );
   await page.waitForTimeout(300);
-  const moved = (a, b) =>
-    !a ||
-    !b ||
-    Math.abs(a.x - b.x) > 0.5 ||
-    Math.abs(a.y - b.y) > 0.5 ||
-    Math.abs(a.width - b.width) > 0.5 ||
-    Math.abs(a.height - b.height) > 0.5;
   const iconKeys = Object.keys(restingGeometry.icons);
   const geometry = {
     resting: restingGeometry,
@@ -364,8 +252,60 @@ try {
       moved(restingGeometry.icons[key], openGeometry.icons[key])
     ),
     movedExtras: Object.keys(restingGeometry.extras).filter((key) =>
-      moved(restingGeometry.extras[key], openGeometry.extras[key])
+      moved(
+        restingGeometry.extras[key],
+        openGeometry.extras[key],
+        !TOP_ANCHORED.has(key)
+      )
     ),
+    iconShiftPx: {
+      icons: Object.fromEntries(
+        iconKeys.map((key) => [
+          key,
+          {
+            dx: openGeometry.icons[key]
+              ? openGeometry.icons[key].x - restingGeometry.icons[key].x
+              : null,
+            dy: openGeometry.icons[key]
+              ? openGeometry.icons[key].y - restingGeometry.icons[key].y
+              : null,
+          },
+        ])
+      ),
+      extras: Object.fromEntries(
+        Object.keys(restingGeometry.extras).map((key) => [
+          key,
+          {
+            dx: openGeometry.extras[key]
+              ? openGeometry.extras[key].x - restingGeometry.extras[key].x
+              : null,
+            dy: openGeometry.extras[key]
+              ? openGeometry.extras[key].y - restingGeometry.extras[key].y
+              : null,
+          },
+        ])
+      ),
+      logo:
+        openGeometry.logo && restingGeometry.logo
+          ? {
+              dx: openGeometry.logo.x - restingGeometry.logo.x,
+              dy: openGeometry.logo.y - restingGeometry.logo.y,
+            }
+          : null,
+      max: maxShift(
+        {
+          ...restingGeometry.icons,
+          ...restingGeometry.extras,
+          logo: restingGeometry.logo ?? { x: 0, y: 0 },
+        },
+        {
+          ...openGeometry.icons,
+          ...openGeometry.extras,
+          logo: openGeometry.logo ?? { x: 0, y: 0 },
+        },
+        BOTTOM_CLUSTER
+      ),
+    },
     revealAnimations,
     nonFadeAnimations: revealAnimations.filter((animation) =>
       animation.properties.some(
@@ -450,10 +390,18 @@ try {
     const aside = page.locator('aside');
     const picker = page.getByRole('dialog', { name: 'Select workspace' });
     const switcher = aside.getByRole('button', { name: 'Switch workspace' });
+    assert.equal(
+      await page.getByRole('button', { name: /workspace selector/i }).count(),
+      0,
+      'there is no show/hide control for the workspace picker'
+    );
+    assert.equal(
+      await switcher.locator('svg.lucide-chevron-down').count(),
+      0,
+      'the workspace trigger has no dropdown chevron'
+    );
     await page.mouse.move(24, 400);
-    await aside
-      .getByRole('button', { name: 'Show workspace selector' })
-      .click();
+    await switcher.click();
     await picker.waitFor();
     await page.keyboard.press('Escape');
     await picker.waitFor({ state: 'hidden' });
@@ -485,6 +433,8 @@ try {
       });
     }
   }
+
+  const matrix = behavior === 'hover' ? await measureIconMatrix(page) : null;
 
   const frames = cycles.flatMap((c) => c.frames);
   const expandedAsideWidth = Math.max(
@@ -528,6 +478,8 @@ try {
       openIcons: Object.keys(openGeometry.icons).length,
       movedIcons: geometry.movedIcons,
       movedExtras: geometry.movedExtras,
+      iconShiftPx: geometry.iconShiftPx,
+      matrix,
       truncatedLabels: openGeometry.truncatedLabels,
       nonFadeAnimations: geometry.nonFadeAnimations,
     },
@@ -585,6 +537,25 @@ try {
       [],
       'navigation icons must keep their position on open'
     );
+    for (const row of matrix ?? []) {
+      assert.ok(
+        row.measured >= 8 && row.maxShiftPx <= ICON_TOLERANCE,
+        `icons must not shift on open (${row.theme}, ${row.width}px): max ${row.maxShiftPx}px over ${row.measured} measured`
+      );
+    }
+    assert.deepEqual(
+      geometry.movedExtras,
+      [],
+      'avatars and footer icons must keep their position on open'
+    );
+    if (behavior === 'hover') {
+      for (const key of ['workspaceAvatar', 'accountAvatar']) {
+        assert.ok(
+          restingGeometry.extras[key] && openGeometry.extras[key],
+          `${key} is measured in the rail and the open panel`
+        );
+      }
+    }
     assert.deepEqual(
       openGeometry.truncatedLabels,
       [],

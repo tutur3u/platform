@@ -2,10 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppsLauncherDialog, SidebarSettingsButton } from '@tuturuuu/satellite';
-import {
-  FixedAppBrand,
-  WorkspaceSelectVisibilityToggle,
-} from '@tuturuuu/satellite/fixed-app-brand';
+import { FixedAppBrand } from '@tuturuuu/satellite/fixed-app-brand';
 import { SidebarOverlayLayout as BaseStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarWorkspaceSelectSection } from '@tuturuuu/ui/custom/satellite-workspace-section';
@@ -13,7 +10,6 @@ import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions
 import { SidebarNavSlide } from '@tuturuuu/ui/custom/sidebar-nav-slide';
 import { restsCollapsed } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { useWorkspaceSelectSection } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
 import dynamic from 'next/dynamic';
@@ -793,19 +789,6 @@ export function StructureImpl({
     }
   };
 
-  const workspaceSection = useWorkspaceSelectSection(isCollapsed);
-  const showWorkspaceSelect =
-    workspaceSection.visible && !(behavior === 'minimal' && isCollapsed);
-  const workspaceSelectToggle = (
-    <WorkspaceSelectVisibilityToggle
-      controls={workspaceSection.id}
-      hideLabel={t('command_launcher.hide_workspace_selector')}
-      onToggle={() => workspaceSection.toggle(() => setIsCollapsed(false))}
-      showLabel={t('command_launcher.show_workspace_selector')}
-      visible={showWorkspaceSelect}
-    />
-  );
-
   const logo = <TuturuuLogo alt="" className="size-7" height={32} width={32} />;
   const sidebarHeader = isCollapsed ? (
     <Link aria-label={t('common.home')} href="/home">
@@ -813,7 +796,6 @@ export function StructureImpl({
     </Link>
   ) : (
     <FixedAppBrand
-      actions={workspaceSelectToggle}
       appHref={`/${wsId}`}
       appId="platform"
       centralHref="/home"
@@ -824,11 +806,7 @@ export function StructureImpl({
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <SidebarWorkspaceSelectSection
-        id={workspaceSection.id}
-        openRequest={workspaceSection.openRequest}
-        visible={showWorkspaceSelect}
-      >
+      <SidebarWorkspaceSelectSection>
         <Suspense
           key={user?.id}
           fallback={
@@ -923,7 +901,6 @@ export function StructureImpl({
 
   const mobileHeader = (
     <FixedAppBrand
-      actions={workspaceSelectToggle}
       appHref={`/${wsId}`}
       appId="platform"
       centralHref="/home"
@@ -947,7 +924,7 @@ export function StructureImpl({
         onOpenChange={setAppsLauncherOpen}
         open={appsLauncherOpen}
       />
-      <WorkspaceSelectorVisibilityProvider visible={showWorkspaceSelect}>
+      <WorkspaceSelectorVisibilityProvider visible>
         <BaseStructure
           isCollapsed={isCollapsed}
           setIsCollapsed={handleToggle}

@@ -1,6 +1,7 @@
 import type { SatelliteContentProps } from '@tuturuuu/ui/custom/satellite-content';
 import {
   SidebarNavigation,
+  SidebarNavigationItemContent,
   satelliteNavigationItemClass,
 } from '@tuturuuu/ui/custom/satellite-navigation';
 import { useCopy } from './i18n';
@@ -32,10 +33,12 @@ export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
                 (current.endsWith(link.href) ||
                   (!current.includes('#') && link.href === '#mission'));
         const content = (
-          <span className="flex min-h-5 min-w-0 items-center gap-2">
-            {link.icon}
-            {!isCollapsed && <span className="truncate">{link.title}</span>}
-          </span>
+          <SidebarNavigationItemContent
+            icon={link.icon}
+            isActive={Boolean(active)}
+            isCollapsed={isCollapsed}
+            title={link.title}
+          />
         );
         const className = `${satelliteNavigationItemClass({ isCollapsed, isActive: Boolean(active), isDisabled: link.disabled })} border-0 ${active ? '' : 'bg-transparent'} shadow-none`;
         const activate = () => {

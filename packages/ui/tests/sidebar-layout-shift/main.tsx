@@ -9,9 +9,9 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
-import { WorkspaceSelectVisibilityToggle } from '@tuturuuu/ui/custom/satellite-brand';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
+import { SatelliteUserMenu } from '@tuturuuu/ui/custom/satellite-user-menu';
 import {
   SidebarNavigation,
   SidebarNavigationItemContent,
@@ -19,10 +19,6 @@ import {
 } from '@tuturuuu/ui/custom/satellite-navigation';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import {
-  useOpenWorkspaceSelectWhenRevealed,
-  useWorkspaceSelectSection,
-} from '@tuturuuu/ui/custom/workspace-select-reveal';
 import {
   Dialog,
   DialogContent,
@@ -158,11 +154,15 @@ function CalendarSidebarFixture() {
   );
 }
 
-const Avatar = () => (
-  <div
-    className="size-8 rounded-full bg-dynamic-purple/30"
-    data-testid="avatar"
-  />
+const Account = ({ hideMetadata }: { hideMetadata?: boolean }) => (
+  <SatelliteUserMenu
+    email="synthetic@example.com"
+    hideMetadata={hideMetadata}
+    label="Account"
+    name="Synthetic user"
+  >
+    <span />
+  </SatelliteUserMenu>
 );
 
 function CalendarGrid(): ReactNode {
@@ -180,7 +180,6 @@ function CalendarGrid(): ReactNode {
 
 function WorkspacePickerFixture({ isCollapsed }: { isCollapsed: boolean }) {
   const [open, setOpen] = useState(false);
-  useOpenWorkspaceSelectWhenRevealed(true, setOpen);
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
@@ -217,28 +216,13 @@ function Harness() {
     handleBehaviorChange: () => setNoop((n) => n + 1),
     backLabel: 'Back',
   });
-  const workspace = useWorkspaceSelectSection(shell.isCollapsed);
   const logo = (
     <div className="size-7 rounded-lg bg-foreground" data-testid="brand-logo" />
   );
   return (
     <SatelliteShell
-      actions={
-        <div className="flex w-full items-center gap-2">
-          <Avatar />
-          <span className="text-sm">Synthetic user</span>
-        </div>
-      }
+      actions={<Account />}
       brand={{
-        actions: (
-          <WorkspaceSelectVisibilityToggle
-            controls={workspace.id}
-            hideLabel="Hide workspace selector"
-            onToggle={() => workspace.toggle(shell.expandSidebar)}
-            showLabel="Show workspace selector"
-            visible={workspace.visible}
-          />
-        ),
         appName: 'Calendar',
         appHref: '/ws',
         centralHref: '/',
@@ -281,9 +265,6 @@ function Harness() {
           workspaceSelect={({ isCollapsed }) => (
             <WorkspacePickerFixture isCollapsed={isCollapsed} />
           )}
-          workspaceSelectId={workspace.id}
-          workspaceSelectOpenRequest={workspace.openRequest}
-          workspaceSelectVisible={workspace.visible}
           wsId="ws"
         />
       }
@@ -303,7 +284,7 @@ function Harness() {
           />
         </button>
       }
-      userPopover={shell.isCollapsed ? <Avatar /> : null}
+      userPopover={shell.isCollapsed ? <Account hideMetadata /> : null}
     >
       <CalendarGrid />
     </SatelliteShell>

@@ -68,10 +68,7 @@ import {
   useWorkspaceInvitations,
   WorkspaceInvitationItems,
 } from './workspace-select-invitations';
-import {
-  useIsSidebarWorkspaceSelect,
-  useOpenWorkspaceSelectWhenRevealed,
-} from './workspace-select-reveal';
+import { useIsSidebarWorkspaceSelect } from './workspace-select-reveal';
 import { WorkspaceSelectTrigger } from './workspace-select-trigger';
 
 const FormSchema = z.object({
@@ -305,7 +302,6 @@ export function WorkspaceSelect({
   );
   const hasSelectableWorkspaces =
     workspaces.length > 0 || invitations.length > 0;
-  useOpenWorkspaceSelectWhenRevealed(hasSelectableWorkspaces, setOpen);
   const inSidebar = useIsSidebarWorkspaceSelect();
   const openPicker = useCallback(() => {
     if (!hasSelectableWorkspaces) return;

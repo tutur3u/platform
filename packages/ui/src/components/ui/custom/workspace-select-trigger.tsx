@@ -162,16 +162,29 @@ export function WorkspaceSelectTrigger({
       {...shared}
       {...props}
       className={cn(
-        'relative flex h-9 w-full cursor-pointer items-center gap-2 rounded-md font-medium text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50',
-        compact ? 'justify-center px-0' : 'px-2 text-start',
+        'relative flex h-9 w-full cursor-pointer items-center gap-0 rounded-md px-0 font-medium text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50',
+        !compact && 'text-start',
         className
       )}
     >
-      {icon}
+      {/* The avatar sits in the rail's icon slot in both states, so it keeps
+          one position when the sidebar expands. */}
+      <span
+        className={cn(
+          'flex shrink-0 justify-center',
+          compact ? 'w-full' : 'w-[var(--sidebar-rail-slot,2.9375rem)]'
+        )}
+      >
+        {icon}
+      </span>
       {!compact && (
-        <span className="min-w-0 flex-1 truncate">{labels.switch}</span>
+        <span className="min-w-0 flex-1 truncate pr-2">{labels.switch}</span>
       )}
-      {invitations}
+      {invitations && !compact ? (
+        <span className="flex shrink-0 items-center pr-2">{invitations}</span>
+      ) : (
+        invitations
+      )}
     </button>
   );
 

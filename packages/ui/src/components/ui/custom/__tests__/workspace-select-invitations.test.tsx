@@ -15,7 +15,6 @@ import en from '../../../../../../../apps/web/messages/en.json';
 import { WorkspaceVisibilityProvider } from '../../../../hooks/use-workspace-visibility';
 import { SidebarWorkspaceSelectSection } from '../satellite-workspace-section';
 import { WorkspaceSelect } from '../workspace-select';
-import { useWorkspaceSelectSection } from '../workspace-select-reveal';
 import { Command, CommandInput, CommandList } from '../../command';
 import {
   useWorkspaceInvitations,
@@ -316,24 +315,14 @@ it('is the "Switch workspace" entry point in the sidebar and opens the dialog', 
   );
 
   function SidebarPickerFixture() {
-    const section = useWorkspaceSelectSection(false);
     return (
-      <>
-        <button type="button" onClick={() => section.toggle(() => undefined)}>
-          Show workspace selector
-        </button>
-        <SidebarWorkspaceSelectSection
-          id={section.id}
-          openRequest={section.openRequest}
-          visible={section.visible}
-        >
-          <WorkspaceSelect
-            wsId="workspace-0"
-            cacheScope="user-1"
-            fetchWorkspaces={async () => workspaces}
-          />
-        </SidebarWorkspaceSelectSection>
-      </>
+      <SidebarWorkspaceSelectSection>
+        <WorkspaceSelect
+          wsId="workspace-0"
+          cacheScope="user-1"
+          fetchWorkspaces={async () => workspaces}
+        />
+      </SidebarWorkspaceSelectSection>
     );
   }
 
@@ -348,14 +337,9 @@ it('is the "Switch workspace" entry point in the sidebar and opens the dialog', 
   );
 
   expect(screen.queryByRole('dialog')).toBeNull();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Show workspace selector' })
-  );
-  const dialog = await screen.findByRole('dialog', {
-    name: 'Select workspace',
-  });
-  fireEvent.keyDown(dialog, { key: 'Escape' });
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(
+    screen.queryByRole('button', { name: /workspace selector/i })
+  ).toBeNull();
 
   const trigger = screen.getByRole('button', { name: 'Switch workspace' });
   expect(trigger.textContent).toBe('Switch workspace');

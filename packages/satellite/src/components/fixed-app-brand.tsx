@@ -8,7 +8,6 @@ import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-export { WorkspaceSelectVisibilityToggle } from '@tuturuuu/ui/custom/satellite-brand';
 export type AppBrandId = LaunchableAppSlug | 'infrastructure';
 type FixedAppBrandProps = Omit<
   SatelliteBrandProps,

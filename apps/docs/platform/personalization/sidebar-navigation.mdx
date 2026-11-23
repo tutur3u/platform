@@ -118,25 +118,37 @@ clearance at 768 to 1920px.
 
 ## Workspace switcher
 
-When **Show workspace selector** is on, the sidebar shows a compact **Switch
-workspace** row with the current workspace's avatar, under the app name
-(decided 2026-11-22). It replaces the earlier dropdown-style control that showed
-the workspace name, plan badge and a chevron: workspaces are chosen in the
-**Select workspace** dialog, so nothing in the sidebar reads as a dropdown.
-Clicking the row, or pressing Cmd+Shift+K (Ctrl+Shift+K), opens that dialog;
-the dialog and shortcut are unchanged. A pending-invitation count still shows
-beside the label and is announced as the row's description. This applies to Web,
-Workspace and every satellite sidebar.
+The sidebar always shows a compact **Switch workspace** row with the current
+workspace's avatar, under the app name (decided 2026-11-22; always present since
+2026-11-23). It replaces the earlier dropdown-style control that showed the
+workspace name, plan badge and a chevron: workspaces are chosen in the
+**Select workspace** dialog, so nothing in the sidebar reads as a dropdown, and
+the former show/hide control for the row is gone. Clicking the row, or pressing
+Cmd+Shift+K (Ctrl+Shift+K), opens that dialog. A pending-invitation count still
+shows beside the label and is announced as the row's description. This applies
+to Web, Workspace and every satellite sidebar.
 
-On desktop, collapsing the sidebar keeps the selector visible as an avatar
-with a tooltip, an accessible name and a dot for pending invitations. Hovering
-the rail restores the label without reopening the dialog. Minimal mode shows
-the selector only while the panel is open. Closing the phone drawer hides the
-selector and cancels any pending request to open its dialog. The settings
-breadcrumb and account menu show the workspace name. Coverage:
-`workspace-select-reveal.test.tsx`, `workspace-select-trigger.test.tsx` and the
-sidebar case in `workspace-select-invitations.test.tsx` under
+On desktop, the collapsed rail shows the same row as an avatar with a tooltip,
+an accessible name and a dot for pending invitations. Hovering the rail restores
+the label without reopening the dialog. Minimal mode shows the selector only
+while the panel is open. The settings breadcrumb and account menu show the
+workspace name. Coverage: `workspace-select-trigger.test.tsx` and the sidebar
+case in `workspace-select-invitations.test.tsx` under
 `packages/ui/src/components/ui/custom/__tests__/`.
+
+## Icon alignment across rail and panel
+
+Every icon keeps one x position whether the sidebar is collapsed, resting in
+expand-on-hover, or expanded (decided 2026-11-23). The shell defines
+`--sidebar-rail-slot` (the collapsed width minus the 1px edge border and the
+0.5rem gutters); navigation rows, the workspace avatar, the account avatar, the
+footer actions and the brand logo all center their icon in that slot, and rows
+use identical left padding in both states, so expanding only reveals labels and
+trailing controls. Scope: Web, Workspace, Colab and every satellite sidebar;
+Nova's fixed sidebar uses the same rows. Coverage: the Chromium harness
+(`scripts/ci/sidebar-layout-shift.mjs`) measures the logo, navigation icons,
+workspace avatar, account avatar and footer icons in the rail and the open
+panel, and fails when any differs by more than 0.01px.
 
 ## Preference precedence
 

@@ -15,7 +15,6 @@ import type {
   WorkspaceSelectRenderer,
 } from './satellite-shell-utils';
 import { SidebarWorkspaceSelectSection } from './satellite-workspace-section';
-import type { WorkspaceSelectOpenRequest } from './workspace-select-reveal';
 
 export interface SatelliteContentProps {
   Navigation: ComponentType<{
@@ -34,9 +33,6 @@ export interface SatelliteContentProps {
   setIsCollapsed: Dispatch<SetStateAction<boolean>>;
   setNavState: Dispatch<SetStateAction<NavigationState>>;
   workspaceSelect?: WorkspaceSelectRenderer;
-  workspaceSelectId?: string;
-  workspaceSelectOpenRequest?: WorkspaceSelectOpenRequest;
-  workspaceSelectVisible: boolean;
   wsId: string;
 }
 
@@ -51,9 +47,6 @@ export function SatelliteContent({
   setIsCollapsed,
   setNavState,
   workspaceSelect,
-  workspaceSelectId,
-  workspaceSelectOpenRequest,
-  workspaceSelectVisible,
   wsId,
 }: SatelliteContentProps) {
   const handleSubMenuClick = (
@@ -79,11 +72,7 @@ export function SatelliteContent({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <SidebarWorkspaceSelectSection
-        id={workspaceSelectId}
-        openRequest={workspaceSelectOpenRequest}
-        visible={Boolean(workspaceSelect && workspaceSelectVisible)}
-      >
+      <SidebarWorkspaceSelectSection visible={Boolean(workspaceSelect)}>
         {workspaceSelect ? (
           <Suspense
             fallback={

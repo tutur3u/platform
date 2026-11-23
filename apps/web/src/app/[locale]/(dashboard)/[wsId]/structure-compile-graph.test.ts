@@ -91,7 +91,9 @@ describe('[wsId] structure compile graph', () => {
     expect(structureImplSource).toContain(
       'currentWorkspace={currentWorkspace}'
     );
-    expect(structureImplSource).toContain('WorkspaceSelectVisibilityToggle');
+    expect(structureImplSource).not.toContain(
+      'WorkspaceSelectVisibilityToggle'
+    );
   });
 
   it('uses the shared workspace selector section behind the shell split point', () => {
@@ -99,10 +101,8 @@ describe('[wsId] structure compile graph', () => {
     expect(structureSource).not.toMatch(staticImportPattern(modulePath));
     expect(structureImplSource).toMatch(staticImportPattern(modulePath));
     expect(structureImplSource).toContain('<SidebarWorkspaceSelectSection');
-    expect(structureImplSource).toContain('controls={workspaceSection.id}');
-    expect(structureImplSource).toContain(
-      'openRequest={workspaceSection.openRequest}'
-    );
+    expect(structureImplSource).not.toContain('useWorkspaceSelectSection');
+    expect(structureImplSource).not.toContain('workspaceSection.');
   });
 
   it('loads optional sidebar helpers after hydration instead of preloading them through next/dynamic', () => {

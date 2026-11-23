@@ -154,6 +154,10 @@ export function Structure({
   const sidebarStyle = {
     '--sidebar-collapsed-width': sidebarCollapsedWidth,
     '--sidebar-expanded-width': sidebarExpandedWidth,
+    // Width of the icon column in the rail: the collapsed width minus the 1px
+    // edge border and the 0.5rem gutter on each side. Panel rows give their
+    // icon the same slot, so every icon sits at one x in both states.
+    '--sidebar-rail-slot': 'calc(var(--sidebar-collapsed-width) - 1rem - 1px)',
     ...MINIMAL_GEOMETRY,
     ...(sidebarHeaderHeight
       ? { '--sidebar-header-height': sidebarHeaderHeight }
@@ -347,7 +351,7 @@ export function Structure({
                             ? 'justify-center md:px-2'
                             : minimalPanelOpen
                               ? 'md:min-h-0'
-                              : 'md:pr-2 md:pl-[calc((var(--sidebar-collapsed-width)-2.25rem)/2)]'
+                              : 'md:pr-2 md:pl-[calc((var(--sidebar-collapsed-width)-1px-2.25rem)/2)]'
                         )}
                       >
                         <div
@@ -384,7 +388,7 @@ export function Structure({
                         className={cn(
                           'flex border-foreground/10 border-t',
                           isCollapsed
-                            ? 'flex-col items-center gap-1 px-1 py-2'
+                            ? 'flex-col items-center gap-1 p-2'
                             : 'items-center gap-1 p-2'
                         )}
                       >

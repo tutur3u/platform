@@ -139,11 +139,10 @@ async function completeTeamOnboarding(
     waitUntil: 'domcontentloaded',
   });
   const workspaceSelector = page.getByRole('button', {
-    name: 'Show workspace selector',
+    name: 'Switch workspace',
   });
   await expect(workspaceSelector).toBeVisible({ timeout: 60_000 });
   await workspaceSelector.click();
-  // Revealing the sidebar section opens the picker once workspaces load.
   const workspacePicker = page.getByRole('dialog', {
     name: 'Select workspace',
     exact: true,
