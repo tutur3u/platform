@@ -532,7 +532,8 @@ export async function dispatchInvitationDeliveries(
         );
       }
     } catch (dispatchError) {
-      // Leave the lease to expire so a later claim retries within the cap.
+      // The lease expires and the next claim settles the row as unknown, so a
+      // message that may have gone out is never sent twice.
       console.error('Calendar invitation dispatch error', {
         deliveryId: delivery.id,
         error:

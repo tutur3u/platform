@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(25);
+select plan(30);
 
 -- Fixtures: 8701 manager, 8702 external guest (not a member), 8703 stranger.
 insert into auth.users (id)
@@ -179,6 +179,14 @@ select throws_ok(
   'the 101st guest is rejected'
 );
 
+select lives_ok(
+  $$insert into private.calendar_event_guests (ws_id, event_id, email)
+    values ('00000000-0000-4000-8000-000000008711',
+            '00000000-0000-4000-8000-000000008722', 'cap1@example.com')
+    on conflict (event_id, email) do nothing$$,
+  'a full event accepts a re-add of an existing guest as a no-op'
+);
+
 -- Quotas, dedupe and the stop fence.
 insert into private.calendar_invite_deliveries (
   ws_id, event_id, guest_id, recipient_email, method, kind,
@@ -283,6 +291,60 @@ select is(
   ) ->> 'blocked',
   'user_hourly',
   'enqueue applies the quota inside its transaction'
+);
+
+select throws_ok(
+  $$select private.calendar_invite_enqueue(
+      '00000000-0000-4000-8000-000000008711',
+      '00000000-0000-4000-8000-000000008701',
+      jsonb_build_array(jsonb_build_object(
+        'event_id', '00000000-0000-4000-8000-0000000087ff',
+        'recipient_email', 'x@example.com', 'method', 'REQUEST',
+        'kind', 'invite', 'ical_sequence', 0,
+        'idempotency_key', 'fixture-foreign-event', 'event_snapshot', '{}',
+        'status', 'queued')),
+      1, false)$$,
+  '22023', 'delivery batch does not match the workspace',
+  'enqueue rejects rows from another workspace'
+);
+select is(
+  private.calendar_invite_enqueue(
+    '00000000-0000-4000-8000-000000008711',
+    '00000000-0000-4000-8000-000000008701',
+    jsonb_build_array(
+      jsonb_build_object(
+        'event_id', '00000000-0000-4000-8000-000000008721',
+        'recipient_email', 'under-1@example.com', 'method', 'REQUEST',
+        'kind', 'invite', 'ical_sequence', 0,
+        'idempotency_key', 'fixture-under-1', 'event_snapshot', '{}',
+        'status', 'queued'),
+      jsonb_build_object(
+        'event_id', '00000000-0000-4000-8000-000000008721',
+        'recipient_email', 'under-2@example.com', 'method', 'REQUEST',
+        'kind', 'invite', 'ical_sequence', 0,
+        'idempotency_key', 'fixture-under-2', 'event_snapshot', '{}',
+        'status', 'queued')),
+    0, true, 100000, 100000,
+    (select count(*)::integer + 1 from private.calendar_invite_deliveries
+     where requested_by = '00000000-0000-4000-8000-000000008701'
+       and created_at > now() - interval '1 hour'
+       and status not in ('suppressed', 'throttled', 'cancelled'))
+  ) ->> 'blocked',
+  'user_hourly',
+  'enqueue counts queued rows when the caller under-reports them'
+);
+select throws_ok(
+  $$insert into private.calendar_invite_suppressions (email, scope, sender_user_id, ws_id)
+    values ('scope@example.com', 'sender',
+      '00000000-0000-4000-8000-000000008701',
+      '00000000-0000-4000-8000-000000008711')$$,
+  '23514', null,
+  'a sender suppression cannot also carry a workspace'
+);
+select throws_ok(
+  $$select count(*) from private.calendar_invite_claim_deliveries(10, 0)$$,
+  '22023', null,
+  'claim rejects an out-of-range lease'
 );
 
 -- Only the service role reaches these tables.
