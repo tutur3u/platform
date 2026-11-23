@@ -37,6 +37,7 @@ export function WalletsDataTable({
   query,
 }: WalletsDataTableProps) {
   const t = useTranslations();
+  const srLabelLoadingMore = t('wallet-data-table.loading_more');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -192,9 +193,9 @@ export function WalletsDataTable({
             })}
           </div>
           {walletsQuery.isFetchingNextPage && (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('wallet-data-table.loading_more')}
+            <div role="status" className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground motion-reduce:animate-none" />
+              <span className="sr-only">{srLabelLoadingMore}</span>
             </div>
           )}
           {walletsQuery.hasNextPage && !walletsQuery.isFetchingNextPage && (

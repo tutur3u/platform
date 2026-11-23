@@ -252,6 +252,7 @@ export function BillSplitCreate({
                 trigger: t('add-person'),
                 search: t('search'),
                 minimumQuery: t('minimum-search'),
+                // loading-text-allowed: picker renders it sr-only beside a skeleton
                 loading: t('loading'),
                 empty: t('no-people'),
                 error: t('list-error'),

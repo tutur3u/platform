@@ -15,6 +15,7 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -87,9 +88,13 @@ export function TagFilter({
             <CommandInput placeholder={t('finance.search_tags')} />
             <CommandList>
               <CommandEmpty>
-                {isLoading
-                  ? t('finance.loading_tags')
-                  : t('finance.no_tags_found')}
+                {isLoading ? (
+                  <LoadingRegion srLabel={t('finance.loading_tags')}>
+                    <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+                  </LoadingRegion>
+                ) : (
+                  t('finance.no_tags_found')
+                )}
               </CommandEmpty>
 
               {error && (

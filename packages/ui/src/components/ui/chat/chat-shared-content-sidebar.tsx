@@ -5,7 +5,6 @@ import {
   FileText,
   ImageIcon,
   Link2,
-  LoaderCircle,
 } from '@tuturuuu/icons';
 import type { ChatAttachment, ChatSharedLink } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
@@ -13,6 +12,7 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import { Button } from '../button';
 import { ScrollArea } from '../scroll-area';
+import { LoadingState } from './chat-loading-state';
 import { useChatSharedContent } from './hooks';
 import { formatChatTime, formatFileSize } from './utils';
 
@@ -87,10 +87,7 @@ export function ChatSharedContentSidebar({
 
       <ScrollArea className="min-h-0 flex-1">
         {sharedContent.isLoading ? (
-          <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
-            <LoaderCircle className="mr-2 size-4 animate-spin" />
-            {t('loading_shared_content')}
-          </div>
+          <LoadingState srLabel={t('loading_shared_content')} />
         ) : tab === 'links' ? (
           <SharedLinkList
             emptyLabel={t('no_links_shared')}

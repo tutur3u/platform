@@ -18,6 +18,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -250,14 +251,9 @@ export function SubscriptionGroupSelector({
       </CardHeader>
       <CardContent className="space-y-3">
         {userGroupsLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <p className="text-muted-foreground text-sm">
-                {t('ws-invoices.loading_groups')}
-              </p>
-            </div>
-          </div>
+          <LoadingRegion srLabel={t('ws-invoices.loading_groups')}>
+            <SkeletonList rows={3} withAvatar={false} withTrailing />
+          </LoadingRegion>
         ) : userGroups.length === 0 ? (
           <div className="py-8 text-center">
             <p className="text-muted-foreground text-sm">

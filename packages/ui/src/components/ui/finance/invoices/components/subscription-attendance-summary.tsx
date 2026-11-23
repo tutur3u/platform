@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Loader2 } from '@tuturuuu/icons';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -11,6 +11,11 @@ import {
 } from '@tuturuuu/ui/card';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  LoadingRegion,
+  Skeleton,
+  SkeletonLine,
+} from '@tuturuuu/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -171,14 +176,21 @@ export function SubscriptionAttendanceSummary({
       </CardHeader>
       <CardContent>
         {isLoadingSubscriptionData && userAttendance.length === 0 ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <p className="text-muted-foreground text-sm">
-                {t('ws-invoices.loading_attendance')}
-              </p>
+          <LoadingRegion
+            srLabel={t('ws-invoices.loading_attendance')}
+            className="space-y-4"
+          >
+            <div aria-hidden="true" className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-20 rounded-lg" />
+              <Skeleton className="h-20 rounded-lg" />
             </div>
-          </div>
+            <div aria-hidden="true" className="grid grid-cols-3 gap-3">
+              <Skeleton className="h-[4.5rem] rounded-lg" />
+              <Skeleton className="h-[4.5rem] rounded-lg" />
+              <Skeleton className="h-[4.5rem] rounded-lg" />
+            </div>
+            <SkeletonLine size="sm" />
+          </LoadingRegion>
         ) : userAttendanceError ? (
           <div className="flex items-center justify-center py-8">
             <p className="text-destructive text-sm">

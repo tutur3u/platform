@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, LoaderCircle } from '@tuturuuu/icons';
+import { Bot } from '@tuturuuu/icons';
 import type { ChatConversation } from '@tuturuuu/internal-api';
 import type {
   AiAgentTestResponse,
@@ -28,6 +28,7 @@ import {
   ChannelStatusBadge,
   readAgentConversationMetadata,
 } from './chat-agent-details-utils';
+import { LoadingState } from './chat-loading-state';
 import { chatQueryKeys } from './query-keys';
 
 type AgentTab = 'operations' | 'setup' | 'thread';
@@ -266,9 +267,8 @@ function renderContent({
 
   if (agentsLoading) {
     return (
-      <div className="flex min-w-0 items-center justify-center p-6 text-muted-foreground text-sm">
-        <LoaderCircle className="mr-2 size-4 animate-spin" />
-        {t('loading_ai_settings')}
+      <div className="min-w-0">
+        <LoadingState srLabel={t('loading_ai_settings')} />
       </div>
     );
   }

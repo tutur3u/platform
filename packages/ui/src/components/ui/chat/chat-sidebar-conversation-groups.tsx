@@ -6,13 +6,13 @@ import {
   ChevronDown,
   ChevronRight,
   Hash,
-  LoaderCircle,
   MessageCircle,
   Users,
 } from '@tuturuuu/icons';
 import type { ChatConversation } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { type UIEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { LoadingRegion, SkeletonListRow } from '../skeleton';
 import { ConversationRow } from './chat-sidebar-items';
 import {
   type ChatConversationSourceGroup,
@@ -246,10 +246,9 @@ export function ConversationGroups({
                   onToggle={toggleSourceGroup}
                 />
               ) : item.type === 'loader' ? (
-                <div className="flex items-center justify-center py-2 text-muted-foreground text-xs">
-                  <LoaderCircle className="mr-2 size-3.5 animate-spin" />
-                  {t('loading_conversations')}
-                </div>
+                <LoadingRegion srLabel={t('loading_conversations')}>
+                  <SkeletonListRow withSubtitle={false} className="py-1.5" />
+                </LoadingRegion>
               ) : (
                 <ConversationRow
                   conversation={item.conversation}

@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../dialog';
+import { LoadingRegion, Skeleton } from '../skeleton';
 import { useWorkspacePickerPreferences } from './use-workspace-picker-preferences';
 import { handlePickerListKey } from './workspace-picker/keyboard';
 import {
@@ -270,18 +271,15 @@ export function WorkspacePickerDialog({
             ref={listRef}
           >
             {showSkeleton ? (
-              <div className="space-y-2 p-3" role="status">
-                <p className="px-1 text-muted-foreground text-sm">
-                  {t('loading')}
-                </p>
+              <LoadingRegion srLabel={t('loading')} className="space-y-2 p-3">
                 {Array.from({ length: 4 }, (_, index) => (
-                  <div
+                  <Skeleton
                     aria-hidden="true"
-                    className="h-12 rounded-lg bg-muted motion-safe:animate-pulse"
+                    className="h-12 rounded-lg"
                     key={index}
                   />
                 ))}
-              </div>
+              </LoadingRegion>
             ) : null}
             {waiting ? null : (
               <PickerList

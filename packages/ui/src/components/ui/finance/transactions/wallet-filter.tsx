@@ -16,6 +16,7 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -107,9 +108,13 @@ export function WalletFilter({
             <CommandInput placeholder={t('finance.search_wallets')} />
             <CommandList>
               <CommandEmpty>
-                {isLoading
-                  ? t('finance.loading_wallets')
-                  : t('finance.no_wallets_found')}
+                {isLoading ? (
+                  <LoadingRegion srLabel={t('finance.loading_wallets')}>
+                    <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+                  </LoadingRegion>
+                ) : (
+                  t('finance.no_wallets_found')
+                )}
               </CommandEmpty>
 
               {error && (

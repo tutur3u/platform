@@ -16,6 +16,7 @@ import {
   CommandList,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { LoadingRegion, SkeletonList } from '../skeleton';
 
 export type WorkspacePeoplePickerLabels = {
   trigger: string;
@@ -153,6 +154,10 @@ export function WorkspacePeoplePicker({
                   </CommandItem>
                 ))}
               </CommandGroup>
+            ) : state.kind === 'loading' ? (
+              <LoadingRegion srLabel={labels.loading}>
+                <SkeletonList rows={3} withSubtitle={false} />
+              </LoadingRegion>
             ) : (
               <div
                 className="px-3 py-4 text-muted-foreground text-sm"
@@ -160,11 +165,9 @@ export function WorkspacePeoplePicker({
               >
                 {state.kind === 'idle'
                   ? labels.minimumQuery
-                  : state.kind === 'loading'
-                    ? labels.loading
-                    : state.kind === 'empty'
-                      ? labels.empty
-                      : labels.error}
+                  : state.kind === 'empty'
+                    ? labels.empty
+                    : labels.error}
               </div>
             )}
           </CommandList>

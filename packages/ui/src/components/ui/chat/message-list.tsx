@@ -20,6 +20,7 @@ import { Badge } from '../badge';
 import { Button } from '../button';
 import { toast } from '../sonner';
 import { MessageBubble } from './message-bubble';
+import { MessageListSkeleton } from './message-list-skeleton';
 import { MessageReplyQuote } from './message-reply-quote';
 import { formatChatDate } from './utils';
 
@@ -67,6 +68,7 @@ export function MessageList({
   wsId,
 }: MessageListProps) {
   const t = useTranslations('chat');
+  const srLabelLoadingOlder = t('loading_older_messages');
   const parentRef = useRef<HTMLDivElement | null>(null);
   const historyScrollHeightRef = useRef<number | null>(null);
   const pendingFocusRef = useRef<ChatMessage | null>(null);
@@ -289,12 +291,7 @@ export function MessageList({
   });
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground text-sm">
-        <LoaderCircle className="mr-2 size-4 animate-spin" />
-        {t('loading_messages')}
-      </div>
-    );
+    return <MessageListSkeleton srLabel={t('loading_messages')} />;
   }
 
   if (messages.length === 0 && !isAgentTyping) {
@@ -358,6 +355,7 @@ export function MessageList({
               {item.type === 'history' ? (
                 <div className="flex justify-center">
                   <Button
+                    aria-busy={isLoadingMoreMessages}
                     disabled={isLoadingMoreMessages}
                     onClick={loadOlderMessages}
                     size="sm"
@@ -365,11 +363,12 @@ export function MessageList({
                     variant="outline"
                   >
                     {isLoadingMoreMessages ? (
-                      <LoaderCircle className="mr-2 size-3.5 animate-spin" />
+                      <LoaderCircle className="mr-2 size-3.5 animate-spin motion-reduce:animate-none" />
                     ) : null}
-                    {isLoadingMoreMessages
-                      ? t('loading_older_messages')
-                      : t('load_older_messages')}
+                    {t('load_older_messages')}
+                    {isLoadingMoreMessages ? (
+                      <span className="sr-only">{srLabelLoadingOlder}</span>
+                    ) : null}
                   </Button>
                 </div>
               ) : item.type === 'typing' ? (

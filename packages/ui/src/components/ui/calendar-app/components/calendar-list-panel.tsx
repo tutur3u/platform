@@ -4,7 +4,7 @@ import { Plus, Settings } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { Button } from '../../button';
-import { Skeleton } from '../../skeleton';
+import { LoadingRegion, Skeleton } from '../../skeleton';
 import { deriveCalendarAccountSyncState } from './calendar-account-status';
 import {
   type CalendarListAccount,
@@ -49,10 +49,9 @@ export type CalendarListPanelState = Pick<
 
 const SKELETON_ROWS = [0, 1, 2, 3, 4] as const;
 
-function CalendarListSkeleton({ label }: { label: string }) {
+function CalendarListSkeleton({ srLabel }: { srLabel: string }) {
   return (
-    <div aria-busy="true" role="status">
-      <span className="sr-only">{label}</span>
+    <LoadingRegion aria-busy="true" srLabel={srLabel}>
       {SKELETON_ROWS.map((row) => (
         <div
           aria-hidden="true"
@@ -63,7 +62,7 @@ function CalendarListSkeleton({ label }: { label: string }) {
           <Skeleton className="h-3 flex-1" />
         </div>
       ))}
-    </div>
+    </LoadingRegion>
   );
 }
 
@@ -146,7 +145,7 @@ export function CalendarListPanel({
 
       <div className="scrollbar-none min-h-0 flex-1 overflow-y-auto">
         {state.isLoadingCalendars ? (
-          <CalendarListSkeleton label={t('loading')} />
+          <CalendarListSkeleton srLabel={t('loading')} />
         ) : (
           <>
             {state.workspaceCalendars.map((calendar) => (

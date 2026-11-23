@@ -6,6 +6,7 @@ import { cn } from '@tuturuuu/utils/format';
 import type { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { Progress } from '../progress';
+import { Skeleton } from '../skeleton';
 
 type ChatTranslations = ReturnType<typeof useTranslations>;
 
@@ -117,11 +118,16 @@ function CreditSourceCard({
           <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
             <Wallet className="size-3.5 shrink-0" />
             <span className="truncate">
-              {state.isLoading
-                ? t('ai_credits_loading')
-                : unavailable
-                  ? t('ai_credits_unknown')
-                  : `${formatNumber(balance.remaining)} ${t('ai_credits_remaining')}`}
+              {state.isLoading ? (
+                <>
+                  <Skeleton className="inline-block h-3 w-24 align-middle" />
+                  <span className="sr-only">{t('ai_credits_loading')}</span>
+                </>
+              ) : unavailable ? (
+                t('ai_credits_unknown')
+              ) : (
+                `${formatNumber(balance.remaining)} ${t('ai_credits_remaining')}`
+              )}
             </span>
           </span>
         </span>

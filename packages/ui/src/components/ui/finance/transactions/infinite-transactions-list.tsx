@@ -34,6 +34,7 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
@@ -586,15 +587,15 @@ export function InfiniteTransactionsList({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16">
-        <div className="relative">
-          <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-          <Loader2 className="relative h-12 w-12 animate-spin text-primary" />
-        </div>
-        <p className="animate-pulse text-muted-foreground text-sm">
-          {t('common.loading')}...
-        </p>
-      </div>
+      <LoadingRegion srLabel={t('common.loading')} className="space-y-3 py-2">
+        {Array.from({ length: 5 }, (_, index) => (
+          <Skeleton
+            key={index}
+            aria-hidden="true"
+            className="h-20 w-full rounded-2xl"
+          />
+        ))}
+      </LoadingRegion>
     );
   }
 
@@ -1011,12 +1012,10 @@ export function InfiniteTransactionsList({
       {/* Auto-load trigger */}
       <div ref={loadMoreRef} className="py-6">
         {isFetchingNextPage && (
-          <div className="flex items-center justify-center gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-muted-foreground text-sm">
-              {t('common.loading')}...
-            </span>
-          </div>
+          <LoadingRegion srLabel={t('common.loading')} className="space-y-3">
+            <Skeleton aria-hidden="true" className="h-20 w-full rounded-2xl" />
+            <Skeleton aria-hidden="true" className="h-20 w-full rounded-2xl" />
+          </LoadingRegion>
         )}
 
         {hasNextPage && !isFetchingNextPage && (

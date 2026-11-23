@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calculator,
-  Loader2,
   TrendingDown,
   TrendingUp,
   Wallet as WalletIcon,
@@ -25,6 +24,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -141,10 +141,15 @@ export function WalletTotalCheckDialog({
             </DialogDescription>
           </DialogHeader>
           {walletsQuery.isLoading ? (
-            <div className="flex items-center gap-2 rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('loading_wallets')}
-            </div>
+            <LoadingRegion srLabel={t('loading_wallets')} className="grid gap-3">
+              {Array.from({ length: 3 }, (_, index) => (
+                <Skeleton
+                  key={index}
+                  aria-hidden="true"
+                  className="h-20 rounded-lg"
+                />
+              ))}
+            </LoadingRegion>
           ) : walletsQuery.isError ? (
             <div className="rounded-md border border-dynamic-red/30 bg-dynamic-red/5 p-4 text-dynamic-red text-sm">
               {walletsQuery.error instanceof Error

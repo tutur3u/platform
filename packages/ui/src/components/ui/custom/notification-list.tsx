@@ -182,8 +182,11 @@ export function NotificationList({
       <div className="flex items-center justify-center gap-2 p-2.5 text-muted-foreground text-xs">
         {query.isFetchingNextPage ? (
           <span role="status" className="inline-flex items-center gap-2">
-            <Loader2 aria-hidden className="size-3 animate-spin" />
-            {labels.loadingMore}
+            <Loader2
+              aria-hidden
+              className="size-3 animate-spin motion-reduce:animate-none"
+            />
+            <span className="sr-only">{labels.loadingMore}</span>
           </span>
         ) : query.isFetchNextPageError ? (
           <Button

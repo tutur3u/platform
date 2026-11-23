@@ -208,11 +208,12 @@ export function PendingInvoicesTable({
       {/* Loading overlay on table when fetching */}
       {showLoadingOverlay && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
-          <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="text-muted-foreground text-sm">
-              {t('common.loading')}
-            </span>
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg"
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" />
+            <span className="sr-only">{t('common.loading')}</span>
           </div>
         </div>
       )}

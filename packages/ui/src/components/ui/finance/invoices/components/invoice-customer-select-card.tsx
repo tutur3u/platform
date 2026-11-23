@@ -20,7 +20,9 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import {
   getAvatarPlaceholder,
@@ -83,6 +85,7 @@ export function InvoiceCustomerSelectCard({
   children,
 }: InvoiceCustomerSelectCardProps) {
   const t = useTranslations();
+  const srLabelLoadingMore = t('ws-invoices.loading_more_customers');
   const [open, setOpen] = useState(false);
   const commandWrapperRef = useRef<HTMLDivElement | null>(null);
   const customerCount = customers.length;
@@ -143,7 +146,11 @@ export function InvoiceCustomerSelectCard({
   const resultMeta = errorMessage
     ? errorMessage
     : loading
-      ? loadingMessage || t('ws-invoices.loading')
+      ? (
+          <LoadingPlaceholder
+            srLabel={loadingMessage || t('ws-invoices.loading')}
+          />
+        )
       : `${customerCount} ${t('ws-invoices.customer').toLowerCase()}${customerCount === 1 ? '' : 's'}`;
 
   return (
@@ -248,11 +255,17 @@ export function InvoiceCustomerSelectCard({
                     }
                   >
                     <CommandEmpty className="px-4 py-10 text-center text-muted-foreground text-sm">
-                      {errorMessage ||
-                        (loading
-                          ? loadingMessage || t('ws-invoices.loading')
-                          : emptyMessage ||
-                            t('ws-invoices.no_customers_found'))}
+                      {errorMessage ? (
+                        errorMessage
+                      ) : loading ? (
+                        <LoadingRegion
+                          srLabel={loadingMessage || t('ws-invoices.loading')}
+                        >
+                          <SkeletonList rows={4} className="text-left" />
+                        </LoadingRegion>
+                      ) : (
+                        emptyMessage || t('ws-invoices.no_customers_found')
+                      )}
                     </CommandEmpty>
 
                     <CommandGroup className="p-2">
@@ -311,11 +324,12 @@ export function InvoiceCustomerSelectCard({
                       {(hasNextPage || isFetchingNextPage) && (
                         <div className="space-y-2 px-3 py-3 text-center">
                           {isFetchingNextPage ? (
-                            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              <span>
-                                {t('ws-invoices.loading_more_customers')}
-                              </span>
+                            <div
+                              role="status"
+                              className="flex items-center justify-center gap-2 text-muted-foreground text-xs"
+                            >
+                              <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                              <span className="sr-only">{srLabelLoadingMore}</span>
                             </div>
                           ) : hasNextPage ? (
                             <Button

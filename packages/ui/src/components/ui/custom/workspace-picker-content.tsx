@@ -25,6 +25,7 @@ import {
 } from '../dialog';
 import { Input } from '../input';
 import { PopoverClose, PopoverContent } from '../popover';
+import { Skeleton } from '../skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import { useWorkspacePickerPreferences } from './use-workspace-picker-preferences';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
@@ -254,20 +255,22 @@ function WorkspacePickerContentInner({
         {!visibility.known ||
         ((listLoading || listError) && workspaces.length === 0) ? (
           <div role="status" className="min-h-64 space-y-3">
-            <p>
-              {listError
-                ? listT('error_workspaces')
-                : visibility.isError
-                  ? t('hidden_workspaces_load_error')
-                  : t('loading')}
-            </p>
+            {listError || visibility.isError ? (
+              <p>
+                {listError
+                  ? listT('error_workspaces')
+                  : t('hidden_workspaces_load_error')}
+              </p>
+            ) : (
+              <span className="sr-only">{t('loading')}</span>
+            )}
             {!listError &&
               !visibility.isError &&
               Array.from({ length: 4 }, (_, index) => (
-                <div
+                <Skeleton
                   key={index}
                   aria-hidden="true"
-                  className="h-12 rounded-lg bg-muted motion-safe:animate-pulse"
+                  className="h-12 rounded-lg"
                 />
               ))}
           </div>

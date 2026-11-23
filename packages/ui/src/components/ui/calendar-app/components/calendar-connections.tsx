@@ -33,6 +33,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { toast } from '../../sonner';
 import { Switch } from '../../switch';
+import { CalendarConnectionsLoading } from './calendar-connections-loading';
 
 type CalendarConnection = {
   id: string;
@@ -787,10 +788,7 @@ export default function CalendarConnections({
                 {t('add_more_calendars')}
               </h3>
               {isLoadingCalendars ? (
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t('loading_calendars')}
-                </div>
+                <CalendarConnectionsLoading srLabel={t('loading_calendars')} />
               ) : unconnectedCalendars.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                   {t('all_calendars_connected')}

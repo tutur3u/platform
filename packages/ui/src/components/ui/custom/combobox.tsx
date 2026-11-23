@@ -15,6 +15,7 @@ import {
   CommandSeparator,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { LoadingRegion, SkeletonLine } from '../skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 
 export type ComboboxOption = {
@@ -163,6 +164,7 @@ export function Combobox({
   onLoadMore,
   loadingMore = false,
   loadMoreText = 'Load more',
+  // loading-text-allowed: default screen-reader label for the skeleton row
   loadingMoreText = 'Loading...',
   t,
 }: ComboboxProps) {
@@ -647,9 +649,9 @@ export function Combobox({
               {loadingMore ? (
                 <>
                   <CommandSeparator />
-                  <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-                    {loadingMoreText}
-                  </div>
+                  <LoadingRegion srLabel={loadingMoreText} className="px-2 py-2">
+                    <SkeletonLine size="sm" barClassName="w-2/3" />
+                  </LoadingRegion>
                 </>
               ) : null}
             </CommandList>

@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -178,13 +179,11 @@ export function BudgetScopeFields({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isLoadingCategories
-                        ? t('loading_categories')
-                        : t('all_categories')
-                    }
-                  />
+                  <SelectValue placeholder={t('all_categories')}>
+                    {isLoadingCategories ? (
+                      <LoadingPlaceholder srLabel={t('loading_categories')} />
+                    ) : undefined}
+                  </SelectValue>
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -219,11 +218,11 @@ export function BudgetScopeFields({
             >
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isLoadingWallets ? t('loading_wallets') : t('all_wallets')
-                    }
-                  />
+                  <SelectValue placeholder={t('all_wallets')}>
+                    {isLoadingWallets ? (
+                      <LoadingPlaceholder srLabel={t('loading_wallets')} />
+                    ) : undefined}
+                  </SelectValue>
                 </SelectTrigger>
               </FormControl>
               <SelectContent>

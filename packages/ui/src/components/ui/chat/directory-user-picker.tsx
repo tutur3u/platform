@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Button } from '../button';
 import { Input } from '../input';
+import { LoadingRegion, SkeletonList } from '../skeleton';
 import { getChatInitials } from './utils';
 
 export function DirectoryUserPicker({
@@ -66,10 +67,9 @@ export function DirectoryUserPicker({
 
       <div className="max-h-64 overflow-y-auto p-2">
         {isFetching ? (
-          <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
-            <LoaderCircle className="mr-2 size-4 animate-spin" />
-            {t('loading_directory')}
-          </div>
+          <LoadingRegion srLabel={t('loading_directory')}>
+            <SkeletonList rows={4} />
+          </LoadingRegion>
         ) : filteredUsers.length > 0 ? (
           filteredUsers.map((user) => (
             <DirectoryUserRow

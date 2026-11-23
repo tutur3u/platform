@@ -33,6 +33,11 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn, formatBytes } from '@tuturuuu/utils/format';
 import { joinPath } from '@tuturuuu/utils/path-helper';
+import {
+  AttachmentPreviewLoading,
+  ExistingAttachmentsLoading,
+  LoadMoreAttachmentsButton,
+} from './transaction-attachments-loading';
 import { getStorageObjectDisplayName } from '@tuturuuu/utils/storage-display-name';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
@@ -292,10 +297,7 @@ function TransactionAttachmentPreviewDialog({
     if (isPreviewLoading) {
       return (
         <div className={previewClass}>
-          <div className="flex flex-col items-center gap-3 text-muted-foreground text-sm">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            {t('common.loading')}
-          </div>
+          <AttachmentPreviewLoading srLabel={t('common.loading')} />
         </div>
       );
     }
@@ -661,10 +663,7 @@ export function TransactionAttachmentsField({
           </div>
 
           {existingAttachmentsLoading && existingAttachments.length === 0 ? (
-            <div className="flex items-center gap-2 rounded-md border border-dashed p-4 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('common.loading')}
-            </div>
+            <ExistingAttachmentsLoading srLabel={t('common.loading')} />
           ) : existingAttachmentsError && existingAttachments.length === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-destructive text-sm">
               {t('transaction-data-table.attachments_existing_error')}
@@ -732,25 +731,12 @@ export function TransactionAttachmentsField({
               })}
 
               {existingAttachmentsHasMore || existingAttachmentsLoadingMore ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  disabled={
-                    existingAttachmentsLoadingMore || !onLoadMoreExisting
-                  }
-                  onClick={onLoadMoreExisting}
-                >
-                  {existingAttachmentsLoadingMore ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      {t('common.loading')}
-                    </>
-                  ) : (
-                    t('common.load_more')
-                  )}
-                </Button>
+                <LoadMoreAttachmentsButton
+                  label={t('common.load_more')}
+                  loadingLabel={t('common.loading')}
+                  loading={existingAttachmentsLoadingMore}
+                  onLoadMore={onLoadMoreExisting}
+                />
               ) : null}
             </div>
           ) : selectedCount === 0 ? (

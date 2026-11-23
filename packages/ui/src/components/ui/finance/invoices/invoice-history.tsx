@@ -215,8 +215,11 @@ export function InvoiceHistory({
         <span>{t('activity_timezone', { timeZone })}</span>
         {query.isFetching && (
           <span className="flex items-center gap-1.5">
-            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-            {t('activity_loading')}
+            <Loader2
+              className="size-3 animate-spin motion-reduce:animate-none"
+              aria-hidden="true"
+            />
+            <span className="sr-only">{t('activity_loading')}</span>
           </span>
         )}
       </div>

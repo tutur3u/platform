@@ -65,7 +65,7 @@ export function BillSplitsPage({
   });
 
   if (splitId) {
-    if (detail.isPending) return <SplitSkeleton title={t('loading')} />;
+    if (detail.isPending) return <SplitSkeleton srLabel={t('loading')} />;
     if (detail.isError)
       return (
         <SplitError
@@ -176,7 +176,7 @@ export function BillSplitsPage({
         {canCreate && <BillSplitCreate wsId={wsId} currency={currency} />}
       </header>
       {listing.isPending ? (
-        <SplitSkeleton title={t('loading')} />
+        <SplitSkeleton srLabel={t('loading')} />
       ) : listing.isError ? (
         <SplitError
           text={t('list-error')}
@@ -215,12 +215,12 @@ export function BillSplitsPage({
   );
 }
 
-function SplitSkeleton({ title }: { title: string }) {
+function SplitSkeleton({ srLabel }: { srLabel: string }) {
   return (
-    <div role="status" aria-label={title} className="grid gap-2">
+    <LoadingRegion srLabel={srLabel} className="grid gap-2">
       <Skeleton className="h-11" />
       <Skeleton className="h-11" />
-    </div>
+    </LoadingRegion>
   );
 }
 

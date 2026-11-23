@@ -30,6 +30,7 @@ export const DEFAULT_NOTIFICATION_LABELS = {
   loading: 'Loading notifications',
   loadError: 'Couldn’t load notifications',
   refreshError: 'Couldn’t refresh. Showing earlier results.',
+  // loading-text-allowed: default label, rendered sr-only beside a spinner
   loadingMore: 'Loading more…',
   noOlder: 'No older notifications',
   retry: 'Retry',

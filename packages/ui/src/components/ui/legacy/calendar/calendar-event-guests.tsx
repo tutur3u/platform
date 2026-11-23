@@ -161,6 +161,7 @@ function CalendarEventGuests({
             trigger: t('add'),
             search: t('search'),
             minimumQuery: t('minimum_query'),
+            // loading-text-allowed: picker renders it sr-only beside a skeleton
             loading: t('loading'),
             empty: t('empty'),
             error: t('error'),

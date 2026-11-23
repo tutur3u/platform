@@ -19,6 +19,7 @@ import {
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
@@ -121,9 +122,13 @@ export function CategoryFilter({
             <CommandInput placeholder={t('finance.search_categories')} />
             <CommandList>
               <CommandEmpty>
-                {isLoading
-                  ? t('finance.loading_categories')
-                  : t('finance.no_categories_found')}
+                {isLoading ? (
+                  <LoadingRegion srLabel={t('finance.loading_categories')}>
+                    <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+                  </LoadingRegion>
+                ) : (
+                  t('finance.no_categories_found')
+                )}
               </CommandEmpty>
 
               {error && (

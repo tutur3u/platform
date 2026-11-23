@@ -19,6 +19,7 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import {
   getAvatarPlaceholder,
@@ -167,13 +168,25 @@ export function UserFilter({
             />
             <CommandList>
               <CommandEmpty>
-                {!availableUsers && isLoading
-                  ? isCreatorFilter
-                    ? t('finance.loading_creators')
-                    : t('finance.loading_users')
-                  : isCreatorFilter
-                    ? t('finance.no_creators_found')
-                    : t('finance.no_users_found')}
+                {!availableUsers && isLoading ? (
+                  <LoadingRegion
+                    srLabel={t(
+                      isCreatorFilter
+                        ? 'finance.loading_creators'
+                        : 'finance.loading_users'
+                    )}
+                  >
+                    <SkeletonList
+                      rows={4}
+                      withAvatar={false}
+                      withSubtitle={false}
+                    />
+                  </LoadingRegion>
+                ) : isCreatorFilter ? (
+                  t('finance.no_creators_found')
+                ) : (
+                  t('finance.no_users_found')
+                )}
               </CommandEmpty>
 
               {!availableUsers && error && (

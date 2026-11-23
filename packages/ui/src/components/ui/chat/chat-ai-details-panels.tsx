@@ -8,7 +8,6 @@ import {
   Gauge,
   ImageIcon,
   Link2,
-  LoaderCircle,
   MessageSquare,
   WalletCards,
   Zap,
@@ -34,6 +33,7 @@ import {
   ChatAiCreditSourcePicker,
   type ChatAiCreditSourceState,
 } from './chat-ai-credit-source-picker';
+import { LoadingState } from './chat-loading-state';
 import { formatChatTime, formatFileSize } from './utils';
 
 type ChatTranslations = ReturnType<typeof useTranslations>;
@@ -58,7 +58,7 @@ export function SettingsPanel({
   t: ChatTranslations;
 }) {
   if (isLoading || !settings) {
-    return <LoadingState label={t('loading_ai_settings')} />;
+    return <LoadingState srLabel={t('loading_ai_settings')} />;
   }
 
   return (
@@ -119,7 +119,7 @@ export function UsagePanel({
   observability: ChatAiObservability | undefined;
   t: ChatTranslations;
 }) {
-  if (isLoading) return <LoadingState label={t('loading_ai_usage')} />;
+  if (isLoading) return <LoadingState srLabel={t('loading_ai_usage')} />;
   if (!observability) return <EmptyState label={t('ai_no_usage')} />;
 
   const totals = observability.totals;
@@ -395,15 +395,6 @@ function TokenChip({ label, value }: { label: string; value: string }) {
         {value}
       </span>
     </span>
-  );
-}
-
-export function LoadingState({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
-      <LoaderCircle className="mr-2 size-4 animate-spin" />
-      {label}
-    </div>
   );
 }
 

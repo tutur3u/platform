@@ -4,7 +4,6 @@ import {
   Bot,
   Funnel,
   Hash,
-  LoaderCircle,
   MessageCircle,
   Search,
   Users,
@@ -23,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { Input } from '../input';
+import { LoadingRegion, SkeletonList } from '../skeleton';
 import { ConversationGroups } from './chat-sidebar-conversation-groups';
 import { SearchResultList } from './chat-sidebar-items';
 import type {
@@ -141,10 +141,9 @@ export function ChatSidebar({
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
-            <LoaderCircle className="mr-2 size-4 animate-spin" />
-            {t('loading_conversations')}
-          </div>
+          <LoadingRegion srLabel={t('loading_conversations')} className="p-2">
+            <SkeletonList rows={6} />
+          </LoadingRegion>
         ) : showSearchResults ? (
           <SearchResultList
             messages={searchResults}

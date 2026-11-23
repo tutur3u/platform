@@ -10,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -64,7 +65,11 @@ export function FormMoreTab({
                     }))
                   : []
               }
-              label={tagsLoading ? 'Loading...' : undefined}
+              label={
+                tagsLoading ? (
+                  <LoadingPlaceholder srLabel={t('common.loading')} />
+                ) : undefined
+              }
               placeholder={
                 !tagsLoading && (!tags || tags.length === 0)
                   ? t('transaction-data-table.no_tags_hint')

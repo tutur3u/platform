@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import {
   Accordion,
@@ -10,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
@@ -32,6 +34,7 @@ export function InvoiceUserHistoryAccordion({
   currency = 'VND',
 }: Props) {
   const t = useTranslations();
+  const srLabelLoading = t('ws-invoices.loading');
   const locale = useLocale();
   const financeHref = useFinanceHref();
   const formatDate = (value: string) => {
@@ -106,9 +109,9 @@ export function InvoiceUserHistoryAccordion({
     return (
       <div className="py-4 text-center">
         {recovery}
-        <p className="text-muted-foreground text-sm">
-          {t('ws-invoices.loading_user_history')}
-        </p>
+        <LoadingRegion srLabel={t('ws-invoices.loading_user_history')}>
+          <SkeletonList rows={3} withAvatar={false} className="text-left" />
+        </LoadingRegion>
       </div>
     );
   }
@@ -232,10 +235,15 @@ export function InvoiceUserHistoryAccordion({
                         className="w-full text-xs"
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}
+                        aria-busy={isFetchingNextPage}
                       >
-                        {isFetchingNextPage
-                          ? t('ws-invoices.loading')
-                          : t('ws-invoices.load_more')}
+                        {isFetchingNextPage ? (
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                        ) : null}
+                        {t('ws-invoices.load_more')}
+                        {isFetchingNextPage ? (
+                          <span className="sr-only">{srLabelLoading}</span>
+                        ) : null}
                       </Button>
                     )}
                   </div>

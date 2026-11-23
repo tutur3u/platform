@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { CalendarSourceOption } from '@tuturuuu/internal-api';
 import { getCalendarAttendees } from '@tuturuuu/internal-api/calendar-attendees';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 
@@ -61,7 +62,9 @@ export function CalendarAttendeeSnapshot({
       </Button>
       {requested &&
         (query.isFetching ? (
-          <p role="status">{t('loading')}</p>
+          <LoadingRegion srLabel={t('loading')} className="space-y-1">
+            <SkeletonList rows={3} withAvatar={false} withSubtitle={false} rowClassName="px-0" />
+          </LoadingRegion>
         ) : snapshot ? (
           <>
             <p className="text-muted-foreground text-sm">{t('read_only')}</p>

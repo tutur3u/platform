@@ -17,6 +17,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '../button';
+import { LoadingRegion, SkeletonList } from '../skeleton';
 import { toast } from '../sonner';
 import { Textarea } from '../textarea';
 import {
@@ -160,10 +161,9 @@ export function AgentExternalThreadPanel({
         >
           <div className="space-y-2">
             {threadsQuery.isLoading ? (
-              <p className="flex items-center gap-2 text-muted-foreground text-xs">
-                <LoaderCircle className="size-3.5 animate-spin" />
-                {t('loading_ai_settings')}
-              </p>
+              <LoadingRegion srLabel={t('loading_ai_settings')}>
+                <SkeletonList rows={3} withAvatar={false} rowClassName="px-0" />
+              </LoadingRegion>
             ) : threads.length > 0 ? (
               threads.map((thread) => (
                 <div

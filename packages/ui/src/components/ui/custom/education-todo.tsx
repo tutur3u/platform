@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/internal-api/teach';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -103,7 +104,9 @@ export function EducationTodo({
           </Button>
         </div>
       ) : query.isPending ? (
-        <p role="status">{t('loading')}</p>
+        <LoadingRegion srLabel={t('loading')} className="space-y-3">
+          <SkeletonList rows={4} withAvatar={false} withTrailing />
+        </LoadingRegion>
       ) : (
         <>
           <p className="text-muted-foreground text-sm">

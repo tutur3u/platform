@@ -1,13 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { LoaderCircle, MapPin } from '@tuturuuu/icons';
+import { MapPin } from '@tuturuuu/icons';
 import {
   type ExternalChatConversationContext,
   getExternalChatConversationContext,
 } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { ScrollArea } from '../scroll-area';
+import { LoadingState } from './chat-loading-state';
 import { formatChatTime } from './utils';
 
 export function ChatExternalContextSidebar({
@@ -34,10 +35,7 @@ export function ChatExternalContextSidebar({
       </div>
       <ScrollArea className="min-h-0 flex-1">
         {query.isLoading ? (
-          <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
-            <LoaderCircle className="mr-2 size-4 animate-spin" />
-            {t('loading_visitor_context')}
-          </div>
+          <LoadingState srLabel={t('loading_visitor_context')} />
         ) : query.data ? (
           <ContextContent context={query.data} />
         ) : (

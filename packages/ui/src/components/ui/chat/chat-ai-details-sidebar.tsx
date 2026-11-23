@@ -188,7 +188,7 @@ export function ChatAiDetailsSidebar({
             value={'shared' satisfies SidebarTab}
           >
             {sharedContent.isLoading ? (
-              <LoadingState label={t('loading_shared_content')} />
+              <LoadingState srLabel={t('loading_shared_content')} />
             ) : (
               <SharedPanel
                 files={shared.files}

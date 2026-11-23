@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -300,7 +301,13 @@ export default function ExportDialogContent({
             (invoiceType === 'pending' && (groupingLoading || groupingError))
           }
         >
-          {isExporting ? t('common.loading') : t('common.export')}
+          {isExporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin motion-reduce:animate-none" />
+          ) : null}
+          {t('common.export')}
+          {isExporting ? (
+            <span className="sr-only">{t('common.loading')}</span>
+          ) : null}
         </Button>
       </DialogFooter>
     </>

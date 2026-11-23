@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { OptionalTimePicker } from '@tuturuuu/ui/optional-time-picker';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import { useTranslations } from 'next-intl';
@@ -113,7 +114,11 @@ export function FormBasicTab({
                       }))
                     : []
                 }
-                label={walletsLoading ? 'Loading...' : undefined}
+                label={
+                  walletsLoading ? (
+                    <LoadingPlaceholder srLabel={t('common.loading')} />
+                  ) : undefined
+                }
                 placeholder={t('transaction-data-table.select_wallet')}
                 selected={field.value ?? ''}
                 onChange={field.onChange}
@@ -175,7 +180,11 @@ export function FormBasicTab({
                           }))
                       : []
                   }
-                  label={walletsLoading ? 'Loading...' : undefined}
+                  label={
+                    walletsLoading ? (
+                      <LoadingPlaceholder srLabel={t('common.loading')} />
+                    ) : undefined
+                  }
                   placeholder={t(
                     'transaction-data-table.select_destination_wallet'
                   )}
@@ -232,7 +241,11 @@ export function FormBasicTab({
                         }))
                       : []
                   }
-                  label={categoriesLoading ? 'Loading...' : undefined}
+                  label={
+                    categoriesLoading ? (
+                      <LoadingPlaceholder srLabel={t('common.loading')} />
+                    ) : undefined
+                  }
                   placeholder={t('transaction-data-table.select_category')}
                   selected={field.value ?? ''}
                   onChange={field.onChange}

@@ -1,9 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Pencil, Search, Trash2 } from '@tuturuuu/icons';
+import { Pencil, Search, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useDeferredValue, useId, useState } from 'react';
 import type { CitationLabels } from './labels';
 import {
@@ -110,10 +111,9 @@ export function CitationLibraryTab({
     }
     if (list.isPending) {
       return (
-        <Message>
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          {labels.loading}
-        </Message>
+        <LoadingRegion srLabel={labels.loading} className="space-y-2 py-2">
+          <SkeletonList rows={3} withAvatar={false} withTrailing />
+        </LoadingRegion>
       );
     }
     if (list.isError) {
