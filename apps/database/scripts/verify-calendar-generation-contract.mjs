@@ -123,8 +123,10 @@ const runner = async (command, args, cwd) => {
           'ON_ERROR_STOP=1',
           '-v',
           'require_dblink=1',
+          // Fixtures run as postgres: platform-role write guards reject
+          // supabase_admin, and the dblink helper connects as postgres.
           '-U',
-          'supabase_admin',
+          'postgres',
           '--dbname',
           'postgres',
           '-f',
