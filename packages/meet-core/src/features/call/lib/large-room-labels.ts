@@ -16,7 +16,9 @@ export const largeRoomLabels = {
     allow_camera: 'Allow camera',
     allow_screen: 'Allow screen sharing',
     media_overrides: 'Media permissions for {name}',
-    skip_lobby: 'Admit signed-in participants automatically',
+    skip_lobby: 'Admit everyone automatically',
+    skip_lobby_hint:
+      "Signed-in people and guests who pass the human check join without waiting. Guests who couldn't verify still wait for you.",
     previous_page: 'Previous page',
     next_page: 'Next page',
     stage_pages: 'Participant video pages',
@@ -44,7 +46,9 @@ export const largeRoomLabels = {
     allow_camera: 'Cho phép bật camera',
     allow_screen: 'Cho phép chia sẻ màn hình',
     media_overrides: 'Quyền sử dụng thiết bị của {name}',
-    skip_lobby: 'Tự động cho người đã đăng nhập vào',
+    skip_lobby: 'Tự động cho mọi người vào',
+    skip_lobby_hint:
+      'Người đã đăng nhập và khách vượt qua bước xác minh sẽ vào ngay. Khách chưa xác minh vẫn chờ bạn duyệt.',
     previous_page: 'Trang trước',
     next_page: 'Trang sau',
     stage_pages: 'Các trang video của người tham gia',

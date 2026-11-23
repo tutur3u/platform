@@ -319,7 +319,12 @@ export function RoomPermissionToggles({
       {entries
         .filter(({ change }) => !!change)
         .map(({ key, label }) => (
-          <SettingsField key={key} label={labels(label)} layout="compact">
+          <SettingsField
+            key={key}
+            label={labels(label)}
+            description={key === 'skipLobby' ? labels('skip_lobby_hint') : undefined}
+            layout="compact"
+          >
             {(field) => (
               <Switch
                 {...field}
@@ -345,23 +350,6 @@ export function RoomPermissionToggles({
               checked={settings?.allowAnonymousGuests ?? false}
               onCheckedChange={(value) =>
                 onSettingsChange({ allowAnonymousGuests: value })
-              }
-            />
-          )}
-        </SettingsField>
-      )}
-      {isHost && onSettingsChange && settings?.allowAnonymousGuests && (
-        <SettingsField
-          label={guestCopy('auto_admit_verified_title')}
-          description={guestCopy('auto_admit_verified_hint')}
-          layout="compact"
-        >
-          {(field) => (
-            <Switch
-              {...field}
-              checked={settings?.autoAdmitVerifiedGuests ?? false}
-              onCheckedChange={(value) =>
-                onSettingsChange({ autoAdmitVerifiedGuests: value })
               }
             />
           )}

@@ -102,7 +102,7 @@ describe('attendance ledger', () => {
     expect(member.state.waiting[GUEST_ID]?.unverified).toBeUndefined();
   });
 
-  it('admits a verified guest at once only when the host opted in', () => {
+  it('admits a verified guest at once only under Admit everyone', () => {
     const base = {
       accountId: GUEST_ID,
       admission: 'lobby' as const,
@@ -117,7 +117,7 @@ describe('attendance ledger', () => {
     });
     const optedIn = room({
       allowAnonymousGuests: true,
-      autoAdmitVerifiedGuests: true,
+      skipLobby: true,
     });
     const verified = token({ ...base, guestTurnstileVerified: true });
     const admitted = admitOrHold(optedIn as never, verified, NOW);
@@ -140,10 +140,10 @@ describe('attendance ledger', () => {
 
     for (const settings of [
       { allowAnonymousGuests: true },
-      { allowAnonymousGuests: true, skipLobby: true },
+      { skipLobby: true },
       {
         allowAnonymousGuests: true,
-        autoAdmitVerifiedGuests: true,
+        skipLobby: true,
         admissionClosed: true,
       },
     ] as Record<string, boolean>[]) {
@@ -156,7 +156,7 @@ describe('attendance ledger', () => {
     const settings = {
       shareNotes: false,
       allowAnonymousGuests: true,
-      autoAdmitVerifiedGuests: true,
+      skipLobby: true,
     };
     const host = token();
     const unverified = token({
@@ -194,6 +194,59 @@ describe('attendance ledger', () => {
     const retry = admitOrHold(denied.state, rotated, NOW);
     expect(retry.state.presence[otherId]).toBeUndefined();
     expect(retry.state.waiting[otherId]).toBeDefined();
+  });
+
+  it('admits waiting verified guests, not unverified ones, when Admit everyone turns on', () => {
+    const host = token();
+    const otherId = '33333333-3333-4333-8333-333333333333';
+    const guest = (userId: string, verified: boolean) =>
+      token({
+        accountId: userId,
+        admission: 'lobby',
+        displayName: verified ? 'Verified' : 'Unverified',
+        guest: true,
+        ...(verified ? { guestTurnstileVerified: true as const } : {}),
+        role: 'speaker',
+        userId,
+      });
+    let room = { ...createMeetRoomSnapshot(), settings: { shareNotes: false, allowAnonymousGuests: true } } as never;
+    room = admitOrHold(room, guest(GUEST_ID, true), NOW).state as never;
+    room = admitOrHold(room, guest(otherId, false), NOW).state as never;
+    room = admitOrHold(room, host, NOW).state as never;
+    const flipped = applyMeetRoomCommand(room, {
+      message: { type: 'room.settings.update', settings: { skipLobby: true } },
+      now: NOW,
+      token: host,
+    });
+    expect(flipped.state.presence[GUEST_ID]).toBeDefined();
+    expect(flipped.state.waiting[otherId]?.unverified).toBe(true);
+    expect(flipped.state.presence[otherId]).toBeUndefined();
+  });
+
+  it('keeps a legacy waiting guest without the verified flag waiting when Admit everyone turns on', () => {
+    const host = token();
+    const legacyId = '44444444-4444-4444-8444-444444444444';
+    let room = { ...createMeetRoomSnapshot(), settings: { shareNotes: false, allowAnonymousGuests: true } } as never;
+    room = admitOrHold(room, host, NOW).state as never;
+    const state = room as unknown as { waiting: Record<string, unknown> };
+    state.waiting = {
+      ...state.waiting,
+      [legacyId]: {
+        guest: true,
+        accountId: legacyId,
+        displayName: 'Legacy',
+        role: 'speaker',
+        requestedAt: NOW,
+        userId: legacyId,
+      },
+    };
+    const flipped = applyMeetRoomCommand(room, {
+      message: { type: 'room.settings.update', settings: { skipLobby: true } },
+      now: NOW,
+      token: host,
+    });
+    expect(flipped.state.presence[legacyId]).toBeUndefined();
+    expect(flipped.state.waiting[legacyId]).toBeDefined();
   });
 
   it('keeps lobby guests out until they are admitted, then stores the guest id and name', () => {

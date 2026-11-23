@@ -129,6 +129,11 @@ export function admitOrHold(
           ...(token.guest && !token.guestTurnstileVerified
             ? { unverified: true as const }
             : {}),
+          // Positive proof for bulk admission: entries written before this
+          // flag existed lack it and so wait for a manual decision.
+          ...(token.guest && token.guestTurnstileVerified
+            ? { verified: true as const }
+            : {}),
           ...(token.participantKind
             ? { participantKind: token.participantKind }
             : {}),
@@ -278,10 +283,10 @@ function decideParticipant(
 
   if (!admit) {
     const blocked = blockAutoAdmission(state, pending.accountId ?? targetId);
-    // With verified-guest auto-admit on, a denied guest is banned like a
-    // removed one, which also pauses auto-admit for new guest ids.
+    // With "Admit everyone" on, a denied guest is banned like a removed one,
+    // which also pauses guest auto-admit for new guest ids.
     const next = {
-      ...(pending.guest && state.settings?.autoAdmitVerifiedGuests
+      ...(pending.guest && state.settings?.skipLobby
         ? recordRemovedGuest(
             blocked,
             pending.accountId ?? targetId,
@@ -486,7 +491,7 @@ export function decideRoomAdmission(
 /**
  * Whether a signed-in person is admitted without waiting: the host turned on
  * automatic admission, admission is open, and nobody removed or denied this
- * account. Guests never qualify; the guest policy decides them.
+ * account. Guests are decided by `skipsLobbyAsVerifiedGuest`.
  */
 export function skipsLobby(state: MeetRoomSnapshot, accountId: string) {
   return (
@@ -498,12 +503,11 @@ export function skipsLobby(state: MeetRoomSnapshot, accountId: string) {
 }
 
 /**
- * Whether an anonymous guest skips the lobby: the host allows guests and
- * explicitly admits verified guests automatically, admission is open, the
- * guest passed a human check, and nobody removed or denied this guest.
- * While any guest removal ban is active the room pauses guest auto-admit,
- * because a removed guest can verify again under a new id.
- * Separate from `skipsLobby`, which covers signed-in people only.
+ * Whether an anonymous guest skips the lobby under "Admit everyone": the host
+ * allows guests and admits automatically, admission is open, the guest passed
+ * a human check, and nobody removed or denied this guest. Unverified guests
+ * always wait. While any guest removal ban is active the room pauses guest
+ * auto-admit, because a removed guest can verify again under a new id.
  */
 export function skipsLobbyAsVerifiedGuest(
   state: MeetRoomSnapshot,
@@ -519,7 +523,7 @@ export function skipsLobbyAsVerifiedGuest(
     token.guest === true &&
     token.guestTurnstileVerified === true &&
     !!state.settings?.allowAnonymousGuests &&
-    !!state.settings.autoAdmitVerifiedGuests &&
+    !!state.settings.skipLobby &&
     !state.settings.admissionClosed &&
     !state.deniedAutoAdmission?.includes(id) &&
     (state.deniedAutoAdmission?.length ?? 0) < 256
@@ -527,7 +531,8 @@ export function skipsLobbyAsVerifiedGuest(
 }
 
 /**
- * Admits the signed-in people already waiting, oldest first, once automatic
+ * Admits the signed-in people and verified guests already waiting, oldest
+ * first, once automatic
  * admission turns on. `result` is the outcome that turned it on; what each
  * admission would send is merged into it. People the room cannot seat yet stay
  * waiting for a manual decision.
@@ -538,11 +543,21 @@ export function admitWaitingSignedIn(
   now: string,
   features: MeetClassFeatures = meetClassFeatures()
 ): MeetRoomOutcome {
+  const nowMs = Date.parse(now);
   const waiting = Object.values(result.state.waiting)
-    .filter(
-      (person) =>
-        !person.guest &&
-        skipsLobby(result.state, person.accountId ?? person.userId)
+    .filter((person) =>
+      person.guest
+        ? skipsLobbyAsVerifiedGuest(
+            result.state,
+            {
+              guest: true,
+              ...(person.verified ? { guestTurnstileVerified: true } : {}),
+              accountId: person.accountId,
+              userId: person.userId,
+            },
+            nowMs
+          )
+        : skipsLobby(result.state, person.accountId ?? person.userId)
     )
     .sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
   let admitted = 0;

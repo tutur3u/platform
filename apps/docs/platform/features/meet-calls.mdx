@@ -921,7 +921,8 @@ next token.
 - The server derives a participant id from the verified Turnstile token and
   stores it with the name in an HttpOnly, host-only `__Host-meet-guest` cookie signed with a key derived from
   `MEET_REALTIME_TOKEN_SECRET`; it is bound to one meeting and lasts 12 hours.
-- Guests need host approval even when **Admit signed-in participants automatically** is on.
+- Guests who could not verify need host approval even when **Admit everyone
+  automatically** is on.
   Media locks apply to guests, and hosts see a Guest badge.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
@@ -947,11 +948,15 @@ next token.
   (Turnstile, then the puzzle). When it passes, the guest session is re-signed
   as verified and the call reconnects with a fresh token, so the host's lobby
   drops the **Unverified** badge without another click.
-- **Admit verified guests automatically** (host setting, off by default, shown
-  once guests without an account are allowed) lets guests who passed Turnstile
-  or the puzzle skip the lobby, unless admission is closed or the host denied
-  or removed them. It is separate from **Admit signed-in participants
-  automatically**, which never admits guests.
+- **Admit everyone automatically** (the host's automatic admission setting)
+  admits signed-in people and guests who passed Turnstile or the puzzle without
+  waiting, and turning it on admits those already waiting. Guests who could
+  not verify always wait for the host. Guest auto-admit pauses while any guest
+  removal ban is active, and with the setting on a denied guest is banned like a
+  removed one, so a guest cannot verify again under a new id to slip back in.
+  Admission closed and room capacity still apply. A guest denied while the
+  setting is off gets no ban, so turning it on later does not stop that person
+  from verifying again under a new id; the host can still deny them.
 - **Ask the host to let you in** sends the join request without a Turnstile
   token. The server accepts it only after the ordinary join limit and every
   guest-join gate pass, the adaptive abuse decision does not mark the network
