@@ -1720,8 +1720,62 @@ enforces these pins in CI; lifting containment requires reviewing its single
 `CONTAINMENT_IN_FORCE` flag and the corresponding config changes. The release operator must read
 back vars after every Meet deploy. Real secret values are provisioned separately.
 
-The panel reads `available` from the state response; unavailable workspaces keep
-the temporary-unavailability message and hide Start, Finish and Retry controls.
+### Transcript and notes availability
+
+The Meet AI gate above is necessary but not sufficient for room-wide
+transcription. The host's browser mixes every participant's audio, so the
+transcript and post-call notes are also gated in code, separately from the
+Worker vars. `readMeetTranscriptionAvailability`
+(`packages/meet-core/src/features/meeting-ai/server/transcription-availability.ts`)
+is the single source of that decision for the state read, the meet-ai POST
+routes and the consent notice.
+
+Transcription stays off in code until a reviewed release opens it. Turning off
+the kill switch, allowlisting a workspace, or setting the reviewed
+`MEET_AI_ALL_WORKSPACES` opt-in opens Private Mira, but not the transcript.
+In that state the state read reports `available: false`, both meet-ai POST
+routes answer 403 and the meeting provider transport refuses.
+
+A live call that shows "Meet AI is temporarily unavailable." and "No transcript
+yet." with the kill switch lifted is this code gate, not the Worker vars. A
+paid-and-staff release sets `MEET_AI_DISABLED=false` and the allow-all secret
+only on `tuturuuu-meet`; Private Mira passes because it reads the Meet AI gate
+directly.
+
+The state response carries `unavailableReason`, and the panel explains each
+reason instead of a generic message:
+
+| Reason | Meaning | Who can change it |
+| --- | --- | --- |
+| `disabled` | A Tuturuuu deployment or security switch keeps it off everywhere | Tuturuuu administrators (a reviewed release) |
+| `workspace` | The workspace is protected, denylisted or not admitted by the Meet AI gate | Tuturuuu administrators |
+| `audience` | The workspace has no stored 18+ audience attestation | The workspace owner, in **Meeting settings → Mira** |
+| `error` | The availability check failed | Anyone: **Try again** |
+
+A failed state read also shows **Try again**. Unavailable workspaces hide Start,
+Finish and Retry notes.
+
+### Live transcript consent fence
+
+Each admitted participant, anonymous guests included, chooses **Allow** or
+**Decline** for the live transcript on a versioned notice
+(`2026-11-23-transcript-v1`). The meeting room Durable Object stores each
+choice per account, with the meeting, server time and revision.
+`/api/meet-call/:meetingId/transcript-consent` returns only the caller's own
+choice and aggregate counts, never who has not chosen. Decline always records;
+Allow requires the transcript to be available. The fence is ready only while
+every admitted account has a current Allow. One Decline, a new participant who
+has not chosen, or a new notice version pauses the transcript for everyone.
+Choices are cleared when an ended room is restored.
+
+The room also records the host's running session (`transcript.session`) so
+every participant sees a recording indicator. The host clears it when the
+session ends, even after leaving. The older socket `transcription.state` and
+`transcription.consent` messages have no client and do not gate anything.
+
+Regression coverage: `room-transcript-consent.test.ts` (`packages/realtime`),
+`transcript-consent/route.test.ts`, `meeting-ai-unavailable.test.tsx` and
+`sessions.test.ts`.
 
 Regression coverage: `ai-workspace-gate.test.ts` and `ai-gate-containment.test.ts`
 (`packages/realtime`), `containment.test.ts`, `workspace-gate.test.ts`,
