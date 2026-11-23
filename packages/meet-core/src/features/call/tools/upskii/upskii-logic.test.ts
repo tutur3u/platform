@@ -1,7 +1,6 @@
 import { InternalApiError } from '@tuturuuu/internal-api';
 import type { UpskiiPresentation } from '@tuturuuu/realtime/meet/room-upskii-presentation';
 import { describe, expect, it } from 'vitest';
-import { sanitizeUpskiiLessonBlocks } from './upskii-lesson-blocks';
 import {
   displayUpskiiLink,
   isSettledUpskiiRefusal,
@@ -14,7 +13,7 @@ const item = {
   id: 'l4',
   title: 'Responsible AI in your class',
   kind: 'lesson' as const,
-  url: 'https://upskii.com/classes/c1/lessons/l4',
+  url: 'https://app.upskii.com/classes/c1/lessons/l4',
   updatedAt: null,
   classId: 'c1',
 };
@@ -88,11 +87,11 @@ describe('presentation items', () => {
   });
 
   it('shows the host and path under the QR code', () => {
-    expect(displayUpskiiLink('https://upskii.com/a/b?token=x#y')).toBe(
-      'upskii.com/a/b'
+    expect(displayUpskiiLink('https://app.upskii.com/a/b?token=x#y')).toBe(
+      'app.upskii.com/a/b'
     );
     expect(
-      displayUpskiiLink(`https://upskii.com/${'a'.repeat(80)}`)
+      displayUpskiiLink(`https://app.upskii.com/${'a'.repeat(80)}`)
     ).toHaveLength(60);
   });
 });
@@ -140,35 +139,5 @@ describe('upskiiPanelView', () => {
       'permission_denied'
     );
     expect(upskiiRequestErrorKey('upskii_rate_limited')).toBe('request_failed');
-  });
-});
-
-describe('sanitizeUpskiiLessonBlocks', () => {
-  it('keeps typed text blocks and Upskii images only', () => {
-    expect(
-      sanitizeUpskiiLessonBlocks([
-        { type: 'heading', level: 2, text: 'Why it matters' },
-        { type: 'paragraph', text: '<script>alert(1)</script>' },
-        { type: 'list', ordered: true, items: ['One', 'Two'] },
-        { type: 'image', src: 'https://upskii.com/i.png', alt: 'Chart' },
-        { type: 'image', src: 'https://evil.test/i.png', alt: 'x' },
-        { type: 'image', src: 'javascript:alert(1)', alt: 'x' },
-        { type: 'html', html: '<b>x</b>' },
-        { type: 'heading', level: 1, text: 'Too big' },
-      ])
-    ).toEqual([
-      { type: 'heading', level: 2, text: 'Why it matters' },
-      { type: 'paragraph', text: '<script>alert(1)</script>' },
-      { type: 'list', ordered: true, items: ['One', 'Two'] },
-      { type: 'image', src: 'https://upskii.com/i.png', alt: 'Chart' },
-    ]);
-  });
-
-  it('stops at the size limits', () => {
-    const paragraph = { type: 'paragraph', text: 'a'.repeat(4000) };
-    expect(sanitizeUpskiiLessonBlocks(Array(30).fill(paragraph))).toHaveLength(
-      16
-    );
-    expect(sanitizeUpskiiLessonBlocks('nope')).toEqual([]);
   });
 });

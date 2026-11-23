@@ -24,7 +24,7 @@ const lesson = {
   kind: 'lesson' as const,
   id: 'l4',
   title: 'Responsible AI in your class',
-  url: 'https://upskii.com/classes/c1/lessons/l4',
+  url: 'https://app.upskii.com/classes/c1/lessons/l4',
 };
 const presentation: UpskiiPresentation = {
   item: lesson,

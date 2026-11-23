@@ -43,14 +43,14 @@ const ready = (role: 'host' | 'speaker') =>
   }) as unknown as MeetRealtimeServerMessage;
 const deliver = (message: MeetRealtimeServerMessage) =>
   act(() => handleUpskiiMessage(meetingId, message, send));
-const lessonUrl = 'https://upskii.com/classes/c1/lessons/l4';
+const lessonUrl = 'https://app.upskii.com/classes/c1/lessons/l4';
 const presentation = {
   item: {
     kind: 'assessment' as const,
     id: 'a1',
     title: 'AI check-in',
     classTitle: 'EduFest',
-    url: 'https://upskii.com/classes/c1/assessments/a1',
+    url: 'https://app.upskii.com/classes/c1/assessments/a1',
   },
   presenterId: 'host',
   startedAt: '2026-12-05T08:00:00Z',
@@ -142,7 +142,7 @@ it('lets a presenter pick a class and present a lesson to the room', async () =>
               id: 'c1',
               title: 'EduFest',
               kind: 'class',
-              url: 'https://upskii.com/classes/c1',
+              url: 'https://app.upskii.com/classes/c1',
               updatedAt: null,
               classId: null,
             },

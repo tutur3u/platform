@@ -43,6 +43,7 @@ export type UpskiiContentErrorCode =
   | 'EARLY_ACCESS_ONLY'
   | 'SCOPE_NOT_GRANTED'
   | 'CLASS_NOT_FOUND'
+  /** `UPSKII_UNAVAILABLE` and every failure the route does not name. */
   | 'UNAVAILABLE';
 
 const KNOWN_ERRORS = new Set<UpskiiContentErrorCode>([
@@ -52,10 +53,11 @@ const KNOWN_ERRORS = new Set<UpskiiContentErrorCode>([
   'CLASS_NOT_FOUND',
 ]);
 
-export const UPSKII_CONTENT_MAX_ITEMS = 200;
+export const UPSKII_CONTENT_MAX_ITEMS = 100;
 
 const idSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
-const controlCharacters = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g;
+const controlCharacters =
+  /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g;
 
 const rawItemSchema = z.object({
   id: idSchema,

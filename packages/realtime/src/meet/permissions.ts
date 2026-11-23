@@ -208,6 +208,7 @@ const PRIVATE_TOOL_FRAMES = new Set([
   'penboard.snapshot',
   'penboard.stroke',
   'qa.host',
+  'upskii.presentation',
 ]);
 
 /** Frames that carry one person's or the managers' activity data. */

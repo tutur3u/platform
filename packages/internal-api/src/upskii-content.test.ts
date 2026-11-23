@@ -28,15 +28,15 @@ describe('parseUpskiiContentPage', () => {
     const page = parseUpskiiContentPage(
       {
         items: [
-          item('l1', 'https://upskii.com/classes/c1/lessons/l1'),
+          item('l1', 'https://app.upskii.com/classes/c1/lessons/l1'),
           item('l2', 'javascript:alert(1)'),
-          item('l3', 'https://upskii.com.evil.test/l3'),
-          item('l4', 'http://upskii.com/l4'),
-          item('l5', 'https://upskii.com/out?next=https://evil.test'),
-          item('l6', { href: 'https://upskii.com/l6' }),
-          item('l1', 'https://upskii.com/classes/c1/lessons/l1-copy'),
-          item('../x', 'https://upskii.com/x'),
-          item('l7', 'https://upskii.com/l7', { title: '   ' }),
+          item('l3', 'https://app.upskii.com.evil.test/l3'),
+          item('l4', 'http://app.upskii.com/l4'),
+          item('l5', 'https://app.upskii.com/out?next=https://evil.test'),
+          item('l6', { href: 'https://app.upskii.com/l6' }),
+          item('l1', 'https://app.upskii.com/classes/c1/lessons/l1-copy'),
+          item('../x', 'https://app.upskii.com/x'),
+          item('l7', 'https://app.upskii.com/l7', { title: '   ' }),
         ],
         nextCursor: 'n2',
       },
@@ -48,7 +48,7 @@ describe('parseUpskiiContentPage', () => {
           id: 'l1',
           title: 'Lesson l1',
           kind: 'lesson',
-          url: 'https://upskii.com/classes/c1/lessons/l1',
+          url: 'https://app.upskii.com/classes/c1/lessons/l1',
           updatedAt: '2026-11-20T00:00:00Z',
           classId: 'c1',
         },
@@ -61,9 +61,9 @@ describe('parseUpskiiContentPage', () => {
     const page = parseUpskiiContentPage(
       {
         items: [
-          item('a1', 'https://upskii.com/a1', {
+          item('a1', 'https://app.upskii.com/a1', {
             kind: 'lesson',
-            title: 'Quiz\u0000 one\u2028',
+            title: 'Quiz\u0000 one\u2028\u202e',
             body: '<p>answers</p>',
           }),
         ],
@@ -79,7 +79,7 @@ describe('parseUpskiiContentPage', () => {
 
   it('caps the list and refuses a malformed page', () => {
     const many = Array.from({ length: UPSKII_CONTENT_MAX_ITEMS + 5 }, (_, i) =>
-      item(`l${i}`, `https://upskii.com/l${i}`)
+      item(`l${i}`, `https://app.upskii.com/l${i}`)
     );
     expect(
       parseUpskiiContentPage({ items: many }, 'lessons').items
@@ -92,7 +92,12 @@ describe('parseUpskiiContentPage', () => {
   it('checks a staging origin exactly when one is pinned', () => {
     const staging = 'https://staging.upskii.com';
     const page = parseUpskiiContentPage(
-      { items: [item('a', `${staging}/a`), item('b', 'https://upskii.com/b')] },
+      {
+        items: [
+          item('a', `${staging}/a`),
+          item('b', 'https://app.upskii.com/b'),
+        ],
+      },
       'classes',
       staging
     );
@@ -105,7 +110,7 @@ describe('listUpskiiContent', () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
-        jsonResponse({ items: [item('l1', 'https://upskii.com/l1')] })
+        jsonResponse({ items: [item('l1', 'https://app.upskii.com/l1')] })
       );
     await listUpskiiContent(
       { kind: 'lessons', classId: 'c1', cursor: 'n2' },

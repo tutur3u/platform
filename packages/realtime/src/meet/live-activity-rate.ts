@@ -46,6 +46,7 @@ export function liveActivityAttemptRefusal({
   switch (message.type) {
     case 'activity.read':
     case 'penboard.read':
+    case 'upskii.present.read':
       limit = 12;
       error = 'activity_read_rate_limited';
       break;

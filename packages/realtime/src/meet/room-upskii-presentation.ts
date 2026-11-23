@@ -7,11 +7,12 @@ import type { MeetRoomCommand, MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
 /**
- * The one origin Meet opens, embeds or shares Upskii links on. Servers may
- * point it at a staging deployment with `resolveUpskiiOrigin`; the room never
- * takes a host from a message.
+ * The one origin Meet opens or shares Upskii links on: the Upskii app, where
+ * lesson and assessment links live. Servers may point it at a staging
+ * deployment with `resolveUpskiiOrigin`; the room never takes a host from a
+ * message.
  */
-export const UPSKII_ORIGIN = 'https://upskii.com';
+export const UPSKII_ORIGIN = 'https://app.upskii.com';
 
 /** Accepts an override only when it is a bare `https` origin. */
 export function resolveUpskiiOrigin(override?: string | null): string {
@@ -31,12 +32,24 @@ export function resolveUpskiiOrigin(override?: string | null): string {
 
 const MAX_URL_LENGTH = 2048;
 
-/** A value that would send the browser to another site when followed. */
+function decodeOnce(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/**
+ * Whether a parameter would send the browser to another site if Upskii
+ * followed it. Every candidate is resolved the way a browser resolves a link,
+ * so backslashes, tabs and other forms the URL parser normalizes count. Query
+ * parameters arrive decoded once; one more decode catches double encoding.
+ */
 function pointsOffOrigin(value: string, origin: string) {
-  const trimmed = value.trim();
-  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\\\\|\/\\)/i.test(trimmed)) {
+  for (const candidate of new Set([value, decodeOnce(value)])) {
     try {
-      return new URL(trimmed, origin).origin !== origin;
+      if (new URL(candidate.trim(), origin).origin !== origin) return true;
     } catch {
       return true;
     }
@@ -44,11 +57,20 @@ function pointsOffOrigin(value: string, origin: string) {
   return false;
 }
 
+function paramsPointOffOrigin(params: URLSearchParams, origin: string) {
+  for (const [key, value] of params)
+    if (pointsOffOrigin(key, origin) || pointsOffOrigin(value, origin))
+      return true;
+  return false;
+}
+
 /**
  * Returns the normalized link when it is `https` on exactly `origin`, with no
- * credentials and no parameter that redirects to another site; otherwise
- * null. `javascript:`, `data:`, lookalike hosts, other ports and open
- * redirects through Upskii are all dropped.
+ * credentials and no query or fragment part (a key, a value or a bare
+ * fragment) that resolves to another site; otherwise null. `javascript:`,
+ * `data:`, lookalike and punycode hosts, other ports and open redirects
+ * through parameters are dropped. Paths are not inspected: Meet relies on
+ * Upskii having no path-based redirect.
  */
 export function toSafeUpskiiUrl(
   raw: unknown,
@@ -64,18 +86,20 @@ export function toSafeUpskiiUrl(
   }
   if (url.protocol !== 'https:' || url.origin !== origin) return null;
   if (url.username || url.password) return null;
-  for (const [, value] of url.searchParams)
-    if (pointsOffOrigin(value, origin)) return null;
+  if (paramsPointOffOrigin(url.searchParams, origin)) return null;
   const hash = url.hash.slice(1);
-  if (hash) {
-    const params = new URLSearchParams(hash);
-    for (const [, value] of params)
-      if (pointsOffOrigin(value, origin)) return null;
-  }
+  if (
+    hash &&
+    (pointsOffOrigin(decodeOnce(hash), origin) ||
+      paramsPointOffOrigin(new URLSearchParams(hash), origin))
+  )
+    return null;
   return url.href;
 }
 
-const controlCharacters = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/** Control, line-separator and bidirectional-override characters. */
+const controlCharacters =
+  /[\u0000-\u001f\u007f-\u009f\u2028\u2029\u202a-\u202e\u2066-\u2069]/;
 const label = (max: number) =>
   z
     .string()

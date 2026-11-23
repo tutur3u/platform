@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { liveActivityAttemptRefusal } from './live-activity-rate';
 import { meetRealtimeClientMessageSchema } from './messages';
+import { receivesMeetToolFrame } from './permissions';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
 import {
   createMeetPresence,
@@ -41,7 +43,7 @@ const lesson = {
   id: 'l4',
   title: 'Responsible AI in your class',
   classTitle: 'EduFest',
-  url: 'https://upskii.com/classes/c1/lessons/l4',
+  url: 'https://app.upskii.com/classes/c1/lessons/l4',
 };
 const run = (state: MeetRoomSnapshot, token: typeof host, input: unknown) => {
   const result = applyUpskiiPresentation(state, {
@@ -57,9 +59,9 @@ const errorOf = (result: ReturnType<typeof run>) =>
 
 describe('toSafeUpskiiUrl', () => {
   it.each([
-    'https://upskii.com/classes/c1/lessons/l4',
-    'https://upskii.com/a?tab=quiz&next=/classes/c1',
-    'https://upskii.com/a#section-2',
+    'https://app.upskii.com/classes/c1/lessons/l4',
+    'https://app.upskii.com/a?tab=quiz&next=/classes/c1',
+    'https://app.upskii.com/a#section-2',
   ])('keeps %s', (url) => {
     expect(toSafeUpskiiUrl(url)).toBe(new URL(url).href);
   });
@@ -67,22 +69,41 @@ describe('toSafeUpskiiUrl', () => {
   it.each([
     'javascript:alert(1)',
     'data:text/html,<script>alert(1)</script>',
-    'http://upskii.com/lesson',
-    'https://upskii.com.evil.test/lesson',
+    'http://app.upskii.com/lesson',
+    'https://app.upskii.com.evil.test/lesson',
     'https://evil.test/upskii.com',
-    'https://upskii.com:8443/lesson',
-    'https://user:pass@upskii.com/lesson',
+    'https://app.upskii.com:8443/lesson',
+    'https://user:pass@app.upskii.com/lesson',
     'https://www.upskii.com/lesson',
-    'https://upskii.com/out?to=https://evil.test',
-    'https://upskii.com/out?next=//evil.test',
-    'https://upskii.com/out?next=%2F%2Fevil.test',
-    'https://upskii.com/out?r=javascript:alert(1)',
-    'https://upskii.com/out#redirect=https://evil.test',
+    'https://upskii.com/lesson',
+    'https://app.upskii.com/out?next=\\/evil.test',
+    'https://app.upskii.com/out?next=/%09/evil.test',
+    'https://app.upskii.com/out?https://evil.test',
+    'https://app.upskii.com/out#https://evil.test',
+    'https://app.upskii.com/out#%2F%2Fevil.test',
+    'https://app.upskii.com/out?next=%252F%252Fevil.test',
+    'https://\u0430pp.upskii.com/lesson',
+    'https://xn--pp-8kc.upskii.com/lesson',
+    'https://app.upskii.com.xn--80ak6aa92e.com/lesson',
+    'https://app.upskii.com/out?to=https://evil.test',
+    'https://app.upskii.com/out?next=//evil.test',
+    'https://app.upskii.com/out?next=%2F%2Fevil.test',
+    'https://app.upskii.com/out?r=javascript:alert(1)',
+    'https://app.upskii.com/out#redirect=https://evil.test',
     '/classes/c1',
     '',
-    `https://upskii.com/${'a'.repeat(2100)}`,
+    `https://app.upskii.com/${'a'.repeat(2100)}`,
   ])('drops %s', (url) => {
     expect(toSafeUpskiiUrl(url)).toBeNull();
+  });
+
+  it('normalizes the default port and host case', () => {
+    expect(toSafeUpskiiUrl('https://app.upskii.com:443/x')).toBe(
+      'https://app.upskii.com/x'
+    );
+    expect(toSafeUpskiiUrl('https://APP.Upskii.com/x')).toBe(
+      'https://app.upskii.com/x'
+    );
   });
 
   it('drops values that are not strings', () => {
@@ -177,7 +198,9 @@ describe('applyUpskiiPresentation', () => {
     ).toBe('awaiting_admission');
     const waiting = {
       ...initial,
-      waiting: { [guest.userId]: initial.presence[guest.userId] },
+      waiting: {
+        [guest.userId]: { ...initial.presence[guest.userId], requestedAt: now },
+      },
     } as MeetRoomSnapshot;
     expect(errorOf(run(waiting, guest, { type: 'upskii.present.read' }))).toBe(
       'awaiting_admission'
@@ -188,7 +211,7 @@ describe('applyUpskiiPresentation', () => {
     for (const url of [
       'javascript:alert(1)',
       'https://evil.test/lesson',
-      'https://upskii.com/out?to=https://evil.test',
+      'https://app.upskii.com/out?to=https://evil.test',
     ]) {
       const result = run(room(), host, {
         type: 'upskii.present.set',
@@ -203,6 +226,8 @@ describe('applyUpskiiPresentation', () => {
     for (const item of [
       { ...lesson, title: 'x'.repeat(161) },
       { ...lesson, title: 'a\u0000b' },
+      { ...lesson, title: 'a\u202eb' },
+      { ...lesson, classTitle: 'a\u2066b' },
       { ...lesson, id: '../etc' },
       { ...lesson, kind: 'class' },
     ])
@@ -232,6 +257,42 @@ describe('applyUpskiiPresentation', () => {
     expect(
       errorOf(run(state, host, { type: 'upskii.present.set', item: lesson }))
     ).toBe('upskii_rate_limited');
+  });
+
+  it('delivers the presentation only to people admitted to a live room', () => {
+    const set = run(room(), host, { type: 'upskii.present.set', item: lesson });
+    const frame = set.broadcast[0] as { type: string };
+    expect(receivesMeetToolFrame(set.state, guest, frame)).toBe(true);
+    const { [guest.userId]: admitted, ...others } = set.state.presence;
+    const lobby = {
+      ...set.state,
+      presence: others,
+      waiting: { [guest.userId]: { ...admitted, requestedAt: now } },
+    } as MeetRoomSnapshot;
+    expect(receivesMeetToolFrame(lobby, guest, frame)).toBe(false);
+    expect(receivesMeetToolFrame(set.state, outsider, frame)).toBe(false);
+    expect(
+      receivesMeetToolFrame({ ...set.state, ended: true }, guest, frame)
+    ).toBe(false);
+  });
+
+  it('limits how often one person reads the presentation', () => {
+    const reader = { ...guest, roomId: `upskii-read-${crypto.randomUUID()}` };
+    const read = () =>
+      liveActivityAttemptRefusal({
+        message: meetRealtimeClientMessageSchema.parse({
+          type: 'upskii.present.read',
+          requestId: 'r',
+        }),
+        token: reader,
+        now,
+      });
+    for (let index = 0; index < 12; index++) expect(read()).toBeUndefined();
+    expect(read()).toEqual({
+      type: 'error',
+      error: 'activity_read_rate_limited',
+      requestId: 'r',
+    });
   });
 
   it('drops the presentation when the room ends', () => {
