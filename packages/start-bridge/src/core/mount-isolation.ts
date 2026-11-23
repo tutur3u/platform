@@ -42,6 +42,7 @@ export interface MountIsolationConfig {
  * mounted app never receives or writes it.
  */
 export const FIRST_PARTY_SESSION_COOKIE = '__Host-ttr_session';
+const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 
 /** Read-only marker set by an app-only logout; it can only deny access. */
 export const LOGOUT_FENCE_COOKIE_NAME = '__Host-tuturuuu_app_signed_out';
@@ -139,9 +140,17 @@ type SessionParts = { whole?: string; chunks: string[]; seen: number };
 function splitSessionCookies(header: string | null) {
   const others: Array<{ name: string; value: string }> = [];
   const sessions = new Map<string, SessionParts>();
+  let localeSeen = false;
   for (const cookie of parseCookieHeader(header)) {
     const session = SUPABASE_AUTH_COOKIE.exec(cookie.name);
     if (!session?.groups?.key) {
+      // The browser lists the mount's own `Path=<base>` locale before Web's
+      // `Path=/` copy. Keep only that first copy: request parsers keep the
+      // last duplicate, which would let Web's choice override the app's.
+      if (cookie.name === LOCALE_COOKIE_NAME) {
+        if (localeSeen) continue;
+        localeSeen = true;
+      }
       others.push(cookie);
       continue;
     }

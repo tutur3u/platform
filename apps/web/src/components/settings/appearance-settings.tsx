@@ -1,10 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  persistLocalePreference,
-  reloadForLocaleChange,
-} from '@tuturuuu/ui/custom/locale-preference';
+import { switchLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { ExperimentalUiSetting } from '@tuturuuu/ui/custom/settings/experimental-ui-setting';
@@ -92,10 +89,7 @@ export default function AppearanceSettings({
   });
 
   const handleLocaleChange = (newLocale: string) => {
-    persistLocalePreference(newLocale);
-    startTransition(() => {
-      reloadForLocaleChange(newLocale);
-    });
+    startTransition(() => switchLocalePreference(newLocale));
   };
 
   const handleTimezoneChange = (timezone: string) => {

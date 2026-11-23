@@ -69,3 +69,45 @@ describe('public marketing locale URLs', () => {
     );
   });
 });
+
+describe('document loads after a language change', () => {
+  function documentLoad(pathname: string, headers: Record<string, string>) {
+    return handleLocale({
+      req: new NextRequest(`https://tuturuuu.com${pathname}`, {
+        headers: { 'sec-fetch-dest': 'document', ...headers },
+      }),
+    });
+  }
+
+  it('renders a Vietnamese choice on a public page without rewriting the cookie', () => {
+    const response = documentLoad('/vi/products/tasks', {
+      cookie: `${LOCALE_COOKIE_NAME}=vi`,
+      'accept-language': 'en',
+    });
+    expect(response.headers.get('location')).toBeNull();
+    expect(
+      response.headers.get('x-middleware-request-x-next-intl-locale')
+    ).toBe('vi');
+    expect(response.cookies.get(LOCALE_COOKIE_NAME)).toBeUndefined();
+  });
+
+  it('keeps System cookie-less when the prefix matches the browser language', () => {
+    const response = documentLoad('/vi/products/tasks', {
+      'accept-language': 'vi',
+    });
+    expect(
+      response.headers.get('x-middleware-request-x-next-intl-locale')
+    ).toBe('vi');
+    expect(response.cookies.get(LOCALE_COOKIE_NAME)).toBeUndefined();
+  });
+
+  it('serves a chosen app-page locale at its unprefixed address', () => {
+    const response = documentLoad('/vi/personal/tasks', {
+      cookie: `${LOCALE_COOKIE_NAME}=vi`,
+    });
+    expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+      '/personal/tasks'
+    );
+    expect(response.cookies.get(LOCALE_COOKIE_NAME)).toBeUndefined();
+  });
+});

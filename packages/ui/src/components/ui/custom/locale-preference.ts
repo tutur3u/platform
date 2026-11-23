@@ -18,6 +18,9 @@ export function persistLocalePreference(
   locale: string,
   cookieName = DEFAULT_LOCALE_COOKIE_NAME
 ) {
+  // Drop every copy this page can reach first, so a root host keeps a single
+  // cookie instead of an older duplicate the server might read.
+  clearLocalePreference(cookieName);
   setCookie(
     cookieName,
     locale,
@@ -36,26 +39,29 @@ export function clearLocalePreference(cookieName = DEFAULT_LOCALE_COOKIE_NAME) {
 /**
  * The explicit locale stored in a `Cookie` header string, or `null` when the
  * visitor follows the system language (no cookie, or an unsupported value).
+ * Pick the copy the server reads: Next's request cookies keep the last
+ * duplicate, while a mounted app's bridge keeps only the first, its own
+ * `Path=<base>` copy (`pick: 'first'`).
  */
 export function readLocalePreference(
   cookieHeader: string,
   locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES,
-  cookieName = DEFAULT_LOCALE_COOKIE_NAME
+  cookieName = DEFAULT_LOCALE_COOKIE_NAME,
+  pick: 'first' | 'last' = 'last'
 ): string | null {
-  // Like the proxies, only the first copy counts; the browser lists the most
-  // specific path first.
-  for (const pair of cookieHeader.split(';')) {
+  let value: string | undefined;
+  for (const pair of cookieHeader.split(/; */u)) {
     const separator = pair.indexOf('=');
     if (separator < 0 || pair.slice(0, separator).trim() !== cookieName)
       continue;
     try {
-      const value = decodeURIComponent(pair.slice(separator + 1).trim());
-      return locales.includes(value) ? value : null;
+      value = decodeURIComponent(pair.slice(separator + 1).trim());
     } catch {
-      return null;
+      continue;
     }
+    if (pick === 'first') break;
   }
-  return null;
+  return value !== undefined && locales.includes(value) ? value : null;
 }
 
 /**
@@ -75,6 +81,15 @@ export function stripLocalePrefix(
   if (!locales.includes(segments[1] ?? '')) return pathname;
   const stripped = `/${segments.slice(2).join('/')}`;
   return `${mounted ? base : ''}${stripped === '/' && mounted ? '' : stripped}`;
+}
+
+/** Stores `locale` and loads the page under it. */
+export function switchLocalePreference(
+  locale: string,
+  locales: readonly string[] = DEFAULT_SUPPORTED_LOCALES
+) {
+  persistLocalePreference(locale);
+  reloadForLocaleChange(locale, locales);
 }
 
 /** The first supported locale among the browser's preferred languages. */

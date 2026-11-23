@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assertMountIsolationConfig,
   isolateMountedCookieHeader,
+  reduceMountedSessionCookieHeader,
   reduceSupabaseSessionValue,
   scopeMountedResponseCookies,
   scopeOwnedSetCookie,
@@ -139,6 +140,20 @@ describe('isolateMountedCookieHeader', () => {
       isolateMountedCookieHeader('tuturuuu_app_session=x; a=b', config)
     ).toBeNull();
     expect(isolateMountedCookieHeader(null, config)).toBeNull();
+  });
+  it("keeps the mount's own locale over Web's Path=/ copy", () => {
+    // Browsers list the more specific Path=<base> cookie first.
+    expect(
+      isolateMountedCookieHeader('NEXT_LOCALE=vi; NEXT_LOCALE=en', config)
+    ).toBe('NEXT_LOCALE=vi');
+  });
+});
+
+describe('reduceMountedSessionCookieHeader', () => {
+  it("keeps the mount's own locale over Web's Path=/ copy", () => {
+    expect(
+      reduceMountedSessionCookieHeader('a=1; NEXT_LOCALE=vi; NEXT_LOCALE=en')
+    ).toBe('a=1; NEXT_LOCALE=vi');
   });
 });
 

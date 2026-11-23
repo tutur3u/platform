@@ -21,10 +21,7 @@ import {
 } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import {
-  persistLocalePreference,
-  reloadForLocaleChange,
-} from '@tuturuuu/ui/custom/locale-preference';
+import { switchLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
@@ -83,9 +80,7 @@ function LanguageSwitcher({
   const switchLocale = () => {
     setLoading(true);
     try {
-      const nextLocale = isVietnamese ? 'en' : 'vi';
-      persistLocalePreference(nextLocale);
-      reloadForLocaleChange(nextLocale);
+      switchLocalePreference(isVietnamese ? 'en' : 'vi');
     } finally {
       setLoading(false);
     }

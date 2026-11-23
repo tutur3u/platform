@@ -17,10 +17,17 @@ describe('readLocalePreference', () => {
     expect(readLocalePreference('MY_NEXT_LOCALE=vi')).toBeNull();
   });
 
-  it('uses only the first copy, which the browser lists most specific first', () => {
-    expect(readLocalePreference('NEXT_LOCALE=en; NEXT_LOCALE=vi')).toBe('en');
-    expect(readLocalePreference('NEXT_LOCALE=fr; NEXT_LOCALE=vi')).toBeNull();
-    expect(readLocalePreference('NEXT_LOCALE=%ZZ; NEXT_LOCALE=vi')).toBeNull();
+  it('reads the last copy at a root host, like Next request cookies', () => {
+    expect(readLocalePreference('NEXT_LOCALE=en; NEXT_LOCALE=vi')).toBe('vi');
+    expect(readLocalePreference('NEXT_LOCALE=vi; NEXT_LOCALE=fr')).toBeNull();
+    expect(readLocalePreference('NEXT_LOCALE=vi; NEXT_LOCALE=%ZZ')).toBe('vi');
+  });
+
+  it("reads the first copy in a mounted app, the mount's own cookie", () => {
+    const header = 'NEXT_LOCALE=vi; NEXT_LOCALE=en';
+    expect(
+      readLocalePreference(header, ['en', 'vi'], 'NEXT_LOCALE', 'first')
+    ).toBe('vi');
   });
 });
 

@@ -1,7 +1,9 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { browserMountedAppBase } from '@tuturuuu/utils/shared-cookie';
 import {
+  DEFAULT_LOCALE_COOKIE_NAME,
   DEFAULT_SUPPORTED_LOCALES,
   readLocalePreference,
 } from './locale-preference';
@@ -18,7 +20,13 @@ export function useLocalePreference(
 ): string | null | undefined {
   return useSyncExternalStore(
     subscribe,
-    () => readLocalePreference(document.cookie, locales),
+    () =>
+      readLocalePreference(
+        document.cookie,
+        locales,
+        DEFAULT_LOCALE_COOKIE_NAME,
+        browserMountedAppBase() ? 'first' : 'last'
+      ),
     () => undefined
   );
 }

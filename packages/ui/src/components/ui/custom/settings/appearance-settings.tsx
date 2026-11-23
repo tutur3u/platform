@@ -11,10 +11,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
-import {
-  persistLocalePreference,
-  reloadForLocaleChange,
-} from '../locale-preference';
+import { switchLocalePreference } from '../locale-preference';
 import { VersionBadgeSetting, VersionInfoSetting } from '../version-badge';
 import { ExperimentalUiSetting } from './experimental-ui-setting';
 import { ThemeModeSetting } from './theme-mode-setting';
@@ -34,10 +31,7 @@ export function AppearanceSettings({
   const [isPending, startTransition] = useTransition();
 
   const handleLocaleChange = (newLocale: string) => {
-    persistLocalePreference(newLocale);
-    startTransition(() => {
-      reloadForLocaleChange(newLocale);
-    });
+    startTransition(() => switchLocalePreference(newLocale));
   };
 
   return (

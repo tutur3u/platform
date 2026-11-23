@@ -28,9 +28,10 @@ Currently, we provide first-class support for the following languages:
 Exceptions:
 
 - Web and Workspace public pages are English at unprefixed addresses and Vietnamese under `/vi`, whatever the cookie says, so search engines see one fixed locale per address.
-- An app mounted under `tuturuuu.com/<app>` stores its choice only under its own path. **System** there clears that choice and then follows the choice made on tuturuuu.com, when one exists, rather than the browser.
+- An app mounted under `tuturuuu.com/<app>` stores its choice under its own path, and that choice outranks the one made on tuturuuu.com there. **System** clears it; the app then follows the tuturuuu.com choice when one exists, rather than the browser.
+- When the browser's language list and its `Accept-Language` header disagree, **System** loads the page in the list's language and the app stores that language as an explicit choice.
 
-Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`) the public `LanguageToggle`, and Settings → Appearance, the Women in Tech page and Rewise tools, which use the same `reloadForLocaleChange`. Login and onboarding switch locale through next-intl's locale-aware navigation, which also lands on the prefixed address. Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`.
+Scope: Web, Workspace, Nova and every satellite app's account menu (`LanguageDropdownItem` and `SystemLanguageDropdownItem` in `@tuturuuu/ui`), the public `LanguageToggle`, Settings → Appearance, the Women in Tech page and Rewise tools, which share one reload path. Login and onboarding switch locale through next-intl's locale-aware navigation, which also lands on the prefixed address. Colab keeps its own locale store with the same three choices. Coverage: `locale-preference.test.ts`, `language-dropdown-item.test.tsx` and `language-toggle.test.tsx` under `packages/ui/src/components/ui/custom/`, the document-load cases in `apps/web/src/lib/locale-proxy.test.ts`, and the mounted locale cases in `packages/start-bridge/src/core/mount-isolation.test.ts`.
 
 ### Contribute
 
