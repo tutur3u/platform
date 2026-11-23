@@ -84,6 +84,7 @@
     "src/app/api/meet-call/[meetingId]/state/route.ts",
     "src/app/api/meet-call/[meetingId]/title/route.ts",
     "src/app/api/meet-call/[meetingId]/token/route.ts",
+    "src/app/api/meet-call/[meetingId]/whiteboard/route.ts",
     "src/app/api/meet-live/[meetingId]/review/route.ts",
     "src/app/api/meet-live/[meetingId]/route.ts",
     "src/app/api/meet-live/memory/route.ts",

@@ -591,6 +591,8 @@
     "./routes/api/meet-call/[meetingId]/programming/route": "./src/routes/api/meet-call/[meetingId]/programming/route.ts",
     "./routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts": "./src/routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts",
     "./routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route": "./src/routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts",
+    "./routes/api/meet-call/[meetingId]/whiteboard/route.ts": "./src/routes/api/meet-call/[meetingId]/whiteboard/route.ts",
+    "./routes/api/meet-call/[meetingId]/whiteboard/route": "./src/routes/api/meet-call/[meetingId]/whiteboard/route.ts",
     "./routes/api/meet-call/[meetingId]/document/route.ts": "./src/routes/api/meet-call/[meetingId]/document/route.ts",
     "./routes/api/meet-call/[meetingId]/document/route": "./src/routes/api/meet-call/[meetingId]/document/route.ts",
     "./features/call/components/meet-phone.css": "./src/features/call/components/meet-phone.css",

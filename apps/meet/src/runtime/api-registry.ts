@@ -34,6 +34,8 @@ const apiClassTimer = () =>
   import('../app/api/meet-call/[meetingId]/class-timer/route');
 const api11 = () => import('../app/api/meet-call/[meetingId]/document/route');
 const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
+const apiWhiteboard = () =>
+  import('../app/api/meet-call/[meetingId]/whiteboard/route');
 const apiGuest = () => import('../app/api/meet-call/[meetingId]/guest/route');
 const apiPolls = () => import('../app/api/meet-call/[meetingId]/polls/route');
 const apiMiraRoom = () =>
@@ -225,6 +227,23 @@ export const meetEndpoints: Endpoint[] = [
         }),
       POST: async (request, params) =>
         (await api11()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/whiteboard',
+    methods: {
+      GET: async (request, params) =>
+        (await apiWhiteboard()).GET(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      POST: async (request, params) =>
+        (await apiWhiteboard()).POST(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),

@@ -127,6 +127,9 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/class-timer/route.ts',
   // Classroom tools require workspace opt-in and a scoped, admitted room service.
   'apps/meet/src/app/api/meet-call/[meetingId]/classroom-tools/route.ts',
+  // Persistent whiteboards: app session or guest room token, a room admission
+  // proof, then the link's guest access and live membership decide the role.
+  'apps/meet/src/app/api/meet-call/[meetingId]/whiteboard/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/responses/[responseId]/files/[uploadId]/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/route.ts',
