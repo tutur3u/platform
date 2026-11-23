@@ -147,6 +147,18 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Root-script and utils test fix lands before production sync. Any other failure is outside this grant.',
   },
+  {
+    // Safari guests are blocked at the Turnstile join check until this source
+    // ships. Test is red only on the known root-script and utils drift outside
+    // Meet's closure. Type Check, Security Checks and Meet Cloudflare stay
+    // required on this exact source.
+    id: 'RA-20261123-1915-MEET-SAFARI-TURNSTILE',
+    source: 'b6eb07b20b039812807609d196f58032c9534f65',
+    workflows: ['turbo-unit-tests.yaml'],
+    expires: '2026-11-23T16:59:00Z',
+    followUp:
+      'Same owners as RA-20261123-1900-MEET-S9B-OG-QA. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
