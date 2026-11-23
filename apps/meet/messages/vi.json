@@ -6000,7 +6000,7 @@
       "public_status": "Tên và giờ họp được công khai. Người tham gia vẫn cần đăng nhập và được chủ phòng duyệt nếu có yêu cầu.",
       "retry": "Thử lại",
       "save_error": "Chưa cập nhật được thông tin công khai. Vui lòng thử lại.",
-      "setting_hint": "Hiển thị tên và giờ họp cho bất kỳ ai có liên kết, kể cả công cụ tìm kiếm. Ghi chú, bản ghi và người tham gia vẫn riêng tư. Các dịch vụ chia sẻ có thể lưu bản xem trước cũ sau khi bạn tắt tính năng này.",
+      "setting_hint": "Hiển thị tên và giờ họp trong bản xem trước liên kết cho bất kỳ ai có liên kết. Ghi chú, bản ghi và người tham gia vẫn riêng tư. Các dịch vụ chia sẻ có thể lưu bản xem trước cũ sau khi bạn tắt tính năng này.",
       "setting_title": "Thông tin cuộc họp công khai",
       "sign_in": "Đăng nhập để tiếp tục",
       "transcription_hint": "Mỗi phiên chép lời kéo dài tối đa 3 giờ. Bạn có thể bắt đầu phiên mới để tiếp tục ghi chú trong cuộc họp dài hơn."

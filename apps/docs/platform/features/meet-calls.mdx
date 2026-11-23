@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-11-22'
+updatedAt: '2026-11-23'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 audience: users
 ---
@@ -1133,6 +1133,43 @@ meeting writes. A health response alone cannot detect broken SFU calls.
 Native fetch must retain its global receiver in Workers. The SFU client binds
 `globalThis.fetch` to `globalThis`; calling an unbound native fetch as an object
 method throws `Illegal invocation`, even though Bun-based checks pass.
+
+## SEO and link previews
+
+Decision, 23 Nov 2026 (owner): Meet link previews and search metadata are
+rebuilt on the Sorbet design system, and every URL they emit is on
+`https://tuturuuu.com/meet`. Meet never advertises `meet.tuturuuu.com`.
+
+- **Surfaces.** Room links (`/meet/r/<code>`) render a per-room card from
+  `/r/<code>/preview`. The Meet landing page and every other page share one
+  static card from `/meet/og`. Both are 1200 by 630, EN or VI by locale
+  (`?lang=`), with the Tuturuuu Meet mark, a "Join meeting" cue and the footer
+  `tuturuuu.com/meet`.
+- **Privacy rule.** A room shows its title and scheduled time only when the host
+  turned on public link previews (the existing `publicLinkPreview` room
+  setting). Any other room, including unknown or malformed codes, renders the
+  generic card and generic metadata: no title, host, attendees or time. The
+  policy is read on every request. Preview requests only read; they never join,
+  create rooms or bill. Attendee names are never queried and the host or
+  workspace name is not part of the public projection, so neither appears.
+- **Time.** Scheduled times are always shown in UTC, because link crawlers have
+  no recipient timezone.
+- **Robots.** Room pages are `noindex,nofollow` whether or not the preview is
+  public. Only the landing page is indexable. No JSON-LD is emitted: room pages
+  are not indexed, so an `Event` would never be read.
+- **Metadata.** Every page carries a canonical URL, `hreflang` alternates for
+  `en`, `vi` and `x-default`, `og:url`, `og:site_name`, `og:locale`,
+  `twitter:card=summary_large_image`, and an image URL carrying `v=<hash of what
+  the image shows>`, so a changed title or time yields a new URL.
+- **Caching.** Detailed room cards cache for 5 minutes, because the host can
+  revoke the setting. Generic and landing cards cache for a day: their URLs
+  change whenever their content does. Services that already fetched a public
+  card may keep it for their own retention period.
+- **Where it lives.** Pure builders and the copy map live in
+  `packages/meet-core/src/features/call/lib/seo/` (`buildMeetSeo`,
+  `buildMeetOgContent`); the renderer is `og-card.tsx`. Tests cover the generic
+  and public cards, canonical domain, absence of the legacy domain and both
+  locales.
 
 ## URL shapes
 

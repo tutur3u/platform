@@ -6000,7 +6000,7 @@
       "public_status": "Title and time are public. Joining still requires sign-in and host approval where applicable.",
       "retry": "Retry",
       "save_error": "Could not update public details. Please try again.",
-      "setting_hint": "Show the meeting title and scheduled time to anyone with the link, including search engines. Notes, recordings and participants stay private. Shared services may retain an earlier preview after you turn this off.",
+      "setting_hint": "Show the meeting title and scheduled time in link previews to anyone with the link. Notes, recordings and participants stay private. Shared services may retain an earlier preview after you turn this off.",
       "setting_title": "Public meeting details",
       "sign_in": "Sign in to continue",
       "transcription_hint": "Each transcription session lasts up to 3 hours. Start a new session to continue taking notes during a longer call."
