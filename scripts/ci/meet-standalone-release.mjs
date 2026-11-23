@@ -67,6 +67,20 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Root 6143, 6145-6148, 6287, 6592, 7002, 7012; utils commercial-comparison; Mail HSTS 6778. CLI publish-count ratchet 6292 is fixed and is not waived. Any other Test failure is outside this grant.',
   },
+  {
+    // Release-authority exception (Iris, 23 Nov 2026; USER rule "ship all,
+    // fix forward"). Red only outside Meet's closure on this source: Type
+    // Check fails only @tuturuuu/playground-execution (TS2307), and Test fails
+    // root-script 782, 6374, 6771, 7007, 7760, 8042 plus utils
+    // commercial-comparison and app-coordination token consumers. Security
+    // Checks and Meet Cloudflare stay required on this exact source.
+    id: 'RA-20261123-1100-MEET-A-PRIME',
+    source: '346ba247f222f7b652512c02e8c138270221b016',
+    workflows: ['turbo-unit-tests.yaml', 'type-check.yaml'],
+    expires: '2026-11-23T16:59:00Z',
+    followUp:
+      'Playground lane: playground-execution type-check, docs page, extra-edges 782, workers_dev 6374. Other root/utils drift to its owners. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
