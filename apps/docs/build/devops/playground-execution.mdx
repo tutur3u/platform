@@ -59,7 +59,8 @@ previous digest while it is a rollback target. [Cloudflare image management](htt
 Dispatch `Playground execution staging deploy`
 (`playground-execution-deploy.yaml`) on `main` with a registry reference
 pinned by digest. The build job has no credentials: it runs the Worker tests,
-builds the staging Worker with `cf build`, and checks that the emitted
+builds the staging Worker with `cf build` (driven by the app's
+`vite.config.ts` and `@cloudflare/vite-plugin`), and checks that the emitted
 output names only that image and every Durable Object class. The deploy job
 runs in the reviewer-gated `playground-staging` environment. It deploys the
 prebuilt output with `cf deploy --prebuilt --no-provision`, uploading the
@@ -189,8 +190,12 @@ room's checker afterwards.
 Each room with recent checks has one `PlaygroundChecker` Durable Object and
 one warm guest on the `basic` instance (1/4 vCPU, 1 GiB) with Internet
 disabled. The guest stops after 90 seconds without checks, and an alarm
-replaces it 30 minutes after it starts, even under continuous checks. The `checker` container class allows at most 50 live
-guests. A cold room starts its guest and answers `check_warming`; the client
+replaces it 30 minutes after it starts, even under continuous checks. Check
+admission caps the rooms checked within the last two minutes, and therefore
+the live guests, at 50, and at three per person. A new room past a cap gets
+`check_quota` with a retry for when the oldest counted room's guest idles out. Durable Object containers take their instance type at
+`start()` and no instance count from `cloudflare.config.ts`, which `cf build`
+rejects for them, so the code enforces every guest bound. A cold room starts its guest and answers `check_warming`; the client
 retries. Each person has at most one check in flight, and a newer check kills
 the older one (`check_superseded`). A room runs at most two checks at once
 (`check_busy`).

@@ -41,23 +41,20 @@ if (
 }
 
 const images = image ? { images: { toolchain: { reference: image } } } : {};
-// A fresh guest per Run; at most one per admitted slot.
+// Durable Object containers take their instance type at start() and their
+// count from the code: a fresh standard-1 guest per Run, one per admitted slot.
 const slot = defineContainer({
   name: `${worker}-slot`,
   schedulingPolicy: 'durable-object',
-  instanceType: 'standard-1',
-  maxInstances: 20,
   ssh: { enabled: false },
   observability: { enabled: false },
   ...images,
 });
-// One warm compile-only guest per room with recent checks, on the smallest
-// instance. The cap bounds total live check guests and therefore their cost.
+// One warm compile-only basic guest per room with recent checks; check
+// admission caps the live rooms and therefore the cost.
 const checker = defineContainer({
   name: `${worker}-checker`,
   schedulingPolicy: 'durable-object',
-  instanceType: 'basic',
-  maxInstances: 50,
   ssh: { enabled: false },
   observability: { enabled: false },
   ...images,
@@ -67,8 +64,6 @@ const checker = defineContainer({
 const qualifier = defineContainer({
   name: `${worker}-qualifier`,
   schedulingPolicy: 'durable-object',
-  instanceType: 'standard-1',
-  maxInstances: 1,
   ssh: { enabled: false },
   observability: { enabled: false },
   ...images,

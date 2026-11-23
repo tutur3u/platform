@@ -92,12 +92,49 @@ test('recent rooms are the ones a pause must stop, newest first and bounded', (t
   assert.deepEqual(checks.recentRooms(2_200_030, 1), ['room-a']);
 });
 
+test('rooms without a live guest wait while the live-room cap is full', (t) => {
+  const store = fixture(t, { ...DEFAULT_CHECK_CAPACITY, liveRooms: 2 });
+  store.runs.setEnabled(true);
+  const checks = store.create();
+  assert.equal(checks.admit(request(1, 'a', 'room-a'), 0).kind, 'admitted');
+  assert.equal(checks.admit(request(2, 'b', 'room-b'), 10).kind, 'admitted');
+  assert.deepEqual(checks.admit(request(3, 'c', 'room-c'), 20), {
+    kind: 'refused',
+    reason: 'check_quota',
+    retryAfterMs: 120_000 - 20,
+  });
+  // A room that already holds a live guest keeps checking.
+  assert.equal(checks.admit(request(4, 'a', 'room-a'), 30).kind, 'admitted');
+  // Once room-b's guest has idled out, a new room may start one.
+  assert.equal(
+    checks.admit(request(5, 'c', 'room-c'), 120_011).kind,
+    'admitted'
+  );
+});
+
+test('one person cannot hold more than their share of live rooms', (t) => {
+  const store = fixture(t, { ...DEFAULT_CHECK_CAPACITY, liveRoomsPerUser: 2 });
+  store.runs.setEnabled(true);
+  const checks = store.create();
+  assert.equal(checks.admit(request(1, 'a', 'room-1'), 0).kind, 'admitted');
+  assert.equal(checks.admit(request(2, 'a', 'room-2'), 10).kind, 'admitted');
+  assert.deepEqual(checks.admit(request(3, 'a', 'room-3'), 20), {
+    kind: 'refused',
+    reason: 'check_quota',
+    retryAfterMs: 120_000 - 20,
+  });
+  assert.equal(checks.admit(request(4, 'a', 'room-1'), 30).kind, 'admitted');
+  assert.equal(checks.admit(request(5, 'b', 'room-3'), 40).kind, 'admitted');
+});
+
 test('per-user, per-room and daily budgets refuse with the time until they free', (t) => {
   const day = 86_400_000;
   const store = fixture(t, {
     perUserPerWindow: 2,
     perRoomPerWindow: 3,
     perDay: 4,
+    liveRooms: 50,
+    liveRoomsPerUser: 3,
   });
   store.runs.setEnabled(true);
   const checks = store.create();
@@ -130,7 +167,11 @@ test('per-user, per-room and daily budgets refuse with the time until they free'
 });
 
 test('each admission is bounded and prunes expired rows', (t) => {
-  const store = fixture(t);
+  const store = fixture(t, {
+    ...DEFAULT_CHECK_CAPACITY,
+    liveRooms: 100,
+    liveRoomsPerUser: 100,
+  });
   store.runs.setEnabled(true);
   const checks = store.create();
   for (let index = 0; index < 80; index += 1)
@@ -140,8 +181,9 @@ test('each admission is bounded and prunes expired rows', (t) => {
     checks.admit(request('late', 'late', 'late'), 700_000).kind,
     'admitted'
   );
-  // gate, conflict, budget, user window, room window, insert, budget, prune.
-  assert.equal(store.statements() - before, 8);
+  // gate, conflict, budget, user window, room window, live rooms, insert,
+  // budget, prune.
+  assert.equal(store.statements() - before, 9);
   const [{ count }] = store.runs['storage'].query(
     'SELECT COUNT(*) AS count FROM playground_checks'
   );

@@ -50,11 +50,12 @@ test('staging config adds only the qualifier and workers.dev, all pinned to the 
   for (const container of staging.containers) {
     assert.equal(container.ssh.enabled, false);
     assert.equal(container.images.toolchain.reference, IMAGE);
+    // `cf build` rejects instance sizing on Durable Object containers; the
+    // code sets it at start() and bounds the count through admission.
+    assert.equal(container.schedulingPolicy, 'durable-object');
+    assert.equal('instanceType' in container, false);
+    assert.equal('maxInstances' in container, false);
   }
-  const qualifier = staging.containers.find(({ name }) =>
-    name.endsWith('-qualifier')
-  );
-  assert.equal(qualifier.maxInstances, 1);
 });
 
 function qualifyRequest(secret = OPERATOR, method = 'POST') {

@@ -6,17 +6,26 @@ const PRUNE_LIMIT = 64;
 // Rows outlive the quota window so a pause can find every room whose guest
 // may still be inside its 30-minute lifetime.
 const RETENTION_MS = 35 * 60 * 1000;
+// A room's warm guest stops 90 seconds after its last check, so only rooms
+// checked within this window can hold a live guest.
+const LIVE_GUEST_WINDOW_MS = 2 * 60 * 1000;
 
 export interface CheckCapacity {
   readonly perUserPerWindow: number;
   readonly perRoomPerWindow: number;
   readonly perDay: number;
+  /** Rooms that may hold a live check guest at once: the guest-count cap. */
+  readonly liveRooms: number;
+  /** Live rooms one person may hold, so nobody fills the cap alone. */
+  readonly liveRoomsPerUser: number;
 }
 
 export const DEFAULT_CHECK_CAPACITY: CheckCapacity = Object.freeze({
   perUserPerWindow: 60,
   perRoomPerWindow: 300,
   perDay: 20_000,
+  liveRooms: 50,
+  liveRoomsPerUser: 3,
 });
 
 export function parseCheckCapacity(env: {
@@ -74,6 +83,9 @@ export class CheckAdmission {
     storage.query(`
       CREATE INDEX IF NOT EXISTS playground_check_room
       ON playground_checks (room, created_at)`);
+    storage.query(`
+      CREATE INDEX IF NOT EXISTS playground_check_live
+      ON playground_checks (created_at, room, requester)`);
     storage.query(`
       CREATE TABLE IF NOT EXISTS playground_check_budget (
         singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
@@ -148,6 +160,42 @@ export class CheckAdmission {
             reason: 'check_quota',
             retryAfterMs: (recent.at(-1)?.created_at ?? now) + WINDOW_MS - now,
           };
+        }
+      }
+      // A room without a live guest may start one only below the caps. The
+      // wait is until the oldest counted room's guest has idled out.
+      const [live] = this.storage.query<{
+        rooms: number;
+        own: number | null;
+        oldest: number | null;
+        mine: number | null;
+        mineOldest: number | null;
+      }>(
+        `SELECT COUNT(*) AS rooms, MAX(room = ?) AS own, MIN(last) AS oldest,
+           SUM(mine) AS mine, MIN(CASE WHEN mine THEN last END) AS mineOldest
+         FROM (
+           SELECT room, MAX(created_at) AS last, MAX(requester = ?) AS mine
+           FROM playground_checks WHERE created_at > ? GROUP BY room
+         )`,
+        request.room,
+        request.requester,
+        now - LIVE_GUEST_WINDOW_MS
+      );
+      if (!live?.own) {
+        for (const [count, limit, oldest] of [
+          [live?.mine ?? 0, this.capacity.liveRoomsPerUser, live?.mineOldest],
+          [live?.rooms ?? 0, this.capacity.liveRooms, live?.oldest],
+        ] as const) {
+          if (count >= limit) {
+            return {
+              kind: 'refused',
+              reason: 'check_quota',
+              retryAfterMs: Math.max(
+                1,
+                (oldest ?? now) + LIVE_GUEST_WINDOW_MS - now
+              ),
+            };
+          }
         }
       }
       this.storage.query(
