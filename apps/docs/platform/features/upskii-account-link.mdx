@@ -1,131 +1,187 @@
 ---
 title: Upskii account link
 description: How a Tuturuuu account links to an Upskii account, what the link allows, and how either side revokes it.
-updatedAt: "2026-11-23"
+updatedAt: "2026-11-24"
 audience: developers
 ---
 
 <Note>
-Status: the Tuturuuu routes, storage and settings row are implemented. Linking
-starts working once the `upskii` app is registered and Upskii ships its side.
-The catalog lists Upskii as internal early access.
+Status: the Tuturuuu routes, storage, login confirmation and settings row are
+implemented. Linking starts working once the `upskii` app is registered and
+Upskii ships its side. The catalog lists Upskii as internal early access.
 </Note>
 
 An Upskii account link lets Tuturuuu read a signed-in user's own Upskii
 classes, lessons and assessments, so Meet can present them. It reuses the
 [external-app flow](/platform/architecture/app-coordination#external-app-flow)
-(registered app, app secret, PKCE-bound handoff and token exchange). It adds no
-new token type, and neither side stores the other side's user tokens.
+(registered app, app secret, PKCE-bound handoff and token exchange). Neither
+side stores the other side's user tokens.
 
 ## Decision
 
 | Item | Rule |
 | --- | --- |
 | Scope | One Tuturuuu account links to at most one Upskii account, and the reverse. A link is per person, not per workspace. |
-| Default | Unlinked. Nothing is shared until the user connects from Upskii. |
-| Who can link | While the catalog shows internal early access: verified `@tuturuuu.com` staff, checked server-side on the link route with the same policy as the catalog. Everyone with an Upskii and Tuturuuu account once the catalog shows Available. |
-| Data shared | Read-only: the user's Upskii classes, lessons and assessments, as scopes `upskii:classes:read`, `upskii:lessons:read` and `upskii:assessments:read`. Tuturuuu data is never sent to Upskii, apart from the account id and email Upskii shows on its link row. |
-| Surfaces | Upskii settings (connect, status, disconnect). Tuturuuu settings → Account → Integrations, on apps/web and every satellite (status, disconnect, connect hands off to Upskii). The catalog card. Meet reads the content server-side. |
-| Revocation | Either side can disconnect at any time. Data flows only while both sides hold an active link, so one side's disconnect stops reads at once. |
+| Default | Unlinked. Nothing is shared until the user connects from Upskii and confirms the Tuturuuu account. |
+| Who can link | Verified `@tuturuuu.com` staff (confirmed exact-domain email, no QA identity, the configured Azure directory) unless the catalog lists Upskii as explicitly `available`. Any other status, or a missing catalog entry, keeps linking staff-only. Any lookup failure denies. |
+| Data shared | Read-only: the user's Upskii classes, lessons and assessments, as scopes `upskii:classes:read`, `upskii:lessons:read` and `upskii:assessments:read`. Upskii receives only the Tuturuuu account id and email for its link row. |
+| Surfaces | Upskii settings (connect, status, disconnect). The Tuturuuu sign-in confirmation. Tuturuuu settings → Account → Integrations on apps/web and every satellite (status, disconnect, connect hands off to Upskii). The catalog card. Meet reads content server-side. |
+| Revocation | Either side can disconnect at any time. Data flows only while both sides hold an active link. |
 | Exceptions | Workspace-level sharing and write access are out of scope. Platform admins cannot create or read another user's link. |
 
 ## Link ceremony
 
 Upskii starts every link, because Upskii owns the data being shared and shows
-the consent. The Tuturuuu **Connect** button opens Upskii's settings.
+the consent. The Tuturuuu **Connect** button opens Upskii settings.
 
 1. In Upskii settings, the signed-in Upskii user `U` chooses **Connect
-   Tuturuuu account**. Upskii shows the three read scopes. On confirm, its
-   server stores `{ state, U, code_verifier }` in an `HttpOnly`, `Secure`,
-   `SameSite=Lax` cookie that expires after 10 minutes, then redirects to the
-   Tuturuuu login with its registered callback as `returnUrl`, plus
-   `code_challenge` and `code_challenge_method=S256`.
-2. Tuturuuu signs the user in, or uses the current account, and returns a
-   single-use handoff token bound to that challenge.
-3. The Upskii callback reads the cookie and refuses the link when the current
-   Upskii session is not `U`. It then calls
-   `POST /api/v1/auth/app-token/exchange` with the `upskii` app id and secret,
-   the token, `codeVerifier`, and `requestedScopes: ["upskii-link:write"]`.
-4. With the returned bearer, Upskii calls
-   `POST /api/v1/integrations/upskii/link` on Tuturuuu with `{ upskiiUserId,
-   upskiiEmail, scopes }`. Tuturuuu checks that the bearer belongs to the
-   enabled `upskii` app and carries `upskii-link:write`. It also checks the
-   staff gate while early access lasts, and stores the link.
-5. Upskii stores its own row `{ U, tuturuuuUserId, linkId, scopes, linkedAt }`,
-   then discards the bearer. It keeps no refresh token.
+   Tuturuuu account**, which submits a CSRF-protected `POST`. Upskii shows the
+   three read scopes. Its server then sets a `__Host-` cookie (`HttpOnly`,
+   `Secure`, `SameSite=Lax`, `Path=/`, 10 minutes) holding
+   `{ state, U, sessionId, code_verifier }`, sealed with an Upskii server key
+   (AEAD). It redirects to the Tuturuuu login with its registered callback as
+   `returnUrl` (carrying `state`), plus `code_challenge` and
+   `code_challenge_method=S256`.
+2. Tuturuuu shows a confirmation before it issues any handoff for an app whose
+   grant is a link-only scope: the signed-in account, the app, what the link
+   shares, **Continue as**, and **Use another account**. Such an app never
+   auto-continues, even with strict PKCE. A user who is not signed in signs in
+   first, which is the same explicit choice.
+3. The Upskii callback answers with `Referrer-Policy: no-referrer`, keeps the
+   token URL out of logs and analytics, and redirects as soon as it finishes.
+   It opens the sealed cookie and refuses the link when the cookie is missing,
+   expired or tampered, when `state` does not match (constant-time compare), or
+   when the current Upskii session is not `U` and `sessionId`
+   (`LINK_SESSION_MISMATCH`). It then calls `POST /api/v1/auth/app-token/exchange`
+   with the `upskii` app id and secret, the token, `codeVerifier`, and
+   `requestedScopes: ["upskii-link:write"]`.
+4. An exchange that issues a link-only scope returns a bearer that carries only
+   link scopes, lives at most 120 seconds, and comes with no refresh token.
+   With it, Upskii calls `POST /api/v1/integrations/upskii/link` with
+   `{ upskiiUserId, upskiiEmail, scopes }`. Tuturuuu checks that the bearer
+   belongs to the enabled `upskii` app, carries `upskii-link:write` and
+   postdates the app's current secret. It applies the staff gate and stores
+   the link for the bearer's user, never a user named in the body.
+5. Upskii stores its own row `{ U, tuturuuuUserId, linkId, scopes, linkedAt }`
+   and discards the bearer.
 
-Registry prerequisites for the `upskii` app: `requirePkce=true` (only after
+No other route accepts the link bearer: it lacks every first-party session
+scope, every profile scope and every external-project scope, and only the
+link route names `upskii-link:write`.
+
+Registry settings for the `upskii` app: `requirePkce=true` (only after
 migration `20261101090000` is confirmed applied in production),
-`callbackPaths: ["/api/integrations/tuturuuu/callback"]`,
-`allowedScopes: ["upskii-link:write"]`, and a 900-second bearer cap. The
-`upskii-link:write` scope is accepted only on the link route.
+`callbackPaths: ["/api/integrations/tuturuuu/callback"]` and
+`allowedScopes: ["upskii-link:write"]`.
 
 ## Mismatch and conflict handling
 
 | Case | Result |
 | --- | --- |
-| The callback arrives in a browser signed in to a different Upskii account than the one that started the link | Upskii refuses with `LINK_SESSION_MISMATCH` before calling the exchange. Nothing is stored. |
-| The Tuturuuu account already has an active link to a different Upskii account | `409 LINK_CONFLICT` with `side: "tuturuuu"`. The user disconnects the old link first. |
+| The callback arrives in a browser whose Upskii session differs from the one that started the link | Upskii refuses with `LINK_SESSION_MISMATCH` before calling the exchange. Nothing is stored. |
+| A link started by someone else is opened in the victim's browser | The victim's browser has no sealed cookie for that `state`, so Upskii refuses. Tuturuuu never auto-continues, so the victim sees which account would be linked. |
+| The Tuturuuu account already has an active link to a different Upskii account | `409 LINK_CONFLICT` with `side: "tuturuuu"`. |
 | The Upskii account already has an active link to a different Tuturuuu account | `409 LINK_CONFLICT` with `side: "upskii"`. |
 | The same pair links again | Idempotent: returns the existing `linkId` and refreshes its scopes. |
-| The Tuturuuu and Upskii emails differ | Allowed. Both settings rows show the other side's email, so the user can see which account is linked. |
-| A non-staff user while early access lasts | `403 EARLY_ACCESS_ONLY`. |
+| The Tuturuuu and Upskii emails differ | Allowed. Both settings rows show the other side's email. |
+| A user who fails the staff gate | `403 EARLY_ACCESS_ONLY`. |
 
 ## Storage
 
 Tuturuuu stores `private.external_account_links`
 (migration `20261123234500_external_account_links.sql`), one row per link:
-`id`, `user_id` (references `auth.users`, deleted with the user), `provider`
+`id`, `user_id` (references `auth.users` with `on delete cascade`), `provider`
 (`upskii` only), `external_subject` (the Upskii user id), `external_email`,
-`scopes`, `linked_at`, `revoked_at`, `revoked_by` (`user`, `provider` or
-`admin`). Partial unique indexes on `(user_id, provider)` and
-`(provider, external_subject)` apply only to rows where `revoked_at` is null.
-Revoked rows are kept as the audit trail. Only server routes with the service
-role write the table; the settings UI reads link status through an API route,
-never through a direct table read.
+`scopes` (read scopes only), `linked_at`, `revoked_at`, `revoked_by` (`user`,
+`provider` or `admin`). Partial unique indexes on `(user_id, provider)` and
+`(provider, external_subject)` apply only while `revoked_at` is null. RLS is
+on with no policies; `anon` and `authenticated` have no access, and
+`service_role` has `select`, `insert` and `update` only, so history cannot be
+deleted through the API. Revoking a link clears `external_email`; the revoked
+row keeps ids and times as the history.
 
 Upskii stores the matching row in its own database. Neither row holds a token.
 
+## Routes
+
+| Route | Caller and auth | Purpose |
+| --- | --- | --- |
+| `POST /api/v1/integrations/upskii/link` | Upskii server, link-only bearer | Create or refresh the link. |
+| `GET /api/v1/integrations/upskii/link` | The user: web session or a first-party satellite app session | `{ canLink, link }`. `link` includes the linked Upskii email. |
+| `DELETE /api/v1/integrations/upskii/link` | The user: web session or a first-party satellite app session | Disconnect. |
+| `POST /api/v1/integrations/upskii/unlink` | Upskii server, `Authorization: Basic base64(upskii:<app secret>)` | Disconnect from Upskii. |
+| `POST /api/v1/integrations/upskii/introspect` | Upskii server, same Basic credentials | Check a read token. |
+
+The app secret is read only from the `Authorization` header, never from a
+body. Each route admits requests per client IP and per app and secret digest
+before the credential check. It paces failed secrets per app and IP, logs
+every refused credential with `console.warn`, and counts verified calls per
+app (and per user for link writes). Over a limit it answers `429` with
+`Retry-After`.
+
 ## Disconnect
 
-- **From Tuturuuu:** `DELETE /api/v1/integrations/upskii/link`, called with the
-  user's session, sets `revoked_at` and `revoked_by = 'user'`. Reads stop at
-  once, because Tuturuuu only calls Upskii for an active link. Upskii learns of
-  the revocation when its settings page or a read checks link status, and then
-  deletes its row.
-- **From Upskii:** Upskii deletes its row first, then calls
-  `POST /api/v1/integrations/upskii/unlink` with its app id, secret and
+- **From Tuturuuu:** `DELETE /api/v1/integrations/upskii/link` sets
+  `revoked_by = 'user'`. Reads stop at once, because Tuturuuu mints read
+  tokens only for an active link and introspection answers `active: false`.
+- **From Upskii:** Upskii deletes its row, then calls the unlink route with
   `{ linkId, upskiiUserId }`. Tuturuuu sets `revoked_by = 'provider'`. If that
-  call fails, reads still stop, because Upskii refuses requests for a link it
-  no longer holds. Upskii retries the call, and Tuturuuu marks the link revoked
-  when Upskii answers `LINK_NOT_FOUND`.
-- **Secret rotation or disabling the app** stops every read at once. Existing
-  links stay stored and resume when the app is enabled again.
-- **Account deletion** on either side removes or revokes the link.
+  call fails, reads still stop, because Upskii refuses a link it no longer
+  holds; Upskii retries the call.
+- **Upskii learns of a Tuturuuu disconnect** when introspection answers
+  `active: false` or the unlink route answers `LINK_NOT_FOUND`, and then
+  deletes its row.
+- **Account deletion:** deleting the Tuturuuu account deletes its links.
+  Deleting an Upskii account calls the unlink route first.
+- **Secret rotation or disabling the app** stops every read at once. Links
+  stay stored and resume when the app works again.
+
+## Secret rotation runbook
+
+The Upskii app secret lives only in Upskii's server environment, never in a
+`NEXT_PUBLIC_` or other client-exposed variable.
+
+1. Rotate the secret in **Infrastructure → External apps** (root admin). This
+   also signs out every Upskii session that used Tuturuuu sign-in.
+2. Put the new secret in Upskii's server secret store and deploy. Until then,
+   unlink and introspect answer `401`, so Meet cannot read Upskii content.
+   Links themselves are unaffected.
+3. Confirm with one introspect call from Upskii's server, then a Meet read.
 
 ## Read API contract (for Meet)
 
-Meet and other Tuturuuu surfaces call one server-only route with the user's
-session. Clients never receive an Upskii credential.
+Meet calls one server-only route with the user's session:
 
 `GET /api/v1/integrations/upskii/content?kind=classes|lessons|assessments&classId=<id>`
 
-- `classId` is required for `lessons` and `assessments`.
-- Returns `404 NOT_LINKED` when there is no active link, and
-  `403 SCOPE_NOT_GRANTED` when the link lacks the scope for that `kind`.
+- The link comes from the session user alone. The route takes no `userId` or
+  `linkId`, and clients never receive a read token or an Upskii credential.
+- `classId` is required for `lessons` and `assessments`. Upskii authorises it
+  against the introspected `upskiiUserId` and refuses a class the user cannot
+  see.
+- Tuturuuu mints the read token server-side through
+  `mintUpskiiReadTokenForUser`, which re-checks the staff gate. It answers
+  `404 NOT_LINKED`, `403 EARLY_ACCESS_ONLY` or `403 SCOPE_NOT_GRANTED`.
+- The Upskii base URL is pinned in server configuration, never taken from the
+  request, so the route cannot be pointed at another host.
 - Response: `{ items: Array<{ id, title, updatedAt, url, kind, classId? }>,
-  nextCursor? }`. `url` is an Upskii deep link that Meet opens or embeds.
-  Bodies and answers are never included.
+  nextCursor? }`. Each `url` must be `https` on Upskii's exact origin;
+  anything else (including `javascript:` and redirects through other hosts)
+  is dropped. Bodies and answers are never included.
+- In a Meet room only the presenter's session fetches. Other participants see
+  only what the presenter shares.
 
-Server to server, Tuturuuu mints a 60-second app-coordination token. It
-carries `target_app: "upskii"`, `sub` set to the Tuturuuu user, the link id,
-and only the one scope the call needs. Tuturuuu sends it to Upskii's
-`GET /api/integrations/tuturuuu/v1/<kind>`. Upskii verifies it by calling
-`POST /api/v1/integrations/upskii/introspect` with its app id and secret. That
-call returns `{ active, tuturuuuUserId, upskiiUserId, linkId, scopes }`.
-Upskii serves the request only when its own row for that `linkId` and user is
-still active. Upskii never stores the token, and Tuturuuu never stores an
-Upskii credential.
+The read token is a purpose-bound `external_link_read` token, not an
+app-coordination bearer: `target_app: "upskii"`, `sub` set to the Tuturuuu
+user, one read scope, and `external-link:<linkId>`. It expires 60 seconds after
+issue, with no clock-skew allowance. Tuturuuu sends it to Upskii's
+`GET /api/integrations/tuturuuu/v1/<kind>`. Upskii checks it with the
+introspect route, which answers
+`{ active, tuturuuuUserId, upskiiUserId, linkId, scopes }`. The answer is
+active only when the token is valid and unexpired, carries exactly one link
+id and only read scopes, and names an active link owned by its user that
+still grants those scopes. Upskii serves the request only when its own row for
+that `linkId` and user is still active.
 
 ## Audit
 
@@ -137,17 +193,34 @@ reason }`, with no emails or tokens. Revoked rows keep the history.
 
 - `apps/web/src/lib/integrations/upskii/link-service.test.ts`: idempotent
   relink, both `LINK_CONFLICT` sides, relink after disconnect, provider unlink
-  limited to its own user, and read tokens refused when expired, revoked,
-  narrower than the link, owned by another user, or replaced by an app bearer.
-- `apps/web/src/app/api/v1/integrations/upskii/link/route.test.ts`: no bearer,
-  another app's bearer, a bearer without `upskii-link:write`, a disabled app,
-  write scopes, the early-access gate, a conflict, and a body that names a
-  different user.
-- `apps/web/src/app/api/v1/integrations/upskii/unlink/route.test.ts` and
-  `introspect/route.test.ts`: app id and secret checks, and `LINK_NOT_FOUND`.
+  limited to its own user and a valid link id, and read tokens refused when
+  expired at 61 seconds, revoked mid-life, narrower than the link, naming
+  another user's link, carrying two link ids or an unknown scope, signed with
+  another key, or replaced by an app bearer.
+- `apps/web/src/lib/integrations/upskii/read-token.test.ts`: minting needs an
+  active link, the staff gate and a granted scope.
+- `apps/web/src/lib/integrations/upskii/access.test.ts`: the staff gate (missing
+  catalog entry, unconfirmed email, lookalike domain, QA account, another Azure
+  tenant, failed lookup, explicit `available`) and Basic credential parsing.
+- `apps/web/src/app/api/v1/integrations/upskii/link/route.test.ts`,
+  `unlink/route.test.ts` and `introspect/route.test.ts`: bearer and secret
+  checks, credentials in the body ignored, `429`, write scopes, the staff gate,
+  conflicts, a body naming another user, and `LINK_NOT_FOUND`.
+- `apps/web/src/lib/auth/external-app-exchange-response.test.ts`: link-only
+  exchanges get no refresh token and at most 120 seconds.
+- `apps/web/src/lib/app-coordination/link-only-scopes.test.ts`: a link bearer is
+  refused by every current-user session option and external-project mode, and
+  only the link route names its scope.
+- `apps/web/src/app/[locale]/(auth)/login/login-view.server.test.ts` and
+  `focused-continue-step.test.tsx`: a link app never auto-continues, and the
+  confirmation names the link.
 - `packages/utils/src/app-coordination-token.test.ts`: read tokens and app
   bearers never verify as each other.
+- `apps/database/supabase/tests/external-account-links.sql`: RLS, no `anon` or
+  `authenticated` access, no `service_role` delete, unique-active indexes,
+  read-only scopes, and the account-deletion cascade.
 - `packages/satellite/src/components/account-settings/account-integrations-panel.test.tsx`:
   the connect hand-off, coming soon, retry, and disconnect after confirmation.
-- Upskii: callback session mismatch, cookie expiry, and refusal of a read for
-  a deleted local row.
+- Upskii: tampered or expired cookie, state mismatch,
+  `LINK_SESSION_MISMATCH`, no referrer leak, and a read refused for a deleted
+  local row.
