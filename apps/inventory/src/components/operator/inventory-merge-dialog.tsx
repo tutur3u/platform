@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -218,13 +219,9 @@ export function InventoryMergeDialog({
             )}
           </div>
           {validPair && preview.isFetching ? (
-            <p
-              role="status"
-              className="flex items-center gap-2 text-muted-foreground text-sm"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('loading')}
-            </p>
+            <LoadingRegion srLabel={t('loading')}>
+              <SkeletonText lines={3} />
+            </LoadingRegion>
           ) : null}
           {preview.isError && validPair ? (
             <div role="alert" className="grid gap-2 text-sm">
@@ -332,7 +329,7 @@ export function InventoryMergeDialog({
                         product:
                           resolvedLabels.find(
                             (product) => product.id === row.productId
-                          )?.name || t('loading'),
+                          )?.name || row.productId,
                         warehouse: recordName(
                           row.warehouseId,
                           labels?.warehouses

@@ -4,6 +4,7 @@ import { Ban, BookUser, Globe, Lock, Mail, Users } from '@tuturuuu/icons';
 import type { ResolvedWorkspacePerson } from '@tuturuuu/internal-api/people';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -153,9 +154,9 @@ export function MailProfileCard({
       ) : null}
 
       {state.kind === 'loading' ? (
-        <p role="status" className="px-4 pb-4 text-muted-foreground text-xs">
-          {t('loading')}
-        </p>
+        <LoadingRegion srLabel={t('loading')} className="px-4 pb-4">
+          <SkeletonLine size="xs" barClassName="w-2/3" />
+        </LoadingRegion>
       ) : state.kind === 'unavailable' ? (
         <p className="px-4 pb-4 text-muted-foreground text-xs">
           {t('unavailable')}

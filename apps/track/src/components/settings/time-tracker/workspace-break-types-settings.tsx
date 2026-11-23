@@ -44,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -245,14 +246,9 @@ export function WorkspaceBreakTypesSettings({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="mt-4 text-muted-foreground text-sm">
-            {tCommon('loading')}...
-          </p>
-        </div>
-      </div>
+      <LoadingRegion srLabel={tCommon('loading')}>
+        <SkeletonList rows={4} withAvatar={false} withTrailing />
+      </LoadingRegion>
     );
   }
 

@@ -124,6 +124,7 @@ export default function FeaturedGroupsSettings({
             }}
             loadingMore={isFetchingNextPage}
             loadMoreText={commonT('load_more')}
+            // loading-text-allowed: sr-only label of the combobox skeleton
             loadingMoreText={commonT('loading')}
             label={
               selection.length > 2 || hasUnresolvedSelectedGroups

@@ -1,4 +1,5 @@
 'use client';
+import { LoadMoreLabel } from '@/components/load-more-label';
 import { mountedFetch } from '@/lib/mounted-api';
 
 import {
@@ -12,6 +13,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import type { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
@@ -216,9 +218,9 @@ export function AdminDefaultModelPicker({
         </div>
         <div className="mt-2 max-h-72 overflow-y-auto rounded-md border">
           {modelPages.isLoading ? (
-            <p className="px-3 py-6 text-center text-muted-foreground text-sm">
-              {t('loading_models')}
-            </p>
+            <LoadingRegion srLabel={String(t('loading_models'))} className="p-2">
+              <SkeletonList rows={4} withAvatar={false} />
+            </LoadingRegion>
           ) : models.length === 0 ? (
             <p className="px-3 py-6 text-center text-muted-foreground text-sm">
               {t('no_models')}
@@ -244,9 +246,11 @@ export function AdminDefaultModelPicker({
             disabled={modelPages.isFetchingNextPage}
             onClick={() => modelPages.fetchNextPage()}
           >
-            {modelPages.isFetchingNextPage
-              ? t('loading_more_models')
-              : t('load_more_models')}
+            <LoadMoreLabel
+              isFetching={modelPages.isFetchingNextPage}
+              label={String(t('load_more_models'))}
+              srLabel={String(t('loading_more_models'))}
+            />
           </Button>
         )}
       </PopoverContent>
@@ -304,9 +308,9 @@ export function AdminModelAllowlistPicker({
       </p>
       <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border p-2">
         {modelPages.isLoading ? (
-          <p className="py-3 text-center text-muted-foreground text-sm">
-            {t('loading_models')}
-          </p>
+          <LoadingRegion srLabel={String(t('loading_models'))}>
+            <SkeletonList rows={4} withAvatar={false} />
+          </LoadingRegion>
         ) : models.length === 0 ? (
           <p className="py-3 text-center text-muted-foreground text-sm">
             {t('no_models')}
@@ -359,9 +363,11 @@ export function AdminModelAllowlistPicker({
           disabled={modelPages.isFetchingNextPage}
           onClick={() => modelPages.fetchNextPage()}
         >
-          {modelPages.isFetchingNextPage
-            ? t('loading_more_models')
-            : t('load_more_models')}
+          <LoadMoreLabel
+            isFetching={modelPages.isFetchingNextPage}
+            label={String(t('load_more_models'))}
+            srLabel={String(t('loading_more_models'))}
+          />
         </Button>
       )}
     </div>

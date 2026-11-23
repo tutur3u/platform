@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getPeriodicReportDeliveryDiagnostics } from '@tuturuuu/internal-api/reports';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { useFormatter, useTranslations } from 'next-intl';
 import { PeriodicStatusBadge } from './periodic-status-badge';
 
@@ -22,9 +23,9 @@ export function PeriodicDeliveryStatus({
   });
   if (query.isPending)
     return (
-      <p role="status" className="text-muted-foreground text-xs">
-        {t('delivery_loading')}
-      </p>
+      <LoadingRegion srLabel={t('delivery_loading')}>
+        <SkeletonLine size="xs" barClassName="w-1/2" />
+      </LoadingRegion>
     );
   if (query.isError)
     return (

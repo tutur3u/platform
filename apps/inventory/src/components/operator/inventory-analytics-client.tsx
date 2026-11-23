@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { BarChart3, RefreshCw, TriangleAlert } from '@tuturuuu/icons';
 import { getInventoryAnalytics } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -74,9 +75,11 @@ export function InventoryAnalyticsClient({ wsId }: { wsId: string }) {
           </fieldset>
           <div className="flex min-w-0 items-center justify-between gap-2 text-[11px] text-muted-foreground sm:justify-end sm:text-xs">
             <span className="truncate">
-              {generatedAt
-                ? t('updatedAt', { date: generatedAt })
-                : t('loading')}
+              {generatedAt ? (
+                t('updatedAt', { date: generatedAt })
+              ) : (
+                <LoadingPlaceholder srLabel={t('loading')} />
+              )}
             </span>
             <Button
               aria-label={t('refresh')}

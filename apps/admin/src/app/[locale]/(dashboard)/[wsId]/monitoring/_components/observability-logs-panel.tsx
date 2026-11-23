@@ -16,6 +16,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { LoadMoreLabel } from '@/components/load-more-label';
 import {
   countByValue,
   facetOptionLabel,
@@ -338,7 +339,11 @@ export function ObservabilityLogsPanel({
             size="sm"
             variant="outline"
           >
-            {isFetchingMore ? loadingLabel : moreLabel}
+            <LoadMoreLabel
+              isFetching={isFetchingMore}
+              label={moreLabel}
+              srLabel={loadingLabel}
+            />
           </Button>
         ) : (
           <span>{endLabel}</span>

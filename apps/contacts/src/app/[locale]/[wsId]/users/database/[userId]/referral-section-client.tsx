@@ -28,6 +28,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { buildWorkspaceUserSearchValue } from '@tuturuuu/users-core/lib/workspace-user-search';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
@@ -339,7 +340,13 @@ export default function ReferralSectionClient({
             <div className="space-y-2">
               <div className="font-medium">{t('referred_users_label')}</div>
               {referredUsersQuery.isLoading ? (
-                <div className="text-sm opacity-60">{t('loading')}</div>
+                <LoadingRegion
+                  srLabel={t('loading')}
+                  className="grid grid-cols-1 gap-2 md:grid-cols-2"
+                >
+                  <Skeleton className="h-16 rounded-lg" />
+                  <Skeleton className="h-16 rounded-lg" />
+                </LoadingRegion>
               ) : (referredUsersQuery.data || []).length === 0 ? (
                 <div className="text-sm opacity-60">
                   {t('no_referred_users')}

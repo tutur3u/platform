@@ -1,6 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { getMailAttachmentDocx } from '@tuturuuu/internal-api';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { validateMailDocx } from '@/lib/mail/docx-preview-validation';
@@ -76,9 +77,9 @@ export function MailDocxPreview({
           {t('attachment_preview_failed')}
         </p>
       ) : !rendered ? (
-        <p role="status" className="p-6 text-muted-foreground text-sm">
-          {t('loading')}
-        </p>
+        <LoadingRegion srLabel={t('loading')} className="p-6">
+          <SkeletonText lines={6} />
+        </LoadingRegion>
       ) : null}
       <iframe
         title={t('preview_attachment', { filename })}

@@ -3,7 +3,6 @@
 import {
   Check,
   ChevronsUpDown,
-  Loader2,
   Mail,
   Settings,
   Users,
@@ -17,7 +16,9 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { SkeletonAvatar } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { groupMailboxes } from './mailbox-groups';
@@ -73,11 +74,12 @@ export function MailAccountPicker({
         >
           {loading && !activeMailbox && !activeAccount ? (
             <>
-              <PickerAvatar>
-                <Loader2 className="size-4 animate-spin" />
-              </PickerAvatar>
-              <span className="min-w-0 flex-1 truncate text-muted-foreground text-sm">
-                {t('loading')}
+              <SkeletonAvatar size="md" />
+              <span className="min-w-0 flex-1">
+                <LoadingPlaceholder
+                  srLabel={t('loading')}
+                  className="w-32"
+                />
               </span>
             </>
           ) : activeMailbox || activeAccount ? (

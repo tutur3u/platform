@@ -276,7 +276,7 @@ export function TutoringSessionsCard({
               role="status"
             >
               <Loader2 className="h-3 w-3 animate-spin" />
-              {tCommon('common.loading')}
+              <span className="sr-only">{tCommon('common.loading')}</span>
             </p>
           ) : null}
         </div>

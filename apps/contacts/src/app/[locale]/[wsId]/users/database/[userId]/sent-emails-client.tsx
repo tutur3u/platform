@@ -1,7 +1,7 @@
 'use client';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Loader2, Mail } from '@tuturuuu/icons';
+import { Mail } from '@tuturuuu/icons';
 import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -12,10 +12,12 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { PendingLabel } from '@/components/loading-rows';
 
 type SentEmail = Database['public']['Tables']['sent_emails']['Row'];
 
@@ -107,12 +109,9 @@ export default function SentEmailsClient({
         <Separator className="mb-4" />
 
         {sentEmailsQuery.isLoading ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="mb-4 h-8 w-8 animate-spin text-muted-foreground" />
-            <div className="text-muted-foreground">
-              {t('loading') || 'Loading...'}
-            </div>
-          </div>
+          <LoadingRegion srLabel={t('loading') || 'Loading'}>
+            <SkeletonList rows={4} withAvatar={false} withTrailing />
+          </LoadingRegion>
         ) : sentEmailsQuery.isError ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <div className="mb-4 font-medium text-destructive">
@@ -127,14 +126,11 @@ export default function SentEmailsClient({
               onClick={() => sentEmailsQuery.refetch()}
               disabled={sentEmailsQuery.isRefetching}
             >
-              {sentEmailsQuery.isRefetching ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('loading') || 'Loading...'}
-                </>
-              ) : (
-                t('retry') || 'Retry'
-              )}
+              <PendingLabel
+                isPending={sentEmailsQuery.isRefetching}
+                label={t('retry') || 'Retry'}
+                srLabel={t('loading') || 'Loading'}
+              />
             </Button>
           </div>
         ) : allEmails.length > 0 ? (
@@ -191,14 +187,11 @@ export default function SentEmailsClient({
                   onClick={handleLoadMore}
                   disabled={sentEmailsQuery.isFetchingNextPage}
                 >
-                  {sentEmailsQuery.isFetchingNextPage ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('loading_more') || 'Loading more...'}
-                    </>
-                  ) : (
-                    t('load_more') || 'Load more'
-                  )}
+                  <PendingLabel
+                    isPending={sentEmailsQuery.isFetchingNextPage}
+                    label={t('load_more') || 'Load more'}
+                    srLabel={t('loading_more') || 'Loading more'}
+                  />
                 </Button>
               </div>
             )}

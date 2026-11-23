@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
+import { SkeletonTableRows } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   Table,
@@ -39,6 +40,7 @@ import { useState } from 'react';
 
 export default function HolidaysPage() {
   const t = useTranslations('admin-holidays');
+  const srLabel = t('loading');
   const queryClient = useQueryClient();
 
   const currentYear = new Date().getFullYear();
@@ -418,11 +420,14 @@ export default function HolidaysPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  {t('loading')}
-                </TableCell>
-              </TableRow>
+              <>
+                <TableRow className="sr-only">
+                  <TableCell colSpan={4} role="status">
+                    {srLabel}
+                  </TableCell>
+                </TableRow>
+                <SkeletonTableRows rows={5} columns={4} />
+              </>
             ) : holidays.length === 0 ? (
               <TableRow>
                 <TableCell

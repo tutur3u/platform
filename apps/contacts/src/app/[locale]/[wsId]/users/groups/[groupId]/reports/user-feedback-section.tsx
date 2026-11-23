@@ -34,6 +34,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { LoadingRows } from '@/components/loading-rows';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
@@ -435,9 +436,7 @@ export default function UserFeedbackSection({
 
           {/* Feedback History */}
           {isLoadingHistory ? (
-            <div className="py-4 text-center text-muted-foreground text-sm">
-              {tFeedback('loading_feedbacks')}
-            </div>
+            <LoadingRows srLabel={tFeedback('loading_feedbacks')} />
           ) : feedbacks.length === 0 ? (
             <div className="py-4 text-center text-muted-foreground text-sm">
               <p>{tFeedback('no_feedbacks_found')}</p>

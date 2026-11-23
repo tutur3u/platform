@@ -10,7 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Separator } from '@tuturuuu/ui/separator';
+import { SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -60,11 +62,13 @@ export function AuditLogBackfillDialogContent({ wsId }: Props) {
         <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
           <p className="font-medium">{t('repair_preview_title')}</p>
           <p className="mt-1 text-muted-foreground text-sm">
-            {previewQuery.isLoading
-              ? t('repair_loading')
-              : t('repair_preview_count', {
-                  count: previewQuery.data?.count ?? 0,
-                })}
+            {previewQuery.isLoading ? (
+              <LoadingPlaceholder srLabel={t('repair_loading')} />
+            ) : (
+              t('repair_preview_count', {
+                count: previewQuery.data?.count ?? 0,
+              })
+            )}
           </p>
         </div>
 
@@ -93,11 +97,11 @@ export function AuditLogBackfillDialogContent({ wsId }: Props) {
                 </p>
               </div>
             ))
+          ) : previewQuery.isLoading ? (
+            <SkeletonList rows={3} withAvatar={false} />
           ) : (
             <p className="text-muted-foreground text-sm">
-              {previewQuery.isLoading
-                ? t('repair_loading')
-                : t('repair_preview_empty')}
+              {t('repair_preview_empty')}
             </p>
           )}
         </div>

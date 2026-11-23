@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
+import { PendingLabel } from '@/components/loading-rows';
 import { useUserStatusLabels } from '@tuturuuu/users-ui/hooks/use-user-status-labels';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -278,7 +279,11 @@ export default function GroupMembers({
               {t('common.cancel')}
             </Button>
             <Button onClick={onConfirmRemove} disabled={removing}>
-              {removing ? t('common.loading') : t('common.remove')}
+              <PendingLabel
+                isPending={removing}
+                label={t('common.remove')}
+                srLabel={t('common.loading')}
+              />
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -293,7 +298,11 @@ export default function GroupMembers({
             size="sm"
           >
             <ChevronDown className="h-4 w-4" />
-            {isFetchingNextPage ? t('common.loading') : t('common.load_more')}
+            <PendingLabel
+              isPending={isFetchingNextPage}
+              label={t('common.load_more')}
+              srLabel={t('common.loading')}
+            />
           </Button>
         </div>
       )}

@@ -11,6 +11,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MailSettingsRowsSkeleton } from './mail-skeletons';
 import {
   formatMailThreadDate,
   formatMailThreadDateTitle,
@@ -95,18 +96,18 @@ export function MailBlockedSenderSettings({
           </form>
         </SettingsSectionBlock>
       ) : null}
-      {blocks.isPending || blocks.isError ? (
+      {blocks.isPending ? (
+        <MailSettingsRowsSkeleton srLabel={t('loading')} />
+      ) : blocks.isError ? (
         <SettingsSectionMessage
-          tone={blocks.isError ? 'error' : 'muted'}
+          tone="error"
           action={
-            blocks.isError ? (
-              <Button onClick={() => void blocks.refetch()} variant="outline">
-                {t('retry')}
-              </Button>
-            ) : undefined
+            <Button onClick={() => void blocks.refetch()} variant="outline">
+              {t('retry')}
+            </Button>
           }
         >
-          {blocks.isError ? t('load_failed') : t('loading')}
+          {t('load_failed')}
         </SettingsSectionMessage>
       ) : blocks.data.length === 0 ? (
         <SettingsSectionMessage>{t('empty')}</SettingsSectionMessage>

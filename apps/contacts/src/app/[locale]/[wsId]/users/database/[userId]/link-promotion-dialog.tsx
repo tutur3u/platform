@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 
 interface LinkPromotionDialogProps {
@@ -62,13 +62,13 @@ export function LinkPromotionDialog({
         </DialogHeader>
 
         {isLoading ? (
-          <div className="space-y-3 py-2" aria-live="polite">
+          <LoadingRegion
+            srLabel={t('ws-user-linked-coupons.loading')}
+            className="space-y-3 py-2"
+          >
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-10 w-full" />
-            <p className="text-muted-foreground text-sm">
-              {t('ws-user-linked-coupons.loading')}
-            </p>
-          </div>
+          </LoadingRegion>
         ) : isLoadError ? (
           <div className="rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-4">
             <div className="flex gap-3">

@@ -217,6 +217,7 @@ export default function UsersManagementSettings({
               count: includedSelectionState.selection.length,
             })}
             loadMoreText={commonT('load_more')}
+            // loading-text-allowed: sr-only label of the combobox skeleton
             loadingMoreText={commonT('loading')}
           />
 
@@ -239,6 +240,7 @@ export default function UsersManagementSettings({
               count: excludedSelection.length,
             })}
             loadMoreText={commonT('load_more')}
+            // loading-text-allowed: sr-only label of the combobox skeleton
             loadingMoreText={commonT('loading')}
           />
 

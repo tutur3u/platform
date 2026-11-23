@@ -29,6 +29,7 @@ export function RecipientPeoplePicker({
           trigger: tSuggestions('browse_people', { field: fieldLabel }),
           search: t('search'),
           minimumQuery: t('minimum_query'),
+          // loading-text-allowed: sr-only label of the picker skeleton
           loading: t('loading'),
           empty: t('empty'),
           error: t('error'),

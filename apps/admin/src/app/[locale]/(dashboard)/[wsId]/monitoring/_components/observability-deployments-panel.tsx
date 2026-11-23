@@ -38,6 +38,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { LoadMoreButton } from '@/components/load-more-label';
 
 type StageStatus = BlueGreenDeploymentStage['status'];
 type StageDisplayStatus = StageStatus | 'not-applicable';
@@ -829,14 +830,12 @@ export function ObservabilityDeploymentsPanel({
         <div className="flex items-center justify-between gap-3 border-border border-t px-3 py-2 text-muted-foreground text-xs">
           <span>{t('deployments.loaded', { loaded, total })}</span>
           {hasMore ? (
-            <Button
-              disabled={isFetchingMore}
+            <LoadMoreButton
+              isFetching={isFetchingMore}
+              label={t('load_older')}
               onClick={onLoadMore}
-              size="sm"
-              variant="outline"
-            >
-              {isFetchingMore ? t('infinite.loading') : t('load_older')}
-            </Button>
+              srLabel={t('infinite.loading')}
+            />
           ) : (
             <span>{t('infinite.end')}</span>
           )}

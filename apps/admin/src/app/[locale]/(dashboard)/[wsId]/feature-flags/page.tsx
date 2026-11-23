@@ -83,6 +83,7 @@ export default async function InfrastructureFeatureFlagsPage({
   const copy = {
     conflict: t('controls.conflict'),
     error: t('controls.error'),
+    // loading-text-allowed: rendered as sr-only text by the toggle
     loading: t('controls.loading'),
     off: t('values.off'),
     on: t('values.on'),

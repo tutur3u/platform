@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, MessageSquareIcon } from '@tuturuuu/icons';
+import { MessageSquareIcon } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
@@ -9,6 +9,7 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useRequestComments } from '../hooks/use-request-comments';
 import { CommentForm } from './comment-form';
@@ -71,12 +72,9 @@ export function CommentList({
 
             {/* Comments List */}
             {isLoading ? (
-              <div className="flex items-center justify-center gap-2 py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                <span className="text-muted-foreground text-sm">
-                  {t('comments.loading')}
-                </span>
-              </div>
+              <LoadingRegion srLabel={t('comments.loading')}>
+                <SkeletonList rows={3} rowClassName="px-0" />
+              </LoadingRegion>
             ) : !comments || comments.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
                 <Avatar className="h-12 w-12 opacity-50">

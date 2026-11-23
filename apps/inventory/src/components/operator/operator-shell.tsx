@@ -16,6 +16,7 @@ import { EmptyCard } from '@tuturuuu/ui/custom/empty-card';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadMoreLabel } from './load-more-label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -229,10 +230,11 @@ export function InfiniteListFooter({
           type="button"
           variant="outline"
         >
-          {isFetchingNextPage ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : null}
-          {isFetchingNextPage ? t('loadingMore') : t('loadMore')}
+          <LoadMoreLabel
+            isFetching={isFetchingNextPage}
+            label={t('loadMore')}
+            srLabel={t('loadingMore')}
+          />
         </Button>
       ) : (
         <span className="text-muted-foreground text-xs sm:text-right">

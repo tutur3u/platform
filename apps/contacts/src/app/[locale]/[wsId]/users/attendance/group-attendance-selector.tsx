@@ -36,6 +36,7 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadingRows } from '@/components/loading-rows';
 import GroupAttendanceClient from '@tuturuuu/users-ui/components/group-attendance-client';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -324,9 +325,7 @@ export default function GroupAttendanceSelector({
                   }}
                 >
                   {groupsQuery.isLoading ? (
-                    <div className="py-6 text-center text-muted-foreground text-sm">
-                      {tc('loading')}
-                    </div>
+                    <LoadingRows srLabel={tc('loading')} className="p-1" />
                   ) : groups.length > 0 ? (
                     <>
                       <CommandGroup>
@@ -352,9 +351,11 @@ export default function GroupAttendanceSelector({
                         ))}
                       </CommandGroup>
                       {groupsQuery.isFetchingNextPage && (
-                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-                          {tc('loading')}
-                        </div>
+                        <LoadingRows
+                          srLabel={tc('loading')}
+                          rows={1}
+                          className="p-1"
+                        />
                       )}
                     </>
                   ) : (

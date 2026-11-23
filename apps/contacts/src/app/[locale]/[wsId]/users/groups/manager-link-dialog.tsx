@@ -31,6 +31,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { LoadingRows } from '@/components/loading-rows';
 import { useTranslations } from 'next-intl';
 import { useDeferredValue, useState } from 'react';
 
@@ -125,10 +126,7 @@ export function ManagerLinkDialog({
 
         <div className="max-h-[min(55vh,28rem)] space-y-2 overflow-y-auto pr-1">
           {candidatesQuery.isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('manager_link_loading')}
-            </div>
+            <LoadingRows srLabel={t('manager_link_loading')} withAvatar rows={4} />
           ) : candidatesQuery.isError ? (
             <div className="space-y-3 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-4">
               <p className="text-sm">{t('manager_link_load_error')}</p>

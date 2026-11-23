@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
+import { LoadMoreLabel } from './load-more-label';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 
@@ -97,7 +98,11 @@ export function SalePickerPagination({
         type="button"
         variant="outline"
       >
-        {isFetchingNextPage ? t('loadingMore') : t('loadMore')}
+        <LoadMoreLabel
+          isFetching={isFetchingNextPage}
+          label={t('loadMore')}
+          srLabel={t('loadingMore')}
+        />
       </Button>
     </div>
   );

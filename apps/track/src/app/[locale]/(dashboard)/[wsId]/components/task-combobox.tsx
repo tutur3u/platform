@@ -10,6 +10,7 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
@@ -61,9 +62,8 @@ export function TaskCombobox({
   const [open, setOpen] = useState(false);
 
   const selectedTask = tasks?.find((task) => task.id === value);
-  const displayText = isLoading
-    ? t('form.loadingTasks')
-    : value && value !== 'none' && selectedTask
+  const displayText =
+    value && value !== 'none' && selectedTask
       ? `${getTicketIdentifier(
           selectedTask.ticket_prefix,
           selectedTask.display_number ?? 0
@@ -83,7 +83,11 @@ export function TaskCombobox({
           className={cn('w-full justify-between font-normal', className)}
           disabled={disabled || isLoading}
         >
-          <span className="truncate">{displayText}</span>
+          {isLoading ? (
+            <LoadingPlaceholder srLabel={t('form.loadingTasks')} />
+          ) : (
+            <span className="truncate">{displayText}</span>
+          )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

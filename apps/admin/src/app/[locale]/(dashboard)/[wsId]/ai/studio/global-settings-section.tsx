@@ -83,6 +83,7 @@ export function GlobalAiStudioSettingsSection({
               <ModelMultiSelect
                 emptyLabel={t('models.empty')}
                 loadMoreLabel={t('models.load_more')}
+                // loading-text-allowed: sr-only label of the model picker skeleton
                 loadingLabel={t('models.loading')}
                 onChange={(defaultModels) =>
                   setSettings((current) => ({ ...current, defaultModels }))

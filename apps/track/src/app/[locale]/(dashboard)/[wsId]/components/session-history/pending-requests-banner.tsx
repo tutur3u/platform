@@ -4,12 +4,12 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
-  Loader2,
 } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { LoadingRegion, Skeleton, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import dayjs from 'dayjs';
@@ -114,12 +114,21 @@ export function PendingRequestsBanner({
         {isExpanded && (
           <CardContent className="px-4 pt-0 pb-4 md:px-6 md:pb-6">
             {isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                <span className="ml-2 text-muted-foreground text-sm">
-                  {t('loading')}
-                </span>
-              </div>
+              <LoadingRegion srLabel={t('loading')} className="space-y-2">
+                {[0, 1].map((row) => (
+                  <div
+                    key={row}
+                    aria-hidden="true"
+                    className="space-y-2 rounded-lg border bg-card p-3"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                      <SkeletonLine size="sm" barClassName="w-1/3" />
+                    </div>
+                    <SkeletonLine size="xs" barClassName="w-2/3" />
+                  </div>
+                ))}
+              </LoadingRegion>
             ) : (
               <div className="space-y-2">
                 {shownRequests.map((request) => (

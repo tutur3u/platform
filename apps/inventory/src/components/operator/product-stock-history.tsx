@@ -1,9 +1,11 @@
 'use client';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { History, Loader2, RefreshCw } from '@tuturuuu/icons';
+import { History, RefreshCw } from '@tuturuuu/icons';
 import { getInventoryProductStockHistory } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
+import { LoadMoreLabel } from './load-more-label';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import {
@@ -38,9 +40,9 @@ export function ProductStockHistory({
 
   if (history.isPending) {
     return (
-      <HistoryState icon={<Loader2 className="h-5 w-5 animate-spin" />}>
-        {t('loading')}
-      </HistoryState>
+      <LoadingRegion srLabel={t('loading')}>
+        <SkeletonList rows={4} withAvatar={false} withTrailing />
+      </LoadingRegion>
     );
   }
 
@@ -93,10 +95,11 @@ export function ProductStockHistory({
           type="button"
           variant="outline"
         >
-          {history.isFetchingNextPage ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : null}
-          {history.isFetchingNextPage ? t('loadingMore') : t('loadMore')}
+          <LoadMoreLabel
+            isFetching={history.isFetchingNextPage}
+            label={t('loadMore')}
+            srLabel={t('loadingMore')}
+          />
         </Button>
       ) : null}
     </div>

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getTutoringPayroll } from '@tuturuuu/internal-api/tutoring';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -127,7 +128,9 @@ export function TutoringPayroll({
       {!valid ? (
         <p role="alert">{t('payroll_invalid_range')}</p>
       ) : query.isPending ? (
-        <p role="status">{t('payroll_loading')}</p>
+        <LoadingRegion srLabel={t('payroll_loading')}>
+          <SkeletonList rows={4} withAvatar={false} withTrailing />
+        </LoadingRegion>
       ) : query.isError ? (
         <div role="alert">
           {t('sessions_load_failed')}{' '}

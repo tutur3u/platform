@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/internal-api/infrastructure/ai';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
@@ -197,10 +198,13 @@ export function ExternalChatsConsole({
                 <ExternalMessageBubble key={message.id} message={message} />
               ))}
               {messagesQuery.isLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Loader2 className="size-4 animate-spin" />
-                  {t('external.loading_messages')}
-                </div>
+                <LoadingRegion
+                  srLabel={t('external.loading_messages')}
+                  className="space-y-3"
+                >
+                  <Skeleton className="h-14 w-2/3 rounded-lg" />
+                  <Skeleton className="ml-auto h-10 w-1/2 rounded-lg" />
+                </LoadingRegion>
               ) : null}
             </div>
             <div className="grid gap-3 rounded-md border border-border bg-background p-3 lg:grid-cols-2">

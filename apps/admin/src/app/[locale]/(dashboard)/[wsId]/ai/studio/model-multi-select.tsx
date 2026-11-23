@@ -11,7 +11,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useDeferredValue, useMemo, useState } from 'react';
+import { LoadMoreLabel } from '@/components/load-more-label';
 import { apiFetch } from '@/lib/api-fetch';
 
 const PAGE_SIZE = 40;
@@ -160,9 +162,9 @@ export function ModelMultiSelect({
           </div>
           <div className="mt-2 max-h-72 overflow-y-auto rounded-md border p-1">
             {modelPages.isLoading ? (
-              <p className="px-3 py-8 text-center text-muted-foreground text-sm">
-                {loadingLabel}
-              </p>
+              <LoadingRegion srLabel={loadingLabel} className="p-1">
+                <SkeletonList rows={4} withAvatar={false} />
+              </LoadingRegion>
             ) : models.length === 0 ? (
               <p className="px-3 py-8 text-center text-muted-foreground text-sm">
                 {emptyLabel}
@@ -203,7 +205,11 @@ export function ModelMultiSelect({
               type="button"
               variant="ghost"
             >
-              {modelPages.isFetchingNextPage ? loadingLabel : loadMoreLabel}
+              <LoadMoreLabel
+                isFetching={modelPages.isFetchingNextPage}
+                label={loadMoreLabel}
+                srLabel={loadingLabel}
+              />
             </Button>
           ) : null}
         </PopoverContent>

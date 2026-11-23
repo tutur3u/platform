@@ -79,11 +79,10 @@ export function ExistingContactPicker({
   return (
     <Combobox
       disabled={disabled}
-      emptyText={
-        results.isFetching
-          ? t('existing_contact_search_loading')
-          : t('existing_contact_search_empty')
-      }
+      emptyText={results.isFetching ? '' : t('existing_contact_search_empty')}
+      loadingMore={results.isFetching}
+      // loading-text-allowed: sr-only label of the combobox skeleton
+      loadingMoreText={t('existing_contact_search_loading')}
       mode="single"
       onChange={(value) => {
         const contactId = typeof value === 'string' ? value : '';

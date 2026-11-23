@@ -17,6 +17,7 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { LoadingRows } from '@/components/loading-rows';
 import type {
   GroupIndicator,
   MetricCategory,
@@ -194,9 +195,7 @@ export default function GroupIndicatorsSelector({
               />
               <CommandList>
                 {searchGroupsQuery.isLoading ? (
-                  <div className="py-6 text-center text-muted-foreground text-sm">
-                    {tc('loading')}
-                  </div>
+                  <LoadingRows srLabel={tc('loading')} className="p-1" />
                 ) : groups.length > 0 ? (
                   <CommandGroup>
                     {groups.map((group) => (

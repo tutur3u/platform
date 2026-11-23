@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
@@ -250,7 +251,12 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                     </p>
                     <p className="mt-1 text-muted-foreground">
                       {isLoadingThreshold || thresholdDays === undefined
-                        ? t('approval.loadingThreshold')
+                        ? (
+                            <LoadingPlaceholder
+                              srLabel={t('approval.loadingThreshold')}
+                              className="w-56"
+                            />
+                          )
                         : thresholdDays === 0 || thresholdDays === null
                           ? t('approval.allEntries')
                           : t('approval.entriesOlderThan', {

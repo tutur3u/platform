@@ -36,6 +36,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { LoadingRows } from '@/components/loading-rows';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 import { cn } from '@tuturuuu/utils/format';
@@ -365,7 +366,7 @@ export function UserFeedbackPanel({
                     }}
                     loadingMore={groupsQuery.isFetchingNextPage}
                     loadMoreText={commonT('load_more')}
-                    loadingMoreText={commonT('loading')}
+                    loadingMoreText={commonT('loading')} // loading-text-allowed: sr-only label of the combobox skeleton
                     disabled={groupsQuery.isLoading}
                   />
                 </div>
@@ -431,10 +432,7 @@ export function UserFeedbackPanel({
           ) : null}
 
           {feedbacksQuery.isLoading ? (
-            <div className="flex items-center justify-center gap-2 rounded-2xl border border-border/60 py-10 text-muted-foreground text-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {commonT('loading')}
-            </div>
+            <LoadingRows srLabel={commonT('loading')} />
           ) : feedbacks.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 border-dashed py-10 text-center">
               {requiresAttention ? (

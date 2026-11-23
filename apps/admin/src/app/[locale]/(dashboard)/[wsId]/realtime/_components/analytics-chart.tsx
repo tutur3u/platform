@@ -6,6 +6,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
@@ -24,14 +25,9 @@ export function RealtimeAnalyticsChart({
 
   if (isLoading) {
     return (
-      <div className="flex h-64 w-full items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-dynamic-blue border-t-transparent" />
-          <p className="mt-4 text-muted-foreground text-sm">
-            {t('chart.loading')}
-          </p>
-        </div>
-      </div>
+      <LoadingRegion srLabel={t('chart.loading')} className="h-64 w-full">
+        <Skeleton className="h-full w-full" />
+      </LoadingRegion>
     );
   }
 

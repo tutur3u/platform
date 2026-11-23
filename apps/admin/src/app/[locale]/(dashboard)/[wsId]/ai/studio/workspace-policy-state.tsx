@@ -1,7 +1,8 @@
 'use client';
 
-import { Loader2, RefreshCw } from '@tuturuuu/icons';
+import { RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 
 export function WorkspacePolicyState({
@@ -33,10 +34,9 @@ export function WorkspacePolicyState({
 
   if (isPending) {
     return (
-      <div className="flex items-center justify-center gap-2 p-10 text-muted-foreground text-sm">
-        <Loader2 className="size-4 animate-spin" />
-        {t('workspaces.loading')}
-      </div>
+      <LoadingRegion srLabel={t('workspaces.loading')} className="p-4">
+        <SkeletonList rows={4} withAvatar={false} withTrailing />
+      </LoadingRegion>
     );
   }
 

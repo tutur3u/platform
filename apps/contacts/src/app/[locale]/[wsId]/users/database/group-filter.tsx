@@ -18,6 +18,7 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { LoadingRows } from '@/components/loading-rows';
 import { fetchPossibleExcludedGroupsPage } from '@tuturuuu/users-ui/database/hooks';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -270,7 +271,11 @@ export function GroupFilter({
               }}
             >
               <CommandEmpty>
-                {showInitialLoading ? t('loading') : t('common.no_results')}
+                {showInitialLoading ? (
+                  <LoadingRows srLabel={t('loading')} />
+                ) : (
+                  t('common.no_results')
+                )}
               </CommandEmpty>
 
               {combinedError && (
@@ -341,9 +346,11 @@ export function GroupFilter({
               {isFetchingNextPage && (
                 <>
                   <CommandSeparator />
-                  <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-                    {commonT('loading')}
-                  </div>
+                  <LoadingRows
+                    srLabel={commonT('loading')}
+                    rows={1}
+                    className="p-1"
+                  />
                 </>
               )}
 

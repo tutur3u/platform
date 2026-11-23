@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Trash2 } from '@tuturuuu/icons';
+import { Loader2, Plus, RefreshCw, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 
@@ -105,6 +105,7 @@ export function ActionButtons({
       </Button>
       <Button
         onClick={onSubmit}
+        aria-busy={isLoadingThreshold || undefined}
         disabled={
           isCreating ||
           isLoadingThreshold ||
@@ -118,21 +119,27 @@ export function ActionButtons({
       >
         {isCreating ? (
           <>
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            {isLoadingThreshold
-              ? t('actions.loading')
-              : isStartTimeOlderThanThreshold
-                ? t('actions.submitting')
-                : t('actions.adding')}
+            <RefreshCw className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+            {isStartTimeOlderThanThreshold
+              ? t('actions.submitting')
+              : t('actions.adding')}
           </>
         ) : (
           <>
-            <Plus className="h-4 w-4" />
-            {isLoadingThreshold
-              ? t('actions.loading')
-              : isStartTimeOlderThanThreshold
-                ? t('actions.submitForApproval')
-                : t('actions.addEntry')}
+            {isLoadingThreshold ? (
+              <Loader2
+                aria-hidden="true"
+                className="h-4 w-4 animate-spin motion-reduce:animate-none"
+              />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {isStartTimeOlderThanThreshold
+              ? t('actions.submitForApproval')
+              : t('actions.addEntry')}
+            {isLoadingThreshold ? (
+              <span className="sr-only">{t('actions.loading')}</span>
+            ) : null}
           </>
         )}
       </Button>

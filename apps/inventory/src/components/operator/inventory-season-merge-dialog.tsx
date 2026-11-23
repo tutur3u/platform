@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { InventorySeasonMergePreviewContent } from './inventory-season-merge-preview';
@@ -192,7 +193,11 @@ function SeasonMergeReview({
             </div>
           ))}
         </div>
-        {valid && query.isFetching ? <p role="status">{t('loading')}</p> : null}
+        {valid && query.isFetching ? (
+          <LoadingRegion srLabel={t('loading')}>
+            <SkeletonText lines={3} />
+          </LoadingRegion>
+        ) : null}
         {recovery.request ? (
           <div
             role="status"

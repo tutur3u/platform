@@ -22,6 +22,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { LoadingRows } from '@/components/loading-rows';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
@@ -313,9 +314,7 @@ export default function UserFeedbackDialog({
             className="flex-1 space-y-4 overflow-y-auto"
           >
             {isLoadingHistory ? (
-              <div className="py-8 text-center text-muted-foreground">
-                <p>{tFeedback('loading_feedbacks')}</p>
-              </div>
+              <LoadingRows srLabel={tFeedback('loading_feedbacks')} />
             ) : feedbacks.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 <p>{tFeedback('no_feedbacks_found')}</p>

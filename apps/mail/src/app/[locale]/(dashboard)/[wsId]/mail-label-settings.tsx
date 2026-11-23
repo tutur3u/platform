@@ -24,6 +24,7 @@ import {
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
+import { MailSettingsRowsSkeleton } from './mail-skeletons';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -136,11 +137,7 @@ export function MailLabelSettings({
         ) : null}
 
         {organization.isLoading ? (
-          <SettingsSectionMessage
-            icon={<Loader2 className="size-4 animate-spin" />}
-          >
-            {t('loading')}
-          </SettingsSectionMessage>
+          <MailSettingsRowsSkeleton srLabel={t('loading')} />
         ) : customLabels.length ? (
           <Accordion className="divide-y" type="multiple">
             {customLabels.map((label) => (

@@ -16,6 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import {
+  LoadingRegion,
+  SkeletonSelectorTrigger,
+} from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -108,12 +112,9 @@ export function WorkspaceSelectDialog({
                 </Button>
               </div>
             ) : isLoading ? (
-              <div className="flex items-center gap-2 py-3">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span className="text-muted-foreground text-sm">
-                  {t('loadingWorkspaces')}
-                </span>
-              </div>
+              <LoadingRegion srLabel={t('loadingWorkspaces')}>
+                <SkeletonSelectorTrigger />
+              </LoadingRegion>
             ) : !availableWorkspaces?.length ? (
               <div className="py-3 text-muted-foreground text-sm">
                 {t('noWorkspaces')}

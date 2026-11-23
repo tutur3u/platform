@@ -100,16 +100,14 @@ export function FeatureFlagToggle({
     <div className="flex flex-col items-start gap-1">
       <Switch
         aria-label={`${flagKey} ${environment}`}
+        aria-busy={pending || undefined}
         checked={override ?? declaredDefault}
         disabled={locked}
         onCheckedChange={(checked) => submit(checked)}
       />
       <span className="text-muted-foreground text-xs">
-        {pending
-          ? copy.loading
-          : (override ?? declaredDefault)
-            ? copy.on
-            : copy.off}
+        {(override ?? declaredDefault) ? copy.on : copy.off}
+        {pending ? <span className="sr-only">{copy.loading}</span> : null}
       </span>
       {override !== null ? (
         <button

@@ -1,8 +1,9 @@
 'use client';
 
-import { AlertTriangle, Loader2, Paperclip } from '@tuturuuu/icons';
+import { AlertTriangle, Paperclip } from '@tuturuuu/icons';
 import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { AnnouncementAttachmentPreview } from './announcement-attachment-preview';
@@ -100,10 +101,13 @@ export function TopicAnnouncementPreviewState({
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center gap-2 text-muted-foreground text-sm">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t('email_preview_loading')}
-      </div>
+      <LoadingRegion
+        srLabel={t('email_preview_loading')}
+        className="space-y-4 p-6"
+      >
+        <SkeletonLine size="lg" barClassName="w-1/2" />
+        <SkeletonText lines={6} />
+      </LoadingRegion>
     );
   }
 

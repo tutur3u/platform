@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Package } from '@tuturuuu/icons';
+import { Package } from '@tuturuuu/icons';
 import type {
   InventoryCheckoutLine,
   InventoryProductSummary,
@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { minorToMajor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
@@ -142,10 +143,9 @@ export function SaleLineItems({
 
   if (detail.isPending) {
     return (
-      <div className="flex min-h-20 items-center justify-center gap-2 rounded-lg border border-dashed text-muted-foreground text-sm">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t('loadingLineItems')}
-      </div>
+      <LoadingRegion srLabel={t('loadingLineItems')}>
+        <SkeletonList rows={2} withAvatar={false} withTrailing />
+      </LoadingRegion>
     );
   }
 

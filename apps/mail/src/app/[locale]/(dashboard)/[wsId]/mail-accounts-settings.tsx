@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/custom/settings-section';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
+import { LoadingRegion } from '@tuturuuu/ui/skeleton';
 import { useState } from 'react';
 import { useCanConnectMailAccounts } from '@/components/mail-actor-provider';
 import { useConnectedMailAccounts } from './connected-mail-accounts';
@@ -138,12 +139,9 @@ function ConnectedAccountsSection({
       title={t('connected_accounts')}
     >
       {view.kind === 'loading' ? (
-        <>
+        <LoadingRegion srLabel={t('loading')}>
           <AccountSkeleton />
-          <span className="sr-only" role="status">
-            {t('loading')}
-          </span>
-        </>
+        </LoadingRegion>
       ) : null}
       {view.kind === 'error' ? (
         <SettingsSectionMessage

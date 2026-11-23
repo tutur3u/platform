@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { shiftScheduleMonth } from '@tuturuuu/utils/topic-schedule';
 import { useLocale, useTranslations } from 'next-intl';
@@ -121,10 +122,9 @@ export function ScheduleCloneDialog({
             {t('schedule_clone_unsaved')}
           </p>
         ) : preview.isLoading ? (
-          <div className="flex items-center gap-2 py-8 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('schedule_clone_loading')}
-          </div>
+          <LoadingRegion srLabel={t('schedule_clone_loading')}>
+            <SkeletonList rows={3} withAvatar={false} />
+          </LoadingRegion>
         ) : preview.isError ? (
           <div className="flex items-center justify-between rounded-md border border-dynamic-red/30 p-3 text-sm">
             {t('schedule_clone_failed')}

@@ -25,6 +25,7 @@ export function WorkspacePolicyEditor({
   const modelPickerProps = {
     emptyLabel: t('models.empty'),
     loadMoreLabel: t('models.load_more'),
+    // loading-text-allowed: sr-only label of the model picker skeleton
     loadingLabel: t('models.loading'),
     removeLabel: (modelId: string) => t('models.remove', { modelId }),
     searchPlaceholder: t('models.search'),

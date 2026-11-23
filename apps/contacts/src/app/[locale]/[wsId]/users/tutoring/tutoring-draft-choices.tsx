@@ -11,6 +11,7 @@ import {
   suggestTutoringSlots,
 } from '@tuturuuu/internal-api/tutoring-suggestion';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
@@ -114,10 +115,13 @@ export function TutoringDraftChoices({
           new Date(),
           exclusion
         );
+  const loadingPlan = (
+    <LoadingPlaceholder srLabel={t('plan_loading')} className="w-40" />
+  );
   let message = missingAbsenceDate
     ? t('plan_choose_missed_date')
     : scheduleLoading
-      ? t('plan_loading')
+      ? loadingPlan
       : scheduleError
         ? t('schedule_load_failed')
         : !schedule.length
@@ -127,7 +131,7 @@ export function TutoringDraftChoices({
           : data.isError
             ? t('plan_incomplete')
             : data.isFetching || !data.data
-              ? t('plan_loading')
+              ? loadingPlan
               : !data.data.teachers.length
                 ? t('plan_no_teachers')
                 : '';

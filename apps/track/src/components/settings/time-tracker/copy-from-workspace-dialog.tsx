@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useVisibleWorkspaces } from '@tuturuuu/ui/hooks/use-visible-workspaces';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -248,9 +250,13 @@ export function CopyFromWorkspaceDialog({
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    isLoadingWorkspaces
-                      ? t('copy_dialog.loading_workspaces')
-                      : t('copy_dialog.choose_workspace')
+                    isLoadingWorkspaces ? (
+                      <LoadingPlaceholder
+                        srLabel={t('copy_dialog.loading_workspaces')}
+                      />
+                    ) : (
+                      t('copy_dialog.choose_workspace')
+                    )
                   }
                 />
               </SelectTrigger>
@@ -311,12 +317,9 @@ export function CopyFromWorkspaceDialog({
               </div>
 
               {isLoadingCategories ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">
-                    {t('copy_dialog.loading_categories')}
-                  </span>
-                </div>
+                <LoadingRegion srLabel={t('copy_dialog.loading_categories')}>
+                  <SkeletonList rows={4} withAvatar={false} />
+                </LoadingRegion>
               ) : categories.length === 0 && existingCategories.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground">
                   {t('copy_dialog.no_categories_found')}

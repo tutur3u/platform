@@ -21,6 +21,7 @@ import {
 import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -177,7 +178,9 @@ export function ReviewAccountsPanel() {
         </div>
       ) : null}
       {accounts.isLoading ? (
-        <p className="text-muted-foreground text-sm">{t('loading')}</p>
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonList rows={3} withTrailing rowClassName="px-0" />
+        </LoadingRegion>
       ) : null}
       {accounts.isError ? (
         <Button onClick={() => void accounts.refetch()} variant="outline">

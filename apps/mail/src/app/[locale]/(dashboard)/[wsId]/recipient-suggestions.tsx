@@ -1,6 +1,7 @@
 'use client';
 
-import { CircleAlert, LoaderCircle } from '@tuturuuu/icons';
+import { CircleAlert } from '@tuturuuu/icons';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { RecipientSuggestion } from './recipient-ranking';
@@ -104,10 +105,9 @@ export function RecipientSuggestions({
         </div>
       ) : null}
       {state.kind === 'loading' && !options.length ? (
-        <div className="flex items-center gap-2 px-3 py-2.5 text-muted-foreground text-sm">
-          <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-          {t('loading')}
-        </div>
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonList rows={2} />
+        </LoadingRegion>
       ) : null}
       {state.kind === 'error' && !options.length ? (
         <div

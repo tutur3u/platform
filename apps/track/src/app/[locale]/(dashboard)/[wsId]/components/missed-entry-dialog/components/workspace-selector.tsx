@@ -2,6 +2,7 @@ import { CircleUserRound, Users } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -49,7 +50,7 @@ export function WorkspaceSelector({
         <SelectContent>
           {isLoadingWorkspaces ? (
             <SelectItem value="loading" disabled>
-              {t('form.loadingWorkspaces')}
+              <LoadingPlaceholder srLabel={t('form.loadingWorkspaces')} />
             </SelectItem>
           ) : (
             userWorkspaces?.map((ws) => (

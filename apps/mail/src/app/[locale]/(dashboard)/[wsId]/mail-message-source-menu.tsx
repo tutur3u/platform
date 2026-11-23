@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -109,7 +110,9 @@ function MessageSource({
   return (
     <>
       {source.isPending ? (
-        <p role="status">{t('source_loading')}</p>
+        <LoadingRegion srLabel={t('source_loading')}>
+          <Skeleton className="h-96 w-full" />
+        </LoadingRegion>
       ) : source.isError ? (
         <div role="alert" className="space-y-3">
           <p>{t('source_unavailable')}</p>

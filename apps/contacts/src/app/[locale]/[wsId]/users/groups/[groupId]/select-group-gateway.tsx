@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Separator } from '@tuturuuu/ui/separator';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -81,11 +82,13 @@ export default function SelectGroupGateway({
             <SelectTrigger>
               <SelectValue
                 placeholder={
-                  query.isLoading
-                    ? tc('loading')
-                    : groups.length
-                      ? t('select_group_placeholder')
-                      : t('no_groups')
+                  query.isLoading ? (
+                    <LoadingPlaceholder srLabel={tc('loading')} />
+                  ) : groups.length ? (
+                    t('select_group_placeholder')
+                  ) : (
+                    t('no_groups')
+                  )
                 }
               />
             </SelectTrigger>

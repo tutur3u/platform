@@ -368,6 +368,7 @@ export function OverviewPanel({
               </div>
             }
             isEmpty={risks.length === 0}
+            // loading-text-allowed: accessible name of the list skeleton
             loadingLabel={t('loading')}
           >
             {risks.length === 0

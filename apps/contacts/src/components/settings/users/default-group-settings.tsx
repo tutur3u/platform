@@ -143,6 +143,7 @@ export default function DefaultGroupSettings({ wsId }: Props) {
             }}
             loadingMore={isFetchingNextPage}
             loadMoreText={commonT('load_more')}
+            // loading-text-allowed: sr-only label of the combobox skeleton
             loadingMoreText={commonT('loading')}
             actions={[
               {

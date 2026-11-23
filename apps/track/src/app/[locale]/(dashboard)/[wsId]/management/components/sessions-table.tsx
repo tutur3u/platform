@@ -10,7 +10,6 @@ import {
   Eye,
   FileSpreadsheet,
   Filter,
-  Loader2,
   Pause,
   Play,
   Search,
@@ -19,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -283,10 +283,9 @@ export default function SessionsTable({
 
       <CardContent className="p-0">
         {isLoading && sortedSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="mb-4 size-8 animate-spin text-dynamic-muted" />
-            <p className="text-dynamic-muted">{t('loadingSessions')}</p>
-          </div>
+          <LoadingRegion srLabel={t('loadingSessions')} className="p-4">
+            <SkeletonList rows={6} withAvatar={false} withTrailing />
+          </LoadingRegion>
         ) : sortedSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10">

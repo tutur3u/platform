@@ -357,9 +357,12 @@ export function WorkspaceUsersTable({
     <div className="relative">
       {/* Lightweight background-refetch indicator */}
       {isBackgroundRefetching && (
-        <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-2 rounded-md border bg-background/90 px-3 py-1.5 text-muted-foreground text-xs shadow-sm">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-          {t('common.loading')}
+        <div
+          role="status"
+          className="pointer-events-none absolute top-2 right-2 z-10 flex items-center rounded-md border bg-background/90 p-1.5 shadow-sm"
+        >
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary motion-reduce:animate-none" />
+          <span className="sr-only">{t('common.loading')}</span>
         </div>
       )}
 

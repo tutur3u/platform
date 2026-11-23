@@ -1410,7 +1410,7 @@ export function ObservabilityDashboardClient({
   }, [projectId]);
   const infiniteLabels = {
     end: t('infinite.end'),
-    loading: t('infinite.loading'),
+    loading: t('infinite.loading'), // loading-text-allowed: sr-only label of the load-more button
     more: t('infinite.more'),
   };
   const cronScheduleLabels = {

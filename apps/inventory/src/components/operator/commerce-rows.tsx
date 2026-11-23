@@ -36,6 +36,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { LoadMoreLabel } from './load-more-label';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   Tooltip,
@@ -369,9 +370,11 @@ export function SaleRows({
             type="button"
             variant="outline"
           >
-            {isFetchingNextPage
-              ? t('pagination.loadingMore')
-              : t('pagination.loadMore')}
+            <LoadMoreLabel
+              isFetching={isFetchingNextPage}
+              label={t('pagination.loadMore')}
+              srLabel={t('pagination.loadingMore')}
+            />
           </Button>
         ) : null}
       </div>

@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -211,9 +212,9 @@ export function ProfileLinksManager({ wsId }: { wsId: string }) {
 
             <div className="max-h-80 space-y-2 overflow-y-auto">
               {targetUsersQuery.isLoading ? (
-                <p className="text-muted-foreground text-sm">
-                  {t('select_target_user_loading')}
-                </p>
+                <LoadingRegion srLabel={t('select_target_user_loading')}>
+                  <SkeletonList rows={3} withAvatar={false} />
+                </LoadingRegion>
               ) : targetUsers.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                   {t('select_target_user_empty')}
@@ -254,7 +255,9 @@ export function ProfileLinksManager({ wsId }: { wsId: string }) {
       </Dialog>
 
       {isLoading ? (
-        <p className="text-muted-foreground text-sm">{t('loading')}</p>
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonList rows={2} withAvatar={false} withTrailing />
+        </LoadingRegion>
       ) : links.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t('empty')}</p>
       ) : (

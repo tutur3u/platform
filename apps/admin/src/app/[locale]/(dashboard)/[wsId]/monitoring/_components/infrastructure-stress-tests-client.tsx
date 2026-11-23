@@ -3,6 +3,7 @@
 import { Activity, Clock, Gauge, Users } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { MetricBlock } from './blue-green-monitoring-panel-primitives';
 import { useInfrastructureStressTestSnapshot } from './blue-green-monitoring-query-hooks';
@@ -21,9 +22,13 @@ export function InfrastructureStressTestsClient({ wsId }: { wsId: string }) {
 
   if (snapshotQuery.isLoading) {
     return (
-      <div className="rounded-lg border border-border/60 bg-background p-6 text-muted-foreground text-sm">
-        {t('states.loading')}
-      </div>
+      <LoadingRegion
+        srLabel={t('states.loading')}
+        className="space-y-4 rounded-lg border border-border/60 bg-background p-6"
+      >
+        <SkeletonLine size="lg" barClassName="w-1/3" />
+        <SkeletonText lines={3} />
+      </LoadingRegion>
     );
   }
 

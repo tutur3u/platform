@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { SessionWithRelations, TimeTrackerData } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
+import { TimeTrackerSkeleton } from './time-tracker-skeleton';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -181,16 +182,7 @@ export default function SimpleTimeTrackerContent({
   };
 
   if (isUserLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="space-y-4 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="animate-pulse text-muted-foreground text-sm">
-            {t('loading')}
-          </p>
-        </div>
-      </div>
-    );
+    return <TimeTrackerSkeleton srLabel={t('loading')} />;
   }
 
   return (

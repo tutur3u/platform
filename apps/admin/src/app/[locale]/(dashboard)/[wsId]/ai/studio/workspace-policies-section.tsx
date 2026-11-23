@@ -22,6 +22,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useDeferredValue, useState } from 'react';
+import { LoadMoreLabel } from '@/components/load-more-label';
 import { updateWorkspaceAiStudioPolicyAction } from './actions';
 import type { AiStudioWorkspacePolicy } from './types';
 import { WorkspacePolicyCard } from './workspace-policy-card';
@@ -172,14 +173,14 @@ export function WorkspaceAiStudioPoliciesSection({
             size="sm"
             variant="outline"
           >
-            {policiesQuery.isFetchingNextPage ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
-            ) : (
+            {policiesQuery.isFetchingNextPage ? null : (
               <RefreshCw className="mr-2 size-4" />
             )}
-            {policiesQuery.isFetchingNextPage
-              ? t('workspaces.loading_more')
-              : t('workspaces.load_more')}
+            <LoadMoreLabel
+              isFetching={policiesQuery.isFetchingNextPage}
+              label={t('workspaces.load_more')}
+              srLabel={t('workspaces.loading_more')}
+            />
           </Button>
         </div>
       ) : null}

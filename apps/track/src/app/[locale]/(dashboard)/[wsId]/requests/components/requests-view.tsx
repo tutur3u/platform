@@ -21,6 +21,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import {
   Card,
   CardContent,
@@ -267,8 +269,10 @@ export function RequestsView({
                   <SelectContent>
                     <SelectItem value="all">{t('filters.allUsers')}</SelectItem>
                     {usersLoading ? (
-                      <div className="px-2 py-1.5 text-muted-foreground text-sm">
-                        {t('filters.loadingUsers')}
+                      <div className="px-2 py-1.5">
+                        <LoadingPlaceholder
+                          srLabel={t('filters.loadingUsers')}
+                        />
                       </div>
                     ) : (
                       availableUsersData.map((user) => (
@@ -354,11 +358,10 @@ export function RequestsView({
       {/* Requests List */}
       {isLoading ? (
         <Card className="border-border/60 bg-linear-to-br from-muted/30 to-muted/10">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
-            <p className="mt-4 text-muted-foreground text-sm">
-              {t('list.loading')}
-            </p>
+          <CardContent className="p-4">
+            <LoadingRegion srLabel={t('list.loading')}>
+              <SkeletonList rows={4} withTrailing />
+            </LoadingRegion>
           </CardContent>
         </Card>
       ) : requests.length === 0 ? (

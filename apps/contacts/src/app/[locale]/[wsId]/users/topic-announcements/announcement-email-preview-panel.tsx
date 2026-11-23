@@ -1,10 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Eye, Loader2, MailWarning } from '@tuturuuu/icons';
+import { Eye, MailWarning } from '@tuturuuu/icons';
 import { previewTopicAnnouncementEmail } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
 import {
@@ -63,10 +64,13 @@ export function AnnouncementEmailPreviewPanel({
 
       <div className="min-h-80 flex-1 overflow-hidden bg-muted/30">
         {previewQuery.isLoading ? (
-          <div className="flex h-full min-h-80 items-center justify-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('email_preview_loading')}
-          </div>
+          <LoadingRegion
+            srLabel={t('email_preview_loading')}
+            className="space-y-4 p-6"
+          >
+            <SkeletonLine size="lg" barClassName="w-1/2" />
+            <SkeletonText lines={6} />
+          </LoadingRegion>
         ) : previewQuery.isError ? (
           <div className="flex h-full min-h-80 flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground text-sm">
             <MailWarning className="h-5 w-5 text-dynamic-orange" />

@@ -9,6 +9,7 @@ import {
   uploadDesktopVaultFile,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { DesktopPlatformPanel } from './desktop-platform-panel';
@@ -159,7 +160,13 @@ function DesktopVaultSession({ actorId }: { actorId: string }) {
           )}
       </section>
     );
-  if (!query.data) return <p role="status">{t('loading')}</p>;
+  if (!query.data)
+    return (
+      <LoadingRegion srLabel={t('loading')} className="space-y-4">
+        <SkeletonLine size="xl" barClassName="w-1/3" />
+        <SkeletonText lines={3} />
+      </LoadingRegion>
+    );
   return (
     <section className="space-y-4" aria-label={t('title')}>
       <header className="space-y-2">

@@ -10,6 +10,7 @@ import type { WorkspaceUserGroupScheduleGroup } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -118,13 +119,13 @@ export function ScheduleSetupEditor({
       )}
 
       {isLoading ? (
-        <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
-          <div className="h-4 w-2/5 animate-pulse rounded bg-muted" />
-          <div className="h-16 animate-pulse rounded-lg bg-muted" />
-          <p className="text-muted-foreground text-sm">
-            {t('schedule_setup_loading')}
-          </p>
-        </div>
+        <LoadingRegion
+          srLabel={t('schedule_setup_loading')}
+          className="space-y-3 rounded-xl border bg-muted/20 p-4"
+        >
+          <Skeleton className="h-4 w-2/5" />
+          <Skeleton className="h-16 rounded-lg" />
+        </LoadingRegion>
       ) : isError ? (
         <div className="flex flex-col gap-3 rounded-xl border border-dynamic-red/30 bg-dynamic-red/5 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm">{t('schedule_setup_load_failed')}</p>

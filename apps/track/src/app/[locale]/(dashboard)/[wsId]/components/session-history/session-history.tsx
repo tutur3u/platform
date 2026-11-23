@@ -56,6 +56,7 @@ import {
   sortSessionGroups,
   stackSessions,
 } from './session-utils';
+import { SessionHistorySkeleton } from './session-history-skeleton';
 import { StackedSessionItem } from './stacked-session-item';
 import { useSessionActions } from './use-session-actions';
 import { CompactWeekSummary } from './week-calendar-grid';
@@ -348,12 +349,7 @@ export function SessionHistory({
 
         <CardContent className="p-4 md:px-6 md:py-3">
           {isLoadingSessions && !isPeriodStatsReady ? (
-            <div className="flex flex-col items-center justify-center py-12 md:py-16">
-              <Loader2 className="h-10 w-10 animate-spin text-dynamic-orange md:h-12 md:w-12" />
-              <p className="mt-4 text-muted-foreground text-sm">
-                {t('loading_sessions')}
-              </p>
-            </div>
+            <SessionHistorySkeleton srLabel={t('loading_sessions')} />
           ) : sessionsForPeriod?.length === 0 &&
             (!isPeriodStatsReady || (periodStats?.sessionCount || 0) === 0) ? (
             <div className="flex flex-col items-center justify-center py-12 md:py-16">
@@ -483,10 +479,11 @@ export function SessionHistory({
           <div ref={loadMoreRef} className="py-6">
             {isFetchingNextPage && (
               <div className="flex items-center justify-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <span className="text-muted-foreground text-sm">
-                  {t('loading_more')}...
-                </span>
+                <Loader2
+                  aria-hidden="true"
+                  className="h-6 w-6 animate-spin text-primary motion-reduce:animate-none"
+                />
+                <span className="sr-only">{t('loading_more')}</span>
               </div>
             )}
 

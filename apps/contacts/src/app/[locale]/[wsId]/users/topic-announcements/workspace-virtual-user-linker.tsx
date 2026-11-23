@@ -147,6 +147,7 @@ export function WorkspaceVirtualUserLinker({
       hasMore={Boolean(usersQuery.hasNextPage)}
       loadingMore={usersQuery.isFetchingNextPage}
       loadMoreText={t('load_more_users')}
+      // loading-text-allowed: sr-only label of the combobox skeleton
       loadingMoreText={t('loading_users')}
       onChange={(next) => {
         const resolved = Array.isArray(next) ? next[0] : next;

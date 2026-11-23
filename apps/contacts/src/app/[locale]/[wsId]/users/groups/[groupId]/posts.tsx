@@ -16,6 +16,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
+import { LoadingRows } from '@/components/loading-rows';
 import { useTranslations } from 'next-intl';
 import type { RefObject } from 'react';
 import { PostDialog } from './post-dialog';
@@ -153,12 +154,7 @@ export default function UserGroupPosts({
         <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
           {/* Loading state */}
           {isLoading && (
-            <div className="flex items-center justify-center gap-3 py-6">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="text-muted-foreground text-sm">
-                {t('common.loading')}...
-              </span>
-            </div>
+            <LoadingRows srLabel={t('common.loading')} withAvatar />
           )}
 
           <PostDialog

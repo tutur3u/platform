@@ -1,6 +1,7 @@
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -99,7 +100,7 @@ export function TimeEntryForm({
             <SelectContent>
               {isLoadingCategories ? (
                 <SelectItem value="loading" disabled>
-                  {t('form.loadingCategories')}
+                  <LoadingPlaceholder srLabel={t('form.loadingCategories')} />
                 </SelectItem>
               ) : (
                 <>

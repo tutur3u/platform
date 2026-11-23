@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReportHistoryEntry } from '../hooks/use-report-history';
 
@@ -54,7 +55,9 @@ export function ReportHistory({
         </AccordionTrigger>
         <AccordionContent className="p-4">
           {logsQuery.isLoading ? (
-            <div className="text-sm opacity-70">{t('common.loading')}</div>
+            <LoadingRegion srLabel={t('common.loading')}>
+              <SkeletonList rows={3} withAvatar={false} />
+            </LoadingRegion>
           ) : logsQuery.data && logsQuery.data.length > 0 ? (
             <div className="space-y-6">
               {logsQuery.data.map((log, idx) => {

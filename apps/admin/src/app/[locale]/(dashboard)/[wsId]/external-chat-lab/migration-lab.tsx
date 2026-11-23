@@ -12,6 +12,8 @@ import { getExternalChatBindingState } from '@tuturuuu/internal-api';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
+import { SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { WorkspacePicker } from '../ai-agents/workspace-picker';
@@ -119,7 +121,9 @@ export function ExternalChatMigrationLab({ wsId: _wsId }: { wsId: string }) {
           {!targetWsId
             ? t('select_workspace')
             : state.isLoading
-              ? t('loading')
+              ? (
+                  <LoadingPlaceholder srLabel={t('loading')} className="w-40" />
+                )
               : state.isError
                 ? t('load_error')
                 : state.data?.readiness.ready
@@ -130,7 +134,9 @@ export function ExternalChatMigrationLab({ wsId: _wsId }: { wsId: string }) {
           {!targetWsId
             ? t('select_workspace_description')
             : state.isLoading
-              ? t('loading')
+              ? (
+                  <SkeletonLine size="sm" barClassName="w-2/3" />
+                )
               : state.isError
                 ? t('load_error')
                 : state.data?.readiness.ready

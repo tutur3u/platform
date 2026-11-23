@@ -5,6 +5,7 @@ import { Info, Loader2, RefreshCw, SearchX, UsersRound } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { PendingLabel } from '@/components/loading-rows';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { type ReactNode, useCallback, useRef } from 'react';
@@ -181,16 +182,14 @@ export function UserGroupsTable({
             aria-label={t('user-group-data-table.retry_loading')}
           >
             {isFetching ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                {t('common.loading')}
-              </>
+              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
             ) : (
-              <>
-                <RefreshCw className="size-4" />
-                {t('common.retry')}
-              </>
+              <RefreshCw className="size-4" />
             )}
+            {t('common.retry')}
+            {isFetching ? (
+              <span className="sr-only">{t('common.loading')}</span>
+            ) : null}
           </Button>
         </div>
       </div>
@@ -250,11 +249,12 @@ export function UserGroupsTable({
       <div className="relative">
         {showLoadingOverlay && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
-            <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="text-muted-foreground text-sm">
-                {t('common.loading')}
-              </span>
+            <div
+              role="status"
+              className="flex items-center rounded-md border bg-background/90 p-3 shadow-lg"
+            >
+              <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" />
+              <span className="sr-only">{t('common.loading')}</span>
             </div>
           </div>
         )}
@@ -297,14 +297,11 @@ export function UserGroupsTable({
               onClick={() => void fetchNextPage()}
               disabled={isFetchingNextPage}
             >
-              {isFetchingNextPage ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('common.loading')}
-                </>
-              ) : (
-                t('common.load_more')
-              )}
+              <PendingLabel
+                isPending={isFetchingNextPage}
+                label={t('common.load_more')}
+                srLabel={t('common.loading')}
+              />
             </Button>
           </div>
         )}

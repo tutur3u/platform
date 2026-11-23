@@ -59,11 +59,10 @@ export function TeacherUserPicker({
   return (
     <Combobox
       disabled={disabled}
-      emptyText={
-        results.isFetching
-          ? t('teacher_search_loading')
-          : t('teacher_search_empty')
-      }
+      emptyText={results.isFetching ? '' : t('teacher_search_empty')}
+      loadingMore={results.isFetching}
+      // loading-text-allowed: sr-only label of the combobox skeleton
+      loadingMoreText={t('teacher_search_loading')}
       mode="single"
       onChange={(value) =>
         onChange(typeof value === 'string' && value ? value : noneValue)

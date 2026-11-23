@@ -7,6 +7,8 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
+import { LoadingRegion, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useDebounce } from 'use-debounce';
@@ -79,15 +81,21 @@ export function InventoryMergeProductSelect({
         className="min-w-0 [&_button[role=combobox]]:min-h-11 [&_button[role=combobox]]:touch-manipulation"
         contentClassName="max-w-[calc(100vw-2rem)] [&_[cmdk-item]]:min-h-11 [&_[cmdk-item]]:break-words"
         disabled={disabled}
-        emptyText={products.isFetching ? t('loading') : t('noOptions')}
+        emptyText={products.isFetching ? '' : t('noOptions')}
         hasMore={products.hasNextPage}
         label={
-          value
-            ? selectedName || t(selected.isError ? 'labelsError' : 'loading')
-            : undefined
+          value ? (
+            selectedName ||
+            (selected.isError ? (
+              t('labelsError')
+            ) : (
+              <LoadingPlaceholder srLabel={t('loading')} />
+            ))
+          ) : undefined
         }
         loadMoreText={t('loadMore')}
         loadingMore={products.isFetchingNextPage}
+        // loading-text-allowed: sr-only label of the combobox skeleton
         loadingMoreText={t('loading')}
         onChange={(next) => {
           const id = typeof next === 'string' ? next : '';
@@ -116,7 +124,11 @@ export function InventoryMergeProductSelect({
         selected={value}
         shouldFilter={false}
       />
-      {products.isFetching ? <p role="status">{t('loading')}</p> : null}
+      {products.isFetching ? (
+        <LoadingRegion srLabel={t('loading')}>
+          <SkeletonLine size="sm" barClassName="w-1/2" />
+        </LoadingRegion>
+      ) : null}
       {value && !selectedName && selected.isError ? (
         <div role="alert" className="grid gap-1">
           <p className="text-destructive">{t('labelsError')}</p>

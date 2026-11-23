@@ -1,5 +1,6 @@
-import { CalendarIcon, ClockIcon, Loader2 } from '@tuturuuu/icons';
+import { CalendarIcon, ClockIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import type { ExtendedTimeTrackingRequest } from '../page';
@@ -91,12 +92,14 @@ export function RequestViewMode({
             </h2>
           </div>
           {isLoadingImages ? (
-            <div className="flex items-center justify-center gap-2 rounded-lg border bg-muted/20 py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <p className="text-muted-foreground text-sm">
-                {t('detail.loadingMedia')}
-              </p>
-            </div>
+            <LoadingRegion
+              srLabel={t('detail.loadingMedia')}
+              className="grid gap-3 sm:grid-cols-3"
+            >
+              {request.images.map((image, index) => (
+                <Skeleton key={`${index}-${image}`} className="h-48 rounded-lg" />
+              ))}
+            </LoadingRegion>
           ) : (
             <div className="grid gap-3 sm:grid-cols-3">
               {imageUrls.map((url, index) => (

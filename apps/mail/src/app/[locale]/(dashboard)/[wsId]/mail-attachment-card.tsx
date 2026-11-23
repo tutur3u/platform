@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingRegion, SkeletonText } from '@tuturuuu/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -147,9 +148,9 @@ export function MailAttachmentCard({
               <DocxPreview url={url} filename={attachment.filename} />
             ) : preview?.kind === 'text' ? (
               textPreview.isPending ? (
-                <p className="p-6 text-muted-foreground text-sm">
-                  {t('loading')}
-                </p>
+                <LoadingRegion srLabel={t('loading')} className="p-6">
+                  <SkeletonText lines={5} />
+                </LoadingRegion>
               ) : (
                 <pre className="max-h-[60dvh] whitespace-pre-wrap break-words p-4 font-mono text-sm leading-6">
                   {textPreview.data}

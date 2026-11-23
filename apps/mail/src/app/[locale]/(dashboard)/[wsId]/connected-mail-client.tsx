@@ -10,6 +10,7 @@ import {
   type ConnectedMailMessage,
   connectedMailRequest,
 } from '@tuturuuu/internal-api';
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
@@ -21,6 +22,7 @@ import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
 import { ConnectedMailCompose } from './connected-mail-compose';
 import { useConnectedMailAccounts } from './connected-mail-accounts';
 import { ConnectedMailReader } from './connected-mail-reader';
+import { MailListSkeleton, MailReaderSkeleton } from './mail-skeletons';
 import {
   type ConnectedMailFolder,
   resolveConnectedAccountId,
@@ -208,7 +210,7 @@ export function ConnectedMailClient({
           <div className="grid min-h-0 gap-4 md:grid-cols-2">
             <div className="space-y-1">
               {messages.isLoading ? (
-                <p role="status">{t('connected_loading')}</p>
+                <MailListSkeleton srLabel={t('connected_loading')} />
               ) : null}
               {messages.data?.pages
                 .flatMap((page) => page.messages)
@@ -231,9 +233,16 @@ export function ConnectedMailClient({
                 ))}
               {messages.hasNextPage ? (
                 <Button
+                  aria-busy={messages.isFetchingNextPage || undefined}
                   disabled={messages.isFetchingNextPage}
                   onClick={() => void messages.fetchNextPage()}
                 >
+                  {messages.isFetchingNextPage ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="mr-2 size-4 animate-spin motion-reduce:animate-none"
+                    />
+                  ) : null}
                   {t('connected_load_more')}
                 </Button>
               ) : null}
@@ -265,7 +274,7 @@ export function ConnectedMailClient({
                 }}
               />
             ) : detail.isLoading ? (
-              <p role="status">{t('connected_loading')}</p>
+              <MailReaderSkeleton srLabel={t('connected_loading')} />
             ) : null}
           </div>
         </>

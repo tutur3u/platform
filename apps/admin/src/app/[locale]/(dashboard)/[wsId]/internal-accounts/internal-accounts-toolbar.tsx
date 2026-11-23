@@ -16,6 +16,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
@@ -173,7 +174,12 @@ export function InternalAccountsToolbar(props: Props) {
 
       <p className="text-muted-foreground text-xs">
         {props.count === undefined
-          ? t('count_loading')
+          ? (
+              <LoadingPlaceholder
+                srLabel={t('count_loading')}
+                className="w-20"
+              />
+            )
           : t('count', { count: props.count })}
       </p>
     </div>

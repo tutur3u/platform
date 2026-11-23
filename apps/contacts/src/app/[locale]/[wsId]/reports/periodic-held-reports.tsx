@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { LoadingPlaceholder } from '@tuturuuu/ui/loading-placeholder';
 import {
   Select,
   SelectContent,
@@ -319,7 +320,9 @@ export function PeriodicHeldActionDialog({
               : preview.isError
                 ? t('held_preview_failed')
                 : count === undefined || preview.isFetching
-                  ? t('held_count_loading')
+                  ? (
+                      <LoadingPlaceholder srLabel={t('held_count_loading')} />
+                    )
                   : count === 0
                     ? t('held_none')
                     : tooMany
