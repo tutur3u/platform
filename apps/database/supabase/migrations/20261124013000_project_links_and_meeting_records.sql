@@ -31,6 +31,12 @@
 
 begin;
 
+-- Adding the unique constraint locks public.task_projects, and the cleanup
+-- triggers lock public.workspace_meetings and public.workspace_calendar_events;
+-- give up rather than queue behind live traffic.
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
 alter table public.task_projects
   add constraint task_projects_id_ws_id_key unique (id, ws_id);
 
@@ -101,7 +107,7 @@ create function private.validate_task_project_link()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 begin
   if tg_op = 'UPDATE' then
@@ -133,13 +139,20 @@ create function private.validate_meeting_task_link()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 begin
   if tg_op = 'UPDATE' then
-    -- Only the carried_from_meeting_id set-null from a deleted origin passes.
+    -- Only the foreign key's ON DELETE SET NULL from a deleted origin passes:
+    -- it runs from the referential trigger, so this trigger is nested
+    -- (pg_trigger_depth() > 1), and the origin meeting is already gone.
     if new.carried_from_meeting_id is null
       and old.carried_from_meeting_id is not null
+      and pg_catalog.pg_trigger_depth() > 1
+      and not exists (
+        select 1 from public.workspace_meetings m
+        where m.id = old.carried_from_meeting_id
+      )
       and (new.meeting_id, new.task_id, new.ws_id, new.link_kind, new.created_by, new.created_at)
         is not distinct from
         (old.meeting_id, old.task_id, old.ws_id, old.link_kind, old.created_by, old.created_at)
@@ -185,7 +198,7 @@ create function private.validate_meeting_record_item()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 begin
   if tg_op = 'UPDATE' and (
@@ -205,7 +218,7 @@ begin
       raise exception 'Meeting is not in this workspace' using errcode = '23503';
     end if;
   end if;
-  new.updated_at := now();
+  new.updated_at := pg_catalog.now();
   return new;
 end $$;
 
@@ -218,7 +231,7 @@ create function private.delete_project_links_for_entity()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 begin
   delete from private.task_project_links
@@ -234,17 +247,17 @@ create trigger workspace_calendar_events_delete_project_links
 after delete on public.workspace_calendar_events
 for each row execute function private.delete_project_links_for_entity('calendar_event');
 
-revoke all on function private.validate_task_project_link() from public, anon, authenticated;
-revoke all on function private.validate_meeting_task_link() from public, anon, authenticated;
-revoke all on function private.validate_meeting_record_item() from public, anon, authenticated;
-revoke all on function private.delete_project_links_for_entity() from public, anon, authenticated;
+revoke all on function private.validate_task_project_link() from public, anon, authenticated, service_role;
+revoke all on function private.validate_meeting_task_link() from public, anon, authenticated, service_role;
+revoke all on function private.validate_meeting_record_item() from public, anon, authenticated, service_role;
+revoke all on function private.delete_project_links_for_entity() from public, anon, authenticated, service_role;
 
 alter table private.task_project_links enable row level security;
 alter table private.meeting_task_links enable row level security;
 alter table private.meeting_record_items enable row level security;
 
 revoke all on table private.task_project_links, private.meeting_task_links,
-  private.meeting_record_items from public, anon, authenticated;
+  private.meeting_record_items from public, anon, authenticated, service_role;
 grant select, insert, delete on table private.task_project_links to service_role;
 grant select, insert, delete on table private.meeting_task_links to service_role;
 grant select, insert, update, delete on table private.meeting_record_items to service_role;
@@ -261,7 +274,7 @@ select tpt.project_id, tp.ws_id, 'task'::text, tpt.task_id, null::uuid,
 from public.task_project_tasks tpt
 join public.task_projects tp on tp.id = tpt.project_id;
 
-revoke all on table private.task_project_entity_links from public, anon, authenticated;
+revoke all on table private.task_project_entity_links from public, anon, authenticated, service_role;
 grant select on table private.task_project_entity_links to service_role;
 
 commit;

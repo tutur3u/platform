@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(46);
+select plan(47);
 
 insert into auth.users (id) values
   ('5e510000-0000-4000-8000-000000000000'),
@@ -99,8 +99,14 @@ select ok(not exists (
   from unnest(array['private.task_project_links', 'private.meeting_task_links']) t(rel)
   cross join unnest(array['UPDATE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']) p(priv)
   where has_table_privilege('service_role', t.rel, p.priv))
-  and not has_table_privilege('service_role', 'private.meeting_record_items', 'TRUNCATE'),
-  'service_role cannot update links or truncate');
+  and not exists (
+    select 1 from unnest(array['TRUNCATE', 'REFERENCES', 'TRIGGER']) p(priv)
+    where has_table_privilege('service_role', 'private.meeting_record_items', p.priv))
+  and not exists (
+    select 1 from unnest(array['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES',
+      'TRIGGER']) p(priv)
+    where has_table_privilege('service_role', 'private.task_project_entity_links', p.priv)),
+  'service_role holds only the scoped privileges');
 select ok((select bool_and(confdeltype = 'c') from pg_constraint
   where conrelid in ('private.task_project_links'::regclass, 'private.meeting_task_links'::regclass,
       'private.meeting_record_items'::regclass)
@@ -212,6 +218,9 @@ select throws_ok($$update private.task_project_links set created_by = null$$,
   '55000', null, 'project links stay immutable for the table owner');
 select throws_ok($$update private.meeting_task_links set link_kind = 'carried_over'$$,
   '55000', null, 'meeting task links stay immutable for the table owner');
+select throws_ok($$update private.meeting_task_links set carried_from_meeting_id = null
+  where carried_from_meeting_id is not null$$,
+  '55000', null, 'a carry-over origin clears only when that meeting is deleted');
 
 -- Cleanup when an entity or project is deleted ------------------------------
 delete from public.workspace_calendar_events where id = '5e510000-0000-4000-8000-000000000401';
