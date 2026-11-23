@@ -2,7 +2,14 @@ import { encodePathSegment, getInternalApiClient } from './client';
 
 /** Room Mira state for the caller; counts only, never identities. */
 export type RoomMiraConsent =
-  | { available: false }
+  | {
+      available: false;
+      /**
+       * Before admission: room Mira is available here and this is the
+       * workspace default for the join box.
+       */
+      joinDefault?: boolean;
+    }
   | {
       available: true;
       version: string;

@@ -72,7 +72,17 @@ export async function GET(
   const { meetingId } = await params;
   return guestPollRoomRoute(request, meetingId, async (access) => {
     if (!(await readRoomMiraAvailability(access))) return { available: false };
-    return readView(access);
+    try {
+      return await readView(access);
+    } catch (error) {
+      // Not admitted yet: the join box needs only the workspace default.
+      if (!(error instanceof MeetCallAccessError) || error.status !== 403)
+        throw error;
+      return {
+        available: false,
+        joinDefault: await readMiraBoxTickedByDefault(access.meeting.ws_id),
+      };
+    }
   });
 }
 

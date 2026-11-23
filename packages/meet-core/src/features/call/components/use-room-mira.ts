@@ -44,6 +44,21 @@ export function useRoomMiraConsent(meetingId: string) {
   });
 }
 
+/**
+ * The join box default before admission, cached apart from the in-call state
+ * so a pre-admission answer never stands in for it after joining.
+ */
+export function useRoomMiraJoinDefault(meetingId: string | undefined) {
+  const query = useQuery({
+    queryKey: [...roomMiraConsentKey(meetingId ?? ''), 'join-default'],
+    queryFn: () => readRoomMiraConsent(meetingId!),
+    enabled: !!meetingId,
+    retry: false,
+  });
+  const data = query.data;
+  return data?.available ? data.boxTickedByDefault : data?.joinDefault;
+}
+
 export type RoomMiraAvailable = Extract<RoomMiraConsent, { available: true }>;
 type Source = 'join' | 'confirm' | 'toggle';
 
@@ -119,7 +134,8 @@ export function useRoomMira(meetingId: string) {
   const applied = useRef(false);
   const [preferOff, setPreferOff] = useState(false);
   useEffect(() => {
-    if (applied.current || !query.data) return;
+    // Waits for the caller's admitted view; nothing applies before it.
+    if (applied.current || !query.data?.available) return;
     applied.current = true;
     const remembered = takeMiraJoinChoice(meetingId);
     if (!remembered) return;

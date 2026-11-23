@@ -163,3 +163,19 @@ it('routes acceptance, turning off and minor reports to the acceptance flow', as
   await post({ action: 'report_minor' });
   expect(f.end).toHaveBeenCalledWith(guestAccess, 'minor_reported');
 });
+
+it('gives a participant who is not admitted yet only the join box default', async () => {
+  const { MeetCallAccessError } =
+    await import('@tuturuuu/meet-core/features/call/lib/call-access');
+  f.room.mockRejectedValue(new MeetCallAccessError(403, 'Join first'));
+  f.boxDefault.mockResolvedValue(false);
+  const response = await GET(new Request('https://meet.test/x'), params);
+  expect(await response.json()).toEqual({
+    available: false,
+    joinDefault: false,
+  });
+  f.room.mockRejectedValue(new MeetCallAccessError(503, 'Down'));
+  await expect(
+    GET(new Request('https://meet.test/x'), params)
+  ).rejects.toMatchObject({ status: 503 });
+});

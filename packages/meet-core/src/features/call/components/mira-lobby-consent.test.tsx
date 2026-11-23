@@ -89,7 +89,7 @@ function showLobby(onJoined = vi.fn()) {
         prepareJoin={() => false}
         room={room}
         runMediaAction={(action) => action()}
-        miraJoin={{ meetingId: 'room', boxTickedByDefault: true }}
+        miraMeetingId="room"
       />
     )
   );

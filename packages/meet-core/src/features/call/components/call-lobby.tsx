@@ -8,6 +8,7 @@ import {
   useRememberMiraJoin,
 } from '../../live-assistant/mira-join-box';
 import { peekMiraJoinChoice } from '../../live-assistant/mira-join-choice';
+import { useRoomMiraJoinDefault } from './use-room-mira';
 import type { MeetRoomController } from '../lib/room-controller';
 import { GuestLobbyUpgrade } from './guest-lobby-upgrade';
 import { Lobby, type LobbyParticipant } from './lobby';
@@ -30,11 +31,14 @@ export function ConnectedLobby({
   onJoined,
   onLeave,
   onRetry,
-  miraJoin,
+  miraMeetingId,
 }: {
   room: MeetRoomController;
-  /** Shows the Mira box above Join, seeded from an earlier join screen. */
-  miraJoin?: { meetingId: string; boxTickedByDefault: boolean };
+  /**
+   * Shows the Mira box above Join where room Mira is available, seeded from
+   * an earlier join screen or else the workspace default.
+   */
+  miraMeetingId?: string;
   participants: readonly LobbyParticipant[];
   defaultAvatarUrl?: string;
   defaultDisplayName: string;
@@ -62,8 +66,7 @@ export function ConnectedLobby({
   // Seeded after mount, so server and client render the same markup: an
   // earlier join screen's choice wins over the workspace default.
   const [miraTicked, setMiraTicked] = useState<boolean | null>(null);
-  const miraMeetingId = miraJoin?.meetingId;
-  const miraDefault = miraJoin?.boxTickedByDefault;
+  const miraDefault = useRoomMiraJoinDefault(miraMeetingId);
   useEffect(() => {
     if (!miraMeetingId || miraDefault === undefined) return;
     setMiraTicked(peekMiraJoinChoice(miraMeetingId)?.ticked ?? miraDefault);
