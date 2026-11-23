@@ -1,0 +1,124 @@
+---
+title: Mira host consent in meetings
+updatedAt: '2026-11-24'
+description: The meeting host turns Mira on once for the meeting; every participant sees that Mira is on and chooses, with one click, whether Mira processes their own audio and messages.
+audience: users
+---
+
+## Product decision
+
+Decision (24 November 2026). Status: approved, implementation pending.
+
+Scope: Meet and Parley meetings with room Mira (room chat **@mira**), live
+transcription and AI notes. Private Mira keeps its existing eligibility rules
+(see [Meet Live assistants](/platform/features/meet-live-assistants)); only its
+notice changes, as described under Intentional exceptions.
+
+Default: off. A meeting uses Mira only after an eligible acceptor turns it on
+and accepts the terms for that meeting.
+
+| Rule | Decision |
+| --- | --- |
+| Who accepts | Only the fixed session host or a co-host assigned in the room, while admitted and present. A workspace admin must join the meeting to accept. Guests never accept. |
+| What the acceptor accepts | The Terms of Service and AI use for this meeting, the enabled capabilities, and confirmation that the meeting audience is 18 or older. The acceptor is responsible for that AI use in the meeting. |
+| Acceptance evidence | Each acceptance is an append-only, revisioned record: acceptor account, meeting, server time, notice version, capabilities and revision. Turning Mira off, a new notice version, or any capability or visibility expansion (for example sharing notes to the workspace) ends the acceptance and starts a new revision. |
+| 18+ | The meeting workspace needs its stored 18+ audience declaration; meetings in workspaces without it cannot turn Mira on. The acceptor's per-meeting confirmation adds to that declaration. There is no exception for minors. Education workspaces with learners under 18 do not make the declaration. |
+| Notice | Every participant, guests included, sees **Mira is on, turned on by {acceptor}** (the acceptor's server-side profile name) before joining and as a persistent in-call indicator that cannot be hidden. Turning Mira on posts a system line in room chat. |
+| Joining | The pre-join screen offers **Join — I'm 18 or older** (Mira on for you) and **Join with Mira off for me**, with equal visual weight and no preselected choice. Either is one click. The notice says: *Under 18? Choose Join with Mira off for me.* Choosing Mira off never limits anything else in the meeting. |
+| Mid-call changes | When Mira is turned on during a call, or the acceptance changes, everyone already present sees the same two choices with no default. Until they choose, they count as off. |
+| Per-person opt-out | At any time, a participant can turn Mira off for themselves. While it is off, their speech is not transcribed or sent to a model and Mira does not read their messages. **Mute Mira for me** (stop hearing Mira's voice replies) and **Leave** stay available. Only the participant can turn it back on. |
+| Effect of one opt-out | It affects only that participant's content. Mira keeps running for everyone else. |
+| Guests | Guest choices are keyed to the server-issued guest participant id, never to a display name or label. A new guest join always starts without a choice. |
+| Reporting a minor | Any participant can report that someone under 18 is present. The report ends the acceptance; turning Mira on again needs a new acceptance and new choices. |
+
+### Required notice content
+
+The notice (EN and VI) names the controller (the meeting workspace), the
+processor (Tuturuuu), the model sub-processor (Google Gemini) and the
+cross-border transfer; the purpose; the data types (speech, transcripts, chat
+messages); retention (transcripts as configured, audio not kept); who can read
+notes; the participant's rights and how to turn Mira off; and a reminder not to
+share sensitive data. It also states two limits: other participants' speech or
+messages that mention you are processed, and your voice can be picked up by
+another participant's microphone.
+
+The notice wording and the consent form are subject to legal review against
+Vietnam's personal data protection rules before production use.
+
+### Enforcement model
+
+Consent is the participant's own choice. A host acceptance alone never makes
+anyone's content available to Mira.
+
+- **Room chat.** Admission and dispatch leases stay in the meeting room Durable
+  Object. Each choice stores `{acceptanceRevision, noticeVersion}` and counts
+  only while both equal the current values. Every choice and every acceptance is
+  also written durably: host acceptances in a new
+  `private.meet_mira_host_acceptances` table, and choices with an
+  `acceptance_revision`. Both follow the `private.meet_ai_consents` rules:
+  append-only, RESTRICT on meeting or workspace deletion, and account deletion
+  anonymizes the account.
+- **No choice means excluded.** A participant who joined before the acceptance,
+  or has not chosen, is off.
+- **Ending an acceptance** bumps the revision. Admitted dispatch leases are
+  refused at their next step, and their answers are discarded and never
+  published. Turning Mira on again does not revive earlier choices; everyone
+  chooses again.
+- **Opting out** applies the deferred-Pause behavior per person. New requests
+  carrying that participant's content are blocked at once. In-flight answers
+  that carry it are discarded, and their usage still settles. Requests that
+  carry only other people's content continue.
+- **Rejoining** keeps a choice only within the same acceptance revision and
+  notice version.
+- **Mixed sources.** A request whose sources include anyone no longer current is
+  stale as a whole.
+- **Context.** Context includes only content authored by participants whose
+  current choice is on: messages, quoted and reply-to bodies, attachments, poll
+  answers and reactions. Mira's own earlier replies stay omitted.
+- **Transcription and notes** stay off under this decision until per-account
+  (`self_v1`) capture ships. Each account then uploads only its own microphone,
+  with echo cancellation on, and the server refuses any chunk without the
+  uploader's current `allow` revision. There is no mixed-audio path. Notes and
+  summaries use only tracks from participants who chose on, and never list
+  opted-out participants as speakers. Erasing anyone's content redacts the whole
+  mixed notes.
+
+Room Live voice (mixed room audio) remains denied on the server; this decision
+does not enable it.
+
+Withdrawal does not erase content processed before it; erasure is a separate
+step. Who turned Mira on, when, and with which capabilities is logged.
+
+### Affected surfaces
+
+Meet and Parley: meeting settings (acceptance), the pre-join screen, the in-call
+Mira indicator and chip, room chat, live transcription and notes. Web workspace
+settings keep the workspace 18+ declaration.
+
+### Intentional exceptions
+
+- Private Mira is started by the participant and charges their own payer. In a
+  meeting with a current acceptance, it shows the same notice, including its 18+
+  wording, and needs no separate Continue. The pre-join **Join** never starts
+  Private Mira by itself. Outside such meetings, its existing notice applies.
+
+### Review and regression evidence
+
+This decision changes the consent model. The implementation ships only after an
+independent security and privacy review of the exact code. Required regression
+coverage:
+
+1. An acceptance with no participant choices allows no capture, dispatch, reservation or notes.
+2. A participant who joined before a mid-call enable stays excluded until they choose.
+3. Ending an acceptance during an admitted lease discards the answer without publishing it, and re-enabling needs new choices.
+4. A notice version bump makes every choice stale.
+5. An opt-out during a lease blocks new requests and discards in-flight answers carrying that participant's content, while others keep Mira.
+6. Context excludes quoted and reply-to bodies, attachments, poll answers and reactions from participants who are off, and excludes Mira's own replies.
+7. Two guests with the same label get separate choices, and a new guest starts without one.
+8. A rejoin keeps a choice only within the same revision and notice version.
+9. Chunk upload without the uploader's current `allow` revision is refused, and there is no mixed-audio path.
+10. Notes exclude opted-out tracks, and an erase redacts the mixed notes.
+11. A workspace without the 18+ declaration cannot accept, and neither can a guest or an absent admin.
+12. A capability or visibility expansion requires a new acceptance.
+13. Acceptance and choice evidence survives a room restore, is anonymized on account deletion, and blocks deletion via RESTRICT.
+14. Both buttons have equal weight with no consent-implying default focus, and the EN and VI notice includes every required item.

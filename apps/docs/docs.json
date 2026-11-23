@@ -158,6 +158,7 @@
               "platform/features/meet-followups",
               "platform/features/meet-forms",
               "platform/features/meet-live-assistants",
+              "platform/features/meet-mira-host-consent",
               "platform/features/meet-solo-mode",
               "platform/features/meet-together",
               "platform/features/mobile-workspace-tools",
