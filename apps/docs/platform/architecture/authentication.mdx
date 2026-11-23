@@ -64,8 +64,9 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   [app coordination](/platform/architecture/app-coordination)); without a
   logo, or when it fails to load, the header shows a neutral app glyph, never
   letters:
-  `<app>'s sign-in is secured and powered by Tuturuuu` (VI `Đăng nhập vào
-  <app> được bảo mật và vận hành bởi Tuturuuu`) with the Tuturuuu mark, so a
+  `<app>'s sign-in is secured and powered by Tuturuuu` (VI
+  `Đăng nhập vào <app> được bảo mật và vận hành bởi Tuturuuu`) with the
+  Tuturuuu mark, so a
   visitor coming from the app knows why Tuturuuu appears. The name renders
   as text. Terms, Privacy and recovery stay in the footer.
 - **Focused external sign-in.** A registered external return app with a
@@ -94,7 +95,7 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the return app it is the only validator for it: the browser runs no second
   cross-app resolve that could disagree.
 - **Auto-continue.** For a strict registration only, the matching session
-  continues without a click after a 1.2 s "Signing you in to <app>…" pause
+  continues without a click after a 1.2 s `Signing you in to <app>…` pause
   with a Cancel link: the registry requires S256 PKCE and lists exact
   callback paths (no origin-only match), and the login request carries a
   valid S256 challenge, so the minted token is redeemable only by the
