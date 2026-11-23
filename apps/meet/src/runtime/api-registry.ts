@@ -519,6 +519,12 @@ export const meetEndpoints: Endpoint[] = [
     pattern: '/og',
     methods: { GET: async (request) => (await landingOg()).GET(request) },
   },
+  // The locale middleware rewrites the bare path to /<locale>/og before
+  // dispatch, so the landing card is matched with its locale prefix too.
+  {
+    pattern: '/[locale]/og',
+    methods: { GET: async (request) => (await landingOg()).GET(request) },
+  },
   {
     pattern: '/[locale]/r/[code]/preview',
     methods: {
