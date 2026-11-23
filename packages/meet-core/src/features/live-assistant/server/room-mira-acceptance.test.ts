@@ -101,6 +101,21 @@ it('allocates the revision durably, then applies it in the room with the co-host
   );
 });
 
+it('keeps Mira off with a 503 when the acceptance cannot be recorded', async () => {
+  f.record.mockRejectedValue(new Error('missing relation'));
+  vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  await expect(acceptRoomMira(host, ['chat'])).rejects.toMatchObject({
+    status: 503,
+    code: 'MIRA_EVIDENCE_UNAVAILABLE',
+  });
+  expect(f.room).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'mira.room.accept' }),
+    expect.anything()
+  );
+  expect(f.end).not.toHaveBeenCalled();
+});
+
 it('ends a revision the room refused as not applied', async () => {
   f.room.mockImplementation(async (_access, command: { action: string }) => {
     if (command.action === 'mira.room.read') return { canAccept: true };

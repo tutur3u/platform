@@ -59,11 +59,22 @@ export async function acceptRoomMira(
       403,
       'Only the host or a co-host in the meeting can turn on Mira'
     );
+  // Mira stays off without its durable acceptance record; the caller can
+  // retry, so the failure is reported as temporarily unavailable.
   const revision = await recordMiraAcceptance({
     meetingId: access.meeting.id,
     userId: access.user.id,
     noticeVersion: MIRA_ROOM_NOTICE_VERSION,
     capabilities,
+  }).catch((error: unknown) => {
+    console.error('Room Mira acceptance evidence failed', {
+      name: error instanceof Error ? error.name : 'unknown',
+    });
+    throw new MeetCallAccessError(
+      503,
+      'Mira could not be turned on right now',
+      'MIRA_EVIDENCE_UNAVAILABLE'
+    );
   });
   let result: AcceptResult;
   try {
