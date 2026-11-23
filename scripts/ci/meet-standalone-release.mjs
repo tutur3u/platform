@@ -136,6 +136,17 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Same owners as RA-20261123-1100-MEET-A-PRIME. Any other failure is outside this grant.',
   },
+  {
+    // Test is red only on four root-script and utils tests outside Meet's
+    // closure; the release authority accepted that risk for this source.
+    // Type Check, Security Checks and Meet Cloudflare stay required here.
+    id: 'RA-20261123-1900-MEET-S9B-OG-QA',
+    source: 'b306fa7092a94fb5179b6dd774d2001e754f6464',
+    workflows: ['turbo-unit-tests.yaml'],
+    expires: '2026-11-23T16:59:00Z',
+    followUp:
+      'Root-script and utils test fix lands before production sync. Any other failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
