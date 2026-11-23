@@ -168,10 +168,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
     <Dialog open={isAddingColumn} onOpenChange={setIsAddingColumn}>
       <div className="space-y-4">
         {isLoading ? (
-          <LoadingRegion
-            className="space-y-2"
-            srLabel={t('common.loading')}
-          >
+          <LoadingRegion className="space-y-2" srLabel={t('common.loading')}>
             {Array.from({ length: 5 }).map((_, index) => (
               <Skeleton key={index} aria-hidden className="h-12 w-full" />
             ))}

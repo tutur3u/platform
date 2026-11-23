@@ -187,7 +187,9 @@ export function PricingSection() {
       {/* Feature comparison */}
       <Reveal>
         {pricesPending && (
-          <p className="sr-only" role="status">{t('pricesLoading')}</p>
+          <p className="sr-only" role="status">
+            {t('pricesLoading')}
+          </p>
         )}
         {priceNotice && (
           <p

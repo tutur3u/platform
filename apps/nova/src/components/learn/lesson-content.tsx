@@ -55,9 +55,7 @@ export function LessonContent({ lesson }: LessonProps) {
 
   // If no lesson data is provided, show a loading state
   if (!lesson) {
-    return (
-      <PageLoading className="h-[calc(100vh-6rem)]" />
-    );
+    return <PageLoading className="h-[calc(100vh-6rem)]" />;
   }
 
   // If there are no sections, show an empty state

@@ -2,7 +2,11 @@
 
 import { Globe2 } from '@tuturuuu/icons';
 import type { WorkspaceDocument } from '@tuturuuu/types';
-import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 
 interface Props {

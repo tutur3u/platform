@@ -243,22 +243,22 @@ export function PeriodicResendDialog({
             </>
           )}
           <p role="status" aria-live="polite" className="text-sm">
-            {!validTarget
-              ? t('held_scope_required')
-              : preview.isError
-                ? t('resend_preview_failed')
-                : count === undefined || preview.isFetching
-                  ? (
-                      <LoadingPlaceholder srLabel={t('resend_count_loading')} />
-                    )
-                  : count === 0
-                    ? t('resend_none')
-                    : tooMany
-                      ? t('held_too_many', {
-                          count,
-                          limit: limits?.maxReportsPerAction ?? 0,
-                        })
-                      : t('resend_count', { count })}
+            {!validTarget ? (
+              t('held_scope_required')
+            ) : preview.isError ? (
+              t('resend_preview_failed')
+            ) : count === undefined || preview.isFetching ? (
+              <LoadingPlaceholder srLabel={t('resend_count_loading')} />
+            ) : count === 0 ? (
+              t('resend_none')
+            ) : tooMany ? (
+              t('held_too_many', {
+                count,
+                limit: limits?.maxReportsPerAction ?? 0,
+              })
+            ) : (
+              t('resend_count', { count })
+            )}
           </p>
           {count !== undefined && count > 0 && preview.data && (
             <p className="text-muted-foreground text-xs">

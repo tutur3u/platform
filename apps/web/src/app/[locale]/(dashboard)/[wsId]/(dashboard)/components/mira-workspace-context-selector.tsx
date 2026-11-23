@@ -109,8 +109,7 @@ export function MiraWorkspaceContextSelector({ wsId }: { wsId: string }) {
     workspaceContextId === 'personal'
       ? t('workspace_context_personal')
       : workspaces?.find((workspace) => workspace.id === workspaceContextId)
-          ?.name ||
-        (isLoading ? '' : t('workspace_context_unknown'));
+          ?.name || (isLoading ? '' : t('workspace_context_unknown'));
 
   const Icon = Brain;
   const isPersonalWorkspaceContext = workspaceContextId === 'personal';

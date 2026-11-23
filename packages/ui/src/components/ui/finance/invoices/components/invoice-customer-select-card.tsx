@@ -143,15 +143,13 @@ export function InvoiceCustomerSelectCard({
     return `${getUserDisplayName(selectedUser)} • ${getUserSecondaryLabel(selectedUser)}`;
   }, [selectedUser]);
 
-  const resultMeta = errorMessage
-    ? errorMessage
-    : loading
-      ? (
-          <LoadingPlaceholder
-            srLabel={loadingMessage || t('ws-invoices.loading')}
-          />
-        )
-      : `${customerCount} ${t('ws-invoices.customer').toLowerCase()}${customerCount === 1 ? '' : 's'}`;
+  const resultMeta = errorMessage ? (
+    errorMessage
+  ) : loading ? (
+    <LoadingPlaceholder srLabel={loadingMessage || t('ws-invoices.loading')} />
+  ) : (
+    `${customerCount} ${t('ws-invoices.customer').toLowerCase()}${customerCount === 1 ? '' : 's'}`
+  );
 
   return (
     <Card className="overflow-hidden border-border/80 bg-card/95 shadow-sm">
@@ -329,7 +327,9 @@ export function InvoiceCustomerSelectCard({
                               className="flex items-center justify-center gap-2 text-muted-foreground text-xs"
                             >
                               <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
-                              <span className="sr-only">{srLabelLoadingMore}</span>
+                              <span className="sr-only">
+                                {srLabelLoadingMore}
+                              </span>
                             </div>
                           ) : hasNextPage ? (
                             <Button

@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  ChevronDown,
-  ChevronUp,
-  ClipboardList,
-} from '@tuturuuu/icons';
+import { ChevronDown, ChevronUp, ClipboardList } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

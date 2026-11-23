@@ -9,7 +9,11 @@ import {
   uploadDesktopVaultFile,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
-import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { DesktopPlatformPanel } from './desktop-platform-panel';

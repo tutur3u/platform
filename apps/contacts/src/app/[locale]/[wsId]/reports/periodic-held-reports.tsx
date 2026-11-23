@@ -315,19 +315,19 @@ export function PeriodicHeldActionDialog({
             </Select>
           </label>
           <p role="status" aria-live="polite" className="text-sm">
-            {!validScope
-              ? t('held_scope_required')
-              : preview.isError
-                ? t('held_preview_failed')
-                : count === undefined || preview.isFetching
-                  ? (
-                      <LoadingPlaceholder srLabel={t('held_count_loading')} />
-                    )
-                  : count === 0
-                    ? t('held_none')
-                    : tooMany
-                      ? t('held_too_many', { count, limit: limit ?? 0 })
-                      : t('held_count', { count })}
+            {!validScope ? (
+              t('held_scope_required')
+            ) : preview.isError ? (
+              t('held_preview_failed')
+            ) : count === undefined || preview.isFetching ? (
+              <LoadingPlaceholder srLabel={t('held_count_loading')} />
+            ) : count === 0 ? (
+              t('held_none')
+            ) : tooMany ? (
+              t('held_too_many', { count, limit: limit ?? 0 })
+            ) : (
+              t('held_count', { count })
+            )}
           </p>
           <p className="text-muted-foreground text-xs">
             {t('held_recorded_note')}

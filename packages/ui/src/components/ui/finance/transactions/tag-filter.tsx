@@ -90,7 +90,11 @@ export function TagFilter({
               <CommandEmpty>
                 {isLoading ? (
                   <LoadingRegion srLabel={t('finance.loading_tags')}>
-                    <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+                    <SkeletonList
+                      rows={4}
+                      withAvatar={false}
+                      withSubtitle={false}
+                    />
                   </LoadingRegion>
                 ) : (
                   t('finance.no_tags_found')

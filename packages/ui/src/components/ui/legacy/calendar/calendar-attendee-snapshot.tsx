@@ -63,7 +63,12 @@ export function CalendarAttendeeSnapshot({
       {requested &&
         (query.isFetching ? (
           <LoadingRegion srLabel={t('loading')} className="space-y-1">
-            <SkeletonList rows={3} withAvatar={false} withSubtitle={false} rowClassName="px-0" />
+            <SkeletonList
+              rows={3}
+              withAvatar={false}
+              withSubtitle={false}
+              rowClassName="px-0"
+            />
           </LoadingRegion>
         ) : snapshot ? (
           <>

@@ -5,7 +5,11 @@ import { Eye, MailWarning } from '@tuturuuu/icons';
 import { previewTopicAnnouncementEmail } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
 import {

@@ -173,14 +173,11 @@ export function InternalAccountsToolbar(props: Props) {
       </div>
 
       <p className="text-muted-foreground text-xs">
-        {props.count === undefined
-          ? (
-              <LoadingPlaceholder
-                srLabel={t('count_loading')}
-                className="w-20"
-              />
-            )
-          : t('count', { count: props.count })}
+        {props.count === undefined ? (
+          <LoadingPlaceholder srLabel={t('count_loading')} className="w-20" />
+        ) : (
+          t('count', { count: props.count })
+        )}
       </p>
     </div>
   );

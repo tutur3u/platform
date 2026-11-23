@@ -110,7 +110,11 @@ export function WalletFilter({
               <CommandEmpty>
                 {isLoading ? (
                   <LoadingRegion srLabel={t('finance.loading_wallets')}>
-                    <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+                    <SkeletonList
+                      rows={4}
+                      withAvatar={false}
+                      withSubtitle={false}
+                    />
                   </LoadingRegion>
                 ) : (
                   t('finance.no_wallets_found')

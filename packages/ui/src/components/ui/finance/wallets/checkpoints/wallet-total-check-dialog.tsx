@@ -141,7 +141,10 @@ export function WalletTotalCheckDialog({
             </DialogDescription>
           </DialogHeader>
           {walletsQuery.isLoading ? (
-            <LoadingRegion srLabel={t('loading_wallets')} className="grid gap-3">
+            <LoadingRegion
+              srLabel={t('loading_wallets')}
+              className="grid gap-3"
+            >
               {Array.from({ length: 3 }, (_, index) => (
                 <Skeleton
                   key={index}

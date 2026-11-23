@@ -649,7 +649,10 @@ export function Combobox({
               {loadingMore ? (
                 <>
                   <CommandSeparator />
-                  <LoadingRegion srLabel={loadingMoreText} className="px-2 py-2">
+                  <LoadingRegion
+                    srLabel={loadingMoreText}
+                    className="px-2 py-2"
+                  >
                     <SkeletonLine size="sm" barClassName="w-2/3" />
                   </LoadingRegion>
                 </>

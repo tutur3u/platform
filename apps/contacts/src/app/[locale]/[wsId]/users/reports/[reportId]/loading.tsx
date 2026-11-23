@@ -1,4 +1,8 @@
-import { LoadingRegion, SkeletonCard, SkeletonLine } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  SkeletonCard,
+  SkeletonLine,
+} from '@tuturuuu/ui/skeleton';
 import { getTranslations } from 'next-intl/server';
 
 export default async function Loading() {

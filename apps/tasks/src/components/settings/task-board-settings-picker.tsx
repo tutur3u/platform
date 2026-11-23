@@ -8,10 +8,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
-import {
-  LoadingRegion,
-  SkeletonSelectorTrigger,
-} from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, SkeletonSelectorTrigger } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 

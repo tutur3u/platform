@@ -211,7 +211,10 @@ export default function SessionsCard() {
         description={
           <span
             aria-hidden="true"
-            className={cn(skeletonClassName, 'inline-block h-3.5 w-64 max-w-full')}
+            className={cn(
+              skeletonClassName,
+              'inline-block h-3.5 w-64 max-w-full'
+            )}
           />
         }
       >

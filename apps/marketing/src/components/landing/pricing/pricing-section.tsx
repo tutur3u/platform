@@ -195,7 +195,9 @@ export function PricingSection() {
           </p>
         )}
         {pricesPending && (
-          <p role="status" className="sr-only">{t('pricesLoading')}</p>
+          <p role="status" className="sr-only">
+            {t('pricesLoading')}
+          </p>
         )}
         <FeatureMatrix />
       </Reveal>

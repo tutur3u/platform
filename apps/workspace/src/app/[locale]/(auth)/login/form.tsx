@@ -1818,7 +1818,8 @@ export default function LoginForm({
                     )}
                   />
 
-                  <Button aria-busy={loading}
+                  <Button
+                    aria-busy={loading}
                     type="submit"
                     className="h-12 w-full rounded-2xl font-medium shadow-lg"
                     disabled={loading || totpForm.watch('totp').length !== 6}
@@ -1886,7 +1887,8 @@ export default function LoginForm({
                           </div>
                         </div>
                       ) : (
-                        <Button aria-busy={createMobileMfaChallengeMutation.isPending}
+                        <Button
+                          aria-busy={createMobileMfaChallengeMutation.isPending}
                           type="button"
                           variant="secondary"
                           className="h-10 rounded-xl"
@@ -1898,10 +1900,14 @@ export default function LoginForm({
                             createMobileMfaChallengeMutation.mutate()
                           }
                         >
-                          {createMobileMfaChallengeMutation.isPending ? <LoadingIndicator className="size-4" /> : null}
+                          {createMobileMfaChallengeMutation.isPending ? (
+                            <LoadingIndicator className="size-4" />
+                          ) : null}
                           {t('login.mobile_mfa_button')}
                           {createMobileMfaChallengeMutation.isPending ? (
-                            <span className="sr-only">{t('common.loading')}</span>
+                            <span className="sr-only">
+                              {t('common.loading')}
+                            </span>
                           ) : null}
                         </Button>
                       )}
@@ -2020,7 +2026,8 @@ export default function LoginForm({
                       </div>
                     ) : null}
 
-                    <Button aria-busy={loading || isResolvingOtpEnablement}
+                    <Button
+                      aria-busy={loading || isResolvingOtpEnablement}
                       type="submit"
                       className="h-12 w-full rounded-2xl font-medium shadow-lg"
                       disabled={
@@ -2031,7 +2038,9 @@ export default function LoginForm({
                           isCaptchaBlockingPasswordSubmit)
                       }
                     >
-                      {loading || isResolvingOtpEnablement ? <LoadingIndicator className="h-4 w-4" /> : null}
+                      {loading || isResolvingOtpEnablement ? (
+                        <LoadingIndicator className="h-4 w-4" />
+                      ) : null}
                       {t('login.continue_with_email')}
                       {loading || isResolvingOtpEnablement ? (
                         <span className="sr-only">{t('common.loading')}</span>
@@ -2135,12 +2144,15 @@ export default function LoginForm({
                       )}
                     />
 
-                    <Button aria-busy={loading}
+                    <Button
+                      aria-busy={loading}
                       type="submit"
                       className="h-12 w-full rounded-2xl font-medium shadow-lg"
                       disabled={loading || otpValue.length !== 6}
                     >
-                      {loading ? <LoadingIndicator className="h-4 w-4" /> : null}
+                      {loading ? (
+                        <LoadingIndicator className="h-4 w-4" />
+                      ) : null}
                       {t('login.verify_button')}
                       {loading ? (
                         <span className="sr-only">{t('common.loading')}</span>
@@ -2306,7 +2318,8 @@ export default function LoginForm({
                       </div>
                     ) : null}
 
-                    <Button aria-busy={loading}
+                    <Button
+                      aria-busy={loading}
                       type="submit"
                       className="h-12 w-full rounded-2xl font-medium shadow-lg"
                       disabled={
@@ -2315,7 +2328,9 @@ export default function LoginForm({
                         isCaptchaBlockingPasswordSubmit
                       }
                     >
-                      {loading ? <LoadingIndicator className="h-4 w-4" /> : null}
+                      {loading ? (
+                        <LoadingIndicator className="h-4 w-4" />
+                      ) : null}
                       {t('login.sign_in')}
                       {loading ? (
                         <span className="sr-only">{t('common.loading')}</span>

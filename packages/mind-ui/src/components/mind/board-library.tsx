@@ -95,10 +95,7 @@ export function BoardLibrary({
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         <div className="space-y-1.5">
           {loading ? (
-            <LoadingRegion
-              srLabel={t('loadingBoards')}
-              className="space-y-1.5"
-            >
+            <LoadingRegion srLabel={t('loadingBoards')} className="space-y-1.5">
               {Array.from({ length: 4 }, (_, index) => (
                 <div
                   // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders

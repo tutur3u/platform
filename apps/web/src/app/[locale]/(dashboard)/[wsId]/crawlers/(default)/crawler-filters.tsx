@@ -5,10 +5,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  LoadingRegion,
-  SkeletonSelectorTrigger,
-} from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, SkeletonSelectorTrigger } from '@tuturuuu/ui/skeleton';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
@@ -118,7 +115,8 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
               const selectedValue = Array.isArray(value) ? value[0] : value;
               router.push(
                 `${pathname}?${createQueryString({
-                  domain: selectedValue === 'all' ? null : selectedValue || null,
+                  domain:
+                    selectedValue === 'all' ? null : selectedValue || null,
                   page: '1',
                 })}`
               );

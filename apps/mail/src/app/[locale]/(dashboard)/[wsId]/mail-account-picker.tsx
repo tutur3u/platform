@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Check,
-  ChevronsUpDown,
-  Mail,
-  Settings,
-  Users,
-} from '@tuturuuu/icons';
+import { Check, ChevronsUpDown, Mail, Settings, Users } from '@tuturuuu/icons';
 import type { ConnectedMailAccount, MailMailbox } from '@tuturuuu/internal-api';
 import {
   Command,
@@ -83,10 +77,7 @@ export function MailAccountPicker({
                 )}
               />
               <span className="min-w-0 flex-1">
-                <LoadingPlaceholder
-                  srLabel={t('loading')}
-                  className="w-32"
-                />
+                <LoadingPlaceholder srLabel={t('loading')} className="w-32" />
               </span>
             </>
           ) : activeMailbox || activeAccount ? (

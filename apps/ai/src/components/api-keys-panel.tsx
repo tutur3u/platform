@@ -125,10 +125,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
             <>
               <Badge variant={approved ? 'default' : 'secondary'}>
                 {keysQuery.isPending ? (
-                  <LoadingPlaceholder
-                    className="w-14"
-                    srLabel={t('loading')}
-                  />
+                  <LoadingPlaceholder className="w-14" srLabel={t('loading')} />
                 ) : approved ? (
                   t('approved')
                 ) : (

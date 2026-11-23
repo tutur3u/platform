@@ -178,7 +178,11 @@ export function InviteLinkFormDialog({
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                aria-busy={isSubmitting}
+              >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
                 ) : null}

@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  ExternalLink,
-  FileText,
-  ImageIcon,
-  Link2,
-} from '@tuturuuu/icons';
+import { ExternalLink, FileText, ImageIcon, Link2 } from '@tuturuuu/icons';
 import type { ChatAttachment, ChatSharedLink } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';

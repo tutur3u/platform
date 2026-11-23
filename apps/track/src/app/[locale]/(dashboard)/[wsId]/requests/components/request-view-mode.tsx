@@ -97,7 +97,10 @@ export function RequestViewMode({
               className="grid gap-3 sm:grid-cols-3"
             >
               {request.images.map((image, index) => (
-                <Skeleton key={`${index}-${image}`} className="h-48 rounded-lg" />
+                <Skeleton
+                  key={`${index}-${image}`}
+                  className="h-48 rounded-lg"
+                />
               ))}
             </LoadingRegion>
           ) : (

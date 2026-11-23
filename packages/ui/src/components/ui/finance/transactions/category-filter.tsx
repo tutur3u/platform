@@ -124,7 +124,11 @@ export function CategoryFilter({
               <CommandEmpty>
                 {isLoading ? (
                   <LoadingRegion srLabel={t('finance.loading_categories')}>
-                    <SkeletonList rows={4} withAvatar={false} withSubtitle={false} />
+                    <SkeletonList
+                      rows={4}
+                      withAvatar={false}
+                      withSubtitle={false}
+                    />
                   </LoadingRegion>
                 ) : (
                   t('finance.no_categories_found')

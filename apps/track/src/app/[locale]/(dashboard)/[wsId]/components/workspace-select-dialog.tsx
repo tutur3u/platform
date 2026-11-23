@@ -16,10 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import {
-  LoadingRegion,
-  SkeletonSelectorTrigger,
-} from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, SkeletonSelectorTrigger } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

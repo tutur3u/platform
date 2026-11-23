@@ -250,18 +250,18 @@ export default function MissedEntryDialog(props: MissedEntryDialogProps) {
                       {t('approval.title')}
                     </p>
                     <p className="mt-1 text-muted-foreground">
-                      {isLoadingThreshold || thresholdDays === undefined
-                        ? (
-                            <LoadingPlaceholder
-                              srLabel={t('approval.loadingThreshold')}
-                              className="w-56"
-                            />
-                          )
-                        : thresholdDays === 0 || thresholdDays === null
-                          ? t('approval.allEntries')
-                          : t('approval.entriesOlderThan', {
-                              days: thresholdDays,
-                            })}
+                      {isLoadingThreshold || thresholdDays === undefined ? (
+                        <LoadingPlaceholder
+                          srLabel={t('approval.loadingThreshold')}
+                          className="w-56"
+                        />
+                      ) : thresholdDays === 0 || thresholdDays === null ? (
+                        t('approval.allEntries')
+                      ) : (
+                        t('approval.entriesOlderThan', {
+                          days: thresholdDays,
+                        })
+                      )}
                     </p>
                   </div>
                 </div>

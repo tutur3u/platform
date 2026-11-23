@@ -890,7 +890,9 @@ export function BoardActivitySettings({
               <Button
                 className="h-8"
                 aria-busy={isFetchingNextPage}
-                aria-label={isFetchingNextPage ? t('common.loading') : undefined}
+                aria-label={
+                  isFetchingNextPage ? t('common.loading') : undefined
+                }
                 disabled={isFetchingNextPage}
                 onClick={() => void fetchNextPage()}
                 size="sm"

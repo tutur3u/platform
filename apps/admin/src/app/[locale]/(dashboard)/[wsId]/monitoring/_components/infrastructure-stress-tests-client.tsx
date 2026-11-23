@@ -3,7 +3,11 @@
 import { Activity, Clock, Gauge, Users } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { MetricBlock } from './blue-green-monitoring-panel-primitives';
 import { useInfrastructureStressTestSnapshot } from './blue-green-monitoring-query-hooks';

@@ -118,32 +118,32 @@ export function ExternalChatMigrationLab({ wsId: _wsId }: { wsId: string }) {
       >
         <MessageSquare className="size-4" />
         <AlertTitle>
-          {!targetWsId
-            ? t('select_workspace')
-            : state.isLoading
-              ? (
-                  <LoadingPlaceholder srLabel={t('loading')} className="w-40" />
-                )
-              : state.isError
-                ? t('load_error')
-                : state.data?.readiness.ready
-                  ? t('ready')
-                  : t('prerequisites')}
+          {!targetWsId ? (
+            t('select_workspace')
+          ) : state.isLoading ? (
+            <LoadingPlaceholder srLabel={t('loading')} className="w-40" />
+          ) : state.isError ? (
+            t('load_error')
+          ) : state.data?.readiness.ready ? (
+            t('ready')
+          ) : (
+            t('prerequisites')
+          )}
         </AlertTitle>
         <AlertDescription>
-          {!targetWsId
-            ? t('select_workspace_description')
-            : state.isLoading
-              ? (
-                  <SkeletonLine size="sm" barClassName="w-2/3" />
-                )
-              : state.isError
-                ? t('load_error')
-                : state.data?.readiness.ready
-                  ? t('ready_description')
-                  : t('missing', {
-                      count: state.data?.readiness.errors.length ?? 1,
-                    })}
+          {!targetWsId ? (
+            t('select_workspace_description')
+          ) : state.isLoading ? (
+            <SkeletonLine size="sm" barClassName="w-2/3" />
+          ) : state.isError ? (
+            t('load_error')
+          ) : state.data?.readiness.ready ? (
+            t('ready_description')
+          ) : (
+            t('missing', {
+              count: state.data?.readiness.errors.length ?? 1,
+            })
+          )}
         </AlertDescription>
       </Alert>
 

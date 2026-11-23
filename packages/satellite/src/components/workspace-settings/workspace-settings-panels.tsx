@@ -1,11 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  AlertTriangle,
-  ExternalLink,
-  RefreshCw,
-} from '@tuturuuu/icons';
+import { AlertTriangle, ExternalLink, RefreshCw } from '@tuturuuu/icons';
 import {
   getWorkspace,
   getWorkspaceAiCreditStatus,

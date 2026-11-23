@@ -84,14 +84,14 @@ export function InventoryMergeProductSelect({
         emptyText={products.isFetching ? '' : t('noOptions')}
         hasMore={products.hasNextPage}
         label={
-          value ? (
-            selectedName ||
-            (selected.isError ? (
-              t('labelsError')
-            ) : (
-              <LoadingPlaceholder srLabel={t('loading')} />
-            ))
-          ) : undefined
+          value
+            ? selectedName ||
+              (selected.isError ? (
+                t('labelsError')
+              ) : (
+                <LoadingPlaceholder srLabel={t('loading')} />
+              ))
+            : undefined
         }
         loadMoreText={t('loadMore')}
         loadingMore={products.isFetchingNextPage}

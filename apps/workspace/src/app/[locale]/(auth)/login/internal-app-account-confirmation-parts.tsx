@@ -96,7 +96,11 @@ export function ProfileLoadingState({
         <span className="sr-only">{srLabelDetail}</span>
         <div className="flex flex-col items-center gap-3">
           <SkeletonAvatar className="size-16" />
-          <SkeletonLine className="w-full" barClassName="mx-auto w-3/5" size="xl" />
+          <SkeletonLine
+            className="w-full"
+            barClassName="mx-auto w-3/5"
+            size="xl"
+          />
           <SkeletonText className="w-full" lines={2} />
         </div>
         <div className="rounded-2xl border p-4">

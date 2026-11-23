@@ -218,7 +218,10 @@ export function AdminDefaultModelPicker({
         </div>
         <div className="mt-2 max-h-72 overflow-y-auto rounded-md border">
           {modelPages.isLoading ? (
-            <LoadingRegion srLabel={String(t('loading_models'))} className="p-2">
+            <LoadingRegion
+              srLabel={String(t('loading_models'))}
+              className="p-2"
+            >
               <SkeletonList rows={4} withAvatar={false} />
             </LoadingRegion>
           ) : models.length === 0 ? (

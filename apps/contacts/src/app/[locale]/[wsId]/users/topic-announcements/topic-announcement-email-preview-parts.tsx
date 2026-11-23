@@ -3,7 +3,11 @@
 import { AlertTriangle, Paperclip } from '@tuturuuu/icons';
 import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
-import { LoadingRegion, SkeletonLine, SkeletonText } from '@tuturuuu/ui/skeleton';
+import {
+  LoadingRegion,
+  SkeletonLine,
+  SkeletonText,
+} from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { AnnouncementAttachmentPreview } from './announcement-attachment-preview';

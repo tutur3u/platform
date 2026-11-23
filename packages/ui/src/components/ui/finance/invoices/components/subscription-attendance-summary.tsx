@@ -11,11 +11,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  LoadingRegion,
-  Skeleton,
-  SkeletonLine,
-} from '@tuturuuu/ui/skeleton';
+import { LoadingRegion, Skeleton, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import {
   Select,
   SelectContent,

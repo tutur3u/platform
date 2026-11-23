@@ -10,11 +10,7 @@ export function MailListSkeleton({ srLabel }: { srLabel: string }) {
   return (
     <LoadingRegion srLabel={srLabel} className="space-y-1">
       {[0, 1, 2, 3, 4].map((row) => (
-        <div
-          key={row}
-          aria-hidden="true"
-          className="rounded-lg border p-3"
-        >
+        <div key={row} aria-hidden="true" className="rounded-lg border p-3">
           <SkeletonLine size="sm" barClassName="w-1/3" />
           <SkeletonLine size="base" barClassName="w-3/4" />
         </div>
