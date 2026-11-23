@@ -239,6 +239,8 @@ export function CallStage({
     );
   }, [cameraWindow, room.setStageVideoWindow, spotlightUserId]);
 
+  // Size containment would confine a fixed focus view to the stage rect.
+  const [focusView, setFocusView] = useState(false);
   const focusTile = useCallback(
     (key: string | null) => {
       if (key && paged) setPage(0);
@@ -270,6 +272,7 @@ export function CallStage({
       focused={(!share || tile.kind === 'screen') && focus === tile.key}
       focusKey={tile.key}
       onFocus={share && tile.kind === 'camera' ? undefined : focusTile}
+      onFocusView={setFocusView}
       onRetry={room.reconnectReceivingMedia}
       onRenderedHeight={room.reportTileHeight}
       onMute={
@@ -312,7 +315,12 @@ export function CallStage({
     return horizontalStrip ? 'row-start-3 min-h-0' : 'min-h-0';
   };
   return (
-    <div className="flex h-full min-h-0 flex-col [container-type:size]">
+    <div
+      className={cn(
+        'flex h-full min-h-0 flex-col',
+        !focusView && '[container-type:size]'
+      )}
+    >
       <VideoPausedNotice policy={room.mediaPolicy} />
       {!compact && !spotlight && count > 1 && (
         <div className="flex shrink-0 justify-end p-1">

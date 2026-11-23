@@ -1,5 +1,6 @@
 'use client';
 import {
+  Expand,
   Hand,
   Maximize,
   MicOff,
@@ -26,6 +27,7 @@ import {
 } from './media-receiving-status';
 import { MiraAudioStatus } from './mira-audio-status';
 import { usePlaybackVolume } from './playback-volume';
+import { useIdleControls } from '../hooks/use-idle-controls';
 import { useRenderedHeight } from '../hooks/use-rendered-height';
 
 function ParticipantTileImpl({
@@ -45,6 +47,7 @@ function ParticipantTileImpl({
   stream,
   kind = 'camera',
   onFocus,
+  onFocusView,
   onMute,
   onRetry,
   focused,
@@ -69,6 +72,8 @@ function ParticipantTileImpl({
   stream?: MediaStream | null;
   kind?: 'camera' | 'screen';
   onFocus?: (key: string | null) => void;
+  /** Reports when the tile enters or leaves the in-app focus view. */
+  onFocusView?: (active: boolean) => void;
   onMute?: (userId: string) => void;
   onRetry?: () => void;
   focusKey?: string;
@@ -99,6 +104,9 @@ function ParticipantTileImpl({
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const tileRef = useRef<HTMLDivElement>(null);
+  const maximizeRef = useRef<HTMLButtonElement>(null);
+  const exitFocusRef = useRef<HTMLButtonElement>(null);
+  const wasExpanded = useRef(false);
   const userId = participant.userId;
   const reportHeight = useMemo(
     () =>
@@ -133,7 +141,9 @@ function ParticipantTileImpl({
     const changed = () =>
       setFullscreen(document.fullscreenElement === tileRef.current);
     const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setExpanded(false);
+      // Browser full screen consumes Esc itself; focus view handles the rest.
+      if (event.key === 'Escape' && !document.fullscreenElement)
+        setExpanded(false);
     };
     document.addEventListener('fullscreenchange', changed);
     document.addEventListener('keydown', onEscape);
@@ -142,6 +152,22 @@ function ParticipantTileImpl({
       document.removeEventListener('keydown', onEscape);
     };
   }, []);
+  useEffect(() => {
+    if (expanded) exitFocusRef.current?.focus();
+    else if (wasExpanded.current) {
+      if (document.fullscreenElement === tileRef.current)
+        void document.exitFullscreen().catch(() => undefined);
+      maximizeRef.current?.focus();
+    }
+    wasExpanded.current = expanded;
+  }, [expanded]);
+  useEffect(() => {
+    if (!onFocusView || !expanded) return;
+    onFocusView(true);
+    return () => onFocusView(false);
+  }, [expanded, onFocusView]);
+  const controlsVisible = useIdleControls(tileRef, expanded);
+  const controlsHidden = expanded && !controlsVisible;
   const readiness = useStreamReadiness(stream);
   const showVideo = Boolean(
     presentingVideo &&
@@ -173,6 +199,7 @@ function ParticipantTileImpl({
     <div
       ref={tileRef}
       data-testid={`participant-${participant.userId}-${kind}`}
+      data-focus-view={expanded || undefined}
       className={cn(
         '@container group relative isolate min-h-0 overflow-hidden rounded-2xl bg-muted/40 ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
@@ -180,7 +207,7 @@ function ParticipantTileImpl({
           kind === 'camera' &&
           'shadow-dynamic-orange/15 shadow-lg ring-2 ring-dynamic-orange',
         className,
-        expanded && 'fixed inset-0 z-50 h-dvh w-screen! rounded-none'
+        expanded && 'fixed inset-0 z-50 size-full rounded-none bg-background'
       )}
     >
       <audio
@@ -269,7 +296,8 @@ function ParticipantTileImpl({
       )}
       <div
         className={cn(
-          'absolute inset-x-0 bottom-0 flex items-end gap-2 bg-gradient-to-t to-transparent px-3 py-2',
+          'absolute inset-x-0 bottom-0 flex items-end gap-2 bg-gradient-to-t to-transparent px-3 py-2 motion-safe:transition-opacity',
+          controlsHidden && 'pointer-events-none opacity-0',
           showVideo
             ? 'from-media-scrim text-media-scrim-foreground'
             : 'from-background/90 text-foreground'
@@ -341,7 +369,14 @@ function ParticipantTileImpl({
           )}
       </div>
       {!floating && (
-        <div className="absolute top-2 right-2 flex gap-1 rounded-lg @max-[12rem]:top-1 @max-[12rem]:right-1 @max-[12rem]:gap-0.5 @max-[12rem]:p-0.5 bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+        <div
+          className={cn(
+            'absolute top-2 right-2 flex gap-1 rounded-lg @max-[12rem]:top-1 @max-[12rem]:right-1 @max-[12rem]:gap-0.5 @max-[12rem]:p-0.5 bg-background/80 p-1 opacity-100 backdrop-blur motion-safe:transition-opacity',
+            expanded
+              ? controlsHidden && 'pointer-events-none opacity-0'
+              : 'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100'
+          )}
+        >
           {!isSelf && audioTrack && (
             <Button
               size="icon"
@@ -365,7 +400,7 @@ function ParticipantTileImpl({
               )}
             </Button>
           )}
-          {onFocus && (
+          {onFocus && !expanded && (
             <Button
               size="icon"
               variant={focused ? 'secondary' : 'ghost'}
@@ -381,36 +416,63 @@ function ParticipantTileImpl({
               <Pin className="size-4" />
             </Button>
           )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8 @max-[12rem]:size-6"
-            aria-label={t(
-              expanded || fullscreen ? 'exit_fullscreen' : 'fullscreen_feed'
-            )}
-            onClick={() => {
-              if (expanded) {
-                setExpanded(false);
-                return;
-              }
-              if (fullscreen) {
-                void document.exitFullscreen();
-                return;
-              }
-              const tile = tileRef.current;
-              if (!tile?.requestFullscreen) {
-                setExpanded(true);
-                return;
-              }
-              void tile.requestFullscreen().catch(() => setExpanded(true));
-            }}
-          >
-            {expanded || fullscreen ? (
-              <Minimize className="size-4" />
-            ) : (
-              <Maximize className="size-4" />
-            )}
-          </Button>
+          {expanded && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 gap-1.5"
+              aria-label={t(
+                fullscreen ? 'exit_browser_fullscreen' : 'browser_fullscreen'
+              )}
+              title={t(
+                fullscreen ? 'exit_browser_fullscreen' : 'browser_fullscreen'
+              )}
+              aria-pressed={fullscreen}
+              onClick={() => {
+                if (fullscreen) {
+                  void document.exitFullscreen().catch(() => undefined);
+                  return;
+                }
+                const tile = tileRef.current;
+                if (!tile?.requestFullscreen) return;
+                // A rejected request leaves the in-app focus view in place.
+                void Promise.resolve(tile.requestFullscreen()).catch(
+                  () => undefined
+                );
+              }}
+            >
+              <Expand className="size-4" />
+              <span className="@max-[20rem]:sr-only">
+                {t(
+                  fullscreen ? 'exit_browser_fullscreen' : 'browser_fullscreen'
+                )}
+              </span>
+            </Button>
+          )}
+          {!(expanded && fullscreen) && (
+            <Button
+              ref={expanded ? exitFocusRef : maximizeRef}
+              size={expanded ? 'sm' : 'icon'}
+              variant="ghost"
+              className={cn(
+                expanded ? 'h-8 gap-1.5' : 'size-8 @max-[12rem]:size-6'
+              )}
+              aria-label={t(expanded ? 'exit_focus_view' : 'focus_view')}
+              title={t(expanded ? 'exit_focus_view' : 'focus_view')}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? (
+                <>
+                  <Minimize className="size-4" />
+                  <span className="@max-[20rem]:sr-only">
+                    {t('exit_focus_view')}
+                  </span>
+                </>
+              ) : (
+                <Maximize className="size-4" />
+              )}
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -446,6 +508,7 @@ export const ParticipantTile = memo(
     a.focused === b.focused &&
     a.focusKey === b.focusKey &&
     a.onFocus === b.onFocus &&
+    a.onFocusView === b.onFocusView &&
     a.onMute === b.onMute &&
     a.onRetry === b.onRetry
 );
