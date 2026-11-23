@@ -11,9 +11,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { preconnect, prefetchDNS } from 'react-dom';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
+import { GUEST_TURNSTILE_SCRIPT_SRC } from '../lib/guest-turnstile-recovery';
 import { GuestTurnstile } from './guest-turnstile';
 
 /** One state at a time: the check and the request never disagree. */
@@ -53,8 +54,11 @@ export function MeetGuestJoin({
   meetingTitle,
   returnTo,
   siteKey,
+  scriptNonce,
 }: {
   meetingId: string;
+  /** The response's CSP nonce, for the server-rendered Turnstile script. */
+  scriptNonce?: string;
   /** Shown only when the host made the meeting details public. */
   meetingTitle?: string;
   returnTo: string;
@@ -67,6 +71,13 @@ export function MeetGuestJoin({
   const t = useTranslations('meet.call.guest_join');
   const router = useRouter();
   const [name, setName] = useState('');
+  // The name field is uncontrolled: WebKit can take seconds to hydrate, and
+  // a controlled input would erase what the guest typed before that.
+  const nameInput = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    const typed = nameInput.current?.value;
+    if (typed) setName(typed);
+  }, []);
   const [state, setState] = useState<GuestJoinState>({ kind: 'verifying' });
   const [stalled, setStalled] = useState(false);
   // A Turnstile token is single-use: a fresh widget issues the next one.
@@ -129,6 +140,14 @@ export function MeetGuestJoin({
 
   return (
     <main className="grid min-h-dvh place-items-center bg-background p-4">
+      {scriptNonce ? (
+        <script
+          async
+          id="cf-turnstile-script"
+          nonce={scriptNonce}
+          src={GUEST_TURNSTILE_SCRIPT_SRC}
+        />
+      ) : null}
       <form
         className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm sm:p-8"
         onSubmit={(event) => {
@@ -151,7 +170,7 @@ export function MeetGuestJoin({
             autoComplete="name"
             maxLength={MEET_GUEST_NAME_MAX}
             placeholder={t('name_placeholder')}
-            value={name}
+            ref={nameInput}
             onChange={(event) => setName(event.target.value)}
             disabled={busy}
             required

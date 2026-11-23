@@ -1,4 +1,5 @@
 import {
+  TURNSTILE_SCRIPT_URL,
   createTurnstileRetryScheduler,
   isPermanentTurnstileError,
   type TurnstileRetryScheduler,
@@ -13,6 +14,12 @@ import {
 export const GUEST_TURNSTILE_WATCHDOG_MS = 5000;
 /** Automatic fresh-widget retries (1 s, 2 s, 4 s) before the widget gives way. */
 export const GUEST_TURNSTILE_MAX_RETRIES = 3;
+/**
+ * The exact script URL the Turnstile React widget injects. Rendering it from
+ * the server under the CSP nonce starts the download before hydration, and
+ * the widget then reuses the tag instead of injecting another.
+ */
+export const GUEST_TURNSTILE_SCRIPT_SRC = `${TURNSTILE_SCRIPT_URL}?onload=onloadTurnstileCallback&render=explicit`;
 /** First fresh-widget delay; it doubles per retry. */
 export const GUEST_TURNSTILE_RETRY_BASE_MS = 1000;
 

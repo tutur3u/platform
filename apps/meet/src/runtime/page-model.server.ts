@@ -1,3 +1,4 @@
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { isMeetClassroomEnabled } from '@/features/classroom-tools/access.server';
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tanstack/react-router';
@@ -146,6 +147,9 @@ async function roomModel(code: string, locale: string, url: URL) {
       kind: 'guest-join' as const,
       meetingId: guestJoin.meetingId,
       siteKey: guestJoin.siteKey,
+      // Lets the join page server-render the Turnstile script under the
+      // response's CSP nonce, so it loads while the page hydrates.
+      scriptNonce: requestNonce(),
       meetingTitle: info?.title,
       returnTo,
       meta: roomMeta(info),

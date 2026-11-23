@@ -27,6 +27,7 @@ export function RoomView({
         meetingTitle={model.meetingTitle}
         returnTo={model.returnTo}
         siteKey={model.siteKey}
+        scriptNonce={model.scriptNonce}
       />
     );
   if (model.kind === 'public-invite')

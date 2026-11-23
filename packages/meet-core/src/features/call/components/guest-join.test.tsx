@@ -7,6 +7,8 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GUEST_TURNSTILE_WATCHDOG_MS } from '../lib/guest-turnstile-recovery';
 import { guestJoinFailure, MeetGuestJoin } from './guest-join';
@@ -279,4 +281,40 @@ it('keeps the puzzle available once Turnstile is unsupported', () => {
   setup();
   act(() => widget().onUnsupported());
   expect(screen.getByRole('button', { name: 'puzzle_start' })).toBeTruthy();
+});
+
+it('keeps a name typed before hydration', async () => {
+  const props = {
+    meetingId: '7f2a528e-3bff-40ee-bfda-5b944ad03ed8',
+    returnTo: '/r/abc',
+    siteKey: 'site-key',
+  };
+  const host = document.createElement('div');
+  host.innerHTML = renderToString(<MeetGuestJoin {...props} />);
+  document.body.append(host);
+  const input = host.querySelector('input') as HTMLInputElement;
+  input.value = 'Fast typer';
+  await act(async () => {
+    hydrateRoot(host, <MeetGuestJoin {...props} />);
+  });
+  expect(input.value).toBe('Fast typer');
+  expect(
+    screen.getByRole('button', { name: 'ask_host_without_verification' })
+  ).toHaveProperty('disabled', false);
+  host.remove();
+});
+
+it('server-renders the Turnstile script under the CSP nonce', () => {
+  const html = renderToString(
+    <MeetGuestJoin
+      meetingId="7f2a528e-3bff-40ee-bfda-5b944ad03ed8"
+      returnTo="/r/abc"
+      siteKey="site-key"
+      scriptNonce="nonce-123"
+    />
+  );
+  expect(html).toContain('nonce="nonce-123"');
+  expect(html).toContain(
+    'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&amp;render=explicit'
+  );
 });
