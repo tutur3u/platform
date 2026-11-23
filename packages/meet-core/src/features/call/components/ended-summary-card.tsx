@@ -4,9 +4,9 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 /**
- * The closed room's identity card: meeting name, status, facts, the primary
- * and Back actions, a quiet row of secondary actions and, on phones, the
- * open notes reader.
+ * The closed room's identity card: title, meeting name, facts, one primary
+ * and at most one secondary action, a quiet overflow menu and, on phones,
+ * the open notes reader.
  */
 export function EndedSummaryCard({
   meetingName,
@@ -15,7 +15,7 @@ export function EndedSummaryCard({
   facts,
   saving,
   actions,
-  secondary,
+  more,
   reader,
 }: {
   meetingName: string;
@@ -23,10 +23,10 @@ export function EndedSummaryCard({
   hint?: string;
   facts?: ReactNode;
   saving: boolean;
-  /** Primary action first, then Back to Meet. */
+  /** One primary action, then at most one secondary. */
   actions: ReactNode;
-  /** Quiet ghost actions under a divider; omitted when empty. */
-  secondary?: ReactNode;
+  /** The quiet overflow menu under the actions. */
+  more?: ReactNode;
   /** Phone layout only: the open reader inside the card. */
   reader?: ReactNode;
 }) {
@@ -34,21 +34,21 @@ export function EndedSummaryCard({
   return (
     <section
       aria-labelledby="meet-ended-title"
-      className="grid w-full justify-items-center gap-5 rounded-3xl border bg-card px-5 py-7 text-center text-card-foreground shadow-sm sm:px-7"
+      className="grid w-full justify-items-center gap-6 rounded-3xl border bg-card px-5 py-8 text-center text-card-foreground shadow-sm sm:px-7"
     >
       <span className="grid size-12 place-items-center rounded-full bg-muted text-muted-foreground">
         <PhoneOff aria-hidden="true" className="size-5" />
       </span>
       <div className="grid max-w-full gap-1.5">
-        <p className="break-words font-semibold text-muted-foreground text-sm">
-          {meetingName}
-        </p>
         <h1
           id="meet-ended-title"
           className="text-balance font-semibold text-2xl tracking-tight"
         >
           {title}
         </h1>
+        <p className="break-words text-muted-foreground text-sm">
+          {meetingName}
+        </p>
         {hint && (
           <p className="text-pretty text-muted-foreground text-sm">{hint}</p>
         )}
@@ -65,11 +65,7 @@ export function EndedSummaryCard({
       )}
       <div className="grid w-full gap-2">{actions}</div>
       {reader}
-      {secondary && (
-        <div className="flex w-full flex-wrap items-center justify-center gap-1 border-t pt-4">
-          {secondary}
-        </div>
-      )}
+      {more && <div className="flex justify-center">{more}</div>}
     </section>
   );
 }

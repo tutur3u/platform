@@ -30,6 +30,8 @@ export function EndedMeetingSettings({
   onShareNotesChange,
   variant = 'outline',
   size,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   canManage: boolean;
   /** Present on the ended page: hosts get the after-meeting notes switch. */
@@ -37,11 +39,17 @@ export function EndedMeetingSettings({
   onShareNotesChange?: (enabled: boolean) => void;
   variant?: ButtonProps['variant'];
   size?: ButtonProps['size'];
+  /** Controlled by a menu item; the dialog then has no trigger button. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   wsId: string;
   meetingId: string;
 }) {
   const t = useTranslations('meet.call');
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const controlled = controlledOpen !== undefined;
+  const open = controlled ? controlledOpen : ownOpen;
+  const setOpen = controlled ? (onOpenChange ?? (() => {})) : setOwnOpen;
   const ai = useQuery({
     queryKey: ['meet-ai', wsId, meetingId],
     queryFn: () => getMeetAiState(wsId, meetingId),
@@ -50,12 +58,14 @@ export function EndedMeetingSettings({
   });
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant={variant} size={size}>
-          <Settings2 className="size-4" />
-          {t('settings_title')}
-        </Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button variant={variant} size={size}>
+            <Settings2 className="size-4" />
+            {t('settings_title')}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('settings_title')}</DialogTitle>

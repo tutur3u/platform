@@ -67,9 +67,7 @@ vi.mock('./ended-meeting-facts-row', () => ({
 vi.mock('./ended-meeting-rating', () => ({
   EndedMeetingRating: () => <div data-testid="rating" />,
 }));
-vi.mock('./ended-manual-task', () => ({
-  EndedManualTask: () => <button type="button">Add task</button>,
-}));
+vi.mock('./ended-manual-task', () => ({ EndedManualTask: () => null }));
 vi.mock('./new-meeting-button', () => ({
   NewMeetingButton: () => <button type="button">New meeting</button>,
 }));
@@ -157,6 +155,17 @@ function renderEnded(props: Partial<Parameters<typeof CallEnded>[0]> = {}) {
   );
 }
 
+function openMore() {
+  fireEvent.keyDown(
+    screen.getByRole('button', { name: 'More', hidden: true }),
+    {
+      key: 'Enter',
+    }
+  );
+}
+const item = (name: string | RegExp) =>
+  screen.queryByRole('menuitem', { name });
+
 it('renders the supplied notes reader instead of the default reader', () => {
   withAi('both');
   renderEnded({
@@ -165,9 +174,8 @@ it('renders the supplied notes reader instead of the default reader', () => {
   });
   expect(screen.getByTestId('notes-reader')).toBeTruthy();
   expect(screen.queryByTestId('session-notes')).toBeNull();
-  fireEvent.click(
-    screen.getByRole('button', { name: 'Hide notes & transcript' })
-  );
+  openMore();
+  fireEvent.click(item('Hide notes & transcript') as HTMLElement);
   expect(screen.queryByTestId('notes-reader')).toBeNull();
 });
 
@@ -186,61 +194,55 @@ it('shows notes and transcript in tabs only when both exist', () => {
   expect(screen.queryByTestId('transcript')).toBeNull();
 });
 
-it('names the button after what the meeting actually has', () => {
+it('names the overflow reader item after what the meeting actually has', () => {
   withAi('notes');
   renderEnded();
-  fireEvent.click(screen.getByRole('button', { name: 'Show notes' }));
-  expect(screen.getByRole('button', { name: 'Hide notes' })).toBeTruthy();
+  openMore();
+  fireEvent.click(item('Show notes') as HTMLElement);
+  expect(screen.getByTestId('session-notes')).toBeTruthy();
   cleanup();
   withAi('transcript');
   renderEnded();
-  expect(screen.getByRole('button', { name: 'Show transcript' })).toBeTruthy();
+  openMore();
+  expect(item('Show transcript')).toBeTruthy();
   cleanup();
   withAi('both');
   renderEnded();
-  expect(
-    screen.getByRole('button', { name: 'View notes & transcript' })
-  ).toBeTruthy();
+  openMore();
+  expect(item('View notes & transcript')).toBeTruthy();
 });
 
-it('keeps the host task action reachable when there is no reader', () => {
+it('keeps the host task action in the overflow when there is no reader', () => {
   withAi('none');
   renderEnded({ canManage: true });
-  expect(screen.getByRole('button', { name: 'Add task' })).toBeTruthy();
+  openMore();
+  expect(item('Create a follow-up task')).toBeTruthy();
   cleanup();
   withAi('notes');
   renderEnded({ canManage: true });
-  expect(screen.queryByRole('button', { name: 'Add task' })).toBeNull();
+  openMore();
+  expect(item('Create a follow-up task')).toBeNull();
   cleanup();
   withAi('none');
   renderEnded();
-  expect(screen.queryByRole('button', { name: 'Add task' })).toBeNull();
+  openMore();
+  expect(item('Create a follow-up task')).toBeNull();
 });
 
-it('hides the button when there is nothing to read or the read failed', () => {
+it('offers no reader item when there is nothing to read or the read failed', () => {
   withAi('none');
   renderEnded({ initialShowNotes: true });
-  expect(
-    screen.queryByRole('button', { name: /notes|transcript/i })
-  ).toBeNull();
   expect(
     screen.getByRole('link', { name: 'Back to Meet' }).dataset.variant
   ).toBe('default');
+  openMore();
+  expect(item(/notes|transcript/i)).toBeNull();
   cleanup();
   aiState.value = { data: undefined, error: new Error('503') };
   renderEnded({ initialShowNotes: true });
-  expect(
-    screen.queryByRole('button', { name: /notes|transcript/i })
-  ).toBeNull();
+  openMore();
+  expect(item(/notes|transcript/i)).toBeNull();
   expect(screen.queryByText(messages.meet.ai.workspace_unavailable)).toBeNull();
-});
-
-it('holds the button place without a label while the notes state loads', () => {
-  renderEnded();
-  expect(screen.getByTestId('ended-notes-pending')).toBeTruthy();
-  expect(
-    screen.queryByRole('button', { name: /notes|transcript/i })
-  ).toBeNull();
 });
 
 it('places the open reader beside the summary on wide screens', () => {
@@ -273,21 +275,47 @@ it('never renders the notes reader for viewers without notes access', () => {
     notes: <div data-testid="notes-reader" />,
   });
   expect(screen.queryByTestId('notes-reader')).toBeNull();
-  expect(
-    screen.queryByRole('button', { name: /notes|transcript/i })
-  ).toBeNull();
+  expect(screen.queryByRole('button', { name: 'More' })).not.toBeNull();
+  openMore();
+  expect(item(/notes|transcript/i)).toBeNull();
 });
 
-it('leads with the reader and keeps Back to Meet as the secondary action', () => {
+it('has exactly one primary action, Back to Meet, even when notes exist', () => {
   withAi('both');
-  renderEnded({ canReadNotes: true });
-  const primary = screen.getByRole('button', {
-    name: 'View notes & transcript',
-  });
-  expect(primary.className).toContain('w-full');
-  expect(
-    screen.getByRole('link', { name: 'Back to Meet' }).dataset.variant
-  ).toBe('outline');
+  renderEnded({ canReadNotes: true, canStartMeeting: true });
+  const section = screen
+    .getByRole('heading', { name: messages.meet.call.call_ended_title })
+    .closest('section') as HTMLElement;
+  const primaries = [...section.querySelectorAll('a,button')].filter(
+    (el) => (el as HTMLElement).dataset.variant === 'default'
+  );
+  expect(primaries).toHaveLength(1);
+  expect(primaries[0]?.textContent).toBe('Back to Meet');
+  expect(screen.getByRole('button', { name: 'New meeting' })).toBeTruthy();
+});
+
+it('moves Restore, follow-up task and Meeting settings into one More menu with permissions respected', () => {
+  withAi('none');
+  renderEnded({ canManage: true });
+  expect(screen.queryByRole('button', { name: 'Restore meeting' })).toBeNull();
+  openMore();
+  expect(item('Restore meeting')).toBeTruthy();
+  expect(item('Create a follow-up task')).toBeTruthy();
+  expect(item('Meeting settings')).toBeTruthy();
+  cleanup();
+  withAi('none');
+  renderEnded({ canManage: false });
+  openMore();
+  expect(item('Restore meeting')).toBeNull();
+  expect(item('Create a follow-up task')).toBeNull();
+  expect(item('Meeting settings')).toBeTruthy();
+});
+
+it('never mentions choosing who can see the notes', () => {
+  renderEnded({ canManage: true });
+  expect(screen.queryByText(/who can see the notes/i)).toBeNull();
+  const json = JSON.stringify(messages);
+  expect(json).not.toMatch(/who can see the notes/i);
 });
 
 it('makes Back to Meet the primary action when the viewer cannot read notes', () => {
@@ -317,7 +345,7 @@ it('shows a left screen with Rejoin and Back, never the connection error, after 
   ).toBeNull();
 });
 
-it('offers New meeting in the quiet action row only to viewers allowed to start one', () => {
+it('offers New meeting as the single secondary action only to viewers allowed to start one', () => {
   renderEnded({ canStartMeeting: true });
   expect(screen.getByRole('button', { name: 'New meeting' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();

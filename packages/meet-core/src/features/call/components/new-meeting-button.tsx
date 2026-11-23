@@ -17,11 +17,13 @@ export function NewMeetingButton({
   disabled,
   variant = 'outline',
   size = 'sm',
+  className,
 }: {
   wsId: string;
   disabled?: boolean;
   variant?: ButtonProps['variant'];
   size?: ButtonProps['size'];
+  className?: string;
 }) {
   const t = useTranslations('meet');
   const router = useRouter();
@@ -46,6 +48,7 @@ export function NewMeetingButton({
     <Button
       variant={variant}
       size={size}
+      className={className}
       disabled={disabled || busy}
       onClick={() => void start()}
     >

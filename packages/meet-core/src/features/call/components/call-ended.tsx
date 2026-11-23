@@ -10,19 +10,16 @@ import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { useEndedRoom } from '../hooks/use-ended-room';
 import type { CallLifecycle } from '../lib/call-state';
 import { useWideEndedLayout } from './ended-layout';
-import { EndedManualTask } from './ended-manual-task';
 import { EndedMeetingFactsRow } from './ended-meeting-facts-row';
 import { EndedMeetingRating } from './ended-meeting-rating';
-import { EndedMeetingSettings } from './ended-meeting-settings';
+import { EndedMoreMenu } from './ended-more-menu';
 import {
   EndedNotesPanel,
-  EndedNotesToggle,
   isEndedReader,
   useEndedNotes,
 } from './ended-notes-panel';
 import { EndedSummaryCard } from './ended-summary-card';
 import { NewMeetingButton } from './new-meeting-button';
-import { RestoreRoomButton } from './restore-room-button';
 
 const primaryClass = 'h-11 w-full rounded-full';
 
@@ -70,16 +67,6 @@ export function CallEnded({
   const open = showNotes && reader !== null;
   const wide = useWideEndedLayout();
   const rejoinable = !ended;
-  const toggle = (primary: boolean) =>
-    reader && (
-      <EndedNotesToggle
-        reader={reader}
-        open={open}
-        primary={primary}
-        disabled={saving}
-        onToggle={() => setShowNotes(!open)}
-      />
-    );
   const backLink = (primary: boolean) => (
     <Button
       asChild
@@ -104,6 +91,18 @@ export function CallEnded({
       </Link>
     </Button>
   );
+  const showNewMeeting = ended && canStartMeeting;
+  const secondary = rejoinable ? (
+    backLink(false)
+  ) : showNewMeeting ? (
+    <NewMeetingButton
+      wsId={wsId}
+      disabled={saving}
+      variant="outline"
+      size="lg"
+      className={primaryClass}
+    />
+  ) : null;
   const primary = rejoinable ? (
     <Button
       size="lg"
@@ -113,63 +112,14 @@ export function CallEnded({
     >
       {t('rejoin_call')}
     </Button>
-  ) : reader ? (
-    toggle(true)
-  ) : availability === 'loading' ? (
-    <div
-      aria-hidden="true"
-      data-testid="ended-notes-pending"
-      className="h-11 w-full rounded-full bg-muted motion-safe:animate-pulse"
-    />
-  ) : null;
+  ) : (
+    backLink(true)
+  );
   const hint = !ended
     ? t('call_left_hint')
-    : canManage
-      ? t('ended_hint_host_settings')
-      : !canSeeNotes
-        ? t('ended_hint')
-        : reader
-          ? t('ended_hint_reader')
-          : undefined;
-  const secondary = [
-    ended && canManage && (
-      <RestoreRoomButton
-        key="restore"
-        accountId={accountId}
-        meetingId={meetingId}
-        disabled={saving}
-        variant="ghost"
-        size="sm"
-      />
-    ),
-    rejoinable && reader && <span key="notes">{toggle(false)}</span>,
-    canManage && MEETING_APP === 'meet' && availability === 'none' && (
-      <EndedManualTask
-        key="task"
-        wsId={wsId}
-        meetingId={meetingId}
-        disabled={saving}
-      />
-    ),
-    canStartMeeting && (
-      <NewMeetingButton
-        key="new"
-        wsId={wsId}
-        disabled={saving}
-        variant="ghost"
-      />
-    ),
-    <EndedMeetingSettings
-      key="settings"
-      wsId={wsId}
-      meetingId={meetingId}
-      canManage={canManage}
-      shareNotesAfterMeeting={shareAfter}
-      onShareNotesChange={setShareAfter}
-      variant="ghost"
-      size="sm"
-    />,
-  ].filter(Boolean);
+    : !canSeeNotes
+      ? t('ended_hint')
+      : undefined;
   const content =
     open && reader
       ? (notes ?? <EndedNotesPanel ai={ai} reader={reader} inline={!wide} />)
@@ -208,11 +158,28 @@ export function CallEnded({
             actions={
               <>
                 {primary}
-                {backLink(!primary)}
+                {secondary}
               </>
             }
             reader={inline ? content : undefined}
-            secondary={secondary.length ? secondary : undefined}
+            more={
+              <EndedMoreMenu
+                accountId={accountId}
+                wsId={wsId}
+                meetingId={meetingId}
+                disabled={saving}
+                canRestore={ended && canManage}
+                canAddTask={
+                  canManage && MEETING_APP === 'meet' && availability === 'none'
+                }
+                canManage={canManage}
+                shareNotesAfterMeeting={shareAfter}
+                onShareNotesChange={setShareAfter}
+                reader={reader}
+                readerOpen={open}
+                onToggleReader={() => setShowNotes(!open)}
+              />
+            }
           />
           {!wide && !inline && content}
           <EndedMeetingRating accountId={accountId} meetingId={meetingId} />

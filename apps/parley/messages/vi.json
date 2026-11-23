@@ -4376,8 +4376,6 @@
       "end_failed": "Không thể kết thúc cuộc họp. Kiểm tra kết nối và thử lại.",
       "end_for_everyone": "Kết thúc cho mọi người",
       "ended_hint": "Phòng đã đóng. Chỉ quản trị viên phòng mới chia sẻ ghi chú.",
-      "ended_hint_host": "Bạn có thể chọn người xem ghi chú trong mục Thêm thao tác.",
-      "ended_hint_reader": "Bạn có thể xem ghi chú của cuộc họp này.",
       "ending_meeting": "Đang kết thúc cuộc họp…",
       "enter_code": "Nhập mã hoặc liên kết cuộc họp",
       "estimated_partial": "Ước tính chưa đầy đủ",
@@ -4427,12 +4425,12 @@
       "join_another_device": "Tham gia bằng thiết bị khác",
       "join_call": "Tham gia cuộc gọi",
       "join_cancel_request": "Hủy yêu cầu và rời đi",
-      "join_connecting_hint": "Đang kết nối với cuộc họp và kiểm tra quyền tham gia. Nếu không thể kết nối, bạn có thể thử lại hoặc rời đi.",
+      "join_connecting_hint": "Vui lòng chờ trong khi chúng tôi kết nối. Nếu quá lâu, bạn có thể thử lại hoặc rời đi.",
       "join_denied_hint": "Chủ phòng đã từ chối yêu cầu tham gia của bạn. Hãy liên hệ chủ phòng trước khi thử lại.",
       "join_denied_title": "Yêu cầu tham gia đã bị từ chối",
-      "join_error_hint": "Chưa thể xác nhận kết nối của bạn. Số lần tự động kết nối lại có giới hạn. Kiểm tra mạng, rồi thử lại hoặc rời đi.",
+      "join_error_hint": "Chúng tôi không thể kết nối bạn với cuộc họp. Hãy kiểm tra kết nối internet rồi thử lại.",
       "join_error_title": "Không thể kết nối với cuộc họp",
-      "join_loading_slow_title": "Kết nối đang mất nhiều thời gian hơn dự kiến",
+      "join_loading_slow_title": "Vẫn đang xử lý",
       "join_missing_hint": "Liên kết có thể không đúng hoặc bạn không có quyền truy cập cuộc họp. Hãy kiểm tra lời mời với chủ phòng.",
       "join_missing_title": "Không tìm thấy cuộc họp hoặc không thể truy cập",
       "join_now": "Tham gia ngay",
@@ -4526,7 +4524,7 @@
       "playback_volume": "Âm lượng phát",
       "playback_volume_hint": "Chỉ thay đổi âm thanh bạn nghe. Âm lượng tổng điều chỉnh giọng nói, âm thanh chia sẻ, Mira và âm báo.",
       "preferences": "Tùy chọn",
-      "preparing_call": "Đang chuẩn bị cuộc gọi",
+      "preparing_call": "Đang thiết lập cuộc họp",
       "preview_private": "Micrô và camera của bạn chưa được chia sẻ cho đến khi bạn tham gia.",
       "pricing_date": "Giá được kiểm tra ngày {date}",
       "private_tools": {
@@ -4737,7 +4735,6 @@
       "ended_reader_transcript": "Bản chép lời",
       "ended_reader_both": "Ghi chú và bản chép lời",
       "rating_private": "Chỉ bạn thấy đánh giá của mình",
-      "ended_hint_host_settings": "Bạn có thể chọn người xem ghi chú trong Cài đặt cuộc họp.",
       "surfaces": {
         "stage": "sân khấu",
         "programming": "Lập trình cùng nhau",
@@ -5146,7 +5143,13 @@
         "video_count": "{count} người",
         "video_hide": "Thu gọn video",
         "video_show": "Hiện video"
-      }
+      },
+      "ended_more": "Thêm",
+      "join_step_setup": "Đang thiết lập cuộc họp",
+      "join_step_connecting": "Đang kết nối",
+      "join_step_ready": "Sắp xong",
+      "join_slow_hint": "Việc này đang lâu hơn bình thường. Hãy kiểm tra kết nối internet hoặc thử lại.",
+      "join_retry": "Thử lại"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

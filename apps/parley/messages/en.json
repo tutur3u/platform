@@ -4376,8 +4376,6 @@
       "end_failed": "Could not end the meeting. Check your connection and try again.",
       "end_for_everyone": "End for everyone",
       "ended_hint": "This room is closed. Notes are shared only by the room admin.",
-      "ended_hint_host": "You can choose who can see the notes in More actions.",
-      "ended_hint_reader": "Notes from this meeting are available to you.",
       "ending_meeting": "Ending meeting…",
       "enter_code": "Enter a meeting code or link",
       "estimated_partial": "Partial estimate",
@@ -4427,12 +4425,12 @@
       "join_another_device": "Join as another device",
       "join_call": "Join call",
       "join_cancel_request": "Cancel request and leave",
-      "join_connecting_hint": "Connecting to the meeting and checking admission. If the connection cannot be established, you can retry or leave.",
+      "join_connecting_hint": "Hang tight while we connect you. If it takes too long, you can try again or leave.",
       "join_denied_hint": "The host did not admit you to this meeting. Contact the host before trying again.",
       "join_denied_title": "Your request was declined",
-      "join_error_hint": "We could not confirm your connection. Automatic reconnection attempts are limited. Check your network, then retry or leave.",
+      "join_error_hint": "We could not connect you to the meeting. Check your internet connection, then try again.",
       "join_error_title": "Unable to connect to the meeting",
-      "join_loading_slow_title": "Connecting is taking longer than expected",
+      "join_loading_slow_title": "Still working on it",
       "join_missing_hint": "This link may be incorrect, or you may not have access to the meeting. Check the invite with the host.",
       "join_missing_title": "Meeting not found or unavailable",
       "join_now": "Join now",
@@ -4526,7 +4524,7 @@
       "playback_volume": "Playback volume",
       "playback_volume_hint": "Only changes what you hear. Master volume scales voices, shared audio, Mira, and notification sounds.",
       "preferences": "Preferences",
-      "preparing_call": "Preparing your call",
+      "preparing_call": "Setting up your meeting",
       "preview_private": "Your microphone and camera are not shared until you join.",
       "pricing_date": "Rates checked {date}",
       "private_tools": {
@@ -4737,7 +4735,6 @@
       "ended_reader_transcript": "Transcript",
       "ended_reader_both": "Notes & transcript",
       "rating_private": "Only you see your rating",
-      "ended_hint_host_settings": "You can choose who can see the notes in Meeting settings.",
       "surfaces": {
         "stage": "the stage",
         "programming": "Co-Programming",
@@ -5146,7 +5143,13 @@
         "video_count": "{count, plural, one {# person} other {# people}}",
         "video_hide": "Collapse video",
         "video_show": "Show video"
-      }
+      },
+      "ended_more": "More",
+      "join_step_setup": "Setting up your meeting",
+      "join_step_connecting": "Connecting",
+      "join_step_ready": "Almost ready",
+      "join_slow_hint": "This is taking longer than usual. Check your internet connection, or try again.",
+      "join_retry": "Try again"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

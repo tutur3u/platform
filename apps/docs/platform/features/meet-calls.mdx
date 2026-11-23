@@ -573,8 +573,10 @@ but does not provide server-side deduplication across tabs or page reloads. Late
 responses
 from expired attempts cannot revive them. Connection errors offer retry and leave;
 room-capacity refusals cannot leave a disabled Connecting spinner. Preparing the
-page or controls for more than 30 seconds replaces its spinner with an explanation
-and a way back. Retrying a join starts from the invitation; it does not grant access.
+page or controls shows one status line that moves through Setting up your meeting,
+Connecting and Almost ready, with a quiet three-part progress bar that holds still
+under reduced motion. After 8 seconds it adds a gentle hint with Try again (when a
+retry exists) and a way back. Waiting copy avoids technical terms. Retrying a join starts from the invitation; it does not grant access.
 
 Admitted participants see confirmation before choosing **Join now**. Declined
 requests and host removal show distinct messages with a way back, rather than
@@ -1890,21 +1892,26 @@ Scope: the in-call view and the ended-meeting screen in Meet and Parley.
   device in `localStorage` under `meet.self-preview`; unavailable storage falls
   back to the defaults (bottom-right, medium, visible). Snap animations honour
   `prefers-reduced-motion`.
-- The ended screen's reader action follows what the meeting produced, decided
-  from the access-checked meet-ai state and only for viewers who may read notes.
-  With no post-call notes and no readable transcript there is no reader action
-  and Back to Meet is the primary action. With notes only it reads **Show
-  notes**, with a transcript only **Show transcript**, and with both **View
-  notes & transcript**. A failed or refused read, or Meet AI being unavailable,
-  counts as nothing to show. While the state loads the action's space is held,
-  so no wrong label flashes.
+- The ended screen has one primary action, **Back to Meet**, and at most one
+  secondary action, **New meeting**, shown only to viewers who may start one.
+  Everything else sits in a single quiet **More** menu with icons: the notes
+  reader toggle, **Create a follow-up task**, **Restore meeting** and **Meeting
+  settings**, each behind its existing permission. The left screen keeps
+  **Rejoin** as its primary action with Back to Meet as the secondary.
+- The notes reader item follows what the meeting produced, decided from the
+  access-checked meet-ai state and only for viewers who may read notes. With no
+  post-call notes and no readable transcript there is no item. With notes only
+  it reads **Show notes**, with a transcript only **Show transcript**, and with
+  both **View notes & transcript**. A failed or refused read, or Meet AI being
+  unavailable, counts as nothing to show.
 - The reader opens inside the page layout: a second column on wide screens and
   inline in the summary card on phones. Tabs appear only when both notes and a
   transcript exist; the meeting page's notes reader follows the same rule.
-  Restore, New meeting and Settings sit in a compact secondary row. The host's
-  notes-sharing switch is in Settings; visibility rules are unchanged.
-- A Meet host whose meeting left no notes and no transcript gets **Add task** in
-  the secondary row, because the reader that normally carries it is absent.
+  The host's notes-sharing switch is in Meeting settings; visibility rules are
+  unchanged and the screen carries no sentence about it.
+- A Meet host whose meeting left no notes and no transcript gets **Create a
+  follow-up task** in the More menu, because the reader that normally carries it
+  is absent.
 - The call rating is its own card below the summary card.
 - Viewers who may read notes see a facts row under the title: the span covered by
   captured notes sessions and recordings, distinct transcript speakers, and
