@@ -106,7 +106,10 @@ export function ContactAccountInvitationCard({
         })
       : null;
   const formatDate = (value: string) =>
-    format.dateTime(new Date(value), { dateStyle: 'medium', timeStyle: 'short' });
+    format.dateTime(new Date(value), {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   const copy = async () => {
     if (!link) return;
     try {

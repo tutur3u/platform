@@ -65,14 +65,11 @@ export async function inviteContactAccountHolder(
   contactId: string,
   accountId: string
 ) {
-  const result = await post<{ outcome: string; invitationId?: string }>(
-    wsId,
-    {
-      action: 'invite',
-      workspaceUserId: contactId,
-      platformAccountId: accountId,
-    }
-  );
+  const result = await post<{ outcome: string; invitationId?: string }>(wsId, {
+    action: 'invite',
+    workspaceUserId: contactId,
+    platformAccountId: accountId,
+  });
   if (result.outcome !== 'invited' || !result.invitationId) {
     throw new Error('Invalid account-link invitation result');
   }

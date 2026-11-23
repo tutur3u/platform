@@ -130,7 +130,9 @@ describe('ContactAccountInvitationCard', () => {
       .at(-1) as HTMLElement;
     fireEvent.click(confirm);
 
-    await waitFor(() => expect(api.revoke).toHaveBeenCalledWith('ws', contactId));
+    await waitFor(() =>
+      expect(api.revoke).toHaveBeenCalledWith('ws', contactId)
+    );
     expect(await screen.findByText('states.cancelled')).toBeTruthy();
     expect(screen.queryByLabelText('link_label')).toBeNull();
   });
