@@ -2742,6 +2742,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/settings/mira-consent-default"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/settings/permissions"
     },
     {

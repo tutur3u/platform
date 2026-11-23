@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 889,
+    "total": 890,
     "categories": {
-      "api": 689,
+      "api": 690,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 877 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 878 }
   },
   "routes": [
     {
@@ -5768,6 +5768,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/settings/mira-audience",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/mira-audience/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/settings/mira-consent-default",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/mira-consent-default/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

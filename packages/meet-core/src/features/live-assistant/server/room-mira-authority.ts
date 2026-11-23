@@ -74,12 +74,16 @@ export async function requireRoomMiraAuthority(access: SignedInMeetCallAccess) {
   };
 }
 
-/** Throws unless every admitted participant currently allows room Mira. */
+/**
+ * Throws unless a host acceptance with chat is current and the requester's
+ * own choice is on. Other participants' choices only limit which content
+ * the room releases for the request.
+ */
 export async function requireRoomMiraFence(access: SignedInMeetCallAccess) {
-  const read = await callRoomService<{ fence?: { ready?: boolean } }>(access, {
+  const read = await callRoomService<{ ready?: boolean }>(access, {
     action: 'mira.room.read',
   });
-  if (read.fence?.ready !== true)
+  if (read.ready !== true)
     throw new MeetCallAccessError(
       409,
       MIRA_ROOM_CONSENT_REQUIRED,

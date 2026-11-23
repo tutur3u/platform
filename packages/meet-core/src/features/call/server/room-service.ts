@@ -43,7 +43,7 @@ export async function resolveMeetCallRouteAccess(
 export async function callRoomService<T>(
   access: MeetCallRouteAccess,
   command: unknown,
-  options?: { classroomTools: true }
+  options?: { classroomTools?: true; coHost?: boolean }
 ): Promise<T> {
   const anonymousGuest = 'guest' in access && access.guest === true;
   const session = await getMeetCallSession({
@@ -60,6 +60,8 @@ export async function callRoomService<T>(
     avatarUrl: 'avatarUrl' in access ? access.avatarUrl : undefined,
     service: true,
     ...(options?.classroomTools ? { classroomTools: true } : {}),
+    // A workspace admin in someone else's meeting acts as co-host.
+    ...(options?.coHost ? { coHost: true } : {}),
     workspaceMember: access.canReadWorkspace,
   });
   const url = new URL(session.realtimeUrl);

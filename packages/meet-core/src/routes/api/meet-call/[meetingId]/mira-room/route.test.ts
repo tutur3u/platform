@@ -3,12 +3,27 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({
   available: vi.fn(),
   room: vi.fn(),
+  accept: vi.fn(),
+  end: vi.fn(),
+  record: vi.fn(),
+  boxDefault: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock(
   '../../../../../features/live-assistant/server/room-mira-authority',
   () => ({ readRoomMiraAvailability: f.available })
+);
+vi.mock(
+  '../../../../../features/live-assistant/server/room-mira-acceptance',
+  () => ({ acceptRoomMira: f.accept, endRoomMira: f.end })
+);
+vi.mock(
+  '../../../../../features/live-assistant/server/room-mira-evidence',
+  () => ({
+    recordMiraChoice: f.record,
+    readMiraBoxTickedByDefault: f.boxDefault,
+  })
 );
 vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
@@ -20,13 +35,18 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
     }
   },
 }));
+const guestAccess = {
+  user: { id: '00000000-0000-4000-8000-0000000000d4' },
+  guest: true,
+  meeting: { id: 'room', ws_id: 'ws' },
+};
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   callRoomService: f.room,
   guestPollRoomRoute: async (
     _request: Request,
     _id: string,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run({ user: { id: 'guest' }, guest: true })),
+  ) => Response.json(await run(guestAccess)),
 }));
 
 import { MIRA_ROOM_NOTICE_VERSION as version } from '@tuturuuu/realtime/meet';
@@ -41,54 +61,105 @@ const post = (body: unknown) =>
     }),
     params
   );
-const read = { version, choice: null, fence: { ready: false, pending: 1 } };
+const read = { version, choice: null, acceptance: null, ready: false };
+const choice = (overrides: Record<string, unknown> = {}) => ({
+  action: 'choice',
+  choice: 'on',
+  version,
+  acceptanceRevision: 1,
+  source: 'join',
+  textHash: 'a'.repeat(64),
+  locale: 'vi',
+  ...overrides,
+});
 
 beforeEach(() => {
   vi.resetAllMocks();
   f.available.mockResolvedValue(true);
   f.room.mockResolvedValue(read);
+  f.boxDefault.mockResolvedValue(true);
+  f.record.mockResolvedValue(undefined);
 });
 
-it('hides the notice without touching the room when room Mira is unavailable', async () => {
+it('hides Mira without touching the room when it is unavailable', async () => {
   f.available.mockResolvedValue(false);
   const response = await GET(new Request('https://meet.test/x'), params);
   expect(await response.json()).toEqual({ available: false });
   expect(f.room).not.toHaveBeenCalled();
 });
 
-it('reads only the caller view, guests included', async () => {
+it('reads the caller view with the workspace box default, guests included', async () => {
+  f.boxDefault.mockResolvedValue(false);
   const response = await GET(new Request('https://meet.test/x'), params);
-  expect(await response.json()).toEqual({ available: true, ...read });
-  expect(f.room).toHaveBeenCalledWith(
-    { user: { id: 'guest' }, guest: true },
-    { action: 'mira.room.read' }
-  );
+  expect(await response.json()).toEqual({
+    available: true,
+    ...read,
+    boxTickedByDefault: false,
+  });
+  expect(f.room).toHaveBeenCalledWith(guestAccess, {
+    action: 'mira.room.read',
+  });
+  expect(f.boxDefault).toHaveBeenCalledWith('ws');
 });
 
-it('records only the caller choice for the current notice', async () => {
-  await post({ choice: 'continue', version });
-  expect(f.room).toHaveBeenCalledWith(expect.anything(), {
+it('records the caller final state, notice, text hash and locale as their own choice', async () => {
+  await post(choice({ choice: 'off' }));
+  expect(f.room).toHaveBeenCalledWith(guestAccess, {
     action: 'mira.room.choice',
-    choice: 'continue',
+    choice: 'off',
     version,
+    acceptanceRevision: 1,
+  });
+  expect(f.record).toHaveBeenCalledWith({
+    meetingId: 'room',
+    wsId: 'ws',
+    participantId: guestAccess.user.id,
+    guest: true,
+    choice: 'off',
+    source: 'join',
+    acceptanceRevision: 1,
+    noticeVersion: version,
+    textHash: 'a'.repeat(64),
+    locale: 'vi',
   });
   for (const body of [
-    { choice: 'continue', version: 'old' },
-    { choice: 'continue', version, accountId: 'someone-else' },
-    { choice: 'leave', version },
+    choice({ version: 'old' }),
+    choice({ accountId: 'someone-else' }),
+    choice({ choice: 'leave' }),
+    choice({ textHash: 'short' }),
+    { action: 'accept', capabilities: ['chat'] },
   ])
     await expect(post(body)).rejects.toMatchObject({ status: 400 });
 });
 
-it('always lets a participant pause, but Continue needs room Mira available', async () => {
+it('always lets a participant turn off, but on needs Mira available', async () => {
   f.available.mockResolvedValue(false);
-  await expect(post({ choice: 'continue', version })).rejects.toMatchObject({
-    status: 403,
+  await expect(post(choice())).rejects.toMatchObject({ status: 403 });
+  await post(choice({ choice: 'off' }));
+  expect(f.room).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'mira.room.choice', choice: 'off' })
+  );
+});
+
+it('falls back to off when an on choice cannot be stored durably', async () => {
+  f.record.mockRejectedValue(new Error('db'));
+  await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+  expect(f.room).toHaveBeenLastCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'mira.room.choice', choice: 'off' })
+  );
+});
+
+it('routes acceptance, turning off and minor reports to the acceptance flow', async () => {
+  await post({
+    action: 'accept',
+    capabilities: ['chat', 'captions'],
+    audienceAdultConfirmed: true,
   });
-  await post({ choice: 'mute', version });
-  expect(f.room).toHaveBeenCalledWith(expect.anything(), {
-    action: 'mira.room.choice',
-    choice: 'mute',
-    version,
-  });
+  expect(f.accept).toHaveBeenCalledWith(guestAccess, ['chat', 'captions']);
+  await post({ action: 'end' });
+  expect(f.end).toHaveBeenCalledWith(guestAccess, 'turned_off');
+  await post({ action: 'report_minor' });
+  expect(f.end).toHaveBeenCalledWith(guestAccess, 'minor_reported');
 });

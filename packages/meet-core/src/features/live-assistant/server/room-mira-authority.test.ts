@@ -120,8 +120,9 @@ it('maps denials and always requires the stored 18+ attestation', async () => {
   });
 });
 
-it('requires a ready all-participant fence', async () => {
-  f.room.mockResolvedValue({ fence: { ready: false, pending: 1 } });
+it('requires a current acceptance and the requester to be on', async () => {
+  // Others still deciding never block the requester.
+  f.room.mockResolvedValue({ ready: false, status: { included: 3 } });
   await expect(requireRoomMiraFence(access)).rejects.toMatchObject({
     status: 409,
     code: 'MIRA_ROOM_CONSENT_REQUIRED',
@@ -132,6 +133,10 @@ it('requires a ready all-participant fence', async () => {
     status: 409,
   });
   f.room.mockResolvedValue({ fence: { ready: true } });
+  await expect(requireRoomMiraFence(access)).rejects.toMatchObject({
+    status: 409,
+  });
+  f.room.mockResolvedValue({ ready: true, status: { included: 1 } });
   await expect(requireRoomMiraFence(access)).resolves.toBeUndefined();
 });
 

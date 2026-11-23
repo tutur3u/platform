@@ -15706,6 +15706,101 @@ export type Database = {
           },
         ];
       };
+      meet_mira_host_acceptances: {
+        Row: {
+          audience_adult_confirmed: boolean;
+          capabilities: string[];
+          created_at: string;
+          end_reason: string | null;
+          event: string;
+          id: string;
+          meeting_id: string;
+          notice_version: string;
+          revision: number;
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          audience_adult_confirmed?: boolean;
+          capabilities?: string[];
+          created_at?: string;
+          end_reason?: string | null;
+          event: string;
+          id?: string;
+          meeting_id: string;
+          notice_version: string;
+          revision: number;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          audience_adult_confirmed?: boolean;
+          capabilities?: string[];
+          created_at?: string;
+          end_reason?: string | null;
+          event?: string;
+          id?: string;
+          meeting_id?: string;
+          notice_version?: string;
+          revision?: number;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meet_mira_participant_choices: {
+        Row: {
+          acceptance_id: string | null;
+          acceptance_revision: number;
+          choice: string;
+          created_at: string;
+          guest: boolean;
+          id: string;
+          locale: string;
+          meeting_id: string;
+          notice_version: string;
+          participant_ref: string;
+          source: string;
+          text_hash: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acceptance_id?: string | null;
+          acceptance_revision: number;
+          choice: string;
+          created_at?: string;
+          guest?: boolean;
+          id?: string;
+          locale: string;
+          meeting_id: string;
+          notice_version: string;
+          participant_ref?: string;
+          source: string;
+          text_hash: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          acceptance_id?: string | null;
+          acceptance_revision?: number;
+          choice?: string;
+          created_at?: string;
+          guest?: boolean;
+          id?: string;
+          locale?: string;
+          meeting_id?: string;
+          notice_version?: string;
+          participant_ref?: string;
+          source?: string;
+          text_hash?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       meet_attendance_erasure_readiness: {
         Row: {
           id: boolean;
@@ -26609,6 +26704,31 @@ export type Database = {
           },
         ];
       };
+      workspace_mira_consent_defaults: {
+        Row: {
+          box_ticked: boolean;
+          changed_by: string | null;
+          created_at: string;
+          id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          box_ticked: boolean;
+          changed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          box_ticked?: boolean;
+          changed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_promotions: {
         Row: {
           code: string | null;
@@ -30363,6 +30483,15 @@ export type Database = {
       employee_retained_mailbox_content: {
         Args: { p_mailbox: string; p_target: string };
         Returns: string;
+      };
+      end_meet_mira_acceptance: {
+        Args: {
+          p_meeting_id: string;
+          p_reason: string;
+          p_revision: number;
+          p_user_id: string | null;
+        };
+        Returns: boolean;
       };
       enqueue_learn_coding_execution: {
         Args: {
@@ -34430,6 +34559,15 @@ export type Database = {
       record_meet_attendance_erasure_ready: {
         Args: { p_binding_erased: boolean };
         Returns: string;
+      };
+      record_meet_mira_acceptance: {
+        Args: {
+          p_capabilities: string[];
+          p_meeting_id: string;
+          p_notice_version: string;
+          p_user_id: string;
+        };
+        Returns: { acceptance_id: string; revision: number }[];
       };
       record_observability_ingest_run: {
         Args: {

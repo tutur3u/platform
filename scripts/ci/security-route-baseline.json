@@ -5909,6 +5909,10 @@
     "digest": "736f206dc579e49d0e061bc529aa21d53dc656e0c0b5fc73868d6571e2e782fc"
   },
   {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/mira-consent-default/route.ts",
+    "digest": "e2f66d4780e467426400770028c01bac59c1e6326a9a2bd90e61f55ea88ddb0d"
+  },
+  {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts",
     "digest": "3fde8239c1f27a9164d02024b3d6a513c4c6e5411aa57ce8101675b5828425b8"
   },

@@ -249,3 +249,37 @@ export async function updateMiraAudienceAttestation(
     }
   );
 }
+
+/** Workspace default for the Meet room Mira consent tick box. */
+export type MiraConsentDefault = {
+  boxTickedByDefault: boolean;
+  changedAt: string | null;
+};
+
+const miraConsentDefaultPath = (workspaceId: string) =>
+  `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/mira-consent-default`;
+
+export async function getMiraConsentDefault(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MiraConsentDefault>(
+    miraConsentDefaultPath(workspaceId),
+    { cache: 'no-store' }
+  );
+}
+
+export async function updateMiraConsentDefault(
+  workspaceId: string,
+  boxTickedByDefault: boolean,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MiraConsentDefault>(
+    miraConsentDefaultPath(workspaceId),
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boxTickedByDefault }),
+    }
+  );
+}
