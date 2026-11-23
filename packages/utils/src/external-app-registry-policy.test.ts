@@ -132,6 +132,10 @@ describe('external app logo URL', () => {
     'https://localhost/logo.png',
     'https://printer.local/logo.png',
     'https://db.internal/logo.png',
+    'https://localhost./logo.png',
+    'https://metadata.google.internal./logo.png',
+    'https://router.home.arpa/logo.png',
+    'https://nas.localdomain/logo.png',
     `https://example.com/${'a'.repeat(2100)}`,
   ])('refuses %s', (value) => {
     expect(parseExternalAppLogoUrl(value)).toBeNull();

@@ -33,7 +33,7 @@ export function AppGlyph({ className }: { className?: string }) {
  * The Tuturuuu mark beside the requesting app: the co-brand row on every
  * "Continue to {app}" card. Decorative; the card's heading names the app.
  */
-export function CoBrandRow({ appName }: { appName: string }) {
+export function CoBrandRow() {
   return (
     <div
       aria-hidden="true"

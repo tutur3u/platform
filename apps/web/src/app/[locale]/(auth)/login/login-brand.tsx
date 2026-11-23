@@ -32,7 +32,8 @@ function LogoImage({ label, src }: { label: string; src: string }) {
 
 /**
  * The app's logo, or the neutral glyph when it has none or the image fails,
- * so a missing logo never leaves a broken image in the header.
+ * so a missing logo never leaves a broken image in the header. Decorative:
+ * the heading beside it names the app.
  */
 function AppMark({ app }: { app: LoginBrandApp }) {
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
@@ -42,7 +43,8 @@ function AppMark({ app }: { app: LoginBrandApp }) {
 
   return (
     <img
-      alt={app.name}
+      alt=""
+      data-testid="login-app-logo"
       className="size-12 rounded-2xl object-contain xl:size-14"
       onError={() => setFailedLogo(app.logo)}
       src={app.logo}

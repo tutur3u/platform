@@ -136,7 +136,7 @@ async function readReturnApp(
         app.callbackPaths.length > 0 &&
         Boolean(challenge),
       id: app.id,
-      logo: app.logoUrl ? externalAppLogoPath(app.id) : null,
+      logo: app.logoUrl ? await externalAppLogoPath(app.id, app.logoUrl) : null,
       name: app.displayName,
     };
   } catch {

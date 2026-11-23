@@ -198,7 +198,11 @@ describe('resolveLoginView', () => {
           { ...strictApp, logoUrl: 'https://cdn.example.net/edufest.png' },
           { returnUrl: EDUFEST }
         )
-      ).toMatchObject({ logo: '/api/v1/auth/external-app-logo/edufest' });
+      ).toMatchObject({
+        logo: expect.stringMatching(
+          /^\/api\/v1\/auth\/external-app-logo\/edufest\/[0-9a-f]{16}$/u
+        ),
+      });
       expect(
         JSON.stringify(
           await gate(

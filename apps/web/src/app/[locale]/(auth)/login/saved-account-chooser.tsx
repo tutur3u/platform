@@ -32,7 +32,7 @@ export function SavedAccountChooser({
 
   return (
     <ConfirmationCard>
-      {appName ? <CoBrandRow appName={appName} /> : null}
+      {appName ? <CoBrandRow /> : null}
       <div className="flex flex-col gap-1.5 text-center">
         <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
           {t('login.choose_account_title')}

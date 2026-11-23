@@ -376,7 +376,7 @@ describe('Login page', () => {
         returnApp: {
           autoContinue: false,
           id: 'edufest',
-          logo: '/api/v1/auth/external-app-logo/edufest',
+          logo: '/api/v1/auth/external-app-logo/edufest/0123456789abcdef',
           name: 'EduFest Booth Hall',
         },
         savedAccounts: [],
@@ -390,15 +390,14 @@ describe('Login page', () => {
       returnUrl: 'https://showcase.ieeai.net/edufest/verify-token?state=s',
     });
 
-    const logo = screen.getByRole('img', { name: 'EduFest Booth Hall' });
+    const logo = screen.getByTestId('login-app-logo');
     expect(logo).toHaveAttribute(
       'src',
-      '/api/v1/auth/external-app-logo/edufest'
+      '/api/v1/auth/external-app-logo/edufest/0123456789abcdef'
     );
+    expect(logo).toHaveAttribute('alt', '');
     fireEvent.error(logo);
-    expect(
-      screen.queryByRole('img', { name: 'EduFest Booth Hall' })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('login-app-logo')).not.toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'Sign in to EduFest Booth Hall' })
     ).toBeInTheDocument();

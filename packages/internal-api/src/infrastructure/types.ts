@@ -6,6 +6,15 @@ import type {
 import type { Json } from '@tuturuuu/types/db';
 import type { ChatMessage } from '../chat-types';
 
+export type {
+  ExternalAppRegistration,
+  ExternalAppsResponse,
+  SaveExternalAppPayload,
+  SaveExternalAppResponse,
+  ApproveExternalAppManagedCronPayload,
+  ApproveExternalAppManagedCronResponse,
+} from './external-app-types';
+
 export interface MobilePlatformVersionPolicyPayload {
   effectiveVersion: string | null;
   minimumVersion: string | null;
@@ -207,27 +216,6 @@ export interface EnableGitHubBotWatcherAutoPickupResponse {
     tokenEndpointUrl: string;
   };
   state: GitHubBotState;
-}
-
-export interface ExternalAppRegistration {
-  allowedScopes: string[];
-  allowedWorkspaceIds: string[];
-  createdAt: string | null;
-  createdBy: string | null;
-  displayName: string;
-  enabled: boolean;
-  id: string;
-  /** Public https logo for sign-in screens; null shows a neutral glyph. */
-  logoUrl?: string | null;
-  origins: string[];
-  secretIssuedAt: string | null;
-  secretLastFour: string | null;
-  updatedAt: string | null;
-  updatedBy: string | null;
-}
-
-export interface ExternalAppsResponse {
-  apps: ExternalAppRegistration[];
 }
 
 export type AiAgentAdapter = 'discord' | 'zalo';
@@ -452,32 +440,6 @@ export type CreateAIWhitelistEmailPayload = Pick<AIWhitelistEmail, 'email'> &
   Partial<Pick<AIWhitelistEmail, 'enabled'>>;
 
 export type UpdateAIWhitelistEmailPayload = Pick<AIWhitelistEmail, 'enabled'>;
-
-export interface SaveExternalAppPayload {
-  allowedScopes?: string[];
-  allowedWorkspaceIds?: string[];
-  displayName: string;
-  enabled: boolean;
-  id: string;
-  issueSecret?: boolean;
-  /** Omitted keeps the stored logo; null or an empty string clears it. */
-  logoUrl?: string | null;
-  origins: string[];
-}
-
-export interface SaveExternalAppResponse {
-  app: ExternalAppRegistration;
-  secret: string | null;
-}
-
-export interface ApproveExternalAppManagedCronPayload {
-  origin: string;
-}
-
-export interface ApproveExternalAppManagedCronResponse {
-  domain: string;
-  enabled: boolean;
-}
 
 export interface SaveAiAgentPayload {
   channels?: Array<{

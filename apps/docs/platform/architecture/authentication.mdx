@@ -59,8 +59,8 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   screen size, with no decorative illustration. A plain sign-in shows the
   Tuturuuu mark and welcome. A sign-in for a registered or first-party app
   shows that app's mark and `Sign in to <app>`, and a small line under the
-  card. A registered logo loads through the same-origin
-  `GET /api/v1/auth/external-app-logo/<appId>` proxy (see
+  card. A registered logo loads through the same-origin, versioned
+  `GET /api/v1/auth/external-app-logo/<appId>/<version>` proxy (see
   [app coordination](/platform/architecture/app-coordination)); without a
   logo, or when it fails to load, the header shows a neutral app glyph, never
   letters:

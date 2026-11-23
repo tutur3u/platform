@@ -722,7 +722,7 @@
     {
       "family": "api-core",
       "localized": false,
-      "pattern": "/api/v1/auth/external-app-logo/[appId]"
+      "pattern": "/api/v1/auth/external-app-logo/[appId]/[version]"
     },
     {
       "family": "api-core",

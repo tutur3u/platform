@@ -140,13 +140,20 @@ export function wasIssuedBeforeSecretRotation(
 export const EXTERNAL_APP_LOGO_URL_MAX_LENGTH = 2048;
 
 const IPV4_LITERAL = /^\d{1,3}(?:\.\d{1,3}){3}$/u;
-const PRIVATE_HOST_SUFFIXES = ['.localhost', '.local', '.internal', '.lan'];
+const PRIVATE_HOST_SUFFIXES = [
+  '.home.arpa',
+  '.internal',
+  '.lan',
+  '.local',
+  '.localdomain',
+  '.localhost',
+];
 
 /**
  * A registered app's logo URL, or null when it is unset or not allowed.
  * Only public https URLs pass: no credentials, IP literals or local hostnames,
  * because the platform fetches the image server-side to serve it from its own
- * origin.
+ * origin. This is a best-effort syntactic check; it does not resolve DNS.
  */
 export function parseExternalAppLogoUrl(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -161,7 +168,8 @@ export function parseExternalAppLogoUrl(value: string | null | undefined) {
     return null;
   }
 
-  const host = url.hostname.toLowerCase();
+  // A trailing dot names the same host, so it must not dodge the checks.
+  const host = url.hostname.toLowerCase().replace(/\.+$/u, '');
   if (
     url.protocol !== 'https:' ||
     url.username ||

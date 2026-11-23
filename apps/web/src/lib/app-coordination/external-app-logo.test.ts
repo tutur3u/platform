@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  clearExternalAppLogoCache,
+  EXTERNAL_APP_LOGO_HIT_TTL_MS,
   EXTERNAL_APP_LOGO_MAX_BYTES,
+  EXTERNAL_APP_LOGO_MISS_TTL_MS,
   externalAppLogoPath,
+  externalAppLogoVersion,
   fetchExternalAppLogo,
+  getCachedExternalAppLogo,
 } from './external-app-logo';
 
 const LOGO = 'https://cdn.example.net/logo.png';
@@ -43,13 +48,13 @@ describe('fetchExternalAppLogo', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it.each([
+  it.each<[string, { headers?: Record<string, string>; status?: number }]>([
     ['an SVG', { headers: { 'content-type': 'image/svg+xml' } }],
     ['HTML', { headers: { 'content-type': 'text/html' } }],
     ['no type', {}],
     ['a redirect', { status: 302, headers: { location: 'https://x.test' } }],
     ['an error', { status: 404, headers: { 'content-type': 'image/png' } }],
-  ] as const)('refuses %s', async (_name, init) => {
+  ])('refuses %s', async (_name, init) => {
     await expect(
       fetchExternalAppLogo(
         LOGO,
@@ -86,9 +91,55 @@ describe('fetchExternalAppLogo', () => {
     await expect(fetchExternalAppLogo(LOGO, fetchImpl)).resolves.toBeNull();
   });
 
-  it('builds an encoded same-origin path', () => {
-    expect(externalAppLogoPath('edufest')).toBe(
-      '/api/v1/auth/external-app-logo/edufest'
+  it('builds a same-origin path versioned by the logo URL', async () => {
+    const path = await externalAppLogoPath('edufest', LOGO);
+    expect(path).toMatch(
+      /^\/api\/v1\/auth\/external-app-logo\/edufest\/[0-9a-f]{16}$/u
     );
+    expect(path).toBe(await externalAppLogoPath('edufest', LOGO));
+    expect(path).not.toBe(
+      await externalAppLogoPath('edufest', 'https://cdn.example.net/new.png')
+    );
+    expect(path.endsWith(await externalAppLogoVersion(LOGO))).toBe(true);
+  });
+});
+
+describe('getCachedExternalAppLogo', () => {
+  beforeEach(() => clearExternalAppLogoCache());
+
+  it('fetches once for concurrent and repeated requests within the TTL', async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(png, { headers: { 'content-type': 'image/png' } })
+    ) as unknown as typeof fetch;
+    await Promise.all([
+      getCachedExternalAppLogo(LOGO, { fetchImpl, now: 0 }),
+      getCachedExternalAppLogo(LOGO, { fetchImpl, now: 0 }),
+    ]);
+    await getCachedExternalAppLogo(LOGO, {
+      fetchImpl,
+      now: EXTERNAL_APP_LOGO_HIT_TTL_MS - 1,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await getCachedExternalAppLogo(LOGO, {
+      fetchImpl,
+      now: EXTERNAL_APP_LOGO_HIT_TTL_MS + 1,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a failed fetch only for the short miss TTL', async () => {
+    const fetchImpl = respond(null, { status: 500 });
+    await getCachedExternalAppLogo(LOGO, { fetchImpl, now: 0 });
+    await getCachedExternalAppLogo(LOGO, {
+      fetchImpl,
+      now: EXTERNAL_APP_LOGO_MISS_TTL_MS - 1,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await getCachedExternalAppLogo(LOGO, {
+      fetchImpl,
+      now: EXTERNAL_APP_LOGO_MISS_TTL_MS + 1,
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

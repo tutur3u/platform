@@ -83,7 +83,7 @@ export function InternalAppAccountConfirmation({
 
   return (
     <ConfirmationCard>
-      <CoBrandRow appName={appName} />
+      <CoBrandRow />
       <div className="flex flex-col gap-1.5 text-center">
         <h2 className="text-balance font-extrabold text-2xl tracking-[-0.02em]">
           {t('login.confirm_internal_app_account_title', {
