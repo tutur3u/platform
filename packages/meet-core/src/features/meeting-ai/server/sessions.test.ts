@@ -345,7 +345,10 @@ it('keeps workspace-wide availability false even when runtime controls list it',
     },
   });
   dbWith([result([]), result([])]);
-  expect((await readMeetAi(request(), params)).available).toBe(false);
+  expect(await readMeetAi(request(), params)).toMatchObject({
+    available: false,
+    unavailableReason: 'disabled',
+  });
 });
 
 it('redacts all costs and raw usage from a shared-notes reader', async () => {

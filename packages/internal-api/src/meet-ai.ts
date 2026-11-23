@@ -1,3 +1,4 @@
+import type { MeetTranscriptUnavailableReason } from './meet-transcript';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -64,8 +65,10 @@ export type MeetAiSession = {
   notes_cost_usd: number | null;
 };
 export type MeetAiState = {
-  /** False when the pilot allowlist excludes this workspace; absent on older servers. */
+  /** False when the transcript cannot run here; absent on older servers. */
   available?: boolean;
+  /** Why it cannot run, so the panel can say who can turn it on. */
+  unavailableReason?: MeetTranscriptUnavailableReason;
   configured: boolean;
   canManage: boolean;
   sessions: MeetAiSession[];

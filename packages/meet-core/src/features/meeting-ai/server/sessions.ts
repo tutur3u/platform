@@ -9,6 +9,7 @@ import { MEETING_APP } from '../../../runtime';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { meetingProviderTransport } from './provider-transport';
 import { readMeetingRoomPolicy } from './room-access';
+import { readMeetTranscriptionAvailability } from './transcription-availability';
 import { readTranscriptRoster } from './transcript-roster';
 import 'server-only';
 import { meetNotesSchema } from '@tuturuuu/ai/meetings/gemini';
@@ -21,7 +22,10 @@ import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { enforceMeetAiUsage } from './usage-limit';
 
 export async function readMeetAi(request: Request, params: MeetAiParams) {
-  const { db, meetingId, canManage } = await meetAiAccess(request, params);
+  const { db, meetingId, wsId, canManage } = await meetAiAccess(
+    request,
+    params
+  );
   const { data: sessions, error } = await db
     .from('meet_ai_sessions')
     .select('*')
@@ -88,7 +92,9 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
     (sum, session) => sum + session.notes_unpriced_attempts,
     0
   );
-  const sessionOrder = new Map(ids.map((id, index) => [id, index]));
+  const sessionOrder = new Map<string, number>(
+    ids.map((id: string, index: number) => [id, index])
+  );
   chunks.sort(
     (a, b) =>
       (sessionOrder.get(a.session_id) ?? 0) -
@@ -96,8 +102,12 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       a.start_seconds - b.start_seconds ||
       a.sequence - b.sequence
   );
+  const availability = await readMeetTranscriptionAvailability(wsId).catch(
+    () => ({ available: false as const, reason: 'error' as const })
+  );
   return {
-    available: false,
+    available: availability.available,
+    unavailableReason: availability.available ? undefined : availability.reason,
     configured:
       MEETING_APP === 'parley'
         ? await meetingProviderTransport().then(
