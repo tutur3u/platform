@@ -1,0 +1,55 @@
+---
+title: Upskii in Meet
+description: Present an Upskii lesson or launch an Upskii assessment during a Meet call.
+---
+
+A host or co-host with a linked Upskii account opens **Upskii** in a call and
+picks a class, then a lesson to present or an assessment to launch. Everyone
+in the room sees the item's title, a QR code and an **Open in Upskii** link.
+People open the item in Upskii with their own Upskii account, so Upskii
+decides what each person may see or take. The presenter shows a lesson's
+content through screen share.
+
+## Decision
+
+| Item | Rule |
+| --- | --- |
+| Scope | Per call. One item is presented at a time. |
+| Default | Nothing is presented. Participants see an empty state until a host presents. |
+| Who presents | Hosts, co-hosts and anyone else the room lets run activities. The realtime room refuses everyone else. |
+| Who reads Upskii | Only the presenter's own session, through the content route of the Upskii account link. Other participants never cause a read. |
+| What the room holds | A label (kind, id, title, class title) and one link. No lesson body, answer or token. The room drops it when the call ends. |
+| Links | Rendered, shared and encoded in a QR code only when `https` on exactly the pinned Upskii origin, with no credentials and no parameter that redirects to another site. The client list, the realtime room and the rendered view each check again. |
+| Surfaces | Meet's in-call activities (web and phone layouts). Parley ships the same strings. |
+| Exceptions | A lesson body is not shown in the room until Upskii offers a body read. Quiz Arena's import reads workspace Teach courses, not the linked Upskii account. |
+
+## States
+
+- **Not linked:** "Link Upskii in Settings → Integrations".
+- **Early access** and **missing access:** the account link cannot read
+  Upskii content yet. Missing access points to Settings → Integrations.
+- **Empty:** no classes, lessons or assessments.
+- **Error:** the list failed; retry.
+- **Presenting:** the item, its QR code and its link. Presenters can choose
+  another item or stop.
+
+## Origin
+
+`UPSKII_ORIGIN` in `@tuturuuu/realtime/meet/room-upskii-presentation` is
+`https://upskii.com`. `resolveUpskiiOrigin` accepts a server override only
+when it is a bare `https` origin. The realtime room and the Meet client use
+the constant, so staging Upskii links are refused there.
+
+## Regression coverage
+
+- `packages/realtime/src/meet/room-upskii-presentation.test.ts`: link checks
+  (scheme, host, port, credentials, redirect parameters), host-only presenting,
+  admission, schema bounds, bodies stripped, rate limit, and cleanup when the
+  room ends.
+- `packages/internal-api/src/upskii-content.test.ts`: unsafe links dropped,
+  the session route with no user or link id, a class required for lessons and
+  assessments, and refusal codes.
+- `packages/meet-core/src/features/call/tools/upskii/*.test.ts(x)`: the room
+  store, the panel and list states, participants never reading Upskii, unsafe
+  links never rendered, the unlinked state, presenting a lesson, and a refused
+  change.

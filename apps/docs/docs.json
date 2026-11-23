@@ -161,6 +161,7 @@
               "platform/features/meet-mira-host-consent",
               "platform/features/meet-solo-mode",
               "platform/features/meet-together",
+              "platform/features/meet-upskii-presenter",
               "platform/features/mobile-workspace-tools",
               "platform/features/mobile-settings-shell",
               "platform/features/mobile-telemetry-privacy",
