@@ -29,10 +29,10 @@ export function EventLinks({
   const t = useTranslations('calendar.native_guests');
   const queryClient = useQueryClient();
   const meet = useMutation({
-    mutationFn: (enabled: boolean) =>
-      enabled
-        ? linkCalendarEventMeeting(workspaceId, eventId)
-        : unlinkCalendarEventMeeting(workspaceId, eventId),
+    mutationFn: async (enabled: boolean): Promise<void> => {
+      if (enabled) await linkCalendarEventMeeting(workspaceId, eventId);
+      else await unlinkCalendarEventMeeting(workspaceId, eventId);
+    },
     onError: () =>
       notifySave({
         title: t('error_title'),

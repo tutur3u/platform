@@ -19,7 +19,7 @@ returns text
 language plpgsql
 stable
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   v_user_day integer;
@@ -78,7 +78,7 @@ create or replace function private.calendar_invite_claim_deliveries(
 returns setof private.calendar_invite_deliveries
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 begin
   if p_limit < 1 or p_limit > 100 then
@@ -144,7 +144,7 @@ create or replace function private.calendar_invite_enqueue(
 returns jsonb
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   v_blocked text;

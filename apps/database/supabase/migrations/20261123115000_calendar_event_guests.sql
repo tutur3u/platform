@@ -1,3 +1,4 @@
+-- tuturuuu: no-grant(trigger)
 -- Calendar event guests, RSVP, invitation delivery and abuse controls.
 --
 -- The legacy participant model lives in the private schema
@@ -100,7 +101,7 @@ create or replace function private.calendar_guest_rows_match_event()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   v_event_ws uuid;
@@ -135,7 +136,7 @@ create or replace function private.calendar_guest_cap()
 returns trigger
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   v_count integer;
@@ -311,26 +312,31 @@ create index calendar_invite_audit_event_idx
 -- Grants and RLS
 -- ---------------------------------------------------------------------------
 
-do $$
-declare
-  t text;
-begin
-  foreach t in array array[
-    'calendar_event_invitation_settings',
-    'calendar_event_guests',
-    'calendar_invite_tokens',
-    'calendar_invite_suppressions',
-    'calendar_invite_deliveries',
-    'calendar_invite_send_fences',
-    'calendar_invite_audit'
-  ] loop
-    execute format('alter table private.%I enable row level security', t);
-    execute format(
-      'revoke all on table private.%I from public, anon, authenticated', t
-    );
-    execute format('grant all on table private.%I to service_role', t);
-  end loop;
-end;
-$$;
+alter table private.calendar_event_invitation_settings enable row level security;
+alter table private.calendar_event_guests enable row level security;
+alter table private.calendar_invite_tokens enable row level security;
+alter table private.calendar_invite_suppressions enable row level security;
+alter table private.calendar_invite_deliveries enable row level security;
+alter table private.calendar_invite_send_fences enable row level security;
+alter table private.calendar_invite_audit enable row level security;
 
-grant usage, select on all sequences in schema private to service_role;
+revoke all on table
+  private.calendar_event_invitation_settings,
+  private.calendar_event_guests,
+  private.calendar_invite_tokens,
+  private.calendar_invite_suppressions,
+  private.calendar_invite_deliveries,
+  private.calendar_invite_send_fences,
+  private.calendar_invite_audit
+from public, anon, authenticated;
+
+grant all on table
+  private.calendar_event_invitation_settings,
+  private.calendar_event_guests,
+  private.calendar_invite_tokens,
+  private.calendar_invite_suppressions,
+  private.calendar_invite_deliveries,
+  private.calendar_invite_send_fences,
+  private.calendar_invite_audit
+to service_role;
+
