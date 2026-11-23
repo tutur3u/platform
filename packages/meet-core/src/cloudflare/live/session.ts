@@ -21,6 +21,7 @@ import {
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
 import { LiveTranscriptPublisher } from './publish-transcript';
+import { liveSocketOriginAllowed } from './origin';
 import { LiveRegistryQueue } from './registry';
 import { maintainLiveRegistry } from './registry-heartbeat';
 import {
@@ -212,10 +213,7 @@ export class MeetLiveDurableObject {
     )
       return new Response('Unauthorized', { status: 401 });
     if (
-      request.headers.get('Origin') !==
-        (saved.claims.app === 'parley'
-          ? this.env.PARLEY_APP_URL
-          : this.env.NEXT_PUBLIC_APP_URL) ||
+      !liveSocketOriginAllowed(request.headers, saved.claims.app, this.env) ||
       request.headers.get('Upgrade') !== 'websocket'
     )
       return new Response('Forbidden', { status: 403 });

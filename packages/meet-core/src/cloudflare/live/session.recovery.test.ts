@@ -111,11 +111,15 @@ function harness(saved = fixture()) {
     },
   };
 }
-function reconnect(object: MeetLiveDurableObject, saved: SavedSession) {
+function reconnect(
+  object: MeetLiveDurableObject,
+  saved: SavedSession,
+  requestOrigin = origin
+) {
   return object.fetch(
     new Request(`${origin}/socket`, {
       headers: {
-        Origin: origin,
+        Origin: requestOrigin,
         Upgrade: 'websocket',
         'Sec-WebSocket-Protocol': `meet-live, auth.${signLiveSession(saved.claims, env.MEET_REALTIME_TOKEN_SECRET)}`,
       },
@@ -183,6 +187,18 @@ describe('durable disconnected recovery', () => {
     await (await h.construct()).alarm();
     expect(h.saved().disconnectedRecoveryDeadline).toBe(deadline);
     expect(h.storage.put.mock.calls.length).toBe(writes);
+  });
+
+  it('accepts the shared tuturuuu.com origin on the upgrade', async () => {
+    const h = harness();
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect(
+      (await reconnect(object, h.saved(), 'https://tuturuuu.com')).status
+    ).toBe(101);
+    expect(
+      (await reconnect(object, h.saved(), 'https://evil.example')).status
+    ).toBe(403);
   });
 
   it('survives an alarm before reconnect, then persists a fresh cutoff on abnormal close', async () => {

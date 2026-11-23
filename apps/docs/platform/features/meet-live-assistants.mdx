@@ -422,6 +422,8 @@ privacy revocation and the complete stop/reschedule path remain release gates.
 
 ## Deployment and verification
 
+The Live socket accepts the legacy `meet.tuturuuu.com` origin and the shared `tuturuuu.com` origin (compared as normalized origins), so Meet works in shared-origin mode; Parley accepts only its own origin.
+
 Apply the additive `meet_private_ai_memory` and
 `20261120223430_workspace_mira_audience_attestations` migrations through the
 repository's normal migration pipeline. The attestation migration only adds one
