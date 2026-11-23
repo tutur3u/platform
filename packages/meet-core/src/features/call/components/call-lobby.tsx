@@ -2,7 +2,12 @@
 
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  MiraJoinBox,
+  useRememberMiraJoin,
+} from '../../live-assistant/mira-join-box';
+import { peekMiraJoinChoice } from '../../live-assistant/mira-join-choice';
 import type { MeetRoomController } from '../lib/room-controller';
 import { GuestLobbyUpgrade } from './guest-lobby-upgrade';
 import { Lobby, type LobbyParticipant } from './lobby';
@@ -25,8 +30,11 @@ export function ConnectedLobby({
   onJoined,
   onLeave,
   onRetry,
+  miraJoin,
 }: {
   room: MeetRoomController;
+  /** Shows the Mira box above Join, seeded from an earlier join screen. */
+  miraJoin?: { meetingId: string; boxTickedByDefault: boolean };
   participants: readonly LobbyParticipant[];
   defaultAvatarUrl?: string;
   defaultDisplayName: string;
@@ -51,6 +59,16 @@ export function ConnectedLobby({
   // Last name sent with presence.join, so a blur followed by join (or a
   // blur without edits) does not resend the same name.
   const sentDisplayName = useRef<string | null>(null);
+  // Seeded after mount, so server and client render the same markup: an
+  // earlier join screen's choice wins over the workspace default.
+  const [miraTicked, setMiraTicked] = useState<boolean | null>(null);
+  const miraMeetingId = miraJoin?.meetingId;
+  const miraDefault = miraJoin?.boxTickedByDefault;
+  useEffect(() => {
+    if (!miraMeetingId || miraDefault === undefined) return;
+    setMiraTicked(peekMiraJoinChoice(miraMeetingId)?.ticked ?? miraDefault);
+  }, [miraMeetingId, miraDefault]);
+  const rememberMira = useRememberMiraJoin();
   const sendDisplayName = (name: string) => {
     if (name === sentDisplayName.current) return;
     sentDisplayName.current = name;
@@ -89,6 +107,9 @@ export function ConnectedLobby({
         videoEnabled,
       }) => {
         onOutputDeviceChange(nextOutputDeviceId);
+        // Recorded after admission; until then the participant is off.
+        if (miraMeetingId && miraTicked !== null)
+          void rememberMira(miraMeetingId, miraTicked).catch(() => undefined);
         if (!canReadWorkspace || displayName !== defaultDisplayName) {
           sendDisplayName(displayName);
         }
@@ -120,6 +141,11 @@ export function ConnectedLobby({
       waiting={room.state.admission === 'waiting'}
       waitingExtra={
         <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
+      }
+      joinExtra={
+        miraTicked === null ? undefined : (
+          <MiraJoinBox checked={miraTicked} onCheckedChange={setMiraTicked} />
+        )
       }
     />
   );

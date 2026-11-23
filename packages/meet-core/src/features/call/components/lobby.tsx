@@ -137,9 +137,12 @@ export function Lobby({
   presenceOnly = false,
   onPresenceChange,
   waitingExtra,
+  joinExtra,
 }: {
   /** Shown under the admission notice while waiting for the host. */
   waitingExtra?: ReactNode;
+  /** Shown directly above Join now, such as the Mira consent box. */
+  joinExtra?: ReactNode;
   defaultDisplayName: string;
   avatarUrl?: string;
   isGuest?: boolean;
@@ -602,6 +605,7 @@ export function Lobby({
             )}
           </section>
 
+          {joinExtra && <div className="mt-5 shrink-0">{joinExtra}</div>}
           <Button
             className="mt-5 w-full shrink-0"
             disabled={

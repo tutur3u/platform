@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { MeetSignalingStatus } from '../lib/signaling';
 import { CallTopBarConnection } from './call-top-bar';
 import { MeetingStatus, MeetingTitle } from './meeting-title';
+import { RoomMiraNotice } from './room-mira-notice';
 
 /**
  * The call's top bar: the meeting name, then its mode and live status, then
@@ -57,6 +58,8 @@ export function CallHeader({
         <CallTopBarConnection status={connection} onRetry={onRetry} />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+        {/* Who turned Mira on stays visible for the whole call. */}
+        <RoomMiraNotice meetingId={meetingId} placement="header" />
         {actions}
       </div>
     </header>

@@ -14,6 +14,7 @@ import { useFormatter, useTranslations } from 'next-intl';
 import { SettingsField } from '../../../../ui/src/components/ui/custom/settings-field';
 import { SettingItemTab } from '../../../../ui/src/components/ui/custom/settings-item-tab';
 import { MiraAdultNotice } from './mira-adult-notice';
+import { MiraConsentDefaultField } from './mira-consent-default-field';
 import { useMiraAudience, useSetMiraAudience } from './use-mira-audience';
 
 export function MiraAudienceSettings({ wsId }: { wsId: string }) {
@@ -95,6 +96,7 @@ export function MiraAudienceSettings({ wsId }: { wsId: string }) {
           layout="compact"
         />
       )}
+      {audience.setting && <MiraConsentDefaultField wsId={wsId} />}
       {audience.setting && (
         <SettingsSectionBlock className="text-muted-foreground text-sm">
           {t('responsibility')}

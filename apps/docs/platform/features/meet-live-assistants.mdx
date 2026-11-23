@@ -69,14 +69,18 @@ When a workspace policy blocks Mira, the owner can open the setting directly
 if the workspace lacks a declaration. Other participants can ask the owner to
 check the setting. Each Mira feature still applies its own access policy.
 
-Room chat shows room Mira as one chip, for example **Mira · waiting for 2 ·
-Details**, with an icon for its state: choose Continue, waiting, ready, pausing
-or paused. **Details** opens a popover (Escape closes it and returns focus to the
-chip) that holds the full status, the 18+ note, **Continue** and **Pause** for
-the viewer, the Continue progress, and the capabilities the host sets. The
-consent rules are the same as before the chip: 18+, a per-person Continue, host
-set capabilities and Pause. Without room Mira the chip opens only the
-capabilities.
+While a host acceptance is current, the call header always shows **Mira is on,
+turned on by {acceptor}**; it cannot be hidden. It opens on its own until the
+participant confirms their choice and holds the Mira box, **Turn Mira off for
+me**, the host's **Turn off Mira for everyone**, and a two-step **Report
+someone under 18**. Room chat shows the same state as one chip. Without room
+Mira the chat chip opens only the capabilities. The host or a co-host who is
+present sees **Turn on Mira**, which asks them to accept the Terms of Service
+and AI use and to confirm that everyone in the meeting is 18 or older.
+
+The workspace Mira settings add **Mira consent box ticked by default** (on by
+default) for workspace settings managers. Each change is an audited row and
+applies to joins after the change.
 
 Regression coverage (`*.test.tsx`): `mira-audience-settings`,
 `mira-workspace-off`, `call-settings-mira`, `private-notice`, `personal-chat`,
@@ -121,41 +125,72 @@ enable Live or bypass its authorization, audio consent, or limits. Synthetic
 regression coverage: `invite-unavailable.test.tsx`, `live-errors.test.ts` and
 `live-workspace-identity.test.tsx`.
 
-## Room Mira and the all-participant fence
+## Room Mira host acceptance and per-person consent
 
 Room chat generation through **@mira**, **@ttr** or **@tuturuuu** requires room
 Mira authority for the requester (deployment, workspace gate, account rule and
-the meeting workspace's stored 18+ attestation) and an all-participant fence.
+the meeting workspace's stored 18+ attestation), a current host acceptance and
+the requester's own current choice. The product decision is recorded in
+[Mira host consent in meetings](/platform/features/meet-mira-host-consent).
 
-While room Mira is available in a meeting, chat shows a **Room Mira** notice to
-every admitted participant, anonymous guests included. Each participant chooses
-**Continue** or **Pause** for their own account; nobody can choose for someone
-else. The notice shows only aggregate counts, never who has not chosen. The
-meeting room Durable Object stores each choice with the notice version
-(`2026-11-20-room-v1`), meeting, account, server time and revision.
+**Acceptance.** Only the session host, or a co-host who is admitted and present,
+turns room Mira on; guests never can. The Meet Worker checks the workspace 18+
+declaration and the acceptor's 18+ confirmation, asks the room whether the
+caller may accept, then allocates the next revision in
+`private.meet_mira_host_acceptances` (serialized on the meeting row, so it stays
+monotonic across room restores) and applies it in the meeting room. A revision
+the room refuses is ended as `not_applied`. Turning Mira off, reporting a minor
+(open to every participant) and any capability expansion end the acceptance; an
+expansion is a new revision. Accepting and ending post a system line in room
+chat.
 
-The room releases chat context for a mention (`ai.reserve`) or resumes an
-approved tool step (`ai.review.claim`) only while every admitted account has a
-current Continue, checked atomically with the state it reads. One Pause, a new
-participant who has not chosen, or a new notice version pauses room Mira for
-everyone; a mention then shows that Mira answers after everyone chooses
-Continue. The context sent to the provider contains only messages written by
-accounts with a current Continue. Mira's own earlier replies are omitted, since
-they can quote people who have since withdrawn; messages from people who left
-without choosing never leave the room. Choices are cleared when an
-ended room is restored.
+**Choices.** The pre-join screen shows one tick box: **Mira, our AI assistant,
+may be turned on in this meeting to provide a helpful experience (notes,
+captions, answers).** with an info panel and the 18+ line. It starts from the
+workspace default. Joining happens before admission, so the final box state,
+the notice hash and the locale are kept for the tab and recorded through the
+mira-room route right after admission, when an acceptance is current; until
+then the participant is off. Under an unticked workspace default, a box that
+started ticked on a join screen never counts and the participant confirms in
+the call. When Mira is turned on mid-call, or the acceptance changes, everyone
+present gets the same box preset to the workspace default and counts as off
+until they confirm. Each choice is stored in the room with its acceptance
+revision and notice version (`2026-11-24-room-v2`) and counts only while both
+are current, so a rejoin keeps a choice only within the same acceptance.
+Durable evidence goes to `private.meet_mira_participant_choices` with the
+notice version, text hash, locale and source (`join`, `confirm`, `toggle`). An
+on choice that cannot be stored durably falls back to off. Guests are keyed by
+their server-issued guest id.
 
-Each reserved request records its source accounts (the requester and every
-author whose messages it carries) with their exact consent revision. Sending
-that saved context to the provider again (`ai.review.claim`), every provider
-request (below), saving a private review
-and every publication (a reply posted by `ai.finish`, `ai.review.share`) require
-the all-participant fence and every source unchanged.
+**Context.** The room releases chat for a mention (`ai.reserve`) only while the
+acceptance includes chat and the requester is on. The released chat and the
+named participant list contain only participants whose current choice is on;
+Mira's own replies and system lines are omitted. One person turning Mira off
+excludes only their content. Each reserved request records the acceptance
+revision and its source accounts (the requester and every included author) with
+their exact choice revision. Sending saved context again
+(`ai.review.claim`), every provider request, saving a private review and every
+publication need the same acceptance and every source unchanged, so a mixed
+request whose sources include anyone no longer on is stale as a whole.
+
+**Live transcript.** The box covers notes, captions and the live transcript
+(`MIRA_BOX_RECORDS_TRANSCRIPT`). After a ticked choice the client records the
+transcript Allow. Turning Mira off declines the transcript in the same room turn,
+which pauses capture for everyone. The room refuses a transcript Allow unless
+the participant's room Mira choice is on, and starting, changing or ending an
+acceptance drops every transcript Allow.
+
+Regression coverage: `packages/realtime/src/meet/room-mira-consent.test.ts`
+(acceptance, per-person choices, context, transcript linkage),
+`room-mira-sources` and `room-mira-withdrawal` (leases and opt-out),
+`room-mira-acceptance.test.ts` and the `mira-room` route test (server),
+`room-mira-notice.test.tsx`, `transcript-consent-notice-mira.test.tsx` and
+`mira-join-box.test.tsx` (UI), and `tests/meet-mira-host-consent.sql` (evidence).
 
 Every outbound provider request, including each model step and the
 model-backed web search, holds a dispatch lease in the meeting room. The room
-admits it (`mira.room.dispatch`) only while the fence and every source revision
-are current, serialized with consent changes, and the release
+admits it (`mira.room.dispatch`) only while the acceptance and every source
+revision are current, serialized with consent changes, and the release
 (`mira.room.release`) reports whether consent stayed unchanged until the
 answer arrived. The provider key and destination stay in the Meet Worker; the
 room records only admission. Admission returns the lease lifetime, and the
@@ -166,34 +201,35 @@ stops there too. An expired request is refused (`MIRA_ROOM_LEASE_EXPIRED`) along
 with every later request, and a send interrupted after it started counts as
 unpriced.
 
-A Pause is deferred while already-admitted requests carry the participant's
-words. From the click, the participant no longer counts as Continue, so no new
+Turning Mira off is deferred while already-admitted requests carry the
+participant's words. From the click, the participant no longer counts as on, so no new
 provider request, reservation, resume or publication can start; the admitted
 requests finish under their bounded leases, and their answers are discarded
-(their usage still settles). The Pause becomes the effective choice, with a new
+(their usage still settles). Off becomes the effective choice, with a new
 revision, when the last lease covering the participant releases or expires (at
 most two minutes); overlapping requests from several requesters all have to
-settle. Meanwhile the notice shows **Pausing…** without choice buttons and
-refreshes every two seconds. Choosing Continue before then cancels the Pause
-with a new revision, so requests reserved earlier stay stale. A Pause with no
-admitted request covering the participant takes effect immediately.
+settle. Meanwhile the indicator shows that Mira is turning off and refreshes
+every two seconds. Turning Mira on again before then cancels the opt-out with a
+new revision, so requests reserved earlier stay stale. An opt-out with no
+admitted request covering the participant takes effect immediately. Requests
+that carry only other people's content continue.
 
 Settlement carries what was received: usage measured from every provider
 answer (including a discarded one) bills both the AI Studio run and the room
 cost. When a received answer lacks usage, a completed generation reports no
 measurable usage, or a request failed without an answer, the run settles once:
 the room cost is unpriced and AI Studio captures the reserved hold. With no
-request sent, nothing is billed. A source who pauses and
-leaves, or returns with a new Continue (a new revision), makes the request and
+request sent, nothing is billed. A source who turns Mira off and
+leaves, or returns with a new choice (a new revision), makes the request and
 its saved review stale; the requester can still discard it, and incurred cost
 settles without posting a reply. Requests reserved without recorded sources are
-stale. The server checks the fence again before any credit
-work. Generation uses the Meet Worker's own provider key; the room
+stale. The server checks the acceptance and the requester's choice again before
+any credit work. Generation uses the Meet Worker's own provider key; the room
 transcription provider binding stays closed.
 
 Room Live input and output (mixed room audio) remain denied on the server,
-independent of environment settings. The fence above is the gate a future room
-Live transport must use; it does not enable room voice by itself. Private text
+independent of environment settings. The acceptance and choices above are the
+gate a future room Live transport must use; it does not enable room voice by itself. Private text
 inside an accepted Live session remains available. The Private Mira tab in room
 chat uses the same current account choice and eligibility as Private Mira Live.
 It sends the requester's question and bounded private history, charges the
@@ -215,7 +251,7 @@ before posting the selected text to the room. Room tool controls require an
 authorized operation from the owning surface. Access to private notes and
 tutor chats is blocked in the room permissions card.
 
-Deploy `tuturuuu-meet-realtime` with the choice protocol, the room Mira fence and
+Deploy `tuturuuu-meet-realtime` with the acceptance and choice protocol and
 the room Live denials before `tuturuuu-meet`. `MEET_AI_RELEASE=paid-and-staff`
 keeps the source `MEET_AI_DISABLED: 'false'` and requires the
 `MEET_AI_ALL_WORKSPACES` secret; `contained` overrides the kill switch to

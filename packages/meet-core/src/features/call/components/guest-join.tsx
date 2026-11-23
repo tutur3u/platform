@@ -13,6 +13,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { preconnect, prefetchDNS } from 'react-dom';
+import {
+  MiraJoinBox,
+  useRememberMiraJoin,
+} from '../../live-assistant/mira-join-box';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
 import { GUEST_TURNSTILE_SCRIPT_SRC } from '../lib/guest-turnstile-recovery';
 import { GuestTurnstile } from './guest-turnstile';
@@ -64,8 +68,11 @@ export function MeetGuestJoin({
   returnTo,
   siteKey,
   scriptNonce,
+  miraBoxTickedByDefault = true,
 }: {
   meetingId: string;
+  /** The workspace default for the Mira box; the same on server and client. */
+  miraBoxTickedByDefault?: boolean;
   /** The response's CSP nonce, for the server-rendered Turnstile script. */
   scriptNonce?: string;
   /** Shown only when the host made the meeting details public. */
@@ -91,6 +98,8 @@ export function MeetGuestJoin({
     if (typed) setName(typed);
   }, []);
   const [state, setState] = useState<GuestJoinState>({ kind: 'verifying' });
+  const [miraTicked, setMiraTicked] = useState(miraBoxTickedByDefault);
+  const rememberMira = useRememberMiraJoin();
   const [stalled, setStalled] = useState(false);
   // A Turnstile token is single-use: a fresh widget issues the next one.
   const [widget, setWidget] = useState(0);
@@ -119,6 +128,8 @@ export function MeetGuestJoin({
   const join = async (token: string | null, via?: 'human') => {
     setState({ kind: 'submitting', token });
     try {
+      // Recorded after admission; both join paths carry the final state.
+      await rememberMira(meetingId, miraTicked).catch(() => undefined);
       await joinMeetCallAsGuest(meetingId, {
         displayName: name.trim(),
         ...(!token
@@ -218,6 +229,11 @@ export function MeetGuestJoin({
             {status}
           </p>
         </div>
+        <MiraJoinBox
+          checked={miraTicked}
+          onCheckedChange={setMiraTicked}
+          disabled={busy}
+        />
         <Button
           type="submit"
           size="lg"

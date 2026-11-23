@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { RoomMiraSelfChoice } from '../call/components/room-mira-notice';
+import { useRoomMiraConsent } from '../call/components/use-room-mira';
 import { useTranscriptConsent } from './use-transcript-consent';
 
 /**
@@ -17,6 +19,13 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
   const t = useTranslations('meet.ai');
   const { consent, choose } = useTranscriptConsent(meetingId);
   const [open, setOpen] = useState<boolean | null>(null);
+  // An Allow needs the caller's own Mira choice on, so the Mira box comes
+  // first. While Mira's state loads, Allow waits; on an error or where room
+  // Mira is unavailable the plain Allow shows (the room still refuses an
+  // Allow from anyone who is off).
+  const mira = useRoomMiraConsent(meetingId);
+  const miraOff = !!mira.data?.available && mira.data.choice !== 'on';
+  const miraPending = mira.isPending;
   if (!consent?.available || !consent.active) return null;
   const needsChoice = consent.choice === null;
   const { fence } = consent;
@@ -78,15 +87,23 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
               : t('consent_you_declined')}
           </p>
         )}
+        {miraOff && consent.choice !== 'allow' && (
+          <div className="space-y-2">
+            <p role="status" className="text-xs">
+              {t('consent_mira_off')}
+            </p>
+            <RoomMiraSelfChoice meetingId={meetingId} />
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
-          {consent.choice !== 'allow' && (
+          {consent.choice !== 'allow' && !miraOff && (
             <Button
               type="button"
               size="sm"
-              disabled={choose.isPending}
+              disabled={choose.isPending || miraPending}
               onClick={() => pick('allow')}
             >
-              {choose.isPending ? (
+              {choose.isPending || miraPending ? (
                 <Loader2 aria-hidden className="size-4 animate-spin" />
               ) : (
                 <Check aria-hidden className="size-4" />
