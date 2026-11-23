@@ -50,6 +50,12 @@ if (
   )
 )
   fixtures.push('calendar-auth-token-deactivation.sql');
+if (
+  trackedFiles.some((file) =>
+    file.endsWith('/20261123115000_calendar_event_guests.sql')
+  )
+)
+  fixtures.push('calendar-event-guests.sql');
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,

@@ -37436,6 +37436,666 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendar_event_guests: {
+        Row: {
+          contact_id: string | null;
+          created_at: string;
+          display_name: string | null;
+          email: string;
+          event_id: string;
+          id: string;
+          invited_by: string | null;
+          is_optional: boolean;
+          is_organizer: boolean;
+          last_invited_sequence: number | null;
+          responded_at: string | null;
+          rsvp_comment: string | null;
+          rsvp_status: string;
+          source: string;
+          updated_at: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          contact_id?: string | null;
+          created_at?: string;
+          display_name?: string | null;
+          email: string;
+          event_id: string;
+          id?: string;
+          invited_by?: string | null;
+          is_optional?: boolean;
+          is_organizer?: boolean;
+          last_invited_sequence?: number | null;
+          responded_at?: string | null;
+          rsvp_comment?: string | null;
+          rsvp_status?: string;
+          source?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          contact_id?: string | null;
+          created_at?: string;
+          display_name?: string | null;
+          email?: string;
+          event_id?: string;
+          id?: string;
+          invited_by?: string | null;
+          is_optional?: boolean;
+          is_organizer?: boolean;
+          last_invited_sequence?: number | null;
+          responded_at?: string | null;
+          rsvp_comment?: string | null;
+          rsvp_status?: string;
+          source?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_event_guests_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_guests_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_event_invitation_settings: {
+        Row: {
+          cancelled_at: string | null;
+          conference_url: string | null;
+          created_at: string;
+          event_id: string;
+          guests_can_invite_others: boolean;
+          guests_can_modify: boolean;
+          guests_can_see_guest_list: boolean;
+          ical_sequence: number;
+          ical_uid: string;
+          meet_meeting_id: string | null;
+          organizer_user_id: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cancelled_at?: string | null;
+          conference_url?: string | null;
+          created_at?: string;
+          event_id: string;
+          guests_can_invite_others?: boolean;
+          guests_can_modify?: boolean;
+          guests_can_see_guest_list?: boolean;
+          ical_sequence?: number;
+          ical_uid: string;
+          meet_meeting_id?: string | null;
+          organizer_user_id?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          cancelled_at?: string | null;
+          conference_url?: string | null;
+          created_at?: string;
+          event_id?: string;
+          guests_can_invite_others?: boolean;
+          guests_can_modify?: boolean;
+          guests_can_see_guest_list?: boolean;
+          ical_sequence?: number;
+          ical_uid?: string;
+          meet_meeting_id?: string | null;
+          organizer_user_id?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_meet_meeting_id_fkey';
+            columns: ['meet_meeting_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_meetings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_organizer_user_id_fkey';
+            columns: ['organizer_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_organizer_user_id_fkey';
+            columns: ['organizer_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_invitation_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_invite_audit: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          created_at: string;
+          detail: NonNullable<Json>;
+          event_id: string | null;
+          guest_id: string | null;
+          id: number;
+          ws_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          detail?: NonNullable<Json>;
+          event_id?: string | null;
+          guest_id?: string | null;
+          id?: never;
+          ws_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          detail?: NonNullable<Json>;
+          event_id?: string | null;
+          guest_id?: string | null;
+          id?: never;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_invite_audit_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_audit_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_audit_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_audit_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_audit_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_audit_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_invite_deliveries: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          event_id: string | null;
+          event_snapshot: Json;
+          guest_id: string | null;
+          ical_sequence: number;
+          id: string;
+          idempotency_key: string;
+          kind: string;
+          last_error: string | null;
+          lease_expires_at: string | null;
+          method: string;
+          next_attempt_at: string;
+          provider_message_id: string | null;
+          recipient_email: string;
+          requested_by: string | null;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          event_id?: string | null;
+          event_snapshot?: Json;
+          guest_id?: string | null;
+          ical_sequence: number;
+          id?: string;
+          idempotency_key: string;
+          kind: string;
+          last_error?: string | null;
+          lease_expires_at?: string | null;
+          method: string;
+          next_attempt_at?: string;
+          provider_message_id?: string | null;
+          recipient_email: string;
+          requested_by?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          event_id?: string | null;
+          event_snapshot?: Json;
+          guest_id?: string | null;
+          ical_sequence?: number;
+          id?: string;
+          idempotency_key?: string;
+          kind?: string;
+          last_error?: string | null;
+          lease_expires_at?: string | null;
+          method?: string;
+          next_attempt_at?: string;
+          provider_message_id?: string | null;
+          recipient_email?: string;
+          requested_by?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_invite_deliveries_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_calendar_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_guest_id_fkey';
+            columns: ['guest_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_guests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_deliveries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_invite_send_fences: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          reason: string | null;
+          stopped: boolean;
+          updated_at: string;
+          ws_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          reason?: string | null;
+          stopped?: boolean;
+          updated_at?: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          reason?: string | null;
+          stopped?: boolean;
+          updated_at?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_invite_send_fences_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_send_fences_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_send_fences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_send_fences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_send_fences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_send_fences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_invite_suppressions: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+          scope: string;
+          sender_user_id: string | null;
+          source: string;
+          ws_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+          scope: string;
+          sender_user_id?: string | null;
+          source?: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+          scope?: string;
+          sender_user_id?: string | null;
+          source?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_invite_suppressions_sender_user_id_fkey';
+            columns: ['sender_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_suppressions_sender_user_id_fkey';
+            columns: ['sender_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_suppressions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_suppressions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_suppressions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_invite_suppressions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      calendar_invite_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          guest_id: string;
+          id: string;
+          last_used_at: string | null;
+          purpose: string;
+          revoked_at: string | null;
+          token_hash: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          guest_id: string;
+          id?: string;
+          last_used_at?: string | null;
+          purpose: string;
+          revoked_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          guest_id?: string;
+          id?: string;
+          last_used_at?: string | null;
+          purpose?: string;
+          revoked_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_invite_tokens_guest_id_fkey';
+            columns: ['guest_id'];
+            isOneToOne: false;
+            referencedRelation: 'calendar_event_guests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_sync_dashboard: {
         Row: {
           batch_count: number | null;
@@ -60313,6 +60973,63 @@ export type Database = {
         };
         Returns: Json;
       };
+      calendar_invite_claim_deliveries: {
+        Args: { p_lease_seconds?: number; p_limit?: number };
+        Returns: {
+          attempts: number;
+          created_at: string;
+          event_id: string | null;
+          guest_id: string | null;
+          ical_sequence: number;
+          id: string;
+          idempotency_key: string;
+          kind: string;
+          last_error: string | null;
+          lease_expires_at: string | null;
+          method: string;
+          next_attempt_at: string;
+          provider_message_id: string | null;
+          recipient_email: string;
+          requested_by: string | null;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'calendar_invite_deliveries';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      calendar_invite_quota_check: {
+        Args: {
+          p_new_recipients: number;
+          p_requested_by: string;
+          p_user_daily_limit?: number;
+          p_user_hourly_limit?: number;
+          p_workspace_daily_limit?: number;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      calendar_is_workspace_calendar_manager: {
+        Args: { p_ws_id: string };
+        Returns: boolean;
+      };
+      calendar_list_event_guests_for_guest: {
+        Args: { p_event_id: string };
+        Returns: {
+          display_name: string;
+          email: string;
+          id: string;
+          is_optional: boolean;
+          is_organizer: boolean;
+          is_self: boolean;
+          rsvp_status: string;
+        }[];
+      };
       calendar_native_generation_mutation: {
         Args: {
           p_action: string;
@@ -60360,6 +61077,34 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      calendar_respond_to_event: {
+        Args: { p_comment?: string; p_event_id: string; p_status: string };
+        Returns: {
+          contact_id: string | null;
+          created_at: string;
+          display_name: string | null;
+          email: string;
+          event_id: string;
+          id: string;
+          invited_by: string | null;
+          is_optional: boolean;
+          is_organizer: boolean;
+          last_invited_sequence: number | null;
+          responded_at: string | null;
+          rsvp_comment: string | null;
+          rsvp_status: string;
+          source: string;
+          updated_at: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'calendar_event_guests';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       calendar_retained_generation: {
         Args: { p_actor_id: string; p_event_id: string; p_ws_id: string };
