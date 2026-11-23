@@ -34,7 +34,7 @@ import {
   rememberMiraJoinChoice,
 } from '../../live-assistant/mira-join-choice';
 import { TranscriptConsentNotice } from '../../meeting-ai/transcript-consent-notice';
-import { RoomMiraNotice } from './room-mira-notice';
+import { RoomMiraNotice, roomMiraConsentKey } from './room-mira-notice';
 
 const m = messages.meet.mira_consent;
 const base = {
@@ -381,8 +381,21 @@ it('(c) applies the Join state once, after the not-admitted read turns into the 
   });
   f.choose.mockResolvedValue({ ...accepted, choice: 'off' });
   const client = show('header', undefined, <RoomMiraNotice meetingId="room" />);
-  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  // Wait for the not-admitted answer itself, not only the call: refetching
+  // while the first read is still in flight joins that read instead of
+  // starting a new one.
+  await vi.waitFor(() =>
+    expect(client.getQueryData(roomMiraConsentKey('room'))).toMatchObject({
+      available: false,
+    })
+  );
   expect(f.choose).not.toHaveBeenCalled();
+  // The not-admitted phase leaves the participant's Join state untouched.
+  expect(peekMiraJoinChoice('room')).toMatchObject({
+    ticked: false,
+    textHash: 'b'.repeat(64),
+    seenRevision: 3,
+  });
   f.read.mockResolvedValue(accepted);
   await client.invalidateQueries();
   await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(1));
