@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { CalendarPreferencesProvider } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { NextIntlClientProvider } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { AddTaskForm } from './add-task-form';
@@ -67,18 +68,23 @@ it('the actual AddTaskForm offers due times after the configured-zone start in a
   client.setQueryData(['workspace_projects', 'workspace'], []);
   saveTaskDefaults('workspace', 'board', 'list');
   render(
-    <QueryClientProvider client={client}>
-      <CalendarPreferencesProvider
-        value={{ timezone: 'Asia/Ho_Chi_Minh', timeFormat: '24h' }}
-      >
-        <AddTaskForm
-          wsId="workspace"
-          defaultTaskName="Synthetic task"
-          setOpen={vi.fn()}
-          setIsLoading={vi.fn()}
-        />
-      </CalendarPreferencesProvider>
-    </QueryClientProvider>
+    <NextIntlClientProvider
+      locale="en"
+      messages={{ common: { loading: 'Loading' } }}
+    >
+      <QueryClientProvider client={client}>
+        <CalendarPreferencesProvider
+          value={{ timezone: 'Asia/Ho_Chi_Minh', timeFormat: '24h' }}
+        >
+          <AddTaskForm
+            wsId="workspace"
+            defaultTaskName="Synthetic task"
+            setOpen={vi.fn()}
+            setIsLoading={vi.fn()}
+          />
+        </CalendarPreferencesProvider>
+      </QueryClientProvider>
+    </NextIntlClientProvider>
   );
   fireEvent.click(
     await screen.findByRole('button', { name: 'Next: Add Details' })
