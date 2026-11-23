@@ -68,6 +68,7 @@ COPY packages/games/package.json ./packages/games/package.json
 COPY packages/google/package.json ./packages/google/package.json
 COPY packages/hive-ui/package.json ./packages/hive-ui/package.json
 COPY packages/hooks/package.json ./packages/hooks/package.json
+COPY packages/human-check/package.json ./packages/human-check/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
 COPY packages/inventory-core/package.json ./packages/inventory-core/package.json
