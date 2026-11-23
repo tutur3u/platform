@@ -12,6 +12,15 @@ vi.mock('@opennextjs/cloudflare', () => ({
 }));
 vi.mock('./transcript-roster', () => ({ readTranscriptRoster: mocks.roster }));
 vi.mock('server-only', () => ({}));
+// Entitlement, credits and the consent fence have their own tests.
+vi.mock('./credit-admission', () => ({ admitMeetCredits: async () => ({}) }));
+vi.mock('./transcript-authority', () => ({
+  requireMeetTranscriptPayer: async () => ({ billingWorkspaceId: 'payer' }),
+}));
+vi.mock('./transcript-fence', () => ({
+  requireMeetTranscriptFence: async () => {},
+  recordMeetTranscriptSession: async () => {},
+}));
 // Limiter behavior is covered by usage-limit and chunks-limit tests.
 vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 // Authorization is covered separately; avoid loading built auth packages here.

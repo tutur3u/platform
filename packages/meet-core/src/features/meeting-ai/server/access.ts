@@ -3,7 +3,7 @@ import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { meetingAiGenerationFailureCode } from '../request-failure';
 import { canReadSharedMeetingNotes } from './room-access';
-import { meetAiAvailable } from './workspace-gate';
+import { readMeetTranscriptionAvailability } from './transcription-availability';
 import 'server-only';
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
@@ -88,7 +88,7 @@ export async function meetAiAccess(
   wsId = meeting.ws_id;
   // Pilot gate: default deny. Existing notes stay readable; the read response
   // carries `available` so the UI can explain the disabled controls.
-  if (mutation && !(await meetAiAvailable(wsId)))
+  if (mutation && !(await readMeetTranscriptionAvailability(wsId)).available)
     throw new MeetAiError(
       403,
       'Meet AI is temporarily unavailable',

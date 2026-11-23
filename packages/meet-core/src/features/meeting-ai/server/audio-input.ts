@@ -5,25 +5,22 @@ import {
 import { z } from 'zod';
 import { MeetAiError } from './access';
 
-export const sourceSchema = z
-  .object({
-    speakerAccountId: z.uuid().optional(),
-    sourceKind: z.enum(['microphone', 'shared_audio']).optional(),
-    startSeconds: z.coerce.number().min(0).max(16_200),
-  })
-  .refine(
-    (value) => !value.speakerAccountId || value.sourceKind !== undefined,
-    { message: 'Source kind is required for attribution', path: ['sourceKind'] }
-  );
+/**
+ * Every clip names its speaker account and source kind. Unattributed audio is
+ * refused, because the consent fence can only check a named speaker's choice.
+ */
+export const sourceSchema = z.object({
+  speakerAccountId: z.uuid(),
+  sourceKind: z.enum(['microphone', 'shared_audio']),
+  startSeconds: z.coerce.number().min(0).max(16_200),
+});
 
 export async function readAudioParts(body: FormData, batched: boolean) {
   let sources: z.infer<typeof sourceSchema>[];
   try {
     sources = batched
       ? z
-          .array(
-            sourceSchema.refine((source) => source.sourceKind !== undefined)
-          )
+          .array(sourceSchema)
           .min(1)
           .max(MEET_AUDIO_BATCH_MAX_CLIPS)
           .parse(JSON.parse(String(body.get('sources'))))

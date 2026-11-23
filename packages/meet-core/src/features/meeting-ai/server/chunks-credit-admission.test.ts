@@ -7,6 +7,18 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+// A paid host pays from the meeting workspace; see transcript-authority tests.
+vi.mock('./transcript-authority', () => ({
+  requireMeetTranscriptPayer: async () => ({
+    payer: 'account',
+    billingWorkspaceId: 'meeting-workspace',
+  }),
+}));
+// The consent fence is covered by transcript-fence and chunks-fence tests.
+vi.mock('./transcript-fence', () => ({
+  requireMeetTranscriptFence: async () => {},
+  recordMeetTranscriptSession: async () => {},
+}));
 // Limiter behavior is covered by usage-limit and chunks-limit tests.
 vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 // Authorization is covered separately; avoid loading built auth packages here.
@@ -64,6 +76,8 @@ function request() {
   body.set('sessionId', id);
   body.set('sequence', '0');
   body.set('startSeconds', '1');
+  body.set('speakerAccountId', '00000000-0000-4000-8000-0000000000aa');
+  body.set('sourceKind', 'microphone');
   body.set('audio', encodeMeetWav(new Float32Array(16000)), 'chunk.wav');
   return new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
     method: 'POST',

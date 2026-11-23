@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   enforce: vi.fn(),
   generate: vi.fn(),
+  payer: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
@@ -12,6 +13,14 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: mocks.enforce }));
 vi.mock('./artifact-billing', () => ({
   generateBilledMeetArtifact: mocks.generate,
+}));
+vi.mock('./credit-admission', () => ({
+  admitMeetCredits: async (_user: string, _meeting: string, payer: string) => ({
+    workspaceId: payer,
+  }),
+}));
+vi.mock('./transcript-authority', () => ({
+  requireMeetTranscriptPayer: mocks.payer,
 }));
 vi.mock('./transcript-roster', () => ({
   readTranscriptRoster: async () => new Map(),
@@ -69,7 +78,13 @@ const draft = (client: never) =>
     timezone: 'Asia/Ho_Chi_Minh',
   });
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.payer.mockResolvedValue({
+    payer: 'tuturuuu',
+    billingWorkspaceId: 'root',
+  });
+});
 
 it('drafts live notes from completed speech, billed once per covered transcript', async () => {
   const { client, filters } = db({ id, ended_at: null }, [
@@ -90,7 +105,8 @@ it('drafts live notes from completed speech, billed once per covered transcript'
   );
   expect(mocks.generate).toHaveBeenCalledWith(
     expect.objectContaining({ timezone: 'Asia/Ho_Chi_Minh' }),
-    { userId: id, meetingId: id, attemptId: `${id}:draft:2` }
+    { userId: id, meetingId: id, attemptId: `${id}:draft:2` },
+    { workspaceId: 'root' }
   );
 });
 
@@ -125,4 +141,16 @@ it('reports a repeated draft of the same transcript as up to date', async () => 
     status: 409,
     message: 'Live notes are already up to date',
   });
+});
+
+it('refuses a free host before credits or the provider', async () => {
+  const { client } = db({ id, ended_at: null }, [chunk(0, 'Hi')]);
+  mocks.payer.mockRejectedValue(
+    Object.assign(new Error('plan'), {
+      status: 403,
+      code: 'MEET_AI_ACCOUNT_UNAVAILABLE',
+    })
+  );
+  await expect(draft(client)).rejects.toMatchObject({ status: 403 });
+  expect(mocks.generate).not.toHaveBeenCalled();
 });

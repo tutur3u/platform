@@ -83,18 +83,20 @@ const production = defineConfig({
       // Strict classroom participant caps: 100 for staff hosts and Enterprise,
       // 50 for Plus/Pro, 10 for Free.
       MEET_CLASSROOM_LIMITS_ENABLED: 'true',
-      // Meet AI containment (A1, 3 Nov 2026). It must match the live Worker vars,
-      // because a deploy replaces vars and dropping these would turn Meet AI back on.
-      // Lifting containment is a reviewed change to the two MEET_AI lines below.
+      // Meet AI is on for every workspace the gate admits: the kill switch
+      // is off here, and the reviewed MEET_AI_ALL_WORKSPACES opt-in stays a
+      // release-time secret, never source. A `contained` release overrides
+      // MEET_AI_DISABLED back to true. The allowlist stays empty.
       // Attendance stays off unless the exact string true. Timer commands are rechecked.
       MEET_CLASS_ATTENDANCE_ENABLED: 'false',
       MEET_CLASS_TIMER_ENABLED: 'true',
-      MEET_AI_DISABLED: 'true',
+      MEET_AI_DISABLED: 'false',
       MEET_AI_ENABLED_WORKSPACE_IDS: '',
-      // The API proxy guard reaches its store over the ABUSE_GUARD binding.
-      // Only `proxy` is assigned: `meet` and `password` keep their own
-      // store paths until they are moved deliberately.
-      ABUSE_GUARD_FAMILIES: 'proxy',
+      // The API proxy guard and the Meet AI usage limiter (transcript chunks
+      // and notes) reach their stores over the ABUSE_GUARD binding. The
+      // limiter fails closed unless `meet` is assigned here. `password` keeps
+      // its own store path until it is moved deliberately.
+      ABUSE_GUARD_FAMILIES: 'proxy,meet',
     },
     durable_objects: {
       bindings: [

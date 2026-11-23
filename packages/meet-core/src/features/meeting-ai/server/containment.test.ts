@@ -30,6 +30,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 import { liveWorkspaceAllowed } from '../../../cloudflare/live/workspace-gate';
 import { assertMeetAiRoom } from './room-gate';
+import { readMeetTranscriptionAvailability } from './transcription-availability';
 import {
   isMeetAiAvailableForWorkspace,
   meetAiAvailable,
@@ -60,6 +61,9 @@ async function expectDenied(env: object | undefined, wsIds: string[]) {
     expect(await meetAiAvailable(wsId)).toBe(false);
     expect(isMeetAiAvailableForWorkspace(wsId, env)).toBe(false);
     expect(liveWorkspaceAllowed(env, live(wsId))).toBe(false);
+    expect((await readMeetTranscriptionAvailability(wsId)).available).toBe(
+      false
+    );
     await expect(
       assertMeetAiRoom({ meeting: { ws_id: wsId } })
     ).rejects.toMatchObject({ status: 403 });

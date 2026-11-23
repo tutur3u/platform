@@ -16,7 +16,7 @@
     "head_sampling_rate": 0.05,
   },
   "vars": {
-    "MEET_AI_DISABLED": "true",
+    "MEET_AI_DISABLED": "false",
     "MEET_AI_ENABLED_WORKSPACE_IDS": "",
     "MEET_CLASS_ATTENDANCE_ENABLED": "false",
     "MEET_CLASS_TIMER_ENABLED": "true",

@@ -10,6 +10,9 @@ import { generateBilledMeetArtifact } from './artifact-billing';
 import { draftMeetAiNotes } from './draft-notes';
 import { meetingProviderTransport } from './provider-transport';
 import { readMeetingRoomPolicy } from './room-access';
+import { admitMeetCredits } from './credit-admission';
+import { requireMeetTranscriptPayer } from './transcript-authority';
+import { recordMeetTranscriptSession } from './transcript-fence';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
 import { readTranscriptRoster } from './transcript-roster';
 import 'server-only';
@@ -228,6 +231,8 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     });
   }
   if (action === 'start') {
+    // Free accounts cannot start; checked before any session row exists.
+    await requireMeetTranscriptPayer({ userId: user.id, wsId, meetingId });
     const { data, error } = await db
       .from('meet_ai_sessions')
       .insert({ meeting_id: meetingId, user_id: user.id })
@@ -238,6 +243,21 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         error.code === '23505' ? 409 : 500,
         'Could not start transcription'
       );
+    try {
+      await recordMeetTranscriptSession({
+        meetingId,
+        actorId: user.id,
+        sessionId: data.id,
+        active: true,
+      });
+    } catch (indicatorError) {
+      // Without a visible indicator the session never captures; end it.
+      await db
+        .from('meet_ai_sessions')
+        .update({ ended_at: new Date().toISOString() })
+        .eq('id', data.id);
+      throw indicatorError;
+    }
     return { sessionId: data.id };
   }
   if (!sessionId) throw new MeetAiError(400, 'Missing session');
@@ -276,6 +296,13 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     .update({ ended_at: session.ended_at ?? new Date().toISOString() })
     .eq('id', sessionId);
   if (ended.error) throw new MeetAiError(500, 'Could not stop transcription');
+  if (!session.ended_at)
+    await recordMeetTranscriptSession({
+      meetingId,
+      actorId: user.id,
+      sessionId,
+      active: false,
+    });
   const { data: chunks, error: chunkError } = await db
     .from('meet_ai_chunks')
     .select('*')
@@ -355,8 +382,15 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         .join('\n');
     if (transcript.length > 500_000)
       throw new MeetAiError(413, 'Transcript exceeds notes limit');
+    // Entitlement and credits are settled before the provider can start.
+    const payer = hasSavedSpeech
+      ? await requireMeetTranscriptPayer({ userId: user.id, wsId, meetingId })
+      : null;
+    const admission = payer
+      ? await admitMeetCredits(user.id, meetingId, payer.billingWorkspaceId)
+      : undefined;
     providerStarted = hasSavedSpeech;
-    const result = hasSavedSpeech
+    const result = payer
       ? await generateBilledMeetArtifact(
           {
             transcript,
@@ -367,7 +401,8 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
             userId: user.id,
             meetingId,
             attemptId: `${sessionId}:${attemptStartedAt}`,
-          }
+          },
+          admission
         )
       : null;
     if (result?.notes) {

@@ -288,10 +288,10 @@
       "uses": 33,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/756a1e6cd3d59e6b84979c54aef912a3322ecf1f",
-        "reason": "The Meet frontend publishes through the cf Void publisher (void-cf-output.mjs and void-cf-publisher.mjs), qualified by a disposable rehearsal of bindings, the SQLite Durable Object tag and two-way rollback, and carries no Wrangler line. Realtime publication, secret-name checks and the paired restore helper keep their admitted Wrangler operations."
+        "decision": "https://github.com/tutur3u/platform/commit/d24b0cbb9d8a17a6845772800d7ce2e571d78edc",
+        "reason": "The Meet frontend publishes through the cf Void publisher (void-cf-output.mjs and void-cf-publisher.mjs) and carries no Wrangler line. Realtime publication, secret-name checks and the paired restore helper keep their admitted Wrangler operations; the realtime deploy appends MEET_AI_DISABLED:true only for a contained MEET_AI_RELEASE, because source configs leave the Meet AI kill switch off under the reviewed all-workspaces opt-in. Usage counts are unchanged."
       },
-      "digest": "d09f23a71b942ce278222d39f7c915eb03ff414a2c745fbd209dac00f84bf051"
+      "digest": "188aa967c74935f0a9f3411e1335753392c33a26706b62705afbcc9c4bda9211"
     },
     ".github/workflows/mind-cloudflare.yaml": {
       "lines": 6,
@@ -1467,11 +1467,11 @@
     "apps/meet-realtime/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
-      "digest": "2312067edfd3cb0e5251660a3647ec1eeef8fb4fd99c7453e559bc3de5b41019",
+      "digest": "c8c21995684ade8abb4626b24163d0f29399febc88c0d92b67677efbdbebbc18",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
-        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints. The existing usage counts and publication path remain unchanged. The saved whiteboard adds a WHITEBOARD_ROOM Durable Object binding, its v4-whiteboard migration and the MEET_WHITEBOARD_FLUSH_DISABLED variable, documented under Saved whiteboard activity in the Meet application page."
+        "decision": "https://github.com/tutur3u/platform/commit/d24b0cbb9d8a17a6845772800d7ce2e571d78edc",
+        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints, the WHITEBOARD_ROOM Durable Object with its v4-whiteboard migration and the MEET_WHITEBOARD_FLUSH_DISABLED variable. MEET_AI_DISABLED is \"false\" so Meet AI follows the reviewed all-workspaces gate; a contained release overrides it to \"true\" at deploy. Usage counts and the publication path are unchanged."
       }
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {

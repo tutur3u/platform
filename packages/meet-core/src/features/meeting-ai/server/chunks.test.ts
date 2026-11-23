@@ -10,6 +10,18 @@ vi.mock('./transcript-speaker', () => ({
   resolveTranscriptSpeaker: mocks.speaker,
 }));
 vi.mock('server-only', () => ({}));
+// Entitlement and payer are covered by transcript-authority tests.
+vi.mock('./transcript-authority', () => ({
+  requireMeetTranscriptPayer: async () => ({
+    payer: 'account',
+    billingWorkspaceId: '00000000-0000-4000-8000-0000000000bb',
+  }),
+}));
+// The consent fence is covered by transcript-fence and chunks-fence tests.
+vi.mock('./transcript-fence', () => ({
+  requireMeetTranscriptFence: async () => {},
+  recordMeetTranscriptSession: async () => {},
+}));
 // Limiter behavior is covered by usage-limit and chunks-limit tests.
 vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 // Authorization is covered separately; avoid loading built auth packages here.
@@ -51,6 +63,8 @@ function request(audio = encodeMeetWav(new Float32Array(16000))) {
   body.set('sessionId', id);
   body.set('sequence', '0');
   body.set('startSeconds', '0');
+  body.set('speakerAccountId', '00000000-0000-4000-8000-0000000000aa');
+  body.set('sourceKind', 'microphone');
   body.set('audio', audio, 'chunk.wav');
   return new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
     method: 'POST',
@@ -435,7 +449,7 @@ it('reserves and charges once for a multi-source upload while persisting verifie
     'sources',
     JSON.stringify([
       { speakerAccountId: id, sourceKind: 'microphone', startSeconds: 0 },
-      { sourceKind: 'shared_audio', startSeconds: 3 },
+      { speakerAccountId: id, sourceKind: 'shared_audio', startSeconds: 3 },
     ])
   );
   body.set('audio_0', encodeMeetWav(new Float32Array(160000)));

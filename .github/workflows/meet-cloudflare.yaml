@@ -726,11 +726,17 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
+          # Source configs leave the Meet AI kill switch off; a contained
+          # release turns it back on for the room Worker too.
+          MEET_AI_RELEASE: ${{ vars.MEET_AI_RELEASE || 'contained' }}
         id: signaling
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
+          case "$MEET_AI_RELEASE" in contained|paid-and-staff) ;; *) echo '::error::MEET_AI_RELEASE must be contained or paid-and-staff'; exit 1 ;; esac
           node scripts/ci/meet-realtime-release.mjs verify "$SOURCE_SHA"
-          bun x --no-install wrangler deploy --no-bundle -c apps/meet-realtime/dist/worker/wrangler.json --message "$SOURCE_SHA"
+          contain=()
+          if [ "$MEET_AI_RELEASE" = contained ]; then contain=(--var MEET_AI_DISABLED:true); fi
+          bun x --no-install wrangler deploy --no-bundle -c apps/meet-realtime/dist/worker/wrangler.json --message "$SOURCE_SHA" "${contain[@]}"
       - name: Deploy the verified frontend
         if: steps.admission.outputs.superseded != 'true'
         env:
@@ -758,6 +764,9 @@ jobs:
           output_args=(--config "${{ steps.meet-output.outputs.config }}" --out "$out" --sha "$SOURCE_SHA"
             --var "TTR_ONE_ORIGIN_MEET=$TTR_ONE_ORIGIN_MEET"
             --var "TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS")
+          if [ "$MEET_AI_RELEASE" = contained ]; then
+            output_args+=(--var MEET_AI_DISABLED=true)
+          fi
           if [ "$MEET_AI_RELEASE" = paid-and-staff ]; then
             output_args+=(--var MEET_AI_DISABLED=false)
             if [ "$PAID_TIER_SECRET" = true ]; then

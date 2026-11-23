@@ -51,11 +51,11 @@ test('the sealed Meet identity binds the shared abuse guard', () => {
   assert.ok(!secretNames.includes('ABUSE_GUARD_KEY_PEPPER'));
 });
 
-test('the emitted artifact assigns only the proxy family to the guard', () => {
-  assert.equal(identity.vars.ABUSE_GUARD_FAMILIES, 'proxy');
+test('the emitted artifact assigns the proxy and Meet AI limiter families to the guard', () => {
+  assert.equal(identity.vars.ABUSE_GUARD_FAMILIES, 'proxy,meet');
   const config = emitted();
   checkPolicy(config, identity, secretNames);
-  for (const value of [undefined, 'proxy,meet', 'proxy,password']) {
+  for (const value of [undefined, 'proxy', 'proxy,meet,password']) {
     const changed = structuredClone(config);
     if (value === undefined) delete changed.vars.ABUSE_GUARD_FAMILIES;
     else changed.vars.ABUSE_GUARD_FAMILIES = value;

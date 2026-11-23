@@ -9,6 +9,8 @@ import type { MeetAiNotes } from '@tuturuuu/internal-api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MeetAiError } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
+import { admitMeetCredits } from './credit-admission';
+import { requireMeetTranscriptPayer } from './transcript-authority';
 import { readTranscriptRoster } from './transcript-roster';
 import { enforceMeetAiUsage } from './usage-limit';
 
@@ -40,7 +42,7 @@ function hasSpeech(chunk: Chunk) {
 /**
  * Live notes for the host's running session, from the transcript saved so
  * far. Nothing is stored: the final notes are generated when the session
- * stops. Each draft is one billed run for the meeting workspace, keyed by the
+ * stops. Each draft is one billed run for the host's payer, keyed by the
  * covered chunk count, so the same transcript is never charged twice, and it
  * counts against the notes limiter before any credit or provider work.
  */
@@ -89,6 +91,17 @@ export async function draftMeetAiNotes(input: {
     meetingId,
     workspaceId: input.wsId,
   });
+  // The same entitlement and payer as the final notes.
+  const { billingWorkspaceId } = await requireMeetTranscriptPayer({
+    userId: input.userId,
+    wsId: input.wsId,
+    meetingId,
+  });
+  const admission = await admitMeetCredits(
+    input.userId,
+    meetingId,
+    billingWorkspaceId
+  );
   let result: Awaited<ReturnType<typeof generateBilledMeetArtifact>>;
   try {
     result = await generateBilledMeetArtifact(
@@ -101,7 +114,8 @@ export async function draftMeetAiNotes(input: {
         userId: input.userId,
         meetingId,
         attemptId: `${sessionId}:draft:${chunks.length}`,
-      }
+      },
+      admission
     );
   } catch (cause) {
     // The same covered transcript already has a draft run.

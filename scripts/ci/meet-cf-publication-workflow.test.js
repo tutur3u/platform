@@ -66,6 +66,11 @@ test('Mira stays contained unless the release opts in to paid-and-staff', () => 
     /MEET_AI_DISABLED/
   );
   assert.equal(publish.run.match(/MEET_AI_DISABLED=false/g).length, 1);
+  // Source configs leave the kill switch off, so contained turns it back on.
+  assert.match(
+    publish.run,
+    /if \[ "\$MEET_AI_RELEASE" = contained \]; then\n\s+output_args\+=\(--var MEET_AI_DISABLED=true\)/
+  );
   assert.match(
     publish.run,
     /if \[ "\$MEET_AI_RELEASE" = paid-and-staff \]; then\n\s+output_args\+=\(--var MEET_AI_DISABLED=false\)/
@@ -111,11 +116,25 @@ test('the secret-names step reports whether paid-tier hosting is a secret', () =
   assert.match(verify.run, /paid_tier_secret=false' >> "\$GITHUB_OUTPUT"/);
 });
 
-test('the realtime Worker never receives the Mira override', () => {
+test('a contained release turns the realtime kill switch back on', () => {
   const signaling = step('deploy', 'Deploy signaling before the frontend');
+  assert.equal(
+    signaling.env.MEET_AI_RELEASE,
+    "${{ vars.MEET_AI_RELEASE || 'contained' }}"
+  );
+  assert.match(
+    signaling.run,
+    /case "\$MEET_AI_RELEASE" in contained\|paid-and-staff\) ;; \*\) echo '::error::[^']*'; exit 1 ;; esac/
+  );
+  assert.match(
+    signaling.run,
+    /if \[ "\$MEET_AI_RELEASE" = contained \]; then contain=\(--var MEET_AI_DISABLED:true\); fi/
+  );
+  assert.match(signaling.run, / deploy [^\n]* "\$\{contain\[@\]\}"/);
+  // The room Worker never receives an opening override or the opt-in.
   assert.doesNotMatch(
     JSON.stringify(signaling),
-    /MEET_AI_RELEASE|MEET_AI_DISABLED=false/
+    /MEET_AI_DISABLED[=:]false|MEET_AI_ALL_WORKSPACES/
   );
 });
 

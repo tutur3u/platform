@@ -8,6 +8,18 @@ const mocks = vi.hoisted(() => ({
   enforce: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+// Entitlement and payer are covered by transcript-authority tests.
+vi.mock('./transcript-authority', () => ({
+  requireMeetTranscriptPayer: async () => ({
+    payer: 'account',
+    billingWorkspaceId: '00000000-0000-4000-8000-0000000000bb',
+  }),
+}));
+// The consent fence is covered by transcript-fence and chunks-fence tests.
+vi.mock('./transcript-fence', () => ({
+  requireMeetTranscriptFence: async () => {},
+  recordMeetTranscriptSession: async () => {},
+}));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
 vi.mock('@tuturuuu/satellite/auth', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({}));
@@ -71,6 +83,8 @@ function chunkRequest(extra: Record<string, string> = {}) {
   body.set('sessionId', id);
   body.set('sequence', '0');
   body.set('startSeconds', '1');
+  body.set('speakerAccountId', '00000000-0000-4000-8000-0000000000aa');
+  body.set('sourceKind', 'microphone');
   // Client-supplied identity fields must never reach the limiter keys.
   for (const [key, value] of Object.entries(extra)) body.set(key, value);
   body.set('audio', encodeMeetWav(new Float32Array(16000 * 3)), 'chunk.wav');

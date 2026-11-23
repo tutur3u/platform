@@ -57,6 +57,8 @@ const upload = () => {
   body.set('id', meetingId);
   body.set('sequence', '0');
   body.set('startSeconds', '0');
+  body.set('speakerAccountId', '00000000-0000-4000-8000-0000000000aa');
+  body.set('sourceKind', 'microphone');
   body.set('audio', new Blob([new Uint8Array(64)], { type: 'audio/wav' }));
   return new Request(
     `https://meet.tuturuuu.com/api/meet-ai/x/${meetingId}/chunks`,

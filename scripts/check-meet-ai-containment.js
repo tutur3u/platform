@@ -2,10 +2,12 @@ const { readFileSync, readdirSync } = require('node:fs');
 const { join } = require('node:path');
 const { parse, parseExpression } = require('@babel/parser');
 
-// SR-919: lifting containment requires a reviewed change to this single flag.
-// The reviewed release-time lever is MEET_AI_RELEASE in meet-cloudflare.yaml,
-// which overrides the deployed Worker var without touching these sources.
-const CONTAINMENT_IN_FORCE = true;
+// SR-919: whether source configs must keep the Meet AI kill switch on.
+// Changing it is a reviewed change. When off, source configs carry
+// MEET_AI_DISABLED "false" and a `contained` MEET_AI_RELEASE in
+// meet-cloudflare.yaml overrides the deployed Worker var back to "true".
+// The pins below that do not depend on it always apply.
+const CONTAINMENT_IN_FORCE = false;
 
 function configFiles() {
   return ['apps/meet', 'apps/meet-realtime'].flatMap((directory) =>
@@ -17,16 +19,26 @@ function configFiles() {
   );
 }
 
-function containmentErrors(source, file) {
-  if (!CONTAINMENT_IN_FORCE) return [];
+function containmentErrors(source, file, inForce = CONTAINMENT_IN_FORCE) {
   const errors = [];
-  const check = (vars, required) => {
-    if (vars?.MEET_AI_DISABLED !== 'true')
+  const check = (vars, required, shape = { keys: [], opaque: false }) => {
+    // Every var must be a plain key so a spread or computed key cannot carry
+    // a control past this check.
+    if (shape.opaque)
+      errors.push('vars must list every key literally, with no spread');
+    if (inForce && vars?.MEET_AI_DISABLED !== 'true')
       errors.push('MEET_AI_DISABLED must be "true"');
+    // An exact string either way: a typo must never read as "enabled".
+    if (!inForce && !['true', 'false'].includes(vars?.MEET_AI_DISABLED))
+      errors.push('MEET_AI_DISABLED must be "true" or "false"');
     if (vars?.MEET_AI_ENABLED_WORKSPACE_IDS !== '')
       errors.push('MEET_AI_ENABLED_WORKSPACE_IDS must be empty');
     // The reviewed allow-all opt-in is a release-time override, never source.
-    if (vars && Object.hasOwn(vars, 'MEET_AI_ALL_WORKSPACES'))
+    // Whatever its value, including a variable or call in void.config.ts.
+    if (
+      (vars && Object.hasOwn(vars, 'MEET_AI_ALL_WORKSPACES')) ||
+      shape.keys.includes('MEET_AI_ALL_WORKSPACES')
+    )
       errors.push('MEET_AI_ALL_WORKSPACES must not be set in source config');
     for (const name of [
       'MEET_AI_DISABLED_WORKSPACE_IDS',
@@ -48,13 +60,30 @@ function containmentErrors(source, file) {
         )
         .map((p) => [p.key.name ?? p.key.value, p.value.value])
     );
-  const checkNode = (node) =>
+  const varsShape = (node) => {
+    const properties = node?.properties ?? [];
+    return {
+      keys: properties
+        .filter((p) => p.type === 'ObjectProperty')
+        .map((p) => p.key.name ?? p.key.value),
+      opaque: properties.some(
+        (p) =>
+          p.type !== 'ObjectProperty' ||
+          p.computed ||
+          (p.key.name ?? p.key.value) === undefined
+      ),
+    };
+  };
+  const checkNode = (node) => {
+    const vars = property(node, 'vars');
     check(
-      literalObject(property(node, 'vars')),
+      literalObject(vars),
       property(property(node, 'secrets'), 'required')?.elements?.map(
         (e) => e.value
-      )
+      ),
+      varsShape(vars)
     );
+  };
   try {
     if (/\.jsonc?$/.test(file)) {
       const node = parseExpression(source);
@@ -95,6 +124,11 @@ if (require.main === module) {
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exitCode = 1;
-  } else console.log('SR-919 Meet containment pins verified');
+  } else
+    console.log(
+      CONTAINMENT_IN_FORCE
+        ? 'SR-919 Meet containment pins verified'
+        : 'SR-919 Meet AI source pins verified (kill switch lifted)'
+    );
 }
 module.exports = { containmentErrors, configFiles };

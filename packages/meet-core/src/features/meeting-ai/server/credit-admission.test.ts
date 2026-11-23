@@ -101,3 +101,16 @@ it.each(['host', 'member', 'guest'])(
     );
   }
 );
+
+it('admits the given payer workspace instead of the meeting workspace', async () => {
+  check.mockResolvedValue(allowed);
+  await expect(
+    admitMeetCredits('actor', 'meeting', 'root-workspace')
+  ).resolves.toEqual({ workspaceId: 'root-workspace', allowance: allowed });
+  expect(check).toHaveBeenCalledWith(
+    'root-workspace',
+    'google/gemini-3.1-flash-lite',
+    'generate',
+    { userId: 'actor' }
+  );
+});

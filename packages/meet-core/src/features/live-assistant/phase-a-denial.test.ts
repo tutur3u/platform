@@ -5,6 +5,10 @@ import {
 } from '@tuturuuu/realtime/meet';
 import { roomService } from '../../../../../apps/meet-realtime/src/room-service';
 vi.mock('server-only', () => ({}));
+const handlers = vi.hoisted(() => ({
+  chunk: vi.fn(),
+  change: vi.fn(),
+}));
 import { meetingProviderTransport } from '../meeting-ai/server/provider-transport';
 import { POST as wav } from '../../routes/api/meet-ai/[wsId]/[meetingId]/chunks/route';
 import { POST as notes } from '../../routes/api/meet-ai/[wsId]/[meetingId]/route';
@@ -28,7 +32,13 @@ vi.mock('../meeting-ai/server/access', () => ({
     }
   },
 }));
-vi.mock('../meeting-ai/server/sessions', () => ({ readMeetAi: vi.fn() }));
+vi.mock('../meeting-ai/server/sessions', () => ({
+  readMeetAi: vi.fn(),
+  changeMeetAi: handlers.change,
+}));
+vi.mock('../meeting-ai/server/chunks', () => ({
+  transcribeMeetChunk: handlers.chunk,
+}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
 it('denies room Live commands and fences room chat without consulting environment gates', () => {
   const token = meetRealtimeTokenPayloadSchema.parse({
@@ -62,15 +72,24 @@ it('denies room Live commands and fences room chat without consulting environmen
       roomService(createMeetRoomSnapshot(), token, { action }).status
     ).toBe(403);
 });
-it('does not reach either a direct or service-bound room provider', async () => {
-  await expect(meetingProviderTransport()).rejects.toThrow(
+it('uses only the Meet Worker key for Meet and keeps the Parley room provider closed', async () => {
+  await expect(meetingProviderTransport()).resolves.toEqual({});
+  vi.resetModules();
+  vi.stubEnv('NEXT_PUBLIC_MEETING_APP', 'parley');
+  const parley = await import('../meeting-ai/server/provider-transport');
+  await expect(parley.meetingProviderTransport()).rejects.toThrow(
     'Room meeting AI is unavailable'
   );
+  vi.unstubAllEnvs();
 });
-it('rejects WAV and notes before reading input or using a provider', async () => {
+it('routes WAV and notes through the gated handlers', async () => {
   const request = new Request('https://meet.example.test/api', {
     method: 'POST',
   });
-  expect((await wav(request, {} as never)).status).toBe(403);
-  expect((await notes(request, {} as never)).status).toBe(403);
+  handlers.chunk.mockResolvedValue({ status: 'completed' });
+  handlers.change.mockResolvedValue({ sessionId: 'session' });
+  expect((await wav(request, {} as never)).status).toBe(200);
+  expect((await notes(request, {} as never)).status).toBe(200);
+  expect(handlers.chunk).toHaveBeenCalledOnce();
+  expect(handlers.change).toHaveBeenCalledOnce();
 });

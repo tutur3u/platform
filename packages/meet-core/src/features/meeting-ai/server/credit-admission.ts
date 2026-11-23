@@ -19,15 +19,7 @@ const refusalCodes: Record<string, string> = {
 
 class TransientCreditCheck extends Error {}
 
-/**
- * Admit the meeting workspace's billing before any chunk row exists, so a
- * refusal never leaves a transcript gap. Only check-infrastructure failures
- * retry: three attempts at most, then a retryable 503 for the client queue.
- */
-export async function admitMeetCredits(
-  userId: string,
-  meetingId: string
-): Promise<MeetCreditAdmission> {
+async function meetingBillingWorkspace(meetingId: string): Promise<string> {
   const db = await createAdminClient({ noCookie: true });
   const { data: meeting, error } = await db
     .from('workspace_meetings')
@@ -37,7 +29,22 @@ export async function admitMeetCredits(
   if (error)
     throw new MeetAiError(503, 'Meeting billing workspace unavailable');
   if (!meeting) throw new MeetAiError(404, 'Meeting not found');
-  const workspaceId = meeting.ws_id;
+  return meeting.ws_id;
+}
+
+/**
+ * Admit the payer's billing before any chunk row exists, so a refusal never
+ * leaves a transcript gap. The payer is the given billing workspace, or the
+ * meeting workspace when none is given. Only check-infrastructure failures
+ * retry: three attempts at most, then a retryable 503 for the client queue.
+ */
+export async function admitMeetCredits(
+  userId: string,
+  meetingId: string,
+  billingWorkspaceId?: string
+): Promise<MeetCreditAdmission> {
+  const workspaceId =
+    billingWorkspaceId ?? (await meetingBillingWorkspace(meetingId));
   const checked = await Effect.runPromise(
     Effect.either(
       Effect.tryPromise({

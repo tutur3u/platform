@@ -9,6 +9,8 @@ import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
 import { admitMeetCredits } from './credit-admission';
+import { requireMeetTranscriptPayer } from './transcript-authority';
+import { requireMeetTranscriptFence } from './transcript-fence';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 import { enforceMeetAiUsage } from './usage-limit';
 
@@ -72,6 +74,14 @@ export async function transcribeMeetChunk(
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
+  // Everyone present and every attributed source must currently allow the
+  // transcript before any limiter, credit, row or provider work.
+  await requireMeetTranscriptFence({
+    meetingId,
+    actorId: user.id,
+    sessionId,
+    sourceAccountIds: parts.map((part) => part.speakerAccountId),
+  });
   // Per-user, per-meeting and per-workspace volume limits, charged in
   // server-computed audio seconds before any credit check, chunk row or
   // provider call. Fails closed (503) when the limiter cannot decide.
@@ -86,7 +96,16 @@ export async function transcribeMeetChunk(
     ),
   });
   // A credit refusal must reject the upload before it can leave a failed row.
-  const admission = await admitMeetCredits(user.id, meetingId);
+  const { billingWorkspaceId } = await requireMeetTranscriptPayer({
+    userId: user.id,
+    wsId,
+    meetingId,
+  });
+  const admission = await admitMeetCredits(
+    user.id,
+    meetingId,
+    billingWorkspaceId
+  );
   const resolved = await Effect.runPromise(
     Effect.either(
       Effect.forEach(

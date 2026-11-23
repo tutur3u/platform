@@ -62,13 +62,13 @@ const identity = {
     PARLEY_APP_URL: 'https://parley.tuturuuu.com',
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: '0x4AAAAAACFREAh7hBTozwxB',
     NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS: 'meet',
-    MEET_AI_DISABLED: 'true',
+    MEET_AI_DISABLED: 'false',
     MEET_AI_ENABLED_WORKSPACE_IDS: '',
     MEET_CLASSROOM_LIMITS_ENABLED: 'true',
     MEET_EDUCATION_ENABLED: 'true',
     MEET_CLASS_ATTENDANCE_ENABLED: 'false',
     MEET_CLASS_TIMER_ENABLED: 'true',
-    ABUSE_GUARD_FAMILIES: 'proxy',
+    ABUSE_GUARD_FAMILIES: 'proxy,meet',
   },
 };
 

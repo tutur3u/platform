@@ -26,7 +26,11 @@ it('validates each file and keeps independent source offsets in a batch', async 
         sourceKind: 'microphone',
         startSeconds: 0,
       },
-      { sourceKind: 'shared_audio', startSeconds: 3 },
+      {
+        speakerAccountId: accountId,
+        sourceKind: 'shared_audio',
+        startSeconds: 3,
+      },
     ])
   );
   body.set('audio_0', encodeMeetWav(new Float32Array(16000)));
@@ -40,11 +44,32 @@ it('validates each file and keeps independent source offsets in a batch', async 
     status: 400,
   });
 });
-it('rejects attribution without source kind but accepts legacy unattributed audio', async () => {
+it('refuses unattributed audio in a batch', async () => {
+  const body = new FormData();
+  body.set(
+    'sources',
+    JSON.stringify([
+      {
+        speakerAccountId: accountId,
+        sourceKind: 'microphone',
+        startSeconds: 0,
+      },
+      { sourceKind: 'microphone', startSeconds: 0 },
+    ])
+  );
+  body.set('audio_0', encodeMeetWav(new Float32Array(16000)));
+  body.set('audio_1', encodeMeetWav(new Float32Array(16000)));
+  await expect(readAudioParts(body, true)).rejects.toMatchObject({
+    status: 400,
+  });
+});
+it('requires a speaker account and source kind on single audio', async () => {
   const body = new FormData();
   body.set('startSeconds', '0');
   body.set('audio', encodeMeetWav(new Float32Array(16000)));
-  expect(await readAudioParts(body, false)).toHaveLength(1);
+  await expect(readAudioParts(body, false)).rejects.toMatchObject({
+    status: 400,
+  });
   body.set('speakerAccountId', accountId);
   await expect(readAudioParts(body, false)).rejects.toMatchObject({
     status: 400,
