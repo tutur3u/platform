@@ -1,0 +1,115 @@
+---
+title: Calendar event guests and invitations
+description: Guests, RSVP, invitation email, abuse limits and Tuturuuu Meet links for Tuturuuu Calendar events.
+updatedAt: "2026-11-23"
+audience: developers
+---
+
+## Scope and default
+
+- **Applies to:** events on Tuturuuu calendars (`provider = 'tuturuuu'`) in the
+  Calendar app event dialog, and to every app that ships the shared calendar UI.
+- **Provider events are excluded.** Google and Microsoft events keep their
+  provider attendees, so the provider stays the only sender. The guest routes
+  return `409 provider_event` for them.
+- **Default:** an event has no guests and sends no email. Adding a guest sends
+  one invitation unless the request sets `notify: false`.
+
+## Guests
+
+- Organizers add guests by workspace member, workspace contact or any email
+  address. Member and contact emails are resolved on the server; a client
+  cannot attach an arbitrary address to a member or contact.
+- Each event has at most 100 guests (database trigger), and a request adds at
+  most 50.
+- The organizer is a guest row with `is_organizer` and RSVP `accepted`.
+- RSVP states are `pending`, `accepted`, `tentative` and `declined`.
+- Guest permissions default to: modify event **off**, invite others **on**,
+  see guest list **on**. "See guest list" is enforced in invitation email,
+  the `.ics` attendee list and `calendar_list_event_guests_for_guest`. The
+  modify and invite settings are stored and carried to clients; guests outside
+  the workspace have no edit surface.
+
+## Invitation email
+
+- Every message is built on the server from a snapshot of the stored event,
+  taken when the send is queued. The client never supplies subject, body or
+  recipients beyond the guest list.
+- Mail goes through `@tuturuuu/email-service` with the platform sender
+  (root-workspace credentials) and `Reply-To` set to the organizer, so that
+  service's rate limits, blacklist and email audit apply.
+- Each email carries an RFC 5545 attachment: `METHOD:REQUEST` for invitations
+  and updates, `METHOD:CANCEL` for cancellations, a stable `UID`, and a
+  `SEQUENCE` that increases on every update or cancellation.
+- "Email guests" sends an update to guests who were already invited. Deleting
+  an event with invited guests sends a cancellation first; removing an invited
+  guest sends that guest a cancellation.
+
+## RSVP and unsubscribe links
+
+- Links carry a 256-bit random token; only its SHA-256 is stored. Each token
+  has one purpose (`rsvp` or `unsubscribe`) and one guest.
+- RSVP links expire a week after the event (60 days at most) and are revoked
+  when the event is cancelled. Unsubscribe links last a year.
+- `GET` only shows a confirmation page; the answer is written on `POST`. Mail
+  scanners that prefetch links therefore cannot answer an invitation.
+- Unsubscribe offers "block this organizer" and "stop all Tuturuuu calendar
+  invitations". Messages include `List-Unsubscribe` and
+  `List-Unsubscribe-Post` (RFC 8058).
+- Both pages are rate limited per client IP.
+
+## Abuse limits
+
+| Limit | Value |
+| --- | --- |
+| Invitations per organizer per hour | 60 |
+| Invitations per organizer per day | 200 |
+| Invitations per workspace per day | 1,000 |
+| Emails per event and recipient per hour | 5 (cancellations exempt) |
+| Guests per event | 100 |
+
+Counts come from the `calendar_invite_deliveries` outbox, so they survive
+restarts. A blocked send returns `429` and writes an audit row. Suppressed
+recipients are recorded as `suppressed` and never mailed.
+
+## Delivery and stop fence
+
+- Deliveries are queued with an idempotency key of event, recipient, sequence
+  and kind; re-sending the same version is a no-op.
+- The Calendar Worker request that queues a send claims and sends a bounded
+  batch with a two-minute lease. Retries back off exponentially for at most
+  five attempts. An ambiguous provider outcome is terminal and never resent.
+- A row in `calendar_invite_send_fences` (per workspace, or global with a null
+  `ws_id`) stops both new sends and claims of queued deliveries.
+- Queued rows left by an interrupted request are claimed by the next send. A
+  Cron Control drain for idle periods is not part of this release.
+
+## Tuturuuu Meet and Tasks
+
+- "Add Tuturuuu Meet" creates a workspace meeting (or links an existing one of
+  the same workspace) and stores its join URL as the event's conferencing
+  link. Invitations show a join button and include the URL in `LOCATION`,
+  `DESCRIPTION` and `CONFERENCE`.
+- Events without other scheduling metadata also get the `tuturuuu_meeting`
+  marker that Meet uses to show the scheduled event on the meeting page.
+- The event dialog shows the task linked through `task_id` or
+  `task_calendar_events`, with a link to it in Tasks.
+- Turning the toggle off removes the link; the meeting room is kept.
+
+## Data and access
+
+Guest, settings, token, suppression, outbox, fence and audit tables are
+proxy-only: anon and authenticated roles have no table grants, and the
+Calendar API authorises `manage_calendar` before using the service role. RLS
+policies remain as defence in depth: calendar managers read and write guests
+of their workspace, and a signed-in guest reads only their own row.
+`calendar_respond_to_event` lets a signed-in guest answer their own
+invitation.
+
+## Regression coverage
+
+- `apps/database/supabase/tests/calendar-event-guests.sql`: grants, RLS,
+  workspace match, guest cap, quotas, idempotency, fences and claims.
+- `apps/calendar/src/lib/calendar/invitations/*.test.ts`: `.ics` format and
+  injection, email escaping and guest-list privacy, tokens, queue
+  classification, retries and ambiguous outcomes.
