@@ -39,19 +39,20 @@ function renderTrigger(props: Partial<WorkspaceSelectTriggerProps> = {}) {
 }
 
 describe('WorkspaceSelectTrigger', () => {
-  it('shows the avatar and "Switch workspace" in the sidebar, not a dropdown', () => {
+  it('shows the current workspace avatar and name with a chevron in the sidebar', () => {
     renderTrigger();
 
-    const trigger = screen.getByRole('button', { name: 'Switch workspace' });
-    expect(trigger.textContent).toBe('Switch workspace');
+    const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
+    expect(trigger.getAttribute('aria-label')).toBe(
+      'Switch workspace, Easy Center'
+    );
+    expect(trigger.textContent).toBe('Easy Center');
     expect(trigger.querySelector('[data-slot="avatar"]')).not.toBeNull();
+    expect(trigger.querySelector('svg')).not.toBeNull();
     expect(trigger.getAttribute('data-workspace-trigger')).toBe('switch');
     expect(trigger.hasAttribute('aria-describedby')).toBe(false);
-    // No current-workspace name, plan badge or chevron: nothing reads as a
-    // dropdown, and no combobox role or list is exposed.
-    expect(screen.queryByText('Easy Center')).toBeNull();
+    // The click opens a dialog: no combobox role or list is exposed.
     expect(screen.queryByText('FREE')).toBeNull();
-    expect(trigger.querySelector('svg')).toBeNull();
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(trigger.getAttribute('aria-keyshortcuts')).toBe(
@@ -59,11 +60,21 @@ describe('WorkspaceSelectTrigger', () => {
     );
   });
 
+  it('truncates a long name and shows it in a tooltip', async () => {
+    const name = 'A very long workspace name that cannot fit the sidebar';
+    renderTrigger({ workspace: { name, tier: 'PRO' } });
+
+    const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
+    expect(trigger.querySelector('.truncate')?.textContent).toBe(name);
+    fireEvent.focus(trigger);
+    expect((await screen.findByRole('tooltip')).textContent).toContain(name);
+  });
+
   it('opens the Select workspace dialog on click', () => {
     renderTrigger();
     expect(screen.queryByRole('dialog')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Switch workspace/ }));
 
     expect(
       screen.getByRole('dialog', { name: 'Select workspace' })
@@ -73,14 +84,15 @@ describe('WorkspaceSelectTrigger', () => {
   it('is avatar-only in the collapsed rail, with a name, tooltip and dialog', async () => {
     renderTrigger({ compact: true });
 
-    const trigger = screen.getByRole('button', { name: 'Switch workspace' });
+    const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
     expect(trigger.textContent).toBe('');
     expect(trigger.querySelector('[data-slot="avatar"]')).not.toBeNull();
+    expect(trigger.querySelector('svg')).toBeNull();
 
     fireEvent.focus(trigger);
-    expect((await screen.findByRole('tooltip')).textContent).toContain(
-      'Switch workspace'
-    );
+    const tip = (await screen.findByRole('tooltip')).textContent;
+    expect(tip).toContain('Easy Center');
+    expect(tip).toContain('Switch workspace');
 
     fireEvent.click(trigger);
     expect(
@@ -91,7 +103,7 @@ describe('WorkspaceSelectTrigger', () => {
   it('announces the invitation count as the button description', () => {
     renderTrigger({ invitationCount: 3 });
 
-    const trigger = screen.getByRole('button', { name: 'Switch workspace' });
+    const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
     const descriptionId = trigger.getAttribute('aria-describedby') ?? '';
     expect(document.getElementById(descriptionId)?.textContent).toBe(
       '3 invitations'
@@ -104,7 +116,7 @@ describe('WorkspaceSelectTrigger', () => {
 
     const ids = (
       screen
-        .getByRole('button', { name: 'Switch workspace' })
+        .getByRole('button', { name: /^Switch workspace/ })
         .getAttribute('aria-describedby') ?? ''
     ).split(' ');
     expect(ids).toHaveLength(2);
@@ -117,7 +129,7 @@ describe('WorkspaceSelectTrigger', () => {
   it('marks invitations with a dot in the narrow collapsed rail', () => {
     renderTrigger({ compact: true, invitationCount: 120 });
 
-    const trigger = screen.getByRole('button', { name: 'Switch workspace' });
+    const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
     expect(trigger.querySelector('[data-invitation-dot]')).not.toBeNull();
     expect(trigger.textContent).toBe('120 invitations');
     expect(trigger.querySelector('[data-slot="badge"]')).toBeNull();
@@ -126,7 +138,7 @@ describe('WorkspaceSelectTrigger', () => {
   it('draws its keyboard ring inside the clipped sidebar section', () => {
     renderTrigger();
 
-    const trigger = screen.getByRole('button', { name: 'Switch workspace' });
+    const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
     expect(trigger.className).toContain('focus-visible:ring-inset');
     expect(trigger.getAttribute('type')).toBe('button');
   });

@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '../dialog';
 import { FOCUS_MODALITY_ATTRIBUTE } from './focus-modality';
+import { SIDEBAR_OVERLAY_HANDOFF_MS } from './sidebar-overlay-context';
 import { Structure } from './structure';
 
 const stubMatchMedia = (reducedMotion = false) =>
@@ -379,6 +380,7 @@ describe('Structure in minimal mode', () => {
     act(() => account.focus());
     expect(document.activeElement).toBe(account);
 
+    advance(SIDEBAR_OVERLAY_HANDOFF_MS);
     advance(240);
     expect(sidebar()).toHaveAttribute('data-overlay-state', 'closing');
     expect(document.activeElement).toBe(trigger());

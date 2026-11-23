@@ -5,6 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '../dialog';
 import { Popover } from '../popover';
+import { SIDEBAR_OVERLAY_HANDOFF_MS } from './sidebar-overlay-context';
 import { Structure } from './structure';
 
 beforeEach(() => {
@@ -407,21 +408,67 @@ describe('Structure', () => {
           <span>Page content</span>
         </Structure>
       );
-      const { rerender } = render(renderOverlays(true, true));
-      const sidebar = screen.getByRole('complementary');
-      fireEvent.mouseLeave(sidebar);
-      rerender(renderOverlays(false, true));
-      expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+      vi.useFakeTimers();
+      const settle = () =>
+        act(() => vi.advanceTimersByTime(SIDEBAR_OVERLAY_HANDOFF_MS));
+      try {
+        const { rerender } = render(renderOverlays(true, true));
+        const sidebar = screen.getByRole('complementary');
+        fireEvent.mouseLeave(sidebar);
+        rerender(renderOverlays(false, true));
+        settle();
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
 
-      fireEvent.mouseEnter(sidebar);
-      rerender(renderOverlays(false, false));
-      expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
-      expect(onMouseLeave).not.toHaveBeenCalled();
+        fireEvent.mouseEnter(sidebar);
+        rerender(renderOverlays(false, false));
+        settle();
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+        expect(onMouseLeave).not.toHaveBeenCalled();
 
-      fireEvent.mouseLeave(sidebar);
-      expect(sidebar).toHaveAttribute('data-overlay-state', 'closing');
-      fireEvent.animationEnd(sidebar);
-      expect(onMouseLeave).toHaveBeenCalledTimes(1);
+        fireEvent.mouseLeave(sidebar);
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'closing');
+        fireEvent.animationEnd(sidebar);
+        expect(onMouseLeave).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps the sidebar pinned through a hand-off between two overlays', () => {
+      const renderOverlays = (menuOpen: boolean, popoverOpen: boolean) => (
+        <Structure
+          isCollapsed={false}
+          onMouseLeave={vi.fn()}
+          overlayOnExpand
+          setIsCollapsed={vi.fn()}
+          sidebarContent={
+            <>
+              <Popover open={menuOpen} />
+              <Dialog open={popoverOpen} />
+            </>
+          }
+        >
+          <span>Page content</span>
+        </Structure>
+      );
+      vi.useFakeTimers();
+      try {
+        const { rerender } = render(renderOverlays(true, false));
+        const sidebar = screen.getByRole('complementary');
+        fireEvent.mouseLeave(sidebar);
+        // The first overlay closes a moment before the next one mounts.
+        rerender(renderOverlays(false, false));
+        act(() => vi.advanceTimersByTime(SIDEBAR_OVERLAY_HANDOFF_MS / 2));
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+        rerender(renderOverlays(false, true));
+        act(() => vi.advanceTimersByTime(SIDEBAR_OVERLAY_HANDOFF_MS));
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+        rerender(renderOverlays(false, false));
+        act(() => vi.advanceTimersByTime(SIDEBAR_OVERLAY_HANDOFF_MS));
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'closing');
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('keeps the animated reflow and mounted body for non-overlay sidebars', () => {

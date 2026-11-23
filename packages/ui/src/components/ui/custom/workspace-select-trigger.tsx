@@ -18,10 +18,10 @@ export interface WorkspaceSelectTriggerProps extends Omit<
   'children'
 > {
   /**
-   * `switch` is the sidebar entry point: the workspace avatar and a
-   * "Switch workspace" label, with no dropdown affordance, because the click
-   * opens the Select workspace dialog. `workspace` names the current workspace
-   * (settings breadcrumb, account menu).
+   * `switch` is the sidebar entry point: the current workspace's avatar and
+   * name with a chevron; the click opens the Select workspace dialog.
+   * `workspace` names the current workspace (settings breadcrumb, account
+   * menu).
    */
   appearance: 'switch' | 'workspace';
   /** Avatar only, for the collapsed rail. */
@@ -154,46 +154,65 @@ export function WorkspaceSelectTrigger({
     );
   }
 
-  // A sidebar row like the navigation items. The ring is inset because the
-  // selector section clips its overflow while it animates open.
+  // A dropdown-style row: the current workspace's avatar and name with a
+  // chevron; it opens the Select workspace dialog. The avatar sits in the
+  // rail's icon slot in both states, so it keeps one position when the
+  // sidebar expands (the border is 1px on each side, compensated in the slot).
+  const name = workspace?.name || `${labels.loading}...`;
   const button = (
     <button
-      aria-label={labels.switch}
+      aria-label={
+        workspace?.name ? `${labels.switch}, ${workspace.name}` : labels.switch
+      }
       {...shared}
       {...props}
       className={cn(
-        'relative flex h-9 w-full cursor-pointer items-center gap-0 rounded-md px-0 font-medium text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50',
-        !compact && 'text-start',
+        'relative flex h-9 w-full cursor-pointer items-center gap-0 rounded-md border px-0 font-medium text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset disabled:pointer-events-none disabled:opacity-50',
+        compact
+          ? 'border-transparent hover:bg-accent hover:text-accent-foreground'
+          : 'border-border/70 bg-muted/30 text-start hover:bg-muted/60',
         className
       )}
     >
-      {/* The avatar sits in the rail's icon slot in both states, so it keeps
-          one position when the sidebar expands. */}
       <span
         className={cn(
           'flex shrink-0 justify-center',
-          compact ? 'w-full' : 'w-[var(--sidebar-rail-slot,2.9375rem)]'
+          compact
+            ? 'w-full'
+            : 'w-[calc(var(--sidebar-rail-slot,2.9375rem)-2px)]'
         )}
       >
         {icon}
       </span>
       {!compact && (
-        <span className="min-w-0 flex-1 truncate pr-2">{labels.switch}</span>
+        <>
+          <span className="-ml-2 min-w-0 flex-1 truncate">{name}</span>
+          {invitations && (
+            <span className="flex shrink-0 items-center pl-1">
+              {invitations}
+            </span>
+          )}
+          <ChevronDown
+            aria-hidden
+            className="mx-2 size-4 shrink-0 text-muted-foreground"
+          />
+        </>
       )}
-      {invitations && !compact ? (
-        <span className="flex shrink-0 items-center pr-2">{invitations}</span>
-      ) : (
-        invitations
-      )}
+      {compact && invitations}
     </button>
   );
-
-  if (!compact) return button;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side="right">{labels.switch}</TooltipContent>
+      <TooltipContent side="right">
+        <span className="block">{name}</span>
+        {compact && (
+          <span className="block text-muted-foreground text-xs">
+            {labels.switch}
+          </span>
+        )}
+      </TooltipContent>
     </Tooltip>
   );
 }

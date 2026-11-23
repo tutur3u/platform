@@ -118,23 +118,35 @@ clearance at 768 to 1920px.
 
 ## Workspace switcher
 
-The sidebar always shows a compact **Switch workspace** row with the current
-workspace's avatar, under the app name (decided 2026-11-22; always present since
-2026-11-23). It replaces the earlier dropdown-style control that showed the
-workspace name, plan badge and a chevron: workspaces are chosen in the
-**Select workspace** dialog, so nothing in the sidebar reads as a dropdown, and
-the former show/hide control for the row is gone. Clicking the row, or pressing
-Cmd+Shift+K (Ctrl+Shift+K), opens that dialog. A pending-invitation count still
-shows beside the label and is announced as the row's description. This applies
-to Web, Workspace and every satellite sidebar.
+The sidebar always shows a dropdown-style row under the app name: the current
+workspace's avatar and name (truncated, with the full name in a tooltip) and a
+chevron (decided 2026-11-23). Clicking it, or pressing Cmd+Shift+K
+(Ctrl+Shift+K), opens the **Select workspace** dialog; workspaces are chosen
+there, and no menu or list opens in the sidebar. A pending-invitation count
+shows beside the name and is announced as the row's description. The row has no
+show/hide control. This applies to Web, Workspace and every satellite sidebar.
 
-On desktop, the collapsed rail shows the same row as an avatar with a tooltip,
-an accessible name and a dot for pending invitations. Hovering the rail restores
-the label without reopening the dialog. Minimal mode shows the selector only
-while the panel is open. The settings breadcrumb and account menu show the
-workspace name. Coverage: `workspace-select-trigger.test.tsx` and the sidebar
-case in `workspace-select-invitations.test.tsx` under
+On desktop, the collapsed rail shows the same row as the avatar alone, at the
+same position as in the expanded panel, with a tooltip (workspace name and
+"Switch workspace"), an accessible name and a dot for pending invitations.
+Hovering the rail restores the name without reopening the dialog. Minimal mode
+shows the selector only while the panel is open. The settings breadcrumb and the
+account menu show the workspace name and plan. Coverage:
+`workspace-select-trigger.test.tsx` and the sidebar case in
+`workspace-select-invitations.test.tsx` under
 `packages/ui/src/components/ui/custom/__tests__/`.
+
+## Hover lock
+
+In expand-on-hover, the panel stays open while any overlay opened from it is
+open, including one that replaces another: the account menu, its Sidebar,
+Language and Theme submenus, Notifications, Feedback and the workspace dialog.
+Portalled content counts as inside the sidebar. A closing overlay keeps the pin
+for 400ms so the next one can mount (the account menu hands off to the
+Notifications popover and to dialogs), and the panel collapses only after every
+overlay has closed and the pointer is outside. Coverage:
+`notification-popover.test.tsx` (account menu to Notifications),
+`structure.test.tsx` (hand-off between overlays) and the Chromium harness.
 
 ## Icon alignment across rail and panel
 
@@ -151,8 +163,9 @@ in the rail and the panel (decided 2026-11-23). Expanding reveals the Settings
 label and the name and email beside the avatar. Notifications, Upgrade, Discord
 and Feedback have no footer controls: the avatar shows the unread count as a
 badge, includes it in its accessible name, and its menu lists Notifications
-(which opens the notifications popover beside the avatar, with focus returning
-to the avatar on close), Upgrade, Discord and Feedback above the account items.
+(with the count; it opens the notifications popover beside the avatar, with focus
+returning to the avatar on close) first, then Upgrade, Feedback and Discord
+after the preference submenus. Feedback appears once.
 The same menu serves the phone top bar. An app that passes no account slot keeps
 its combined actions row.
 

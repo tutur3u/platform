@@ -11,7 +11,9 @@ import {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { SatelliteUserMenu } from '../satellite-user-menu';
 import { useAccountHub } from '../sidebar-footer-context';
+import { SIDEBAR_OVERLAY_HANDOFF_MS } from '../sidebar-overlay-context';
 import { Structure } from '../structure';
 import {
   fakeApi,
@@ -70,12 +72,26 @@ function AccountEntry() {
   );
 }
 
-function HoverSidebar({ popover }: { popover: ReactNode }) {
+function HoverSidebar({
+  popover,
+  userMenu = false,
+}: {
+  popover: ReactNode;
+  userMenu?: boolean;
+}) {
   const [collapsed, setCollapsed] = useState(true);
   return (
     <Structure
       notificationPopover={popover}
-      userPopover={<AccountEntry />}
+      userPopover={
+        userMenu ? (
+          <SatelliteUserMenu email="ada@example.com" label="Account" name="Ada">
+            <span />
+          </SatelliteUserMenu>
+        ) : (
+          <AccountEntry />
+        )
+      }
       isCollapsed={collapsed}
       onMouseEnter={() => setCollapsed(false)}
       onMouseLeave={() => setCollapsed(true)}
@@ -130,11 +146,67 @@ describe('notification popover', () => {
         fireEvent.click(outside, { button: 0 });
       }
       await waitFor(() => expect(popover).not.toBeInTheDocument());
-      expect(sidebar).toHaveAttribute('data-overlay-state', 'closing');
+      // The pin outlasts the popover briefly so a follow-up overlay can mount.
+      await waitFor(
+        () => expect(sidebar).toHaveAttribute('data-overlay-state', 'closing'),
+        { timeout: SIDEBAR_OVERLAY_HANDOFF_MS * 4 }
+      );
       fireEvent.animationEnd(sidebar);
       expect(sidebar).not.toHaveAttribute('data-overlay-state');
     }
   );
+
+  it('keeps the hover sidebar open while the user menu hands off to Notifications', async () => {
+    stubBrowser(fakeApi([notification('n1', 1)], 1).fetch);
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    renderPopover({
+      wrap: (popover) => <HoverSidebar popover={popover} userMenu />,
+    });
+    const sidebar = screen.getByRole('complementary');
+    fireEvent.mouseEnter(sidebar);
+    expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+
+    const account = await screen.findByRole('button', {
+      name: /^Account/,
+    });
+    fireEvent.keyDown(account, { key: 'Enter' });
+    const item = await screen.findByRole('menuitem', {
+      name: /Notifications/,
+    });
+    // The pointer moves from the sidebar onto the portalled menu.
+    fireEvent.mouseLeave(sidebar, { relatedTarget: item });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+
+    fireEvent.click(item);
+    // The menu closes before the popover opens; the sidebar must not start
+    // closing in between.
+    expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
+    const popover = await screen.findByRole('dialog');
+    // Neither the closed menu nor the opening popover lets the sidebar close.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(popover).toBeVisible();
+    expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+
+    // Focus returning to the avatar (the menu closing) does not dismiss it.
+    act(() => account.focus());
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(popover).toBeVisible();
+
+    fireEvent.keyDown(popover, { key: 'Escape' });
+    await waitFor(() => expect(popover).not.toBeInTheDocument());
+    await waitFor(
+      () => expect(sidebar).toHaveAttribute('data-overlay-state', 'closing'),
+      { timeout: SIDEBAR_OVERLAY_HANDOFF_MS * 4 }
+    );
+  });
 
   it('requests only the unread count while closed, independent of list rows', async () => {
     const api = fakeApi([notification('n1', 1), notification('n2', 2)], 7);

@@ -162,6 +162,9 @@ try {
   page.on('pageerror', (error) => pageErrors.push(error.message));
   await page.addInitScript(installProbes);
   await page.goto(`http://127.0.0.1:${port}/?behavior=${behavior}`);
+  if (process.env.SIDEBAR_SHIFT_THEME === 'dark') {
+    await page.evaluate(() => document.documentElement.classList.add('dark'));
+  }
   await page.locator('[data-testid="calendar-grid"]').waitFor();
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(800);
@@ -384,16 +387,11 @@ try {
     await checkAccountHub(page, shots);
     const aside = page.locator('aside');
     const picker = page.getByRole('dialog', { name: 'Select workspace' });
-    const switcher = aside.getByRole('button', { name: 'Switch workspace' });
+    const switcher = aside.getByRole('button', { name: /^Switch workspace/ });
     assert.equal(
       await page.getByRole('button', { name: /workspace selector/i }).count(),
       0,
       'there is no show/hide control for the workspace picker'
-    );
-    assert.equal(
-      await switcher.locator('svg.lucide-chevron-down').count(),
-      0,
-      'the workspace trigger has no dropdown chevron'
     );
     await page.mouse.move(24, 400);
     await switcher.click();
@@ -404,11 +402,9 @@ try {
     await switcher.locator('[data-invitation-dot]').waitFor();
     await switcher.locator('[data-slot="avatar-image"]').waitFor();
     assert.equal(
-      await switcher
-        .locator('span')
-        .filter({ hasText: /^Switch workspace$/ })
-        .count(),
-      0
+      await switcher.locator('.truncate').count(),
+      0,
+      'the collapsed switcher is avatar-only'
     );
     if (shots) {
       await page.screenshot({
@@ -416,7 +412,12 @@ try {
       });
     }
     await page.mouse.move(24, 400);
-    await switcher.getByText('Switch workspace', { exact: true }).waitFor();
+    await switcher.getByText('Calendar workspace', { exact: true }).waitFor();
+    assert.equal(
+      await switcher.locator('svg.lucide-chevron-down').count(),
+      1,
+      'the expanded switcher shows the current workspace with a chevron'
+    );
     assert.equal(
       await picker.isVisible(),
       false,

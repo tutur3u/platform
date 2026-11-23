@@ -7,6 +7,7 @@ import {
   Settings,
   Users,
 } from '@tuturuuu/icons';
+import { AccountHubActionItems } from '@tuturuuu/ui/custom/account-hub-ui';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
@@ -166,7 +167,7 @@ const Account = ({ hideMetadata }: { hideMetadata?: boolean }) => (
     label="Account"
     name="Synthetic user"
   >
-    <span />
+    <AccountHubActionItems />
   </SatelliteUserMenu>
 );
 

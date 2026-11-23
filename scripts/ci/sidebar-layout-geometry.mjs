@@ -109,7 +109,19 @@ export async function checkAccountHub(page, shots) {
     await page.screenshot({ path: path.join(shots, '6-account-menu.png') });
   await menu.getByRole('menuitem', { name: /^Notifications/ }).click();
   await page.getByTestId('notifications-panel').waitFor();
-  await page.waitForTimeout(300);
+  // The pointer is on the menu, outside the sidebar: the sidebar stays open
+  // through the menu-to-popover hand-off and while the popover is open.
+  await page.waitForTimeout(900);
+  assert.equal(
+    await page.locator('aside[data-overlay-state="open"]').count(),
+    1,
+    'the hover sidebar stays open while Notifications is open'
+  );
+  assert.equal(
+    await page.getByTestId('notifications-panel').isVisible(),
+    true,
+    'the notifications popover is still open'
+  );
   if (shots)
     await page.screenshot({ path: path.join(shots, '7-notifications.png') });
   // The pointer stays on the sidebar, as it does when the avatar is clicked.

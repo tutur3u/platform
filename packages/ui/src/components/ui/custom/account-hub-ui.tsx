@@ -1,8 +1,12 @@
 'use client';
 
-import { ArrowBigUpDash, Bell, MessageSquareWarning } from '@tuturuuu/icons';
+import { ArrowBigUpDash, Bell, MessageSquare } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { DropdownMenuItem, DropdownMenuSeparator } from '../dropdown-menu';
+import {
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../dropdown-menu';
 import { fillCount } from './notification-labels';
 import { useAccountHub } from './sidebar-footer-context';
 
@@ -33,80 +37,92 @@ export function AccountUnreadBadge({ className }: { className?: string }) {
   );
 }
 
+/** The Notifications entry of the account menu: bell, label and unread count. */
+export function AccountNotificationsMenuItem() {
+  const hub = useAccountHub();
+  const notifications = hub?.state.notifications;
+  if (!hub || !notifications) return null;
+  const { unreadCount } = hub.state;
+
+  return (
+    <>
+      <DropdownMenuItem
+        className="cursor-pointer"
+        onSelect={() => {
+          // Let the menu close first so focus lands on the popover.
+          setTimeout(() => hub.patch({ notificationsOpen: true }), 0);
+        }}
+      >
+        <Bell className="h-4 w-4 text-dynamic-pink" />
+        <span className="min-w-0 flex-1 truncate">{notifications.label}</span>
+        {unreadCount > 0 && (
+          <span className="min-w-4 rounded-full bg-dynamic-red px-1 text-center font-semibold text-[10px] text-background leading-4 tabular-nums">
+            <span aria-hidden>{unreadCount > 99 ? '99+' : unreadCount}</span>
+            <span className="sr-only">
+              {fillCount(notifications.unreadText, unreadCount)}
+            </span>
+          </span>
+        )}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+    </>
+  );
+}
+
 /**
- * Notifications, Upgrade, Discord and Feedback as account menu items. Renders
- * nothing when the sidebar has published none of them.
+ * Upgrade, Feedback and Discord: the one place the sidebar offers them. Renders
+ * nothing when the sidebar has published none, so a menu can fall back to its
+ * own feedback entry.
  */
-export function AccountHubMenuItems() {
+export function AccountHubActionItems() {
   const hub = useAccountHub();
   if (!hub) return null;
-  const { notifications, unreadCount, upgrade, discord, feedback } = hub.state;
-  if (!notifications && !upgrade && !discord && !feedback) return null;
+  const { upgrade, discord, feedback } = hub.state;
+  if (!upgrade && !discord && !feedback) return null;
 
   const Link = upgrade?.Link;
   return (
     <>
-      {notifications && (
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onSelect={() => {
-            // Let the menu close first so focus lands on the popover.
-            setTimeout(() => hub.patch({ notificationsOpen: true }), 0);
-          }}
-        >
-          <Bell className="h-4 w-4" />
-          <span className="min-w-0 flex-1 truncate">{notifications.label}</span>
-          {unreadCount > 0 && (
-            <span className="min-w-4 rounded-full bg-dynamic-red px-1 text-center font-semibold text-[10px] text-background leading-4 tabular-nums">
-              <span aria-hidden>{unreadCount > 99 ? '99+' : unreadCount}</span>
-              <span className="sr-only">
-                {fillCount(notifications.unreadText, unreadCount)}
-              </span>
-            </span>
-          )}
-        </DropdownMenuItem>
-      )}
-      {upgrade && (
-        <DropdownMenuItem
-          asChild
-          className="cursor-pointer text-dynamic-purple"
-        >
-          {upgrade.external || !Link ? (
-            <a
-              href={upgrade.href}
-              {...(upgrade.external
-                ? { target: '_blank', rel: 'noopener noreferrer' }
-                : {})}
-            >
-              <ArrowBigUpDash className="h-4 w-4" />
-              {upgrade.label}
-            </a>
-          ) : (
-            <Link href={upgrade.href}>
-              <ArrowBigUpDash className="h-4 w-4" />
-              {upgrade.label}
-            </Link>
-          )}
-        </DropdownMenuItem>
-      )}
-      {discord && (
-        <DropdownMenuItem asChild className="cursor-pointer">
-          <a href={discord.href} target="_blank" rel="noopener noreferrer">
-            <DiscordGlyph />
-            Discord
-          </a>
-        </DropdownMenuItem>
-      )}
-      {feedback && (
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onSelect={() => setTimeout(feedback.open, 0)}
-        >
-          <MessageSquareWarning className="h-4 w-4" />
-          {feedback.label}
-        </DropdownMenuItem>
-      )}
       <DropdownMenuSeparator />
+      <DropdownMenuGroup>
+        {upgrade && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            {upgrade.external || !Link ? (
+              <a
+                href={upgrade.href}
+                {...(upgrade.external
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
+                <ArrowBigUpDash className="h-4 w-4 text-dynamic-purple" />
+                {upgrade.label}
+              </a>
+            ) : (
+              <Link href={upgrade.href}>
+                <ArrowBigUpDash className="h-4 w-4 text-dynamic-purple" />
+                {upgrade.label}
+              </Link>
+            )}
+          </DropdownMenuItem>
+        )}
+        {feedback && (
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => setTimeout(feedback.open, 0)}
+          >
+            <MessageSquare className="h-4 w-4 text-dynamic-yellow" />
+            {feedback.label}
+          </DropdownMenuItem>
+        )}
+        {discord && (
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <a href={discord.href} target="_blank" rel="noopener noreferrer">
+              <DiscordGlyph />
+              Discord
+            </a>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuGroup>
     </>
   );
 }
@@ -115,7 +131,7 @@ function DiscordGlyph() {
   return (
     <svg
       aria-hidden
-      className="size-4 shrink-0"
+      className="size-4 shrink-0 text-dynamic-indigo"
       viewBox="0 -28.5 256 256"
       xmlns="http://www.w3.org/2000/svg"
     >

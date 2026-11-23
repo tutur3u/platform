@@ -2,6 +2,14 @@
 
 import { createContext, useContext, useLayoutEffect, useState } from 'react';
 
+/**
+ * How long a closed overlay keeps the sidebar pinned. A menu item that opens
+ * another overlay (user menu, then Notifications, a dialog or a submenu) closes
+ * one before the next mounts; without the grace the sidebar would collapse in
+ * that gap and take the new overlay's anchor with it.
+ */
+export const SIDEBAR_OVERLAY_HANDOFF_MS = 400;
+
 export const SidebarOverlayContext = createContext<(() => () => void) | null>(
   null
 );
@@ -20,7 +28,12 @@ export function useSidebarOverlayOpenChange({
   const isOpen = open ?? uncontrolledOpen;
 
   useLayoutEffect(() => {
-    if (isOpen) return registerOverlay?.();
+    if (!isOpen) return;
+    const release = registerOverlay?.();
+    if (!release) return;
+    return () => {
+      setTimeout(release, SIDEBAR_OVERLAY_HANDOFF_MS);
+    };
   }, [isOpen, registerOverlay]);
 
   if (!registerOverlay) return onOpenChange;

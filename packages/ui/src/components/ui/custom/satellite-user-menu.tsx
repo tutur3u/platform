@@ -14,7 +14,7 @@ import {
 } from '../dropdown-menu';
 import { AnimatedSlotText } from './animated-slot-text';
 import {
-  AccountHubMenuItems,
+  AccountNotificationsMenuItem,
   AccountUnreadBadge,
   useAccountHubLabel,
 } from './account-hub-ui';
@@ -116,7 +116,7 @@ export function SatelliteUserMenu({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <AccountHubMenuItems />
+        <AccountNotificationsMenuItem />
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

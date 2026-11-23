@@ -12,7 +12,8 @@ import {
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
-  AccountHubMenuItems,
+  AccountHubActionItems,
+  AccountNotificationsMenuItem,
   AccountUnreadBadge,
   useAccountHubLabel,
 } from '@tuturuuu/ui/custom/account-hub-ui';
@@ -143,7 +144,7 @@ export default function UserNavClient({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <AccountHubMenuItems />
+          <AccountNotificationsMenuItem />
           <DropdownMenuGroup>
             <Link href="/home">
               <DropdownMenuItem className="flex cursor-pointer gap-4">
@@ -215,6 +216,7 @@ export default function UserNavClient({
               <span>{t('common.settings')}</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
+          <AccountHubActionItems />
           <DropdownMenuSeparator />
           <LogoutDropdownItem />
         </DropdownMenuContent>

@@ -13,6 +13,7 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DropdownMenuItem } from '../dropdown-menu';
 import type { NavLink } from './navigation';
+import { AccountHubActionItems } from './account-hub-ui';
 import { SatelliteFooterActions } from './satellite-footer-actions';
 import {
   AccountHubProvider,
@@ -424,7 +425,7 @@ describe('shared account chrome', () => {
           onFeedback={feedback}
         />
         <SatelliteUserMenu name="Ngoc" email="ngoc@example.com" label="Account">
-          <span />
+          <AccountHubActionItems />
         </SatelliteUserMenu>
       </AccountHubProvider>
     );

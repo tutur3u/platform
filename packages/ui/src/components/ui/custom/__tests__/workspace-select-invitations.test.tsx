@@ -289,7 +289,7 @@ it.each(['empty', 'error', 'loading'] as const)(
   }
 );
 
-it('is the "Switch workspace" entry point in the sidebar and opens the dialog', async () => {
+it('shows the current workspace in the sidebar and opens the dialog', async () => {
   const workspaces = [
     {
       id: 'workspace-0',
@@ -341,9 +341,8 @@ it('is the "Switch workspace" entry point in the sidebar and opens the dialog', 
     screen.queryByRole('button', { name: /workspace selector/i })
   ).toBeNull();
 
-  const trigger = screen.getByRole('button', { name: 'Switch workspace' });
-  expect(trigger.textContent).toBe('Switch workspace');
-  expect(trigger.querySelector('svg')).toBeNull();
+  const trigger = screen.getByRole('button', { name: /^Switch workspace/ });
+  expect(trigger.textContent).toContain('Orchard 0');
   expect(screen.queryByRole('combobox')).toBeNull();
 
   fireEvent.click(trigger);

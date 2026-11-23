@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  AlertTriangle,
+  MessageSquare,
   Check,
   ExternalLink,
   Globe,
@@ -24,7 +24,9 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import type { ReactNode } from 'react';
+import { AccountHubActionItems } from './account-hub-ui';
 import { PublicProfileMenuItem } from './public-profile-menu-item';
+import { useAccountHub } from './sidebar-footer-context';
 import type { SidebarBehavior } from './sidebar-behavior';
 
 export { PublicProfileMenuItem } from './public-profile-menu-item';
@@ -75,6 +77,9 @@ export function SatelliteUserMenuItems({
   onReport: () => void;
   onLogout: () => void;
 }) {
+  // The sidebar's account hub offers Feedback once; fall back to the report
+  // entry only where no hub is hosting it.
+  const hasHubFeedback = Boolean(useAccountHub()?.state.feedback);
   return (
     <>
       {workspaceSelect ? (
@@ -192,17 +197,20 @@ export function SatelliteUserMenuItems({
             </DropdownMenuSubContent>
           </DropdownMenuPortal>
         </DropdownMenuSub>
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onClick={(e) => {
-            e.preventDefault();
-            onReport();
-          }}
-        >
-          <AlertTriangle className="h-4 w-4 text-dynamic-yellow" />
-          <span>{t('common.report-problem')}</span>
-        </DropdownMenuItem>
+        {!hasHubFeedback && (
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              onReport();
+            }}
+          >
+            <MessageSquare className="h-4 w-4 text-dynamic-yellow" />
+            <span>{t('common.report-problem')}</span>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuGroup>
+      <AccountHubActionItems />
       {signedIn && (
         <>
           <DropdownMenuSeparator />

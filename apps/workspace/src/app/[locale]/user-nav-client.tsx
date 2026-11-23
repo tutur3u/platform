@@ -20,7 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { AnimatedSlotText } from '@tuturuuu/ui/custom/animated-slot-text';
 import { PublicProfileMenuItem } from '@tuturuuu/ui/custom/satellite-user-menu-items';
 import {
-  AccountHubMenuItems,
+  AccountHubActionItems,
+  AccountNotificationsMenuItem,
   AccountUnreadBadge,
   useAccountHubLabel,
 } from '@tuturuuu/ui/custom/account-hub-ui';
@@ -336,7 +337,7 @@ export default function UserNavClient({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <AccountHubMenuItems />
+          <AccountNotificationsMenuItem />
           {wsId && (
             <>
               <div className="w-full p-1">
@@ -467,6 +468,7 @@ export default function UserNavClient({
               <InviteMembersMenuItem />
             </>
           )}
+          <AccountHubActionItems />
           <DropdownMenuSeparator />
           {accounts.length >= 2 ? (
             <DropdownMenuItem
