@@ -17,6 +17,7 @@ import {
   type GuestTurnstilePhase,
   type GuestTurnstileStallReason,
 } from '../lib/guest-turnstile-recovery';
+import { GuestHumanCheck } from './guest-human-check';
 
 /**
  * The guest join check. It never leaves a guest on an empty box: a
@@ -25,13 +26,18 @@ import {
  * manual retry, and (through `onStalledChange`) the host-approval fallback.
  */
 export function GuestTurnstile({
+  meetingId,
   siteKey,
   onToken,
+  onHumanPass,
   onTokenLost,
   onStalledChange,
 }: {
+  meetingId: string;
   siteKey: string;
   onToken: (token: string) => void;
+  /** A pass from the Tuturuuu jigsaw check offered once Turnstile stalls. */
+  onHumanPass: (passToken: string) => void;
   onTokenLost: () => void;
   onStalledChange: (stalled: boolean) => void;
 }) {
@@ -105,6 +111,7 @@ export function GuestTurnstile({
             ? t('verification_unsupported_hint')
             : t('verification_blocked_hint')}
         </p>
+        <GuestHumanCheck meetingId={meetingId} onPass={onHumanPass} />
         <Button type="button" variant="outline" size="sm" onClick={retryNow}>
           <RefreshCw aria-hidden="true" className="size-4" />
           {t('verification_retry')}
@@ -163,6 +170,7 @@ export function GuestTurnstile({
           <p className="text-muted-foreground">
             {t('verification_blocked_hint')}
           </p>
+          <GuestHumanCheck meetingId={meetingId} onPass={onHumanPass} />
           <Button type="button" variant="outline" size="sm" onClick={retryNow}>
             <RefreshCw aria-hidden="true" className="size-4" />
             {t('verification_retry')}

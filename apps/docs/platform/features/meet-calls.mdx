@@ -919,16 +919,23 @@ next token.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.
+- The join page preconnects to `challenges.cloudflare.com` from the document
+  head, so the check starts loading while the guest types a name.
 - The join page never leaves a guest on an empty check. **Ask the host to let
   you in** is always shown as a secondary action next to the Turnstile widget.
   If no Turnstile token arrives within 5 seconds, the page keeps the widget (the
   guest may be about to click it) and adds a note that a content blocker, Safari
   Lockdown Mode or iCloud Private Relay may block `challenges.cloudflare.com`,
   with **Retry verification**. Turnstile's error, timeout and unsupported
-  callbacks replace the widget with a fresh one (two automatic retries with
-  growing delays, never a synchronous reset); a script that never loaded is
+  callbacks replace the widget with a fresh one (three automatic retries after
+  1, 2 and 4 seconds, never a synchronous reset); a script that never loaded is
   removed so the retry injects it again. When retries run out or the browser is
   unsupported, the widget gives way to the same explanation and retry.
+- Once Turnstile is slow or stalled, the page also offers **Solve a puzzle
+  instead**, the Tuturuuu [human check](/build/devops/human-check): a
+  server-rendered jigsaw that works with drag or the keyboard. A solved puzzle
+  gives the same verified guest session as Turnstile; the guest still waits for
+  host approval.
 - **Ask the host to let you in** sends the join request without a Turnstile
   token. The server accepts it only after the ordinary join limit and every
   guest-join gate pass, the adaptive abuse decision does not mark the network
@@ -955,6 +962,7 @@ next token.
 Regression coverage: `guest-session.test.ts`, `guest-access.test.ts`,
 `guest-rate-limit.test.ts`, `guest-unverified-limit.test.ts`,
 `guest-unverified-risk.test.ts`, `guest-turnstile-recovery.test.ts`,
+`guest-human-check.test.ts`, the `human-check` route tests,
 `guest-join.test.tsx`, the unverified lobby flag in `attendance-ledger.test.ts`, `guest-admission.ts`, the guest `route.test.ts`,
 `room-guest.test.ts`, `room-removed-guests.test.ts`, `room-polls` guest voting,
 the guest cases in the Meet `page-model.server.test.ts` and room `page.test.ts`.

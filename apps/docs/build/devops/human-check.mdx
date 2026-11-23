@@ -1,0 +1,98 @@
+---
+title: Human Check Puzzle
+description: The Tuturuuu jigsaw check that backs up Cloudflare Turnstile, its security model and its limits.
+updatedAt: '2026-11-23'
+audience: developers
+---
+
+## Overview
+
+`@tuturuuu/human-check` is a platform-owned jigsaw puzzle for surfaces where
+Cloudflare Turnstile cannot run: a content blocker, Safari Lockdown Mode or
+iCloud Private Relay blocking `challenges.cloudflare.com`, or a browser Turnstile
+reports as unsupported. It loads no third-party script. Turnstile stays the
+primary check; the puzzle is offered only after Turnstile stalls.
+
+The package has two entry points:
+
+- `@tuturuuu/human-check`: a framework-free core (WebCrypto only) that renders
+  challenges, verifies placements and issues and redeems pass tokens. It runs in
+  Workers, Node and browsers.
+- `@tuturuuu/human-check/react`: `JigsawCheck`, the drag and keyboard component.
+  Callers inject `load`, `verify`, `onPass` and localized labels.
+
+Meet guest join is the first consumer. Other surfaces (for example calendar
+invitations) can reuse it by adding their own scope and routes.
+
+## Security model
+
+- **Server-authoritative answer.** The server renders a 320×160 raster PNG
+  background (gradient, blobs, per-pixel noise) with the slot and two decoy
+  cutouts of the same shape and darkness, plus the piece cut from the untouched
+  background. Geometry comes from its own CSPRNG draw, separate from the
+  texture, so the visible noise never reveals the slot. The slot position is
+  sealed with AES-GCM under a key derived from `HUMAN_CHECK_SECRET`; the browser
+  receives only the images, the piece row, the size and an opaque token. The
+  images are raster, never SVG, so the markup cannot reveal the geometry.
+- **Binding.** A challenge is bound to a scope (Meet uses `meet:<meetingId>`) and
+  to an HMAC of the requesting network, and expires after two minutes.
+- **Verification.** The placement must land within 6 px of the slot (4 px at the
+  harder level). The pointer trajectory must look like a person dragging: enough
+  samples, a plausible duration and peak speed, no teleport jumps, and not a
+  constant-velocity flat line. Keyboard placement (arrow keys, Shift for larger
+  steps, Enter) is the accessible path and needs deliberate steps over time.
+- **Attempts and single use.** Each challenge allows three placements (two at
+  the harder level) and issues at most one pass. The pass is an HMAC-signed token bound to the same scope and
+  network, valid for two minutes, and redeemable once.
+- **Counters.** Attempt, single-use and pass counters use the shared abuse-guard
+  Durable Object when the app runs with it. Without it they count per isolate,
+  and the two-minute lifetimes bound any replay.
+
+The motion screen raises the cost of naive automation; it is not a bot detector
+on its own. Every issue, pass and failure is rate-limited and scored, and Meet
+still requires host approval for every guest.
+
+## Limits in Meet
+
+- Puzzles are charged before any database lookup: six per network per meeting
+  every ten minutes, and sixty per meeting across networks. After half the
+  network budget the puzzle adds a decoy and tightens tolerance; past the budget
+  the network cools down until the window resets (`429` with `Retry-After`).
+- Placements are charged first against a per-network budget across all
+  puzzles and meetings: six every ten minutes. This bounds blind guessing (each
+  placement covers about 7% of slot positions) and the verify route's work.
+  Issuance also has a per-network window across all meetings (twenty every ten
+  minutes).
+- Issuance is scored with the
+  [adaptive abuse policy](/build/devops/adaptive-abuse-rate-limits); restricted
+  or challenge-required subjects get no puzzle. Passes and failures are recorded
+  as `challenge_passed` and `challenge_failed` signals. Forged, expired and spent
+  tokens are refused without a reputation write.
+- A redeemed pass gives the same verified guest session as Turnstile, so the
+  guest can vote in polls. The guest still waits in the lobby for the host.
+
+## Accepted limits
+
+- A computer-vision solver can place the piece; the motion screen is friction.
+  Host approval, the rate limits and abuse scoring remain the real gate.
+- Without the shared Durable Object, counters live per isolate. An attacker who
+  floods one isolate can evict single-use entries, and spreading requests across
+  isolates multiplies the placement budget; the two-minute token lifetimes bound
+  the replay.
+- Network binding and per-network limits use the client IP from Cloudflare's
+  headers. Meet is reachable only through Cloudflare custom domains, which
+  set them; a direct origin would let a client choose its network value.
+
+## Configuration
+
+Set `HUMAN_CHECK_SECRET` (at least 32 characters, from a CSPRNG) as a Worker
+secret on `tuturuuu-meet`, for example with `wrangler secret put` from a
+credentialed machine, reading the value from standard input. Without it the
+puzzle routes answer `503` and the join page keeps **Retry verification** and
+**Ask the host to let you in**. Rotating the secret invalidates outstanding
+challenges and passes, which expire within two minutes anyway.
+
+Regression coverage: `packages/human-check/src/challenge.test.ts`,
+`motion.test.ts`, `react/jigsaw-check.test.tsx`, Meet's
+`guest-human-check.test.ts`, the `human-check` route tests, the guest join
+`route.test.ts` and `guest-join.test.tsx`.

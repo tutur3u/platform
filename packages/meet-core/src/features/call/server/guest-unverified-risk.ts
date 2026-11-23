@@ -7,6 +7,10 @@ import {
 import { MEET_GUEST_UNVERIFIED_NETWORK_LIMIT } from '../lib/guest-unverified-limit';
 
 export const MEET_GUEST_UNVERIFIED_ROUTE = '/api/meet-call/guest/unverified';
+export const MEET_GUEST_HUMAN_CHECK_ROUTE = '/api/meet-call/guest/human-check';
+
+/** Which tokenless step is being scored: a host-approval join or a puzzle. */
+export type MeetGuestRiskKind = 'unverified' | 'human-check';
 
 export type MeetGuestUnverifiedRisk =
   | { allowed: true; networkLimit: number; decision: AbuseRiskDecision | null }
@@ -29,9 +33,20 @@ type RiskSources = {
  */
 export async function assessMeetGuestUnverifiedJoin(
   request: Request,
-  input: { meetingId: string; network: string | undefined },
+  input: {
+    meetingId: string;
+    network: string | undefined;
+    kind?: MeetGuestRiskKind;
+  },
   sources: RiskSources = {}
 ): Promise<MeetGuestUnverifiedRisk> {
+  const humanCheck = input.kind === 'human-check';
+  const route = humanCheck
+    ? MEET_GUEST_HUMAN_CHECK_ROUTE
+    : MEET_GUEST_UNVERIFIED_ROUTE;
+  const prefix = humanCheck
+    ? 'meet_guest_human_check'
+    : 'meet_guest_unverified';
   const resolve = sources.resolve ?? resolveAbuseRiskDecision;
   const record = sources.record ?? recordAbuseActivitySignal;
   let decision: AbuseRiskDecision | null = null;
@@ -42,7 +57,7 @@ export async function assessMeetGuestUnverifiedJoin(
       ipAddress: input.network ?? null,
       isRead: false,
       method: 'POST',
-      route: MEET_GUEST_UNVERIFIED_ROUTE,
+      route,
     });
   } catch (error) {
     console.warn('Meet unverified guest risk check unavailable', {
@@ -57,10 +72,10 @@ export async function assessMeetGuestUnverifiedJoin(
       method: 'POST',
       metadata: { meetingId: input.meetingId, refused },
       reasonCode: refused
-        ? 'meet_guest_unverified_refused'
-        : 'meet_guest_unverified_join',
+        ? `${prefix}_refused`
+        : `${prefix}_${humanCheck ? 'issued' : 'join'}`,
       riskTier: decision.tier,
-      route: MEET_GUEST_UNVERIFIED_ROUTE,
+      route,
       // A refusal counts against the subject; an admitted lobby request
       // is only recorded, so a blocked check alone never builds a penalty.
       signalType: refused ? 'challenge_failed' : 'challenge_issued',

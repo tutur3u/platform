@@ -33,6 +33,8 @@ const mocks = vi.hoisted(() => {
   return {
     InternalApiError,
     join: vi.fn(),
+    puzzle: vi.fn(),
+    check: vi.fn(),
     refresh: vi.fn(),
     mounts: 0,
     widget: null as WidgetProps | null,
@@ -43,6 +45,10 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 vi.mock('@tuturuuu/internal-api/meet-call', () => ({
   joinMeetCallAsGuest: mocks.join,
+}));
+vi.mock('@tuturuuu/internal-api/meet-guest-human-check', () => ({
+  createMeetGuestHumanCheck: mocks.puzzle,
+  verifyMeetGuestHumanCheck: mocks.check,
 }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: mocks.refresh }),
@@ -171,6 +177,13 @@ it('stalls after repeated errors and keeps the host path', async () => {
   act(() => {
     widget().onError('600010');
   });
+  await act(async () => {
+    vi.advanceTimersByTime(4000);
+  });
+  expect(mocks.mounts).toBe(4);
+  act(() => {
+    widget().onError('600010');
+  });
   expect(screen.getByTestId('guest-turnstile-stalled')).toBeTruthy();
   expect(
     screen.getByRole('button', { name: 'ask_host_without_verification' })
@@ -226,4 +239,44 @@ it('maps the verification-required refusal', () => {
       new mocks.InternalApiError('x', 403, 'MEET_GUEST_VERIFICATION_REQUIRED')
     )
   ).toBe('verification_required');
+});
+
+it('offers the Tuturuuu puzzle when Turnstile cannot run and joins with its pass', async () => {
+  mocks.puzzle.mockResolvedValue({
+    token: 'sealed',
+    background: 'data:image/png;base64,AA==',
+    piece: 'data:image/png;base64,AA==',
+    pieceY: 30,
+    width: 320,
+    height: 160,
+    pieceSize: 54,
+    expiresAt: Date.now() + 120_000,
+  });
+  mocks.check.mockResolvedValue({
+    ok: true,
+    passToken: 'human-pass',
+    expiresAt: 0,
+  });
+  setup();
+  await act(async () => {
+    vi.advanceTimersByTime(GUEST_TURNSTILE_WATCHDOG_MS);
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'puzzle_start' }));
+  const slider = await screen.findByRole('slider', { name: 'puzzle_slider' });
+  fireEvent.keyDown(slider, { key: 'ArrowRight', shiftKey: true });
+  fireEvent.keyDown(slider, { key: 'Enter' });
+  await waitFor(() => expect(screen.getByText('puzzle_passed')).toBeTruthy());
+  fireEvent.click(screen.getByRole('button', { name: 'ask_to_join' }));
+  await waitFor(() =>
+    expect(mocks.join).toHaveBeenCalledWith(expect.any(String), {
+      displayName: 'Safari guest',
+      humanPassToken: 'human-pass',
+    })
+  );
+});
+
+it('keeps the puzzle available once Turnstile is unsupported', () => {
+  setup();
+  act(() => widget().onUnsupported());
+  expect(screen.getByRole('button', { name: 'puzzle_start' })).toBeTruthy();
 });

@@ -501,6 +501,11 @@
       "import": "./dist/meet-call.js",
       "require": "./dist/meet-call.js"
     },
+    "./meet-guest-human-check": {
+      "types": "./dist/meet-guest-human-check.d.ts",
+      "import": "./dist/meet-guest-human-check.js",
+      "require": "./dist/meet-guest-human-check.js"
+    },
     "./meet-whiteboard": {
       "types": "./dist/meet-whiteboard.d.ts",
       "import": "./dist/meet-whiteboard.js",

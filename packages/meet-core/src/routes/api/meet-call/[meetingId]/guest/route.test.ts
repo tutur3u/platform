@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   limit: vi.fn(),
   unverifiedLimit: vi.fn(),
   risk: vi.fn(),
+  redeem: vi.fn(),
 }));
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: mocks.cookie }),
@@ -25,6 +26,13 @@ vi.mock(
   '@tuturuuu/meet-core/features/call/server/guest-unverified-risk',
   () => ({ assessMeetGuestUnverifiedJoin: mocks.risk })
 );
+vi.mock('@tuturuuu/meet-core/features/call/server/guest-human-check', () => ({
+  meetHumanCheckGuard: async () => null,
+  meetHumanCheckScope: (id: string) => `meet:${id}`,
+  meetHumanCheckSecret: () => 'secret-0123456789abcdef0123456789abcdef',
+  meetHumanCheckStore: () => ({ incr: async () => 1 }),
+}));
+vi.mock('@tuturuuu/human-check', () => ({ redeemPassToken: mocks.redeem }));
 vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/usage-limit', () => ({
   meetAiUsageGuard: vi.fn(async () => ({ selection: { kind: 'off' } })),
 }));
@@ -254,5 +262,35 @@ it('verifies a token even when hostApproval is also sent', async () => {
   );
   expect(response.status).toBe(403);
   expect((await response.json()).code).toBe('MEET_GUEST_TURNSTILE_FAILED');
+  expect(mocks.risk).not.toHaveBeenCalled();
+});
+
+it('admits a redeemed puzzle pass as a verified guest', async () => {
+  mocks.redeem.mockResolvedValue({ ok: true, jti: 'jti-1', challengeId: 'c' });
+  const response = await POST(
+    request({ displayName: 'Puzzle guest', humanPassToken: 'pass' }),
+    params
+  );
+  expect(response.status).toBe(200);
+  expect(mocks.verify).not.toHaveBeenCalled();
+  expect(mocks.redeem).toHaveBeenCalledWith(
+    expect.objectContaining({
+      token: 'pass',
+      scope: `meet:${meetingId}`,
+      subject: '203.0.113.4',
+    })
+  );
+  expect((await cookieSession(response))?.turnstileVerified).toBe(true);
+});
+
+it('refuses a spent or foreign puzzle pass', async () => {
+  mocks.redeem.mockResolvedValue({ ok: false });
+  const response = await POST(
+    request({ displayName: 'An', humanPassToken: 'pass', hostApproval: true }),
+    params
+  );
+  expect(response.status).toBe(403);
+  expect((await response.json()).code).toBe('MEET_GUEST_TURNSTILE_FAILED');
+  expect(response.headers.get('Set-Cookie')).toBeNull();
   expect(mocks.risk).not.toHaveBeenCalled();
 });

@@ -11,8 +11,8 @@ import {
  * leave the widget loaded but never issuing a token, with no callback firing.
  */
 export const GUEST_TURNSTILE_WATCHDOG_MS = 5000;
-/** Automatic fresh-widget retries before the page offers the fallback. */
-export const GUEST_TURNSTILE_MAX_RETRIES = 2;
+/** Automatic fresh-widget retries (1 s, 2 s, 4 s) before the widget gives way. */
+export const GUEST_TURNSTILE_MAX_RETRIES = 3;
 /** First fresh-widget delay; it doubles per retry. */
 export const GUEST_TURNSTILE_RETRY_BASE_MS = 1000;
 

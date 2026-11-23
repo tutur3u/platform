@@ -273,6 +273,7 @@
                   "build/devops/hive-realtime-runbook",
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
+                  "build/devops/human-check",
                   "build/devops/mastermind-store",
                   "build/devops/mastermind-secret-entry",
                   "build/devops/mastermind-ship-collector",

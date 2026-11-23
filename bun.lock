@@ -3182,6 +3182,21 @@
         "react-dom": "^19.2.8",
       },
     },
+    "packages/human-check": {
+      "name": "@tuturuuu/human-check",
+      "devDependencies": {
+        "@testing-library/react": "^16.3.3",
+        "@types/react": "~19.2.18",
+        "jsdom": "^30.1.3",
+        "react": "^19.2.8",
+        "react-dom": "^19.2.8",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+      "peerDependencies": {
+        "react": "*",
+      },
+    },
     "packages/icons": {
       "name": "@tuturuuu/icons",
       "version": "0.1.1",
@@ -3301,6 +3316,7 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/cloudflare": "workspace:*",
         "@tuturuuu/education-core": "workspace:*",
+        "@tuturuuu/human-check": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/programming-ui": "workspace:*",
@@ -6211,6 +6227,8 @@
     "@tuturuuu/hive-ui": ["@tuturuuu/hive-ui@workspace:packages/hive-ui"],
 
     "@tuturuuu/hooks": ["@tuturuuu/hooks@workspace:packages/hooks"],
+
+    "@tuturuuu/human-check": ["@tuturuuu/human-check@workspace:packages/human-check"],
 
     "@tuturuuu/icons": ["@tuturuuu/icons@workspace:packages/icons"],
 

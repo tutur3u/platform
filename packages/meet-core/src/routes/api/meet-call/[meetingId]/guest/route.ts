@@ -10,6 +10,12 @@ import { resolveMeetGuestJoin } from '@tuturuuu/meet-core/features/call/lib/gues
 import { checkMeetGuestJoinLimit } from '@tuturuuu/meet-core/features/call/lib/guest-rate-limit';
 import { checkMeetGuestUnverifiedLimit } from '@tuturuuu/meet-core/features/call/lib/guest-unverified-limit';
 import {
+  meetHumanCheckGuard,
+  meetHumanCheckScope,
+  meetHumanCheckSecret,
+  meetHumanCheckStore,
+} from '@tuturuuu/meet-core/features/call/server/guest-human-check';
+import {
   MEET_GUEST_COOKIE,
   MEET_GUEST_TTL_SECONDS,
   meetGuestCookieHeader,
@@ -19,6 +25,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
 import { meetAiUsageGuard } from '@tuturuuu/meet-core/features/meeting-ai/server/usage-limit';
+import { redeemPassToken } from '@tuturuuu/human-check';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
@@ -27,6 +34,8 @@ const headers = { 'Cache-Control': 'private, no-store' };
 const bodySchema = z.object({
   displayName: z.string().max(400),
   turnstileToken: z.string().max(4096).optional(),
+  /** Single-use pass from the Tuturuuu jigsaw check when Turnstile cannot load. */
+  humanPassToken: z.string().max(2048).optional(),
   /**
    * The Turnstile check could not load in this browser. The guest asks the
    * host directly: the session stays unverified, so it can only wait in the
@@ -92,16 +101,44 @@ export async function POST(
       { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
       { status: 403, headers }
     );
-  const secret = getMeetRealtimeTokenSecret();
+  const tokenSecret = getMeetRealtimeTokenSecret();
   const existing = await verifyMeetGuestSession(
     (await cookies()).get(MEET_GUEST_COOKIE)?.value,
     meetingId,
-    secret
+    tokenSecret
   );
   if (existing?.turnstileVerified)
     return Response.json({ ok: true }, { headers });
   const turnstileToken = parsed.data.turnstileToken?.trim();
   const devMode = process.env.NODE_ENV === 'development';
+  const humanPassToken = parsed.data.humanPassToken?.trim();
+  if (!turnstileToken && humanPassToken) {
+    const secret = meetHumanCheckSecret();
+    const network = extractTurnstileRemoteIp(request);
+    const pass = secret
+      ? await redeemPassToken({
+          secret,
+          store: meetHumanCheckStore(await meetHumanCheckGuard()),
+          token: humanPassToken,
+          scope: meetHumanCheckScope(meetingId),
+          subject: network ?? 'unknown',
+        })
+      : ({ ok: false } as const);
+    if (!pass.ok)
+      return Response.json(
+        { error: 'Verification failed', code: 'MEET_GUEST_TURNSTILE_FAILED' },
+        { status: 403, headers }
+      );
+    return guestSessionResponse({
+      guestId:
+        existing?.guestId ??
+        (await meetDeviceIdentity(meetingId, `guest-human:${pass.jti}`)),
+      meetingId,
+      displayName,
+      secret: tokenSecret,
+      verified: true,
+    });
+  }
   if (!turnstileToken && parsed.data.hostApproval === true) {
     const network = extractTurnstileRemoteIp(request);
     const risk = await assessMeetGuestUnverifiedJoin(request, {
@@ -135,7 +172,7 @@ export async function POST(
       guestId: existing?.guestId ?? crypto.randomUUID(),
       meetingId,
       displayName,
-      secret,
+      secret: tokenSecret,
       verified: false,
     });
   }
@@ -160,7 +197,7 @@ export async function POST(
     guestId,
     meetingId,
     displayName,
-    secret,
+    secret: tokenSecret,
     verified,
   });
 }

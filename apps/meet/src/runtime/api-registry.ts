@@ -37,6 +37,10 @@ const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
 const apiWhiteboard = () =>
   import('../app/api/meet-call/[meetingId]/whiteboard/route');
 const apiGuest = () => import('../app/api/meet-call/[meetingId]/guest/route');
+const apiGuestHumanCheck = () =>
+  import('../app/api/meet-call/[meetingId]/guest/human-check/route');
+const apiGuestHumanCheckVerify = () =>
+  import('../app/api/meet-call/[meetingId]/guest/human-check/verify/route');
 const apiPolls = () => import('../app/api/meet-call/[meetingId]/polls/route');
 const apiMiraRoom = () =>
   import('../app/api/meet-call/[meetingId]/mira-room/route');
@@ -244,6 +248,28 @@ export const meetEndpoints: Endpoint[] = [
         }),
       POST: async (request, params) =>
         (await apiWhiteboard()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/guest/human-check',
+    methods: {
+      POST: async (request, params) =>
+        (await apiGuestHumanCheck()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/guest/human-check/verify',
+    methods: {
+      POST: async (request, params) =>
+        (await apiGuestHumanCheckVerify()).POST(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),

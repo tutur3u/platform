@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, LockKeyhole, ShieldCheck, Video } from '@tuturuuu/icons';
+import { TURNSTILE_ORIGIN } from '@tuturuuu/cloudflare/turnstile/client';
 import { InternalApiError } from '@tuturuuu/internal-api';
 import { joinMeetCallAsGuest } from '@tuturuuu/internal-api/meet-call';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,13 +12,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState, useTransition } from 'react';
+import { preconnect, prefetchDNS } from 'react-dom';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
 import { GuestTurnstile } from './guest-turnstile';
 
 /** One state at a time: the check and the request never disagree. */
 export type GuestJoinState =
   | { kind: 'verifying' }
-  | { kind: 'verified'; token: string }
+  /** `via: 'human'` marks a pass from the Tuturuuu jigsaw check. */
+  | { kind: 'verified'; token: string; via?: 'human' }
   /** `token: null` asks the host without a Turnstile token. */
   | { kind: 'submitting'; token: string | null }
   | {
@@ -57,6 +60,10 @@ export function MeetGuestJoin({
   returnTo: string;
   siteKey: string;
 }) {
+  // Warm the Turnstile origin from the document head (server render
+  // included) so the check starts loading while the guest types a name.
+  preconnect(TURNSTILE_ORIGIN);
+  prefetchDNS(TURNSTILE_ORIGIN);
   const t = useTranslations('meet.call.guest_join');
   const router = useRouter();
   const [name, setName] = useState('');
@@ -74,6 +81,10 @@ export function MeetGuestJoin({
     (token: string) => setState({ kind: 'verified', token }),
     []
   );
+  const onHumanPass = useCallback(
+    (token: string) => setState({ kind: 'verified', token, via: 'human' }),
+    []
+  );
   const onTokenLost = useCallback(
     () =>
       setState((current) =>
@@ -82,12 +93,16 @@ export function MeetGuestJoin({
     []
   );
 
-  const join = async (token: string | null) => {
+  const join = async (token: string | null, via?: 'human') => {
     setState({ kind: 'submitting', token });
     try {
       await joinMeetCallAsGuest(meetingId, {
         displayName: name.trim(),
-        ...(token ? { turnstileToken: token } : { hostApproval: true }),
+        ...(!token
+          ? { hostApproval: true }
+          : via === 'human'
+            ? { humanPassToken: token }
+            : { turnstileToken: token }),
       });
       startTransition(() => router.refresh());
     } catch (error) {
@@ -119,7 +134,7 @@ export function MeetGuestJoin({
         onSubmit={(event) => {
           event.preventDefault();
           if (state.kind !== 'verified' || !name.trim() || busy) return;
-          void join(state.token);
+          void join(state.token, state.via);
         }}
       >
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -146,8 +161,10 @@ export function MeetGuestJoin({
         <div className="space-y-2">
           <GuestTurnstile
             key={widget}
+            meetingId={meetingId}
             siteKey={siteKey}
             onToken={onToken}
+            onHumanPass={onHumanPass}
             onTokenLost={onTokenLost}
             onStalledChange={setStalled}
           />

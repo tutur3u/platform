@@ -35,6 +35,8 @@ export function joinMeetCallAsGuest(
     turnstileToken?: string;
     /** Turnstile could not load: ask the host, landing unverified in the lobby. */
     hostApproval?: true;
+    /** Single-use pass from the Tuturuuu jigsaw check. */
+    humanPassToken?: string;
   }
 ) {
   return getInternalApiClient().json<{ ok: true }>(
