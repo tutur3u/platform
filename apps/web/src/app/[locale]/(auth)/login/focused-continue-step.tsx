@@ -122,12 +122,10 @@ export function FocusedContinueStep({
         {auto.counting && !continuing ? (
           <button
             className={FOCUSED_LINK_CLASS}
-            onBlur={auto.release}
+            key="cancel"
             onClick={auto.cancel}
-            onFocus={auto.hold}
-            onPointerEnter={auto.hold}
-            onPointerLeave={auto.release}
             type="button"
+            {...auto.holdHandlers}
           >
             {t('login.auto_continue_cancel')}
           </button>
@@ -135,6 +133,7 @@ export function FocusedContinueStep({
           <button
             className={FOCUSED_LINK_CLASS}
             disabled={busy}
+            key="another"
             onClick={onUseAnotherAccount}
             type="button"
           >

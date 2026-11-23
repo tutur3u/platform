@@ -10,8 +10,10 @@ export const AUTO_CONTINUE_DELAY_MS = 1200;
  * It fires at most once per mount: a cancel, or a failed continue that
  * returns the card to its idle state, never schedules another attempt.
  * While Cancel has focus or a pointer over it the countdown holds, and it
- * restarts in full on release, so keyboard and screen-reader users can
- * reach Cancel in time.
+ * restarts in full once both are released, so keyboard and screen-reader
+ * users can reach Cancel in time. The holds clear whenever the countdown
+ * stops, so a Cancel that unmounts under the pointer never leaves a later
+ * countdown stuck.
  *
  * `eligible` must already encode the security gate (a strict PKCE
  * registration with a valid challenge, and the session the card names).
@@ -26,12 +28,17 @@ export function useAutoContinue({
   onContinue: () => void;
 }) {
   const [cancelled, setCancelled] = useState(false);
-  const [held, setHeld] = useState(false);
+  const [focusHeld, setFocusHeld] = useState(false);
+  const [pointerHeld, setPointerHeld] = useState(false);
   const firedRef = useRef(false);
   const onContinueRef = useRef(onContinue);
   onContinueRef.current = onContinue;
   const counting = eligible && !cancelled && !firedRef.current;
-  const running = counting && !held;
+  if (!counting && (focusHeld || pointerHeld)) {
+    setFocusHeld(false);
+    setPointerHeld(false);
+  }
+  const running = counting && !focusHeld && !pointerHeld;
 
   useEffect(() => {
     if (!running) return;
@@ -45,7 +52,12 @@ export function useAutoContinue({
   return {
     cancel: () => setCancelled(true),
     counting,
-    hold: () => setHeld(true),
-    release: () => setHeld(false),
+    /** Spread onto the Cancel control. */
+    holdHandlers: {
+      onBlur: () => setFocusHeld(false),
+      onFocus: () => setFocusHeld(true),
+      onPointerEnter: () => setPointerHeld(true),
+      onPointerLeave: () => setPointerHeld(false),
+    },
   };
 }
