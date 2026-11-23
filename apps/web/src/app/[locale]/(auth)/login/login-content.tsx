@@ -190,7 +190,7 @@ export function LoginContent({
         </div>
 
         <main className="flex flex-1 flex-col items-center justify-center py-8 sm:py-12">
-          <div className="fade-in-0 slide-in-from-bottom-2 flex w-full max-w-[400px] animate-in flex-col gap-8 duration-300 motion-reduce:animate-none">
+          <div className="fade-in-0 slide-in-from-bottom-2 flex w-full max-w-[400px] animate-in xl:max-w-[440px] flex-col gap-8 duration-300 motion-reduce:animate-none">
             <LoginBrandHeader
               app={brandApp}
               multiAccount={multiAccount}

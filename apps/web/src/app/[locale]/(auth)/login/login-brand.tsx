@@ -15,13 +15,13 @@ export type LoginBrandApp = {
 };
 
 const HEADING_CLASS =
-  'text-balance font-extrabold text-[28px] leading-[1.1] tracking-[-0.02em] sm:text-[32px]';
+  'text-balance font-extrabold text-[28px] leading-[1.1] tracking-[-0.02em] sm:text-[32px] xl:text-[38px]';
 
 function LogoImage({ label, src }: { label: string; src: string }) {
   return (
     <span
       aria-label={label}
-      className="block size-12 bg-center bg-contain bg-no-repeat"
+      className="block size-12 bg-center xl:size-14 bg-contain bg-no-repeat"
       role="img"
       style={{ backgroundImage: `url(${src})` }}
     />
@@ -35,7 +35,7 @@ function AppMark({ app }: { app: LoginBrandApp }) {
   return (
     <span
       aria-hidden="true"
-      className="flex size-12 items-center justify-center rounded-2xl bg-calendar-bg-cyan font-extrabold text-dynamic-cyan text-lg"
+      className="flex size-12 items-center justify-center rounded-2xl xl:size-14 xl:text-xl bg-calendar-bg-cyan font-extrabold text-dynamic-cyan text-lg"
     >
       {getAppMonogram(app.name)}
     </span>
@@ -61,7 +61,7 @@ export function LoginBrandHeader({
   if (pending) {
     return (
       <div aria-hidden="true" className="flex flex-col items-center gap-4">
-        <div className="size-12 animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
+        <div className="size-12 animate-pulse rounded-2xl xl:size-14 bg-muted motion-reduce:animate-none" />
         <div className="h-8 w-64 max-w-full animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
         <div className="h-4 w-48 max-w-full animate-pulse rounded-full bg-muted/70 motion-reduce:animate-none" />
       </div>
@@ -76,7 +76,7 @@ export function LoginBrandHeader({
           <h1 className={HEADING_CLASS}>
             {t('login.sign_in_to_app', { app: app.name })}
           </h1>
-          <p className="text-balance text-[15px] text-muted-foreground leading-relaxed">
+          <p className="text-balance text-[15px] text-muted-foreground leading-relaxed xl:text-base">
             {t('login.sign_in_to_app_subtitle', { app: app.name })}
           </p>
         </div>
@@ -93,7 +93,7 @@ export function LoginBrandHeader({
             ? t('account_switcher.add_account')
             : t('login.welcome_to_tuturuuu')}
         </h1>
-        <p className="text-balance text-[15px] text-muted-foreground leading-relaxed">
+        <p className="text-balance text-[15px] text-muted-foreground leading-relaxed xl:text-base">
           {multiAccount
             ? t('account_switcher.add_account_description')
             : t('login.sign_in_or_create')}
