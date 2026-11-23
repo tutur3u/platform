@@ -26,6 +26,15 @@ Deletion re-checks the marker and the reserved address before anything is
 removed, so the QA path cannot delete a real account. The migration refuses to
 apply while any existing account already uses a reserved address or marker.
 
+Run signed-in acceptance in a headed browser. Web challenges session mutations
+whose User-Agent names an automation framework, such as default headless
+Chromium, with `403 ABUSE_CHALLENGE_REQUIRED`; routes behind `withSessionAuth`
+(the profile save, for example) then fail while unwrapped routes still pass. Do
+not override the User-Agent or send a challenge header to get past it.
+Provisioning stores a display-name hint only, so a first Meet join opens the
+name form; save the name there or through the profile page before testing a
+room.
+
 QA accounts never verify as staff, including `--staff` hosts on the staff
 domain: `isVerifiedTuturuuuStaffSession` and `private.staff_identity_verified`
 return false for any marked account, so staff-only surfaces (support inbox,

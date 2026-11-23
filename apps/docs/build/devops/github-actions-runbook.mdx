@@ -118,6 +118,33 @@ Batch reviewable changes and use authorized local or development-runner checks t
 
 App validation covers the affected application and its dependencies. Verify build metadata against the candidate source where required. Local tests, emitted artifacts and deployed behavior are distinct evidence; passing one does not establish the others.
 
+### Pinned Meet release admission
+
+A Meet release dispatch (`release=true` with `source_sha`) admits a source only
+when the newest `main` push or dispatch run of Security Checks and of Meet
+Cloudflare succeeded on that exact commit. `RELEASE_EXCEPTIONS` in
+`scripts/ci/meet-standalone-release.mjs` can cover Test, TypeScript Type Check
+and Oxc Check for one named source; it never covers those two.
+
+Meet Cloudflare is path-filtered, so a pin whose newest commits fall outside
+Meet's paths has no run on it and admission refuses it. Dispatch the workflow on
+`main` without inputs while `main` still points at the pin. That run validates
+and deploys nothing. Dispatch the release after it succeeds.
+
+The release deploys Realtime before it stages, verifies and assigns the
+frontend. Restore both captured versions together when the room protocol
+changed between them.
+
+### Parley production deploys
+
+Parley's deploy job runs only on the `production` ref; there is no pinned-source
+release from `main`. Its OpenNext cache population starts a temporary Worker
+(`open-next-cache-populate`) in a remote dev session and posts each cache entry
+to it. The deploy credential therefore needs permission to create Workers on
+the account. A token limited to named Workers cannot start that helper: every
+write waits out its 60-second timeout and the job refuses before the Worker
+upload, leaving the serving version unchanged.
+
 ## PR runner pool: variable, canary and kill switch
 
 PR verification can use a separately admitted runner pool. Routing follows trusted workflow policy and must preserve isolation for untrusted contributions. Pool routing does not replace the PR label gate or independent review. Operator configuration and recovery procedures are maintained privately.
