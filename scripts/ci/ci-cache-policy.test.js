@@ -54,6 +54,7 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-room-do.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-worker.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-state.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts"',
   ].join('\n');

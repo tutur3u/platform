@@ -4966,7 +4966,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/realtime/whiteboard/checkpoint/route.ts",
-    "digest": "163e76dd7160e27925269aa87281072ae9d6bd17aacb76fa5482cae0d0f92b60"
+    "digest": "5351a83bc15be248d9d79bcadc92552ee145e41b5e9a3e956bf229e3962c54ad"
   },
   {
     "file": "apps/web/src/app/api/v1/sso/saml/[clientId]/metadata/route.ts",

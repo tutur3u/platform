@@ -1470,8 +1470,8 @@
       "digest": "2312067edfd3cb0e5251660a3647ec1eeef8fb4fd99c7453e559bc3de5b41019",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/5de2f25cb8a4fe0326ce16c864e21c959a447c15",
-        "reason": "The realtime Worker gains the WHITEBOARD_ROOM Durable Object binding, its v4-whiteboard SQLite migration and the MEET_WHITEBOARD_FLUSH_DISABLED stop fence variable. The Wrangler usage counts and the publication path are unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
+        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints. The existing usage counts and publication path remain unchanged. The saved whiteboard adds a WHITEBOARD_ROOM Durable Object binding, its v4-whiteboard migration and the MEET_WHITEBOARD_FLUSH_DISABLED variable, documented under Saved whiteboard activity in the Meet application page."
       }
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
@@ -1480,8 +1480,8 @@
       "digest": "6810276eef3f8ea622de410a3b9f60e40115527a11a5e2042a432e82a1d4f2d6",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/5de2f25cb8a4fe0326ce16c864e21c959a447c15",
-        "reason": "The realtime Worker gains the WHITEBOARD_ROOM Durable Object binding, its v4-whiteboard SQLite migration and the MEET_WHITEBOARD_FLUSH_DISABLED stop fence variable. The Wrangler usage counts and the publication path are unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
+        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints. The existing usage counts and publication path remain unchanged. The saved whiteboard adds a WHITEBOARD_ROOM Durable Object binding, its v4-whiteboard migration and the MEET_WHITEBOARD_FLUSH_DISABLED variable, documented under Saved whiteboard activity in the Meet application page."
       }
     },
     "apps/meet/.gitignore": {

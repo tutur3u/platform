@@ -61,6 +61,7 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       'collaboration-retry-budget.test.ts',
       'channel-retry-budget.test.ts',
       'whiteboard-room-do.test.ts',
+      'whiteboard-worker.test.ts',
       'room-state.test.ts',
       'channel-checkpoint-request.test.ts',
     ].map((file) => `apps/meet-realtime/src/${file}`);
