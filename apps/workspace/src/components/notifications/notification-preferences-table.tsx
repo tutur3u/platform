@@ -12,7 +12,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useId, useMemo, useState } from 'react';
 import {
   ACCOUNT_EVENT_GROUPS,
   isComingSoonPreference,
@@ -44,6 +44,13 @@ const CHANNELS: NotificationChannel[] = ['web', 'email', 'push'];
 const TABLE_ROW_GRID =
   'grid grid-cols-[minmax(0,1fr)_repeat(3,3.5rem)] items-center gap-x-2 px-4 md:px-5';
 
+/** A switch that is shown but cannot be changed: never read, never written. */
+const isLocked = (
+  workspaceScope: boolean,
+  eventType: string,
+  channel: string
+) => !workspaceScope && isComingSoonPreference(eventType, channel);
+
 export default function NotificationPreferencesTable({
   scope,
   wsId,
@@ -59,6 +66,7 @@ export default function NotificationPreferencesTable({
   const accountQuery = useAccountNotificationPreferences();
   const updateWorkspace = useUpdateNotificationPreferences();
   const updateAccount = useUpdateAccountNotificationPreferences();
+  const idPrefix = useId();
 
   const { data: preferences, isLoading } = isWorkspace
     ? workspaceQuery
@@ -100,7 +108,9 @@ export default function NotificationPreferencesTable({
         prefs[eventType] = {};
         CHANNELS.forEach((channel) => {
           const key = `${eventType}-${channel}`;
-          prefs[eventType]![channel] = existingPrefs.get(key) ?? true;
+          prefs[eventType]![channel] = isLocked(isWorkspace, eventType, channel)
+            ? false
+            : (existingPrefs.get(key) ?? true);
         });
       });
     });
@@ -117,7 +127,12 @@ export default function NotificationPreferencesTable({
       group.events.forEach((eventType) => {
         CHANNELS.forEach((channel) => {
           const key = `${eventType}-${channel}`;
-          if (!existingPrefs.has(key)) {
+          // A coming-soon pair is never created: nothing is stored for it
+          // until consent is recorded.
+          if (
+            !existingPrefs.has(key) &&
+            !isLocked(isWorkspace, eventType, channel)
+          ) {
             missingPreferences.push({
               eventType: eventType as any,
               channel,
@@ -185,7 +200,9 @@ export default function NotificationPreferencesTable({
         prefs[eventType] = {};
         CHANNELS.forEach((channel) => {
           const key = `${eventType}-${channel}`;
-          prefs[eventType]![channel] = existingPrefs.get(key) ?? true;
+          prefs[eventType]![channel] = isLocked(isWorkspace, eventType, channel)
+            ? false
+            : (existingPrefs.get(key) ?? true);
         });
       });
     });
@@ -290,21 +307,26 @@ export default function NotificationPreferencesTable({
       enabled: boolean;
     }> = [];
 
+    // A coming-soon pair is skipped: it is neither shown as on nor written.
+    group.events.forEach((eventType) => {
+      CHANNELS.forEach((channel) => {
+        if (isLocked(isWorkspace, eventType, channel)) return;
+        preferencesToSave.push({
+          eventType: eventType as any,
+          channel,
+          enabled,
+        });
+      });
+    });
+
     // Update local state
     setLocalPreferences((prev) => {
       const newPrefs = { ...prev };
-      group.events.forEach((eventType) => {
-        if (!newPrefs[eventType]) {
-          newPrefs[eventType] = {};
-        }
-        CHANNELS.forEach((channel) => {
-          newPrefs[eventType]![channel] = enabled;
-          preferencesToSave.push({
-            eventType: eventType as any,
-            channel,
-            enabled,
-          });
-        });
+      preferencesToSave.forEach((item) => {
+        newPrefs[item.eventType] = {
+          ...newPrefs[item.eventType],
+          [item.channel]: enabled,
+        };
       });
       return newPrefs;
     });
@@ -341,7 +363,9 @@ export default function NotificationPreferencesTable({
 
     return group.events.every((eventType) =>
       CHANNELS.every(
-        (channel) => localPreferences[eventType]?.[channel] === true
+        (channel) =>
+          isLocked(isWorkspace, eventType, channel) ||
+          localPreferences[eventType]?.[channel] === true
       )
     );
   };
@@ -352,7 +376,9 @@ export default function NotificationPreferencesTable({
 
     return group.events.every((eventType) =>
       CHANNELS.every(
-        (channel) => localPreferences[eventType]?.[channel] === false
+        (channel) =>
+          isLocked(isWorkspace, eventType, channel) ||
+          localPreferences[eventType]?.[channel] === false
       )
     );
   };
@@ -369,6 +395,7 @@ export default function NotificationPreferencesTable({
 
     group.events.forEach((eventType) => {
       CHANNELS.forEach((channel) => {
+        if (isLocked(isWorkspace, eventType, channel)) return;
         totalCount++;
         if (localPreferences[eventType]?.[channel] === true) {
           enabledCount++;
@@ -511,7 +538,7 @@ export default function NotificationPreferencesTable({
                       isComingSoonPreference(eventType, 'email') && (
                         <p
                           className="text-muted-foreground text-xs"
-                          id={`${eventType}-coming-soon`}
+                          id={`${idPrefix}-${eventType}-coming-soon`}
                         >
                           {t('marketing-coming-soon')}
                         </p>
@@ -520,8 +547,11 @@ export default function NotificationPreferencesTable({
                   {CHANNELS.map((channel) => {
                     const savingKey = `${eventType}-${channel}`;
                     const isSaving = savingStates.has(savingKey);
-                    const comingSoon =
-                      !isWorkspace && isComingSoonPreference(eventType, channel);
+                    const comingSoon = isLocked(
+                      isWorkspace,
+                      eventType,
+                      channel
+                    );
 
                     return (
                       <div key={channel} className="flex justify-center">
@@ -538,7 +568,9 @@ export default function NotificationPreferencesTable({
                             }
                             disabled={isSaving || comingSoon}
                             aria-describedby={
-                              comingSoon ? `${eventType}-coming-soon` : undefined
+                              comingSoon
+                                ? `${idPrefix}-${eventType}-coming-soon`
+                                : undefined
                             }
                             aria-label={`${tChannels(channel)} notifications for ${tEvents(eventType as any)}`}
                           />

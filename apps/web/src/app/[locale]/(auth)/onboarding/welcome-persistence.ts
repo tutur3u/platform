@@ -13,9 +13,8 @@ import {
 } from './welcome-model';
 
 /**
- * Every write goes through an existing API: the onboarding-progress PATCH, the
- * account notification preferences and the user config. Nothing here adds a
- * route or a column.
+ * Every write goes through an existing API: the onboarding-progress PATCH and
+ * the user config. Nothing here adds a route or a column.
  */
 
 export function saveProgress(update: ConnectedOnboardingUpdate) {
