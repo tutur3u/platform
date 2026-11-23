@@ -24,7 +24,9 @@ import { callRoomService, type MeetCallRouteAccess } from './room-service';
 
 type Access = MeetCallRouteAccess;
 type Row = Record<string, any>;
-type Admin = Awaited<ReturnType<typeof createAdminClient>>;
+// Derived from the call site: ReturnType of the generic createAdminClient
+// resolves its Database parameter to unknown.
+type Admin = Awaited<ReturnType<typeof adminDb>>;
 type LinkRow = {
   whiteboard_id: string;
   ws_id: string;
