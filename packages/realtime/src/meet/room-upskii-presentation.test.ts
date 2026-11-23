@@ -24,7 +24,11 @@ const host = meetRealtimeTokenPayloadSchema.parse({
   role: 'host',
   exp: 2_000_000_000,
 });
-const guest = { ...host, role: 'speaker' as const, userId: crypto.randomUUID() };
+const guest = {
+  ...host,
+  role: 'speaker' as const,
+  userId: crypto.randomUUID(),
+};
 const outsider = { ...guest, userId: crypto.randomUUID() };
 const room = (): MeetRoomSnapshot => ({
   ...createMeetRoomSnapshot(),
@@ -166,9 +170,7 @@ describe('applyUpskiiPresentation', () => {
   it('refuses participants, people not admitted and the lobby', () => {
     const initial = room();
     expect(
-      errorOf(
-        run(initial, guest, { type: 'upskii.present.set', item: lesson })
-      )
+      errorOf(run(initial, guest, { type: 'upskii.present.set', item: lesson }))
     ).toBe('permission_denied');
     expect(
       errorOf(run(initial, outsider, { type: 'upskii.present.read' }))

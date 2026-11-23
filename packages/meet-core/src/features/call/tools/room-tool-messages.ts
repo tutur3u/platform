@@ -8,6 +8,7 @@ import {
 } from './live-activities/activities-handler';
 import { closeLiveActivitiesRoom } from './live-activities/activities-store';
 import { handleLiveQaMessage } from './live-activities/qa/qa-handler';
+import { closeUpskiiRoom, handleUpskiiMessage } from './upskii/upskii-store';
 import { handlePenboardMessage } from './whiteboard/whiteboard-handler';
 import { closeWhiteboardRoom } from './whiteboard/whiteboard-store';
 
@@ -23,11 +24,13 @@ function handleMeetToolMessage(
   handleLiveQaMessage(meetingId, message, actions.sendLiveQa);
   handleLiveActivitiesMessage(meetingId, message, actions.sendSharedTool);
   handlePenboardMessage(meetingId, message, actions.sendSharedTool);
+  handleUpskiiMessage(meetingId, message, actions.sendSharedTool);
 }
 
 function clearRoomTools(meetingId: string) {
   closeLiveActivitiesRoom(meetingId);
   closeWhiteboardRoom(meetingId);
+  closeUpskiiRoom(meetingId);
 }
 
 function roomToolTransportStatus(

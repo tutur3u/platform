@@ -81,9 +81,9 @@ describe('parseUpskiiContentPage', () => {
     const many = Array.from({ length: UPSKII_CONTENT_MAX_ITEMS + 5 }, (_, i) =>
       item(`l${i}`, `https://upskii.com/l${i}`)
     );
-    expect(parseUpskiiContentPage({ items: many }, 'lessons').items).toHaveLength(
-      UPSKII_CONTENT_MAX_ITEMS
-    );
+    expect(
+      parseUpskiiContentPage({ items: many }, 'lessons').items
+    ).toHaveLength(UPSKII_CONTENT_MAX_ITEMS);
     expect(() => parseUpskiiContentPage({ items: 'x' }, 'lessons')).toThrow(
       InternalApiError
     );
@@ -153,7 +153,9 @@ describe('upskiiContentErrorCode', () => {
       upskiiContentErrorCode(new InternalApiError('x', 404, 'NOT_LINKED'))
     ).toBe('NOT_LINKED');
     expect(
-      upskiiContentErrorCode(new InternalApiError('x', 403, 'EARLY_ACCESS_ONLY'))
+      upskiiContentErrorCode(
+        new InternalApiError('x', 403, 'EARLY_ACCESS_ONLY')
+      )
     ).toBe('EARLY_ACCESS_ONLY');
     expect(upskiiContentErrorCode(new InternalApiError('x', 404))).toBe(
       'NOT_LINKED'
