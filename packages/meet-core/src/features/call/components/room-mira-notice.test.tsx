@@ -184,7 +184,13 @@ it('lets a participant turn Mira off and report a minor in two steps', async () 
       expect.objectContaining({ choice: 'off', source: 'toggle' })
     )
   );
-  fireEvent.click(screen.getByRole('button', { name: m.report_minor }));
+  // Choosing closes the popover; the indicator stays and opens it again.
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: m.indicator_on.replace('{name}', 'Lan'),
+    })
+  );
+  fireEvent.click(await screen.findByRole('button', { name: m.report_minor }));
   expect(f.report).not.toHaveBeenCalled();
   fireEvent.click(
     await screen.findByRole('button', { name: m.report_minor_confirm })
