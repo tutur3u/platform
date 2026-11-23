@@ -68,6 +68,9 @@ function fixture(env: Record<string, string> = {}) {
         for (const [k, v] of Object.entries(entries))
           values.set(k, structuredClone(v));
       },
+      delete: async (keys: string[]) => {
+        for (const key of keys) values.delete(key);
+      },
       setAlarm: async () => {
         ops.alarms++;
       },
@@ -80,12 +83,15 @@ function fixture(env: Record<string, string> = {}) {
     0 = fakeSocket();
     1 = fakeSocket();
   };
-  const the = new WhiteboardRoomDurableObject(state, {
+  const config = {
     WHITEBOARD_ROOM: {} as DurableObjectNamespace,
     MEET_REALTIME_TOKEN_SECRET: SECRET,
     PLATFORM_API_BASE_URL: 'https://platform.example.invalid',
     ...env,
-  });
+  };
+  const the = new WhiteboardRoomDurableObject(state, config);
+  /** A new instance over the same storage and sockets, like an eviction. */
+  const restart = () => new WhiteboardRoomDurableObject(state, config);
   async function join(over: Partial<BoardTicket> = {}) {
     const request = new Request('https://x/whiteboard', {
       headers: {
@@ -96,7 +102,7 @@ function fixture(env: Record<string, string> = {}) {
     const response = await the.fetch(request).catch((e) => e);
     return response;
   }
-  return { the, values, ops, sockets, state, join };
+  return { the, values, ops, sockets, state, join, restart };
 }
 
 beforeEach(() => {
@@ -104,12 +110,15 @@ beforeEach(() => {
   globalThis.fetch = (async (_url: URL, init: RequestInit) => {
     const op = JSON.parse(String(init.body)).op;
     (globalThis as any).__fetches.push(op);
+    const status = (globalThis as any).__status?.[op];
+    if (status) return new Response(null, { status });
     return Response.json({
       updatedAt: 'u',
       elements: op === 'load' ? [rect('seed')] : undefined,
     });
   }) as typeof fetch;
   (globalThis as any).__fetches = [];
+  (globalThis as any).__status = {};
 });
 afterEach(() => {
   Date.now = realNow;
@@ -235,4 +244,145 @@ test('the stop fence halts flushes and storage writes but keeps relaying', async
   await f.the.alarm();
   assert.deepEqual((globalThis as any).__fetches, ['load']);
   assert.equal(f.values.has('meta'), false);
+});
+
+test('the stop fence also keeps the identity out of storage until it lifts', async () => {
+  const f = fixture({ MEET_WHITEBOARD_FLUSH_DISABLED: '1' });
+  await open(f);
+  assert.equal(f.values.has('identity'), false);
+  assert.equal(f.ops.puts, 0);
+});
+
+test('stores the identity on the first join when the fence is off', async () => {
+  const f = fixture();
+  await open(f);
+  assert.deepEqual(f.values.get('identity'), ids);
+});
+
+test('never delivers a broadcast to a socket whose ticket expired', async () => {
+  const f = fixture();
+  const editor = await open(f);
+  const stale = await open(f, {
+    userId: 'u2',
+    exp: Math.floor(now / 1000) + 5,
+  });
+  now += 10_000;
+  await f.the
+    .webSocketMessage(
+      editor as any,
+      JSON.stringify({ type: 'cursor', x: 1, y: 1 })
+    )
+    .catch(() => undefined);
+  assert.equal(stale.closed, 1008);
+  assert.ok(!stale.sent.some((m) => m.type === 'cursor'));
+});
+
+test('after an eviction the restored room sweeps expired sockets without a new message', async () => {
+  const f = fixture();
+  await open(f);
+  const stale = await open(f, {
+    userId: 'u2',
+    exp: Math.floor(now / 1000) + 5,
+  });
+  const alarmsBefore = f.ops.alarms;
+  const restored = f.restart();
+  now += 10_000;
+  await restored.alarm();
+  assert.ok(f.ops.alarms >= alarmsBefore);
+  assert.equal(stale.closed, 1008);
+});
+
+test('a viewer may ask for the scene only once every two seconds', async () => {
+  const f = fixture();
+  const viewer = await open(f, { role: 'view' });
+  const base = viewer.sent.filter((m) => m.type === 'sync').length;
+  for (let i = 0; i < 5; i++)
+    await f.the.webSocketMessage(viewer as any, '{"type":"sync"}');
+  assert.equal(viewer.sent.filter((m) => m.type === 'sync').length, base + 1);
+  now += 2500;
+  await f.the.webSocketMessage(viewer as any, '{"type":"sync"}');
+  assert.equal(viewer.sent.filter((m) => m.type === 'sync').length, base + 2);
+});
+
+test('drops unsupported elements with a notice and keeps the socket open', async () => {
+  const f = fixture();
+  const editor = await open(f);
+  const peer = await open(f, { userId: 'u2' });
+  await f.the.webSocketMessage(
+    editor as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [
+        { type: 'insert', element: { ...rect('img'), type: 'image' } },
+        { type: 'insert', element: rect('ok') },
+      ],
+    })
+  );
+  assert.equal(editor.closed, null);
+  assert.deepEqual(editor.sent.at(-1), {
+    type: 'rejected',
+    reason: 'unsupported',
+  });
+  assert.deepEqual(
+    peer.sent.at(-1).changes.map((c: any) => c.element.id),
+    ['ok']
+  );
+  await f.the.webSocketMessage(
+    editor as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [
+        { type: 'insert', element: { ...rect('img2'), type: 'image' } },
+      ],
+    })
+  );
+  assert.equal(editor.closed, null);
+});
+
+test('tells the sender when the board is full and keeps the socket open', async () => {
+  const f = fixture();
+  const editor = await open(f);
+  let refused = 0;
+  for (let i = 0; i < 60; i++) {
+    now += 1000;
+    await f.the.webSocketMessage(
+      editor as any,
+      JSON.stringify({
+        type: 'elements',
+        changes: [
+          {
+            type: 'insert',
+            element: { ...rect(`big${i}`), text: 'x'.repeat(60_000) },
+          },
+        ],
+      })
+    );
+    refused += editor.sent.filter((m) => m.type === 'rejected').length;
+    editor.sent.length = 0;
+  }
+  assert.ok(refused > 0);
+  assert.equal(editor.closed, null);
+});
+
+test('a room closed by the platform reopens at the next join once the board is back', async () => {
+  const f = fixture();
+  const editor = await open(f);
+  (globalThis as any).__status = { flush: 404 };
+  await f.the.webSocketMessage(
+    editor as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [{ type: 'insert', element: rect('a') }],
+    })
+  );
+  f.sockets.splice(0);
+  await f.the.webSocketClose();
+  now += BOARD_LIMITS.idleFlushMs + 10;
+  await f.the.alarm();
+  (globalThis as any).__status = { load: 404 };
+  assert.equal((await f.join({ userId: 'u3' })).status, 410);
+  assert.equal(f.sockets.length, 0);
+  (globalThis as any).__status = {};
+  const reopened = await open(f, { userId: 'u3' });
+  assert.equal(reopened.sent[0].type, 'sync');
 });

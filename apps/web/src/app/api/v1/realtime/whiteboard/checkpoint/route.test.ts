@@ -203,6 +203,55 @@ describe('whiteboard checkpoint route', () => {
     expect(state.updates).toHaveLength(1);
   });
 
+  it('never trims a board past the room budget: the overflow loads nowhere and is written back untouched', async () => {
+    const stored = Array.from({ length: 2005 }, (_, i) => rect(`e${i}`));
+    state.board!.snapshot = { elements: stored, appState: {} };
+    const loaded = await (await call({ op: 'load' })).json();
+    expect(loaded.elements).toHaveLength(2000);
+    const elements = loaded.elements.map((e: any, i: number) =>
+      i === 0 ? { ...e, version: 2 } : e
+    );
+    const response = await call(flush(elements, 't1'));
+    expect(response.status).toBe(200);
+    const written = (state.updates[0]!.snapshot as any).elements;
+    expect(written).toHaveLength(2005);
+    expect(written.slice(2000).map((e: any) => e.id)).toEqual([
+      'e2000',
+      'e2001',
+      'e2002',
+      'e2003',
+      'e2004',
+    ]);
+  });
+
+  it('keeps elements past the byte budget out of the room and in the board', async () => {
+    const fat = (id: string) => ({ ...rect(id), text: 'x'.repeat(60_000) });
+    const stored = Array.from({ length: 40 }, (_, i) => fat(`f${i}`));
+    state.board!.snapshot = { elements: stored, appState: {} };
+    const loaded = await (await call({ op: 'load' })).json();
+    expect(loaded.elements.length).toBeLessThan(40);
+    expect(JSON.stringify(loaded.elements).length).toBeLessThanOrEqual(
+      2_000_000
+    );
+    await call(flush(loaded.elements, 't1'));
+    const written = (state.updates[0]!.snapshot as any).elements;
+    expect(written.map((e: any) => e.id).sort()).toEqual(
+      stored.map((e) => e.id).sort()
+    );
+  });
+
+  it('does not duplicate an element the room now holds that was once overflow', async () => {
+    const stored = Array.from({ length: 2002 }, (_, i) => rect(`e${i}`));
+    state.board!.snapshot = { elements: stored, appState: {} };
+    const loaded = await (await call({ op: 'load' })).json();
+    const elements = [...loaded.elements.slice(1), rect('e2000', 3)];
+    await call(flush(elements, 't1'));
+    const ids = (state.updates[0]!.snapshot as any).elements.map(
+      (e: any) => e.id
+    );
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('rejects a body whose hash does not match and malformed bodies', async () => {
     expect(
       (await call(flush([rect('a')], 't1', { hash: 'a'.repeat(64) }))).status

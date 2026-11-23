@@ -15,6 +15,10 @@ export interface BoardRoomMeta {
   persistDueAt: number | null;
   flushDueAt: number | null;
   retry?: RetryBudget;
+  /** Elements edited in the room since the last flush; a concurrent save never removes these. */
+  dirtyIds?: string[];
+  /** Storage chunks the scene occupies, so a smaller scene can delete the rest. */
+  sceneChunks?: number;
   /** The board was unlinked or archived; nothing flushes again. */
   closed?: boolean;
 }

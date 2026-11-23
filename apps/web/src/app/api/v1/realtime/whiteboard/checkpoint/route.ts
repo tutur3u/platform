@@ -61,13 +61,28 @@ function splitStored(snapshot: unknown) {
     : [];
   const supported: BoardElement[] = [];
   const preserved: unknown[] = [];
+  let bytes = 0;
   for (const element of elements) {
     const checked = boardElementSchema.safeParse(element);
-    if (checked.success) supported.push(checked.data);
-    else preserved.push(element);
+    if (!checked.success) {
+      preserved.push(element);
+      continue;
+    }
+    const size = byteLength(checked.data);
+    // Elements past the room's budgets are never loaded into the room and are
+    // written back untouched, so a large board is saved, never trimmed.
+    if (
+      supported.length >= BOARD_LIMITS.maxElements ||
+      bytes + size > BOARD_LIMITS.maxSnapshotBytes
+    ) {
+      preserved.push(element);
+      continue;
+    }
+    supported.push(checked.data);
+    bytes += size;
   }
   return {
-    supported: supported.slice(0, BOARD_LIMITS.maxElements),
+    supported,
     preserved,
     appState: (parsed?.appState ?? {}) as Row,
   };
@@ -173,11 +188,17 @@ export async function POST(request: Request) {
     if (flush.baseUpdatedAt !== String(board.updated_at)) return settle(board);
 
     const { preserved, appState } = stored(board);
-    const snapshot = {
-      elements: [...flush.elements, ...preserved],
-      appState,
-    };
-    if (byteLength(snapshot) > BOARD_LIMITS.maxSnapshotBytes) return fail(413);
+    // The room owns every element it sent; only the ones it never held remain.
+    const sent = new Set(flush.elements.map((element) => element.id));
+    const kept = preserved.filter(
+      (element) => !sent.has((element as { id?: string })?.id ?? '')
+    );
+    const snapshot = { elements: [...flush.elements, ...kept], appState };
+    if (
+      byteLength(flush.elements) > BOARD_LIMITS.maxSnapshotBytes ||
+      byteLength(snapshot) > BOARD_LIMITS.maxSnapshotBytes * 4
+    )
+      return fail(413);
     const { data, error } = await db
       .from('workspace_whiteboards')
       .update({ snapshot, updated_at: new Date().toISOString() } as never)

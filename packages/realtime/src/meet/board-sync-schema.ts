@@ -7,6 +7,17 @@ import { z } from 'zod';
  */
 export const BOARD_TICKET_AUDIENCE = 'tuturuuu.meet.whiteboard';
 
+/**
+ * The browser offers `[BOARD_SOCKET_PROTOCOL, BOARD_TOKEN_PROTOCOL_PREFIX + token]`
+ * so the join ticket travels in a header, not in a URL that proxies log. The
+ * room selects only the first, public, protocol.
+ */
+export const BOARD_SOCKET_PROTOCOL = 'tuturuuu.whiteboard';
+export const BOARD_TOKEN_PROTOCOL_PREFIX = 'bearer.';
+
+/** Minimum gap between scene resends to one socket. */
+export const BOARD_SYNC_INTERVAL_MS = 2000;
+
 export const BOARD_LIMITS = {
   /** Live elements, deleted tombstones included. */
   maxElements: 2000,
@@ -95,7 +106,7 @@ export const boardElementSchema = z
   });
 export type BoardElement = z.infer<typeof boardElementSchema>;
 
-const boardChangeSchema = z
+export const boardChangeSchema = z
   .object({
     type: z.enum(['insert', 'update', 'delete']),
     element: boardElementSchema,
@@ -174,6 +185,11 @@ export const boardServerMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('role'), role: boardRoleSchema }),
   z.object({ type: z.literal('saved'), revision: z.number().int() }),
   z.object({ type: z.literal('save-error') }),
+  /** Edits the room refused; the sender's other edits in the batch still applied. */
+  z.object({
+    type: z.literal('rejected'),
+    reason: z.enum(['size', 'count', 'unsupported']),
+  }),
   z.object({ type: z.literal('closed') }),
 ]);
 export type BoardServerMessage = z.infer<typeof boardServerMessage>;

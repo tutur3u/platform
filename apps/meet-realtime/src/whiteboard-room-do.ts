@@ -3,14 +3,21 @@ import {
   signRealtimePayload,
   verifyRealtimePayload,
 } from '../../../packages/realtime/src/core/token';
-import { sameBoardSession } from '../../../packages/realtime/src/meet/board-sync-access';
 import {
+  isTerminalCheckpointStatus,
+  sameBoardSession,
+} from '../../../packages/realtime/src/meet/board-sync-access';
+import {
+  BoardLoadError,
   type BoardRoom,
   createBoardRoom,
 } from '../../../packages/realtime/src/meet/board-sync-core';
 import { chunkElements } from '../../../packages/realtime/src/meet/board-sync-merge';
+import { boardFlushFenced } from '../../../packages/realtime/src/meet/board-sync-flush';
 import {
   BOARD_LIMITS,
+  BOARD_SOCKET_PROTOCOL,
+  BOARD_SYNC_INTERVAL_MS,
   BOARD_TICKET_AUDIENCE,
   type BoardCheckpointBody,
   type BoardElement,
@@ -18,6 +25,7 @@ import {
   type BoardRole,
   type BoardServerMessage,
   type BoardTicket,
+  boardChangeSchema,
   boardCheckpointResultSchema,
   boardClientMessage,
   boardTicketSchema,
@@ -36,6 +44,8 @@ type Attachment = {
   connectionId: string;
   windowAt: number;
   messages: number;
+  /** When this socket last asked for the scene; resends are throttled. */
+  lastSyncAt: number;
 };
 
 const CHECKPOINT_PATH = '/api/v1/realtime/whiteboard/checkpoint';
@@ -58,6 +68,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     null;
   private ready: Promise<void>;
   private alarmInFlight: Promise<void> | null = null;
+  private identityStored = false;
 
   constructor(
     private state: DurableObjectState,
@@ -68,14 +79,12 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       storage: {
         get: (key) => this.state.storage.get(key),
         put: (entries) => this.state.storage.put(entries),
+        delete: async (keys) => {
+          await this.state.storage.delete(keys);
+        },
         setAlarm: (at) => this.state.storage.setAlarm(at),
       },
-      load: async () => {
-        const answer = await this.checkpointCall({ op: 'load' });
-        if (answer.status !== 200 || !answer.result)
-          throw new Error('Board load failed');
-        return answer.result;
-      },
+      load: () => this.checkpointCall({ op: 'load' }),
       flush: (body) => this.checkpointCall(body),
       hash: sha256,
       broadcast: (message) => this.broadcast(message),
@@ -95,6 +104,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         (await state.storage.get<NonNullable<typeof this.identity>>(
           'identity'
         )) ?? null;
+      this.identityStored = this.identity !== null;
       await this.room.restore();
     });
   }
@@ -115,6 +125,11 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     const payload = JSON.stringify(message);
     for (const socket of this.sockets()) {
       if (socket === except) continue;
+      // A socket past its ticket receives nothing, even before a sweep runs.
+      if (this.attachment(socket).ticket.exp * 1000 <= Date.now()) {
+        socket.close(1008, 'Ticket expired');
+        continue;
+      }
       try {
         socket.send(payload);
       } catch {
@@ -199,14 +214,26 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       return new Response(null, { status: 403 });
     if (this.sockets().length >= BOARD_LIMITS.maxSockets)
       return new Response('Room full', { status: 429 });
-    if (!this.identity) {
-      this.identity = { meetingId, wsId, boardId };
+    this.identity ??= { meetingId, wsId, boardId };
+    // The fence keeps every storage write off; the identity is stored on the
+    // first join after it lifts, which a flush after eviction needs.
+    if (
+      !this.identityStored &&
+      !boardFlushFenced(this.env.MEET_WHITEBOARD_FLUSH_DISABLED)
+    ) {
       await this.state.storage.put({ identity: this.identity });
+      this.identityStored = true;
     }
     try {
-      await this.room.ensureLoaded();
-    } catch {
-      return new Response(null, { status: 503 });
+      await this.room.prepare();
+    } catch (error) {
+      return new Response(null, {
+        status:
+          error instanceof BoardLoadError &&
+          isTerminalCheckpointStatus(error.status)
+            ? error.status
+            : 503,
+      });
     }
     if (this.room.closed) return new Response(null, { status: 410 });
     const pair = new WebSocketPair();
@@ -215,12 +242,17 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       connectionId: crypto.randomUUID(),
       windowAt: Date.now(),
       messages: 0,
+      lastSyncAt: 0,
     } satisfies Attachment);
     this.state.acceptWebSocket(pair[1]);
     this.sendScene(pair[1], ticket.data.role);
     this.broadcast({ type: 'presence', members: this.members() });
     await this.room.connectionsChanged();
-    return new Response(null, { status: 101, webSocket: pair[0] });
+    return new Response(null, {
+      status: 101,
+      webSocket: pair[0],
+      headers: { 'Sec-WebSocket-Protocol': BOARD_SOCKET_PROTOCOL },
+    });
   }
 
   private sendScene(socket: WebSocket, role: BoardRole) {
@@ -256,8 +288,32 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       return socket.close(1008, 'Message rate exceeded');
     socket.serializeAttachment(attachment);
     let message: ReturnType<typeof boardClientMessage.parse>;
+    let unsupported = 0;
     try {
-      message = boardClientMessage.parse(JSON.parse(data));
+      const raw = JSON.parse(data);
+      // Elements the room cannot hold (images, embeds) are dropped with a
+      // notice; closing the socket would only make the client reconnect.
+      if (
+        raw?.type === 'elements' &&
+        Array.isArray(raw.changes) &&
+        raw.changes.length <= BOARD_LIMITS.maxChangesPerMessage
+      ) {
+        const kept = raw.changes.filter(
+          (change: unknown) => boardChangeSchema.safeParse(change).success
+        );
+        unsupported = raw.changes.length - kept.length;
+        raw.changes = kept;
+        if (kept.length === 0 && unsupported > 0) {
+          socket.send(
+            JSON.stringify({
+              type: 'rejected',
+              reason: 'unsupported',
+            } satisfies BoardServerMessage)
+          );
+          return;
+        }
+      }
+      message = boardClientMessage.parse(raw);
     } catch {
       return socket.close(1008, 'Invalid whiteboard message');
     }
@@ -285,8 +341,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         }
         return;
       }
-      case 'sync':
+      case 'sync': {
+        // A resend can carry the whole scene, so one socket may ask rarely.
+        if (Date.now() - attachment.lastSyncAt < BOARD_SYNC_INTERVAL_MS) return;
+        attachment.lastSyncAt = Date.now();
+        socket.serializeAttachment(attachment);
         return this.sendScene(socket, ticket.role);
+      }
       case 'cursor':
         return this.broadcast(
           {
@@ -312,7 +373,15 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       case 'elements': {
         if (ticket.role !== 'edit')
           return socket.close(1008, 'Read-only board');
-        const applied = await this.room.edit(message.changes);
+        const { applied, rejected } = await this.room.edit(message.changes);
+        const refusal = rejected ?? (unsupported > 0 ? 'unsupported' : null);
+        if (refusal)
+          socket.send(
+            JSON.stringify({
+              type: 'rejected',
+              reason: refusal,
+            } satisfies BoardServerMessage)
+          );
         if (applied.length > 0)
           this.broadcast(
             {

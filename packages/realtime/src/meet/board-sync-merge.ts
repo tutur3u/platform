@@ -59,6 +59,64 @@ export function applyBoardChanges(
   return applied;
 }
 
+/** Running byte size of each element, so a batch is checked without re-measuring the scene. */
+export interface SceneSizes {
+  sizes: Map<string, number>;
+  total: number;
+}
+
+export function sizesFrom(scene: BoardScene): SceneSizes {
+  const sizes = new Map<string, number>();
+  let total = 0;
+  for (const [id, element] of scene) {
+    const bytes = byteLength(element);
+    sizes.set(id, bytes);
+    total += bytes;
+  }
+  return { sizes, total };
+}
+
+export interface BoundedResult {
+  applied: BoardChange[];
+  /** Changes refused because the scene would pass its element or byte budget. */
+  rejected: 'size' | 'count' | null;
+}
+
+/**
+ * Applies a client batch within the element and byte budgets. Growth that would
+ * pass a budget is refused; changes that keep or shrink an element always apply,
+ * so a full board can still be cleaned up.
+ */
+export function applyBoundedChanges(
+  scene: BoardScene,
+  tracker: SceneSizes,
+  changes: readonly BoardChange[],
+  maxBytes: number = BOARD_LIMITS.maxSnapshotBytes
+): BoundedResult {
+  const applied: BoardChange[] = [];
+  let rejected: BoundedResult['rejected'] = null;
+  for (const change of changes) {
+    const { element } = change;
+    const existing = scene.get(element.id);
+    if (existing && !supersedes(element, existing)) continue;
+    if (!existing && scene.size >= BOARD_LIMITS.maxElements) {
+      rejected = 'count';
+      continue;
+    }
+    const before = tracker.sizes.get(element.id) ?? 0;
+    const bytes = byteLength(element);
+    if (bytes > before && tracker.total - before + bytes > maxBytes) {
+      rejected ??= 'size';
+      continue;
+    }
+    scene.set(element.id, element);
+    tracker.sizes.set(element.id, bytes);
+    tracker.total += bytes - before;
+    applied.push(change);
+  }
+  return { applied, rejected };
+}
+
 export function sceneElements(scene: BoardScene): BoardElement[] {
   return [...scene.values()];
 }
@@ -71,7 +129,7 @@ export function sceneBytes(scene: BoardScene) {
  * Drops the oldest deleted elements once the scene nears its budget. Deleted
  * elements only matter while a stale peer could resurrect them.
  */
-export function pruneTombstones(scene: BoardScene) {
+export function pruneTombstones(scene: BoardScene, tracker?: SceneSizes) {
   const limit = Math.floor(BOARD_LIMITS.maxElements * 0.9);
   if (scene.size <= limit) return 0;
   let removed = 0;
@@ -79,10 +137,24 @@ export function pruneTombstones(scene: BoardScene) {
     if (scene.size <= limit) break;
     if (element.isDeleted) {
       scene.delete(id);
+      if (tracker) {
+        tracker.total -= tracker.sizes.get(id) ?? 0;
+        tracker.sizes.delete(id);
+      }
       removed++;
     }
   }
   return removed;
+}
+
+/** Marks an element deleted with a version above any peer's copy of it. */
+export function tombstone(element: BoardElement): BoardElement {
+  return {
+    ...element,
+    isDeleted: true,
+    version: element.version + 1,
+    versionNonce: Math.floor(Math.random() * 2 ** 31),
+  };
 }
 
 /** Splits a scene into messages that each stay under `maxBytes` of element JSON. */
