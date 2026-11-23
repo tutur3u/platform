@@ -107,7 +107,6 @@ export function MeetingProjects({
             search: t('search'),
             empty: t('empty'),
             clear: t('clear'),
-            loading: t('loading'),
           }}
           onChange={(projectId) => {
             if (projectId) change.mutate({ projectId, link: true });

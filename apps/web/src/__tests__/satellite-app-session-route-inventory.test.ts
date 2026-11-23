@@ -170,6 +170,12 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-live/[meetingId]/route.ts',
   'apps/meet/src/app/api/meet-live/[meetingId]/review/route.ts',
   'apps/meet/src/app/api/meet-live/memory/route.ts',
+  // The meeting record, Project links and since-last-time read and write
+  // through the Meet session; reads need full membership and writes need the
+  // host or a workspace admin, plus manage_projects to link a Project.
+  'apps/meet/src/app/api/meet-record/[wsId]/[meetingId]/route.ts',
+  'apps/meet/src/app/api/meet-record/[wsId]/[meetingId]/projects/route.ts',
+  'apps/meet/src/app/api/meet-record/[wsId]/[meetingId]/since/route.ts',
   'apps/learn/src/app/api/auth/logout/route.ts',
   'apps/learn/src/app/api/auth/refresh-app-session/route.ts',
   'apps/learn/src/app/api/auth/verify-app-token/route.ts',

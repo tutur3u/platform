@@ -19,7 +19,6 @@ const labels = {
   search: 'Search projects',
   empty: 'No projects',
   clear: 'No project',
-  loading: 'Loading projects',
 };
 
 const projects = [
@@ -33,7 +32,7 @@ describe('ProjectPicker', () => {
       <ProjectPicker
         labels={labels}
         onChange={vi.fn()}
-        state={{ status: 'loading' }}
+        state={{ status: 'loading', srLabel: 'Loading projects' }}
         value={null}
       />
     );

@@ -16,11 +16,10 @@ export type ProjectPickerLabels = {
   search: string;
   empty: string;
   clear: string;
-  loading: string;
 };
 
 export type ProjectPickerState =
-  | { status: 'loading' }
+  | { status: 'loading'; srLabel: string }
   | { status: 'ready'; projects: ProjectPickerOption[] };
 
 export type ProjectPickerProps = {
@@ -57,7 +56,7 @@ export function ProjectPicker({
 
   if (state.status === 'loading') {
     return (
-      <LoadingRegion className={className} srLabel={labels.loading}>
+      <LoadingRegion className={className} srLabel={state.srLabel}>
         <SkeletonLine barClassName="w-full" size="base" />
       </LoadingRegion>
     );

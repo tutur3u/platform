@@ -28,6 +28,10 @@
 -- meeting, then the task, always in that order. Key-share locks do not
 -- conflict with each other, so concurrent inserts never wait on one another;
 -- a delete of a locked row waits for the inserting transaction to finish.
+--
+-- The four trigger functions are revoked from every role and never granted:
+-- only the trigger machinery runs them.
+-- tuturuuu: no-grant (trigger)
 
 begin;
 
