@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '../../button';
-import { Skeleton } from '../../skeleton';
+import { LoadingRegion, Skeleton } from '../../skeleton';
 import { BillSplitActivityPanel } from './activity';
 import { BillSplitContactBank } from './contact-bank';
 import { BillSplitCreate } from './create';
