@@ -65,13 +65,14 @@ export function CallShell(
       meetingName={props.meetingName}
       leaveHref={props.leaveHref}
       busy={session.isFetching}
-      title={t(
+      onRetry={() => void session.refetch()}
+      title={
         choice
-          ? 'device_already_joined'
+          ? t('device_already_joined')
           : errorKey
-            ? 'startup_failed'
-            : 'preparing_call'
-      )}
+            ? t('startup_failed')
+            : undefined
+      }
       description={
         choice ? t('device_choice_hint') : errorKey ? t(errorKey) : undefined
       }

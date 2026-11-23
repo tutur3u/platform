@@ -1,18 +1,25 @@
 'use client';
 
-import { ArrowLeft, Loader2, Video } from '@tuturuuu/icons';
+import { ArrowLeft, Loader2, RefreshCw, Video } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useWaitDeadline } from '../hooks/use-wait-deadline';
 import { type CallLifecycle, isCallLifecycleBusy } from '../lib/call-state';
+import {
+  PreparationProgress,
+  SLOW_HINT_MS,
+  usePreparationStep,
+} from './preparation-steps';
 
 /**
  * One stable, full-height shell for server loading, device checks and
- * recovery. While loading it shows the meeting name, the call mark with a
- * spinner, one title, one short status line and a way back. `description`
- * and `children` carry recovery copy and actions for settled outcomes.
+ * recovery. While loading it shows the meeting name, the call mark, one
+ * status line that advances through three human steps and a subtle progress
+ * bar. After a slow wait it adds a gentle hint with Try again and a way back.
+ * `description` and `children` carry recovery copy and actions for settled
+ * outcomes.
  */
 export function CallPreparation({
   title,
@@ -21,6 +28,7 @@ export function CallPreparation({
   leaveHref,
   lifecycle = 'preparing',
   busy = isCallLifecycleBusy(lifecycle),
+  onRetry,
   children,
 }: {
   title?: string;
@@ -30,17 +38,18 @@ export function CallPreparation({
   /** Drives the spinner; `busy` overrides it for non-call loading states. */
   lifecycle?: CallLifecycle;
   busy?: boolean;
+  /** Offered with the slow-connection hint. */
+  onRetry?: () => void;
   children?: ReactNode;
 }) {
   const t = useTranslations('meet.call');
-  const slow = useWaitDeadline(busy, 30_000);
+  const slow = useWaitDeadline(busy, SLOW_HINT_MS);
+  const { step, key } = usePreparationStep(busy, lifecycle);
   const spinning = busy && !slow;
   const status = slow
     ? t('join_loading_slow_title')
-    : (title ?? t('preparing_call'));
-  const line = slow
-    ? undefined
-    : (description ?? (spinning ? t('connecting') : undefined));
+    : (title ?? (busy ? t(key) : t('join_step_setup')));
+  const line = slow ? t('join_slow_hint') : description;
   return (
     <main className="flex min-h-dvh w-full items-center justify-center bg-background px-5 py-10 sm:px-8">
       <section
@@ -52,7 +61,7 @@ export function CallPreparation({
             {meetingName}
           </p>
         )}
-        <div className="relative mb-6 grid size-16 place-items-center rounded-2xl bg-muted">
+        <div className="relative grid size-16 place-items-center rounded-2xl bg-muted">
           <Video className="size-7 text-muted-foreground" aria-hidden="true" />
           {spinning && (
             <span className="absolute -right-1.5 -bottom-1.5 grid size-7 place-items-center rounded-full border bg-background shadow-sm">
@@ -63,7 +72,8 @@ export function CallPreparation({
             </span>
           )}
         </div>
-        <output aria-live="polite" className="block space-y-1.5">
+        {spinning && !title && <PreparationProgress step={step} />}
+        <output aria-live="polite" className="mt-5 block space-y-1.5">
           <h1 className="text-balance font-semibold text-xl tracking-tight">
             {status}
           </h1>
@@ -72,6 +82,12 @@ export function CallPreparation({
           )}
         </output>
         {children && <div className="mt-6 w-full space-y-4">{children}</div>}
+        {slow && onRetry && (
+          <Button variant="outline" className="mt-6" onClick={onRetry}>
+            <RefreshCw className="size-4" aria-hidden="true" />
+            {t('join_retry')}
+          </Button>
+        )}
         {(leaveHref || slow) && (
           <Button variant="ghost" size="sm" className="mt-8" asChild>
             <Link href={leaveHref ?? '/'}>
