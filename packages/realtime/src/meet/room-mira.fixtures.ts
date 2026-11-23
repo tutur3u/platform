@@ -67,10 +67,11 @@ export function endMira(
   )!;
 }
 
-/** The choice command as the client sends it for the current acceptance. */
+/** The choice command as the client sends it from an in-call confirm. */
 export const miraChoice = (state: RoomServiceState, choice: 'on' | 'off') => ({
   action: 'mira.room.choice',
   choice,
   version: MIRA_ROOM_NOTICE_VERSION,
   acceptanceRevision: acceptanceRevisionOf(state),
+  source: 'confirm' as const,
 });

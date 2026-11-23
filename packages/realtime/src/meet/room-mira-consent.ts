@@ -42,8 +42,9 @@ const command = z.discriminatedUnion('action', [
     version: z.literal(MIRA_ROOM_NOTICE_VERSION),
     // The acceptance the participant saw; 0 when none was current.
     acceptanceRevision: z.number().int().nonnegative(),
-    // Where the choice was made. A choice carried from the join screen never
-    // turns an earlier off back on; only an action in the call does.
+    // Where the choice was made. Only an action in the call ('confirm' or
+    // 'toggle') turns an earlier off back on; a missing source counts as a
+    // Join state, which never does.
     source: z.enum(['join', 'confirm', 'toggle']).optional(),
   }),
   // Brackets every provider request that carries room-derived content.
@@ -163,9 +164,11 @@ export function applyMiraRoomConsent(
   if (choice === 'off') return reply(turnOff(settled, token, accountId, now));
   const own = settled.miraRoom?.choices[accountId];
   const pending = settled.miraRoom?.pending?.[accountId];
-  // A Join state never turns an earlier off, from any acceptance, back on.
+  // Only an action in the call turns an earlier off, from any acceptance,
+  // back on. A Join state, or a choice with no source, never does.
   if (
-    source === 'join' &&
+    source !== 'confirm' &&
+    source !== 'toggle' &&
     (pending || (own?.choice === 'off' && own.meetingId === token.meetingId))
   )
     return {

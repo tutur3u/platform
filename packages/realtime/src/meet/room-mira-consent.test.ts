@@ -233,8 +233,24 @@ describe('room Mira per-person consent', () => {
       lastChoice: 'off',
       ready: false,
     });
+    // A choice with no source counts as a Join state and is refused too.
+    const unsourced = { ...miraChoice(room, 'on'), source: undefined };
+    expect(act(bob, unsourced)).toMatchObject({
+      status: 409,
+      body: { code: 'MIRA_ROOM_JOIN_OVER_OFF' },
+    });
+    expect(view(bob).choice).toBeNull();
     // An action in the call does turn it on.
     act(bob, { ...miraChoice(room, 'on'), source: 'confirm' });
+    expect(view(bob)).toMatchObject({ choice: 'on', ready: true });
+  });
+
+  it('lets a toggle turn on after an earlier off', () => {
+    accept();
+    choose(bob, 'off');
+    expect(
+      act(bob, { ...miraChoice(room, 'on'), source: 'toggle' }).status ?? 200
+    ).toBe(200);
     expect(view(bob)).toMatchObject({ choice: 'on', ready: true });
   });
 

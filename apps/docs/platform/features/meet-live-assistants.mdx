@@ -161,9 +161,10 @@ unticked while the participant's own last state is off: from Join, from
 turning Mira off in the call, or from another tab or device (the room view
 returns the account's `lastChoice`, kept across acceptance revisions). A Join
 recording that fails retries on the next read without a toast. The room is the
-fence: a choice sent with source `join` is refused (`MIRA_ROOM_JOIN_OVER_OFF`)
-when that account's earlier choice in the meeting was off, in any revision, so
-only a confirm or toggle in the call turns Mira back on. An on choice also
+fence: an on choice is refused (`MIRA_ROOM_JOIN_OVER_OFF`) when that account's
+earlier choice in the meeting was off, in any revision, unless its source is
+`confirm` or `toggle`; `join` and a missing source count as a Join state, so
+only an action in the call turns Mira back on. An on choice also
 needs a current acceptance, never revision 0.
 The lobby seeds its box once, so a changed default never overwrites a box the
 participant already toggled. When Mira is turned on mid-call, or the acceptance changes, everyone
