@@ -187,10 +187,11 @@ every function here is `service_role` only with an explicit actor argument.
     places; no agent mints it, and it is never `service_role`. Drive's claim,
     budget, ok and fail functions are granted to it by Drive's migration
     (dependency 9).
-  - **`ttr_storage_operator`**: `NOLOGIN`, granted to named operator logins
-    only. Drive's `set_mode`, `stop`, `resume` and `requeue` belong to it, so the
+  - **`ttr_storage_operator`**: `NOLOGIN`, granted to the release authority's
+    break-glass login only. Drive's `set_mode`, `stop`, `resume` and `requeue` belong to it, so the
     purge Worker cannot change a mode and the web app cannot stop the fence.
-    Until a named login exists, the controls are owner-run SQL.
+    The release authority is its only holder, as a break-glass login (decision
+    9c). Everyday control runs as owner-run SQL through a reviewed packet.
   - **For Drive's jobs**, Cron Control keeps its one credential,
     `SUPABASE_SECRET_KEY` over PostgREST (`apps/cron-control/src/dispatch.ts:113-125`,
     `processors/maintenance-rpc.ts`), and gets no Postgres access: only the
@@ -358,7 +359,7 @@ Drive's dependencies. Each row cites the note's section.
 | 8 | Order | RESOLVED. Rollout order matches the one above |
 | 9a | Role grants | RESOLVED. "Credentials and roles": the index migration creates `ttr_storage_purge` and `ttr_storage_operator`; **Drive's migration grants `EXECUTE` on `drive_trash_purge_claim`, `drive_trash_budget_take`, `drive_trash_purge_ok` and `drive_trash_purge_fail` to `ttr_storage_purge`** and owns its definers as **`ttr_drive_owner`** (NOLOGIN, created by the index migration) |
 | 9b | Separate expedite | RESOLVED. `private.storage_expedite_unit(ws_id, unit_id, actor_id)` is `SECURITY DEFINER`, `EXECUTE` for `service_role`, called by the web route after its own permission check; it only sets `purge_after = now()` and audits the actor. The `trashed` to `purged` step stays with `ttr_storage_purge` |
-| 9c | Operator logins | RESOLVED as a procedure. The release authority names the first logins later; until then no login holds `ttr_storage_operator` and the controls are **owner-run SQL through a reviewed packet** |
+| 9c | Operator logins | RESOLVED (owner decision, 2026-11-24). The release authority is the **only** holder of `ttr_storage_operator`, as a break-glass login; no agent, Worker credential or deputy holds the role. Everyday `set_mode`, `stop`, `resume` and `requeue` run as **owner-run SQL through a reviewed packet**. Once Better Auth admin roles exist, the controls move to an audited Worker admin action that authorizes the actor through those roles and reaches the controls through a separately reviewed grant, never by holding `ttr_storage_operator`; the break-glass login stays with the release authority |
 | 10 | One transaction with the service | RESOLVED. "Composing with Drive's transactions": the service operations are composable, non-committing SQL functions, and **Drive's definer wrappers call them inside one transaction**. This covers route operations; the job's bookkeeping is separate by design (S10) |
 | 11 | Truncate refusal | RESOLVED. Integrity rules: the index migration owns one `BEFORE TRUNCATE` refusal per table, `ENABLE ALWAYS`; Drive's pgTAP only asserts it |
 
