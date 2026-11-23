@@ -9,6 +9,15 @@ import { currentDeployment } from './cf-worker-current-deployment.mjs';
 import { verifyDashboardAdmission } from './cf-worker-settings-dashboard.mjs';
 import { settingsList } from './cf-worker-settings-pagination.mjs';
 import { retryMissingSecret } from './cf-worker-settings-retry.mjs';
+import {
+  assertServiceBindings,
+  attributeLabel,
+  bindingLabel,
+  declaredNames,
+  readServiceBinding,
+  REVIEWED_BINDING_ATTRIBUTES,
+  typeLabel,
+} from './cf-worker-settings-bindings.mjs';
 import { verifyPublicRoutes } from './cf-worker-settings-routes.mjs';
 
 function canonical(value) {
@@ -38,65 +47,6 @@ const TOKEN_STATUSES = new Set(['active', 'disabled', 'expired']);
 // node:assert appends actual values to custom messages; compare without a diff.
 function same(actual, expected, message) {
   assert.ok(isDeepStrictEqual(actual, expected), message);
-}
-
-// Server identifiers are printed only when they equal a name we already
-// trust: a declared binding of this identity, or a constant reviewed here.
-// A syntactically valid identifier can still be a credential.
-const KNOWN_BINDING_TYPES = new Set([
-  'plain_text',
-  'secret_text',
-  'durable_object_namespace',
-  'json',
-  'kv_namespace',
-  'r2_bucket',
-  'd1',
-  'queue',
-  'service',
-  'analytics_engine',
-  'ai',
-  'assets',
-  'browser',
-  'hyperdrive',
-  'vectorize',
-  'version_metadata',
-  'dispatch_namespace',
-  'workflow',
-  'secrets_store_secret',
-  'send_email',
-  'mtls_certificate',
-]);
-const KNOWN_BINDING_ATTRIBUTES = new Set([
-  'environment',
-  'dispatch_namespace',
-  'namespace_id',
-  'script_name',
-  'class_name',
-  'text',
-  'json',
-]);
-
-function declaredNames(identity) {
-  return new Set([
-    ...Object.keys(identity.vars ?? {}),
-    ...Object.keys(identity.durableObjects ?? {}),
-    ...Object.keys(identity.services ?? {}),
-    ...(identity.secrets ?? []),
-  ]);
-}
-
-function bindingLabel(name, declared, index) {
-  return declared.has(name) ? name : `<undeclared binding #${index + 1}>`;
-}
-
-function typeLabel(type) {
-  return KNOWN_BINDING_TYPES.has(type) ? type : '<unknown type>';
-}
-
-function attributeLabel(attribute) {
-  return KNOWN_BINDING_ATTRIBUTES.has(attribute)
-    ? attribute
-    : '<unknown attribute>';
 }
 
 /** Parse a response body; a parse error would echo the body, so drop it. */
@@ -286,23 +236,6 @@ async function readSettings({ identity, accountId, token, fetchImpl = fetch }) {
   };
 }
 
-// Maps and Sets only: binding names such as `__proto__` must not reach an
-// object prototype chain.
-const REVIEWED_BINDING_ATTRIBUTES = new Map([
-  ['plain_text', new Set(['name', 'type', 'text'])],
-  ['secret_text', new Set(['name', 'type'])],
-  // namespace_id is assigned by Cloudflare; script_name is checked below.
-  [
-    'durable_object_namespace',
-    new Set(['name', 'type', 'class_name', 'script_name', 'namespace_id']),
-  ],
-  // Service bindings to another Worker's named entrypoint.
-  [
-    'service',
-    new Set(['name', 'type', 'service', 'entrypoint', 'environment']),
-  ],
-]);
-
 /** Summarize text and Durable Object bindings; text values keep only a digest. */
 function verifyBindings(settings, identity) {
   const { bindings } = settings;
@@ -312,7 +245,6 @@ function verifyBindings(settings, identity) {
   );
   const declaredVars = new Set(Object.keys(identity.vars ?? {}));
   const declaredObjects = new Set(Object.keys(identity.durableObjects ?? {}));
-  const declaredServices = new Set(Object.keys(identity.services ?? {}));
   const declared = declaredNames(identity);
   const seen = new Set();
   const vars = new Map();
@@ -351,20 +283,7 @@ function verifyBindings(settings, identity) {
         // the secrets endpoint, which tolerates operator-installed extras.
         break;
       case 'service':
-        assert.ok(
-          declaredServices.has(binding.name),
-          `undeclared service binding ${name}`
-        );
-        assert.ok(
-          binding.environment === undefined ||
-            binding.environment === null ||
-            binding.environment === 'production',
-          `service binding ${name} targets another environment`
-        );
-        services.set(binding.name, {
-          service: binding.service,
-          entrypoint: binding.entrypoint ?? undefined,
-        });
+        services.set(...readServiceBinding(binding, identity, name));
         break;
       default:
         assert.ok(
@@ -388,19 +307,7 @@ function verifyBindings(settings, identity) {
     differing.length === 0,
     `Worker vars differ: ${differing.join(', ')}`
   );
-  const observedServices = canonical(Object.fromEntries(services));
-  same(
-    observedServices,
-    canonical(
-      Object.fromEntries(
-        Object.entries(identity.services ?? {}).map(([name, target]) => [
-          name,
-          { service: target.service, entrypoint: target.entrypoint },
-        ])
-      )
-    ),
-    'service bindings differ'
-  );
+  assertServiceBindings(services, identity);
   const observedObjects = canonical(Object.fromEntries(durableObjects));
   same(
     observedObjects,

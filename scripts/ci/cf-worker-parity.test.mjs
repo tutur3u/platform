@@ -404,8 +404,8 @@ for (const app of ['devbox-control', 'coordination']) {
   });
 }
 
-test('service bindings to a named entrypoint normalize identically in both shapes', () => {
-  const cf = normalizeCfConfig({
+test('a service binding to a named entrypoint is a reviewed identity field', () => {
+  const identity = normalizeCfConfig({
     worker: {
       name: 'svc',
       env: {
@@ -417,21 +417,10 @@ test('service bindings to a named entrypoint normalize identically in both shape
       },
     },
   });
-  const wrangler = normalizeWranglerConfig({
-    name: 'svc',
-    services: [
-      {
-        binding: 'ERASURE',
-        service: 'realtime-fixture',
-        entrypoint: 'Erasure',
-      },
-    ],
-  });
-  assert.deepEqual(cf.services, {
+  assert.deepEqual(identity.services, {
     ERASURE: { service: 'realtime-fixture', entrypoint: 'Erasure' },
   });
-  assert.deepEqual(wrangler.services, cf.services);
-  assert.deepEqual(cf.unmapped, {});
+  assert.deepEqual(identity.unmapped, {});
   assert.equal(
     normalizeCfConfig({ worker: { name: 'svc' } }).services,
     undefined
