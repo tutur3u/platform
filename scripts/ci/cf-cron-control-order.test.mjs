@@ -74,17 +74,20 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
   assertCronSet(baseline.previousIdentity.crons, TARGET_ORDER);
-  assert.deepEqual(baseline.transition.fields, ['services', 'vars']);
+  assert.deepEqual(baseline.transition.fields, ['vars']);
   assert.deepEqual(
     baseline.previousIdentity.compatibilityFlags,
     baseline.identity.compatibilityFlags
   );
   assert.deepEqual(baseline.identity.vars, {
     ...baseline.previousIdentity.vars,
-    CRON_CONTROL_ENABLED_JOBS: `${baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS},forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare`,
-    FORMS_UPLOAD_CLEANUP_MODE: 'off',
+    CRON_CONTROL_ENABLED_JOBS: `${baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS},observability-retention,observability-slo-burn,observability-cloudflare`,
   });
-  assert.equal(baseline.previousIdentity.services, undefined);
+  assert.equal(baseline.previousIdentity.vars.FORMS_UPLOAD_CLEANUP_MODE, 'off');
+  assert.deepEqual(
+    baseline.previousIdentity.services,
+    baseline.identity.services
+  );
   assert.deepEqual(baseline.identity.services, {
     MEET_ATTENDANCE_ERASURE: {
       entrypoint: 'AttendanceErasure',
