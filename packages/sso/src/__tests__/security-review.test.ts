@@ -182,7 +182,7 @@ describe('security review protocol regressions', () => {
   });
 
   it('rejects a distinct unsigned attacker assertion beside an intact signed assertion and valid outer signature', async () => {
-    const original = f.response();
+    const original = await f.response();
     const doc = parseXml(original.xml);
     const root = documentRoot(doc);
     const signed = one(root, SAML.assertion, 'Assertion');
@@ -204,7 +204,7 @@ describe('security review protocol regressions', () => {
     attackerEmail.textContent = 'attacker@example.test';
     root.insertBefore(attacker, signed);
     root.removeChild(one(root, SAML.signature, 'Signature'));
-    const xml = f.signer({
+    const xml = await f.signer({
       xml: serialize(doc),
       id: samlIdSchema.parse(root.getAttribute('ID')),
       kind: 'Response',

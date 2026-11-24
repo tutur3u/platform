@@ -14,7 +14,7 @@ import {
 import { append, documentRoot, newDocument, parseXml, serialize } from './xml';
 
 /** Protocol construction only. The caller must authorize and consume a transaction first. */
-export function createLoginResponse(
+export async function createLoginResponse(
   input: {
     profile: unknown;
     idp: unknown;
@@ -124,7 +124,7 @@ export function createLoginResponse(
     });
     append(attr, SAML.assertion, 'saml:AttributeValue', {}, value);
   }
-  const signedAssertion = dependencies.signer({
+  const signedAssertion = await dependencies.signer({
     xml: serialize(assertion),
     id: assertionId,
     kind: 'Assertion',
@@ -147,7 +147,7 @@ export function createLoginResponse(
   r.appendChild(
     response.importNode(documentRoot(parseXml(signedAssertion)), true)
   );
-  const xml = dependencies.signer({
+  const xml = await dependencies.signer({
     xml: serialize(response),
     id: responseId,
     kind: 'Response',

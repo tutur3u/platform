@@ -61,7 +61,8 @@ failing a digest. This harness does not substitute for Claude/WorkOS acceptance.
 - `createLoginResponse`: inject `now`, `generateId` and `signer`. Unique response
   and assertion IDs, two-minute validity, bearer Recipient/InResponseTo/expiry,
   audience, response destination and MFA AuthnContext are fixed by the profile.
-  Both assertion and response are signed. A synchronous signer is supported;
+  Both assertion and response are signed. The signer port is asynchronous, so a
+  remote signer can implement it;
   returning a response after five seconds is forbidden. This check does not
   preempt an arbitrary injected signer; bounded/cancellable remote signing is
   future service-adapter work. No retries or background operations exist.
@@ -78,8 +79,10 @@ failing a digest. This harness does not substitute for Claude/WorkOS acceptance.
   ForceAuthn additionally requires both after the request. The adapter must prove
   live account/factor lineage and REFEDS MFA semantics; a posted timestamp,
   `aal2`, refreshed JWT `iat`, or enrolled factor is insufficient.
-- `createIdpMetadata`: public certificate, persistent format and both request
-  bindings; no SLO. Metadata alone does not enable any service. The global
+- `createIdpMetadata`: the signing certificate first, then up to two optional
+  `rolloverCertificates` (each a separate signing `KeyDescriptor`, current and
+  distinct, never used to sign), persistent format and both request bindings;
+  no SLO. Metadata alone does not enable any service. The global
   `WantAuthnRequestsSigned=false` allows per-SP policy; registered profiles still
   enforce required signatures individually.
 - `@tuturuuu/sso/node-signer`: dedicated RSA key/certificate matching adapter.

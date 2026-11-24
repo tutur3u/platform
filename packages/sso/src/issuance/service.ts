@@ -74,7 +74,7 @@ export async function decideLogin(
       // Mark before dispatch, so an unknown consume result is never retried.
       consumed = true;
       const pairwiseSubject = await d.consume(current.principal);
-      const response = createLoginResponse(
+      const response = await createLoginResponse(
         {
           ...current,
           request: tx.request,

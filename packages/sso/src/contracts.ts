@@ -127,6 +127,9 @@ export const idpConfigSchema = z
     entityId: entityIdSchema,
     ssoUrl: endpointSchema,
     signingCertificate: certificateSchema,
+    // Rollover certificates published in metadata beside the signing one;
+    // never used to sign.
+    rolloverCertificates: z.array(certificateSchema).max(2).optional(),
   })
   .strict()
   .readonly();
@@ -166,11 +169,12 @@ export const assuranceSchema = z
     mfaVerifiedAt: z.iso.datetime(),
   })
   .strict();
+/** Async so a remote signer (for example a Worker) can implement the port. */
 export type SamlSigner = (input: {
   xml: string;
   id: z.infer<typeof samlIdSchema>;
   kind: 'Assertion' | 'Response';
-}) => string;
+}) => Promise<string>;
 export interface ProtocolDependencies {
   now: () => Date;
   generateId: () => string;

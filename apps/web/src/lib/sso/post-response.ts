@@ -20,7 +20,7 @@ const escapeHtml = (s: string) =>
     }
   });
 export function postResponse(
-  response: ReturnType<typeof createLoginResponse>,
+  response: Awaited<ReturnType<typeof createLoginResponse>>,
   locale: 'en' | 'vi'
 ) {
   const nonce = randomBytes(24).toString('base64');

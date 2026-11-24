@@ -181,12 +181,12 @@ export async function serviceProvider(f: Fixture) {
 }
 
 /** Forge protocol-invalid but correctly signed fixtures, so semantic checks must run. */
-export function resign(
+export async function resign(
   f: Fixture,
   xml: string,
   mutate: (doc: ReturnType<DOMParser['parseFromString']>) => void,
   signAssertion = true
-): string {
+): Promise<string> {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   assert.ok(doc.documentElement);
   const signatures = Array.from(
@@ -199,7 +199,7 @@ export function resign(
   if (!assertion) throw new Error('fixture assertion absent');
   const serializer = new XMLSerializer();
   if (signAssertion) {
-    const signed = f.signer({
+    const signed = await f.signer({
       xml: serializer.serializeToString(assertion),
       id: samlIdSchema.parse(assertion.getAttribute('ID')),
       kind: 'Assertion',
@@ -214,7 +214,7 @@ export function resign(
       assertion
     );
   }
-  return f.signer({
+  return await f.signer({
     xml: serializer.serializeToString(doc),
     id: samlIdSchema.parse(doc.documentElement.getAttribute('ID')),
     kind: 'Response',

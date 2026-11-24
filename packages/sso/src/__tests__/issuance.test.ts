@@ -16,61 +16,61 @@ beforeAll(() => {
 });
 
 describe('issuance contract without application authorization', () => {
-  it('requires fresh MFA for every account rather than trusting a boolean or enrolled factor', () => {
-    expect(() =>
+  it('requires fresh MFA for every account rather than trusting a boolean or enrolled factor', async () => {
+    await expect(
       f.response({
         assurance: { method: 'totp-mfa', authenticatedAt: f.now.toISOString() },
       })
-    ).toThrow();
+    ).rejects.toThrow();
     const old = new Date(f.now.getTime() - 600_001).toISOString();
-    expect(() =>
+    await expect(
       f.response({
         assurance: { ...f.assurance, authenticatedAt: old, mfaVerifiedAt: old },
       })
-    ).toThrow('SAML_FRESH_MFA_REQUIRED');
+    ).rejects.toThrow('SAML_FRESH_MFA_REQUIRED');
     const future = new Date(f.now.getTime() + 1).toISOString();
-    expect(() =>
+    await expect(
       f.response({ assurance: { ...f.assurance, mfaVerifiedAt: future } })
-    ).toThrow('SAML_FRESH_MFA_REQUIRED');
+    ).rejects.toThrow('SAML_FRESH_MFA_REQUIRED');
   });
 
-  it('requires a new primary authentication and MFA after ForceAuthn', () => {
+  it('requires a new primary authentication and MFA after ForceAuthn', async () => {
     const prior = new Date(f.now.getTime() - 1000).toISOString();
     const request = { ...f.request, forceAuthn: true };
-    expect(() =>
+    await expect(
       f.response({
         request,
         assurance: { ...f.assurance, authenticatedAt: prior },
       })
-    ).toThrow('SAML_FORCE_AUTHN_REQUIRED');
-    expect(() => f.response({ request })).not.toThrow();
+    ).rejects.toThrow('SAML_FORCE_AUTHN_REQUIRED');
+    await expect(f.response({ request })).resolves.toBeDefined();
   });
 
-  it('rejects expired requests, cross-client requests and changed registered ACS', () => {
+  it('rejects expired requests, cross-client requests and changed registered ACS', async () => {
     const issueInstant = new Date(f.now.getTime() - 300_001).toISOString();
-    expect(() =>
+    await expect(
       f.response({ request: { ...f.request, issueInstant } })
-    ).toThrow('SAML_REQUEST_EXPIRED');
-    expect(() =>
+    ).rejects.toThrow('SAML_REQUEST_EXPIRED');
+    await expect(
       f.response({ request: { ...f.request, issuer: 'urn:other' } })
-    ).toThrow('SAML_REQUEST_PROFILE');
-    expect(() =>
+    ).rejects.toThrow('SAML_REQUEST_PROFILE');
+    await expect(
       f.response({
         profile: { ...f.profile, acsUrl: 'https://other.example.test/acs' },
       })
-    ).toThrow('SAML_REQUEST_PROFILE');
-    expect(() =>
+    ).rejects.toThrow('SAML_REQUEST_PROFILE');
+    await expect(
       f.response({
         profile: {
           ...f.profile,
           requestSigning: { mode: 'required', certificate: f.certificate },
         },
       })
-    ).toThrow('SAML_REQUEST_PROFILE');
+    ).rejects.toThrow('SAML_REQUEST_PROFILE');
   });
 
-  it('rejects reused IDs from an injected generator', () => {
-    expect(() =>
+  it('rejects reused IDs from an injected generator', async () => {
+    await expect(
       createLoginResponse(
         {
           profile: f.profile,
@@ -85,12 +85,12 @@ describe('issuance contract without application authorization', () => {
           signer: f.signer,
         }
       )
-    ).toThrow('SAML_ID_COLLISION');
+    ).rejects.toThrow('SAML_ID_COLLISION');
   });
 
-  it('refuses to return a response after the five-second issuance window', () => {
+  it('refuses to return a response after the five-second issuance window', async () => {
     let reads = 0;
-    expect(() =>
+    await expect(
       createLoginResponse(
         {
           profile: f.profile,
@@ -108,7 +108,7 @@ describe('issuance contract without application authorization', () => {
           signer: f.signer,
         }
       )
-    ).toThrow('SAML_ISSUANCE_EXPIRED');
+    ).rejects.toThrow('SAML_ISSUANCE_EXPIRED');
   });
 
   it('validates HTTPS endpoint configuration without normalizing requests into a match', () => {

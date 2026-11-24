@@ -29,7 +29,7 @@ export function createNodeSigner(input: {
       .equals(cert.publicKey.export({ type: 'spki', format: 'der' })),
     'KEY_MISMATCH'
   );
-  return ({ xml, id, kind }) => {
+  return async ({ xml, id, kind }) => {
     const signature = new SignedXml({
       privateKey: key,
       publicCert: input.certificate,
