@@ -61,6 +61,14 @@ export const mobileTrack: Track = {
           fallback: 'planned',
         },
         {
+          id: 'mobile-store-screenshots',
+          title: 'Refreshed store screenshots for iPhone, iPhone Duo, iPad and Mac in light and dark',
+          titleVi: 'Ảnh chụp cửa hàng mới cho iPhone, iPhone Duo, iPad và Mac, cả giao diện sáng và tối',
+          prs: [],
+          app: 'mobile',
+          fallback: 'in_progress',
+        },
+        {
           id: 'store-1-0',
           title:
             'Tuturuuu 1.0 on the App Store, Mac App Store, Google Play and Microsoft Store',
@@ -146,6 +154,19 @@ export const mobileTrack: Track = {
           fallback: 'planned',
         },
         {
+          id: 'mobile-sorbet-sign-in',
+          title: 'Sorbet sign-in, two-step verification and a one-time welcome',
+          titleVi: 'Đăng nhập, xác minh hai bước theo Sorbet và màn hình chào mừng một lần',
+          prs: [],
+          commits: [
+            'fd4f8948b1524afae92e670c5facbaf3b380c65f',
+            '7a092f155e580a45d76bd6a5fdffbf0b76eb2640',
+            '1a765531b3ed4940da698d4548dda8be9a1eff90',
+          ],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
           id: 'mobile-tablet',
           title: 'Tablet list and detail layout',
           prs: [6685],
@@ -196,6 +217,20 @@ export const mobileTrack: Track = {
           id: 'mobile-education',
           title: 'Education mode with a Today classes card',
           prs: [6982],
+          app: 'mobile',
+          fallback: 'planned',
+        },
+        {
+          id: 'mobile-contacts-reports',
+          title: 'Browse, search and preview Contacts reports and review approvals',
+          titleVi: 'Duyệt, tìm kiếm, xem trước báo cáo Liên hệ và duyệt từng yêu cầu',
+          prs: [],
+          commits: [
+            '63feb3ada7c4daee47f7854b1010e23babd9cc0e',
+            '24596a1567c3e44944e0b295935622a05dc18651',
+            'b7a5a9b2933af36381c5a626581c49638e5f21d5',
+            '9db2915caab660ac6eaa5b537f7bf406aef0aa4e',
+          ],
           app: 'mobile',
           fallback: 'planned',
         },

@@ -147,6 +147,49 @@
       "desktop": "Windows desktop"
     }
   },
+  "featurePreviews": {
+    "eyebrow": "Feature previews",
+    "heading": "See what ships, on every screen",
+    "lede": "Real screens from the current Tuturuuu design, captured with sample data. Pick a device and a theme.",
+    "deviceLabel": "Device",
+    "variantLabels": {
+      "ipad": "Orientation",
+      "duo": "Layout"
+    },
+    "themeLabel": "Theme",
+    "railLabel": "Features",
+    "groups": {
+      "iphone": "iPhone",
+      "ipad": "iPad",
+      "mac": "Mac",
+      "duo": "iPhone Duo"
+    },
+    "variants": {
+      "ipad": [
+        "Portrait",
+        "Landscape"
+      ],
+      "duo": [
+        "Closed",
+        "Open"
+      ]
+    },
+    "themes": {
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "devices": {
+      "iphone": "iPhone",
+      "ipad": "iPad",
+      "ipad-landscape": "iPad in landscape",
+      "mac": "Mac",
+      "duo-folded": "iPhone Duo, closed",
+      "duo-unfolded": "iPhone Duo, open"
+    },
+    "alt": "{feature} on {device}, {theme} theme",
+    "captured": "Shown on {device}, {theme} theme, with sample data",
+    "onRoadmap": "See it on the roadmap"
+  },
   "meta": {
     "title": "Tuturuuu Roadmap: what we're building and shipping",
     "description": "What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.",

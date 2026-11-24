@@ -7,6 +7,38 @@ export const tasksTrack: Track = {
     'Plan work in sprints, keep boards readable and capture notes next to your tasks.',
   milestones: [
     {
+      id: 'tasks-collaboration',
+      title: 'Comments, links and imports',
+      titleVi: 'Bình luận, liên kết và nhập dữ liệu',
+      deliverables: [
+        {
+          id: 'task-comments-links',
+          title: 'Comments, linked resources and status in the task dialog',
+          titleVi: 'Bình luận, tài nguyên liên kết và trạng thái trong hộp thoại công việc',
+          prs: [],
+          commits: [
+            '6f61b3309bb5513f30c3d074012b47e14b989c11',
+            'd252d04cfb283ffd85b17a16792048600a4ed5ed',
+            '1c9bcc814f5e75a2d24585daeaa19a5704e7984c',
+          ],
+          app: 'tasks',
+          fallback: 'planned',
+        },
+        {
+          id: 'task-github-import',
+          title: 'Import GitHub issues with their timeline, keeping your edits on re-import',
+          titleVi: 'Nhập issue GitHub kèm dòng thời gian, giữ nguyên chỉnh sửa của bạn khi nhập lại',
+          prs: [],
+          commits: [
+            '19eed42e2e560822fd8fe5777ad79fa8972b5772',
+            '17a40db6648722bae55abf79514f66f0a2fac483',
+          ],
+          app: 'tasks',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
       id: 'tasks-sprints',
       title: 'Sprints and cycles',
       summary: 'Plan, run and close sprints directly on a board.',

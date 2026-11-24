@@ -7,6 +7,7 @@ import {
 import {
   type CSSProperties,
   type ReactNode,
+  lazy,
   memo,
   Suspense,
   useCallback,
@@ -46,6 +47,11 @@ import { NotesEmpty, PatchNotes } from '../components/insights/patch-notes';
 import { shownState } from '../components/live-label';
 import { StoreReleases } from '../components/store-releases';
 import { RoadmapTabs, skipToTabs } from '../components/tabs';
+
+// The previews, their manifests and image URLs load as their own chunk.
+const FeaturePreviewsSection = lazy(
+  () => import('../components/feature-previews-section')
+);
 
 export function RoadmapPage({
   lang,
@@ -226,7 +232,14 @@ const RoadmapMain = memo(function RoadmapMain({
         </Suspense>
       </>
     ),
-    releases: <StoreReleases lang={lang} t={t.storeReleases} now={now} />,
+    releases: (
+      <div className="grid gap-8">
+        <Suspense>
+          <FeaturePreviewsSection lang={lang} t={t.featurePreviews} />
+        </Suspense>
+        <StoreReleases lang={lang} t={t.storeReleases} now={now} />
+      </div>
+    ),
     stack: (
       <>
         {stackLead}

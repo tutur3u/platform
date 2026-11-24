@@ -6,6 +6,24 @@ export const driveTrack: Track = {
   summary: 'Find, browse and share files quickly on web and mobile.',
   milestones: [
     {
+      id: 'drive-sorbet',
+      title: 'A new file browser',
+      titleVi: 'Trình duyệt tệp mới',
+      deliverables: [
+        {
+          id: 'drive-sorbet-browser',
+          title: 'File browser rebuilt on the Sorbet design',
+          titleVi: 'Trình duyệt tệp được làm lại theo thiết kế Sorbet',
+          prs: [],
+          commits: [
+            '8a590e242a213f36709b2c9198eecf0848c22820',
+          ],
+          app: 'drive',
+          fallback: 'planned',
+        },
+      ],
+    },
+    {
       id: 'drive-mobile',
       title: 'Drive on mobile',
       deliverables: [

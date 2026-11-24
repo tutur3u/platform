@@ -147,6 +147,49 @@
       "desktop": "Máy tính Windows"
     }
   },
+  "featurePreviews": {
+    "eyebrow": "Xem trước tính năng",
+    "heading": "Xem những gì sắp ra mắt trên mọi màn hình",
+    "lede": "Màn hình thật từ thiết kế Tuturuuu hiện tại, chụp với dữ liệu mẫu. Chọn thiết bị và giao diện.",
+    "deviceLabel": "Thiết bị",
+    "variantLabels": {
+      "ipad": "Hướng màn hình",
+      "duo": "Bố cục"
+    },
+    "themeLabel": "Giao diện",
+    "railLabel": "Tính năng",
+    "groups": {
+      "iphone": "iPhone",
+      "ipad": "iPad",
+      "mac": "Mac",
+      "duo": "iPhone Duo"
+    },
+    "variants": {
+      "ipad": [
+        "Dọc",
+        "Ngang"
+      ],
+      "duo": [
+        "Gập",
+        "Mở"
+      ]
+    },
+    "themes": {
+      "light": "Sáng",
+      "dark": "Tối"
+    },
+    "devices": {
+      "iphone": "iPhone",
+      "ipad": "iPad",
+      "ipad-landscape": "iPad nằm ngang",
+      "mac": "Mac",
+      "duo-folded": "iPhone Duo khi gập",
+      "duo-unfolded": "iPhone Duo khi mở"
+    },
+    "alt": "{feature} trên {device}, giao diện {theme}",
+    "captured": "Hiển thị trên {device}, giao diện {theme}, với dữ liệu mẫu",
+    "onRoadmap": "Xem trên lộ trình"
+  },
   "meta": {
     "title": "Lộ trình Tuturuuu: những gì đang xây dựng và ra mắt",
     "description": "Tuturuuu đang xây dựng gì: mọi dòng sản phẩm, cột mốc và hạng mục, kèm những gì vừa ra mắt trong tuần, cập nhật trực tiếp từ pull request công khai và kiểm tra triển khai.",

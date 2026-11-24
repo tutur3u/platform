@@ -105,6 +105,23 @@ screenshot, store, device and language. Thumbnails keep a skeleton until
 decoded (a `span`, valid inside the row's button). Captions, device, language
 and listing text come from `apps/mobile/store` (`content/store-releases.ts`).
 
+Above the store rows, Feature previews (`components/feature-previews.tsx`)
+shows real screens of the current Sorbet design: a device switch (iPhone,
+iPad portrait or landscape, Mac in a window frame, and iPhone Duo closed
+or open), a Light/Dark switch that starts on the page's theme, and
+a rail of features, each linking to its track. Images come from
+`src/assets/previews/<app|web>/manifest.json`, which the capture scripts write
+(the Flutter app through `apps/mobile/test/store_screenshots`, the web apps
+from a local fixture stack; see `apps/docs/build/devops/mobile-store-screenshots.mdx`).
+Each capture is framed on a transparent background and shipped as AVIF with a
+WebP fallback in one `<picture>`; only the selected device, theme and language
+load, lazily, and nothing loads while the Releases panel is hidden.
+`content/feature-previews.ts` holds the EN and VI copy per screen. A captured
+screen without copy is left out, and a missing device, theme or language
+falls back to another capture rather than an empty frame
+(`content/feature-previews.test.ts`). The section is omitted while no
+manifest exists.
+
 ## Design tokens (Sorbet)
 
 The roadmap uses the default Sorbet palette from `@tuturuuu/ui`. Its root
