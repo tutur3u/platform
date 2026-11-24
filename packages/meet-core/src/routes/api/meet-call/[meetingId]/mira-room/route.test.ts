@@ -77,6 +77,15 @@ const post = (body: unknown) =>
     params
   );
 const read = { version, choice: null, acceptance: null, ready: false };
+const PENDING = '0b1e0d1c-2f3a-4b5c-8d6e-7f8091a2b3c4';
+/** The room holds every on as pending and answers its id; else the view. */
+const roomDefault = async (
+  _access: unknown,
+  command: { action: string; choice?: string }
+) =>
+  command.action === 'mira.room.choice' && command.choice === 'on'
+    ? { pendingId: PENDING, pendingUntil: Date.now() + 20_000, view: read }
+    : read;
 const choice = (overrides: Record<string, unknown> = {}) => ({
   action: 'choice',
   choice: 'on',
@@ -91,7 +100,7 @@ const choice = (overrides: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   vi.resetAllMocks();
   f.available.mockResolvedValue(true);
-  f.room.mockResolvedValue(read);
+  f.room.mockImplementation(roomDefault);
   f.boxDefault.mockResolvedValue(true);
   f.lastChoice.mockResolvedValue(null);
   f.record.mockResolvedValue(undefined);
@@ -160,13 +169,17 @@ it('always lets a participant turn off, but on needs Mira available', async () =
   );
 });
 
-it('falls back to off when an on choice cannot be stored durably', async () => {
+it('never confirms an on whose evidence cannot be stored', async () => {
   f.record.mockRejectedValue(new Error('db'));
   await expect(post(choice())).rejects.toMatchObject({ status: 503 });
-  expect(f.room).toHaveBeenLastCalledWith(
-    expect.anything(),
-    expect.objectContaining({ action: 'mira.room.choice', choice: 'off' })
+  const actions = f.room.mock.calls.map(
+    ([, command]) => (command as { action: string; choice?: string })
   );
+  expect(actions.some((command) => command.action === 'mira.room.confirm')).toBe(
+    false
+  );
+  // No compensating off: the pending on lapses by itself.
+  expect(actions.filter((command) => command.choice === 'off')).toHaveLength(0);
 });
 
 it('records no evidence for a Join state the room refuses to turn back on', async () => {
@@ -229,8 +242,10 @@ it('gives a participant who is not admitted yet the join box default and the ope
 });
 
 const roomIn = (mode: 'room' | 'self' | undefined) =>
-  f.room.mockImplementation(async (_access, command: { action: string }) =>
-    command.action === 'transcript.consent.read' ? { mode } : read
+  f.room.mockImplementation(async (access, command: { action: string }) =>
+    command.action === 'transcript.consent.read'
+      ? { mode }
+      : roomDefault(access, command)
   );
 const choiceCalls = () =>
   f.room.mock.calls.filter(
@@ -417,150 +432,144 @@ describe('withdrawal evidence', () => {
   });
 });
 
-describe('on without evidence', () => {
-  it('retries the on evidence once before any fallback', async () => {
-    f.record
-      .mockRejectedValueOnce(new Error('blip'))
-      .mockResolvedValue(undefined);
-    const response = await post(choice());
-    expect(response.status).toBe(200);
-    expect(choiceCalls()).toHaveLength(1);
-  });
-
-  it('turns the room back off and records that off as a system fallback', async () => {
-    f.record.mockImplementation(async (evidence: { source: string }) => {
-      if (evidence.source !== 'system_fallback') throw new Error('db');
-    });
-    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
-    const calls = choiceCalls().map(
-      ([, command]) => (command as { choice: string }).choice
-    );
-    expect(calls).toEqual(['on', 'off']);
-    expect(f.record).toHaveBeenLastCalledWith(
-      expect.objectContaining({ choice: 'off', source: 'system_fallback' })
-    );
-  });
-});
-
-describe('room on without evidence is always compensated', () => {
-  const roomWith = (
-    plan: (command: { action: string; choice?: string }) => unknown
-  ) =>
-    f.room.mockImplementation(async (_access, command) => {
-      const outcome = plan(command as { action: string; choice?: string });
-      if (outcome instanceof Error) throw outcome;
-      return outcome ?? read;
-    });
-  const failure = (status?: number) =>
-    Object.assign(new Error('room'), status ? { status } : {});
-  const choices = () =>
-    choiceCalls().map(([, command]) => (command as { choice: string }).choice);
-
-  it('retries a failed fallback off and alerts when it still fails', async () => {
-    const alert = vi.spyOn(console, 'error').mockImplementation(() => {});
-    f.record.mockRejectedValue(new Error('db'));
-    roomWith((command) =>
-      command.action === 'mira.room.choice' && command.choice === 'off'
-        ? failure(504)
-        : undefined
-    );
-    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
-    expect(choices()).toEqual(['on', 'off', 'off']);
-    expect(alert).toHaveBeenCalledWith(
-      '[meet-mira] room on left without evidence',
-      { meetingId: 'room', accountId: guestAccess.user.id }
-    );
-    // No fallback row is claimed for an off that never reached the room.
-    expect(f.record).not.toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'system_fallback' })
-    );
-    alert.mockRestore();
-  });
-
-  it('records the fallback once a retried off lands', async () => {
-    let offs = 0;
-    f.record.mockImplementation(async (evidence: { source: string }) => {
-      if (evidence.source !== 'system_fallback') throw new Error('db');
-    });
-    roomWith((command) =>
-      command.action === 'mira.room.choice' &&
-      command.choice === 'off' &&
-      offs++ === 0
-        ? failure()
-        : undefined
-    );
-    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
-    expect(choices()).toEqual(['on', 'off', 'off']);
-    expect(f.record).toHaveBeenLastCalledWith(
-      expect.objectContaining({ choice: 'off', source: 'system_fallback' })
-    );
-  });
-
-  it.each([
-    ['a timeout or lost answer', undefined],
-    ['a room 5xx', 502],
-  ])(
-    'turns the room back off when the on call fails with %s',
-    async (_label, status) => {
-      roomWith((command) =>
-        command.action === 'mira.room.choice' && command.choice === 'on'
-          ? failure(status)
-          : undefined
-      );
-      await expect(post(choice())).rejects.toMatchObject(
-        status ? { status } : { message: 'room' }
-      );
-      expect(choices()).toEqual(['on', 'off']);
-      expect(f.record).not.toHaveBeenCalledWith(
-        expect.objectContaining({ choice: 'on' })
-      );
-      expect(f.record).toHaveBeenCalledWith(
-        expect.objectContaining({ choice: 'off', source: 'system_fallback' })
-      );
-    }
+const confirmCalls = () =>
+  f.room.mock.calls.filter(
+    ([, command]) =>
+      (command as { action: string }).action === 'mira.room.confirm'
   );
 
-  it('sends no compensation for a clear room refusal of the on', async () => {
-    roomWith((command) =>
-      command.action === 'mira.room.choice' && command.choice === 'on'
-        ? failure(409)
-        : undefined
+describe('two-phase on', () => {
+  it('writes the evidence with the pending id, then confirms it', async () => {
+    const order: string[] = [];
+    f.record.mockImplementation(async () => {
+      order.push('evidence');
+    });
+    f.room.mockImplementation(async (access, command: { action: string }) => {
+      order.push(command.action);
+      return roomDefault(access, command);
+    });
+    const response = await post(choice());
+    expect(response.status).toBe(200);
+    expect(order).toEqual([
+      'transcript.consent.read',
+      'mira.room.choice',
+      'evidence',
+      'mira.room.confirm',
+      'mira.room.read',
+    ]);
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({ choice: 'on', pendingId: PENDING })
     );
-    await expect(post(choice())).rejects.toMatchObject({ status: 409 });
-    expect(choices()).toEqual(['on']);
-    expect(f.record).not.toHaveBeenCalled();
+    expect(confirmCalls()[0]?.[1]).toEqual({
+      action: 'mira.room.confirm',
+      pendingId: PENDING,
+    });
+  });
+
+  it('passes the notice mode through to the confirm', async () => {
+    roomIn('self');
+    await post(choice({ noticeMode: 'self' }));
+    expect(confirmCalls()[0]?.[1]).toEqual({
+      action: 'mira.room.confirm',
+      pendingId: PENDING,
+      noticeMode: 'self',
+    });
+  });
+
+  it('retries a transient evidence failure once before confirming', async () => {
+    f.record.mockRejectedValueOnce(new Error('blip')).mockResolvedValue(undefined);
+    expect((await post(choice())).status).toBe(200);
+    expect(f.record).toHaveBeenCalledTimes(2);
+    expect(confirmCalls()).toHaveLength(1);
   });
 
   it('does not retry an evidence refusal the database will repeat', async () => {
-    const { MiraChoiceRecordError } =
-      await import('../../../../../features/live-assistant/server/room-mira-evidence');
-    f.record.mockImplementation(async (evidence: { source: string }) => {
-      if (evidence.source !== 'system_fallback')
-        throw new MiraChoiceRecordError('23514');
-    });
-    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
-    const onAttempts = f.record.mock.calls.filter(
-      ([evidence]) => (evidence as { choice: string }).choice === 'on'
+    const { MiraChoiceRecordError } = await import(
+      '../../../../../features/live-assistant/server/room-mira-evidence'
     );
-    expect(onAttempts).toHaveLength(1);
+    f.record.mockRejectedValue(new MiraChoiceRecordError('23503'));
+    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+    expect(f.record).toHaveBeenCalledTimes(1);
+    expect(confirmCalls()).toHaveLength(0);
   });
 
-  it('leaves the room off when an off races an on whose evidence fails', async () => {
-    f.record.mockImplementation(
-      async (evidence: { choice: string; source: string }) => {
-        if (evidence.choice === 'on') throw new Error('db');
+  it('answers 503 when the room says the pending on expired', async () => {
+    const { MeetCallAccessError } =
+      await import('@tuturuuu/meet-core/features/call/lib/call-access');
+    f.room.mockImplementation(async (access, command: { action: string }) => {
+      if (command.action === 'mira.room.confirm')
+        throw new MeetCallAccessError(
+          409,
+          'Room action is unavailable',
+          'MIRA_ROOM_PENDING_EXPIRED'
+        );
+      return roomDefault(access, command);
+    });
+    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+    expect(f.record).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['no pending id', { view: read }],
+    ['a malformed pending id', { pendingId: 'not-a-uuid' }],
+    ['an unparseable 2xx body', new SyntaxError('Unexpected token')],
+    ['a lost answer', Object.assign(new Error('fetch failed'), {})],
+  ])('refuses an on with %s and never writes or confirms', async (_l, reply) => {
+    f.room.mockImplementation(
+      async (access, command: { action: string; choice?: string }) => {
+        if (command.action === 'mira.room.choice' && command.choice === 'on') {
+          if (reply instanceof Error) throw reply;
+          return reply;
+        }
+        return roomDefault(access, command);
       }
     );
-    const results = await Promise.allSettled([
-      post(choice()),
-      post(choice({ choice: 'off' })),
-    ]);
-    expect(results[0]?.status).toBe('rejected');
-    expect(results[1]?.status).toBe('fulfilled');
-    expect(choices().at(-1)).toBe('off');
-    expect(f.record).toHaveBeenCalledWith(
-      expect.objectContaining({ choice: 'off', source: 'join' })
+    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+    expect(f.record).not.toHaveBeenCalled();
+    expect(confirmCalls()).toHaveLength(0);
+  });
+
+  it('passes a clear room refusal of the on through', async () => {
+    const { MeetCallAccessError } =
+      await import('@tuturuuu/meet-core/features/call/lib/call-access');
+    f.room.mockImplementation(
+      async (access, command: { action: string; choice?: string }) => {
+        if (command.action === 'mira.room.choice' && command.choice === 'on')
+          throw new MeetCallAccessError(409, 'Confirm in the call');
+        return roomDefault(access, command);
+      }
     );
+    await expect(post(choice())).rejects.toMatchObject({ status: 409 });
+    expect(f.record).not.toHaveBeenCalled();
+  });
+});
+
+describe('withdrawal edge cases', () => {
+  it('answers 503 for an off whose room answer was unreadable, after recording it', async () => {
+    f.room.mockImplementation(
+      async (access, command: { action: string; choice?: string }) => {
+        if (command.action === 'mira.room.choice' && command.choice === 'off')
+          throw new SyntaxError('Unexpected token');
+        return roomDefault(access, command);
+      }
+    );
+    await expect(post(choice({ choice: 'off' }))).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({ choice: 'off' })
+    );
+  });
+
+  it('does not retry a deterministic refusal of an off, and answers 503', async () => {
+    const { MiraChoiceRecordError } = await import(
+      '../../../../../features/live-assistant/server/room-mira-evidence'
+    );
+    f.record.mockRejectedValue(new MiraChoiceRecordError('23514'));
+    await expect(post(choice({ choice: 'off' }))).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(f.record).toHaveBeenCalledTimes(1);
   });
 });
 

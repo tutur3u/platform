@@ -65,11 +65,7 @@ export type MiraChoiceEvidence = {
   participantId: string;
   guest: boolean;
   choice: 'on' | 'off';
-  /**
-   * `system_fallback`: the server turned the room back off after an on it
-   * could not record.
-   */
-  source: 'join' | 'confirm' | 'toggle' | 'system_fallback';
+  source: 'join' | 'confirm' | 'toggle';
   acceptanceRevision: number;
   noticeVersion: string;
   textHash: string;
@@ -84,18 +80,22 @@ export type MiraChoiceEvidence = {
    * Ignored for "off", which is always stored, with or without the mode.
    */
   requireNoticeMode?: boolean;
+  /** The room's pending id for an "on", confirmed only after this row lands. */
+  pendingId?: string;
 };
 
 /**
- * When the choice table last refused the `notice_mode` column. Detection is
+ * When the choice table last refused an optional column. Detection is
  * retried after a short while, never latched for good.
  */
-let noticeModeMissingAt: number | undefined;
+const columnMissingAt = new Map<'notice_mode' | 'pending_id', number>();
 export const NOTICE_MODE_PROBE_TTL_MS = 60_000;
 
-const noticeModeMissing = () =>
-  noticeModeMissingAt !== undefined &&
-  Date.now() - noticeModeMissingAt < NOTICE_MODE_PROBE_TTL_MS;
+const columnMissing = (column: 'notice_mode' | 'pending_id') => {
+  const at = columnMissingAt.get(column);
+  return at !== undefined && Date.now() - at < NOTICE_MODE_PROBE_TTL_MS;
+};
+const noticeModeMissing = () => columnMissing('notice_mode');
 
 /** A choice row the database refused, with its Postgres error code. */
 export class MiraChoiceRecordError extends Error {
@@ -126,20 +126,30 @@ export async function canStoreMiraNoticeMode() {
   };
   const { error } = await table.select('notice_mode').limit(0);
   if (!error) {
-    noticeModeMissingAt = undefined;
+    columnMissingAt.delete('notice_mode');
     return true;
   }
   if (MISSING_COLUMN.has(error.code ?? '')) {
-    noticeModeMissingAt = Date.now();
+    columnMissingAt.set('notice_mode', Date.now());
     return false;
   }
   throw new Error('Mira choice storage could not be checked');
 }
 
+/** The optional column a missing-column error names, when it names one. */
+function missingColumnOf(error: { code?: string; message?: string }) {
+  if (!MISSING_COLUMN.has(error.code ?? '')) return undefined;
+  const message = error.message ?? '';
+  if (message.includes('pending_id')) return 'pending_id' as const;
+  if (message.includes('notice_mode')) return 'notice_mode' as const;
+  return undefined;
+}
+
 /**
  * Appends one participant's own choice; accounts are pseudonymized in SQL.
- * An "off" is always stored: without the notice mode when the column cannot
- * take it, so a withdrawal is never lost.
+ * An "off" is always stored: without an optional column the table cannot
+ * take yet, so a withdrawal is never lost. A per-speaker "on" that must keep
+ * its notice mode fails instead of dropping it.
  */
 export async function recordMiraChoice(input: MiraChoiceEvidence) {
   const db = await privateDb();
@@ -161,18 +171,37 @@ export async function recordMiraChoice(input: MiraChoiceEvidence) {
   const self = input.noticeMode === 'self';
   if (self && required && noticeModeMissing())
     throw new Error('Mira choice notice mode cannot be stored');
-  const withMode = self && (required || !noticeModeMissing());
-  const insert = (mode: boolean) =>
+  const extras: { notice_mode?: 'self'; pending_id?: string } = {};
+  if (self && (required || !noticeModeMissing())) extras.notice_mode = 'self';
+  if (input.pendingId && !columnMissing('pending_id'))
+    extras.pending_id = input.pendingId;
+  const insert = () =>
     db
       .from('meet_mira_participant_choices')
-      .insert((mode ? { ...row, notice_mode: 'self' } : row) as typeof row);
-  let { error } = await insert(withMode);
-  // Feature check: without the column PostgREST answers PGRST204.
-  if (withMode && MISSING_COLUMN.has(error?.code ?? '')) {
-    noticeModeMissingAt = Date.now();
-    if (required) throw new Error('Mira choice notice mode cannot be stored');
-    ({ error } = await insert(false));
-  } else if (withMode && !error) noticeModeMissingAt = undefined;
+      .insert({ ...row, ...extras } as typeof row);
+  let { error } = await insert();
+  // Feature check: a column the table lacks is named in PGRST204; drop it
+  // and retry, unless the row must keep it. At most one retry per column.
+  for (let attempt = 0; error && attempt < 2; attempt++) {
+    if (!MISSING_COLUMN.has(error.code ?? '')) break;
+    // An unnamed missing column is the only optional one sent, or the newer.
+    const column =
+      missingColumnOf(error) ??
+      (extras.pending_id !== undefined
+        ? ('pending_id' as const)
+        : extras.notice_mode !== undefined
+          ? ('notice_mode' as const)
+          : undefined);
+    if (!column || !(column in extras)) break;
+    columnMissingAt.set(column, Date.now());
+    if (column === 'notice_mode' && required)
+      throw new Error('Mira choice notice mode cannot be stored');
+    delete extras[column];
+    ({ error } = await insert());
+  }
+  if (!error)
+    for (const column of Object.keys(extras) as Array<keyof typeof extras>)
+      columnMissingAt.delete(column);
   if (error) throw new MiraChoiceRecordError(error.code);
 }
 

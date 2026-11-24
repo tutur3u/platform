@@ -46,23 +46,22 @@ async function recordWithRetry(evidence: MiraChoiceEvidence) {
   }
 }
 
-const statusOf = (error: unknown) =>
-  typeof error === 'object' && error !== null && 'status' in error
-    ? Number((error as { status: unknown }).status)
-    : 0;
-
-/** The room may have applied a call whose answer was lost or failed. */
-const roomOutcomeUnknown = (error: unknown) => {
-  const status = statusOf(error);
-  return !status || status >= 500;
-};
+/**
+ * A room refusal carries the room's own status. Anything else (a failed or
+ * aborted fetch, an unreadable answer, an error before the request) leaves
+ * the outcome unknown and is answered 503 so the client asks again.
+ */
+const roomFailure = (error: unknown) =>
+  error instanceof MeetCallAccessError ? error : notSaved();
 
 function evidenceOf(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput,
-  requireNoticeMode: boolean
+  requireNoticeMode: boolean,
+  pendingId?: string
 ): MiraChoiceEvidence {
   return {
+    ...(pendingId ? { pendingId } : {}),
     meetingId: access.meeting.id,
     wsId: access.meeting.ws_id,
     participantId: access.user.id,
@@ -80,7 +79,7 @@ function evidenceOf(
 }
 
 const roomChoice = (access: MeetCallRouteAccess, input: RoomMiraChoiceInput) =>
-  callRoomService(access, {
+  callRoomService<{ pendingId?: unknown }>(access, {
     action: 'mira.room.choice',
     choice: input.choice,
     version: input.version,
@@ -116,78 +115,59 @@ async function recordOff(
     });
     throw notSaved();
   }
-  if (roomError) throw roomError;
+  if (roomError) throw roomFailure(roomError);
 }
 
-/**
- * Turns the room back off for an on that has no evidence, retrying once.
- * If the room still cannot be reached, an alertable error names only the
- * meeting and the account so an operator can turn Mira off for them.
- */
-async function compensateOn(
-  access: MeetCallRouteAccess,
-  input: RoomMiraChoiceInput
-) {
-  const off = () =>
-    callRoomService(access, {
-      action: 'mira.room.choice',
-      choice: 'off',
-      version: input.version,
-      acceptanceRevision: input.acceptanceRevision,
-    });
-  try {
-    await off();
-  } catch {
-    try {
-      await off();
-    } catch {
-      console.error('[meet-mira] room on left without evidence', {
-        meetingId: access.meeting.id,
-        accountId: access.user.id,
-      });
-      return;
-    }
-  }
-  try {
-    await recordMiraChoice({
-      ...evidenceOf(access, { ...input, choice: 'off' }, false),
-      source: 'system_fallback',
-    });
-  } catch {
-    console.error('Room Mira fallback evidence failed');
-  }
-}
+const PENDING_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * A participant's own on. It counts only with durable evidence: after the
- * room accepts it, the evidence is written with one retry. If that still
- * fails, or the room call failed in a way that may still have applied it
- * (no answer, timeout, 5xx), the room is turned back off (retried once) and
- * that system-initiated off is recorded with source `system_fallback`, so
- * the room never stays on without evidence. A clear room refusal (4xx) left
- * the room unchanged and is passed through.
+ * A participant's own on, in two phases fenced by the room. The room holds
+ * the on as pending (no effect on anything consent-gated) and returns its
+ * pending id; the evidence row is written with that id (one retry); only
+ * then does the room confirm it. Without evidence nothing is confirmed and
+ * the pending on expires by itself, so a lost answer, a late or replayed on,
+ * a cancelled request or a racing tab can never leave Mira on without
+ * evidence. An expired or superseded pending id is a 503 so the client asks
+ * again.
  */
 async function recordOn(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput,
   requireNoticeMode: boolean
 ) {
+  let reply: { pendingId?: unknown };
   try {
-    await roomChoice(access, input);
+    reply = await roomChoice(access, input);
   } catch (error) {
-    if (roomOutcomeUnknown(error)) await compensateOn(access, input);
-    throw error;
+    throw roomFailure(error);
   }
+  const pendingId =
+    typeof reply?.pendingId === 'string' && PENDING_ID.test(reply.pendingId)
+      ? reply.pendingId
+      : undefined;
+  // A room without the pending fence cannot guarantee the on; refuse it.
+  if (!pendingId) throw notSaved();
   try {
-    await recordWithRetry(evidenceOf(access, input, requireNoticeMode));
-    return;
+    await recordWithRetry(
+      evidenceOf(access, input, requireNoticeMode, pendingId)
+    );
   } catch (error) {
     console.error('Room Mira choice evidence failed', {
       name: error instanceof Error ? error.name : 'unknown',
     });
+    throw notSaved();
   }
-  await compensateOn(access, input);
-  throw notSaved();
+  try {
+    await callRoomService(access, {
+      action: 'mira.room.confirm',
+      pendingId,
+      // The room binds the pending on to its room, account and notice mode.
+      ...(input.noticeMode ? { noticeMode: input.noticeMode } : {}),
+    });
+  } catch {
+    // Expired, superseded or unreachable: the pending on lapses by itself.
+    throw notSaved();
+  }
 }
 
 /** Applies the caller's own Mira choice in the room and its evidence. */

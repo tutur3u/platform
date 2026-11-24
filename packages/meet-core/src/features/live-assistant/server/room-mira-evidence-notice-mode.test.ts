@@ -146,3 +146,62 @@ describe('notice mode storage check', () => {
     await expect(canStoreMiraNoticeMode()).rejects.toThrow();
   });
 });
+
+describe('Mira choice pending id', () => {
+  const pendingId = '0b1e0d1c-2f3a-4b5c-8d6e-7f8091a2b3c4';
+  const missing = (column: string) => ({
+    error: {
+      code: 'PGRST204',
+      message: `Could not find the '${column}' column of 'meet_mira_participant_choices'`,
+    },
+  });
+
+  it('stores the pending id with the on', async () => {
+    const { recordMiraChoice } = await import('./room-mira-evidence');
+    f.insert.mockResolvedValue({ error: null });
+    await recordMiraChoice({ ...evidence, pendingId });
+    expect(f.insert.mock.calls[0]?.[0]).toMatchObject({ pending_id: pendingId });
+  });
+
+  it('drops a missing pending id column but keeps a required notice mode', async () => {
+    const { recordMiraChoice } = await import('./room-mira-evidence');
+    f.insert
+      .mockResolvedValueOnce(missing('pending_id'))
+      .mockResolvedValue({ error: null });
+    await recordMiraChoice({
+      ...evidence,
+      pendingId,
+      noticeMode: 'self',
+      requireNoticeMode: true,
+    });
+    expect(f.insert).toHaveBeenCalledTimes(2);
+    expect(f.insert.mock.calls[1]?.[0]).toMatchObject({ notice_mode: 'self' });
+    expect(f.insert.mock.calls[1]?.[0]).not.toHaveProperty('pending_id');
+  });
+
+  it('still fails a required notice mode after dropping the pending id', async () => {
+    const { recordMiraChoice } = await import('./room-mira-evidence');
+    f.insert
+      .mockResolvedValueOnce(missing('pending_id'))
+      .mockResolvedValue(missing('notice_mode'));
+    await expect(
+      recordMiraChoice({
+        ...evidence,
+        pendingId,
+        noticeMode: 'self',
+        requireNoticeMode: true,
+      })
+    ).rejects.toThrow();
+    expect(f.insert).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the Postgres code of a refused row', async () => {
+    const { recordMiraChoice, MiraChoiceRecordError } = await import(
+      './room-mira-evidence'
+    );
+    f.insert.mockResolvedValue({ error: { code: '23503' } });
+    const error = await recordMiraChoice(evidence).catch((caught) => caught);
+    expect(error).toBeInstanceOf(MiraChoiceRecordError);
+    expect(error.pgCode).toBe('23503');
+  });
+});
