@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = existsSync(resolve(process.cwd(), 'packages/satellite'))
@@ -7,6 +7,7 @@ const repoRoot = existsSync(resolve(process.cwd(), 'packages/satellite'))
   : resolve(process.cwd(), '../..');
 
 const SATELLITE_PROVIDERS = "from '@tuturuuu/satellite/providers'";
+const PRE_PAINT_TAG = /<SorbetPrePaintScript\b[^>]*>/g;
 
 /** Whether `layout` renders the shared satellite Providers. */
 function usesSatelliteProviders(app: string, layout: string) {
@@ -45,6 +46,36 @@ describe('bridged app providers', () => {
     }
 
     expect(checked).toBeGreaterThan(5);
+    expect(missing).toEqual([]);
+  });
+
+  it('stamp the nonce on every Sorbet pre-paint script they render', () => {
+    const roots = [resolve(repoRoot, 'packages/satellite/src/providers')];
+    for (const app of readdirSync(resolve(repoRoot, 'apps'))) {
+      const appDir = resolve(repoRoot, 'apps', app);
+      if (!existsSync(resolve(appDir, 'src/start.ts'))) continue;
+      for (const dir of ['src', 'roadmap']) {
+        if (existsSync(resolve(appDir, dir))) roots.push(resolve(appDir, dir));
+      }
+    }
+
+    const missing: string[] = [];
+    const visit = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === 'node_modules') continue;
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) visit(path);
+        else if (/\.tsx$/.test(entry.name) && !/\.test\./.test(entry.name)) {
+          const source = readFileSync(path, 'utf8');
+          const tags = source.match(PRE_PAINT_TAG) ?? [];
+          if (tags.some((tag) => !/\bnonce=/.test(tag))) {
+            missing.push(relative(repoRoot, path));
+          }
+        }
+      }
+    };
+    for (const root of roots) visit(root);
+
     expect(missing).toEqual([]);
   });
 });

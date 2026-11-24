@@ -1,4 +1,5 @@
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
@@ -18,14 +19,16 @@ export function GatewayProviders({
   data: Data;
   children: ReactNode;
 }) {
+  const nonce = requestNonce();
   return (
     <ThemeProvider
       attribute="class"
       themes={['system', 'light', 'dark']}
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
+      nonce={nonce}
     >
-      <SorbetPrePaintScript />
+      <SorbetPrePaintScript nonce={nonce} />
       <IntlProvider
         locale={data.locale}
         messages={data.locale === 'vi' ? vi : en}

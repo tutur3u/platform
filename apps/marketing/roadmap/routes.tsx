@@ -25,6 +25,7 @@ import { roadmapHead } from '@tuturuuu/roadmap-core/pages/roadmap-head.ts';
 import { langFromPathname } from '@tuturuuu/roadmap-core/seo.ts';
 import { sorbetPage } from '@tuturuuu/roadmap-core/sorbet-page.ts';
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
 import styles from '../src/roadmap/styles.css?url';
@@ -74,7 +75,7 @@ function useRoadmapStatus() {
 
 function RoadmapNotFound() {
   return (
-    <PublicSatelliteProviders>
+    <PublicSatelliteProviders nonce={requestNonce()}>
       <StatusPage {...useRoadmapStatus()} variant="not-found" />
     </PublicSatelliteProviders>
   );
@@ -84,7 +85,7 @@ function RoadmapError({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   if (import.meta.env.SSR) console.error('Roadmap render failed', error);
   return (
-    <PublicSatelliteProviders>
+    <PublicSatelliteProviders nonce={requestNonce()}>
       <StatusPage
         {...useRoadmapStatus()}
         onRetry={() => {
@@ -98,7 +99,11 @@ function RoadmapError({ error, reset }: ErrorComponentProps) {
 }
 
 function page(children: ReactNode) {
-  return <PublicSatelliteProviders>{children}</PublicSatelliteProviders>;
+  return (
+    <PublicSatelliteProviders nonce={requestNonce()}>
+      {children}
+    </PublicSatelliteProviders>
+  );
 }
 
 const status = {

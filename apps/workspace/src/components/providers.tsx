@@ -1,5 +1,6 @@
 import '@/lib/dayjs-setup';
 import { getSupabaseSessionUser } from '@tuturuuu/auth/supabase-session-user';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
@@ -11,6 +12,7 @@ import { MiraSoulScopeProvider } from './mira-soul-scope';
 import { QueryProvider } from './query-provider';
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
+  const nonce = requestNonce();
   return (
     <NextThemesProvider
       attribute="class"
@@ -25,8 +27,9 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
       scriptProps={{ 'data-cfasync': 'false' }}
       // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
       // for more details
+      nonce={nonce}
     >
-      <SorbetPrePaintScript />
+      <SorbetPrePaintScript nonce={nonce} />
       {children}
     </NextThemesProvider>
   );

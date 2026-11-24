@@ -1,4 +1,5 @@
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import '@tuturuuu/ui/globals.css';
 import '@tuturuuu/marketing-shell/fonts.css';
 import './(marketing)/(landing)/landing.css';
@@ -63,7 +64,7 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <PublicSatelliteProviders>
+        <PublicSatelliteProviders nonce={requestNonce()}>
           {children}
           <LandingEnhancements landing={isLandingRender()} />
         </PublicSatelliteProviders>
