@@ -26867,6 +26867,25 @@ export type Database = {
           },
         ];
       };
+      workspace_external_project_delivery_versions: {
+        Row: {
+          updated_at: string;
+          version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          updated_at?: string;
+          version?: number;
+          ws_id: string;
+        };
+        Update: {
+          updated_at?: string;
+          version?: number;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_mira_audience_attestations: {
         Row: {
           attested_at: string;
@@ -29143,6 +29162,10 @@ export type Database = {
       bump_meet_attendance_fence: {
         Args: { p_meeting_id: string; p_ws_id: string };
         Returns: number;
+      };
+      bump_workspace_external_project_delivery_versions: {
+        Args: { p_ws_ids: string[] };
+        Returns: undefined;
       };
       calculate_ai_studio_usage_cost: {
         Args: {
@@ -31797,6 +31820,18 @@ export type Database = {
           updated_at: string;
           wallet_id: string;
           ws_id: string;
+        }[];
+      };
+      get_external_project_delivery_state: {
+        Args: { p_ws_id: string };
+        Returns: {
+          adapter: string;
+          binding_fingerprint: string;
+          canonical_id: string;
+          canonical_project: Json;
+          enabled: boolean;
+          settings: Json;
+          version: number;
         }[];
       };
       get_external_provider_costs: {

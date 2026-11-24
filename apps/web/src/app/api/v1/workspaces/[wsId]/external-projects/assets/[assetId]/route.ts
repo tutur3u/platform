@@ -24,6 +24,12 @@ import { getExternalProjectAssetRevision } from '@/lib/external-projects/asset-d
 import { resolveAllowedAssetRedirectUrl } from '@/lib/external-projects/asset-redirect-policy';
 import { guardExternalProjectAssetSourceUrl } from '@/lib/external-projects/asset-source-guard';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
+import { createAssetEdgeCache } from '@/lib/external-projects/asset-edge-cache';
+import { deliveryVersionMemo } from '@/lib/external-projects/delivery-version';
+import {
+  isCmsEdgeCacheEnabled,
+  resolveDefaultEdgeCache,
+} from '@/lib/external-projects/edge-cache-core';
 import { publicExternalProjectAssetResponse } from '@/lib/external-projects/public-asset-response';
 import { allowPublicAssetTransform } from '@/lib/external-projects/asset-transform-limit';
 import { readVerifiedAsset } from '@/lib/external-projects/verified-asset-cache';
@@ -115,6 +121,12 @@ const privateHeaders = {
   'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
   'Vercel-CDN-Cache-Control': 'no-store',
 };
+
+const assetEdgeCache = createAssetEdgeCache({
+  getCache: resolveDefaultEdgeCache,
+  isEnabled: isCmsEdgeCacheEnabled,
+  readVersion: (workspaceId) => deliveryVersionMemo.get(workspaceId),
+});
 
 async function readAsset(
   admin: TypedSupabaseClient,
@@ -226,6 +238,23 @@ export async function GET(request: Request, { params }: AssetParams) {
     const transform = assetTransformQuerySchema.parse(
       Object.fromEntries(query.entries())
     );
+    // A revision-pinned request may be answered from the edge cache. The key
+    // carries the delivery version, so an entry exists only for a publication
+    // that was verified at that version; a hit skips verification, the byte
+    // read and the transform.
+    const edgeSlot = await assetEdgeCache.open({
+      assetId,
+      revision: query.get('v'),
+      transform,
+      workspaceId: resolvedWsId,
+    });
+    const conditional = {
+      ifNoneMatch: request.headers.get('if-none-match'),
+      range: request.headers.get('range'),
+    };
+    const edgeHit = await edgeSlot?.hit(conditional);
+    if (edgeHit) return edgeHit;
+
     const result = await readAsset(
       admin,
       resolvedWsId,
@@ -252,11 +281,13 @@ export async function GET(request: Request, { params }: AssetParams) {
         digest
       );
       if (!object) return privateJson({ error: 'Asset not available' }, 404);
+      // With an edge slot the full 200 is built (and stored once verified);
+      // ranges are cut from it afterwards.
       const response = await publicExternalProjectAssetResponse(
         object,
         transform,
-        privateHeaders,
-        request.headers.get('range'),
+        edgeSlot ? edgeSlot.headers(digest) : privateHeaders,
+        edgeSlot ? null : conditional.range,
         key
       );
       const current =
@@ -276,7 +307,9 @@ export async function GET(request: Request, { params }: AssetParams) {
         void response?.body?.cancel().catch(() => {});
         return privateJson({ error: 'Asset not available' }, 404);
       }
-      return response;
+      if (!edgeSlot) return response;
+      if (response.status === 200) await edgeSlot.store(response.clone());
+      return edgeSlot.respond(response, conditional);
     }
 
     const access = await requireWorkspaceExternalProjectAccess({

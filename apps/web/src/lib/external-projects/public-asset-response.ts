@@ -1,5 +1,6 @@
 import type { ImageTransformOptions } from '@tuturuuu/types';
 import { getImageTransformer } from '../image-transform';
+import { sliceByteRange } from './asset-byte-range';
 import { PUBLIC_ASSET_MAX_BYTES } from './asset-publication-bytes';
 import { cachedVerifiedAsset } from './verified-asset-cache';
 
@@ -55,28 +56,17 @@ export async function publicExternalProjectAssetResponse(
     responseHeaders.set('Content-Disposition', 'attachment');
   }
 
-  const range =
-    !transform && /^bytes=(\d{0,16})-(\d{0,16})$/.exec(requestedRange ?? '');
+  let body: Uint8Array = buffer;
   let status = 200;
-  if (range && (range[1] || range[2])) {
-    const length = buffer.byteLength;
-    const start = range[1]
-      ? Number(range[1])
-      : Math.max(0, length - Number(range[2]));
-    const end =
-      range[1] && range[2]
-        ? Math.min(length - 1, Number(range[2]))
-        : length - 1;
-    if (start >= length || end < start) {
-      responseHeaders.set('Content-Range', `bytes */${length}`);
+  if (!transform) {
+    const sliced = sliceByteRange(buffer, requestedRange, responseHeaders);
+    if (sliced.status === 416)
       return new Response(null, { status: 416, headers: responseHeaders });
-    }
-    responseHeaders.set('Content-Range', `bytes ${start}-${end}/${length}`);
-    buffer = buffer.subarray(start, end + 1);
-    status = 206;
+    body = sliced.body;
+    status = sliced.status;
+    responseHeaders.set('Accept-Ranges', 'bytes');
   }
-  if (!transform) responseHeaders.set('Accept-Ranges', 'bytes');
-  return new Response(new Uint8Array(buffer), {
+  return new Response(new Uint8Array(body), {
     status,
     headers: responseHeaders,
   });

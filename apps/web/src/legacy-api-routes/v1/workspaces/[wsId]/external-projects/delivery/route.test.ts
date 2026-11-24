@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   buildWorkspaceExternalProjectDeliveryPayload: vi.fn(),
@@ -22,10 +22,6 @@ vi.mock('@/lib/external-projects/cache', () => ({
   EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL: 'private, no-store',
 }));
 
-vi.mock('@/lib/external-projects/http-cache', () => ({
-  ifNoneMatchMatches: vi.fn(() => false),
-}));
-
 vi.mock('@/lib/external-projects/store', () => ({
   buildWorkspaceExternalProjectDeliveryPayload: (
     ...args: Parameters<
@@ -34,9 +30,10 @@ vi.mock('@/lib/external-projects/store', () => ({
   ) => mocks.buildWorkspaceExternalProjectDeliveryPayload(...args),
 }));
 
-describe('external project delivery route', () => {
+describe('external project delivery route with the edge cache fenced', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('CMS_DELIVERY_EDGE_CACHE', '0');
     mocks.createAdminClient.mockResolvedValue({ kind: 'admin-db' });
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       canonical_project: { id: 'canonical-project' },
@@ -46,6 +43,10 @@ describe('external project delivery route', () => {
       collections: [],
       revision: 1,
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('rejects a malformed workspace ID before making database calls', async () => {
@@ -65,7 +66,7 @@ describe('external project delivery route', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('continues to deliver for a valid workspace UUID', async () => {
+  it('reads and builds on every request, privately, while fenced', async () => {
     const { GET } = await import('./route');
     const workspaceId = '123e4567-e89b-12d3-a456-426614174000';
     const response = await GET(
@@ -79,6 +80,7 @@ describe('external project delivery route', () => {
     expect(response.headers.get('cache-control')).toContain('no-store');
     expect(response.headers.get('vercel-cdn-cache-control')).toBe('no-store');
     expect(response.headers.get('x-tuturuuu-asset-publication')).toBe('v1');
+    expect(response.headers.get('x-tuturuuu-delivery-cache')).toBe('BYPASS');
     expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
       workspaceId,
       { kind: 'admin-db' }

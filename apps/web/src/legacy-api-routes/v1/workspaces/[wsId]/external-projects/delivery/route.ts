@@ -8,6 +8,19 @@ import {
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
+import {
+  bypassDeliveryHeaders,
+  createDeliveryEdgeCache,
+} from '@/lib/external-projects/delivery-edge-cache';
+import {
+  bindingFromDeliveryState,
+  isDeliveryStateMissing,
+  readDeliveryState,
+} from '@/lib/external-projects/delivery-state';
+import {
+  isCmsEdgeCacheEnabled,
+  resolveDefaultEdgeCache,
+} from '@/lib/external-projects/edge-cache-core';
 import { ifNoneMatchMatches } from '@/lib/external-projects/http-cache';
 import { buildWorkspaceExternalProjectDeliveryPayload } from '@/lib/external-projects/store';
 
@@ -15,6 +28,15 @@ const privateHeaders = {
   'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
   'Vercel-CDN-Cache-Control': 'no-store',
 };
+
+const deliveryEdgeCache = createDeliveryEdgeCache({
+  getCache: resolveDefaultEdgeCache,
+  readState: async (workspaceId) =>
+    readDeliveryState(
+      (await createAdminClient()) as TypedSupabaseClient,
+      workspaceId
+    ),
+});
 
 export async function GET(
   request: Request,
@@ -53,6 +75,38 @@ export async function GET(
       );
     }
 
+    // The edge-cached path needs the version counter migration; without it
+    // (or with the fence set) the route reads and builds on every request.
+    if (isCmsEdgeCacheEnabled()) {
+      try {
+        const response = await deliveryEdgeCache.serve({
+          build: async (state) =>
+            buildWorkspaceExternalProjectDeliveryPayload(
+              {
+                binding: bindingFromDeliveryState(state, resolvedWsId),
+                includeDrafts: false,
+                workspaceId: resolvedWsId,
+              },
+              (await createAdminClient()) as TypedSupabaseClient
+            ),
+          ifNoneMatch: request.headers.get('if-none-match'),
+          includeDrafts: false,
+          workspaceId: resolvedWsId,
+        });
+        return (
+          response ??
+          NextResponse.json(
+            {
+              error: 'External project delivery unavailable for this workspace',
+            },
+            { headers: privateHeaders, status: 404 }
+          )
+        );
+      } catch (error) {
+        if (!isDeliveryStateMissing(error)) throw error;
+      }
+    }
+
     const admin = (await createAdminClient()) as TypedSupabaseClient;
     const binding = await resolveWorkspaceExternalProjectBinding(
       resolvedWsId,
@@ -78,8 +132,7 @@ export async function GET(
     const etag = `W/"${payload.revision}"`;
     const publicHeaders = {
       ...privateHeaders,
-      ETag: etag,
-      'X-Tuturuuu-Asset-Publication': 'v1',
+      ...bypassDeliveryHeaders(etag),
     };
 
     if (ifNoneMatchMatches(request.headers.get('if-none-match'), etag)) {
