@@ -64,7 +64,7 @@ export async function getContactsWorkspacePermissions(
 
 /**
  * Whether the app-session actor may change platform-controlled workspace
- * secrets (module switches stored in `workspace_secrets`). Only root-workspace
+ * secrets (the module switches in workspace secrets). Only root-workspace
  * secret or role managers qualify; a workspace-level grant does not, because
  * creators and `admin` members imply it for their own workspace.
  */
