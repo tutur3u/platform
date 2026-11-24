@@ -265,7 +265,12 @@ test('only the production environment upload step receives the named deploy toke
   ]);
   const environment = 'wave1-${{ inputs.app }}-production';
   assert.equal(workflow.jobs.publish.environment, environment);
-  assert.equal(workflow.jobs.qualify.environment, environment);
+  // A release-candidate seal qualifies in the credential-free artifact
+  // environment; wave1-mail-release-artifact.test.mjs evaluates it per ref.
+  assert.equal(
+    workflow.jobs.qualify.environment,
+    "${{ startsWith(github.ref, 'refs/heads/release-candidate/') && format('wave1-{0}-artifact', inputs.app) || format('wave1-{0}-production', inputs.app) }}"
+  );
   assert.equal(workflow.jobs.publish.env.PUBLICATION_ENVIRONMENT, environment);
   assert.ok(
     workflow.jobs.publish.steps.some((step) =>
