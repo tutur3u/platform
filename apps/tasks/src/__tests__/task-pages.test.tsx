@@ -433,7 +433,7 @@ describe('tasks app task pages', () => {
 
     const links = await getNavigationLinks({ personalOrWsId: 'workspace-1' });
 
-    expect(links).toHaveLength(9);
+    expect(links).toHaveLength(7);
     expect(links[0]).toMatchObject({
       href: '/workspace-1/tasks',
       aliases: [

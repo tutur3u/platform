@@ -4,10 +4,10 @@ import {
   applySidebarNavigationPreferences,
   createSidebarNavigationLayoutConfigForHiddenState,
   createSidebarNavigationLayoutConfigForPlacement,
-  flattenToolsSection,
   normalizeSidebarNavigationLayoutConfig,
   promoteArchivedWhenMoreToolsOnlyHasArchive,
 } from '../sidebar-navigation-preferences';
+import { flattenToolsSection } from '../sidebar-tools-section';
 
 const links: (NavLink | null)[] = [
   {

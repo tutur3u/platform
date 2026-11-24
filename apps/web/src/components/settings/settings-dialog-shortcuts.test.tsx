@@ -262,7 +262,10 @@ function expectSettingsQueryOpened() {
       settingsBoardId: null,
       settingsDialog: 'open',
       settingsLinkedProvider: null,
+      settingsMembersTab: null,
       settingsTab: null,
+      upgradeDialog: null,
+      upgradeTab: null,
     },
     {
       history: 'push',
@@ -349,7 +352,10 @@ describe('settings dialog shortcut', () => {
         settingsBoardId: 'board-1',
         settingsDialog: 'open',
         settingsLinkedProvider: null,
+        settingsMembersTab: null,
         settingsTab: 'task_board',
+        upgradeDialog: null,
+        upgradeTab: null,
       },
       {
         history: 'push',
@@ -478,7 +484,10 @@ describe('settings dialog shortcut', () => {
         settingsBoardId: null,
         settingsDialog: 'open',
         settingsLinkedProvider: null,
+        settingsMembersTab: null,
         settingsTab: 'workspace_members',
+        upgradeDialog: null,
+        upgradeTab: null,
       },
       { history: 'push', scroll: false, shallow: true }
     );
