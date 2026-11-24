@@ -53,7 +53,7 @@ const claims = {
   roomId,
   exp: Math.floor(Date.now() / 1000) + 60,
 };
-type Kind = 'withdraw' | 'revoke' | 'close';
+type Kind = 'withdraw' | 'revoke' | 'close' | 'end';
 const entry = (
   accountId: string,
   seq: number,
@@ -348,12 +348,30 @@ describe('self_v1 outbox delivery writes', () => {
 });
 
 describe('room end through the outbox', () => {
-  it('closes the session once the last close lands, then refuses uploads', async () => {
+  it('never ends the session when its last participant stream closes', async () => {
+    // Leave, heartbeat expiry, a reload or a lost open all emit close.
     liveStreams = 0;
     const acked = await ackedOf(
       body([entry(a, 5, 'close'), entry(b, 2, 'close')])
     );
     expect(acked).toHaveLength(2);
+    expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
+    await expect(
+      loadSelfSession(
+        fakeDb() as never,
+        { sessionId, meetingId, wsId: ws },
+        'upload'
+      )
+    ).resolves.toMatchObject({ id: sessionId });
+  });
+
+  it('ends the session on the room end entry, then refuses uploads', async () => {
+    const acked = await ackedOf(
+      body([entry(a, 5, 'close'), entry(host, 6, 'end')])
+    );
+    expect(acked).toEqual(
+      expect.arrayContaining([ack(a, 5), ack(host, 6)])
+    );
     expect(mocks.rpc.stopSession).toHaveBeenCalledWith(expect.anything(), {
       sessionId,
       hostId: host,
@@ -363,7 +381,6 @@ describe('room end through the outbox', () => {
       expect.anything(),
       sessionId
     );
-    // The upload path loads the session first and refuses before reserving.
     await expect(
       loadSelfSession(
         fakeDb() as never,
@@ -373,18 +390,27 @@ describe('room end through the outbox', () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 
-  it('keeps the session while another holder still has a live stream', async () => {
-    liveStreams = 1;
-    await ackedOf(body([entry(a, 5, 'close')]));
+  it('acknowledges a repeated end without stopping again', async () => {
+    await ackedOf(body([entry(host, 6, 'end')]));
+    mocks.rpc.stopSession.mockClear();
+    expect(await ackedOf(body([entry(host, 6, 'end')]))).toEqual([
+      ack(host, 6),
+    ]);
     expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
   });
 
-  it('withholds the close acknowledgement when the stop fails', async () => {
+  it('acknowledges an end for a session that is gone', async () => {
+    expect(
+      await ackedOf(body([entry(host, 1, 'end', goneSession)]))
+    ).toEqual([ack(host, 1, goneSession)]);
+  });
+
+  it('withholds the end acknowledgement when the stop fails', async () => {
     mocks.rpc.stopSession.mockRejectedValue(
       new MeetSelfRpcError(503, 'down', '')
     );
     const acked = await ackedOf(
-      body([entry(a, 5, 'close'), entry(b, 1, 'withdraw')])
+      body([entry(host, 7, 'end'), entry(b, 1, 'withdraw')])
     );
     expect(acked).toEqual([ack(b, 1)]);
   });

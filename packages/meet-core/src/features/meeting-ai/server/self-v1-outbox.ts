@@ -74,11 +74,18 @@ export async function writeSelfOutboxEntries(
   entries: MeetSelfOutboxEntry[]
 ) {
   const groups = new Map<string, MeetSelfOutboxEntry[]>();
+  const ends: MeetSelfOutboxEntry[] = [];
   for (const entry of entries) {
+    // A session's end lands only after every other entry of that session.
+    if (entry.kind === 'end') {
+      ends.push(entry);
+      continue;
+    }
     const key = `${entry.sessionId}:${entry.accountId}`;
     groups.set(key, [...(groups.get(key) ?? []), entry]);
   }
   const settled: MeetSelfOutboxEntry[] = [];
+  const blocked = new Set<string>();
   let failed = false;
   await Promise.all(
     [...groups.values()].map(async (list) => {
@@ -88,11 +95,25 @@ export async function writeSelfOutboxEntries(
           settled.push(entry);
         } catch {
           failed = true;
+          blocked.add(entry.sessionId);
           return;
         }
       }
     })
   );
+  for (const entry of ends) {
+    // An earlier entry of the session is still pending: hold its end back.
+    if (blocked.has(entry.sessionId)) {
+      failed = true;
+      continue;
+    }
+    try {
+      await writeEntry(db, entry);
+      settled.push(entry);
+    } catch {
+      failed = true;
+    }
+  }
   return { settled, failed };
 }
 

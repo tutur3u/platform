@@ -154,6 +154,34 @@ describe('self_v1 legal outbox drain', () => {
     expect(mocks.ack.mock.calls[0]?.[2]).toEqual([{ accountId: a, seq: 9 }]);
   });
 
+  it('writes the end only after the session closes, and holds it on failure', async () => {
+    const order: string[] = [];
+    mocks.rpc.closeStream.mockImplementation(async () => {
+      order.push('close');
+      return true;
+    });
+    mocks.roomEnd.mockImplementation(async () => {
+      order.push('end');
+      return true;
+    });
+    await drainSelfOutbox({} as never, room, sessionId, [
+      entry(a, 9, 'end'),
+      entry(b, 3, 'close'),
+    ]);
+    expect(order).toEqual(['close', 'end']);
+    mocks.roomEnd.mockClear();
+    mocks.rpc.closeStream.mockRejectedValue(
+      new MeetSelfRpcError(503, 'down', '')
+    );
+    await expect(
+      drainSelfOutbox({} as never, room, sessionId, [
+        entry(b, 4, 'close'),
+        entry(a, 10, 'end'),
+      ])
+    ).rejects.toMatchObject({ status: 503 });
+    expect(mocks.roomEnd).not.toHaveBeenCalled();
+  });
+
   it('keeps an end entry pending while the stop fails', async () => {
     mocks.roomEnd.mockRejectedValue(new Error('db down'));
     await expect(
