@@ -695,3 +695,20 @@ export function promoteArchivedWhenMoreToolsOnlyHasArchive(
     return [link];
   });
 }
+
+/**
+ * The sidebar has no More tools section. The tools container's children
+ * render as dedicated items below the pinned ones, grouped by section label,
+ * and every app also stays reachable from the Apps picker.
+ */
+export function flattenToolsSection(
+  links: (NavLink | null)[]
+): (NavLink | null)[] {
+  return cleanSeparators(
+    links.flatMap((link) =>
+      link?.id === MORE_TOOLS_NAVIGATION_ID
+        ? [null, ...(link.children ?? []), null]
+        : [link]
+    )
+  );
+}

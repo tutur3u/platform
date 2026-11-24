@@ -42,6 +42,7 @@ import {
   applySidebarNavigationPreferences,
   createSidebarNavigationLayoutConfigForHiddenState,
   createSidebarNavigationLayoutConfigForPlacement,
+  flattenToolsSection,
   MORE_TOOLS_NAVIGATION_ID,
   promoteArchivedWhenMoreToolsOnlyHasArchive,
   SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID,
@@ -386,7 +387,7 @@ export function StructureImpl({
   );
   const preferredLinks = useMemo(() => {
     if (navigationPreferenceResult.archivedLinks.length === 0) {
-      return navigationPreferenceResult.links;
+      return flattenToolsSection(navigationPreferenceResult.links);
     }
 
     const archivedNavigationLink: NavLink = {
@@ -401,17 +402,19 @@ export function StructureImpl({
       ),
     };
 
-    return navigationPreferenceResult.links.map((link) => {
-      if (link?.id !== MORE_TOOLS_NAVIGATION_ID) return link;
+    return flattenToolsSection(
+      navigationPreferenceResult.links.map((link) => {
+        if (link?.id !== MORE_TOOLS_NAVIGATION_ID) return link;
 
-      return {
-        ...link,
-        children: insertArchivedNavigationLink({
-          archivedNavigationLink,
-          children: link.children ?? [],
-        }),
-      };
-    });
+        return {
+          ...link,
+          children: insertArchivedNavigationLink({
+            archivedNavigationLink,
+            children: link.children ?? [],
+          }),
+        };
+      })
+    );
   }, [
     navigationPreferenceResult.archivedLinks,
     navigationPreferenceResult.links,

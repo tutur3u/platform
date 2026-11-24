@@ -4,6 +4,7 @@ import {
   applySidebarNavigationPreferences,
   createSidebarNavigationLayoutConfigForHiddenState,
   createSidebarNavigationLayoutConfigForPlacement,
+  flattenToolsSection,
   normalizeSidebarNavigationLayoutConfig,
   promoteArchivedWhenMoreToolsOnlyHasArchive,
 } from '../sidebar-navigation-preferences';
@@ -372,5 +373,25 @@ describe('promoteArchivedWhenMoreToolsOnlyHasArchive', () => {
     expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
       moreTools,
     ]);
+  });
+});
+
+describe('flattenToolsSection', () => {
+  it('renders every tool as a dedicated item instead of a More tools section', () => {
+    const result = applySidebarNavigationPreferences(links, null);
+    const containerChildren =
+      result.links.find((link) => link?.id === 'more_tools')?.children ?? [];
+    const flat = flattenToolsSection(result.links);
+
+    expect(flat.some((link) => link?.id === 'more_tools')).toBe(false);
+    for (const child of containerChildren) {
+      if (child) expect(flat).toContain(child);
+    }
+    const ids = flat.map((link) => link?.id ?? null);
+    expect(ids[0]).not.toBeNull();
+    expect(ids.at(-1)).not.toBeNull();
+    expect(ids.some((id, index) => id === null && ids[index - 1] === null)).toBe(
+      false
+    );
   });
 });

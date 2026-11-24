@@ -17456,7 +17456,7 @@
         "account_scope": "Account default",
         "archive_item": "Archive {item}",
         "archived_title": "Archived",
-        "description": "Choose what stays in the root sidebar, what lives under More tools, and which tools are hidden.",
+        "description": "Choose what is pinned to the top of the sidebar, what is listed under Tools, and which tools are archived.",
         "drag_item": "Drag {item}",
         "editing_scope": "Editing this scope",
         "empty_section": "No tools in this section.",
@@ -17493,9 +17493,9 @@
           "workforce": "Workforce"
         },
         "locked": "Always shown",
-        "more_title": "More tools",
+        "more_title": "Tools",
         "move_down": "Move {item} down",
-        "move_to_more": "Move to More tools",
+        "move_to_more": "Move to Tools",
         "move_to_root": "Move to root",
         "move_up": "Move {item} up",
         "pin_to_root": "Pin to root",
@@ -17506,7 +17506,7 @@
         "reset_error": "Failed to reset sidebar layout",
         "reset_success": "Sidebar layout reset",
         "reset_workspace": "Reset workspace override",
-        "root_title": "Root sidebar",
+        "root_title": "Pinned",
         "save_error": "Failed to save sidebar layout",
         "save_success": "Sidebar layout saved",
         "sections": {
@@ -17519,7 +17519,7 @@
         "show_item": "Restore {item}",
         "title": "Sidebar layout",
         "unarchive_item": "Restore {item}",
-        "unpin_to_more": "Unpin to More tools",
+        "unpin_to_more": "Unpin to Tools",
         "using_account_default": "Using account default",
         "workspace_scope": "Workspace override"
       },

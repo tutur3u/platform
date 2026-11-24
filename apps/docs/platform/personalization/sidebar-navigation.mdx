@@ -1,7 +1,7 @@
 ---
 title: 'Sidebar Navigation'
 description: 'How dashboard sidebar layout preferences work in apps/web.'
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-24"
 audience: users
 ---
 
@@ -9,14 +9,29 @@ audience: users
 
 The dashboard sidebar always keeps **Dashboard** in the root navigation. By default, the root navigation then shows **Tasks**, **Calendar**, and **Finance**.
 
-All other eligible top-level tools are placed under **More tools**. More tools is grouped into durable sections:
+The sidebar has no **More tools** section (decided 2026-11-24). Every other
+eligible tool is a dedicated sidebar item listed below the pinned ones, in a
+**Tools** group, and every app is also reachable from the Apps picker at the
+top of the sidebar. Tools keep their durable sections, separated by dividers:
 
 - **Work tools**: Habits, Whiteboards, Track, Drive, Forms, Documents
 - **AI**: Mind, Hive, Chat, AI Lab
 - **Operations**: Workforce, Users, Inventory
 - **Utilities**: QR Generator, Google Workspace, Meet, Polls, Mail, Education, Link Shortener
 
-Dashboard is separated from the main root tools. **Settings** is pinned to the bottom of the sidebar, below More tools and Archived (including when Archived is promoted to the root sidebar).
+Pinning moves a tool into the top group; unpinning returns it to Tools;
+archiving hides it under **Archived**. Stored layouts keep their `more`
+placement, which now means the Tools group. Manage members, SSO and Domains
+live in the settings dialog, not the sidebar (see
+[Settings dialog](/platform/features/settings-dialog)).
+
+Dashboard is separated from the main root tools. **Settings** is pinned to the
+bottom of the sidebar, below Tools and Archived.
+
+Implementation: `flattenToolsSection` in
+`apps/web/src/app/[locale]/(dashboard)/[wsId]/sidebar-navigation-preferences.ts`
+(and the apps/workspace copy) expands the internal `more_tools` container.
+Regression coverage: `__tests__/sidebar-navigation-preferences.test.ts`.
 
 ## Managing layout
 

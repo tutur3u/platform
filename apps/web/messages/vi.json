@@ -17456,7 +17456,7 @@
         "account_scope": "Mặc định tài khoản",
         "archive_item": "Lưu trữ {item}",
         "archived_title": "Đã lưu trữ",
-        "description": "Chọn công cụ nằm ở thanh bên chính, công cụ nằm trong Nhiều công cụ và công cụ bị ẩn.",
+        "description": "Chọn công cụ được ghim ở đầu thanh bên, công cụ nằm trong mục Công cụ và công cụ đã lưu trữ.",
         "drag_item": "Kéo {item}",
         "editing_scope": "Đang chỉnh phạm vi này",
         "empty_section": "Không có công cụ nào trong phần này.",
@@ -17493,9 +17493,9 @@
           "workforce": "Nhân sự"
         },
         "locked": "Luôn hiển thị",
-        "more_title": "Nhiều công cụ",
+        "more_title": "Công cụ",
         "move_down": "Di chuyển {item} xuống",
-        "move_to_more": "Chuyển vào Nhiều công cụ",
+        "move_to_more": "Chuyển vào Công cụ",
         "move_to_root": "Chuyển ra thanh chính",
         "move_up": "Di chuyển {item} lên",
         "pin_to_root": "Ghim vào thanh chính",
@@ -17506,7 +17506,7 @@
         "reset_error": "Không thể đặt lại bố cục thanh bên",
         "reset_success": "Đã đặt lại bố cục thanh bên",
         "reset_workspace": "Đặt lại ghi đè workspace",
-        "root_title": "Thanh bên chính",
+        "root_title": "Đã ghim",
         "save_error": "Không thể lưu bố cục thanh bên",
         "save_success": "Đã lưu bố cục thanh bên",
         "sections": {
@@ -17519,7 +17519,7 @@
         "show_item": "Khôi phục {item}",
         "title": "Bố cục thanh bên",
         "unarchive_item": "Khôi phục {item}",
-        "unpin_to_more": "Bỏ ghim vào Nhiều công cụ",
+        "unpin_to_more": "Bỏ ghim vào Công cụ",
         "using_account_default": "Đang dùng mặc định tài khoản",
         "workspace_scope": "Ghi đè workspace"
       },
