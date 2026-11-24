@@ -32,7 +32,11 @@ export default defineConfig({
   test: {
     server: { deps: { inline: ['next-intl'] } },
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}', 'cloudflare/worker-entrypoint.test.ts'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'cloudflare/worker-entrypoint.test.ts',
+      'cloudflare/security-profile.test.ts',
+    ],
     exclude: [...configDefaults.exclude, 'src/proxy.public-callback.test.ts'],
   },
 });

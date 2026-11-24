@@ -6,6 +6,7 @@ import {
   buildReportOnlyCsp,
   DEFAULT_PERMISSIONS,
   originSources,
+  WASM_COMPILE_SOURCE,
 } from '../security-headers';
 
 const profile: AppSecurityProfile = {
@@ -116,5 +117,52 @@ describe('applyDocumentSecurityHeaders', () => {
     expect(applyDocumentSecurityHeaders(upgrade, profile, shared)).toBe(
       upgrade
     );
+  });
+});
+
+describe('script-src and WebAssembly', () => {
+  const tokens = (csp: string) =>
+    (directive(csp, 'script-src') ?? '').split(' ').slice(1);
+
+  it("allows exactly 'wasm-unsafe-eval' for Meet and Parley and no other unsafe token", () => {
+    for (const basePath of ['/meet', '/parley']) {
+      const csp = buildReportOnlyCsp(
+        { ...profile, basePath, script: [WASM_COMPILE_SOURCE] },
+        shared
+      );
+      const unsafe = tokens(csp).filter((token) => /unsafe/u.test(token));
+      expect(unsafe).toEqual(["'wasm-unsafe-eval'"]);
+    }
+  });
+
+  it('keeps every other profile free of any unsafe token', () => {
+    for (const basePath of ['/mail', '/tasks', '/drive', '/learn', '/']) {
+      const csp = buildReportOnlyCsp({ ...profile, basePath }, shared);
+      expect(directive(csp, 'script-src')).not.toMatch(/unsafe/u);
+    }
+  });
+
+  it("refuses the wasm source outside Meet and Parley, and 'unsafe-eval' anywhere", () => {
+    expect(() =>
+      buildReportOnlyCsp(
+        { ...profile, basePath: '/mail', script: [WASM_COMPILE_SOURCE] },
+        shared
+      )
+    ).toThrow(/may not contain/u);
+    for (const basePath of ['/meet', '/parley', '/mail'])
+      for (const source of ["'unsafe-eval'", "'unsafe-inline'"])
+        expect(() =>
+          buildReportOnlyCsp({ ...profile, basePath, script: [source] }, shared)
+        ).toThrow(/may not contain/u);
+  });
+
+  it("never emits 'unsafe-eval' in any directive", () => {
+    const csp = buildReportOnlyCsp(
+      { ...profile, script: [WASM_COMPILE_SOURCE] },
+      shared
+    );
+    expect(csp).not.toContain("'unsafe-eval'");
+    // 'wasm-unsafe-eval' contains the words, so match the quoted keyword.
+    expect(csp.match(/'unsafe-eval'/gu)).toBeNull();
   });
 });

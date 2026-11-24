@@ -35,6 +35,33 @@ behavior. Drive's `src/start-candidate/apex-worker.test.ts` additionally covers
 production bindings on the apex. Emitted Worker and deployed acceptance remain
 required before routing production traffic.
 
+## WebAssembly in Meet and Parley
+
+The in-browser code formatters (Ruff, clang-format, gofmt and shfmt) are
+WebAssembly modules, and compiling WebAssembly needs `'wasm-unsafe-eval'` in
+`script-src`. Meet's report-only profile (`apps/meet/cloudflare/security-profile.ts`)
+adds exactly that source, through `WASM_COMPILE_SOURCE` in
+`packages/utils/src/security-headers.ts`. Parley uses the same exception when it
+gets a document CSP profile; it has none today.
+
+- **Scope.** Only the `/meet` and `/parley` profiles. `buildReportOnlyCsp` throws
+  for any `unsafe-*` script source other than `'wasm-unsafe-eval'` on those two
+  mounts, so `'unsafe-eval'`, `'unsafe-inline'` and the wasm source on any other app
+  fail the build of the header.
+- **What it does not allow.** `'wasm-unsafe-eval'` lets the page compile
+  WebAssembly. It does not enable JavaScript `eval`, `new Function` or string
+  timers, and Trusted Types still guards DOM-injection sinks.
+- **What loads.** The formatters are lazily loaded, first-party packages at fixed
+  versions under permissive licenses (MIT or Apache-2.0). They are bundled with
+  the app and fetched from its own origin; the page fetches no formatter code from
+  a third-party host, and `script-src` gains no host.
+
+This change must merge before any Meet or Parley CSP is switched from report-only
+to enforce, or the formatters fail to compile under enforcement. Header unit tests
+(`packages/utils/src/__tests__/security-headers.test.ts` and
+`apps/meet/cloudflare/security-profile.test.ts`) name the exception and assert that
+`'unsafe-eval'` never appears in any directive.
+
 ## Mounted app Trusted Types rollout
 
 Tasks, Learn, Nova, Tools, Teach, LMS, Finance, Drive, Chat, CMS, Forms,

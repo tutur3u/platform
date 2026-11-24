@@ -3,6 +3,7 @@ import {
   applyDocumentSecurityHeaders,
   DEFAULT_PERMISSIONS,
   originSources,
+  WASM_COMPILE_SOURCE,
 } from '@tuturuuu/utils/security-headers';
 
 /** Meet document headers: media features on, report-only CSP elsewhere. */
@@ -23,6 +24,8 @@ export function applyMeetDocumentHeaders(
       ...originSources(vars.NEXT_PUBLIC_SUPABASE_URL),
       'https://tuturuuu.com',
     ],
+    // The code formatters are WebAssembly; this does not allow JavaScript eval.
+    script: [WASM_COMPILE_SOURCE],
     permissions: {
       ...DEFAULT_PERMISSIONS,
       camera: 'self',

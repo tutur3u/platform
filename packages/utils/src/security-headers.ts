@@ -115,14 +115,47 @@ function selfSources(
 }
 
 /**
- * Report-only policy: no `'unsafe-inline'`/`'unsafe-eval'` for scripts, plus
- * Trusted Types, so inline scripts, eval and DOM-injection sinks surface as
- * violations before enforcement.
+ * Lets the page compile WebAssembly without allowing JavaScript `eval`. The
+ * in-browser code formatters (Ruff, clang-format, gofmt, shfmt) are WebAssembly
+ * modules, so Meet and Parley need it; no other app does.
+ */
+export const WASM_COMPILE_SOURCE = "'wasm-unsafe-eval'";
+
+/** The only mounts whose script-src may carry {@link WASM_COMPILE_SOURCE}. */
+const WASM_COMPILE_BASE_PATHS: ReadonlySet<string> = new Set([
+  '/meet',
+  '/parley',
+]);
+
+/**
+ * Script sources may never name an `unsafe-*` keyword, with one named
+ * exception: `'wasm-unsafe-eval'` on the Meet and Parley mounts.
+ */
+function assertScriptSources(profile: AppSecurityProfile) {
+  for (const source of profile.script ?? []) {
+    if (!/unsafe/iu.test(source)) continue;
+    if (
+      source === WASM_COMPILE_SOURCE &&
+      WASM_COMPILE_BASE_PATHS.has(profile.basePath)
+    )
+      continue;
+    throw new Error(
+      `script-src may not contain ${source} for ${profile.basePath}`
+    );
+  }
+}
+
+/**
+ * Report-only policy: no `'unsafe-inline'`/`'unsafe-eval'` for scripts (the one
+ * exception is `'wasm-unsafe-eval'` on Meet and Parley), plus Trusted Types, so
+ * inline scripts, eval and DOM-injection sinks surface as violations before
+ * enforcement.
  */
 export function buildReportOnlyCsp(
   profile: AppSecurityProfile,
   context: DocumentSecurityContext
 ): string {
+  assertScriptSources(profile);
   const own = selfSources(profile, context);
   const join = (...parts: readonly (readonly string[] | undefined)[]) =>
     [...new Set(parts.flatMap((part) => part ?? []))].join(' ');
