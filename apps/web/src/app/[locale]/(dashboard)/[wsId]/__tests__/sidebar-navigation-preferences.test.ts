@@ -390,8 +390,8 @@ describe('flattenToolsSection', () => {
     const ids = flat.map((link) => link?.id ?? null);
     expect(ids[0]).not.toBeNull();
     expect(ids.at(-1)).not.toBeNull();
-    expect(ids.some((id, index) => id === null && ids[index - 1] === null)).toBe(
-      false
-    );
+    expect(
+      ids.some((id, index) => id === null && ids[index - 1] === null)
+    ).toBe(false);
   });
 });

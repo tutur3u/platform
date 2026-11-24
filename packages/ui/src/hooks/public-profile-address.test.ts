@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function loadAddress() {
   vi.resetModules();
-  return import('./public-profile-address');
+  return import('./public-profile-address.js');
 }
 
 beforeEach(() => {

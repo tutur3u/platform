@@ -65,7 +65,7 @@ describe('useSettingsDialogUrlState', () => {
 
 describe('useSettingsDialogUrlState with the public profile address', () => {
   it('reports the Public profile tab while /u/<name> is shown and restores the address before switching tabs', async () => {
-    const address = await import('./public-profile-address');
+    const address = await import('./public-profile-address.js');
     window.history.replaceState(
       null,
       '',
@@ -86,8 +86,6 @@ describe('useSettingsDialogUrlState with the public profile address', () => {
     expect(window.location.pathname).toBe('/ws');
     expect(address.isPublicProfileAddressActive()).toBe(false);
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    expect(onUrlUpdate.mock.calls.at(-1)?.[0].options.history).toBe(
-      'replace'
-    );
+    expect(onUrlUpdate.mock.calls.at(-1)?.[0].options.history).toBe('replace');
   });
 });

@@ -471,7 +471,11 @@ describe('tasks app task pages', () => {
     }
     expect(links).toHaveLength(7);
     expect(
-      links.some((link) => link?.openSettingsDialog?.tab === 'workspace_members')
+      links.some(
+        (link) =>
+          typeof link?.openSettingsDialog === 'object' &&
+          link.openSettingsDialog.tab === 'workspace_members'
+      )
     ).toBe(false);
   });
 

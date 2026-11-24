@@ -13,6 +13,7 @@ const satellite = 'packages/satellite/src/components/';
 const forwardedTranslators = {
   [`${satellite}account-settings/account-integrations-navigation.ts`]: '',
   [`${satellite}account-settings/account-settings-navigation.ts`]: '',
+  [`${satellite}account-settings/public-profile-navigation.ts`]: '',
   [`${satellite}workspace-settings/navigation.tsx`]: '',
   [`${ui}calendar-app/components/calendar-connections-settings-content.tsx`]:
     'calendar',

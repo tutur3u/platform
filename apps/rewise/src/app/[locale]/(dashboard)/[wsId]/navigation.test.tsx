@@ -4,7 +4,6 @@ vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));
 
-
 import { getNavigationLinks } from './navigation';
 
 describe('Rewise navigation', () => {

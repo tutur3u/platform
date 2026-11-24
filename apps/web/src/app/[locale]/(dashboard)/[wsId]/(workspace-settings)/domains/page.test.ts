@@ -26,7 +26,9 @@ describe('retired SSO and Domains routes', () => {
 
   it('opens Settings -> Single sign-on', async () => {
     await expect(
-      WorkspaceSSOPage({ params: Promise.resolve({ locale: 'vi', wsId: 'ws-1' }) })
+      WorkspaceSSOPage({
+        params: Promise.resolve({ locale: 'vi', wsId: 'ws-1' }),
+      })
     ).rejects.toThrow(
       'redirect:vi:/ws-1?settingsDialog=open&settingsTab=workspace_sso'
     );
