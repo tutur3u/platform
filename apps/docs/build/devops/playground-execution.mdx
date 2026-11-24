@@ -74,8 +74,15 @@ variable.
 Staging is reachable only on its `workers.dev` hostname, so it needs no zone
 or route change. Only the staging configuration contains the qualifier: the
 `PLAYGROUND_QUALIFY` flag, the `PLAYGROUND_QUALIFIER` binding and its one-guest
-container class. Production has none of them, which a configuration test
-enforces, and `/qualify` there answers like any unknown path.
+container class. Staging builds from `src/staging-worker.ts`, which adds the
+qualifier class and the `/qualify` route to the production entry
+`src/worker.ts`; production builds from `src/worker.ts`, so neither reaches
+its bundle. A configuration test, a bundle test and the production build's
+shape check enforce this, and `/qualify` in production answers like any
+unknown path. Workflow checks that something is absent use
+`if grep …; then exit 1; fi`: Bash ignores `set -e` for a negated `! grep`
+that is not a step's last command, which `workflow-negated-commands.test.js`
+refuses.
 
 `POST /qualify` takes the operator secret. It starts one fresh guest and runs
 fixed fixture jobs, never request input, through the production exec,

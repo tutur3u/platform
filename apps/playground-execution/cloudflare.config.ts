@@ -73,7 +73,8 @@ export default defineConfig({
   containers: staging ? [slot, checker, qualifier] : [slot, checker],
   worker: {
     name: worker,
-    entrypoint: 'src/worker.ts',
+    // Only the staging entry carries the fixture qualifier.
+    entrypoint: staging ? 'src/staging-worker.ts' : 'src/worker.ts',
     compatibilityDate: '2026-11-22',
     compatibilityFlags: ['nodejs_compat'],
     // Staging is reached on workers.dev, so it needs no zone or route change;

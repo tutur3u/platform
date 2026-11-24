@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import './worker-test-runtime.mjs';
 
-const { default: worker } = await import('./worker.ts');
+const { default: worker } = await import('./staging-worker.ts');
+const { default: productionWorker } = await import('./worker.ts');
 const { PlaygroundQualifier } = await import('./qualifier.ts');
 
 const OPERATOR = 'o'.repeat(40);
@@ -264,4 +265,25 @@ test('a second qualification while one runs is refused, not stacked', async () =
     PLAYGROUND_QUALIFIER: { getByName: () => ({ qualify: async () => null }) },
   });
   assert.equal(response.status, 409);
+});
+
+test('the production entry has no qualification route even when the flag is set', async () => {
+  const response = await productionWorker.fetch(qualifyRequest(), {
+    PLAYGROUND_QUALIFY: 'enabled',
+    PLAYGROUND_OPERATOR_SECRET: OPERATOR,
+    PLAYGROUND_QUALIFIER: {
+      getByName: () => assert.fail('reached the qualifier'),
+    },
+  });
+  assert.equal(response.status, 404);
+});
+
+test('production config builds from the entry without the qualifier', async () => {
+  const production = await config();
+  const staging = await config('staging');
+  assert.equal(production.worker.entrypoint, 'src/worker.ts');
+  assert.equal(staging.worker.entrypoint, 'src/staging-worker.ts');
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('./worker.ts', import.meta.url), 'utf8');
+  assert.equal(/qualifier/iu.test(source), false);
 });

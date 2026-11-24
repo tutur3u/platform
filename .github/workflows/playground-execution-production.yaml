@@ -83,8 +83,19 @@ jobs:
             grep -rqF "$name" .cloudflare/output
           done
           # The fixture qualifier and workers.dev exist only in staging.
-          ! grep -rqF PlaygroundQualifier .cloudflare/output
-          ! grep -rqF 'tuturuuu-playground-execution-staging' .cloudflare/output
+          if grep -rqF PlaygroundQualifier .cloudflare/output; then
+            echo 'The production output must not contain PlaygroundQualifier' >&2
+            exit 1
+          fi
+          if grep -rqF 'tuturuuu-playground-execution-staging' .cloudflare/output; then
+            echo 'The production output must not contain tuturuuu-playground-execution-staging' >&2
+            exit 1
+          fi
+          # The code reads the flag; the production configuration must not bind it.
+          if grep -rqF --include='*.json' PLAYGROUND_QUALIFY .cloudflare/output; then
+            echo 'The production configuration must not bind PLAYGROUND_QUALIFY' >&2
+            exit 1
+          fi
           grep -rqF "$PLAYGROUND_INGRESS_HOST" .cloudflare/output
           grep -rqF "$PLAYGROUND_SOURCE_ORIGIN" .cloudflare/output
       - name: Stage the build output
@@ -130,7 +141,10 @@ jobs:
           grep -rFl "$PLAYGROUND_IMAGE" .cloudflare/output > /dev/null
           others="$(grep -rhoE 'registry\.cloudflare\.com/[^"[:space:]]+' .cloudflare/output | sort -u | grep -vxF "$PLAYGROUND_IMAGE" || true)"
           test -z "$others"
-          ! grep -rqF PlaygroundQualifier .cloudflare/output
+          if grep -rqF PlaygroundQualifier .cloudflare/output; then
+            echo 'The production output must not contain PlaygroundQualifier' >&2
+            exit 1
+          fi
       - name: Pause admission on an existing deployment before rolling out
         env:
           PLAYGROUND_OPERATOR_SECRET: ${{ secrets.PLAYGROUND_PRODUCTION_OPERATOR_SECRET }}
