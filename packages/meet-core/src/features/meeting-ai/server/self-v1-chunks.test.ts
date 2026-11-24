@@ -270,6 +270,15 @@ describe('self_v1 chunk admission', () => {
     expect(mocks.generate).not.toHaveBeenCalled();
   });
 
+  it('refuses an account under deletion or a chunk after the stop cutoff', async () => {
+    mocks.rpc.reserveChunk.mockRejectedValue(
+      new MeetSelfRpcError(409, 'not eligible', '55000')
+    );
+    expect((await run()).status).toBe(409);
+    expect(mocks.generate).not.toHaveBeenCalled();
+    expect(mocks.rpc.settleChunk).not.toHaveBeenCalled();
+  });
+
   it('returns a settled exact duplicate without dispatching again', async () => {
     mocks.rpc.reserveChunk.mockResolvedValue({
       ...reserved,
@@ -378,6 +387,36 @@ describe('self_v1 in-flight fence', () => {
     expect(JSON.stringify(settle.usage)).not.toContain('my own words');
   });
 
+  it('records a provider overrun at the reservation and logs it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.rpc.reserveChunk.mockResolvedValue({
+      ...reserved,
+      reserved_cost_usd: 0.0004,
+    });
+    await run();
+    expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ outcome: 'completed', costUsd: 0.0004 })
+    );
+    expect(warn).toHaveBeenCalledWith(
+      '[meet-ai] self_v1 chunk cost exceeded its reservation'
+    );
+    warn.mockRestore();
+  });
+
+  it('keeps a cost within the reservation unchanged', async () => {
+    mocks.rpc.reserveChunk.mockResolvedValue({
+      ...reserved,
+      reserved_cost_usd: 0.01,
+    });
+    await run();
+    expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ outcome: 'completed', costUsd: 0.001 })
+    );
+  });
+
+  // Also covers an erased generation: the database refuses completed text.
   it('discards when the database refuses completed text', async () => {
     mocks.rpc.settleChunk.mockImplementation(async (_db, input) => {
       if (input.outcome === 'completed')

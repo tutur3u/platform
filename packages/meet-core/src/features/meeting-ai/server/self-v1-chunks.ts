@@ -251,9 +251,21 @@ export async function transcribeSelfChunk(
   return persistSelfChunk(db, room, {
     chunkId: chunk.id,
     accountId: user.id,
+    reservedCostUsd: chunk.reserved_cost_usd,
     fence,
     result,
   });
+}
+
+/**
+ * The database refuses a settled cost above the chunk's reservation, so the
+ * recorded cost is capped there; an overrun means the reservation estimate
+ * is too low and is logged for follow-up.
+ */
+export function clampToReservation(costUsd: number, reserved: number | null) {
+  if (typeof reserved !== 'number' || costUsd <= reserved) return costUsd;
+  console.warn('[meet-ai] self_v1 chunk cost exceeded its reservation');
+  return reserved;
 }
 
 async function persistSelfChunk(
@@ -262,12 +274,13 @@ async function persistSelfChunk(
   input: {
     chunkId: string;
     accountId: string;
+    reservedCostUsd: number | null;
     fence: { sessionId: string; streamId: string; consentRevision: number };
     result: Awaited<ReturnType<typeof generateBilledMeetArtifact>>;
   }
 ) {
   const { result, fence } = input;
-  const costUsd = result.costUsd ?? 0;
+  const costUsd = clampToReservation(result.costUsd ?? 0, input.reservedCostUsd);
   const usage = {
     model: result.usage.model,
     inputTokens: result.usage.inputTokens ?? null,
