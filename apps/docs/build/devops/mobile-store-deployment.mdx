@@ -552,7 +552,24 @@ profile for the existing distribution certificate, and replace the profile
 through an Infrastructure Mobile Deployment vault draft. CI checks the hydrated
 profile before signing, and checks that the exported app's profile and
 entitlements match that decision before upload. Regression coverage:
-`scripts/ci/mobile-store-workflow.test.js`. CI uses a temporary
+`scripts/ci/mobile-store-workflow.test.js` and
+`scripts/mobile-deployment/ios-signing.test.mjs`.
+
+The `IOS_SIGNING_MODE` repository variable selects how the TestFlight job signs.
+Leave it unset or set it to `manual` to use the vault distribution certificate
+and App Store profile. Set it to `cloud` to let Xcode manage signing with the
+vault App Store Connect API key (`APP_STORE_CONNECT_API_KEY_ID`,
+`APP_STORE_CONNECT_ISSUER_ID` and the `.p8` key). In cloud mode,
+`scripts/mobile-deployment/ios-build-ipa.sh` runs `flutter build ios
+--config-only`, then `xcodebuild archive` and `-exportArchive` with
+`-allowProvisioningUpdates` and the key. Xcode creates or refreshes the App
+Store profile, adds entitlement capabilities such as Time Sensitive
+Notifications to the App ID, and signs the export with a cloud-managed Apple
+Distribution certificate. The key needs the Admin role: App Manager and
+Developer keys cannot use cloud-managed distribution certificates. Cloud mode
+keeps the key in the vault, so the GitHub Environment still holds only
+`MOBILE_DEPLOYMENT_CI_TOKEN`. The vault p12 and profile stay required while
+`manual` is the fallback. CI uses a temporary
 keychain and an ignored `ios/Flutter/StoreSigning.xcconfig` for manual
 distribution signing. Export uses the profile UUID and App Store Connect export
 method. Local development keeps its existing signing settings when that file

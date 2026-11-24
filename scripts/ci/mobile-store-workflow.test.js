@@ -581,37 +581,32 @@ test('both store paths use the shared mobile note policy and bounded Play metada
   assert.match(notes, /notes\.length \+ bullet\.length > 4000/);
 });
 
-test('a profile without Time Sensitive Notifications omits the entitlement instead of blocking TestFlight', () => {
+test('TestFlight signing runs through the mode-aware signing and build scripts', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'mobile-deploy-stores.yaml'),
     'utf8'
   );
-  const importStep = workflow.slice(
-    workflow.indexOf('- name: Import Apple signing assets'),
-    workflow.indexOf('- name: Omit Live screen broadcast from TestFlight beta')
+  assert.match(
+    workflow,
+    /IOS_SIGNING_MODE: \$\{\{ vars\.IOS_SIGNING_MODE == 'cloud' && 'cloud' \|\| 'manual' \}\}/
   );
-  assert.ok(importStep.length > 0, 'iOS signing import step must exist');
+  assert.match(
+    workflow,
+    /run: bash \.\.\/\.\.\/scripts\/mobile-deployment\/ios-signing\.sh "\$IOS_SIGNING_MODE"/
+  );
+  assert.match(
+    workflow,
+    /run: bash \.\.\/\.\.\/scripts\/mobile-deployment\/ios-build-ipa\.sh "\$IOS_SIGNING_MODE" "\$BUILD_NAME" "\$BUILD_NUMBER"/
+  );
   assert.doesNotMatch(
-    importStep,
-    /test "\$\(\/usr\/libexec\/PlistBuddy -c 'Print Entitlements:com\.apple\.developer\.usernotifications\.time-sensitive'/,
-    'a missing optional entitlement must not fail the iOS signing import'
-  );
-  assert.match(
-    importStep,
-    /Delete :\$\{time_sensitive_key\}" ios\/Runner\/Runner-Production\.entitlements/
-  );
-  assert.match(
-    importStep,
-    /::warning title=Time Sensitive Notifications omitted::/
-  );
-  assert.match(
-    importStep,
-    /MOBILE_TIME_SENSITIVE_ENTITLEMENT=\$time_sensitive_entitlement/
+    workflow,
+    /test "\$\(\/usr\/libexec\/PlistBuddy -c 'Print Entitlements:com\.apple\.developer\.usernotifications\.time-sensitive' "\$profile_plist"/,
+    'a profile without the optional entitlement must not fail the iOS signing import'
   );
   assert.match(
     workflow,
     /if \[ "\$\{MOBILE_TIME_SENSITIVE_ENTITLEMENT:-\}" = true \]; then/,
-    'the exported app must match the profile decision'
+    'the exported app must match the signing decision'
   );
   assert.match(workflow, /Unexpected Time Sensitive entitlement/);
 });

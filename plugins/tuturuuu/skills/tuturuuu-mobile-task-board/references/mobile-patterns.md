@@ -60,6 +60,10 @@ localization changes.
   root workspace apps/web mobile deployment vault after GitHub OIDC validation.
   Local verification must prove the Android AAB build, while iOS IPA
   verification requires full Xcode before it can be claimed.
+- `IOS_SIGNING_MODE=cloud` switches TestFlight signing from the vault p12 and
+  profile to Xcode-managed signing with the vault App Store Connect key, which
+  needs the Admin role. A profile without Time Sensitive Notifications only
+  drops that entitlement in `manual` mode; it no longer blocks iOS delivery.
 
 ## API Origins And Authentication
 
