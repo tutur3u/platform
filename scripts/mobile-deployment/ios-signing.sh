@@ -20,6 +20,12 @@ time_sensitive_key='com.apple.developer.usernotifications.time-sensitive'
 plist_buddy="${PLIST_BUDDY:-/usr/libexec/PlistBuddy}"
 
 : "${APPLE_TEAM_ID:?}" "${APPLE_BUNDLE_ID:?}" "${GITHUB_ENV:?}" "${RUNNER_TEMP:?}"
+# The team id is written into the xcconfig and export plist, so only accept
+# the Apple format (ten uppercase letters or digits).
+if ! [[ "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]]; then
+  echo "::error title=Apple signing configuration::APPLE_TEAM_ID is not a ten-character Apple team id."
+  exit 1
+fi
 
 write_export_options() {
   local signing_style="$1" profile_uuid="${2:-}" profiles=''
