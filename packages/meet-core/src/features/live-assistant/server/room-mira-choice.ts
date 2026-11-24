@@ -6,6 +6,7 @@ import {
 } from '../../call/server/room-service';
 import {
   type MiraChoiceEvidence,
+  MiraChoiceRecordError,
   recordMiraChoice,
 } from './room-mira-evidence';
 
@@ -25,14 +26,36 @@ const isGuest = (access: MeetCallRouteAccess) =>
 const notSaved = () =>
   new MeetCallAccessError(503, 'Your choice could not be saved');
 
+/**
+ * Refusals the database will repeat (unknown revision, check, uniqueness,
+ * invalid value, permission); retrying them cannot help.
+ */
+const DETERMINISTIC = new Set(['23503', '23514', '23505', '22023', '42501']);
+
 /** One retry covers a transient storage error; a second failure is final. */
 async function recordWithRetry(evidence: MiraChoiceEvidence) {
   try {
     await recordMiraChoice(evidence);
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof MiraChoiceRecordError &&
+      DETERMINISTIC.has(error.pgCode ?? '')
+    )
+      throw error;
     await recordMiraChoice(evidence);
   }
 }
+
+const statusOf = (error: unknown) =>
+  typeof error === 'object' && error !== null && 'status' in error
+    ? Number((error as { status: unknown }).status)
+    : 0;
+
+/** The room may have applied a call whose answer was lost or failed. */
+const roomOutcomeUnknown = (error: unknown) => {
+  const status = statusOf(error);
+  return !status || status >= 500;
+};
 
 function evidenceOf(
   access: MeetCallRouteAccess,
@@ -97,32 +120,34 @@ async function recordOff(
 }
 
 /**
- * A participant's own on. It counts only with durable evidence: after the
- * room accepts it, the evidence is written with one retry. If that still
- * fails, the room is turned back off and that system-initiated off is
- * recorded with source `system_fallback`, so the ledger shows every room
- * change; the participant gets a 503.
+ * Turns the room back off for an on that has no evidence, retrying once.
+ * If the room still cannot be reached, an alertable error names only the
+ * meeting and the account so an operator can turn Mira off for them.
  */
-async function recordOn(
+async function compensateOn(
   access: MeetCallRouteAccess,
-  input: RoomMiraChoiceInput,
-  requireNoticeMode: boolean
+  input: RoomMiraChoiceInput
 ) {
-  await roomChoice(access, input);
-  try {
-    await recordWithRetry(evidenceOf(access, input, requireNoticeMode));
-    return;
-  } catch (error) {
-    console.error('Room Mira choice evidence failed', {
-      name: error instanceof Error ? error.name : 'unknown',
+  const off = () =>
+    callRoomService(access, {
+      action: 'mira.room.choice',
+      choice: 'off',
+      version: input.version,
+      acceptanceRevision: input.acceptanceRevision,
     });
+  try {
+    await off();
+  } catch {
+    try {
+      await off();
+    } catch {
+      console.error('[meet-mira] room on left without evidence', {
+        meetingId: access.meeting.id,
+        accountId: access.user.id,
+      });
+      return;
+    }
   }
-  await callRoomService(access, {
-    action: 'mira.room.choice',
-    choice: 'off',
-    version: input.version,
-    acceptanceRevision: input.acceptanceRevision,
-  });
   try {
     await recordMiraChoice({
       ...evidenceOf(access, { ...input, choice: 'off' }, false),
@@ -131,6 +156,37 @@ async function recordOn(
   } catch {
     console.error('Room Mira fallback evidence failed');
   }
+}
+
+/**
+ * A participant's own on. It counts only with durable evidence: after the
+ * room accepts it, the evidence is written with one retry. If that still
+ * fails, or the room call failed in a way that may still have applied it
+ * (no answer, timeout, 5xx), the room is turned back off (retried once) and
+ * that system-initiated off is recorded with source `system_fallback`, so
+ * the room never stays on without evidence. A clear room refusal (4xx) left
+ * the room unchanged and is passed through.
+ */
+async function recordOn(
+  access: MeetCallRouteAccess,
+  input: RoomMiraChoiceInput,
+  requireNoticeMode: boolean
+) {
+  try {
+    await roomChoice(access, input);
+  } catch (error) {
+    if (roomOutcomeUnknown(error)) await compensateOn(access, input);
+    throw error;
+  }
+  try {
+    await recordWithRetry(evidenceOf(access, input, requireNoticeMode));
+    return;
+  } catch (error) {
+    console.error('Room Mira choice evidence failed', {
+      name: error instanceof Error ? error.name : 'unknown',
+    });
+  }
+  await compensateOn(access, input);
   throw notSaved();
 }
 

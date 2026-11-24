@@ -97,6 +97,14 @@ const noticeModeMissing = () =>
   noticeModeMissingAt !== undefined &&
   Date.now() - noticeModeMissingAt < NOTICE_MODE_PROBE_TTL_MS;
 
+/** A choice row the database refused, with its Postgres error code. */
+export class MiraChoiceRecordError extends Error {
+  constructor(public pgCode?: string) {
+    super('Mira choice could not be recorded');
+    this.name = 'MiraChoiceRecordError';
+  }
+}
+
 /** PostgREST answers these when a column is unknown to its schema cache. */
 const MISSING_COLUMN = new Set(['PGRST204', '42703']);
 
@@ -165,7 +173,7 @@ export async function recordMiraChoice(input: MiraChoiceEvidence) {
     if (required) throw new Error('Mira choice notice mode cannot be stored');
     ({ error } = await insert(false));
   } else if (withMode && !error) noticeModeMissingAt = undefined;
-  if (error) throw new Error('Mira choice could not be recorded');
+  if (error) throw new MiraChoiceRecordError(error.code);
 }
 
 /** The workspace default for the join tick box; ticked unless changed. */
