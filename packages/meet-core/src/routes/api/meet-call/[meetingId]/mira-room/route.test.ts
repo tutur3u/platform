@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   available: vi.fn(),
@@ -351,4 +351,75 @@ it('records a room-notice on after an earlier per-speaker on as a new choice', a
     expect.objectContaining({ choice: 'on' })
   );
   expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('noticeMode');
+});
+
+describe('withdrawal evidence', () => {
+  const failRoomChoice = async (status: number) => {
+    const { MeetCallAccessError } =
+      await import('@tuturuuu/meet-core/features/call/lib/call-access');
+    f.room.mockImplementation(async (_access, command: { action: string }) => {
+      if (command.action === 'mira.room.choice')
+        throw new MeetCallAccessError(status, 'Room action is unavailable');
+      return read;
+    });
+  };
+
+  it('records an off even when the room call fails, then returns the room error', async () => {
+    await failRoomChoice(502);
+    await expect(post(choice({ choice: 'off' }))).rejects.toMatchObject({
+      status: 502,
+    });
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({ choice: 'off', source: 'join' })
+    );
+  });
+
+  it('answers 503 when neither the room nor the ledger took the off', async () => {
+    await failRoomChoice(504);
+    f.record.mockRejectedValue(new Error('db'));
+    await expect(post(choice({ choice: 'off' }))).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(f.record).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a transient evidence failure once for an off', async () => {
+    f.record.mockRejectedValueOnce(new Error('blip')).mockResolvedValue(undefined);
+    const response = await post(choice({ choice: 'off' }));
+    expect(response.status).toBe(200);
+    expect(f.record).toHaveBeenCalledTimes(2);
+  });
+
+  it('never answers 200 for an off the ledger refused', async () => {
+    f.record.mockRejectedValue(new Error('db'));
+    await expect(post(choice({ choice: 'off' }))).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(f.record).toHaveBeenCalledTimes(2);
+    // The room already took the off; no on fallback runs for an off.
+    expect(choiceCalls()).toHaveLength(1);
+  });
+});
+
+describe('on without evidence', () => {
+  it('retries the on evidence once before any fallback', async () => {
+    f.record.mockRejectedValueOnce(new Error('blip')).mockResolvedValue(undefined);
+    const response = await post(choice());
+    expect(response.status).toBe(200);
+    expect(choiceCalls()).toHaveLength(1);
+  });
+
+  it('turns the room back off and records that off as a system fallback', async () => {
+    f.record.mockImplementation(async (evidence: { source: string }) => {
+      if (evidence.source !== 'system_fallback') throw new Error('db');
+    });
+    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+    const calls = choiceCalls().map(
+      ([, command]) => (command as { choice: string }).choice
+    );
+    expect(calls).toEqual(['on', 'off']);
+    expect(f.record).toHaveBeenLastCalledWith(
+      expect.objectContaining({ choice: 'off', source: 'system_fallback' })
+    );
+  });
 });

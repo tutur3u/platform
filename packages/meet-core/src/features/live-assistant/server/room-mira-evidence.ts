@@ -65,7 +65,11 @@ export type MiraChoiceEvidence = {
   participantId: string;
   guest: boolean;
   choice: 'on' | 'off';
-  source: 'join' | 'confirm' | 'toggle';
+  /**
+   * `system_fallback`: the server turned the room back off after an on it
+   * could not record.
+   */
+  source: 'join' | 'confirm' | 'toggle' | 'system_fallback';
   acceptanceRevision: number;
   noticeVersion: string;
   textHash: string;

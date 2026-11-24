@@ -17,11 +17,11 @@ import {
 } from '../../../../../features/live-assistant/server/room-mira-acceptance';
 import { readRoomMiraAvailability } from '../../../../../features/live-assistant/server/room-mira-authority';
 import { requireCurrentMiraNoticeMode } from '../../../../../features/live-assistant/server/room-mira-notice-mode';
+import { applyRoomMiraChoice } from '../../../../../features/live-assistant/server/room-mira-choice';
 import {
   canStoreMiraNoticeMode,
   readMiraBoxTickedByDefault,
   readOpenMiraAcceptanceRevision,
-  recordMiraChoice,
 } from '../../../../../features/live-assistant/server/room-mira-evidence';
 
 const command = z.discriminatedUnion('action', [
@@ -55,9 +55,6 @@ const command = z.discriminatedUnion('action', [
 
 /** A storage check that cannot run counts as unable to store: fail closed. */
 const canStoreModeOrFalse = () => canStoreMiraNoticeMode().catch(() => false);
-
-const isGuest = (access: MeetCallRouteAccess) =>
-  'guest' in access && access.guest === true;
 
 async function readView(access: MeetCallRouteAccess) {
   const [view, boxTickedByDefault] = await Promise.all([
@@ -133,47 +130,7 @@ export async function POST(
       if (requireNoticeMode && !(await canStoreModeOrFalse()))
         throw new MeetCallAccessError(503, 'Your choice could not be saved');
     }
-    await callRoomService(access, {
-      action: 'mira.room.choice',
-      choice: data.choice,
-      version: data.version,
-      acceptanceRevision: data.acceptanceRevision,
-      // The room refuses a Join state that would turn an earlier off on.
-      source: data.source,
-      // The room refuses an on under another mode's notice in the same turn.
-      ...(data.noticeMode ? { noticeMode: data.noticeMode } : {}),
-    });
-    try {
-      await recordMiraChoice({
-        meetingId: access.meeting.id,
-        wsId: access.meeting.ws_id,
-        participantId: access.user.id,
-        guest: isGuest(access),
-        choice: data.choice,
-        source: data.source,
-        acceptanceRevision: data.acceptanceRevision,
-        noticeVersion: data.version,
-        textHash: data.textHash,
-        locale: data.locale,
-        ...(data.noticeMode === 'self'
-          ? { noticeMode: 'self' as const, requireNoticeMode }
-          : {}),
-      });
-    } catch (error) {
-      console.error('Room Mira choice evidence failed', {
-        name: error instanceof Error ? error.name : 'unknown',
-      });
-      // On counts only with durable evidence; fall back to off.
-      if (data.choice === 'on') {
-        await callRoomService(access, {
-          action: 'mira.room.choice',
-          choice: 'off',
-          version: data.version,
-          acceptanceRevision: data.acceptanceRevision,
-        });
-        throw new MeetCallAccessError(503, 'Your choice could not be saved');
-      }
-    }
+    await applyRoomMiraChoice(access, data, requireNoticeMode);
     return readView(access);
   });
 }
