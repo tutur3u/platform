@@ -37,8 +37,11 @@ export function resolveStatusListId(
     status: TaskList['status'],
     pick?: (l: StatusList) => boolean
   ) => usable.find((list) => list.status === status && (pick?.(list) ?? true));
-  const preferred = (id?: string | null) =>
-    id ? usable.find((list) => list.id === id) : undefined;
+  // A board default only counts when it really is a list of that status.
+  const preferred = (id: string | null | undefined, status: TaskList["status"]) =>
+    id
+      ? usable.find((list) => list.id === id && list.status === status)
+      : undefined;
 
   switch (key) {
     case 'backlog':
@@ -58,11 +61,11 @@ export function resolveStatusListId(
       return first('review')?.id ?? null;
     case 'done':
       return (
-        (preferred(defaults.defaultDoneListId) ?? first('done'))?.id ?? null
+        (preferred(defaults.defaultDoneListId, "done") ?? first('done'))?.id ?? null
       );
     case 'cancelled':
       return (
-        (preferred(defaults.defaultClosedListId) ?? first('closed'))?.id ?? null
+        (preferred(defaults.defaultClosedListId, "closed") ?? first('closed'))?.id ?? null
       );
   }
 }

@@ -74,6 +74,15 @@ describe('status mapping', () => {
     ).toBe('done-early');
   });
 
+  it('ignores a default whose list has a different status', () => {
+    expect(
+      resolveStatusListId('done', board, { defaultDoneListId: 'closed-late' })
+    ).toBe('done-early');
+    expect(
+      resolveStatusListId('cancelled', board, { defaultClosedListId: 'done-late' })
+    ).toBe('closed-early');
+  });
+
   it('skips deleted and archived lists and returns null for a missing status', () => {
     const lists = [
       list('gone', 'Review', 'review', 1, { deleted: true }),
