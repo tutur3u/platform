@@ -351,7 +351,7 @@ it('ships the About Mira, dismiss and off-line copy in English and Vietnamese', 
   expect('badge' in vi_messages.meet.mira_adults).toBe(false);
 });
 
-it('(gap a) records an explicit off when someone unticked before any acceptance', async () => {
+it('records an explicit off when someone unticked before any acceptance', async () => {
   untickAtJoin(0);
   f.read.mockResolvedValue(base);
   f.choose.mockResolvedValue({ ...base, lastChoice: 'off' });
@@ -370,7 +370,7 @@ it('(gap a) records an explicit off when someone unticked before any acceptance'
   expect(peekMiraJoinChoice('room')?.ticked).toBe(false);
 });
 
-it('(gap a) records the off once, and not again when the server already has it', async () => {
+it('records the off once, and not again when the server already has it', async () => {
   untickAtJoin(0);
   f.read.mockResolvedValue(base);
   f.choose.mockResolvedValue({ ...base, lastChoice: 'off' });
@@ -390,7 +390,7 @@ it('(gap a) records the off once, and not again when the server already has it',
   expect(f.choose).not.toHaveBeenCalled();
 });
 
-it('(gap a) records nothing for a ticked box until an acceptance exists', async () => {
+it('records nothing for a ticked box until an acceptance exists', async () => {
   rememberMiraJoinChoice('room', {
     ticked: true,
     textHash: 'b'.repeat(64),
@@ -405,7 +405,7 @@ it('(gap a) records nothing for a ticked box until an acceptance exists', async 
   expect(f.transcript).not.toHaveBeenCalled();
 });
 
-it('(gap a) hashes the notice again when the Join hash is missing', async () => {
+it('hashes the notice again when the Join hash is missing', async () => {
   rememberMiraJoinChoice('room', {
     ticked: false,
     textHash: '',
@@ -427,7 +427,7 @@ it('(gap a) hashes the notice again when the Join hash is missing', async () => 
   );
 });
 
-it('(gap a) retries a failed explicit off on the next read, never in a loop', async () => {
+it('retries a failed explicit off on the next read, never in a loop', async () => {
   untickAtJoin(0);
   f.read.mockResolvedValue(base);
   f.choose

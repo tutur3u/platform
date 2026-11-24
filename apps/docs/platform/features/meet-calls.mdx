@@ -1252,7 +1252,9 @@ is not exposed to any client yet; legacy sessions keep the rule above.
   `private.erase_meet_mira_evidence` in the same transaction as the delete: it
   copies each decision into the minimal `private.meet_consent_proofs` (who,
   when, notice version, hash, revision, choice, `room_seq`, no content), removes
-  the originals and keeps the proof for three years. See
+  the originals and keeps the proof for three years. While transcript capture
+  is active or draining, the delete is refused and the meeting API answers 409
+  `MEETING_DELETE_BLOCKED`, which Meet shows as "can't be deleted yet". See
   [Mira host consent](/platform/features/meet-mira-host-consent#deleting-a-meeting-or-workspace).
 - Withdrawal does not hide speech captured before it; removing that speech is
   erasure, a separate later step.

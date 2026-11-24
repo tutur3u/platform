@@ -138,7 +138,7 @@ describe('before the migration that adds the functions is applied', () => {
   it('falls back to the bare meeting delete, scoped to its workspace', async () => {
     const { client, from, eq, select } = adminWithTables({
       data: null,
-      error: { code: '42883' },
+      error: missing,
     });
     await expect(
       deleteMeetingErasingMira(client, WS, MEETING)
@@ -147,6 +147,18 @@ describe('before the migration that adds the functions is applied', () => {
     expect(eq).toHaveBeenCalledWith('id', MEETING);
     expect(eq).toHaveBeenCalledWith('ws_id', WS);
     expect(select).toHaveBeenCalledWith('id');
+  });
+
+  it('does not fall back when a function inside the erase is undefined', async () => {
+    const { client, from } = adminWithTables({
+      data: null,
+      error: { code: '42883' },
+    });
+    expect(await deleteMeetingErasingMira(client, WS, MEETING)).toEqual({
+      data: null,
+      error: { code: '42883' },
+    });
+    expect(from).not.toHaveBeenCalled();
   });
 
   it('does not fall back on any other database error', async () => {

@@ -3,6 +3,7 @@
 import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { TTR_URL } from '../../constants/common';
 import { showMeetingAiFailure } from './failure-toast';
 import { MeetingAiStatusBar } from './meeting-ai-status-bar';
 import { meetingAiStatus } from './meeting-ai-status';
@@ -70,7 +71,7 @@ export function MeetingAiPanel({
         inCall={inCall}
         busy={ai.busy || choose.isPending}
         creditFailure={ai.creditFailure}
-        billingHref={`https://tuturuuu.com/${encodeURIComponent(ai.wsId)}/billing`}
+        billingHref={`${TTR_URL}/${encodeURIComponent(ai.wsId)}/billing`}
         onStart={() => run(start)}
         onFinish={(sessionId) => run(() => finish(sessionId))}
         onRetryNotes={(sessionId) => run(() => ai.finish(sessionId))}

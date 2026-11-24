@@ -95,12 +95,19 @@ async function deleteRunWorkspace(
   const removed = await postPrivateRpc(
     context,
     'delete_workspace_erasing_mira',
-    { p_ws_id: wsId, p_only_non_personal: true }
+    { p_ws_id: wsId, p_only_non_personal: true },
+    undefined,
+    { readErrorCode: true }
   );
   // The function does not exist until its migration is applied, which can
-  // trail this deploy (PostgREST answers 404); the bare delete below is still
-  // guarded by the evidence tables' RESTRICT.
-  if (removed.kind === 'http' && removed.status === 404)
+  // trail this deploy: PostgREST answers 404 with PGRST202. Any other 404 is
+  // not a missing function and fails. The bare delete below is still guarded
+  // by the evidence tables' RESTRICT.
+  if (
+    removed.kind === 'http' &&
+    removed.status === 404 &&
+    removed.code === 'PGRST202'
+  )
     return deleteRunWorkspaceBare(context, wsId, runId);
   // A redirect, 5xx or unreadable answer leaves the delete unconfirmed.
   if (removed.kind !== 'ok') return rpcFailure(removed);

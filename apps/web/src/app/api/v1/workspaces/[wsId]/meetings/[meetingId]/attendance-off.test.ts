@@ -87,7 +87,7 @@ it('reports a failed delete without claiming success', async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {});
   deleteMock.mockResolvedValue({
     data: null,
-    error: { code: '23503', message: 'blocked' },
+    error: { code: 'XX000', message: 'failed' },
   });
   expect((await call()).status).toBe(500);
 });
@@ -117,4 +117,17 @@ it('does not treat a meeting lookup error as a missing meeting', async () => {
   expect(response.status).toBe(500);
   expect(deleteMock).not.toHaveBeenCalled();
   expect(imports.count).toBe(0);
+});
+
+it.each([
+  ['a live transcript capture', '55000'],
+  ['a row outside the erase', '23503'],
+])('answers 409 when %s still holds the meeting', async (_, code) => {
+  deleteMock.mockResolvedValue({ data: null, error: { code } });
+  const response = await call();
+  expect(response.status).toBe(409);
+  await expect(response.json()).resolves.toEqual({
+    error: 'This meeting cannot be deleted yet',
+    code: 'MEETING_DELETE_BLOCKED',
+  });
 });

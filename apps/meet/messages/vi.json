@@ -6101,6 +6101,7 @@
       "create_failed": "Không thể tạo cuộc họp. Vui lòng thử lại.",
       "default_title": "Cuộc họp của {name}",
       "delete": "Xóa",
+      "delete_blocked": "Chưa thể xóa cuộc họp này. Hãy dừng việc ghi lời thoại đang chạy trong cuộc họp rồi thử lại.",
       "delete_description": "Cuộc họp và các bản ghi của nó sẽ bị xóa vĩnh viễn.",
       "delete_failed": "Không thể xóa cuộc họp. Vui lòng thử lại.",
       "delete_title": "Xóa cuộc họp này?",

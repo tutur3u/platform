@@ -200,7 +200,7 @@ const waitingRoom = {
   state: { ...room.state, admission: 'waiting' },
 } as unknown as MeetRoomController;
 
-it('(gap b) tells someone outside the room that Mira is on, without naming anyone', async () => {
+it('tells someone outside the room that Mira is on, without naming anyone', async () => {
   f.read.mockResolvedValue(outside({ joinRevision: 2 }));
   showLobby();
   expect(await screen.findByText(m.lobby_notice)).toBeTruthy();
@@ -211,14 +211,14 @@ it('(gap b) tells someone outside the room that Mira is on, without naming anyon
   ).toBeTruthy();
 });
 
-it('(gap b) shows no Mira notice while no acceptance is open', async () => {
+it('shows no Mira notice while no acceptance is open', async () => {
   f.read.mockResolvedValue(outside({ joinRevision: 0 }));
   showLobby();
   await screen.findByRole('checkbox', { name: m.box_label });
   expect(screen.queryByText(m.lobby_notice)).toBeNull();
 });
 
-it('(gap b) shows the notice in the waiting room and learns of a later acceptance', async () => {
+it('shows the notice in the waiting room and learns of a later acceptance', async () => {
   f.read.mockResolvedValue(outside({ joinRevision: 0 }));
   showLobby(vi.fn(), waitingRoom);
   await screen.findByRole('checkbox', { name: m.box_label });
@@ -229,7 +229,7 @@ it('(gap b) shows the notice in the waiting room and learns of a later acceptanc
   expect(await screen.findByText(m.lobby_notice)).toBeTruthy();
 });
 
-it('(gap b) refreshes only while Mira is offered and the caller is outside', async () => {
+it('refreshes only while Mira is offered and the caller is outside', async () => {
   f.read.mockResolvedValue(outside({ joinRevision: 1 }));
   showLobby();
   await screen.findByText(m.lobby_notice);
@@ -246,14 +246,14 @@ it('(gap b) refreshes only while Mira is offered and the caller is outside', asy
   expect(read(accepted)).toBe(false);
 });
 
-it('(gap c) starts the lobby box unticked for someone whose own last choice here was off', async () => {
+it('starts the lobby box unticked for someone whose own last choice here was off', async () => {
   f.read.mockResolvedValue(outside({ joinRevision: 2, joinLastChoice: 'off' }));
   showLobby();
   const box = await screen.findByRole('checkbox', { name: m.box_label });
   expect(box.getAttribute('aria-checked')).toBe('false');
 });
 
-it('(gap c) keeps the off over a remembered ticked Join state, and ticks otherwise', async () => {
+it('keeps the off over a remembered ticked Join state, and ticks otherwise', async () => {
   rememberMiraJoinChoice('room', {
     ticked: true,
     textHash: 'c'.repeat(64),

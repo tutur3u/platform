@@ -17,6 +17,10 @@ vi.mock('@tuturuuu/internal-api', () => ({
   draftMeetAiNotes: f.draft,
 }));
 vi.mock('./meeting-session-notes', () => ({ MeetingSessionNotes: () => null }));
+// The billing link uses the configured platform origin.
+vi.mock('../../constants/common', () => ({
+  TTR_URL: 'https://web.example.test',
+}));
 
 import { MeetingAiPanel } from './meeting-ai-panel';
 import {
@@ -238,7 +242,7 @@ it('(gap d) tells the host the plan lacks transcription after a 402, with a bill
   expect(ai.credits_model_not_on_plan).toMatch(/plan.*transcription/);
   expect(screen.queryByText(ai.status_ready_title)).toBeNull();
   const link = screen.getByRole('link', { name: ai.credits_billing });
-  expect(link.getAttribute('href')).toBe('https://tuturuuu.com/ws/billing');
+  expect(link.getAttribute('href')).toBe('https://web.example.test/ws/billing');
   // The host can start again once the plan changes.
   expect(screen.getByRole('button', { name: ai.start_again })).toBeTruthy();
 });

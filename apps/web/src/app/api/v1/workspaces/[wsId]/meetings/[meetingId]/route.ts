@@ -9,6 +9,27 @@ import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { deleteMeetingErasingMira } from '@/lib/meet/mira-evidence-erasure';
 import { canManageLegacyRecording } from './_lib/recording-access';
 
+/**
+ * The database refuses the delete while something still holds the meeting:
+ * a live transcript capture keeps its consent evidence (55000), or a row
+ * outside the erase still references it (23503). The meeting stays; the
+ * client explains that it cannot be deleted yet.
+ */
+function deleteBlockedResponse(error: unknown) {
+  const code =
+    typeof error === 'object' && error !== null
+      ? (error as { code?: unknown }).code
+      : undefined;
+  if (code !== '23503' && code !== '55000') return null;
+  return NextResponse.json(
+    {
+      error: 'This meeting cannot be deleted yet',
+      code: 'MEETING_DELETE_BLOCKED',
+    },
+    { status: 409 }
+  );
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
@@ -251,6 +272,8 @@ export async function DELETE(
         meetingId
       );
       if (removed.error) {
+        const blocked = deleteBlockedResponse(removed.error);
+        if (blocked) return blocked;
         console.error('Error deleting meeting:', removed.error);
         return NextResponse.json(
           { error: 'Failed to delete meeting' },
@@ -294,7 +317,10 @@ export async function DELETE(
               p_meeting_id: string;
               p_plan: unknown;
             }
-          ): Promise<{ data: unknown; error: { message?: string } | null }>;
+          ): Promise<{
+            data: unknown;
+            error: { code?: string; message?: string } | null;
+          }>;
         };
       }
     )
@@ -305,6 +331,8 @@ export async function DELETE(
         p_plan: plan,
       });
     if (removed.error) {
+      const blocked = deleteBlockedResponse(removed.error);
+      if (blocked) return blocked;
       console.error('Error deleting meeting:', removed.error);
       return NextResponse.json(
         { error: 'Failed to delete meeting' },

@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { deleteWorkspaceErasingMira } from '../meet/mira-evidence-erasure';
 import {
   GUARD_WORKSPACE_SELF_REMOVAL,
   lastManagerResponse,
@@ -454,44 +455,6 @@ async function deleteWorkspaceWithAttendanceIntent(
     record.phase = 'confirmed';
     record.sqlDone = true;
   }
-  return { error: null };
-}
-
-/**
- * Deletes the workspace and erases its Meet Mira consent evidence in one
- * transaction; the evidence blocks a bare delete.
- */
-async function deleteWorkspaceErasingMira(
-  sbAdmin: TypedSupabaseClient,
-  wsId: string
-): Promise<{ error: unknown }> {
-  const removed = await (
-    sbAdmin as unknown as {
-      schema(name: 'private'): {
-        rpc(
-          fn: 'delete_workspace_erasing_mira',
-          args: { p_ws_id: string }
-        ): Promise<{ data: unknown; error: unknown }>;
-      };
-    }
-  )
-    .schema('private')
-    .rpc('delete_workspace_erasing_mira', { p_ws_id: wsId });
-  // The function does not exist until its migration is applied, which can
-  // trail this deploy; the bare delete is still guarded by RESTRICT.
-  const code =
-    typeof removed.error === 'object' && removed.error !== null
-      ? (removed.error as { code?: unknown }).code
-      : undefined;
-  if (code === 'PGRST202' || code === '42883') {
-    const bare = await sbAdmin.from('workspaces').delete().eq('id', wsId);
-    return { error: bare.error };
-  }
-  if (removed.error) return { error: removed.error };
-  if (removed.data !== 'deleted' && removed.data !== 'not_deleted')
-    return {
-      error: new Error('Workspace delete returned an unexpected result'),
-    };
   return { error: null };
 }
 

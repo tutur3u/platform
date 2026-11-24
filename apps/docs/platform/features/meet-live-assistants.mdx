@@ -203,10 +203,11 @@ still succeeds and an untick is still kept. Every later confirm box starts
 unticked while the participant's own last state is off: from Join, from
 turning Mira off in the call, or from another tab or device (the room view
 returns the account's `lastChoice`, kept across acceptance revisions). A Join
-recording that fails retries on the next read without a toast. An untick is
-recorded even when no acceptance is open yet: an explicit off at revision 0
-with source `join`, which the room treats like any off (it declines the
-transcript). A tick records nothing without an acceptance, since an on choice
+recording that fails retries on the next read without a toast. Joining with
+the box unticked, whether the participant unticked it or left an unticked
+workspace default as it was, is recorded even when no acceptance is open yet:
+an explicit off at revision 0 with source `join`, which the room treats like
+any off (it declines the transcript). A tick records nothing without an acceptance, since an on choice
 needs a current one; the host's later acceptance asks for a confirm. The room is the
 fence: an on choice is refused (`MIRA_ROOM_JOIN_OVER_OFF`) when that account's
 earlier choice in the meeting was off, in any revision, unless its source is

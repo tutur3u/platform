@@ -6101,6 +6101,7 @@
       "create_failed": "Could not create the meeting. Please try again.",
       "default_title": "{name}'s meeting",
       "delete": "Delete",
+      "delete_blocked": "This meeting can't be deleted yet. End any transcript capture running in it, then try again.",
       "delete_description": "The meeting and its recordings will be permanently deleted.",
       "delete_failed": "Could not delete the meeting. Please try again.",
       "delete_title": "Delete this meeting?",

@@ -101,10 +101,11 @@ export function meetingAiStatus(input: Input): MeetingAiStatus {
     return { kind: 'detached', session: active };
   }
   const last = latest(data.sessions);
-  // A billing refusal stopped capture and then ended the session. Its notes
-  // are of an empty transcript, so they are not "ready"; the refusal is what
-  // the host has to see until they start again.
-  if (input.creditFailure)
+  // A plan without transcription stopped capture and then ended the session.
+  // Its notes are of an empty transcript, so they are not "ready"; the refusal
+  // is what the host has to see until they start again. Other credit failures
+  // keep the session's own status.
+  if (input.creditFailure === 'credits_model_not_on_plan')
     return { kind: 'failed', session: last ?? null, retryable: false };
   if (!last) return { kind: 'idle' };
   if (last.notes_status === 'completed')

@@ -117,6 +117,20 @@ describe('meeting AI status', () => {
     ).toMatchObject({ kind: 'failed', retryable: false });
   });
 
+  it('lets other credit failures keep the ended session\'s own status', () => {
+    const ended = session({
+      ended_at: '2026-11-23T09:59:00Z',
+      notes_status: 'completed',
+    });
+    expect(
+      meetingAiStatus({
+        ...base,
+        data: state([ended]),
+        creditFailure: 'credits_exhausted',
+      }).kind
+    ).toBe('ready');
+  });
+
   it('keeps showing a billing refusal after the session ended, never "ready"', () => {
     // The refusal stopped capture and the session was finished with notes of
     // an empty transcript, which the server reports as completed.

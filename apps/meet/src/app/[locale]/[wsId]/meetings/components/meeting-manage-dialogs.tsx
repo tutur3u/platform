@@ -2,6 +2,7 @@
 
 import {
   deleteWorkspaceMeeting,
+  InternalApiError,
   updateWorkspaceMeeting,
 } from '@tuturuuu/internal-api';
 import {
@@ -103,9 +104,14 @@ export function MeetingManageDialogs({
       setSubmission({ kind: 'idle' });
       onClose();
       onChanged();
-    } catch {
+    } catch (error) {
       setSubmission({ kind: 'idle' });
-      toast.error(t('delete_failed'));
+      toast.error(
+        error instanceof InternalApiError &&
+          error.code === 'MEETING_DELETE_BLOCKED'
+          ? t('delete_blocked')
+          : t('delete_failed')
+      );
     }
   };
 

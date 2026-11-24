@@ -354,9 +354,26 @@ it('ends the slot as unknown when the workspace delete is unconfirmed', async ()
   }
 });
 
-it('falls back to the guarded bare delete while the erase function is not deployed yet', async () => {
+const missingFunction = () =>
+  new Response(JSON.stringify({ code: 'PGRST202' }), { status: 404 });
+
+it('fails without a bare delete when a 404 does not name a missing function', async () => {
   const { state, calls } = context(
     ledger({ workspaceDelete: new Response('{}', { status: 404 }) }),
+    {}
+  );
+  await expect(cleanupQaTestUsers(state)).resolves.toMatchObject({
+    outcome: 'failed',
+  });
+  expect(
+    calls.some((call) => call.path.startsWith('/rest/v1/workspaces'))
+  ).toBe(false);
+  expect(settled(calls)).toBe(false);
+});
+
+it('falls back to the guarded bare delete while the erase function is not deployed yet', async () => {
+  const { state, calls } = context(
+    ledger({ workspaceDelete: missingFunction() }),
     {}
   );
   // The fixture's bare table delete answers 409 (Mira evidence would refuse it),
@@ -374,7 +391,7 @@ it('falls back to the guarded bare delete while the erase function is not deploy
 
 it('records the removal after the fallback delete succeeds', async () => {
   const route = ledger({
-    workspaceDelete: new Response('{}', { status: 404 }),
+    workspaceDelete: missingFunction(),
   });
   const { state, calls } = context((url, init) =>
     url.pathname === '/rest/v1/workspaces'
@@ -389,7 +406,7 @@ it('records the removal after the fallback delete succeeds', async () => {
 
 it('stops before the fallback delete when the Cron Control fence closes', async () => {
   const { state, calls } = context(
-    ledger({ workspaceDelete: new Response('{}', { status: 404 }) }),
+    ledger({ workspaceDelete: missingFunction() }),
     {
       fence: async (seen) =>
         !seen.some((call) =>

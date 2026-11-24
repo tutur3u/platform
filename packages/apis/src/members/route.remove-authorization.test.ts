@@ -276,6 +276,7 @@ describe('member removal target identity', () => {
     ]);
     expect(privateRpc).toHaveBeenCalledWith('delete_workspace_erasing_mira', {
       p_ws_id: 'ws-a',
+      p_only_non_personal: false,
     });
   });
 
