@@ -75,7 +75,10 @@ export type MiraChoiceEvidence = {
    * choices omit it and keep the stored default.
    */
   noticeMode?: 'self';
-  /** Per-speaker capture is on: refuse to store a self choice without its mode. */
+  /**
+   * The room is in per-speaker mode: an "on" must be stored with its mode.
+   * Ignored for "off", which is always stored, with or without the mode.
+   */
   requireNoticeMode?: boolean;
 };
 
@@ -86,7 +89,44 @@ export type MiraChoiceEvidence = {
 let noticeModeMissingAt: number | undefined;
 export const NOTICE_MODE_PROBE_TTL_MS = 60_000;
 
-/** Appends one participant's own choice; accounts are pseudonymized in SQL. */
+const noticeModeMissing = () =>
+  noticeModeMissingAt !== undefined &&
+  Date.now() - noticeModeMissingAt < NOTICE_MODE_PROBE_TTL_MS;
+
+/** PostgREST answers these when a column is unknown to its schema cache. */
+const MISSING_COLUMN = new Set(['PGRST204', '42703']);
+
+/**
+ * Whether a choice can be stored with its notice mode. Checked before the
+ * room records an "on", so an "on" that would need the mode is refused before
+ * the room changes. A failed probe throws; the caller fails closed.
+ */
+export async function canStoreMiraNoticeMode() {
+  if (noticeModeMissing()) return false;
+  const db = await privateDb();
+  // The column is not in the generated types until its migration lands.
+  const table = db.from('meet_mira_participant_choices') as unknown as {
+    select: (columns: string) => {
+      limit: (count: number) => PromiseLike<{ error: { code?: string } | null }>;
+    };
+  };
+  const { error } = await table.select('notice_mode').limit(0);
+  if (!error) {
+    noticeModeMissingAt = undefined;
+    return true;
+  }
+  if (MISSING_COLUMN.has(error.code ?? '')) {
+    noticeModeMissingAt = Date.now();
+    return false;
+  }
+  throw new Error('Mira choice storage could not be checked');
+}
+
+/**
+ * Appends one participant's own choice; accounts are pseudonymized in SQL.
+ * An "off" is always stored: without the notice mode when the column cannot
+ * take it, so a withdrawal is never lost.
+ */
 export async function recordMiraChoice(input: MiraChoiceEvidence) {
   const db = await privateDb();
   const row = {
@@ -103,22 +143,20 @@ export async function recordMiraChoice(input: MiraChoiceEvidence) {
     text_hash: input.textHash,
     locale: input.locale,
   };
-  const missing =
-    noticeModeMissingAt !== undefined &&
-    Date.now() - noticeModeMissingAt < NOTICE_MODE_PROBE_TTL_MS;
-  const withMode = input.noticeMode === 'self' && !missing;
-  if (input.noticeMode === 'self' && missing && input.requireNoticeMode)
+  const required = input.choice === 'on' && !!input.requireNoticeMode;
+  const self = input.noticeMode === 'self';
+  if (self && required && noticeModeMissing())
     throw new Error('Mira choice notice mode cannot be stored');
+  const withMode = self && (required || !noticeModeMissing());
   const insert = (mode: boolean) =>
     db
       .from('meet_mira_participant_choices')
       .insert((mode ? { ...row, notice_mode: 'self' } : row) as typeof row);
   let { error } = await insert(withMode);
   // Feature check: without the column PostgREST answers PGRST204.
-  if (withMode && error?.code === 'PGRST204') {
+  if (withMode && MISSING_COLUMN.has(error?.code ?? '')) {
     noticeModeMissingAt = Date.now();
-    if (input.requireNoticeMode)
-      throw new Error('Mira choice notice mode cannot be stored');
+    if (required) throw new Error('Mira choice notice mode cannot be stored');
     ({ error } = await insert(false));
   } else if (withMode && !error) noticeModeMissingAt = undefined;
   if (error) throw new Error('Mira choice could not be recorded');

@@ -8,7 +8,7 @@ const f = vi.hoisted(() => ({
   record: vi.fn(),
   boxDefault: vi.fn(),
   openRevision: vi.fn(),
-  perSpeaker: vi.fn(),
+  canStore: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
@@ -27,6 +27,7 @@ vi.mock(
   '../../../../../features/live-assistant/server/room-mira-evidence',
   () => ({
     recordMiraChoice: f.record,
+    canStoreMiraNoticeMode: f.canStore,
     readMiraBoxTickedByDefault: f.boxDefault,
     readOpenMiraAcceptanceRevision: f.openRevision,
   })
@@ -86,6 +87,7 @@ beforeEach(() => {
   f.room.mockResolvedValue(read);
   f.boxDefault.mockResolvedValue(true);
   f.record.mockResolvedValue(undefined);
+  f.canStore.mockResolvedValue(true);
 });
 
 it('hides Mira without touching the room when it is unavailable', async () => {
@@ -245,23 +247,55 @@ it('never refuses off for a stale notice mode', async () => {
   );
 });
 
+it('records a per-speaker off without requiring its mode or reading the room', async () => {
+  roomIn('self');
+  f.canStore.mockRejectedValue(new Error('probe down'));
+  await post(choice({ choice: 'off', noticeMode: 'self' }));
+  expect(choiceCalls()).toHaveLength(1);
+  expect(f.canStore).not.toHaveBeenCalled();
+  expect(f.record).toHaveBeenCalledWith(
+    expect.objectContaining({
+      choice: 'off',
+      noticeMode: 'self',
+      requireNoticeMode: false,
+    })
+  );
+  const reads = f.room.mock.calls.filter(
+    ([, command]) =>
+      (command as { action: string }).action === 'transcript.consent.read'
+  );
+  expect(reads).toHaveLength(0);
+});
+
 it('keeps the room-capture on payload and evidence unchanged', async () => {
   roomIn('room');
   await post(choice());
   expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('noticeMode');
-  expect(f.perSpeaker).not.toHaveBeenCalled();
+  expect(f.canStore).not.toHaveBeenCalled();
 });
 
-it.each([true, false])(
-  'records a per-speaker on with its notice mode (flag on: %s)',
-  async (flag) => {
+it('requires the stored mode for an on in a per-speaker room', async () => {
+  roomIn('self');
+  await post(choice({ noticeMode: 'self' }));
+  expect(f.canStore).toHaveBeenCalledOnce();
+  expect(f.record).toHaveBeenCalledWith(
+    expect.objectContaining({ noticeMode: 'self', requireNoticeMode: true })
+  );
+});
+
+it.each([
+  ['the column is missing', () => f.canStore.mockResolvedValue(false)],
+  ['the storage check fails', () => f.canStore.mockRejectedValue(new Error('x'))],
+])(
+  'refuses a per-speaker on before the room changes when %s',
+  async (_label, arrange) => {
     roomIn('self');
-    f.perSpeaker.mockResolvedValue(flag);
-    await post(choice({ noticeMode: 'self' }));
-    expect(f.record).toHaveBeenCalledWith(
-      expect.objectContaining({ noticeMode: 'self', requireNoticeMode: flag })
-    );
-    expect(f.perSpeaker).toHaveBeenCalledWith('ws');
+    arrange();
+    await expect(post(choice({ noticeMode: 'self' }))).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(choiceCalls()).toHaveLength(0);
+    expect(f.record).not.toHaveBeenCalled();
   }
 );
 

@@ -17,8 +17,8 @@ import {
 } from '../../../../../features/live-assistant/server/room-mira-acceptance';
 import { readRoomMiraAvailability } from '../../../../../features/live-assistant/server/room-mira-authority';
 import { requireCurrentMiraNoticeMode } from '../../../../../features/live-assistant/server/room-mira-notice-mode';
-import { meetPerSpeakerEnabled } from '../../../../../features/meeting-ai/server/per-speaker-flag';
 import {
+  canStoreMiraNoticeMode,
   readMiraBoxTickedByDefault,
   readOpenMiraAcceptanceRevision,
   recordMiraChoice,
@@ -52,6 +52,9 @@ const command = z.discriminatedUnion('action', [
   z.object({ action: z.literal('end') }).strict(),
   z.object({ action: z.literal('report_minor') }).strict(),
 ]);
+
+/** A storage check that cannot run counts as unable to store: fail closed. */
+const canStoreModeOrFalse = () => canStoreMiraNoticeMode().catch(() => false);
 
 const isGuest = (access: MeetCallRouteAccess) =>
   'guest' in access && access.guest === true;
@@ -117,9 +120,19 @@ export async function POST(
     // Off always records, so anyone can turn Mira off for themselves.
     if (data.choice === 'on' && !(await readRoomMiraAvailability(access)))
       throw new MeetCallAccessError(403, 'Room Mira is unavailable');
-    // On counts only under the notice for the room's current transcript mode.
-    if (data.choice === 'on')
-      await requireCurrentMiraNoticeMode(access, data.noticeMode);
+    // On counts only under the notice for the room's current transcript
+    // mode. In a per-speaker room it also needs storage for that mode, checked
+    // before the room changes so a refusal leaves the room untouched.
+    let requireNoticeMode = false;
+    if (data.choice === 'on') {
+      const current = await requireCurrentMiraNoticeMode(
+        access,
+        data.noticeMode
+      );
+      requireNoticeMode = current === 'self';
+      if (requireNoticeMode && !(await canStoreModeOrFalse()))
+        throw new MeetCallAccessError(503, 'Your choice could not be saved');
+    }
     await callRoomService(access, {
       action: 'mira.room.choice',
       choice: data.choice,
@@ -141,12 +154,7 @@ export async function POST(
         textHash: data.textHash,
         locale: data.locale,
         ...(data.noticeMode === 'self'
-          ? {
-              noticeMode: 'self' as const,
-              requireNoticeMode: await meetPerSpeakerEnabled(
-                access.meeting.ws_id
-              ),
-            }
+          ? { noticeMode: 'self' as const, requireNoticeMode }
           : {}),
       });
     } catch (error) {
