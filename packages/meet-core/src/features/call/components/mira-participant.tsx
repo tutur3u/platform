@@ -5,8 +5,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ComponentProps, useEffect, useId, useState } from 'react';
-import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
+import { type ComponentProps, useEffect, useState } from 'react';
 import { MiraAvatar } from './mira-profile';
 import { MiraWhereStrip } from './mira-where-strip';
 
@@ -39,7 +38,6 @@ export function MiraParticipant({
   onChat: () => void;
 }) {
   const t = useTranslations('meet.live');
-  const adultNoticeId = useId();
   const [speakingSession, setSpeakingSession] = useState<string>();
   useEffect(() => {
     if (!sessionId) return;
@@ -187,12 +185,10 @@ export function MiraParticipant({
               variant="outline"
               size="sm"
               className="h-7 motion-reduce:transition-none"
-              aria-describedby={adultNoticeId}
               onClick={onChat}
             >
               <MessageSquare aria-hidden className="size-3.5" />
               {t('tile_open_chat')}
-              <MiraAdultNotice variant="compact" id={adultNoticeId} />
             </Button>
           )}
         </div>

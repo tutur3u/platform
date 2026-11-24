@@ -1,12 +1,20 @@
 'use client';
 
-import { Check, Loader2, Pause, Power, TriangleAlert } from '@tuturuuu/icons';
+import {
+  Check,
+  Loader2,
+  Lock,
+  Pause,
+  Power,
+  TriangleAlert,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import { MiraConsentBox } from '../../live-assistant/mira-consent-box';
+import { MiraAbout } from './mira-about';
 import { RoomMiraChip, type RoomMiraChipState } from './room-mira-chip';
 import {
   type RoomMiraAvailable,
@@ -17,55 +25,46 @@ import {
 export { roomMiraConsentKey };
 
 /**
- * Room Mira for every admitted participant. The header placement is the
- * persistent indicator: while an acceptance is current it always shows who
- * turned Mira on, and it opens on its own until this person confirms. The
- * chat placement summarizes the same state beside the composer, and shows
- * `details` (what the host allows Mira to do) when room Mira is unavailable.
+ * The one Mira control in the call header, for every admitted participant.
+ * While an acceptance is current it always names who turned Mira on (its
+ * accessible name and the popover's first line), and it opens on its own until
+ * this person confirms. The popover holds the participant's choice, who is
+ * using Mira privately, the host's turn-off and About Mira, which gathers
+ * every notice.
  */
 export function RoomMiraNotice({
   meetingId,
-  details,
-  placement = 'chat',
+  privateUsers = [],
 }: {
   meetingId: string;
-  details?: ReactNode;
-  placement?: 'chat' | 'header';
+  /** People using Mira privately; it hears only their own microphone. */
+  privateUsers?: readonly { userId: string; displayName: string }[];
 }) {
   const t = useTranslations('meet.mira_consent');
-  const tc = useTranslations('meet.call');
+  const tl = useTranslations('meet.live');
   const mira = useRoomMira(meetingId);
   const [open, setOpen] = useState<boolean | null>(null);
   const data = mira.data;
-  if (!data) {
-    if (placement === 'header' || mira.loading || !details) return null;
+  // Only an acceptor sees an entry point while Mira is off.
+  if (!data || (!data.acceptance && !data.canAccept)) return null;
+  const privateList = privateUsers.length > 0 && (
+    <ul className="space-y-1 text-muted-foreground text-xs">
+      {privateUsers.map((person) => (
+        <li key={person.userId} role="status" className="flex gap-1.5">
+          <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          {tl('phase_private_indicator', { name: person.displayName })}
+        </li>
+      ))}
+    </ul>
+  );
+  if (!data.acceptance)
     return (
-      <RoomMiraChip
-        state="permissions"
-        label={tc('miraEverywhere.permissions.title')}
-        detailsLabel={tc('room_mira_details')}
-        title={tc('miraEverywhere.permissions.title')}
-      >
-        {details}
-      </RoomMiraChip>
-    );
-  }
-  if (!data.acceptance) {
-    // Only an acceptor sees an entry point while Mira is off.
-    if (!data.canAccept) return null;
-    return (
-      <RoomMiraChip
-        state="host"
-        label={t('host_turn_on')}
-        detailsLabel={tc('room_mira_details')}
-        title={t('host_title')}
-        variant={placement}
-      >
+      <RoomMiraChip state="host" title={t('host_turn_on')}>
+        <p className="font-medium">{t('host_title')}</p>
         <HostAcceptance mira={mira} />
-        {placement === 'chat' && details}
+        <MiraAbout />
       </RoomMiraChip>
     );
-  }
   const state: RoomMiraChipState = data.pausing
     ? 'pausing'
     : data.choice === 'on'
@@ -73,24 +72,31 @@ export function RoomMiraNotice({
       : data.choice === 'off'
         ? 'off'
         : 'choose';
-  const needsChoice = state === 'choose';
   const label = t('indicator_on', { name: data.acceptance.acceptorName });
   return (
     <RoomMiraChip
       state={state}
-      label={label}
-      detailsLabel={tc('room_mira_details')}
       title={label}
-      variant={placement}
-      open={placement === 'header' ? (open ?? needsChoice) : undefined}
-      onOpenChange={placement === 'header' ? setOpen : undefined}
+      description={t(
+        state === 'pausing'
+          ? 'pausing'
+          : state === 'on'
+            ? 'you_on'
+            : state === 'off'
+              ? 'you_off'
+              : 'you_choose'
+      )}
+      open={open ?? state === 'choose'}
+      onOpenChange={setOpen}
     >
+      <p className="font-medium">{label}</p>
       <ParticipantChoice
         key={`${data.acceptance.revision}:${data.choice}`}
         data={data}
         mira={mira}
         onDone={() => setOpen(false)}
       />
+      {privateList}
       {data.canAccept && (
         <Button
           type="button"
@@ -104,8 +110,9 @@ export function RoomMiraNotice({
           {t('host_turn_off')}
         </Button>
       )}
-      <ReportMinor mira={mira} />
-      {placement === 'chat' && details}
+      <MiraAbout>
+        <ReportMinor mira={mira} />
+      </MiraAbout>
     </RoomMiraChip>
   );
 }
@@ -246,7 +253,7 @@ function ReportMinor({ mira }: { mira: Mira }) {
   const t = useTranslations('meet.mira_consent');
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="space-y-1 border-t pt-2">
+    <div className="space-y-1">
       {confirming && (
         <p role="status" className="text-muted-foreground text-xs">
           {t('report_minor_hint')}

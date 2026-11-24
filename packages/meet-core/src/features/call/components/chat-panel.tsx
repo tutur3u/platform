@@ -29,6 +29,12 @@ import { isMeetAssistant } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
 import type { MeetParticipantIdentityFlags } from '../lib/participant-identity';
 import {
+  miraLineKey,
+  readDismissedMiraLines,
+  visibleChatMessages,
+  writeDismissedMiraLines,
+} from '../lib/mira-system-lines';
+import {
   matchMiraSlashCommands,
   type MiraSlashCommand,
   miraSlashCommandDraft,
@@ -46,23 +52,17 @@ import {
 } from './assistant-workspace-picker';
 import { ChatMessageBody } from './chat-message-body';
 import { ChatAuthor } from './chat-author';
-import {
-  MiraPermissionsCard,
-  type MiraPermissionsProps,
-} from './mira-permissions-card';
+import { ChatSystemLine } from './chat-system-line';
+import type { MiraPermissionsProps } from './mira-permissions-card';
 import { MiraLiveDot, MiraModeTag } from './mira-presence';
 import { MiraAvatar, MiraProfile } from './mira-profile';
-import { RoomMiraNotice, roomMiraConsentKey } from './room-mira-notice';
+import { roomMiraConsentKey } from './use-room-mira';
 import {
   type MiraToolAction,
   type MiraToolCall,
   MiraToolCard,
 } from './mira-tool-card';
-import {
-  type MiraSurface,
-  type MiraSurfaceActivity,
-  MiraWhereStrip,
-} from './mira-where-strip';
+import type { MiraSurface, MiraSurfaceActivity } from './mira-where-strip';
 
 type RoomMira = {
   typing?: boolean;
@@ -180,6 +180,14 @@ export function ChatPanel({
     enabled: !!selfUserId,
     retry: false,
   });
+  const [dismissedLines, setDismissedLines] = useState(() =>
+    readDismissedMiraLines(meetingId)
+  );
+  const dismissLine = (key: string) => {
+    const next = new Set(dismissedLines).add(key);
+    setDismissedLines(next);
+    writeDismissedMiraLines(meetingId, next);
+  };
   const [assistantWorkspace, setAssistantWorkspace] =
     useState<string>('personal');
   const [draft, setDraft] = useState(''),
@@ -319,77 +327,91 @@ export function ChatPanel({
       )}
       <ScrollArea className="[&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 min-h-0 min-w-0 flex-1 px-4 py-3 [&_[data-radix-scroll-area-viewport]>div]:w-full [&_[data-radix-scroll-area-viewport]>div]:max-w-full">
         <ol aria-live="polite" aria-relevant="additions" className="space-y-5">
-          {chat.map((message) => (
-            <li key={message.id} className="@container flex gap-2">
-              {isMeetAssistant(message) ? (
-                <MiraProfile>
-                  <MiraAvatar />
-                </MiraProfile>
-              ) : (
-                <Avatar className="mt-0.5 size-7 shrink-0">
-                  <AvatarImage src={message.avatarUrl} alt="" />
-                  <AvatarFallback>
-                    {message.displayName.slice(0, 1)}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  {isMeetAssistant(message) ? (
-                    <span className="flex flex-wrap items-center gap-1 text-xs">
-                      <MiraProfile />
-                      <MiraModeTag
-                        compact
-                        mode={
-                          message.displayName === 'Mira Live' ? 'live' : 'chat'
-                        }
+          {visibleChatMessages(chat, dismissedLines).map((message) =>
+            message.notice ? (
+              <li key={message.id}>
+                <ChatSystemLine
+                  notice={message.notice}
+                  onDismiss={() => dismissLine(miraLineKey(message))}
+                />
+              </li>
+            ) : (
+              <li key={message.id} className="@container flex gap-2">
+                {isMeetAssistant(message) ? (
+                  <MiraProfile>
+                    <MiraAvatar />
+                  </MiraProfile>
+                ) : (
+                  <Avatar className="mt-0.5 size-7 shrink-0">
+                    <AvatarImage src={message.avatarUrl} alt="" />
+                    <AvatarFallback>
+                      {message.displayName.slice(0, 1)}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    {isMeetAssistant(message) ? (
+                      <span className="flex flex-wrap items-center gap-1 text-xs">
+                        <MiraProfile />
+                        <MiraModeTag
+                          compact
+                          mode={
+                            message.displayName === 'Mira Live'
+                              ? 'live'
+                              : 'chat'
+                          }
+                        />
+                      </span>
+                    ) : (
+                      <ChatAuthor
+                        message={message}
+                        participants={participants}
+                        self={message.userId === selfUserId}
+                        youLabel={t('you')}
                       />
-                    </span>
-                  ) : (
-                    <ChatAuthor
-                      message={message}
-                      participants={participants}
-                      self={message.userId === selfUserId}
-                      youLabel={t('you')}
+                    )}
+                    <time className="shrink-0 text-[0.65rem] text-muted-foreground">
+                      {new Date(message.createdAt).toLocaleTimeString(
+                        undefined,
+                        {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )}
+                    </time>
+                  </div>
+                  <div className="wrap-break-word min-w-0 text-sm">
+                    <ChatMessageBody
+                      body={message.body}
+                      assistant={isMeetAssistant(message)}
+                    />
+                  </div>
+                  {isMeetAssistant(message) &&
+                    mira?.toolsByMessageId
+                      ?.get(message.id)
+                      ?.map(({ tool, onAuthorizedAction }) => (
+                        <MiraToolCard
+                          key={tool.id}
+                          tool={tool}
+                          onAction={selfUserId ? onAuthorizedAction : undefined}
+                          onFocusSurface={mira.onFocusSurface}
+                        />
+                      ))}
+                  {reviews.data?.some((review) => review.id === message.id) && (
+                    <AssistantPrivateReview
+                      meetingId={meetingId}
+                      selfUserId={selfUserId}
+                      messageId={message.id}
                     />
                   )}
-                  <time className="shrink-0 text-[0.65rem] text-muted-foreground">
-                    {new Date(message.createdAt).toLocaleTimeString(undefined, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </time>
+                  {message.attachmentIds?.map((id) => (
+                    <ChatAttachment key={id} meetingId={meetingId} id={id} />
+                  ))}
                 </div>
-                <div className="wrap-break-word min-w-0 text-sm">
-                  <ChatMessageBody
-                    body={message.body}
-                    assistant={isMeetAssistant(message)}
-                  />
-                </div>
-                {isMeetAssistant(message) &&
-                  mira?.toolsByMessageId
-                    ?.get(message.id)
-                    ?.map(({ tool, onAuthorizedAction }) => (
-                      <MiraToolCard
-                        key={tool.id}
-                        tool={tool}
-                        onAction={selfUserId ? onAuthorizedAction : undefined}
-                        onFocusSurface={mira.onFocusSurface}
-                      />
-                    ))}
-                {reviews.data?.some((review) => review.id === message.id) && (
-                  <AssistantPrivateReview
-                    meetingId={meetingId}
-                    selfUserId={selfUserId}
-                    messageId={message.id}
-                  />
-                )}
-                {message.attachmentIds?.map((id) => (
-                  <ChatAttachment key={id} meetingId={meetingId} id={id} />
-                ))}
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          )}
           {reviews.data
             ?.filter(
               (review) => !chat.some((message) => message.id === review.id)
@@ -428,7 +450,6 @@ export function ChatPanel({
             </div>
             <p className="text-muted-foreground text-sm">{t('chat_empty')}</p>
             <p className="text-muted-foreground text-xs">{t('mira_hint')}</p>
-            <MiraAdultNotice className="justify-center" />
           </div>
         )}
         {miraTyping && (
@@ -448,26 +469,7 @@ export function ChatPanel({
             onOpenPrivateMira={onOpenPrivateMira}
           />
         )}
-        {mira?.activity && (
-          <div className="mt-3">
-            <MiraWhereStrip
-              activity={mira.activity}
-              onFocusSurface={mira.onFocusSurface}
-            />
-          </div>
-        )}
         <div ref={bottom} />
-        <div className="mt-3">
-          <RoomMiraNotice
-            meetingId={meetingId}
-            details={
-              <MiraPermissionsCard
-                {...mira?.permissions}
-                className="border-0 bg-transparent p-0"
-              />
-            }
-          />
-        </div>
       </ScrollArea>
       <form
         className="space-y-2 border-t p-3"
@@ -639,7 +641,6 @@ export function ChatPanel({
             variant="ghost"
             size="sm"
             disabled={busy}
-            aria-describedby={`${paletteId}-mention-adults`}
             onClick={() =>
               setDraft(
                 (text) => `${text.slice(0, 1989)}${text ? ' ' : ''}@Tuturuuu `
@@ -648,10 +649,6 @@ export function ChatPanel({
           >
             <MiraAvatar size={20} />
             Mira
-            <MiraAdultNotice
-              variant="compact"
-              id={`${paletteId}-mention-adults`}
-            />
           </Button>
           <span className="flex-1" />
           <Button

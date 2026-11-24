@@ -5504,7 +5504,6 @@
     },
     "mira_adults": {
       "ask_owner": "Ask your workspace owner to check the Mira setting.",
-      "badge": "18+",
       "confirmed_at": "Confirmed on {date}",
       "consent": "Mira is only for people aged 18 or older. Choose Continue only if you are 18 or older.",
       "effect": "Confirm this only if everyone in the workspace is 18 or older. You can withdraw the declaration at any time.",
@@ -5557,7 +5556,10 @@
       "turn_off_me": "Turn Mira off for me",
       "you_choose": "Confirm your Mira choice for this meeting.",
       "you_off": "Mira is off for you.",
-      "you_on": "Mira is on for you."
+      "you_on": "Mira is on for you.",
+      "about": "About Mira",
+      "dismiss_line": "Dismiss",
+      "system_off": "Mira is off"
     },
     "public": {
       "admission_hint": "Your host controls admission. Signing in does not grant access to private meeting notes.",

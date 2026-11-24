@@ -6149,7 +6149,6 @@
     },
     "mira_adults": {
       "ask_owner": "Hãy nhờ chủ sở hữu không gian làm việc kiểm tra cài đặt Mira.",
-      "badge": "18+",
       "confirmed_at": "Đã xác nhận ngày {date}",
       "consent": "Mira chỉ dành cho người từ 18 tuổi trở lên. Chỉ chọn Tiếp tục nếu bạn đã đủ 18 tuổi.",
       "effect": "Chỉ xác nhận nếu tất cả mọi người trong không gian làm việc đều từ 18 tuổi trở lên. Bạn có thể rút lại xác nhận bất cứ lúc nào.",
@@ -6165,12 +6164,14 @@
       "workspace_off": "Mira không khả dụng trong không gian làm việc này. Một số tính năng Mira yêu cầu chủ sở hữu xác nhận rằng tất cả mọi người đều từ 18 tuổi trở lên."
     },
     "mira_consent": {
+      "about": "Giới thiệu về Mira",
       "adults": "Mira dành cho người từ 18 tuổi trở lên. Dưới 18 tuổi? Hãy bỏ chọn ô này.",
       "box_label": "Mira, trợ lý AI của chúng tôi, có thể được bật trong cuộc họp này để mang lại trải nghiệm hữu ích (ghi chú, phụ đề, trả lời).",
       "confirm": "Xác nhận",
       "default_effect": "Áp dụng cho lượt tham gia sau khi thay đổi. Khi tắt, mỗi người tự chọn ô để dùng Mira.",
       "default_failed": "Không lưu được mặc định đồng ý Mira",
       "default_toggle": "Ô đồng ý Mira được chọn sẵn",
+      "dismiss_line": "Ẩn",
       "host_adults": "Mọi người trong cuộc họp này đều từ 18 tuổi trở lên",
       "host_confirm": "Chấp nhận và bật",
       "host_failed": "Không cập nhật được Mira cho cuộc họp này",
@@ -6199,6 +6200,7 @@
       "report_minor_hint": "Thao tác này tắt Mira cho mọi người trong cuộc họp.",
       "save_failed": "Không lưu được lựa chọn Mira của bạn",
       "start_with_mira": "Bật Mira cho cuộc họp này và bắt đầu chép lời",
+      "system_off": "Mira đã tắt",
       "turn_off_me": "Tắt Mira cho tôi",
       "you_choose": "Xác nhận lựa chọn Mira của bạn cho cuộc họp này.",
       "you_off": "Mira đang tắt với bạn.",

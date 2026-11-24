@@ -5504,7 +5504,6 @@
     },
     "mira_adults": {
       "ask_owner": "Hãy nhờ chủ sở hữu không gian làm việc kiểm tra cài đặt Mira.",
-      "badge": "18+",
       "confirmed_at": "Đã xác nhận ngày {date}",
       "consent": "Mira chỉ dành cho người từ 18 tuổi trở lên. Chỉ chọn Tiếp tục nếu bạn đã đủ 18 tuổi.",
       "effect": "Chỉ xác nhận nếu tất cả mọi người trong không gian làm việc đều từ 18 tuổi trở lên. Bạn có thể rút lại xác nhận bất cứ lúc nào.",
@@ -5557,7 +5556,10 @@
       "turn_off_me": "Tắt Mira cho tôi",
       "you_choose": "Xác nhận lựa chọn Mira của bạn cho cuộc họp này.",
       "you_off": "Mira đang tắt với bạn.",
-      "you_on": "Mira đang bật với bạn."
+      "you_on": "Mira đang bật với bạn.",
+      "about": "Giới thiệu về Mira",
+      "dismiss_line": "Ẩn",
+      "system_off": "Mira đã tắt"
     },
     "public": {
       "admission_hint": "Chủ phòng quyết định ai được tham gia. Đăng nhập không tự cấp quyền xem ghi chú riêng tư.",

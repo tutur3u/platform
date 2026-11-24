@@ -138,29 +138,93 @@ it('does not call the room assistant for plain chat', async () => {
   expect(screen.queryByRole('alert')).toBeNull();
 });
 
-it('states the 18+ rule where room chat offers @mira and while a message mentions it', () => {
+it('shows no 18+ badge in chat and states the rule only while a message mentions Mira', () => {
   showChat();
-  // The empty chat invites people to ask Mira, so it carries the rule.
-  expect(
-    screen.getAllByText(adults.notice, { ignore: '.sr-only' })
-  ).toHaveLength(1);
-  expect(
-    screen.getByRole('button', { name: 'Mira', description: adults.notice })
-  ).toBeTruthy();
+  expect(screen.queryByText(adults.notice, { ignore: '.sr-only' })).toBeNull();
+  expect(screen.queryByText('18+')).toBeNull();
+  const mira = screen.getByRole('button', { name: 'Mira' });
+  expect(mira.textContent).toBe('Mira');
   const composer = screen.getByRole('textbox', { name: call.chat });
   expect(composer.getAttribute('aria-describedby')).toBeNull();
   fireEvent.change(composer, { target: { value: '@mira summarize' } });
   expect(
     screen.getAllByText(adults.notice, { ignore: '.sr-only' })
-  ).toHaveLength(2);
+  ).toHaveLength(1);
   expect(
     document.getElementById(composer.getAttribute('aria-describedby') ?? '')
       ?.textContent
   ).toBe(adults.notice);
   fireEvent.change(composer, { target: { value: 'hello everyone' } });
+  expect(screen.queryByText(adults.notice, { ignore: '.sr-only' })).toBeNull();
+});
+
+it('keeps the room Mira chip and the where-Mira strip out of the chat', () => {
+  showChat({
+    mira: {
+      activity: { polls: { active: true, status: 'Drafting' } },
+    },
+  });
   expect(
-    screen.getAllByText(adults.notice, { ignore: '.sr-only' })
+    screen.queryByRole('button', { name: /^Mira is on, turned on by/ })
+  ).toBeNull();
+  expect(screen.queryByRole('region', { name: 'Where Mira is' })).toBeNull();
+});
+
+const miraLine = (id: string, revision?: number) => ({
+  id,
+  userId: MEET_ASSISTANT_USER_ID,
+  assistant: true,
+  body: 'Mira is on, turned on by Lan.',
+  displayName: 'Mira',
+  createdAt: `2026-01-01T10:00:0${id.length}Z`,
+  notice: { kind: 'mira.on' as const, by: 'Lan', revision },
+});
+
+it('shows one Mira is on line per acceptance revision and lets it be dismissed for the meeting', () => {
+  sessionStorage.clear();
+  const line = messages.meet.mira_consent;
+  const chat = [miraLine('a', 3), miraLine('bb', 3)];
+  showChat({ chat });
+  const lines = screen.getAllByText(line.indicator_on.replace('{name}', 'Lan'));
+  expect(lines).toHaveLength(1);
+  // The system line is not a Mira chat message: no Chat pill, no profile.
+  expect(screen.queryByText('Chat')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: line.dismiss_line }));
+  expect(
+    screen.queryByText(line.indicator_on.replace('{name}', 'Lan'))
+  ).toBeNull();
+  cleanup();
+  // Dismissed for this meeting in this tab, so a remount keeps it hidden.
+  showChat({ chat });
+  expect(
+    screen.queryByText(line.indicator_on.replace('{name}', 'Lan'))
+  ).toBeNull();
+  cleanup();
+  // A later acceptance is a new revision and shows again.
+  showChat({ chat: [...chat, miraLine('ccc', 4)] });
+  expect(
+    screen.getAllByText(line.indicator_on.replace('{name}', 'Lan'))
   ).toHaveLength(1);
+});
+
+it('still shows the line when session storage is blocked', () => {
+  const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    throw new Error('blocked');
+  });
+  const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('blocked');
+  });
+  showChat({ chat: [miraLine('a', 7)] });
+  const text = messages.meet.mira_consent.indicator_on.replace('{name}', 'Lan');
+  expect(screen.getByText(text)).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: messages.meet.mira_consent.dismiss_line,
+    })
+  );
+  expect(screen.queryByText(text)).toBeNull();
+  get.mockRestore();
+  set.mockRestore();
 });
 
 it('names the workspace 18+ setting, not a generic refusal, when @mira is off for the workspace', async () => {

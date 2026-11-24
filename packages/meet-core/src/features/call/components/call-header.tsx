@@ -2,7 +2,7 @@
 import { Eye } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import type { MeetSignalingStatus } from '../lib/signaling';
 import { CallTopBarConnection } from './call-top-bar';
 import { MeetingStatus, MeetingTitle } from './meeting-title';
@@ -22,6 +22,7 @@ export function CallHeader({
   recording,
   connection,
   onRetry,
+  privateMiraUsers,
   actions,
 }: {
   meetingId: string;
@@ -33,6 +34,8 @@ export function CallHeader({
   recording: boolean;
   connection: MeetSignalingStatus;
   onRetry: () => void;
+  /** People using Mira privately, listed in the Mira control. */
+  privateMiraUsers?: ComponentProps<typeof RoomMiraNotice>['privateUsers'];
   actions: ReactNode;
 }) {
   const t = useTranslations('meet.call');
@@ -58,8 +61,8 @@ export function CallHeader({
         <CallTopBarConnection status={connection} onRetry={onRetry} />
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-        {/* Who turned Mira on stays visible for the whole call. */}
-        <RoomMiraNotice meetingId={meetingId} placement="header" />
+        {/* The one Mira control; it names who turned Mira on for the whole call. */}
+        <RoomMiraNotice meetingId={meetingId} privateUsers={privateMiraUsers} />
         {actions}
       </div>
     </header>

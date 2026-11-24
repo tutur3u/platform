@@ -252,11 +252,9 @@ function PollComposer({
           size="sm"
           variant="outline"
           disabled={busy}
-          aria-describedby={adultNoticeId}
           onClick={() => setMode('mira')}
         >
           <Sparkles className="size-4" /> {t('mira_draft')}
-          <MiraAdultNotice variant="compact" id={adultNoticeId} />
         </Button>
       </div>
     );
@@ -399,7 +397,6 @@ function PollCard({
   summary?: string;
 }) {
   const t = useTranslations('meet.call.polls');
-  const adultNoticeId = useId();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { id: pollId } = poll;
   return (
@@ -480,13 +477,11 @@ function PollCard({
               size="sm"
               variant="outline"
               disabled={busy}
-              aria-describedby={adultNoticeId}
               onClick={() =>
                 onAction({ action: 'mira_summarize', pollId, locale })
               }
             >
               <Sparkles className="size-4" /> {t('mira_summarize')}
-              <MiraAdultNotice variant="compact" id={adultNoticeId} />
             </Button>
           )}
           {(['csv', 'json'] as const).map((format) => (

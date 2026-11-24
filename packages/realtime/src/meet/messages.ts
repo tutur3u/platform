@@ -417,8 +417,11 @@ export type MeetRealtimeServerMessage =
       guest?: true;
       external?: true;
       id: string;
-      /** A room Mira system line; clients show it in their own locale. */
-      notice?: { kind: 'mira.on' | 'mira.off'; by?: string };
+      /**
+       * A room Mira system line; clients show it in their own locale and
+       * show one line per acceptance `revision`.
+       */
+      notice?: { kind: 'mira.on' | 'mira.off'; by?: string; revision?: number };
       requestId?: string;
       type: 'chat.message';
       replayed?: boolean;

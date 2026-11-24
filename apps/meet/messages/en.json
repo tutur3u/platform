@@ -6149,7 +6149,6 @@
     },
     "mira_adults": {
       "ask_owner": "Ask your workspace owner to check the Mira setting.",
-      "badge": "18+",
       "confirmed_at": "Confirmed on {date}",
       "consent": "Mira is only for people aged 18 or older. Choose Continue only if you are 18 or older.",
       "effect": "Confirm this only if everyone in the workspace is 18 or older. You can withdraw the declaration at any time.",
@@ -6165,12 +6164,14 @@
       "workspace_off": "Mira is unavailable for this workspace. Some Mira features require the workspace owner to confirm that everyone is 18 or older."
     },
     "mira_consent": {
+      "about": "About Mira",
       "adults": "Mira is for people 18 or older. Under 18? Untick the box.",
       "box_label": "Mira, our AI assistant, may be turned on in this meeting to provide a helpful experience (notes, captions, answers).",
       "confirm": "Confirm",
       "default_effect": "Applies to joins after the change. When off, each person ticks the box to use Mira.",
       "default_failed": "Couldn't save the Mira consent default",
       "default_toggle": "Mira consent box ticked by default",
+      "dismiss_line": "Dismiss",
       "host_adults": "Everyone in this meeting is 18 or older",
       "host_confirm": "Accept and turn on",
       "host_failed": "Couldn't update Mira for this meeting",
@@ -6199,6 +6200,7 @@
       "report_minor_hint": "This turns Mira off for everyone in this meeting.",
       "save_failed": "Couldn't save your Mira choice",
       "start_with_mira": "Turn on Mira for this meeting and start the transcript",
+      "system_off": "Mira is off",
       "turn_off_me": "Turn Mira off for me",
       "you_choose": "Confirm your Mira choice for this meeting.",
       "you_off": "Mira is off for you.",

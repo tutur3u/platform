@@ -99,8 +99,7 @@ function showLobby(onJoined = vi.fn()) {
   );
   return onJoined;
 }
-const showCall = () =>
-  render(wrap(<RoomMiraNotice meetingId="room" placement="header" />));
+const showCall = () => render(wrap(<RoomMiraNotice meetingId="room" />));
 
 beforeEach(() => {
   vi.resetAllMocks();

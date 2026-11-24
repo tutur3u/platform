@@ -197,7 +197,7 @@ export function applyMiraRoomAcceptance(
   });
   const line = systemLine(
     next,
-    { kind: 'mira.on', by: acceptorName },
+    { kind: 'mira.on', by: acceptorName, revision },
     `Mira is on, turned on by ${acceptorName}.`
   );
   return {

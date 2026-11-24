@@ -66,9 +66,8 @@ const acceptedLater = {
   acceptance: { ...accepted.acceptance, revision: 4 },
 };
 function show(
-  placement: 'chat' | 'header' = 'header',
-  details?: ReactNode,
-  extra?: ReactNode
+  extra?: ReactNode,
+  privateUsers?: { userId: string; displayName: string }[]
 ) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -76,11 +75,7 @@ function show(
   render(
     <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={messages}>
-        <RoomMiraNotice
-          meetingId="room"
-          placement={placement}
-          details={details}
-        />
+        <RoomMiraNotice meetingId="room" privateUsers={privateUsers} />
         {extra}
       </NextIntlClientProvider>
     </QueryClientProvider>
@@ -221,6 +216,7 @@ it('lets a participant turn Mira off and report a minor in two steps', async () 
       name: m.indicator_on.replace('{name}', 'Lan'),
     })
   );
+  fireEvent.click(await screen.findByRole('button', { name: m.about }));
   fireEvent.click(await screen.findByRole('button', { name: m.report_minor }));
   expect(f.report).not.toHaveBeenCalled();
   fireEvent.click(
@@ -397,7 +393,7 @@ it('(c) applies the Join state once, after the not-admitted read turns into the 
     joinRevision: 3,
   });
   f.choose.mockResolvedValue({ ...accepted, choice: 'off' });
-  const client = show('header', undefined, <RoomMiraNotice meetingId="room" />);
+  const client = show(<RoomMiraNotice meetingId="room" />);
   // Wait for the not-admitted answer itself, not only the call: refetching
   // while the first read is still in flight joins that read instead of
   // starting a new one.
@@ -438,4 +434,110 @@ it('(e) keeps a Join untick when storage fails, and the call box starts unticked
   const box = await screen.findByRole('checkbox', { name: m.box_label });
   expect(box.getAttribute('aria-checked')).toBe('false');
   expect(f.choose).not.toHaveBeenCalled();
+});
+
+it('is one compact control: a short label, a status dot and the full statement as its name', async () => {
+  f.read.mockResolvedValue({ ...accepted, choice: 'on', ready: true });
+  show();
+  const name = m.indicator_on.replace('{name}', 'Lan');
+  const control = await screen.findByRole('button', { name });
+  // Only one control, labelled "Mira" with no 18+ badge.
+  expect(screen.getAllByRole('button')).toHaveLength(1);
+  expect(control.textContent).toContain('Mira');
+  expect(control.textContent).not.toContain('18+');
+  expect(control.querySelector('[data-state="on"]')).toBeTruthy();
+  expect(control.getAttribute('aria-label')).toBe(name);
+  // The dot's meaning is part of its description for assistive tech.
+  expect(screen.getByRole('button', { name, description: m.you_on })).toBe(
+    control
+  );
+  // The popover opens with the same full statement.
+  fireEvent.click(control);
+  expect(
+    (await screen.findAllByText(name)).some((node) => node.tagName === 'P')
+  ).toBe(true);
+});
+
+it('shows amber while the choice is pending and muted once the person turned Mira off', async () => {
+  f.read.mockResolvedValue(accepted);
+  show();
+  const name = m.indicator_on.replace('{name}', 'Lan');
+  const pending = await screen.findByRole('button', { name });
+  expect(pending.querySelector('[data-state="choose"]')).toBeTruthy();
+  cleanup();
+  f.read.mockResolvedValue({ ...accepted, choice: 'off' });
+  show();
+  const off = await screen.findByRole('button', { name });
+  expect(off.querySelector('[data-state="off"]')).toBeTruthy();
+});
+
+it('gathers every notice in About Mira, with the 18+ rule and the report', async () => {
+  f.read.mockResolvedValue({ ...accepted, choice: 'on', ready: true });
+  show();
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: m.indicator_on.replace('{name}', 'Lan'),
+    })
+  );
+  // Collapsed: no notice text and no report until About Mira is opened.
+  expect(screen.queryByText(m.info_retention)).toBeNull();
+  expect(screen.queryByRole('button', { name: m.report_minor })).toBeNull();
+  fireEvent.click(await screen.findByRole('button', { name: m.about }));
+  expect(screen.getByText(messages.meet.mira_adults.notice)).toBeTruthy();
+  for (const key of MIRA_CONSENT_INFO_KEYS)
+    expect(screen.getByText(m[key])).toBeTruthy();
+  for (const key of ['link_privacy', 'link_terms', 'link_ai'] as const)
+    expect(screen.getByRole('link', { name: m[key] })).toBeTruthy();
+  expect(screen.getByRole('button', { name: m.report_minor })).toBeTruthy();
+});
+
+it('lists who is using Mira privately and offers the host a turn-off for everyone', async () => {
+  f.read.mockResolvedValue({
+    ...accepted,
+    choice: 'on',
+    ready: true,
+    canAccept: true,
+  });
+  f.turnOff.mockResolvedValue(base);
+  show(undefined, [{ userId: 'u1', displayName: 'Minh' }]);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: m.indicator_on.replace('{name}', 'Lan'),
+    })
+  );
+  expect(
+    screen.getByText(
+      messages.meet.live.phase_private_indicator.replace('{name}', 'Minh')
+    )
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: m.host_turn_off }));
+  await vi.waitFor(() => expect(f.turnOff).toHaveBeenCalled());
+});
+
+it('gives people who are not the host no turn-off for everyone', async () => {
+  f.read.mockResolvedValue({ ...accepted, choice: 'on', ready: true });
+  show();
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: m.indicator_on.replace('{name}', 'Lan'),
+    })
+  );
+  await screen.findByRole('button', { name: m.turn_off_me });
+  expect(screen.queryByRole('button', { name: m.host_turn_off })).toBeNull();
+  expect(
+    screen.queryByText(
+      messages.meet.live.phase_private_indicator.replace('{name}', '')
+    )
+  ).toBeNull();
+});
+
+it('ships the About Mira, dismiss and off-line copy in English and Vietnamese', () => {
+  const vm = vi_messages.meet.mira_consent;
+  for (const key of ['about', 'dismiss_line', 'system_off'] as const) {
+    expect(m[key]).toBeTruthy();
+    expect(vm[key]).toBeTruthy();
+    expect(vm[key]).not.toBe(m[key]);
+  }
+  expect('badge' in messages.meet.mira_adults).toBe(false);
+  expect('badge' in vi_messages.meet.mira_adults).toBe(false);
 });

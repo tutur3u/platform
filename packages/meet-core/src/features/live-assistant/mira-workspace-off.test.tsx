@@ -112,14 +112,13 @@ it('offers no button where the meeting settings cannot be opened', async () => {
   expect(screen.queryByRole('button')).toBeNull();
 });
 
-it('keeps a control name intact and reads the compact 18+ badge as its description', () => {
+it('states the 18+ rule as a sentence and a describing id, never as a badge', () => {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <button type="button" aria-describedby="adults">
         Mira
-        <MiraAdultNotice variant="compact" id="adults" />
       </button>
-      <MiraAdultNotice />
+      <MiraAdultNotice id="adults" />
       <MiraAdultNotice consent />
     </NextIntlClientProvider>
   );
@@ -127,9 +126,7 @@ it('keeps a control name intact and reads the compact 18+ badge as its descripti
     name: 'Mira',
     description: copy.notice,
   });
-  expect(control.textContent).toContain(copy.badge);
+  expect(control.textContent).toBe('Mira');
   expect(document.getElementById('adults')?.textContent).toBe(copy.notice);
-  // The badge description and the inline sentence carry the same rule.
-  expect(screen.getAllByText(copy.notice)).toHaveLength(2);
   expect(screen.getByText(copy.consent)).toBeTruthy();
 });

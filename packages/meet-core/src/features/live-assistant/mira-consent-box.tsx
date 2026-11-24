@@ -71,6 +71,42 @@ export async function hashMiraConsentText(text: string) {
     .join('');
 }
 
+/**
+ * The notice items and links behind every Mira info affordance, for the
+ * meeting's notice mode: the same keys the hashed text is built from.
+ */
+export function MiraConsentInfoContent({
+  mode = 'room',
+}: {
+  mode?: MiraNoticeMode;
+}) {
+  const t = useTranslations('meet.mira_consent');
+  return (
+    <>
+      <p className="font-medium">{t('info_title')}</p>
+      {miraConsentInfoKeys(mode).map((key) => (
+        <p key={key} className="text-pretty text-muted-foreground text-xs">
+          {t(key)}
+        </p>
+      ))}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-xs">
+        {(['privacy', 'terms', 'ai'] as const).map((link) => (
+          <a
+            key={link}
+            className="inline-flex items-center gap-1 underline underline-offset-2"
+            href={LINKS[link]}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t(`link_${link}`)}
+            <ExternalLink aria-hidden className="size-3" />
+          </a>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function MiraConsentInfo({ mode }: { mode: MiraNoticeMode }) {
   const t = useTranslations('meet.mira_consent');
   return (
@@ -91,26 +127,7 @@ function MiraConsentInfo({ mode }: { mode: MiraNoticeMode }) {
         collisionPadding={12}
         className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-1.5rem))] space-y-2 overflow-y-auto text-sm"
       >
-        <p className="font-medium">{t('info_title')}</p>
-        {miraConsentInfoKeys(mode).map((key) => (
-          <p key={key} className="text-pretty text-muted-foreground text-xs">
-            {t(key)}
-          </p>
-        ))}
-        <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-xs">
-          {(['privacy', 'terms', 'ai'] as const).map((link) => (
-            <a
-              key={link}
-              className="inline-flex items-center gap-1 underline underline-offset-2"
-              href={LINKS[link]}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t(`link_${link}`)}
-              <ExternalLink aria-hidden className="size-3" />
-            </a>
-          ))}
-        </div>
+        <MiraConsentInfoContent mode={mode} />
       </PopoverContent>
     </Popover>
   );

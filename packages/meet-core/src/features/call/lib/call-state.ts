@@ -49,6 +49,8 @@ export interface CallChatMessage {
   guest?: true;
   external?: true;
   id: string;
+  /** A room Mira system line, shown in the viewer's locale. */
+  notice?: { kind: 'mira.on' | 'mira.off'; by?: string; revision?: number };
   userId: string;
 }
 
@@ -309,6 +311,7 @@ export function reduceCallState(
               ...(message.guest ? { guest: true as const } : {}),
               ...(message.external ? { external: true as const } : {}),
               id: message.id,
+              notice: message.notice,
               userId: message.userId,
               retained: message.retained,
             },

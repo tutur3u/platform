@@ -89,11 +89,10 @@ it('renders spotlight tile, 104px Self-PiP, Mira live caption, status strip, 3-t
   expect(miraTile.className).toContain('mira-speaking');
   expect(miraTile.className).toContain('motion-reduce:animate-none');
   expect(miraTile.textContent).toContain('Live');
-  expect(miraTile.textContent).toContain(en.meet.mira_adults.badge);
+  expect(miraTile.textContent).not.toContain('18+');
   expect(
     screen.getAllByRole('button', {
       name: en.meet.call.phone.mira_open_label,
-      description: en.meet.mira_adults.notice,
     })
   ).toHaveLength(2);
   fireEvent.click(miraTile);

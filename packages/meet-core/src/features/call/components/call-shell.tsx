@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
-import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
+import { privateMiraUsers } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
 import { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
@@ -409,6 +409,7 @@ function CallShellContent({
         recording={state.recording.state === 'recording'}
         connection={room.connectionStatus}
         onRetry={retryConnection}
+        privateMiraUsers={privateMiraUsers(room.state.participants)}
         actions={
           <>
             <TranscriptControls
@@ -416,13 +417,6 @@ function CallShellContent({
               meetingId={meetingId}
               wsId={wsId}
               guest={requiresAccount}
-            />
-            <RoomAssistantAudio
-              room={room}
-              audioSuppressed={sharedAudio.shared}
-              canManage={canManage}
-              meetingId={meetingId}
-              outputDeviceId={outputDeviceId}
             />
             {!presenceOnly && (
               <>

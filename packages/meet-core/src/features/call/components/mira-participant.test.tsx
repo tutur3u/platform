@@ -55,6 +55,19 @@ it('shows an AI participant with speaking feedback, pinning and the shared chat 
   expect(onChat).toHaveBeenCalledOnce();
 });
 
+it('shows no 18+ badge on the chat entrypoint', () => {
+  render(
+    <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
+      <MiraParticipant focused={false} onFocus={vi.fn()} onChat={vi.fn()} />
+    </NextIntlClientProvider>
+  );
+  const chat = screen.getByRole('button', {
+    name: messages.meet.live.tile_open_chat,
+  });
+  expect(chat.textContent).toBe(messages.meet.live.tile_open_chat);
+  expect(chat.getAttribute('aria-describedby')).toBeNull();
+});
+
 it.each([
   ['listening', 'Mira • Live', 'Listening'],
   ['speaking', 'Mira • Live', 'Speaking'],
