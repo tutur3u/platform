@@ -2952,6 +2952,16 @@
         "vitest": "^5.0.5",
       },
     },
+    "packages/authz": {
+      "name": "@tuturuuu/authz",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.6.5",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
     "packages/cite": {
       "name": "@tuturuuu/cite",
       "dependencies": {
@@ -6178,6 +6188,8 @@
     "@tuturuuu/auth": ["@tuturuuu/auth@workspace:packages/auth"],
 
     "@tuturuuu/auth-worker": ["@tuturuuu/auth-worker@workspace:apps/auth"],
+
+    "@tuturuuu/authz": ["@tuturuuu/authz@workspace:packages/authz"],
 
     "@tuturuuu/calendar": ["@tuturuuu/calendar@workspace:apps/calendar"],
 
