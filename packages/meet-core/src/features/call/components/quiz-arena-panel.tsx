@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/icons';
 import type { QuizArenaFullView } from '@tuturuuu/realtime/meet/room-quiz-arena';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
@@ -106,6 +107,8 @@ export function QuizArenaPanel({
         setMiraUnavailable(true);
         return;
       }
+      if (action.action === 'import_upskii' && result.skipped)
+        toast.info(t('import_skipped', { count: result.skipped }));
       if (action.action === 'buzz') sounds.buzz();
       if (
         action.action === 'mira_generate_board' ||

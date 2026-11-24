@@ -58,6 +58,8 @@ export type QuizArenaActionResult = {
   ok?: boolean;
   seq?: number;
   fallback?: boolean;
+  /** Lesson questions left out of an import because Quiz Arena can't play them. */
+  skipped?: number;
   courses?: Awaited<ReturnType<typeof listUpskiiCourses>>['courses'];
 };
 
@@ -78,8 +80,8 @@ export async function runQuizArenaAction(
       return listUpskiiCourses(access);
     case 'import_upskii': {
       await callRoomService(access, { action: 'arena.authorize' });
-      const board = await buildUpskiiBoard(access, action);
-      return setup(access, board, action.config);
+      const { board, skipped } = await buildUpskiiBoard(access, action);
+      return { ...(await setup(access, board, action.config)), skipped };
     }
     case 'mira_generate_board': {
       // The durable host check runs before any credit or model call.

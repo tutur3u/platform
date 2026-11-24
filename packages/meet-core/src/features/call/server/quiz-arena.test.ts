@@ -47,6 +47,9 @@ function fakeDb() {
       };
       return builder;
     },
+    schema() {
+      return this;
+    },
   };
 }
 
@@ -321,6 +324,71 @@ it('imports workspace lesson quizzes and flashcards into a board', async () => {
     type: 'open_text',
     acceptedAnswers: ['Stack'],
   });
+});
+
+it('imports Teach multiple choice and short answers with private keys and skips the rest', async () => {
+  mocks.tables.course_module_quizzes = ['q1', 'q2', 'q3', 'q4', 'q5'].map(
+    (quiz_id) => ({ module_id: moduleId, quiz_id })
+  );
+  mocks.tables.workspace_quizzes = [
+    { id: 'q1', question: 'What is O(1)?', ws_id: ws },
+    {
+      id: 'q2',
+      question: 'Which structure does BFS use?',
+      type: 'multiple_choice',
+      content: { options: ['Stack', 'Queue', 'Heap'] },
+      answer: null,
+      ws_id: ws,
+    },
+    {
+      id: 'q3',
+      question: 'Name the structure DFS uses.',
+      type: 'paragraph',
+      answer: null,
+      ws_id: ws,
+    },
+    {
+      id: 'q4',
+      question: 'Recursion needs a base case.',
+      type: 'true_false',
+      ws_id: ws,
+    },
+    { id: 'q5', question: 'Pick one', ws_id: ws },
+  ];
+  mocks.tables.workspace_quiz_answers = [
+    { quiz_id: 'q2', answer: { correctIndex: 1 } },
+    { quiz_id: 'q3', answer: { text: 'Stack' } },
+    { quiz_id: 'q4', answer: { correct: true } },
+  ];
+  mocks.tables.quiz_options = [
+    ...mocks.tables.quiz_options,
+    { quiz_id: 'q5', value: 'A', is_correct: false, explanation: null },
+    { quiz_id: 'q5', value: 'B', is_correct: false, explanation: null },
+  ];
+  const action = quizArenaActionSchema.parse({
+    action: 'import_upskii',
+    courseId: course,
+    config,
+  });
+  await expect(runQuizArenaAction(access, action)).resolves.toMatchObject({
+    ok: true,
+    skipped: 2,
+  });
+  const board = mocks.room.mock.calls[1]?.[1].board;
+  const byText = (text: string) =>
+    board.tiles.find(
+      (tile: { question: { question: string } }) =>
+        tile.question.question === text
+    )?.question;
+  const bfs = byText('Which structure does BFS use?');
+  expect(bfs.type).toBe('single_choice');
+  expect(bfs.options[bfs.correctIndex]).toBe('Queue');
+  expect(byText('Name the structure DFS uses.')).toMatchObject({
+    type: 'open_text',
+    acceptedAnswers: ['Stack'],
+  });
+  expect(byText('Recursion needs a base case.')).toBeUndefined();
+  expect(byText('Pick one')).toBeUndefined();
 });
 
 it('rejects lesson imports outside the meeting workspace or without membership', async () => {
