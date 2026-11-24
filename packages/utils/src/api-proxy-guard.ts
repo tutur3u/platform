@@ -86,6 +86,8 @@ export type GuardOptions = {
   skipContentValidation?: boolean;
   maxPayloadBytes?: number;
   trustedBypassRules?: TrustedProxyBypassRule[];
+  /** App-token `target_app` values that may supply the session rate-limit actor. */
+  sessionActorTargetApps?: readonly string[];
 };
 
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
@@ -945,14 +947,7 @@ export async function guardApiProxyRequest(
 ): Promise<NextResponse | null> {
   let bearerActor: string | null = null;
   let sessionActor: string | null = null;
-  if (
-    !isTrustedProxyBypassRequest(
-      req.nextUrl.pathname,
-      req.headers,
-      undefined,
-      req.method
-    )
-  ) {
+  if (!isTrustedProxyBypassForRequest(req)) {
     const assurance = await enforceRequiredMfaRequest(
       req,
       options.useVerifiedBearerActor
@@ -965,6 +960,7 @@ export async function guardApiProxyRequest(
             onVerifiedSessionActor: (userId) => {
               sessionActor = userId;
             },
+            sessionActorTargetApps: options.sessionActorTargetApps,
           }
         : undefined
     );

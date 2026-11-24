@@ -101,10 +101,10 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     gates: ['principal.userId'],
   },
   // Route principal resolution for app-session bearers; no scope gate
-  // (app_coordination typ only).
+  // (app_coordination typ only). The target app scopes the session actor.
   'packages/utils/src/required-mfa-runtime.ts': {
     calls: 1,
-    gates: ['verified.claims.sub'],
+    gates: ['verified.claims.sub', 'verified.claims.target_app'],
   },
   'packages/utils/src/required-mfa-transfer.ts': {
     calls: 1,

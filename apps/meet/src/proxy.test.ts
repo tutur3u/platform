@@ -456,6 +456,9 @@ describe('Meet public build identity boundary', () => {
       expect(response.headers.get('x-middleware-next')).toBe('1');
       expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
       expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+      expect(mocks.guardApiProxyRequest.mock.calls[0]?.[1]).toMatchObject({
+        sessionActorTargetApps: ['meet', 'web'],
+      });
       const identity = createBuildInfoHandler('meet')();
       expect(identity.status).toBe(200);
       expect(identity.headers.get('cache-control')).toBe('no-store, max-age=0');

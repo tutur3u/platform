@@ -268,6 +268,8 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:meet:api',
+      // The web app session is the shared-origin platform session.
+      sessionActorTargetApps: ['meet', 'web'],
     });
     if (guardResponse) {
       if (appSessionRefresh) {

@@ -292,6 +292,37 @@ describe('connected required MFA request enforcement', () => {
     ).toBeNull();
     expect(mocks.admin).not.toHaveBeenCalled();
   });
+  it('picks each cached session actor with its own target-app filter', async () => {
+    const { getUserById } = setup();
+    const meet = createAppCoordinationToken({
+      userId: 'member',
+      targetApp: 'meet',
+    }).token;
+    const finance = createAppCoordinationToken({
+      userId: 'other',
+      targetApp: 'finance',
+    }).token;
+    const req = request({
+      cookie: `tuturuuu_app_session=${meet}; tuturuuu_web_app_session=${finance}`,
+    });
+    const actorFor = async (sessionActorTargetApps?: string[]) => {
+      const onVerifiedSessionActor = vi.fn();
+      expect(
+        await enforceRequiredMfaRequest(req, undefined, {
+          onVerifiedSessionActor,
+          sessionActorTargetApps,
+        })
+      ).toBeNull();
+      return onVerifiedSessionActor.mock.calls.map(([userId]) => userId);
+    };
+    // Unfiltered, the two users form a mixed set with no actor.
+    expect(await actorFor()).toEqual([]);
+    expect(await actorFor(['finance'])).toEqual(['other']);
+    expect(await actorFor(['meet', 'web'])).toEqual(['member']);
+    expect(await actorFor()).toEqual([]);
+    // Every call reused one cached assurance check per credential.
+    expect(getUserById).toHaveBeenCalledTimes(2);
+  });
 });
 
 it.each(['throw', 'policy-result'])(

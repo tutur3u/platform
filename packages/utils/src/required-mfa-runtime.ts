@@ -18,13 +18,30 @@ type RequestIdentity = Pick<NextRequest, 'headers' | 'url'> &
 type RequestAssurance = {
   response: NextResponse | null;
   bearerUser: SupabaseUser | null;
-  sessionUserId: string | null;
+  sessionIdentities: SessionIdentity[] | null;
 };
+/** A verified cookie credential's user; `targetApp` is set for app tokens. */
+type SessionIdentity = { userId: string; targetApp?: string };
 type RequestAssuranceListeners = {
-  /** Receives the one user every verified cookie credential resolves to, for a
-   * request without an Authorization header. */
+  /** Receives the one user every counted verified cookie credential resolves
+   * to, for a request without an Authorization header. */
   onVerifiedSessionActor?: (userId: string) => void;
+  /** App tokens count toward the session actor only when their `target_app`
+   * is listed. Unset counts every verified app token. Every credential is
+   * still MFA-checked either way. */
+  sessionActorTargetApps?: readonly string[];
 };
+function sessionActor(
+  identities: SessionIdentity[],
+  targetApps: readonly string[] | undefined
+) {
+  const users = new Set<string>();
+  for (const { userId, targetApp } of identities)
+    if (!targetApp || !targetApps || targetApps.includes(targetApp))
+      users.add(userId);
+  const [user] = users;
+  return users.size === 1 ? user : null;
+}
 type CachedRequestAssurance = {
   fingerprint: string;
   pending: Promise<RequestAssurance>;
@@ -70,26 +87,26 @@ export async function enforceRequiredMfaRequest(
       pending: Promise.resolve<RequestAssurance>({
         response: null,
         bearerUser: null,
-        sessionUserId: null,
+        sessionIdentities: null,
       }),
       verified: null,
     };
     entry.pending = (async () => {
       let bearerUser: SupabaseUser | null = null;
-      let sessionUserId: string | null = null;
+      let sessionIdentities: SessionIdentity[] | null = null;
       const response = await enforceUncachedRequiredMfaRequest(
         request,
         (user) => {
           bearerUser = user;
         },
-        (userId) => {
-          sessionUserId = userId;
+        (identities) => {
+          sessionIdentities = identities;
         }
       );
       const result = {
         response,
         bearerUser: response ? null : bearerUser,
-        sessionUserId: response ? null : sessionUserId,
+        sessionIdentities: response ? null : sessionIdentities,
       };
       entry.verified = result;
       return result;
@@ -101,8 +118,11 @@ export async function enforceRequiredMfaRequest(
   if (fingerprint(request) !== identity) return unauthenticated(request);
   if (!result.response && result.bearerUser)
     onVerifiedBearerActor?.(result.bearerUser.id);
-  if (!result.response && result.sessionUserId)
-    listeners.onVerifiedSessionActor?.(result.sessionUserId);
+  const actor =
+    !result.response && result.sessionIdentities
+      ? sessionActor(result.sessionIdentities, listeners.sessionActorTargetApps)
+      : null;
+  if (actor) listeners.onVerifiedSessionActor?.(actor);
   return result.response;
 }
 
@@ -110,13 +130,13 @@ export async function enforceRequiredMfaRequest(
  * borrow another session's assurance. Cookie-only legacy handlers can ignore a
  * Bearer header, so ambient credentials must be checked as well.
  * Uses explicit access tokens and never rotates browser refresh cookies.
- * A request without an Authorization header whose verified cookie credentials
- * all resolve to one user reports that user as its session actor; differing
- * users report none. */
+ * A request without an Authorization header reports every verified cookie
+ * identity with its app-token target, so each caller picks its session actor
+ * from the identities its own app accepts. */
 async function enforceUncachedRequiredMfaRequest(
   request: NextRequest,
   onVerifiedBearerUser: (user: SupabaseUser) => void,
-  onVerifiedSessionUser: (userId: string) => void
+  onVerifiedSessionIdentities: (identities: SessionIdentity[]) => void
 ) {
   if (
     request.method === 'OPTIONS' ||
@@ -129,9 +149,10 @@ async function enforceUncachedRequiredMfaRequest(
     const admin = (await createAdminClient({
       noCookie: true,
     })) as TypedSupabaseClient;
-    const sessionUsers = new Set<string>();
+    const sessionIdentities: SessionIdentity[] = [];
     for (const token of credentials) {
       let userId: string;
+      let targetApp: string | undefined;
       let providerUser: SupabaseUser | null = null;
       let providerVerification: Promise<VerifiedUserResult> | undefined;
       // One server-revalidated lookup per request and credential, shared with
@@ -153,6 +174,7 @@ async function enforceUncachedRequiredMfaRequest(
           continue; // An invalid or expired ambient app cookie adds no identity.
         }
         userId = verified.claims.sub;
+        targetApp = verified.claims.target_app;
       } else {
         const result = await getProviderUser();
         if (result.error || !result.data.user) return unauthenticated(request);
@@ -214,11 +236,10 @@ async function enforceUncachedRequiredMfaRequest(
         providerUser
       )
         onVerifiedBearerUser(providerUser);
-      sessionUsers.add(userId);
+      sessionIdentities.push({ userId, targetApp });
     }
-    const [sessionUser] = sessionUsers;
-    if (!request.headers.has('authorization') && sessionUsers.size === 1)
-      onVerifiedSessionUser(sessionUser!);
+    if (!request.headers.has('authorization'))
+      onVerifiedSessionIdentities(sessionIdentities);
     return null;
   } catch {
     return guardRejection(

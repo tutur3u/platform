@@ -61,7 +61,7 @@ const providerCookie = (accessToken: string, project = 'project') =>
     JSON.stringify({ access_token: accessToken })
   ).toString('base64url')}`;
 
-function setupProvider() {
+function setupProvider(appMetadata: Record<string, unknown> = {}) {
   const getUser = vi.fn(async (token: string) =>
     token === 'eyJmember'
       ? { data: { user: { id: 'member', app_metadata: {} } }, error: null }
@@ -74,7 +74,7 @@ function setupProvider() {
       getClaims: async () => ({ data: null, error: null }),
       admin: {
         getUserById: async (id: string) => ({
-          data: { user: { id, app_metadata: {} } },
+          data: { user: { id, app_metadata: appMetadata } },
         }),
       },
     },
@@ -89,7 +89,8 @@ async function pollMeetRoom(cookie?: string) {
       'https://tuturuuu.com/api/meet-call/00000000-0000-4000-8000-000000000001/transcript-consent',
       { headers: cookie ? { cookie } : {} }
     ),
-    { prefixBase: 'proxy:meet:api' }
+    // Mirrors the Meet proxy's guard options (asserted in apps/meet).
+    { prefixBase: 'proxy:meet:api', sessionActorTargetApps: ['meet', 'web'] }
   );
 }
 
@@ -180,6 +181,52 @@ describe('Meet room polling at the API proxy guard', () => {
     expect(response?.headers.get('X-RateLimit-Caller-Class')).not.toBe(
       'authenticated'
     );
+  });
+
+  it('gives no actor to a validly signed app session for another app', async () => {
+    setupProvider();
+    const { token } = createAppCoordinationToken({
+      userId: 'member',
+      targetApp: 'finance',
+    });
+    const response = await pollMeetRoom(`tuturuuu_app_session=${token}`);
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
+    expect(mocks.limit).toHaveBeenCalledWith('ip:192.0.2.1');
+    expect(mocks.limit).not.toHaveBeenCalledWith('user:member');
+  });
+
+  it('keeps another app session out of the Meet actor set', async () => {
+    // The foreign token names a different user; it must neither become the
+    // actor nor turn the Meet session into a mixed-user set.
+    setupProvider();
+    const meet = createAppCoordinationToken({
+      userId: 'member',
+      targetApp: 'meet',
+    });
+    const foreign = createAppCoordinationToken({
+      userId: 'victim',
+      targetApp: 'finance',
+    });
+    const response = await pollMeetRoom(
+      `tuturuuu_app_session=${meet.token}; tuturuuu_web_app_session=${foreign.token}`
+    );
+    expect(response?.headers.get('X-RateLimit-Caller-Class')).toBe(
+      'authenticated'
+    );
+    expect(mocks.limit).toHaveBeenCalledWith('user:member');
+    expect(mocks.limit).not.toHaveBeenCalledWith('user:victim');
+  });
+
+  it('still rejects another app session that fails MFA', async () => {
+    setupProvider({ tuturuuu_required_mfa: { required: true } });
+    const { token } = createAppCoordinationToken({
+      userId: 'member',
+      targetApp: 'finance',
+    });
+    const response = await pollMeetRoom(`tuturuuu_app_session=${token}`);
+    expect(response?.status).toBe(403);
+    expect(response?.headers.get('X-Tuturuuu-Auth-Assurance')).toBe('required');
+    expect(mocks.limit).not.toHaveBeenCalled();
   });
 
   it('keeps a forged app session on the anonymous per-IP budget', async () => {
