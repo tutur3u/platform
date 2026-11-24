@@ -1,5 +1,4 @@
 import 'server-only';
-import { MEET_TRANSCRIPT_NOTICE_VERSION } from '@tuturuuu/realtime/meet';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams } from './access';
 import { loadSelfSession, meetSelfAccess } from './self-v1-access';
@@ -25,6 +24,23 @@ function openError(error: unknown) {
         )
       : notEligible();
   return error;
+}
+
+/** Room refusals of an open, by reason, as the client's fixed codes. */
+function openRefusal(reason: string | undefined) {
+  if (reason === 'rate_limited')
+    return new MeetAiError(
+      409,
+      'Too many changes; try again shortly',
+      'MEET_SELF_RATE_LIMITED'
+    );
+  if (reason === 'unavailable' || reason === 'no_session')
+    return new MeetAiError(
+      409,
+      'Transcription of your voice is not available',
+      'MEET_SELF_UNAVAILABLE'
+    );
+  return notEligible();
 }
 
 async function readJson<T extends z.ZodType>(request: Request, schema: T) {
@@ -54,6 +70,14 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
   );
   const room = await selfRoom(meetingId, user.id);
   const begin = await selfRoomCommands.openBegin(room, session.id);
+  if (!begin.allowed) {
+    // A refusal still carries legal entries; they are written before the
+    // refusal is returned.
+    await drainSelfOutbox(db, room, session.id, begin.pending).catch(() => {
+      console.warn('[meet-ai] self_v1 open refusal drain pending');
+    });
+    throw openRefusal(begin.reason);
+  }
   try {
     await drainSelfOutbox(db, room, session.id, begin.pending);
     const state = await selfRpc.consentState(db, {
@@ -68,7 +92,8 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
               sessionId: session.id,
               accountId: user.id,
               decision: 'allow',
-              noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
+              // The room names the notice the participant accepted.
+              noticeVersion: begin.noticeVersion,
               roomSeq: begin.allowSeq,
             })
           ).revision;

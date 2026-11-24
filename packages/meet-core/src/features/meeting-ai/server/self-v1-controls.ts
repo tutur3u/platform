@@ -206,18 +206,13 @@ export async function readSelfConsentExtras(
   consent: Record<string, unknown>
 ) {
   const guest = 'guest' in access && access.guest === true;
-  const signedIn = access as MeetCallRouteAccess & {
-    isHost: boolean;
-    canReadWorkspace: boolean;
-  };
-  const [available, role] = await Promise.all([
+  const available =
     MEETING_APP === 'meet'
-      ? meetPerSpeakerEnabled(access.meeting.ws_id)
-      : Promise.resolve(false),
-    guest ? Promise.resolve({ coHost: false }) : resolveMeetClassRole(signedIn),
-  ]);
+      ? await meetPerSpeakerEnabled(access.meeting.ws_id)
+      : false;
   const session = sessionSchema.safeParse(consent.session);
-  const canManageMode = !guest && (signedIn.isHost || role.coHost);
+  // The room decides host and co-host rights; a guest never manages the mode.
+  const canManageMode = !guest && consent.canManageMode === true;
   // Host and co-host see who contributes, never why someone does not.
   const coverage =
     canManageMode && session.success && session.data.protocol === 'self_v1'

@@ -63,7 +63,13 @@ describe('self_v1 stream open', () => {
       meetingId: 'm',
     });
     mocks.loadSession.mockResolvedValue({ id: sessionId, generation: 4 });
-    mocks.begin.mockResolvedValue({ epoch: 9, allowSeq: 12, pending: [] });
+    mocks.begin.mockResolvedValue({
+      allowed: true,
+      epoch: 9,
+      allowSeq: 12,
+      noticeVersion: 'notice-room',
+      pending: [],
+    });
     mocks.rpc.consentState.mockResolvedValue({
       decision: 'withdraw',
       revision: 2,
@@ -78,8 +84,10 @@ describe('self_v1 stream open', () => {
 
   it('drains, appends a fresh allow after a withdraw, opens and commits', async () => {
     mocks.begin.mockResolvedValue({
+      allowed: true,
       epoch: 9,
       allowSeq: 12,
+      noticeVersion: 'notice-room',
       pending: [{ sessionId, accountId: uploader, seq: 11, kind: 'withdraw' }],
     });
     const response = await meetAiResponse(() =>
@@ -98,6 +106,10 @@ describe('self_v1 stream open', () => {
       ['withdraw', 11],
       ['allow', 12],
     ]);
+    // The allow is recorded under the notice the room names.
+    expect(mocks.rpc.recordDecision.mock.calls[1]?.[1].noticeVersion).toBe(
+      'notice-room'
+    );
     expect(mocks.rpc.openStream).toHaveBeenCalledWith(
       {},
       { sessionId, accountId: uploader, generation: 4, consentRevision: 3 }
@@ -138,6 +150,32 @@ describe('self_v1 stream open', () => {
       {},
       expect.objectContaining({ decision: 'withdraw', roomSeq: 13 })
     );
+  });
+
+  it.each([
+    ['rate_limited', 'MEET_SELF_RATE_LIMITED'],
+    ['unavailable', 'MEET_SELF_UNAVAILABLE'],
+    ['no_session', 'MEET_SELF_UNAVAILABLE'],
+    ['revoked', 'MEET_SELF_NOT_ELIGIBLE'],
+    ['guest', 'MEET_SELF_NOT_ELIGIBLE'],
+  ])('drains a refused open (%s) and answers %s', async (reason, code) => {
+    mocks.begin.mockResolvedValue({
+      allowed: false,
+      reason,
+      pending: [{ sessionId, accountId: uploader, seq: 4, kind: 'withdraw' }],
+    });
+    const response = await meetAiResponse(() =>
+      openSelfStream(post({ sessionId }), params)
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code });
+    expect(mocks.rpc.recordDecision).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc.recordDecision.mock.calls[0]?.[1]).toMatchObject({
+      decision: 'withdraw',
+      roomSeq: 4,
+    });
+    expect(mocks.rpc.openStream).not.toHaveBeenCalled();
+    expect(mocks.commit).not.toHaveBeenCalled();
   });
 
   it('maps a database refusal to not eligible', async () => {

@@ -146,6 +146,18 @@ describe('per-speaker transcript choice', () => {
     );
   });
 
+  it('answers a limited allow with 409 MEET_SELF_RATE_LIMITED', async () => {
+    mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
+    mocks.room.mockRejectedValue(Object.assign(new Error('x'), { status: 429 }));
+    const response = await meetAiResponse(() =>
+      chooseSelfTranscript(post({ choice: 'allow' }), params)
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_SELF_RATE_LIMITED',
+    });
+  });
+
   it('runs the uploader check before an allow reaches the room', async () => {
     mocks.selfAccess.mockRejectedValue(
       Object.assign(new Error('no'), { status: 403 })
@@ -239,7 +251,8 @@ describe('transcript-consent extras', () => {
     expect(
       await readSelfConsentExtras(mocks.access as never, {
         mode: 'self',
-        session: { sessionId, protocol: 'self_v1' },
+        session: { sessionId, protocol: 'self_v1', generation: 2 },
+        canManageMode: true,
       })
     ).toEqual({
       mode: 'self',
@@ -259,13 +272,26 @@ describe('transcript-consent extras', () => {
 
   it('defaults to room mode and never lets a guest manage it', async () => {
     expect(
-      await readSelfConsentExtras({ ...mocks.access, guest: true } as never, {})
+      await readSelfConsentExtras({ ...mocks.access, guest: true } as never, {
+        canManageMode: true,
+      })
     ).toEqual({
       mode: 'room',
       perSpeakerAvailable: true,
       session: null,
       canManageMode: false,
     });
+  });
+
+  it('omits coverage for a participant the room does not let manage', async () => {
+    const extras = await readSelfConsentExtras(mocks.access as never, {
+      mode: 'self',
+      session: { sessionId, protocol: 'self_v1', generation: 2 },
+      canManageMode: false,
+    });
+    expect(extras).not.toHaveProperty('coverage');
+    expect(extras.canManageMode).toBe(false);
+    expect(mocks.admin).not.toHaveBeenCalled();
   });
 
   it('falls back to room mode when the per-speaker read fails', async () => {

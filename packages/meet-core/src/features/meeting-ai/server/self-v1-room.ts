@@ -82,18 +82,41 @@ const pendingOf = (value: unknown): MeetSelfOutboxEntry[] =>
   Array.isArray(value) ? (value as MeetSelfOutboxEntry[]) : [];
 
 export const selfRoomCommands = {
+  /**
+   * A refusal answers 200 with `allowed: false` so its pending entries still
+   * arrive; an allowed reply carries the room sequence and notice version to
+   * record the allow under.
+   */
   async openBegin(room: MeetSelfRoom, sessionId: string) {
     const reply = await send<{
-      epoch: number;
-      allowSeq: number;
+      allowed?: boolean;
+      reason?: string;
+      epoch?: number;
+      allowSeq?: number;
+      noticeVersion?: string;
       pending?: MeetSelfOutboxEntry[];
     }>(room, { action: 'transcription.self.openBegin', sessionId });
+    const pending = pendingOf(reply?.pending);
+    if (reply?.allowed !== true)
+      return {
+        allowed: false as const,
+        reason: typeof reply?.reason === 'string' ? reply.reason : undefined,
+        pending,
+      };
     if (
-      !Number.isSafeInteger(reply?.epoch) ||
-      !Number.isSafeInteger(reply?.allowSeq)
+      !Number.isSafeInteger(reply.epoch) ||
+      !Number.isSafeInteger(reply.allowSeq) ||
+      typeof reply.noticeVersion !== 'string' ||
+      !reply.noticeVersion
     )
       throw selfRoomError(null);
-    return { ...reply, pending: pendingOf(reply.pending) };
+    return {
+      allowed: true as const,
+      epoch: reply.epoch as number,
+      allowSeq: reply.allowSeq as number,
+      noticeVersion: reply.noticeVersion,
+      pending,
+    };
   },
 
   async openCommit(
@@ -168,6 +191,12 @@ export const selfRoomCommands = {
         throw new MeetAiError(
           403,
           'Only the host or a co-host can change the capture mode'
+        );
+      if (code === 412)
+        throw new MeetAiError(
+          409,
+          'Transcription of each voice is not available here',
+          'MEET_SELF_UNAVAILABLE'
         );
       throw selfRoomError(error);
     }
