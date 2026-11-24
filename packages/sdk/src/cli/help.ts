@@ -8,6 +8,8 @@ import { boardsHelp } from './help-boards';
 import { boxHelp } from './help-devbox';
 import { formatHelp, type HelpTopic } from './help-format';
 import { calendarActionHelp } from './help-calendar';
+import { relationshipsHelp } from './help-relationships';
+import { taskCollaborationHelp } from './help-task-collaboration';
 import { getGlobalHelp } from './help-global';
 import { upgradeHelp } from './help-upgrade';
 import { resourcesHelp } from './resources';
@@ -202,24 +204,7 @@ const helpTopics: Record<string, HelpTopic> = {
     ],
     usage: 'ttr projects [list|use|create|get|tasks] [id] [options]',
   },
-  relationships: {
-    commands: [
-      'list [task-id]               list task relationships',
-      'create [task-id]             create a relationship from JSON payload',
-      'delete [task-id]             delete a relationship from JSON payload',
-    ],
-    examples: [
-      'ttr relationships <task-id>',
-      'ttr relationships create <task-id> --json-payload \'{"target_task_id":"...","type":"blocks"}\'',
-    ],
-    options: [
-      '--task <id>                  task id when omitted positionally',
-      '--json-payload <json>        relationship mutation payload',
-      '--workspace, --ws <id>        override the selected workspace',
-      '--json                       print machine-readable JSON',
-    ],
-    usage: 'ttr relationships [list|create|delete] [task-id] [options]',
-  },
+  relationships: relationshipsHelp,
   tasks: {
     commands: [
       'list                         list open tasks plus assigned external tasks in personal workspace',
@@ -235,6 +220,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'delete [id]                  delete a task',
       'move [id]                    move a task to another list or board',
       'bulk --ids <ids>             run a bulk task operation',
+      ...taskCollaborationHelp.commands,
     ],
     description:
       'Task lists are sorted by priority and due date. Unscoped lists start from the personal workspace and include assigned tasks from other accessible workspaces. Human-readable lists show total tasks and page/max page. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
@@ -254,6 +240,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr tasks close <task-id>',
       'ttr tasks update VHP-12 --json-payload \'{"completed":true}\'',
       'ttr tasks move <task-id> --list <done-list-id>',
+      ...taskCollaborationHelp.examples,
     ],
     options: [
       '--all                        include all task-list statuses, task states, and archived boards',
@@ -273,10 +260,11 @@ const helpTopics: Record<string, HelpTopic> = {
       '--limit <n>, --offset <n>     paginate list output (offset form)',
       '--q <query>                  filter list output by task text; search query alias for tasks search',
       '--template <key|file>         create a task from a workspace or local task template',
+      ...taskCollaborationHelp.options,
       '--json                       print machine-readable JSON',
     ],
     usage:
-      'ttr tasks [list|search|use|get|create|update|description|delete|move|bulk] [id] [options]',
+      'ttr tasks [list|search|use|get|create|update|description|delete|move|bulk|comment|link|timeline|status|import] [id] [options]',
   },
   'task-templates': {
     commands: [

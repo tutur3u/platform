@@ -94,6 +94,12 @@ import {
   shouldUseChunkedTaskDescriptionUpdate,
   updateTaskDescriptionWithBestTransport,
 } from './task-description';
+import { runGithubImport } from './github-import-command';
+import { normalizeLabelColor } from './label-color';
+import {
+  runTaskCollaborationCommand,
+  TASK_COLLABORATION_ACTIONS,
+} from './task-collaboration-command';
 import { runTaskTemplateCliCommand } from './task-template-command';
 import {
   isLocalTaskTemplateReference,
@@ -116,24 +122,6 @@ const REVIEW_TASK_LIST_STATUSES = ['review'] as const;
 const DONE_TASK_LIST_STATUSES = ['review', 'done'] as const;
 const CLOSED_TASK_LIST_STATUSES = ['closed'] as const;
 const TASK_SEARCH_MODES = ['text', 'semantic', 'hybrid'] as const;
-const LABEL_COLOR_ALIASES: Record<string, string> = {
-  amber: '#D97706',
-  blue: '#2563EB',
-  cyan: '#0891B2',
-  emerald: '#059669',
-  gray: '#6B7280',
-  green: '#16A34A',
-  indigo: '#4F46E5',
-  orange: '#EA580C',
-  pink: '#DB2777',
-  purple: '#7C3AED',
-  red: '#DC2626',
-  slate: '#475569',
-  teal: '#0D9488',
-  violet: '#7C3AED',
-  yellow: '#CA8A04',
-};
-
 type ListedWorkspace = Awaited<
   ReturnType<TuturuuuUserClient['workspaces']['list']>
 >[number];
@@ -1010,15 +998,7 @@ async function maybeMovePersonalExternalTaskToTerminal({
   return true;
 }
 
-export function normalizeLabelColor(value?: string) {
-  const color = (value || 'gray').trim();
-
-  if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/u.test(color)) {
-    return color;
-  }
-
-  return LABEL_COLOR_ALIASES[color.toLowerCase()] ?? color;
-}
+export { normalizeLabelColor };
 
 interface WorkspaceCommandContext {
   client: TuturuuuUserClient;
@@ -1342,6 +1322,21 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
       positionals,
       workspaceId,
     });
+    return true;
+  }
+  if (action && TASK_COLLABORATION_ACTIONS.has(action)) {
+    await runTaskCollaborationCommand({
+      client,
+      config,
+      flags,
+      json,
+      positionals,
+      workspaceId,
+    });
+    return true;
+  }
+  if (action === 'import') {
+    await runGithubImport(client, workspaceId, flags, json);
     return true;
   }
 

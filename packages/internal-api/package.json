@@ -381,6 +381,11 @@
       "import": "./dist/task-media-cleanup.js",
       "require": "./dist/task-media-cleanup.js"
     },
+    "./task-collaboration": {
+      "types": "./dist/task-collaboration.d.ts",
+      "import": "./dist/task-collaboration.js",
+      "require": "./dist/task-collaboration.js"
+    },
     "./task-history": {
       "types": "./dist/task-history.d.ts",
       "import": "./dist/task-history.js",

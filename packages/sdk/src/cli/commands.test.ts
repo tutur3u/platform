@@ -1636,7 +1636,7 @@ task_name: Prepare handoff
 
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining(
-        'Usage: ttr tasks [list|search|use|get|create|update|description|delete|move|bulk]'
+        'Usage: ttr tasks [list|search|use|get|create|update|description|delete|move|bulk|comment|link|timeline|status|import]'
       )
     );
     expect(write).toHaveBeenCalledWith(
