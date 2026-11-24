@@ -126,7 +126,9 @@ describe('notification and invitation shell coverage', () => {
         existsSync(resolve(platformWorkspaceApi, segment, 'route.ts'))
       )
       .map((segment) => `/api/workspaces/${segment}`);
-    const sharedConfig = source('packages/utils/src/next-config.ts');
+    const sharedConfig = source(
+      'packages/utils/src/web-workspace-api-paths.ts'
+    );
 
     for (const route of staticRoutes) {
       expect(sharedConfig).toContain(`'${route}'`);
