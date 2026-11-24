@@ -27,8 +27,9 @@ Use its [autonomy contract](references/program-orchestration.md#autonomy-and-asy
 Its operating model sets roles, the shared subagent allocation, lead budget grants and receipts; check declared allocations with `node scripts/ci/check-agent-budget.js`. Apply `references/security-default.md` to every lane: change-triggered checks, independent review for auth/RLS/CI/token/storage changes, and finding fields.
 A child on a linked host follows `references/linked-host-child-route.md`. Do not pass `isolation`.
 For orchestrator/intake threads and fleet-wide work (delegating long commands,
-resuming limited seats, replacing stuck leads, fleet worktree removal, T3 settings
-location), read `references/fleet-orchestration.md`.
+resuming limited seats, handing off limited or stuck threads, fleet worktree
+removal and orphan triage, T3 settings location, migration version reservation),
+read `references/fleet-orchestration.md`.
 For assigned ongoing idea/bug/feature intake, read `references/request-backlog.md`:
 capture each outcome before dispatch, recover durable requests on every wake, and
 keep implemented work distinct from verified delivery.

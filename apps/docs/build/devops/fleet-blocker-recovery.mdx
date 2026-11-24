@@ -1,6 +1,6 @@
 ---
 title: Fleet blocker recovery
-description: Triage stalled reviews and recover usage-limited fleet threads.
+description: Triage stalled reviews, recover usage-limited fleet threads and keep fleet work owned.
 ---
 
 Quinn operates the reviewer blocker detector and D1336 v2 exhaustion handling
@@ -36,3 +36,32 @@ native task state for each decision.
    case still blocked after its one deferral.
 4. Verify the actual successor provider, binding and progress. Keep the
    exhausted destination blocked until fresh evidence proves its eligibility.
+
+## Orchestrator standing rules
+
+These rules keep fleet orchestrators responsive and every piece of fleet work
+owned. The agent procedure is the `tuturuuu-agent-coordination` skill's
+fleet orchestration reference.
+
+- **Never block the orchestrator.** Orchestrator and intake threads hand
+  expensive or long commands (multi-host scans, cleanups, installs, gate runs,
+  waiting logins) to subagents and stay available. Short read-only checks are
+  fine.
+- **Resume on any seat with usage.** A usage-limited run moves to any admitted
+  seat with measured headroom on any linked machine or project, following the
+  exhaustion handling above. Unknown quota is not headroom.
+- **Hand off, then settle.** A stuck or limited long-lived thread is replaced by
+  a fresh child with a self-contained brief. Settle the old thread only after
+  its work has landed or been preserved and its result was delivered.
+- **Every item has an owner or is safe to remove.** Safe means merged
+  (patch-equivalent), clean, not held or locked, and idle. Anything else is
+  preserved first: a verified `git bundle` plus a patch and checksum in durable
+  storage, one triage row per item, then an owner or a decision request. Never
+  force-remove.
+- **T3 desktop settings.** A T3 desktop app may read
+  `~/.t3-desktop/userdata/settings.json` rather than
+  `~/.t3/userdata/settings.json`; confirm which file the running server uses
+  before editing provider instances.
+- **Migration versions.** Ask the orchestrator to reserve a migration version
+  from its registry before creating a migration, so parallel lanes never pick
+  the same timestamp.
