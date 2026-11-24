@@ -12,10 +12,9 @@ const f = vi.hoisted(() => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
-vi.mock(
-  '../../../../../features/meeting-ai/server/per-speaker-flag',
-  () => ({ meetPerSpeakerEnabled: f.perSpeaker })
-);
+vi.mock('../../../../../features/meeting-ai/server/per-speaker-flag', () => ({
+  meetPerSpeakerEnabled: f.perSpeaker,
+}));
 vi.mock(
   '../../../../../features/live-assistant/server/room-mira-authority',
   () => ({ readRoomMiraAvailability: f.available })
@@ -219,7 +218,8 @@ const roomIn = (mode: 'room' | 'self' | undefined) =>
   );
 const choiceCalls = () =>
   f.room.mock.calls.filter(
-    ([, command]) => (command as { action: string }).action === 'mira.room.choice'
+    ([, command]) =>
+      (command as { action: string }).action === 'mira.room.choice'
   );
 
 it.each([

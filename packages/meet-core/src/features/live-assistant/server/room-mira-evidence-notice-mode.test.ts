@@ -44,9 +44,8 @@ describe('Mira choice notice mode', () => {
   it('falls back without the column and re-probes after the window', async () => {
     vi.useFakeTimers();
     try {
-      const { recordMiraChoice, NOTICE_MODE_PROBE_TTL_MS } = await import(
-        './room-mira-evidence'
-      );
+      const { recordMiraChoice, NOTICE_MODE_PROBE_TTL_MS } =
+        await import('./room-mira-evidence');
       f.insert
         .mockResolvedValueOnce({ error: { code: 'PGRST204' } })
         .mockResolvedValue({ error: null });
@@ -56,7 +55,9 @@ describe('Mira choice notice mode', () => {
       expect(f.insert.mock.calls[2]?.[0]).not.toHaveProperty('notice_mode');
       vi.advanceTimersByTime(NOTICE_MODE_PROBE_TTL_MS + 1);
       await recordMiraChoice({ ...evidence, noticeMode: 'self' });
-      expect(f.insert.mock.calls[3]?.[0]).toMatchObject({ notice_mode: 'self' });
+      expect(f.insert.mock.calls[3]?.[0]).toMatchObject({
+        notice_mode: 'self',
+      });
     } finally {
       vi.useRealTimers();
     }

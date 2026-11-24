@@ -112,9 +112,7 @@ export async function recordMiraChoice(input: MiraChoiceEvidence) {
   const insert = (mode: boolean) =>
     db
       .from('meet_mira_participant_choices')
-      .insert(
-        (mode ? { ...row, notice_mode: 'self' } : row) as typeof row
-      );
+      .insert((mode ? { ...row, notice_mode: 'self' } : row) as typeof row);
   let { error } = await insert(withMode);
   // Feature check: without the column PostgREST answers PGRST204.
   if (withMode && error?.code === 'PGRST204') {
