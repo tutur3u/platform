@@ -6,6 +6,7 @@ import { CyclePlanningView } from '@tuturuuu/tasks-ui/tu-do/cycles/planning/cycl
 import { TaskCyclesView } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-view';
 import { BoardClient } from '@tuturuuu/tasks-ui/tu-do/shared/board-client';
 import { TaskLegacyRouteRecovery } from '@tuturuuu/tasks-ui/tu-do/shared/task-legacy-route-recovery';
+import { SkeletonCard } from '@tuturuuu/ui/skeleton';
 import { useLocale, useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import SharedTaskContent from '../app/[locale]/shared/task/[shareCode]/content';
@@ -101,7 +102,7 @@ function WorkspacePageView({ page }: { page: WorkspacePage }) {
       );
     case 'new-task':
       return (
-        <Suspense fallback={<div className="h-40 animate-pulse bg-muted" />}>
+        <Suspense fallback={<SkeletonCard className="m-2" lines={4} />}>
           <TaskPlanComposer
             key={`${page.wsId}:${page.sourceUrl ?? ''}`}
             wsId={page.wsId}

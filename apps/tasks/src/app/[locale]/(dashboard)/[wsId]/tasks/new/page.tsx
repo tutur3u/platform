@@ -1,4 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { SkeletonCard } from '@tuturuuu/ui/skeleton';
 import { getLettinNotebookReferenceUrl } from '@tuturuuu/utils/lettin-task-reference';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -15,7 +16,7 @@ type Props = {
 };
 export default function Page(props: Props) {
   return (
-    <Suspense fallback={<div className="h-40 animate-pulse bg-muted" />}>
+    <Suspense fallback={<SkeletonCard className="m-2" lines={4} />}>
       <NewTaskPage {...props} />
     </Suspense>
   );

@@ -52,15 +52,70 @@ export function TaskBoardHeaderSkeleton({
   );
 }
 
+const LIST_SECTIONS = [
+  { id: 'todo', rows: 4 },
+  { id: 'in-progress', rows: 3 },
+  { id: 'done', rows: 2 },
+] as const;
+
+/** Status sections with task rows, matching the board's list view. */
+export function TaskListSkeleton({ root = false }: { root?: boolean }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        'flex h-full flex-col gap-4 overflow-hidden py-3',
+        root ? 'pr-0 pl-2' : 'px-2'
+      )}
+      data-testid="task-list-skeleton"
+    >
+      {LIST_SECTIONS.map((section) => (
+        <div className="flex flex-col gap-1" key={section.id}>
+          <div className="flex h-9 items-center gap-2 px-2">
+            <Skeleton className="h-4 w-4 rounded" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-5 w-7 rounded-full" />
+          </div>
+          {Array.from({ length: section.rows }, (_, index) => (
+            <div
+              className="flex h-11 items-center gap-3 rounded-lg border bg-card/80 px-3"
+              key={`${section.id}-${index}`}
+            >
+              <Skeleton className="h-4 w-4 shrink-0 rounded" />
+              <Skeleton
+                className={cn('h-4', index % 2 === 0 ? 'w-2/5' : 'w-1/3')}
+              />
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <Skeleton className="hidden h-4 w-16 rounded-full sm:block" />
+                <Skeleton className="h-4 w-12 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function TaskBoardLoadingState({
   className,
   root = false,
   showHeader = false,
+  view = 'kanban',
 }: {
   className?: string;
   root?: boolean;
   showHeader?: boolean;
+  /** The board view being opened; list view gets status sections and rows. */
+  view?: 'kanban' | 'list';
 }) {
+  const body =
+    view === 'list' ? (
+      <TaskListSkeleton root={root} />
+    ) : (
+      <KanbanSkeleton root={root} />
+    );
+
   return (
     <div
       aria-busy="true"
@@ -81,11 +136,11 @@ export function TaskBoardLoadingState({
             className="min-h-0 flex-1 overflow-hidden"
             data-testid="task-board-loading-body"
           >
-            <KanbanSkeleton root={root} />
+            {body}
           </div>
         </>
       ) : (
-        <KanbanSkeleton root={root} />
+        body
       )}
     </div>
   );

@@ -96,4 +96,11 @@ describe('TaskBoardLoadingState', () => {
     );
     expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
   });
+
+  it('shows status sections and task rows for the list view', () => {
+    render(<TaskBoardLoadingState showHeader view="list" />);
+
+    expect(screen.getByTestId('task-list-skeleton')).toBeInTheDocument();
+    expect(screen.queryByTestId('kanban-skeleton')).not.toBeInTheDocument();
+  });
 });

@@ -8,7 +8,7 @@ vi.mock('@tanstack/react-router', () => ({
     select({ location }),
 }));
 
-import { PageTransition } from './page-transition';
+import { PageTransition, TasksPageLoading } from './page-transition';
 
 afterEach(cleanup);
 
@@ -61,5 +61,37 @@ describe('Tasks URL and loaded model boundary', () => {
       <PageTransition loadedPath={location.pathname}>Board A</PageTransition>
     );
     expect(screen.getByText('Board A')).toBeTruthy();
+  });
+});
+
+describe('TasksPageLoading', () => {
+  it.each(['/en/ws/boards/b1', '/ws/boards/b1/', '/en/ws/boards', '/ws/tasks'])(
+    'shows the board header and columns for %s',
+    (pathname) => {
+      location.pathname = pathname;
+      render(<TasksPageLoading />);
+      expect(screen.getByRole('progressbar', { name: 'Loading' })).toBeTruthy();
+      expect(screen.getByTestId('task-board-header-skeleton')).toBeTruthy();
+      expect(screen.getByTestId('kanban-skeleton')).toBeTruthy();
+      expect(screen.getByRole('main')).toBeTruthy();
+    }
+  );
+
+  it('fills the page without the shell offsets', () => {
+    location.pathname = '/en/ws/boards/b1';
+    render(<TasksPageLoading />);
+    const state = screen.getByTestId('task-board-loading-state');
+    expect(state.className).not.toContain('-ml-4');
+    expect(state.className).toContain('w-full');
+  });
+
+  it('never falls back to a single full-width band', () => {
+    location.pathname = '/en/ws/cycles';
+    const { container } = render(<TasksPageLoading />);
+    expect(container.querySelector('.h-40.w-full')).toBeNull();
+    expect(
+      container.querySelector('[data-slot="skeleton-list"]')
+    ).not.toBeNull();
+    expect(screen.queryByTestId('kanban-skeleton')).toBeNull();
   });
 });
