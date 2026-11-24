@@ -38,6 +38,17 @@ jobs:
             --iidfile "$RUNNER_TEMP/image-id" \
             apps/playground-execution/container
           echo "PLAYGROUND_IMAGE_ID=$(cat "$RUNNER_TEMP/image-id")" >> "$GITHUB_ENV"
+      - name: Report where the image size goes
+        run: |
+          set -euo pipefail
+          {
+            echo '### Playground image size'
+            echo '```'
+            docker image inspect --format '{{.Size}} bytes' "$PLAYGROUND_IMAGE_ID"
+            docker run --rm --pull=never --network=none --cap-drop=ALL --read-only --user=0:0 --entrypoint /bin/sh "$PLAYGROUND_IMAGE_ID" -c \
+              'du -xsm /usr/lib/* /usr/lib/x86_64-linux-gnu/* /usr/share/* /usr/local/* /usr/libexec/* /usr/bin 2>/dev/null | sort -n | tail -30'
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run every stock template with Docker isolation
         run: node apps/playground-execution/verify-image.mjs "$PLAYGROUND_IMAGE_ID"
       - name: Qualify the trusted launcher sandbox
