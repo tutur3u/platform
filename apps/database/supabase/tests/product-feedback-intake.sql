@@ -2,7 +2,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(52);
+SELECT plan(53);
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid =
   'private.product_feedback_reports'::regclass), 'reports enable RLS');
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid =
@@ -216,5 +216,9 @@ SET LOCAL ROLE anon;
 SELECT throws_ok($$SELECT public.list_product_feedback_receipts()$$,
   '42501',NULL,'anonymous listing is denied');
 RESET ROLE;
+SELECT has_index('private','product_feedback_receipts',
+  'product_feedback_receipts_actor_created_idx',
+  ARRAY['actor_id','created_at','id'],
+  'receipt listing has its keyset index');
 SELECT * FROM finish();
 ROLLBACK;
