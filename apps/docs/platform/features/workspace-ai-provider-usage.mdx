@@ -1,0 +1,260 @@
+---
+title: BYOK usage and observability
+description: Design for per-workspace and per-key AI usage analytics, provider cost against platform credits, BYOK error and latency SLOs, and workspace admin alerts, using metadata only.
+updatedAt: "2026-11-24"
+audience: developers
+---
+
+**Status:** design, awaiting independent security review. Keys are in
+[Per-workspace AI provider keys](/platform/features/workspace-ai-provider-keys);
+the request path is in [AI provider routing](/platform/ai/ai-provider-routing).
+
+## Principles
+
+- **One record per request.** Every routed request already writes an AI Studio
+  run (`private.ai_studio_runs`) or a Live session (`private.ai_live_sessions`).
+  Analytics, SLOs and alerts read those, so there is no second event stream.
+- **Metadata only.** No key material, no prompt, output, tool payload,
+  transcript or provider error message, no user id in rollups, no IP or user
+  agent. This follows the
+  [personal data protection standard](/platform/data-protection-standard):
+  runtime logs carry redacted, allowlisted fields and unfiltered provider
+  errors never leave the request.
+- **Admin-only.** Per-key analytics need the workspace's
+  `manage_workspace_secrets`. No view breaks usage down by member, because an
+  admin permission does not authorize disclosure of another person's activity.
+
+## Data model
+
+### Run fields
+
+Migration `<VERSION-FROM-IRIS>_ai_usage_rollups.sql` adds to both
+`private.ai_studio_runs` and `private.ai_live_sessions`:
+
+| Column | Meaning |
+| --- | --- |
+| `credential_source` | `platform`, `byok`, `subscription` or `external_app` |
+| `provider` | `google`, `openai`, `anthropic` (derived from the route, not parsed from `model_id`) |
+| `provider_key_id` | The workspace key used, or null |
+| `fallback_from` | `byok` when the request fell back to platform credits |
+| `error_class` | Widened to the [error classes](#error-classes) below |
+| `estimated_platform_credits` | What the credit ledger would have charged for the same usage, computed by the ledger's pricing in dry-run mode |
+| `byok_fee_micro_usd` | 1,000 for a settled BYOK request, else 0 |
+
+Run rows keep AI Studio's existing metadata retention. The data protection
+standard lists that 365-day default as an open gap; these columns do not widen
+it, and adopting the standard's 90-day ceiling for runs closes it.
+
+### Rollups
+
+```sql
+create table private.workspace_ai_usage_hourly (
+  ws_id uuid not null references public.workspaces(id) on delete cascade,
+  bucket_start timestamptz not null,         -- hour
+  feature text not null,
+  provider text not null,
+  model_id text not null,
+  credential_source text not null,
+  provider_key_id uuid,                      -- null for platform
+  requests integer not null,
+  successes integer not null,
+  fallbacks integer not null,
+  errors jsonb not null,                     -- { error_class: count }
+  input_tokens bigint not null,
+  cached_input_tokens bigint not null,
+  output_tokens bigint not null,
+  audio_input_tokens bigint not null,
+  audio_output_tokens bigint not null,
+  latency_p50_ms integer,
+  latency_p95_ms integer,
+  first_token_p95_ms integer,
+  est_provider_cost_micro_usd bigint not null,
+  credits_charged numeric not null,
+  est_platform_credits numeric not null,
+  byok_fee_micro_usd bigint not null
+);
+create unique index workspace_ai_usage_hourly_key on private.workspace_ai_usage_hourly
+  (ws_id, bucket_start, feature, provider, model_id, credential_source,
+   coalesce(provider_key_id, '00000000-0000-0000-0000-000000000000'));
+```
+
+`private.workspace_ai_usage_daily` has the same shape by day. Hourly rows are
+kept 35 days and daily rows 13 months. Both cascade with the workspace, hold no
+user ids, and are reachable only through service-role definer RPCs. A Personal
+workspace's rollups describe one person and are erased with that account's
+workspace.
+
+### Rollup job
+
+A Cron Control job, `ai-usage-rollup`, every 15 minutes:
+
+- recomputes the current and previous hour from run rows, in keyset pages of
+  at most 5,000 runs and 20 pages per pass, with a durable cursor;
+- replaces each bucket's values (an idempotent upsert), so retries and
+  duplicate invocations cannot double count;
+- also writes the platform-wide observability rollups below;
+- runs only while listed in `CRON_CONTROL_ENABLED_JOBS` and its
+  `private.observability_source_control` row is `on` or `dry_run`, which is its
+  stop fence; it never reschedules itself.
+
+Estimated provider cost uses `private.ai_gateway_models` prices and is labeled
+an estimate: the provider's invoice is authoritative.
+
+## Error classes
+
+The routing layer maps every provider failure to one class before anything is
+logged or stored:
+
+| Class | Typical cause | Counts against |
+| --- | --- | --- |
+| `auth` | 401 or 403 from the provider | The workspace key |
+| `quota` | Provider quota or billing exhausted | The workspace key |
+| `rate_limit` | 429 | The workspace key |
+| `invalid_request` | 400 from the provider | The request |
+| `content_filtered` | Provider safety block | The request |
+| `provider_unavailable` | Provider 5xx | The provider |
+| `timeout`, `network` | No answer within the deadline | The provider or the path |
+| `platform` | A Tuturuuu failure before or after the provider call | Tuturuuu |
+| `cancelled` | The caller aborted | None |
+| `no_key`, `key_invalid`, `key_revoked` | Resolution outcome, no provider call | The workspace key |
+
+## Analytics
+
+`GET /api/v1/workspaces/[wsId]/ai-provider-keys/usage` with `from`, `to`,
+`granularity` (`hour` up to 7 days, else `day`), and optional `feature`,
+`provider`, `model` and `source` filters. The range is at most 400 days and
+2,000 points. The handler checks `manage_workspace_secrets`, then calls
+`get_workspace_ai_usage(p_ws_id, …)`, which reads only that workspace's rows.
+
+| Measure | Source |
+| --- | --- |
+| Requests, successes, fallbacks | Rollup counts |
+| Tokens in, cached in, out, audio | Rollup sums |
+| Latency p50 and p95, first-token p95 | Rollup percentiles (request-weighted across buckets) |
+| Errors and rate-limit hits | `errors` by class |
+| Model mix | Requests and tokens per `model_id` |
+| Per-feature breakdown | Requests, tokens and cost per `feature` (Meet Mira chat, Live, room voice, transcription, notes, web chat, embeddings, mail, …) |
+| Estimated provider cost | `est_provider_cost_micro_usd` |
+| Platform credits avoided | `est_platform_credits` for BYOK rows, shown with the BYOK fee next to it |
+| Credits charged | `credits_charged` (platform and fallback rows) |
+
+AI Studio's Observe pages (`/runs`, `/usage`) and the workspace AI executions
+analytics gain a **Credential** filter (all, workspace key, platform credits),
+so the same requests appear there for their existing readers; those views show
+the provider only, never `last4`.
+
+## UI
+
+The **Usage** and **Health** views live in the **AI provider keys** tab
+(Settings → Developer), beside **Keys**. Charts use recharts with the tab and
+chart patterns of the AI executions analytics
+(`apps/web/src/app/[locale]/(dashboard)/[wsId]/ai/executions/components/enhanced-execution-charts.tsx`)
+and the workspace usage stat cards; colors use the dynamic chart tokens.
+
+```text
+[ Keys | Usage | Health ]                         [ 24 h | 7 d | 30 d | 90 d | Custom ]
+ Requests 12,480   Tokens 3.1M in / 0.4M out   p95 1.9 s   Errors 0.8 %
+ Provider cost ≈ $4.20   Credits avoided 9,600 (BYOK fee $12.48)
+ [ Overview | Features | Models | Errors | Cost ]
+ ▁▂▃▅▇▅▃  stacked by source: Workspace key · Platform credits · Fallback
+ Feature          Requests  Tokens   p95     Errors  Cost
+ Meet Mira chat   6,210     1.2M     1.4 s   0.4 %   $1.10
+ …                                              [ Open runs in AI Studio ]
+```
+
+**Health** shows each key's state (`healthy`, `degraded`, `failing`, `unused`,
+`revoked`), its error classes in the last 24 hours, the last **Test key**
+result and the alert history.
+
+| String | English | Vietnamese |
+| --- | --- | --- |
+| Views | Keys · Usage · Health | Khóa · Mức sử dụng · Tình trạng |
+| Tiles | Requests · Tokens · p95 latency · Error rate | Yêu cầu · Token · Độ trễ p95 · Tỷ lệ lỗi |
+| Cost | Estimated provider cost | Chi phí nhà cung cấp ước tính |
+| Avoided | Platform credits avoided | Tín dụng nền tảng tiết kiệm được |
+| Fee | BYOK fee | Phí BYOK |
+| Sources | Workspace key · Platform credits · Fallback | Khóa của không gian làm việc · Tín dụng nền tảng · Dự phòng |
+| States | Healthy · Degraded · Failing · Unused · Revoked | Ổn định · Suy giảm · Đang lỗi · Chưa dùng · Đã thu hồi |
+| Estimate note | Estimates. Your provider's invoice is authoritative. | Số liệu ước tính. Hóa đơn của nhà cung cấp là chính xác nhất. |
+| Runs link | Open runs in AI Studio | Mở lượt chạy trong AI Studio |
+
+## Platform observability
+
+The [observability pipeline](/build/devops/observability-analytics) gains one
+source:
+
+- `ai-providers` is added to the `private.observability_source_control` source
+  check and to `private.observability_metric_allowed` with `requests`,
+  `errors`, `customer_key_errors`, `rate_limited`, `duration_p95_ms` and
+  `first_token_p95_ms`. Services are `<credential_source>:<provider>` (for
+  example `byok:openai`), aggregated across workspaces with no workspace id.
+  The `ai-usage-rollup` job writes 900-second buckets through
+  `observability_write_rollups`.
+- `observability_burn_rate` reads only `cloudflare-workers` today. The
+  migration generalizes it to the SLO's own source and metrics; the existing
+  `observability-slo-alerts.sql` tests must pass unchanged.
+
+| SLO | Objective | Bad events |
+| --- | --- | --- |
+| `byok-path-availability` | 99.5 % of BYOK requests | `platform`, plus `timeout` and `network` inside Tuturuuu's transport |
+| `byok-provider-availability-<provider>` | 99 % of BYOK requests | `provider_unavailable`, provider-side `timeout` |
+| `byok-latency-<provider>` | 99 % of 15-minute buckets with first-token p95 at or under 4,000 ms | Language requests only; Live and embeddings excluded |
+
+Customer-key errors (`auth`, `quota`, `rate_limit`) and request errors are not
+bad events: the workspace's key or request causes them, and they drive the
+workspace alerts below. Burn alerts reuse the existing thresholds (page at 14.4
+over 1 hour and 15 minutes, ticket at 6 over 6 hours and 1 hour), the
+50-request minimum and the unavailable-window rule, and go to root members with
+`view_infrastructure` and the Admin Health view. Provider availability SLOs
+open tickets only, because a provider outage is reported, not fixed.
+
+Runtime logs use `console.warn` and `console.error` with only `requestId`,
+`runId`, `feature`, `provider`, `modelId`, `credentialSource`, `errorClass`,
+`status` and `latencyMs`. A canary test sends a request whose prompt, key and
+provider error contain marker strings and asserts that no log, run, rollup,
+event or notification contains them.
+
+## Admin alerts
+
+`private.send_root_operator_alert` delivers only to the root workspace. A
+sibling, `private.send_workspace_admin_alert(p_ws_id, p_kind, p_dedupe_key,
+p_code, p_data, p_permissions, p_priority)`, dedupes through
+`private.workspace_admin_alerts` and calls `public.create_notification` for at
+most 20 members of that workspace who hold every listed permission
+(`manage_workspace_secrets`), on web, email and push per their preferences. The
+notification carries a `code` so each client renders it from its EN or VI
+bundle.
+
+| Kind | Trigger | Priority |
+| --- | --- | --- |
+| `byok_key_auth_failed` | A key is marked `invalid` | `urgent` |
+| `byok_key_quota_exhausted` | First `quota` error for a key | `high` |
+| `byok_key_rate_limited` | 20 % or more of at least 20 requests rate-limited in an hour | `medium` |
+| `byok_key_operator_revoked` | An operator revokes a key | `high` |
+| `byok_fallback_active` | First fallback to platform credits in 24 hours | `medium` |
+| `byok_key_recovered` | `restored`, or two healthy rollup passes after an alert | `low` |
+
+Each kind fires at most once per key per 24 hours; a pass delivers at most 20
+alerts; resolved alerts are kept 90 days. Payloads hold the provider, the key's
+creation date, the error class, counts and the time window, never `last4`, key
+material or content.
+
+| Code | English | Vietnamese |
+| --- | --- | --- |
+| `byok_key_auth_failed` | Your {provider} key was rejected. Requests use {fallback} until you replace it. | Khóa {provider} của bạn bị từ chối. Các yêu cầu dùng {fallback} cho đến khi bạn thay khóa. |
+| `byok_key_quota_exhausted` | Your {provider} key has run out of quota. | Khóa {provider} của bạn đã hết hạn mức. |
+| `byok_fallback_active` | {count} requests used platform credits because your {provider} key failed. | {count} yêu cầu đã dùng tín dụng nền tảng vì khóa {provider} của bạn bị lỗi. |
+| `byok_key_recovered` | Your {provider} key works again. | Khóa {provider} của bạn đã hoạt động trở lại. |
+
+## Security review
+
+| # | Threat | Mitigation | Residual | Severity |
+| --- | --- | --- | --- | --- |
+| 1 | Prompt, output, key or provider message reaches logs, rollups or alerts | Error-class mapping at the boundary, allowlisted log fields, no content columns, marker canary test | SDK-internal logging per version | High, residual Low |
+| 2 | Cross-workspace analytics read | Permission check in the handler, workspace-bound definer RPC, no direct table grants | None known | High, residual Low |
+| 3 | Analytics expose individual members' activity | No user dimension in rollups or views | Small workspaces can still infer who was active | Medium, residual Low |
+| 4 | Rollup job runs away or double counts | Bounded pages, durable cursor, idempotent bucket replacement, Cron Control stop fence | None known | Medium, residual Low |
+| 5 | Generalizing the burn-rate function breaks existing SLOs | Existing pgTAP suite must pass unchanged | None known | Medium, residual Low |
+| 6 | Alert floods or notification abuse | Per-key, per-kind 24-hour dedupe, 20 per pass, permission-targeted recipients | None known | Low |
+| 7 | Cost figures mislead billing decisions | Labeled estimates; invoice is authoritative | Catalog price drift | Low |
+| 8 | Run metadata kept longer than the standard allows | Columns add no content; adopt the 90-day ceiling for runs | Open data-protection gap until that change | Medium |

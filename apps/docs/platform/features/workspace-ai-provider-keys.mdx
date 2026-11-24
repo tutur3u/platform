@@ -1,0 +1,361 @@
+---
+title: Per-workspace AI provider keys
+description: Design for workspace bring-your-own-key (BYOK) provider keys for Google, OpenAI and Anthropic, stored as encrypted workspace secrets, with per-request server-side decryption, admin-only access, audit, billing and a threat model.
+updatedAt: "2026-11-24"
+audience: developers
+---
+
+**Status:** design, awaiting independent security review. No code or
+migration ships from this page. BYOK is specified in three pages and stored in
+the encrypted workspace secrets system:
+
+| Page | Covers |
+| --- | --- |
+| This page | Key metadata, per-request decryption, save and revoke, billing, erasure |
+| [Workspace secrets encryption](/platform/architecture/workspace-secrets-encryption) | The encrypted store every workspace secret, including provider keys, lives in |
+| [AI provider routing](/platform/ai/ai-provider-routing) | The one provider layer every AI feature uses, per-feature models, fallback order, health check and **Test key**, call-site inventory and migration order |
+| [BYOK usage and observability](/platform/features/workspace-ai-provider-usage) | Usage and cost analytics, SLOs and admin alerts |
+
+## Storage
+
+Provider keys are **credential-tier workspace secrets** in
+`public.workspace_secrets`, under reserved names `AI_PROVIDER_KEY:google`,
+`AI_PROVIDER_KEY:openai` and `AI_PROVIDER_KEY:anthropic`. Their values exist
+only as credential-tier payloads in `private.workspace_secret_payloads`:
+a per-row data key wrapped by `WORKSPACE_SECRETS_KEK_V<n>`, held only by the
+`tuturuuu-workspace-secrets` Worker, so Postgres can never decrypt them (see
+[the two tiers](/platform/architecture/workspace-secrets-encryption#design-two-encrypted-tiers)).
+Only the BYOK handlers below, through the secrets Worker, write them. Two
+layers enforce this:
+- The reserved-name trigger `workspace_secrets_guard_reserved_names` rejects
+  `anon` and `authenticated` writes to `AI_PROVIDER_KEY:*`. It skips every
+  other role, so it cannot stop `service_role`.
+- Every generic Secrets route (web, workspace and admin `POST`, `PUT` and
+  `DELETE`) refuses `AI_PROVIDER_KEY:*` in application code, for every caller.
+  This includes platform administrators, whom `getWorkspaceSecretsAccess`
+  serves through `createAdminClient()` (`service_role`). See
+  [write authority](/platform/architecture/workspace-secrets-encryption#read-and-write-api).
+
+In the Secrets list these rows show `•••• last4` and open the **AI provider
+keys** tab for changes. BYOK metadata (status, health, validation) lives in a
+small table beside them.
+
+[Mira cloud channels](/platform/ai/mira-cloud-channels#secrets) uses the same
+store until the [secrets vault](/platform/architecture/secrets-vault) workload
+tier ships, so there is one encrypted store for every workspace credential.
+
+## Scope
+
+| Item | Decision |
+| --- | --- |
+| Providers | `google` (Gemini Developer API keys), `openai`, `anthropic`. Providers are rows in a lookup table, so a new provider is a migration plus an adapter. Vertex, Azure and custom base URLs are out of scope. |
+| Keys per workspace | At most one active key per provider. |
+| UI | Workspace settings, **Developer** group, a new **AI provider keys** tab (`ai_provider_keys`) beside **Secrets**. The existing `secrets` tab is gated on the root workspace's `manage_workspace_secrets`, so customer admins never see it; the new tab is gated on the workspace's own permission. |
+| Who | Holders of `manage_workspace_secrets` in that workspace. The root override in `getWorkspaceSecretsAccess` does **not** apply: platform operators can revoke for abuse through the operator path below, never read or replace. |
+| Operator revocation | `DELETE /api/v1/infrastructure/workspaces/[wsId]/ai-provider-keys/[provider]` in `apps/admin`. Requires the root workspace's `manage_workspace_secrets` and a verified staff session, and a `reason` from a fixed enum. It calls `revoke_workspace_ai_provider_key` with `actor_kind = 'operator'`, writes an `operator_revoked` event, and notifies the workspace's key holders. It never returns or replaces a key. |
+| Default | No key. Every feature uses platform keys and AI credits, as today. |
+| Release flag | `AI_BYOK_ENABLED` must equal exactly `true` on the web Worker and `tuturuuu-workspace-secrets`; source configuration carries `false`. While off, the tab is hidden, saves are refused and `resolve` returns `none`, so every request takes the platform path. Flips need the release authority's acknowledgement. |
+
+## Data model
+
+Migration `20261124112500_byok_provider_keys.sql` (name reserved; the final
+stamp is requested again right before push, after the encryption migration's
+stamp, and the file renamed byte for byte). It holds metadata only, in
+`private`:
+
+```sql
+create table private.ai_provider_key_providers (
+  id text primary key,                       -- 'google' | 'openai' | 'anthropic'
+  enabled boolean not null default true,
+  test_model_id text not null                -- model for the Test key generation
+);
+
+create table private.workspace_ai_provider_keys (
+  id uuid primary key default gen_random_uuid(),
+  ws_id uuid not null references public.workspaces(id) on delete cascade,
+  provider text not null references private.ai_provider_key_providers(id),
+  secret_id uuid references public.workspace_secrets(id) on delete set null,
+  status text not null check (status in ('active', 'invalid', 'revoked')),
+  last_validated_at timestamptz,
+  last_error_class text,                     -- error class enum, never a message
+  created_by uuid references public.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  revoked_by uuid references public.users(id) on delete set null,
+  revoked_at timestamptz,
+  check ((status = 'revoked') = (secret_id is null))
+);
+create unique index workspace_ai_provider_keys_one_active
+  on private.workspace_ai_provider_keys (ws_id, provider)
+  where status <> 'revoked';
+
+create table private.workspace_ai_provider_key_events (
+  id bigint generated always as identity primary key,
+  ws_id uuid not null references public.workspaces(id) on delete cascade,
+  key_id uuid,                               -- no FK: survives key row changes
+  provider text not null,
+  action text not null check (action in (
+    'created', 'replaced', 'validated', 'validation_failed', 'tested',
+    'revoked', 'marked_invalid', 'restored', 'routing_changed',
+    'operator_revoked')),
+  actor_user_id uuid references public.users(id) on delete set null,
+  actor_kind text not null check (actor_kind in ('user', 'system', 'operator')),
+  error_class text,
+  at timestamptz not null default now()
+);
+```
+
+- `revoke all` on every table from `public`, `anon` and `authenticated`; RLS on
+  with **no policies**. Only `service_role` reaches them, through
+  `security definer` RPCs granted to `service_role` only:
+  `put_workspace_ai_provider_key`, `revoke_workspace_ai_provider_key` and
+  `list_workspace_ai_provider_keys`. No RPC returns a payload.
+- Events are append-only: a trigger rejects `update` and `delete` except the
+  actor anonymization and the workspace cascade.
+- No table stores a key, a key prefix, a hash of a key or a provider error
+  message, because provider messages can quote request details. `last4` comes
+  from the credential payload.
+- The routing tables (per-feature model and fallback order) are in
+  [AI provider routing](/platform/ai/ai-provider-routing#per-feature-model-selection);
+  the usage rollups are in [BYOK usage](/platform/features/workspace-ai-provider-usage#data-model).
+  Both use `<VERSION-FROM-IRIS>`.
+- pgTAP coverage in `apps/database/supabase/tests/byok-provider-keys.sql`: no
+  access for `anon` and `authenticated`, one active key per provider, the
+  revoked/secret check, the reserved-name guard, append-only events, cascade and
+  anonymization. The exact SQL, an isolated `bun sb:reset` and the pgTAP receipt
+  go to the migration owner before anything is applied anywhere else.
+
+## Encryption
+
+Provider keys use the credential tier of
+[workspace secrets encryption](/platform/architecture/workspace-secrets-encryption):
+a fresh 256-bit data key per value, AES-256-GCM through the
+`packages/vault-crypto` envelope. The value AAD binds the workspace, secret id,
+name and value revision; the wrapped data key's AAD binds the KEK version (see
+[the data model](/platform/architecture/workspace-secrets-encryption#data-model)). The KEK itself is `WORKSPACE_SECRETS_KEK_V<n>` held only by
+`tuturuuu-workspace-secrets`. KEK rotation, backups and restore follow that
+page. Only `last4` and status are ever shown; no client receives the
+plaintext, including the admin who saved it.
+
+## Server-side decryption per request
+
+`tuturuuu-workspace-secrets` has no public route (`workers_dev: false`, no custom domain).
+Callers reach it only through Cloudflare service bindings and a
+`WorkerEntrypoint` RPC, which the routing layer calls once per request:
+
+```ts
+resolve(input: {
+  wsId: string;                 // the payer workspace
+  provider: 'google' | 'openai' | 'anthropic';
+  feature: AiFeatureKey;        // from the routing registry
+  userId: string;               // the actor the run was begun for
+  proof: {
+    kind: 'ai_run' | 'live_session';
+    id: string;                 // run or Live session id
+    secret: string;             // run-scoped proof from the begin RPC; a Live
+                                // renewal (settle, then a new begin) returns a new one
+  };
+}): Promise<
+  | { mode: 'byok'; keyId: string; key: string }
+  | { mode: 'none' }
+  | { mode: 'unusable'; keyId: string; errorClass: 'invalid' | 'revoked' }
+>;
+
+// Metadata only: never decrypts and never returns key material.
+keyStatus(input: { wsId: string; keyId: string }): Promise<{
+  status: 'active' | 'invalid' | 'revoked' | 'missing';
+}>;
+```
+
+| Method | Bindings allowed | Notes |
+| --- | --- | --- |
+| `resolve` | Each binding for its allowlisted features (for example `tuturuuu-meet` only `meet_*`) | Decrypts; needs a claimable proof |
+| `keyStatus` | `tuturuuu-meet-realtime` (room voice and Live ticks) and `tuturuuu-web` (Live session renewals) | Reads `private.workspace_ai_provider_keys` for that workspace and key only; a `keyId` from another workspace returns `missing` |
+
+- **Per request, server side.** Each AI request decrypts the key for that
+  request only. The plaintext lives in the caller's isolate for the provider
+  call (or, for a Live session, its provider connection) and is dropped after;
+  there is no cross-request cache. It is never written to Durable Object
+  storage, Queue payloads, logs, metrics, error messages or responses. Provider
+  and SDK errors are mapped to an error class before `console.*`.
+- **Proof of use.** Every routed request begins its AI run first, through
+  `begin_ai_studio_run` or `begin_meeting_ai_live_session`.
+  - **Zero-credit path.** Both RPCs gain a BYOK and `unmetered` path that
+    reserves 0 credits. `begin_ai_studio_run` rejects `p_reserved_credits <= 0`
+    with `INVALID_AMOUNT` today, so the path is an explicit `p_credential_source`
+    argument, not a zero amount. The RPC still checks membership of `userId`
+    in `wsId`, the feature gate, the model policy and the BYOK caps below.
+  - **Run-scoped proof.** The RPC generates a random 32-byte proof secret,
+    stores only its SHA-256 on the run or session row, and returns the secret
+    once. A per-run random secret needs no signing key shared between Workers.
+    It is scoped to that run, not to one call: it is claimed up to the caps
+    below.
+    - **AI runs:** `byok_proof_expires_at = now() + 10 minutes`.
+    - **Live and room voice sessions:** the expiry equals the session row's
+      hold expiry (nine minutes). Live billing renews by settling the current
+      `ai_live_sessions` row and beginning the next one through
+      `begin_meeting_ai_live_session`, about every eight minutes
+      (`packages/meet-core/src/cloudflare/live/billing.ts`). Each new row
+      returns a fresh secret with its own expiry, and the previous row's
+      secret stops claiming once that row is no longer `active`. A reconnect
+      or `GoAway` resumption uses the current row's secret, so sessions of 30
+      to 60 minutes keep resolving across renewals. The 30-claim cap applies
+      per row.
+    - **Handling:** callers keep `proof.secret` in memory only and never log,
+      persist or forward it. Durable Objects keep it in memory, not storage,
+      and renew after a restart. `resolve` hashes the secret and the database
+      compares SHA-256 digests (`proof_hash is not null` and equal). Any
+      comparison in Worker code uses a constant-time compare.
+  - **Check and count.** `resolve` calls
+    `private.claim_byok_resolution(proof_kind, id, proof_hash, ws_id, feature, user_id)`.
+    In one statement it compares the hash, checks workspace, feature and user,
+    checks the status (`reserved` or `running` for `ai_studio_runs`; `active`
+    for `ai_live_sessions`) and that the proof is unexpired, and increments
+    `byok_resolutions`. It allows at most 16 per run (tool loops use up to 8
+    steps) and 30 per Live session (connects and reconnects). The counter is a
+    database column, so the cap holds across stateless isolates.
+  - A compromised caller cannot decrypt without a live run it began for that
+    workspace, user and feature, and every decryption is counted on that run.
+  - **Schema changes** (in the BYOK migration):
+    - `private.ai_studio_runs` gains `credential_source` (`platform` or
+      `byok`), `provider_key_id`, `byok_proof_hash`, `byok_proof_expires_at`
+      and `byok_resolutions integer not null default 0`.
+    - `private.ai_live_sessions` (migration `20260803150000`) has `status`
+      `active | closed | expired`, no feature column, `reserved_credits > 0`
+      and a non-null `reservation_id`. It gains `feature text not null`
+      (backfilled to `meet_live_private`), `kind` (`private` or `room_voice`),
+      the same credential, key and proof columns, and
+      `estimated_cost_hold_micro_usd`. The checks become
+      `credential_source = 'byok' or reserved_credits > 0` and
+      `(credential_source = 'byok') = (reservation_id is null)`, so platform
+      sessions keep their credit reservation and BYOK sessions carry none.
+- **Caller allowlist.** Each service-binding name maps to the features it may
+  request (for example `tuturuuu-meet` only `meet_*`).
+- **Audit.** The run row records `provider_key_id` and `credential_source`, so
+  every decryption has a who, what feature and when record without a second
+  write. Admin actions go to the events table.
+- **Latency.** One binding call plus one ciphertext read per request (tens of
+  milliseconds from a Worker to Postgres), small next to model latency.
+- **Revocation.** A revoked or replaced key stops resolving at once; a Live
+  session sees it on its next 20-second tick or reconnect and applies the
+  fallback order.
+
+The key always belongs to the **payer** workspace, never a selected tool
+workspace. Verified staff usage pays from the Tuturuuu root workspace and uses
+platform keys. BYOK never relaxes eligibility: the workspace gate, account
+rule, plan, model policy, 18+ attestation and consent rules still apply.
+
+## Save, validate, revoke
+
+Handlers under `apps/web/src/app/api/v1/workspaces/[wsId]/ai-provider-keys/`,
+all requiring the workspace's `manage_workspace_secrets`:
+
+| Method | Effect |
+| --- | --- |
+| `GET` | Metadata: provider, status, health, `last4`, validated and created times, creator, recent events. |
+| `PUT` | Body `{ provider, key }`. Rate-limited (10 saves per workspace per hour). `tuturuuu-workspace-secrets.put` validates with the provider, encrypts, writes the credential payload, the metadata row and the event in one RPC and returns metadata. A replaced key is crypto-shredded in the same transaction. |
+| `POST …/test` | **Test key**: the validation call plus a one-token generation (see [health check](/platform/ai/ai-provider-routing#health-check-and-test-key)). |
+| `DELETE` | Revokes: deletes the `AI_PROVIDER_KEY:<provider>` secret and its payload, sets `status = 'revoked'`, writes the event. |
+
+**Validate on save** uses one fixed, read-only call per provider, with no
+caller-supplied URL and `redirect: 'manual'`:
+
+| Provider | Call |
+| --- | --- |
+| Google | `GET https://generativelanguage.googleapis.com/v1beta/models`; the reference shows a `key` query parameter, and the call sends the `x-goog-api-key` header the `@google/genai` SDK uses, so the key never appears in a URL |
+| OpenAI | `GET https://api.openai.com/v1/models` with `Authorization: Bearer` |
+| Anthropic | `GET https://api.anthropic.com/v1/models` with the `x-api-key` and `anthropic-version` headers, as in the Models API reference |
+
+Base URLs are fixed constants in `packages/ai/src/routing`, never read from
+configuration or request input. Keys travel only in headers, never in a
+`?key=` query parameter, for validation and for every routed call.
+
+A 401 or 403 rejects the save (`key_rejected`); a timeout or 5xx rejects it
+(`provider_unavailable`) without storing anything. The browser sends the key
+once over HTTPS from a password field cleared after submit; the client uses the
+internal API package with TanStack Query and never caches the request body.
+
+## Billing
+
+- A BYOK request reserves and deducts **no AI credits** for provider cost. Its
+  run still records tokens and estimated provider cost for analytics and caps.
+- **BYOK platform fee: $1 per 1,000 BYOK requests** (1,000 micro-USD per
+  request) on every surface that uses a workspace key. This is a product
+  decision and extends the fee in
+  [Mira managed pricing](/platform/ai/mira-managed-pricing#decisions) beyond
+  Mira channels. A request is one model request settled with the workspace's
+  key: a chat or channel reply, one room Mira chat answer, one generation in a
+  feature, or one model response turn in a Live or room voice session. A
+  request that falls back to platform keys pays credits and carries no fee.
+  Until the payment catalog ships, the fee is metered and not billed.
+- Per-workspace caps apply to BYOK usage on **estimated provider cost**, because
+  BYOK settles 0 credits:
+  - `AI_BYOK_WORKSPACE_DAILY_MICRO_USD` (default 20,000,000, that is $20) and
+    `AI_BYOK_WORKSPACE_DAILY_REQUESTS` (default 2,000) cap all BYOK usage
+    through `router.run` per workspace per UTC day;
+  - the room voice daily cap is separate (see
+    [room voice cost bounds](/platform/features/meet-mira-room-voice#cost-bounds)).
+
+  The begin RPCs check both in the same transaction that reserves the run, on
+  a per-workspace daily counter row, so a stuck loop or session cannot run
+  unbounded on the workspace's own provider bill.
+
+## Deletion and erasure
+
+- **Revoke** deletes the secret and its payload at once; metadata and events stay.
+- **Workspace deletion** cascades keys, routing, rollups and events.
+- **Account deletion** sets `created_by`, `revoked_by` and `actor_user_id` to
+  null. Rollups hold no user ids.
+- **Backups** keep only the credential payload, under the KEK retention rules
+  in [workspace secrets encryption](/platform/architecture/workspace-secrets-encryption#key-rotation).
+- Revoking in Tuturuuu does not revoke the key at the provider; the UI tells
+  admins to rotate it there too. The provider's own terms apply to BYOK
+  traffic.
+
+## UI sketch
+
+The **AI provider keys** tab (*Khóa nhà cung cấp AI*) has three views: **Keys**,
+**Usage** and **Health** ([usage design](/platform/features/workspace-ai-provider-usage#ui)).
+Keys lists Google, OpenAI and Anthropic with status, `•••• last4`, last
+checked, and **Add key**, **Test key**, **Replace**, **Remove**. Removing uses the
+shared confirmation dialog.
+
+| String | English | Vietnamese |
+| --- | --- | --- |
+| Tab | AI provider keys | Khóa nhà cung cấp AI |
+| Status | Active · Invalid · Not set | Đang dùng · Không hợp lệ · Chưa đặt |
+| Actions | Add key · Test key · Replace · Remove | Thêm khóa · Kiểm tra khóa · Thay khóa · Xóa |
+| Fee line | Requests on your own keys cost $1 per 1,000 requests and use no AI credits. | Yêu cầu dùng khóa của bạn có phí $1 cho mỗi 1.000 yêu cầu và không dùng tín dụng AI. |
+| Saved | Key saved. Mira uses it for this workspace's {provider} requests. | Đã lưu khóa. Mira dùng khóa này cho các yêu cầu {provider} của không gian làm việc. |
+| Failed | Your workspace's {provider} key failed. | Khóa {provider} của không gian làm việc bị lỗi. |
+| Remove | Remove this key? Mira switches to platform credits. | Xóa khóa này? Mira sẽ chuyển sang dùng tín dụng nền tảng. |
+| Provider note | Your agreement with {provider} applies to requests on this key. | Thỏa thuận của bạn với {provider} áp dụng cho các yêu cầu dùng khóa này. |
+
+## Security review
+
+| # | Threat | Mitigation | Residual | Severity |
+| --- | --- | --- | --- | --- |
+| 1 | Database dump or leaked service-role key exposes provider keys | Credential-tier envelope encryption; KEK only on `tuturuuu-workspace-secrets` | Needs both the database and that Worker's secrets | High, residual Low |
+| 2 | A compromised caller Worker resolves other workspaces' keys | Binding-only RPC, per-binding feature allowlist, run-scoped proof secret from `begin_ai_studio_run` or `begin_meeting_ai_live_session`, bound to workspace, feature and user; a Live renewal settles the row and begins a new one with a fresh proof; atomic per-run resolution counter | A caller holding `service_role` can still begin runs, but only for eligible members, and each run is counted and billed | High, residual Low |
+| 3 | Key leaks through logs, errors, storage or Queues | Per-request decryption, no cache, error-class mapping, no key-derived audit fields | Third-party SDK logging must be reviewed per version | High, residual Low |
+| 4 | Customer admins cannot find the panel, or root-only gating leaks it to operators | Separate tab gated on the workspace's own permission; root override excluded | None known | Medium, residual Low |
+| 5 | Keys exposed to browsers or other admins | Never returned after save; only `last4`; no read endpoint | Keys typed on a compromised device | Medium, residual Low |
+| 6 | Ciphertext moved to another workspace or provider | Value AAD binds workspace, secret id, name and value revision; wrap AAD binds the KEK version | None known | Medium, residual Low |
+| 7 | Nonce reuse or weak crypto | `vault-crypto` per-message subkeys, fresh DEK per key | Depends on that library's review closing | Medium |
+| 8 | Save endpoint used as a stolen-key checking oracle | Rate limits, audit, fixed provider URLs | Low value: an attacker can call the provider directly | Low |
+| 9 | SSRF through validation | Fixed endpoints, no caller base URL, `redirect: 'manual'` | None known | Low |
+| 10 | Members spend the workspace's provider budget | Existing eligibility and model policy, workspace daily BYOK cost and request caps, usage visible to admins | Provider-side limits are the workspace's responsibility | Low |
+| 11 | A platform administrator overwrites or deletes a key through the generic Secrets routes | `AI_PROVIDER_KEY:*` refused in application code on every generic Secrets route; operator revocation only through its audited endpoint | None known | High, residual Low |
+
+## Open questions
+
+- Whether saving or removing a key requires a recent re-authentication.
+- Default fallback order (proposed `byok, platform`); Mira channels keep
+  `byok` only.
+
+## Sources
+
+- [OpenAI list models](https://developers.openai.com/api/reference/resources/models/methods/list),
+  [OpenAI error codes](https://developers.openai.com/api/docs/guides/error-codes)
+- [Claude Models API](https://platform.claude.com/docs/en/api/models/list)
+- [Gemini list models](https://aistudio.google.com/api-reference/models/list-models)
+- [Cloudflare service bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/)

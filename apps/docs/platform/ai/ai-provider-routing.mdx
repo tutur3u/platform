@@ -1,0 +1,246 @@
+---
+title: AI provider routing
+description: Design for one AI SDK provider layer that every Tuturuuu AI feature routes through, with per-feature model selection, a BYOK then platform-credit fallback order, a key health check and a call-site migration order.
+updatedAt: "2026-11-24"
+audience: developers
+---
+
+**Status:** design, awaiting independent security review. Key storage is in
+[Per-workspace AI provider keys](/platform/features/workspace-ai-provider-keys);
+analytics and alerts are in
+[BYOK usage and observability](/platform/features/workspace-ai-provider-usage).
+
+## Today
+
+About 50 production call sites reach a model provider, almost all Gemini, and
+almost all build their own `google(...)`, `gateway(...)` or
+`createGoogleGenerativeAI(...)` from the shared server key
+`GOOGLE_GENERATIVE_AI_API_KEY`. There is no shared model resolver. Existing
+pieces the router reuses:
+
+| Helper | Role today |
+| --- | --- |
+| `resolvePlanModel` (`packages/ai/src/credits/resolve-plan-model.ts`) | Plan-allowed model id for a workspace and capability |
+| `model-mapping.ts` | `isGoogleModelId`, `toBareModelName`, `toGatewayModelId`: the `google(bare)` or `gateway(id)` choice |
+| `checkAiCredits`, `deductAiCredits`, reservation helpers (`packages/ai/src/credits`) | Credit allowance, reservation and deduction |
+| `beginAiStudioRun`, `settleAiStudioRun`, `recordAiStudioRunStep` (`packages/ai/src/studio/metering.ts`) | Run records with model, feature, tokens, latency, cost, error class |
+| `createMeteredTextEmbedding` | The one helper that already bundles key, model and credits |
+| `withAiMemory` | Wraps any `LanguageModel` with memory |
+| `answerMeetChat`, `packages/ai/src/meetings/gemini.ts` | Accept `provider: { apiKey?, fetch? }`, the closest per-request key pattern |
+| `createPOST({ subscription: { resolveModel } })` | Pluggable `LanguageModel` resolver, used by ChatGPT subscriptions |
+
+## Goals
+
+- One layer decides model, provider, credential, metering and run recording
+  for every AI request, so BYOK works everywhere without per-feature code.
+- No behavior change by default: a workspace with no key and no routing rows
+  gets today's model, provider and metering.
+- The layer is framework-independent: request identity, the key resolver,
+  credits and storage are injected by each app's adapter, per the repository's
+  domain-library rule.
+
+## Design
+
+New module `packages/ai/src/routing/`, exported as `@tuturuuu/ai/routing`.
+
+### Feature registry
+
+`AI_FEATURE_REGISTRY` lists every feature key with its capability, default
+model, credit feature (an `AI_FEATURES` value), metering mode and whether BYOK
+may serve it:
+
+| Key (examples) | Capability | Credit feature | Metering today | BYOK |
+| --- | --- | --- | --- | --- |
+| `chat`, `chat_title`, `chat_tools` | language | `chat` | credits | yes |
+| `meet_room_chat`, `meet_private_chat` | language | `generate` | credits | yes |
+| `meet_live_private`, `meet_room_voice`, `assistant_live` | live | `voice_live` | Live ledger | yes |
+| `meet_transcription`, `meet_notes`, `notes_voice` | language | `generate` | AI Studio run | yes |
+| `embeddings` | embedding | `embeddings` | credits | same model only (below) |
+| `image_generation`, `tts` | image, speech | `image_generation`, `generate` | credits | yes |
+| `email_draft`, `mail_labels`, `calendar_parse`, `chat_summary`, `course_generate` | language | per feature | **unmetered** | yes |
+
+The `metering` field preserves each feature's current behavior. Routing a
+feature through the layer never starts charging credits it does not charge
+today; changing a feature from `unmetered` is a separate product decision.
+
+### API
+
+```ts
+const router = createAiRouter({ keys, credits, runs, policy, routes, platform });
+
+// AI SDK callers
+await router.run(
+  { feature: 'chat', payerWsId, userId, requestedModel, signal },
+  ({ model, route }) => streamText({ model, messages }),
+);
+
+// Non-AI-SDK transports: Gemini Live, ephemeral tokens, raw TTS fetch
+const lease = await router.credential({ feature: 'meet_live_private', payerWsId, userId, sessionId });
+// lease.apiKey, lease.route, lease.settle(usage)
+```
+
+`router.run` does, in order:
+
+1. **Resolve the route:** the workspace's feature row, else the registry
+   default; the model must be in the catalog (`private.ai_gateway_models`),
+   pass AI Studio model policy (`private.workspace_ai_studio_policies`: denied,
+   then allowed) and the plan (`resolvePlanModel`).
+2. **Begin the run** (`begin_ai_studio_run`). On a BYOK route it takes the
+   zero-credit path, checks the workspace daily BYOK caps and returns the
+   run-scoped proof secret that `keys.resolve` needs (see
+   [proof of use](/platform/features/workspace-ai-provider-keys#server-side-decryption-per-request)).
+3. **For each credential in the fallback order:**
+   - `byok`: `keys.resolve(...)`; on a key, build a direct provider instance
+     (`createGoogleGenerativeAI`, `createOpenAI` or `createAnthropic` with that
+     key and the injected `fetch`); no credit reservation; the fee meter counts
+     one request.
+   - `platform`: today's choice (`google(bare)` or `gateway(id)` with the
+     platform key), with the feature's metering (reservation, then settlement).
+   - Wrap the model with `withAiMemory` where the feature uses memory.
+4. **Execute.** On an error, classify it (see
+   [error classes](/platform/features/workspace-ai-provider-usage#error-classes)).
+   Move to the next credential only when the class allows it **and** no output
+   has reached the caller: once a stream has emitted a token, the error is
+   returned, never retried on another credential.
+5. **Settle** usage, cost, latency, first-token latency, error class,
+   `credential_source` and `provider_key_id` on the run.
+
+`router.credential` does the same route, run and key steps, and returns the
+key and a settle function to transports that need a raw key: `GoogleGenAI` in
+the Meet Live Durable Object, `authTokens.create` for web and mobile Live
+ephemeral tokens (the browser still receives only the ephemeral token), and
+the Gemini TTS fetch.
+
+**Ephemeral Live tokens.** A token minted with a workspace key is a bearer
+credential for that key, so `authTokens.create` always sets:
+- `uses: 1`, so one token opens one session;
+- `newSessionExpireTime` 60 seconds after minting, and `expireTime` no later
+  than the feature's session limit;
+- `liveConnectConstraints` pinning the model and the session config (response
+  modality, system instruction and tools) the server chose, so a client cannot
+  redirect the token to another model or enable tools.
+
+Each mint counts as a resolution on the session's proof and is recorded with
+the session.
+
+**Transport pinning.** Every provider instance and raw `fetch` uses a fixed
+base URL constant in `packages/ai/src/routing`
+(`https://generativelanguage.googleapis.com`, `https://api.openai.com`,
+`https://api.anthropic.com`), never a value from configuration, the database
+or a request. Keys travel only in headers (`x-goog-api-key`,
+`Authorization: Bearer`, `x-api-key`), never as a `?key=` query parameter,
+and a test asserts that no routed request URL contains a key.
+
+### Embeddings
+
+Stored vectors must come from one model and dimension (`gemini-embedding-2`,
+3072 dimensions). BYOK can serve embeddings only with the same model id on the
+workspace's Google key; a route can never switch embeddings to another
+provider or model, because mixed vectors break search.
+
+## Per-feature model selection
+
+```sql
+-- <VERSION-FROM-IRIS>_ai_provider_routing.sql
+create table private.workspace_ai_routing_defaults (
+  ws_id uuid primary key references public.workspaces(id) on delete cascade,
+  fallback_order text[] not null default '{byok,platform}',
+  updated_by uuid references public.users(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+create table private.workspace_ai_feature_routes (
+  ws_id uuid not null references public.workspaces(id) on delete cascade,
+  feature text not null,                     -- AI_FEATURE_REGISTRY key
+  model_id text,                             -- null: platform default
+  fallback_order text[],                     -- null: workspace default
+  fallback_on_rate_limit boolean not null default false,
+  updated_by uuid references public.users(id) on delete set null,
+  updated_at timestamptz not null default now(),
+  primary key (ws_id, feature)
+);
+```
+
+- `fallback_order` holds one or both of `byok` and `platform`, without
+  repeats (a check constraint). The UI offers **Workspace key, then platform
+  credits** (default), **Workspace key only** and **Platform credits only**.
+- Mira channels with `keyMode: 'byok'` force `{byok}`, matching their rule that
+  a failing tenant key never falls back.
+- Only service-role definer RPCs read or write these tables, like the key
+  tables. Every change writes a `routing_changed` key event.
+- **Edit** requires `manage_ai_policy`, the existing model-policy permission;
+  **view** requires `manage_workspace_secrets` or `use_ai_studio`.
+- **UI:** a **Per-feature models** section in AI Studio → Governance → Model
+  policy (`/<wsId>/model-policy`), beside the allow and deny lists, with one row
+  per feature: model picker (only policy- and plan-allowed models), fallback
+  order, and the provider whose key will be used. The keys tab links to it.
+
+### Fallback rules
+
+| Error class | Next credential |
+| --- | --- |
+| `no_key`, `key_revoked`, `key_invalid` | Yes |
+| `auth` (401/403 from the provider) | Yes; the key is marked `invalid` |
+| `quota` (provider quota or billing exhausted) | Yes |
+| `rate_limit` (429) | Only with `fallback_on_rate_limit` |
+| `provider_unavailable`, `timeout`, `network` | No: normal retry rules, then an error |
+| `invalid_request`, `content_filtered`, `cancelled`, `platform` | No |
+
+A request that falls back to `platform` needs credits like any platform
+request; without them it fails with the usual credit error. A Live session
+changes credential only at connect or reconnect, after its gate recheck.
+
+## Health check and Test key
+
+- **Passive health** comes from the hourly usage rollups:
+  - `failing`: an `auth` or `quota` error in the last 15 minutes and no success
+    since;
+  - `degraded`: at least 20 requests in the last hour with an error rate of 5 %
+    or more, or 20 % or more rate-limited;
+  - `healthy`: otherwise, when requests exist;
+  - `unused`: no requests for 7 days.
+- **Test key** (`POST …/ai-provider-keys/{provider}/test`): the list-models
+  call plus a one-token generation on the provider's test model
+  (`test_model_id` on `private.ai_provider_key_providers`, for example the
+  provider's cheapest text model). It reports success or an error class and the
+  latency, writes a `tested` event, is limited to 6 tests per key per hour, and
+  the UI states that it sends one small request billed by the provider.
+- **Recovery probe:** after a `quota` failure, a Cron Control job re-tests the
+  key at most once an hour and 3 times a day, with bounded batches, idempotent
+  progress and the job's stop fence; success writes `restored`. An `auth`
+  failure is never probed automatically; only an admin's Test key or a new key
+  restores it.
+
+## Call-site inventory and migration order
+
+Migration is one call site per change, each with routing, fallback and
+billing tests; unmigrated sites keep working on the platform path.
+
+| Order | Feature | Code | Notes |
+| --- | --- | --- | --- |
+| 1 | Router core, registry, adapters | `packages/ai/src/routing` | Platform path only, no behavior change |
+| 2 | Meet room and private chat, polls, quiz, forms | `packages/ai/src/meetings/chat.ts`, `packages/meet-core/src/features/call/server/*` | Already take `provider: { apiKey, fetch }`; room requests keep `roomMiraProviderFetch` leases |
+| 3 | Meet Live, room voice | `packages/meet-core/src/cloudflare/live/provider.ts`, [room voice](/platform/features/meet-mira-room-voice) | `router.credential`; payer rules unchanged |
+| 4 | Web Mira chat, title, summary, tools | `packages/ai/src/chat/google/route.ts`, `summary/route.ts`, `packages/ai/src/tools/executors/*` | BYOK uses direct provider SDKs instead of the gateway; list gateway-only features per model |
+| 5 | Meetings transcription and notes, notes voice | `packages/ai/src/meetings/gemini.ts`, `packages/meet-core/src/features/meeting-ai/server/*`, `apps/web/src/lib/notes-voice/provider.ts` | Keep Parley's closed provider transport |
+| 6 | Embeddings and memory | `packages/ai/src/embeddings/metered.ts`, `packages/ai/src/memory/*`, `packages/tasks-api` | Same model only |
+| 7 | Web and mobile Live assistant, external AI API, AI Studio | `apps/web/src/lib/live/token-builder.ts`, `apps/web/src/lib/external-ai/*`, `apps/ai/src/lib/*` | Ephemeral tokens minted with the routed key |
+| 8 | Tasks, Mail, Calendar, Cite, Mind, Hive, Teach, Learn, SePay, AI agents, admin translate, user reports | `apps/tasks`, `apps/mail`, `apps/calendar`, `apps/web/src/lib/cite`, `packages/ai/src/mind`, `apps/hive`, `apps/teach`, `apps/learn`, `apps/inventory`, `apps/{web,admin}/src/lib/ai-agents`, `apps/admin`, `apps/web/src/lib/user-report-automation` | Keep each feature's metering mode; raw `fetch` sites move to `router.credential` |
+| 9 | Boundary guard | `bun validate` guard | Shrink-only allowlist: no `GOOGLE_GENERATIVE_AI_API_KEY` reads or direct `@ai-sdk/*` provider construction outside `packages/ai/src/routing` |
+
+Out of scope: the Vertex year-plan route, the meeting eval tool, the roadmap
+changelog script, and ChatGPT subscriptions, which stay a per-user OAuth path
+recorded as `credential_source = 'subscription'`.
+
+## Security review
+
+| # | Threat | Mitigation | Residual | Severity |
+| --- | --- | --- | --- | --- |
+| 1 | Routing bypasses model policy or plan limits | Route resolution applies catalog, policy (deny first) and plan before any credential | None known | High, residual Low |
+| 2 | A member changes routes to drain credits or use an expensive model | Edit needs `manage_ai_policy`; model picker limited to allowed models; audited | Admins are trusted with spend | Medium, residual Low |
+| 3 | Silent credit drain through fallback | Explicit fallback order, no fallback after output, alerts on fallback ([usage](/platform/features/workspace-ai-provider-usage#admin-alerts)) | Default order includes `platform` | Medium |
+| 4 | Duplicate side effects from retrying on another credential | Retry only before any output; tools run after the model step that requested them | Provider-side work on a failed first attempt may still be billed by the provider | Medium, residual Low |
+| 5 | Mixed embedding vectors corrupt search | Embeddings locked to one model id | None known | Medium, residual Low |
+| 6 | New code bypasses the layer and the key store | Boundary guard with a shrink-only allowlist | Guard gaps until migration completes | Medium |
+| 7 | Test key used for cost or as an oracle | 6 tests per key per hour, admin only, audited | Tiny provider cost per test | Low |
+| 8 | Unmetered features start charging, or metered ones stop | Registry `metering` mode preserves current behavior; tests per migrated site | None known | Low |
