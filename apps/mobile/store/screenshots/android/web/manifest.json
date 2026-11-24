@@ -6,14 +6,14 @@
       "file": "apps/mobile/store/screenshots/android/web/01-dashboard.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 64866
+      "bytes": 64386
     },
     {
       "id": "assistant",
       "file": "apps/mobile/store/screenshots/android/web/02-assistant.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 53700
+      "bytes": 53664
     },
     {
       "id": "tasks",
@@ -34,7 +34,7 @@
       "file": "apps/mobile/store/screenshots/android/web/05-time-tracker.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 35764
+      "bytes": 36004
     },
     {
       "id": "notes",

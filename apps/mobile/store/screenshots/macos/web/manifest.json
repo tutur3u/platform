@@ -6,14 +6,14 @@
       "file": "apps/mobile/store/screenshots/macos/web/01-dashboard.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 28678
+      "bytes": 28682
     },
     {
       "id": "assistant",
       "file": "apps/mobile/store/screenshots/macos/web/02-assistant.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 26406
+      "bytes": 26380
     },
     {
       "id": "tasks",
@@ -34,7 +34,7 @@
       "file": "apps/mobile/store/screenshots/macos/web/05-time-tracker.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 21676
+      "bytes": 21686
     },
     {
       "id": "notes",
