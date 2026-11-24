@@ -210,3 +210,13 @@ it('shows the title as a plain heading to everyone else', () => {
     screen.queryByRole('textbox', { name: call.meeting_title })
   ).toBeNull();
 });
+
+it('draws the host title as plain heading text at rest', () => {
+  show({ role: 'host', miraMeetingId: 'm-1' });
+  const field = screen.getByRole('textbox', { name: call.meeting_title });
+  expect(field.className).toContain('[--field-stroke:transparent]');
+  expect(field.className).toContain('hover:[--field-stroke:var(--border)]');
+  expect(field.className).toContain(
+    'focus-visible:[--field-stroke:var(--border)]'
+  );
+});

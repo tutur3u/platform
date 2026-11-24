@@ -45,7 +45,7 @@ export function PrejoinTitle({
   return (
     <Input
       aria-label={t('meeting_title')}
-      className="-mx-3 h-auto w-auto border-transparent bg-transparent px-3 py-1 font-semibold text-xl tracking-tight shadow-none hover:bg-muted/60 focus-visible:bg-background md:text-xl"
+      className="-mx-3 h-auto w-auto bg-transparent px-3 py-1 font-semibold text-xl tracking-tight shadow-none [--field-stroke:transparent] hover:bg-muted/60 hover:[--field-stroke:var(--border)] focus-visible:bg-background focus-visible:[--field-stroke:var(--border)] md:text-xl"
       disabled={busy}
       id="prejoin-title"
       maxLength={255}
