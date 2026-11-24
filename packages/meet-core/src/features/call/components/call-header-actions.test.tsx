@@ -63,7 +63,7 @@ it('keeps the timer, Mira and Share on a phone and moves the rest into More', ()
   expect(screen.getByTestId('clock')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Mira' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy();
-  // Capture, consent and the private-Mira status stay mounted in the bar.
+  // Capture and consent stay mounted in the bar.
   expect(screen.getByText('notice')).toBeTruthy();
   expect(screen.queryByText('volume')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: call.more_actions }));
