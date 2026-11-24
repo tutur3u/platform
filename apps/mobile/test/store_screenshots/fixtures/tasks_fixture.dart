@@ -4,6 +4,7 @@ import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_boards_page.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
+import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 
@@ -139,6 +140,27 @@ abstract final class StoreTasksFixture {
         for (final p in people)
           TaskBoardTaskAssignee(id: p.id, displayName: p.name, email: p.email),
       ],
+    );
+  }
+
+  /// What the landing page waits on and what it relates to.
+  static TaskRelationshipsResponse landingRelationships(StoreLocale l) {
+    RelatedTaskInfo info(String id) {
+      final task = tasks(l).firstWhere((task) => task.id == id);
+      return RelatedTaskInfo(
+        id: task.id,
+        name: task.name ?? '',
+        displayNumber: task.displayNumber,
+        completed: task.completed,
+        priority: task.priority,
+        boardId: boardId(l),
+        boardName: boardName(l),
+      );
+    }
+
+    return TaskRelationshipsResponse(
+      blockedBy: [info('store-task-hero')],
+      relatedTasks: [info('store-task-pricing')],
     );
   }
 
@@ -400,6 +422,14 @@ class StoreTaskRepository extends TaskRepository {
       locale,
     ).where((task) => task.listId == listId).toList(growable: false);
   }
+
+  @override
+  Future<TaskRelationshipsResponse> getTaskRelationships({
+    required String wsId,
+    required String taskId,
+  }) async => taskId == 'store-task-landing'
+      ? StoreTasksFixture.landingRelationships(locale)
+      : TaskRelationshipsResponse.empty;
 
   @override
   Future<TaskBoardsPage> getTaskBoards(

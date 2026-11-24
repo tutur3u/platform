@@ -5,8 +5,10 @@
 //     test/store_screenshots/store_screenshots_test.dart
 //
 // Optional comma-separated filters: STORE_SCREENS (ids), STORE_DEVICES
-// (`ios/iphone-6.9`), STORE_LOCALES (`en`, `vi`). Without DESIGN_RENDER_DIR
-// the suite still pumps every page as a smoke test and writes nothing.
+// (`ios/iphone-6.9`, `showcase/mac-dark`), STORE_LOCALES (`en`, `vi`).
+// STORE_SHOWCASE=1 adds the roadmap preview targets (light and dark).
+// Without DESIGN_RENDER_DIR the suite still pumps every page as a smoke test
+// and writes nothing.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +29,7 @@ void main() {
   final devices = _filter('STORE_DEVICES');
   final locales = _filter('STORE_LOCALES');
   // Smoke runs (no output dir) pump one phone and one desktop size.
+  final includeShowcase = Platform.environment['STORE_SHOWCASE'] == '1';
   const smokeDevices = {'ios/iphone-6.9', 'macos/mac'};
 
   setUpAll(() async {
@@ -34,8 +37,12 @@ void main() {
     await initStoreCache();
   });
 
-  for (final device in storeDevices) {
+  for (final device in [...storeDevices, ...showcaseDevices]) {
     if (devices != null && !devices.contains(device.id)) continue;
+    // Showcase targets render only on request (`STORE_DEVICES=showcase/...`
+    // or `STORE_SHOWCASE=1`) and never in the smoke run.
+    final showcase = device.id.startsWith('showcase/');
+    if (showcase && devices == null && !includeShowcase) continue;
     if (devices == null &&
         DesignRender.outputDir == null &&
         !smokeDevices.contains(device.id)) {
@@ -43,7 +50,7 @@ void main() {
     }
     for (final locale in StoreLocale.values) {
       if (locales != null && !locales.contains(locale.name)) continue;
-      for (final screen in storeScreens) {
+      for (final screen in showcase ? showcaseScreens : storeScreens) {
         if (screens != null && !screens.contains(screen.id)) continue;
         testWidgets('${device.id} ${locale.name} ${screen.id}', (tester) async {
           await captureStoreScreen(tester, screen, device, locale);

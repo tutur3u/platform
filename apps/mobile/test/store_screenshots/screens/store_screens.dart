@@ -19,3 +19,14 @@ final List<StoreScreen> storeScreens = [
   timeTrackerStoreScreen,
   notesStoreScreen,
 ];
+
+/// Screens for the roadmap's feature previews, in showcase order. Ids match
+/// `SHOWCASE_SCREENS` in `scripts/store-screenshots/specs.mjs`.
+final List<StoreScreen> showcaseScreens = [
+  tasksStoreScreen,
+  taskDetailStoreScreen,
+  calendarStoreScreen,
+  assistantStoreScreen,
+  dashboardStoreScreen,
+  timeTrackerStoreScreen,
+];

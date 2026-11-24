@@ -1,6 +1,9 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -10,6 +13,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../fixtures/shell_frame_fixture.dart';
 import '../fixtures/store_team.dart';
 import '../fixtures/tasks_fixture.dart';
 import '../store_screenshot_app.dart';
@@ -38,23 +42,31 @@ WorkspaceCubit _workspaceCubit() {
   return cubit;
 }
 
+/// The launch board page over fixtures, optionally opened on one task.
+Widget storeTaskBoardPage(
+  StoreLocale locale, {
+  String? initialTaskId,
+  TaskBoardDetailView initialView = TaskBoardDetailView.kanban,
+}) => MultiBlocProvider(
+  providers: [
+    BlocProvider<WorkspaceCubit>.value(value: _workspaceCubit()),
+    BlocProvider(create: (_) => ShellChromeActionsCubit()),
+  ],
+  child: TaskBoardDetailPage(
+    boardId: StoreTasksFixture.boardId(locale),
+    taskRepository: StoreTaskRepository(locale),
+    timeTrackerRepository: _StoreTimeTrackerRepository(),
+    initialView: initialView,
+    initialTaskId: initialTaskId,
+  ),
+);
+
 /// The launch board in Kanban view.
 final StoreScreen tasksStoreScreen = StoreScreen(
   id: 'tasks',
   order: 2,
   shellLocation: '/tasks/boards/spring-launch',
-  build: (locale) => MultiBlocProvider(
-    providers: [
-      BlocProvider<WorkspaceCubit>.value(value: _workspaceCubit()),
-      BlocProvider(create: (_) => ShellChromeActionsCubit()),
-    ],
-    child: TaskBoardDetailPage(
-      boardId: StoreTasksFixture.boardId(locale),
-      taskRepository: StoreTaskRepository(locale),
-      timeTrackerRepository: _StoreTimeTrackerRepository(),
-      initialView: TaskBoardDetailView.kanban,
-    ),
-  ),
+  build: storeTaskBoardPage,
   // Kanban loads a window of three lists; wide layouts show all four.
   prepare: (tester, locale) async {
     final cubit = BlocProvider.of<TaskBoardDetailCubit>(
@@ -65,5 +77,27 @@ final StoreScreen tasksStoreScreen = StoreScreen(
     for (final list in StoreTasksFixture.lists(locale)) {
       await tester.runAsync(() => cubit.loadListTasks(listId: list.id));
     }
+  },
+);
+
+/// One launch task open in the board's detail screen. Showcase only.
+final StoreScreen taskDetailStoreScreen = StoreScreen(
+  id: 'task-detail',
+  order: 9,
+  build: (locale) {
+    // The detail screen watches connectivity; report Wi-Fi.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      ..setMockMethodCallHandler(
+        const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+        (call) async => <String>['wifi'],
+      )
+      ..setMockMethodCallHandler(
+        const MethodChannel('dev.fluttercommunity.plus/connectivity_status'),
+        (call) async => null,
+      );
+    return storeShellFrame(
+      location: Routes.taskBoardDetailPath(StoreTasksFixture.boardId(locale)),
+      child: storeTaskBoardPage(locale, initialTaskId: 'store-task-landing'),
+    );
   },
 );

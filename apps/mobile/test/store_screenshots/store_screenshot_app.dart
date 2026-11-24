@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/design_render_harness.dart';
@@ -28,12 +29,21 @@ enum StoreLocale {
 /// A store screenshot target: the logical viewport the app lays out in and
 /// the pixel ratio that turns it into the store's raw pixel size.
 class StoreDevice {
-  const StoreDevice(this.id, this.logicalSize, this.pixelRatio);
+  const StoreDevice(
+    this.id,
+    this.logicalSize,
+    this.pixelRatio, {
+    this.brightness = Brightness.light,
+  });
 
   /// `<store>/<device>`, matching `apps/mobile/store/metadata/<store>.json`.
   final String id;
   final Size logicalSize;
   final double pixelRatio;
+
+  /// The theme brightness the capture renders in. Store listings are light;
+  /// showcase targets carry a dark twin.
+  final Brightness brightness;
 
   Size get pixelSize => logicalSize * pixelRatio;
 }
@@ -48,6 +58,27 @@ const storeDevices = <StoreDevice>[
   StoreDevice('android/tablet10', Size(800, 1280), 2), // 1600x2560
   StoreDevice('macos/mac', Size(1440, 900), 2), // 2880x1800
   StoreDevice('windows/desktop', Size(1440, 810), 4 / 3), // 1920x1080
+];
+
+/// Roadmap feature-preview targets (`showcase/<device>-<theme>`): each device
+/// in light and dark. Keep the sizes in step with `SHOWCASE_DEVICES` in
+/// `scripts/store-screenshots/specs.mjs`.
+final showcaseDevices = <StoreDevice>[
+  for (final (name, size, ratio) in const [
+    ('iphone', Size(393, 852), 3.0), // 1179x2556
+    ('ipad', Size(1024, 1366), 2.0), // 2048x2732
+    ('ipad-landscape', Size(1366, 1024), 2.0), // 2732x2048
+    ('mac', Size(1512, 982), 2.0), // 3024x1964
+    ('duo-folded', Size(393, 852), 3.0), // 1179x2556
+    ('duo-unfolded', Size(786, 852), 3.0), // 2358x2556
+  ])
+    for (final brightness in Brightness.values)
+      StoreDevice(
+        'showcase/$name-${brightness.name}',
+        size,
+        ratio,
+        brightness: brightness,
+      ),
 ];
 
 /// One listing screen: the real feature page over synthetic fixture data.
@@ -80,16 +111,18 @@ class StoreScreen {
 }
 
 /// The app's own root frame (Shadcn app, appearance host, Material bridge) in
-/// the default light classic theme a fresh install shows, inside the capture
-/// boundary. Sorbet is opt-in, so no Sorbet theme is active.
+/// the default Sorbet theme a fresh install shows, inside the capture
+/// boundary.
 class StoreScreenshotApp extends StatefulWidget {
   const StoreScreenshotApp({
     required this.locale,
     required this.child,
+    this.brightness = Brightness.light,
     super.key,
   });
 
   final StoreLocale locale;
+  final Brightness brightness;
   final Widget child;
 
   @override
@@ -118,7 +151,12 @@ class _StoreScreenshotAppState extends State<StoreScreenshotApp> {
   Widget build(BuildContext context) {
     return RepaintBoundary(
       key: DesignRenderApp.boundaryKey,
-      child: routedSorbetTestApp(router: _router, locale: widget.locale.locale),
+      child: routedSorbetTestApp(
+        router: _router,
+        locale: widget.locale.locale,
+        sorbet: const SorbetTheme(),
+        brightness: widget.brightness,
+      ),
     );
   }
 }
@@ -140,6 +178,7 @@ Future<void> captureStoreScreen(
     StoreScreenshotApp(
       key: ValueKey('${device.id}/${locale.name}/${screen.id}'),
       locale: locale,
+      brightness: device.brightness,
       child: location == null
           ? page
           : storeShellFrame(location: location, child: page),
