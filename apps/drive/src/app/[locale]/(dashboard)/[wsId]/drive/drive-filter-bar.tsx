@@ -102,10 +102,18 @@ export function DriveFilterBar({ onChange, searchState }: DriveFilterBarProps) {
           value={searchState.view}
           variant="default"
         >
-          <ToggleGroupItem aria-label={t('filters.grid')} value="grid">
+          <ToggleGroupItem
+            aria-label={t('filters.grid')}
+            className="pointer-coarse:min-w-11"
+            value="grid"
+          >
             <LayoutGrid className="size-4" />
           </ToggleGroupItem>
-          <ToggleGroupItem aria-label={t('filters.list')} value="list">
+          <ToggleGroupItem
+            aria-label={t('filters.list')}
+            className="pointer-coarse:min-w-11"
+            value="list"
+          >
             <LayoutList className="size-4" />
           </ToggleGroupItem>
         </ToggleGroup>

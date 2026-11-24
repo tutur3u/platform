@@ -100,6 +100,13 @@ describe('DriveBreadcrumbs', () => {
     expect(onNavigate).toHaveBeenCalledWith('Logos');
   });
 
+  it('truncates crumb labels inside the button so touch hit areas stay whole', () => {
+    render(<DriveBreadcrumbs onNavigate={vi.fn()} path="Logos/2026" />);
+    const crumb = screen.getByRole('button', { name: 'Logos' });
+    expect(crumb.className).not.toMatch(/\b(truncate|overflow-hidden)\b/u);
+    expect(within(crumb).getByText('Logos')).toHaveClass('truncate');
+  });
+
   it('shows no ellipsis with a single parent', () => {
     render(<DriveBreadcrumbs onNavigate={vi.fn()} path="Logos" />);
     expect(

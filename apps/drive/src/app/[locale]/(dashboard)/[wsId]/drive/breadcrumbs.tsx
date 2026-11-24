@@ -55,7 +55,7 @@ export default function DriveBreadcrumbs({
               <DropdownMenu>
                 <DropdownMenuTrigger
                   aria-label={t('breadcrumb_more')}
-                  className="rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+                  className="flex items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-ring pointer-coarse:size-11"
                 >
                   <BreadcrumbEllipsis className="size-7" />
                 </DropdownMenuTrigger>
@@ -83,12 +83,13 @@ export default function DriveBreadcrumbs({
               )}
             >
               <BreadcrumbLink asChild>
+                {/* The label truncates, not the button, so the touch hit area is not clipped. */}
                 <button
-                  className="max-w-40 truncate rounded-md py-1 font-semibold focus-visible:outline-2 focus-visible:outline-ring"
+                  className="flex min-w-0 max-w-40 rounded-md py-1 font-semibold focus-visible:outline-2 focus-visible:outline-ring"
                   onClick={() => onNavigate(crumb.path)}
                   type="button"
                 >
-                  {crumb.label}
+                  <span className="truncate">{crumb.label}</span>
                 </button>
               </BreadcrumbLink>
             </BreadcrumbItem>
