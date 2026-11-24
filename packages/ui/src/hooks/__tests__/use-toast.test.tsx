@@ -1,168 +1,130 @@
-import { act, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { reducer, toast, useToast } from '../use-toast';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-type ReducerState = Parameters<typeof reducer>[0];
+const sonner = vi.hoisted(() => {
+  const toast = Object.assign(vi.fn(), {
+    error: vi.fn(),
+    dismiss: vi.fn(),
+  });
+  return { toast };
+});
 
-function makeState(ids: string[]): ReducerState {
-  return { toasts: ids.map((id) => ({ id, open: true, title: id })) };
-}
+vi.mock('sonner', () => ({ toast: sonner.toast }));
 
-describe('use-toast reducer', () => {
+import { toast, useToast } from '../use-toast';
+
+const repoRoot = existsSync(resolve(process.cwd(), 'packages/ui/package.json'))
+  ? process.cwd()
+  : resolve(process.cwd(), '../..');
+
+describe('legacy use-toast forwards to Sonner', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    sonner.toast.mockClear();
+    sonner.toast.error.mockClear();
+    sonner.toast.dismiss.mockClear();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
+  it('shows a default toast with its title and description', () => {
+    const handle = toast({ title: 'Saved', description: 'All changes kept' });
+
+    expect(sonner.toast).toHaveBeenCalledWith('Saved', {
+      id: handle.id,
+      description: 'All changes kept',
+      action: undefined,
+    });
+    expect(sonner.toast.error).not.toHaveBeenCalled();
   });
 
-  it('ADD_TOAST prepends the toast and keeps only the newest one', () => {
-    const state = reducer(makeState(['a']), {
-      type: 'ADD_TOAST',
-      toast: { id: 'b', title: 'b' },
+  it('maps the destructive variant to an error toast', () => {
+    const handle = toast({
+      title: 'Could not save',
+      description: 'Try again',
+      variant: 'destructive',
     });
 
-    expect(state.toasts.map((t) => t.id)).toEqual(['b']);
-  });
-
-  it('UPDATE_TOAST merges fields into the matching toast only', () => {
-    const initial = makeState(['a']);
-    const state = reducer(initial, {
-      type: 'UPDATE_TOAST',
-      toast: { id: 'a', title: 'updated' },
+    expect(sonner.toast.error).toHaveBeenCalledWith('Could not save', {
+      id: handle.id,
+      description: 'Try again',
+      action: undefined,
     });
-
-    expect(state.toasts[0]).toEqual({ id: 'a', open: true, title: 'updated' });
-    expect(initial.toasts[0]?.title).toBe('a');
-
-    const unchanged = reducer(initial, {
-      type: 'UPDATE_TOAST',
-      toast: { id: 'missing', title: 'x' },
-    });
-    expect(unchanged.toasts).toEqual(initial.toasts);
+    expect(sonner.toast).not.toHaveBeenCalled();
   });
 
-  it('DISMISS_TOAST with an id closes only that toast', () => {
-    const state = reducer(
-      { toasts: [...makeState(['r1']).toasts, ...makeState(['r2']).toasts] },
-      { type: 'DISMISS_TOAST', toastId: 'r1' }
+  it('uses the description as the message when there is no title', () => {
+    toast({ description: 'Copied' });
+
+    expect(sonner.toast).toHaveBeenCalledWith(
+      'Copied',
+      expect.objectContaining({ description: undefined })
+    );
+  });
+
+  it('updates the same Sonner toast and dismisses it by id', () => {
+    const handle = toast({ title: 'Uploading' });
+    handle.update({ id: handle.id, title: 'Uploaded' });
+
+    expect(sonner.toast).toHaveBeenLastCalledWith(
+      'Uploaded',
+      expect.objectContaining({ id: handle.id })
     );
 
-    expect(state.toasts).toEqual([
-      { id: 'r1', open: false, title: 'r1' },
-      { id: 'r2', open: true, title: 'r2' },
-    ]);
+    handle.dismiss();
+    expect(sonner.toast.dismiss).toHaveBeenCalledWith(handle.id);
   });
 
-  it('DISMISS_TOAST without an id closes every toast', () => {
-    const state = reducer(
-      { toasts: [...makeState(['r3']).toasts, ...makeState(['r4']).toasts] },
-      { type: 'DISMISS_TOAST' }
-    );
+  it('gives useToast callers the forwarding toast and no legacy stack', () => {
+    const { result } = renderHook(() => useToast());
 
-    expect(state.toasts.every((t) => t.open === false)).toBe(true);
-  });
+    expect(result.current.toasts).toEqual([]);
+    result.current.toast({ title: 'From hook' });
+    expect(sonner.toast).toHaveBeenCalledWith('From hook', expect.any(Object));
 
-  it('REMOVE_TOAST with an id drops that toast', () => {
-    const state = reducer(
-      { toasts: [...makeState(['a']).toasts, ...makeState(['b']).toasts] },
-      { type: 'REMOVE_TOAST', toastId: 'a' }
-    );
-
-    expect(state.toasts.map((t) => t.id)).toEqual(['b']);
-  });
-
-  it('REMOVE_TOAST without an id clears all toasts', () => {
-    const state = reducer(makeState(['a', 'b']), { type: 'REMOVE_TOAST' });
-
-    expect(state.toasts).toEqual([]);
+    result.current.dismiss();
+    expect(sonner.toast.dismiss).toHaveBeenCalledWith(undefined);
   });
 });
 
-describe('useToast', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
+function layoutFiles(directory: string): string[] {
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === 'node_modules' || entry.name.startsWith('.')) return [];
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) return layoutFiles(path);
+    return entry.name === 'layout.tsx' ? [path] : [];
   });
+}
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+describe('toast mounting', () => {
+  it('mounts exactly one Sonner Toaster in each web app root layout', () => {
+    const inactive = new Set(['tanstack-web', 'backend', 'mobile']);
+    const appsDir = resolve(repoRoot, 'apps');
+    const offenders: string[] = [];
 
-  it('shows, updates, dismisses and finally removes a toast', () => {
-    const { result } = renderHook(() => useToast());
+    for (const app of readdirSync(appsDir)) {
+      if (inactive.has(app)) continue;
+      const rootLayout = resolve(appsDir, app, 'src/app/[locale]/layout.tsx');
+      if (!existsSync(rootLayout)) continue;
 
-    let handle!: ReturnType<typeof toast>;
-    act(() => {
-      handle = result.current.toast({ title: 'Saved' });
-    });
+      const source = readFileSync(rootLayout, 'utf8');
+      const mounts = source.match(/<Toaster\b/gu)?.length ?? 0;
+      if (mounts > 0 && !source.includes("'@tuturuuu/ui/sonner'")) {
+        offenders.push(`${app}: Toaster is not the shared Sonner one`);
+      }
+      if (mounts > 1) offenders.push(`${app}: ${mounts} Toaster mounts`);
+    }
 
-    expect(result.current.toasts).toHaveLength(1);
-    expect(result.current.toasts[0]).toMatchObject({
-      id: handle.id,
-      title: 'Saved',
-      open: true,
-    });
+    for (const file of layoutFiles(appsDir)) {
+      const path = relative(repoRoot, file);
+      if ([...inactive].some((app) => path.startsWith(`apps/${app}/`))) {
+        continue;
+      }
+      if (readFileSync(file, 'utf8').includes("'@tuturuuu/ui/toaster'")) {
+        offenders.push(`${path}: mounts the legacy Radix Toaster`);
+      }
+    }
 
-    act(() => {
-      handle.update({ id: handle.id, title: 'Saved again' });
-    });
-    expect(result.current.toasts[0]?.title).toBe('Saved again');
-
-    act(() => {
-      result.current.toasts[0]?.onOpenChange?.(false);
-    });
-    expect(result.current.toasts[0]?.open).toBe(false);
-
-    act(() => {
-      vi.advanceTimersByTime(1_000_000);
-    });
-    expect(result.current.toasts).toHaveLength(0);
-  });
-
-  it('keeps only the newest toast and dismisses all via dismiss()', () => {
-    const { result } = renderHook(() => useToast());
-
-    let second!: ReturnType<typeof toast>;
-    act(() => {
-      toast({ title: 'first' });
-      second = toast({ title: 'second' });
-    });
-
-    expect(result.current.toasts.map((t) => t.id)).toEqual([second.id]);
-
-    act(() => {
-      result.current.toasts[0]?.onOpenChange?.(true);
-    });
-    expect(result.current.toasts[0]?.open).toBe(true);
-
-    act(() => {
-      result.current.dismiss();
-    });
-    expect(result.current.toasts[0]?.open).toBe(false);
-
-    act(() => {
-      vi.advanceTimersByTime(1_000_000);
-    });
-    expect(result.current.toasts).toHaveLength(0);
-  });
-
-  it('shares state between subscribers and unsubscribes on unmount', () => {
-    const first = renderHook(() => useToast());
-    const second = renderHook(() => useToast());
-
-    act(() => {
-      toast({ title: 'shared' });
-    });
-    expect(second.result.current.toasts[0]?.title).toBe('shared');
-
-    first.unmount();
-
-    act(() => {
-      second.result.current.dismiss();
-      vi.advanceTimersByTime(1_000_000);
-    });
-    expect(second.result.current.toasts).toHaveLength(0);
-    second.unmount();
+    expect(offenders).toEqual([]);
   });
 });
