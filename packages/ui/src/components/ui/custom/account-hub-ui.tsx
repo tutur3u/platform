@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '../dropdown-menu';
+import { visibleDiscordHref } from './community-links';
 import { fillCount } from './notification-labels';
 import { useAccountHub } from './sidebar-footer-context';
 
@@ -79,12 +80,12 @@ export function AccountHubActionItems({
 } = {}) {
   const hub = useAccountHub();
   const upgrade = hub?.state.upgrade;
-  const discord = hub?.state.discord;
+  const discordHref = visibleDiscordHref(hub?.state.discord?.href);
   const feedback = hub?.state.feedback
     ? { label: hub.state.feedback.label, onOpen: hub.state.feedback.open }
     : fallbackFeedback;
   const notifications = hub?.state.notifications;
-  if (!upgrade && !discord && !feedback && !notifications) return null;
+  if (!upgrade && !discordHref && !feedback && !notifications) return null;
 
   const Link = upgrade?.Link;
   return (
@@ -121,9 +122,9 @@ export function AccountHubActionItems({
           </DropdownMenuItem>
         )}
         <AccountNotificationsMenuItem />
-        {discord && (
+        {discordHref && (
           <DropdownMenuItem asChild className="cursor-pointer">
-            <a href={discord.href} target="_blank" rel="noopener noreferrer">
+            <a href={discordHref} target="_blank" rel="noopener noreferrer">
               <DiscordGlyph />
               Discord
             </a>

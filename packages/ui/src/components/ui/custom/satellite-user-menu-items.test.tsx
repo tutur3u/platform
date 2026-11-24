@@ -88,10 +88,9 @@ it('lists Notifications directly below the account hub Feedback entry', () => {
   expect(html).not.toContain('common.report-problem');
   const feedback = html.indexOf('Feedback');
   const notifications = html.indexOf('Notifications');
-  const discord = html.indexOf('Discord');
   expect(feedback).toBeGreaterThan(html.indexOf('common.theme'));
   expect(notifications).toBeGreaterThan(feedback);
-  expect(discord).toBeGreaterThan(notifications);
+  expect(html).not.toContain('Discord');
 });
 it('does not invent a profile link for users without a username', () => {
   const html = renderToStaticMarkup(<SatelliteUserMenuItems {...props} />);

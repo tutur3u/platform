@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { visibleDiscordHref } from './community-links';
 import { type SatelliteBrandProps, ShellAnchor } from './satellite-brand';
 import { usePublishAccountHub } from './sidebar-footer-context';
 
@@ -18,7 +19,8 @@ export interface SatelliteFooterActionsProps {
 }
 
 /**
- * Publishes Upgrade, Discord and Feedback to the account menu. It renders no
+ * Publishes Upgrade, Discord (while `COMMUNITY_LINKS.discord` is on) and
+ * Feedback to the account menu. It renders no
  * footer controls of its own: the sidebar footer is Settings and the account.
  */
 export function SatelliteFooterActions({
@@ -50,9 +52,10 @@ export function SatelliteFooterActions({
       wsId,
     ]
   );
+  const visibleDiscord = visibleDiscordHref(discordHref);
   const discord = useMemo(
-    () => (discordHref ? { href: discordHref } : undefined),
-    [discordHref]
+    () => (visibleDiscord ? { href: visibleDiscord } : undefined),
+    [visibleDiscord]
   );
   const feedback = useMemo(
     () => ({ label: labels.feedback, open: onFeedback }),

@@ -144,6 +144,7 @@
               "platform/features/mastermind-thread-replies",
               "platform/features/people-registry",
               "platform/features/mira-client-actions",
+              "platform/features/account-menu",
               "platform/features/colab",
               "platform/features/lettin",
               "platform/features/cms-site-contract-v1",

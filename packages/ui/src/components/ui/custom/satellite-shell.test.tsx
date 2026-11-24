@@ -442,13 +442,11 @@ describe('shared account chrome', () => {
     expect(
       screen.getByRole('menuitem', { name: 'Upgrade' }).getAttribute('href')
     ).toBe('/ws/billing');
-    expect(
-      screen.getByRole('menuitem', { name: 'Discord' }).getAttribute('href')
-    ).toBe('https://discord.gg/example');
+    expect(screen.queryByRole('menuitem', { name: 'Discord' })).toBeNull();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Feedback' }));
     await waitFor(() => expect(feedback).toHaveBeenCalledOnce());
   });
-  it('publishes Upgrade, Discord and Feedback to the account menu instead of rendering footer controls', () => {
+  it('publishes Upgrade and Feedback, and hides Discord, in the account menu instead of rendering footer controls', () => {
     const feedback = vi.fn();
     function Probe() {
       const hub = useAccountHub();
@@ -476,7 +474,6 @@ describe('shared account chrome', () => {
     );
     expect(JSON.parse(screen.getByTestId('hub').textContent ?? '{}')).toEqual({
       upgrade: '/ws/billing',
-      discord: 'https://discord.example/invite',
       feedback: 'Feedback',
     });
     expect(container.querySelector('button, a')).toBeNull();

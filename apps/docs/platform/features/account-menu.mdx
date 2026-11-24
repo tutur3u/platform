@@ -1,0 +1,24 @@
+---
+title: Account menu
+description: What every app's account menu offers and where each entry opens.
+updatedAt: "2026-11-24"
+audience: users
+---
+
+Every web app (`apps/web` and each satellite sharing `packages/ui`) renders the
+same account menu from the avatar in the sidebar footer. This page records the
+product rules for its entries.
+
+## Community links
+
+- **Scope:** account menus, sidebar footers, help menus, settings and mobile web
+  layouts of every app that renders `SatelliteFooterActions` or
+  `AccountHubActionItems`.
+- **Default:** Discord links are hidden. `COMMUNITY_LINKS.discord` in
+  `packages/ui/src/components/ui/custom/community-links.ts` is the single
+  switch; apps keep passing `discordHref`, and the shared publisher and menu
+  drop it while the switch is off.
+- **Exceptions:** documentation links (for example the SDK docs Discord card)
+  are not governed by this switch.
+- **Regression coverage:** `satellite-shell.test.tsx` and
+  `satellite-user-menu-items.test.tsx` in `packages/ui`.
