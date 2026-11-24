@@ -54,6 +54,37 @@ function project(chunk: MeetAiChunkRow) {
   };
 }
 
+/**
+ * Session time of a chunk: the uploader's own stream opened at a known
+ * offset from the session start, and `startSample` counts 16 kHz samples
+ * from that open. The stream must be this account's stream in this session.
+ */
+async function sessionStartMs(
+  db: TypedSupabaseClient,
+  input: {
+    session: { id: string; created_at: string };
+    streamId: string;
+    accountId: string;
+    startSample: number;
+  }
+) {
+  const { data: stream, error } = await db
+    .schema('private')
+    .from('meet_ai_capture_streams')
+    .select('created_at')
+    .eq('id', input.streamId)
+    .eq('session_id', input.session.id)
+    .eq('account_id', input.accountId)
+    .maybeSingle();
+  if (error) throw new MeetAiError(503, 'Capture stream lookup failed');
+  if (!stream) throw consentRefused();
+  const offset = Math.max(
+    0,
+    Date.parse(stream.created_at) - Date.parse(input.session.created_at)
+  );
+  return Math.round(offset) + Math.floor(input.startSample / 16);
+}
+
 /** Room authority for this uploader; pending legal entries are written first. */
 async function roomCheck(
   db: TypedSupabaseClient,
@@ -141,7 +172,12 @@ export async function transcribeSelfChunk(
     meetingId,
     billingWorkspaceId
   );
-  const startMs = Math.floor(fields.startSample / 16);
+  const startMs = await sessionStartMs(db, {
+    session,
+    streamId: fields.streamId,
+    accountId: user.id,
+    startSample: fields.startSample,
+  });
   const chunk = await selfRpc.reserveChunk(db, {
     id: fields.id,
     sessionId: session.id,

@@ -151,8 +151,16 @@ describe('per-speaker transcript choice', () => {
 });
 
 describe('transcript-consent extras', () => {
-  it('reports mode, availability, session and mode rights', async () => {
+  it('reports mode, availability, session, mode rights and coverage', async () => {
     mocks.access.isHost = true;
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        { account_id: 'a', coverage: 'contributing' },
+        { account_id: 'b', coverage: 'not_contributing' },
+      ],
+      error: null,
+    });
+    mocks.admin.mockResolvedValue({ schema: () => ({ rpc }) });
     expect(
       await readSelfConsentExtras(mocks.access as never, {
         mode: 'self',
@@ -163,6 +171,14 @@ describe('transcript-consent extras', () => {
       perSpeakerAvailable: true,
       session: { sessionId, protocol: 'self_v1' },
       canManageMode: true,
+      coverage: [
+        { accountId: 'a', contributing: true },
+        { accountId: 'b', contributing: false },
+      ],
+    });
+    expect(rpc).toHaveBeenCalledWith('list_meet_ai_self_v1_coverage', {
+      p_session_id: sessionId,
+      p_reader_id: 'u',
     });
   });
 

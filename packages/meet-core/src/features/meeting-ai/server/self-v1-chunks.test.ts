@@ -89,13 +89,24 @@ const reserved = {
   dispatch_consent_revision: null,
   transcript: null,
 };
+const stream = {
+  select: () => stream,
+  eq: () => stream,
+  maybeSingle: vi.fn(),
+};
+// The stream opened 10 s into the session.
+const db = { schema: () => ({ from: () => stream }) };
 const run = (body = form()) =>
   meetAiResponse(() => transcribeSelfChunk(request(), params, body));
 
 beforeEach(() => {
   vi.resetAllMocks();
+  stream.maybeSingle.mockResolvedValue({
+    data: { created_at: '2026-11-24T00:00:10.000Z' },
+    error: null,
+  });
   mocks.access.mockResolvedValue({
-    db: {},
+    db,
     user: { id: uploader },
     wsId: ws,
     meetingId,
@@ -108,6 +119,7 @@ beforeEach(() => {
     billing_ws_id: ws,
     generation: 1,
     language_hint: null,
+    created_at: '2026-11-24T00:00:00.000Z',
   });
   mocks.authorize.mockResolvedValue({ allowed: true, pending: [] });
   mocks.payer.mockResolvedValue({ billingWorkspaceId: 'root-ws' });
@@ -160,13 +172,13 @@ describe('self_v1 chunk admission', () => {
     expect(mocks.credits).toHaveBeenCalledWith(host, meetingId, 'root-ws');
     expect(mocks.generate.mock.calls[0]?.[1]).toMatchObject({ userId: host });
     expect(mocks.rpc.reserveChunk).toHaveBeenCalledWith(
-      {},
+      db,
       expect.objectContaining({
         accountId: uploader,
         streamId,
         consentRevision: 2,
-        startMs: 2000,
-        endMs: 4000,
+        startMs: 12_000,
+        endMs: 14_000,
         audioSeconds: 2,
       })
     );
@@ -181,7 +193,7 @@ describe('self_v1 chunk admission', () => {
       expect.objectContaining({ spend: false })
     );
     expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
-      {},
+      db,
       expect.objectContaining({ outcome: 'completed', costUsd: 0.001 })
     );
   });
@@ -206,7 +218,7 @@ describe('self_v1 chunk admission', () => {
     mocks.rpc.recordDecision.mockResolvedValue({ revision: 3, recorded: true });
     expect((await run()).status).toBe(409);
     expect(mocks.rpc.recordDecision).toHaveBeenCalledWith(
-      {},
+      db,
       expect.objectContaining({ decision: 'withdraw', roomSeq: 4 })
     );
     expect(mocks.ack).toHaveBeenCalledWith(expect.anything(), sessionId, [
@@ -251,6 +263,13 @@ describe('self_v1 chunk admission', () => {
     expect(mocks.generate).not.toHaveBeenCalled();
   });
 
+  it('refuses a stream that is not this account own stream in the session', async () => {
+    stream.maybeSingle.mockResolvedValue({ data: null, error: null });
+    expect((await run()).status).toBe(409);
+    expect(mocks.rpc.reserveChunk).not.toHaveBeenCalled();
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
   it('returns a settled exact duplicate without dispatching again', async () => {
     mocks.rpc.reserveChunk.mockResolvedValue({
       ...reserved,
@@ -277,7 +296,7 @@ describe('self_v1 in-flight fence', () => {
     expect((await run()).status).toBe(409);
     expect(providerCalled).toBe(false);
     expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
-      {},
+      db,
       expect.objectContaining({ outcome: 'released' })
     );
   });
@@ -294,7 +313,7 @@ describe('self_v1 in-flight fence', () => {
     expect((await run()).status).toBe(409);
     expect(providerCalled).toBe(false);
     expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
-      {},
+      db,
       expect.objectContaining({ outcome: 'discarded', costUsd: 0 })
     );
   });
@@ -318,7 +337,7 @@ describe('self_v1 in-flight fence', () => {
     });
     expect((await run()).status).toBe(502);
     expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
-      {},
+      db,
       { chunkId, outcome: 'unknown' }
     );
   });

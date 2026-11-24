@@ -16,6 +16,7 @@ import { MeetAiError, type MeetAiParams } from './access';
 import { meetPerSpeakerEnabled } from './per-speaker-flag';
 import { meetSelfAccess } from './self-v1-access';
 import { drainSelfOutbox } from './self-v1-outbox';
+import { listSelfCoverage } from './self-v1-reads';
 import { selfRoom, selfRoomCommands, selfRoomError } from './self-v1-room';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
 
@@ -169,10 +170,28 @@ export async function readSelfConsentExtras(
       : resolveMeetClassRole(signedIn),
   ]);
   const session = sessionSchema.safeParse(consent.session);
+  const canManageMode = !guest && (signedIn.isHost || role.coHost);
+  // Host and co-host see who contributes, never why someone does not.
+  const coverage =
+    canManageMode && session.success && session.data.protocol === 'self_v1'
+      ? await listSelfCoverage(
+          await createAdminClient({ noCookie: true }),
+          session.data.sessionId,
+          access.user.id
+        )
+          .then((rows) =>
+            rows.map((row) => ({
+              accountId: row.account_id,
+              contributing: row.coverage === 'contributing',
+            }))
+          )
+          .catch(() => undefined)
+      : undefined;
   return {
     mode: consent.mode === 'self' ? ('self' as const) : ('room' as const),
     perSpeakerAvailable: available,
     session: session.success ? session.data : null,
-    canManageMode: !guest && (signedIn.isHost || role.coHost),
+    canManageMode,
+    ...(coverage ? { coverage } : {}),
   };
 }
