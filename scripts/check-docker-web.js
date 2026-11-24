@@ -7,31 +7,20 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const {
   readDockerProdComposeMergedText,
 } = require('./docker-web/prod-compose-include.js');
-const BACKEND_DOCKERFILE_PATH = path.join(
-  ROOT_DIR,
-  'apps',
-  'backend',
-  'Dockerfile'
-);
+const pausedRuntimes = require('./paused-runtimes.js');
+const BACKEND_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps/backend/Dockerfile');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
 const TANSTACK_WEB_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
-  'apps',
-  'tanstack-web',
-  'Dockerfile'
+  'apps/tanstack-web/Dockerfile'
 );
 const TANSTACK_WEB_SERVER_PATH = path.join(
   ROOT_DIR,
-  'apps',
-  'tanstack-web',
-  'docker',
-  'server.mjs'
+  'apps/tanstack-web/docker/server.mjs'
 );
 const DOCKER_SETUP_WORKFLOW_PATH = path.join(
   ROOT_DIR,
-  '.github',
-  'workflows',
-  'docker-setup-check.yaml'
+  '.github/workflows/docker-setup-check.yaml'
 );
 const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
 const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
@@ -48,9 +37,7 @@ const MEET_REALTIME_DOCKERFILE_PATH = path.join(
 );
 const CHAT_REALTIME_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
-  'apps',
-  'chat-realtime',
-  'Dockerfile'
+  'apps/chat-realtime/Dockerfile'
 );
 const HIVE_DB_MIGRATE_SCRIPT_PATH = path.join(
   ROOT_DIR,
@@ -825,12 +812,16 @@ function validateDockerSetupWorkflow(workflowContent) {
   return errors;
 }
 
+// Dev volumes cover every package unless root `dev:web:docker` is paused.
 function validateDockerCompose(
   composeContent,
-  { workspacePackageJsonPaths = listWorkspacePackageJsonPaths() } = {}
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    paused = pausedRuntimes.isPausedRootCommand('dev:web:docker'),
+  } = {}
 ) {
   const errors = [];
-  const packageWorkspaceDirs = workspacePackageJsonPaths
+  const packageWorkspaceDirs = (paused ? [] : workspacePackageJsonPaths)
     .filter((relativePath) => relativePath.startsWith('packages/'))
     .map((relativePath) => path.posix.dirname(relativePath))
     .sort();
@@ -1714,21 +1705,23 @@ function validateBackendDockerfile(dockerfileContent) {
   return errors;
 }
 
+// Manifest completeness applies once tanstack-web leaves PAUSED_APP_DIRECTORIES.
 function validateTanstackWebDockerfile(
   dockerfileContent,
   {
     workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
     fileDependencyPaths = listFileDependencyPaths(),
+    paused = pausedRuntimes.PAUSED_APP_DIRECTORIES.has('tanstack-web'),
   } = {}
 ) {
-  const errors = [
-    ...validateDepsStageManifestCopies({
-      dockerfileContent,
-      dockerfileLabel: 'apps/tanstack-web/Dockerfile',
-      workspacePackageJsonPaths,
-      fileDependencyPaths,
-    }),
-  ];
+  const errors = paused
+    ? []
+    : validateDepsStageManifestCopies({
+        dockerfileContent,
+        dockerfileLabel: 'apps/tanstack-web/Dockerfile',
+        workspacePackageJsonPaths,
+        fileDependencyPaths,
+      });
   const requiredSnippets = [
     'FROM oven/bun:1.4.1 AS deps',
     'FROM oven/bun:1.4.1 AS dev',
@@ -2336,7 +2329,13 @@ function checkDockerWebSetup({
       workspacePackageJsonPaths,
     }),
     ...validateTanstackWebServer(tanstackWebServerContent),
-    ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
+    ...validateDockerCompose(composeContent, {
+      workspacePackageJsonPaths,
+      paused: pausedRuntimes.isPausedRootCommand('dev:web:docker', {
+        rootDir,
+        fsImpl,
+      }),
+    }),
     ...validateTanstackDualCompose(tanstackDualComposeContent),
     ...validateDockerProdCompose(prodComposeContent),
     ...validateDockerBakeFile(dockerBakeContent),

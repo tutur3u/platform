@@ -203,6 +203,10 @@ paused app/Docker sources and broad lockfile maintenance stays disabled.
 Shared lock resolutions still need review when active dependencies change.
 Do not regenerate migration manifests as a condition of live Next.js work.
 Resumption must restore commands, tests, CI, dependency policy and docs together.
+`scripts/check-docker-web.js` skips workspace-manifest completeness for the
+retired TanStack Dockerfile (`PAUSED_APP_DIRECTORIES`) and per-package dev
+volumes while root `dev:web:docker` routes to `scripts/paused-runtimes.js`;
+restoring either brings the check back. Active app Dockerfiles stay complete.
 See `apps/docs/build/devops/active-runtime.mdx`.
 
 ## CI diff planner

@@ -118,3 +118,30 @@ Longest queues (p90): Deploy Coordinator Cloudflare / check-ci / Check CI Config
 Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
 
 Coalescing from 74ca3852f4 holds: Cloudflare Source wall p50 fell from 38-43 min to 22-24 min and Check CI Config queue p90 from 28-34 min to about 16 min. No failed-then-passed job, so no flake fix. SDK dev channel stayed red on main because packages/sdk/scripts/portable-build.test.cjs compared the staged closure with a hardcoded count (29) that dde408aea6 outgrew by approving users-link-actions.ts; it is the third drift of that count. ec1c821302 exports the approved set and asserts the staged closure equals it, so a new approval needs no test edit and a stale approval fails. Rollback condition: an approved module that is intentionally unreachable from the portable entries. Mobile Tests and the Tutoring absence credit foundation contract fail on consecutive main SHAs with no recovered retry, so they are owner defects, not flakes.
+
+## 2026-11-24 | Daily CI sample
+
+Window 2026-11-23T00:36 to 2026-11-24T00:36 UTC, main branch: 1000 workflow runs (832 success, 67 queued, 29 skipped, 29 failure, 25 cancelled, 12 in_progress, 5 pending, 1 waiting). Job timing covers 120 sampled runs; execution uses successful jobs only.
+
+| Slowest workflows (wall) | p50 / p90 (n) |
+| --- | ---: |
+| Pay Cloudflare Source | 37.8 min / 58.1 min (10) |
+| Shortener Cloudflare Source | 37.0 min / 53.8 min (10) |
+| Learn Cloudflare Source | 36.7 min / 45.6 min (10) |
+| Finance Cloudflare Source | 36.7 min / 54.2 min (11) |
+| Rewise Cloudflare Source | 36.6 min / 48.2 min (10) |
+| Inventory Cloudflare Source | 36.4 min / 51.7 min (10) |
+
+| Slowest jobs (execution) | p50 / p90 (n) | queue p90 |
+| --- | ---: | ---: |
+| Mobile Build Linux / Build Linux (Development) | 21.5 min / 21.5 min (1) | 19 s |
+| Mail Calendar Tasks builds / calendar-native | 13.2 min / 15.1 min (4) | 3.0 min |
+| Meet Cloudflare / validate | 9.2 min / 9.5 min (2) | 2.6 min |
+| Test / Unit test shard (2) | 9.1 min / 10.4 min (3) | 2.1 min |
+| TypeScript Type Check / Type Check | 8.4 min / 8.4 min (1) | 94 s |
+| Test / Unit test shard (1) | 7.6 min / 8.2 min (4) | 103 s |
+
+Longest queues (p90): Nova Cloudflare Source / check-ci / Check CI Config 29.2 min; Pay Cloudflare Source / check-ci / Check CI Config 28.8 min; Codex Plugin Check / check-ci / Check CI Config 25.1 min; Apps Cloudflare Source / check-ci / Check CI Config 23.9 min.
+Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
+
+No workflow change; no failed-then-passed job, so no flake fix. scripts/check-docker-web.test.js had 5 failures on main, hidden because default discovery and the disabled docker-setup-check workflow skip it: every new workspace package had to be copied into the retired apps/tanstack-web Dockerfile and mounted as a dev volume in docker-compose.web.yml, and the chat-realtime Dockerfile lagged meet-realtime by 35 manifests. apps/chat-realtime is an active Cloudflare Worker with live CI and its image sits in the production sidecar compose, so its Dockerfile now copies every manifest. test(ci): scope docker web check to active runtimes skips manifest completeness for directories in PAUSED_APP_DIRECTORIES and per-package dev volumes while root dev:web:docker routes to scripts/paused-runtimes.js; a fixture-driven policy test in paused-runtimes.test.js keeps chat, meet and web Dockerfiles strict and proves both checks return on resumption. Result: 5 failing to 0 of 85. Rollback condition: Docker setup or apps/tanstack-web resumes without restoring the root command or PAUSED_APP_DIRECTORIES entry.

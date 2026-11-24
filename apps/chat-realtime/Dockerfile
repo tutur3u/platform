@@ -49,6 +49,27 @@ COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/lettin/package.json ./apps/lettin/package.json
 COPY apps/web/package.json ./apps/web/package.json
+COPY apps/abuse-guard/package.json ./apps/abuse-guard/package.json
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/cms-renderer/package.json ./apps/cms-renderer/package.json
+COPY apps/coordination/package.json ./apps/coordination/package.json
+COPY apps/cron-control/package.json ./apps/cron-control/package.json
+COPY apps/deploy-coordinator/package.json ./apps/deploy-coordinator/package.json
+COPY apps/devbox-control/package.json ./apps/devbox-control/package.json
+COPY apps/gateway/package.json ./apps/gateway/package.json
+COPY apps/lms/package.json ./apps/lms/package.json
+COPY apps/marketing/package.json ./apps/marketing/package.json
+COPY apps/mastermind-store/package.json ./apps/mastermind-store/package.json
+COPY apps/mastermind/package.json ./apps/mastermind/package.json
+COPY apps/meet-realtime/package.json ./apps/meet-realtime/package.json
+COPY apps/ops-hub/package.json ./apps/ops-hub/package.json
+COPY apps/playground-execution/package.json ./apps/playground-execution/package.json
+COPY apps/roadmap/package.json ./apps/roadmap/package.json
+COPY apps/status-api/package.json ./apps/status-api/package.json
+COPY apps/turbo-cache/package.json ./apps/turbo-cache/package.json
+COPY apps/vault-witness/package.json ./apps/vault-witness/package.json
+COPY apps/workspace-domains/package.json ./apps/workspace-domains/package.json
+COPY apps/workspace/package.json ./apps/workspace/package.json
 COPY packages/ai/package.json ./packages/ai/package.json
 COPY packages/meet-core/package.json ./packages/meet-core/package.json
 COPY packages/apis/package.json ./packages/apis/package.json
@@ -94,6 +115,20 @@ COPY packages/users-core/package.json ./packages/users-core/package.json
 COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
+COPY packages/agent-quota/package.json ./packages/agent-quota/package.json
+COPY packages/cite/package.json ./packages/cite/package.json
+COPY packages/cms-blocks/package.json ./packages/cms-blocks/package.json
+COPY packages/feature-flags/package.json ./packages/feature-flags/package.json
+COPY packages/fleet-board-schemas/package.json ./packages/fleet-board-schemas/package.json
+COPY packages/human-check/package.json ./packages/human-check/package.json
+COPY packages/marketing-shell/package.json ./packages/marketing-shell/package.json
+COPY packages/mira-runtime/package.json ./packages/mira-runtime/package.json
+COPY packages/roadmap-core/package.json ./packages/roadmap-core/package.json
+COPY packages/session/package.json ./packages/session/package.json
+COPY packages/sso/package.json ./packages/sso/package.json
+COPY packages/start-bridge/package.json ./packages/start-bridge/package.json
+COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
+COPY packages/whiteboard/package.json ./packages/whiteboard/package.json
 
 # Keep this install command in sync with scripts/check-docker-web.js.
 # Retries mitigate flaky registry resolution and BuildKit cache issues.

@@ -1,4 +1,22 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
 const PAUSED_APP_DIRECTORIES = new Set(['backend', 'tanstack-web']);
+const PAUSED_COMMAND = /^node scripts\/paused-runtimes\.js(?:\s|$)/u;
+
+// True while the root package.json routes `scriptName` to this guard. Checks
+// scoped to a paused command resume once resumption restores the command.
+function isPausedRootCommand(
+  scriptName,
+  { rootDir = path.resolve(__dirname, '..'), fsImpl = fs } = {}
+) {
+  const manifestPath = path.join(rootDir, 'package.json');
+  if (!fsImpl.existsSync(manifestPath)) return false;
+  const { scripts = {} } = JSON.parse(
+    fsImpl.readFileSync(manifestPath, 'utf8')
+  );
+  return PAUSED_COMMAND.test(scripts[scriptName] ?? '');
+}
 
 // Policy tests may inspect the pause; implementation suites stay out of defaults.
 function isPausedImplementationTest(file) {
@@ -28,5 +46,10 @@ function main(argv = process.argv.slice(2)) {
   process.exitCode = 1;
 }
 
-module.exports = { PAUSED_APP_DIRECTORIES, isPausedImplementationTest, main };
+module.exports = {
+  PAUSED_APP_DIRECTORIES,
+  isPausedImplementationTest,
+  isPausedRootCommand,
+  main,
+};
 if (require.main === module) main();

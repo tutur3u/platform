@@ -5,7 +5,11 @@ const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 const { discoverScriptTests } = require('./run-script-tests');
 const { updatePlan } = require('./package-update');
-const { isPausedImplementationTest } = require('./paused-runtimes');
+const {
+  isPausedImplementationTest,
+  isPausedRootCommand,
+} = require('./paused-runtimes');
+const docker = require('./check-docker-web');
 const { command } = require('./local-docs');
 
 const root = path.resolve(__dirname, '..');
@@ -81,6 +85,51 @@ test('paused root commands fail visibly without running an inactive service', ()
   ])
     assert.match(scripts[name], /paused-runtimes\.js/);
   assert.doesNotMatch(scripts['test:e2e'], /docker/i);
+});
+
+test('Docker checks drop workspace completeness only for paused runtimes', () => {
+  assert.equal(isPausedRootCommand('dev:web:docker'), true);
+  assert.equal(isPausedRootCommand('dev:docs'), false);
+  assert.equal(isPausedRootCommand('no-such-script'), false);
+  const read = (file) => fs.readFileSync(file, 'utf8');
+  const tanstack = read(docker.TANSTACK_WEB_DOCKERFILE_PATH);
+  const compose = read(docker.WEB_COMPOSE_FILE_PATH);
+  const newPackage = 'packages/zz-new/package.json';
+  const fixture = {
+    fileDependencyPaths: [],
+    workspacePackageJsonPaths: [newPackage],
+  };
+  assert.deepEqual(docker.validateTanstackWebDockerfile(tanstack, fixture), []);
+  assert.deepEqual(docker.validateDockerCompose(compose, fixture), []);
+  const resumed = { ...fixture, paused: false };
+  assert.match(
+    docker.validateTanstackWebDockerfile(tanstack, resumed).join('\n'),
+    /deps stage is missing workspace package manifests: packages\/zz-new/u
+  );
+  assert.match(
+    docker.validateDockerCompose(compose, resumed).join('\n'),
+    /platform-web-zz-new-node_modules:\/workspace\/packages\/zz-new/u
+  );
+  for (const [validate, file] of [
+    [
+      docker.validateChatRealtimeDockerfile,
+      docker.CHAT_REALTIME_DOCKERFILE_PATH,
+    ],
+    [
+      docker.validateMeetRealtimeDockerfile,
+      docker.MEET_REALTIME_DOCKERFILE_PATH,
+    ],
+  ]) {
+    assert.match(
+      validate(read(file), fixture).join('\n'),
+      /deps stage is missing workspace package manifests: packages\/zz-new/u
+    );
+  }
+  const web = docker.validateDockerfile({
+    ...fixture,
+    dockerfileContent: read(docker.WEB_DOCKERFILE_PATH),
+  });
+  assert.match(web.join('\n'), /packages\/zz-new\/package\.json/u);
 });
 
 test('local docs uses a pinned CLI, bounded ports, and no container command', () => {

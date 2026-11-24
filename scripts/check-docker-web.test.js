@@ -235,15 +235,6 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
-        'COPY packages/offline/package.json ./packages/offline/package.json\n',
-        ''
-      )
-    ).join('\n'),
-    /apps\/tanstack-web\/Dockerfile deps stage is missing workspace package manifests: packages\/offline\/package\.json/u
-  );
-  assert.match(
-    validateTanstackWebDockerfile(
-      dockerfileContent.replace(
         'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs\n',
         ''
       )
@@ -914,7 +905,7 @@ test('validateDockerCompose reports missing package-local artifact isolation', (
       ''
     );
 
-  const errors = validateDockerCompose(composeContent);
+  const errors = validateDockerCompose(composeContent, { paused: false });
 
   assert.ok(
     errors
