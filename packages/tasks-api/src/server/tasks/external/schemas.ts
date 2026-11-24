@@ -95,6 +95,27 @@ export const normalizedIssueSchema = z.object({
     .array(z.object({ url: httpsUrl, oid: z.string().max(64).optional() }))
     .max(100)
     .default([]),
+  /** Original GitHub timeline events (closed, reopened, labeled, ...). */
+  events: z
+    .array(
+      z.object({
+        event: z.enum([
+          'closed',
+          'reopened',
+          'labeled',
+          'unlabeled',
+          'assigned',
+          'milestoned',
+        ]),
+        at: z.string().max(40),
+        actor: z.string().max(100).nullish(),
+        label: z.string().max(100).optional(),
+        milestone: z.string().max(200).optional(),
+        assignee: z.string().max(100).optional(),
+      })
+    )
+    .max(100)
+    .default([]),
   parent_url: httpsUrl.nullable().default(null),
   sub_issue_urls: z.array(httpsUrl).max(200).default([]),
 });

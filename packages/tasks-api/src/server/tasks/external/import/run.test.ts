@@ -188,6 +188,54 @@ describe('creating tasks', () => {
     expect(result?.warnings).toEqual(['unmapped_assignees: ghost, stranger']);
   });
 
+  it('records the source timeline at its original times with mapped actors', async () => {
+    const url = 'https://github.com/tutur3u/platform/issues/8';
+    await run(
+      [
+        issue({
+          number: 8,
+          state: 'closed',
+          state_reason: 'completed',
+          closed_at: '2023-05-03T00:00:00Z',
+          events: [
+            {
+              event: 'labeled',
+              at: '2023-05-01T08:00:00Z',
+              actor: 'stranger',
+              label: 'bug',
+            },
+            { event: 'closed', at: '2023-05-03T00:00:00Z', actor: 'vhpx' },
+            { event: 'reopened', at: '2023-05-04T00:00:00Z', actor: 'vhpx' },
+            { event: 'closed', at: 'not a date', actor: 'vhpx' },
+          ],
+        }),
+      ],
+      { mapping: { status_lists: {}, authors: { vhpx: VHPX } } }
+    );
+    const events = store.history.filter(
+      (h) => h.change_type === 'external_event'
+    );
+    expect(
+      events.map((e) => [
+        e.metadata.event,
+        e.changed_at,
+        e.changed_by,
+        e.metadata.external_actor,
+      ])
+    ).toEqual([
+      ['labeled', '2023-05-01T08:00:00.000Z', null, 'stranger'],
+      ['closed', '2023-05-03T00:00:00.000Z', VHPX, 'vhpx'],
+      ['reopened', '2023-05-04T00:00:00.000Z', VHPX, 'vhpx'],
+    ]);
+    expect(
+      events.every(
+        (e) => e.field_name === 'external' && e.metadata.external_url === url
+      )
+    ).toBe(true);
+    expect(events[0]?.metadata.label).toBe('bug');
+    expect(events[1]?.metadata.state_reason).toBe('completed');
+  });
+
   it('links pull requests and commits into task links only', async () => {
     const [result] = await run([
       issue({

@@ -23,6 +23,7 @@ import {
   sameInstant,
   sameSet,
   syncComments,
+  timelineEventRows,
 } from './run-support';
 import type { HistoryInsert, ImportStore, TaskPatch } from './store-types';
 
@@ -134,7 +135,16 @@ async function importOne(
         },
       },
     ];
-    if (issue.state === 'closed')
+    // The recorded timeline carries the original close; the synthesized event
+    // only stands in when the source supplied none.
+    const timeline = timelineEventRows(
+      taskId,
+      issue,
+      ctx.mapping.authors,
+      ctx.memberIds
+    );
+    if (timeline.length) history.push(...timeline);
+    else if (issue.state === 'closed')
       history.push(eventRow(taskId, issue, 'closed'));
     await store.insertHistory(history);
     await store.insertComments(wsId, taskId, comments);

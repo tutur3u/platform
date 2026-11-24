@@ -164,3 +164,47 @@ export async function pendingLinks(
       state: spec.state,
     }));
 }
+
+/**
+ * History rows for the issue's original timeline. The actor maps to a
+ * workspace user only through the authors mapping; otherwise the login stays
+ * in the metadata.
+ */
+export function timelineEventRows(
+  taskId: string,
+  issue: NormalizedIssue,
+  authors: Record<string, string>,
+  memberIds: ReadonlySet<string>
+): HistoryInsert[] {
+  const rows: HistoryInsert[] = [];
+  for (const event of issue.events) {
+    const at = timestampOrNull(event.at);
+    if (!at) continue;
+    const mapped = event.actor ? authors[event.actor] : undefined;
+    rows.push({
+      task_id: taskId,
+      changed_by: mapped && memberIds.has(mapped) ? mapped : null,
+      changed_at: at,
+      change_type: 'external_event',
+      field_name: 'external',
+      ...(event.event === 'closed' || event.event === 'reopened'
+        ? {
+            old_value: event.event === 'closed' ? 'open' : 'closed',
+            new_value: event.event === 'closed' ? 'closed' : 'open',
+          }
+        : {}),
+      metadata: {
+        event: event.event,
+        external_actor: event.actor ?? null,
+        external_url: issue.url,
+        ...(event.event === 'closed' && stateReasonForEvent(issue)
+          ? { state_reason: stateReasonForEvent(issue) }
+          : {}),
+        ...(event.label ? { label: event.label } : {}),
+        ...(event.milestone ? { milestone: event.milestone } : {}),
+        ...(event.assignee ? { assignee: event.assignee } : {}),
+      },
+    });
+  }
+  return rows;
+}
