@@ -732,7 +732,9 @@ follower keeps mirroring the leader's layout and the lock on local rearranging.
 | Chat and participants | A full-height sheet that follows the visual viewport so the composer stays above the keyboard, with a drag handle (a drag of 96 px or more dismisses), a scrim and Escape. |
 | Bottom bar | Unchanged: seven 44 px controls (mic, camera, activities, more, leave, chat, people) with safe-area bottom padding. |
 
-The earlier `MeetPhoneCallLayout` mockup component is not a production path.
+The More menu is a popover under the top bar in this first version; a bottom sheet with
+full list rows is a later refinement. The portrait grid and the filmstrip apply to
+non-spotlight stages only. The earlier `MeetPhoneCallLayout` mockup component is not a production path.
 
 Regression coverage: `phone-stage.test.tsx`, `participant-tile-phone.test.tsx`,
 `call-header-actions.test.tsx` and `phone-sheet.test.tsx`.
