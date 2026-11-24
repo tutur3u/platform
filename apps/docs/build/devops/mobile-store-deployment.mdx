@@ -474,7 +474,9 @@ silently skipping both publishing jobs.
 
 Both jobs fetch the active encrypted vault bundle from
 `https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle`, with the
-CI bearer token and GitHub OIDC attestation. Signing files, private keys, and
+CI bearer token and GitHub OIDC attestation. The fetch does not follow
+redirects, so those headers never reach another host, and a redirect fails the
+fetch like any other non-200 response. Signing files, private keys, and
 build environment files are hydrated only into temporary runner paths and
 cleaned up afterward. Do not copy signing values into repository secrets or
 commit them to source. The App Store private key uses `API_PRIVATE_KEYS_DIR`.

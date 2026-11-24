@@ -183,8 +183,10 @@ jobs:
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
           # Without -f, curl keeps the status so a failure is summarized from
-          # bounded fields; the helper never prints a successful bundle.
-          bundle_status="$(curl -sSL \
+          # bounded fields; the helper never prints a successful bundle. No -L:
+          # the credential headers must never follow a redirect, so a redirect
+          # is reported as a failed fetch.
+          bundle_status="$(curl -sS \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
             -D "$bundle_path.headers" \
@@ -325,8 +327,10 @@ jobs:
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
           # Without -f, curl keeps the status so a failure is summarized from
-          # bounded fields; the helper never prints a successful bundle.
-          bundle_status="$(curl -sSL \
+          # bounded fields; the helper never prints a successful bundle. No -L:
+          # the credential headers must never follow a redirect, so a redirect
+          # is reported as a failed fetch.
+          bundle_status="$(curl -sS \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
             -D "$bundle_path.headers" \
@@ -521,8 +525,10 @@ jobs:
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
           # Without -f, curl keeps the status so a failure is summarized from
-          # bounded fields; the helper never prints a successful bundle.
-          bundle_status="$(curl -sSL \
+          # bounded fields; the helper never prints a successful bundle. No -L:
+          # the credential headers must never follow a redirect, so a redirect
+          # is reported as a failed fetch.
+          bundle_status="$(curl -sS \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
             -D "$bundle_path.headers" \
@@ -799,8 +805,10 @@ jobs:
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
           # Without -f, curl keeps the status so a failure is summarized from
-          # bounded fields; the helper never prints a successful bundle.
-          bundle_status="$(curl -sSL \
+          # bounded fields; the helper never prints a successful bundle. No -L:
+          # the credential headers must never follow a redirect, so a redirect
+          # is reported as a failed fetch.
+          bundle_status="$(curl -sS \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
             -D "$bundle_path.headers" \
@@ -1124,8 +1132,10 @@ jobs:
             "$oidc_url" -o "$oidc_response"
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
           # Without -f, curl keeps the status so a failure is summarized from
-          # bounded fields; the helper never prints a successful bundle.
-          bundle_status="$(curl -sSL \
+          # bounded fields; the helper never prints a successful bundle. No -L:
+          # the credential headers must never follow a redirect, so a redirect
+          # is reported as a failed fetch.
+          bundle_status="$(curl -sS \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
             -D "$bundle_path.headers" \

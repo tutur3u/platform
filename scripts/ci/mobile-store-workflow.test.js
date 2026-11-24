@@ -617,3 +617,26 @@ test('TestFlight signing runs through the mode-aware signing and build scripts',
   );
   assert.match(workflow, /Unexpected Time Sensitive entitlement/);
 });
+
+test('credentialed bundle fetches never follow a redirect', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github/workflows/mobile-deploy-stores.yaml'),
+    'utf8'
+  );
+  // Each curl call that sends the CI token or the OIDC attestation header.
+  const calls = workflow
+    .split(/(?=\bcurl\b)/)
+    .filter((part) => /^curl\b/.test(part))
+    .map((part) => part.slice(0, part.search(/\n\s*\n|\)"\n/) + 1 || undefined))
+    .filter(
+      (call) =>
+        call.includes('MOBILE_DEPLOYMENT_CI_TOKEN') ||
+        call.includes('X-GitHub-OIDC-Token')
+    );
+  assert.equal(calls.length, 5);
+  for (const call of calls) {
+    // Any short-flag group in the call, not only the first one.
+    assert.doesNotMatch(call, /(?:^|\s)-[A-Za-z]*L/);
+    assert.doesNotMatch(call, /--location/);
+  }
+});
