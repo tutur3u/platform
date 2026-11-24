@@ -74,6 +74,24 @@ for meaningful status. Pair color with text or an icon and an accessible name.
 Avoid raw hex, RGB, HSL, OKLCH, arbitrary color utilities, and decorative hue classes
 in application components. Token definitions remain in the shared stylesheet.
 
+Sorbet is the default UI (`SORBET_UI_DEFAULT` in `sorbet-ui.ts`). People can opt
+back to the classic theme per account, so build shared components on the semantic
+roles above rather than on either theme's literal values. `sorbet-tokens.json` is
+the portable contract that web and mobile read.
+
+`dynamic-*` utilities exist only for the hues `globals.css` defines
+(`--color-dynamic-<hue>` and `--color-dynamic-light-<hue>`). Any other name, such
+as `dynamic-amber`, `dynamic-muted` or `dynamic-surface`, renders with no color.
+`packages/ui/src/dynamic-color-tokens.test.ts` fails on any such name in active
+apps and packages. Class names built at runtime (`` `bg-dynamic-${color}` ``) are
+invisible to Tailwind; map each value to a full static class instead.
+
+Send feedback through `toast` from `@tuturuuu/ui/sonner`. Each app root layout
+mounts exactly one Sonner `<Toaster />`. The legacy `@tuturuuu/ui/hooks/use-toast`
+API forwards to Sonner, and `destructive` becomes an error toast. Don't mount the
+Radix `@tuturuuu/ui/toaster`: it no longer renders anything. The use-toast tests
+check both the forwarding and that each root layout mounts one Toaster.
+
 The proposed settings scope separates borders, inputs, cards, and accent surfaces
 in dark mode. It also keeps disabled input values readable at full opacity while
 disabled buttons remain visibly unavailable. Do not extend these overrides to the
