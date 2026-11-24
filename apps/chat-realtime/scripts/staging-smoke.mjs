@@ -96,7 +96,11 @@ function check(results, name, ok) {
 
 export async function runLive({ origin, secret }) {
   const results = [];
-  check(results, 'health reports running', (await health(origin)).stopped === false);
+  check(
+    results,
+    'health reports running',
+    (await health(origin)).stopped === false
+  );
 
   let client;
   try {
@@ -109,7 +113,11 @@ export async function runLive({ origin, secret }) {
   try {
     const event = smokeEvent();
     const body = JSON.stringify(event);
-    const accepted = await post(origin, body, await publishTicket(secret, body));
+    const accepted = await post(
+      origin,
+      body,
+      await publishTicket(secret, body)
+    );
     check(results, 'signed publish accepted', accepted.status === 200);
     const delivered = await client
       .next((f) => f.t === 'event' && f.event?.id === event.id, TIMEOUT_MS)
@@ -153,7 +161,11 @@ export async function runLive({ origin, secret }) {
 
 export async function runStopped({ origin, secret }) {
   const results = [];
-  check(results, 'health reports stopped', (await health(origin)).stopped === true);
+  check(
+    results,
+    'health reports stopped',
+    (await health(origin)).stopped === true
+  );
   const body = JSON.stringify(smokeEvent());
   check(
     results,
@@ -186,7 +198,9 @@ export function readSmokeConfig(env = process.env) {
     throw new Error('CHAT_REALTIME_SMOKE_ORIGIN must be a bare HTTPS origin');
   }
   if (secret.trim().length < 32) {
-    throw new Error('CHAT_REALTIME_SMOKE_SECRET must be at least 32 characters');
+    throw new Error(
+      'CHAT_REALTIME_SMOKE_SECRET must be at least 32 characters'
+    );
   }
   return { origin: url.origin, secret };
 }
@@ -201,7 +215,8 @@ async function main() {
   const config = readSmokeConfig();
   const results =
     phase === 'live' ? await runLive(config) : await runStopped(config);
-  for (const { name, ok } of results) console.log(`${ok ? 'PASS' : 'FAIL'} ${name}`);
+  for (const { name, ok } of results)
+    console.log(`${ok ? 'PASS' : 'FAIL'} ${name}`);
   if (results.some(({ ok }) => !ok)) process.exit(1);
 }
 

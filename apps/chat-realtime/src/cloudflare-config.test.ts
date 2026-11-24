@@ -71,7 +71,9 @@ describe('chat-realtime Cloudflare config', () => {
       const { worker } = await config({ CHAT_REALTIME_DEPLOY_ENV: deployEnv });
       expect(declared(worker.env)).toEqual(DEFAULT_ENV);
     }
-    const { worker } = await config({ CHAT_REALTIME_TOKEN_ROTATION: 'overlap' });
+    const { worker } = await config({
+      CHAT_REALTIME_TOKEN_ROTATION: 'overlap',
+    });
     expect(declared(worker.env)).toEqual(
       [
         ...DEFAULT_ENV,
