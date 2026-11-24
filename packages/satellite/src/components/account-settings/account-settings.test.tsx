@@ -112,7 +112,7 @@ describe('shared satellite account settings', () => {
     ).toBeDefined();
   });
 
-  it('exposes profile, accounts, security, sessions and integrations in one group', () => {
+  it('exposes profile, public profile, accounts, security, sessions and integrations in one group', () => {
     const group = createAccountSettingsNavGroup((key) => key);
     expect(group.label).toBe('satellite-account-settings.title');
     expect(group.items.map((item) => item.name)).toEqual([
@@ -120,6 +120,7 @@ describe('shared satellite account settings', () => {
     ]);
     expect(ACCOUNT_SETTINGS_TAB_IDS).toEqual([
       'profile',
+      'public_profile',
       'accounts',
       'security',
       'sessions',

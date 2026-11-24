@@ -1,5 +1,4 @@
 import { ClipboardList, Plus } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -43,7 +42,5 @@ export async function getNavigationLinks({
       icon: <Plus className="h-4 w-4" />,
       disabled: withoutPermission('manage_forms'),
     },
-    null,
-    createWorkspaceMembersNavLink(t),
   ];
 }

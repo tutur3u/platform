@@ -1,13 +1,6 @@
-import type { WorkspaceAccessTab } from '@tuturuuu/ui/custom/workspace-access';
-import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import {
-  getPermissions,
-  verifyHasSecrets,
-} from '@tuturuuu/utils/workspace-helper';
+import { buildSettingsDialogHref } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Members',
@@ -15,68 +8,21 @@ export const metadata: Metadata = {
     'Manage Members in the Workspace Settings area of your Tuturuuu workspace.',
 };
 
-const WORKSPACE_ACCESS_TABS: WorkspaceAccessTab[] = [
-  'people',
-  'roles',
-  'defaults-member',
-  'defaults-guest',
-];
-
-function resolveInitialTab(tab: string | undefined): WorkspaceAccessTab {
-  return WORKSPACE_ACCESS_TABS.includes(tab as WorkspaceAccessTab)
-    ? (tab as WorkspaceAccessTab)
-    : 'people';
-}
-
 interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-  searchParams: Promise<{
-    tab?: string;
-  }>;
+  params: Promise<{ wsId: string }>;
 }
 
-export default async function WorkspaceMembersPage({
-  params,
-  searchParams,
-}: Props) {
-  const { tab } = await searchParams;
-
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId }) => {
-        if (workspace.personal) redirect(`/${wsId}/settings`);
-
-        const permissions = await getPermissions({
-          wsId,
-        });
-        if (!permissions) notFound();
-        const { withoutPermission } = permissions;
-
-        if (withoutPermission('manage_workspace_members'))
-          redirect(`/${wsId}/settings`);
-
-        const user = await getCurrentUser();
-        const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
-
-        const canManageMembers = !withoutPermission('manage_workspace_members');
-        const canManageRoles = !withoutPermission('manage_workspace_roles');
-
-        return (
-          <StandardWorkspaceAccessPage
-            disableInvite={disableInvite}
-            initialContext={{
-              canManageMembers,
-              canManageRoles,
-              currentUserEmail: user?.email ?? null,
-              currentUserId: user?.id ?? null,
-              workspaceId: wsId,
-            }}
-            initialTab={resolveInitialTab(tab)}
-          />
-        );
-      }}
-    </WorkspaceWrapper>
+/**
+ * Member management lives in the settings dialog (Current workspace ->
+ * Members), which enforces the same member and role permissions. This route
+ * keeps bookmarks and links working by opening that tab over the workspace.
+ */
+export default async function WorkspaceMembersPage({ params }: Props) {
+  const { wsId } = await params;
+  redirect(
+    buildSettingsDialogHref(
+      `/${encodeURIComponent(wsId)}`,
+      'workspace_members'
+    )
   );
 }

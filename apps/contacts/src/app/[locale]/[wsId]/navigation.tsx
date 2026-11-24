@@ -17,7 +17,6 @@ import {
   UserCheck,
   Users,
 } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -208,7 +207,5 @@ export async function getNavigationLinks({
       requireRootMember: true,
       disabled: withoutPermission('manage_users'),
     },
-    null,
-    createWorkspaceMembersNavLink(t),
   ];
 }

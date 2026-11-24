@@ -104,6 +104,7 @@ so `?settingsTab=<tab>` means the same thing in every app.
 | Tab id | apps/web | Satellites |
 | --- | --- | --- |
 | `profile` | Full profile panel | Shared `SatelliteProfileSettingsPanel`: avatar upload, display name, full name, user id. Email is read-only, with a link to the web profile tab. |
+| `public_profile` | Public profile card; shows `/u/<username>` in the address bar (see [Account menu](/platform/features/account-menu#profile)) | Same card; keeps the `?settingsTab=` address |
 | `accounts` | Account switcher management | Explains the tab and opens the same tab in apps/web. |
 | `security` | Password, 2FA, passkeys, linked identities | Explains the tab and opens the same tab in apps/web. |
 | `sessions` | Devices and session revocation | Explains the tab and opens the same tab in apps/web. |
@@ -207,6 +208,22 @@ tab in the Contacts settings dialog (`contact_labels`, User management group)
 edits it; apps/web and apps/workspace do not show it. Empty fields fall back to
 the default and are not stored. Saving needs `manage_workspace_settings`,
 enforced by the contacts settings route.
+
+## Workspace members live in settings
+
+- **Scope:** apps/web, apps/workspace and every satellite sidebar.
+- **Default:** member management (people, invites and pending invites, invite
+  links, roles, removal, guest self-join) is the **Current workspace → Members**
+  tab (`workspace_members`). No sidebar shows a Manage members entry.
+- **Old route:** `/[wsId]/members` in apps/web and apps/workspace redirects to
+  `/[wsId]?settingsDialog=open&settingsTab=workspace_members`, so bookmarks
+  open the same tab. Permissions are those the tab already enforces
+  (`manage_workspace_members`, `manage_workspace_roles`).
+- **Exceptions:** the CMS external-project People page (`/[wsId]/members` in
+  apps/cms) is a separate feature and keeps its sidebar entry.
+- **Regression coverage:** `members/page.test.ts` in apps/web and
+  apps/workspace, `apps/tasks/src/__tests__/task-pages.test.tsx` and
+  `packages/satellite/src/components/workspace-settings/navigation.test.tsx`.
 
 ## Implementation
 

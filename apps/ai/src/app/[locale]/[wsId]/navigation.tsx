@@ -12,7 +12,6 @@ import {
   Plug,
   Sparkles,
 } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -23,10 +22,7 @@ export async function getNavigationLinks({
   canManageAiKeys: boolean;
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
-  const [t, common] = await Promise.all([
-    getTranslations('ai-studio'),
-    getTranslations(),
-  ]);
+  const t = await getTranslations('ai-studio');
   const href = (section?: string) =>
     `/${personalOrWsId}${section ? `/${section}` : ''}`;
 
@@ -114,7 +110,5 @@ export async function getNavigationLinks({
       href: href('developer-docs'),
       icon: <BookOpen className="h-4 w-4" />,
     },
-    null,
-    createWorkspaceMembersNavLink(common),
   ];
 }

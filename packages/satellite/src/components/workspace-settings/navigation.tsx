@@ -1,7 +1,5 @@
 import { Building, CreditCard, Users } from '@tuturuuu/icons';
-import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { createElement } from 'react';
 
 export type WorkspaceSettingsTranslator = (key: string) => string;
 
@@ -33,16 +31,5 @@ export function createWorkspaceSettingsNavGroup(
         name: 'workspace_billing',
       },
     ],
-  };
-}
-
-export function createWorkspaceMembersNavLink(
-  t: WorkspaceSettingsTranslator
-): NavLink {
-  return {
-    icon: createElement(Users, { className: 'h-4 w-4' }),
-    id: 'workspace-members-settings',
-    openSettingsDialog: { tab: 'workspace_members' },
-    title: t('satellite-workspace-settings.manage_members'),
   };
 }

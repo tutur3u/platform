@@ -12,7 +12,6 @@ import {
   Tags,
   Users,
 } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
@@ -56,8 +55,6 @@ export async function getNavigationLinks({
         icon: <ShieldUser className="h-4 w-4" />,
         matchExact: true,
       },
-      null,
-      createWorkspaceMembersNavLink(t),
     ];
   }
 
@@ -138,7 +135,5 @@ export async function getNavigationLinks({
       icon: <Users className="h-4 w-4" />,
       aliases: [`/${personalOrWsId}/members`],
     },
-    null,
-    createWorkspaceMembersNavLink(t),
   ];
 }

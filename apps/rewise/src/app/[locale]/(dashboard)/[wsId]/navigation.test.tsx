@@ -4,9 +4,6 @@ vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));
 
-vi.mock('@tuturuuu/satellite/workspace-settings', () => ({
-  createWorkspaceMembersNavLink: () => null,
-}));
 
 import { getNavigationLinks } from './navigation';
 

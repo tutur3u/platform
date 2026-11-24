@@ -13,7 +13,6 @@ import {
   Store,
   TicketPercent,
 } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 import {
@@ -63,7 +62,6 @@ export async function getNavigationLinks({
 }: {
   workspaceSlug: string;
 }): Promise<(NavLink | null)[]> {
-  const t = await getTranslations();
   const inventoryT = await getTranslations('inventory.nav');
 
   const links = getInventoryNavigationItems({ workspaceSlug }).map((item) => {
@@ -79,5 +77,5 @@ export async function getNavigationLinks({
     };
   });
 
-  return [...links, null, createWorkspaceMembersNavLink(t)];
+  return links;
 }

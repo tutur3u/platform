@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Timer,
 } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -48,8 +47,6 @@ export async function getNavigationLinks({
       icon: <ClockCheck className="h-4 w-4" />,
       disabled: personalOrWsId === 'personal',
     },
-    null,
-    createWorkspaceMembersNavLink(t),
   ];
 
   return navLinks;

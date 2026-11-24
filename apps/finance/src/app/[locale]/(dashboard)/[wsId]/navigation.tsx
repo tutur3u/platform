@@ -12,7 +12,6 @@ import {
   Tags,
   Wallet,
 } from '@tuturuuu/icons';
-import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -124,8 +123,6 @@ export async function getNavigationLinks({
           disabled: withoutPermission('view_transactions'),
         }
       : null,
-    null,
-    createWorkspaceMembersNavLink(t),
   ];
 
   return navLinks;

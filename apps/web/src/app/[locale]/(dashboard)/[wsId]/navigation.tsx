@@ -31,7 +31,6 @@ import {
   type DashboardNavigationLink,
 } from './navigation-icon-descriptor';
 import { createMoreToolsNavigation } from './navigation-more-tools';
-import { createWorkspaceMembersNavigationLink } from './workspace-members-navigation';
 
 type NavigationUser = {
   email?: string;
@@ -632,12 +631,6 @@ export async function WorkspaceNavigationLinks({
           preferenceSectionLabel: sidebarSections.utilities,
         }
       : null,
-    createWorkspaceMembersNavigationLink({
-      canManageMembers: !withoutPermission('manage_workspace_members'),
-      isPersonal,
-      preferenceSectionLabel: sidebarSections.utilities,
-      t,
-    }),
   ];
 
   /**

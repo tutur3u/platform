@@ -469,11 +469,10 @@ describe('tasks app task pages', () => {
         aliases: [`/workspace-1/${route}/*`],
       });
     }
-    expect(links[7]).toBeNull();
-    expect(links[8]).toMatchObject({
-      id: 'workspace-members-settings',
-      openSettingsDialog: { tab: 'workspace_members' },
-    });
+    expect(links).toHaveLength(7);
+    expect(
+      links.some((link) => link?.openSettingsDialog?.tab === 'workspace_members')
+    ).toBe(false);
   });
 
   it('enables Cycles only for members who can manage projects', async () => {
