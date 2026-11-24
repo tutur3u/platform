@@ -131,10 +131,6 @@ export function selfCaptureViewOf(lifecycle: SelfLifecycle): SelfCaptureState {
       return lifecycle.degraded ? { kind: 'paused' } : { kind: 'capturing' };
     case 'not_eligible':
       return { kind: 'guest' };
-    case 'lease_expired':
-      return state.kind === 'open'
-        ? { kind: 'opening', key: state.key }
-        : state;
     case 'refused':
     case 'unavailable':
       return { kind: 'stopped' };
