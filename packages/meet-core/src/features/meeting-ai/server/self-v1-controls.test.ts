@@ -48,7 +48,9 @@ vi.mock('./per-speaker-flag', () => ({ meetPerSpeakerEnabled: mocks.flag }));
 import { meetAiResponse } from './access';
 import {
   chooseSelfTranscript,
+  consentViewExtras,
   readSelfConsentExtras,
+  selfModeConsentChoice,
   setSelfMode,
 } from './self-v1-controls';
 
@@ -128,7 +130,12 @@ describe('per-speaker transcript choice', () => {
       post({ choice: 'decline' }),
       params
     );
-    expect(result).toEqual({ available: true, choice: 'decline' });
+    expect(result).toMatchObject({
+      available: true,
+      choice: 'decline',
+      mode: 'room',
+      perSpeakerAvailable: true,
+    });
     expect(mocks.selfAccess).not.toHaveBeenCalled();
     expect(query.eq).toHaveBeenCalledWith('protocol', 'self_v1');
     expect(mocks.drain).toHaveBeenCalledWith(
@@ -147,6 +154,74 @@ describe('per-speaker transcript choice', () => {
       chooseSelfTranscript(post({ choice: 'allow' }), params)
     ).rejects.toMatchObject({ status: 403 });
     expect(mocks.room).not.toHaveBeenCalled();
+  });
+});
+
+describe('legacy consent POST in a per-speaker room', () => {
+  const roomAccess = mocks.access as never;
+  const read = (mode: string) => (input: { action: string }) =>
+    Promise.resolve(
+      input.action === 'transcript.consent.read'
+        ? { mode }
+        : { choice: 'allow', mode, session: { sessionId, protocol: 'self_v1' } }
+    );
+
+  it('leaves room mode to the room-capture path', async () => {
+    mocks.room.mockImplementation(read('room'));
+    expect(
+      await selfModeConsentChoice(post({}), roomAccess, 'allow')
+    ).toBeNull();
+    expect(mocks.room).toHaveBeenCalledTimes(1);
+    expect(mocks.selfAccess).not.toHaveBeenCalled();
+  });
+
+  it('records an allow for this account only after the uploader check', async () => {
+    mocks.room.mockImplementation(read('self'));
+    mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
+    const response = await selfModeConsentChoice(post({}), roomAccess, 'allow');
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toMatchObject({
+      available: true,
+      choice: 'allow',
+      mode: 'self',
+      session: { sessionId, protocol: 'self_v1' },
+    });
+    const params = await mocks.selfAccess.mock.calls[0]?.[1].params;
+    expect(params).toEqual({ wsId: 'w', meetingId: 'm' });
+    expect(mocks.room).toHaveBeenLastCalledWith(roomAccess, {
+      action: 'transcript.consent.choice',
+      choice: 'allow',
+      version: expect.any(String),
+    });
+  });
+
+  it('refuses an ineligible allow without a room choice', async () => {
+    mocks.room.mockImplementation(read('self'));
+    const { MeetAiError } = await import('./access');
+    mocks.selfAccess.mockRejectedValue(
+      new MeetAiError(403, 'no', 'MEET_SELF_UNAVAILABLE')
+    );
+    const response = await selfModeConsentChoice(post({}), roomAccess, 'allow');
+    expect(response?.status).toBe(403);
+    expect(await response?.json()).toMatchObject({
+      code: 'MEET_SELF_UNAVAILABLE',
+    });
+    expect(mocks.room).toHaveBeenCalledTimes(1);
+  });
+
+  it('always records a decline, without the uploader check', async () => {
+    mocks.room.mockImplementation(read('self'));
+    const response = await selfModeConsentChoice(
+      post({}),
+      roomAccess,
+      'decline'
+    );
+    expect(response?.status).toBe(200);
+    expect(mocks.selfAccess).not.toHaveBeenCalled();
+    expect(mocks.room).toHaveBeenLastCalledWith(
+      roomAccess,
+      expect.objectContaining({ choice: 'decline' })
+    );
   });
 });
 
@@ -191,6 +266,18 @@ describe('transcript-consent extras', () => {
     ).toEqual({
       mode: 'room',
       perSpeakerAvailable: true,
+      session: null,
+      canManageMode: false,
+    });
+  });
+
+  it('falls back to room mode when the per-speaker read fails', async () => {
+    mocks.flag.mockRejectedValue(new Error('down'));
+    expect(
+      await consentViewExtras(mocks.access as never, { mode: 'self' })
+    ).toEqual({
+      mode: 'room',
+      perSpeakerAvailable: false,
       session: null,
       canManageMode: false,
     });

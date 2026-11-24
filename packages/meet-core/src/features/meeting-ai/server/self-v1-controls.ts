@@ -12,12 +12,17 @@ import {
   callRoomService,
   type MeetCallRouteAccess,
 } from '../../call/server/room-service';
-import { MeetAiError, type MeetAiParams } from './access';
+import { MeetAiError, type MeetAiParams, meetAiResponse } from './access';
 import { meetPerSpeakerEnabled } from './per-speaker-flag';
 import { meetSelfAccess } from './self-v1-access';
 import { drainSelfOutbox } from './self-v1-outbox';
 import { listSelfCoverage } from './self-v1-reads';
-import { selfRoom, selfRoomCommands, selfRoomError } from './self-v1-room';
+import {
+  type MeetSelfRoom,
+  selfRoom,
+  selfRoomCommands,
+  selfRoomError,
+} from './self-v1-room';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
 
 async function roomFor(request: Request, params: MeetAiParams) {
@@ -114,11 +119,51 @@ export async function chooseSelfTranscript(
   if (!parsed.success) throw new MeetAiError(400, 'Invalid choice');
   if (parsed.data.choice === 'allow') await meetSelfAccess(request, params);
   const room = await roomFor(request, params);
+  return recordSelfChoice(room, parsed.data.choice);
+}
+
+/**
+ * The transcript-consent POST in a room set to per-speaker capture gives the
+ * same result as the per-speaker choice route: the room records this
+ * account's own choice and never starts room capture, Allow passes the
+ * uploader check first, and decline always records. Returns null in room
+ * mode, where the consent route keeps its room-capture behaviour.
+ */
+export async function selfModeConsentChoice(
+  request: Request,
+  access: MeetCallRouteAccess,
+  choice: 'allow' | 'decline'
+): Promise<Response | null> {
+  if (MEETING_APP !== 'meet') return null;
+  const read = await callRoomService<{ mode?: unknown }>(access, {
+    action: 'transcript.consent.read',
+  });
+  if (read?.mode !== 'self') return null;
+  return meetAiResponse(async () => {
+    if (choice === 'allow') {
+      const { user } = await meetSelfAccess(request, {
+        params: Promise.resolve({
+          wsId: access.meeting.ws_id,
+          meetingId: access.meeting.id,
+        }),
+      });
+      if (user.id !== access.user.id)
+        throw new MeetAiError(409, 'Account changed');
+    }
+    return recordSelfChoice({ access, accountId: access.user.id }, choice);
+  });
+}
+
+/** Sends the caller's own choice to the room, then writes its legal entries. */
+async function recordSelfChoice(
+  room: MeetSelfRoom,
+  choice: 'allow' | 'decline'
+) {
   let view: MeetTranscriptConsentView & { pending?: unknown };
   try {
     view = await callRoomService(room.access, {
       action: 'transcript.consent.choice',
-      choice: parsed.data.choice,
+      choice,
       version: MEET_TRANSCRIPT_NOTICE_VERSION,
     });
   } catch (error) {
@@ -140,7 +185,11 @@ export async function chooseSelfTranscript(
         console.warn('[meet-ai] self_v1 choice drain pending');
       });
   }
-  return { available: true, ...consent };
+  return {
+    available: true,
+    ...consent,
+    ...(await consentViewExtras(room.access, consent)),
+  };
 }
 
 const sessionSchema = z.object({
@@ -194,4 +243,20 @@ export async function readSelfConsentExtras(
     canManageMode,
     ...(coverage ? { coverage } : {}),
   };
+}
+
+/**
+ * The per-speaker fields for a consent view, or room mode when they cannot
+ * be read, so a failed read never turns capture on.
+ */
+export function consentViewExtras(
+  access: MeetCallRouteAccess,
+  consent: Record<string, unknown>
+) {
+  return readSelfConsentExtras(access, consent).catch(() => ({
+    mode: 'room' as const,
+    perSpeakerAvailable: false,
+    session: null,
+    canManageMode: false,
+  }));
 }

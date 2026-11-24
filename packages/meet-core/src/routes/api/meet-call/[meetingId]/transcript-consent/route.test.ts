@@ -4,6 +4,7 @@ const f = vi.hoisted(() => ({
   available: vi.fn(),
   room: vi.fn(),
   extras: vi.fn(),
+  selfChoice: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
@@ -12,7 +13,8 @@ vi.mock(
   () => ({ readMeetTranscriptionAvailability: f.available })
 );
 vi.mock('../../../../../features/meeting-ai/server/self-v1-controls', () => ({
-  readSelfConsentExtras: f.extras,
+  consentViewExtras: f.extras,
+  selfModeConsentChoice: f.selfChoice,
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
@@ -70,6 +72,7 @@ beforeEach(() => {
   f.available.mockResolvedValue({ available: true });
   f.room.mockResolvedValue(read);
   f.extras.mockResolvedValue(roomMode);
+  f.selfChoice.mockResolvedValue(null);
 });
 
 it('reports the unavailable reason without touching the room', async () => {
@@ -99,7 +102,7 @@ it('adds the per-speaker session for the caller', async () => {
   const self = {
     mode: 'self',
     perSpeakerAvailable: true,
-    session: { id: 's', generation: 2 },
+    session: { sessionId: 's', protocol: 'self_v1' },
     canManageMode: false,
   };
   f.extras.mockResolvedValue(self);
@@ -108,14 +111,23 @@ it('adds the per-speaker session for the caller', async () => {
   expect(f.extras).toHaveBeenCalledWith(guestAccess, read);
 });
 
-it('falls back to room capture when the per-speaker read fails', async () => {
-  f.extras.mockRejectedValue(new Error('down'));
-  const response = await GET(new Request('https://meet.test/x'), params);
+it('gives the per-speaker choice result while the room is in self mode', async () => {
+  f.selfChoice.mockResolvedValue(
+    Response.json({ available: true, choice: 'allow', mode: 'self' })
+  );
+  const response = await post({ choice: 'allow', version });
   expect(await response.json()).toEqual({
     available: true,
-    ...read,
-    ...roomMode,
+    choice: 'allow',
+    mode: 'self',
   });
+  expect(f.selfChoice).toHaveBeenCalledWith(
+    expect.any(Request),
+    guestAccess,
+    'allow'
+  );
+  expect(f.available).not.toHaveBeenCalled();
+  expect(f.room).not.toHaveBeenCalled();
 });
 
 it('records only the caller choice for the current notice', async () => {

@@ -9,7 +9,10 @@ import {
 } from '@tuturuuu/realtime/meet';
 import { connection } from 'next/server';
 import { z } from 'zod';
-import { readSelfConsentExtras } from '../../../../../features/meeting-ai/server/self-v1-controls';
+import {
+  consentViewExtras,
+  selfModeConsentChoice,
+} from '../../../../../features/meeting-ai/server/self-v1-controls';
 import { readMeetTranscriptionAvailability } from '../../../../../features/meeting-ai/server/transcription-availability';
 
 const choice = z
@@ -38,15 +41,11 @@ export async function GET(
     const consent = await callRoomService<MeetTranscriptConsentView>(access, {
       action: 'transcript.consent.read',
     });
-    // Per-speaker fields are optional; without them the client stays in
-    // room-capture mode.
-    const extras = await readSelfConsentExtras(access, consent).catch(() => ({
-      mode: 'room' as const,
-      perSpeakerAvailable: false,
-      session: null,
-      canManageMode: false,
-    }));
-    return { available: true, ...consent, ...extras };
+    return {
+      available: true,
+      ...consent,
+      ...(await consentViewExtras(access, consent)),
+    };
   });
 }
 
@@ -58,6 +57,12 @@ export async function POST(
   return guestPollRoomRoute(request, meetingId, async (access) => {
     const input = choice.safeParse(await request.json().catch(() => null));
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid choice');
+    const self = await selfModeConsentChoice(
+      request,
+      access,
+      input.data.choice
+    );
+    if (self) return self;
     // Decline always records, so anyone can pause the transcript at any time.
     if (input.data.choice === 'allow') {
       const availability = await readMeetTranscriptionAvailability(
@@ -70,6 +75,10 @@ export async function POST(
       action: 'transcript.consent.choice',
       ...input.data,
     });
-    return { available: true, ...consent };
+    return {
+      available: true,
+      ...consent,
+      ...(await consentViewExtras(access, consent)),
+    };
   });
 }
