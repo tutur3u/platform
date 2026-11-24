@@ -640,23 +640,7 @@ export async function APIKeysStats({ wsId }: { wsId: string }) {
   return <StatisticCard title="API Keys" value={count || 0} />;
 }
 
-export async function SecretsStats({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
-
-  if (!containsPermission('manage_workspace_secrets')) {
-    return <StatisticCard title="Secrets" value="***" className="opacity-50" />;
-  }
-
-  const { count } = await supabase
-    .from('workspace_secrets')
-    .select('*', { count: 'exact', head: true })
-    .eq('ws_id', wsId);
-
-  return <StatisticCard title="Secrets" value={count || 0} />;
-}
+export { SecretsStats } from './secrets-stats';
 
 // ============================================================================
 // Integrations Stats
