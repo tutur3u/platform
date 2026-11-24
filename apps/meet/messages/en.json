@@ -5327,6 +5327,10 @@
         "your_answer": "Your response"
       },
       "preferences": "Preferences",
+      "prejoin": {
+        "devices": "Devices",
+        "preview": "Camera preview"
+      },
       "preparing_call": "Setting up your meeting",
       "presence_only": "Presence only",
       "presence_roster": {

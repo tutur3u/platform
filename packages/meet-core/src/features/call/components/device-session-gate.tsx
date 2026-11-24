@@ -9,6 +9,9 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ComponentProps, useEffect, useState } from 'react';
 import { retryStartup, startupErrorKey } from '../lib/startup-error';
+import { NameSetupPrejoin } from '../prejoin/name-setup-prejoin';
+import { PrejoinConnecting } from '../prejoin/prejoin-connecting';
+import { PrejoinProvider } from '../prejoin/prejoin-context';
 import { CallPreparation } from './call-preparation';
 import type { ConnectedCallShell as ConnectedCallShellType } from './call-shell';
 
@@ -17,13 +20,44 @@ const loadCallShell = () =>
 const ConnectedCallShell = dynamic(loadCallShell, {
   loading: () => <CallPreparation />,
 });
+// The redesigned join flow keeps the pre-join layout up while the chunk loads.
+const PrejoinCallShell = dynamic(loadCallShell, {
+  loading: () => <PrejoinConnecting />,
+});
 
-export function CallShell(
-  props: Omit<
-    ComponentProps<typeof ConnectedCallShellType>,
-    'token' | 'realtimeUrl'
-  >
-) {
+type CallShellProps = Omit<
+  ComponentProps<typeof ConnectedCallShellType>,
+  'token' | 'realtimeUrl'
+>;
+
+/** Set while the account still needs a display name; the session waits for it. */
+export type CallShellNameSetup = { initialName: string; siteKey?: string };
+
+export function CallShell({
+  meetUxV2 = false,
+  nameSetup,
+  ...props
+}: CallShellProps & { meetUxV2?: boolean; nameSetup?: CallShellNameSetup }) {
+  if (!meetUxV2) return <DeviceSessionGate {...props} />;
+  return (
+    <PrejoinProvider
+      info={{
+        meetingName: props.meetingName,
+        displayName: props.defaultDisplayName,
+        avatarUrl: props.defaultAvatarUrl,
+        leaveHref: props.leaveHref,
+      }}
+    >
+      <DeviceSessionGate {...props} nameSetup={nameSetup} prejoin />
+    </PrejoinProvider>
+  );
+}
+
+function DeviceSessionGate({
+  nameSetup,
+  prejoin = false,
+  ...props
+}: CallShellProps & { nameSetup?: CallShellNameSetup; prejoin?: boolean }) {
   const t = useTranslations('meet.call');
   const pathname = usePathname();
   const [deviceId] = useState(() => crypto.randomUUID());
@@ -48,18 +82,23 @@ export function CallShell(
     refetchOnReconnect: false,
     staleTime: Infinity,
     gcTime: 0,
+    enabled: !nameSetup,
   });
-  if (session.data?.token && !session.data.requiresDeviceChoice)
+  if (nameSetup) return <NameSetupPrejoin {...nameSetup} />;
+  if (session.data?.token && !session.data.requiresDeviceChoice) {
+    const Shell = prejoin ? PrejoinCallShell : ConnectedCallShell;
     return (
-      <ConnectedCallShell
+      <Shell
         {...props}
         token={session.data.token}
         realtimeUrl={session.data.realtimeUrl}
         deviceId={deviceId}
       />
     );
+  }
   const choice = session.data?.requiresDeviceChoice;
   const errorKey = session.error ? startupErrorKey(session.error) : null;
+  if (prejoin && !choice && !errorKey) return <PrejoinConnecting />;
   return (
     <CallPreparation
       meetingName={props.meetingName}

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   section: vi.fn(() => null),
   ended: vi.fn(() => null),
   shell: vi.fn(() => null),
+  nameForm: vi.fn(() => null),
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -18,7 +19,7 @@ vi.mock(
 );
 vi.mock(
   '@tuturuuu/meet-core/features/call/components/participant-name-form',
-  () => ({ ParticipantNameForm: () => null })
+  () => ({ ParticipantNameForm: mocks.nameForm })
 );
 vi.mock('@tuturuuu/ui/hooks/use-workspace-visibility', () => ({
   WorkspaceVisibilityProvider: ({ children }: { children: ReactNode }) =>
@@ -108,4 +109,46 @@ test('the in-room ended screen keeps the reader gate on the policy', () => {
   const policy = { ended: true, canReadNotes: false };
   const [ended] = findByType(RoomView({ model: model(policy) }), mocks.ended);
   expect(ended?.props).toMatchObject({ canReadNotes: false });
+});
+
+function needingName(meetUxV2: boolean) {
+  const value = model({ ended: false }) as unknown as {
+    meetUxV2: boolean;
+    formsTurnstileSiteKey: string;
+    access: { needsDisplayName: boolean; suggestedDisplayName: string };
+  };
+  value.meetUxV2 = meetUxV2;
+  value.formsTurnstileSiteKey = 'site-key';
+  value.access.needsDisplayName = true;
+  value.access.suggestedDisplayName = 'Linh';
+  return value as unknown as Parameters<typeof RoomView>[0]['model'];
+}
+
+test('keeps the separate name step while the redesigned join flow is off', () => {
+  const view = RoomView({ model: needingName(false) });
+  expect(findByType(view, mocks.nameForm)).toHaveLength(1);
+  expect(findByType(view, mocks.shell)).toHaveLength(0);
+});
+
+test('asks for the name on the pre-join stage when the redesigned flow is on', () => {
+  const view = RoomView({ model: needingName(true) });
+  expect(findByType(view, mocks.nameForm)).toHaveLength(0);
+  const [shell] = findByType(view, mocks.shell);
+  expect(shell?.props).toMatchObject({
+    meetUxV2: true,
+    nameSetup: { initialName: 'Linh', siteKey: 'site-key' },
+  });
+});
+
+test('passes the redesigned flag to the live call without a name step', () => {
+  const value = model({ ended: false }) as unknown as { meetUxV2: boolean };
+  value.meetUxV2 = true;
+  const [shell] = findByType(
+    RoomView({
+      model: value as unknown as Parameters<typeof RoomView>[0]['model'],
+    }),
+    mocks.shell
+  );
+  expect(shell?.props).toMatchObject({ meetUxV2: true });
+  expect(shell?.props.nameSetup).toBeUndefined();
 });

@@ -402,6 +402,7 @@
     "./features/meeting-ai/server/usage-limit": "./src/features/meeting-ai/server/usage-limit.ts",
     "./features/meeting-ai/server/usage-limit.ts": "./src/features/meeting-ai/server/usage-limit.ts",
     "./features/call/server/forms/enabled": "./src/features/call/server/forms/enabled.ts",
+    "./features/call/server/ux-v2": "./src/features/call/server/ux-v2.ts",
     "./features/call/lib/guest-access": "./src/features/call/lib/guest-access.ts",
     "./features/call/lib/guest-access.ts": "./src/features/call/lib/guest-access.ts",
     "./features/call/lib/guest-session": "./src/features/call/lib/guest-session.ts",

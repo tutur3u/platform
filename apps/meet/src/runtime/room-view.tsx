@@ -30,6 +30,7 @@ export function RoomView({
         siteKey={model.siteKey}
         miraBoxTickedByDefault={model.miraBoxTickedByDefault}
         miraAcceptanceRevision={model.miraAcceptanceRevision}
+        meetUxV2={model.meetUxV2}
         // The server render reads the response nonce like the root head
         // scripts do; the browser never needs it again.
         scriptNonce={model.scriptNonce ?? globalThis.__meetCspNonce?.()}
@@ -79,7 +80,15 @@ export function RoomView({
         />
       </WorkspaceVisibilityProvider>
     );
-  if (access.needsDisplayName)
+  // With the redesigned flow the name is asked on the pre-join stage itself.
+  const nameSetup =
+    access.needsDisplayName && model.meetUxV2
+      ? {
+          initialName: access.suggestedDisplayName ?? '',
+          siteKey: model.formsTurnstileSiteKey,
+        }
+      : undefined;
+  if (access.needsDisplayName && !nameSetup)
     return (
       <ParticipantNameForm
         initialName={access.suggestedDisplayName ?? ''}
@@ -108,6 +117,8 @@ export function RoomView({
           canReadWorkspace={canReadWorkspace}
           requiresAccount={requiresAccount}
           formsEnabled={model.formsEnabled}
+          meetUxV2={model.meetUxV2}
+          nameSetup={nameSetup}
           formsTurnstileSiteKey={model.formsTurnstileSiteKey}
           classroomToolsEnabled={model.classroomToolsEnabled}
           meetingId={meeting.id}

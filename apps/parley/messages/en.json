@@ -4370,6 +4370,10 @@
         "external": "From outside this workspace",
         "guest": "Guest, not signed in"
       },
+      "prejoin": {
+        "devices": "Devices",
+        "preview": "Camera preview"
+      },
       "presence_only": "Presence only",
       "thumbnail_mode": "Thumbnail mode",
       "room_media_health": "Room media health",

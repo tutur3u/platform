@@ -11,28 +11,13 @@ import { peekMiraJoinChoice } from '../../live-assistant/mira-join-choice';
 import type { MeetRoomController } from '../lib/room-controller';
 import { GuestLobbyUpgrade } from './guest-lobby-upgrade';
 import { Lobby, type LobbyParticipant } from './lobby';
+import { ConnectedPrejoin } from '../prejoin/connected-prejoin';
+import { usePrejoin } from '../prejoin/prejoin-context';
 import { useRoomMiraJoinSeed } from './use-room-mira';
 
 type MediaDevice = 'microphone' | 'camera';
 
-export function ConnectedLobby({
-  room,
-  participants,
-  defaultAvatarUrl,
-  defaultDisplayName,
-  canReadWorkspace,
-  joined,
-  meetingName,
-  transcriptionNotice,
-  outputDeviceId,
-  onOutputDeviceChange,
-  prepareJoin,
-  runMediaAction,
-  onJoined,
-  onLeave,
-  onRetry,
-  miraMeetingId,
-}: {
+export type ConnectedLobbyProps = {
   room: MeetRoomController;
   /**
    * Shows the Mira box above Join where room Mira is available, seeded from
@@ -57,7 +42,36 @@ export function ConnectedLobby({
   onJoined: () => void;
   onLeave: () => void;
   onRetry: () => void;
-}) {
+};
+
+/** The redesigned pre-join stage when the join flow is on, else the original lobby. */
+export function ConnectedLobby(props: ConnectedLobbyProps) {
+  const prejoin = usePrejoin();
+  return prejoin ? (
+    <ConnectedPrejoin {...props} capture={prejoin} />
+  ) : (
+    <LegacyConnectedLobby {...props} />
+  );
+}
+
+function LegacyConnectedLobby({
+  room,
+  participants,
+  defaultAvatarUrl,
+  defaultDisplayName,
+  canReadWorkspace,
+  joined,
+  meetingName,
+  transcriptionNotice,
+  outputDeviceId,
+  onOutputDeviceChange,
+  prepareJoin,
+  runMediaAction,
+  onJoined,
+  onLeave,
+  onRetry,
+  miraMeetingId,
+}: ConnectedLobbyProps) {
   const t = useTranslations('meet.call');
   const selected = room.getSelectedDevices();
   // Last name sent with presence.join, so a blur followed by join (or a
@@ -164,7 +178,7 @@ export function ConnectedLobby({
  * default (a refetch, or the host changing the setting) never overwrites a
  * box the participant already toggled. An earlier join screen's choice wins.
  */
-function LobbyMiraBox({
+export function LobbyMiraBox({
   meetingId,
   ticked,
   onTickedChange,

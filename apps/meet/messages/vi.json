@@ -5327,6 +5327,10 @@
         "your_answer": "Câu trả lời của bạn"
       },
       "preferences": "Tùy chọn",
+      "prejoin": {
+        "devices": "Thiết bị",
+        "preview": "Xem trước camera"
+      },
       "preparing_call": "Đang thiết lập cuộc họp",
       "presence_only": "Chỉ hiện diện",
       "presence_roster": {

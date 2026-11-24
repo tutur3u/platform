@@ -29,6 +29,7 @@ import {
 } from '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
+import { isMeetUxV2Enabled } from '@tuturuuu/meet-core/features/call/server/ux-v2';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
   getSatelliteAppSessionUser,
@@ -160,6 +161,7 @@ async function roomModel(code: string, locale: string, url: URL) {
       miraAcceptanceRevision: await readOpenMiraAcceptanceRevision(
         guestJoin.meetingId
       ),
+      meetUxV2: isMeetUxV2Enabled(),
       returnTo,
       meta: roomMeta(info),
     };
@@ -190,6 +192,7 @@ async function roomModel(code: string, locale: string, url: URL) {
   return {
     kind: 'room' as const,
     formsEnabled: !access.guest && isMeetFormsEnabled(),
+    meetUxV2: isMeetUxV2Enabled(),
     formsTurnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim(),
     meta: roomMeta(info),
     access: {

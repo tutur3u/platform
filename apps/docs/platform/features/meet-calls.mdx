@@ -685,6 +685,38 @@ helper failure against the installed upstream script and executes the replacemen
 with saved/system/forced themes. Require exact-commit CI and deployed first-paint
 verification; this console repair alone does not prove an authenticated join works.
 
+### Pre-join stage (`MEET_UX_V2`)
+
+The Meet Worker var `MEET_UX_V2` (default `false`, read like
+`MEET_FORMS_ENABLED`) replaces the loading screen, the separate display-name
+step and the guest card with one pre-join stage: camera preview with mic,
+camera and device controls on the left; meeting title, name, Mira box and the
+Join button on the right. With the flag off the original flow is unchanged.
+Parley mounts the same shell and keeps the flag off.
+
+| State | What the stage shows |
+| --- | --- |
+| Connecting | The same layout while the device session and call shell load. Join keeps its label, shows a spinner and is disabled. There is no separate loading page; device-choice and startup errors keep the recovery screen. |
+| Ready, profile has a name | No name field: the name is shown as text. Mira box above Join. |
+| No name on the profile | A name field; the name is saved to the profile before signaling opens, with the browser check when the save asks for one. |
+| Guest | Name, the human check with its puzzle fallback, the Mira box and **Ask to join**; asking the host without verification and signing in stay below. |
+| Waiting for the host | Disabled Join reading "Waiting for host approval", the approval notice and Cancel request and leave. |
+| Connection error | Join becomes Refresh with the error beside it. |
+
+**Ask to join** appears only on the guest stage, because guests are always admitted
+by the host; signed-in participants see **Join now** and the waiting state when the
+room holds them. On a 390 px phone Join is sticky at the bottom, after the fields
+and the Mira box in document order, and the fields scroll clear of it. The Mira
+box component and its hashed consent text are unchanged, and a slot above the
+fields is reserved for the lobby consent notice. The preview stays local until
+Join; capture is skipped for viewers and presence-only rooms once the room reports
+them. After a guest request is accepted the page refreshes into the signed-in
+stage, so the preview restarts once at that step.
+
+Regression coverage: `prejoin-stage.test.tsx`, `connected-prejoin.test.tsx`,
+`guest-prejoin.test.tsx`, `device-session-gate.test.tsx` and
+`apps/meet/src/runtime/room-view.test.tsx`.
+
 ## Live activities and the pen board
 
 Admitted participants share the active Meet room's assessment, flashcards,

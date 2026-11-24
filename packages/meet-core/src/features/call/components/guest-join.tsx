@@ -20,6 +20,7 @@ import {
 import { prefersMiraOff } from '../../live-assistant/mira-join-choice';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
 import { GUEST_TURNSTILE_SCRIPT_SRC } from '../lib/guest-turnstile-recovery';
+import { GuestPrejoin } from '../prejoin/guest-prejoin';
 import { GuestTurnstile } from './guest-turnstile';
 
 /** One state at a time: the check and the request never disagree. */
@@ -71,8 +72,11 @@ export function MeetGuestJoin({
   scriptNonce,
   miraBoxTickedByDefault = false,
   miraAcceptanceRevision = 0,
+  meetUxV2 = false,
 }: {
   meetingId: string;
+  /** Shows the redesigned pre-join stage instead of the guest card. */
+  meetUxV2?: boolean;
   /** The workspace default for the Mira box; the same on server and client. */
   miraBoxTickedByDefault?: boolean;
   /** The Mira acceptance open when the page loaded; 0 when none. */
@@ -177,16 +181,52 @@ export function MeetGuestJoin({
     }
   })();
 
+  const turnstileScript = earlyScriptNonce ? (
+    <script
+      async
+      id="cf-turnstile-script"
+      nonce={earlyScriptNonce}
+      src={GUEST_TURNSTILE_SCRIPT_SRC}
+    />
+  ) : null;
+  if (meetUxV2)
+    return (
+      <GuestPrejoin
+        canAskHost={canAskHost}
+        meetingId={meetingId}
+        miraTicked={miraTicked}
+        name={name}
+        nameRef={nameInput}
+        onAskHost={() => void join(null)}
+        onHumanPass={onHumanPass}
+        onMiraChange={setMiraTicked}
+        onNameChange={setName}
+        onStalledChange={setStalled}
+        onSubmit={() => {
+          if (state.kind !== 'verified' || !name.trim() || busy) return;
+          void join(state.token, state.via);
+        }}
+        onToken={onToken}
+        onTokenLost={onTokenLost}
+        returnTo={returnTo}
+        script={turnstileScript}
+        siteKey={siteKey}
+        stalled={stalled}
+        state={
+          state.kind === 'submitting'
+            ? { kind: 'submitting', askingHost: state.token === null }
+            : state.kind === 'failed'
+              ? { kind: 'failed', message: status }
+              : { kind: state.kind }
+        }
+        statusLabel={status}
+        title={meetingTitle || t('title')}
+        widget={widget}
+      />
+    );
   return (
     <main className="grid min-h-dvh place-items-center bg-background p-4">
-      {earlyScriptNonce ? (
-        <script
-          async
-          id="cf-turnstile-script"
-          nonce={earlyScriptNonce}
-          src={GUEST_TURNSTILE_SCRIPT_SRC}
-        />
-      ) : null}
+      {turnstileScript}
       <form
         className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm sm:p-8"
         onSubmit={(event) => {

@@ -4370,6 +4370,10 @@
         "external": "Ngoài không gian làm việc này",
         "guest": "Khách, chưa đăng nhập"
       },
+      "prejoin": {
+        "devices": "Thiết bị",
+        "preview": "Xem trước camera"
+      },
       "presence_only": "Chỉ hiện diện",
       "thumbnail_mode": "Chế độ ảnh thu nhỏ",
       "room_media_health": "Tình trạng media của phòng",

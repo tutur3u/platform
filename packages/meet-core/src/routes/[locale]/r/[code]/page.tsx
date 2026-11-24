@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
+import { isMeetUxV2Enabled } from '@tuturuuu/meet-core/features/call/server/ux-v2';
 import {
   AccountRequiredInvite,
   MeetingPublicInvite,
@@ -112,6 +113,7 @@ export default async function RoomPage({
         siteKey={access.guestJoin.siteKey}
         miraBoxTickedByDefault={access.guestJoin.miraBoxTickedByDefault}
         miraAcceptanceRevision={access.guestJoin.miraAcceptanceRevision}
+        meetUxV2={isMeetUxV2Enabled()}
       />
     );
   if ('publicInvite' in access && access.publicInvite)
@@ -165,13 +167,23 @@ export default async function RoomPage({
         />
       </WorkspaceVisibilityProvider>
     );
-  if (access.needsDisplayName)
+  const meetUxV2 = isMeetUxV2Enabled();
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+  // With the redesigned flow the name is asked on the pre-join stage itself.
+  const nameSetup =
+    access.needsDisplayName && meetUxV2
+      ? {
+          initialName: access.suggestedDisplayName ?? '',
+          siteKey: turnstileSiteKey,
+        }
+      : undefined;
+  if (access.needsDisplayName && !nameSetup)
     return (
       <ParticipantNameForm
         initialName={access.suggestedDisplayName ?? ''}
         meetingName={meeting.name ?? t('untitled_meeting')}
         leaveHref={leaveHref}
-        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()}
+        siteKey={turnstileSiteKey}
       />
     );
 
@@ -179,7 +191,9 @@ export default async function RoomPage({
     <WorkspaceVisibilityProvider actorId={user.id}>
       <CallShell
         formsEnabled={isMeetFormsEnabled()}
-        formsTurnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()}
+        formsTurnstileSiteKey={turnstileSiteKey}
+        meetUxV2={meetUxV2}
+        nameSetup={nameSetup}
         accountId={user.id}
         defaultDisplayName={displayName}
         defaultAvatarUrl={avatarUrl}
