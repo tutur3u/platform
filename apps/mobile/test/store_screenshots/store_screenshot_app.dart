@@ -5,12 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/design_render_harness.dart';
 import '../helpers/pump_app.dart';
 import 'capture_guard.dart';
 import 'fixtures/shell_frame_fixture.dart';
+import 'fixtures/store_team.dart';
 
 /// Store listing locales. Fixture content ships in both.
 enum StoreLocale {
@@ -87,6 +90,34 @@ final showcaseDevices = <StoreDevice>[
         brightness: brightness,
       ),
 ];
+
+/// The device the running capture targets, for fixtures that fill a tablet
+/// layout further than a phone or desktop one. Set by [captureStoreScreen].
+StoreDevice? currentStoreDevice;
+
+/// Listing targets that use the tablet composition: the iPad 13" and the Play
+/// 10" tablet. Other sizes keep their approved fixtures.
+const storeTabletDeviceIds = {'ios/ipad-13', 'android/tablet10'};
+
+/// Whether the running capture is one of [storeTabletDeviceIds].
+bool get storeTabletListing =>
+    storeTabletDeviceIds.contains(currentStoreDevice?.id);
+
+/// The `content` anchor of a tablet capture whose page ends before the
+/// viewport does: a full-width rectangle from the top down to the bottom of
+/// [last] plus [padding]. The composer crops the card there, so the card ends
+/// just after the content instead of showing an empty lower half. Other
+/// targets get no anchor.
+Map<String, Rect> storeContentAnchor(
+  WidgetTester tester,
+  Finder last, {
+  double padding = 24,
+}) {
+  if (!storeTabletListing || last.evaluate().isEmpty) return const {};
+  final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+  final bottom = tester.getRect(last.first).bottom + padding;
+  return {'content': Rect.fromLTWH(0, 0, size.width, bottom)};
+}
 
 /// One listing screen: the real feature page over synthetic fixture data.
 class StoreScreen {
@@ -174,6 +205,13 @@ class _StoreScreenshotAppState extends State<StoreScreenshotApp> {
   }
 }
 
+/// Pins the clocks Home and the calendar read to [StoreTeam.now], so every
+/// capture shows the same time of day.
+Widget storeWallClock(Widget child) => HomeWallClock(
+  now: StoreTeam.now,
+  child: CalendarWallClock(now: StoreTeam.now, child: child),
+);
+
 /// Lays out [screen] on [device], settles it and writes
 /// `<DESIGN_RENDER_DIR>/<device.id>/<locale>/<NN-id>.png`.
 Future<void> captureStoreScreen(
@@ -183,6 +221,7 @@ Future<void> captureStoreScreen(
   StoreLocale locale,
 ) async {
   DesignRender.setSize(tester, device.logicalSize);
+  currentStoreDevice = device;
   // Screens that need stored preferences seed their own in build().
   SharedPreferences.setMockInitialValues({});
   final page = screen.build(locale);
@@ -192,9 +231,11 @@ Future<void> captureStoreScreen(
       key: ValueKey('${device.id}/${locale.name}/${screen.id}'),
       locale: locale,
       brightness: device.brightness,
-      child: location == null
-          ? page
-          : storeShellFrame(location: location, child: page),
+      child: storeWallClock(
+        location == null
+            ? page
+            : storeShellFrame(location: location, child: page),
+      ),
     ),
   );
   await settleStoreScreen(tester);
@@ -207,7 +248,7 @@ Future<void> captureStoreScreen(
   );
   final anchors = screen.anchors?.call(tester);
   final output = DesignRender.outputDir;
-  if (anchors != null && output != null) {
+  if (anchors != null && anchors.isNotEmpty && output != null) {
     final size = device.logicalSize;
     final file = File(
       '$output/${device.id}/${locale.name}/${screen.fileName}.json',

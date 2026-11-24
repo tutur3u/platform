@@ -272,8 +272,8 @@ abstract final class StoreTasksFixture {
       number: 50,
       listId: listId(l, 'todo'),
       name: l.pick(
-        'Test the signup flow on Android',
-        'Thử luồng đăng ký trên Android',
+        'Test the signup flow on mobile',
+        'Thử luồng đăng ký trên điện thoại',
       ),
       priority: 'normal',
       labelIds: ['store-label-qa'],

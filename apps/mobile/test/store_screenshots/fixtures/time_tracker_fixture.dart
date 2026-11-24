@@ -94,20 +94,21 @@ abstract final class StoreTimeTrackerFixture {
     categoryId: 'store-cat-build',
     categoryName: l.pick('Development', 'Lập trình'),
     categoryColor: 'BLUE',
-    startTime: DateTime.now().subtract(const Duration(minutes: 47)),
+    startTime: StoreTeam.now.subtract(const Duration(minutes: 47)),
     isRunningFlag: true,
     wsId: StoreTeam.workspaceId,
     userId: StoreTeam.me.id,
   );
 
-  /// Today's finished sessions, newest first.
+  /// The previous working day's finished sessions, newest first; the capture
+  /// clock is early morning, so a full day's log is yesterday's.
   static List<TimeTrackingSession> today(StoreLocale l) => [
     _session(
       l,
       id: 'store-session-handoff',
       title: l.pick('Landing page handoff', 'Bàn giao trang giới thiệu'),
       categoryId: 'store-cat-build',
-      start: StoreTeam.at(14, 30),
+      start: StoreTeam.at(14, 30, -1),
       minutes: 50,
     ),
     _session(
@@ -115,7 +116,7 @@ abstract final class StoreTimeTrackerFixture {
       id: 'store-session-review',
       title: l.pick('Design review with An', 'Duyệt thiết kế cùng An'),
       categoryId: 'store-cat-meet',
-      start: StoreTeam.at(13, 30),
+      start: StoreTeam.at(13, 30, -1),
       minutes: 45,
     ),
     _session(
@@ -123,7 +124,7 @@ abstract final class StoreTimeTrackerFixture {
       id: 'store-session-hero',
       title: l.pick('Hero illustrations', 'Minh họa ảnh bìa'),
       categoryId: 'store-cat-design',
-      start: StoreTeam.at(10, 40),
+      start: StoreTeam.at(10, 40, -1),
       minutes: 110,
     ),
     _session(
@@ -131,7 +132,7 @@ abstract final class StoreTimeTrackerFixture {
       id: 'store-session-standup',
       title: l.pick('Launch stand-up', 'Họp nhanh buổi sáng'),
       categoryId: 'store-cat-meet',
-      start: StoreTeam.at(10),
+      start: StoreTeam.at(10, 0, -1),
       minutes: 25,
     ),
     _session(
@@ -139,7 +140,7 @@ abstract final class StoreTimeTrackerFixture {
       id: 'store-session-copy',
       title: l.pick('Pricing page copy', 'Nội dung trang bảng giá'),
       categoryId: 'store-cat-write',
-      start: StoreTeam.at(8, 45),
+      start: StoreTeam.at(8, 45, -1),
       minutes: 70,
     ),
     _session(
@@ -147,7 +148,7 @@ abstract final class StoreTimeTrackerFixture {
       id: 'store-session-inbox',
       title: l.pick('Plan the day', 'Lên kế hoạch trong ngày'),
       categoryId: 'store-cat-write',
-      start: StoreTeam.at(8, 15),
+      start: StoreTeam.at(8, 15, -1),
       minutes: 25,
     ),
   ];
@@ -213,7 +214,7 @@ abstract final class StoreTimeTrackerFixture {
     bool withRunning = true,
   }) => TimeTrackerState(
     status: TimeTrackerStatus.loaded,
-    lastUpdatedAt: DateTime.now(),
+    lastUpdatedAt: StoreTeam.now,
     runningSession: withRunning ? running(l) : null,
     elapsed: const Duration(minutes: 47, seconds: 12),
     recentSessions: today(l),
@@ -221,7 +222,7 @@ abstract final class StoreTimeTrackerFixture {
     stats: stats(),
     selectedCategoryId: 'store-cat-build',
     historyViewMode: historyViewMode,
-    historyAnchorDate: StoreTeam.at(0),
+    historyAnchorDate: StoreTeam.at(0, 0, -1),
     historySessions: today(l),
     historyPeriodStats: todayStats(l),
     isHistoryStatsAccordionOpen: true,

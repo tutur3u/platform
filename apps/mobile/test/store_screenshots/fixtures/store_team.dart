@@ -30,6 +30,11 @@ abstract final class StoreTeam {
   static String project(StoreLocale l) =>
       l.pick('Spring launch', 'Ra mắt mùa xuân');
 
+  /// The capture's wall clock: 09:20 on the capture day. Home's greeting, the
+  /// calendar's now line and the morning's Mira chat all agree with it, so
+  /// nothing dated today in a fixture lies after this time.
+  static DateTime get now => at(9, 20);
+
   /// Today at [hour]:[minute] local time, shifted by [days].
   static DateTime at(int hour, [int minute = 0, int days = 0]) {
     final now = DateTime.now();

@@ -14,7 +14,7 @@ class _HomeHeader extends StatelessWidget {
     final l10n = context.l10n;
     final scale = _HomeScaleScope.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final now = DateTime.now();
+    final now = HomeWallClock.of(context);
     final name = context.select<ShellProfileCubit?, String?>((cubit) {
       final profile = cubit?.state.profile;
       final value = profile?.displayName ?? profile?.fullName;

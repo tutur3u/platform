@@ -60,7 +60,7 @@ const _habits = <_Habit>[
     best: 19,
     teamTotal: 27,
     teamStreak: 23,
-    loggedAt: (15, 40),
+    loggedAt: (8, 5),
   ),
   _Habit(
     id: 'deep-work',
@@ -143,6 +143,106 @@ const _habits = <_Habit>[
   ),
 ];
 
+/// Further trackers a tablet's wider overview has room to show; phones and
+/// desktops list only [_habits].
+const _tabletHabits = <_Habit>[
+  _Habit(
+    id: 'stretch',
+    en: 'Morning stretch',
+    vi: 'Giãn cơ buổi sáng',
+    color: 'YELLOW',
+    icon: 'Repeat',
+    unitEn: 'minutes',
+    unitVi: 'phút',
+    target: 10,
+    today: 10,
+    streak: 14,
+    best: 22,
+    teamTotal: 40,
+    teamStreak: 22,
+    loggedAt: (7, 30),
+  ),
+  _Habit(
+    id: 'journal',
+    en: 'Evening journal',
+    vi: 'Viết nhật ký buổi tối',
+    color: 'PURPLE',
+    icon: 'BookOpen',
+    unitEn: 'entries',
+    unitVi: 'bài',
+    target: 1,
+    today: 0,
+    streak: 8,
+    best: 17,
+    teamTotal: 3,
+    teamStreak: 17,
+    mode: HabitTrackerComposerMode.quickCheck,
+  ),
+  _Habit(
+    id: 'vitamins',
+    en: 'Take vitamins',
+    vi: 'Uống vitamin',
+    color: 'GREEN',
+    icon: 'ShieldPlus',
+    unitEn: 'doses',
+    unitVi: 'liều',
+    target: 1,
+    today: 1,
+    streak: 17,
+    best: 28,
+    teamTotal: 5,
+    teamStreak: 28,
+    mode: HabitTrackerComposerMode.quickCheck,
+  ),
+  _Habit(
+    id: 'plan',
+    en: 'Plan tomorrow',
+    vi: 'Lên kế hoạch ngày mai',
+    color: 'BLUE',
+    icon: 'SlidersHorizontal',
+    unitEn: 'plans',
+    unitVi: 'bản',
+    target: 1,
+    today: 0,
+    streak: 11,
+    best: 18,
+    teamTotal: 4,
+    teamStreak: 18,
+    mode: HabitTrackerComposerMode.quickCheck,
+  ),
+  _Habit(
+    id: 'screen-free',
+    en: 'Screen-free evening',
+    vi: 'Tối không màn hình',
+    color: 'GRAY',
+    icon: 'Snowflake',
+    unitEn: 'hours',
+    unitVi: 'giờ',
+    target: 2,
+    today: 1,
+    streak: 5,
+    best: 12,
+    teamTotal: 9,
+    teamStreak: 12,
+  ),
+  _Habit(
+    id: 'language',
+    en: 'Language practice',
+    vi: 'Luyện ngoại ngữ',
+    color: 'ORANGE',
+    icon: 'Code2',
+    unitEn: 'minutes',
+    unitVi: 'phút',
+    target: 15,
+    today: 15,
+    streak: 23,
+    best: 31,
+    teamTotal: 60,
+    teamStreak: 31,
+    loggedAt: (7, 45),
+  ),
+];
+
 HabitTracker _tracker(_Habit habit, StoreLocale locale) {
   final created = StoreTeam.at(9, 0, -60);
   return HabitTracker(
@@ -205,7 +305,7 @@ HabitTrackerMemberSummary _mine(_Habit habit) {
 
 /// The team's habit trackers, each with today's progress and streak.
 List<HabitTrackerCardSummary> storeHabitSummaries(StoreLocale locale) => [
-  for (final habit in _habits)
+  for (final habit in [..._habits, if (storeTabletListing) ..._tabletHabits])
     HabitTrackerCardSummary(
       tracker: _tracker(habit, locale),
       currentMember: _mine(habit),

@@ -83,7 +83,7 @@ class StoreFinance {
       _amount(4800, 120000000),
       locale.pick('Studio project deposit', 'Tiền cọc dự án studio'),
       locale.pick('Client payments', 'Thu từ khách hàng'),
-      StoreTeam.at(10, 20),
+      StoreTeam.at(8, 20),
     ),
     _transaction(
       'figma',
@@ -94,7 +94,7 @@ class StoreFinance {
         'Gói phần mềm thiết kế cho cả nhóm',
       ),
       locale.pick('Software', 'Phần mềm'),
-      StoreTeam.at(8, 45),
+      StoreTeam.at(7, 55),
     ),
     _transaction(
       'print',

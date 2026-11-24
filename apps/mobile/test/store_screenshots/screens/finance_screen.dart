@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/finance/widgets/finance_transaction_groups.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,7 +22,13 @@ const StoreScreen financeStoreScreen = StoreScreen(
   order: 6,
   build: _build,
   prepare: _seedAndShow,
+  anchors: _anchors,
 );
+
+/// The overview lists a fixed number of recent transactions, so on a tablet
+/// the page ends before the viewport; the composer crops the card there.
+Map<String, Rect> _anchors(WidgetTester tester) =>
+    storeContentAnchor(tester, find.byType(FinanceTransactionGroups));
 
 /// The page builds its own repository and reads the overview that
 /// initStoreCache seeded; it mounts after the shell frame settles.

@@ -39,18 +39,66 @@ Map<String, Rect> _anchors(WidgetTester tester) {
   };
 }
 
-/// Opens each turn's tool steps so the listing shows what Mira looked up
-/// and what it changed. Shorter screens keep them folded so the whole
-/// conversation, Linh's question included, stays in frame.
-Future<void> _openToolSteps(WidgetTester tester, StoreLocale locale) async {
-  final view = tester.view.physicalSize / tester.view.devicePixelRatio;
-  final roomy = view.height >= 950 || (view.height >= 900 && view.width >= 700);
-  if (!roomy) return;
+/// Each turn of the conversation: the padded row the transcript keys by
+/// `('assistant-turn', ...)`.
+Finder _turns() => find.byWidgetPredicate((widget) {
+  final key = widget.key;
+  if (key is! ValueKey) return false;
+  final value = key.value;
+  return value is (Object?, Object?, Object?, Object?) &&
+      value.$1 == 'assistant-turn';
+});
+
+/// How far the turn under the header sticks out above the viewport, or 0 when
+/// the viewport starts at a turn's top. The turns end in a 14 px gap, which
+/// counts as clear.
+double _cutAtTop(WidgetTester tester) {
+  final turns = _turns();
+  if (turns.evaluate().isEmpty) return 0;
+  final viewTop = tester
+      .getTopLeft(
+        find.ancestor(of: turns.first, matching: find.byType(Scrollable)).first,
+      )
+      .dy;
+  var cut = 0.0;
+  for (final element in turns.evaluate()) {
+    final rect = tester.getRect(find.byWidget(element.widget));
+    if (rect.top < viewTop - 0.5 && rect.bottom - 14 > viewTop + 0.5) {
+      cut = cut < viewTop - rect.top ? viewTop - rect.top : cut;
+    }
+  }
+  return cut;
+}
+
+Future<void> _toggleToolSteps(WidgetTester tester) async {
   final toggles = find.byKey(const ValueKey('assistant-tools-toggle'));
   for (var i = 0; i < toggles.evaluate().length; i++) {
     await tester.tap(toggles.at(i), warnIfMissed: false);
     await tester.pump(const Duration(milliseconds: 300));
   }
+  await settleStoreScreen(tester);
+}
+
+/// Shows what Mira looked up and changed by opening each turn's tool steps,
+/// then makes the viewport start at the top of a whole message, never in the
+/// middle of one. When open steps push the first turn under the header, the
+/// steps fold again; when the folded conversation still overflows, the list
+/// scrolls up to the top of the turn that was cut.
+Future<void> _openToolSteps(WidgetTester tester, StoreLocale locale) async {
+  final view = tester.view.physicalSize / tester.view.devicePixelRatio;
+  final roomy = view.height >= 950 || (view.height >= 900 && view.width >= 700);
+  if (roomy) {
+    await _toggleToolSteps(tester);
+    if (_cutAtTop(tester) > 0) await _toggleToolSteps(tester);
+  }
+  final cut = _cutAtTop(tester);
+  if (cut <= 0) return;
+  final turns = _turns();
+  final scrollable = tester.state<ScrollableState>(
+    find.ancestor(of: turns.first, matching: find.byType(Scrollable)).first,
+  );
+  scrollable.position.jumpTo(scrollable.position.pixels - cut);
+  await tester.pump(const Duration(milliseconds: 300));
 }
 
 Widget _build(StoreLocale locale) {

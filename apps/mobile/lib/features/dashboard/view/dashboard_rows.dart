@@ -57,7 +57,7 @@ class _TaskRow extends StatelessWidget {
   (String?, AppTone) _due(BuildContext context, DateTime? date) {
     final l10n = context.l10n;
     if (date == null) return (null, AppTone.neutral);
-    final now = DateTime.now();
+    final now = HomeWallClock.of(context);
     final today = DateTime(now.year, now.month, now.day);
     final delta = DateTime(
       date.year,

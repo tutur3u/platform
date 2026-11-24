@@ -160,6 +160,54 @@ abstract final class StoreNotes {
         ),
       ]),
     ),
+    if (storeTabletListing) ..._tabletNotes(l),
+  ];
+
+  /// Older notes a tablet's list pane has room to show; phones and desktops
+  /// list only the notes above.
+  static List<NoteRecord> _tabletNotes(StoreLocale l) => [
+    _note(
+      'store-note-kickoff',
+      l.pick('Winter launch kickoff', 'Khởi động chiến dịch mùa đông'),
+      StoreTeam.at(10, 0, -52),
+      _doc([
+        _p(
+          l.pick(
+            'Goals, owners and the three milestones that matter most.',
+            'Mục tiêu, người phụ trách và ba cột mốc quan trọng nhất.',
+          ),
+        ),
+      ]),
+    ),
+    _note(
+      'store-note-fonts',
+      l.pick('Type pairing trials', 'Thử ghép phông chữ'),
+      StoreTeam.at(16, 30, -58),
+      _doc([
+        _p(
+          l.pick(
+            'Rounded headlines with a calm sans for body text won every test.',
+            'Tiêu đề bo tròn kết hợp phông không chân cho nội dung thắng '
+                'mọi bài thử.',
+          ),
+        ),
+      ]),
+    ),
+    _note(
+      'store-note-offsite',
+      l.pick('Team offsite ideas', 'Ý tưởng cho chuyến đi nhóm'),
+      StoreTeam.at(11, 15, -66),
+      _doc([
+        _p(
+          l.pick(
+            'A quiet lakeside weekend with one workshop and plenty of free '
+                'time.',
+            'Một cuối tuần yên tĩnh bên hồ với một buổi workshop và nhiều '
+                'thời gian tự do.',
+          ),
+        ),
+      ]),
+    ),
   ];
 
   static Map<String, dynamic> _review(StoreLocale l) => _doc([
@@ -262,6 +310,7 @@ abstract final class StoreNotes {
         ],
       ),
     ]),
+    if (storeTabletListing) ..._tabletReviewSections(l),
     _h(l.pick('Next review', 'Buổi review tiếp theo')),
     {
       'type': 'paragraph',
@@ -278,6 +327,48 @@ abstract final class StoreNotes {
       ],
     },
   ]);
+
+  /// Sections a tablet's wide reading pane has room for.
+  static List<Map<String, dynamic>> _tabletReviewSections(StoreLocale l) => [
+    _h(l.pick('Open questions', 'Câu hỏi còn mở')),
+    _bullets([
+      l.pick(
+        'Does the pricing page need a short explainer video?',
+        'Trang bảng giá có cần video giải thích ngắn không?',
+      ),
+      l.pick(
+        'Which three screens lead the store listing?',
+        'Ba màn hình nào sẽ dẫn đầu trang giới thiệu?',
+      ),
+      l.pick(
+        'Who signs off the final icon set?',
+        'Ai là người duyệt bộ icon cuối cùng?',
+      ),
+    ]),
+    _h(l.pick('Timeline', 'Tiến độ')),
+    _table([
+      [
+        l.pick('Milestone', 'Cột mốc'),
+        l.pick('Due', 'Hạn'),
+        l.pick('Owner', 'Phụ trách'),
+      ],
+      [
+        l.pick('Hero illustration', 'Minh hoạ chính'),
+        l.pick('Wednesday', 'Thứ Tư'),
+        StoreTeam.an.firstName,
+      ],
+      [
+        l.pick('Welcome screens', 'Màn hình chào mừng'),
+        l.pick('Thursday', 'Thứ Năm'),
+        StoreTeam.an.firstName,
+      ],
+      [
+        l.pick('Press kit', 'Bộ tài liệu báo chí'),
+        l.pick('Friday', 'Thứ Sáu'),
+        l.pick('Bao', 'Bảo'),
+      ],
+    ]),
+  ];
 
   static NoteRecord _note(
     String id,

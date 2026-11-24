@@ -64,6 +64,23 @@ part 'dashboard_resource_cards.dart';
 part 'dashboard_customization.dart';
 part 'dashboard_grid.dart';
 
+/// The wall clock Home reads for its greeting, date line and due labels.
+/// It is the device clock unless a [HomeWallClock] above the page pins it, as
+/// the store listing capture and widget tests do.
+class HomeWallClock extends InheritedWidget {
+  const HomeWallClock({required this.now, required super.child, super.key});
+
+  final DateTime now;
+
+  /// The pinned time when there is one, else the device time.
+  static DateTime of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<HomeWallClock>()?.now ??
+      DateTime.now();
+
+  @override
+  bool updateShouldNotify(HomeWallClock oldWidget) => now != oldWidget.now;
+}
+
 class DashboardPage extends StatelessWidget {
   const DashboardPage({
     this.replayToken = 0,
@@ -268,6 +285,7 @@ class _DashboardViewState extends State<_DashboardView> {
                       final homeTasks = _homeTasks(taskState);
                       final upcomingEvents = _upcomingEvents(
                         calendarState.events,
+                        HomeWallClock.of(context),
                       );
                       // Built here, not in the layout builder below: the
                       // entries watch cubits, which needs a build method.
@@ -415,8 +433,10 @@ class _DashboardViewState extends State<_DashboardView> {
     return (today: today, upNext: take([state.upcomingTasks]));
   }
 
-  List<CalendarEvent> _upcomingEvents(List<CalendarEvent> events) {
-    final now = DateTime.now();
+  List<CalendarEvent> _upcomingEvents(
+    List<CalendarEvent> events,
+    DateTime now,
+  ) {
     final end = now.add(const Duration(days: 7));
 
     final result =

@@ -1,6 +1,7 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/user_profile.dart';
@@ -40,6 +41,26 @@ const dashboardStoreScreen = StoreScreen(
   id: 'dashboard',
   order: 1,
   build: _build,
+  prepare: _expectMorningGreeting,
+  anchors: _anchors,
+);
+
+/// The capture clock is 09:20, so Home greets with the morning line.
+Future<void> _expectMorningGreeting(WidgetTester tester, StoreLocale l) async {
+  final greeting = l.pick(
+    'Good morning, ${StoreTeam.me.firstName}',
+    'Chào buổi sáng, ${StoreTeam.me.firstName}',
+  );
+  expect(find.text(greeting), findsOneWidget);
+}
+
+/// Home lists at most three tasks and three events, so on a tablet the page
+/// ends after the calendar block; the composer crops the card there.
+Map<String, Rect> _anchors(WidgetTester tester) => storeContentAnchor(
+  tester,
+  find.byWidgetPredicate(
+    (w) => w.runtimeType.toString() == '_UpcomingEventsBlock',
+  ),
 );
 
 const _studio = Workspace(
