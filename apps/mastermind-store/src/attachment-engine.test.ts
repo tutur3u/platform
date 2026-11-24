@@ -108,6 +108,7 @@ const bind = (objects: string[], over: Record<string, unknown> = {}) => ({
   machineId: 'skr-m4',
   threadId: 'thread:a',
   actorId: ACTOR,
+  credential: CRED,
   objects,
   fetch: objects.map((id) => ({ id, hash: sha(Buffer.from(`cap:${id}`)) })),
   expiresAt: NOW + 3_600_000,
@@ -163,6 +164,15 @@ describe('attachment engine', () => {
     expect(
       code(() =>
         files.assertBindable(bind([uuid(10)], { actorId: OTHER }), NOW + 3)
+      )
+    ).toBe('attachment_refused');
+    // The store checks the sending session too, not only Web.
+    expect(
+      code(() =>
+        files.assertBindable(
+          bind([uuid(10)], { credential: 'f'.repeat(64) }),
+          NOW + 3
+        )
       )
     ).toBe('attachment_refused');
   });

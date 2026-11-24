@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { test } from 'node:test';
 import { AttachmentError, openSpool } from './attachment-spool.mjs';
-import { handleReplyV2, verifyReplyV2 } from './bridge-attach.mjs';
+import { handleReplyV2, replyMarker, verifyReplyV2 } from './bridge-attach.mjs';
 import {
   fakeStore,
   manifestFile,
@@ -145,11 +145,36 @@ test('after a crash mid-send it reconciles from the thread before any retry', as
   await assert.rejects(deliverBundle(world.verified, options(world, quiet)));
   assert.equal(quiet.calls.length, 0);
 
-  // Past the grace period, found in the thread by its marker: delivered.
+  // Past the grace period, a quoted marker (agent output, owner text) is
+  // not the submission; T3's own MCP item for this bundle is.
   const later = () => NOW + 120_000;
+  const marker = replyMarker(id, world.frame.envelope.textDigest);
+  const quoted = fakeT3({
+    timeline: [
+      {
+        text: `${marker} quoted`,
+        creationSource: 'provider',
+        messageId: 'm-8',
+      },
+      {
+        text: `[mm-reply ${id}] other bundle`,
+        creationSource: 'mcp',
+        messageId: 'm-7',
+      },
+    ],
+  });
+  await assert.rejects(
+    deliverBundle(world.verified, options(world, quoted, later)),
+    (error) => error.code === 'attachment_ambiguous'
+  );
   const landed = fakeT3({
     timeline: [
-      { text: `[mm-reply ${id}] Owner reply`, messageId: 'm-9', runId: 'r-9' },
+      {
+        text: `${marker} Owner reply`,
+        creationSource: 'mcp',
+        messageId: 'm-9',
+        runId: 'r-9',
+      },
     ],
   });
   const receipt = await deliverBundle(

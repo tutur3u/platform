@@ -16,6 +16,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test';
 import {
   ACTOR,
   createBridgeTestRuntime,
+  OPERATOR,
   ORIGIN,
   openBridgeSocket,
   TOKEN,
@@ -71,6 +72,19 @@ beforeAll(async () => {
 afterAll(async () => {
   await rm(workDir, { recursive: true, force: true });
 });
+
+const runtime = (on = true) =>
+  createBridgeTestRuntime(scriptPath, workDir, '1000', undefined, {
+    MASTERMIND_BRIDGE_ATTACHMENTS: on ? 'on' : 'off',
+  });
+
+/** Today's charged bridge operations, read with the operator token. */
+async function bridgeOps(mf: Miniflare) {
+  const response = await mf.dispatchFetch(`${ORIGIN}/v1/status`, {
+    headers: { authorization: `Bearer ${OPERATOR}` },
+  });
+  return ((await response.json()) as { bridge: { ops: number } }).bridge.ops;
+}
 
 async function call(
   mf: Miniflare,
@@ -169,6 +183,7 @@ const sendV2 = (
       },
       sig: 'c'.repeat(64),
       ackKey: ACK_KEY,
+      credential: CRED,
       fetch: objects.map((id) => ({ id, hash: sha(CAPABILITY) })),
     },
   });
@@ -180,7 +195,7 @@ const fetchObject = (mf: Miniflare, id: string, capability = CAPABILITY) =>
 
 describe('reply attachments on the bridge', () => {
   it('refuses a v2 reply unless the live machine advertised attachments', async () => {
-    const mf = createBridgeTestRuntime(scriptPath, workDir, '1000');
+    const mf = runtime();
     try {
       const id = await upload(mf, new Uint8Array([1, 2, 3]));
       expect((await sendV2(mf, [id])).body).toEqual({
@@ -199,7 +214,7 @@ describe('reply attachments on the bridge', () => {
   });
 
   it('serves an object only to its capability while the reply waits, then releases it', async () => {
-    const mf = createBridgeTestRuntime(scriptPath, workDir, '1000');
+    const mf = runtime();
     try {
       const bytes = new Uint8Array([5, 6, 7, 8]);
       const id = await upload(mf, bytes);
@@ -248,7 +263,7 @@ describe('reply attachments on the bridge', () => {
   });
 
   it('caps the finalize body at ingress and refuses a second finalize', async () => {
-    const mf = createBridgeTestRuntime(scriptPath, workDir, '1000');
+    const mf = runtime();
     try {
       const id = await upload(mf, new Uint8Array([1]));
       const again = await call(mf, `/v1/bridge/attachments/object?id=${id}`, {
@@ -283,6 +298,53 @@ describe('reply attachments on the bridge', () => {
         { method: 'POST', body: '{}' }
       );
       expect(anonymous.status).toBe(401);
+    } finally {
+      await mf.dispose();
+    }
+  });
+  it('exposes nothing while the store flag is off', async () => {
+    const mf = runtime(false);
+    try {
+      const reserve = await mf.dispatchFetch(
+        `${ORIGIN}/v1/bridge/attachments/reserve`,
+        {
+          method: 'POST',
+          headers: { authorization: `Bearer ${TOKEN}` },
+          body: '{}',
+        }
+      );
+      expect(reserve.status).toBe(404);
+      expect((await fetchObject(mf, uuid(9))).status).toBe(404);
+      expect(await bridgeOps(mf)).toBe(0);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it('charges no operation for a refused fetch, and answers 503 behind the fence', async () => {
+    const mf = runtime();
+    try {
+      const id = await upload(mf, new Uint8Array([4, 4]));
+      const link = await machine(mf, [ATTACHMENT_CAPABILITY]);
+      expect((await sendV2(mf, [id])).body).toMatchObject({ ok: true });
+      await link.next();
+      const before = await bridgeOps(mf);
+      // Guessed ids and capabilities never touch the daily budget.
+      for (let n = 0; n < 25; n++) {
+        expect((await fetchObject(mf, uuid(100 + n))).status).toBe(404);
+        expect((await fetchObject(mf, id, 'a'.repeat(64))).status).toBe(404);
+      }
+      expect(await bridgeOps(mf)).toBe(before);
+      expect((await fetchObject(mf, id)).status).toBe(200);
+      expect(await bridgeOps(mf)).toBe(before + 1);
+      // The stop fence is temporary: the machine is told to retry, not that
+      // the object is gone.
+      await mf.dispatchFetch(`${ORIGIN}/v1/fence`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${OPERATOR}` },
+        body: JSON.stringify({ stopped: true }),
+      });
+      expect((await fetchObject(mf, id)).status).toBe(503);
     } finally {
       await mf.dispose();
     }

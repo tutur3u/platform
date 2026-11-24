@@ -29,6 +29,8 @@ export const BRIDGE_BUNDLE_DOMAIN = 'mastermind-fleet-reply-bundle-v2';
 export const BRIDGE_FETCH_DOMAIN = 'mastermind-fleet-attachment-fetch-v1';
 /** HKDF labels of the keys derived from the fleet secret. */
 export const BRIDGE_SEAL_KEY_INFO_V2 = 'mastermind-fleet-reply-enc-v2';
+/** Key of the bundle digest; distinct from the v1 text digest key, so no text digest equals a bundle digest. */
+export const BRIDGE_BUNDLE_KEY_INFO = 'mastermind-fleet-reply-bundle-key-v2';
 export const BRIDGE_FETCH_KEY_INFO = 'mastermind-fleet-attachment-fetch-v1';
 export const BRIDGE_CREDENTIAL_KEY_INFO = 'mastermind-fleet-attachment-cred-v1';
 export const BRIDGE_ATTACHMENT_META_KEY_INFO =
@@ -43,7 +45,7 @@ export const ATTACHMENT_LIMITS = {
   /** Re-encoded images fit inside this box; larger ones are scaled down. */
   maxImageEdge: 2048,
   /** Decoder refusal threshold, before any pixel is processed. */
-  maxImageInputPixels: 40_000_000,
+  maxImageInputPixels: 25_000_000,
   maxNameChars: 120,
   /** A reserved upload must be finalized within this long. */
   reserveTtlMs: 30 * 60 * 1000,
@@ -212,6 +214,8 @@ export const bridgeSendV2Schema = z
     envelope: bridgeReplyV2EnvelopeSchema,
     sig: hex64,
     ackKey: z.string().regex(/^[\w-]{43}$/u),
+    /** Keyed digest of the sending session; must equal the records' own. */
+    credential: hex64,
     /** Per object, the sha256 of the capability its fetch must present. */
     fetch: z
       .array(z.object({ id: uuid, hash: hex64 }).strict())

@@ -55,6 +55,15 @@ test('the spool is a private directory of exclusive 0600 files with generated na
   const linked = path.join(root, 'linked-spool');
   fs.symlinkSync(dir, linked);
   assert.throws(() => openSpool(linked), AttachmentError);
+  // So is a spool whose parent directory is a symlink.
+  const realParent = path.join(root, 'real-parent');
+  fs.mkdirSync(realParent);
+  const linkedParent = path.join(root, 'linked-parent');
+  fs.symlinkSync(realParent, linkedParent);
+  assert.throws(
+    () => openSpool(path.join(linkedParent, 'attachment-spool')),
+    AttachmentError
+  );
 });
 
 test('downloads go only to the store origin, with the capability in a header and no redirects', async () => {

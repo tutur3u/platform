@@ -133,7 +133,7 @@ export const POST = withSessionAuth(
           waitMs: BRIDGE_LIMITS.maxWaitMs,
         });
         const view = replyView(receipt);
-        // Counts and sizes only: no names, and no digest of a file's bytes.
+        // Counts and sizes only: no names and no digests.
         if (!replayed)
           console.info('Mastermind fleet reply', {
             replyId: id,
@@ -141,7 +141,6 @@ export const POST = withSessionAuth(
             sessionId: assurance.proof.sessionId,
             machineId: prepared.sealed.envelope.machineId,
             threadId: prepared.sealed.envelope.threadId,
-            bundleDigest: prepared.sealed.envelope.textDigest,
             attachments: prepared.bytes.length,
             attachmentBytes: prepared.bytes,
             state: view.state,

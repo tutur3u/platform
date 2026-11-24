@@ -100,16 +100,20 @@ export async function prepareReplyV2(
     return refuse(fleetError('attachment_expired', 410));
   return {
     ok: true,
-    sealed: sealFleetReplyV2(input.secret, {
-      id: input.id,
-      machineId: input.machineId,
-      threadId: input.threadId,
-      actorId: input.actorId,
-      text: input.text,
-      files,
-      issuedAt,
-      expiresAt,
-    }),
+    sealed: sealFleetReplyV2(
+      input.secret,
+      {
+        id: input.id,
+        machineId: input.machineId,
+        threadId: input.threadId,
+        actorId: input.actorId,
+        text: input.text,
+        files,
+        issuedAt,
+        expiresAt,
+      },
+      credential
+    ),
     bytes: files.map((file) => file.size),
   };
 }

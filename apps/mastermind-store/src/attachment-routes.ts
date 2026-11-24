@@ -8,6 +8,9 @@
  * - `POST /v1/bridge/attachments/records`: read records by id.
  * - `POST /v1/bridge/send2`: store and push a reply with attachments.
  *
+ * Every route answers 404 unless `MASTERMIND_BRIDGE_ATTACHMENTS` is `on`, so
+ * the store exposes nothing for attachments until they are turned on.
+ *
  * Machine capability (no service token):
  * - `GET  /v1/bridge/attachments/fetch?id=` with `Authorization: MM-Fetch
  *   <capability>`: one bound object's bytes, while its reply waits for the
@@ -28,6 +31,16 @@ import { json, readCapped, readCappedBytes } from './http';
 import type { StoreEnv } from './worker';
 
 type Result = { response: Response; kind: string };
+
+/** Whether this deployment exposes reply attachments at all. */
+export const attachmentsEnabled = (env: StoreEnv) =>
+  env.MASTERMIND_BRIDGE_ATTACHMENTS?.trim() === 'on';
+const ATTACHMENT_PATHS = new Set([
+  '/v1/bridge/send2',
+  '/v1/bridge/attachments/reserve',
+  '/v1/bridge/attachments/object',
+  '/v1/bridge/attachments/records',
+]);
 const CAPABILITY = /^[0-9a-f]{64}$/u;
 const MAX_JSON = 64 * 1024;
 
@@ -57,13 +70,23 @@ export async function handleAttachmentFetch(
     ? header.slice(ATTACHMENT_FETCH_SCHEME.length + 1)
     : '';
   if (
+    !attachmentsEnabled(env) ||
     budget === null ||
     !attachmentIdSchema.safeParse(id).success ||
     !CAPABILITY.test(capability)
   )
     return { ...missing, kind: 'bridge:fetch:refused' };
-  const bytes = await stub(env).fetchAttachment(id, capability, budget);
-  if (!bytes) return { ...missing, kind: 'bridge:fetch:refused' };
+  const fetched = await stub(env).fetchAttachment(id, capability, budget);
+  // The stop fence or an exhausted budget says nothing about any object,
+  // and the machine retries it; every per-object refusal is the same 404.
+  if (fetched.status === 'busy')
+    return {
+      response: new Response(null, { status: 503 }),
+      kind: 'bridge:fetch:busy',
+    };
+  if (fetched.status !== 'ok')
+    return { ...missing, kind: 'bridge:fetch:refused' };
+  const { bytes } = fetched;
   return {
     response: new Response(bytes, {
       status: 200,
@@ -86,6 +109,11 @@ export async function handleAttachmentRoutes(
   budget: number,
   fail: (error: BridgeErrorCode) => Response
 ): Promise<Result | null> {
+  if (ATTACHMENT_PATHS.has(path) && !attachmentsEnabled(env))
+    return {
+      response: json({ ok: false, error: 'bad_request' }, 404),
+      kind: 'bridge:attachments:off',
+    };
   if (path === '/v1/bridge/send2' && request.method === 'POST') {
     const parsed = bridgeSendV2Schema.safeParse(await parseJson(request));
     if (!parsed.success)

@@ -39,6 +39,11 @@ const isOwn = (stat) =>
  */
 export function openSpool(dir) {
   fs.mkdirSync(path.dirname(dir), { recursive: true, mode: 0o700 });
+  // The parent (the fleet-sync state directory) must be a real directory of
+  // ours too, so the spool cannot be redirected through it.
+  const parent = fs.lstatSync(path.dirname(dir));
+  if (!parent.isDirectory() || parent.isSymbolicLink() || !isOwn(parent))
+    throw new AttachmentError('spool_unsafe');
   try {
     fs.mkdirSync(dir, { mode: 0o700 });
   } catch (error) {

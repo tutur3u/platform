@@ -7,7 +7,6 @@ import {
   createHmac,
   randomBytes,
 } from 'node:crypto';
-import { BRIDGE_DIGEST_KEY_INFO } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
 import {
   ATTACHMENT_LIMITS,
   ATTACHMENT_MIME,
@@ -15,6 +14,7 @@ import {
   type AttachmentKind,
   attachmentMetaContext,
   BRIDGE_ATTACHMENT_META_KEY_INFO,
+  BRIDGE_BUNDLE_KEY_INFO,
   BRIDGE_CREDENTIAL_KEY_INFO,
   BRIDGE_FETCH_KEY_INFO,
   BRIDGE_SEAL_KEY_INFO_V2,
@@ -130,8 +130,13 @@ export type IngestError =
   | 'attachments_unavailable';
 
 const RASTER_FORMATS = new Set(['jpeg', 'png', 'webp', 'gif']);
-/** C0 controls other than tab, line feed, form feed and carriage return. */
-const TEXT_CONTROLS = /[\u0000-\u0008\u000B\u000E-\u001F\u007F]/u;
+/**
+ * C0 controls other than tab, line feed, form feed and carriage return, and
+ * the bidirectional overrides and isolates that can make text read
+ * differently from what it contains.
+ */
+const TEXT_CONTROLS =
+  /[\u0000-\u0008\u000B\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069]/u;
 
 function isRaster(input: Buffer) {
   return (
@@ -238,12 +243,16 @@ export interface FleetReplyV2Input {
  * the machine's acknowledgement signs, so a repeated reply id with other
  * files can never collect the first receipt.
  */
-export function sealFleetReplyV2(secret: string, input: FleetReplyV2Input) {
+export function sealFleetReplyV2(
+  secret: string,
+  input: FleetReplyV2Input,
+  credential: string
+) {
   const { text, files, ...head } = input;
   const payload = { text, files };
   const textDigest = createHmac(
     'sha256',
-    derive(secret, BRIDGE_DIGEST_KEY_INFO)
+    derive(secret, BRIDGE_BUNDLE_KEY_INFO)
   )
     .update(bridgeBundleString(head, payload), 'utf8')
     .digest('hex');
@@ -263,6 +272,7 @@ export function sealFleetReplyV2(secret: string, input: FleetReplyV2Input) {
       .update(bridgeReplyV2SigningString(envelope), 'utf8')
       .digest('hex'),
     ackKey: fleetAckKey(secret),
+    credential,
     fetch: files.map((file) => ({
       id: file.id,
       hash: createHash('sha256')

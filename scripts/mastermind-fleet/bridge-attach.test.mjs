@@ -9,6 +9,7 @@ import {
   BRIDGE_FETCH_DOMAIN,
   BRIDGE_FETCH_KEY_INFO,
   BRIDGE_REPLY_V2_DOMAIN,
+  BRIDGE_BUNDLE_KEY_INFO,
   BRIDGE_SEAL_KEY_INFO_V2,
   bridgeReplyV2SigningString,
 } from '../../packages/utils/src/mastermind-store/reply-attachments.ts';
@@ -16,6 +17,7 @@ import {
   ATTACHMENT_CAPABILITY,
   attachmentMessage,
   BUNDLE_DOMAIN,
+  BUNDLE_KEY_INFO,
   FETCH_DOMAIN,
   FETCH_KEY_INFO,
   fetchCapability,
@@ -57,6 +59,7 @@ test('the machine and Web agree on the v2 labels, signed bytes and capability', 
   assert.equal(REPLY_V2_DOMAIN, BRIDGE_REPLY_V2_DOMAIN);
   assert.equal(BUNDLE_DOMAIN, BRIDGE_BUNDLE_DOMAIN);
   assert.equal(SEAL_KEY_INFO_V2, BRIDGE_SEAL_KEY_INFO_V2);
+  assert.equal(BUNDLE_KEY_INFO, BRIDGE_BUNDLE_KEY_INFO);
   assert.equal(FETCH_DOMAIN, BRIDGE_FETCH_DOMAIN);
   assert.equal(FETCH_KEY_INFO, BRIDGE_FETCH_KEY_INFO);
   const frame = replyV2Frame(1, { files: [manifestFile(1, text('hello'))] });
@@ -214,6 +217,7 @@ test('the byte budget refuses past the hourly limit', async () => {
 test('the T3 message carries the reply marker first and treats files as data', () => {
   const message = attachmentMessage(
     '00000000-0000-4000-8000-000000000001',
+    'ab'.repeat(32),
     'Look at this',
     [
       manifestFile(1, text('x'), { name: '../a‮b.txt' }),
@@ -226,10 +230,29 @@ test('the T3 message carries the reply marker first and treats files as data', (
     ]
   );
   const [first, second, , body] = message.split('\n');
-  assert.match(first, /^\[mm-reply 00000000-0000-4000-8000-000000000001\] /);
+  assert.match(
+    first,
+    /^\[mm-reply 00000000-0000-4000-8000-000000000001 abababababababab\] /
+  );
   assert.match(first, /\.\.ab\.txt|ab\.txt/);
   assert.doesNotMatch(first, /[‮/]/);
   assert.match(second, /data/);
   assert.equal(body, 'Look at this');
   fs.rmSync(tempDir(), { recursive: true, force: true });
+});
+
+test('no v1 text digest can equal a v2 bundle digest', async () => {
+  const { textDigest } = await import('./bridge-core.mjs');
+  const { bundleString } = await import('./bridge-attach.mjs');
+  const frame = replyV2Frame(1, { files: [manifestFile(1, text('one'))] });
+  const payload = verifyReplyV2(frame, {
+    secret: SECRET,
+    machineId: 'skr-m4',
+    now: NOW,
+  });
+  // A v1 reply whose text is exactly the bundle bytes digests under another key.
+  assert.notEqual(
+    textDigest(SECRET, bundleString(frame.envelope, payload)),
+    frame.envelope.textDigest
+  );
 });

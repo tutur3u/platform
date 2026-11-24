@@ -31,6 +31,8 @@ export interface StoreEnv {
   MASTERMIND_BRIDGE: DurableObjectNamespace<FleetBridge>;
   /** Billable bridge operations per UTC day; see bridge-engine.ts. */
   MASTERMIND_BRIDGE_DAILY_OPS?: string;
+  /** `on` exposes the reply attachment routes; anything else hides them. */
+  MASTERMIND_BRIDGE_ATTACHMENTS?: string;
   /** Comma-separated service tokens (rotation); each at least 32 characters. */
   MASTERMIND_STORE_TOKENS?: string;
   MASTERMIND_STORE_OPERATOR_TOKEN?: string;

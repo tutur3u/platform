@@ -54,6 +54,7 @@ export interface BindInput {
   machineId: string;
   threadId: string;
   actorId: string;
+  credential: string;
   objects: string[];
   fetch: { id: string; hash: string }[];
   expiresAt: number;
@@ -269,6 +270,7 @@ export function createAttachmentEngine(sql: SqlLike) {
           row.state !== 'ready' ||
           row.reply !== input.replyId ||
           row.actor !== input.actorId ||
+          row.cred !== input.credential ||
           row.machine !== input.machineId ||
           row.thread !== input.threadId ||
           Number(row.exp) <= now ||

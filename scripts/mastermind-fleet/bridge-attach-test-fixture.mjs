@@ -8,8 +8,8 @@ import {
   hkdfSync,
   randomBytes,
 } from 'node:crypto';
-import { BRIDGE_DIGEST_KEY_INFO } from '../../packages/utils/src/mastermind-store/bridge-protocol.ts';
 import {
+  BRIDGE_BUNDLE_KEY_INFO,
   BRIDGE_SEAL_KEY_INFO_V2,
   bridgeBundleString,
   bridgeReplyV2SealContext,
@@ -61,7 +61,7 @@ export function replyV2Frame(n = 1, over = {}, secret = SECRET) {
   const envelope = {
     ...head,
     box: { iv: iv.toString('base64url'), data: data.toString('base64url') },
-    textDigest: createHmac('sha256', derive(secret, BRIDGE_DIGEST_KEY_INFO))
+    textDigest: createHmac('sha256', derive(secret, BRIDGE_BUNDLE_KEY_INFO))
       .update(bridgeBundleString(head, payload))
       .digest('hex'),
     objects: files.map((file) => file.id),

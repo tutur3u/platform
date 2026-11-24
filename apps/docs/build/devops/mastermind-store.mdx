@@ -86,8 +86,8 @@ client: `bridge-client.ts`.
 | `GET /v1/bridge/receipt?id=` | service token | A reply's receipt. |
 | `GET /v1/bridge/live` | service token | Machine presence and pokes. |
 | `POST /v1/bridge/send2` | service token | Store and push a reply with attachments (envelope v2); binds its upload records in the same transaction and needs a live machine that advertised `reply-attachments-v2`. |
-| `POST /v1/bridge/attachments/reserve`, `PUT .../object?id=`, `POST .../records` | service token | Mint an upload record under quota, finalize it once with derived bytes (chunk rows, at most 10 MB), read records. Behind the `mastermind_reply_attachments` flag on Web. |
-| `GET /v1/bridge/attachments/fetch?id=` | `MM-Fetch` capability | One bound object's bytes for its addressed machine while the reply waits; at most 8 fetches; every refusal is a bare 404. See [thread replies](/platform/features/mastermind-thread-replies#attachments). |
+| `POST /v1/bridge/attachments/reserve`, `PUT .../object?id=`, `POST .../records` | service token | Mint an upload record under quota, finalize it once with derived bytes (chunk rows, at most 10 MB), read records. All attachment routes answer 404 unless `MASTERMIND_BRIDGE_ATTACHMENTS` is `on` (default `off`). |
+| `GET /v1/bridge/attachments/fetch?id=` | `MM-Fetch` capability | One bound object's bytes for its addressed machine while the reply waits; at most 8 fetches; only a matching fetch is charged; per-object refusals are a bare 404, the fence or budget a 503. See [thread replies](/platform/features/mastermind-thread-replies#attachments). |
 
 Bounds and stop fence:
 

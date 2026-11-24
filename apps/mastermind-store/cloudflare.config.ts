@@ -32,6 +32,8 @@ export default defineConfig({
       }),
       // Fleet bridge: billable operations (tickets, replies, pokes) per UTC day.
       MASTERMIND_BRIDGE_DAILY_OPS: bindings.text('20000'),
+      // Reply attachments (envelope v2): `on` exposes their routes; off by default.
+      MASTERMIND_BRIDGE_ATTACHMENTS: bindings.text('off'),
       MASTERMIND_BRIDGE: bindings.durableObject({
         worker: 'tuturuuu-mastermind-store',
         exportName: 'FleetBridge',

@@ -317,6 +317,18 @@ describe('PUT /api/v1/mastermind/fleet/reply-attachments/[uploadId]', () => {
       params({ uploadId: reserved.id })
     );
     expect(binary.status).toBe(415);
+    // Bidirectional overrides make text read differently from what it is.
+    const bidi = new TextEncoder().encode('ab\u202Ec');
+    const spoofed = record({ size: bidi.byteLength });
+    mocks.records.set(spoofed.id, spoofed);
+    expect(
+      (
+        await PUT(
+          uploadRequest(spoofed.id, bidi),
+          params({ uploadId: spoofed.id })
+        )
+      ).status
+    ).toBe(415);
     expect(mocks.bridge!.finalizeAttachment).not.toHaveBeenCalled();
   });
 
@@ -429,6 +441,8 @@ describe('POST /api/v1/mastermind/fleet/replies with attachments', () => {
       true
     );
     expect(sent.envelope.objects).toEqual([file.id]);
+    // The store re-checks the sending session against the records.
+    expect(sent.credential).toBe(credential('session-1'));
     expect(sent.sig).toBe(
       createHmac('sha256', SECRET)
         .update(bridgeReplyV2SigningString(sent.envelope))

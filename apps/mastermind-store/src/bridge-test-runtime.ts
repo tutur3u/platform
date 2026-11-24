@@ -22,7 +22,8 @@ export function createBridgeTestRuntime(
   scriptPath: string,
   modulesRoot: string,
   ops: string,
-  authorize: (ownerId: string) => number = () => 204
+  authorize: (ownerId: string) => number = () => 204,
+  extraBindings: Record<string, string> = {}
 ) {
   return new Miniflare({
     durableObjectsPersist: false,
@@ -50,6 +51,7 @@ export function createBridgeTestRuntime(
       MASTERMIND_STORE_TOKENS: TOKEN,
       MASTERMIND_STORE_OPERATOR_TOKEN: OPERATOR,
       MASTERMIND_BRIDGE_DAILY_OPS: ops,
+      ...extraBindings,
     },
   });
 }

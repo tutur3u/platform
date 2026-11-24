@@ -52,6 +52,7 @@ export function createAttachmentApi(host: {
         machineId: envelope.machineId,
         threadId: envelope.threadId,
         actorId: envelope.actorId,
+        credential: input.credential,
         objects: envelope.objects,
         fetch: input.fetch,
         expiresAt: envelope.expiresAt,
@@ -114,15 +115,34 @@ export function createAttachmentApi(host: {
       return done.ok ? ({ ok: true, record: done.value } as const) : done;
     },
 
-    /** An object's bytes for the capability bound to it, or null. */
-    async fetch(id: string, capability: string, budget: number) {
+    /**
+     * An object's bytes for the capability bound to it. Only a fetch that
+     * matches its capability costs an operation, so guessed ids and
+     * capabilities cannot spend the daily budget. `busy` (stop fence or
+     * budget) is worth retrying; `missing` is not.
+     */
+    async fetch(
+      id: string,
+      capability: string,
+      budget: number
+    ): Promise<
+      | { status: 'ok'; bytes: Uint8Array<ArrayBuffer> }
+      | { status: 'missing' }
+      | { status: 'busy' }
+    > {
       const hash = await sha256Hex(capability);
       const now = Date.now();
-      const bytes = attempt(() => {
-        charge(now, budget);
-        return files.fetch(id, hash, now);
+      const result = attempt(() => {
+        if (engine.stopped()) throw new BridgeError('stopped');
+        const bytes = files.fetch(id, hash, now);
+        // A refused budget rolls the fetch count back with the transaction.
+        if (bytes) engine.chargeFrame(now, budget);
+        return bytes;
       });
-      return bytes.ok ? bytes.value : null;
+      if (!result.ok) return { status: 'busy' };
+      return result.value
+        ? { status: 'ok', bytes: result.value }
+        : { status: 'missing' };
     },
   };
 }

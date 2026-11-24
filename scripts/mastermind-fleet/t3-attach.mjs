@@ -30,9 +30,14 @@ const PROBE_PAGES = 5;
 
 const journalKey = (id) => `mm-attach:${id}`;
 
-/** Whether a submission with this reply's marker is already in the thread. */
-async function findMarked(call, threadId, id) {
-  const marker = replyMarker(id);
+/**
+ * Whether this bundle's own submission is already in the thread: an item T3
+ * recorded as an MCP submission whose text starts with the reply marker
+ * (reply id and bundle digest prefix). Quoted copies in agent output or the
+ * owner's typed text are not MCP submissions.
+ */
+async function findMarked(call, threadId, id, digest) {
+  const marker = replyMarker(id, digest);
   let beforePosition;
   for (let page = 0; page < PROBE_PAGES; page++) {
     const read = await call('t3_thread_read', {
@@ -41,7 +46,10 @@ async function findMarked(call, threadId, id) {
       ...(beforePosition === undefined ? {} : { beforePosition }),
     });
     const hit = (read?.items ?? []).find(
-      (item) => typeof item?.text === 'string' && item.text.startsWith(marker)
+      (item) =>
+        item?.creationSource === 'mcp' &&
+        typeof item?.text === 'string' &&
+        item.text.startsWith(marker)
     );
     if (hit) return hit;
     if (!Number.isInteger(read?.earlierPosition)) return undefined;
@@ -133,7 +141,7 @@ export async function deliverBundle(
     // A submission still in T3's hands may not be in the timeline yet.
     if (now() - known.at < IN_FLIGHT_GRACE_MS)
       throw new T3McpError('steer_in_flight');
-    const landed = await findMarked(call, threadId, id);
+    const landed = await findMarked(call, threadId, id, envelope.textDigest);
     if (landed)
       return finish({
         delivery: 'delivered',
@@ -192,7 +200,7 @@ export async function deliverBundle(
 
   const sent = await call('t3_thread_send_attachments', {
     threadId,
-    message: attachmentMessage(id, text, files),
+    message: attachmentMessage(id, envelope.textDigest, text, files),
     attachments,
   });
   if (typeof sent?.messageId !== 'string') throw new T3McpError('t3_rpc_error');
