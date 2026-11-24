@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
 import { NextResponse } from 'next/server';
@@ -118,6 +119,16 @@ export async function GET(request: Request, { params }: Params) {
     if (deliveriesResult.error) throw deliveriesResult.error;
 
     const senderConfigured = Boolean(senderResult.data);
+    // The report email gate is a platform-controlled workspace secret, so only
+    // root-workspace secret or role managers may change it.
+    const rootPermissions =
+      wsId === ROOT_WORKSPACE_ID
+        ? permissions
+        : await getUserGroupRoutePermissions(ROOT_WORKSPACE_ID, request);
+    const canManagePlatformSecrets = Boolean(
+      rootPermissions?.containsPermission('manage_workspace_secrets') ||
+      rootPermissions?.containsPermission('manage_workspace_roles')
+    );
     const schedules = schedulesResult.data ?? [];
     return NextResponse.json({
       canManage: permissions.containsPermission(
@@ -126,7 +137,7 @@ export async function GET(request: Request, { params }: Params) {
       defaults: schedules.filter((schedule) => !schedule.group_id),
       emailDelivery: {
         canConfigureReportEmailGate:
-          permissions.containsPermission('manage_workspace_secrets') &&
+          canManagePlatformSecrets &&
           permissions.containsPermission('send_user_group_report_emails'),
         canConfigureAutoSend:
           permissions.containsPermission('manage_user_report_automation') &&

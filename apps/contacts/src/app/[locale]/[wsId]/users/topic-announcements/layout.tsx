@@ -8,7 +8,10 @@ import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { resolveWorkspaceFeatureAccess } from '@/components/feature-gate/workspace-feature-access';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getContactsWorkspacePermissions } from '@/lib/workspace';
+import {
+  canManagePlatformWorkspaceSecrets,
+  getContactsWorkspacePermissions,
+} from '@/lib/workspace';
 import { TeacherTopicsView } from './teacher-topics-view';
 import {
   TopicAnnouncementsDisabledGate,
@@ -38,9 +41,10 @@ export default async function TopicAnnouncementsLayout({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, isPersonal }) => {
-        const [permissions, secrets] = await Promise.all([
+        const [permissions, secrets, canEnableFeature] = await Promise.all([
           getContactsWorkspacePermissions(wsId),
           getSecrets({ forceAdmin: true, wsId }),
+          canManagePlatformWorkspaceSecrets(),
         ]);
 
         const isSupervisor = Boolean(
@@ -62,9 +66,7 @@ export default async function TopicAnnouncementsLayout({
           );
 
         const access = resolveWorkspaceFeatureAccess({
-          canEnableFeature: Boolean(
-            permissions?.containsPermission('manage_workspace_secrets')
-          ),
+          canEnableFeature,
           canManageFeature: Boolean(
             permissions?.containsPermission('send_user_group_post_emails')
           ),

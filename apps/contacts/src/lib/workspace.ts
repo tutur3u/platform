@@ -1,5 +1,6 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   getWorkspace,
@@ -59,6 +60,28 @@ export async function getContactsWorkspacePermissions(
   if (!linkedUser) return null;
 
   return getPermissions({ user, wsId });
+}
+
+/**
+ * Whether the app-session actor may change platform-controlled workspace
+ * secrets (module switches stored in `workspace_secrets`). Only root-workspace
+ * secret or role managers qualify; a workspace-level grant does not, because
+ * creators and `admin` members imply it for their own workspace.
+ */
+export async function canManagePlatformWorkspaceSecrets(
+  actor?: ContactsActor
+): Promise<boolean> {
+  const user = actor ?? (await getSatelliteAppSessionUser('contacts'));
+  if (!user?.id) return false;
+
+  const rootPermissions = await getPermissions({
+    user,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+  return Boolean(
+    rootPermissions?.containsPermission('manage_workspace_secrets') ||
+    rootPermissions?.containsPermission('manage_workspace_roles')
+  );
 }
 
 export async function getContactsWorkspaceUserLink(

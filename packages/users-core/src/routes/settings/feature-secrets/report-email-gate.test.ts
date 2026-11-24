@@ -70,9 +70,12 @@ it('permits the explicitly authorized report flag without returning credentials 
 it.each(['manage_workspace_secrets', 'send_user_group_report_emails'])(
   'denies the report flag without %s',
   async (missing) => {
+    // manage_workspace_roles is the other root grant that passes the
+    // platform-secrets check, so it is withheld throughout.
+    const denied = [missing, 'manage_workspace_roles'];
     mocks.permissions.mockResolvedValue({
-      withoutPermission: (p: string) => p === missing,
-      containsPermission: (p: string) => p !== missing,
+      withoutPermission: (p: string) => denied.includes(p),
+      containsPermission: (p: string) => !denied.includes(p),
     });
     expect((await request()).status).toBe(403);
     expect(mocks.admin).not.toHaveBeenCalled();

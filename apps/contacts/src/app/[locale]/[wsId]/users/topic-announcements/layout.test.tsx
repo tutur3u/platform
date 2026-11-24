@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  canManagePlatformSecrets: false,
   secrets: [] as { name: string; value: string }[],
 }));
 
@@ -10,6 +11,9 @@ vi.mock('@/components/workspace-wrapper', () => ({
   default: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('@/lib/workspace', () => ({
+  canManagePlatformWorkspaceSecrets: vi.fn(
+    async () => mocks.canManagePlatformSecrets
+  ),
   getContactsWorkspacePermissions: vi.fn(async () => ({
     containsPermission: () => true,
   })),
@@ -46,6 +50,7 @@ async function view(isPersonal: boolean, secret?: string) {
 }
 
 beforeEach(() => {
+  mocks.canManagePlatformSecrets = false;
   mocks.secrets = [];
 });
 
@@ -64,5 +69,16 @@ describe('topic announcements layout', () => {
         gates.TopicAnnouncementsDisabledGate
       );
     }
+  });
+
+  it('offers Enable only to platform secrets managers, not to workspace owners', async () => {
+    // The workspace permissions mock grants everything, as a creator resolves.
+    const ownerView = await view(false, 'false');
+    expect(ownerView.type).toBe(gates.TopicAnnouncementsDisabledGate);
+    expect((ownerView.props as { canEnable: boolean }).canEnable).toBe(false);
+
+    mocks.canManagePlatformSecrets = true;
+    const staffView = await view(false, 'false');
+    expect((staffView.props as { canEnable: boolean }).canEnable).toBe(true);
   });
 });

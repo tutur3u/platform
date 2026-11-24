@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/users-core/lib/contacts-feature-secrets';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { unstable_rethrow } from 'next/navigation';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -38,8 +39,21 @@ export async function PUT(request: Request, { params }: Params) {
     if (!permissions) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
+    // These switches are platform-controlled entitlements, so the secrets
+    // permission must come from the root workspace (the same rule as the
+    // workspace_secrets RLS policy). Workspace creators and `admin` members
+    // imply manage_workspace_secrets for their own workspace, which must not
+    // let them self-enable a module.
+    const rootPermissions =
+      wsId === ROOT_WORKSPACE_ID
+        ? permissions
+        : await getUserGroupRoutePermissions(ROOT_WORKSPACE_ID, request);
+    const canManagePlatformSecrets = Boolean(
+      rootPermissions?.containsPermission('manage_workspace_secrets') ||
+      rootPermissions?.containsPermission('manage_workspace_roles')
+    );
     if (
-      permissions.withoutPermission('manage_workspace_secrets') ||
+      !canManagePlatformSecrets ||
       (secretName === REPORT_EMAIL_SENDING_SECRET &&
         permissions.withoutPermission('send_user_group_report_emails'))
     ) {

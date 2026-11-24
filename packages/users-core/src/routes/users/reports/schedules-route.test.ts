@@ -122,46 +122,58 @@ describe('monthly report automatic sending configuration', () => {
 
 describe('server-computed report email gate capability', () => {
   it.each([
-    ['manage_workspace_secrets', false],
-    ['send_user_group_report_emails', false],
-    ['none', true],
-  ])('requires both permissions (%s)', async (missing, expected) => {
-    mocks.permissions.mockResolvedValue({
-      containsPermission: (name: string) => name !== missing,
-    });
-    const rows: Record<string, unknown> = {
-      user_report_schedules: [],
-      workspaces: { timezone: 'UTC' },
-      workspace_email_credentials: { id: 'sender-1' },
-      user_report_automation_runs: [],
-      user_report_email_attempts: [],
-      workspace_configs: { value: 'false' },
-    };
-    function from(table: string) {
-      const result = { data: rows[table], error: null };
-      const builder = Object.assign(
-        Promise.resolve(result),
-        {} as Record<string, unknown>
+    ['manage_workspace_secrets', false, true],
+    ['send_user_group_report_emails', false, true],
+    ['none', true, true],
+    ['root access', false, false],
+  ])(
+    'requires both permissions (%s)',
+    async (missing, expected, rootGranted) => {
+      // The secrets permission must come from the root workspace; a workspace
+      // owner implies it for their own workspace.
+      mocks.permissions.mockImplementation(async (wsId: string) =>
+        !rootGranted && wsId === '00000000-0000-0000-0000-000000000000'
+          ? null
+          : {
+              // manage_workspace_roles is the other root grant for the gate.
+              containsPermission: (name: string) =>
+                name !== missing && name !== 'manage_workspace_roles',
+            }
       );
-      for (const method of [
-        'select',
-        'eq',
-        'order',
-        'limit',
-        'single',
-        'maybeSingle',
-      ])
-        builder[method] = () => builder;
-      return builder;
+      const rows: Record<string, unknown> = {
+        user_report_schedules: [],
+        workspaces: { timezone: 'UTC' },
+        workspace_email_credentials: { id: 'sender-1' },
+        user_report_automation_runs: [],
+        user_report_email_attempts: [],
+        workspace_configs: { value: 'false' },
+      };
+      function from(table: string) {
+        const result = { data: rows[table], error: null };
+        const builder = Object.assign(
+          Promise.resolve(result),
+          {} as Record<string, unknown>
+        );
+        for (const method of [
+          'select',
+          'eq',
+          'order',
+          'limit',
+          'single',
+          'maybeSingle',
+        ])
+          builder[method] = () => builder;
+        return builder;
+      }
+      mocks.admin.mockResolvedValue({ from, schema: () => ({ from }) });
+      const response = await GET(
+        new Request('https://contacts.example/schedules'),
+        context
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.emailDelivery.canConfigureReportEmailGate).toBe(expected);
+      expect(JSON.stringify(body)).not.toContain('sender-1');
     }
-    mocks.admin.mockResolvedValue({ from, schema: () => ({ from }) });
-    const response = await GET(
-      new Request('https://contacts.example/schedules'),
-      context
-    );
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.emailDelivery.canConfigureReportEmailGate).toBe(expected);
-    expect(JSON.stringify(body)).not.toContain('sender-1');
-  });
+  );
 });

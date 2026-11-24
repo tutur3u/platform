@@ -32,7 +32,7 @@ module's configuration from a page they cannot open.
 | --- | --- | --- | --- | --- | --- |
 | Tutoring | `ENABLE_TUTORING` | `workspace_configs` | On | Off | `manage_workspace_settings` |
 | Feedbacks | `ENABLE_FEEDBACKS` | `workspace_configs` | On | Off | `manage_workspace_settings` |
-| Topic announcements | `ENABLE_TOPIC_ANNOUNCEMENTS` | `workspace_secrets` | Off | Off | `manage_workspace_secrets` |
+| Topic announcements | `ENABLE_TOPIC_ANNOUNCEMENTS` | `workspace_secrets` | Off | Off | Root `manage_workspace_secrets` or `manage_workspace_roles` |
 | Approvals | — | — | On | Unavailable | — |
 
 Shared workspaces keep whatever each module defaulted to before the gate
@@ -61,8 +61,35 @@ exactly that case. It is deliberately not a general secrets endpoint:
 
 - only names in `CONTACTS_FEATURE_SECRET_NAMES` are addressable;
 - only the literal values `true` and `false` are accepted;
-- `manage_workspace_secrets` is required;
+- the caller needs `manage_workspace_secrets` or `manage_workspace_roles` in the
+  **root** workspace, and `ENABLE_REPORT_EMAIL_SENDING` also needs
+  `send_user_group_report_emails` in the target workspace;
 - it never reads a secret back.
+
+### Product decision: platform-controlled module secrets
+
+Scope: `ENABLE_TOPIC_ANNOUNCEMENTS`, `ENABLE_TOPIC_TEACHER_ASSIGNMENTS` and
+`ENABLE_REPORT_EMAIL_SENDING`, plus every other `workspace_secrets` name. These
+switches are platform entitlements, default Off, and only Tuturuuu platform
+admins (root `manage_workspace_secrets` or `manage_workspace_roles`) change
+them. A workspace-level `manage_workspace_secrets` grant is never enough:
+workspace creators and `admin` members imply it for their own workspace, so it
+would let any owner self-enable a module that sends platform email.
+
+Affected surfaces: the Contacts feature-secret route and the topic announcements
+Disabled gate (its **Enable** button shows only for platform admins; workspace
+owners ask Tuturuuu support), the report schedule `canConfigureReportEmailGate`
+capability, the web and workspace Settings → Secrets routes, and the storage
+provider `migrate` and `rollout-state` routes. All of them match the root-only
+RLS policy on `public.workspace_secrets`. Exceptions: none. A future runtime flag
+can give one key a workspace-admin controller through a separate product
+decision.
+
+Regression coverage: `packages/users-core/src/routes/settings/feature-secrets/platform-controller.test.ts`,
+`packages/users-core/src/routes/users/reports/schedules-route.test.ts`,
+`apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/layout.test.tsx`,
+`apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/access.test.ts` and
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/platform-controller.test.ts`.
 
 <Warning>
   `workspace_secrets` has no unique index on `(ws_id, name)`, and the platform

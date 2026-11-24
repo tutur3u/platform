@@ -16,12 +16,16 @@ const migrateSchema = z.object({
   overwrite: z.boolean().optional(),
 });
 
+/**
+ * Storage provider rollout is platform-controlled: only root-workspace secret
+ * or role managers may use it. A workspace-level grant is not enough, because
+ * workspace creators and `admin` members imply manage_workspace_secrets for
+ * their own workspace.
+ */
 function canManageSecretsForWorkspace(
-  workspacePermissions: Awaited<ReturnType<typeof getPermissions>>,
   rootPermissions: Awaited<ReturnType<typeof getPermissions>>
 ) {
-  return (
-    workspacePermissions?.containsPermission('manage_workspace_secrets') ||
+  return Boolean(
     rootPermissions?.containsPermission('manage_workspace_roles') ||
     rootPermissions?.containsPermission('manage_workspace_secrets')
   );
@@ -38,12 +42,12 @@ export async function POST(
       return auth.response;
     }
     const { normalizedWsId, user } = auth.context;
-    const [workspacePermissions, rootPermissions] = await Promise.all([
-      getPermissions({ user, wsId: normalizedWsId }),
-      getPermissions({ user, wsId: ROOT_WORKSPACE_ID }),
-    ]);
+    const rootPermissions = await getPermissions({
+      user,
+      wsId: ROOT_WORKSPACE_ID,
+    });
 
-    if (!canManageSecretsForWorkspace(workspacePermissions, rootPermissions)) {
+    if (!canManageSecretsForWorkspace(rootPermissions)) {
       return NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }

@@ -26,20 +26,22 @@ export async function getWorkspaceSecretsAccess(
 
   const resolvedWsId = resolveWorkspaceId(wsId);
 
-  const [workspacePermissions, rootPermissions] = await Promise.all([
-    getPermissions({ wsId: resolvedWsId, request }),
-    getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
-  ]);
-
-  const canManageWorkspaceSecrets =
-    workspacePermissions?.containsPermission('manage_workspace_secrets') ??
-    false;
+  // Workspace secrets are platform-controlled. Only root-workspace secret or
+  // role managers may read or write them, matching the root-only RLS policy on
+  // public.workspace_secrets. A workspace-level `manage_workspace_secrets`
+  // grant is not enough: workspace creators and `admin` members imply it for
+  // their own workspace, and the credential Worker writes with the service
+  // role, so this guard is the only check on that path.
+  const rootPermissions = await getPermissions({
+    wsId: ROOT_WORKSPACE_ID,
+    request,
+  });
   const canManageAsPlatformAdmin =
     rootPermissions?.containsPermission('manage_workspace_roles') ||
     rootPermissions?.containsPermission('manage_workspace_secrets') ||
     false;
 
-  if (!canManageWorkspaceSecrets && !canManageAsPlatformAdmin) {
+  if (!canManageAsPlatformAdmin) {
     return {
       allowed: false as const,
       status: 403,
@@ -49,7 +51,7 @@ export async function getWorkspaceSecretsAccess(
 
   return {
     allowed: true as const,
-    db: canManageAsPlatformAdmin ? await createAdminClient() : supabase,
+    db: await createAdminClient(),
     resolvedWsId,
   };
 }

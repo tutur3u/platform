@@ -571,11 +571,14 @@ This is why a missing permission often appears first as a disabled nav item, not
 
 Web's workspace secrets page, including `/personal/secrets`, resolves the workspace
 before applying the same `getWorkspaceSecretsAccess` check as the secrets API.
-Access requires the target workspace's `manage_workspace_secrets` permission or
-an existing platform administrator permission. Denied access returns not found,
-rather than throwing a render error. The page retains the API-selected database
-client and its row-security behavior; workspace permission alone does not bypass
-platform-only database policies. Returned rows keep the edit and delete menu.
+Access requires `manage_workspace_secrets` or `manage_workspace_roles` in the
+root workspace, the same rule as the root-only RLS policy on
+`public.workspace_secrets`. The target workspace's own `manage_workspace_secrets`
+does not grant access, because workspace creators and `admin` members imply it
+for their own workspace and the credential Worker writes with the service role.
+Denied access returns not found, rather than throwing a render error. Allowed
+callers read and write through the admin client.
+Returned rows keep the edit and delete menu.
 
 Regression coverage: the secrets `page.test.tsx`, `row-actions.test.tsx`, and the
 API's `access.test.ts` cover resolved aliases, denied access before data reads,
