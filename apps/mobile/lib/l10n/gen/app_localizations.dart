@@ -25789,6 +25789,12 @@ abstract class AppLocalizations {
   /// **'e.g. World capitals'**
   String get inputPlaceholderQuizSetName;
 
+  /// No description provided for @inputPlaceholderRejectionReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain what needs to change'**
+  String get inputPlaceholderRejectionReason;
+
   /// No description provided for @inputPlaceholderSaleTitle.
   ///
   /// In en, this message translates to:

@@ -13735,6 +13735,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inputPlaceholderQuizSetName => 'e.g. World capitals';
 
   @override
+  String get inputPlaceholderRejectionReason => 'Explain what needs to change';
+
+  @override
   String get inputPlaceholderSaleTitle => 'e.g. Office supplies order';
 
   @override

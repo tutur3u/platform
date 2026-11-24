@@ -6175,6 +6175,7 @@
   "inputPlaceholderQuizOption": "e.g. Paris",
   "inputPlaceholderQuizQuestion": "e.g. What is the capital of France?",
   "inputPlaceholderQuizSetName": "e.g. World capitals",
+  "inputPlaceholderRejectionReason": "Explain what needs to change",
   "inputPlaceholderSaleTitle": "e.g. Office supplies order",
   "inputPlaceholderSharedMessage": "Edit the message you want to share",
   "inputPlaceholderStorefrontCurrency": "e.g. VND",

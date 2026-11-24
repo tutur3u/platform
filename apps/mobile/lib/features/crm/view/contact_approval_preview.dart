@@ -140,6 +140,7 @@ class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
             AppTextField(
               key: const ValueKey('approval-rejection-reason'),
               label: l10n.contactsApprovalReason,
+              placeholder: l10n.inputPlaceholderRejectionReason,
               minLines: 2,
               maxLines: 4,
               maxLength: _reasonLimit,

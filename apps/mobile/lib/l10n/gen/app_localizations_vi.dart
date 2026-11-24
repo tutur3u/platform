@@ -13583,6 +13583,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inputPlaceholderQuizSetName => 'VD: Thủ đô các nước';
 
   @override
+  String get inputPlaceholderRejectionReason => 'Giải thích những gì cần thay đổi';
+
+  @override
   String get inputPlaceholderSaleTitle => 'VD: Đơn hàng đồ dùng văn phòng';
 
   @override
