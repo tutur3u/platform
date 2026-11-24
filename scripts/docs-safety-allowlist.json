@@ -1,6 +1,11 @@
 {
   "entries": [
     {
+      "path": "apps/docs/platform/guides/meet-share-audio.mdx",
+      "rule": "fleet host or machine name",
+      "reason": "False positive: the Vietnamese word 'thanh' (audio, as in 'âm thanh') matches the hashed prefix; the page names no host or machine."
+    },
+    {
       "path": "apps/docs/build/development-tools/local-e2e.mdx",
       "rule": "bypass secret name",
       "reason": "Flag name is public in source; the bypass only activates with local web origins and a local Supabase URL (apps/web/src/lib/auth/local-e2e.ts); Desk-approved 31 Oct."
