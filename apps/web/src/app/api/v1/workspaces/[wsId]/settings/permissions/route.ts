@@ -112,6 +112,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const canAccessInquiries = isRootWorkspace && isTuturuuuMember;
       const canAccessIntegrations =
         discordAllowed || canManageWorkspaceIntegrations;
+      // Same gates as the SSO and Domains APIs; the dialog also hides SSO in
+      // personal workspaces.
+      const canAccessSso =
+        permissions.membershipType === 'MEMBER' &&
+        hasWorkspacePermission('manage_sso_clients');
+      const canAccessDomains =
+        hasWorkspacePermission('manage_workspace_domains') ||
+        hasWorkspacePermission('view_workspace_domains');
 
       // Typed against the shared contract so dropping a field here is a
       // compile error rather than a settings dialog that silently renders as
@@ -144,9 +152,11 @@ export const GET = withSessionAuth<{ wsId: string }>(
           reports: canManageUserReportTemplates,
           secrets: canManageWorkspaceSecrets,
           usage: canViewUsage,
+          workspace_domains: canAccessDomains,
           workspace_members: canManageWorkspaceMembers,
           workspace_roles: canManageWorkspaceRoles,
           workspace_settings: canManageWorkspaceSettings,
+          workspace_sso: canAccessSso,
         },
       };
 

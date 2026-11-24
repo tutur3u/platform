@@ -1,33 +1,21 @@
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { SsoManagement } from './sso-management';
+import { redirectToWorkspaceSettingsTab } from '@/lib/workspace-settings-tab-redirect';
 
 export async function generateMetadata() {
   const t = await getTranslations('workspace-sso');
   return { title: t('title') };
 }
-export default async function WorkspaceSsoPage({
+
+/**
+ * SSO lives in the settings dialog (Current workspace -> SSO), which
+ * shows it only to members with the same permissions. This route keeps
+ * bookmarks working by opening that tab over the workspace.
+ */
+export default async function WorkspaceSSOPage({
   params,
 }: {
-  params: Promise<{ wsId: string }>;
+  params: Promise<{ locale: string; wsId: string }>;
 }) {
-  await connection();
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId }) => {
-        const permissions = await getPermissions({ wsId });
-        if (
-          workspace.personal ||
-          workspace.deleted ||
-          permissions?.membershipType !== 'MEMBER' ||
-          permissions.withoutPermission('manage_sso_clients')
-        )
-          notFound();
-        return <SsoManagement key={wsId} wsId={wsId} />;
-      }}
-    </WorkspaceWrapper>
-  );
+  const { locale, wsId } = await params;
+  redirectToWorkspaceSettingsTab({ locale, tab: 'workspace_sso', wsId });
 }

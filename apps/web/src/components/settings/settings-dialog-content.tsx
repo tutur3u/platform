@@ -6,6 +6,7 @@ import {
   AccountIntegrationsPanel,
   AccountManagementSettings,
   AppearanceSettings,
+  DomainsManagement,
   KeyboardShortcutsSettings,
   MiraMemorySettings,
   MiraPersonalitySettings,
@@ -15,6 +16,7 @@ import {
   PublicProfileSettingsPanel,
   SecuritySettings,
   SessionSettings,
+  SsoManagement,
   SettingsDialogNativeRoutePanels,
   WorkspaceBillingSettings,
   WorkspaceGeneralSettingsPanel,
@@ -129,6 +131,12 @@ export function SettingsDialogContent({
           workspace={workspace}
           workspaceError={workspaceError}
         />
+      )}
+      {activeTab === 'workspace_sso' && wsId && (
+        <SsoManagement embedded key={wsId} wsId={wsId} />
+      )}
+      {activeTab === 'workspace_domains' && wsId && (
+        <DomainsManagement embedded key={wsId} wsId={wsId} />
       )}
       {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
         <div className="h-full">

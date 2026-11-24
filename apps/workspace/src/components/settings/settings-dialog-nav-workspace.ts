@@ -1,4 +1,10 @@
-import { Building, CreditCard, LayoutGrid, Users } from '@tuturuuu/icons';
+import {
+  Building,
+  CreditCard,
+  KeyRound,
+  LayoutGrid,
+  Users,
+} from '@tuturuuu/icons';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import type { SettingsNavBuilderParams } from './settings-dialog-nav-types';
 
@@ -29,6 +35,17 @@ export function buildWorkspaceSettingsNavGroups({
                 icon: Users,
                 description: t('ws-settings.members-description'),
                 keywords: ['Members', 'Team', 'Roles'],
+              },
+            ]
+          : []),
+        ...(availability.canAccessSso
+          ? [
+              {
+                name: 'workspace_sso',
+                label: t('workspace-sso.title'),
+                icon: KeyRound,
+                description: t('workspace-sso.description'),
+                keywords: ['SSO', 'SAML', 'Single sign-on', 'WorkOS'],
               },
             ]
           : []),

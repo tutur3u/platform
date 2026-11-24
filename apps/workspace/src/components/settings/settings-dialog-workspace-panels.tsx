@@ -9,6 +9,10 @@ import {
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
+import {
+  SETTINGS_MEMBERS_TAB_PARAM,
+  sanitizeWorkspaceAccessTab,
+} from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { WorkspaceDeletionSettings } from '@tuturuuu/ui/custom/workspace-deletion-settings';
 import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
 import {
@@ -17,6 +21,7 @@ import {
   SkeletonText,
 } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
 import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
 import InviteLinksSection from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/invite-links-section';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
@@ -141,6 +146,7 @@ export function WorkspaceMembersSettingsPanel({
   workspace,
   workspaceError,
 }: WorkspaceMembersSettingsPanelProps) {
+  const [membersTab] = useQueryState(SETTINGS_MEMBERS_TAB_PARAM, parseAsString);
   const memberSettingsQuery = useQuery({
     enabled:
       Boolean(workspace?.id) &&
@@ -188,7 +194,7 @@ export function WorkspaceMembersSettingsPanel({
             currentUserId,
             workspaceId: workspace.id,
           }}
-          initialTab="people"
+          initialTab={sanitizeWorkspaceAccessTab(membersTab) ?? 'people'}
           showHeader={false}
         />
       </div>

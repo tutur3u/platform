@@ -26,8 +26,16 @@ type View =
   | { kind: 'error' }
   | { kind: 'ready'; data: WorkspaceDomainsOverview };
 
-export function DomainsManagement({ wsId }: { wsId: string }) {
+export function DomainsManagement({
+  embedded = false,
+  wsId,
+}: {
+  /** Inside the settings dialog, whose header already names the section. */
+  embedded?: boolean;
+  wsId: string;
+}) {
   const t = useTranslations('workspace-domains');
+  const Shell = embedded ? 'div' : 'main';
   const cache = useQueryClient();
   const errorMessage = useDomainErrorMessage();
   const [hostname, setHostname] = useState('');
@@ -50,7 +58,7 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
       ? { kind: 'error' }
       : { kind: 'ready', data: overview.data };
 
-  const header = (
+  const header = embedded ? null : (
     <header className="space-y-1">
       <h1 className="font-semibold text-2xl tracking-tight">{t('title')}</h1>
       <p className="text-muted-foreground text-sm">{t('description')}</p>
@@ -60,18 +68,18 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
   switch (view.kind) {
     case 'loading':
       return (
-        <main className="mx-auto w-full max-w-3xl space-y-8">
+        <Shell className="mx-auto w-full max-w-3xl space-y-8">
           {header}
           <SettingsSection>
             <LoadingRegion srLabel={t('loading')}>
               <SkeletonList rows={3} withAvatar={false} withTrailing />
             </LoadingRegion>
           </SettingsSection>
-        </main>
+        </Shell>
       );
     case 'error':
       return (
-        <main className="mx-auto w-full max-w-3xl space-y-8">
+        <Shell className="mx-auto w-full max-w-3xl space-y-8">
           {header}
           <SettingsSection>
             <SettingsSectionMessage
@@ -85,7 +93,7 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
               {t('loadError')}
             </SettingsSectionMessage>
           </SettingsSection>
-        </main>
+        </Shell>
       );
     case 'ready': {
       const { data } = view;
@@ -95,7 +103,7 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
         if (hostname.trim()) add.mutate(hostname.trim());
       };
       return (
-        <main className="mx-auto w-full max-w-3xl space-y-8">
+        <Shell className="mx-auto w-full max-w-3xl space-y-8">
           {header}
           <EntitlementSummary wsId={wsId} overview={data} />
 
@@ -162,7 +170,7 @@ export function DomainsManagement({ wsId }: { wsId: string }) {
               ))
             )}
           </SettingsSection>
-        </main>
+        </Shell>
       );
     }
     default: {

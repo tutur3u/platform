@@ -47,6 +47,7 @@ type SettingsOpenIntent = {
 const SETTINGS_EXTRA_KEYS = [
   'settingsBoardId',
   'settingsLinkedProvider',
+  'settingsMembersTab',
 ] as const;
 
 let settingsDialogPromise: Promise<SettingsDialogComponent> | null = null;

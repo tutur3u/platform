@@ -17,10 +17,12 @@ export type WorkspaceSettingsPermissions = WorkspacePermissionsSummary;
 export type SettingsDialogAvailability = {
   allowWorkspaceBasicsEdit: boolean;
   canAccessApiKeys: boolean;
+  canAccessDomains: boolean;
   canAccessInquiries: boolean;
   canAccessIntegrations: boolean;
   canAccessReports: boolean;
   canAccessSecrets: boolean;
+  canAccessSso: boolean;
   canAccessUsage: boolean;
   canManageWorkspaceMembers: boolean;
   canManageWorkspaceRoles: boolean;
@@ -95,6 +97,10 @@ export function getSettingsDialogAvailability({
       !isRootWorkspace &&
       (Boolean(workspace?.personal) || canManageWorkspaceSettings),
     canAccessApiKeys,
+    canAccessDomains: isSettingsEntryAvailable(
+      workspacePermissions,
+      'workspace_domains'
+    ),
     canAccessInquiries: isSettingsEntryAvailable(
       workspacePermissions,
       'inquiries'
@@ -102,6 +108,9 @@ export function getSettingsDialogAvailability({
     canAccessIntegrations,
     canAccessReports,
     canAccessSecrets,
+    canAccessSso:
+      !workspace?.personal &&
+      isSettingsEntryAvailable(workspacePermissions, 'workspace_sso'),
     canAccessUsage,
     canManageWorkspaceMembers,
     canManageWorkspaceRoles,

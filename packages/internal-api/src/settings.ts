@@ -22,9 +22,11 @@ export type WorkspaceSettingsAvailabilityKey =
   | 'reports'
   | 'secrets'
   | 'usage'
+  | 'workspace_domains'
   | 'workspace_members'
   | 'workspace_roles'
-  | 'workspace_settings';
+  | 'workspace_settings'
+  | 'workspace_sso';
 
 /**
  * The complete `/settings/permissions` response.
@@ -73,9 +75,11 @@ export const DENIED_WORKSPACE_PERMISSIONS: WorkspacePermissionsSummary = {
     reports: false,
     secrets: false,
     usage: false,
+    workspace_domains: false,
     workspace_members: false,
     workspace_roles: false,
     workspace_settings: false,
+    workspace_sso: false,
   },
   can_access_api_keys: false,
   can_access_billing: false,

@@ -21,8 +21,16 @@ import { ClientDetails, ssoKey } from './client-details';
 import { ClientEditor, EnableClientDialog } from './client-editor';
 import { SsoMutationError } from './mutation-error';
 
-export function SsoManagement({ wsId }: { wsId: string }) {
+export function SsoManagement({
+  embedded = false,
+  wsId,
+}: {
+  /** Inside the settings dialog, whose header already names the section. */
+  embedded?: boolean;
+  wsId: string;
+}) {
   const t = useTranslations('workspace-sso');
+  const Shell = embedded ? 'div' : 'main';
   const cache = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editor, setEditor] = useState<
@@ -106,11 +114,13 @@ export function SsoManagement({ wsId }: { wsId: string }) {
       </div>
     );
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-6">
-      <header className="space-y-2">
-        <h1 className="font-semibold text-2xl">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </header>
+    <Shell className="mx-auto w-full max-w-4xl space-y-6">
+      {!embedded && (
+        <header className="space-y-2">
+          <h1 className="font-semibold text-2xl">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('description')}</p>
+        </header>
+      )}
       <section
         className="space-y-2 rounded-lg border bg-muted/30 p-4"
         aria-label={t('activation')}
@@ -230,6 +240,6 @@ export function SsoManagement({ wsId }: { wsId: string }) {
           if (confirm) toggle.mutate({ client: confirm, enable: true });
         }}
       />
-    </main>
+    </Shell>
   );
 }

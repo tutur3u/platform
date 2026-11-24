@@ -35,6 +35,7 @@ const UserNavCommandLauncher = dynamic(
 const SETTINGS_EXTRA_KEYS = [
   'settingsBoardId',
   'settingsLinkedProvider',
+  'settingsMembersTab',
 ] as const;
 
 function useUserNavSettingsDialogComponent(enabled: boolean) {

@@ -219,11 +219,31 @@ enforced by the contacts settings route.
   `/[wsId]?settingsDialog=open&settingsTab=workspace_members`, so bookmarks
   open the same tab. Permissions are those the tab already enforces
   (`manage_workspace_members`, `manage_workspace_roles`).
+- **Members views:** the old `?tab=roles|defaults-member|defaults-guest` view
+  carries over as `settingsMembersTab`, which the Members tab opens on.
 - **Exceptions:** the CMS external-project People page (`/[wsId]/members` in
   apps/cms) is a separate feature and keeps its sidebar entry.
 - **Regression coverage:** `members/page.test.ts` in apps/web and
   apps/workspace, `apps/tasks/src/__tests__/task-pages.test.tsx` and
   `packages/satellite/src/components/workspace-settings/navigation.test.tsx`.
+
+## SSO and Domains live in settings
+
+- **Scope:** apps/web (SSO and Domains) and apps/workspace (SSO).
+- **Default:** **Current workspace → Single sign-on** (`workspace_sso`) and
+  **Current workspace → Domains** (`workspace_domains`) render the same
+  `SsoManagement` and `DomainsManagement` components the pages used, without
+  their page header. Neither appears in the sidebar.
+- **Permissions:** unchanged. `/settings/permissions` reports
+  `available.workspace_sso` for a full member with `manage_sso_clients`
+  (hidden in personal workspaces) and `available.workspace_domains` for
+  `view_workspace_domains` or `manage_workspace_domains`. The SSO and Domains
+  APIs keep enforcing the same checks.
+- **Old routes:** `/[wsId]/sso` and `/[wsId]/domains` redirect, with the locale,
+  to `/[wsId]?settingsDialog=open&settingsTab=workspace_sso|workspace_domains`.
+- **Regression coverage:** `domains/page.test.ts`,
+  `settings-dialog-nav-items.test.ts` and
+  `workspace-settings-permissions-route.test.ts` in apps/web.
 
 ## Implementation
 

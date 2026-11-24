@@ -7,6 +7,11 @@ const LazyAccountManagementSettings = lazy(
   () => import('./account/account-management-settings')
 );
 const LazyAppearanceSettings = lazy(() => import('./appearance-settings'));
+const LazySsoManagement = lazy(() =>
+  import(
+    '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/sso/sso-management'
+  ).then((module) => ({ default: module.SsoManagement }))
+);
 const LazyPublicProfileSettingsPanel = lazy(() =>
   import('@tuturuuu/satellite/public-profile-panel').then((module) => ({
     default: module.PublicProfileSettingsPanel,
@@ -60,6 +65,7 @@ export const AccountManagementSettings = withPanelSuspense(
   LazyAccountManagementSettings
 );
 export const AppearanceSettings = withPanelSuspense(LazyAppearanceSettings);
+export const SsoManagement = withPanelSuspense(LazySsoManagement);
 export const PublicProfileSettingsPanel = withPanelSuspense(
   LazyPublicProfileSettingsPanel
 );

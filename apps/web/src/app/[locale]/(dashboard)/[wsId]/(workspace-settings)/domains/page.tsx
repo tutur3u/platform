@@ -1,33 +1,21 @@
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { DomainsManagement } from './domains-management';
+import { redirectToWorkspaceSettingsTab } from '@/lib/workspace-settings-tab-redirect';
 
 export async function generateMetadata() {
   const t = await getTranslations('workspace-domains');
   return { title: t('title') };
 }
 
+/**
+ * Domains lives in the settings dialog (Current workspace -> Domains), which
+ * shows it only to members with the same permissions. This route keeps
+ * bookmarks working by opening that tab over the workspace.
+ */
 export default async function WorkspaceDomainsPage({
   params,
 }: {
-  params: Promise<{ wsId: string }>;
+  params: Promise<{ locale: string; wsId: string }>;
 }) {
-  await connection();
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId }) => {
-        const permissions = await getPermissions({ wsId });
-        const canManage =
-          permissions?.containsPermission('manage_workspace_domains') ?? false;
-        const canView =
-          canManage ||
-          (permissions?.containsPermission('view_workspace_domains') ?? false);
-        if (workspace.deleted || !canView) notFound();
-        return <DomainsManagement key={wsId} wsId={wsId} />;
-      }}
-    </WorkspaceWrapper>
-  );
+  const { locale, wsId } = await params;
+  redirectToWorkspaceSettingsTab({ locale, tab: 'workspace_domains', wsId });
 }

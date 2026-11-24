@@ -257,9 +257,11 @@ describe('workspace settings permissions route', () => {
       manage_workspace_settings: true,
       available: {
         billing: true,
+        workspace_domains: true,
         workspace_members: true,
         workspace_roles: true,
         workspace_settings: true,
+        workspace_sso: true,
       },
     });
   });
@@ -388,6 +390,9 @@ describe('workspace settings permissions route', () => {
       workspace_members: true,
       workspace_roles: true,
       workspace_settings: true,
+      // Neither SSO nor domain permissions are granted here.
+      workspace_sso: false,
+      workspace_domains: false,
     });
     expect(payload.available).not.toHaveProperty('infrastructure');
     expect(payload.available).not.toHaveProperty('internal_projects');

@@ -119,12 +119,33 @@ export function buildSettingsDialogHref(
   return `${path}?${params.toString()}${hash}`;
 }
 
+/** The Members tab's view: people, roles or a default permission set. */
+export const SETTINGS_MEMBERS_TAB_PARAM = 'settingsMembersTab';
+
+const WORKSPACE_ACCESS_TABS = [
+  'people',
+  'roles',
+  'defaults-member',
+  'defaults-guest',
+] as const;
+
+export type WorkspaceAccessTabId = (typeof WORKSPACE_ACCESS_TABS)[number];
+
+export function sanitizeWorkspaceAccessTab(
+  value: string | null | undefined
+): WorkspaceAccessTabId | null {
+  return (WORKSPACE_ACCESS_TABS as readonly string[]).includes(value ?? '')
+    ? (value as WorkspaceAccessTabId)
+    : null;
+}
+
 /** Params a redirect must carry so a settings deep link survives it. */
 export const SETTINGS_DIALOG_DEEP_LINK_PARAMS = [
   SETTINGS_DIALOG_PARAM,
   SETTINGS_TAB_PARAM,
   'settingsBoardId',
   'settingsLinkedProvider',
+  SETTINGS_MEMBERS_TAB_PARAM,
 ] as const;
 
 /** Copies settings deep-link params from one query onto another. */

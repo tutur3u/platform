@@ -16,10 +16,12 @@ const t = Object.assign((key: string) => key, {
 const baseAvailability: SettingsDialogAvailability = {
   allowWorkspaceBasicsEdit: false,
   canAccessApiKeys: false,
+  canAccessDomains: false,
   canAccessInquiries: false,
   canAccessIntegrations: false,
   canAccessReports: false,
   canAccessSecrets: false,
+  canAccessSso: false,
   canAccessUsage: false,
   canManageWorkspaceMembers: false,
   canManageWorkspaceRoles: false,
@@ -57,6 +59,8 @@ describe('settings dialog nav items', () => {
     expect(names).not.toContain('user_status');
     expect(names).not.toContain('workspace_members');
     expect(names).not.toContain('workspace_billing');
+    expect(names).not.toContain('workspace_sso');
+    expect(names).not.toContain('workspace_domains');
     expect(names).not.toContain('usage');
     expect(names).not.toContain('integrations');
     expect(names).not.toContain('api_keys');
@@ -78,6 +82,8 @@ describe('settings dialog nav items', () => {
         canAccessReports: true,
         canAccessSecrets: true,
         canAccessUsage: true,
+        canAccessSso: true,
+        canAccessDomains: true,
         canManageWorkspaceMembers: true,
         hasBillingPermission: true,
       },
@@ -86,6 +92,8 @@ describe('settings dialog nav items', () => {
 
     expect(names).toContain('workspace_members');
     expect(names).toContain('workspace_billing');
+    expect(names).toContain('workspace_sso');
+    expect(names).toContain('workspace_domains');
     expect(names).not.toContain('workspace_reports');
     expect(names).not.toContain('tasks_general');
     expect(names).not.toContain('calendar_general');
