@@ -235,16 +235,16 @@ describe('rule validation agrees with the rule store', () => {
       [
         sql,
         [
-          'feature_flag_sync_definitions(jsonb, boolean)',
           'feature_flag_mutate_rule(uuid, uuid, text, text, text, uuid, text, integer, uuid[], uuid[], bigint, text, text)',
         ],
       ],
       [
         permission,
         [
+          'feature_flag_sync_definitions(jsonb, boolean)',
           'feature_flag_read_snapshot(text)',
           'feature_flag_read_subject_rules(text, uuid, uuid)',
-          'feature_flag_read_rules(uuid, text, text)',
+          'feature_flag_read_rules(uuid, text, text, integer, text, text, uuid)',
           'feature_flag_read_audit(uuid, integer, timestamptz, uuid)',
           'feature_flag_erase_subject(text, uuid)',
         ],
@@ -291,11 +291,23 @@ describe('rule validation agrees with the rule store', () => {
     expect(sql).toContain('v_audit.actor_id is distinct from p_actor');
     expect(sql).toContain("raise exception 'feature_flag_rule_limit'");
     expect(sql).toContain(') >= 50000 then');
+    expect(sql).toContain("raise exception 'feature_flag_actor_rule_limit'");
+    expect(sql).toContain(') >= 200 then');
+    expect(sql).toContain("and scope <> 'platform' and mode <> 'off'");
+    expect(sql).toContain('pg_advisory_xact_lock_shared(');
+    expect(permission).toContain(
+      "pg_advisory_xact_lock(pg_catalog.hashtextextended('feature_flag_erasure', 0))"
+    );
+    expect(permission).toContain(
+      'least(greatest(coalesce(p_limit, 500), 1), 1000)'
+    );
     expect(sql).toContain("raise exception 'feature_flag_write_lost'");
-    expect(sql).toContain(
+    expect(permission).toContain(
       "raise exception 'feature_flag_definition_widens_control'"
     );
-    expect(sql).toContain('insert into private.feature_flag_definition_audit');
+    expect(permission).toContain(
+      'insert into private.feature_flag_definition_audit'
+    );
     expect(permission).toContain(
       "where r.environment = p_environment and r.scope = 'platform' and r.mode is not null;"
     );
@@ -315,10 +327,10 @@ describe('rule validation agrees with the rule store', () => {
     expect(sql).toContain('before truncate on private.feature_flag_audit');
     expect(
       sql.match(/set_config\('feature_flags\.entrypoint', '', true\)/g)
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(
       permission.match(/set_config\('feature_flags\.entrypoint', '', true\)/g)
-    ).toHaveLength(1);
+    ).toHaveLength(2);
     expect(sql).toContain("v_entry = 'erase_subject'");
     expect(sql).not.toMatch(/delete from private\.feature_flag/i);
     expect(sql).not.toContain('platform_feature_flag');

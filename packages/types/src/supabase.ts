@@ -32117,7 +32117,15 @@ export type Database = {
         Returns: Json;
       };
       feature_flag_read_rules: {
-        Args: { p_actor: string; p_environment: string; p_flag_key: string };
+        Args: {
+          p_actor: string;
+          p_after_flag_key?: string;
+          p_after_scope?: string;
+          p_after_subject_id?: string;
+          p_environment: string;
+          p_flag_key: string;
+          p_limit?: number;
+        };
         Returns: Json;
       };
       feature_flag_read_snapshot: {

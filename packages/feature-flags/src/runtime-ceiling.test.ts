@@ -243,12 +243,19 @@ describe('subject rule isolation', () => {
     });
   });
 
-  it('ignores a workspace rule whose subject is not a UUID', () => {
-    const rules = [
-      platformRule(),
-      { ...workspaceOff, subjectId: 'workspace-1' },
-    ];
-    expect(decide(flagWith(), rules).enabled).toBe(true);
+  it('fails closed for everyone on a workspace or user rule without a UUID subject', () => {
+    for (const subjectId of ['workspace-1', 42, null, undefined]) {
+      for (const base of [workspaceOff, { ...userOn, mode: 'off' as const }]) {
+        const rules = [
+          platformRule(),
+          { ...base, subjectId } as unknown as RuntimeRule,
+        ];
+        expect(decide(flagWith(), rules, elsewhere)).toMatchObject({
+          enabled: false,
+          source: 'invalid-rules',
+        });
+      }
+    }
   });
 
   it('fails closed for everyone on a malformed or duplicated platform rule', () => {
@@ -279,6 +286,25 @@ describe('subject rule isolation', () => {
       allowUserIds: [USER],
     });
     expect(decide(flagWith(), [allow], upper).enabled).toBe(true);
+  });
+
+  it('compares allow-list entries in lowercase', () => {
+    const allowUser = platformRule({
+      mode: 'rollout',
+      percentage: 0,
+      allowUserIds: [USER.toUpperCase()],
+    });
+    expect(decide(flagWith(), [allowUser]).enabled).toBe(true);
+    const allowWorkspace = platformRule({
+      mode: 'rollout',
+      percentage: 0,
+      allowWorkspaceIds: [WS.toUpperCase()],
+    });
+    expect(decide(flagWith(), [allowWorkspace]).enabled).toBe(true);
+    expect(
+      decide(flagWith(), [allowWorkspace], { ...member, workspaceId: null })
+        .enabled
+    ).toBe(false);
   });
 });
 

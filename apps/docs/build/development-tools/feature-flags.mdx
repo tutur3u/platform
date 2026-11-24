@@ -97,10 +97,11 @@ dark registers one, so production can carry the code with the feature off.
 passes the verified actor (`userId`, `workspaceId`, `isStaff` from the server's
 verified identity), the stored rules for the flag (or `null` when no snapshot is
 available) and the raw environment value. Adapters pass lowercase UUIDs; the
-evaluator also lowercases context and subject ids before comparing, and
-buckets rollouts on the lowercase ids. Only `null` means "no snapshot": any
+evaluator also lowercases context, subject and allow-list ids before comparing,
+and buckets rollouts on the lowercase ids. Only `null` means "no snapshot": any
 other non-list value, including `undefined`, and any list holding a non-object
-entry is a malformed snapshot and turns every flag off.
+entry is a malformed snapshot and turns every flag off, as does a workspace or
+user rule whose subject is not a UUID, since it names no subject to deny.
 
 The platform rule is a **ceiling**. Precedence:
 
@@ -164,10 +165,10 @@ everyone:
 ### Rule store
 
 Migration `20261125030000_feature_flag_rules.sql` keeps runtime rules in the
-`private` schema with its write RPCs, and
+`private` schema with the rule write RPC, and
 `20261125030100_manage_feature_flags_permission.sql` adds the
-`manage_feature_flags` root permission with the read and erasure RPCs. Clients
-have no table access.
+`manage_feature_flags` root permission with the definition sync, read and
+erasure RPCs. Clients have no table access.
 
 | Object | Purpose |
 | --- | --- |
@@ -180,8 +181,9 @@ The rule table's CHECK calls the same SQL shape function as the mutate RPC.
 Triggers reject truncation, deletes, audit updates and any write outside the
 RPC entrypoints; only the erasure entrypoint may delete rules and anonymize
 audit rows. Every function pins `search_path = pg_catalog, pg_temp`. Only
-`service_role` may execute the RPCs, and each RPC also refuses a request JWT
-that names another role.
+`service_role` may execute the RPCs, and each RPC also refuses request claims
+that name another role or no role; only a session with no request claims (a
+direct database caller) is trusted without one.
 
 **Definitions.** The admin app's server calls
 `feature_flag_sync_definitions(p_definitions, p_acknowledge_widening)` at deploy
@@ -209,8 +211,20 @@ has never existed), and writes the rule and its audit row in one transaction:
   or null. A null `p_mode` unsets the rule.
 - A known `p_operation_id` replays its result only for the same actor and rule
   identity; otherwise the call fails with `feature_flag_operation_conflict`.
-- A flag holds at most 50000 live workspace and user rules per environment
-  (`feature_flag_rule_limit`); allow-lists hold at most 500 ids each.
+- Workspace and user rules that can enable a flag (any mode but `off`) are
+  capped per flag and environment: 50000 in all (`feature_flag_rule_limit`)
+  and, for a `workspace-admin` or `self` scope, 200 last written by one actor
+  (`feature_flag_actor_rule_limit`). An `off` rule only narrows and is never
+  capped, so self opt-outs and workspace kills keep working when a cap is
+  full, and one tenant creating many workspaces cannot exhaust the shared
+  cap. Platform-admin writes count toward the total but not the actor quota.
+  Allow-lists hold at most 500 ids each.
+- Every write holds the erasure lock in shared mode, and subject erasure holds
+  it exclusively, so an erasure waits for in-flight writes and blocks new ones
+  until it commits. A write committed after the erasure that still names the
+  erased id (for example from a stale admin form) re-adds it; account deletion
+  therefore erases after the account is gone, so pickers can no longer resolve
+  it, and a repeated erasure removes any such entry.
 - The server sets `p_client` for its own surface; it never comes from a request
   body.
 
@@ -222,8 +236,13 @@ has never existed), and writes the rule and its audit row in one transaction:
   returns only the live workspace rules of the request's workspace and the
   user rules of its verified user, for a request-scoped lookup.
 
-Pass both lists to `evaluateRuntimeFlag` as `rules`. Admin screens use
-`feature_flag_read_rules(p_actor, p_flag_key, p_environment)` and
+Pass both lists to `evaluateRuntimeFlag` as `rules`. If the subject read
+fails, the adapter fails closed for that request (the flag is off) and never
+evaluates with the snapshot alone, which would drop a workspace kill or a self
+opt-out. Admin screens use `feature_flag_read_rules(p_actor, p_flag_key,
+p_environment, p_limit, p_after_flag_key, p_after_scope, p_after_subject_id)`,
+a page of 1 to 1000 rules (default 500) whose `nextCursor` is passed back as
+the `p_after_*` arguments until it is null, and
 `feature_flag_read_audit(p_actor, p_limit, p_before, p_before_id)`, which need
 root `view_infrastructure` or `manage_feature_flags`; the audit pages newest
 first on the `(occurredAt, id)` cursor of the last row.
@@ -235,7 +254,7 @@ subjects, allow-lists, authors and actors). Account erasure calls
 [data protection standard](/platform/data-protection-standard#runtime-feature-flag-rules).
 
 **Rollback.** The `manage_feature_flags` enum value cannot be removed; its
-rollback drops only the read and erasure RPCs. The rule store rollback drops
+rollback drops only the definition sync, read and erasure RPCs. The rule store rollback drops
 every rule and audit row, so export `private.feature_flag_audit` and
 `private.feature_flag_definition_audit` first.
 

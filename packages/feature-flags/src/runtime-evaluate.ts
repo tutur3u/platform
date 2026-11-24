@@ -1,7 +1,7 @@
 import type { CatalogFlag } from './lifecycle.mjs';
 import type { RuntimeRuleScope } from './runtime-definition.mjs';
 import { RUNTIME_RULE_SCOPES } from './runtime-definition.mjs';
-import { isIncluded, ruleShapeError } from './rule-validation';
+import { isIncluded, isUuid, ruleShapeError } from './rule-validation';
 
 export type RuntimeRuleMode = 'on' | 'off' | 'staff' | 'rollout';
 
@@ -106,10 +106,14 @@ function ruleDecides(
       return context.isStaff;
     case 'rollout': {
       if (context.userId === null) return false;
-      if (rule.allowUserIds?.includes(context.userId)) return true;
+      if (rule.allowUserIds?.some((id) => lowerId(id) === context.userId)) {
+        return true;
+      }
       if (
         context.workspaceId !== null &&
-        rule.allowWorkspaceIds?.includes(context.workspaceId)
+        rule.allowWorkspaceIds?.some(
+          (id) => lowerId(id) === context.workspaceId
+        )
       ) {
         return true;
       }
@@ -124,8 +128,9 @@ function ruleDecides(
 /**
  * Evaluates one runtime flag. Precedence:
  *
- * 1. A malformed snapshot, or a malformed or duplicated platform rule, fails
- *    closed for everyone (`invalid-rules`). A malformed, duplicated or
+ * 1. A malformed snapshot, a malformed or duplicated platform rule, or a
+ *    workspace or user rule whose subject is not a UUID fails closed for
+ *    everyone (`invalid-rules`). Any other malformed, duplicated or
  *    undeclared-scope workspace or user rule denies only its own subject.
  * 2. A platform `off` rule on a kill switch is final (`kill-switch`).
  * 3. The platform rule is a ceiling. While it is `off`, `staff` or `rollout`,
@@ -159,7 +164,8 @@ export function evaluateRuntimeFlag(
   // A malformed snapshot, or a malformed or duplicated platform rule, fails
   // closed for everyone: an ambiguous ceiling must never turn a feature on. A
   // malformed or duplicated workspace or user rule denies only its own
-  // subject, so one bad tenant rule cannot switch the flag off platform-wide.
+  // subject, so one bad tenant rule cannot switch the flag off platform-wide,
+  // unless its subject is not a UUID: that rule names no subject to deny.
   if (input.rules !== null && !Array.isArray(input.rules)) {
     trace.push('rule snapshot is not a list');
     return { enabled: false, source: 'invalid-rules', trace };
@@ -187,6 +193,10 @@ export function evaluateRuntimeFlag(
     seen.add(identity);
     if (bad && rule.scope === 'platform') {
       trace.push('invalid or duplicate platform rule');
+      return { enabled: false, source: 'invalid-rules', trace };
+    }
+    if (bad && !isUuid(rule.subjectId)) {
+      trace.push(`${rule.scope} rule without a UUID subject`);
       return { enabled: false, source: 'invalid-rules', trace };
     }
     if (bad) denied.add(identity);

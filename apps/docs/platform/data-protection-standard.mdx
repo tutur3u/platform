@@ -95,6 +95,7 @@ Decision recorded on 2026-11-25: account erasure anonymizes the runtime feature 
 - **Account erasure:** `private.feature_flag_erase_subject('user', <user id>)` deletes the user's rules, removes the user from every allow-list (bumping the rule's revision), nulls `updated_by`, and in every audit row nulls the actor and user subject and replaces the user's allow-list entries with the tombstone `"erased"`. Each rule it deletes or changes gets an audit row with no actor and client `erasure`. The call is idempotent. Audit rows are otherwise kept.
 - **Workspace purge:** the purge calls `private.feature_flag_erase_subject('workspace', <workspace id>)`, which deletes the workspace's rules and removes it from allow-lists. Rule subjects carry no foreign key, so nothing cascades on its own. Workspace ids in audit rows are kept.
 - **Wiring:** the account-deletion and workspace-purge paths call the RPC; until they do, erasure of these stores is incomplete for that request.
+- **Concurrency:** rule writes hold the erasure lock shared and erasure holds it exclusively, so erasure never interleaves with a write. A write committed afterwards that still names the erased id re-adds it; account deletion erases after the account is gone, and a repeated erasure removes such an entry.
 - **Exceptions:** an audit `reason` is free text written by an administrator and is not rewritten.
 - **Regression coverage:** `apps/database/supabase/tests/feature-flag-rule-store.sql` (subject erasure section).
 

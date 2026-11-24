@@ -3,11 +3,11 @@
 -- matches ruleMutationError (packages/feature-flags/src/rule-store-contract.test.ts
 -- binds each 'shape: <name>' row to the TypeScript table), controller
 -- authorization, compare-and-swap, replay, unset, append-only audits, control
--- widening, subject erasure and the per-flag subject rule cap.
+-- widening, subject erasure, read paging and the subject rule caps.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(113);
+select plan(121);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data) values
   ('5ff00000-0000-4000-8000-000000000001', 'ff-root-creator@example.com', now(), '{}', '{}'),
@@ -132,7 +132,7 @@ select ok(not exists (
          'private.feature_flag_sync_definitions(jsonb,boolean)',
          'private.feature_flag_mutate_rule(uuid,uuid,text,text,text,uuid,text,integer,uuid[],uuid[],bigint,text,text)',
          'private.feature_flag_read_snapshot(text)',
-         'private.feature_flag_read_rules(uuid,text,text)',
+         'private.feature_flag_read_rules(uuid,text,text,integer,text,text,uuid)',
          'private.feature_flag_read_audit(uuid,integer,timestamptz,uuid)',
          'private.feature_flag_read_subject_rules(text,uuid,uuid)',
          'private.feature_flag_erase_subject(text,uuid)'
@@ -145,7 +145,7 @@ select ok((
     'private.feature_flag_sync_definitions(jsonb,boolean)',
     'private.feature_flag_mutate_rule(uuid,uuid,text,text,text,uuid,text,integer,uuid[],uuid[],bigint,text,text)',
     'private.feature_flag_read_snapshot(text)',
-    'private.feature_flag_read_rules(uuid,text,text)',
+    'private.feature_flag_read_rules(uuid,text,text,integer,text,text,uuid)',
     'private.feature_flag_read_audit(uuid,integer,timestamptz,uuid)',
     'private.feature_flag_read_subject_rules(text,uuid,uuid)',
     'private.feature_flag_erase_subject(text,uuid)'
@@ -405,6 +405,17 @@ select is(jsonb_array_length(pg_temp.rpc($q$private.feature_flag_read_subject_ru
   'another workspace and user see no subject rules');
 select is(jsonb_array_length(pg_temp.rpc($q$private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000003',
   'FF_RULE_TEST', 'production')$q$) -> 'rules'), 3, 'a root viewer reads every rule, including the unset one');
+create temp table ff_rules_page as select pg_temp.rpc($q$private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000003',
+  'FF_RULE_TEST', 'production', 2)$q$) as page;
+select ok(jsonb_array_length((select page -> 'rules' from ff_rules_page)) = 2
+  and (select page -> 'nextCursor' ->> 'flagKey' from ff_rules_page) = 'FF_RULE_TEST',
+  'the rules read is bounded by its limit and returns a cursor');
+select is((select jsonb_build_array(jsonb_array_length(next -> 'rules'), next -> 'nextCursor',
+    next -> 'rules' -> 0 ->> 'scope' > (page -> 'rules' -> 1 ->> 'scope'))
+  from ff_rules_page, pg_temp.rpc(format($q$private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000003',
+    'FF_RULE_TEST', 'production', 2, %L, %L, %L::uuid)$q$, page -> 'nextCursor' ->> 'flagKey',
+    page -> 'nextCursor' ->> 'scope', page -> 'nextCursor' ->> 'subjectId')) as next),
+  '[1, null, true]'::jsonb, 'the next rules page starts after the cursor and ends the list');
 select is(pg_temp.rpc($q$private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000004', null, 'production')$q$) ->> 'error',
   'feature_flag_denied', 'a non-root workspace creator cannot read the rules');
 create temp table ff_page as select pg_temp.rpc($q$private.feature_flag_read_audit('5ff00000-0000-4000-8000-000000000002',
@@ -422,6 +433,9 @@ select is(pg_temp.rpc($q$private.feature_flag_read_audit('5ff00000-0000-4000-800
 select set_config('request.jwt.claims', '{"role":"authenticated"}', true);
 select throws_ok($q$select private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000003', null, 'production')$q$,
   '42501', 'feature_flag_denied', 'a definer RPC refuses a non-service request JWT');
+select set_config('request.jwt.claims', '{"sub":"5ff00000-0000-4000-8000-000000000003"}', true);
+select throws_ok($q$select private.feature_flag_read_snapshot('production')$q$,
+  '42501', 'feature_flag_denied', 'a definer RPC refuses request claims without a role');
 select set_config('request.jwt.claims', '', true);
 
 -- Append-only audit and guarded rules ---------------------------------------------------
@@ -494,19 +508,42 @@ select is(pg_temp.rpc($q$private.feature_flag_erase_subject('platform', null)$q$
 select is(coalesce(current_setting('feature_flags.entrypoint', true), ''), '',
   'the erasure entrypoint is cleared once it returns');
 
--- Per-flag cap on live subject rules ------------------------------------------------------
+-- Caps on enabling subject rules ---------------------------------------------------------
 
 select set_config('feature_flags.entrypoint', 'mutate_rule', true);
 insert into private.feature_flag_rules (flag_key, scope, subject_id, environment, mode, revision, updated_by)
-select 'FF_RULE_ADMIN_USER', 'workspace', gen_random_uuid(), 'production', 'on', 1, null
+select 'FF_RULE_TEST', 'workspace', gen_random_uuid(), 'production', 'on', 1, null
 from generate_series(1, 50000);
 select set_config('feature_flags.entrypoint', '', true);
-select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_ADMIN_USER', 'production',
-  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Over the cap', 'admin-ui'),
-  'feature_flag_rule_limit', 'a flag holds at most 50000 live workspace and user rules per environment');
-select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_ADMIN_USER', 'development',
-  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Other environment', 'admin-ui'),
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'production',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 0, 'Over the cap', 'workspace-ui'),
+  'feature_flag_rule_limit', 'a flag holds at most 50000 enabling workspace and user rules per environment');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'production',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'off', null, null, null, 0, 'Workspace kill', 'workspace-ui'),
+  'applied', 'a workspace off rule is allowed at the cap');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000005', gen_random_uuid(), 'FF_RULE_TEST', 'production',
+  'user', '5ff00000-0000-4000-8000-000000000005', 'off', null, null, null, 0, 'Opt out', 'workspace-ui'),
+  'applied', 'a self opt-out is allowed at the cap');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 0, 'Other environment', 'workspace-ui'),
   'applied', 'the cap counts one environment');
+
+select set_config('feature_flags.entrypoint', 'mutate_rule', true);
+insert into private.feature_flag_rules (flag_key, scope, subject_id, environment, mode, revision, updated_by)
+select flag, 'workspace', gen_random_uuid(), 'development', 'on', 1, actor
+from generate_series(1, 200),
+  (values ('FF_RULE_TEST', '5ff00000-0000-4000-8000-000000000004'::uuid),
+    ('FF_RULE_ADMIN_USER', '5ff00000-0000-4000-8000-000000000002'::uuid)) as quota(flag, actor);
+select set_config('feature_flags.entrypoint', '', true);
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 0, 'Over the quota', 'workspace-ui'),
+  'feature_flag_actor_rule_limit', 'a tenant actor holds at most 200 enabling rules per flag and environment');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'off', null, null, null, 0, 'Off at quota', 'workspace-ui'),
+  'applied', 'an off rule is allowed at the actor quota');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_ADMIN_USER', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Root beyond quota', 'admin-ui'),
+  'applied', 'the actor quota does not apply to platform-admin controlled rules');
 
 select * from finish();
 rollback;

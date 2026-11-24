@@ -3,8 +3,9 @@
 -- Clients have no table DML. Service-role definer RPCs are the only writers; a
 -- transaction-local entrypoint setting, cleared before each RPC returns,
 -- rejects direct owner writes. The rule CHECK and the mutate RPC share one
--- shape function, mirroring ruleShapeError in @tuturuuu/feature-flags. Read
--- and erasure RPCs are in 20261125030100_manage_feature_flags_permission.sql.
+-- shape function, mirroring ruleShapeError in @tuturuuu/feature-flags. The
+-- definition sync, read and erasure RPCs are in
+-- 20261125030100_manage_feature_flags_permission.sql.
 -- Rollback: apps/database/rollbacks/20261125030000_feature_flag_rules.rollback.sql
 
 set lock_timeout = '5s';
@@ -319,11 +320,18 @@ create function private.feature_flag_require_service_role()
 returns void language plpgsql stable
 set search_path = pg_catalog, pg_temp
 as $flag$
+declare
+  v_claims jsonb := coalesce(
+    nullif(pg_catalog.current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb
+  );
 begin
+  -- Only a session with no request claims (a direct database caller) is
+  -- implicitly trusted; claims without a role are refused.
   if coalesce(
     nullif(pg_catalog.current_setting('request.jwt.claim.role', true), ''),
-    nullif(pg_catalog.current_setting('request.jwt.claims', true), '')::jsonb ->> 'role',
-    'service_role'
+    v_claims ->> 'role',
+    case when v_claims = '{}'::jsonb then 'service_role' end,
+    ''
   ) <> 'service_role' then
     raise exception 'feature_flag_denied' using errcode = '42501';
   end if;
@@ -331,7 +339,7 @@ end;
 $flag$;
 
 comment on function private.feature_flag_require_service_role() is
-  'Raises when a request JWT names a role other than service_role.';
+  'Raises unless the request JWT role is service_role, or no request claims are set.';
 
 -- tuturuuu: no-grant (internal)
 revoke all on function private.feature_flag_require_service_role()
@@ -355,135 +363,6 @@ $flag$;
 -- tuturuuu: no-grant (internal)
 revoke all on function private.feature_flag_rule_json(text, integer, uuid[], uuid[])
   from public, anon, authenticated, service_role;
-
-create function private.feature_flag_sync_definitions(
-  p_definitions jsonb, p_acknowledge_widening boolean default false
-)
-returns jsonb language plpgsql security definer
-set search_path = pg_catalog, pg_temp
-set lock_timeout = '5s'
-as $flag$
-declare
-  v_item jsonb;
-  v_key text;
-  v_scopes text[];
-  v_error text;
-  v_seen text[] := '{}'::text[];
-  v_changed integer := 0;
-  v_old private.feature_flag_definitions%rowtype;
-  v_old_json jsonb;
-  v_new_json jsonb;
-  v_widened boolean;
-begin
-  perform private.feature_flag_require_service_role();
-  if p_definitions is null
-    or pg_catalog.jsonb_typeof(p_definitions) is distinct from 'array'
-    or pg_catalog.jsonb_array_length(p_definitions) > 500
-  then
-    raise exception 'feature_flag_invalid_definitions' using errcode = '22023';
-  end if;
-
-  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('feature_flag_definitions', 0));
-  perform pg_catalog.set_config('feature_flags.entrypoint', 'sync_definitions', true);
-
-  for v_item in select value from pg_catalog.jsonb_array_elements(p_definitions) loop
-    if pg_catalog.jsonb_typeof(v_item) is distinct from 'object' then
-      raise exception 'feature_flag_invalid_definitions' using errcode = '22023';
-    end if;
-    if exists (
-        select 1 from pg_catalog.jsonb_object_keys(v_item) as field
-        where field not in ('key', 'kind', 'scopes', 'controllers', 'delegate')
-      )
-      or pg_catalog.jsonb_typeof(v_item -> 'key') is distinct from 'string'
-      or pg_catalog.jsonb_typeof(v_item -> 'kind') is distinct from 'string'
-      or pg_catalog.jsonb_typeof(v_item -> 'scopes') is distinct from 'array'
-      or coalesce(pg_catalog.jsonb_typeof(v_item -> 'delegate'), 'null')
-        not in ('null', 'string')
-    then
-      raise exception 'feature_flag_invalid_definitions' using errcode = '22023';
-    end if;
-    if exists (
-      select 1 from pg_catalog.jsonb_array_elements(v_item -> 'scopes') as scope
-      where pg_catalog.jsonb_typeof(scope) is distinct from 'string'
-    ) then
-      raise exception 'feature_flag_invalid_definitions' using errcode = '22023';
-    end if;
-
-    v_key := v_item ->> 'key';
-    v_scopes := array(select pg_catalog.jsonb_array_elements_text(v_item -> 'scopes'));
-    v_error := private.feature_flag_definition_error(
-      v_key, v_item ->> 'kind', v_scopes, v_item -> 'controllers', v_item ->> 'delegate'
-    );
-    if v_error is not null then
-      raise exception '%', v_error using errcode = '22023', detail = v_key;
-    end if;
-    if v_key = any (v_seen) then
-      raise exception 'feature_flag_duplicate_definition'
-        using errcode = '22023', detail = v_key;
-    end if;
-    v_seen := v_seen || v_key;
-
-    v_new_json := pg_catalog.jsonb_build_object('kind', v_item ->> 'kind',
-      'scopes', pg_catalog.to_jsonb(v_scopes), 'controllers', v_item -> 'controllers',
-      'delegate', pg_catalog.to_jsonb(v_item ->> 'delegate'));
-    select * into v_old from private.feature_flag_definitions where flag_key = v_key for update;
-    v_old_json := case when found then pg_catalog.jsonb_build_object('kind', v_old.kind,
-      'scopes', pg_catalog.to_jsonb(v_old.scopes), 'controllers', v_old.controllers,
-      'delegate', pg_catalog.to_jsonb(v_old.delegate)) end;
-    continue when v_old_json is not distinct from v_new_json;
-
-    if exists (
-      select 1 from private.feature_flag_rules
-      where flag_key = v_key and mode is not null and not (scope = any (v_scopes))
-    ) then
-      raise exception 'feature_flag_definition_orphans_rules'
-        using errcode = '23503', detail = v_key;
-    end if;
-    -- Handing a scope with live rules from platform admins to workspace admins
-    -- or to users, or newly delegating it, needs an explicit acknowledgement.
-    v_widened := v_old_json is not null and exists (
-      select 1 from private.feature_flag_rules as r
-      where r.flag_key = v_key and r.mode is not null and r.scope <> 'platform'
-        and (
-          (v_old.controllers ->> r.scope = 'platform-admin'
-            and v_item -> 'controllers' ->> r.scope in ('workspace-admin', 'self'))
-          or (r.scope = 'workspace' and v_old.delegate is null
-            and v_item ->> 'delegate' = 'workspace')
-        )
-    );
-    if v_widened and p_acknowledge_widening is not true then
-      raise exception 'feature_flag_definition_widens_control'
-        using errcode = '42501', detail = v_key;
-    end if;
-
-    if v_old_json is null then
-      insert into private.feature_flag_definitions (flag_key, kind, scopes, controllers, delegate)
-      values (v_key, v_item ->> 'kind', v_scopes, v_item -> 'controllers', v_item ->> 'delegate');
-    else
-      update private.feature_flag_definitions
-        set kind = v_item ->> 'kind', scopes = v_scopes, controllers = v_item -> 'controllers',
-            delegate = v_item ->> 'delegate', updated_at = pg_catalog.clock_timestamp()
-      where flag_key = v_key;
-    end if;
-    insert into private.feature_flag_definition_audit (
-      flag_key, old_definition, new_definition, acknowledged_widening
-    ) values (v_key, v_old_json, v_new_json, v_widened);
-    v_changed := v_changed + 1;
-  end loop;
-  perform pg_catalog.set_config('feature_flags.entrypoint', '', true);
-
-  return pg_catalog.jsonb_build_object('status', 'synced',
-    'definitions', pg_catalog.cardinality(v_seen), 'changed', v_changed);
-end;
-$flag$;
-
-comment on function private.feature_flag_sync_definitions(jsonb, boolean) is
-  'Upserts runtime flag definitions from deployed code and audits each change. Refuses malformed or duplicate entries, a scope removal that would orphan a live rule, and an unacknowledged control widening over live rules.';
-
-revoke all on function private.feature_flag_sync_definitions(jsonb, boolean)
-  from public, anon, authenticated;
-grant execute on function private.feature_flag_sync_definitions(jsonb, boolean)
-  to service_role;
 
 create function private.feature_flag_mutate_rule(
   p_actor uuid, p_operation_id uuid, p_flag_key text, p_environment text,
@@ -509,6 +388,10 @@ declare
   v_rows integer;
 begin
   perform private.feature_flag_require_service_role();
+  -- Serializes every write with private.feature_flag_erase_subject, which
+  -- holds this key exclusively, so an erasure never races an allow-list write.
+  perform pg_catalog.pg_advisory_xact_lock_shared(
+    pg_catalog.hashtextextended('feature_flag_erasure', 0));
   if p_actor is null then
     raise exception 'feature_flag_denied' using errcode = '42501';
   end if;
@@ -617,17 +500,29 @@ begin
     );
   end if;
 
-  -- At most 50000 live workspace and user rules per flag and environment.
-  if p_scope <> 'platform' and v_old is null and v_new is not null then
+  -- Caps on workspace and user rules that can enable a flag, per flag and
+  -- environment: 50000 in all and, for a tenant controller, 200 last written by
+  -- one actor. An off rule only narrows and is never capped, so opt-outs and
+  -- workspace kills keep working while a cap is full.
+  if p_scope <> 'platform' and p_mode <> 'off'
+    and (v_rule.mode is null or v_rule.mode = 'off')
+  then
     perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
       pg_catalog.concat_ws(':', 'feature_flag_rule_cap', p_flag_key, p_environment), 0
     ));
     if (
       select pg_catalog.count(*) from private.feature_flag_rules
       where flag_key = p_flag_key and environment = p_environment
-        and scope <> 'platform' and mode is not null
+        and scope <> 'platform' and mode <> 'off'
     ) >= 50000 then
       raise exception 'feature_flag_rule_limit' using errcode = '54000';
+    end if;
+    if v_controller <> 'platform-admin' and (
+      select pg_catalog.count(*) from private.feature_flag_rules
+      where flag_key = p_flag_key and environment = p_environment
+        and scope <> 'platform' and mode <> 'off' and updated_by = p_actor
+    ) >= 200 then
+      raise exception 'feature_flag_actor_rule_limit' using errcode = '54000';
     end if;
   end if;
 
