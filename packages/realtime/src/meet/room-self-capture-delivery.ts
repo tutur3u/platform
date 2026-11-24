@@ -155,8 +155,7 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
   if (!binding || !capture || due === undefined || due > input.now) return;
   if (!input.secret || !input.roomName) return;
   const day = Math.floor(input.now / DAY_MS);
-  const sent =
-    capture.deliveryDay?.day === day ? capture.deliveryDay.count : 0;
+  const sent = capture.deliveryDay?.day === day ? capture.deliveryDay.count : 0;
   if (sent >= SELF_OUTBOX_DAILY_DELIVERIES) return;
   const delivery = capture.delivery ?? restartDelivery(undefined, input.now);
   await input.commit({

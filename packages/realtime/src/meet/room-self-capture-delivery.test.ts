@@ -10,6 +10,7 @@ import type { RoomServiceState } from './room-service';
 import { releaseParticipant } from './index';
 import {
   revokeSelfCapture,
+  SELF_CAPTURE_DEADLINE_MS,
   settleSelfCapture,
 } from './room-self-capture-state';
 import {
@@ -164,7 +165,12 @@ describe('per-speaker outbox alarm delivery', () => {
         ...exhausted,
         selfCapture: {
           ...exhausted.selfCapture!,
-          session: { ...exhausted.selfCapture!.session!, status: 'active' },
+          // A session still inside its capture deadline at `later`.
+          session: {
+            ...exhausted.selfCapture!.session!,
+            status: 'active',
+            captureUntil: later + SELF_CAPTURE_DEADLINE_MS,
+          },
         },
       },
       alice,
@@ -275,7 +281,9 @@ describe('outbox delivery bounds', () => {
       expect(h.fetch).toHaveBeenCalledTimes(1);
       expect(error).toHaveBeenCalledTimes(1);
       expect(
-        selfOutboxDeadline(h.read(), { MEET_AI_SELF_OUTBOX: { fetch: h.fetch } })
+        selfOutboxDeadline(h.read(), {
+          MEET_AI_SELF_OUTBOX: { fetch: h.fetch },
+        })
       ).toBeUndefined();
     } finally {
       error.mockRestore();

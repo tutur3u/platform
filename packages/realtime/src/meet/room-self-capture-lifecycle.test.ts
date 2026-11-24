@@ -71,13 +71,15 @@ describe('the room-side capture deadline', () => {
   it('ends the session three hours after it started', () => {
     const state = open(selfRoom(), alice, streamA);
     const late = T + SELF_CAPTURE_DEADLINE_MS;
-    expect(authorize(state, alice, streamA, 1, false, late - 1).body.allowed).toBe(
-      true
+    expect(
+      authorize(state, alice, streamA, 1, false, late - 1).body.allowed
+    ).toBe(true);
+    expect(authorize(state, alice, streamA, 1, false, late).body).toMatchObject(
+      {
+        allowed: false,
+        reason: 'no_session',
+      }
     );
-    expect(authorize(state, alice, streamA, 1, false, late).body).toMatchObject({
-      allowed: false,
-      reason: 'no_session',
-    });
     expect(begin(state, alice, late).body).toMatchObject({
       allowed: false,
       reason: 'no_session',

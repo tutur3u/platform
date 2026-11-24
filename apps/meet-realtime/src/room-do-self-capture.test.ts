@@ -28,6 +28,15 @@ import { MeetRoomDurableObject, type MeetRoomEnv } from './room-do';
 import type { RoomServiceState } from './room-service';
 
 Object.assign(globalThis, { WebSocketRequestResponsePair: class {} });
+
+/**
+ * A per-speaker room with Alice's stream committed, seeded at the real clock
+ * the Durable Object reads, so the session is inside its capture deadline.
+ */
+function liveRoom() {
+  const now = Date.now();
+  return open(selfRoom(now), alice, streamA, 1, now);
+}
 const secret = 'self-outbox-test-secret';
 
 function fixture(seed: RoomServiceState, env: Partial<MeetRoomEnv> = {}) {
@@ -78,7 +87,7 @@ function fixture(seed: RoomServiceState, env: Partial<MeetRoomEnv> = {}) {
 }
 
 test('a leave reaches the stored outbox without arming delivery when unbound', async () => {
-  const f = fixture(open(selfRoom(), alice, streamA));
+  const f = fixture(liveRoom());
   const leaving = f.sockets[1]!;
   leaving.readyState = WebSocket.CLOSED;
   await f.room.webSocketClose(leaving as unknown as WebSocket, 1000);
@@ -99,7 +108,7 @@ test('the bound alarm delivers the outbox once due and drops acknowledged entrie
     };
     return Response.json({ acked: body.entries });
   };
-  const f = fixture(open(selfRoom(), alice, streamA), {
+  const f = fixture(liveRoom(), {
     MEET_AI_SELF_OUTBOX: { fetch },
   } as Partial<MeetRoomEnv>);
   const leaving = f.sockets[1]!;
@@ -145,7 +154,7 @@ const serviceCall = (room: MeetRoomDurableObject, id: string, body: object) =>
   );
 
 test('hibernation keeps the outbox and the room sequence counter', async () => {
-  const f = fixture(open(selfRoom(), alice, streamA));
+  const f = fixture(liveRoom());
   const leaving = f.sockets[1]!;
   leaving.readyState = WebSocket.CLOSED;
   await f.room.webSocketClose(leaving as unknown as WebSocket, 1000);
@@ -174,7 +183,7 @@ test('hibernation keeps the outbox and the room sequence counter', async () => {
 
 test('room.restore keeps undrained entries, epochs and sequences', async () => {
   const T = 1_000_000;
-  let seed = open(selfRoom(), alice, streamA);
+  let seed = liveRoom();
   seed = endMeetRoom(
     {
       ...seed,
@@ -221,7 +230,7 @@ const outboxFetch = {
 };
 
 test('a new ending restarts an exhausted delivery cycle', async () => {
-  const seed = open(selfRoom(), alice, streamA);
+  const seed = liveRoom();
   const stale: SelfOutboxEntry = {
     sessionId: otherSession,
     accountId: host,
@@ -251,7 +260,7 @@ test('a new ending restarts an exhausted delivery cycle', async () => {
 });
 
 test('the room refuses a second live session and never restarts an ended one', async () => {
-  const f = fixture(open(selfRoom(), alice, streamA));
+  const f = fixture(liveRoom());
   const start = (id: string) => ({
     action: 'transcript.session',
     sessionId: id,
@@ -266,7 +275,7 @@ test('the room refuses a second live session and never restarts an ended one', a
     'MEET_SELF_SESSION_LIVE'
   );
 
-  const seed = open(selfRoom(), alice, streamA);
+  const seed = liveRoom();
   seed.selfCapture = {
     ...seed.selfCapture!,
     session: { ...seed.selfCapture!.session!, status: 'ended' },
@@ -298,7 +307,7 @@ test('the room refuses a second live session and never restarts an ended one', a
 });
 
 test('a full outbox refuses new opens and keeps every entry', async () => {
-  const seed = open(selfRoom(), alice, streamA);
+  const seed = liveRoom();
   seed.selfCapture = {
     ...seed.selfCapture!,
     outbox: Array.from({ length: SELF_OUTBOX_MAX_ENTRIES }, (_, i) => ({
@@ -325,7 +334,7 @@ test('a full outbox refuses new opens and keeps every entry', async () => {
 });
 
 test('a refused command still stores the endings it settled', async () => {
-  const seed = open(selfRoom(), alice, streamA);
+  const seed = liveRoom();
   // An untick the fence has not settled yet.
   const choices = seed.transcriptConsent!.choices;
   seed.transcriptConsent = {
@@ -352,10 +361,18 @@ test('an Allow given in room mode needs per-speaker evidence before an open', as
   for (const id of [host, alice]) seed = miraOn(seed, id, at);
   const f = fixture(seed);
   // Room capture: the Allow carries no per-speaker evidence.
-  assert.equal((await serviceCall(f.room, alice, transcriptChoice('allow'))).status, 200);
+  assert.equal(
+    (await serviceCall(f.room, alice, transcriptChoice('allow'))).status,
+    200
+  );
   assert.equal(f.snapshot().selfCapture?.allowNotices, undefined);
   assert.equal(
-    (await serviceCall(f.room, host, { action: 'transcript.mode.set', mode: 'self' })).status,
+    (
+      await serviceCall(f.room, host, {
+        action: 'transcript.mode.set',
+        mode: 'self',
+      })
+    ).status,
     200
   );
   const started = await serviceCall(f.room, host, {
@@ -376,7 +393,10 @@ test('an Allow given in room mode needs per-speaker evidence before an open', as
     { allowed: false, reason: 'notice_required' }
   );
   // Re-sending the Allow with evidence recovers.
-  assert.equal((await serviceCall(f.room, alice, transcriptChoice('allow'))).status, 200);
+  assert.equal(
+    (await serviceCall(f.room, alice, transcriptChoice('allow'))).status,
+    200
+  );
   const opened = (await (await serviceCall(f.room, alice, open)).json()) as {
     allowed: boolean;
     locale: string;
