@@ -81,7 +81,7 @@ window.__layout = async (spec) => {
     }
     if (c.main) {
       mainY = y;
-      result.card = { x: c.x, y, width: c.w, height: h, imageTop: y + stripH, imageHeight: h - stripH };
+      result.card = { x: c.x, y, width: c.w, height: h, imageTop: y + stripH, imageHeight: (h - stripH) / (c.crop || 1) };
     }
   }
 
