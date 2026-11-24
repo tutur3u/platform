@@ -260,6 +260,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'workspace-secrets_0',
+    app: 'workspace-secrets',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'meet-realtime_0',
     app: 'meet-realtime',
     category: 'internal',

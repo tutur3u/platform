@@ -1785,7 +1785,8 @@
       "teach": "Teach",
       "tools": "Tools",
       "track": "Track",
-      "vault-witness": "Vault Witness"
+      "vault-witness": "Vault Witness",
+      "workspace-secrets": "Workspace secrets"
     },
     "categories": {
       "ai": "AI and knowledge",
@@ -1956,7 +1957,8 @@
       "voiceAssistant": "Voice assistant",
       "workforce": "Workforce administration",
       "workspace-domains_0": "Workspace custom domains edge",
-      "workspaces": "Workspaces created per account"
+      "workspaces": "Workspaces created per account",
+      "workspace-secrets_0": "Encrypted workspace secrets service"
     },
     "included": "Included",
     "internal": "Show platform services",
