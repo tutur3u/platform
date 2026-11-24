@@ -74,6 +74,15 @@ export const reportProblemSchema = z.object({
     }),
 });
 
+export interface FeedbackReceipt {
+  id: string;
+  product: Product;
+  type: SupportType;
+  subject: string;
+  mediaCount: number;
+  submittedAt: string;
+}
+
 export interface ReportProblemDialogProps {
   ImageComponent?: React.ComponentType<{
     src: string;
@@ -86,6 +95,30 @@ export interface ReportProblemDialogProps {
     key:
       | 'affected-product-required'
       | 'cancel'
+      | 'feedback-dialog-back'
+      | 'feedback-dialog-characters'
+      | 'feedback-dialog-close'
+      | 'feedback-dialog-group'
+      | 'feedback-dialog-history'
+      | 'feedback-dialog-history-description'
+      | 'feedback-dialog-history-empty'
+      | 'feedback-dialog-no-results'
+      | 'feedback-dialog-receipt-id'
+      | 'feedback-dialog-receipt-media'
+      | 'feedback-dialog-remove-media'
+      | 'feedback-dialog-search'
+      | 'feedback-dialog-send'
+      | 'feedback-dialog-send-description'
+      | 'feedback-dialog-submit-failed'
+      | 'feedback-dialog-support-type'
+      | 'feedback-dialog-support-type-placeholder'
+      | 'feedback-dialog-title'
+      | 'feedback-dialog-type-bug'
+      | 'feedback-dialog-type-feature-request'
+      | 'feedback-dialog-upload-compressing'
+      | 'feedback-dialog-upload-cta'
+      | 'feedback-dialog-upload-drop'
+      | 'feedback-dialog-upload-hint'
       | 'media-alt'
       | 'media-optional'
       | 'report-problem'
@@ -99,6 +132,10 @@ export interface ReportProblemDialogProps {
     values?: Record<string, string | number>
   ) => string;
   apiOptions?: InternalApiClientOptions;
+  /** Called with the receipt of each report the backend accepted. */
+  onSubmitted?: (receipt: FeedbackReceipt) => void;
+  /** Close the dialog after a submission. Defaults to true. */
+  closeOnSubmit?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   products?: Array<{ value: Product; label: string }>;

@@ -22,6 +22,8 @@ export function useReportProblem({
   onOpenChange,
   t,
   apiOptions,
+  onSubmitted,
+  closeOnSubmit = true,
 }: ReportProblemDialogProps) {
   const suggestionId = useId();
   const mediaUploadId = useId();
@@ -405,7 +407,7 @@ export function useReportProblem({
           ?.label || validatedForm.product
       }`;
 
-      await submitReportMutation.mutateAsync({
+      const result = await submitReportMutation.mutateAsync({
         product: validatedForm.product,
         type: validatedForm.type,
         suggestion: validatedForm.suggestion,
@@ -413,13 +415,40 @@ export function useReportProblem({
         media: validatedForm.media,
       });
       toast.success(t('report-submitted-success'));
+      onSubmitted?.({
+        id: result.reportId,
+        product: validatedForm.product,
+        type: validatedForm.type,
+        subject,
+        mediaCount: validatedForm.media.length,
+        submittedAt: new Date().toISOString(),
+      });
 
-      // Close dialog (which will also trigger cleanup)
-      handleOpenChange(false);
+      if (closeOnSubmit) {
+        // Close dialog (which will also trigger cleanup)
+        handleOpenChange(false);
+      } else {
+        resetForm();
+      }
     } catch (error) {
       console.error('Failed to submit report:', error);
-      toast.error('Failed to submit report. Please try again.');
+      toast.error(t('feedback-dialog-submit-failed'));
     }
+  };
+
+  const resetForm = () => {
+    // Revoke all object URLs to free memory
+    mediaPreviewsRef.current.forEach((url) => {
+      URL.revokeObjectURL(url);
+    });
+
+    // Clear all form state
+    setFormData({ product: '', type: '', suggestion: '', media: [] });
+    setMediaPreviews([]);
+    mediaPreviewsRef.current = [];
+    setValidationErrors({});
+    setIsDragOver(false);
+    setIsCompressing(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -435,18 +464,7 @@ export function useReportProblem({
 
     // Clean up and reset everything when dialog closes
     if (!newOpen) {
-      // Revoke all object URLs to free memory
-      mediaPreviews.forEach((url) => {
-        URL.revokeObjectURL(url);
-      });
-
-      // Clear all form state
-      setFormData({ product: '', type: '', suggestion: '', media: [] });
-      setMediaPreviews([]);
-      mediaPreviewsRef.current = [];
-      setValidationErrors({});
-      setIsDragOver(false);
-      setIsCompressing(false);
+      resetForm();
 
       // Clear localStorage
       localStorage.removeItem(LOCAL_STORAGE_KEY);
