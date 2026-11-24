@@ -468,6 +468,32 @@ describe('two-phase on', () => {
     });
   });
 
+  it.each([
+    ['records it and answers 200', undefined, 200],
+    ['answers 503 when its evidence fails', new Error('db'), 503],
+  ])(
+    'treats an old room on without a pending id as effective: %s',
+    async (_label, failure, status) => {
+      f.room.mockImplementation(
+        async (access, command: { action: string; choice?: string }) =>
+          command.action === 'mira.room.choice' && command.choice === 'on'
+            ? { ...read, choice: 'on' }
+            : roomDefault(access, command)
+      );
+      if (failure) f.record.mockRejectedValue(failure);
+      const outcome = await post(choice()).then(
+        (response) => response.status,
+        (error: { status: number }) => error.status
+      );
+      expect(outcome).toBe(status);
+      expect(f.record).toHaveBeenCalledWith(
+        expect.objectContaining({ choice: 'on' })
+      );
+      expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('pendingId');
+      expect(confirmCalls()).toHaveLength(0);
+    }
+  );
+
   it('treats a null pending id as already on: no evidence, no confirm', async () => {
     f.room.mockImplementation(
       async (access, command: { action: string; choice?: string }) =>
@@ -539,7 +565,6 @@ describe('two-phase on', () => {
   });
 
   it.each([
-    ['no pending id', { view: read }],
     ['a malformed pending id', { pendingId: 'not-a-uuid' }],
     ['an unparseable 2xx body', new SyntaxError('Unexpected token')],
     ['a lost answer', Object.assign(new Error('fetch failed'), {})],

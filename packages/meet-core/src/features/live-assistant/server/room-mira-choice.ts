@@ -159,14 +159,35 @@ async function recordOn(
   // Already on under the same acceptance and notice: nothing was staged, and
   // the evidence for that on was recorded when it was confirmed.
   if (reply?.pendingId === null) return;
+  // A room without the pending fence (deployed before it) applied the on at
+  // once: record its evidence as before. The server can therefore deploy
+  // before or with the room, never after it.
+  if (reply?.pendingId === undefined) {
+    await keepAlive(recordEffectiveOn(access, input, requireNoticeMode));
+    return;
+  }
   const pendingId =
-    typeof reply?.pendingId === 'string' && PENDING_ID.test(reply.pendingId)
+    typeof reply.pendingId === 'string' && PENDING_ID.test(reply.pendingId)
       ? reply.pendingId
       : undefined;
-  // A room without the pending fence cannot guarantee the on; refuse it.
   if (!pendingId) throw notSaved();
   // The evidence and confirm finish even if the client disconnects.
   await keepAlive(confirmWithEvidence(access, input, requireNoticeMode, pendingId));
+}
+
+async function recordEffectiveOn(
+  access: MeetCallRouteAccess,
+  input: RoomMiraChoiceInput,
+  requireNoticeMode: boolean
+) {
+  try {
+    await recordWithRetry(evidenceOf(access, input, requireNoticeMode));
+  } catch (error) {
+    console.error('Room Mira choice evidence failed', {
+      name: error instanceof Error ? error.name : 'unknown',
+    });
+    throw notSaved();
+  }
 }
 
 async function confirmWithEvidence(
