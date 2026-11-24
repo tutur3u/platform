@@ -143,6 +143,10 @@ select is(pg_temp.dec(89623, 89602, 'withdraw', 2), '1/false', 'a withdraw after
 select ok(not private.meet_ai_self_v1_close_stream(pg_temp.sess(89623), pg_temp.cid(89602), 3),
   'a close after the purge is a no-op');
 select is(pg_temp.rows_for(89623, 89602), '1/0', 'nothing returns after the purge');
+select ok(private.meet_ai_self_v1_capturing((select s from public.meet_ai_sessions s
+    where s.id = pg_temp.sess(89621))), 'a live session captures');
+select ok(not private.meet_ai_self_v1_capturing((select s from public.meet_ai_sessions s
+    where s.id = pg_temp.sess(89623))), 'a purged session that is still active no longer captures');
 
 insert into private.meet_ai_erasure_jobs(operation_id, scope, session_id, requested_by, fence_generation,
   expires_at) values (gen_random_uuid(), 'session', pg_temp.sess(89624), 'workspace_admin', 1,
@@ -158,10 +162,12 @@ insert into private.meet_ai_erasure_jobs(id, operation_id, scope, session_id, su
   subject_digest, requested_by, fence_generation, status, completed_at, expires_at)
   values (pg_temp.cid(89641), gen_random_uuid(), 'person_session', pg_temp.sess(89621), pg_temp.cid(89607),
     sha256('f'::bytea), 'subject', 1, 'completed', now(), now() + interval '30 days');
-select is(pg_temp.dec(89621, 89607, 'withdraw', 2), '1/false',
-  'a withdraw after that person''s erasure completed is a no-op');
-select ok(not private.meet_ai_self_v1_close_stream(pg_temp.sess(89621), pg_temp.cid(89607), 3),
-  'a close after that person''s erasure completed is a no-op');
+select is(pg_temp.dec(89621, 89607, 'withdraw', 2), '2/true',
+  'a withdraw after that person''s erasure completed is still recorded');
+select ok(private.meet_ai_self_v1_close_stream(pg_temp.sess(89621), pg_temp.cid(89607), 3),
+  'a close after that person''s erasure completed is still recorded');
+select is(pg_temp.dec(89621, 89607, 'allow', 4), '2/false',
+  'an allow after that person''s erasure completed is a no-op');
 select is(pg_temp.dec(89621, 89603, 'withdraw', 2), '2/true', 'another account in that session still records');
 
 select is((select r.revision::text || '/' || r.recorded from private.meet_ai_self_v1_record_decision(

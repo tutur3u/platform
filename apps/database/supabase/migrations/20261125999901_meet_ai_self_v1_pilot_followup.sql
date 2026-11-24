@@ -68,22 +68,40 @@ $$;
 revoke all on function private.meet_ai_self_v1_account_gone(uuid) from public, anon, authenticated;
 grant execute on function private.meet_ai_self_v1_account_gone(uuid) to service_role;
 
--- A session closed out for one account: capture deleted, transcript purged,
--- any session erasure job, or a completed person erasure of that account.
+-- A session closed out for one account: capture deleted, transcript purged or
+-- any session erasure job, for every write; and, only for a write that opens
+-- or re-links capture (p_opening, an allow), a completed person erasure of that
+-- account. A withdraw, deny, close or revoke after a completed person erasure
+-- is still recorded: it is the only way to stop a stream that is still live
+-- once the upload fence lifts.
 create function private.meet_ai_self_v1_closed_out(
-  p_session public.meet_ai_sessions, p_account_id uuid
+  p_session public.meet_ai_sessions, p_account_id uuid, p_opening boolean
 ) returns boolean language sql stable set search_path = pg_catalog, pg_temp
 as $$
   select p_session.capture_state = 'deleted' or p_session.transcript_purged_at is not null
     or exists (select 1 from private.meet_ai_erasure_jobs j
       where j.session_id = p_session.id
         and (j.scope = 'session'
-          or (j.subject_account_id = p_account_id and j.status = 'completed')));
+          or (p_opening and j.subject_account_id = p_account_id and j.status = 'completed')));
 $$;
-revoke all on function private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid)
+revoke all on function private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid, boolean)
   from public, anon, authenticated;
-grant execute on function private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid)
+grant execute on function private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid, boolean)
   to service_role;
+
+-- A purged transcript ends capture: a session that is still active but whose
+-- transcript was purged opens no stream, reserves no chunk and dispatches none
+-- (the purge deletes the room entries that enforce a revoke).
+create or replace function private.meet_ai_self_v1_capturing(p_session public.meet_ai_sessions)
+returns boolean language sql stable
+set search_path = pg_catalog, pg_temp
+as $$
+  select p_session.user_id is not null and p_session.billing_host_id is not null
+    and p_session.transcript_purged_at is null
+    and p_session.capture_deadline_at > now()
+    and (p_session.capture_state = 'active'
+      or (p_session.capture_state = 'draining' and p_session.drain_deadline_at > now()));
+$$;
 
 -- Consent rows: room_seq only on self_v1 account decisions, ordered against
 -- the shared watermark; every self_v1 account `allow` carries a room_seq and
@@ -107,7 +125,7 @@ begin
     return new;
   end if;
   if private.meet_ai_self_v1_account_gone(new.user_id)
-     or private.meet_ai_self_v1_closed_out(s, new.user_id) then
+     or private.meet_ai_self_v1_closed_out(s, new.user_id, new.decision = 'allow') then
     return null;
   end if;
   if new.decision = 'allow' then
@@ -250,7 +268,8 @@ begin
   if s.protocol <> 'self_v1' then
     raise exception 'Self-capture session not found' using errcode = 'P0002';
   end if;
-  if gone or private.meet_ai_self_v1_closed_out(s, p_account_id)
+  gone := gone or private.meet_ai_self_v1_account_gone(p_account_id);
+  if gone or private.meet_ai_self_v1_closed_out(s, p_account_id, p_decision = 'allow')
      or private.meet_ai_self_v1_room_seq_state(p_session_id, p_account_id, p_room_seq,
       p_decision) = 'duplicate' then
     return query select st.revision, false
@@ -334,7 +353,8 @@ begin
   if s.protocol <> 'self_v1' then
     raise exception 'Self-capture session not found' using errcode = 'P0002';
   end if;
-  if gone or private.meet_ai_self_v1_closed_out(s, p_account_id) then
+  gone := gone or private.meet_ai_self_v1_account_gone(p_account_id);
+  if gone or private.meet_ai_self_v1_closed_out(s, p_account_id, false) then
     return false;
   end if;
   if p_kind = 'revoke' then

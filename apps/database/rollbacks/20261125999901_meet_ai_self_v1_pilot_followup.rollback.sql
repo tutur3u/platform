@@ -225,7 +225,17 @@ revoke all on function private.meet_ai_self_v1_end_upload(uuid, uuid, bigint, te
 grant execute on function private.meet_ai_self_v1_end_upload(uuid, uuid, bigint, text)
   to service_role;
 
-drop function if exists private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid);
+create or replace function private.meet_ai_self_v1_capturing(p_session public.meet_ai_sessions)
+returns boolean language sql stable
+set search_path = pg_catalog, pg_temp
+as $$
+  select p_session.user_id is not null and p_session.billing_host_id is not null
+    and p_session.capture_deadline_at > now()
+    and (p_session.capture_state = 'active'
+      or (p_session.capture_state = 'draining' and p_session.drain_deadline_at > now()));
+$$;
+
+drop function if exists private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid, boolean);
 
 alter table private.meet_mira_participant_choices
   drop constraint meet_mira_participant_choices_source_check,
