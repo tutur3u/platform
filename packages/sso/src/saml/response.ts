@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   assuranceSchema,
   identitySchema,
@@ -21,6 +22,8 @@ export async function createLoginResponse(
     request: unknown;
     identity: unknown;
     assurance: unknown;
+    /** A finalized expiry, at most 120 seconds after now; defaults to now + 120 s. */
+    notOnOrAfter?: unknown;
   },
   dependencies: ProtocolDependencies
 ) {
@@ -62,7 +65,15 @@ export async function createLoginResponse(
     'ID_COLLISION'
   );
   const instant = now.toISOString();
-  const expires = new Date(now.getTime() + 120_000).toISOString();
+  const expires =
+    input.notOnOrAfter === undefined
+      ? new Date(now.getTime() + 120_000).toISOString()
+      : z.iso.datetime().parse(input.notOnOrAfter);
+  const expiresAt = Date.parse(expires);
+  requireProtocol(
+    expiresAt > now.getTime() && expiresAt <= now.getTime() + 120_000,
+    'EXPIRY'
+  );
   const assertion = newDocument(SAML.assertion, 'saml:Assertion');
   const a = documentRoot(assertion);
   a.setAttribute('ID', assertionId);

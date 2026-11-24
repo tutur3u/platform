@@ -281,3 +281,30 @@ describe('real signed IdP response to independent Node-SAML SP', () => {
 });
 
 import assert from 'node:assert/strict';
+
+describe('caller-bound NotOnOrAfter', () => {
+  it('uses a finalized expiry inside the 120-second window', async () => {
+    const notOnOrAfter = new Date(f.now.getTime() + 60_000).toISOString();
+    const result = await f.response({ notOnOrAfter });
+    expect(result.expiresAt).toBe(notOnOrAfter);
+    const profile = await (await serviceProvider(f)).accept(result.xml);
+    expect(profile.nameID).toBe(f.identity.pairwiseSubject);
+    expect(result.xml).toContain(`NotOnOrAfter="${notOnOrAfter}"`);
+  });
+
+  it.each([
+    ['in the past', -1],
+    ['at now', 0],
+    ['beyond 120 seconds', 120_001],
+  ])('refuses an expiry %s', async (_label, offset) => {
+    await expect(
+      f.response({
+        notOnOrAfter: new Date(f.now.getTime() + offset).toISOString(),
+      })
+    ).rejects.toThrow('SAML_EXPIRY');
+  });
+
+  it('refuses a malformed expiry', async () => {
+    await expect(f.response({ notOnOrAfter: 'tomorrow' })).rejects.toThrow();
+  });
+});

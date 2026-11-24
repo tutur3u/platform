@@ -1,7 +1,7 @@
 ---
 title: "Outbound SSO to Claude"
 description: "SAML identity-provider architecture, pilot decisions, and delivery boundaries"
-updatedAt: "2026-10-23"
+updatedAt: "2026-11-24"
 audience: users
 ---
 
@@ -46,8 +46,9 @@ stale requests, unsupported NameID/authentication contexts, passive interactions
 duplicate IDs/parameters, DTDs and oversized compressed/expanded XML. Unsigned
 requests require an explicitly unsigned profile and do not authenticate the SP.
 
-Assertions expire after two minutes and bind Audience, Recipient, Destination
-and InResponseTo. The only supported NameID format is persistent; the connection's
+Assertions expire after two minutes, or earlier at a finalized `notOnOrAfter`
+the caller supplies (never later than two minutes), and bind Audience,
+Recipient, Destination and InResponseTo. The only supported NameID format is persistent; the connection's
 actual requirements must be confirmed before enabling it. For both request
 bindings, NameIDPolicy or AllowCreate omission means false, including signed
 requests. Only explicit true/1 permits the future caller to allocate a subject;
