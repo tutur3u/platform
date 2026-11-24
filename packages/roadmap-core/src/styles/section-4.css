@@ -285,6 +285,21 @@
   border-radius: var(--rm-radius);
   background: var(--rm-panel);
 }
+/* Filter groups wrap inside the panel: a long label set (VI) would otherwise
+   widen the panel past a 390px screen. Buttons keep their label width, so a
+   row breaks instead of squeezing labels into each other. */
+.ws-explore .segmented {
+  flex-wrap: wrap;
+  max-inline-size: 100%;
+}
+.ws-explore .segmented button {
+  flex: 1 1 auto;
+}
+@media (max-width: 479px) {
+  .ws-explore .segmented {
+    border-radius: 18px;
+  }
+}
 .ws-explore h3 {
   margin: 0;
   font-size: 15px;

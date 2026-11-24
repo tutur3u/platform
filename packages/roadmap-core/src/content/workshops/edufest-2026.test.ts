@@ -258,6 +258,16 @@ describe('EduFest workshop: learn, demos and practical information', () => {
       assert.match(cssRule(css, selector) ?? '', /min-height: 24px;/, selector);
   });
 
+  it('catalog filter groups wrap so a 390px screen never clips the panel', () => {
+    const rule = cssRule(readStyles(), '.ws-explore .segmented') ?? '';
+    assert.match(rule, /flex-wrap: wrap;/);
+    assert.match(rule, /max-inline-size: 100%;/);
+    // A zero flex-basis (the narrow-screen .filters rule) never wraps: the
+    // labels squeeze into each other instead.
+    const button = cssRule(readStyles(), '.ws-explore .segmented button') ?? '';
+    assert.match(button, /flex: 1 1 auto;/);
+  });
+
   it('copy never promises AI help levels or 100-person rooms as available today', () => {
     assert.match(en.faq.items.answers.a, /are planned/);
     assert.match(
