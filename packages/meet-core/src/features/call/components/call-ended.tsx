@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import { useEndedNavigationBreadcrumb } from '../hooks/use-ended-navigation-breadcrumb';
 import { useEndedRoom } from '../hooks/use-ended-room';
 import type { CallLifecycle } from '../lib/call-state';
 import { useWideEndedLayout } from './ended-layout';
@@ -60,6 +61,7 @@ export function CallEnded({
 }) {
   const ended = lifecycle === 'ended';
   useEndedRoom(accountId, meetingId, ended);
+  useEndedNavigationBreadcrumb(true);
   const queryClient = useQueryClient();
   const t = useTranslations('meet.call');
   const [showNotes, setShowNotes] = useState(initialShowNotes);
