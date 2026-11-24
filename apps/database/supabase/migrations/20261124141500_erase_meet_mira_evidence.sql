@@ -65,6 +65,9 @@ create index meet_consent_proofs_purge on private.meet_consent_proofs(purge_afte
 create index meet_consent_proofs_user on private.meet_consent_proofs(user_id)
   where user_id is not null;
 create index meet_consent_proofs_meeting on private.meet_consent_proofs(meeting_id);
+-- Account deletion clears pseudonyms that link to the account from unnamed rows.
+create index meet_consent_proofs_unnamed_ref on private.meet_consent_proofs(participant_ref)
+  where user_id is null and participant_ref is not null;
 alter table private.meet_consent_proofs enable row level security;
 revoke all on private.meet_consent_proofs
   from public, anon, authenticated, service_role;
@@ -196,8 +199,16 @@ grant select, insert on private.meet_mira_evidence_erasures to service_role;
 -- Exactly one scope per call. Proofs are copied before the originals go, and
 -- every copy must match a deletion, so a concurrent write fails the whole
 -- transaction instead of losing evidence. Choices go first: they reference
--- acceptances. Deleting per-speaker consents of a session that can still
--- capture is refused by their own guard, which also refuses the delete.
+-- acceptances. Deleting per-speaker consents of a session whose capture is
+-- active or draining is refused by their own guard (55000), which also fails
+-- the meeting or workspace delete; the meeting API answers 409
+-- MEETING_DELETE_BLOCKED and the client says the meeting cannot be deleted
+-- yet.
+--
+-- Call it only from the delete wrappers and deletion functions in this file,
+-- in the transaction of the delete it belongs to: on its own it removes
+-- evidence while the meeting stays. Those callers are SECURITY INVOKER and run
+-- as the service role, so the service role keeps EXECUTE.
 create function private.erase_meet_mira_evidence(
   p_meeting_id uuid,
   p_ws_id uuid,
@@ -208,8 +219,9 @@ security definer
 set search_path = pg_catalog, pg_temp
 as $$
 declare
-  copied integer := 0;
-  step integer;
+  acceptances_copied integer;
+  choices_copied integer;
+  consents_copied integer;
   choices_erased integer;
   acceptances_erased integer;
   consents_erased integer;
@@ -228,6 +240,31 @@ begin
       using errcode = '22023';
   end if;
 
+  -- Lock the accounts that in-scope evidence names, in id order, before
+  -- copying. An Auth account delete that starts later waits for this
+  -- transaction, so its anonymization sees the proof rows written here; one
+  -- already running is waited for, and the copies below then see the rows it
+  -- anonymized. Without the lock a concurrent delete could miss uncommitted
+  -- proof rows and leave the account id in them.
+  perform 1 from auth.users u
+  where u.id in (
+    select a.user_id from private.meet_mira_host_acceptances a
+    where (p_meeting_id is not null and a.meeting_id = p_meeting_id)
+      or (p_ws_id is not null and a.ws_id = p_ws_id)
+    union
+    select c.user_id from private.meet_mira_participant_choices c
+    where (p_meeting_id is not null and c.meeting_id = p_meeting_id)
+      or (p_ws_id is not null and c.ws_id = p_ws_id)
+    union
+    select c.user_id from private.meet_ai_consents c
+    join public.meet_ai_sessions s on s.id = c.session_id
+    join public.workspace_meetings m on m.id = s.meeting_id
+    where (p_meeting_id is not null and s.meeting_id = p_meeting_id)
+      or (p_ws_id is not null and m.ws_id = p_ws_id)
+  )
+  order by u.id
+  for key share of u;
+
   insert into private.meet_consent_proofs(
     kind, meeting_id, ws_id, user_id, participant_ref, choice, revision,
     notice_version, text_hash, capabilities, decided_at, erase_reason
@@ -242,8 +279,7 @@ begin
   from private.meet_mira_host_acceptances a
   where (p_meeting_id is not null and a.meeting_id = p_meeting_id)
     or (p_ws_id is not null and a.ws_id = p_ws_id);
-  get diagnostics step = row_count;
-  copied := copied + step;
+  get diagnostics acceptances_copied = row_count;
 
   insert into private.meet_consent_proofs(
     kind, meeting_id, ws_id, user_id, participant_ref, choice, revision,
@@ -257,8 +293,7 @@ begin
   from private.meet_mira_participant_choices c
   where (p_meeting_id is not null and c.meeting_id = p_meeting_id)
     or (p_ws_id is not null and c.ws_id = p_ws_id);
-  get diagnostics step = row_count;
-  copied := copied + step;
+  get diagnostics choices_copied = row_count;
 
   -- room_seq is read through jsonb so this works before and after the column
   -- exists; guest labels are never copied.
@@ -288,8 +323,7 @@ begin
   join public.workspace_meetings m on m.id = s.meeting_id
   where (p_meeting_id is not null and s.meeting_id = p_meeting_id)
     or (p_ws_id is not null and m.ws_id = p_ws_id);
-  get diagnostics step = row_count;
-  copied := copied + step;
+  get diagnostics consents_copied = row_count;
 
   if p_meeting_id is not null then
     delete from private.meet_mira_participant_choices
@@ -320,12 +354,15 @@ begin
     get diagnostics consents_erased = row_count;
   end if;
 
-  if copied <> choices_erased + acceptances_erased + consents_erased then
+  -- Each table's copies must match its deletions.
+  if acceptances_copied <> acceptances_erased
+    or choices_copied <> choices_erased
+    or consents_copied <> consents_erased then
     raise exception 'Consent evidence changed while it was being erased'
       using errcode = '40001';
   end if;
 
-  if copied > 0 then
+  if acceptances_erased + choices_erased + consents_erased > 0 then
     insert into private.meet_mira_evidence_erasures(
       scope, meeting_id, ws_id, acceptances, choices, consents, reason
     ) values (
@@ -343,7 +380,7 @@ end;
 $$;
 revoke all on function private.erase_meet_mira_evidence(uuid, uuid, text)
   from public, anon, authenticated;
--- tuturuuu: reviewed(function-grant): private.erase_meet_mira_evidence(uuid,uuid,text) is called only by the service-role deletion functions below and by the service role directly; it moves the evidence of exactly one meeting or workspace into the minimal consent proof and keeps a non-content receipt.
+-- tuturuuu: reviewed(function-grant): private.erase_meet_mira_evidence(uuid,uuid,text) is called only by the service-role delete wrappers and deletion functions in this migration, inside the transaction of their delete; it moves the evidence of exactly one meeting or workspace into the minimal consent proof and keeps a non-content receipt.
 grant execute on function private.erase_meet_mira_evidence(uuid, uuid, text)
   to service_role;
 

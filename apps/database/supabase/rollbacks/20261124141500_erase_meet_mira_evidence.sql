@@ -1,12 +1,13 @@
 -- Rolls back the erase_meet_mira_evidence migration. The deletion
 -- functions return to their previous bodies (with the 60-second statement
--- timeout on the workspace ones), the proof anonymization trigger function
--- does nothing, and the erase routine, wrappers and receipt table are
--- dropped. Disable callers of the wrappers first.
+-- timeout on the workspace ones), and the erase routine, wrappers and receipt
+-- table are dropped. The proof anonymization trigger and its function stay with
+-- the proof table, so account deletion keeps clearing account ids and linked
+-- pseudonyms from proof rows (a migration role cannot drop a trigger on
+-- auth.users either). Disable callers of the wrappers first.
 -- private.meet_consent_proofs is NOT dropped: it holds the only remaining proof
 -- of consent for deleted meetings. Export it, then drop it by hand when that is
--- intended. Until the migration is applied again, account deletion no longer
--- clears the account id from proof rows. After this rollback, deleting a meeting or workspace that holds
+-- intended. After this rollback, deleting a meeting or workspace that holds
 -- consent evidence is refused again (RESTRICT) until the evidence is erased by hand.
 begin;
 set local lock_timeout = '5s';
@@ -192,16 +193,6 @@ begin
 end;
 $$;
 
--- A migration role cannot drop a trigger on auth.users, so the proof
--- anonymization trigger stays and its function does nothing.
-create or replace function private.anonymize_linked_meet_evidence()
-returns trigger language plpgsql security definer
-set search_path = pg_catalog, pg_temp
-as $$
-begin
-  return old;
-end;
-$$;
 
 drop function if exists private.delete_workspace_erasing_mira(uuid, boolean);
 drop function if exists private.delete_meeting_erasing_mira(uuid, uuid);

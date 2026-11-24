@@ -84,6 +84,18 @@ select ok(not has_table_privilege('authenticated', 'private.meet_mira_evidence_e
 select ok(not has_table_privilege('service_role', 'private.meet_mira_evidence_erasures', 'UPDATE'), 'receipts cannot be rewritten');
 select ok((select prosecdef from pg_proc where oid = 'private.erase_meet_mira_evidence(uuid,uuid,text)'::regprocedure), 'the erase routine is a definer function');
 select ok((select 'search_path=pg_catalog, pg_temp' = any(proconfig) from pg_proc where oid = 'private.erase_meet_mira_evidence(uuid,uuid,text)'::regprocedure), 'the erase routine pins its search_path');
+-- A concurrent Auth account delete cannot run between the copy and commit:
+-- the routine key-share locks the accounts its evidence names, in id order,
+-- before copying. pgTAP has one session, so the lock is checked structurally;
+-- every erase below takes it, which proves the owner may lock auth.users.
+select ok(pg_get_functiondef('private.erase_meet_mira_evidence(uuid,uuid,text)'::regprocedure) ~ 'order by u\.id\s+for key share of u', 'the erase routine locks the named accounts in id order');
+select ok(
+  position('for key share' in pg_get_functiondef('private.erase_meet_mira_evidence(uuid,uuid,text)'::regprocedure))
+    < position('insert into private.meet_consent_proofs' in pg_get_functiondef('private.erase_meet_mira_evidence(uuid,uuid,text)'::regprocedure)),
+  'and takes the lock before the first copy'
+);
+select ok(pg_get_functiondef('private.erase_meet_mira_evidence(uuid,uuid,text)'::regprocedure) ~ 'choices_copied <> choices_erased', 'copies and deletions are compared per table');
+select has_index('private', 'meet_consent_proofs', 'meet_consent_proofs_unnamed_ref', 'unnamed proof rows are indexed by pseudonym');
 
 -- A proof row holds who, when, notice version, hash, revision and choice, plus
 -- the meeting and workspace ids; no transcript, audio, name or email column.
