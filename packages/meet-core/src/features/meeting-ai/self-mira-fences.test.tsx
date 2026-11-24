@@ -482,3 +482,80 @@ describe('Mira re-confirmation after a capture mode change', () => {
     );
   });
 });
+
+describe('a failed Mira off', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('is retried until the room records it, with capture held throughout', async () => {
+    f.miraChoose
+      .mockRejectedValueOnce(new Error('room down'))
+      .mockRejectedValueOnce(new Error('room down'))
+      .mockResolvedValue({ ...miraOn, choice: 'off' });
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.data).toBeTruthy());
+    let done: Promise<unknown> | undefined;
+    act(() => {
+      done = hook.result.current.choose.mutateAsync({
+        choice: 'off',
+        source: 'toggle',
+      });
+    });
+    await vi.waitFor(() => expect(f.miraChoose).toHaveBeenCalledTimes(1));
+    expect(isSelfCaptureHeld('m')).toBe(true);
+    await act(() => vi.advanceTimersByTimeAsync(15_000));
+    await act(async () => {
+      await done;
+    });
+    expect(f.miraChoose).toHaveBeenCalledTimes(3);
+    const { toast } = await import('@tuturuuu/ui/sonner');
+    expect(toast.error).not.toHaveBeenCalled();
+    expect(isSelfCaptureHeld('m')).toBe(true);
+  });
+
+  it('stops after three tries, says so and shows the room state', async () => {
+    f.miraChoose.mockRejectedValue(new Error('room down'));
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.data).toBeTruthy());
+    const reads = f.mira.mock.calls.length;
+    let done: Promise<unknown> | undefined;
+    act(() => {
+      done = hook.result.current.choose
+        .mutateAsync({ choice: 'off', source: 'toggle' })
+        .catch(() => undefined);
+    });
+    await act(() => vi.advanceTimersByTimeAsync(20_000));
+    await act(async () => {
+      await done;
+    });
+    expect(f.miraChoose).toHaveBeenCalledTimes(3);
+    const { toast } = await import('@tuturuuu/ui/sonner');
+    expect(toast.error).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() =>
+      expect(f.mira.mock.calls.length).toBeGreaterThan(reads)
+    );
+    expect(isSelfCaptureHeld('m')).toBe(true);
+  });
+
+  it('never retries an on', async () => {
+    f.read.mockResolvedValue(view({ mode: 'room', session: null }));
+    f.miraChoose.mockRejectedValue(new Error('room down'));
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.noticeKnown).toBe(true));
+    let done: Promise<unknown> | undefined;
+    act(() => {
+      done = hook.result.current.choose
+        .mutateAsync({ choice: 'on', source: 'toggle' })
+        .catch(() => undefined);
+    });
+    await act(() => vi.advanceTimersByTimeAsync(30_000));
+    await act(async () => {
+      await done;
+    });
+    expect(f.miraChoose).toHaveBeenCalledTimes(1);
+  });
+});

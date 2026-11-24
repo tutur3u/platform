@@ -29,7 +29,6 @@ import {
   prefersMiraOff,
   rememberMiraPreference,
 } from '../../live-assistant/mira-join-choice';
-import { isStaleSelfNotice } from '../../meeting-ai/self-api';
 import { holdSelfCapture } from '../../meeting-ai/self-hold';
 import { readSelfRoom } from '../../meeting-ai/self-room';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
@@ -109,6 +108,9 @@ async function roomCaptureMode(meetingId: string) {
   }
 }
 
+/** Waits between attempts of a failed Mira off: three tries in about 15 s. */
+export const MIRA_OFF_RETRY_MS = [5000, 10_000];
+
 export type RoomMiraAvailable = Extract<RoomMiraConsent, { available: true }>;
 type Source = 'join' | 'confirm' | 'toggle';
 
@@ -162,7 +164,7 @@ export function useRoomMira(meetingId: string) {
       // Turning it off is never held back.
       if (input.choice === 'on' && !input.textHash && !notice.known)
         throw new Error('The meeting notice is not known yet');
-      return setRoomMiraChoice(meetingId, {
+      const payload = {
         choice: input.choice,
         version: MIRA_ROOM_NOTICE_VERSION,
         acceptanceRevision: data?.acceptance?.revision ?? 0,
@@ -170,7 +172,21 @@ export function useRoomMira(meetingId: string) {
         textHash: input.textHash ?? (await hashMiraConsentText(text)),
         locale: input.locale ?? locale,
         ...(mode === 'self' ? { noticeMode: 'self' as const } : {}),
-      });
+      };
+      // A Join state already retries on the next read.
+      if (input.choice === 'on' || input.source === 'join')
+        return setRoomMiraChoice(meetingId, payload);
+      // An off is recorded even when the room call fails, and repeating it
+      // is harmless, so it is retried a few times. An on never is.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await setRoomMiraChoice(meetingId, payload);
+        } catch (error) {
+          const wait = MIRA_OFF_RETRY_MS[attempt];
+          if (wait === undefined) throw error;
+          await new Promise((resolve) => setTimeout(resolve, wait));
+        }
+      }
     },
     // Off stops this device's own per-speaker capture before the request is
     // sent, and keeps it stopped until the person allows the transcript again.
@@ -198,17 +214,19 @@ export function useRoomMira(meetingId: string) {
         ).catch(() => undefined);
       refreshTranscript();
     },
-    // A Join state is retried quietly on the next read. A refused choice
-    // may follow a mode change, so the meeting's notice is read again.
-    onError: (error, input) => {
-      if (input.source !== 'join') toast.error(t('save_failed'));
+    // A Join state is retried quietly on the next scheduled read; reading
+    // again here would retry it at once, in a loop against a failing room.
+    // After the person's own choice fails, the room's real Mira state and
+    // the meeting's notice are read again, so a refusal for another notice
+    // shows the current one and the person chooses again; nothing is resent
+    // under a different notice.
+    onError: (_error, input) => {
+      if (input.source === 'join') return;
+      toast.error(t('save_failed'));
+      void queryClient.invalidateQueries({
+        queryKey: roomMiraConsentKey(meetingId),
+      });
       refreshTranscript();
-      // The server expects another notice: show the current one and let the
-      // person choose again. Nothing is resent under a different notice.
-      if (isStaleSelfNotice(error))
-        void queryClient.invalidateQueries({
-          queryKey: roomMiraConsentKey(meetingId),
-        });
     },
   });
 

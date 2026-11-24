@@ -277,7 +277,12 @@ it('sends no host Allow while the host’s Mira on is for the other notice', asy
   f.mira.mockResolvedValue({
     available: true,
     version: 'v',
-    acceptance: { revision: 1, acceptorName: 'Lan', capabilities: ['chat'], acceptedAt: 0 },
+    acceptance: {
+      revision: 1,
+      acceptorName: 'Lan',
+      capabilities: ['chat'],
+      acceptedAt: 0,
+    },
     choice: 'on',
     lastChoice: 'on',
     pausing: false,

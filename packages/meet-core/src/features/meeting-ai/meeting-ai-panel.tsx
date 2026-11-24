@@ -57,7 +57,9 @@ export function MeetingAiPanel({
   // first; the room would refuse the host's Allow until then.
   const mira = useRoomMiraConsent(ai.meetingId, inCall);
   const miraStale =
-    !!mira.data?.available && mira.data.choice === 'on' && !!mira.data.noticeStale;
+    !!mira.data?.available &&
+    mira.data.choice === 'on' &&
+    !!mira.data.noticeStale;
   const start = async () => {
     if (inCall && !miraStale) await ensureAllowed();
     await ai.start();
