@@ -5,6 +5,7 @@ import { toast } from '../sonner';
 import { getVideoDimensions, MAX_VIDEO_SIZE } from './media-utils';
 import {
   createLoadingPlaceholder,
+  dispatchIfOpen,
   findUploadPlaceholder,
   generateUploadId,
   videoUploadPlaceholderPluginKey,
@@ -199,7 +200,7 @@ export const Video = (options: VideoOptions = {}) =>
                   let currentPos = from;
                   if (from !== to) {
                     const deleteTr = view.state.tr.delete(from, to);
-                    view.dispatch(deleteTr);
+                    if (!dispatchIfOpen(view, deleteTr)) return;
                     currentPos = from;
                   }
 
@@ -238,9 +239,8 @@ export const Video = (options: VideoOptions = {}) =>
                           height: dimensions.height,
                         },
                       });
-                      view.dispatch(placeholderTr);
+                      if (!dispatchIfOpen(view, placeholderTr)) return;
 
-                      // Upload the video
                       const url = await onVideoUpload(video);
 
                       // Get fresh state after upload
@@ -257,7 +257,7 @@ export const Video = (options: VideoOptions = {}) =>
                         removeTr.setMeta(videoUploadPlaceholderPluginKey, {
                           remove: { id: uploadId },
                         });
-                        view.dispatch(removeTr);
+                        if (!dispatchIfOpen(view, removeTr)) return;
                         continue;
                       }
 
@@ -278,7 +278,7 @@ export const Video = (options: VideoOptions = {}) =>
                       // Create and insert the video node
                       const node = videoNode.create({ src: url });
                       finalTr.insert(insertPos, node);
-                      view.dispatch(finalTr);
+                      if (!dispatchIfOpen(view, finalTr)) return;
 
                       // Update position for next insertion
                       currentPos = insertPos + node.nodeSize;
@@ -293,7 +293,7 @@ export const Video = (options: VideoOptions = {}) =>
                       removeTr.setMeta(videoUploadPlaceholderPluginKey, {
                         remove: { id: uploadId },
                       });
-                      view.dispatch(removeTr);
+                      if (!dispatchIfOpen(view, removeTr)) return;
                     }
                   }
                 })();
@@ -379,9 +379,8 @@ export const Video = (options: VideoOptions = {}) =>
                           height: dimensions.height,
                         },
                       });
-                      view.dispatch(placeholderTr);
+                      if (!dispatchIfOpen(view, placeholderTr)) return;
 
-                      // Upload the video
                       const url = await onVideoUpload(video);
 
                       const node = schema.nodes.video?.create({ src: url });
@@ -395,7 +394,7 @@ export const Video = (options: VideoOptions = {}) =>
                         removeTr.setMeta(videoUploadPlaceholderPluginKey, {
                           remove: { id: uploadId },
                         });
-                        view.dispatch(removeTr);
+                        if (!dispatchIfOpen(view, removeTr)) return;
                         continue;
                       }
 
@@ -414,7 +413,7 @@ export const Video = (options: VideoOptions = {}) =>
                       });
 
                       finalTr.insert(insertPos, node);
-                      view.dispatch(finalTr);
+                      if (!dispatchIfOpen(view, finalTr)) return;
 
                       // Update position for next insertion
                       currentPos = insertPos + node.nodeSize;
@@ -429,7 +428,7 @@ export const Video = (options: VideoOptions = {}) =>
                       removeTr.setMeta(videoUploadPlaceholderPluginKey, {
                         remove: { id: uploadId },
                       });
-                      view.dispatch(removeTr);
+                      if (!dispatchIfOpen(view, removeTr)) return;
                     }
                   }
                 })();

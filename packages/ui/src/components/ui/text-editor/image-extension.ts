@@ -18,6 +18,7 @@ import {
 import { getKnownUploadErrorKey, getUploadErrorMessage } from './upload-errors';
 import {
   createLoadingPlaceholder,
+  dispatchIfOpen,
   findUploadPlaceholder,
   generateUploadId,
   imageUploadPlaceholderPluginKey,
@@ -471,7 +472,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                   let currentPos = from;
                   if (from !== to) {
                     const deleteTr = view.state.tr.delete(from, to);
-                    view.dispatch(deleteTr);
+                    if (!dispatchIfOpen(view, deleteTr)) return;
                     currentPos = from;
                   }
 
@@ -514,9 +515,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
                           type: 'image' as const,
                         },
                       });
-                      view.dispatch(placeholderTr);
+                      if (!dispatchIfOpen(view, placeholderTr)) return;
 
-                      // Upload the image
                       const currentOnImageUpload = getOnImageUpload();
                       if (!currentOnImageUpload) {
                         throw Object.assign(
@@ -542,7 +542,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         removeTr.setMeta(imageUploadPlaceholderPluginKey, {
                           remove: { id: uploadId },
                         });
-                        view.dispatch(removeTr);
+                        if (!dispatchIfOpen(view, removeTr)) return;
                         continue;
                       }
 
@@ -567,7 +567,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       });
 
                       finalTr.insert(insertPos, node);
-                      view.dispatch(finalTr);
+                      if (!dispatchIfOpen(view, finalTr)) return;
 
                       // Update position for next insertion
                       currentPos = insertPos + node.nodeSize;
@@ -594,7 +594,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
                         remove: { id: uploadId },
                       });
-                      view.dispatch(removeTr);
+                      if (!dispatchIfOpen(view, removeTr)) return;
                     }
                   }
                 })();
@@ -713,9 +713,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
                           type: 'image' as const,
                         },
                       });
-                      view.dispatch(placeholderTr);
+                      if (!dispatchIfOpen(view, placeholderTr)) return;
 
-                      // Upload the image
                       const url = await currentOnImageUpload(image);
 
                       // Try imageResize first (custom), fallback to image (base)
@@ -729,7 +728,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         removeTr.setMeta(imageUploadPlaceholderPluginKey, {
                           remove: { id: uploadId },
                         });
-                        view.dispatch(removeTr);
+                        if (!dispatchIfOpen(view, removeTr)) return;
                         continue;
                       }
 
@@ -753,7 +752,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       });
 
                       finalTr.insert(insertPos, node);
-                      view.dispatch(finalTr);
+                      if (!dispatchIfOpen(view, finalTr)) return;
 
                       // Update position for next insertion
                       currentPos = insertPos + node.nodeSize;
@@ -776,7 +775,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
                         remove: { id: uploadId },
                       });
-                      view.dispatch(removeTr);
+                      if (!dispatchIfOpen(view, removeTr)) return;
                     }
                   }
 
@@ -823,9 +822,8 @@ export const CustomImage = (options: ImageOptions = {}) => {
                           type: 'video' as const,
                         },
                       });
-                      view.dispatch(placeholderTr);
+                      if (!dispatchIfOpen(view, placeholderTr)) return;
 
-                      // Upload the video
                       const url = await currentOnVideoUpload(video);
 
                       // Check for video node type
@@ -838,7 +836,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                         removeTr.setMeta(imageUploadPlaceholderPluginKey, {
                           remove: { id: uploadId },
                         });
-                        view.dispatch(removeTr);
+                        if (!dispatchIfOpen(view, removeTr)) return;
                         continue;
                       }
 
@@ -861,7 +859,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       });
 
                       finalTr.insert(insertPos, node);
-                      view.dispatch(finalTr);
+                      if (!dispatchIfOpen(view, finalTr)) return;
 
                       // Update position for next insertion
                       currentPos = insertPos + node.nodeSize;
@@ -884,7 +882,7 @@ export const CustomImage = (options: ImageOptions = {}) => {
                       removeTr.setMeta(imageUploadPlaceholderPluginKey, {
                         remove: { id: uploadId },
                       });
-                      view.dispatch(removeTr);
+                      if (!dispatchIfOpen(view, removeTr)) return;
                     }
                   }
                 })();

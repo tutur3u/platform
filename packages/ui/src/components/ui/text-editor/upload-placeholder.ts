@@ -1,6 +1,6 @@
-import type { EditorState } from '@tiptap/pm/state';
+import type { EditorState, Transaction } from '@tiptap/pm/state';
 import { PluginKey } from '@tiptap/pm/state';
-import type { Decoration } from '@tiptap/pm/view';
+import type { Decoration, EditorView } from '@tiptap/pm/view';
 
 // Plugin keys for upload placeholder decorations (separate keys to avoid conflicts)
 export const imageUploadPlaceholderPluginKey = new PluginKey(
@@ -121,4 +121,15 @@ export function findUploadPlaceholder(
   }
 
   return found;
+}
+
+/**
+ * Dispatches `tr` unless the view is already destroyed. Uploads resolve after
+ * awaits, so the editor may have closed before their placeholder updates land.
+ * Returns false when the view is gone so the upload flow can stop.
+ */
+export function dispatchIfOpen(view: EditorView, tr: Transaction): boolean {
+  if (view.isDestroyed) return false;
+  view.dispatch(tr);
+  return true;
 }
