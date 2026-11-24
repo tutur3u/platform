@@ -7,7 +7,12 @@ import {
 
 type Admin = Awaited<ReturnType<typeof createAdminClient>>;
 
+/** User-perceived characters kept from a host's name. */
 const MAX_HOST_NAME_LENGTH = 80;
+/** UTF-16 units kept, so "{name}'s meeting" always fits the 255-unit API limit. */
+const MAX_HOST_NAME_UNITS = 200;
+/** Raw input is cut before sanitizing; a stored name is not trusted to be short. */
+const RAW_LIMIT = 2048;
 
 /**
  * The name an instant meeting is titled after: the saved profile display name,
@@ -24,10 +29,17 @@ export async function readMeetingHostName(
   )
     .then(({ data }) => data?.display_name)
     .catch(() => null);
-  const name = [saved, metadata?.display_name, metadata?.full_name].find(
-    (value): value is string => typeof value === 'string' && !!value.trim()
-  );
-  return name
-    ? truncateGraphemes(sanitizeMeetingName(name), MAX_HOST_NAME_LENGTH)
-    : '';
+  // The first candidate that still has visible text after sanitizing wins, so
+  // an invisible-only saved name falls through to the account's own names.
+  for (const candidate of [
+    saved,
+    metadata?.display_name,
+    metadata?.full_name,
+  ]) {
+    if (typeof candidate !== 'string') continue;
+    const name = sanitizeMeetingName(candidate.slice(0, RAW_LIMIT));
+    if (name)
+      return truncateGraphemes(name, MAX_HOST_NAME_LENGTH, MAX_HOST_NAME_UNITS);
+  }
+  return '';
 }

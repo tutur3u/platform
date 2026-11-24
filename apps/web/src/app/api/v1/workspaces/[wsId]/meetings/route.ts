@@ -23,6 +23,7 @@ const ScheduleSchema = z.object({
 const CreateMeetingSchema = z.object({
   name: z
     .string()
+    .max(2048)
     .transform(sanitizeMeetingName)
     .pipe(z.string().min(1).max(255)),
   time: z.iso.datetime({ offset: true }),

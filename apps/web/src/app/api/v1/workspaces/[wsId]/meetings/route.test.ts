@@ -169,6 +169,16 @@ describe('meeting creation authorization', () => {
     );
   });
 
+  it('rejects raw input over 2048 characters before it is processed', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+    const response = await POST(
+      request({ name: 'a'.repeat(2049), time: '2026-09-06T10:00:00Z' }),
+      params
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
   it('rejects a name that is only hidden characters', async () => {
     mocks.auth.mockResolvedValue(authenticatedContext());
     const response = await POST(

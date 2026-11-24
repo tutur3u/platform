@@ -73,3 +73,23 @@ it('composes a decomposed Vietnamese name and strips hidden characters', async (
     )
   ).toBe('Tra\u0302\u0300n Minh'.normalize('NFC'));
 });
+
+it('falls through to the account names when the saved name is invisible', async () => {
+  expect(
+    await readMeetingHostName(
+      admin({ data: { display_name: String.fromCodePoint(0x3164, 0x200b) } }),
+      'a',
+      { full_name: 'Gia Huy' }
+    )
+  ).toBe('Gia Huy');
+});
+
+it('keeps a default title under the API limit even for a long emoji name', async () => {
+  const name = '👩\u200D👩\u200D👧\u200D👦'.repeat(80);
+  const result = await readMeetingHostName(
+    admin({ data: { display_name: name } }),
+    'a'
+  );
+  expect(result.length).toBeLessThanOrEqual(200);
+  expect(`${result}'s meeting`.length).toBeLessThanOrEqual(255);
+});

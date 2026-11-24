@@ -5054,7 +5054,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts",
-    "sourceSha256": "b719419738fb9ff4708617ac96a8eb9707ff7e4e7b997173165932cd46a19e06",
+    "sourceSha256": "33e15fce24b502ae6ca60df769290840b79a674d5c5931fe0c59af1db6e6edef",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
