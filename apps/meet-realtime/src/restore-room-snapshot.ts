@@ -7,6 +7,7 @@ import { upgradeLegacyGuestMarkers } from '../../../packages/realtime/src/meet/r
 import { recoverMeetMediaRoles } from '../../../packages/realtime/src/meet/room-media-role';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { meetTrackKey } from '../../../packages/realtime/src/meet/room-tracks';
+import { expireMiraOn } from '../../../packages/realtime/src/meet/room-mira-pending';
 import type { RoomServiceState } from './room-service';
 
 export function restoreRoomSnapshot(
@@ -18,10 +19,11 @@ export function restoreRoomSnapshot(
   migrated: boolean;
   closedPublications: MeetRealtimeServerMessage[];
 } {
-  const consented = normalizeTranscriptionConsent({
-    ...createMeetRoomSnapshot(),
-    ...stored,
-  });
+  const loaded = { ...createMeetRoomSnapshot(), ...stored };
+  // A Mira on still awaiting its confirm is dropped when the room loads from
+  // storage: the person keeps the previous state and asks again.
+  const unstaged = expireMiraOn(loaded, 0, true);
+  const consented = normalizeTranscriptionConsent(unstaged);
   const normalized = upgradeLegacyGuestMarkers(consented);
   const snapshot = recoverMeetMediaRoles(
     normalized,
@@ -31,6 +33,7 @@ export function restoreRoomSnapshot(
     })
   );
   let migrated =
+    unstaged !== loaded ||
     consented !== normalized ||
     normalized !== snapshot ||
     stored.transcriptionConsents !== snapshot.transcriptionConsents;

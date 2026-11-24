@@ -232,6 +232,25 @@ const miraOnChoice = {
   acceptanceRevision: 1,
   source: 'confirm',
 };
+/**
+ * Mira on through the room service as the Meet Worker sends it: the choice,
+ * then the confirm of the staged on. The status of the last call.
+ */
+async function turnMiraOn(
+  room: MeetRoomDurableObject,
+  id: string,
+  noticeMode: 'room' | 'self'
+) {
+  const staged = await serviceCall(room, id, { ...miraOnChoice, noticeMode });
+  const body = (await staged.json()) as { pendingId?: string | null };
+  if (staged.status !== 200 || !body.pendingId) return staged.status;
+  return (
+    await serviceCall(room, id, {
+      action: 'mira.room.confirm',
+      pendingId: body.pendingId,
+    })
+  ).status;
+}
 const miraOff = {
   action: 'mira.room.choice',
   choice: 'off',
@@ -425,11 +444,7 @@ test('an Allow given in room mode needs per-speaker evidence before an open', as
   );
   // Confirming Mira under the per-speaker notice, then the Allow with its
   // evidence, recovers.
-  assert.equal(
-    (await serviceCall(f.room, alice, { ...miraOnChoice, noticeMode: 'self' }))
-      .status,
-    200
-  );
+  assert.equal(await turnMiraOn(f.room, alice, 'self'), 200);
   assert.equal(
     (await serviceCall(f.room, alice, transcriptChoice('allow'))).status,
     200
@@ -552,10 +567,7 @@ test('a change to room capture needs Mira confirmed under the room notice', asyn
     200
   );
   for (const id of [host, alice]) {
-    assert.equal(
-      (await call(id, { ...miraOnChoice, noticeMode: 'self' })).status,
-      200
-    );
+    assert.equal(await turnMiraOn(f.room, id, 'self'), 200);
     assert.equal((await call(id, transcriptChoice('allow'))).status, 200);
   }
   assert.deepEqual(await fence(), {
@@ -580,10 +592,7 @@ test('a change to room capture needs Mira confirmed under the room notice', asyn
   // Room Mira chat keeps working.
   assert.equal(read.ready, true);
   for (const id of [host, alice])
-    assert.equal(
-      (await call(id, { ...miraOnChoice, noticeMode: 'room' })).status,
-      200
-    );
+    assert.equal(await turnMiraOn(f.room, id, 'room'), 200);
   assert.deepEqual(await fence(), {
     ready: true,
     pending: 0,

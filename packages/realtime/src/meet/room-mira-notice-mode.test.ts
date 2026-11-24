@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMeetRoomSnapshot } from './index';
 import { isCurrentMiraRoomOn } from './room-mira-choices';
-import { acceptMira, miraChoice } from './room-mira.fixtures';
+import { acceptMira, miraChoice, withConfirm } from './room-mira.fixtures';
 import type { RoomServiceState } from './room-service';
 import {
   admit,
@@ -22,11 +22,14 @@ const choose = (
   choice: 'on' | 'off',
   noticeMode?: 'room' | 'self'
 ) =>
-  svc(
-    state,
-    alice,
-    { ...miraChoice(state, choice), ...(noticeMode ? { noticeMode } : {}) },
-    T
+  withConfirm(
+    svc(
+      state,
+      alice,
+      { ...miraChoice(state, choice), ...(noticeMode ? { noticeMode } : {}) },
+      T
+    ),
+    (next, input) => svc(next, alice, input, T)
   );
 const mode = (state: RoomServiceState, next: 'room' | 'self') =>
   ok(svc(state, host, { action: 'transcript.mode.set', mode: next }, T));

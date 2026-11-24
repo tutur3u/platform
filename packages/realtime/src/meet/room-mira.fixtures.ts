@@ -75,3 +75,18 @@ export const miraChoice = (state: RoomServiceState, choice: 'on' | 'off') => ({
   acceptanceRevision: acceptanceRevisionOf(state),
   source: 'confirm' as const,
 });
+
+type Ran = { state: RoomServiceState; body: unknown; status?: number };
+
+/**
+ * An on the room staged, confirmed as the Meet Worker confirms it once its
+ * evidence is stored. Any other result is returned unchanged.
+ */
+export function withConfirm<R extends Ran>(
+  result: R,
+  confirm: (state: RoomServiceState, input: object) => R
+): R {
+  const pendingId = (result.body as { pendingId?: unknown } | null)?.pendingId;
+  if (typeof pendingId !== 'string' || result.status) return result;
+  return confirm(result.state, { action: 'mira.room.confirm', pendingId });
+}

@@ -9,7 +9,7 @@ import {
   applyMiraRoomConsent,
   fenceMiraRoomRequest,
 } from './room-mira-consent';
-import { acceptMira, miraChoice } from './room-mira.fixtures';
+import { acceptMira, miraChoice, withConfirm } from './room-mira.fixtures';
 import {
   type RoomChatMessage,
   roomService,
@@ -40,7 +40,9 @@ const service = (state: RoomServiceState, id: string, input: unknown) =>
     roomService(state, token(id), input)
   );
 const choose = (state: RoomServiceState, id: string, choice: 'on' | 'off') =>
-  service(state, id, miraChoice(state, choice)).state;
+  withConfirm(service(state, id, miraChoice(state, choice)), (next, input) =>
+    service(next, id, input)
+  ).state;
 const message = (id: string, accountId: string, body: string) =>
   ({
     type: 'chat.message',

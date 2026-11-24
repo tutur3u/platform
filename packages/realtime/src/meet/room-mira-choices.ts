@@ -31,6 +31,8 @@ export type MiraRoomChoice = {
    * notice, or the per-speaker one. Absent means the room notice.
    */
   noticeMode?: 'room' | 'self';
+  /** The pending id whose confirm made this on effective. */
+  confirmedPendingId?: string;
 };
 /**
  * Turning off while already-admitted provider requests carry the account's
@@ -48,6 +50,8 @@ export type MiraRoomState = {
   lastRevision?: number;
   choices: Record<string, MiraRoomChoice>;
   pending?: Record<string, MiraRoomPendingPause>;
+  /** Staged on choices awaiting the Meet Worker's confirm, by account. */
+  pendingOn?: Record<string, import('./room-mira-pending').MiraRoomPendingOn>;
 };
 
 export type MiraRoomStatus = {

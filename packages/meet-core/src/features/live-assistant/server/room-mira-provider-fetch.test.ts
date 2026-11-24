@@ -109,7 +109,12 @@ beforeEach(() => {
     noticeVersion: version,
     audienceAdultConfirmed: true,
   }).state;
-  for (const id of [alice, bob]) apply(id, choice('on'));
+  for (const id of [alice, bob]) {
+    const body = apply(id, choice('on')) as { pendingId?: string } | null;
+    // The room stages an on until the Meet Worker confirms its evidence.
+    if (body?.pendingId)
+      apply(id, { action: 'mira.room.confirm', pendingId: body.pendingId });
+  }
   room = {
     ...room,
     chat: [

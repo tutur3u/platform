@@ -9,7 +9,7 @@ import {
   fenceMiraRoomRequest,
   miraRoomStatus,
 } from './room-mira-consent';
-import { acceptMira, miraChoice } from './room-mira.fixtures';
+import { acceptMira, miraChoice, withConfirm } from './room-mira.fixtures';
 import {
   type RoomChatMessage,
   roomService,
@@ -39,11 +39,13 @@ let now = 1_800_000_000_000;
 let room: RoomServiceState;
 /** One serialized authority, in the meet-realtime wrapper order. */
 function act(id: string, input: unknown) {
-  const result =
-    applyMiraRoomConsent(room, token(id), input, now) ??
-    fenceMiraRoomRequest(room, token(id), input, () =>
-      roomService(room, token(id), input)
+  const run = (current: RoomServiceState, command: unknown) =>
+    applyMiraRoomConsent(current, token(id), command, now) ??
+    fenceMiraRoomRequest(current, token(id), command, () =>
+      roomService(current, token(id), command)
     );
+  // An on takes effect once the Meet Worker confirms it.
+  const result = withConfirm(run(room, input), run);
   room = result.state;
   return result;
 }

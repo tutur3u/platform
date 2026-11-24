@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { admitOrHold, createMeetRoomSnapshot } from './index';
 import { applyMiraRoomConsent } from './room-mira-consent';
-import { acceptMira, miraChoice, miraToken } from './room-mira.fixtures';
+import {
+  acceptMira,
+  miraChoice,
+  miraToken,
+  withConfirm,
+} from './room-mira.fixtures';
 import { endMeetRoom } from './room-ending';
 import type { RoomServiceState } from './room-service';
 
@@ -13,12 +18,11 @@ function liveRoom() {
   for (const id of [host, guest])
     state = admitOrHold(state, miraToken(id), '2026-11-24T00:00:00Z').state;
   state = acceptMira(state, host);
-  for (const id of [host, guest])
-    state = applyMiraRoomConsent(
-      state,
-      miraToken(id),
-      miraChoice(state, 'on')
-    )!.state;
+  for (const id of [host, guest]) {
+    const run = (next: RoomServiceState, input: object) =>
+      applyMiraRoomConsent(next, miraToken(id), input)!;
+    state = withConfirm(run(state, miraChoice(state, 'on')), run).state;
+  }
   return state;
 }
 

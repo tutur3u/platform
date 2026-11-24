@@ -58,6 +58,7 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       'room-do-recovery.test.ts',
       'room-do-settings.test.ts',
       'room-do-self-capture.test.ts',
+      'room-do-mira-pending.test.ts',
       'attendance-room-erase.test.ts',
       'attendance-directory-spill.test.ts',
       'collaboration-retry-budget.test.ts',

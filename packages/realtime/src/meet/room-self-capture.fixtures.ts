@@ -4,7 +4,12 @@ import {
   fenceMiraRoomRequest,
   guardMeetTranscriptAllow,
 } from './room-mira-consent';
-import { acceptMira, miraChoice, miraToken } from './room-mira.fixtures';
+import {
+  acceptMira,
+  miraChoice,
+  miraToken,
+  withConfirm,
+} from './room-mira.fixtures';
 import { routeSelfCapture } from './room-self-capture-route';
 import { roomService, type RoomServiceState } from './room-service';
 import {
@@ -70,16 +75,16 @@ export const admit = (state: RoomServiceState, id: string) =>
 
 /** Mira on under the notice of the room's current transcript mode. */
 export function miraOn(state: RoomServiceState, id: string, now = 1_000_000) {
+  const run = (current: RoomServiceState, input: object) =>
+    applyMiraRoomConsent(current, tokenOf(id), input, now)!;
   return ok(
-    applyMiraRoomConsent(
-      state,
-      tokenOf(id),
-      {
+    withConfirm(
+      run(state, {
         ...miraChoice(state, 'on'),
         noticeMode: state.selfCapture?.mode ?? 'room',
-      },
-      now
-    )!
+      }),
+      run
+    )
   );
 }
 

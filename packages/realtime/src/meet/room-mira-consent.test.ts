@@ -15,6 +15,7 @@ import {
   miraChoice,
   miraMeetingId as meetingId,
   miraToken as token,
+  withConfirm,
 } from './room-mira.fixtures';
 import {
   type RoomChatMessage,
@@ -34,11 +35,15 @@ let room: RoomServiceState;
 /** One serialized authority, in the meet-realtime wrapper order. */
 function act(id: string, input: unknown, role: 'host' | 'speaker' = 'speaker') {
   const t = token(id, role);
-  const result =
-    applyMiraRoomConsent(room, t, input) ??
-    guardMeetTranscriptAllow(room, t, input) ??
-    applyMeetTranscriptConsent(room, t, input) ??
-    fenceMiraRoomRequest(room, t, input, () => roomService(room, t, input));
+  const run = (current: RoomServiceState, command: unknown) =>
+    applyMiraRoomConsent(current, t, command) ??
+    guardMeetTranscriptAllow(current, t, command) ??
+    applyMeetTranscriptConsent(current, t, command) ??
+    fenceMiraRoomRequest(current, t, command, () =>
+      roomService(current, t, command)
+    );
+  // An on takes effect once the Meet Worker confirms it.
+  const result = withConfirm(run(room, input), run);
   room = result.state;
   return result;
 }

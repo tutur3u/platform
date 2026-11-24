@@ -16,6 +16,13 @@ import {
   settleMiraRoomWithdrawals,
 } from './room-mira-choices';
 import { miraRoomDispatch } from './room-mira-dispatch';
+import {
+  confirmMiraOn,
+  dropMiraOn,
+  expireMiraOn,
+  pendingMiraOn,
+  stageMiraOn,
+} from './room-mira-pending';
 import type { RoomChatMessage, RoomServiceState } from './room-service';
 import {
   applyMeetTranscriptConsent,
@@ -57,6 +64,12 @@ const command = z.discriminatedUnion('action', [
     messageId: z.string().max(200),
     leaseId: z.uuid(),
   }),
+  // The Meet Worker's confirm of a staged on, once its evidence is stored.
+  z.object({
+    action: z.literal('mira.room.confirm'),
+    pendingId: z.uuid(),
+    noticeMode: z.enum(['room', 'self']).optional(),
+  }),
   z.object({
     action: z.literal('mira.room.release'),
     messageId: z.string().max(200),
@@ -68,7 +81,8 @@ const command = z.discriminatedUnion('action', [
 function miraRoomView(
   state: RoomServiceState,
   token: MeetRealtimeTokenPayload,
-  accountId: string
+  accountId: string,
+  now = Date.now()
 ) {
   const acceptance = currentMiraRoomAcceptance(state);
   const own = state.miraRoom?.choices[accountId];
@@ -103,6 +117,9 @@ function miraRoomView(
           : own.choice
         : null,
     pausing,
+    // A staged on awaiting the server's confirm: shown as turning on, never
+    // as on, and with no consent effect.
+    pending: !!pendingMiraOn(state, accountId, now),
     ready: miraRoomRequesterReady(state, token.meetingId, accountId),
     canAccept: canAcceptMiraRoom(state, token),
     status: miraRoomStatus(state, token.meetingId),
@@ -137,7 +154,14 @@ export function applyMiraRoomConsent(
   // pending opt-out never waits longer than the request itself.
   if (parsed.data.action === 'mira.room.release')
     return miraRoomDispatch(state, token, accountId, parsed.data, now);
-  const settled = settleMiraRoomWithdrawals(state, now);
+  const settled = expireMiraOn(settleMiraRoomWithdrawals(state, now), now);
+  const reply = (next: RoomServiceState): Result => ({
+    state: next,
+    body: miraRoomView(next, token, accountId, now),
+  });
+  // Refusals of a confirm are 409 with no state change.
+  if (parsed.data.action === 'mira.room.confirm')
+    return confirmMiraOn(settled, token, accountId, parsed.data, now, reply);
   const admitted = admittedMiraRoomAccounts(settled).includes(accountId);
   // Turning off always records, even while not admitted, so nobody needs to
   // be in the room to stop Mira reading them.
@@ -149,10 +173,6 @@ export function applyMiraRoomConsent(
       body: { error: 'Join an active meeting first' },
       status: 403,
     };
-  const reply = (next: RoomServiceState): Result => ({
-    state: next,
-    body: miraRoomView(next, token, accountId),
-  });
   if (parsed.data.action === 'mira.room.read') return reply(settled);
   if (parsed.data.action === 'mira.room.dispatch')
     return miraRoomDispatch(settled, token, accountId, parsed.data, now);
@@ -210,18 +230,29 @@ export function applyMiraRoomConsent(
     own.acceptanceRevision === currentRevision &&
     (own.noticeMode ?? 'room') === noticeMode
   )
-    return reply(settled);
-  return reply(
-    recordMiraRoomChoice(
-      settled,
-      accountId,
-      token.meetingId ?? '',
-      'on',
-      currentRevision,
-      now,
-      noticeMode
-    )
+    return { ...reply(settled), body: { ...view(settled), pendingId: null } };
+  // The on has no effect until the Meet Worker confirms it after storing its
+  // evidence; one pending on per account, the latest one wins.
+  const staged = stageMiraOn(
+    settled,
+    token,
+    accountId,
+    noticeMode,
+    currentRevision,
+    now
   );
+  return {
+    state: staged.state,
+    body: {
+      ...view(staged.state),
+      pendingId: staged.pending.pendingId,
+      pendingUntil: staged.pending.pendingUntil,
+    },
+  };
+
+  function view(next: RoomServiceState) {
+    return miraRoomView(next, token, accountId, now);
+  }
 }
 
 /**
@@ -230,11 +261,13 @@ export function applyMiraRoomConsent(
  * turning Mira off pauses the live transcript for everyone.
  */
 function turnOff(
-  state: RoomServiceState,
+  input: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   accountId: string,
   now: number
 ): RoomServiceState {
+  // Off applies at once; a pending on can no longer be confirmed.
+  const state = dropMiraOn(input, accountId);
   const declined =
     applyMeetTranscriptConsent(
       state,
