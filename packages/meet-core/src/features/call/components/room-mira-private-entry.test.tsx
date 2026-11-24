@@ -250,6 +250,29 @@ it('tells a guest without a Private Assistant who is using Mira privately', asyn
   ).toBeNull();
 });
 
+it('announces private use on the closed control, in English and Vietnamese', async () => {
+  f.read.mockResolvedValue({ available: false });
+  show('en', lan);
+  const control = await screen.findByRole('button', {
+    name: messages.meet.live.title,
+  });
+  const described = () =>
+    document.getElementById(control.getAttribute('aria-describedby') ?? '')
+      ?.textContent;
+  expect(described()).toBe('1 person is using Mira privately.');
+  cleanup();
+  f.read.mockResolvedValue({ ...accepted, choice: 'on' });
+  show('en', [...lan, { userId: 'u2', displayName: 'Minh' }]);
+  const accepted2 = await screen.findByRole('button', {
+    name: /Mira is on, turned on by Lan/,
+  });
+  expect(
+    document.getElementById(accepted2.getAttribute('aria-describedby') ?? '')
+      ?.textContent
+  ).toContain('2 people are using Mira privately.');
+  expect(vi_messages.meet.live.private_use_count).toContain('Mira riêng tư');
+});
+
 it('tells a member with room Mira off who is using Mira privately', async () => {
   f.read.mockResolvedValue(base);
   act(() => publishLiveSession(session()));
@@ -294,6 +317,37 @@ it('leaves focus with the assistant dialog when the popover closes', async () =>
   await new Promise((resolve) => setTimeout(resolve, 50));
   expect(document.activeElement).toBe(dialog);
   dialog.remove();
+});
+
+it('still returns focus to the control on an ordinary close after the assistant path', async () => {
+  f.read.mockResolvedValue({ ...accepted, choice: 'on' });
+  act(() => publishLiveSession(session()));
+  show();
+  const control = await screen.findByRole('button', {
+    name: /Mira is on, turned on by Lan/,
+  });
+  fireEvent.click(control);
+  fireEvent.click(
+    await screen.findByRole('button', { name: messages.meet.live.open_private })
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: messages.meet.live.open_private })
+    ).toBeNull()
+  );
+  // The next close is an ordinary one and must not be swallowed.
+  fireEvent.click(control);
+  await screen.findByRole('button', { name: messages.meet.live.open_private });
+  fireEvent.keyDown(document.activeElement ?? document.body, {
+    key: 'Escape',
+  });
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: messages.meet.live.open_private })
+    ).toBeNull()
+  );
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(document.activeElement).toBe(control);
 });
 
 it('opens again for a new acceptance the person has not answered', async () => {

@@ -94,6 +94,11 @@ export function RoomMiraNotice({
       ))}
     </ul>
   );
+  // A closed control still tells a screen reader that Mira is in private use.
+  const privateNote =
+    privateUsers.length > 0
+      ? tl('private_use_count', { count: privateUsers.length })
+      : undefined;
   // Room Mira is off, unavailable or unreadable for this person. The control
   // then holds their Private Assistant and who else uses one, and is absent
   // without either.
@@ -103,6 +108,7 @@ export function RoomMiraNotice({
       <RoomMiraChip
         state="off"
         title={tl('title')}
+        description={privateNote}
         open={open ?? false}
         onOpenChange={setOpen}
         triggerRef={trigger}
@@ -119,6 +125,7 @@ export function RoomMiraNotice({
       <RoomMiraChip
         state="host"
         title={t('host_turn_on')}
+        description={privateNote}
         open={open ?? false}
         onOpenChange={setOpen}
         triggerRef={trigger}
@@ -143,15 +150,20 @@ export function RoomMiraNotice({
     <RoomMiraChip
       state={state}
       title={label}
-      description={t(
-        state === 'pausing'
-          ? 'pausing'
-          : state === 'on'
-            ? 'you_on'
-            : state === 'off'
-              ? 'you_off'
-              : 'you_choose'
-      )}
+      description={[
+        t(
+          state === 'pausing'
+            ? 'pausing'
+            : state === 'on'
+              ? 'you_on'
+              : state === 'off'
+                ? 'you_off'
+                : 'you_choose'
+        ),
+        privateNote,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       open={open ?? state === 'choose'}
       onOpenChange={setOpen}
       triggerRef={trigger}
