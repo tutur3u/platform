@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/media/public_storage_media.dart';
 
 Future<String> resolveTaskDescriptionVideoUrl(
   String url,
@@ -14,7 +15,7 @@ Future<String> resolveTaskDescriptionVideoUrl(
     return url;
   }
 
-  if (url.contains('.supabase.co/storage/v1/object/public/')) {
+  if (isPublicStorageMediaUrl(url)) {
     return url;
   }
 

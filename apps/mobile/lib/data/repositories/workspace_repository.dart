@@ -13,7 +13,6 @@ import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
-import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/media/profile_media_optimizer.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
@@ -82,23 +81,15 @@ class WorkspaceRepository {
   String? _resolveWorkspaceAvatarUrl(String? value) {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
+    // Storage hosts are server-owned: show only absolute URLs the API
+    // returns, and never build a storage host or path in the app.
     final uri = Uri.tryParse(trimmed);
-    if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+    if (uri != null &&
+        {'http', 'https'}.contains(uri.scheme) &&
+        uri.host.isNotEmpty) {
       return trimmed;
     }
-    final supabaseUrl = maybeSupabase?.storage
-        .from('avatars')
-        .getPublicUrl(trimmed);
-    if (supabaseUrl != null) {
-      return supabaseUrl;
-    }
-
-    var baseUrl = Env.supabaseUrl.replaceAll(RegExp(r'/$'), '');
-    if (Platform.isAndroid && baseUrl.contains('localhost')) {
-      baseUrl = baseUrl.replaceAll('localhost', '10.0.2.2');
-    }
-
-    return '$baseUrl/storage/v1/object/public/avatars/$trimmed';
+    return null;
   }
 
   Workspace _workspaceFromJson(Map<String, dynamic> json) {

@@ -67,6 +67,15 @@ localization changes.
 
 ## API Origins And Authentication
 
+- Storage hosts are server-owned. Display and upload only URLs the API
+  returns: never build a storage host or object path in the app. Use the
+  server-issued `uploadUrl` from an upload ticket, show `avatar_url` as-is,
+  and show the placeholder for a bare path. Classify public media with
+  `core/media/public_storage_media.dart`, which accepts the
+  `/storage/v1/object/public/{bucket}/...` shape on any host and
+  `cdn.tuturuuu.com/{bucket}/...`. Profile media cache keys use bucket and
+  object path, not the host.
+
 - Mobile uses Supabase access-token Bearer authentication against both the
   platform and registered satellite origins. A satellite proxy must let a
   syntactically valid bearer credential reach route-level authentication

@@ -30,6 +30,7 @@ void main() {
             'id': 'team-ws',
             'name': 'Product',
             'personal': false,
+            'avatar_url': 'https://cdn.tuturuuu.com/avatars/team-ws/logo.webp',
             'tier': 'ENTERPRISE',
           },
           {
@@ -49,9 +50,12 @@ void main() {
       expect(workspaces[0].tier, workspaceTierPlus);
       expect(workspaces[1].tier, workspaceTierEnterprise);
       expect(workspaces[2].tier, workspaceTierPro);
+      // The app never builds a storage host: a legacy bare path shows the
+      // placeholder, and server URLs are used as-is.
+      expect(workspaces[0].avatarUrl, isNull);
       expect(
-        workspaces[0].avatarUrl,
-        contains('/storage/v1/object/public/avatars/avatars/alex.png'),
+        workspaces[1].avatarUrl,
+        'https://cdn.tuturuuu.com/avatars/team-ws/logo.webp',
       );
     });
 
