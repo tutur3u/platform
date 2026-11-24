@@ -4319,7 +4319,6 @@
       "workspace_unavailable": "Meet AI is temporarily unavailable."
     },
     "call": {
-      "actions_action": "Action items",
       "actions_prompt": "List the action items, owners, and due dates mentioned in this meeting.",
       "activities": {
         "all": "All activities",
@@ -4380,6 +4379,10 @@
       "approved_empty": "No remembered approvals yet.",
       "approved_people": "Approved people",
       "approved_people_hint": "These people can rejoin without asking again.",
+      "ask_actions": "Action items",
+      "ask_decisions": "Decisions",
+      "ask_mira": "Ask Mira",
+      "ask_summarize": "Summary",
       "assistant_approve_actions": "Approve actions",
       "assistant_consent_pending": "Mira answers after everyone in the meeting chooses Continue.",
       "assistant_decision_needed": "Mira needs your approval",
@@ -4518,7 +4521,6 @@
       "cost_reports_limited": "{count} telemetry reports were limited or baselined. Some usage is missing from this estimate.",
       "cost_unavailable": "Cost data unavailable",
       "creation_restricted": "Hosting requires a verified Plus, Pro, Enterprise or @tuturuuu.com account. You can still join using an invite link.",
-      "decisions_action": "Decisions",
       "decisions_prompt": "What decisions have we made, and what remains open?",
       "deny": "Deny",
       "device_already_joined": "You’re already in this meeting",
@@ -5070,7 +5072,7 @@
           "title": "Mira can",
           "unavailable": "Unavailable"
         },
-        "roomTab": "Room Chat @Tuturuuu",
+        "roomTab": "Meeting Room",
         "surfaces": {
           "docs": "Docs",
           "polls": "Polls",
@@ -5110,7 +5112,7 @@
           "openSlide": "Open slide",
           "privacyDetail": "Mira only posts to the room if you share.",
           "shareSnippet": "Share snippet to room",
-          "tab": "Private Mira Tutor",
+          "tab": "Private Assistant",
           "title": "Mira Tutor"
         },
         "typing": "Mira is typing…",
@@ -5702,7 +5704,6 @@
       "stop_recording": "Stop recording",
       "stop_sharing": "Stop sharing",
       "storage_writes": "Snapshot writes",
-      "summarize_action": "Summarize",
       "summarize_prompt": "Summarize this meeting so far.",
       "summon": {
         "blocked": "{name} invited you to {surface}, but the host has not opened activities to everyone",

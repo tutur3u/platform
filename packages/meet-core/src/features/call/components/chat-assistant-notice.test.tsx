@@ -142,8 +142,9 @@ it('shows no 18+ badge in chat and states the rule only while a message mentions
   showChat();
   expect(screen.queryByText(adults.notice, { ignore: '.sr-only' })).toBeNull();
   expect(screen.queryByText('18+')).toBeNull();
-  const mira = screen.getByRole('button', { name: 'Mira' });
-  expect(mira.textContent).toBe('Mira');
+  const askMira = screen.getByRole('button', { name: call.ask_mira });
+  expect(askMira.textContent).not.toContain('18+');
+  expect(askMira.getAttribute('aria-describedby')).toBeNull();
   const composer = screen.getByRole('textbox', { name: call.chat });
   expect(composer.getAttribute('aria-describedby')).toBeNull();
   fireEvent.change(composer, { target: { value: '@mira summarize' } });
@@ -403,8 +404,9 @@ it('renders action cards only for trusted Mira messages and dispatches authorize
     },
   });
   expect(screen.getByText('Mira is typing…')).toBeTruthy();
-  expect(screen.getByText('Mira • Chat')).toBeTruthy();
-  expect(screen.getByText('Chat')).toBeTruthy();
+  // No Chat pill on Mira messages; the profile still carries the AI marker.
+  expect(screen.queryByText('Mira • Chat')).toBeNull();
+  expect(screen.queryByText('Chat')).toBeNull();
   expect(screen.queryByText('Untrusted tool')).toBeNull();
   expect(screen.getByText('Edited by Mira (Voice Live)')).toBeTruthy();
   for (const name of ['Stopped', 'Undone'])

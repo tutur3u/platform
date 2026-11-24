@@ -51,13 +51,18 @@ it('defaults to room chat and keeps an explicitly chosen conversation private wh
       .getByRole('tab', { name: messages.meet.call.miraEverywhere.roomTab })
       .getAttribute('aria-selected')
   ).toBe('true');
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira Tutor' }), {
-    button: 0,
-    ctrlKey: false,
-  });
+  fireEvent.mouseDown(
+    screen.getByRole('tab', {
+      name: messages.meet.call.miraEverywhere.tutor.tab,
+    }),
+    {
+      button: 0,
+      ctrlKey: false,
+    }
+  );
   expect(
     screen
-      .getByRole('tab', { name: 'Private Mira Tutor' })
+      .getByRole('tab', { name: messages.meet.call.miraEverywhere.tutor.tab })
       .getAttribute('aria-selected')
   ).toBe('true');
   fireEvent.change(screen.getByRole('textbox', { name: 'Private Mira' }), {
@@ -69,7 +74,7 @@ it('defaults to room chat and keeps an explicitly chosen conversation private wh
   rerender(content(false));
   expect(
     screen
-      .getByRole('tab', { name: 'Private Mira Tutor' })
+      .getByRole('tab', { name: messages.meet.call.miraEverywhere.tutor.tab })
       .getAttribute('aria-selected')
   ).toBe('true');
   fireEvent.click(
@@ -113,10 +118,15 @@ it('takes explicit Showcase feedback to room chat without sending a message', ()
     </QueryClientProvider>
   );
   const { rerender } = render(content(false));
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira Tutor' }), {
-    button: 0,
-    ctrlKey: false,
-  });
+  fireEvent.mouseDown(
+    screen.getByRole('tab', {
+      name: messages.meet.call.miraEverywhere.tutor.tab,
+    }),
+    {
+      button: 0,
+      ctrlKey: false,
+    }
+  );
   rerender(content(true));
   expect(
     screen

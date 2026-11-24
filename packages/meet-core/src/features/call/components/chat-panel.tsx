@@ -39,6 +39,7 @@ import {
   type MiraSlashCommand,
   miraSlashCommandDraft,
 } from '../lib/mira-slash-commands';
+import { AskMiraMenu } from './ask-mira-menu';
 import { AssistantPrivateReview } from './assistant-private-review';
 import {
   type AssistantFailureNotice,
@@ -354,14 +355,9 @@ export function ChatPanel({
                     {isMeetAssistant(message) ? (
                       <span className="flex flex-wrap items-center gap-1 text-xs">
                         <MiraProfile />
-                        <MiraModeTag
-                          compact
-                          mode={
-                            message.displayName === 'Mira Live'
-                              ? 'live'
-                              : 'chat'
-                          }
-                        />
+                        {message.displayName === 'Mira Live' && (
+                          <MiraModeTag compact mode="live" />
+                        )}
                       </span>
                     ) : (
                       <ChatAuthor
@@ -450,12 +446,14 @@ export function ChatPanel({
             </div>
             <p className="text-muted-foreground text-sm">{t('chat_empty')}</p>
             <p className="text-muted-foreground text-xs">{t('mira_hint')}</p>
+            <p className="mx-auto max-w-xs text-pretty text-muted-foreground text-xs">
+              {t('room_chat_audience')}
+            </p>
           </div>
         )}
         {miraTyping && (
           <div role="status" className="mt-3 flex flex-wrap items-center gap-2">
             <MiraAvatar size={24} />
-            <MiraModeTag mode="chat" />
             <span className="inline-flex items-center gap-2 rounded-full border border-dynamic-purple/25 bg-calendar-bg-purple px-2.5 py-1 font-semibold text-dynamic-purple text-xs">
               <MiraLiveDot />
               {tm('typing')}
@@ -510,21 +508,6 @@ export function ChatPanel({
             ))}
           </ul>
         )}
-        <div className="flex flex-wrap gap-1">
-          {(['summarize', 'decisions', 'actions'] as const).map((action) => (
-            <Button
-              key={action}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 rounded-full text-xs"
-              disabled={busy || !!draft.trim()}
-              onClick={() => setDraft(`@mira ${t(`${action}_prompt`)}`)}
-            >
-              {t(`${action}_action`)}
-            </Button>
-          ))}
-        </div>
         {commands.length > 0 && (
           <div
             id={paletteId}
@@ -553,63 +536,7 @@ export function ChatPanel({
         {hasMeetAssistantMention(draft) && (
           <MiraAdultNotice id={`${paletteId}-adults`} />
         )}
-        <Textarea
-          ref={composer}
-          value={draft}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            setDismissedDraft(undefined);
-            setCommandIndex(0);
-          }}
-          onFocus={() => {
-            setDismissedDraft(undefined);
-            setCommandIndex(0);
-          }}
-          onBlur={() => setDismissedDraft(draft)}
-          aria-autocomplete="list"
-          aria-controls={commands.length ? paletteId : undefined}
-          aria-activedescendant={
-            activeCommand ? `${paletteId}-${activeCommand}` : undefined
-          }
-          aria-describedby={
-            hasMeetAssistantMention(draft) ? `${paletteId}-adults` : undefined
-          }
-          maxLength={2000}
-          rows={2}
-          disabled={busy}
-          aria-label={t('chat')}
-          placeholder={t(qaLive ? 'chat_placeholder_qa' : 'chat_placeholder')}
-          className="max-h-32 min-h-16 resize-none"
-          onKeyDown={(event) => {
-            if (event.nativeEvent.isComposing) return;
-            if (commands.length) {
-              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                event.preventDefault();
-                const direction = event.key === 'ArrowDown' ? 1 : -1;
-                setCommandIndex(
-                  (commandIndex + direction + commands.length) % commands.length
-                );
-                return;
-              }
-              if (event.key === 'Escape') {
-                event.preventDefault();
-                event.stopPropagation();
-                setDismissedDraft(draft);
-                return;
-              }
-              if (event.key === 'Enter' && !event.shiftKey && activeCommand) {
-                event.preventDefault();
-                chooseCommand(activeCommand);
-                return;
-              }
-            }
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              void submit();
-            }
-          }}
-        />
-        <div className="flex items-center gap-1">
+        <div className="@container flex items-end gap-1">
           <input
             ref={input}
             type="file"
@@ -636,21 +563,70 @@ export function ChatPanel({
           >
             <Paperclip className="size-4" />
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={busy}
-            onClick={() =>
-              setDraft(
-                (text) => `${text.slice(0, 1989)}${text ? ' ' : ''}@Tuturuuu `
-              )
+          <AskMiraMenu
+            disabled={busy || !!draft.trim()}
+            onPick={(action) => {
+              setDraft(`@mira ${t(`${action}_prompt`)}`);
+              composer.current?.focus();
+            }}
+          />
+          <Textarea
+            ref={composer}
+            value={draft}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setDismissedDraft(undefined);
+              setCommandIndex(0);
+            }}
+            onFocus={() => {
+              setDismissedDraft(undefined);
+              setCommandIndex(0);
+            }}
+            onBlur={() => setDismissedDraft(draft)}
+            aria-autocomplete="list"
+            aria-controls={commands.length ? paletteId : undefined}
+            aria-activedescendant={
+              activeCommand ? `${paletteId}-${activeCommand}` : undefined
             }
-          >
-            <MiraAvatar size={20} />
-            Mira
-          </Button>
-          <span className="flex-1" />
+            aria-describedby={
+              hasMeetAssistantMention(draft) ? `${paletteId}-adults` : undefined
+            }
+            maxLength={2000}
+            rows={1}
+            disabled={busy}
+            aria-label={t('chat')}
+            placeholder={t(qaLive ? 'chat_placeholder_qa' : 'chat_placeholder')}
+            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none py-1.5"
+            onKeyDown={(event) => {
+              if (event.nativeEvent.isComposing) return;
+              if (commands.length) {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  const direction = event.key === 'ArrowDown' ? 1 : -1;
+                  setCommandIndex(
+                    (commandIndex + direction + commands.length) %
+                      commands.length
+                  );
+                  return;
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDismissedDraft(draft);
+                  return;
+                }
+                if (event.key === 'Enter' && !event.shiftKey && activeCommand) {
+                  event.preventDefault();
+                  chooseCommand(activeCommand);
+                  return;
+                }
+              }
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void submit();
+              }
+            }}
+          />
           <Button
             type="submit"
             size="icon"

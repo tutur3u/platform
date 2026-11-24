@@ -4290,7 +4290,6 @@
       "workspace_unavailable": "Meet AI tạm thời không khả dụng."
     },
     "call": {
-      "actions_action": "Việc cần làm",
       "actions_prompt": "Liệt kê công việc cần làm, người phụ trách và hạn chót được nhắc đến trong cuộc họp.",
       "admit": "Cho vào",
       "approved_empty": "Chưa có người được ghi nhớ phê duyệt.",
@@ -4452,7 +4451,6 @@
       "cost_reports_limited": "{count} báo cáo đo lường đã bị giới hạn hoặc đặt lại mốc. Ước tính này còn thiếu một phần mức sử dụng.",
       "cost_unavailable": "Dữ liệu chi phí không khả dụng",
       "creation_restricted": "Để tạo cuộc họp, bạn cần tài khoản đã xác minh dùng gói Plus, Pro, Enterprise hoặc email @tuturuuu.com. Bạn vẫn có thể tham gia bằng liên kết mời.",
-      "decisions_action": "Quyết định",
       "decisions_prompt": "Chúng ta đã quyết định những gì và còn vấn đề nào chưa giải quyết?",
       "deny": "Từ chối",
       "device_already_joined": "Bạn đã tham gia cuộc họp này",
@@ -4802,7 +4800,6 @@
       "stop_recording": "Dừng ghi",
       "stop_sharing": "Dừng chia sẻ",
       "storage_writes": "Lượt ghi trạng thái",
-      "summarize_action": "Tóm tắt",
       "summarize_prompt": "Tóm tắt cuộc họp đến thời điểm này.",
       "switch_device": "Chuyển sang thiết bị này",
       "system_default": "Mặc định hệ thống",
@@ -5312,7 +5309,11 @@
         "unlinked_title": "Chưa liên kết Upskii",
         "url_rejected": "Không thể chia sẻ liên kết này.",
         "waiting_title": "Chưa có nội dung được trình bày"
-      }
+      },
+      "ask_mira": "Hỏi Mira",
+      "ask_summarize": "Tóm tắt",
+      "ask_decisions": "Quyết định",
+      "ask_actions": "Việc cần làm"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",

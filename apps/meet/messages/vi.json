@@ -4319,7 +4319,6 @@
       "workspace_unavailable": "Meet AI tạm thời không khả dụng."
     },
     "call": {
-      "actions_action": "Việc cần làm",
       "actions_prompt": "Liệt kê công việc cần làm, người phụ trách và hạn chót được nhắc đến trong cuộc họp.",
       "activities": {
         "all": "Tất cả hoạt động",
@@ -4380,6 +4379,10 @@
       "approved_empty": "Chưa có người được ghi nhớ phê duyệt.",
       "approved_people": "Người đã được duyệt",
       "approved_people_hint": "Những người này có thể tham gia lại mà không cần xin duyệt.",
+      "ask_actions": "Việc cần làm",
+      "ask_decisions": "Quyết định",
+      "ask_mira": "Hỏi Mira",
+      "ask_summarize": "Tóm tắt",
       "assistant_approve_actions": "Duyệt thao tác",
       "assistant_consent_pending": "Mira sẽ trả lời sau khi mọi người trong cuộc họp chọn Tiếp tục.",
       "assistant_decision_needed": "Mira cần bạn phê duyệt",
@@ -4518,7 +4521,6 @@
       "cost_reports_limited": "{count} báo cáo đo lường đã bị giới hạn hoặc đặt lại mốc. Ước tính này còn thiếu một phần mức sử dụng.",
       "cost_unavailable": "Dữ liệu chi phí không khả dụng",
       "creation_restricted": "Để tạo cuộc họp, bạn cần tài khoản đã xác minh dùng gói Plus, Pro, Enterprise hoặc email @tuturuuu.com. Bạn vẫn có thể tham gia bằng liên kết mời.",
-      "decisions_action": "Quyết định",
       "decisions_prompt": "Chúng ta đã quyết định những gì và còn vấn đề nào chưa giải quyết?",
       "deny": "Từ chối",
       "device_already_joined": "Bạn đã tham gia cuộc họp này",
@@ -5070,7 +5072,7 @@
           "title": "Mira có thể",
           "unavailable": "Không khả dụng"
         },
-        "roomTab": "Phòng chat @Tuturuuu",
+        "roomTab": "Phòng họp",
         "surfaces": {
           "docs": "Tài liệu",
           "polls": "Bình chọn",
@@ -5110,7 +5112,7 @@
           "openSlide": "Mở trang chiếu",
           "privacyDetail": "Mira chỉ đăng vào phòng khi bạn chia sẻ.",
           "shareSnippet": "Chia sẻ đoạn trích vào phòng",
-          "tab": "Gia sư Mira riêng tư",
+          "tab": "Trợ lý riêng",
           "title": "Gia sư Mira"
         },
         "typing": "Mira đang nhập…",
@@ -5702,7 +5704,6 @@
       "stop_recording": "Dừng ghi",
       "stop_sharing": "Dừng chia sẻ",
       "storage_writes": "Lượt ghi trạng thái",
-      "summarize_action": "Tóm tắt",
       "summarize_prompt": "Tóm tắt cuộc họp đến thời điểm này.",
       "summon": {
         "blocked": "{name} mời bạn đến {surface}, nhưng chủ trì chưa mở hoạt động cho mọi người",
