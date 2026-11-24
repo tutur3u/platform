@@ -1753,6 +1753,7 @@
     "create_workspace_upgrade_notice": "Workspaces are created with a free tier by default. You can upgrade your plan in the workspace billing page after creation.",
     "created": "Created",
     "creating": "Creating",
+    "current_plan": "Current plan",
     "current_workspace": "Current workspace",
     "cyan": "Cyan",
     "dark": "Dark",

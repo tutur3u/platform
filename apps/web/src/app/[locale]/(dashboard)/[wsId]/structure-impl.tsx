@@ -948,7 +948,8 @@ export function StructureImpl({
             <SidebarFooterActions
               wsId={wsId}
               isCollapsed={isCollapsed}
-              showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
+              isFreeTier={!workspace?.tier || workspace.tier === 'FREE'}
+              showUpgrade
             />
           }
           onMouseEnter={onMouseEnter}

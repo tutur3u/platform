@@ -300,6 +300,7 @@
     "create_workspace_action": "Tạo",
     "create_workspace_description": "Tạo workspace để tổ chức đội ngũ, dự án và dữ liệu lập kế hoạch.",
     "create_workspace_upgrade_notice": "Giới hạn workspace phụ thuộc vào gói hiện tại của bạn.",
+    "current_plan": "Gói hiện tại",
     "current_workspace": "Không gian làm việc hiện tại",
     "dark": "Tối",
     "dashboard": "Bảng điều khiển",

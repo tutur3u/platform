@@ -2,6 +2,8 @@
 
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useCallback } from 'react';
+import { leavePublicProfileAddress } from './public-profile-address';
+import { SETTINGS_DIALOG_DEEP_LINK_PARAMS } from './settings-dialog-url';
 
 export const UPGRADE_DIALOG_PARAM = 'upgradeDialog';
 export const UPGRADE_TAB_PARAM = 'upgradeTab';
@@ -10,6 +12,22 @@ export const UPGRADE_TAB_IDS = ['plans', 'compare', 'current'] as const;
 export type UpgradeTabId = (typeof UPGRADE_TAB_IDS)[number];
 
 const QUERY_OPTIONS = { scroll: false, shallow: true } as const;
+
+export const CLOSED_UPGRADE_DIALOG_QUERY = {
+  [UPGRADE_DIALOG_PARAM]: null,
+  [UPGRADE_TAB_PARAM]: null,
+} as const;
+
+/** Settings params cleared when Upgrade opens, so one dialog shows at a time. */
+const CLOSED_SETTINGS_QUERY = Object.fromEntries(
+  SETTINGS_DIALOG_DEEP_LINK_PARAMS.map((key) => [key, null])
+) as Record<(typeof SETTINGS_DIALOG_DEEP_LINK_PARAMS)[number], null>;
+const SETTINGS_PARSERS = Object.fromEntries(
+  SETTINGS_DIALOG_DEEP_LINK_PARAMS.map((key) => [key, parseAsString])
+) as Record<
+  (typeof SETTINGS_DIALOG_DEEP_LINK_PARAMS)[number],
+  typeof parseAsString
+>;
 
 /** Returns the tab id, or `plans` for a missing or unknown value. */
 export function resolveUpgradeTab(value: string | null | undefined) {
@@ -24,6 +42,7 @@ export function resolveUpgradeTab(value: string | null | undefined) {
 export function useUpgradeDialogUrlState() {
   const [query, setQuery] = useQueryStates(
     {
+      ...SETTINGS_PARSERS,
       [UPGRADE_DIALOG_PARAM]: parseAsString,
       [UPGRADE_TAB_PARAM]: parseAsString,
     },
@@ -34,8 +53,10 @@ export function useUpgradeDialogUrlState() {
 
   const openUpgrade = useCallback(
     (nextTab?: UpgradeTabId) => {
+      leavePublicProfileAddress();
       void setQuery(
         {
+          ...CLOSED_SETTINGS_QUERY,
           [UPGRADE_DIALOG_PARAM]: UPGRADE_DIALOG_OPEN_VALUE,
           [UPGRADE_TAB_PARAM]: nextTab ?? null,
         },
@@ -57,10 +78,10 @@ export function useUpgradeDialogUrlState() {
     [setQuery]
   );
   const closeUpgrade = useCallback(() => {
-    void setQuery(
-      { [UPGRADE_DIALOG_PARAM]: null, [UPGRADE_TAB_PARAM]: null },
-      { ...QUERY_OPTIONS, history: 'replace' }
-    );
+    void setQuery(CLOSED_UPGRADE_DIALOG_QUERY, {
+      ...QUERY_OPTIONS,
+      history: 'replace',
+    });
   }, [setQuery]);
 
   return { closeUpgrade, open, openUpgrade, selectTab, tab };

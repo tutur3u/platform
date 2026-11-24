@@ -14,6 +14,11 @@ import {
   parseSettingsDialogQuery,
   serializeSettingsDialogQuery,
 } from './settings-dialog-url';
+import {
+  CLOSED_UPGRADE_DIALOG_QUERY,
+  UPGRADE_DIALOG_PARAM,
+  UPGRADE_TAB_PARAM,
+} from './use-upgrade-dialog-url-state';
 
 type ExtraValues<K extends string> = Partial<Record<K, string | null>>;
 
@@ -42,6 +47,8 @@ export function useSettingsDialogUrlState<K extends string = never>(
     const parsers: Record<string, typeof parseAsString> = {
       settingsDialog: parseAsString,
       settingsTab: parseAsString,
+      [UPGRADE_DIALOG_PARAM]: parseAsString,
+      [UPGRADE_TAB_PARAM]: parseAsString,
     };
     for (const key of Object.keys(clearedExtras)) parsers[key] = parseAsString;
     return parsers;
@@ -66,6 +73,8 @@ export function useSettingsDialogUrlState<K extends string = never>(
       void setQuery(
         {
           ...clearedExtras,
+          // One account dialog at a time: opening Settings closes Upgrade.
+          ...CLOSED_UPGRADE_DIALOG_QUERY,
           ...extras,
           ...serializeSettingsDialogQuery(nextTab),
         },

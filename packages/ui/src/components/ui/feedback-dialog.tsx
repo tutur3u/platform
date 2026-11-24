@@ -20,7 +20,7 @@ const noopPersist = () => {};
 
 type FeedbackDialogProps = Omit<
   ReportProblemDialogProps,
-  'trigger' | 'showTrigger' | 'className' | 'closeOnSubmit' | 'onSubmitted'
+  'trigger' | 'showTrigger' | 'className'
 > & { initialTab?: FeedbackTab };
 
 /**
@@ -29,6 +29,8 @@ type FeedbackDialogProps = Omit<
  */
 export function FeedbackDialog({
   initialTab = FEEDBACK_TABS.send,
+  closeOnSubmit = false,
+  onSubmitted,
   ...props
 }: FeedbackDialogProps) {
   const { t, products, ImageComponent } = props;
@@ -36,10 +38,12 @@ export function FeedbackDialog({
   const { receipts, addReceipt } = useFeedbackReceipts();
   const report = useReportProblem({
     ...props,
-    closeOnSubmit: false,
+    // Stays open on the receipt by default; a caller may still close it.
+    closeOnSubmit,
     onSubmitted: (receipt) => {
       addReceipt(receipt);
       setTab(FEEDBACK_TABS.history);
+      onSubmitted?.(receipt);
     },
   });
   const { handleOpenChange } = report;

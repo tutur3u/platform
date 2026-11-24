@@ -89,3 +89,39 @@ describe('useSettingsDialogUrlState with the public profile address', () => {
     expect(onUrlUpdate.mock.calls.at(-1)?.[0].options.history).toBe('replace');
   });
 });
+
+describe('one account dialog at a time', () => {
+  it('closes Upgrade when Settings opens', async () => {
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+    const { result } = renderUrlState(
+      '?upgradeDialog=open&upgradeTab=compare',
+      onUrlUpdate
+    );
+    act(() => result.current.openSettings('security'));
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    const update = onUrlUpdate.mock.calls.at(-1)?.[0];
+    expect(update?.searchParams.get('settingsTab')).toBe('security');
+    expect(update?.searchParams.has('upgradeDialog')).toBe(false);
+    expect(update?.searchParams.has('upgradeTab')).toBe(false);
+  });
+
+  it('closes Settings when Upgrade opens', async () => {
+    const { useUpgradeDialogUrlState } =
+      await import('./use-upgrade-dialog-url-state.js');
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+    const { result } = renderHook(() => useUpgradeDialogUrlState(), {
+      wrapper: withNuqsTestingAdapter({
+        onUrlUpdate,
+        searchParams:
+          '?settingsDialog=open&settingsTab=workspace_members&settingsMembersTab=roles',
+      }),
+    });
+    act(() => result.current.openUpgrade('current'));
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    const update = onUrlUpdate.mock.calls.at(-1)?.[0];
+    expect(update?.searchParams.get('upgradeDialog')).toBe('open');
+    expect(update?.searchParams.get('upgradeTab')).toBe('current');
+    for (const key of ['settingsDialog', 'settingsTab', 'settingsMembersTab'])
+      expect(update?.searchParams.has(key)).toBe(false);
+  });
+});

@@ -121,7 +121,11 @@ export default async function BillingPage({
         products={products}
         seatStatus={seatStatus}
         requiredSeats={requiredSeats}
-        openPlansOnLoad={Boolean(plan)}
+        openPlansOnLoad={
+          // Only a product from the fetched catalog opens the plan list.
+          typeof plan === 'string' &&
+          products.some((product) => product.id === plan)
+        }
       />
 
       <BillingDetailsCard wsId={wsId} />

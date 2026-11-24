@@ -9,22 +9,35 @@ import {
   type SatelliteFooterActionsProps,
 } from './satellite-footer-actions';
 import { UpgradeDialog } from './upgrade-dialog';
-export function SidebarFooterActions(
-  props: Omit<
-    SatelliteFooterActionsProps,
-    'labels' | 'discordHref' | 'onFeedback' | 'LinkComponent'
-  >
-) {
+export function SidebarFooterActions({
+  isFreeTier = true,
+  ...props
+}: Omit<
+  SatelliteFooterActionsProps,
+  'labels' | 'discordHref' | 'onFeedback' | 'LinkComponent'
+> & {
+  /**
+   * Free workspaces see "Upgrade" on the Plans tab; paid workspaces see
+   * "Current plan" on the Current plan tab of the same dialog.
+   */
+  isFreeTier?: boolean;
+}) {
   const t = useTranslations('common');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const openFeedback = useCallback(() => setFeedbackOpen(true), []);
   const { openUpgrade } = useUpgradeDialogUrlState();
-  const onUpgrade = useCallback(() => openUpgrade('plans'), [openUpgrade]);
+  const onUpgrade = useCallback(
+    () => openUpgrade(isFreeTier ? 'plans' : 'current'),
+    [isFreeTier, openUpgrade]
+  );
   return (
     <>
       <SatelliteFooterActions
         {...props}
-        labels={{ upgrade: t('upgrade'), feedback: t('feedback') }}
+        labels={{
+          upgrade: isFreeTier ? t('upgrade') : t('current_plan'),
+          feedback: t('feedback'),
+        }}
         discordHref={process.env.NEXT_PUBLIC_DISCORD_LINK}
         onFeedback={openFeedback}
         onUpgrade={onUpgrade}

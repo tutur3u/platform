@@ -1772,6 +1772,7 @@
     "create_workspace_upgrade_notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo.",
     "created": "Đã tạo",
     "creating": "Đang tạo",
+    "current_plan": "Gói hiện tại",
     "current_workspace": "Không gian làm việc hiện tại",
     "cyan": "Xanh lơ",
     "dark": "Tối",

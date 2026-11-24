@@ -464,6 +464,7 @@
     "create_workspace_action": "Tạo",
     "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
     "create_workspace_upgrade_notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo.",
+    "current_plan": "Gói hiện tại",
     "current_workspace": "Không gian làm việc hiện tại",
     "dark": "Tối",
     "dashboard": "Bảng điều khiển",
