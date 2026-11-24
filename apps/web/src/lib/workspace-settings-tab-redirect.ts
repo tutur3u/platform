@@ -3,7 +3,7 @@ import {
   SETTINGS_MEMBERS_TAB_PARAM,
   sanitizeWorkspaceAccessTab,
 } from '@tuturuuu/ui/hooks/settings-dialog-url';
-import { redirect } from '@/i18n/routing';
+import { type Locale, redirect, routing } from '@/i18n/routing';
 
 /**
  * Sends a retired workspace settings page to the settings dialog tab that
@@ -23,12 +23,17 @@ export function redirectToWorkspaceSettingsTab({
   const accessTab = sanitizeWorkspaceAccessTab(
     Array.isArray(membersTab) ? membersTab[0] : membersTab
   );
+  const targetLocale: Locale = (routing.locales as readonly string[]).includes(
+    locale
+  )
+    ? (locale as Locale)
+    : routing.defaultLocale;
   return redirect({
     href: buildSettingsDialogHref(
       `/${encodeURIComponent(wsId)}`,
       tab,
       accessTab ? { [SETTINGS_MEMBERS_TAB_PARAM]: accessTab } : undefined
     ),
-    locale,
+    locale: targetLocale,
   });
 }

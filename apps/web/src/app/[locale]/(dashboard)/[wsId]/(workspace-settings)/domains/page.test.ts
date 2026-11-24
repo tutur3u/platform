@@ -5,7 +5,10 @@ const redirect = vi.hoisted(() =>
     throw new Error(`redirect:${target.locale}:${target.href}`);
   })
 );
-vi.mock('@/i18n/routing', () => ({ redirect }));
+vi.mock('@/i18n/routing', () => ({
+  redirect,
+  routing: { defaultLocale: 'en', locales: ['en', 'vi'] },
+}));
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));

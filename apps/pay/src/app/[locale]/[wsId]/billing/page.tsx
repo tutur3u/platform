@@ -124,7 +124,7 @@ export default async function BillingPage({
         openPlansOnLoad={
           // Only a product from the fetched catalog opens the plan list.
           typeof plan === 'string' &&
-          products.some((product) => product.id === plan)
+          products.some((product: { id: string }) => product.id === plan)
         }
       />
 

@@ -57,7 +57,7 @@ export function SsoManagement({
     onSuccess: async (result) => {
       setEditor(null);
       setReloaded(false);
-      setSelectedId(result.id);
+      setSelectedId((result as { id: string }).id);
       await refresh();
     },
   });

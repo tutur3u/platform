@@ -1,21 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const redirect = vi.hoisted(() =>
-  vi.fn((_target?: { href: string; locale: string }) => {
-    throw new Error('NEXT_REDIRECT');
-  })
+  vi.fn((_target?: { href: string; locale: string }) => undefined)
 );
-vi.mock('@/i18n/routing', () => ({ redirect }));
+vi.mock('@/i18n/routing', () => ({
+  redirect,
+  routing: { defaultLocale: 'en', locales: ['en', 'vi'] },
+}));
 
 import WorkspaceMembersPage from './page';
 
 async function visit(tab?: string) {
-  await expect(
-    WorkspaceMembersPage({
-      params: Promise.resolve({ locale: 'vi', wsId: 'ws-1' }),
-      searchParams: Promise.resolve({ tab }),
-    })
-  ).rejects.toThrow();
+  await WorkspaceMembersPage({
+    params: Promise.resolve({ locale: 'vi', wsId: 'ws-1' }),
+    searchParams: Promise.resolve({ tab }),
+  });
   return redirect.mock.calls[0]?.[0];
 }
 
