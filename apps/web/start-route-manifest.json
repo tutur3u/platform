@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 899,
+    "total": 900,
     "categories": {
-      "api": 699,
+      "api": 700,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 887 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 888 }
   },
   "routes": [
     {
@@ -5240,6 +5240,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/classes/[classId]/tuition",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/classes/[classId]/tuition/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

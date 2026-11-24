@@ -2412,6 +2412,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/finance/classes/[classId]/tuition"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/finance/wallets/[walletId]/checkpoints/[checkpointId]/review"
     },
     {
