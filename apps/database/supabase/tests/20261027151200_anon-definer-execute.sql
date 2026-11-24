@@ -640,6 +640,9 @@ INSERT INTO definer_added_later_authenticated VALUES
   ('public.set_product_email_consent(boolean,text,text)'),
   ('public.get_product_email_consent()'),
   ('public.list_product_email_consent_events(integer)'),
+  -- apps/database/supabase/migrations/20261124114000_product_analytics_consent.sql
+  ('public.get_product_analytics_consent()'),
+  ('public.set_product_analytics_consent(boolean,text,text)'),
   -- apps/database/supabase/migrations/20261124141000_product_feedback_receipt_list.sql
   ('public.list_product_feedback_receipts(integer,timestamp with time zone,uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later_authenticated l
