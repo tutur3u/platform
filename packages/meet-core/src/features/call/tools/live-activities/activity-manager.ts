@@ -22,13 +22,14 @@ const ROOM_ACTIVITY_TOOLS = new Set([
   'live-game',
   'live-icebreaker',
   'pen-whiteboard',
+  'upskii',
 ]);
 
 /**
  * The tools someone browses when all they may do is run room activities: a
  * workspace co-host in a room whose tools are for hosts only. They get the
- * four activities and the pen board; polls, timers, Quiz Arena and Q&A stay
- * with the hosts.
+ * live activities, the pen board and the Upskii presenter; polls, timers,
+ * Quiz Arena and Q&A stay with the hosts.
  */
 export function roomActivityTools<T extends { id: string }>(
   tools: readonly T[]

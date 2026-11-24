@@ -60,6 +60,7 @@ it('tints every activity from the shared tokens and never with a raw hue', () =>
     'tool:live-game',
     'tool:live-icebreaker',
     'tool:pen-whiteboard',
+    'tool:upskii',
     'whiteboard',
     'breakouts',
     'programming',

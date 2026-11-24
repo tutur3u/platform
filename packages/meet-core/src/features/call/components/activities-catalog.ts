@@ -24,6 +24,7 @@ const GROUP_OF: Readonly<Record<string, ActivityGroup>> = {
   'live-flashcards': 'learn',
   'live-game': 'learn',
   'live-assessment': 'learn',
+  upskii: 'learn',
   'pen-whiteboard': 'create',
   whiteboard: 'create',
   programming: 'create',

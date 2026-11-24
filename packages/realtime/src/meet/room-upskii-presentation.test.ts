@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { MEET_CLASS_COHOST_SCOPE } from './class-timer';
 import { liveActivityAttemptRefusal } from './live-activity-rate';
 import { meetRealtimeClientMessageSchema } from './messages';
-import { receivesMeetToolFrame } from './permissions';
+import { MEET_REALTIME_SCOPES, receivesMeetToolFrame } from './permissions';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
 import {
   createMeetPresence,
@@ -29,13 +30,35 @@ const host = meetRealtimeTokenPayloadSchema.parse({
 const guest = {
   ...host,
   role: 'speaker' as const,
+  scopes: [],
+  userId: crypto.randomUUID(),
+};
+const viewer = {
+  ...host,
+  role: 'viewer' as const,
+  scopes: [],
+  userId: crypto.randomUUID(),
+};
+const participantManager = {
+  ...host,
+  role: 'speaker' as const,
+  scopes: [MEET_REALTIME_SCOPES.participantsManage],
+  userId: crypto.randomUUID(),
+};
+const cohost = {
+  ...host,
+  role: 'speaker' as const,
+  scopes: [MEET_CLASS_COHOST_SCOPE],
   userId: crypto.randomUUID(),
 };
 const outsider = { ...guest, userId: crypto.randomUUID() };
 const room = (): MeetRoomSnapshot => ({
   ...createMeetRoomSnapshot(),
   presence: Object.fromEntries(
-    [host, guest].map((token) => [token.userId, createMeetPresence(token, now)])
+    [host, guest, viewer, participantManager, cohost].map((token) => [
+      token.userId,
+      createMeetPresence(token, now),
+    ])
   ),
 });
 const lesson = {
@@ -200,11 +223,32 @@ describe('applyUpskiiPresentation', () => {
     ]);
   });
 
-  it('refuses participants, people not admitted and the lobby', () => {
+  it('refuses set and clear from plain participants, people not admitted and the lobby', () => {
     const initial = room();
-    expect(
-      errorOf(run(initial, guest, { type: 'upskii.present.set', item: lesson }))
-    ).toBe('permission_denied');
+    const active = run(initial, host, {
+      type: 'upskii.present.set',
+      item: lesson,
+    });
+    for (const participant of [guest, viewer]) {
+      const deniedSet = run(initial, participant, {
+        type: 'upskii.present.set',
+        item: lesson,
+        requestId: 'deny-set',
+      });
+      expect(errorOf(deniedSet)).toBe('permission_denied');
+      expect(deniedSet.broadcast).toEqual([]);
+      expect(deniedSet.state.upskiiPresentation).toBeUndefined();
+
+      const deniedClear = run(active.state, participant, {
+        type: 'upskii.present.clear',
+        requestId: 'deny-clear',
+      });
+      expect(errorOf(deniedClear)).toBe('permission_denied');
+      expect(deniedClear.broadcast).toEqual([]);
+      expect(deniedClear.state.upskiiPresentation).toEqual(
+        active.state.upskiiPresentation
+      );
+    }
     expect(
       errorOf(run(initial, outsider, { type: 'upskii.present.read' }))
     ).toBe('awaiting_admission');
@@ -217,6 +261,27 @@ describe('applyUpskiiPresentation', () => {
     expect(errorOf(run(waiting, guest, { type: 'upskii.present.read' }))).toBe(
       'awaiting_admission'
     );
+  });
+
+  it('accepts set and clear from participant managers and class co-hosts', () => {
+    for (const actor of [participantManager, cohost]) {
+      const set = run(room(), actor, {
+        type: 'upskii.present.set',
+        item: lesson,
+        requestId: 'actor-set',
+      });
+      expect(set.state.upskiiPresentation?.presenterId).toBe(actor.userId);
+      expect(set.broadcast).toHaveLength(1);
+
+      const cleared = run(set.state, actor, {
+        type: 'upskii.present.clear',
+        requestId: 'actor-clear',
+      });
+      expect(cleared.state.upskiiPresentation).toBeUndefined();
+      expect(cleared.broadcast).toEqual([
+        { type: 'upskii.presentation', presentation: null },
+      ]);
+    }
   });
 
   it('re-checks the link on the room, whatever the client sent', () => {

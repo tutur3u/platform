@@ -9,6 +9,7 @@ const TONES: Record<string, string> = {
   'tool:live-game': 'bg-dynamic-red/15 text-dynamic-red',
   'tool:live-icebreaker': 'bg-dynamic-cyan/15 text-dynamic-cyan',
   'tool:pen-whiteboard': 'bg-dynamic-indigo/15 text-dynamic-indigo',
+  'tool:upskii': 'bg-dynamic-sky/15 text-dynamic-sky',
   whiteboard: 'bg-dynamic-indigo/15 text-dynamic-indigo',
   breakouts: 'bg-dynamic-teal/15 text-dynamic-teal',
   programming: 'bg-dynamic-gray/15 text-dynamic-gray',

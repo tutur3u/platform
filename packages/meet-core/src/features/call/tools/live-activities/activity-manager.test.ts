@@ -26,7 +26,7 @@ it('matches the room: hosts, participant managers and workspace co-hosts run act
   expect(runsRoomActivities({})).toBe(false);
 });
 
-it('limits someone who only runs activities to the activities and the pen board', () => {
+it('limits someone who only runs activities to the activities, pen board and Upskii presenter', () => {
   const ids = [
     'polls',
     'timers',
@@ -37,6 +37,7 @@ it('limits someone who only runs activities to the activities and the pen board'
     'live-game',
     'live-icebreaker',
     'pen-whiteboard',
+    'upskii',
   ];
   expect(
     roomActivityTools(ids.map((id) => ({ id }))).map(({ id }) => id)
@@ -46,5 +47,6 @@ it('limits someone who only runs activities to the activities and the pen board'
     'live-game',
     'live-icebreaker',
     'pen-whiteboard',
+    'upskii',
   ]);
 });

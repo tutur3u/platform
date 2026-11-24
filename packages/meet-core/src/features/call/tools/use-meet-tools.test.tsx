@@ -139,7 +139,7 @@ it('lets someone who only runs activities browse those and the pen board, nothin
     registry: tools,
   });
   expect(shown()).toBe(
-    'live-assessment live-flashcards live-game live-icebreaker pen-whiteboard'
+    'live-assessment live-flashcards live-game live-icebreaker pen-whiteboard upskii'
   );
   for (const hostsOnly of ['Polls', 'Q&A'])
     expect(screen.queryByRole('button', { name: hostsOnly })).toBeNull();
@@ -161,7 +161,7 @@ it('lets someone who only runs activities browse those and the pen board, nothin
   expect(shown()).toBe('');
 });
 
-it('registers polls, timer, quiz, the live activities and the pen board in order', () => {
+it('registers polls, timer, quiz, the live activities, the pen board and Upskii in order', () => {
   // The default registry is the one for the configured switch.
   expect(meetTools).toEqual(
     meetToolsFor({ assessment: MEET_LIVE_ASSESSMENT_ENABLED })
@@ -179,6 +179,7 @@ it('registers polls, timer, quiz, the live activities and the pen board in order
     'live-game',
     'live-icebreaker',
     'pen-whiteboard',
+    'upskii',
   ]);
 });
 
@@ -195,6 +196,7 @@ it('offers the assessment in the menu and to co-hosts only while it is switched 
     'live-game',
     'live-icebreaker',
     'pen-whiteboard',
+    'upskii',
   ]);
   // Nothing else leaves the menu with it.
   expect(ids(off)).toEqual(ids(on).filter((id) => id !== 'live-assessment'));

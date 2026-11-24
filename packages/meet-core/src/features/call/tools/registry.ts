@@ -9,6 +9,7 @@ import { liveQaTool } from './live-activities/qa/definition';
 import { pollsTool } from './polls';
 import { quizTool } from './quiz';
 import { timersTool } from './timers';
+import { upskiiTool } from './upskii/definition';
 import { whiteboardTool } from './whiteboard/definition';
 
 /** What the hub passes every tool panel; `useMeetTool()` has the rest. */
@@ -51,6 +52,7 @@ export function meetToolsFor(features: {
     quizTool,
     ...liveActivityTools,
     whiteboardTool,
+    upskiiTool,
   ].filter((tool) => features.assessment || tool !== liveAssessmentTool);
 }
 
