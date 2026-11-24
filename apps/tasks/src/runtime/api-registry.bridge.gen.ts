@@ -124,45 +124,52 @@ import * as route117 from '../app/api/v1/workspaces/[wsId]/task-templates/[templ
 import * as route118 from '../app/api/v1/workspaces/[wsId]/task-templates/[templateKey]/route';
 import * as route119 from '../app/api/v1/workspaces/[wsId]/task-templates/from-task/route';
 import * as route120 from '../app/api/v1/workspaces/[wsId]/task-templates/route';
-import * as route121 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route';
-import * as route122 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/embedding/route';
-import * as route123 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/estimation/route';
-import * as route124 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/history/route';
-import * as route125 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route';
-import * as route126 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup/route';
-import * as route127 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/move/route';
-import * as route128 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/relationships/route';
-import * as route129 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/revert/route';
-import * as route130 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/route';
-import * as route131 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/history/route';
-import * as route132 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/route';
-import * as route133 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/share-links/route';
-import * as route134 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/shares/route';
-import * as route135 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]/route';
-import * as route136 from '../app/api/v1/workspaces/[wsId]/tasks/bulk/route';
-import * as route137 from '../app/api/v1/workspaces/[wsId]/tasks/embeddings/generate/route';
-import * as route138 from '../app/api/v1/workspaces/[wsId]/tasks/history/route';
-import * as route139 from '../app/api/v1/workspaces/[wsId]/tasks/journal/route';
-import * as route140 from '../app/api/v1/workspaces/[wsId]/tasks/media/route';
-import * as route141 from '../app/api/v1/workspaces/[wsId]/tasks/recurrence/route';
-import * as route142 from '../app/api/v1/workspaces/[wsId]/tasks/route';
-import * as route143 from '../app/api/v1/workspaces/[wsId]/tasks/schedule-batch/route';
-import * as route144 from '../app/api/v1/workspaces/[wsId]/tasks/search/route';
-import * as route145 from '../app/api/v1/workspaces/[wsId]/tasks/suggestions/route';
-import * as route146 from '../app/api/v1/workspaces/[wsId]/tasks/upload-url/route';
-import * as route147 from '../app/api/v1/workspaces/[wsId]/tasks/with-relationship/route';
-import * as route148 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route';
-import * as route149 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/route';
-import * as route150 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/shares/route';
-import * as route151 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/use/route';
-import * as route152 from '../app/api/v1/workspaces/[wsId]/templates/background/route';
-import * as route153 from '../app/api/v1/workspaces/[wsId]/templates/route';
-import * as route154 from '../app/api/v1/workspaces/[wsId]/templates/upload-url/route';
-import * as route155 from '../app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/route';
-import * as route156 from '../app/api/v1/workspaces/[wsId]/time-tracking/sessions/route';
-import * as route157 from '../app/api/v1/workspaces/[wsId]/time-tracking/tasks/route';
-import * as route158 from '../app/api/workspaces/[wsId]/members/route';
-import * as route159 from '../app/api/workspaces/[wsId]/route';
+import * as route121 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/comments/[commentId]/route';
+import * as route122 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/comments/route';
+import * as route123 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route';
+import * as route124 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/embedding/route';
+import * as route125 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/estimation/route';
+import * as route126 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/external-ref/route';
+import * as route127 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/history/route';
+import * as route128 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route';
+import * as route129 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/links/[linkId]/route';
+import * as route130 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/links/route';
+import * as route131 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup/route';
+import * as route132 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/move/route';
+import * as route133 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/relationships/route';
+import * as route134 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/revert/route';
+import * as route135 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/route';
+import * as route136 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/history/route';
+import * as route137 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/route';
+import * as route138 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/share-links/route';
+import * as route139 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/shares/route';
+import * as route140 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]/route';
+import * as route141 from '../app/api/v1/workspaces/[wsId]/tasks/[taskId]/timeline/route';
+import * as route142 from '../app/api/v1/workspaces/[wsId]/tasks/bulk/route';
+import * as route143 from '../app/api/v1/workspaces/[wsId]/tasks/embeddings/generate/route';
+import * as route144 from '../app/api/v1/workspaces/[wsId]/tasks/history/route';
+import * as route145 from '../app/api/v1/workspaces/[wsId]/tasks/import/github/route';
+import * as route146 from '../app/api/v1/workspaces/[wsId]/tasks/journal/route';
+import * as route147 from '../app/api/v1/workspaces/[wsId]/tasks/media/route';
+import * as route148 from '../app/api/v1/workspaces/[wsId]/tasks/recurrence/route';
+import * as route149 from '../app/api/v1/workspaces/[wsId]/tasks/route';
+import * as route150 from '../app/api/v1/workspaces/[wsId]/tasks/schedule-batch/route';
+import * as route151 from '../app/api/v1/workspaces/[wsId]/tasks/search/route';
+import * as route152 from '../app/api/v1/workspaces/[wsId]/tasks/suggestions/route';
+import * as route153 from '../app/api/v1/workspaces/[wsId]/tasks/upload-url/route';
+import * as route154 from '../app/api/v1/workspaces/[wsId]/tasks/with-relationship/route';
+import * as route155 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route';
+import * as route156 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/route';
+import * as route157 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/shares/route';
+import * as route158 from '../app/api/v1/workspaces/[wsId]/templates/[templateId]/use/route';
+import * as route159 from '../app/api/v1/workspaces/[wsId]/templates/background/route';
+import * as route160 from '../app/api/v1/workspaces/[wsId]/templates/route';
+import * as route161 from '../app/api/v1/workspaces/[wsId]/templates/upload-url/route';
+import * as route162 from '../app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/route';
+import * as route163 from '../app/api/v1/workspaces/[wsId]/time-tracking/sessions/route';
+import * as route164 from '../app/api/v1/workspaces/[wsId]/time-tracking/tasks/route';
+import * as route165 from '../app/api/workspaces/[wsId]/members/route';
+import * as route166 from '../app/api/workspaces/[wsId]/route';
 
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/[...path]", module: route0 },
@@ -286,43 +293,50 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/task-templates/[templateKey]", module: route118 },
   { pattern: "/api/v1/workspaces/[wsId]/task-templates/from-task", module: route119 },
   { pattern: "/api/v1/workspaces/[wsId]/task-templates", module: route120 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/description", module: route121 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/embedding", module: route122 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/estimation", module: route123 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/history", module: route124 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/labels", module: route125 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup", module: route126 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/move", module: route127 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/relationships", module: route128 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/revert", module: route129 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]", module: route130 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/history", module: route131 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule", module: route132 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/share-links", module: route133 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/shares", module: route134 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]", module: route135 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/bulk", module: route136 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/embeddings/generate", module: route137 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/history", module: route138 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/journal", module: route139 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/media", module: route140 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/recurrence", module: route141 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks", module: route142 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/schedule-batch", module: route143 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/search", module: route144 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/suggestions", module: route145 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/upload-url", module: route146 },
-  { pattern: "/api/v1/workspaces/[wsId]/tasks/with-relationship", module: route147 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]/background-url", module: route148 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]", module: route149 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]/shares", module: route150 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]/use", module: route151 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates/background", module: route152 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates", module: route153 },
-  { pattern: "/api/v1/workspaces/[wsId]/templates/upload-url", module: route154 },
-  { pattern: "/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]", module: route155 },
-  { pattern: "/api/v1/workspaces/[wsId]/time-tracking/sessions", module: route156 },
-  { pattern: "/api/v1/workspaces/[wsId]/time-tracking/tasks", module: route157 },
-  { pattern: "/api/workspaces/[wsId]/members", module: route158 },
-  { pattern: "/api/workspaces/[wsId]", module: route159 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/comments/[commentId]", module: route121 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/comments", module: route122 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/description", module: route123 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/embedding", module: route124 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/estimation", module: route125 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/external-ref", module: route126 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/history", module: route127 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/labels", module: route128 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/links/[linkId]", module: route129 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/links", module: route130 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup", module: route131 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/move", module: route132 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/relationships", module: route133 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/revert", module: route134 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]", module: route135 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/history", module: route136 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule", module: route137 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/share-links", module: route138 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/shares", module: route139 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]", module: route140 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/[taskId]/timeline", module: route141 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/bulk", module: route142 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/embeddings/generate", module: route143 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/history", module: route144 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/import/github", module: route145 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/journal", module: route146 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/media", module: route147 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/recurrence", module: route148 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks", module: route149 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/schedule-batch", module: route150 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/search", module: route151 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/suggestions", module: route152 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/upload-url", module: route153 },
+  { pattern: "/api/v1/workspaces/[wsId]/tasks/with-relationship", module: route154 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]/background-url", module: route155 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]", module: route156 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]/shares", module: route157 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates/[templateId]/use", module: route158 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates/background", module: route159 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates", module: route160 },
+  { pattern: "/api/v1/workspaces/[wsId]/templates/upload-url", module: route161 },
+  { pattern: "/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]", module: route162 },
+  { pattern: "/api/v1/workspaces/[wsId]/time-tracking/sessions", module: route163 },
+  { pattern: "/api/v1/workspaces/[wsId]/time-tracking/tasks", module: route164 },
+  { pattern: "/api/workspaces/[wsId]/members", module: route165 },
+  { pattern: "/api/workspaces/[wsId]", module: route166 },
 ]);
