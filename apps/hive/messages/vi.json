@@ -311,7 +311,7 @@
     "feedback-dialog-close": "Đóng",
     "feedback-dialog-group": "Phản hồi",
     "feedback-dialog-history": "Phản hồi của bạn",
-    "feedback-dialog-history-description": "Biên nhận của các báo cáo bạn đã gửi trong phiên này.",
+    "feedback-dialog-history-description": "Biên nhận của các phản hồi bạn đã gửi.",
     "feedback-dialog-history-empty": "Chưa có gì được gửi. Các báo cáo bạn gửi sẽ hiện ở đây kèm biên nhận.",
     "feedback-dialog-no-results": "Không tìm thấy kết quả",
     "feedback-dialog-receipt-id": "Biên nhận {id}",
@@ -329,7 +329,7 @@
     "feedback-dialog-upload-compressing": "Đang nén...",
     "feedback-dialog-upload-cta": "Nhấp để tải lên hoặc kéo và thả",
     "feedback-dialog-upload-drop": "Thả tệp vào đây",
-    "feedback-dialog-upload-hint": "Hình ảnh (PNG, JPG, GIF, WebP) hoặc video (MP4, WebM, MOV) tối đa 5 MB mỗi tệp",
+    "feedback-dialog-upload-hint": "Một hình ảnh (PNG, JPG hoặc WebP) tối đa 2 MB",
     "guest_access": "Quyền khách",
     "hidden_workspaces": "Không gian làm việc đã ẩn",
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
@@ -368,7 +368,9 @@
     "feedback-dialog-history-error": "Không thể tải phản hồi của bạn.",
     "feedback-dialog-history-loading": "Đang tải phản hồi của bạn...",
     "feedback-dialog-history-more": "Xem cũ hơn",
-    "feedback-dialog-history-retry": "Thử lại"
+    "feedback-dialog-history-retry": "Thử lại",
+    "feedback-dialog-media-unavailable": "Tạm thời chưa thể đính kèm ảnh. Hãy gỡ ảnh để gửi góp ý.",
+    "feedback-dialog-unavailable": "Tính năng góp ý tạm thời không khả dụng. Nội dung của bạn vẫn được giữ lại, vui lòng thử lại sau."
   },
   "dashboard": {
     "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",

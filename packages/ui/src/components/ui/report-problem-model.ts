@@ -79,6 +79,8 @@ export interface ReportProblemDialogProps {
       | 'feedback-dialog-back'
       | 'feedback-dialog-captcha-failed'
       | 'feedback-dialog-captcha-unavailable'
+      | 'feedback-dialog-media-unavailable'
+      | 'feedback-dialog-unavailable'
       | 'feedback-dialog-characters'
       | 'feedback-dialog-close'
       | 'feedback-dialog-group'

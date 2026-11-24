@@ -57,6 +57,9 @@ export function useReportProblem({
   const mediaPreviewsRef = useRef<string[]>([]);
   const submitFeedbackMutation = useSubmitFeedbackMutation(apiOptions);
   const isSubmitting = submitFeedbackMutation.isPending;
+  // The intake answers 503 while submissions (or image attachments) are
+  // switched off; the form then explains it instead of failing silently.
+  const [unavailable, setUnavailable] = useState<'all' | 'media' | null>(null);
   const turnstile = useFeedbackTurnstile();
   // One key per submission: retries of the same content reuse it so the intake
   // deduplicates them, and any edit starts a new submission.
@@ -264,6 +267,7 @@ export function useReportProblem({
 
   const removeMedia = (index: number) => {
     startNewSubmission();
+    if (unavailable === 'media') setUnavailable(null);
     // Revoke the object URL to free memory
     if (mediaPreviews[index]) {
       URL.revokeObjectURL(mediaPreviews[index]);
@@ -314,6 +318,10 @@ export function useReportProblem({
         resetForm();
       }
     } catch (error) {
+      if (isServiceUnavailable(error)) {
+        setUnavailable(formData.media.length > 0 ? 'media' : 'all');
+        return;
+      }
       console.error('Failed to submit feedback:', error);
       toast.error(t('feedback-dialog-submit-failed'));
     } finally {
@@ -339,6 +347,7 @@ export function useReportProblem({
   };
 
   const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) setUnavailable(null);
     // Update internal state for uncontrolled mode
     if (!isControlled) {
       setInternalOpen(newOpen);
@@ -390,5 +399,15 @@ export function useReportProblem({
     mediaPreviews,
     removeMedia,
     turnstile,
+    unavailable,
   };
+}
+
+function isServiceUnavailable(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    error.status === 503
+  );
 }

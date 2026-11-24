@@ -1101,7 +1101,7 @@
     "feedback-dialog-close": "Close",
     "feedback-dialog-group": "Feedback",
     "feedback-dialog-history": "Your feedback",
-    "feedback-dialog-history-description": "Receipts for the reports you sent in this session.",
+    "feedback-dialog-history-description": "Receipts for the feedback you have sent.",
     "feedback-dialog-history-empty": "Nothing sent yet. Reports you submit appear here with a receipt.",
     "feedback-dialog-no-results": "No results found",
     "feedback-dialog-receipt-id": "Receipt {id}",
@@ -1119,7 +1119,7 @@
     "feedback-dialog-upload-compressing": "Compressing...",
     "feedback-dialog-upload-cta": "Click to upload or drag and drop",
     "feedback-dialog-upload-drop": "Drop files here",
-    "feedback-dialog-upload-hint": "Images (PNG, JPG, GIF, WebP) or videos (MP4, WebM, MOV) up to 5 MB each",
+    "feedback-dialog-upload-hint": "One image (PNG, JPG or WebP) up to 2 MB",
     "file-name": "File Name",
     "file-type": "File Type",
     "finance": "Finance",
@@ -1337,7 +1337,9 @@
     "feedback-dialog-history-error": "Your feedback could not be loaded.",
     "feedback-dialog-history-loading": "Loading your feedback...",
     "feedback-dialog-history-more": "Show older",
-    "feedback-dialog-history-retry": "Try again"
+    "feedback-dialog-history-retry": "Try again",
+    "feedback-dialog-media-unavailable": "Image attachments are temporarily unavailable. Remove the image to send your feedback.",
+    "feedback-dialog-unavailable": "Feedback is temporarily unavailable. Your text is kept; please try again later."
   },
   "contact": {
     "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",

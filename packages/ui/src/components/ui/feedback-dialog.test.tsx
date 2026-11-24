@@ -197,6 +197,29 @@ describe('feedback dialog', () => {
     expect(resetWidget).toHaveBeenCalled();
   });
 
+  it('explains a switched-off intake and keeps the text instead of failing silently', async () => {
+    submitProductFeedback.mockRejectedValue(
+      Object.assign(new Error('Service unavailable'), { status: 503 })
+    );
+    renderDialog();
+    fillForm('Keep this text');
+    solve();
+    fireEvent.click(submit());
+
+    expect(
+      await screen.findByText('feedback-dialog-unavailable')
+    ).toBeDefined();
+    expect(
+      (
+        screen.getByPlaceholderText(
+          'suggestion-placeholder'
+        ) as HTMLTextAreaElement
+      ).value
+    ).toBe('Keep this text');
+    solve();
+    expect(submit().disabled).toBe(true);
+  });
+
   it('reuses the key on a retry of the same submission and mints a new one after an edit', async () => {
     submitProductFeedback.mockRejectedValueOnce(new Error('offline'));
     submitProductFeedback.mockRejectedValueOnce(new Error('offline'));

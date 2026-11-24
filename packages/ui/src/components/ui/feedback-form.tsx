@@ -57,6 +57,7 @@ export function FeedbackForm({
     handleTypeChange,
     handleSuggestionChange,
     turnstile,
+    unavailable,
   } = report;
   const invalid = (message?: string) =>
     message
@@ -168,6 +169,17 @@ export function FeedbackForm({
           )}
         </SettingsSectionBlock>
 
+        {unavailable && (
+          <p
+            className="rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-dynamic-orange text-sm"
+            role="alert"
+          >
+            {unavailable === 'media'
+              ? t('feedback-dialog-media-unavailable')
+              : t('feedback-dialog-unavailable')}
+          </p>
+        )}
+
         <SettingsSectionFooter>
           <Button
             type="button"
@@ -184,6 +196,7 @@ export function FeedbackForm({
               !formData.type ||
               !formData.suggestion.trim() ||
               !turnstile.token ||
+              unavailable === 'all' ||
               isSubmitting
             }
           >
