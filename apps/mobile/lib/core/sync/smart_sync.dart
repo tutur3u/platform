@@ -48,6 +48,19 @@ class SmartSync {
   int _running = 0;
   int _scopeRevision = 0;
 
+  /// Read-only copy of the per-key history, for the debug diagnostics view.
+  /// The cache keys it carries can name a user or workspace, so callers that
+  /// render it summarize by domain instead of showing keys.
+  List<SyncKeyStatus> debugSnapshot() => [
+    for (final MapEntry(:key, :value) in _history.entries)
+      SyncKeyStatus(
+        key: key,
+        lastSuccess: value.lastSuccess,
+        failures: value.failures,
+        retryAfter: value.retryAfter,
+      ),
+  ];
+
   void reset() {
     _scopeRevision++;
     _history.clear();
@@ -200,6 +213,20 @@ class SmartSync {
       ..[key] = history;
     if (_history.length > 128) _history.remove(_history.keys.first);
   }
+}
+
+class SyncKeyStatus {
+  const SyncKeyStatus({
+    required this.key,
+    required this.lastSuccess,
+    required this.failures,
+    required this.retryAfter,
+  });
+
+  final Object key;
+  final DateTime? lastSuccess;
+  final int failures;
+  final DateTime? retryAfter;
 }
 
 class _SyncHistory {

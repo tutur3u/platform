@@ -8923,6 +8923,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDiagnosticEmpty => 'No recent entries.';
 
   @override
+  String get settingsDiagnosticSync => 'Sync status';
+
+  @override
+  String get settingsDiagnosticSyncNever => 'never';
+
+  @override
+  String settingsDiagnosticSyncDomain(String domain, int resources, String lastSynced, int failures) {
+    String _temp0 = intl.Intl.pluralLogic(
+      failures,
+      locale: localeName,
+      other: '$failures failures',
+      one: '1 failure',
+    );
+    return '$domain ($resources): last synced $lastSynced, $_temp0';
+  }
+
+  @override
+  String settingsDiagnosticSyncRetry(String time) {
+    return 'retry after $time';
+  }
+
+  @override
   String get settingsAppVersion => 'App version';
 
   @override

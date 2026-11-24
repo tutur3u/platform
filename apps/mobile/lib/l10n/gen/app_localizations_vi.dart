@@ -8810,6 +8810,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsDiagnosticEmpty => 'Không có mục nào gần đây.';
 
   @override
+  String get settingsDiagnosticSync => 'Trạng thái đồng bộ';
+
+  @override
+  String get settingsDiagnosticSyncNever => 'chưa bao giờ';
+
+  @override
+  String settingsDiagnosticSyncDomain(String domain, int resources, String lastSynced, int failures) {
+    String _temp0 = intl.Intl.pluralLogic(
+      failures,
+      locale: localeName,
+      other: '$failures lần lỗi',
+    );
+    return '$domain ($resources): đồng bộ lần cuối $lastSynced, $_temp0';
+  }
+
+  @override
+  String settingsDiagnosticSyncRetry(String time) {
+    return 'thử lại sau $time';
+  }
+
+  @override
   String get settingsAppVersion => 'Phiên bản ứng dụng';
 
   @override

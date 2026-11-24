@@ -4550,6 +4550,33 @@
   "settingsDiagnosticOptInFirst": "Enable stability reports in Settings first.",
   "settingsDiagnosticSendUnavailable": "Diagnostics are unavailable or were just queued. Try again shortly.",
   "settingsDiagnosticEmpty": "No recent entries.",
+  "settingsDiagnosticSync": "Sync status",
+  "settingsDiagnosticSyncNever": "never",
+  "settingsDiagnosticSyncDomain": "{domain} ({resources}): last synced {lastSynced}, {failures, plural, =1{1 failure} other{{failures} failures}}",
+  "@settingsDiagnosticSyncDomain": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      },
+      "resources": {
+        "type": "int"
+      },
+      "lastSynced": {
+        "type": "String"
+      },
+      "failures": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsDiagnosticSyncRetry": "retry after {time}",
+  "@settingsDiagnosticSyncRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAppVersion": "App version",
   "appearanceAccentAmber": "Amber",
   "appearanceAccentBlue": "Blue",

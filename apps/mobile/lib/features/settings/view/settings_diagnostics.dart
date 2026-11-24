@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/observability/mobile_diagnostics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
+import 'package:mobile/core/sync/smart_sync_runtime.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -195,6 +197,7 @@ class _SettingsDiagnosticsState extends State<SettingsDiagnostics> {
               for (final event in _diagnostics.requests) event.summary,
             ]),
             _entries(l10n.settingsDiagnosticLogs, _diagnostics.logs),
+            _entries(l10n.settingsDiagnosticSync, _syncLines(context)),
             SettingsTile(
               grouped: true,
               icon: LucideIcons.share,
@@ -234,6 +237,30 @@ class _SettingsDiagnosticsState extends State<SettingsDiagnostics> {
         ),
     ],
   );
+
+  /// Per-domain sync history; reads the in-memory SmartSync state on build.
+  List<String> _syncLines(BuildContext context) {
+    final l10n = context.l10n;
+    final format = DateFormat.yMd(
+      Localizations.localeOf(context).toString(),
+    ).add_Hms();
+    return [
+      for (final domain in SmartSyncRuntime.debugDomains())
+        [
+          l10n.settingsDiagnosticSyncDomain(
+            domain.domain,
+            domain.resources,
+            domain.lastSuccess == null
+                ? l10n.settingsDiagnosticSyncNever
+                : format.format(domain.lastSuccess!.toLocal()),
+            domain.failures,
+          ),
+          if (domain.retryAfter case final retry?
+              when retry.isAfter(DateTime.now()))
+            l10n.settingsDiagnosticSyncRetry(format.format(retry.toLocal())),
+        ].join('\n'),
+    ];
+  }
 
   Widget _detail(String label, String value) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),

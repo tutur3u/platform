@@ -16729,6 +16729,30 @@ abstract class AppLocalizations {
   /// **'No recent entries.'**
   String get settingsDiagnosticEmpty;
 
+  /// No description provided for @settingsDiagnosticSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync status'**
+  String get settingsDiagnosticSync;
+
+  /// No description provided for @settingsDiagnosticSyncNever.
+  ///
+  /// In en, this message translates to:
+  /// **'never'**
+  String get settingsDiagnosticSyncNever;
+
+  /// No description provided for @settingsDiagnosticSyncDomain.
+  ///
+  /// In en, this message translates to:
+  /// **'{domain} ({resources}): last synced {lastSynced}, {failures, plural, =1{1 failure} other{{failures} failures}}'**
+  String settingsDiagnosticSyncDomain(String domain, int resources, String lastSynced, int failures);
+
+  /// No description provided for @settingsDiagnosticSyncRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'retry after {time}'**
+  String settingsDiagnosticSyncRetry(String time);
+
   /// No description provided for @settingsAppVersion.
   ///
   /// In en, this message translates to:

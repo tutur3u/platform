@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/sync/smart_sync.dart';
+import 'package:mobile/core/sync/sync_domain_status.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,6 +65,10 @@ abstract final class SmartSyncRuntime {
       reset();
     };
   }
+
+  /// Per-domain sync history for Settings diagnostics (debug mode only).
+  static List<SyncDomainStatus> debugDomains() =>
+      summarizeSyncDomains(_scheduler.debugSnapshot());
 
   static void request(SyncTrigger trigger) =>
       unawaited(_refresh?.call(trigger, null));
