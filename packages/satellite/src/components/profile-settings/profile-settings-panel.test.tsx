@@ -133,7 +133,7 @@ describe('SatelliteProfileSettingsPanel', () => {
     const active = await screen.findByText('active');
     const verified = screen.getByText('verified');
     // Success variant owns the green tokens; no one-off overrides on top.
-    expect(active.className).toContain('bg-dynamic-green/10');
+    expect(active.className).toContain('bg-success/10');
     expect(active.className).not.toContain('border-dynamic-green/30');
     // Outline variant: no fill, so it reads on any settings card.
     expect(verified.className).not.toMatch(/(^|\s)bg-/);

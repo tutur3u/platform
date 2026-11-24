@@ -38,7 +38,8 @@ describe('Storefront header client link composition', () => {
       // Storefront routing deliberately uses localePrefix: 'never'.
       expect(anchor?.getAttribute('href')).toBe('/login');
       expect(anchor?.getAttribute('data-slot')).toBe('button');
-      expect(anchor?.className).toContain('border-input');
+      // The outline stroke reads the design variable (Button slot class).
+      expect(anchor?.className).toContain('border-(--field-stroke)');
       expect(host.querySelector('button')).toBeNull();
 
       await act(() => {
@@ -58,7 +59,9 @@ describe('Storefront header client link composition', () => {
         '/sample-store/orders'
       );
       expect(host.querySelector('a')?.getAttribute('data-slot')).toBe('button');
-      expect(host.querySelector('a')?.className).toContain('border-input');
+      expect(host.querySelector('a')?.className).toContain(
+        'border-(--field-stroke)'
+      );
       expect(host.querySelector('button')).toBeNull();
     });
   }

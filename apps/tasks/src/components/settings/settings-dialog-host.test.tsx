@@ -102,6 +102,9 @@ describe('Tasks settings dialog host', () => {
         settingsBoardId: 'board-1',
         settingsDialog: 'open',
         settingsTab: 'task_board',
+        // Opening Settings closes Upgrade: one account dialog at a time.
+        upgradeDialog: null,
+        upgradeTab: null,
       },
       { ...options, history: 'push' }
     );
@@ -121,6 +124,8 @@ describe('Tasks settings dialog host', () => {
         settingsBoardId: 'board-2',
         settingsDialog: 'open',
         settingsTab: 'task_board',
+        upgradeDialog: null,
+        upgradeTab: null,
       },
       { ...options, history: 'replace' }
     );

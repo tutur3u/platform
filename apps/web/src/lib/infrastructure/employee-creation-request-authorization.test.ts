@@ -198,8 +198,12 @@ it('keeps the origin, action-header and content-type gates for a CLI bearer', as
 it('answers 503 when token verification is unavailable', async () => {
   const token = createCliAppSession(claims, { secret }).access.token;
   vi.stubEnv('NODE_ENV', 'production');
+  // Blank every name the coordination-secret resolver reads: CI sets a
+  // SUPABASE_SECRET_KEY placeholder, which is a deliberate fallback.
   vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', '');
-  vi.stubEnv('APP_COORDINATION_SECRET', '');
+  vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
+  vi.stubEnv('APP_COORDINATION_TOKEN_NEXT_SECRET', '');
+  vi.stubEnv('SUPABASE_SECRET_KEY', '');
   expect(await authorizeEmployeeCreationRequest(request(token))).toEqual({
     authorized: false,
     status: 503,
