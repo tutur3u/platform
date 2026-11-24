@@ -304,3 +304,48 @@ it('refuses an unknown notice mode', async () => {
     status: 400,
   });
 });
+
+it.each(['self', 'room'] as const)(
+  'forwards the %s notice mode to the room choice',
+  async (noticeMode) => {
+    roomIn(noticeMode);
+    await post(choice({ noticeMode }));
+    expect(choiceCalls()[0]?.[1]).toMatchObject({ noticeMode });
+  }
+);
+
+it('sends no notice mode to the room when the client names none', async () => {
+  roomIn('room');
+  await post(choice());
+  expect(choiceCalls()[0]?.[1]).not.toHaveProperty('noticeMode');
+});
+
+it('passes the room notice-mode refusal through as its code', async () => {
+  const { MeetCallAccessError } =
+    await import('@tuturuuu/meet-core/features/call/lib/call-access');
+  f.room.mockImplementation(async (_access, command: { action: string }) => {
+    if (command.action === 'mira.room.choice')
+      throw new MeetCallAccessError(
+        409,
+        'Room action is unavailable',
+        'MIRA_ROOM_NOTICE_MODE_STALE'
+      );
+    return command.action === 'transcript.consent.read'
+      ? { mode: 'self' }
+      : read;
+  });
+  await expect(post(choice({ noticeMode: 'self' }))).rejects.toMatchObject({
+    status: 409,
+    code: 'MIRA_ROOM_NOTICE_MODE_STALE',
+  });
+  expect(f.record).not.toHaveBeenCalled();
+});
+
+it('records a room-notice on after an earlier per-speaker on as a new choice', async () => {
+  roomIn('room');
+  await post(choice());
+  expect(f.record).toHaveBeenCalledWith(
+    expect.objectContaining({ choice: 'on' })
+  );
+  expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('noticeMode');
+});

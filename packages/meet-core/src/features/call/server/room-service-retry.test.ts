@@ -142,3 +142,17 @@ it('drops a refusal code outside the allowlist or a missing one', async () => {
       callRoomService(access, { action: 'transcript.session' })
     ).rejects.toMatchObject({ code: undefined });
 });
+
+it('forwards the room Mira notice-mode refusal code', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ code: 'MIRA_ROOM_NOTICE_MODE_STALE' }, { status: 409 })
+      )
+  );
+  await expect(
+    callRoomService(access, { action: 'mira.room.choice' })
+  ).rejects.toMatchObject({ status: 409, code: 'MIRA_ROOM_NOTICE_MODE_STALE' });
+});

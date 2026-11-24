@@ -140,6 +140,8 @@ export async function POST(
       acceptanceRevision: data.acceptanceRevision,
       // The room refuses a Join state that would turn an earlier off on.
       source: data.source,
+      // The room refuses an on under another mode's notice in the same turn.
+      ...(data.noticeMode ? { noticeMode: data.noticeMode } : {}),
     });
     try {
       await recordMiraChoice({
