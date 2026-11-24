@@ -1467,7 +1467,7 @@ export function AboutUsClient() {
                 <Link href="mailto:contact@tuturuuu.com">
                   <Button className="group">
                     {t('sponsors.call-to-action.button')}
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
               </div>

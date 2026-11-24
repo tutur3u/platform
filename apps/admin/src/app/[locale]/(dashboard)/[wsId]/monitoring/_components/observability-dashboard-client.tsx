@@ -2499,7 +2499,7 @@ export function ObservabilityDashboardClient({
                   type="button"
                   variant="outline"
                 >
-                  <Power className="mr-2 h-4 w-4" />
+                  <Power className="h-4 w-4" />
                   {cronRunnerRecoveryMutation.isPending &&
                   cronRunnerRecoveryMutation.variables === 'ensure'
                     ? cronT('runner_recovery.ensure_pending')
@@ -2516,7 +2516,7 @@ export function ObservabilityDashboardClient({
                   type="button"
                   variant="destructive"
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                   {cronRunnerRecoveryMutation.isPending &&
                   cronRunnerRecoveryMutation.variables === 'restart'
                     ? cronT('runner_recovery.restart_pending')
@@ -2636,7 +2636,7 @@ export function ObservabilityDashboardClient({
                       type="button"
                       variant="outline"
                     >
-                      <Play className="mr-2 h-4 w-4" />
+                      <Play className="h-4 w-4" />
                       {cronT('actions.run_now')}
                     </Button>
                   </div>

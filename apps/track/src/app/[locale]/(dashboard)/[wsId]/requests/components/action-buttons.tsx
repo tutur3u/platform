@@ -138,7 +138,7 @@ export function ActionButtons({
           className="w-full bg-dynamic-blue hover:bg-dynamic-blue/90"
         >
           {isResubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          <CheckCircle2Icon className="mr-2 h-4 w-4" />
+          <CheckCircle2Icon className="h-4 w-4" />
           {t('detail.resubmitButton')}
         </Button>
       </div>
@@ -244,7 +244,7 @@ export function ActionButtons({
               className="w-full bg-dynamic-green hover:bg-dynamic-green/90"
             >
               {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <CheckCircle2Icon className="mr-2 h-4 w-4" />
+              <CheckCircle2Icon className="h-4 w-4" />
               {t('detail.approveButton')}
             </Button>
             <Button
@@ -252,7 +252,7 @@ export function ActionButtons({
               onClick={() => setShowNeedsInfoForm(true)}
               className="w-full border-dynamic-blue/20 bg-dynamic-blue hover:bg-dynamic-blue/90"
             >
-              <InfoIcon className="mr-2 h-4 w-4" />
+              <InfoIcon className="h-4 w-4" />
               <span className="truncate">{t('detail.requestInfoButton')}</span>
             </Button>
           </>
@@ -263,7 +263,7 @@ export function ActionButtons({
             onClick={() => setShowRejectionForm(true)}
             className="w-full"
           >
-            <XCircleIcon className="mr-2 h-4 w-4" />
+            <XCircleIcon className="h-4 w-4" />
             {t('detail.revertToRejectedButton')}
           </Button>
         )}
@@ -273,7 +273,7 @@ export function ActionButtons({
             onClick={() => setShowRejectionForm(true)}
             className="w-full"
           >
-            <XCircleIcon className="mr-2 h-4 w-4" />
+            <XCircleIcon className="h-4 w-4" />
             {t('detail.rejectButton')}
           </Button>
         )}
@@ -284,7 +284,7 @@ export function ActionButtons({
             className="w-full bg-dynamic-green hover:bg-dynamic-green/90"
           >
             {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <CheckCircle2Icon className="mr-2 h-4 w-4" />
+            <CheckCircle2Icon className="h-4 w-4" />
             {t('detail.revertToApprovedButton')}
           </Button>
         )}

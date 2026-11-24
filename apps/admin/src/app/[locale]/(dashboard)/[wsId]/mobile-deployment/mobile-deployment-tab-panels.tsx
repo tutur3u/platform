@@ -80,11 +80,11 @@ export function MobileDeploymentOverviewPanel({
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button disabled={isFetching} onClick={onVerify} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           {t('verify')}
         </Button>
         <Button disabled={activateDisabled} onClick={onActivate}>
-          <Rocket className="mr-2 h-4 w-4" />
+          <Rocket className="h-4 w-4" />
           {t('activate')}
         </Button>
         <Button
@@ -92,7 +92,7 @@ export function MobileDeploymentOverviewPanel({
           onClick={onRollback}
           variant="outline"
         >
-          <RotateCcw className="mr-2 h-4 w-4" />
+          <RotateCcw className="h-4 w-4" />
           {t('rollback')}
         </Button>
       </div>
@@ -234,7 +234,7 @@ export function MobileDeploymentTokensPanel({
             disabled={!tokenName.trim() || issuePending}
             onClick={onIssueToken}
           >
-            <KeyRound className="mr-2 h-4 w-4" />
+            <KeyRound className="h-4 w-4" />
             {t('issueToken')}
           </Button>
         </div>

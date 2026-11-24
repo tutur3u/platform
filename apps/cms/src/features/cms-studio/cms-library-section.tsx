@@ -184,11 +184,11 @@ export function CmsLibrarySection({
                 onClick={onImport}
                 disabled={importPending}
               >
-                <FolderSync className="mr-2 h-4 w-4" />
+                <FolderSync className="h-4 w-4" />
                 {strings.importAction}
               </Button>
               <Button onClick={onCreateEntry} disabled={createEntryPending}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 {strings.createEntryAction}
               </Button>
             </div>
@@ -442,7 +442,7 @@ export function CmsLibrarySection({
 
             <div className="mt-3 grid gap-2">
               <Button onClick={onCreateEntry}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 {strings.createEntryAction}
               </Button>
               {activeCollection ? (
@@ -450,7 +450,7 @@ export function CmsLibrarySection({
                   variant="outline"
                   onClick={() => onOpenCollection(activeCollection.id)}
                 >
-                  <Settings2 className="mr-2 h-4 w-4" />
+                  <Settings2 className="h-4 w-4" />
                   {strings.editCollectionAction}
                 </Button>
               ) : null}
@@ -459,7 +459,7 @@ export function CmsLibrarySection({
                 disabled={importPending}
                 onClick={onImport}
               >
-                <FolderSync className="mr-2 h-4 w-4" />
+                <FolderSync className="h-4 w-4" />
                 {strings.importAction}
               </Button>
             </div>

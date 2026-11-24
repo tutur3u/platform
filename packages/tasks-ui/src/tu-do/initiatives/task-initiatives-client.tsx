@@ -463,7 +463,7 @@ export function TaskInitiativesClient({
           </p>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           New Initiative
         </Button>
       </div>
@@ -485,7 +485,7 @@ export function TaskInitiativesClient({
               className="mt-4"
               onClick={() => setIsCreateDialogOpen(true)}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Create Initiative
             </Button>
           </CardContent>
@@ -580,7 +580,7 @@ export function TaskInitiativesClient({
                     onClick={() => handleOpenManageProjects(initiative)}
                     disabled={isLinking || isUnlinking}
                   >
-                    <Link className="mr-2 h-4 w-4" />
+                    <Link className="h-4 w-4" />
                     Manage Projects
                   </Button>
                 </div>
@@ -805,7 +805,7 @@ export function TaskInitiativesClient({
                           onClick={() => handleUnlinkProject(project.id)}
                           disabled={isUnlinking}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                           Remove
                         </Button>
                       </div>

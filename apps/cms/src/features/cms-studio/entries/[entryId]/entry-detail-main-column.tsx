@@ -264,7 +264,7 @@ export function EntryDetailMainColumn({
                         : strings.uploadCoverAction}
                     </Button>
                     <Button size="sm" variant="outline" onClick={onOpenPreview}>
-                      <Eye className="mr-2 h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                       {strings.openPreviewAction}
                     </Button>
                   </div>

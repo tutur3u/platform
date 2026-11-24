@@ -285,7 +285,7 @@ export function GoalsPanel({
               <Input name="period_end" type="date" />
             </div>
             <Button disabled={!selectedMetric || createGoalMutation.isPending}>
-              <Target className="mr-2 h-4 w-4" />
+              <Target className="h-4 w-4" />
               {t('actions.add_goal')}
             </Button>
           </form>

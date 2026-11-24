@@ -176,13 +176,13 @@ export function PlaygroundCredential({
             type="button"
             variant="outline"
           >
-            <CheckCircle2 className="mr-2 size-3.5" />
+            <CheckCircle2 className="size-3.5" />
             {t('verify_key')}
           </Button>
         ) : null}
         {canManageAiKeys && approvalGranted ? (
           <Button onClick={onCreateKey} size="sm" type="button">
-            <Zap className="mr-2 size-3.5" />
+            <Zap className="size-3.5" />
             {t('quick_create')}
           </Button>
         ) : null}

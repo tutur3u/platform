@@ -78,7 +78,7 @@ export function QuizCompletionCard({
           onClick={onRetry}
           className="h-12 border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary/90"
         >
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           {t('courses.quizRetryPractice')}
         </Button>
       )}

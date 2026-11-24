@@ -157,7 +157,7 @@ export function PostApprovalActions({
               onClick={() => setRejectOpen(true)}
               disabled={mutation.isPending}
             >
-              <X className="mr-1 h-4 w-4" />
+              <X className="h-4 w-4" />
               {t('actions.reject')}
             </Button>
           )}
@@ -169,7 +169,7 @@ export function PostApprovalActions({
             onClick={() => mutation.mutate({ action: 'unapprove' })}
             disabled={mutation.isPending}
           >
-            <RotateCcw className="mr-1 h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
             {t('actions.unapprove')}
           </Button>
         )}

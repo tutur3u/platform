@@ -165,7 +165,7 @@ export function ProfileUnavailableState({
           onClick={onRetryProfile}
           type="button"
         >
-          <RefreshCcw className="mr-2 size-4" />
+          <RefreshCcw className="size-4" />
           {t('login.retry_profile_load')}
         </Button>
         <Button

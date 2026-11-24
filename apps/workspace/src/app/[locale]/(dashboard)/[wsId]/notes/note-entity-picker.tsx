@@ -152,7 +152,7 @@ export function NoteEntityPicker({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" type="button">
-          <Link2 className="mr-2 size-4" />
+          <Link2 className="size-4" />
           {t('link_work')}
         </Button>
       </DialogTrigger>

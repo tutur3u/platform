@@ -195,7 +195,7 @@ export function WalletCheckpointHistoryDialog({
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        <History className="mr-2 h-4 w-4" />
+        <History className="h-4 w-4" />
         {t('checkpoint_history')}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>

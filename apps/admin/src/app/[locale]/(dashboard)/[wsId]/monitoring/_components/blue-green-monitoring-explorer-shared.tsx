@@ -213,7 +213,7 @@ export function ExplorerPagination({
           size="sm"
           variant="outline"
         >
-          <ChevronLeft className="mr-1 h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" />
           {t('explorer.previous_page')}
         </Button>
         <Button
@@ -224,7 +224,7 @@ export function ExplorerPagination({
           variant="outline"
         >
           {t('explorer.next_page')}
-          <ChevronRight className="ml-1 h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
     </div>

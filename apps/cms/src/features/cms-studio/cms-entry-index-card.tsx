@@ -176,7 +176,7 @@ export function CmsEntryIndexCard({
             className="h-8"
             onClick={() => onOpenQuickTaxonomy(entry.id)}
           >
-            <Tags className="mr-2 h-3.5 w-3.5" />
+            <Tags className="h-3.5 w-3.5" />
             {strings.quickTaxonomyAction}
           </Button>
         ) : (

@@ -82,7 +82,7 @@ export default async function NewlyCreatedTasks({
             size="sm"
             className="h-8 px-3 transition-all duration-200 hover:scale-105 hover:bg-dynamic-green/10 hover:text-dynamic-green"
           >
-            <Eye className="mr-1.5 h-3.5 w-3.5" />
+            <Eye className="h-3.5 w-3.5" />
             {t('view_all')}
           </Button>
         </Link>
@@ -110,7 +110,7 @@ export default async function NewlyCreatedTasks({
                   size="sm"
                   className="border-dynamic-green/30 bg-linear-to-r from-dynamic-green/5 to-dynamic-green/10 text-dynamic-green transition-all duration-200 hover:scale-105 hover:border-dynamic-green/40 hover:bg-dynamic-green/20 hover:shadow-md"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   {t('create_task')}
                 </Button>
               </Link>

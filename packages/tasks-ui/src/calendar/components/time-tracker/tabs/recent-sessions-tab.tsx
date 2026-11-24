@@ -66,7 +66,7 @@ export function RecentSessionsTab({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
-                <Filter className="mr-2 h-4 w-4" />
+                <Filter className="h-4 w-4" />
                 Filter
               </Button>
             </PopoverTrigger>
@@ -146,7 +146,7 @@ export function RecentSessionsTab({
                 onClick={onSwitchToCurrentTab}
                 className="mt-4"
               >
-                <Play className="mr-2 h-4 w-4" />
+                <Play className="h-4 w-4" />
                 Start First Timer
               </Button>
             )}

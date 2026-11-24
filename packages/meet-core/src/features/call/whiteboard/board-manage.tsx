@@ -63,7 +63,7 @@ export function BoardManage({
             setBoardId('');
           }}
         >
-          <Link2 className="mr-1 h-4 w-4" />
+          <Link2 className="h-4 w-4" />
           {t('board_link')}
         </Button>
       </div>
@@ -77,7 +77,7 @@ export function BoardManage({
           onChange={(event) => setTitle(event.target.value)}
         />
         <Button size="sm" type="submit" disabled={!title.trim() || pending}>
-          <Plus className="mr-1 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           {t('board_create')}
         </Button>
       </form>

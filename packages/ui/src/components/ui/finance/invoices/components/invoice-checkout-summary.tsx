@@ -101,7 +101,7 @@ export function InvoiceCheckoutSummary({
               onClick={onRoundUp}
               className="flex-1"
             >
-              <ArrowUp className="mr-1 h-4 w-4" />
+              <ArrowUp className="h-4 w-4" />
               {t('ws-invoices.round_up')}
             </Button>
             <Button
@@ -110,7 +110,7 @@ export function InvoiceCheckoutSummary({
               onClick={onRoundDown}
               className="flex-1"
             >
-              <ArrowDown className="mr-1 h-4 w-4" />
+              <ArrowDown className="h-4 w-4" />
               {t('ws-invoices.round_down')}
             </Button>
             <Button

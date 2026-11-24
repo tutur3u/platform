@@ -208,7 +208,7 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
         <div className="flex items-center justify-between">
           <h3 className="font-medium text-lg">Task Types</h3>
           <Button variant="outline" size="sm" onClick={addNewTaskType}>
-            <PlusIcon className="mr-2 h-4 w-4" />
+            <PlusIcon className="h-4 w-4" />
             Add Type
           </Button>
         </div>

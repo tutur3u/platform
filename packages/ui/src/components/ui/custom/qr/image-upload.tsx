@@ -324,7 +324,7 @@ function QRImageUpload({
             onClick={handleRemoveImage}
             className="h-8 px-2"
           >
-            <X className="mr-1 h-3 w-3" />
+            <X className="h-3 w-3" />
             {t('common.remove')}
           </Button>
         )}

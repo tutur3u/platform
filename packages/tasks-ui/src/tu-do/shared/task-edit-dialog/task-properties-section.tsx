@@ -1511,7 +1511,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                           }}
                           className="h-8 w-full justify-start"
                         >
-                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          <Plus className="h-3.5 w-3.5" />
                           {t('ws-task-boards.dialog.create_new_label')}
                         </Button>
                       </div>
@@ -1659,7 +1659,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                             }}
                             className="h-8 w-full justify-start"
                           >
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
+                            <Plus className="h-3.5 w-3.5" />
                             {t('ws-task-boards.dialog.create_new_project')}
                           </Button>
                         </div>

@@ -78,7 +78,7 @@ export function TransactionRowActions(props: Props) {
       {data.href && (
         <Link href={data.href}>
           <Button>
-            <Eye className="mr-1 h-5 w-5" />
+            <Eye className="h-5 w-5" />
             {t('common.view')}
           </Button>
         </Link>

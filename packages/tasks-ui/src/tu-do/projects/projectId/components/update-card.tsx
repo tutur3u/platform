@@ -116,7 +116,7 @@ export function UpdateCard({
                 />
                 <div className="flex items-center gap-2">
                   <Button type="button" size="sm" onClick={onSave}>
-                    <Check className="mr-2 h-4 w-4" />
+                    <Check className="h-4 w-4" />
                     {t('save')}
                   </Button>
                   <Button
@@ -125,7 +125,7 @@ export function UpdateCard({
                     variant="outline"
                     onClick={onCancel}
                   >
-                    <X className="mr-2 h-4 w-4" />
+                    <X className="h-4 w-4" />
                     {t('cancel')}
                   </Button>
                 </div>

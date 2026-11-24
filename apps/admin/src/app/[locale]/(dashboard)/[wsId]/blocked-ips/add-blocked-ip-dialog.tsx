@@ -118,7 +118,7 @@ export default function AddBlockedIPDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           {t('add_blocked_ip')}
         </Button>
       </DialogTrigger>

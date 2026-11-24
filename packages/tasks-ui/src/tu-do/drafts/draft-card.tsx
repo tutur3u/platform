@@ -194,7 +194,7 @@ export function DraftCard({
               onConvert(draft);
             }}
           >
-            <Play className="mr-1 h-3 w-3" />
+            <Play className="h-3 w-3" />
             {t('convert_to_task')}
           </Button>
         </div>

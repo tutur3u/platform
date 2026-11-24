@@ -340,7 +340,7 @@ export function RecycleBinContent({
               onClick={() => handleRestoreDialogOpenChange(true)}
               disabled={isWorking}
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
               {t.restore} ({selectedTasks.size})
             </Button>
             <Button
@@ -350,7 +350,7 @@ export function RecycleBinContent({
               onClick={() => handleDeleteDialogOpenChange(true)}
               disabled={isWorking}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               {t.delete} ({selectedTasks.size})
             </Button>
           </div>

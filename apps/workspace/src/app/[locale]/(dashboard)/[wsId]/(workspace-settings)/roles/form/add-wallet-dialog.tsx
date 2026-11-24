@@ -127,7 +127,7 @@ export function AddWalletDialog({
           size="sm"
           disabled={availableWallets.length === 0}
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           <span className="text-xs sm:text-sm">{t('ws-roles.add_wallet')}</span>
         </Button>
       </DialogTrigger>

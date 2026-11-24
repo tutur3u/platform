@@ -122,7 +122,7 @@ export function WorkspaceSecretsManager({ workspaceId }: Props) {
                 setEditingSecretId(null);
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               {showCreateForm ? tCommon('cancel') : t('secret_manager_add')}
             </Button>
           </div>

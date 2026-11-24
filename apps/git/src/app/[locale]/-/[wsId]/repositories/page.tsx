@@ -70,7 +70,7 @@ export default async function RepositoriesPage({
             required
           />
           <Button type="submit">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Add repository
           </Button>
         </form>
@@ -121,7 +121,7 @@ export default async function RepositoriesPage({
                 )}
               >
                 <Button size="sm" type="submit" variant="outline">
-                  <Power className="mr-2 h-4 w-4" />
+                  <Power className="h-4 w-4" />
                   {repository.enabled ? 'Disable' : 'Enable'}
                 </Button>
               </form>

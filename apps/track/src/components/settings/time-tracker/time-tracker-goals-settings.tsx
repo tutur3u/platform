@@ -227,7 +227,7 @@ export function TimeTrackerGoalsSettings({
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openAddDialog} className="shrink-0">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 <span>{t('add_goal')}</span>
               </Button>
             </DialogTrigger>
@@ -246,7 +246,7 @@ export function TimeTrackerGoalsSettings({
                 variant="outline"
                 className="mt-3 text-foreground"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 {t('create_first_goal')}
               </Button>
             </div>

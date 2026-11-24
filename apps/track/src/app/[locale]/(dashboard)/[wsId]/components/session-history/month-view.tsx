@@ -360,7 +360,7 @@ export function MonthView({
                             )
                           }
                         >
-                          <RotateCcw className="mr-1 h-3 w-3" />
+                          <RotateCcw className="h-3 w-3" />
                           {t('resume')}
                         </Button>
                         <Button

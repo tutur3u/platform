@@ -709,7 +709,7 @@ export default function CalendarLabClientPage({
                   disabled={!simulationResult}
                   className="h-10 w-full justify-start"
                 >
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="h-4 w-4" />
                   {t('set_baseline')}
                 </Button>
                 {baselineResult && (

@@ -250,7 +250,7 @@ export default function TeamClient({
             )}
             <Link href={'/leaderboard'}>
               <Button variant="outline">
-                <Trophy className="mr-1.5 h-4 w-4" />
+                <Trophy className="h-4 w-4" />
                 {t('view-leaderboard')}
               </Button>
             </Link>
@@ -516,7 +516,7 @@ export default function TeamClient({
                   variant="outline"
                   onClick={() => openDialog('des')}
                 >
-                  <Info className="mr-2 h-4 w-4 text-blue-500" />
+                  <Info className="h-4 w-4 text-blue-500" />
                   {t('overview-tab.team-description')}
                 </Button>
                 <Button
@@ -524,7 +524,7 @@ export default function TeamClient({
                   variant="outline"
                   onClick={() => openDialog('goals')}
                 >
-                  <Target className="mr-2 h-4 w-4 text-green-500" />
+                  <Target className="h-4 w-4 text-green-500" />
                   {t('overview-tab.view-team-goals')}
                 </Button>
               </CardContent>

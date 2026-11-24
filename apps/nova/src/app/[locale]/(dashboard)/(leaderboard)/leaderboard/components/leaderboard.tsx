@@ -382,7 +382,7 @@ export function Leaderboard({
                                 onClick={() => toggleRowExpand(entry.id)}
                                 className="ml-1 h-5 p-0 font-normal text-[10px] text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                               >
-                                <Sparkles className="mr-1 h-2.5 w-2.5" />
+                                <Sparkles className="h-2.5 w-2.5" />
                                 {expandedRows.has(entry.id)
                                   ? t('hide-breakdown')
                                   : t('show-breakdown')}
@@ -396,7 +396,7 @@ export function Leaderboard({
                                 onClick={() => toggleRowExpand(entry.id)}
                                 className="ml-1 h-5 p-0 font-normal text-[10px] text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                               >
-                                <Sparkles className="mr-1 h-2.5 w-2.5" />
+                                <Sparkles className="h-2.5 w-2.5" />
                                 {expandedRows.has(entry.id)
                                   ? t('hide-breakdown')
                                   : t('show-breakdown')}

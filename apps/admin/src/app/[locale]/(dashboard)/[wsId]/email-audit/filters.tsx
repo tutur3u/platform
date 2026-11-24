@@ -172,7 +172,7 @@ export default function Filters() {
           onClick={clearAllFilters}
           className="text-muted-foreground hover:text-foreground"
         >
-          <XCircle className="mr-1 h-4 w-4" />
+          <XCircle className="h-4 w-4" />
           {t('clear_filters')}
         </Button>
       )}

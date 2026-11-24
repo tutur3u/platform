@@ -271,7 +271,7 @@ export default function RoleFormMembersSection({
               onClick={() => void roleMembersQuery.refetch()}
               className="flex-1 sm:flex-none"
             >
-              <RefreshCcw className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <RefreshCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="text-xs sm:text-sm">{t('common.refresh')}</span>
             </Button>
             <Button
@@ -358,7 +358,7 @@ export default function RoleFormMembersSection({
                       onClick={() => handleAddMember(user.id)}
                       className="w-full sm:w-auto"
                     >
-                      <Plus className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       <span className="text-xs sm:text-sm">
                         {t('common.add')}
                       </span>
@@ -445,7 +445,7 @@ export default function RoleFormMembersSection({
                   onClick={() => handleRemoveMember(member.id)}
                   className="w-full sm:w-auto"
                 >
-                  <X className="mr-1 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="text-xs sm:text-sm">
                     {t('common.remove')}
                   </span>

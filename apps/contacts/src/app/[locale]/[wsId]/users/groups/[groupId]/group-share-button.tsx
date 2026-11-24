@@ -49,7 +49,7 @@ export default function GroupShareButton({ groupId }: Props) {
         onClick={() => setIsOpen(true)}
         className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
       >
-        <Share className="mr-2 h-5 w-5" />
+        <Share className="h-5 w-5" />
         {t('share')}
       </Button>
 

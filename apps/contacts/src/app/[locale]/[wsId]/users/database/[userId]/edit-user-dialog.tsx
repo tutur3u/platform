@@ -49,7 +49,7 @@ export default function EditUserDialog({ wsId, data }: EditUserDialogProps) {
   return (
     <>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Pencil className="mr-1 h-4 w-4" />
+        <Pencil className="h-4 w-4" />
         {t('common.edit')}
       </Button>
 

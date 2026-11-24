@@ -171,7 +171,7 @@ export default function ClientQuizzes({
               />
               <div className="mt-4 flex items-center justify-end gap-2">
                 <Button variant="ghost" onClick={() => setEditingQuizId(null)}>
-                  <X className="mr-1 h-5 w-5" />
+                  <X className="h-5 w-5" />
                   {t('common.cancel')}
                 </Button>
               </div>

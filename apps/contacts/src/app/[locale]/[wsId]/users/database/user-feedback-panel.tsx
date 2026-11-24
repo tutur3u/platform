@@ -329,7 +329,7 @@ export function UserFeedbackPanel({
                   setEditingFeedbackId(null);
                 }}
               >
-                <MessageSquarePlus className="mr-2 h-4 w-4" />
+                <MessageSquarePlus className="h-4 w-4" />
                 {tFeedback('add_feedback')}
               </Button>
             ) : null}

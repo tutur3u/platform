@@ -108,7 +108,7 @@ export default function UserGroupPosts({
         <div className="flex items-center gap-2">
           {groupId && canCreatePosts && (
             <Button size="sm" onClick={() => openDialog()}>
-              <BookPlus className="mr-1 h-4 w-4" />
+              <BookPlus className="h-4 w-4" />
               {t('ws-user-groups.add_post')}
             </Button>
           )}
@@ -204,7 +204,7 @@ export default function UserGroupPosts({
                   onClick={() => onLoadMore?.()}
                   className="w-full transition-all hover:scale-105 md:w-auto"
                 >
-                  <ChevronDown className="mr-2 h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" />
                   {t('common.load_more')}
                 </Button>
               </div>

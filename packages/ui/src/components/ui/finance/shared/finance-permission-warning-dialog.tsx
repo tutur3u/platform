@@ -120,7 +120,7 @@ export function FinancePermissionWarningContent({
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={copyRequest}>
-          <Copy className="mr-2 h-4 w-4" />
+          <Copy className="h-4 w-4" />
           {t('finance-permission-warning.copy_request')}
         </Button>
       </DialogFooter>

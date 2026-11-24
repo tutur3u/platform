@@ -192,7 +192,7 @@ export function FontPreviewPanel({
                         );
                       }}
                     >
-                      <ArrowRightLeft className="mr-1 h-4 w-4" />
+                      <ArrowRightLeft className="h-4 w-4" />
                       {t('settings.swap_fonts')}
                     </Button>
                     <Button
@@ -228,7 +228,7 @@ export function FontPreviewPanel({
                         });
                       }}
                     >
-                      <Shuffle className="mr-1 h-4 w-4" />
+                      <Shuffle className="h-4 w-4" />
                       {t('settings.remix_fonts')}
                     </Button>
                     <Button
@@ -255,7 +255,7 @@ export function FontPreviewPanel({
                         );
                       }}
                     >
-                      <RotateCcw className="mr-1 h-4 w-4" />
+                      <RotateCcw className="h-4 w-4" />
                       {t('settings.reset_fonts')}
                     </Button>
                   </div>

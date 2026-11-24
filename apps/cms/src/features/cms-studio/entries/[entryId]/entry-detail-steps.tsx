@@ -145,7 +145,7 @@ export function EntryDetailStepNav({
         disabled={!previous}
         onClick={() => previous && onStepChange(previous)}
       >
-        <ChevronLeft className="mr-2 h-4 w-4" />
+        <ChevronLeft className="h-4 w-4" />
         {strings.previousAction}
       </Button>
       <span className="text-muted-foreground text-xs tabular-nums">
@@ -161,7 +161,7 @@ export function EntryDetailStepNav({
         onClick={() => next && onStepChange(next)}
       >
         {strings.nextAction}
-        <ChevronRight className="ml-2 h-4 w-4" />
+        <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
   );

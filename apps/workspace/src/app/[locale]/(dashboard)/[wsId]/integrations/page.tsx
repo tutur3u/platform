@@ -210,7 +210,7 @@ export default async function IntegrationsPage({
                     </Button>
                   ) : (
                     <Button disabled className="w-full">
-                      <Settings className="mr-2 h-4 w-4" />
+                      <Settings className="h-4 w-4" />
                       Coming Soon
                     </Button>
                   )}

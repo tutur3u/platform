@@ -87,7 +87,7 @@ export default function BudgetsPage({
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               {t('create')}
             </Button>
           </DialogTrigger>
@@ -138,7 +138,7 @@ export default function BudgetsPage({
               {t('empty_description')}
             </p>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               {t('create')}
             </Button>
           </CardContent>

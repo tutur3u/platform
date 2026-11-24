@@ -75,7 +75,7 @@ export function DownloadButtonPDF({
       className={`${className}`}
       variant={variant}
     >
-      <FileText className="mr-1 h-3 w-3" />
+      <FileText className="h-3 w-3" />
       {t('download_button')} (PDF)
     </Button>
   );

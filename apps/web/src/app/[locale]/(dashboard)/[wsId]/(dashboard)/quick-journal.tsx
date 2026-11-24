@@ -1187,7 +1187,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
               disabled={disableGenerate}
               className="sm:w-auto"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Add Manually
             </Button>
           </div>

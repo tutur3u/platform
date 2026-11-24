@@ -199,7 +199,7 @@ export function GitHubBotConfigurationCard({
             }
             onClick={onSave}
           >
-            <ShieldCheck className="mr-2 h-4 w-4" />
+            <ShieldCheck className="h-4 w-4" />
             {t('save')}
           </Button>
           <Button
@@ -207,11 +207,11 @@ export function GitHubBotConfigurationCard({
             onClick={onTest}
             variant="outline"
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             {t('test')}
           </Button>
           <Button onClick={onRefresh} variant="ghost">
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             {t('refresh')}
           </Button>
         </div>
@@ -268,7 +268,7 @@ export function GitHubBotClientsCard({
           }
           onClick={onAutoPickup}
         >
-          <ShieldCheck className="mr-2 h-4 w-4" />
+          <ShieldCheck className="h-4 w-4" />
           {t('enableAutoPickup')}
         </Button>
 
@@ -297,7 +297,7 @@ export function GitHubBotClientsCard({
             disabled={!configuration || !clientName.trim() || issuePending}
             onClick={onIssue}
           >
-            <KeyRound className="mr-2 h-4 w-4" />
+            <KeyRound className="h-4 w-4" />
             {t('issueClient')}
           </Button>
         </div>

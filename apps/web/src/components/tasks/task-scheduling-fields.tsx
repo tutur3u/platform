@@ -167,7 +167,7 @@ export function TaskSchedulingFields({
             disabled={!canSchedule}
             className="h-7"
           >
-            <CalendarClock className="mr-1 h-3 w-3" />
+            <CalendarClock className="h-3 w-3" />
             Schedule
           </Button>
         )}

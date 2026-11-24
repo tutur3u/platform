@@ -226,7 +226,7 @@ export function ResponsesPanel({
                   size="sm"
                   className="text-destructive hover:text-destructive"
                 >
-                  <Trash className="mr-2 h-4 w-4" />
+                  <Trash className="h-4 w-4" />
                   {t('responses.clear_all')}
                 </Button>
               }

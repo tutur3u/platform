@@ -95,7 +95,7 @@ export function ActiveSessionCard({
           variant="outline"
           className="flex-1"
         >
-          <Pause className="mr-2 h-4 w-4" />
+          <Pause className="h-4 w-4" />
           Pause
         </Button>
         <Button
@@ -104,7 +104,7 @@ export function ActiveSessionCard({
           variant="destructive"
           className="flex-1"
         >
-          <Square className="mr-2 h-4 w-4" />
+          <Square className="h-4 w-4" />
           Stop
         </Button>
       </div>

@@ -381,7 +381,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               className="w-full justify-between"
             >
               {getSelectedTimezoneLabel(value.timezone)}
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -534,7 +534,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 {value.secondaryTimezone
                   ? getSelectedTimezoneLabel(value.secondaryTimezone)
                   : 'Select secondary timezone'}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent

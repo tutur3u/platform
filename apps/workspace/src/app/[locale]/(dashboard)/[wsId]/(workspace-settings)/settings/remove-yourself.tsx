@@ -116,7 +116,7 @@ export default function RemoveYourself({ workspace, currentUserId }: Props) {
             className="w-full"
             disabled={!workspace || isSystemWs || isLeaving}
           >
-            <UserMinus className="mr-2 h-4 w-4" />
+            <UserMinus className="h-4 w-4" />
             {isLeaving ? `${t('leaving')}...` : t('leave_workspace')}
           </Button>
         </div>

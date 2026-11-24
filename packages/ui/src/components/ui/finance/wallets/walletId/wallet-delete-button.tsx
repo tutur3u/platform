@@ -64,7 +64,7 @@ export function WalletDeleteButton({
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
         <Button variant="destructive" size="sm">
-          <Trash className="mr-2 h-4 w-4" />
+          <Trash className="h-4 w-4" />
           {t('common.delete')}
         </Button>
       </AlertDialogTrigger>

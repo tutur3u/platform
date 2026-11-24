@@ -246,7 +246,7 @@ export default function LinkedProductsClient({
             size="sm"
             onClick={() => setIsAddDialogOpen(true)}
           >
-            <Link className="mr-2 h-4 w-4" />
+            <Link className="h-4 w-4" />
             {t('user-data-table.link_product')}
           </Button>
         ) : undefined

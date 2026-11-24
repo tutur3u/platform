@@ -320,9 +320,9 @@ export default async function TasksAssignedToMe({
               size="sm"
               className="group/btn h-9 border-dynamic-orange/30 bg-background/50 backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:border-dynamic-orange hover:bg-dynamic-orange/10 hover:text-dynamic-orange hover:shadow-md"
             >
-              <UserRoundCheck className="mr-2 h-4 w-4 transition-transform group-hover/btn:scale-110" />
+              <UserRoundCheck className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
               {t('view_all')}
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
             </Button>
           </Link>
         </div>
@@ -490,9 +490,9 @@ export default async function TasksAssignedToMe({
                     size="default"
                     className="group/btn h-10 bg-linear-to-r from-dynamic-orange to-dynamic-orange/90 shadow-lg transition-all duration-200 hover:scale-105 hover:from-dynamic-orange hover:to-dynamic-red hover:shadow-xl"
                   >
-                    <TrendingUp className="mr-2 h-4 w-4 transition-transform group-hover/btn:scale-110" />
+                    <TrendingUp className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
                     {t('view_tasks')}
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
                   </Button>
                 </Link>
               </div>

@@ -763,7 +763,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
               onClick={() => setIsConversionDialogOpen(false)}
               disabled={isConverting}
             >
-              <X className="mr-2 h-4 w-4" />
+              <X className="h-4 w-4" />
               {t('conversion_dialog.cancel')}
             </Button>
             <Button

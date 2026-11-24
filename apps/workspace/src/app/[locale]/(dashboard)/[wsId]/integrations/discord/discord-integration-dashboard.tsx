@@ -524,7 +524,7 @@ export default function DiscordIntegrationDashboard({
               className="h-8 px-2 transition-colors hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
               onClick={() => setShowAddMemberDialog(true)}
             >
-              <Plus className="mr-1 h-3 w-3" />
+              <Plus className="h-3 w-3" />
               Add Member
             </Button>
           </CardHeader>
@@ -655,7 +655,7 @@ export default function DiscordIntegrationDashboard({
                     className="border-dynamic-blue/20 text-dynamic-blue transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10"
                     onClick={() => setShowAddMemberDialog(true)}
                   >
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Add Member
                   </Button>
                 </div>

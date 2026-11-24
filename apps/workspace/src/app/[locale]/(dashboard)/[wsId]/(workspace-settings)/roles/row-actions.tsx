@@ -56,7 +56,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
   return (
     <div className="flex items-center justify-end gap-2">
       <Button onClick={() => setShowEditDialog(true)}>
-        <Pencil className="mr-1 h-5 w-5" />
+        <Pencil className="h-5 w-5" />
         {t('common.edit')}
       </Button>
 

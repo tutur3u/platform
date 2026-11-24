@@ -416,7 +416,7 @@ export function BlueGreenMonitoringRequestsClient() {
                 }}
                 type="button"
               >
-                <Terminal className="mr-2 h-4 w-4" />
+                <Terminal className="h-4 w-4" />
                 {t('requests_page.error_lens')}
               </Button>
               <Button
@@ -1220,9 +1220,9 @@ function RequestTracePanel({
         type="button"
         variant="outline"
       >
-        <Eye className="mr-2 h-4 w-4" />
+        <Eye className="h-4 w-4" />
         {t('requests_page.inspect_request')}
-        <ArrowUpRight className="ml-2 h-4 w-4" />
+        <ArrowUpRight className="h-4 w-4" />
       </Button>
     </aside>
   );

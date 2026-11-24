@@ -217,7 +217,7 @@ export function TimeTrackerCategoriesSettings({
               onClick={() => setIsCopyDialogOpen(true)}
               className="shrink-0"
             >
-              <Copy className="mr-2 h-4 w-4" />
+              <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">
                 {t('copy_from_workspace')}
               </span>
@@ -226,7 +226,7 @@ export function TimeTrackerCategoriesSettings({
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={openAddDialog} className="shrink-0">
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('add_category')}</span>
                   <span className="sm:hidden">{t('add_short')}</span>
                 </Button>
@@ -247,7 +247,7 @@ export function TimeTrackerCategoriesSettings({
                 variant="outline"
                 className="mt-3 text-foreground"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 {t('create_first')}
               </Button>
             </div>

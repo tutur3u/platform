@@ -215,7 +215,7 @@ export default function DeleteAccountPage() {
                       className="w-full"
                       onClick={() => router.push('/')}
                     >
-                      <ExternalLink className="mr-2 h-3 w-3" />
+                      <ExternalLink className="h-3 w-3" />
                       {t('delete-account-go-to-billing')}
                     </Button>
                   </div>
@@ -314,7 +314,7 @@ export default function DeleteAccountPage() {
                       deleteMutation.isPending || !email.trim() || isBlocked
                     }
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                     {deleteMutation.isPending
                       ? t('delete-account-deleting')
                       : t('delete-account-button')}
@@ -326,7 +326,7 @@ export default function DeleteAccountPage() {
                   onClick={handleGoToDashboard}
                   disabled={deleteMutation.isPending}
                 >
-                  <ArrowRight className="mr-2 h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" />
                   {t('cancel')}
                 </Button>
               </div>

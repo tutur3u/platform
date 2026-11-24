@@ -177,7 +177,7 @@ export function MobileDeploymentSecretsPanel({
           </div>
         </div>
         <Button onClick={() => openDialog()} size="sm" variant="outline">
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           {t('addSecret')}
         </Button>
       </CardHeader>

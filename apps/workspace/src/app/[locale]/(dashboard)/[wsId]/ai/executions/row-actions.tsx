@@ -29,7 +29,7 @@ export function RowActions({ row, extraData }: RowActionsProps) {
   return (
     <div className="flex items-center justify-end gap-2">
       <Button onClick={handleViewClick}>
-        <Eye className="mr-1 h-5 w-5" />
+        <Eye className="h-5 w-5" />
         {t('common.view')}
       </Button>
     </div>

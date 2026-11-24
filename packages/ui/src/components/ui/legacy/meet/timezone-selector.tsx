@@ -34,7 +34,7 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
           className="w-full @lg:min-w-96 @md:min-w-72 justify-between bg-background/50 transition hover:bg-background/80"
         >
           {value ? value.text : t('select-time-zone')}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="max-h-96 w-full min-w-72 p-0">

@@ -497,7 +497,7 @@ export function TaskActions({
                       { 'text-muted-foreground': !newStartDate }
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     {newStartDate ? format(newStartDate, 'PPP') : 'Pick a date'}
                     {newStartDate && (
                       <span
@@ -556,7 +556,7 @@ export function TaskActions({
                       { 'border-destructive': isOverdue }
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     {newEndDate ? format(newEndDate, 'PPP') : 'Pick a date'}
                     {newEndDate && (
                       <span

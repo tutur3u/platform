@@ -83,7 +83,7 @@ export function CmsSettingsSection({
             disabled={importPending}
             onClick={onImport}
           >
-            <FolderSync className="mr-2 h-4 w-4" />
+            <FolderSync className="h-4 w-4" />
             {strings.importAction}
           </Button>
         </CardContent>

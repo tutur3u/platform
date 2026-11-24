@@ -75,7 +75,7 @@ export function WorkspacePolicyCard({
         <WorkspacePolicyEditor onChange={onChange} policy={policy} />
         <div className="mt-4 flex justify-end border-t pt-4">
           <Button disabled={isPending || !isDirty} onClick={onSave} size="sm">
-            <Save className="mr-2 size-4" />
+            <Save className="size-4" />
             {isPending ? t('workspaces.saving') : t('save')}
           </Button>
         </div>

@@ -245,7 +245,7 @@ export function InquiriesClient({
                     onClick={clearFilters}
                     className="h-9 transition-all hover:border-dynamic-red/50 hover:bg-dynamic-red/5 hover:text-dynamic-red"
                   >
-                    <XIcon className="mr-2 h-4 w-4" />
+                    <XIcon className="h-4 w-4" />
                     Clear filters
                   </Button>
                 </div>

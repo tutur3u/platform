@@ -77,7 +77,7 @@ export function ProgressPanel({
             <div className="mt-auto grid gap-2 pt-6">
               {onQuickLog ? (
                 <Button onClick={onQuickLog} type="button">
-                  <Sparkles className="mr-2 size-4" />
+                  <Sparkles className="size-4" />
                   {t('quicklog.open')}
                 </Button>
               ) : null}

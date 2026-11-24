@@ -286,7 +286,7 @@ export function TaskProgressPage({
             ) : null}
             {metrics.length > 0 ? (
               <Button onClick={() => setQuickLogOpen(true)} type="button">
-                <Plus className="mr-2 size-4" />
+                <Plus className="size-4" />
                 {t('quicklog.open')}
               </Button>
             ) : null}

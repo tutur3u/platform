@@ -228,7 +228,7 @@ export function SatelliteWorkspaceSettingsPanel({
           ) : (
             <Button disabled>
               {t('billing_open_pay')}
-              <ExternalLink className="ml-2 size-4" />
+              <ExternalLink className="size-4" />
             </Button>
           )}
         </SettingItemTab>
@@ -245,7 +245,7 @@ function BillingMetricError({ onRetry }: { onRetry: () => void }) {
         {t('billing_overview_unavailable')}
       </p>
       <Button onClick={onRetry} size="sm" type="button" variant="ghost">
-        <RefreshCw className="mr-1.5 size-3.5" />
+        <RefreshCw className="size-3.5" />
         {t('billing_retry')}
       </Button>
     </div>

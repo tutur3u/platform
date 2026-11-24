@@ -410,7 +410,7 @@ export function NotesClient({ wsId }: { wsId: string }) {
           </p>
         </div>
         <Button onClick={() => void createNote()}>
-          <Plus className="mr-2 size-4" />
+          <Plus className="size-4" />
           {t('new')}
         </Button>
       </div>

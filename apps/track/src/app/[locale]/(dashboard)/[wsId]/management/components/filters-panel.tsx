@@ -84,7 +84,7 @@ export default function FiltersPanel({
               disabled={isLoading}
               className="text-muted-foreground transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
             >
-              <X className="mr-1 size-4" />
+              <X className="size-4" />
               {t('clearAll')}
             </Button>
           )}
@@ -155,7 +155,7 @@ export default function FiltersPanel({
                 disabled={isLoading}
                 className="text-muted-foreground transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
               >
-                <X className="mr-1 size-3" />
+                <X className="size-3" />
                 {t('clear')}
               </Button>
             )}

@@ -3573,7 +3573,7 @@ export function TimerControls({
                     variant="outline"
                     className="flex-1 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/40"
                   >
-                    <Pause className="mr-2 h-4 w-4" />
+                    <Pause className="h-4 w-4" />
                     {t('take_break')}
                   </Button>
                   <Button
@@ -3582,7 +3582,7 @@ export function TimerControls({
                     variant="destructive"
                     className="flex-1"
                   >
-                    <Square className="mr-2 h-4 w-4" />
+                    <Square className="h-4 w-4" />
                     {t('complete')}
                   </Button>
                 </div>
@@ -3696,7 +3696,7 @@ export function TimerControls({
                   disabled={isLoading}
                   className="flex-1 bg-green-600 text-white hover:bg-green-700"
                 >
-                  <Play className="mr-2 h-4 w-4" />
+                  <Play className="h-4 w-4" />
                   {t('resume_session')}
                 </Button>
                 <Button
@@ -3705,7 +3705,7 @@ export function TimerControls({
                   variant="destructive"
                   className="flex-1"
                 >
-                  <Square className="mr-2 h-4 w-4" />
+                  <Square className="h-4 w-4" />
                   {t('end_session')}
                 </Button>
               </div>
@@ -4459,7 +4459,7 @@ export function TimerControls({
                     className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
                     size="lg"
                   >
-                    <Play className="mr-2 h-4 w-4" />
+                    <Play className="h-4 w-4" />
                     {selectedTaskId && selectedTaskId !== 'none'
                       ? t('start_timer')
                       : t('create_task_and_start')}
@@ -4645,7 +4645,7 @@ export function TimerControls({
                     className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
                     size="lg"
                   >
-                    <Play className="mr-2 h-5 w-5" />
+                    <Play className="h-5 w-5" />
                     {t('start_timer')}
                   </Button>
                 </TabsContent>
@@ -4951,7 +4951,7 @@ export function TimerControls({
                 disabled={!selectedBreakTypeId && !customBreakTypeName.trim()}
                 className="flex-1 bg-amber-600 hover:bg-amber-700"
               >
-                <Pause className="mr-2 h-4 w-4" />
+                <Pause className="h-4 w-4" />
                 {t('break_type.start_break')}
               </Button>
             </div>

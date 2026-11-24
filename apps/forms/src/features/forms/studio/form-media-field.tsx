@@ -125,7 +125,7 @@ export function FormMediaField({
           disabled={uploadMutation.isPending}
           onClick={() => fileInputRef.current?.click()}
         >
-          <Upload className="mr-2 h-4 w-4" />
+          <Upload className="h-4 w-4" />
           {hasImage ? t('studio.replace_image') : t('studio.upload_image')}
         </Button>
         <Button
@@ -141,7 +141,7 @@ export function FormMediaField({
             })
           }
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
           {t('studio.remove_image')}
         </Button>
       </div>

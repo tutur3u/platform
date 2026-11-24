@@ -70,7 +70,7 @@ export function InvalidReturnUrlWarning({
         type="button"
       >
         <span>{t('login.clear_invalid_return_url')}</span>
-        <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
       </Button>
     </ConfirmationCard>
   );

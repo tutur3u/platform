@@ -250,9 +250,9 @@ export default function SessionsTable({
                     disabled={isLoading}
                     className="border-dynamic-green/20 text-dynamic-green transition-all duration-200 hover:border-dynamic-green/30 hover:bg-dynamic-green/10"
                   >
-                    <Download className="mr-2 size-4" />
+                    <Download className="size-4" />
                     {t('export')}
-                    <ChevronDown className="ml-2 size-4" />
+                    <ChevronDown className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
@@ -315,7 +315,7 @@ export default function SessionsTable({
                   onClick={onClearFilters}
                   className="border-dynamic-blue/20 text-dynamic-blue transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10"
                 >
-                  <Filter className="mr-2 size-4" />
+                  <Filter className="size-4" />
                   {t('clearAllFilters')}
                 </Button>
               </div>

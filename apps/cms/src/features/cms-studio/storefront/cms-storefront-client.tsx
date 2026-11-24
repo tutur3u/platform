@@ -225,7 +225,7 @@ export function CmsStorefrontClient({ workspaceId }: { workspaceId: string }) {
                   disabled={publishMutation.isPending}
                   onClick={() => publishMutation.mutate(product.id)}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   {t('epm.storefront_publish_action')}
                 </Button>
               </li>

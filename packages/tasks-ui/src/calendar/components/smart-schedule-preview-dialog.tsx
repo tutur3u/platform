@@ -584,14 +584,14 @@ Share this log with engineers for debugging assistance.
                 onClick={downloadFullDebugLog}
                 className="ml-auto text-xs"
               >
-                <Bug className="mr-1 h-3 w-3" />
+                <Bug className="h-3 w-3" />
                 Debug Log
               </Button>
             )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleDiscard}>
-              <X className="mr-2 h-4 w-4" />
+              <X className="h-4 w-4" />
               Discard
             </Button>
             <Button
@@ -679,7 +679,7 @@ ${
         className="mt-4"
         onClick={downloadDebugLog}
       >
-        <Bug className="mr-2 h-4 w-4" />
+        <Bug className="h-4 w-4" />
         Download Debug Log
       </Button>
     </div>

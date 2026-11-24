@@ -227,7 +227,7 @@ function ColorControlPopover({
             type="button"
             variant="ghost"
           >
-            <X className="mr-1.5 size-3.5" />
+            <X className="size-3.5" />
             {clearLabel}
           </Button>
         </div>

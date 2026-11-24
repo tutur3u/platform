@@ -188,7 +188,7 @@ export default async function WorkspaceUsersPage({
                 createDescription={t('ws-users.create_description')}
                 trigger={
                   <Button size="sm">
-                    <UserPlus className="mr-2 h-4 w-4" />
+                    <UserPlus className="h-4 w-4" />
                     {t('ws-users.create')}
                   </Button>
                 }

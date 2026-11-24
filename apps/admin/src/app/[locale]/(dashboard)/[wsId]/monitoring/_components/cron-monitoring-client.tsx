@@ -269,7 +269,7 @@ function JobRuntimeRow({
           size="sm"
           onClick={() => onOpenExecutions(job.id)}
         >
-          <History className="mr-2 h-4 w-4" />
+          <History className="h-4 w-4" />
           {t('cron.actions.executions')}
         </Button>
         <Button
@@ -278,7 +278,7 @@ function JobRuntimeRow({
           onClick={() => onRun(job.id)}
           disabled={running || runInFlight || !job.enabled}
         >
-          <ListRestart className="mr-2 h-4 w-4" />
+          <ListRestart className="h-4 w-4" />
           {running
             ? t('cron.actions.queueing')
             : runInFlight
@@ -295,7 +295,7 @@ function JobRuntimeRow({
           }
           disabled={!run && !lastExecution}
         >
-          <Terminal className="mr-2 h-4 w-4" />
+          <Terminal className="h-4 w-4" />
           {t('cron.actions.logs')}
         </Button>
       </div>
@@ -578,7 +578,7 @@ function ManagedExternalCronSection({
                     }
                     disabled={running || !job.enabled}
                   >
-                    <ListRestart className="mr-2 h-4 w-4" />
+                    <ListRestart className="h-4 w-4" />
                     {running ? 'Running' : 'Run now'}
                   </Button>
                   <Button
@@ -998,7 +998,7 @@ export function CronMonitoringClient() {
               onClick={() => archiveQuery.refetch()}
               disabled={archiveQuery.isFetching}
             >
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
               {t('cron.actions.refresh')}
             </Button>
           </div>

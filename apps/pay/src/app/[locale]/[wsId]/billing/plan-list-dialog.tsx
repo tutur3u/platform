@@ -573,7 +573,7 @@ export default function PlanListDialog({
                           disabled
                           size="sm"
                         >
-                          <Crown className="mr-2 h-4 w-4" />
+                          <Crown className="h-4 w-4" />
                           {t('contact-sales')}
                         </Button>
                       </div>
@@ -594,7 +594,7 @@ export default function PlanListDialog({
                               disabled
                               size="sm"
                             >
-                              <ButtonIcon className="mr-2 h-4 w-4" />
+                              <ButtonIcon className="h-4 w-4" />
                               {buttonConfig.text}
                             </Button>
                           </div>

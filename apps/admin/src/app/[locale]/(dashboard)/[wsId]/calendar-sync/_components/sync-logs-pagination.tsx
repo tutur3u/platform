@@ -92,7 +92,7 @@ export default function SyncLogsPagination({
             disabled={currentPage === 1}
             className="h-9 border-2 px-3 font-medium"
           >
-            <ChevronLeft className="mr-1 h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
 
@@ -110,7 +110,7 @@ export default function SyncLogsPagination({
             className="h-9 border-2 px-3 font-medium"
           >
             Next
-            <ChevronRight className="ml-1 h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

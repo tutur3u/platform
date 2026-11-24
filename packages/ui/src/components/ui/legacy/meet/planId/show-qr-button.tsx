@@ -21,7 +21,7 @@ export default function ShowQRButton({ url }: { url: string }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button className="w-full md:w-auto" variant="outline" disabled={!url}>
-          <QrCode className="mr-1 h-5 w-5" />
+          <QrCode className="h-5 w-5" />
           {t('meet-together-plan-details.show_qr_code')}
         </Button>
       </DialogTrigger>

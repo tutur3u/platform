@@ -119,7 +119,7 @@ export function AmountRangeFilter({
                   onClick={handleClear}
                   className="flex-1 text-destructive"
                 >
-                  <X className="mr-2 h-3 w-3" />
+                  <X className="h-3 w-3" />
                   {commonT('clear')}
                 </Button>
               )}

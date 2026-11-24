@@ -254,7 +254,7 @@ export default function MigrationDashboard({ wsId }: MigrationDashboardProps) {
                 variant="destructive"
                 className="animate-pulse"
               >
-                <StopCircle className="mr-2 h-4 w-4" />
+                <StopCircle className="h-4 w-4" />
                 Stop All
               </Button>
             )}

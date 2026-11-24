@@ -206,7 +206,7 @@ export function QuickActions({
             onClick={() => onDuplicate(recentSessions[0]!)}
             className="w-full justify-start text-xs"
           >
-            <RotateCcw className="mr-2 h-3 w-3" />
+            <RotateCcw className="h-3 w-3" />
             Repeat: {recentSessions[0].title}
           </Button>
         )}
@@ -219,7 +219,7 @@ export function QuickActions({
               onClick={() => onTemplate(template)}
               className="w-full justify-start text-xs"
             >
-              <Copy className="mr-2 h-3 w-3" />
+              <Copy className="h-3 w-3" />
               {template.title}
               <Badge variant="secondary" className="ml-auto text-xs">
                 {template.usage_count}×

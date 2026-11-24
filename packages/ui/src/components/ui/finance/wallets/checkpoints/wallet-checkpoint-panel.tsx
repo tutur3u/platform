@@ -132,7 +132,7 @@ export function WalletCheckpointPanel({
         </div>
         {canUpdateWallets && (
           <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             {t('record_checkpoint')}
           </Button>
         )}

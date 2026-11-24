@@ -99,7 +99,7 @@ export function WalletDetailsActions({
             size="sm"
             onClick={() => setShowEditDialog(true)}
           >
-            <Pencil className="mr-2 h-4 w-4" />
+            <Pencil className="h-4 w-4" />
             {t('common.edit')}
           </Button>
           <ModifiableDialogTrigger
@@ -130,7 +130,7 @@ export function WalletDetailsActions({
                 size="sm"
                 onClick={() => setTransactionAction('charge')}
               >
-                <CreditCard className="mr-2 h-4 w-4" />
+                <CreditCard className="h-4 w-4" />
                 {t('wallet-data-table.credit_charge')}
               </Button>
               <Button
@@ -138,7 +138,7 @@ export function WalletDetailsActions({
                 size="sm"
                 onClick={() => setTransactionAction('payment')}
               >
-                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                <ArrowLeftRight className="h-4 w-4" />
                 {t('wallet-data-table.credit_payment')}
               </Button>
               <Button
@@ -146,7 +146,7 @@ export function WalletDetailsActions({
                 size="sm"
                 onClick={() => setTransactionAction('credit')}
               >
-                <RotateCcw className="mr-2 h-4 w-4" />
+                <RotateCcw className="h-4 w-4" />
                 {t('wallet-data-table.credit_refund')}
               </Button>
             </>
@@ -156,7 +156,7 @@ export function WalletDetailsActions({
               size="sm"
               onClick={() => setTransactionAction('transaction')}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               {t('ws-transactions.singular')}
             </Button>
           )}

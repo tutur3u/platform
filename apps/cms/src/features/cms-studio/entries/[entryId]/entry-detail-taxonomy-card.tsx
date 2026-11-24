@@ -183,7 +183,7 @@ export function EntryDetailTaxonomyCard({
               variant="outline"
               onClick={onClearCategories}
             >
-              <X className="mr-2 h-4 w-4" />
+              <X className="h-4 w-4" />
               {strings.categoryClearAction}
             </Button>
           ) : null}
@@ -313,7 +313,7 @@ export function EntryDetailTaxonomyCard({
                 variant="outline"
                 onClick={onClearTags}
               >
-                <X className="mr-2 h-4 w-4" />
+                <X className="h-4 w-4" />
                 {strings.tagsClearAction}
               </Button>
             ) : null}

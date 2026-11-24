@@ -112,7 +112,7 @@ export function RaceControls({
           onClick={resetVisualization}
           disabled={races.length === 0}
         >
-          <RefreshCw size={16} className="mr-1" />
+          <RefreshCw size={16} />
           Reset
         </Button>
       </div>

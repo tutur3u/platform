@@ -351,7 +351,7 @@ export function QuickTimeTracker({
             onClick={() => toast.dismiss(toastId)}
           >
             <Button variant="outline" size="sm" className="ml-3">
-              <ExternalLink className="mr-1 h-3 w-3" />
+              <ExternalLink className="h-3 w-3" />
               View
             </Button>
           </Link>
@@ -685,7 +685,7 @@ export function QuickTimeTracker({
                   className="flex-1 border-green-300 text-green-700 hover:bg-green-100 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/30"
                   disabled={stopMutation.isPending || isLoadingSession}
                 >
-                  <Square className="mr-2 h-3 w-3" />
+                  <Square className="h-3 w-3" />
                   Stop
                 </Button>
                 <Link href={`/${wsId}/time-tracker`}>
@@ -929,7 +929,7 @@ export function QuickTimeTracker({
                   size="sm"
                   disabled={!selectedTask || startMutation.isPending}
                 >
-                  <Play className="mr-2 h-3 w-3" />
+                  <Play className="h-3 w-3" />
                   Start Timer
                 </Button>
                 <Link href={`/${wsId}/time-tracker`}>

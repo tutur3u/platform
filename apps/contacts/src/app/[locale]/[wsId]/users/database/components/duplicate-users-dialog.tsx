@@ -498,7 +498,7 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
       >
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
-            <Users className="mr-2 h-4 w-4" />
+            <Users className="h-4 w-4" />
             {t('duplicates')}
           </Button>
         </DialogTrigger>
@@ -705,7 +705,7 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
                     size="sm"
                     onClick={() => setShowBulkConfirm(true)}
                   >
-                    <GitMerge className="mr-2 h-4 w-4" />
+                    <GitMerge className="h-4 w-4" />
                     {t('bulk_merge')}
                   </Button>
                 </div>
@@ -729,7 +729,7 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
           <DialogFooter className="shrink-0">
             {state === 'idle' && (
               <Button onClick={handleDetectDuplicates} className="w-full">
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
                 {t('detect_duplicates')}
               </Button>
             )}
@@ -739,14 +739,14 @@ export function DuplicateUsersDialog({ wsId, onMergeComplete }: Props) {
                 onClick={() => setShowMergeConfirm(true)}
                 className="w-full"
               >
-                <GitMerge className="mr-2 h-4 w-4" />
+                <GitMerge className="h-4 w-4" />
                 {t('merge_users')}
               </Button>
             )}
 
             {(state === 'detecting' || state === 'merging') && (
               <Button disabled className="w-full">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {state === 'detecting'
                   ? t('detecting')
                   : t('duplicate_merging')}

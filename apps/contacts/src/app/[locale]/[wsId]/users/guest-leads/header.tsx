@@ -61,7 +61,7 @@ export function GuestLeadHeader({
                 className="w-full md:w-fit"
                 title={t('common.settings')}
               >
-                <Settings className="mr-1 h-4 w-4" />
+                <Settings className="h-4 w-4" />
                 {t('common.settings')}
               </Button>
             ) : null}

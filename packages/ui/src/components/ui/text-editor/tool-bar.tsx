@@ -605,7 +605,7 @@ export function ToolBar({
               onMouseDown={(e) => e.preventDefault()}
               className="h-8 flex-1 text-xs"
             >
-              <Columns2 className="mr-1.5 size-3.5" />
+              <Columns2 className="size-3.5" />
               Insert Left
             </Button>
             <Button
@@ -616,7 +616,7 @@ export function ToolBar({
               onMouseDown={(e) => e.preventDefault()}
               className="h-8 flex-1 text-xs"
             >
-              <Columns2 className="mr-1.5 size-3.5" />
+              <Columns2 className="size-3.5" />
               Insert Right
             </Button>
             <Button
@@ -646,7 +646,7 @@ export function ToolBar({
               onMouseDown={(e) => e.preventDefault()}
               className="h-8 flex-1 text-xs"
             >
-              <Rows2 className="mr-1.5 size-3.5" />
+              <Rows2 className="size-3.5" />
               Insert Above
             </Button>
             <Button
@@ -657,7 +657,7 @@ export function ToolBar({
               onMouseDown={(e) => e.preventDefault()}
               className="h-8 flex-1 text-xs"
             >
-              <Rows2 className="mr-1.5 size-3.5" />
+              <Rows2 className="size-3.5" />
               Insert Below
             </Button>
             <Button
@@ -687,7 +687,7 @@ export function ToolBar({
               onMouseDown={(e) => e.preventDefault()}
               className="h-8 flex-1 text-xs"
             >
-              <Combine className="mr-1.5 size-3.5" />
+              <Combine className="size-3.5" />
               Merge
             </Button>
             <Button
@@ -698,7 +698,7 @@ export function ToolBar({
               onMouseDown={(e) => e.preventDefault()}
               className="h-8 flex-1 text-xs"
             >
-              <Workflow className="mr-1.5 size-3.5" />
+              <Workflow className="size-3.5" />
               Split
             </Button>
           </div>
@@ -716,7 +716,7 @@ export function ToolBar({
             onMouseDown={(e) => e.preventDefault()}
             className="h-8 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
           >
-            <Trash2 className="mr-1.5 size-3.5" />
+            <Trash2 className="size-3.5" />
             Delete Table
           </Button>
         </div>

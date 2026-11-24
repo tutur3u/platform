@@ -81,7 +81,7 @@ export function PlatformLinkRepairDialog({
     >
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          <Link2 className="mr-2 h-4 w-4" />
+          <Link2 className="h-4 w-4" />
           {t('platform_link_repair_open')}
         </Button>
       </DialogTrigger>

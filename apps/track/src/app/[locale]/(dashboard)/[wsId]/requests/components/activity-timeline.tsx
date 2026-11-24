@@ -457,7 +457,7 @@ export function ActivityTimeline({
                       disabled={currentPage === 1 || isLoading}
                       className="shrink-0"
                     >
-                      <ChevronLeft className="mr-1 h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4" />
                       <span className="hidden sm:inline">
                         {t('activity.previous')}
                       </span>
@@ -480,7 +480,7 @@ export function ActivityTimeline({
                       <span className="hidden sm:inline">
                         {t('activity.next')}
                       </span>
-                      <ChevronRight className="ml-1 h-4 w-4" />
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>

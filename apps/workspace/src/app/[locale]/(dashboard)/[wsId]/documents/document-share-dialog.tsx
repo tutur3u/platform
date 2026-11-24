@@ -132,7 +132,7 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
               onClick={() => window.open(publicLink)}
               disabled={!isPublic}
             >
-              <ExternalLink className="mr-2 h-4 w-4" />
+              <ExternalLink className="h-4 w-4" />
               Open public link
             </Button>
           </div>

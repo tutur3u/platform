@@ -97,7 +97,7 @@ export function ApiKeyRow({
             size="sm"
             variant="outline"
           >
-            <RefreshCw className="mr-2 size-3.5" />
+            <RefreshCw className="size-3.5" />
             {t('rotate')}
           </Button>
           <Button
@@ -106,7 +106,7 @@ export function ApiKeyRow({
             size="sm"
             variant="outline"
           >
-            <Trash2 className="mr-2 size-3.5" />
+            <Trash2 className="size-3.5" />
             {t('revoke')}
           </Button>
         </div>
@@ -150,7 +150,7 @@ export function ApiKeySecretDialog({
         </div>
         <DialogFooter>
           <Button onClick={onUseInPlayground} variant="outline">
-            <Rocket className="mr-2 size-4" />
+            <Rocket className="size-4" />
             {t('use_in_playground')}
           </Button>
           <Button onClick={onClose}>{t('done')}</Button>

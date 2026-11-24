@@ -63,7 +63,7 @@ export function StudioErrorState({
       </div>
       {onRetry ? (
         <Button onClick={onRetry} size="sm" type="button" variant="outline">
-          <RefreshCw className="mr-2 size-3.5" />
+          <RefreshCw className="size-3.5" />
           {retryLabel}
         </Button>
       ) : null}

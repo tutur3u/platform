@@ -279,7 +279,7 @@ export function TagManager({
           className="w-full md:w-fit"
           onClick={handleOpenCreate}
         >
-          <Plus className="mr-1 h-5 w-5" />
+          <Plus className="h-5 w-5" />
           {t('ws-transaction-tags.create')}
         </Button>
       </div>
@@ -477,7 +477,7 @@ export function TagManager({
             </p>
             {!searchQuery && (
               <Button onClick={handleOpenCreate}>
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 {t('ws-transaction-tags.create')}
               </Button>
             )}

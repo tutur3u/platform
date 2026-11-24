@@ -355,7 +355,7 @@ export default function LoginForm() {
                   variant="outline"
                   disabled={_isLoading}
                 >
-                  <Mail size={18} className="mr-1" />
+                  <Mail size={18} />
                   {t('login.open_inbucket')}
                 </Button>
               </Link>

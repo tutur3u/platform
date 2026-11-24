@@ -169,7 +169,7 @@ export function HabitsPanel({ wsId }: HabitsPanelProps) {
       <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
         <p className="text-muted-foreground text-sm">Failed to load habits</p>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           Retry
         </Button>
       </div>
@@ -188,7 +188,7 @@ export function HabitsPanel({ wsId }: HabitsPanelProps) {
             </p>
           </div>
           <Button size="sm" onClick={() => setIsHabitDialogOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Create Habit
           </Button>
         </div>

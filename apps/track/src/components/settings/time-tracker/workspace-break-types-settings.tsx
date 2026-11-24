@@ -481,7 +481,7 @@ export function WorkspaceBreakTypesSettings({
                 onClick={handleOpenCreate}
                 className="mt-3 text-foreground"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 {t('create')}
               </Button>
             </div>

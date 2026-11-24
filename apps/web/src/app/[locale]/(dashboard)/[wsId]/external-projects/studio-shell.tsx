@@ -55,7 +55,7 @@ export function StudioShell({
             className="h-9 rounded-full px-4"
             onClick={() => setPreviewOpen(true)}
           >
-            <Eye className="mr-2 h-4 w-4" />
+            <Eye className="h-4 w-4" />
             {previewDrawerTitle}
           </Button>
         </div>

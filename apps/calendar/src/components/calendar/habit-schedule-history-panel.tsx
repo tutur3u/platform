@@ -215,7 +215,7 @@ export function HabitScheduleHistoryPanel({
                           revokeSkipMutation.mutate(entry.occurrence_date)
                         }
                       >
-                        <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                        <RotateCcw className="h-3.5 w-3.5" />
                         Revoke
                       </Button>
                     )}

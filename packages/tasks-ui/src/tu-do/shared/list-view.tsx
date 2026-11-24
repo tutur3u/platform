@@ -1053,7 +1053,7 @@ function InteractiveListView({
                   disabled={bulkWorking}
                 >
                   {tc('bulk_actions')}
-                  <ChevronDown className="ml-1.5 h-3.5 w-3.5" />
+                  <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
@@ -1188,7 +1188,7 @@ function InteractiveListView({
               onClick={() => setSelectedTasks(new Set())}
               className="h-8"
             >
-              <X className="mr-1.5 h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" />
               {tc('cancel')}
             </Button>
           </div>

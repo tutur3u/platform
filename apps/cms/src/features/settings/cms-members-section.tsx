@@ -122,13 +122,13 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
                 <Button
                   onClick={() => state.setRoleEditorState({ mode: 'create' })}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   {tRoles('create')}
                 </Button>
               ) : null
             ) : state.canManageMembers ? (
               <Button onClick={() => setInviteDialogOpen(true)}>
-                <UserPlus className="mr-2 h-4 w-4" />
+                <UserPlus className="h-4 w-4" />
                 {t('ws-members.invite_member')}
               </Button>
             ) : null}

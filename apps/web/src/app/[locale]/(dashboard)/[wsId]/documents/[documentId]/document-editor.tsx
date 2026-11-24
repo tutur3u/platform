@@ -324,7 +324,7 @@ export function DocumentEditor({
             variant="outline"
             onClick={() => router.push(`/${wsId}/documents`)}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
             Back to documents
           </Button>
         </div>

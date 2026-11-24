@@ -189,7 +189,7 @@ export function PublishingSettingsSection({
                 className={toneClasses.secondaryButtonClassName}
                 onClick={onOpenPreview}
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 {t('settings.open_preview_tab')}
               </Button>
               <Button
@@ -203,7 +203,7 @@ export function PublishingSettingsSection({
                   }
                 }}
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
                 {t('settings.open_live_form')}
               </Button>
               <Button
@@ -217,7 +217,7 @@ export function PublishingSettingsSection({
                   toast.success(t('toast.share_link_copied'));
                 }}
               >
-                <Copy className="mr-2 h-4 w-4" />
+                <Copy className="h-4 w-4" />
                 {t('settings.copy_share_link')}
               </Button>
             </div>

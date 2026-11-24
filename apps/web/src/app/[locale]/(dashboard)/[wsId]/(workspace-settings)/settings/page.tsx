@@ -96,7 +96,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           containsPermission('manage_workspace_members') ? (
             <Link href={`/${wsId}/members`}>
               <Button className="cursor-pointer">
-                <UserPlus className="mr-2 h-4 w-4" />
+                <UserPlus className="h-4 w-4" />
                 <span>
                   {disableInvite
                     ? t('ws-members.invite_member_disabled')

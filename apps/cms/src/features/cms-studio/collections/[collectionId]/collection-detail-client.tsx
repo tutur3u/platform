@@ -358,7 +358,7 @@ export function CollectionDetailClient({
               className="px-0"
               onClick={() => router.push(contentPath)}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               {strings.backToEpmAction}
             </Button>
             <div className="space-y-2">

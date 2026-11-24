@@ -62,7 +62,7 @@ export function ChatPermissions({
       {isPublic && (
         <div className="flex items-center gap-2">
           <Button variant="outline" className="flex-1" onClick={copyLink}>
-            <Copy className="mr-2 h-4 w-4" />
+            <Copy className="h-4 w-4" />
             {t('copy_public_link')}
           </Button>
           <Button variant="outline" size="icon" onClick={() => setShowQR(true)}>

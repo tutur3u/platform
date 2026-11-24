@@ -90,7 +90,7 @@ export function FormsImportButton({
         onChange={handleFileChange}
       />
       <Button variant="outline" onClick={handleFilePick} disabled={isImporting}>
-        <Upload className="mr-2 h-4 w-4" />
+        <Upload className="h-4 w-4" />
         {isImporting ? t('studio.saving') : t('settings.import_form')}
       </Button>
     </>

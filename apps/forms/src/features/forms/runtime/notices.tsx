@@ -117,7 +117,7 @@ export function renderReadOnlyNotice({
                   isResponseCopyBlockedByTurnstile
                 }
               >
-                <Mail className="mr-2 h-4 w-4" />
+                <Mail className="h-4 w-4" />
                 {t('runtime.response_copy_send_now')}
               </Button>
               <p className="text-muted-foreground text-xs leading-6">

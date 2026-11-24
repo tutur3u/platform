@@ -291,7 +291,7 @@ export function CmsLibraryCommandCenter({
               disabled={createEntryPending}
               onClick={onCreateEntry}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               {strings.createEntryAction}
             </Button>
 

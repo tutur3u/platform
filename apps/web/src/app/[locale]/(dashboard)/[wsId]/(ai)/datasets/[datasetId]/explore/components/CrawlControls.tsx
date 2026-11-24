@@ -35,28 +35,28 @@ export function CrawlControls({
       <div className="flex items-center gap-2">
         {canStart && (
           <Button onClick={onStart} variant="default">
-            <Play className="mr-2 h-4 w-4" />
+            <Play className="h-4 w-4" />
             Start Crawling
           </Button>
         )}
 
         {canPause && (
           <Button onClick={onPause} variant="outline">
-            <Pause className="mr-2 h-4 w-4" />
+            <Pause className="h-4 w-4" />
             Pause
           </Button>
         )}
 
         {canResume && (
           <Button onClick={onResume} variant="outline">
-            <Play className="mr-2 h-4 w-4" />
+            <Play className="h-4 w-4" />
             Resume
           </Button>
         )}
 
         {canStop && (
           <Button onClick={onStop} variant="destructive">
-            <StopCircle className="mr-2 h-4 w-4" />
+            <StopCircle className="h-4 w-4" />
             Stop
           </Button>
         )}

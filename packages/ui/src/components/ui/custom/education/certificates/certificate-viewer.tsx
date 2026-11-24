@@ -83,7 +83,7 @@ export function CertificateViewer({
       </div>
       <div id="download-buttons" className="mt-6 flex justify-center gap-2">
         <Button onClick={handlePNG}>
-          <ImageIcon className="mr-1 h-4 w-4" />
+          <ImageIcon className="h-4 w-4" />
           {t('download_button')} (PNG)
         </Button>
         <DownloadButtonPDF

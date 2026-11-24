@@ -100,7 +100,7 @@ export function BoardActions({
         {data.href && (
           <Link href={data.href} onClick={(e) => e.stopPropagation()}>
             <Button>
-              <Eye className="mr-1 h-5 w-5" />
+              <Eye className="h-5 w-5" />
               {t('common.view')}
             </Button>
           </Link>

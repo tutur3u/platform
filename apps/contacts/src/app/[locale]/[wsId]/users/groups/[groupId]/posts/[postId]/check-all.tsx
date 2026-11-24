@@ -75,7 +75,7 @@ export function CheckAll({
         onClick={() => mutation.mutate('check')}
         disabled={loading || completed || !canUpdateUserGroupsPosts}
       >
-        <CheckCheck className="mr-1" />
+        <CheckCheck />
         {completed
           ? t('ws_post_details.completed')
           : t('ws_post_details.check_all')}
@@ -86,7 +86,7 @@ export function CheckAll({
         variant="outline"
         title={t('ws_post_details.uncheck_all_description')}
       >
-        <RotateCcw className="mr-1" />
+        <RotateCcw />
         {t('ws_post_details.uncheck_all')}
       </Button>
     </div>

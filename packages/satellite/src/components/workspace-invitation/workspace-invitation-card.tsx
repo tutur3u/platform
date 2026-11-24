@@ -119,7 +119,7 @@ export function SatelliteWorkspaceInvitationCard({
             type="button"
             variant="outline"
           >
-            <X className="mr-2 h-4 w-4" />
+            <X className="h-4 w-4" />
             {declineMutation.isPending ? t('rejecting') : t('reject')}
           </Button>
           <Button

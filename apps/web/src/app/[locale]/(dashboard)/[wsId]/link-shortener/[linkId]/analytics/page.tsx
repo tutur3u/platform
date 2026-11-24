@@ -85,7 +85,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
             </p>
             <Link href={`/${wsId}/link-shortener`}>
               <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 {t('link-shortener.analytics.back_to_links')}
               </Button>
             </Link>
@@ -117,7 +117,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
           <div className="flex items-center gap-4">
             <Link href={`/${wsId}/link-shortener`}>
               <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 {t('link-shortener.analytics.back_to_links')}
               </Button>
             </Link>

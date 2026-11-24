@@ -141,7 +141,7 @@ export function FormCardActions({
               disabled={duplicatePending}
               onClick={handleDuplicate}
             >
-              <Copy className="mr-2 h-4 w-4" />
+              <Copy className="h-4 w-4" />
               {t('pages.duplicate_form')}
             </Button>
             <Button
@@ -149,7 +149,7 @@ export function FormCardActions({
               variant="outline"
               onClick={() => setArchiveOpen(true)}
             >
-              <Archive className="mr-2 h-4 w-4" />
+              <Archive className="h-4 w-4" />
               {isArchived ? t('pages.restore_form') : t('pages.archive_form')}
             </Button>
             <Button
@@ -158,7 +158,7 @@ export function FormCardActions({
               className="border-destructive/40 text-destructive hover:bg-destructive/10"
               onClick={() => setDeleteOpen(true)}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               {t('pages.delete_form')}
             </Button>
           </>

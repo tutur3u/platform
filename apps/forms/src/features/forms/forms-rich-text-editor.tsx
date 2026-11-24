@@ -297,7 +297,7 @@ export function FormsRichTextEditor({
                   setLinkOpen(false);
                 }}
               >
-                <Unlink className="mr-2 h-4 w-4" />
+                <Unlink className="h-4 w-4" />
                 Remove
               </Button>
               <Button
@@ -311,7 +311,7 @@ export function FormsRichTextEditor({
                   setLinkOpen(false);
                 }}
               >
-                <Link2 className="mr-2 h-4 w-4" />
+                <Link2 className="h-4 w-4" />
                 Apply
               </Button>
             </div>

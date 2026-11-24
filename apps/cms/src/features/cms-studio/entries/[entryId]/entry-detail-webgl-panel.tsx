@@ -123,7 +123,7 @@ export function EntryDetailWebglPanel({
                   )
                 }
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
                 {strings.webglOpenAction}
               </Button>
             ) : null}
@@ -139,7 +139,7 @@ export function EntryDetailWebglPanel({
                     )
                   }
                 >
-                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                   {strings.webglOpenPublicAction}
                 </Button>
                 <Button
@@ -150,7 +150,7 @@ export function EntryDetailWebglPanel({
                     )
                   }
                 >
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="h-4 w-4" />
                   {strings.webglCopyPublicLinkAction}
                 </Button>
               </>
@@ -162,7 +162,7 @@ export function EntryDetailWebglPanel({
                   void navigator.clipboard?.writeText(webglManifestText)
                 }
               >
-                <Copy className="mr-2 h-4 w-4" />
+                <Copy className="h-4 w-4" />
                 {strings.webglCopyManifestAction}
               </Button>
             ) : null}

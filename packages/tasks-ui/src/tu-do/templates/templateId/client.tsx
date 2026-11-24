@@ -395,7 +395,7 @@ export default function TemplateDetailClient({
               size="lg"
               className="w-full font-semibold shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
             >
-              <Plus className="mr-2 h-5 w-5" />
+              <Plus className="h-5 w-5" />
               {t('detail.use_template')}
             </Button>
 
@@ -406,7 +406,7 @@ export default function TemplateDetailClient({
                   onClick={() => setShareDialogOpen(true)}
                   className="w-full"
                 >
-                  <Share2 className="mr-2 h-4 w-4" />
+                  <Share2 className="h-4 w-4" />
                   {t('share.manage')}
                 </Button>
                 <Button
@@ -414,7 +414,7 @@ export default function TemplateDetailClient({
                   onClick={() => setEditDialogOpen(true)}
                   className="w-full"
                 >
-                  <Pencil className="mr-2 h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                   {t('detail.edit')}
                 </Button>
                 <AlertDialog>
@@ -423,7 +423,7 @@ export default function TemplateDetailClient({
                       variant="outline"
                       className="col-span-2 w-full text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                       {t('detail.delete')}
                     </Button>
                   </AlertDialogTrigger>

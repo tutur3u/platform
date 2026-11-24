@@ -251,7 +251,7 @@ export default function InviteLinksSection({
                 size="sm"
                 onClick={() => void linksQuery.refetch()}
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
                 {t('common.retry')}
               </Button>
             }

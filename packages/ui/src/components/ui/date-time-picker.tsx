@@ -656,7 +656,7 @@ export function DateTimePicker({
           : 'Open date and time picker'
       }
     >
-      <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+      <CalendarIcon className="h-4 w-4 shrink-0" />
       {date ? (
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
           <span className="truncate">{selectedDateText}</span>

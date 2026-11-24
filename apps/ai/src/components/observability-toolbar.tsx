@@ -169,7 +169,7 @@ export function ObservabilityToolbar({
               type="button"
               variant="ghost"
             >
-              <X className="mr-1.5 size-3.5" />
+              <X className="size-3.5" />
               {t('clear_filters')}
             </Button>
           </>

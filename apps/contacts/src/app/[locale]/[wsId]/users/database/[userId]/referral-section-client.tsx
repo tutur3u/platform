@@ -482,7 +482,7 @@ export default function ReferralSectionClient({
                 disabled={!isSelectedValid || referUserMutation.isPending}
                 className="w-full"
               >
-                <UserPlus className="mr-2 h-4 w-4" />
+                <UserPlus className="h-4 w-4" />
                 {t('refer_selected_person')}
               </Button>
             </>

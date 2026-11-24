@@ -227,7 +227,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
               size="sm"
               disabled={availableRoles.length === 0}
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="text-xs sm:text-sm">
                 {t('ws-wallets.add_role')}
               </span>

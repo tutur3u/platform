@@ -38,7 +38,7 @@ export function EmptyStateCard({
         <p className="text-muted-foreground/60 text-xs">{description}</p>
       </div>
       <Button size="sm" onClick={onAction} className="mt-2 w-full">
-        <ActionIcon className="mr-1.5 h-3.5 w-3.5" />
+        <ActionIcon className="h-3.5 w-3.5" />
         {actionLabel}
       </Button>
     </div>

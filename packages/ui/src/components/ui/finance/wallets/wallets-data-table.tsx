@@ -205,7 +205,7 @@ export function WalletsDataTable({
               size="sm"
               onClick={() => void walletsQuery.fetchNextPage()}
             >
-              <ChevronDown className="mr-2 h-4 w-4" />
+              <ChevronDown className="h-4 w-4" />
               {t('wallet-data-table.load_more')}
             </Button>
           )}

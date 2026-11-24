@@ -1155,7 +1155,7 @@ export function CommandBar({
                                         }
                                         className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
                                       >
-                                        <UserMinus className="mr-1 h-3 w-3" />
+                                        <UserMinus className="h-3 w-3" />
                                         {t('cmd_remove_all')}
                                       </Button>
                                     )}

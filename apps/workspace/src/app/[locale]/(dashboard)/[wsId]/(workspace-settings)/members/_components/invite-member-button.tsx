@@ -130,7 +130,7 @@ export default function InviteMemberButton({
           className="w-full md:w-auto"
           disabled={!wsId || !currentUser || disabled}
         >
-          <UserPlus className="mr-2 h-4 w-4" />
+          <UserPlus className="h-4 w-4" />
           {label}
         </Button>
       </DialogTrigger>

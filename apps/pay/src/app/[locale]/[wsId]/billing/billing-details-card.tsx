@@ -209,7 +209,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
             {error instanceof Error ? error.message : t('error-loading-data')}
           </p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             {t('try-again')}
           </Button>
         </div>

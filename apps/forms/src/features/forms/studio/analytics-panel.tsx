@@ -178,7 +178,7 @@ export function AnalyticsPanel({
                       disabled={clearMutation.isPending}
                       className="w-full text-destructive hover:text-destructive sm:w-auto"
                     >
-                      <Trash className="mr-2 h-4 w-4" />
+                      <Trash className="h-4 w-4" />
                       {t('analytics.clear_all')}
                     </Button>
                   }

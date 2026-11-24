@@ -74,7 +74,7 @@ export default async function ApiKeyUsageLogsPage({
             <div>
               <Link href={`/${wsId}/api-keys`}>
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" />
                   {t('back_to_api_keys')}
                 </Button>
               </Link>

@@ -250,7 +250,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
                   }
                   type="button"
                 >
-                  <Plus className="mr-2 size-4" />
+                  <Plus className="size-4" />
                   {t('create')}
                 </Button>
                 <Button
@@ -264,7 +264,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
                   type="button"
                   variant="outline"
                 >
-                  <Zap className="mr-2 size-4" />
+                  <Zap className="size-4" />
                   {t('quick_create')}
                 </Button>
               </div>

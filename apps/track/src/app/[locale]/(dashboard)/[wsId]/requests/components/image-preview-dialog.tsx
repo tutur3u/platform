@@ -78,7 +78,7 @@ export function ImagePreviewDialog({
                   onClick={handlePrevious}
                   className="flex-1"
                 >
-                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
+                  <ChevronLeftIcon className="h-4 w-4" />
                   {t('detail.previousImage')}
                 </Button>
 
@@ -104,7 +104,7 @@ export function ImagePreviewDialog({
                   className="flex-1"
                 >
                   {t('detail.nextImage')}
-                  <ChevronRightIcon className="ml-2 h-4 w-4" />
+                  <ChevronRightIcon className="h-4 w-4" />
                 </Button>
               </div>
             )}

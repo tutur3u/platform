@@ -1026,7 +1026,7 @@ export function InfiniteTransactionsList({
               onClick={() => fetchNextPage()}
               className="w-full transition-all hover:scale-105 md:w-auto"
             >
-              <ChevronDown className="mr-2 h-4 w-4" />
+              <ChevronDown className="h-4 w-4" />
               {t('user-data-table.common.load_more')}
             </Button>
           </div>

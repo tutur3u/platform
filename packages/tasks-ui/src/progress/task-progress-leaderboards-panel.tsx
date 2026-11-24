@@ -259,7 +259,7 @@ export function LeaderboardsPanel(props: {
                   !selectedMetric || createLeaderboardMutation.isPending
                 }
               >
-                <Trophy className="mr-2 h-4 w-4" />
+                <Trophy className="h-4 w-4" />
                 {t('actions.add_leaderboard')}
               </Button>
             </form>

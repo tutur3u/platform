@@ -568,7 +568,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
               onClick={handleRunStandardBenchmarks}
               disabled={isRunningBenchmark}
             >
-              <Play className="mr-2 h-4 w-4" />
+              <Play className="h-4 w-4" />
               Run Standard Benchmarks
             </Button>
           </CardContent>

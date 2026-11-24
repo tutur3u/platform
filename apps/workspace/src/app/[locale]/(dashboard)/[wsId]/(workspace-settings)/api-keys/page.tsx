@@ -81,7 +81,7 @@ export default async function WorkspaceApiKeysPage({
                   roles={roles}
                   trigger={
                     <Button>
-                      <Plus className="mr-2 h-5 w-5" />
+                      <Plus className="h-5 w-5" />
                       {t('create_key')}
                     </Button>
                   }

@@ -279,7 +279,7 @@ export function WalletInterestSettings({
                 )}
                 disabled={updateMutation.isPending}
               >
-                <CalendarIcon className="mr-2 h-3 w-3" />
+                <CalendarIcon className="h-3 w-3" />
                 {trackingStartDate ? (
                   format(trackingStartDate, 'PP', { locale: dateLocale })
                 ) : (
@@ -313,7 +313,7 @@ export function WalletInterestSettings({
                 )}
                 disabled={updateMutation.isPending}
               >
-                <CalendarIcon className="mr-2 h-3 w-3" />
+                <CalendarIcon className="h-3 w-3" />
                 {trackingEndDate ? (
                   format(trackingEndDate, 'PP', { locale: dateLocale })
                 ) : (

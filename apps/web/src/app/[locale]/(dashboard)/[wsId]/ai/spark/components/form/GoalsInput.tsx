@@ -234,7 +234,7 @@ export function GoalsInput({
                 className="w-full"
                 onClick={handleAddGoal}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 Add Goal
               </Button>
             </div>

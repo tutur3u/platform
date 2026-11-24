@@ -64,7 +64,7 @@ export function PostCheckHistory({
     <Dialog>
       <DialogTrigger asChild>
         <Button onClick={() => refetch()} size="sm" variant="ghost">
-          <History className="mr-1 h-4 w-4" />
+          <History className="h-4 w-4" />
           {t('ws_post_details.history')}
         </Button>
       </DialogTrigger>

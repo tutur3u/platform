@@ -159,7 +159,7 @@ export function CoverImageUpload({
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || isUploading}
             >
-              <Upload className="mr-2 h-4 w-4" />
+              <Upload className="h-4 w-4" />
               Replace
             </Button>
             <Button
@@ -169,7 +169,7 @@ export function CoverImageUpload({
               onClick={handleRemove}
               disabled={disabled || isUploading}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
               Remove
             </Button>
           </div>

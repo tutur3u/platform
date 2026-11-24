@@ -49,7 +49,7 @@ export function LinkPromotionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Link className="mr-2 h-4 w-4" />
+          <Link className="h-4 w-4" />
           {t('ws-user-linked-coupons.link_action')}
         </Button>
       </DialogTrigger>
@@ -81,7 +81,7 @@ export function LinkPromotionDialog({
                   {t('ws-user-linked-coupons.load_failed_description')}
                 </p>
                 <Button size="sm" variant="outline" onClick={onRetry}>
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                   {t('ws-user-linked-coupons.retry')}
                 </Button>
               </div>

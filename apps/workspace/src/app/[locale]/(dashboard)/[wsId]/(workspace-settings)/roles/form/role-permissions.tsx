@@ -123,7 +123,7 @@ export default function RoleFormPermissionsSection({
             onClick={() => handleToggleAll(!allPermissionsEnabled)}
             className="w-full shrink-0 sm:w-auto"
           >
-            <CheckCircle className="mr-1.5 h-4 w-4 sm:mr-2" />
+            <CheckCircle className="h-4 w-4" />
             <span className="text-sm sm:text-base">
               {allPermissionsEnabled
                 ? t('ws-roles.deselect_all')

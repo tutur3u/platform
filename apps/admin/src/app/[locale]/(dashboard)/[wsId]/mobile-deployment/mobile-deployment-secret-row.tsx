@@ -58,7 +58,7 @@ export function MobileDeploymentSecretRow({
 
       <div className="flex flex-wrap gap-2 md:justify-end">
         <Button onClick={() => onEdit(row)} size="sm" variant="outline">
-          <KeyRound className="mr-2 h-4 w-4" />
+          <KeyRound className="h-4 w-4" />
           {configured ? t('edit') : t('add')}
         </Button>
         <Button
@@ -67,7 +67,7 @@ export function MobileDeploymentSecretRow({
           size="sm"
           variant="ghost"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
           {t('clear')}
         </Button>
       </div>

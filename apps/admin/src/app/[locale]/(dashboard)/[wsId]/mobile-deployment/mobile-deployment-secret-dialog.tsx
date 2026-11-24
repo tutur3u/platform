@@ -229,7 +229,7 @@ export function MobileDeploymentSecretDialog({
               {t('cancel')}
             </Button>
             <Button disabled={!canSave} type="submit">
-              <KeyRound className="mr-2 h-4 w-4" />
+              <KeyRound className="h-4 w-4" />
               {t('save')}
             </Button>
           </DialogFooter>

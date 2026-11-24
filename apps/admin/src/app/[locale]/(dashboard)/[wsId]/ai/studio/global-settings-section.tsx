@@ -151,7 +151,7 @@ export function GlobalAiStudioSettingsSection({
           </div>
           <div className="flex justify-end border-t bg-muted/10 p-4">
             <Button disabled={isPending} onClick={onSave}>
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="h-4 w-4" />
               {t('save')}
             </Button>
           </div>

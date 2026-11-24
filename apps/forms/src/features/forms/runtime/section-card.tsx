@@ -434,7 +434,7 @@ export function renderFormSectionCard({
               onClick={handleBack}
               disabled={!canGoBack || isBusy}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
               {t('runtime.back')}
             </Button>
             <div className="flex flex-col items-stretch gap-2 sm:items-end">

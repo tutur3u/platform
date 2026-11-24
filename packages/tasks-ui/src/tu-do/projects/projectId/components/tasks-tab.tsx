@@ -260,7 +260,7 @@ function ProjectTasksEmptyState({
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
       <Button onClick={onLinkTasks}>
-        <Link2 className="mr-2 h-4 w-4" />
+        <Link2 className="h-4 w-4" />
         {linkTasksLabel}
       </Button>
     </div>

@@ -177,7 +177,7 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
       <div className="flex items-center gap-2">
         <DialogTrigger asChild>
           <Button variant="outline" onClick={() => setIsOpen(true)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             Manage Duplicates
           </Button>
         </DialogTrigger>

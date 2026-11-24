@@ -34,7 +34,7 @@ export function ReportProblemDialogContent({
         <DialogTrigger asChild>
           {trigger || (
             <Button variant="secondary" size="sm" className={cn(className)}>
-              <MessageSquareWarning className="mr-2 h-4 w-4" />
+              <MessageSquareWarning className="h-4 w-4" />
               {props.t('report-problem')}
             </Button>
           )}

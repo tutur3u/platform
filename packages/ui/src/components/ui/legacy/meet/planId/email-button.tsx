@@ -24,7 +24,7 @@ export default function EmailButton({
       className="hidden md:block"
     >
       <Button variant="outline" disabled={!url}>
-        <Mail className="mr-1 h-5 w-5" />
+        <Mail className="h-5 w-5" />
         {t('meet-together-plan-details.send_email')}
       </Button>
     </Link>

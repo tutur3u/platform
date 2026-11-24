@@ -508,7 +508,7 @@ export function AddTaskForm({
             setOpen(false);
           }}
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Create Board
         </Button>
       </div>
@@ -1064,7 +1064,7 @@ export function AddTaskForm({
                   size="sm"
                   className="flex-1"
                 >
-                  <Plus className="mr-2 h-3 w-3" />
+                  <Plus className="h-3 w-3" />
                   Add Another
                 </Button>
                 <Button
@@ -1117,13 +1117,13 @@ export function AddTaskForm({
                 className="flex-1"
               >
                 Next: Add Details
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           ) : (
             <div className="flex gap-2">
               <Button onClick={handlePrevStep} variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
               <Button

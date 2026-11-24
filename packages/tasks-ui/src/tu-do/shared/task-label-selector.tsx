@@ -165,7 +165,7 @@ export function TaskLabelSelector({
                 selectedLabels.length === 0 && 'text-muted-foreground'
               )}
             >
-              <Plus className="mr-2 h-3 w-3" />
+              <Plus className="h-3 w-3" />
               {selectedLabels.length === 0 ? 'Add labels' : 'Add more labels'}
             </Button>
           </PopoverTrigger>

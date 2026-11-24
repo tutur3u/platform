@@ -389,7 +389,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
           </Dialog>
           <DatasetCrawler wsId={wsId} dataset={dataset}>
             <Button variant="outline">
-              <Upload className="mr-2 h-4 w-4" />
+              <Upload className="h-4 w-4" />
               Import Data
             </Button>
           </DatasetCrawler>

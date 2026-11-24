@@ -254,7 +254,7 @@ export function CategoryColorsSettings({
                   className="h-9"
                   disabled={!newCategoryName.trim()}
                 >
-                  <PlusIcon className="mr-2 h-4 w-4" />
+                  <PlusIcon className="h-4 w-4" />
                   Add
                 </Button>
               </div>

@@ -363,7 +363,7 @@ export function TaskForm({
                       )}
                       onClick={() => handleQuickAssign(member.id)}
                     >
-                      <Users className="mr-1 h-3 w-3" />
+                      <Users className="h-3 w-3" />
                       {resolveUserDisplayName(member, {
                         emailLocalPart: true,
                         fallback: 'User',

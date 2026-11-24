@@ -91,7 +91,7 @@ function DefaultAccessCard({
               size="sm"
               onClick={() => onEdit(memberType)}
             >
-              <Pencil className="mr-2 h-4 w-4" />
+              <Pencil className="h-4 w-4" />
               {t('common.edit')}
             </Button>
           ) : null}
@@ -241,14 +241,14 @@ export function CmsRolesPanel({
                           variant="outline"
                           onClick={() => onEditRole(role)}
                         >
-                          <Pencil className="mr-2 h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                           {t('common.edit')}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={() => onDeleteRole(role)}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                           {t('common.delete')}
                         </Button>
                       </div>

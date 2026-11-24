@@ -25,7 +25,7 @@ export function WorkspacePolicyState({
           {t('workspaces.load_error')}
         </p>
         <Button onClick={onRetry} size="sm" variant="outline">
-          <RefreshCw className="mr-2 size-4" />
+          <RefreshCw className="size-4" />
           {t('workspaces.retry')}
         </Button>
       </div>

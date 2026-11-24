@@ -25,7 +25,7 @@ export default function WalletRoleAccessDialog({ wsId, walletId }: Props) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full sm:w-auto">
-          <Shield className="mr-2 h-4 w-4" />
+          <Shield className="h-4 w-4" />
           {t('ws-wallets.role_access')}
         </Button>
       </DialogTrigger>

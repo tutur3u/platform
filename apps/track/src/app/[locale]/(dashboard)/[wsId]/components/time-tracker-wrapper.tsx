@@ -113,7 +113,7 @@ export default function TimeTrackerWrapper({
                 onClick={switchToSimple}
                 className="border-orange-300 bg-white text-orange-700 hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-300 dark:hover:bg-orange-950/50"
               >
-                <Zap className="mr-2 h-4 w-4" />
+                <Zap className="h-4 w-4" />
                 {t('switchToSimple')}
               </Button>
             </CardTitle>
@@ -155,7 +155,7 @@ export default function TimeTrackerWrapper({
               onClick={switchToAdvanced}
               className="border-blue-300 bg-white text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50"
             >
-              <Settings className="mr-2 h-4 w-4" />
+              <Settings className="h-4 w-4" />
               {t('switchToAdvanced')}
             </Button>
           </CardTitle>

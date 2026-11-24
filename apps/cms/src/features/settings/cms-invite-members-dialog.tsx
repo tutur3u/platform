@@ -66,7 +66,7 @@ export function CmsInviteMembersDialog({
               disabled={isSubmitting || inviteCount === 0}
               onClick={onSubmit}
             >
-              <MailPlus className="mr-2 h-4 w-4" />
+              <MailPlus className="h-4 w-4" />
               {t('ws-members.invite_submit')}
             </Button>
           </div>

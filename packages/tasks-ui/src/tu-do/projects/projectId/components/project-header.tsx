@@ -91,7 +91,7 @@ export function ProjectHeader({
               onClick={onCancel}
               disabled={isSaving}
             >
-              <X className="mr-2 h-4 w-4" />
+              <X className="h-4 w-4" />
               {t('cancel')}
             </Button>
             <Button size="sm" onClick={onSave} disabled={isSaving}>

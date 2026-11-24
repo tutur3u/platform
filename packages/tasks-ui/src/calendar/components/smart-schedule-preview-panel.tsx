@@ -903,7 +903,7 @@ ${previewData.warnings.join('\n') || 'None'}
               className="h-8 text-xs"
               onClick={downloadDebugLog}
             >
-              <Bug className="mr-1 h-3 w-3" />
+              <Bug className="h-3 w-3" />
               Debug
             </Button>
             <div className="flex gap-2">

@@ -621,7 +621,7 @@ export function SimpleTimerControls({
                 variant="outline"
                 className="flex-1"
               >
-                <Pause className="mr-2 h-4 w-4" />
+                <Pause className="h-4 w-4" />
                 {t('pause')}
               </Button>
               <Button
@@ -630,7 +630,7 @@ export function SimpleTimerControls({
                 variant="destructive"
                 className="flex-1"
               >
-                <Square className="mr-2 h-4 w-4" />
+                <Square className="h-4 w-4" />
                 {t('stop')}
               </Button>
             </div>
@@ -723,7 +723,7 @@ export function SimpleTimerControls({
                 disabled={isLoading}
                 className="flex-1 bg-green-600 text-white hover:bg-green-700"
               >
-                <Play className="mr-2 h-4 w-4" />
+                <Play className="h-4 w-4" />
                 {t('resume')}
               </Button>
               <Button
@@ -732,7 +732,7 @@ export function SimpleTimerControls({
                 variant="destructive"
                 className="flex-1"
               >
-                <Square className="mr-2 h-4 w-4" />
+                <Square className="h-4 w-4" />
                 {t('stop')}
               </Button>
             </div>
@@ -798,7 +798,7 @@ export function SimpleTimerControls({
               className="w-full"
               size="lg"
             >
-              <Play className="mr-2 h-5 w-5" />
+              <Play className="h-5 w-5" />
               {t('startTimer')}
             </Button>
           </div>

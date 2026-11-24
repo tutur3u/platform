@@ -526,7 +526,7 @@ export default function MarketingPage() {
                 <Button variant="outline" className="group">
                   {/* Browse Learning Resources */}
                   {t('browse-learning-resources')}
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
             </motion.div>

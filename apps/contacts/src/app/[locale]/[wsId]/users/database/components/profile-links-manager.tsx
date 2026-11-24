@@ -159,11 +159,11 @@ export function ProfileLinksManager({ wsId }: { wsId: string }) {
             variant="outline"
             onClick={() => setUserPickerOpen(true)}
           >
-            <Search className="mr-2 h-4 w-4" />
+            <Search className="h-4 w-4" />
             {t('create_specific_button')}
           </Button>
           <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             {t('create_generic_button')}
           </Button>
         </div>
@@ -301,7 +301,7 @@ export function ProfileLinksManager({ wsId }: { wsId: string }) {
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" size="sm">
                         {t('details_toggle')}
-                        <ChevronDown className="ml-1 h-4 w-4" />
+                        <ChevronDown className="h-4 w-4" />
                       </Button>
                     </CollapsibleTrigger>
                   ) : null}
@@ -310,7 +310,7 @@ export function ProfileLinksManager({ wsId }: { wsId: string }) {
                     size="sm"
                     onClick={() => copyLink(link.code)}
                   >
-                    <Copy className="mr-1 h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                     {t('copy_link')}
                   </Button>
                   {!link.is_revoked ? (

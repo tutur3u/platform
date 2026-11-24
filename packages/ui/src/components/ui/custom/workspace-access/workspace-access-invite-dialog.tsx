@@ -180,7 +180,7 @@ export function WorkspaceAccessInviteDialog({
             }
             onClick={onSubmit}
           >
-            <MailPlus className="mr-2 size-4" />
+            <MailPlus className="size-4" />
             <span className="truncate">{t('ws-members.invite_submit')}</span>
           </Button>
         </DialogFooter>

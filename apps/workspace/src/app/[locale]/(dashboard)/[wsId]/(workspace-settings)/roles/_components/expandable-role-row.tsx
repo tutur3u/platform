@@ -89,7 +89,7 @@ export function ExpandableRoleRow({
                     onManageMembers();
                   }}
                 >
-                  <Users className="mr-1.5 h-3.5 w-3.5" />
+                  <Users className="h-3.5 w-3.5" />
                   <span className="text-xs">
                     {t('ws-roles.manage_members')}
                   </span>
@@ -104,7 +104,7 @@ export function ExpandableRoleRow({
                     onEditRole();
                   }}
                 >
-                  <Edit className="mr-1.5 h-3.5 w-3.5" />
+                  <Edit className="h-3.5 w-3.5" />
                   <span className="text-xs">{t('common.edit')}</span>
                 </Button>
               )}

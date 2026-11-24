@@ -241,7 +241,7 @@ export function RequestDetailModal({
                   onClick={editMode.handleEnterEditMode}
                   className="w-full"
                 >
-                  <EditIcon className="mr-2 h-4 w-4" />
+                  <EditIcon className="h-4 w-4" />
                   {t('detail.editButton')}
                 </Button>
               )}

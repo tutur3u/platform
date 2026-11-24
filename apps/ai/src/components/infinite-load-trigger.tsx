@@ -89,13 +89,13 @@ export function InfiniteLoadTrigger({
           type="button"
           variant="outline"
         >
-          <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" />
+          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
           {loadMoreLabel}
           <span className="sr-only">{srLabel}</span>
         </Button>
       ) : hasNextPage ? (
         <Button onClick={onLoadMore} size="sm" type="button" variant="outline">
-          <ChevronDown className="mr-2 size-4" />
+          <ChevronDown className="size-4" />
           {loadMoreLabel}
         </Button>
       ) : (

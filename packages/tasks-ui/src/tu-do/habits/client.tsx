@@ -124,11 +124,11 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
             onClick={() => refetch()}
             disabled={isLoading}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
           <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             New Habit
           </Button>
         </div>
@@ -221,7 +221,7 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
               className="mt-4"
               onClick={() => setIsCreateDialogOpen(true)}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4" />
               Create Habit
             </Button>
           </CardContent>

@@ -129,7 +129,7 @@ export function WalletTotalCheckDialog({
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
-        <Calculator className="mr-2 h-4 w-4" />
+        <Calculator className="h-4 w-4" />
         {t('all_wallet_check')}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>

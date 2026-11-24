@@ -42,14 +42,14 @@ export function ImportPanel({
               onClick={() => importMutation.mutate(false)}
               variant="outline"
             >
-              <BarChart3 className="mr-2 h-4 w-4" />
+              <BarChart3 className="h-4 w-4" />
               {t('actions.preview')}
             </Button>
             <Button
               disabled={!importText.trim() || importMutation.isPending}
               onClick={() => importMutation.mutate(true)}
             >
-              <Upload className="mr-2 h-4 w-4" />
+              <Upload className="h-4 w-4" />
               {t('actions.commit_import')}
             </Button>
           </div>

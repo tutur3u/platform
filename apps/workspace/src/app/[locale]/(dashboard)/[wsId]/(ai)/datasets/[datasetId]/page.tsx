@@ -57,13 +57,13 @@ export default async function DatasetDetailsPage({ params }: Props) {
               <div className="flex items-center gap-2">
                 <DatasetCrawler wsId={wsId} dataset={dataset}>
                   <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" />
+                    <Upload className="h-4 w-4" />
                     Import Data
                   </Button>
                 </DatasetCrawler>
                 <Link href={`/${wsId}/datasets/${datasetId}/explore`}>
                   <Button variant="outline">
-                    <FileText className="mr-2 h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                     Explore Data
                   </Button>
                 </Link>

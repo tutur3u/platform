@@ -363,7 +363,7 @@ export default async function PollsPage() {
         description={t('ws-polls.description')}
         action={
           <Button className="w-full md:w-fit">
-            <Vote className="mr-2 h-5 w-5" />
+            <Vote className="h-5 w-5" />
             {t('ws-polls.create')}
           </Button>
         }
@@ -397,11 +397,11 @@ export default async function PollsPage() {
           </h2>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
+              <Filter className="h-4 w-4" />
               {t('ws-polls.filter')}
             </Button>
             <Button variant="outline" size="sm">
-              <SortAsc className="mr-2 h-4 w-4" />
+              <SortAsc className="h-4 w-4" />
               {t('ws-polls.sort')}
             </Button>
           </div>
@@ -436,7 +436,7 @@ export default async function PollsPage() {
               {t('ws-polls.no_more_polls_desc')}
             </p>
             <Button>
-              <Vote className="mr-2 h-4 w-4" />
+              <Vote className="h-4 w-4" />
               {t('ws-polls.create_first_poll')}
             </Button>
           </CardContent>

@@ -186,7 +186,7 @@ export function QuickTaskDialog({
                     className="mt-4"
                     onClick={() => setShowBoardCreation(true)}
                   >
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     {t('ws-task-boards.create')}
                   </Button>
                 </div>

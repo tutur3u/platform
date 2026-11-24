@@ -618,7 +618,7 @@ function NewSessionForm({
             className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
             size="lg"
           >
-            <Play className="mr-2 h-4 w-4" />
+            <Play className="h-4 w-4" />
             {selectedTaskId ? 'Start Timer' : 'Create Task & Start Timer'}
           </Button>
         </TabsContent>
@@ -669,7 +669,7 @@ function NewSessionForm({
             className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
             size="lg"
           >
-            <Play className="mr-2 h-4 w-4" />
+            <Play className="h-4 w-4" />
             Start Timer
           </Button>
         </TabsContent>

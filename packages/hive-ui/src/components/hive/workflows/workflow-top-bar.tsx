@@ -137,7 +137,7 @@ export function WorkflowTopBar({
           onClick={onSaveWorkflow}
           type="button"
         >
-          <Save className="mr-2 h-4 w-4" />
+          <Save className="h-4 w-4" />
           {t('save')}
         </Button>
         <Button
@@ -147,7 +147,7 @@ export function WorkflowTopBar({
           type="button"
           variant="secondary"
         >
-          <Play className="mr-2 h-4 w-4" />
+          <Play className="h-4 w-4" />
           {runPending ? t('running') : t('run')}
         </Button>
       </div>

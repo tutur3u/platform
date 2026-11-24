@@ -82,7 +82,7 @@ export function WelcomeScreen({
             type="button"
           >
             {buttonLabel}
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="h-4 w-4" />
           </Button>
 
           <p className="text-muted-foreground text-sm">

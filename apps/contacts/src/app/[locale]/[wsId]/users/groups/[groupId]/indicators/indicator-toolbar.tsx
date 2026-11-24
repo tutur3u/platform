@@ -20,11 +20,11 @@ export function IndicatorToolbar({
   return (
     <div className="flex flex-wrap justify-end gap-2">
       <Button variant="outline" onClick={onAddCategoryClick}>
-        <FolderPlus className="mr-2 h-4 w-4" />
+        <FolderPlus className="h-4 w-4" />
         {tIndicators('add_metric_category')}
       </Button>
       <Button onClick={onAddIndicatorClick}>
-        <Plus className="mr-2 h-4 w-4" />
+        <Plus className="h-4 w-4" />
         {tIndicators('add_indicator')}
       </Button>
     </div>

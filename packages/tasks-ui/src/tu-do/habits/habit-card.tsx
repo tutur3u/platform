@@ -166,7 +166,7 @@ export default function HabitCard({
             className="w-full"
             onClick={() => onComplete(today)}
           >
-            <Check className="mr-2 h-4 w-4" />
+            <Check className="h-4 w-4" />
             Complete for Today
           </Button>
         )}

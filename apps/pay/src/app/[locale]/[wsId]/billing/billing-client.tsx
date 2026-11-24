@@ -236,7 +236,7 @@ export function BillingClient({
                       variant="outline"
                       onClick={() => setShowAdjustSeatsDialog(true)}
                     >
-                      <Plus className="mr-1 h-3 w-3" />
+                      <Plus className="h-3 w-3" />
                       {t('adjust-seats')}
                     </Button>
                   </div>

@@ -223,7 +223,7 @@ export function NotificationSettings({
           onClick={handleAddCustomReminder}
           className="mt-2"
         >
-          <PlusIcon className="mr-2 h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
           Add custom reminder
         </Button>
       )}

@@ -400,7 +400,7 @@ export default function ProblemForm({
                     onClick={addTestCase}
                     className="w-full"
                   >
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Add Test Case
                   </Button>
                 </CardContent>

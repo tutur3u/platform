@@ -49,7 +49,7 @@ export function FollowupPicker({
               {options.find((option) => option.id === value)?.label ??
                 t('followup_choose')}
             </span>
-            <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent

@@ -366,7 +366,7 @@ export default function UserFeedbackSection({
               onClick={() => setShowAddForm(true)}
               className="mb-4 w-full border-dashed"
             >
-              <MessageSquarePlus className="mr-2 h-4 w-4" />
+              <MessageSquarePlus className="h-4 w-4" />
               {tFeedback('add_feedback')}
             </Button>
           ) : (

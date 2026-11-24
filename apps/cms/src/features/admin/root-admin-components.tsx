@@ -239,7 +239,7 @@ export function ProjectRegistryCard({
           className="border-border/70 hover:bg-background"
           onClick={onPrepareBinding}
         >
-          <Link className="mr-2 h-4 w-4" />
+          <Link className="h-4 w-4" />
           {tRoot('use_for_binding_action')}
         </Button>
       </div>

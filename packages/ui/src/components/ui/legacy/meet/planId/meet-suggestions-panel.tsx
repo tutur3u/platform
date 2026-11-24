@@ -208,14 +208,13 @@ export function MeetSuggestionsPanel({
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={downloadIcs}>
-                <CalendarCheck className="mr-2 h-4 w-4" />{' '}
+                <CalendarCheck className="h-4 w-4" />{' '}
                 {t('download_calendar_file')}
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline">
-                    <ExternalLink className="mr-2 h-4 w-4" />{' '}
-                    {t('open_in_calendar')}
+                    <ExternalLink className="h-4 w-4" /> {t('open_in_calendar')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -297,7 +296,7 @@ export function MeetSuggestionsPanel({
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost">
-                <RotateCcw className="mr-2 h-4 w-4" /> {t('reopen_plan')}
+                <RotateCcw className="h-4 w-4" /> {t('reopen_plan')}
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -435,7 +434,7 @@ export function MeetSuggestionsPanel({
           <Dialog>
             <DialogTrigger asChild>
               <Button className="w-full" disabled={selected.length === 0}>
-                <LockKeyhole className="mr-2 h-4 w-4" />{' '}
+                <LockKeyhole className="h-4 w-4" />{' '}
                 {t('finalize_timeframes', { count: selected.length })}
               </Button>
             </DialogTrigger>

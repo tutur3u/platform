@@ -32,7 +32,7 @@ export function ImportExportSettingsSection({
           className={toneClasses.secondaryButtonClassName}
           onClick={onExport}
         >
-          <Download className="mr-2 h-4 w-4" />
+          <Download className="h-4 w-4" />
           {t('settings.export_form')}
         </Button>
         <Button
@@ -41,7 +41,7 @@ export function ImportExportSettingsSection({
           className={toneClasses.secondaryButtonClassName}
           onClick={triggerImportFileInput}
         >
-          <Upload className="mr-2 h-4 w-4" />
+          <Upload className="h-4 w-4" />
           {t('settings.import_form')}
         </Button>
       </div>

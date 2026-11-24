@@ -442,7 +442,7 @@ export function InquiryDetailModal({
                 window.open(selectedMedia.url, '_blank');
               }}
             >
-              <ExternalLinkIcon className="mr-2 h-4 w-4" />
+              <ExternalLinkIcon className="h-4 w-4" />
               Open in New Tab
             </Button>
 

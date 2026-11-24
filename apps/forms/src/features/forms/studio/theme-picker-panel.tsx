@@ -222,7 +222,7 @@ export function ThemePickerPanel({
                       )
                     }
                   >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4" />
                     {t('settings.previous_theme')}
                   </Button>
                   <Button
@@ -239,7 +239,7 @@ export function ThemePickerPanel({
                       )
                     }
                   >
-                    <Sparkles className="mr-1 h-4 w-4" />
+                    <Sparkles className="h-4 w-4" />
                     {t('settings.random_theme')}
                   </Button>
                   <Button
@@ -261,7 +261,7 @@ export function ThemePickerPanel({
                     }
                   >
                     {t('settings.next_theme')}
-                    <ChevronRight className="ml-1 h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

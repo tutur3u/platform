@@ -272,7 +272,7 @@ export default function ResultClient({
                     onClick={refreshPageData}
                     className="border-red-300 text-red-800 hover:bg-red-50"
                   >
-                    <RefreshCcw className="mr-2 h-4 w-4" />
+                    <RefreshCcw className="h-4 w-4" />
                     Refresh Page
                   </Button>
                 </div>

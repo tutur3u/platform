@@ -134,7 +134,7 @@ export const dashboardLearningComponents = {
                 }
                 onClick={() => setSelected(null)}
               >
-                <RotateCcw className="mr-2 h-4 w-4" /> Try Again
+                <RotateCcw className="h-4 w-4" /> Try Again
               </Button>
             </div>
             {props.explanation && (
@@ -245,7 +245,7 @@ export const dashboardLearningComponents = {
                 setShowScore(false);
               }}
             >
-              <RotateCcw className="mr-2 h-4 w-4" /> Restart Quiz
+              <RotateCcw className="h-4 w-4" /> Restart Quiz
             </Button>
             <Button
               variant="ghost"
@@ -258,7 +258,7 @@ export const dashboardLearningComponents = {
                 setShowScore(false);
               }}
             >
-              <Dices className="mr-2 h-4 w-4" /> Randomize & Restart
+              <Dices className="h-4 w-4" /> Randomize & Restart
             </Button>
           </div>
         </div>
@@ -551,7 +551,7 @@ export const dashboardLearningComponents = {
             }}
             disabled={currentIndex === 0}
           >
-            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+            <ChevronLeft className="h-4 w-4" /> Previous
           </Button>
           <div className="flex gap-2">
             {currentIndex === flashcards.length - 1 ? (
@@ -564,7 +564,7 @@ export const dashboardLearningComponents = {
                     setFlipped(false);
                   }}
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" /> Restart
+                  <RotateCcw className="h-4 w-4" /> Restart
                 </Button>
                 <Button
                   variant="ghost"
@@ -575,7 +575,7 @@ export const dashboardLearningComponents = {
                     setCurrentIndex(0);
                   }}
                 >
-                  <Dices className="mr-2 h-4 w-4" /> Randomize
+                  <Dices className="h-4 w-4" /> Randomize
                 </Button>
               </>
             ) : (
@@ -586,7 +586,7 @@ export const dashboardLearningComponents = {
                   setFlipped(false);
                 }}
               >
-                Next <ChevronRight className="ml-2 h-4 w-4" />
+                Next <ChevronRight className="h-4 w-4" />
               </Button>
             )}
           </div>
