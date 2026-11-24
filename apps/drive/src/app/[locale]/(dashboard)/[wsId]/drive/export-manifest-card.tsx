@@ -45,7 +45,7 @@ export function ExportManifestCard({
             variant="outline"
             onClick={onCopyManifest}
           >
-            <Copy className="mr-2 h-4 w-4" />
+            <Copy className="size-4" />
             {copyManifestLabel}
           </Button>
           <Button
@@ -54,7 +54,7 @@ export function ExportManifestCard({
             variant="outline"
             onClick={onCopyAssetMap}
           >
-            <Link2 className="mr-2 h-4 w-4" />
+            <Link2 className="size-4" />
             {copyAssetMapLabel}
           </Button>
         </div>

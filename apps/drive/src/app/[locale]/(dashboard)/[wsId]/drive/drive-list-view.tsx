@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Table,
@@ -40,7 +41,7 @@ export function DriveListView({
         : 'indeterminate';
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-1">
+    <Card className="overflow-hidden p-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -121,6 +122,6 @@ export function DriveListView({
           })}
         </TableBody>
       </Table>
-    </div>
+    </Card>
   );
 }

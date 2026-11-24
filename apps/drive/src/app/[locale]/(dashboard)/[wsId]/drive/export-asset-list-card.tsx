@@ -73,7 +73,7 @@ export function ExportAssetListCard({
                     variant="outline"
                     onClick={() => onOpenAssetLink(file.url)}
                   >
-                    <ExternalLink className="mr-2 h-4 w-4" />
+                    <ExternalLink className="size-4" />
                     {openLabel}
                   </Button>
                   <Button
@@ -82,9 +82,9 @@ export function ExportAssetListCard({
                     onClick={() => onCopyAssetLink(file.relativePath, file.url)}
                   >
                     {copiedPath === file.relativePath ? (
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      <CheckCircle2 className="size-4" />
                     ) : (
-                      <Copy className="mr-2 h-4 w-4" />
+                      <Copy className="size-4" />
                     )}
                     {copyLabel}
                   </Button>

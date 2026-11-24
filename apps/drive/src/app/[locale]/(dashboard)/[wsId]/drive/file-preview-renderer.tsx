@@ -170,11 +170,11 @@ export function FilePreviewRenderer({
           </p>
           <div className="flex justify-center gap-2">
             <Button onClick={onDownload} size="sm">
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="size-4" />
               {t('common.download')}
             </Button>
             <Button onClick={onOpenExternal} variant="outline" size="sm">
-              <ExternalLink className="mr-2 h-4 w-4" />
+              <ExternalLink className="size-4" />
               {t('common.view')}
             </Button>
           </div>

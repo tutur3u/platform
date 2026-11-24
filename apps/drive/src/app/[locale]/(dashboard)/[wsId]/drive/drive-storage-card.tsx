@@ -2,6 +2,7 @@
 
 import { HardDrive, RefreshCw, TriangleAlert } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn, formatBytes } from '@tuturuuu/utils/format';
@@ -98,9 +99,10 @@ export function DriveStorageCard({ wsId }: { wsId: string }) {
   const { refetch, state } = useDriveQuota(wsId);
 
   return (
-    <section
+    <Card
       aria-label={t('storage.title')}
-      className="mx-2 mb-2 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-elevation-1"
+      className="mx-2 mb-2 space-y-3 p-4"
+      role="region"
     >
       <div className="flex items-center gap-2">
         <HardDrive aria-hidden className="size-4 text-muted-foreground" />
@@ -112,6 +114,6 @@ export function DriveStorageCard({ wsId }: { wsId: string }) {
         ) : null}
       </div>
       <QuotaBody onRetry={refetch} state={state} />
-    </section>
+    </Card>
   );
 }

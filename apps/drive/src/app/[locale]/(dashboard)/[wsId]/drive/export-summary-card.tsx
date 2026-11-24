@@ -89,11 +89,11 @@ export function ExportSummaryCard({
                   variant="outline"
                   onClick={onOpenEntry}
                 >
-                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <ExternalLink className="size-4" />
                   {openLabel}
                 </Button>
                 <Button type="button" size="sm" onClick={onCopyEntry}>
-                  <Copy className="mr-2 h-4 w-4" />
+                  <Copy className="size-4" />
                   {copyLabel}
                 </Button>
               </div>

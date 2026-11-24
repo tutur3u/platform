@@ -1,6 +1,7 @@
 'use client';
 
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -14,14 +15,15 @@ import {
 } from './drive-view-helpers';
 import { getStorageObjectDisplayName } from './storage-display-name';
 
+/** Each list item holds one Card; a checked item rings its card. */
 const cardClassName =
-  'group relative rounded-2xl border border-border bg-card shadow-elevation-1 transition-shadow has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-ring';
+  'group relative w-full transition-shadow has-[[data-state=checked]]:ring-2 has-[[data-state=checked]]:ring-ring';
 
 function OpenButton({ label, onOpen }: { label: string; onOpen: () => void }) {
   return (
     <button
       aria-label={label}
-      className="absolute inset-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+      className="absolute inset-0 rounded-[inherit] focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
       onClick={onOpen}
       type="button"
     />
@@ -77,27 +79,28 @@ export function DriveFolderSection({
         {folders.map((folder) => {
           const name = getStorageObjectDisplayName(folder);
           return (
-            <li
-              key={folder.name}
-              className={cn(cardClassName, 'flex items-center gap-3 p-3')}
-            >
-              <OpenButton
-                label={t('actions.open_named', { name })}
-                onOpen={() => onNavigate(folder.name ?? '')}
-              />
-              <SelectBox
-                checked={isSelected(folder)}
-                item={folder}
-                onToggle={onToggle}
-              />
-              <DriveItemIcon item={folder} />
-              <span className="flex min-w-0 flex-1 flex-col">
-                <strong className="truncate text-sm">{name}</strong>
-                <span className="text-muted-foreground text-xs">
-                  {format.meta(folder)}
+            <li key={folder.name} className="flex">
+              <Card
+                className={cn(cardClassName, 'flex items-center gap-3 p-3')}
+              >
+                <OpenButton
+                  label={t('actions.open_named', { name })}
+                  onOpen={() => onNavigate(folder.name ?? '')}
+                />
+                <SelectBox
+                  checked={isSelected(folder)}
+                  item={folder}
+                  onToggle={onToggle}
+                />
+                <DriveItemIcon item={folder} />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <strong className="truncate text-sm">{name}</strong>
+                  <span className="text-muted-foreground text-xs">
+                    {format.meta(folder)}
+                  </span>
                 </span>
-              </span>
-              <DriveItemMenu actions={actions} item={folder} />
+                <DriveItemMenu actions={actions} item={folder} />
+              </Card>
             </li>
           );
         })}
@@ -127,41 +130,46 @@ export function DriveFileGrid(props: DriveCollectionProps) {
               const name = getStorageObjectDisplayName(file);
               const isImage = getDriveFileKind(file) === 'image';
               return (
-                <li
-                  key={file.id}
-                  className={cn(cardClassName, 'flex flex-col gap-2 p-2')}
-                >
-                  <OpenButton
-                    label={t('actions.preview_named', { name })}
-                    onOpen={() => actions.onOpen(file)}
-                  />
-                  <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl bg-muted">
-                    {isImage ? (
-                      <DriveGridThumbnail item={file} path={path} wsId={wsId} />
-                    ) : (
-                      <DriveItemIcon
-                        className="size-full rounded-xl"
-                        iconClassName="size-9"
-                        item={file}
-                      />
-                    )}
-                    <span className="absolute top-2 left-2 flex">
-                      <SelectBox
-                        checked={isSelected(file)}
-                        item={file}
-                        onToggle={onToggle}
-                      />
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 pb-1 pl-2">
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <strong className="truncate text-sm">{name}</strong>
-                      <span className="truncate text-muted-foreground text-xs">
-                        {format.meta(file)}
+                <li key={file.id} className="flex">
+                  <Card
+                    className={cn(cardClassName, 'flex flex-col gap-2 p-2')}
+                  >
+                    <OpenButton
+                      label={t('actions.preview_named', { name })}
+                      onOpen={() => actions.onOpen(file)}
+                    />
+                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[calc(var(--radius-xl)_-_0.5rem)] bg-muted">
+                      {isImage ? (
+                        <DriveGridThumbnail
+                          item={file}
+                          path={path}
+                          wsId={wsId}
+                        />
+                      ) : (
+                        <DriveItemIcon
+                          className="size-full rounded-xl"
+                          iconClassName="size-9"
+                          item={file}
+                        />
+                      )}
+                      <span className="absolute top-2 left-2 flex">
+                        <SelectBox
+                          checked={isSelected(file)}
+                          item={file}
+                          onToggle={onToggle}
+                        />
                       </span>
-                    </span>
-                    <DriveItemMenu actions={actions} item={file} />
-                  </div>
+                    </div>
+                    <div className="flex items-center gap-1 pb-1 pl-2">
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <strong className="truncate text-sm">{name}</strong>
+                        <span className="truncate text-muted-foreground text-xs">
+                          {format.meta(file)}
+                        </span>
+                      </span>
+                      <DriveItemMenu actions={actions} item={file} />
+                    </div>
+                  </Card>
                 </li>
               );
             })}

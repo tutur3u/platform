@@ -19,6 +19,13 @@ import {
   driveSortByValues,
 } from './search-params';
 
+/**
+ * Sorbet draws default toggle groups as a segmented track (2px padding over
+ * 32px items, matching the 36px Input and Select); classic keeps its joined
+ * toggles, whose accent fill marks the selection.
+ */
+const trackClassName = 'w-max justify-start';
+
 interface DriveFilterBarProps {
   onChange: (update: DriveSearchUpdate) => void;
   searchState: DriveSearchState;
@@ -33,7 +40,7 @@ export function DriveFilterBar({ onChange, searchState }: DriveFilterBarProps) {
       <div className="-mx-1 min-w-0 flex-1 overflow-x-auto px-1 py-1">
         <ToggleGroup
           aria-label={t('filters.type_label')}
-          className="w-max justify-start gap-1"
+          className={trackClassName}
           onValueChange={(value) =>
             onChange({
               type: driveTypeFilters.includes(value as DriveTypeFilter)
@@ -44,14 +51,10 @@ export function DriveFilterBar({ onChange, searchState }: DriveFilterBarProps) {
           size="sm"
           type="single"
           value={searchState.type ?? ''}
-          variant="outline"
+          variant="default"
         >
           {driveTypeFilters.map((type) => (
-            <ToggleGroupItem
-              className="rounded-full! border-l! px-3"
-              key={type}
-              value={type}
-            >
+            <ToggleGroupItem className="px-3" key={type} value={type}>
               {t(`chips.${type}`)}
             </ToggleGroupItem>
           ))}
@@ -62,10 +65,7 @@ export function DriveFilterBar({ onChange, searchState }: DriveFilterBarProps) {
           onValueChange={(value) => onChange({ sortBy: value as DriveSortBy })}
           value={searchState.sortBy}
         >
-          <SelectTrigger
-            aria-label={t('filters.sort_label')}
-            className="h-9 w-40"
-          >
+          <SelectTrigger aria-label={t('filters.sort_label')} className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">
@@ -93,6 +93,7 @@ export function DriveFilterBar({ onChange, searchState }: DriveFilterBarProps) {
         </Button>
         <ToggleGroup
           aria-label={t('filters.view_label')}
+          className={trackClassName}
           onValueChange={(value) => {
             if (value === 'grid' || value === 'list') onChange({ view: value });
           }}

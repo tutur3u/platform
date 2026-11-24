@@ -1,7 +1,16 @@
 'use client';
 
-import { ChevronRight } from '@tuturuuu/icons';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@tuturuuu/ui/breadcrumb';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { Fragment } from 'react';
 import { getPathSegments } from './drive-selection';
 import { getStoragePathSegmentDisplayName } from './storage-display-name';
 
@@ -28,35 +37,42 @@ export default function DriveBreadcrumbs({
   const parents = trail.slice(0, -1);
 
   return (
-    <nav
-      aria-label={t('breadcrumb')}
-      className="flex min-w-0 flex-1 items-center gap-1"
-    >
-      <ol className="flex min-w-0 items-center gap-1">
-        {parents.map((crumb) => (
-          <li key={crumb.path} className="flex min-w-0 items-center gap-1">
-            <button
-              type="button"
-              className="max-w-40 truncate rounded-full px-2 py-1 font-semibold text-muted-foreground text-sm hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-              onClick={() => onNavigate(crumb.path)}
+    <Breadcrumb aria-label={t('breadcrumb')} className="flex min-w-0 flex-1">
+      {/* One line: parents truncate first; phones keep only the nearest one. */}
+      <BreadcrumbList className="min-w-0 flex-nowrap sm:gap-1.5">
+        {parents.map((crumb, index) => (
+          <Fragment key={crumb.path}>
+            <BreadcrumbItem
+              className={cn(
+                'min-w-0 shrink-[100]',
+                index < parents.length - 1 && 'hidden sm:inline-flex'
+              )}
             >
-              {crumb.label}
-            </button>
-            <ChevronRight
-              aria-hidden
-              className="size-3.5 shrink-0 text-muted-foreground"
+              <BreadcrumbLink asChild>
+                <button
+                  className="max-w-40 truncate rounded-md py-1 font-semibold focus-visible:outline-2 focus-visible:outline-ring"
+                  onClick={() => onNavigate(crumb.path)}
+                  type="button"
+                >
+                  {crumb.label}
+                </button>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator
+              className={cn(
+                index < parents.length - 1 && 'hidden sm:inline-flex'
+              )}
             />
-          </li>
+          </Fragment>
         ))}
-        <li className="min-w-0">
-          <h1
-            aria-current="page"
-            className="truncate px-2 font-bold text-xl tracking-tight"
-          >
-            {current?.label}
+        <BreadcrumbItem className="min-w-0">
+          <h1 className="min-w-0 truncate text-xl tracking-tight">
+            <BreadcrumbPage className="font-semibold">
+              {current?.label}
+            </BreadcrumbPage>
           </h1>
-        </li>
-      </ol>
-    </nav>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
