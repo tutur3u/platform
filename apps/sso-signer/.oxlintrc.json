@@ -1,0 +1,6 @@
+{
+  "plugins": ["eslint", "typescript", "oxc"],
+  "categories": { "correctness": "error" },
+  "rules": { "eslint/no-alert": "error" },
+  "ignorePatterns": ["dist/**", "node_modules/**"]
+}

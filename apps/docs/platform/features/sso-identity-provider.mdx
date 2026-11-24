@@ -273,6 +273,9 @@ That lets a workspace approve a domain it controls, not one it only typed.
   - Deploying it and writing its secrets is restricted to the release authority
     in Cloudflare.
 
+  The signer Worker's interface, bounds and deployment plan are in
+  [SSO signer Worker](/platform/features/sso-signer-worker).
+
   S1 changes the synchronous `SamlSigner` contract (`({xml,id,kind}) => string`
   in `packages/sso/src/contracts.ts`) into an async signer port, and spikes
   assertion construction inside the Worker. Changing `node-signer.ts` alone is

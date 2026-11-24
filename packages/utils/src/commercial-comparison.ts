@@ -61,6 +61,13 @@ const advanced: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
   },
   {
+    id: 'ssoSigner',
+    app: 'sso-signer',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'statusApi',
     app: 'status-api',
     category: 'internal',

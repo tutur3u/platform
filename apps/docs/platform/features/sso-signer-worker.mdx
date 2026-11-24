@@ -1,0 +1,169 @@
+---
+title: "SSO signer Worker"
+description: "The dark Cloudflare Worker that builds and signs SAML login responses for the Tuturuuu identity provider: request authentication, finalization permits, kid binding, replay store, stop fence, budget and deployment plan."
+updatedAt: "2026-11-24"
+audience: developers
+---
+
+<Note>
+**Status: dark spike.** `apps/sso-signer` (`tuturuuu-sso-signer`) has no
+routes, no workers.dev and no preview URLs, and no CI workflow publishes it.
+Nothing in `apps/web` calls it. Its shipped configuration refuses every sign
+request. The design it implements is
+[Key custody and rotation](/platform/features/sso-identity-provider#key-custody-and-rotation).
+</Note>
+
+## What it does
+
+The Worker is not a raw signing oracle. A caller sends structured fields; the
+Worker builds the SAML `Response` and `Assertion` itself with
+`createLoginResponse` from `packages/sso` and signs both with the same
+`createNodeSigner` (xml-crypto 6.4.0, @xmldom/xmldom 0.9.12, `node:crypto`
+X509Certificate) under `nodejs_compat`. A workerd runtime test proves that the
+bundled Worker signs a response that the independent Node-SAML SP from
+`packages/sso` accepts.
+
+The fields: `client`, `protocol` (`saml`), `transactionId`, `kid`, `subject`
+(the pairwise subject), `attributes` (`email`, `firstName`, `lastName`),
+`profile` (`entityId`, `acsUrl`), `idp` (`entityId`, `ssoUrl`), `request`
+(`id` used as InResponseTo, `issueInstant`, `forceAuthn`, optional
+`relayState`), `assurance` (`authenticatedAt`, `mfaVerifiedAt`) and
+`notOnOrAfter`, which becomes the assertion expiry (at most two minutes after
+the Worker's clock). The AuthnRequest itself, its signature and the profile's
+request-signing policy are admitted by `apps/web`; the Worker receives the
+admitted request's bound fields.
+
+## Entry points
+
+Callers reach the Worker only through service bindings to named entry points.
+The default handler answers 404.
+
+| Entry | Surface | Authentication |
+| --- | --- | --- |
+| `SignerEntry` | `POST /v1/saml/sign`, body `{ input, permit }`, at most 16 KiB | HMAC request headers |
+| `ControlEntry` | RPC `readFence(key)`, `setFence(key, mode, reason)` | Control caller key, checked at the entry and again in the object |
+
+A successful sign returns `correlationId`, `responseId`, `assertionId`,
+`samlResponse` (base64), `destination`, `relayState` and `expiresAt`. A refusal
+returns `{ error, correlationId }` and, for protocol refusals, the `SAML_` code
+as `reason`. Logs carry the correlation ID and an outcome code only.
+
+## Checks, cheapest first
+
+No Durable Object is called before the request HMAC, the body, the permit and
+the kid binding pass, and the private key is parsed only after every check.
+
+1. Path and method, then `SSO_SIGNER_FENCE_FLOOR` (break-glass `stopped`).
+2. **Request HMAC.** Headers `x-ttr-sso-timestamp` (Unix ms),
+   `x-ttr-sso-nonce` (base64url, 16 to 32 bytes) and `x-ttr-sso-signature`:
+   HMAC-SHA256 with `SSO_SIGNER_REQUEST_KEY` over
+   `ttr-sso-signer-request-v1`, method, path, timestamp, nonce and the
+   base64url SHA-256 of the body, joined by newlines. At most 60 seconds of
+   skew. No bearer form exists.
+3. **Body** against a strict schema.
+4. **Permit.** `{ v: 1, id, kid, iat, exp, fields, sig }`: `fields` is the
+   base64url SHA-256 of `ttr-sso-permit-fields-v1` plus the sorted-key JSON of
+   the whole `input` (so every field, the kid included, is bound), and `sig` is
+   Ed25519 over `ttr-sso-permit-v1` plus `[v, id, kid, iat, exp, fields]`. The
+   Worker holds only `SSO_SIGNER_PERMIT_PUBLIC_KEY`. Lifetime is at most 60
+   seconds; `iat` may lead the Worker clock by at most 5 seconds.
+5. **Kid binding.** `SSO_SIGNER_KEYS` maps each kid (lowercase letters, digits
+   and hyphens) to exactly one `client`, one `protocol` and its certificate,
+   for at most eight kids. A mismatch is refused. The private key is the
+   secret `SSO_SIGNING_KEY_<KID>` (kid upper-cased, `-` as `_`).
+6. **Stop fence** (`SignerControl`). With no record it is `stopped`: a fresh
+   deployment signs nothing until an operator sets it to `running`.
+7. **Daily budget** (`SignerBudget`): one unit per admitted request, replays
+   included, `SSO_SIGNER_DAILY_BUDGET` (default 5,000) per UTC day.
+8. **Replay claim** (`SignerReplay`): the nonce and the permit ID together,
+   all or nothing.
+9. **Transaction confirmation**, then build and sign.
+
+## Durable Objects and cost bounds
+
+All three objects use SQLite storage, are named `<role>:<SSO_SIGNER_ENV>`, and
+set no alarms.
+
+- `SignerReplay` deletes at most 32 expired rows per claim, inserts at most
+  two, keeps its live count in a meta row instead of scanning, and refuses new
+  claims at 50,000 live rows (fail closed). Nonce rows live 60 seconds past
+  their timestamp; permit rows until the permit expires.
+- `SignerBudget` keeps only the current UTC day's row.
+- An isolate remembers a `stopped` fence for 10 seconds and an exhausted budget
+  until its UTC midnight, so a flood against a stopped or exhausted signer costs
+  no object calls. `running` is never cached, so a stop applies to the next
+  request.
+
+An admitted request costs three object calls; a request refused before step 6
+costs none.
+
+## Transaction confirmation (later slice)
+
+`src/transaction-confirmation.ts` defines the `TransactionConfirmation` port:
+resolve `ok` only when the consumed transaction `transactionId` matches the
+bound fields, failing closed on any error. It will be backed by a Worker-only
+database role that can read only an approved, consumed, not-yet-signed
+transaction; that role needs a migration and lands separately. Until then the
+only implementations are `refuseAllConfirmation` (every deployed config) and
+`uncheckedLocalConfirmation`, selected only when
+`SSO_SIGNER_TRANSACTION_CHECK` is `unchecked-local` and `SSO_SIGNER_ENV` is
+`local`, for the workerd runtime test.
+
+## Configuration
+
+| Binding | Kind | Shipped value |
+| --- | --- | --- |
+| `SSO_SIGNER_ENV` | text | `local` |
+| `SSO_SIGNER_FENCE_FLOOR` | text | empty (`running`) |
+| `SSO_SIGNER_DAILY_BUDGET` | text | empty (default) |
+| `SSO_SIGNER_KEYS` | text | empty (refuses) |
+| `SSO_SIGNER_PERMIT_PUBLIC_KEY` | text | empty (refuses) |
+| `SSO_SIGNER_TRANSACTION_CHECK` | text | empty (refuses) |
+| `SSO_SIGNER_REQUEST_KEY` | secret | not provisioned |
+| `SSO_SIGNER_CONTROL_KEY` | secret | not provisioned |
+| `SSO_SIGNING_KEY_<KID>` | secret | not declared or provisioned |
+
+Key sets (`SSO_SIGNER_REQUEST_KEY`, `SSO_SIGNER_PERMIT_PUBLIC_KEY`,
+`SSO_SIGNER_CONTROL_KEY`) are one base64url 32-byte key, or JSON
+`{"current","previous"}` during a dual-publish rotation.
+
+## Tests
+
+`apps/sso-signer/src/*.test.ts` run under `vp test`:
+
+- request HMAC: bad signature (key, body, method, path, nonce, flipped byte),
+  skew, malformed headers, bearer refusal, rotation;
+- permit: foreign key, changed signature or claim, expiry, future `iat`,
+  lifetime over 60 seconds, a mismatch on every structured field (derived from
+  the input's leaf paths) and rotation; a replayed permit under a fresh nonce;
+- kid binding: unknown kid, another client or protocol, missing secret,
+  malformed maps;
+- replay store bounds, budget cap and day rollover, fence default and control
+  keys, and the isolate guards;
+- the handler end to end through Node-SAML, including log redaction;
+- `worker-runtime.test.ts`: the esbuild bundle in workerd (Miniflare 4,
+  `nodejs_compat`), through both named entry points. Miniflare 4's workerd
+  accepts compatibility dates up to 2026-08-06, so the test runs at
+  2026-08-01; the deployed config's later date adds no flag the Worker uses.
+  The bundle turns CommonJS `require` of Node built-ins (xml-crypto's
+  `require("crypto")`) into `node:` imports, as the Cloudflare Vite plugin does.
+
+## Deployment plan
+
+Deployment is held. Each step needs the release authority:
+
+1. **Route choice, later.** The Worker stays without routes or custom domains.
+   `apps/web` will reach it through a service binding to `SignerEntry`; adding
+   any public route or domain is a separate reviewed change.
+2. **Staging first.** Publish to staging only after the transaction
+   confirmation slice is merged. The release authority writes the staging
+   secrets and kid map, sets the fence to `running` through `ControlEntry`, and
+   runs acceptance against the local Node-SAML SP before any real SP.
+3. **Rollback.** Stop signing at once by setting the fence to `stopped` (or
+   deploying `SSO_SIGNER_FENCE_FLOOR: 'stopped'`); `apps/web` keeps its Node
+   signer path until the Worker is accepted, so turning the Worker off restores
+   the current behavior. Keep the previous Worker version for a one-step
+   version rollback.
+4. **Production** deploys and production secrets need the release authority's
+   explicit ACK. A production kid is written only by the release authority, and
+   rotation follows the dual-publish schedule in the design.

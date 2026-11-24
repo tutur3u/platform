@@ -35,6 +35,7 @@ COPY apps/playground-execution/package.json ./apps/playground-execution/package.
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
+COPY apps/sso-signer/package.json ./apps/sso-signer/package.json
 COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.json
 COPY apps/storefront/package.json ./apps/storefront/package.json
 COPY apps/supermemory/package.json ./apps/supermemory/package.json
