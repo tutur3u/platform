@@ -45,7 +45,7 @@ export interface FeatureFlagRow {
   lifecycle: FlagLifecycle;
   mutable: boolean;
   owner: string | null;
-  readOnly: 'mobile-build' | 'workspace-secret' | null;
+  readOnly: 'mobile-build' | 'runtime' | 'workspace-secret' | null;
   scope: FlagScope;
   rollout?: FeatureRollout;
   verifiedOnProdAt: string | null;

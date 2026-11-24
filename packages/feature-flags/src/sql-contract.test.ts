@@ -109,8 +109,9 @@ describe('platform feature flag migration contract', () => {
       'ENABLE_JOURNAL_MOOD_TRACKING',
       'ENABLE_DOCUMENT_HIERARCHY',
     ];
+    // Runtime flags belong to the rule store, not this migration's family map.
     const migratedFlags = featureFlagCatalog.flags.filter(
-      (flag) => !catalogOnlyKeys.includes(flag.key)
+      (flag) => !catalogOnlyKeys.includes(flag.key) && flag.family !== 'runtime'
     );
     const familyEntries = [
       ...sql.matchAll(/when '([^']+)' then '([^']+)'/g),
@@ -132,6 +133,9 @@ describe('platform feature flag migration contract', () => {
       expect(sql).not.toContain(key);
     }
     expect(sql).not.toContain('cookie_consent_banner');
+    for (const flag of featureFlagCatalog.flags) {
+      if (flag.family === 'runtime') expect(sql).not.toContain(flag.key);
+    }
     expect(
       familyEntries
         .filter(({ family }) => family === 'mobile-runtime')
@@ -146,7 +150,9 @@ describe('platform feature flag migration contract', () => {
         expect(sql).not.toContain(flag.key);
       }
     }
-    expect(featureFlagCatalog.flags).toHaveLength(53);
+    expect(
+      featureFlagCatalog.flags.filter((flag) => flag.family !== 'runtime')
+    ).toHaveLength(53);
     expect(RUNTIME_FLAG_KEYS).toHaveLength(16);
     expect(registry).toHaveLength(17);
   });

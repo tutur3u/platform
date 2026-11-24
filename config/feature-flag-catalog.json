@@ -1184,6 +1184,115 @@
         "owner": "platform",
         "removeBy": "2027-02-12"
       }
+    },
+    {
+      "key": "MEET_UX_V2",
+      "family": "runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Meet pre-join stage and phone in-room layout.",
+      "owner": "meet",
+      "createdAt": "2026-11-25",
+      "apps": ["meet"],
+      "appsComplete": true,
+      "sources": ["packages/meet-core/src/features/call/server/ux-v2.ts"],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false,
+      "rollout": {
+        "stage": "internal",
+        "owner": "meet",
+        "removeBy": "2027-02-28"
+      },
+      "runtime": {
+        "type": "boolean",
+        "scopes": ["platform", "workspace", "user"],
+        "controllers": {
+          "platform": "platform-admin",
+          "workspace": "platform-admin",
+          "user": "platform-admin"
+        },
+        "envFallback": "MEET_UX_V2",
+        "clientExposed": true
+      }
+    },
+    {
+      "key": "MEET_FORMS_ENABLED",
+      "family": "runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "In-call forms in Meet rooms.",
+      "owner": "meet",
+      "createdAt": "2026-11-25",
+      "apps": ["meet", "meet-realtime"],
+      "appsComplete": true,
+      "sources": [
+        "packages/meet-core/src/features/call/server/forms/enabled.ts",
+        "packages/realtime/src/meet/room-forms.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false,
+      "rollout": {
+        "stage": "internal",
+        "owner": "meet",
+        "removeBy": "2027-02-28"
+      },
+      "runtime": {
+        "type": "boolean",
+        "scopes": ["platform", "workspace"],
+        "controllers": {
+          "platform": "platform-admin",
+          "workspace": "platform-admin"
+        },
+        "envFallback": "MEET_FORMS_ENABLED",
+        "clientExposed": true
+      }
+    },
+    {
+      "key": "MEET_FORMS_EXTENDED_ENABLED",
+      "family": "runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Extended in-call form features; also requires MEET_FORMS_ENABLED.",
+      "owner": "meet",
+      "createdAt": "2026-11-25",
+      "apps": ["meet", "meet-realtime"],
+      "appsComplete": true,
+      "sources": [
+        "packages/meet-core/src/features/call/server/forms-extended/route-guard.ts",
+        "packages/realtime/src/meet/room-forms.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false,
+      "rollout": {
+        "stage": "internal",
+        "owner": "meet",
+        "removeBy": "2027-02-28"
+      },
+      "runtime": {
+        "type": "boolean",
+        "scopes": ["platform", "workspace"],
+        "controllers": {
+          "platform": "platform-admin",
+          "workspace": "platform-admin"
+        },
+        "envFallback": "MEET_FORMS_EXTENDED_ENABLED",
+        "clientExposed": true
+      }
     }
   ]
 }

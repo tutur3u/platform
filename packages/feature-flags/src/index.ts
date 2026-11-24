@@ -83,6 +83,26 @@ export type {
   PrivateRpcAdmin,
   PrivateRpcResult,
 } from './runtime-rpc';
+export {
+  RUNTIME_CONTROLLERS,
+  RUNTIME_RULE_SCOPES,
+  RUNTIME_VALUE_TYPES,
+  validateRuntimeDefinition,
+} from './runtime-definition.mjs';
+export type {
+  RuntimeControllers,
+  RuntimeDefinition,
+  RuntimeRuleScope,
+} from './runtime-definition.mjs';
+export { evaluateRuntimeFlag, rolloutBucket } from './runtime-evaluate';
+export type {
+  RuntimeDecision,
+  RuntimeDecisionSource,
+  RuntimeEvaluationContext,
+  RuntimeEvaluationInput,
+  RuntimeRule,
+  RuntimeRuleMode,
+} from './runtime-evaluate';
 export { projectDashboardFlag } from './runtime-dashboard';
 export type { DashboardFlagProjection } from './runtime-dashboard';
 export type FlagKey = (typeof registry)[number]['key'];

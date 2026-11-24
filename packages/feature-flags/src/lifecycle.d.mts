@@ -1,7 +1,12 @@
 import type { FeatureRollout } from './audience.mjs';
+import type { RuntimeDefinition } from './runtime-definition.mjs';
 
 export type FlagEnvironment = 'development' | 'staging' | 'production';
-export type FlagFamily = 'mobile-runtime' | 'workspace-secret' | 'mobile-build';
+export type FlagFamily =
+  | 'mobile-runtime'
+  | 'workspace-secret'
+  | 'mobile-build'
+  | 'runtime';
 /**
  * `release` flags gate a new feature and become removal-due after production
  * verification. Every other kind is a retained control and is never due for
@@ -43,6 +48,8 @@ export interface CatalogFlag {
   readonly legacy: boolean;
   /** Date-only deadline recorded before the catalog existed. */
   readonly legacyRemoveBy?: string;
+  /** Store-backed rule scopes and controllers; required for `runtime` flags. */
+  readonly runtime?: RuntimeDefinition;
 }
 
 export interface FeatureFlagCatalog {

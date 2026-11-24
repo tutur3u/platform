@@ -96,7 +96,7 @@ it('projects rollout metadata without inventing legacy stages', () => {
     ],
   });
   const rows = model.groups.flatMap((group) => group.rows);
-  expect(rows).toHaveLength(53);
+  expect(rows).toHaveLength(56);
   expect(rows.map((row) => row.key).sort()).toEqual(
     featureFlagCatalog.flags.map((flag) => flag.key).sort()
   );
@@ -107,4 +107,21 @@ it('projects rollout metadata without inventing legacy stages', () => {
   expect(
     rows.find((row) => row.key === featureFlagCatalog.flags[1]?.key)?.rollout
   ).toBeUndefined();
+});
+
+it('lists runtime flags read-only until the rule store accepts them', () => {
+  const model = buildFeatureFlagDashboardModel(
+    new Date('2026-11-25T00:00:00Z')
+  );
+  const runtimeRows = model.groups
+    .filter((group) => group.family === 'runtime')
+    .flatMap((group) => group.rows);
+  expect(runtimeRows.map((row) => row.key)).toContain('MEET_UX_V2');
+  for (const row of runtimeRows) {
+    expect(row.readOnly).toBe('runtime');
+    for (const environment of row.environments) {
+      expect(environment.effective).toBe('unknown');
+      expect(environment.declaredDefault).toBe(false);
+    }
+  }
 });

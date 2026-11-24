@@ -7560,6 +7560,7 @@
     "controls": {
       "build_time": "Lúc dựng bản",
       "conflict": "Bản ghi đã thay đổi. Tải lại trước khi lưu.",
+      "env_fallback": "Biến triển khai cho đến khi có quy tắc được lưu",
       "error": "Không lưu được",
       "loading": "Đang lưu",
       "managed_in_secrets": "Quản lý theo không gian làm việc trong Bí mật",
@@ -7577,6 +7578,7 @@
     "families": {
       "mobile_build": "Bản dựng mobile",
       "mobile_runtime": "Mobile runtime",
+      "runtime": "Runtime",
       "workspace_secret": "Cài đặt không gian làm việc"
     },
     "filter": {

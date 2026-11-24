@@ -2,7 +2,7 @@ export interface DashboardFlagProjection {
   effective: 'off' | 'on' | 'unknown';
   mutable: boolean;
   overrideEnabled: boolean | null;
-  readOnly: 'mobile-build' | 'workspace-secret' | null;
+  readOnly: 'mobile-build' | 'runtime' | 'workspace-secret' | null;
   revision: number;
 }
 
@@ -15,7 +15,9 @@ export function projectDashboardFlag(input: {
   stored: { overrideEnabled: boolean | null; revision: number } | null;
 }): DashboardFlagProjection {
   const readOnly =
-    input.family === 'workspace-secret' || input.family === 'mobile-build'
+    input.family === 'workspace-secret' ||
+    input.family === 'mobile-build' ||
+    input.family === 'runtime'
       ? input.family
       : null;
   const mutable =

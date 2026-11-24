@@ -144,8 +144,9 @@ describe('catalog families', () => {
     expect(catalogFamilyCounts()).toEqual({
       'mobile-build': 2,
       'mobile-runtime': 16,
+      runtime: 3,
       'workspace-secret': 35,
-      total: 53,
+      total: 56,
     });
     expect(
       featureFlagCatalog.flags

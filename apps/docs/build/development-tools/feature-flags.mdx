@@ -48,6 +48,7 @@ together with `getFlagLifecycle` and `validateCatalog`.
 | `mobile-runtime` | global | `config/feature-flags.json` and the mobile endpoint |
 | `workspace-secret` | workspace | Workspace secrets read through `@tuturuuu/utils/feature-flags` and Infrastructure secret definitions |
 | `mobile-build` | build | Non-secret mobile deployment settings compiled with `bool.fromEnvironment` |
+| `runtime` | global | Store-backed rules with a legacy environment-variable fallback, evaluated by `evaluateRuntimeFlag` |
 
 Each entry records `owner`, `createdAt`, `apps` (with `appsComplete` when every
 consumer app is traced), `sources`, `defaults` per environment (`development`,
@@ -74,6 +75,62 @@ only from an actual production verification, never from defaults or CI results.
 `packages/feature-flags/src/catalog.test.ts` fails when a source family gains or
 loses a flag without a catalog change, when a recorded source stops naming its
 flag, or when a new entry is marked legacy.
+
+### Runtime flags
+
+A `runtime` entry declares a `runtime` block next to its lifecycle metadata:
+
+| Field | Meaning |
+| --- | --- |
+| `type` | `boolean`. |
+| `scopes` | Rule scopes a stored rule may target: `platform` (required), `workspace`, `user`. |
+| `controllers` | Who may set each scope. `platform` is always `platform-admin`. `workspace` is `platform-admin` (entitlements, rollouts) or `workspace-admin`. `user` is `platform-admin` (per-person overrides) or `self`. |
+| `envFallback` | Legacy environment variable read only while no platform rule is stored, or `null`. |
+| `clientExposed` | Whether the evaluated boolean may reach a browser or app client. |
+
+Runtime flags use the `global` scope and default to `false` in every
+environment; validation rejects anything else. Every new feature that ships
+dark registers one, so production can carry the code with the feature off.
+
+`evaluateRuntimeFlag({ flag, context, rules, envValue })` is pure. The adapter
+passes the verified actor (`userId`, `workspaceId`, `isStaff` from the server's
+verified identity), the stored rules for the flag (or `null` when no snapshot is
+available) and the raw environment value. Precedence, first match wins:
+
+1. A malformed rule, or two rules for the same scope and subject, turns the
+   flag off for everyone (`invalid-rules`). Rules for other flags are ignored.
+2. A platform `off` rule on a `kill-switch` flag turns it off.
+3. A user rule, when `controllers.user` is `platform-admin` (`on` or `off`).
+4. The workspace rule for the actor's workspace. When `controllers.workspace`
+   is `workspace-admin`, a platform `off` rule still wins over it; any other
+   platform rule (including `staff` or a 0% rollout) does not.
+5. The platform rule.
+6. The environment fallback, only while no platform rule is stored; only the
+   exact string `true` enables it. It also applies when the snapshot is `null`.
+7. The catalog default, which is off.
+
+Rule modes are `on`, `off`, `staff` (verified staff only) and `rollout`
+(allow-listed workspaces or users, then a deterministic percentage bucket of
+flag, user and workspace, so one user can land differently per workspace). A
+`self` user rule can only turn an enabled result off; a user never grants a
+feature to themselves. Each decision carries a `trace` of the steps taken.
+
+Cut a flag over to the store in two releases: store a platform rule equal to the
+current environment value, then remove the environment variable and set
+`envFallback` to `null`. The fallback still applies while the snapshot is
+unavailable, so a stale environment variable must not outlive the cutover.
+Adapters keep serving the last good snapshot instead of passing `null` once a
+flag has a stored platform rule, and the write path validates rules with the
+same shape rules, because one malformed or duplicate rule turns the flag off
+for everyone.
+Dependencies between flags stay with the caller: for example
+`MEET_FORMS_EXTENDED_ENABLED` also requires `MEET_FORMS_ENABLED`. Runtime
+`kill-switch` flags default off like every runtime flag, so they guard features
+that ship dark. The Infrastructure dashboard lists runtime entries read-only
+until the rule store accepts them.
+
+Regression coverage is in `packages/feature-flags/src/runtime-evaluate.test.ts`
+and `catalog.test.ts`.
 
 ### Overdue check
 

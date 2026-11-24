@@ -7560,6 +7560,7 @@
     "controls": {
       "build_time": "Build time",
       "conflict": "This flag changed. Reload before saving.",
+      "env_fallback": "Deployment variable until a stored rule exists",
       "error": "Could not save",
       "loading": "Saving",
       "managed_in_secrets": "Managed per workspace in Secrets",
@@ -7577,6 +7578,7 @@
     "families": {
       "mobile_build": "Mobile build",
       "mobile_runtime": "Mobile runtime",
+      "runtime": "Runtime",
       "workspace_secret": "Workspace settings"
     },
     "filter": {

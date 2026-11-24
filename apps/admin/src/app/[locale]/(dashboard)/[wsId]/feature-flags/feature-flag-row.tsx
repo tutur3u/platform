@@ -93,6 +93,11 @@ export function FlagRow({
             {t('controls.build_time')}
           </p>
         ) : null}
+        {row.readOnly === 'runtime' ? (
+          <p className="mt-1 text-muted-foreground text-xs">
+            {t('controls.env_fallback')}
+          </p>
+        ) : null}
       </TableCell>
       <TableCell>
         <Badge variant="secondary">{t(`kinds.${messageKey(row.kind)}`)}</Badge>

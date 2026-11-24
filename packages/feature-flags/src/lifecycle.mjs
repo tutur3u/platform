@@ -2,6 +2,7 @@
 // toolchain or installed dependencies. Types live in lifecycle.d.mts.
 
 import { validateFeatureRollout } from './audience.mjs';
+import { validateRuntimeDefinition } from './runtime-definition.mjs';
 
 export const FLAG_ENVIRONMENTS = Object.freeze([
   'development',
@@ -12,6 +13,7 @@ export const FLAG_FAMILIES = Object.freeze([
   'mobile-runtime',
   'workspace-secret',
   'mobile-build',
+  'runtime',
 ]);
 export const FLAG_KINDS = Object.freeze([
   'release',
@@ -109,6 +111,23 @@ export function validateFlag(flag, environments = FLAG_ENVIRONMENTS) {
     flag.rollout === undefined
   )
     fail('new release flags require rollout stage, owner and removeBy');
+  if (flag.family === 'runtime') {
+    if (flag.runtime === undefined)
+      fail('runtime flags require a runtime block');
+    if (flag.scope !== 'global') fail('runtime flags use the global scope');
+    if (
+      typeof flag.defaults === 'object' &&
+      flag.defaults !== null &&
+      Object.values(flag.defaults).some((value) => value !== false)
+    ) {
+      fail('runtime flags default to false in every environment');
+    }
+  } else if (flag.runtime !== undefined) {
+    fail('only runtime flags declare a runtime block');
+  }
+  if (flag.runtime !== undefined) {
+    for (const error of validateRuntimeDefinition(flag.runtime)) fail(error);
+  }
   if (!KEY_PATTERN.test(flag.key ?? '')) fail('key is invalid');
   if (!FLAG_FAMILIES.includes(flag.family)) fail('family is invalid');
   if (!FLAG_KINDS.includes(flag.kind)) fail('kind is invalid');

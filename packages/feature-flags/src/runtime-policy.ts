@@ -14,6 +14,7 @@ const FAMILIES = [
   'mobile-runtime',
   'workspace-secret',
   'mobile-build',
+  'runtime',
 ] as const;
 
 export type PlatformFlagFamily = (typeof FAMILIES)[number];
@@ -22,6 +23,7 @@ export type FlagKeyClassification =
   | { family: 'mobile-runtime'; mutable: true }
   | { family: 'workspace-secret'; mutable: false }
   | { family: 'mobile-build'; mutable: false }
+  | { family: 'runtime'; mutable: false }
   | { family: null; mutable: false };
 
 const byKey = new Map(
@@ -38,6 +40,9 @@ export function classifyFlagKey(key: string): FlagKeyClassification {
   }
   if (family === 'workspace-secret') return { family, mutable: false };
   if (family === 'mobile-build') return { family, mutable: false };
+  // Runtime flags are read from their environment fallback until the rule
+  // store accepts them; nothing writes them through the mobile store.
+  if (family === 'runtime') return { family, mutable: false };
   return { family: null, mutable: false };
 }
 
@@ -48,6 +53,7 @@ export function catalogFamilyCounts(): Record<
   const counts = {
     'mobile-build': 0,
     'mobile-runtime': 0,
+    runtime: 0,
     'workspace-secret': 0,
     total: featureFlagCatalog.flags.length,
   };
