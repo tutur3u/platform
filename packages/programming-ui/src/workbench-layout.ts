@@ -42,6 +42,8 @@ export interface OutputView {
   running: boolean;
   /** Before a meeting's Run runs: waiting for a free runner, or the runner starting. */
   phase?: 'waiting' | 'starting';
+  /** A submitted Run is still queued or running after 3 s: say the sandbox is starting. */
+  slowStart?: boolean;
 }
 /** The output pane shows real run text or an explicit empty state, never a stale frame. */
 export function outputView(

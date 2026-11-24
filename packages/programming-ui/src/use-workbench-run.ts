@@ -13,6 +13,7 @@ import {
   retryAfterSeconds,
   WorkbenchStepError,
 } from './workbench-errors';
+import { useSlowStartNotice } from './use-slow-start-notice';
 import { isRunActive } from './workbench-layout';
 
 /** Longest a Run waits on its own for a free runner before asking the person. */
@@ -213,8 +214,11 @@ export function useWorkbenchRun({
       if (operation === 'run') runner.onRunError(error);
     },
   });
+  // Stop ends the slow-start note at once; the next Run brings it back.
+  const [stopped, setStopped] = useState(false);
   // Each new Run or Stop gets its own request ID; a retry reuses the last one.
   const runOperation = (operation: 'run' | 'stop') => {
+    setStopped(operation === 'stop');
     // Stop while waiting for a free runner cancels the wait; there is no run to stop yet.
     if (operation === 'stop' && waiting) return wake.current?.();
     run.mutate({
@@ -224,6 +228,14 @@ export function useWorkbenchRun({
       runId: operation === 'stop' ? runId : undefined,
     });
   };
+  // Only a Run this browser submitted in a meeting, while it is still queued or
+  // running; compile-only checks never come through here.
+  const submittedHere =
+    (run.isPending && run.variables?.operation === 'run') ||
+    (!!localRun && localRun.id === runId);
+  const slowStart = useSlowStartNotice(
+    !!meeting && !stopped && submittedHere && (run.isPending || busy)
+  );
   const finished = timing.current;
   const status = result.data?.status;
   // Meetings name the wait for a runner and its cold start; Learn keeps "Running…".
@@ -238,6 +250,8 @@ export function useWorkbenchRun({
     result,
     busy,
     phase,
+    /** The Run is still starting 3 s after submit: a sandbox cold start. */
+    slowStart,
     /** A Run is waiting for a free runner; Stop cancels it. */
     waiting,
     /** The service, not the program, failed: the Run never started. */

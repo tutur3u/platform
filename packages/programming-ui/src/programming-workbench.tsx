@@ -134,6 +134,7 @@ export function ProgrammingWorkbench({
     result,
     busy,
     phase,
+    slowStart,
     waiting,
     sandboxFailed,
     save,
@@ -222,7 +223,11 @@ export function ProgrammingWorkbench({
   );
   const runnerDown = gate.id;
   const output = {
-    view: { ...outputView(!!problem, testOutput, result.data), phase },
+    view: {
+      ...outputView(!!problem, testOutput, result.data),
+      phase,
+      slowStart,
+    },
     save: selectedSave,
     failure: gate.failure,
     onRetry: retry,

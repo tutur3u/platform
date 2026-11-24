@@ -7324,6 +7324,7 @@
     "runnerWaiting": "Đang chờ trình chạy rảnh…",
     "running": "Đang chạy…",
     "runShortcut": "{action} ({shortcut})",
+    "sandboxSlowStart": "Đang khởi động môi trường chạy… lần Chạy đầu tiên có thể mất tới 20 giây.",
     "save": "Lưu vào Drive",
     "saved": "Đã lưu vào Drive",
     "saveFailed": "Lưu Drive thất bại. Giữ phòng mở và thử lại.",

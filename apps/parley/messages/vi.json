@@ -6602,6 +6602,7 @@
     "runnerUnavailableUnsaved": "Trình chạy mã của Meet vẫn đang được thiết lập. Mọi người vẫn có thể cùng viết mã.",
     "runnerWaiting": "Đang chờ trình chạy rảnh…",
     "running": "Đang chạy…",
+    "sandboxSlowStart": "Đang khởi động môi trường chạy… lần Chạy đầu tiên có thể mất tới 20 giây.",
     "save": "Lưu vào Drive",
     "saved": "Đã lưu vào Drive",
     "saveFailed": "Lưu Drive thất bại. Giữ phòng mở và thử lại.",

@@ -260,6 +260,11 @@ export function WorkbenchOutput({
               className="h-16 min-h-16 rounded-[var(--radius-lg)] font-mono text-xs"
             />
           )}
+          {view.slowStart && (
+            <output className="block text-muted-foreground text-xs">
+              {t('sandboxSlowStart')}
+            </output>
+          )}
           {preview && port ? (
             <iframe
               title={t('preview')}
