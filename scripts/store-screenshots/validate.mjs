@@ -4,7 +4,9 @@
 // side and aspect limits, per-locale counts per device class (English and
 // Vietnamese ship the same set), opaque PNG graphics, per-file store limits, the committed
 // size budget, that every screenshot the metadata lists exists, and the web
-// gallery WebP limits and manifest sizes.
+// gallery WebP limits and manifest sizes, and that every caption measured in
+// layout-report.json sits in the safe area, runs at most two lines and is set
+// large enough.
 //
 //   node scripts/store-screenshots/validate.mjs [--root <repo>]
 import fs from 'node:fs';
@@ -14,6 +16,8 @@ import { parseArgs } from 'node:util';
 import { checkColorProfile } from './color-profile.mjs';
 import { validateShowcase } from './showcase-checks.mjs';
 import { readImageInfo } from './image-info.mjs';
+import { checkLayoutReport, LAYOUT_REPORT_FILE } from './layout-checks.mjs';
+import { readLayoutReport } from './layout-report.mjs';
 import {
   GRAPHIC_TARGETS,
   OUTPUT_BUDGET_BYTES,
@@ -202,6 +206,7 @@ export function validateStoreImages(root) {
   let totalBytes = 0;
   let screenshotCount = 0;
   const screenshotFiles = [];
+  const measured = new Map();
   const webPlatforms = new Set();
   const storesWithShots = new Set();
   for (const file of files) {
@@ -211,6 +216,7 @@ export function validateStoreImages(root) {
       .relative(screenshotDir, file)
       .split(path.sep)
       .join('/');
+    if (relative === LAYOUT_REPORT_FILE) continue;
     if (/^[a-z]+\/web\//.test(relative)) {
       if (relative.endsWith('/manifest.json')) continue;
       problems.push(...checkWebImage(relative, buffer).problems);
@@ -221,6 +227,15 @@ export function validateStoreImages(root) {
     screenshotFiles.push(relative);
     storesWithShots.add(relative.split('/')[0]);
     problems.push(...checkScreenshot(relative, buffer));
+    const [store, device] = relative.split('/');
+    const target = SCREENSHOT_TARGETS.find(
+      (t) => t.store === store && t.device === device
+    );
+    const info = target && readImageInfo(buffer);
+    if (info) measured.set(relative, { ...info, target });
+  }
+  if (measured.size > 0) {
+    problems.push(...checkLayoutReport(readLayoutReport(root), measured));
   }
   for (const platform of webPlatforms)
     problems.push(...checkWebGallery(screenshotDir, platform));

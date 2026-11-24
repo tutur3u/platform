@@ -198,22 +198,21 @@ test('showcase sizes match the Flutter capture targets', () => {
   }
 });
 
-test('the preview page is transparent and draws the frame without text', () => {
+test('the preview page is a transparent frameless card without text', () => {
   const layout = showcaseLayout(SHOWCASE_DEVICES.mac, 3024, 1964);
   const html = showcaseHtml({
     layout,
     theme: 'dark',
     rawUrl: 'data:image/png;base64,AA==',
-    barColor: 'rgb(0,0,0)',
   });
   assert.match(html, /html,body\{[^}]*background:transparent/);
-  assert.match(html, /#ff5f57/);
+  assert.doesNotMatch(html, /#ff5f57|#febc2e|#28c840|9:41|<svg/);
+  assert.match(html, /class="bar"/);
   assert.doesNotMatch(html, /<h1/);
   const duo = showcaseHtml({
     layout: showcaseLayout(SHOWCASE_DEVICES['duo-unfolded'], 2853, 2007),
     theme: 'light',
     rawUrl: 'data:image/png;base64,AA==',
-    barColor: 'rgb(0,0,0)',
   });
   assert.match(duo, /class="seam"/);
   assert.deepEqual(Object.keys(SHOWCASE_FRAMES).sort(), [

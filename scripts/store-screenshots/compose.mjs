@@ -1,21 +1,23 @@
-#!/usr/bin/env node
 // Composes store listing images from raw app captures.
 //
 //   node scripts/store-screenshots/compose.mjs --raw <dir> [options]
 //
 // <dir> holds `<store>/<device>/<locale>/NN-<id>.png` from
-// apps/mobile/test/store_screenshots. Writes screenshots to
+// apps/mobile/test/store_screenshots (and, for the assistant, an
+// `NN-assistant.json` with the card positions the chip points at). Writes
+// screenshots to
 // apps/mobile/store/screenshots/<store>/<device>/<locale>/NN-<id>.jpg, or .png
 // for targets with `format: 'png'` (Microsoft Store) (paths
-// from apps/mobile/store/metadata when present) and the opaque PNG graphics
-// (Play feature graphic, Microsoft Store hero) to apps/mobile/store/graphics.
+// from apps/mobile/store/metadata when present), the opaque PNG graphics
+// (Play feature graphic, Microsoft Store hero) to apps/mobile/store/graphics,
+// and apps/mobile/store/screenshots/layout-report.json with the measured
+// caption box of every screenshot.
 //
 // Options:
 //   --metadata <dir>   store metadata (default apps/mobile/store/metadata)
 //   --out <dir>        repository root to write under (default: this repo)
 //   --only <ids>       comma-separated `<store>/<device>` targets
 //   --locales <ids>    comma-separated locales (default en,vi)
-//   --plate <png>      background plate image instead of the drawn discs
 //   --no-graphics      skip the feature graphic and hero
 //   --gallery-only     only rebuild the web gallery from composed screenshots
 //
@@ -27,6 +29,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { loadMetadata, planScreens } from './captions.mjs';
+import { reportEntry, writeLayoutReport } from './layout-report.mjs';
 import { loadChromium } from './deps.mjs';
 import { toOpaqueRgbPng } from './png-rgb.mjs';
 import { writeWebGallery } from './web-gallery.mjs';
@@ -34,15 +37,10 @@ import {
   GRAPHIC_TARGETS,
   JPEG_QUALITY,
   LOCALES,
+  SCREENSHOT_ROOT,
   SCREENSHOT_TARGETS,
 } from './specs.mjs';
-import {
-  featureGraphicHtml,
-  graphicSpec,
-  heroHtml,
-  screenshotHtml,
-  screenshotSpec,
-} from './template.mjs';
+import { featureGraphicHtml, heroHtml, screenshotHtml } from './template.mjs';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -65,14 +63,23 @@ export function findRaw(rawDir, target, locale, id) {
   return match ? path.join(dir, match) : null;
 }
 
-async function render(page, html, width, height, spec) {
-  await page.setViewportSize({ width, height });
+/** Raw capture anchors (`NN-id.json` beside the PNG), or null. */
+function readAnchors(rawFile) {
+  const file = rawFile.replace(/\.png$/, '.json');
+  if (!fs.existsSync(file)) return null;
+  return JSON.parse(fs.readFileSync(file, 'utf8')).anchors ?? null;
+}
+
+/** Renders [html] and runs the page layout pass; returns what it measured. */
+async function render(page, { html, spec }) {
+  await page.setViewportSize({ width: spec.width, height: spec.height });
   await page.setContent(html, { waitUntil: 'networkidle' });
-  const fontsLoaded = await page.evaluate((s) => window.__layout(s), spec);
-  if (!fontsLoaded)
+  const result = await page.evaluate((s) => window.__layout(s), spec);
+  if (!result.fontsLoaded)
     throw new Error(
-      'Nunito did not load; check network access to Google Fonts.'
+      'Nunito or JetBrains Mono did not load; check network access to Google Fonts.'
     );
+  return result;
 }
 
 async function main() {
@@ -86,7 +93,6 @@ async function main() {
       out: { type: 'string', default: REPO_ROOT },
       only: { type: 'string' },
       locales: { type: 'string', default: LOCALES.join(',') },
-      plate: { type: 'string' },
       'no-graphics': { type: 'boolean', default: false },
       'gallery-only': { type: 'boolean', default: false },
     },
@@ -96,12 +102,12 @@ async function main() {
   const rawDir = galleryOnly ? '' : path.resolve(values.raw);
   const only = values.only ? new Set(values.only.split(',')) : null;
   const locales = values.locales.split(',');
-  const plateUrl = values.plate ? dataUrl(values.plate) : undefined;
 
   const chromium = await loadChromium();
   const browser = await chromium.launch();
   const page = await browser.newPage({ deviceScaleFactor: 1 });
   const missing = [];
+  const report = {};
   let written = 0;
   try {
     for (const target of SCREENSHOT_TARGETS) {
@@ -109,7 +115,11 @@ async function main() {
       if (only && !only.has(`${target.store}/${target.device}`)) continue;
       const metadata = loadMetadata(values.metadata, target.store);
       for (const locale of locales) {
-        for (const screen of planScreens(metadata, target, locale)) {
+        for (const [index, screen] of planScreens(
+          metadata,
+          target,
+          locale
+        ).entries()) {
           const raw = findRaw(rawDir, target, locale, screen.id);
           if (!raw) {
             missing.push(
@@ -117,20 +127,31 @@ async function main() {
             );
             continue;
           }
-          const html = screenshotHtml({
+          const fan =
+            screen.id === 'dashboard'
+              ? {
+                  left: findRaw(rawDir, target, locale, 'calendar'),
+                  right: findRaw(rawDir, target, locale, 'assistant'),
+                }
+              : null;
+          const anchors = readAnchors(raw);
+          const anchor =
+            anchors?.done && anchors.details
+              ? { done: anchors.done, details: anchors.details }
+              : null;
+          const composed = screenshotHtml({
             target,
-            screenId: screen.id,
+            index,
             headline: screen.headline,
+            overline: screen.overline,
             rawUrl: dataUrl(raw),
-            plateUrl,
+            fanUrls:
+              fan?.left && fan.right
+                ? { left: dataUrl(fan.left), right: dataUrl(fan.right) }
+                : null,
+            chip: screen.chip && anchor ? { text: screen.chip, anchor } : null,
           });
-          await render(
-            page,
-            html,
-            target.width,
-            target.height,
-            screenshotSpec(target)
-          );
+          const measured = await render(page, composed);
           const out = path.join(values.out, screen.file);
           fs.mkdirSync(path.dirname(out), { recursive: true });
           if (out.endsWith('.png')) {
@@ -145,6 +166,8 @@ async function main() {
               quality: JPEG_QUALITY,
             });
           }
+          report[path.relative(path.join(values.out, SCREENSHOT_ROOT), out)] =
+            reportEntry(composed.spec, measured);
           written += 1;
         }
       }
@@ -174,19 +197,17 @@ async function main() {
           html = featureGraphicHtml({
             iconUrl: dataUrl(icon),
             phoneUrls: [dataUrl(phoneDashboard), dataUrl(phoneCalendar)],
-            plateUrl,
           });
         } else if (graphic.id === 'hero' && desktopDashboard && phoneCalendar) {
           html = heroHtml({
             desktopUrl: dataUrl(desktopDashboard),
             phoneUrl: dataUrl(phoneCalendar),
-            plateUrl,
           });
         } else {
           missing.push(`graphic ${graphic.id}`);
           continue;
         }
-        await render(page, html, graphic.width, graphic.height, graphicSpec());
+        await render(page, html);
         const png = await page.screenshot({ type: 'png' });
         const out = path.join(values.out, graphic.file);
         fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -194,6 +215,8 @@ async function main() {
         written += 1;
       }
     }
+
+    if (Object.keys(report).length > 0) writeLayoutReport(values.out, report);
 
     const gallery = await writeWebGallery(page, values.out, values.metadata);
     for (const items of Object.values(gallery)) {

@@ -218,10 +218,13 @@ test('present assets are checked for format, dimensions and gallery size', () =>
     assert.equal(result.lines.length, 4, result.lines.join('\n'));
     assertRejects(result, /feature-graphic.*is 1024x512, expected 1024x500/u);
     assertRejects(result, /vi\/01-dashboard\.jpg: not a readable jpeg/u);
-    assertRejects(result, /web\/02-tasks\.webp: is \d+ bytes, limit 150000/u);
     assertRejects(
       result,
-      /web\/03-calendar\.webp: is 1280x1280, expected 720x1280/u
+      /web\/02-assistant\.webp: is \d+ bytes, limit 150000/u
+    );
+    assertRejects(
+      result,
+      /web\/03-tasks\.webp: is 1280x1280, expected 720x1280/u
     );
     assert.ok(result.pending.length > 0);
 

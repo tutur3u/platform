@@ -6,11 +6,14 @@
 
 /**
  * Screenshots are JPEG unless a target sets `format: 'png'`; the Microsoft
- * Store listing takes opaque PNG. `fill` sizes the device to that share of
- * the canvas width with a tighter headline margin, for large canvases where
- * the default frame reads small at thumbnail size.
+ * Store listing takes opaque PNG. `frame` is the device class the capture
+ * comes from. `layout` is the composition for the canvas shape: `stack`
+ * (caption above the UI), `tablet` (caption above a wide UI), `side` (caption
+ * left, UI right) or `window` (caption left, a plain window card right); see
+ * template-layout.mjs.
  * @type {Array<{ store: string, device: string, width: number, height: number,
- *   frame: FrameKind, maxBytes: number, format?: 'png', fill?: number }>}
+ *   frame: FrameKind, layout: 'stack' | 'tablet' | 'side' | 'window',
+ *   maxBytes: number, format?: 'png' }>}
  */
 export const SCREENSHOT_TARGETS = [
   {
@@ -19,6 +22,7 @@ export const SCREENSHOT_TARGETS = [
     width: 1320,
     height: 2868,
     frame: 'phone',
+    layout: 'stack',
     maxBytes: 10_000_000,
   },
   {
@@ -29,6 +33,7 @@ export const SCREENSHOT_TARGETS = [
     width: 1206,
     height: 2622,
     frame: 'phone',
+    layout: 'stack',
     maxBytes: 10_000_000,
   },
   {
@@ -39,6 +44,7 @@ export const SCREENSHOT_TARGETS = [
     width: 1398,
     height: 2034,
     frame: 'phone',
+    layout: 'stack',
     maxBytes: 10_000_000,
   },
   {
@@ -48,6 +54,7 @@ export const SCREENSHOT_TARGETS = [
     width: 2853,
     height: 2007,
     frame: 'foldable',
+    layout: 'side',
     maxBytes: 10_000_000,
   },
   {
@@ -56,6 +63,7 @@ export const SCREENSHOT_TARGETS = [
     width: 1284,
     height: 2778,
     frame: 'phone',
+    layout: 'stack',
     maxBytes: 10_000_000,
   },
   {
@@ -64,8 +72,8 @@ export const SCREENSHOT_TARGETS = [
     width: 2064,
     height: 2752,
     frame: 'tablet',
+    layout: 'tablet',
     maxBytes: 10_000_000,
-    fill: 0.8,
   },
   {
     store: 'android',
@@ -73,6 +81,7 @@ export const SCREENSHOT_TARGETS = [
     width: 1080,
     height: 1920,
     frame: 'phone',
+    layout: 'stack',
     maxBytes: 8_000_000,
   },
   {
@@ -81,8 +90,8 @@ export const SCREENSHOT_TARGETS = [
     width: 1080,
     height: 1920,
     frame: 'tablet',
+    layout: 'stack',
     maxBytes: 8_000_000,
-    fill: 0.92,
   },
   {
     store: 'android',
@@ -90,8 +99,8 @@ export const SCREENSHOT_TARGETS = [
     width: 1440,
     height: 2560,
     frame: 'tablet',
+    layout: 'tablet',
     maxBytes: 8_000_000,
-    fill: 0.92,
   },
   {
     store: 'macos',
@@ -99,8 +108,8 @@ export const SCREENSHOT_TARGETS = [
     width: 2880,
     height: 1800,
     frame: 'desktop-mac',
+    layout: 'window',
     maxBytes: 10_000_000,
-    fill: 0.8,
   },
   {
     store: 'windows',
@@ -108,6 +117,7 @@ export const SCREENSHOT_TARGETS = [
     width: 1920,
     height: 1080,
     frame: 'desktop-windows',
+    layout: 'window',
     maxBytes: 50_000_000,
     format: 'png',
   },
@@ -133,15 +143,19 @@ export const GRAPHIC_TARGETS = [
 
 export const LOCALES = ['en', 'vi'];
 
-/** Screens in listing order; ids match the metadata screenshot ids. */
+/**
+ * Screens in story order (dashboard first, then Mira, tasks and calendar for
+ * the four-screen iPhone Duo sets); ids match the metadata screenshot ids and
+ * the keys of store-captions.json.
+ */
 export const SCREEN_IDS = [
   'dashboard',
+  'assistant',
   'tasks',
   'calendar',
-  'assistant',
+  'time-tracker',
   'finance',
   'habits',
-  'time-tracker',
   'notes',
 ];
 

@@ -5,12 +5,22 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
-import { headlineFor, planScreens } from './captions.mjs';
+import {
+  captionFor,
+  loadMetadata,
+  planScreens,
+  STORE_CAPTIONS,
+} from './captions.mjs';
+import { reportEntry, writeLayoutReport } from './layout-report.mjs';
 import { gallerySources } from './web-gallery.mjs';
 import { readImageInfo } from './image-info.mjs';
 import { toOpaqueRgbPng } from './png-rgb.mjs';
-import { GRAPHIC_TARGETS, SCREENSHOT_TARGETS } from './specs.mjs';
-import { screenshotSpec } from './template.mjs';
+import {
+  GRAPHIC_TARGETS,
+  LOCALES,
+  SCREEN_IDS,
+  SCREENSHOT_TARGETS,
+} from './specs.mjs';
 import {
   checkGraphic,
   checkScreenshot,
@@ -182,26 +192,27 @@ test('flattens alpha into an opaque RGB PNG', () => {
   assert.match(checkGraphic(graphic, rgba)[0], /alpha/);
 });
 
-test('uses metadata captions, falling back for sentence-length ones', () => {
-  assert.equal(
-    headlineFor('Ask Mira by text or voice', 'en', 'assistant'),
-    'Ask Mira by text or voice'
-  );
-  assert.equal(
-    headlineFor(
-      'See today’s tasks, events and workspace activity in one place, every day.',
-      'en',
-      'dashboard'
-    ),
-    'Your day at a glance'
-  );
+test('reads headlines and overlines from store-captions.json', () => {
+  assert.deepEqual(captionFor('en', 'assistant'), {
+    headline: 'Ask Mira, get it done',
+    overline: 'Mira',
+    chip: 'Calendar updated',
+  });
+  assert.deepEqual(captionFor('vi', 'time-tracker'), {
+    headline: 'Biết thời gian đi về đâu',
+    overline: 'Theo dõi thời gian',
+    chip: null,
+  });
+  assert.throws(() => captionFor('en', 'nope'), /No caption for en\/nope/);
+  assert.deepEqual(Object.keys(STORE_CAPTIONS.screens), SCREEN_IDS);
   const target = SCREENSHOT_TARGETS.find((t) => t.store === 'windows');
   const planned = planScreens(null, target, 'vi');
   assert.equal(planned.length, 8);
   assert.equal(
-    planned[6].file,
-    'apps/mobile/store/screenshots/windows/desktop/vi/07-time-tracker.png'
+    planned[4].file,
+    'apps/mobile/store/screenshots/windows/desktop/vi/05-time-tracker.png'
   );
+  assert.equal(planned[1].headline, 'Hỏi Mira, việc xong ngay');
   const metadata = {
     screenshots: {
       desktop: [
@@ -214,8 +225,115 @@ test('uses metadata captions, falling back for sentence-length ones', () => {
     },
   };
   assert.deepEqual(planScreens(metadata, target, 'vi'), [
-    { id: 'notes', file: 'x/vi/notes.png', headline: 'Ngắn' },
+    {
+      id: 'notes',
+      file: 'x/vi/notes.png',
+      headline: 'Ghi ý tưởng trước khi quên',
+      overline: 'Ghi chú',
+      chip: null,
+    },
   ]);
+});
+
+test('store metadata lists the story order with the image captions', () => {
+  const duo = SCREEN_IDS.slice(0, 4);
+  for (const store of ['ios', 'android', 'macos', 'windows']) {
+    const metadata = loadMetadata(
+      path.join(REPO_ROOT, 'apps/mobile/store/metadata'),
+      store
+    );
+    for (const [device, entries] of Object.entries(metadata.screenshots)) {
+      const want = device.startsWith('iphone-duo') ? duo : SCREEN_IDS;
+      assert.deepEqual(
+        entries.map((entry) => entry.id),
+        want,
+        `${store}/${device} order`
+      );
+      for (const [index, entry] of entries.entries()) {
+        for (const locale of LOCALES) {
+          assert.equal(
+            entry.caption[locale],
+            captionFor(locale, entry.id).headline,
+            `${store}/${device}/${entry.id} ${locale} caption`
+          );
+          assert.match(
+            entry.files[locale],
+            new RegExp(
+              `/${locale}/${String(index + 1).padStart(2, '0')}-${entry.id}\\.`
+            ),
+            `${store}/${device}/${entry.id} ${locale} file number`
+          );
+        }
+      }
+    }
+    assert.deepEqual(
+      metadata.gallery.map((item) => path.basename(item.file)),
+      [
+        '01-dashboard.webp',
+        '02-assistant.webp',
+        '03-tasks.webp',
+        '04-calendar.webp',
+        '05-time-tracker.webp',
+        '06-notes.webp',
+      ],
+      `${store} gallery`
+    );
+  }
+});
+
+/** A measured caption that passes every layout check on a 1080x1920 frame. */
+function goodEntry() {
+  return reportEntry(
+    { width: 1080, height: 1920, layout: 'stack' },
+    {
+      caption: { x: 100, y: 250, width: 880, height: 400 },
+      headline: { fontSize: 120, lines: 2 },
+    }
+  );
+}
+
+test('holds captions to the layout report', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'store-shots-'));
+  try {
+    const shots = path.join(
+      root,
+      'apps/mobile/store/screenshots/android/phone/en'
+    );
+    fs.mkdirSync(shots, { recursive: true });
+    for (const name of ['01-dashboard.jpg', '02-assistant.jpg']) {
+      fs.writeFileSync(path.join(shots, name), jpegHeader(1080, 1920));
+    }
+    const only = (problems) =>
+      problems.filter((problem) =>
+        /layout-report|caption|headline/.test(problem)
+      );
+    assert.deepEqual(only(validateStoreImages(root).problems), [
+      'android/phone/en/01-dashboard.jpg: missing from layout-report.json',
+      'android/phone/en/02-assistant.jpg: missing from layout-report.json',
+    ]);
+    const crowded = reportEntry(
+      { width: 1080, height: 1920, layout: 'stack' },
+      {
+        caption: { x: 20, y: 250, width: 1050, height: 400 },
+        headline: { fontSize: 30, lines: 3 },
+      }
+    );
+    writeLayoutReport(root, {
+      'android/phone/en/01-dashboard.jpg': goodEntry(),
+      'android/phone/en/02-assistant.jpg': crowded,
+    });
+    const problems = only(validateStoreImages(root).problems);
+    assert.equal(problems.length, 4);
+    assert.match(
+      problems[0],
+      /02-assistant\.jpg: caption is 20 px from the left edge/
+    );
+    assert.match(problems[1], /from the right edge/);
+    assert.match(problems[2], /runs 3 lines/);
+    assert.match(problems[3], /headline is 30 px, needs at least 45 px/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('reports missing listed screenshots once any are committed', () => {
@@ -237,6 +355,10 @@ test('reports missing listed screenshots once any are committed', () => {
       path.join(shots, '03-calendar.jpg'),
       jpegHeader(1080, 1920)
     );
+    writeLayoutReport(root, {
+      'android/phone/en/01-dashboard.jpg': goodEntry(),
+      'android/phone/en/03-calendar.jpg': goodEntry(),
+    });
     const listed = (id) => ({
       id,
       files: {
@@ -393,23 +515,4 @@ test('web gallery follows the listing gallery, else the first screenshots', () =
     () => gallerySources(shots, [{ file: 'x/web/02-tasks.webp' }]),
     /No screenshot/
   );
-});
-
-test('only the large canvases fill 80% of the width', () => {
-  const filled = SCREENSHOT_TARGETS.filter((t) => t.fill).map(
-    (t) => `${t.store}/${t.device}`
-  );
-  assert.deepEqual(filled, [
-    'ios/ipad-13',
-    'android/tablet7',
-    'android/tablet10',
-    'macos/mac',
-  ]);
-  for (const target of SCREENSHOT_TARGETS) {
-    const spec = screenshotSpec(target);
-    assert.equal(
-      spec.frames[target.frame].maxWidth,
-      target.fill ?? (target.frame === 'phone' ? 0.8 : 0.84)
-    );
-  }
 });

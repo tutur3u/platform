@@ -1,7 +1,7 @@
 ---
 title: "Mobile Store Screenshots"
 description: "How the App Store, Google Play and Microsoft Store screenshots, graphics and the roadmap feature previews are captured from the real Flutter UI and composed into images."
-updatedAt: "2026-11-24"
+updatedAt: "2026-11-25"
 audience: developers
 ---
 
@@ -68,14 +68,37 @@ node scripts/store-screenshots/compose.mjs --raw apps/mobile/build/store_raw
 node scripts/store-screenshots/validate.mjs
 ```
 
-`compose.mjs` renders each capture in headless Chromium. Each image gets a Sorbet
-background tinted with the screen's product tone, a generic device frame (no
-manufacturer device art) and the headline. Large canvases (iPad 13", Android 10"
-tablet, Mac) set `fill: 0.8` in `specs.mjs`: the device spans 80% of the width
-under a tighter headline margin, so the UI stays legible as a store thumbnail. Headlines come from the
-`screenshots` captions in `apps/mobile/store/metadata/<store>.json`. A caption
-longer than 48 characters, such as a Microsoft Store sentence caption, falls
-back to the short headline in `scripts/store-screenshots/captions.json`.
+`compose.mjs` renders each capture in headless Chromium as a colour-field
+card, with no device frame and no status bar:
+
+- a pastel Sorbet field with a warm white wave rising from the bottom. The
+  wave crest shifts slightly by frame index, so a locale's set reads as one
+  strip, and the field carries no other hue;
+- a caption: a product-label chip (JetBrains Mono, uppercase) over a Nunito
+  900 headline of at most two lines;
+- the raw capture as a frameless rounded card with a soft shadow, bleeding off
+  the canvas edge. The dashboard frame fans three cards (calendar, assistant
+  and the dashboard on top) on the `stack` and `tablet` layouts, and the
+  assistant frame carries a "Calendar updated" chip pointing at its calendar
+  action card. The Flutter capture writes that card's position beside the PNG
+  (`NN-assistant.json`), and the chip repeats a state the capture shows.
+
+Each target in `specs.mjs` names a `layout` for its canvas shape; the numbers
+live in `template-layout.mjs` as percentages of the canvas width.
+
+| Layout | Targets | Composition |
+| --- | --- | --- |
+| `stack` | iPhone 6.9/6.3/6.5, iPhone Duo outer, Play phone, Play 7" tablet | Caption centred above the card |
+| `tablet` | iPad 13", Play 10" tablet | Caption above a wide card (84% of the width) |
+| `side` | iPhone Duo inner (2853x2007) | Caption left, card right, a thin centre line on the card |
+| `window` | Mac, Windows | Caption left, a plain window card (neutral grey dots) right |
+
+Headlines, overlines and the assistant chip come from
+`scripts/store-screenshots/store-captions.json`, keyed by screen id. The
+`screenshots` captions in `apps/mobile/store/metadata/<store>.json` carry the
+same headline text, and `validate.test.mjs` fails when they differ. Screens run
+in story order for every target (dashboard, assistant, tasks, calendar, time
+tracker, finance, habits, notes); the iPhone Duo sets keep the first four.
 Outputs:
 
 - `apps/mobile/store/screenshots/<store>/<device>/<locale>/NN-<id>.jpg`: JPEG,
@@ -83,6 +106,10 @@ Outputs:
   Store targets (`format: 'png'`) write `NN-<id>.png` as 24-bit PNG with no
   alpha at 1920x1080. The metadata `files` paths and
   `scripts/store-metadata` expect `.png` for `windows`.
+- `apps/mobile/store/screenshots/layout-report.json`: the measured caption box,
+  headline size and line count of every screenshot, and the canvas size.
+  compose measures each caption in the browser and merges the entries it
+  writes into the file.
 - `apps/mobile/store/screenshots/<platform>/web/NN-<id>.webp` and a
   `manifest.json` with each file's width and height: up to six EN shots per
   platform for /roadmap, at most 1280 px on the long edge and 150 KB each. The
@@ -92,13 +119,12 @@ Outputs:
   alpha. The hero carries no text, and the feature graphic shows only the app
   name.
 
-Options: `--only ios/iphone-6.9,macos/mac`, `--locales en`, `--plate <png>`
-(replaces the drawn background with a generated plate), `--no-graphics` and
+Options: `--only ios/iphone-6.9,macos/mac`, `--locales en`, `--no-graphics` and
 `--gallery-only` (rebuilds only the web gallery from the composed screenshots,
 leaving them byte-for-byte unchanged).
-Headlines use Nunito from Google Fonts, so composition needs network access.
-Playwright and sharp resolve from a workspace that depends on them. Run
-`bunx playwright install chromium` once per host.
+Captions use Nunito and JetBrains Mono from Google Fonts, so composition needs
+network access. Playwright and sharp resolve from a workspace that depends on
+them. Run `bunx playwright install chromium` once per host.
 
 Section 5 lists what `validate.mjs` checks.
 
@@ -132,9 +158,11 @@ the fixture's empty description state, not drawn UI.
 | `duo-unfolded` | 951x669 | 3x | foldable with centre crease | 1600 px |
 
 `duo-folded` and `duo-unfolded` are the iPhone Duo outer and inner displays.
-The frames are generic: no Apple device art, a plain window with traffic-light
-controls for the Mac, and no headline, so the page supplies captions and the
-background.
+Each preview is a frameless rounded card with a soft shadow on a transparent
+canvas: no device art, no status bar, no field and no headline, so the page
+supplies captions and the background. The Mac preview is a plain window card
+with a white title strip and three neutral grey dots, and the open iPhone Duo
+keeps a thin centre line.
 
 `showcase.mjs` renders each capture on a transparent canvas in headless
 Chromium and encodes AVIF (primary) and WebP (fallback) with sharp, at the
@@ -184,8 +212,8 @@ Connect lists "1398 × 2034 pixels, 2034 × 1398 pixels (outer display);
 2007 × 2853 pixels, 2853 × 2007 pixels (inner display)" and notes: "Starting in
 April 2027, screenshots will be required for any app using the iOS 27.1 SDK or
 later." Submitting Duo screenshots shows a "made for iPhone Duo" badge. The Duo
-targets carry four screens per locale: the dashboard, tasks, calendar and
-assistant.
+targets carry four screens per locale: the dashboard, assistant, tasks and
+calendar.
 
 Apple accepts JPEG or PNG with no alpha, 1-10 per device size. Google Play
 takes JPEG or 24-bit PNG with no alpha, at most 8 MB each, each side 320-3840
@@ -206,6 +234,11 @@ workflow does not upload screenshots.
   the 8 MB cap;
 - per-locale counts for each device class, and the same set in English and
   Vietnamese;
+- caption layout from `layout-report.json`: every screenshot has an entry sized
+  like its image, and each caption keeps at least 5% of the width and height
+  clear on every edge (so nothing sits in the top or bottom 4%), runs at most
+  two lines, and has a headline of at least 4.2% of the canvas width on
+  phones and 2.6% on iPad, Mac and Windows;
 - per-store file limits, opaque graphics, the web gallery limits and the 40 MiB
   budget for committed screenshots;
 - that every screenshot the metadata lists exists for each store that has any

@@ -127,15 +127,10 @@ async function main() {
               .removeAlpha()
               .png()
               .toBuffer();
-            const { data } = await sharp(scaled)
-              .extract({ left: 4, top: 4, width: 1, height: 1 })
-              .raw()
-              .toBuffer({ resolveWithObject: true });
             const html = showcaseHtml({
               layout,
               theme,
               rawUrl: `data:image/png;base64,${scaled.toString('base64')}`,
-              barColor: `rgb(${data[0]},${data[1]},${data[2]})`,
             });
             await page.setViewportSize({
               width: layout.width,
