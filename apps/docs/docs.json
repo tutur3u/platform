@@ -698,6 +698,7 @@
             "pages": [
               "agents/quickstart",
               "build/development-tools/contributing-with-agents",
+              "build/development-tools/agent-browser-control",
               "build/development-tools/codex-plugin",
               "build/development-tools/chatgpt-mcp",
               "build/skills/overview",

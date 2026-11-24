@@ -17,6 +17,7 @@ required to apply the rules below.
 | Any code, dependency, runtime or workflow change | Focused secret scan of the diff, dependency/advisory review of changed manifests and lockfiles, SAST on touched code, and a trust-boundary read of new inputs, outputs and privileges |
 | Authentication/authorization, RLS and tenant isolation, credentials and tokens, storage delivery, CI/actions, runner execution, package publishing, deployment | An **independent** security review by someone other than the author, recorded as a receipt before integration |
 | Docs-only, with no executable or configuration change | A secret scan of the diff |
+| Granting an agent seat control of a real browser or desktop | An independent security review of the guard and kill switch, and a live probe on each machine; see [agent browser control](agent-browser-control.md) |
 
 Keep checks focused on the change. Report a broad audit's scope honestly, and
 never claim an all-clear from a scan. A scan reports what its rules matched.
