@@ -134,7 +134,8 @@ async function keepAlive<T>(work: Promise<T>) {
   return work;
 }
 
-const PENDING_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PENDING_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * A participant's own on, in two phases fenced by the room. The room holds
@@ -180,7 +181,9 @@ async function recordOn(
       : undefined;
   if (!pendingId) throw notSaved();
   // The evidence and confirm finish even if the client disconnects.
-  await keepAlive(confirmWithEvidence(access, input, requireNoticeMode, pendingId));
+  await keepAlive(
+    confirmWithEvidence(access, input, requireNoticeMode, pendingId)
+  );
 }
 
 /**

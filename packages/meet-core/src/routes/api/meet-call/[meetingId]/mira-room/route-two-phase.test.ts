@@ -109,7 +109,6 @@ beforeEach(() => {
   f.canStore.mockResolvedValue(true);
 });
 
-
 const roomIn = (mode: 'room' | 'self' | undefined) =>
   f.room.mockImplementation(async (access, command: { action: string }) =>
     command.action === 'transcript.consent.read'
@@ -248,16 +247,17 @@ describe('two-phase on', () => {
   });
 
   it('retries a transient evidence failure once before confirming', async () => {
-    f.record.mockRejectedValueOnce(new Error('blip')).mockResolvedValue(undefined);
+    f.record
+      .mockRejectedValueOnce(new Error('blip'))
+      .mockResolvedValue(undefined);
     expect((await post(choice())).status).toBe(200);
     expect(f.record).toHaveBeenCalledTimes(2);
     expect(confirmCalls()).toHaveLength(1);
   });
 
   it('does not retry an evidence refusal the database will repeat', async () => {
-    const { MiraChoiceRecordError } = await import(
-      '../../../../../features/live-assistant/server/room-mira-evidence'
-    );
+    const { MiraChoiceRecordError } =
+      await import('../../../../../features/live-assistant/server/room-mira-evidence');
     f.record.mockRejectedValue(new MiraChoiceRecordError('23503'));
     await expect(post(choice())).rejects.toMatchObject({ status: 503 });
     expect(f.record).toHaveBeenCalledTimes(1);
@@ -332,4 +332,3 @@ describe('two-phase on', () => {
     expect(f.record).not.toHaveBeenCalled();
   });
 });
-

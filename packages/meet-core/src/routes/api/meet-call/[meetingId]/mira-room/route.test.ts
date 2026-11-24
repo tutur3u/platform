@@ -175,11 +175,11 @@ it('never confirms an on whose evidence cannot be stored', async () => {
   f.record.mockRejectedValue(new Error('db'));
   await expect(post(choice())).rejects.toMatchObject({ status: 503 });
   const actions = f.room.mock.calls.map(
-    ([, command]) => (command as { action: string; choice?: string })
+    ([, command]) => command as { action: string; choice?: string }
   );
-  expect(actions.some((command) => command.action === 'mira.room.confirm')).toBe(
-    false
-  );
+  expect(
+    actions.some((command) => command.action === 'mira.room.confirm')
+  ).toBe(false);
   // No compensating off: the pending on lapses by itself.
   expect(actions.filter((command) => command.choice === 'off')).toHaveLength(0);
 });
@@ -452,9 +452,8 @@ describe('withdrawal edge cases', () => {
   });
 
   it('does not retry a deterministic refusal of an off, and answers 503', async () => {
-    const { MiraChoiceRecordError } = await import(
-      '../../../../../features/live-assistant/server/room-mira-evidence'
-    );
+    const { MiraChoiceRecordError } =
+      await import('../../../../../features/live-assistant/server/room-mira-evidence');
     f.record.mockRejectedValue(new MiraChoiceRecordError('23514'));
     await expect(post(choice({ choice: 'off' }))).rejects.toMatchObject({
       status: 503,

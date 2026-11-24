@@ -160,7 +160,9 @@ describe('Mira choice pending id', () => {
     const { recordMiraChoice } = await import('./room-mira-evidence');
     f.insert.mockResolvedValue({ error: null });
     await recordMiraChoice({ ...evidence, pendingId });
-    expect(f.insert.mock.calls[0]?.[0]).toMatchObject({ pending_id: pendingId });
+    expect(f.insert.mock.calls[0]?.[0]).toMatchObject({
+      pending_id: pendingId,
+    });
   });
 
   it('drops a missing pending id column but keeps a required notice mode', async () => {
@@ -196,9 +198,8 @@ describe('Mira choice pending id', () => {
   });
 
   it('keeps the Postgres code of a refused row', async () => {
-    const { recordMiraChoice, MiraChoiceRecordError } = await import(
-      './room-mira-evidence'
-    );
+    const { recordMiraChoice, MiraChoiceRecordError } =
+      await import('./room-mira-evidence');
     f.insert.mockResolvedValue({ error: { code: '23503' } });
     const error = await recordMiraChoice(evidence).catch((caught) => caught);
     expect(error).toBeInstanceOf(MiraChoiceRecordError);

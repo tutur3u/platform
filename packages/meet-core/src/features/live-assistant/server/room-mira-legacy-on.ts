@@ -1,6 +1,12 @@
 import 'server-only';
-import { callRoomService, type MeetCallRouteAccess } from '../../call/server/room-service';
-import { type MiraChoiceEvidence, recordMiraChoice } from './room-mira-evidence';
+import {
+  callRoomService,
+  type MeetCallRouteAccess,
+} from '../../call/server/room-service';
+import {
+  type MiraChoiceEvidence,
+  recordMiraChoice,
+} from './room-mira-evidence';
 
 /*
  * Rooms without two-phase Mira support apply an on at once, so an on whose
