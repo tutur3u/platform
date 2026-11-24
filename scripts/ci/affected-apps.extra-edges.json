@@ -50,6 +50,7 @@
   "apps/mobile/store/": ["packages/roadmap-core"],
   "apps/nova/src/lib/": ["apps/web"],
   "apps/nova/start-bridge.config": ["apps/learn"],
+  "apps/parley/messages/": ["packages/meet-core"],
   "apps/rewise/src/lib/": ["apps/web"],
   "apps/roadmap/": ["packages/roadmap-core"],
   "apps/storefront/": ["apps/inventory"],
