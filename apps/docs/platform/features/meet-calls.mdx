@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-11-23'
+updatedAt: '2026-11-24'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 audience: users
 ---
@@ -2024,8 +2024,16 @@ Ray ID in Cloudflare Security Analytics. Binary WAV uploads can trigger OWASP
 `6179ae15870a4bb7b2d480d4843b323c` in the OWASP ruleset for this expression:
 
 ```text
-(http.host eq "meet.tuturuuu.com" and http.request.method eq "POST" and http.request.uri.path wildcard "/api/meet-ai/*/*/chunks" and starts_with(http.request.headers["content-type"][0], "multipart/form-data"))
+((http.host eq "meet.tuturuuu.com" and http.request.uri.path wildcard "/api/meet-ai/*/*/chunks") or (http.host eq "tuturuuu.com" and http.request.uri.path wildcard "/meet/api/meet-ai/*/*/chunks")) and http.request.method eq "POST" and starts_with(http.request.headers["content-type"][0], "multipart/form-data")
 ```
+
+Both hosts are required: signed-in users run Meet at `tuturuuu.com/meet`, so
+their chunks arrive under the `/meet` base path. The exception has no expiry
+clause. A `http.request.timestamp.sec` bound turns the exception off silently
+once it passes, and every chunk then fails with the Cloudflare block page while
+the room reports that audio could not be transcribed. After changing the rule,
+send a multipart WAV to each host's chunk path and confirm the Worker answers
+(an app `401` or `403`, not the block page).
 
 Keep the other managed rules active. The Worker still checks the signed actor,
 meeting ownership, same-origin request, byte limit, canonical WAV format, and
