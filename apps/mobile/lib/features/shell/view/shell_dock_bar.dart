@@ -355,6 +355,9 @@ class ShellDockSlotButton extends StatelessWidget {
                             duration: duration,
                             curve: ShellChromeStyle.dockCurve,
                             style: TextStyle(
+                              fontFamily: DefaultTextStyle.of(
+                                context,
+                              ).style.fontFamily,
                               fontSize: 10,
                               height: 13 / 10,
                               letterSpacing: -0.1,

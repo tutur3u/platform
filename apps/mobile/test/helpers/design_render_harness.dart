@@ -44,6 +44,8 @@ abstract final class DesignRender {
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
       'Nunito': 'assets/fonts/Nunito-Variable.ttf',
+      // Sorbet's overline and numeric roles use JetBrains Mono.
+      'JetBrainsMono': 'assets/fonts/JetBrainsMono-Variable.ttf',
       // Tabular figures (timers, durations) ask for the platform monospace.
       'monospace': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
