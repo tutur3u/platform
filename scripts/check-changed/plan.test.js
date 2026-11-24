@@ -280,6 +280,29 @@ test('path-gated guards cover i18n, migrations, docs and API routes', () => {
   }
 });
 
+test('docs changes check large deletions in the pushed commits', () => {
+  const docs = planChecks(
+    [{ status: 'D', file: 'apps/docs/build/old.mdx' }],
+    context()
+  );
+  const step = docs.steps.find((entry) => entry.id === 'docs-deletions');
+  assert.deepEqual(step.args, [
+    'scripts/check-docs-deletions.js',
+    '--base',
+    'abc123',
+  ]);
+  assert.ok(
+    !ids(planChecks(changed('apps/web/src/x.ts'), context())).includes(
+      'docs-deletions'
+    )
+  );
+  assert.ok(
+    !ids(
+      planChecks(changed('apps/docs/build/x.mdx'), context([], { base: null }))
+    ).includes('docs-deletions')
+  );
+});
+
 test('workflow edits run workflow policy tests with changed script tests', () => {
   const plan = planChecks(
     changed('.github/workflows/type-check.yaml', 'scripts/oxc.js'),

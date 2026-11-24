@@ -282,6 +282,15 @@ function planChecks(changes, context) {
       nodeStep('docs-audit', 'docs navigation audit', ['scripts/docs-audit.js'])
     );
   }
+  if (context.base && any(/^apps\/docs\//)) {
+    steps.push(
+      nodeStep('docs-deletions', 'large docs deletions are marked', [
+        'scripts/check-docs-deletions.js',
+        '--base',
+        context.base,
+      ])
+    );
+  }
 
   if (selected.has('sdk-portable')) {
     steps.push(

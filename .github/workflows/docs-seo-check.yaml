@@ -50,6 +50,22 @@ jobs:
         with:
           bun-version: 1.4.4
           cache-enabled: ${{ runner.environment != 'self-hosted' }}
+      - name: Require a marker for large docs deletions
+        if: github.event_name == 'push' && (needs.plan.result != 'success' || needs.plan.outputs.run != 'false')
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # The checkout is shallow; deepen it until the pushed range is local.
+          if [[ "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ && "$BEFORE_SHA" != 0000000000000000000000000000000000000000 ]] \
+            && git fetch --no-tags --quiet --deepen=200 origin "$AFTER_SHA" \
+            && git merge-base --is-ancestor "$BEFORE_SHA" "$AFTER_SHA"; then
+            node scripts/check-docs-deletions.js --range "$BEFORE_SHA..$AFTER_SHA"
+          else
+            echo "::warning title=Docs deletion guard::The pushed range is unavailable; checking only $AFTER_SHA."
+            node scripts/check-docs-deletions.js --commit "$AFTER_SHA"
+          fi
       - name: Install locked dependencies
         if: needs.plan.result != 'success' || needs.plan.outputs.run != 'false'
         env:
