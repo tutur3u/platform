@@ -67,7 +67,7 @@ test('source config preserves the schedule and job list with AI retention in dry
   });
   assert.deepEqual(config.worker.env.FORMS_UPLOAD_CLEANUP_MODE, {
     type: 'text',
-    value: 'delete',
+    value: 'off',
   });
   assert.deepEqual(config.worker.env.MEET_ATTENDANCE_ERASURE, {
     type: 'worker',

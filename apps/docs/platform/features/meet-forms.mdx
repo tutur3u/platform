@@ -55,6 +55,9 @@ deleted object cannot be written again. A slot that stops between steps
 leaves the rows claimed; the next claim takes them again, and both deletes
 repeat safely. A reservation that fails five times is no longer claimed.
 The job runs only while `FORMS_UPLOAD_CLEANUP_MODE` is exactly `delete`.
+Production ships it as `off`, which dispatches the slot and reports `ok`
+without any request, until hosted stop and billing evidence support a
+reviewed switch to `delete`.
 The Cron Control stop fence is checked before every claim and delete.
 
 Before enabling core Forms, apply the `meet_form_creation` migration and

@@ -376,7 +376,8 @@ in-slot retry; the claim counts one attempt per slot and stops at five.
 `forms-upload-cleanup.test.ts` dispatch cases count requests through an empty
 claim, the page bound, a stop before the storage delete and before the
 reservation delete, a restart, a refusal of either delete, and a timeout during
-either delete. Hosted stop and billing evidence are still outstanding.
+either delete. Hosted stop and billing evidence are still outstanding, so
+production runs the job with `FORMS_UPLOAD_CLEANUP_MODE` set to `off`.
 
 The daily `external-app-exchange-audit-retention` slot makes at most eight
 1,000-row purge RPCs and ten ledger operations (claim, eight fence checks,

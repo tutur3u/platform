@@ -56,7 +56,9 @@ export default defineConfig({
       // switch. Any other value (including unset or padded) means off.
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
       // Exactly 'delete' runs forms-upload-cleanup; any other value is off.
-      FORMS_UPLOAD_CLEANUP_MODE: bindings.text('delete'),
+      // 'off' until hosted stop and billing evidence exist for the job; the
+      // slot still dispatches and reports `ok` without any request.
+      FORMS_UPLOAD_CLEANUP_MODE: bindings.text('off'),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(
         'inventory-checkout-expiry'
       ),
