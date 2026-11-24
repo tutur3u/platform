@@ -120,7 +120,7 @@ ttr tasks import --from github --repo tutur3u/platform --board <board-id> \
 
 The CLI reads GitHub with `gh api graphql` and the caller's own `gh` login, 25
 issues per page, caches pages on disk for an hour (`--refresh` skips the cache)
-and backs off on rate limits. It never reads, stores or sends a token: only
+and backs off on rate limits. The cache directory is private (mode 0700, files 0600, written atomically) and a symlinked cache directory is refused. It never reads, stores or sends a token: only
 issue data goes to the Tasks API, in batches of at most 25 (`--batch-size` can
 lower that). `--input` accepts a saved GraphQL export instead of calling `gh`.
 `--since` keeps open issues and issues closed on or after the date. `--issues`
@@ -159,6 +159,15 @@ a non-zero exit code. `--dry-run` writes nothing, including the `github` label.
   relationships once both tasks exist; until then the result carries a
   `relationship_pending` warning and a later batch or re-run completes it.
 
+### What the API accepts
+
+The issue URL must be `https://github.com/<owner>/<repo>/issues/<n>` and match
+the declared `repo` and `number`. Comment URLs must be
+`.../issues/<n>#issuecomment-<id>` on the same issue, linked pull requests
+`.../pull/<n>`, linked commits `.../commit/<sha>`, and parent and sub-issue
+URLs issue URLs. Anything else fails validation, so a request cannot key an
+import on a URL that GitHub does not own.
+
 ### Rules for safe re-runs
 
 - The key is the external reference URL, never the task name. A task that
@@ -176,7 +185,10 @@ a non-zero exit code. `--dry-run` writes nothing, including the `github` label.
   import. An unchanged state never moves it.
 - `--refresh-content` (API `refresh_content: true`) opts in to overwriting the
   name and description with the GitHub text.
-- A task deleted in Tasks is not recreated; its result says `task_deleted`.
+- A task deleted in Tasks is not recreated; its result says `task_deleted`. A
+  reference whose task is no longer on a board of the workspace is skipped
+  with `task_outside_workspace`, and nothing is written for it. The check runs
+  again right before the writes.
 - Two concurrent imports of the same issue produce one task.
 
 ### Mapping file
