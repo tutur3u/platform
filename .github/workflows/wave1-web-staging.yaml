@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
-      - name: Refuse missing fences or unprotected staging environments
+      - name: Refuse missing fences, admission or main-only staging environments
         env:
           GITHUB_TOKEN: ${{ github.token }}
           WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}

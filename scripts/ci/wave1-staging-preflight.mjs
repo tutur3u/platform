@@ -88,7 +88,7 @@ if (
   preflight({ env: process.env, mode: process.argv[2], app: process.argv[3] })
     .then((names) =>
       console.log(
-        `Protected staging environments verified: ${names.join(', ')}`
+        `Main-only staging environments verified: ${names.join(', ')}`
       )
     )
     .catch(() => {
