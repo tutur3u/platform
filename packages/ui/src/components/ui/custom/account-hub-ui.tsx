@@ -92,7 +92,19 @@ export function AccountHubActionItems({
     <>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        {upgrade && (
+        {upgrade?.open && (
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => {
+              const openUpgrade = upgrade.open;
+              setTimeout(() => openUpgrade?.(), 0);
+            }}
+          >
+            <ArrowBigUpDash className="h-4 w-4 text-dynamic-purple" />
+            {upgrade.label}
+          </DropdownMenuItem>
+        )}
+        {upgrade && !upgrade.open && (
           <DropdownMenuItem asChild className="cursor-pointer">
             {upgrade.external || !Link ? (
               <a

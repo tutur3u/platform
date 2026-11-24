@@ -2,11 +2,13 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import { useUpgradeDialogUrlState } from '../../../hooks/use-upgrade-dialog-url-state';
 import { ReportProblemDialog } from '../report-problem-dialog';
 import {
   SatelliteFooterActions,
   type SatelliteFooterActionsProps,
 } from './satellite-footer-actions';
+import { UpgradeDialog } from './upgrade-dialog';
 export function SidebarFooterActions(
   props: Omit<
     SatelliteFooterActionsProps,
@@ -16,6 +18,8 @@ export function SidebarFooterActions(
   const t = useTranslations('common');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const openFeedback = useCallback(() => setFeedbackOpen(true), []);
+  const { openUpgrade } = useUpgradeDialogUrlState();
+  const onUpgrade = useCallback(() => openUpgrade('plans'), [openUpgrade]);
   return (
     <>
       <SatelliteFooterActions
@@ -23,8 +27,15 @@ export function SidebarFooterActions(
         labels={{ upgrade: t('upgrade'), feedback: t('feedback') }}
         discordHref={process.env.NEXT_PUBLIC_DISCORD_LINK}
         onFeedback={openFeedback}
+        onUpgrade={onUpgrade}
         LinkComponent={Link}
       />
+      {props.showUpgrade && (
+        <UpgradeDialog
+          billingFallbackHref={props.upgradeHref ?? `/${props.wsId}/billing`}
+          wsId={props.wsId}
+        />
+      )}
       <ReportProblemDialog
         open={feedbackOpen}
         onOpenChange={setFeedbackOpen}

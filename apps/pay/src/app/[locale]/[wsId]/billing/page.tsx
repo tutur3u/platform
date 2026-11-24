@@ -32,11 +32,14 @@ export const metadata: Metadata = {
 
 export default async function BillingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ wsId: string }>;
+  searchParams: Promise<{ plan?: string | string[] }>;
 }) {
   await connection();
   const { wsId: id } = await params;
+  const { plan } = await searchParams;
   const actor = await resolveSatellitePageActor(['pay', 'platform']);
   if (!actor) return notFound();
   const { admin: sbAdmin, user } = actor;
@@ -118,6 +121,7 @@ export default async function BillingPage({
         products={products}
         seatStatus={seatStatus}
         requiredSeats={requiredSeats}
+        openPlansOnLoad={Boolean(plan)}
       />
 
       <BillingDetailsCard wsId={wsId} />

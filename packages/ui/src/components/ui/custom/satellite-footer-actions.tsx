@@ -16,6 +16,8 @@ export interface SatelliteFooterActionsProps {
   showUpgrade: boolean;
   upgradeHref?: string;
   upgradeExternal?: boolean;
+  /** Opens the Upgrade dialog; without it the entry links to billing. */
+  onUpgrade?: () => void;
 }
 
 /**
@@ -32,6 +34,7 @@ export function SatelliteFooterActions({
   showUpgrade,
   upgradeHref,
   upgradeExternal = false,
+  onUpgrade,
 }: SatelliteFooterActionsProps) {
   const upgrade = useMemo(
     () =>
@@ -40,12 +43,14 @@ export function SatelliteFooterActions({
             label: labels.upgrade,
             href: upgradeHref ?? `/${wsId}/billing`,
             external: upgradeExternal,
+            open: onUpgrade,
             Link: LinkComponent,
           }
         : undefined,
     [
       LinkComponent,
       labels.upgrade,
+      onUpgrade,
       showUpgrade,
       upgradeExternal,
       upgradeHref,

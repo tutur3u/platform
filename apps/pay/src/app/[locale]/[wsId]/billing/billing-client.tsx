@@ -64,6 +64,8 @@ interface BillingClientProps {
   products: Product[];
   seatStatus?: SeatStatus;
   requiredSeats: number | null;
+  /** Open the plan list on load, as the Upgrade dialog's checkout handoff asks. */
+  openPlansOnLoad?: boolean;
 }
 
 function getSimplePlanName(name: string): string {
@@ -81,8 +83,9 @@ export function BillingClient({
   products,
   seatStatus,
   requiredSeats,
+  openPlansOnLoad = false,
 }: BillingClientProps) {
-  const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
+  const [showUpgradeOptions, setShowUpgradeOptions] = useState(openPlansOnLoad);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [showAdjustSeatsDialog, setShowAdjustSeatsDialog] = useState(false);
   const t = useTranslations('billing');

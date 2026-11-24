@@ -1787,6 +1787,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/billing/upgrade-options"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/calendar-settings"
     },
     {

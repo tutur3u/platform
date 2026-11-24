@@ -32,6 +32,8 @@ export interface AccountHubState {
     label: string;
     href: string;
     external: boolean;
+    /** Opens the Upgrade dialog instead of following `href`. */
+    open?: () => void;
     Link?: ComponentType<{
       href: string;
       className?: string;

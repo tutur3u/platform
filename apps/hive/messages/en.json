@@ -315,6 +315,7 @@
     "hide_workspace": "Hide workspace",
     "join_workspace": "Join Workspace",
     "loading": "Loading",
+    "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
     "open_sidebar": "Open sidebar",
     "picker_internal_meta": "Platform administration",
@@ -336,6 +337,7 @@
     "retry": "Retry",
     "search_workspace": "Search workspaces",
     "select_workspace": "Select workspace",
+    "settings": "Settings",
     "switch_workspace": "Switch workspace"
   },
   "dashboard": {
@@ -521,7 +523,11 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
+    "back_to_app": "Back to app",
     "keyboard_shortcuts": {
       "calendar_agenda": "Agenda view",
       "calendar_day": "Day view",
@@ -545,11 +551,13 @@
       "settings_dialog": "Settings dialog",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
+    "manage_settings": "Manage your {label} settings",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "sidebar_minimal": "Minimal"
-    }
+    },
+    "search_settings_placeholder": "Search settings..."
   },
   "studio": {
     "agent": {

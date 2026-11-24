@@ -8,7 +8,10 @@
     "owner": "web-next",
     "source": "apps/web/src/app/sw.ts",
     "disposition": "Next-fallback",
-    "bypassPrefixes": ["/meet", "/mail"]
+    "bypassPrefixes": [
+      "/meet",
+      "/mail"
+    ]
   },
   "crons": [],
   "summary": {
@@ -23,7 +26,10 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 888 }
+    "dispositions": {
+      "native-Start": 12,
+      "Next-fallback": 888
+    }
   },
   "routes": [
     {

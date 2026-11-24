@@ -48,3 +48,32 @@ product rules for its entries.
   `public-profile-menu-item.test.tsx` in `packages/ui`;
   `public-profile-panel.test.tsx` in `packages/satellite`; the `/u/[username]`
   page test in `apps/web`.
+
+## Upgrade
+
+- **Scope**: the Upgrade entry of the account menu in every app that ships the
+  shared sidebar (`SidebarFooterActions`). It is shown only while the workspace
+  is on the Free tier.
+- **Default**: selecting Upgrade opens the Upgrade dialog on the current page
+  instead of navigating to billing. The dialog reuses the settings dialog shell
+  and has three tabs: Plans (monthly or yearly cards with a checkout button),
+  Compare plans (a table of price, seats and inclusions) and Current plan.
+  Its state is in the URL (`?upgradeDialog=open&upgradeTab=plans|compare|current`);
+  opening pushes a history entry so Back closes it, and tab changes and closing
+  replace it.
+- **Data**: `GET /api/v1/workspaces/[wsId]/billing/upgrade-options` returns the
+  self-serve plans (one Free plan and the publicly listed Plus and Pro seat
+  products), the workspace's active subscription and the pay billing URL. It
+  accepts web and satellite app sessions and requires `manage_subscription`;
+  other members see a permission message.
+- **Checkout**: the dialog does not create checkouts. A plan's button opens
+  `<pay>/<wsId>/billing?plan=<productId>` in a new tab, where the pay billing
+  page opens its plan list and runs the existing Polar checkout and guarded
+  plan-change flows. "View full billing" opens the same page without the hint.
+- **Exceptions**: workspaces on a paid tier do not see the entry. Free is never
+  offered a checkout button, and plans below the current tier show "Manage in
+  billing" instead.
+- **Regression coverage**: `upgrade-dialog.test.tsx` (menu entry, plan list,
+  current plan marker, checkout handoff, comparison table headers, permission
+  state), the route test beside `upgrade-options/route.ts`, and
+  `packages/internal-api/src/upgrade-options.test.ts`.

@@ -14055,7 +14055,8 @@
     "settings_description": "Choose optional uses of browser storage. You can return here at any time to change or withdraw your choice.",
     "storage_unavailable": "Browser storage is unavailable. Optional collection stays off. Enable browser storage if you want your choice to be remembered.",
     "sync_failed": "Your choice is saved in this browser, but we could not update your account yet. We will try again on your next visit, or you can save it again from Privacy settings.",
-    "title": "Your privacy choices"
+    "title": "Your privacy choices",
+    "analytics_disabled": "Analytics is currently disabled. Your preference does not activate a provider."
   },
   "product-data-table": {
     "category": "Category",
@@ -28123,5 +28124,48 @@
       "link_removed": "removed the link"
     },
     "unknown_user": "Unknown user"
+  },
+  "upgrade_dialog": {
+    "title": "Upgrade",
+    "search": "Search",
+    "description": "Compare plans and upgrade this workspace.",
+    "tab_plans": "Plans",
+    "plans_description": "Choose a plan for this workspace.",
+    "tab_compare": "Compare plans",
+    "compare_description": "See what each plan includes side by side.",
+    "tab_current": "Current plan",
+    "current_description": "The plan this workspace is on today.",
+    "billing_cycle": "Billing cycle",
+    "cycle_month": "Monthly",
+    "cycle_year": "Yearly",
+    "free": "Free",
+    "price_month": "{price} per month",
+    "price_year": "{price} per year",
+    "price_per_seat_month": "{price} per seat per month",
+    "price_per_seat_year": "{price} per seat per year",
+    "seats_range": "{min} to {max} seats",
+    "seats_from": "From {min} seats",
+    "current_badge": "Current plan",
+    "your_plan": "Your current plan",
+    "manage_in_billing": "Manage in billing",
+    "continue_to_checkout": "Continue to checkout",
+    "checkout_note": "Checkout opens on the billing page, where you confirm seats and payment.",
+    "view_billing": "View full billing",
+    "compare_feature": "Feature",
+    "compare_price": "Price",
+    "compare_seats": "Seats",
+    "compare_includes": "Includes",
+    "not_applicable": "Not applicable",
+    "free_plan_name": "Free",
+    "free_plan_body": "This workspace is on the Free plan. Choose a paid plan to unlock more.",
+    "current_cycle": "Billing cycle",
+    "current_renews": "Renews on",
+    "current_ends": "Ends on",
+    "status_active": "Active",
+    "status_canceling": "Ends at period end",
+    "loading": "Loading plans",
+    "load_error": "Plans could not be loaded.",
+    "retry": "Retry",
+    "forbidden": "Only members who can manage subscriptions can upgrade this workspace."
   }
 }

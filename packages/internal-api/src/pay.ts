@@ -5,6 +5,8 @@ import {
   withPayApiBaseUrl,
 } from './client';
 
+export * from './upgrade-options';
+
 export type WorkspaceBillingSummary = {
   isPersonalWorkspace: boolean;
   subscription: null | {
