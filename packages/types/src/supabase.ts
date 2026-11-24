@@ -7304,6 +7304,145 @@ export type Database = {
           },
         ];
       };
+      feature_flag_audit: {
+        Row: {
+          actor_id: string;
+          client: string;
+          environment: string;
+          flag_key: string;
+          id: string;
+          new_revision: number;
+          new_rule: Json | null;
+          occurred_at: string;
+          old_revision: number;
+          old_rule: Json | null;
+          operation_id: string;
+          reason: string;
+          scope: string;
+          subject_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          client: string;
+          environment: string;
+          flag_key: string;
+          id?: string;
+          new_revision: number;
+          new_rule?: Json | null;
+          occurred_at?: string;
+          old_revision: number;
+          old_rule?: Json | null;
+          operation_id: string;
+          reason: string;
+          scope: string;
+          subject_id?: string | null;
+        };
+        Update: {
+          actor_id?: string;
+          client?: string;
+          environment?: string;
+          flag_key?: string;
+          id?: string;
+          new_revision?: number;
+          new_rule?: Json | null;
+          occurred_at?: string;
+          old_revision?: number;
+          old_rule?: Json | null;
+          operation_id?: string;
+          reason?: string;
+          scope?: string;
+          subject_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'feature_flag_audit_flag_key_fkey';
+            columns: ['flag_key'];
+            isOneToOne: false;
+            referencedRelation: 'feature_flag_definitions';
+            referencedColumns: ['flag_key'];
+          },
+        ];
+      };
+      feature_flag_definitions: {
+        Row: {
+          controllers: NonNullable<Json>;
+          delegate: string | null;
+          flag_key: string;
+          kind: string;
+          scopes: string[];
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          controllers: NonNullable<Json>;
+          delegate?: string | null;
+          flag_key: string;
+          kind: string;
+          scopes: string[];
+          updated_at?: string;
+        };
+        Update: {
+          controllers?: NonNullable<Json>;
+          delegate?: string | null;
+          flag_key?: string;
+          kind?: string;
+          scopes?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      feature_flag_rules: {
+        Row: {
+          allow_user_ids: string[] | null;
+          allow_workspace_ids: string[] | null;
+          environment: string;
+          flag_key: string;
+          mode: string | null;
+          percentage: number | null;
+          revision: number;
+          scope: string;
+          subject_id: string | null;
+          updated_at: string;
+          updated_by: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          allow_user_ids?: string[] | null;
+          allow_workspace_ids?: string[] | null;
+          environment: string;
+          flag_key: string;
+          mode?: string | null;
+          percentage?: number | null;
+          revision: number;
+          scope: string;
+          subject_id?: string | null;
+          updated_at?: string;
+          updated_by: string;
+        };
+        Update: {
+          allow_user_ids?: string[] | null;
+          allow_workspace_ids?: string[] | null;
+          environment?: string;
+          flag_key?: string;
+          mode?: string | null;
+          percentage?: number | null;
+          revision?: number;
+          scope?: string;
+          subject_id?: string | null;
+          updated_at?: string;
+          updated_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'feature_flag_rules_flag_key_fkey';
+            columns: ['flag_key'];
+            isOneToOne: false;
+            referencedRelation: 'feature_flag_definitions';
+            referencedColumns: ['flag_key'];
+          },
+        ];
+      };
       field_types: {
         Row: {
           enabled: boolean;
@@ -15998,6 +16137,64 @@ export type Database = {
         };
         Relationships: [];
       };
+      meet_consent_proofs: {
+        Row: {
+          capabilities: string[] | null;
+          choice: string;
+          decided_at: string;
+          erase_reason: string;
+          erased_at: string;
+          id: string;
+          kind: string;
+          meeting_id: string | null;
+          notice_version: string;
+          participant_ref: string | null;
+          purge_after: string;
+          revision: number | null;
+          room_seq: number | null;
+          text_hash: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          capabilities?: string[] | null;
+          choice: string;
+          decided_at: string;
+          erase_reason: string;
+          erased_at?: string;
+          id?: string;
+          kind: string;
+          meeting_id?: string | null;
+          notice_version: string;
+          participant_ref?: string | null;
+          purge_after?: string;
+          revision?: number | null;
+          room_seq?: number | null;
+          text_hash?: string | null;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Update: {
+          capabilities?: string[] | null;
+          choice?: string;
+          decided_at?: string;
+          erase_reason?: string;
+          erased_at?: string;
+          id?: string;
+          kind?: string;
+          meeting_id?: string | null;
+          notice_version?: string;
+          participant_ref?: string | null;
+          purge_after?: string;
+          revision?: number | null;
+          room_seq?: number | null;
+          text_hash?: string | null;
+          user_id?: string | null;
+          ws_id?: string | null;
+        };
+        Relationships: [];
+      };
       meet_form_creation_intents: {
         Row: {
           actor_id: string;
@@ -16052,6 +16249,43 @@ export type Database = {
             referencedColumns: ['user_id'];
           },
         ];
+      };
+      meet_mira_evidence_erasures: {
+        Row: {
+          acceptances: number;
+          choices: number;
+          consents: number;
+          erased_at: string;
+          id: string;
+          meeting_id: string | null;
+          reason: string;
+          scope: string;
+          ws_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          acceptances: number;
+          choices: number;
+          consents?: number;
+          erased_at?: string;
+          id?: string;
+          meeting_id?: string | null;
+          reason: string;
+          scope: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          acceptances?: number;
+          choices?: number;
+          consents?: number;
+          erased_at?: string;
+          id?: string;
+          meeting_id?: string | null;
+          reason?: string;
+          scope?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [];
       };
       meet_mira_host_acceptances: {
         Row: {
@@ -27624,6 +27858,151 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_secret_backfill_status: {
+        Row: {
+          attempts: number;
+          last_error_class: string | null;
+          needs_review_at: string | null;
+          secret_id: string;
+          source_rev: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          last_error_class?: string | null;
+          needs_review_at?: string | null;
+          secret_id: string;
+          source_rev: number;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          last_error_class?: string | null;
+          needs_review_at?: string | null;
+          secret_id?: string;
+          source_rev?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      workspace_secret_name_tiers: {
+        Row: {
+          client_visible: boolean;
+          kind: string;
+          match: string;
+          priority: number;
+          tier: string;
+          value_type: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          client_visible: boolean;
+          kind: string;
+          match: string;
+          priority: number;
+          tier: string;
+          value_type: string;
+        };
+        Update: {
+          client_visible?: boolean;
+          kind?: string;
+          match?: string;
+          priority?: number;
+          tier?: string;
+          value_type?: string;
+        };
+        Relationships: [];
+      };
+      workspace_secret_payloads: {
+        Row: {
+          ciphertext: string | null;
+          kek_version: number | null;
+          last4: string | null;
+          put_request_id: string | null;
+          secret_id: string;
+          source_rev: number;
+          tier: string;
+          updated_at: string;
+          vault_secret_id: string | null;
+          verified_rev: number | null;
+          wrapped_dek: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ciphertext?: string | null;
+          kek_version?: number | null;
+          last4?: string | null;
+          put_request_id?: string | null;
+          secret_id: string;
+          source_rev: number;
+          tier: string;
+          updated_at?: string;
+          vault_secret_id?: string | null;
+          verified_rev?: number | null;
+          wrapped_dek?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          ciphertext?: string | null;
+          kek_version?: number | null;
+          last4?: string | null;
+          put_request_id?: string | null;
+          secret_id?: string;
+          source_rev?: number;
+          tier?: string;
+          updated_at?: string;
+          vault_secret_id?: string | null;
+          verified_rev?: number | null;
+          wrapped_dek?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_secrets_migration_state: {
+        Row: {
+          dual_since: string | null;
+          enforce_credential_encryption: boolean;
+          enforcement_changed_at: string | null;
+          enforcement_changed_by: string | null;
+          id: boolean;
+          last_mismatch_at: string | null;
+          mismatches: number;
+          null_approved_at: string | null;
+          null_approved_by: string | null;
+          plaintext_nulled_at: string | null;
+          read_mode: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          dual_since?: string | null;
+          enforce_credential_encryption?: boolean;
+          enforcement_changed_at?: string | null;
+          enforcement_changed_by?: string | null;
+          id?: boolean;
+          last_mismatch_at?: string | null;
+          mismatches?: number;
+          null_approved_at?: string | null;
+          null_approved_by?: string | null;
+          plaintext_nulled_at?: string | null;
+          read_mode?: string;
+        };
+        Update: {
+          dual_since?: string | null;
+          enforce_credential_encryption?: boolean;
+          enforcement_changed_at?: string | null;
+          enforcement_changed_by?: string | null;
+          id?: boolean;
+          last_mismatch_at?: string | null;
+          mismatches?: number;
+          null_approved_at?: string | null;
+          null_approved_by?: string | null;
+          plaintext_nulled_at?: string | null;
+          read_mode?: string;
+        };
+        Relationships: [];
+      };
       workspace_subscription_errors: {
         Row: {
           created_at: string;
@@ -30864,6 +31243,10 @@ export type Database = {
         Args: { p_domain: string };
         Returns: undefined;
       };
+      delete_meeting_erasing_mira: {
+        Args: { p_meeting_id: string; p_ws_id: string };
+        Returns: string;
+      };
       delete_meeting_with_attendance_intent: {
         Args: { p_meeting_id: string; p_plan: Json; p_ws_id: string };
         Returns: string;
@@ -30875,6 +31258,10 @@ export type Database = {
           p_plan: Json;
           p_ws_id: string;
         };
+        Returns: string;
+      };
+      delete_workspace_erasing_mira: {
+        Args: { p_only_non_personal?: boolean; p_ws_id: string };
         Returns: string;
       };
       delete_workspace_with_attendance_intent: {
@@ -31340,6 +31727,10 @@ export type Database = {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
       };
+      erase_meet_mira_evidence: {
+        Args: { p_meeting_id: string; p_reason: string; p_ws_id: string };
+        Returns: Json;
+      };
       evaluate_observability_slos: { Args: { p_limit: number }; Returns: Json };
       expire_ai_live_sessions: {
         Args: { p_balance_id: string };
@@ -31640,6 +32031,74 @@ export type Database = {
       };
       external_project_set_cms_site_template: {
         Args: { p_actor_user_id: string; p_template: Json; p_ws_id: string };
+        Returns: Json;
+      };
+      feature_flag_definition_error: {
+        Args: {
+          p_controllers: Json;
+          p_delegate: string;
+          p_flag_key: string;
+          p_kind: string;
+          p_scopes: string[];
+        };
+        Returns: string;
+      };
+      feature_flag_mutate_rule: {
+        Args: {
+          p_actor: string;
+          p_allow_user_ids: string[];
+          p_allow_workspace_ids: string[];
+          p_client: string;
+          p_environment: string;
+          p_expected_revision: number;
+          p_flag_key: string;
+          p_mode: string;
+          p_operation_id: string;
+          p_percentage: number;
+          p_reason: string;
+          p_scope: string;
+          p_subject_id: string;
+        };
+        Returns: Json;
+      };
+      feature_flag_read_audit: {
+        Args: { p_actor: string; p_before?: string; p_limit?: number };
+        Returns: Json;
+      };
+      feature_flag_read_rules: {
+        Args: { p_actor: string; p_environment: string; p_flag_key: string };
+        Returns: Json;
+      };
+      feature_flag_read_snapshot: {
+        Args: { p_environment: string };
+        Returns: Json;
+      };
+      feature_flag_require_root: {
+        Args: { p_actor: string; p_permissions: string[] };
+        Returns: undefined;
+      };
+      feature_flag_rule_json: {
+        Args: {
+          p_allow_user_ids: string[];
+          p_allow_workspace_ids: string[];
+          p_mode: string;
+          p_percentage: number;
+        };
+        Returns: Json;
+      };
+      feature_flag_rule_shape_error: {
+        Args: {
+          p_allow_user_ids: string[];
+          p_allow_workspace_ids: string[];
+          p_mode: string;
+          p_percentage: number;
+          p_scope: string;
+          p_subject_id: string;
+        };
+        Returns: string;
+      };
+      feature_flag_sync_definitions: {
+        Args: { p_definitions: Json };
         Returns: Json;
       };
       fee_lock_baseline: {
@@ -36121,6 +36580,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      set_workspace_secrets_credential_enforcement: {
+        Args: { p_changed_by: string; p_enabled: boolean };
+        Returns: undefined;
+      };
       settle_ai_live_session: {
         Args: {
           p_close?: boolean;
@@ -36301,6 +36764,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      sweep_meet_consent_proof_accounts: {
+        Args: { p_limit?: number };
+        Returns: number;
       };
       sync_credit_pack_purchase: {
         Args: {
@@ -37419,6 +37886,19 @@ export type Database = {
         Args: { p_role_id: string };
         Returns: boolean;
       };
+      workspace_secret_config_row_value: {
+        Args: { p_secret_id: string };
+        Returns: string;
+      };
+      workspace_secret_config_value: {
+        Args: { p_name: string; p_ws_id: string };
+        Returns: string;
+      };
+      workspace_secret_enabled: {
+        Args: { p_name: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      workspace_secret_name_tier: { Args: { p_name: string }; Returns: string };
       workspace_user_groups: {
         Args: { '': Database['private']['Tables']['user_group_posts']['Row'] };
         Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
@@ -59042,6 +59522,7 @@ export type Database = {
           name: string;
           notes: string | null;
           starting_date: string | null;
+          updated_at: string | null;
           ws_id: string;
         };
         ComputedFields: never;
@@ -59058,6 +59539,7 @@ export type Database = {
           name: string;
           notes?: string | null;
           starting_date?: string | null;
+          updated_at?: string | null;
           ws_id: string;
         };
         Update: {
@@ -59073,6 +59555,7 @@ export type Database = {
           name?: string;
           notes?: string | null;
           starting_date?: string | null;
+          updated_at?: string | null;
           ws_id?: string;
         };
         Relationships: [
@@ -59125,6 +59608,7 @@ export type Database = {
           created_at: string | null;
           group_id: string;
           role: string | null;
+          updated_at: string | null;
           user_id: string;
         };
         ComputedFields: never;
@@ -59132,12 +59616,14 @@ export type Database = {
           created_at?: string | null;
           group_id: string;
           role?: string | null;
+          updated_at?: string | null;
           user_id: string;
         };
         Update: {
           created_at?: string | null;
           group_id?: string;
           role?: string | null;
+          updated_at?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -64585,6 +65071,18 @@ export type Database = {
         Args: { ws_id: string };
         Returns: number;
       };
+      get_workspace_secret_credential: {
+        Args: { p_name: string; p_ws_id: string };
+        Returns: {
+          ciphertext: string;
+          kek_version: number;
+          legacy_value: string;
+          name: string;
+          secret_id: string;
+          value_rev: number;
+          wrapped_dek: string;
+        }[];
+      };
       get_workspace_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -65072,6 +65570,13 @@ export type Database = {
           trust_multiplier: number;
         }[];
       };
+      list_workspace_secret_config: {
+        Args: { p_ws_id: string };
+        Returns: {
+          name: string;
+          value: string;
+        }[];
+      };
       list_workspace_user_audit_bucket_counts: {
         Args: {
           p_actor_query?: string;
@@ -65402,6 +65907,32 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      put_workspace_secret_config: {
+        Args: { p_name: string; p_value: string; p_ws_id: string };
+        Returns: {
+          secret_id: string;
+          status: string;
+          value_rev: number;
+        }[];
+      };
+      put_workspace_secret_credential: {
+        Args: {
+          p_ciphertext: string;
+          p_expected_rev: number;
+          p_kek_version: number;
+          p_last4: string;
+          p_name: string;
+          p_request_id: string;
+          p_secret_id: string;
+          p_wrapped_dek: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          secret_id: string;
+          status: string;
+          value_rev: number;
+        }[];
       };
       quarantine_calendar_auth_token: {
         Args: {
@@ -66603,6 +67134,10 @@ export type Database = {
       workspace_has_available_seats: {
         Args: { target_ws_id: string };
         Returns: boolean;
+      };
+      workspace_secret_credential_status: {
+        Args: { p_secret_id: string; p_ws_id: string };
+        Returns: string;
       };
       workspace_usage_summary: {
         Args: { p_ws: string };
@@ -68762,7 +69297,8 @@ export type Database = {
         | 'manage_workspace_domains'
         | 'manage_qa_test_users'
         | 'operate_mira_channels'
-        | 'manage_courses';
+        | 'manage_courses'
+        | 'manage_feature_flags';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -71738,6 +72274,7 @@ export const Constants = {
         'manage_qa_test_users',
         'operate_mira_channels',
         'manage_courses',
+        'manage_feature_flags',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

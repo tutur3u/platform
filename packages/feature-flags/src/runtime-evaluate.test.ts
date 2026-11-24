@@ -176,17 +176,29 @@ describe('evaluateRuntimeFlag', () => {
     ).toMatchObject({ enabled: false, source: 'platform' });
   });
 
-  it('lets a workspace rule override the platform rule', () => {
-    const decision = evaluateRuntimeFlag({
-      context: member,
-      flag: runtimeFlag(),
-      rules: [
-        rule({ mode: 'off' }),
-        rule({ scope: 'workspace', subjectId: WS, mode: 'on' }),
-        rule({ scope: 'workspace', subjectId: OTHER_WS, mode: 'off' }),
-      ],
-    });
-    expect(decision).toMatchObject({ enabled: true, source: 'workspace' });
+  it('bounds a workspace rule by the platform rule', () => {
+    const flag = runtimeFlag();
+    expect(
+      evaluateRuntimeFlag({
+        context: member,
+        flag,
+        rules: [
+          rule({ mode: 'off' }),
+          rule({ scope: 'workspace', subjectId: WS, mode: 'on' }),
+          rule({ scope: 'workspace', subjectId: OTHER_WS, mode: 'off' }),
+        ],
+      })
+    ).toMatchObject({ enabled: false, source: 'platform' });
+    expect(
+      evaluateRuntimeFlag({
+        context: member,
+        flag,
+        rules: [
+          rule({ mode: 'on' }),
+          rule({ scope: 'workspace', subjectId: WS, mode: 'off' }),
+        ],
+      })
+    ).toMatchObject({ enabled: false, source: 'workspace' });
   });
 
   it('applies a platform-controlled user rule above the workspace rule', () => {
@@ -290,6 +302,21 @@ describe('evaluateRuntimeFlag', () => {
     ['a platform rule with a subject', { scope: 'platform', subjectId: WS }],
     ['a staff user rule', { scope: 'user', subjectId: USER, mode: 'staff' }],
     ['an out-of-range rollout', { mode: 'rollout', percentage: 101 }],
+    ['a rollout without a percentage', { mode: 'rollout' }],
+    ['a percentage outside rollout', { mode: 'on', percentage: 50 }],
+    ['an allow-list outside rollout', { mode: 'staff', allowUserIds: [USER] }],
+    [
+      'an oversized allow-list',
+      {
+        mode: 'rollout',
+        percentage: 0,
+        allowUserIds: Array.from({ length: 501 }, () => USER),
+      },
+    ],
+    [
+      'a non-UUID workspace subject',
+      { scope: 'workspace', subjectId: 'workspace-1' },
+    ],
     ['an unknown mode', { mode: 'maybe' as never }],
     [
       'a string allow-list',
@@ -348,13 +375,6 @@ describe('evaluateRuntimeFlag', () => {
         rules: [rule({ mode: 'off' }), optIn],
       })
     ).toMatchObject({ enabled: false, source: 'platform' });
-    expect(
-      evaluateRuntimeFlag({
-        context: member,
-        flag,
-        rules: [rule({ mode: 'staff' }), optIn],
-      })
-    ).toMatchObject({ enabled: true, source: 'workspace' });
   });
 
   it('uses the env fallback with no snapshot only until a platform rule exists', () => {
@@ -401,7 +421,9 @@ describe('evaluateRuntimeFlag', () => {
   it('fails closed on a malformed snapshot', () => {
     for (const rules of [
       'on' as unknown as RuntimeRule[],
+      undefined as unknown as RuntimeRule[],
       [null as unknown as RuntimeRule],
+      [rule({}), 'on' as unknown as RuntimeRule],
     ]) {
       expect(
         evaluateRuntimeFlag({

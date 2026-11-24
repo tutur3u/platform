@@ -4,6 +4,9 @@
 // A `runtime` block declares how a store-backed flag may be set: which rule
 // scopes exist, who controls each scope, and the legacy environment variable
 // that stays a read-only fallback while no stored rule exists.
+// `delegate: 'workspace'` lets a workspace rule enable the flag on its own
+// while the platform rule is `on` or absent; without it a workspace rule only
+// narrows the platform decision.
 
 export const RUNTIME_RULE_SCOPES = Object.freeze([
   'platform',
@@ -11,6 +14,7 @@ export const RUNTIME_RULE_SCOPES = Object.freeze([
   'user',
 ]);
 export const RUNTIME_VALUE_TYPES = Object.freeze(['boolean']);
+export const RUNTIME_DELEGATES = Object.freeze(['workspace']);
 /**
  * `platform-admin`: root-workspace flag managers only. `workspace-admin`:
  * the workspace's own settings managers. `self`: the signed-in user, who may
@@ -38,6 +42,7 @@ export function validateRuntimeDefinition(runtime) {
     'controllers',
     'envFallback',
     'clientExposed',
+    'delegate',
   ]);
   for (const field of Object.keys(runtime)) {
     if (!known.has(field)) errors.push(`runtime.${field} is not a known field`);
@@ -82,6 +87,13 @@ export function validateRuntimeDefinition(runtime) {
       !ENV_NAME.test(runtime.envFallback))
   ) {
     errors.push('runtime.envFallback must be an env var name or null');
+  }
+  if (Object.hasOwn(runtime, 'delegate')) {
+    if (!RUNTIME_DELEGATES.includes(runtime.delegate)) {
+      errors.push('runtime.delegate must be workspace when set');
+    } else if (!Array.isArray(scopes) || !scopes.includes('workspace')) {
+      errors.push('runtime.delegate requires the workspace scope');
+    }
   }
   if (typeof runtime.clientExposed !== 'boolean') {
     errors.push('runtime.clientExposed must be a boolean');

@@ -87,6 +87,7 @@ A `runtime` entry declares a `runtime` block next to its lifecycle metadata:
 | `controllers` | Who may set each scope. `platform` is always `platform-admin`. `workspace` is `platform-admin` (entitlements, rollouts) or `workspace-admin`. `user` is `platform-admin` (per-person overrides) or `self`. |
 | `envFallback` | Legacy environment variable read only while no platform rule is stored, or `null`. |
 | `clientExposed` | Whether the evaluated boolean may reach a browser or app client. |
+| `delegate` | Optional. `workspace` lets a workspace rule enable the flag on its own while the platform rule is `on` or absent. Requires the `workspace` scope. |
 
 Runtime flags use the `global` scope and default to `false` in every
 environment; validation rejects anything else. Every new feature that ships
@@ -95,42 +96,112 @@ dark registers one, so production can carry the code with the feature off.
 `evaluateRuntimeFlag({ flag, context, rules, envValue })` is pure. The adapter
 passes the verified actor (`userId`, `workspaceId`, `isStaff` from the server's
 verified identity), the stored rules for the flag (or `null` when no snapshot is
-available) and the raw environment value. Precedence, first match wins:
+available) and the raw environment value. Only `null` means "no snapshot": any
+other non-list value, including `undefined`, and any list holding a non-object
+entry is a malformed snapshot and turns every flag off.
+
+The platform rule is a **ceiling**. Precedence:
 
 1. A malformed rule, or two rules for the same scope and subject, turns the
    flag off for everyone (`invalid-rules`). Rules for other flags are ignored.
-2. A platform `off` rule on a `kill-switch` flag turns it off.
-3. A user rule, when `controllers.user` is `platform-admin` (`on` or `off`).
-4. The workspace rule for the actor's workspace. When `controllers.workspace`
-   is `workspace-admin`, a platform `off` rule still wins over it; any other
-   platform rule (including `staff` or a 0% rollout) does not.
-5. The platform rule.
-6. The environment fallback, only while no platform rule is stored; only the
-   exact string `true` enables it. It also applies when the snapshot is `null`.
-7. The catalog default, which is off.
+2. A platform `off` rule on a `kill-switch` flag turns it off (`kill-switch`).
+3. While the platform rule is `off`, `staff` or `rollout`, a workspace or user
+   rule can only narrow it: the result is the override's decision AND the
+   platform decision. A workspace `on` under a platform `staff` rule is
+   therefore staff-only.
+4. One override decides inside that ceiling: a user rule for the actor when
+   `controllers.user` is `platform-admin`, otherwise the workspace rule for the
+   actor's workspace.
+   - While the platform rule is `on` or absent, a `platform-admin` user rule
+     decides alone (`on` or `off`).
+   - A workspace rule decides alone only when the flag declares
+     `delegate: 'workspace'` and the platform rule is `on` or absent. Without
+     the delegate it narrows the environment fallback or the catalog default,
+     so it cannot enable a flag that has no platform rule.
+5. Without an override: the platform rule, then the environment fallback (only
+   while no platform rule is stored; only the exact string `true` enables it,
+   and it also applies when the snapshot is `null`), then the catalog default,
+   which is off.
+
+A `self` user rule can only turn an enabled result off; a user never grants a
+feature to themselves. Per-person access beyond a platform `staff` or `rollout`
+rule goes through that platform rule (`staff` mode or its allow-lists), not a
+user rule.
 
 Rule modes are `on`, `off`, `staff` (verified staff only) and `rollout`
 (allow-listed workspaces or users, then a deterministic percentage bucket of
-flag, user and workspace, so one user can land differently per workspace). A
-`self` user rule can only turn an enabled result off; a user never grants a
-feature to themselves. Each decision carries a `trace` of the steps taken.
+flag, user and workspace, so one user can land differently per workspace). Each
+decision carries a `trace` of the steps taken.
+
+Rule shape is shared by `ruleShapeError` in
+`packages/feature-flags/src/rule-validation.ts`, the evaluator and the rule
+store: a platform rule has a null subject and other scopes a UUID subject; a
+user rule is `on` or `off`; a `rollout` rule has an integer percentage 0 to 100
+and other modes none; allow-lists appear only on `rollout`, with at most 500
+UUIDs each. `ruleMutationError` adds the write checks (operation id,
+environment, reason, client, expected revision, and `self` rules limited to
+`off` or unset) in the order the database applies them.
 
 Cut a flag over to the store in two releases: store a platform rule equal to the
 current environment value, then remove the environment variable and set
 `envFallback` to `null`. The fallback still applies while the snapshot is
 unavailable, so a stale environment variable must not outlive the cutover.
-Adapters keep serving the last good snapshot instead of passing `null` once a
-flag has a stored platform rule, and the write path validates rules with the
-same shape rules, because one malformed or duplicate rule turns the flag off
-for everyone.
+Requirements, because one malformed or duplicate rule turns the flag off for
+everyone:
+
+- Adapters must keep serving the last good snapshot instead of passing `null`
+  once a flag has a stored platform rule.
+- The write path must validate every rule with `ruleMutationError` before it
+  calls the store, which rejects the same input again.
+
+### Rule store
+
+Migration `20261125030000_feature_flag_rules.sql` keeps runtime rules in the
+`private` schema, with no client table access:
+
+| Object | Purpose |
+| --- | --- |
+| `feature_flag_definitions` | The runtime block of each catalog runtime flag (`scopes`, `controllers`, `kind`, `delegate`). |
+| `feature_flag_rules` | One rule per flag, scope, subject and environment (`development` or `production`; there is no staging store). A null `mode` is an unset rule that keeps its revision. |
+| `feature_flag_audit` | Append-only receipt per write: operation id, actor, old and new rule, old and new revision, `reason` (1 to 500 characters) and `client` (`admin-ui`, `workspace-ui`, `ttr`, `migration`). |
+
+The rule table's CHECK calls the same SQL shape function as the mutate RPC.
+Triggers reject deletes, truncation, audit updates, and any write outside the
+RPC entrypoints. Every function pins `search_path = pg_catalog, pg_temp`, and
+only `service_role` may execute the RPCs:
+
+- `feature_flag_sync_definitions(p_definitions)` upserts the deployed catalog's
+  `runtimeDefinitionRows(featureFlagCatalog.flags)`. It refuses malformed or
+  duplicate definitions and refuses to drop a scope that still holds a live
+  rule; unset those rules first.
+- `feature_flag_mutate_rule(...)` validates the write, authorizes it by the
+  scope's controller, compares `p_expected_revision` (0 for a rule that has
+  never existed), replays a known `p_operation_id`, and writes the rule and its
+  audit row in one transaction. `platform-admin` requires the root permission
+  `manage_feature_flags`; `workspace-admin` requires `manage_workspace_settings`
+  in the subject workspace; `self` requires the actor to be the subject, and
+  the mode may only be `off` or null. A null `p_mode` unsets the rule.
+- `feature_flag_read_snapshot(p_environment)` returns the live rules for one
+  environment with a `version` digest for snapshot caches.
+- `feature_flag_read_rules(p_actor, p_flag_key, p_environment)` and
+  `feature_flag_read_audit(p_actor, p_limit, p_before)` need root
+  `view_infrastructure` or `manage_feature_flags`.
+
+Migration `20261125030100_manage_feature_flags_permission.sql` adds the
+`manage_feature_flags` permission, listed in the root-only Infrastructure
+permission group. Regression coverage is in
+`packages/feature-flags/src/rule-store-contract.test.ts`, which binds each shape
+case to the same named case in
+`apps/database/supabase/tests/feature-flag-rule-store.sql`.
+
 Dependencies between flags stay with the caller: for example
 `MEET_FORMS_EXTENDED_ENABLED` also requires `MEET_FORMS_ENABLED`. Runtime
 `kill-switch` flags default off like every runtime flag, so they guard features
 that ship dark. The Infrastructure dashboard lists runtime entries read-only
 until the rule store accepts them.
 
-Regression coverage is in `packages/feature-flags/src/runtime-evaluate.test.ts`
-and `catalog.test.ts`.
+Regression coverage is in `packages/feature-flags/src/runtime-evaluate.test.ts`,
+`runtime-ceiling.test.ts` and `catalog.test.ts`.
 
 ### Overdue check
 

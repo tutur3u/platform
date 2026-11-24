@@ -1,5 +1,6 @@
 import type { CatalogFlag } from './lifecycle.mjs';
 import type { RuntimeRuleScope } from './runtime-definition.mjs';
+import { ruleShapeError } from './rule-validation';
 
 export type RuntimeRuleMode = 'on' | 'off' | 'staff' | 'rollout';
 
@@ -9,10 +10,12 @@ export interface RuntimeRule {
   readonly scope: RuntimeRuleScope;
   readonly subjectId: string | null;
   readonly mode: RuntimeRuleMode;
-  /** Integer 0 to 100; used by `rollout`. */
-  readonly percentage?: number;
-  readonly allowWorkspaceIds?: readonly string[];
-  readonly allowUserIds?: readonly string[];
+  /** Integer 0 to 100; required by `rollout` and absent otherwise. */
+  readonly percentage?: number | null;
+  /** Rollout only: at most 500 workspace UUIDs admitted before the bucket. */
+  readonly allowWorkspaceIds?: readonly string[] | null;
+  /** Rollout only: at most 500 user UUIDs admitted before the bucket. */
+  readonly allowUserIds?: readonly string[] | null;
 }
 
 /**
@@ -52,40 +55,17 @@ export interface RuntimeEvaluationInput {
    * null when no rule snapshot is available. The environment fallback applies
    * only while no platform rule exists, so a flag that has been cut over to
    * the store must drop its environment variable and its `envFallback`.
+   *
+   * Only `null` means "no snapshot". Any other non-list value, including
+   * `undefined`, is a malformed snapshot and turns every flag off, as does a
+   * list holding a non-object entry. An adapter that has served a snapshot
+   * must keep serving the last good one rather than pass `null`.
    */
   readonly rules: readonly RuntimeRule[] | null;
 }
 
-const MODES: readonly string[] = ['on', 'off', 'staff', 'rollout'];
-
-function isIdList(value: unknown) {
-  return (
-    value === undefined ||
-    (Array.isArray(value) && value.every((id) => typeof id === 'string'))
-  );
-}
-
 function isWellFormed(rule: RuntimeRule, flag: CatalogFlag) {
-  const scopes = flag.runtime?.scopes ?? [];
-  if (!scopes.includes(rule.scope)) return false;
-  if (!MODES.includes(rule.mode)) return false;
-  if (rule.scope === 'platform') {
-    if (rule.subjectId !== null) return false;
-  } else if (typeof rule.subjectId !== 'string' || rule.subjectId === '') {
-    return false;
-  }
-  // A user rule is a per-person override: on or off only.
-  if (rule.scope === 'user' && rule.mode !== 'on' && rule.mode !== 'off') {
-    return false;
-  }
-  if (!isIdList(rule.allowUserIds) || !isIdList(rule.allowWorkspaceIds)) {
-    return false;
-  }
-  if (rule.mode === 'rollout') {
-    const pct = rule.percentage ?? 0;
-    if (!Number.isInteger(pct) || pct < 0 || pct > 100) return false;
-  }
-  return true;
+  return ruleShapeError(rule, flag.runtime?.scopes ?? []) === null;
 }
 
 /** Deterministic 0..9999 bucket for a flag, actor and workspace. */
@@ -136,12 +116,26 @@ function ruleDecides(
 }
 
 /**
- * Evaluates one runtime flag. Precedence: an invalid rule set fails closed;
- * a platform `off` on a kill switch, or above a workspace-admin controlled
- * rule, is final; then a platform-controlled user rule, the workspace rule,
- * the platform rule, the environment fallback (only while no platform rule is
- * stored) and the catalog default. A self-controlled user rule can only turn
- * the result off; a user can never grant a feature to themselves.
+ * Evaluates one runtime flag. Precedence:
+ *
+ * 1. A malformed or duplicated rule set fails closed (`invalid-rules`).
+ * 2. A platform `off` rule on a kill switch is final (`kill-switch`).
+ * 3. The platform rule is a ceiling. While it is `off`, `staff` or `rollout`,
+ *    a workspace or user rule can only narrow it: the result is the override
+ *    AND the platform decision.
+ * 4. One override decides inside that ceiling: a platform-admin user rule for
+ *    the actor, otherwise the workspace rule for the actor's workspace. While
+ *    the platform rule is `on` or absent, a platform-admin user rule decides
+ *    alone. A workspace rule decides alone only when the flag declares
+ *    `delegate: 'workspace'`; otherwise it narrows the environment fallback or
+ *    the catalog default, so it cannot enable a flag that has no platform rule.
+ * 5. Without an override: the platform rule, then the environment fallback
+ *    (only while no platform rule is stored), then the catalog default.
+ *
+ * A self-controlled user rule can only turn an enabled result off; a user can
+ * never grant a feature to themselves. Per-person access beyond a platform
+ * `staff` or `rollout` rule goes through that rule (`staff` mode or its
+ * allow-lists), not through a user rule.
  */
 export function evaluateRuntimeFlag(
   input: RuntimeEvaluationInput
@@ -192,7 +186,7 @@ export function evaluateRuntimeFlag(
       : rules.find(
           (rule) => rule.scope === 'user' && rule.subjectId === context.userId
         );
-  const { controllers, envFallback } = flag.runtime;
+  const { controllers, delegate, envFallback } = flag.runtime;
 
   const withSelfOptOut = (decision: RuntimeDecision): RuntimeDecision => {
     if (
@@ -213,35 +207,56 @@ export function evaluateRuntimeFlag(
     trace.push('platform kill switch is off');
     return { enabled: false, source: 'kill-switch', trace };
   }
-  if (user && controllers.user === 'platform-admin') {
-    const enabled = ruleDecides(user, flag.key, context);
-    trace.push(`user rule ${user.mode}`);
-    return { enabled, source: 'user', trace };
-  }
-  if (workspace) {
-    // A workspace admin may opt in only where the platform has not turned
-    // the feature off.
-    if (
-      controllers.workspace === 'workspace-admin' &&
-      platform?.mode === 'off'
-    ) {
-      trace.push('platform rule off overrides the workspace-admin rule');
-      return { enabled: false, source: 'platform', trace };
+
+  // What the flag resolves to without a workspace or user rule.
+  const base = (): RuntimeDecision => {
+    if (platform) {
+      return {
+        enabled: ruleDecides(platform, flag.key, context),
+        source: 'platform',
+        trace: [...trace, `platform rule ${platform.mode}`],
+      };
     }
-    const enabled = ruleDecides(workspace, flag.key, context);
-    trace.push(`workspace rule ${workspace.mode}`);
-    return withSelfOptOut({ enabled, source: 'workspace', trace });
+    if (envFallback !== null && input.envValue !== undefined) {
+      return {
+        enabled: input.envValue === 'true',
+        source: 'env-fallback',
+        trace: [...trace, `no platform rule: ${envFallback} fallback`],
+      };
+    }
+    return {
+      enabled: fallbackDefault,
+      source: 'default',
+      trace: [...trace, 'catalog default'],
+    };
+  };
+
+  const override =
+    user && controllers.user === 'platform-admin'
+      ? { rule: user, scope: 'user' as const, delegated: true }
+      : workspace
+        ? {
+            rule: workspace,
+            scope: 'workspace' as const,
+            delegated: delegate === 'workspace',
+          }
+        : undefined;
+  if (override === undefined) return withSelfOptOut(base());
+
+  const step = `${override.scope} rule ${override.rule.mode}`;
+  const ceilingApplies =
+    (platform !== undefined && platform.mode !== 'on') || !override.delegated;
+  const ceiling = ceilingApplies ? base() : undefined;
+  if (ceiling && !ceiling.enabled) {
+    return {
+      enabled: false,
+      source: ceiling.source,
+      trace: [...ceiling.trace, `${step} is bounded by it`],
+    };
   }
-  if (platform) {
-    const enabled = ruleDecides(platform, flag.key, context);
-    trace.push(`platform rule ${platform.mode}`);
-    return withSelfOptOut({ enabled, source: 'platform', trace });
-  }
-  if (envFallback !== null && input.envValue !== undefined) {
-    const enabled = input.envValue === 'true';
-    trace.push(`no platform rule: ${envFallback} fallback`);
-    return withSelfOptOut({ enabled, source: 'env-fallback', trace });
-  }
-  trace.push('catalog default');
-  return { enabled: fallbackDefault, source: 'default', trace };
+  return withSelfOptOut({
+    enabled: ruleDecides(override.rule, flag.key, context),
+    source: override.scope,
+    trace: [...(ceiling?.trace ?? trace), step],
+  });
 }

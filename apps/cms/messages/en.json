@@ -16593,6 +16593,8 @@
     "manage_external_migrations_description": "Allows members to view and execute external migrations.",
     "manage_external_projects": "Manage CMS",
     "manage_external_projects_description": "Allows members to manage Tuturuuu CMS content. In the root workspace, this also controls the canonical project registry, workspace bindings, adapter assignment, and privileged imports.",
+    "manage_feature_flags": "Manage feature flags",
+    "manage_feature_flags_description": "Allows root workspace members to set platform feature flag rules, including workspace and per-user rules that platform admins control.",
     "manage_finance": "Manage Finance",
     "manage_finance_description": "Allows members to view, create, edit, and delete financial transactions in the workspace.",
     "manage_forms": "Manage Forms",

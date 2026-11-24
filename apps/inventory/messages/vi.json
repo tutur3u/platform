@@ -5423,6 +5423,8 @@
     "manage_external_migrations_description": "Cho phép thành viên xem và thực thi chuyển dữ liệu từ bên ngoài.",
     "manage_external_projects": "Quản lý dự án ngoài nền tảng",
     "manage_external_projects_description": "Cho phép thành viên quản lý nội dung dự án ngoài nền tảng. Trong không gian làm việc gốc, quyền này cũng kiểm soát sổ đăng ký chuẩn, liên kết không gian làm việc, gán adapter và các lần nhập đặc quyền.",
+    "manage_feature_flags": "Quản lý cờ tính năng",
+    "manage_feature_flags_description": "Cho phép thành viên không gian làm việc gốc đặt quy tắc cờ tính năng của nền tảng, bao gồm quy tắc cho không gian làm việc và cho từng người dùng do quản trị viên nền tảng kiểm soát.",
     "manage_finance": "Quản lý tài chính",
     "manage_finance_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa giao dịch tài chính trong không gian làm việc.",
     "manage_forms": "Quản lý biểu mẫu",

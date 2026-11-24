@@ -85,6 +85,7 @@ export type {
 } from './runtime-rpc';
 export {
   RUNTIME_CONTROLLERS,
+  RUNTIME_DELEGATES,
   RUNTIME_RULE_SCOPES,
   RUNTIME_VALUE_TYPES,
   validateRuntimeDefinition,
@@ -92,8 +93,30 @@ export {
 export type {
   RuntimeControllers,
   RuntimeDefinition,
+  RuntimeDelegate,
   RuntimeRuleScope,
 } from './runtime-definition.mjs';
+export {
+  isUuid,
+  RULE_ALLOW_LIST_MAX,
+  RULE_CLIENTS,
+  RULE_ENVIRONMENTS,
+  RULE_MODES,
+  RULE_REASON_MAX,
+  ruleMutationError,
+  ruleShapeError,
+} from './rule-validation';
+export type {
+  RuleClient,
+  RuleEnvironment,
+  RuleMode,
+  RuleMutationErrorCode,
+  RuleMutationInput,
+  RuleShape,
+  RuleShapeErrorCode,
+} from './rule-validation';
+export { runtimeDefinitionRows } from './rule-definitions';
+export type { RuntimeDefinitionRow } from './rule-definitions';
 export { evaluateRuntimeFlag, rolloutBucket } from './runtime-evaluate';
 export type {
   RuntimeDecision,

@@ -7,6 +7,7 @@ import {
   GitBranch,
   Newspaper,
   ScrollText,
+  ToggleRight,
   UserCog,
 } from '@tuturuuu/icons';
 import { deploymentVaultPermissions } from './deployment-vault-permissions';
@@ -27,6 +28,14 @@ export function infrastructurePermissionGroup(
         icon: <Eye />,
         title: t('ws-roles.view_infrastructure'),
         description: t('ws-roles.view_infrastructure_description'),
+        disableOnProduction: false,
+        disabled: false,
+      },
+      {
+        id: 'manage_feature_flags' as PermissionId,
+        icon: <ToggleRight />,
+        title: t('ws-roles.manage_feature_flags'),
+        description: t('ws-roles.manage_feature_flags_description'),
         disableOnProduction: false,
         disabled: false,
       },
