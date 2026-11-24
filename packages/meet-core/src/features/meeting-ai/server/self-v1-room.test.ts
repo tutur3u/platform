@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ room: vi.fn() }));
 vi.mock('server-only', () => ({}));
+vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
+vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
+vi.mock('@tuturuuu/satellite/auth', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('../../call/lib/call-access', () => ({ getMeetCallAccess: vi.fn() }));
 vi.mock('../../call/server/room-service', () => ({
   callRoomService: mocks.room,
