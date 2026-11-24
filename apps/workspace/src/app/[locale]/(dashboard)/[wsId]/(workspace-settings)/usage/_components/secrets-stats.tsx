@@ -1,8 +1,9 @@
 import StatisticCard from '@/components/cards/StatisticCard';
 import { getWorkspaceSecretsAccess } from '@/legacy-api-routes/workspaces/[wsId]/secrets/access';
 
-// The count follows the Secrets page's own access rule: workspace secret
-// managers, or platform admins through the root workspace.
+// The count follows the Secrets page's own access rule (getWorkspaceSecretsAccess):
+// workspace secrets are platform-controlled, so only root-workspace secret or
+// role managers see it.
 export async function SecretsStats({ wsId }: { wsId: string }) {
   const access = await getWorkspaceSecretsAccess(wsId);
   if (!access.allowed) {
