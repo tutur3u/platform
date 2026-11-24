@@ -15,6 +15,23 @@ import {
 } from '@/legacy-api-routes/head';
 import { canManageLegacyRecording } from '../_lib/recording-access';
 
+const RECORDING_STATUSES = [
+  'recording',
+  'interrupted',
+  'pending_transcription',
+  'transcribing',
+  'completed',
+  'failed',
+] as const satisfies readonly RecordingStatus[];
+// Fails the type check when the enum gains a status this list does not know.
+const _everyStatusListed: Exclude<
+  RecordingStatus,
+  (typeof RECORDING_STATUSES)[number]
+> extends never
+  ? true
+  : never = true;
+void _everyStatusListed;
+
 async function getRecordings(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
@@ -71,32 +88,25 @@ async function getRecordings(
     const statusFilter = searchParams.get('status');
     const limitParam = searchParams.get('limit');
 
-    // Validate status filter
+    // Validate status filter against the enum, never against the statuses that
+    // happen to exist in the table: with no row in a given status (no active
+    // recording, say) the value would be rejected as invalid.
     let statusesToFilter: RecordingStatus[] = [];
     if (statusFilter) {
-      const { data: validStatuses, error: validStatusesError } = await supabase
-        .from('recording_sessions')
-        .select('status');
-
-      if (validStatusesError) {
-        return NextResponse.json(
-          { error: 'Failed to fetch valid statuses' },
-          { status: 500 }
-        );
-      }
-
-      const requestedStatuses = statusFilter.split(',').map((s) => s.trim());
+      const requestedStatuses = statusFilter
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       const invalidStatuses = requestedStatuses.filter(
-        (s) =>
-          !validStatuses.map((v) => v.status).includes(s as RecordingStatus)
+        (s) => !RECORDING_STATUSES.includes(s as RecordingStatus)
       );
 
-      if (invalidStatuses.length > 0) {
+      if (requestedStatuses.length === 0 || invalidStatuses.length > 0) {
         return NextResponse.json(
           {
             error: 'Invalid status values',
             invalidStatuses,
-            validStatuses: validStatuses.map((v) => v.status),
+            validStatuses: RECORDING_STATUSES,
           },
           { status: 400 }
         );

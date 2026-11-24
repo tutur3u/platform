@@ -7,6 +7,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { endedMeetingFacts } from '../lib/ended-meeting-facts';
+import { retryRoomRead, roomReadRetryDelay } from '../lib/room-read-retry';
 
 type Tone = 'neutral' | 'done' | 'pending';
 
@@ -30,7 +31,8 @@ export function EndedMeetingFactsRow({
     queryKey: ['meet-recordings', meetingId],
     queryFn: () => readMeetRecordings(meetingId),
     enabled: canSeeNotes,
-    retry: false,
+    retry: retryRoomRead,
+    retryDelay: roomReadRetryDelay,
   });
   if (!canSeeNotes) return null;
   const facts = endedMeetingFacts({

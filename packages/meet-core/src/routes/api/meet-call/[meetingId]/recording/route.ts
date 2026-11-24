@@ -112,12 +112,17 @@ export async function GET(request: Request, { params }: Params) {
   return roomRoute(request, meetingId, async (access) => {
     const sessionId = new URL(request.url).searchParams.get('sessionId');
     if (!sessionId)
-      return callRoomService(access, { action: 'recording.list' });
+      return callRoomService(
+        access,
+        { action: 'recording.list' },
+        { retryRead: true }
+      );
     if (!z.uuid().safeParse(sessionId).success)
       throw new MeetCallAccessError(400, 'Invalid recording');
     const record = await callRoomService<{ path: string; storageWsId: string }>(
       access,
-      { action: 'recording.read', sessionId }
+      { action: 'recording.read', sessionId },
+      { retryRead: true }
     );
     const url = await createWorkspaceStorageSignedReadUrl(
       record.storageWsId,

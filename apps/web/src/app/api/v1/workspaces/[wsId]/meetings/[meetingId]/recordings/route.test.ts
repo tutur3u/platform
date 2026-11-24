@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   hostId: '',
   isAdmin: false,
   transcriptIn: vi.fn(),
+  statusIn: vi.fn(),
 }));
 
 vi.mock('next/server', () => ({ NextResponse: { json: Response.json } }));
@@ -55,6 +56,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => {
   for (const name of ['select', 'eq', 'order', 'not', 'limit']) {
     chain[name] = () => chain;
   }
+  chain.in = (column: string, values: string[]) => {
+    mocks.statusIn(column, values);
+    return chain;
+  };
   chain.single = async () => ({
     data: { id: MEETING_ID, creator_id: mocks.hostId },
   });
@@ -82,14 +87,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => {
 
 import { GET } from './route';
 
-async function list(userId: string, isAdmin = false) {
+async function list(userId: string, isAdmin = false, query = '') {
   mocks.userId = userId;
   mocks.isAdmin = isAdmin;
   const response = await (
     GET as unknown as (...a: unknown[]) => Promise<Response>
   )(
     new Request(
-      `http://localhost/api/v1/workspaces/${WS_ID}/meetings/${MEETING_ID}/recordings`
+      `http://localhost/api/v1/workspaces/${WS_ID}/meetings/${MEETING_ID}/recordings${query}`
     ),
     { params: Promise.resolve({ wsId: WS_ID, meetingId: MEETING_ID }) }
   );
@@ -101,6 +106,7 @@ async function list(userId: string, isAdmin = false) {
 
 beforeEach(() => {
   mocks.transcriptIn.mockReset();
+  mocks.statusIn.mockReset();
   mocks.hostId = HOST_ID;
 });
 
@@ -132,4 +138,44 @@ it('returns every transcript to the meeting host', async () => {
   const transcripts = await list(HOST_ID);
   expect(transcripts['recorded-by-recorder']).not.toBeNull();
   expect(transcripts['recorded-by-other']).not.toBeNull();
+});
+
+async function status(query: string) {
+  mocks.userId = HOST_ID;
+  mocks.isAdmin = true;
+  return (GET as unknown as (...a: unknown[]) => Promise<Response>)(
+    new Request(
+      `http://localhost/api/v1/workspaces/${WS_ID}/meetings/${MEETING_ID}/recordings${query}`
+    ),
+    { params: Promise.resolve({ wsId: WS_ID, meetingId: MEETING_ID }) }
+  );
+}
+
+it('accepts the recording status filter even when no session has that status', async () => {
+  const response = await status('?status=recording&limit=1');
+  expect(response.status).toBe(200);
+  expect(mocks.statusIn).toHaveBeenCalledWith('status', ['recording']);
+});
+
+it('accepts a comma separated list of known statuses', async () => {
+  const response = await status('?status=failed,%20completed');
+  expect(response.status).toBe(200);
+  expect(mocks.statusIn).toHaveBeenCalledWith('status', [
+    'failed',
+    'completed',
+  ]);
+});
+
+it('rejects an unknown status with the valid list', async () => {
+  const response = await status('?status=recording,bogus');
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({
+    invalidStatuses: ['bogus'],
+    validStatuses: expect.arrayContaining(['recording', 'completed']),
+  });
+});
+
+it('rejects an out-of-range limit', async () => {
+  expect((await status('?limit=0')).status).toBe(400);
+  expect((await status('?limit=101')).status).toBe(400);
 });

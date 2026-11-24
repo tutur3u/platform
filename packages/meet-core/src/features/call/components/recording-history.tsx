@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { retryRoomRead, roomReadRetryDelay } from '../lib/room-read-retry';
 export function RecordingHistory({ meetingId }: { meetingId: string }) {
   const t = useTranslations('meet.call');
   const [url, setUrl] = useState<string | null>(null);
@@ -13,7 +14,8 @@ export function RecordingHistory({ meetingId }: { meetingId: string }) {
     queryKey: ['meet-recordings', meetingId],
     queryFn: () => readMeetRecordings(meetingId),
     refetchInterval: 10000,
-    retry: false,
+    retry: retryRoomRead,
+    retryDelay: roomReadRetryDelay,
   });
   if (records.isPending || records.error)
     return (

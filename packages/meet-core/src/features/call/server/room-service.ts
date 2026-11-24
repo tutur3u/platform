@@ -40,10 +40,17 @@ export async function resolveMeetCallRouteAccess(
   }
 }
 
+const ROOM_READ_RETRY_MS = 250;
+
 export async function callRoomService<T>(
   access: MeetCallRouteAccess,
   command: unknown,
-  options?: { classroomTools?: true; coHost?: boolean }
+  options?: {
+    classroomTools?: true;
+    coHost?: boolean;
+    /** Safe to repeat: one retry when the room answers 5xx or is unreachable. */
+    retryRead?: true;
+  }
 ): Promise<T> {
   const anonymousGuest = 'guest' in access && access.guest === true;
   const session = await getMeetCallSession({
@@ -68,21 +75,51 @@ export async function callRoomService<T>(
   url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
   url.pathname = '/room-service';
   url.search = '';
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(command),
-    signal: AbortSignal.timeout(10000),
-    cache: 'no-store',
-  });
-  if (!response.ok)
+  // Ending a room rewrites its state and tears down its media while the ended
+  // screen already reads it, so a read can land mid-teardown. Reads are
+  // repeated once; an unreachable room is reported as retryable, never as a
+  // generic 500.
+  const attempts = options?.retryRead ? 2 : 1;
+  let response: Response | undefined;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const last = attempt === attempts;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(command),
+        signal: AbortSignal.timeout(10000),
+        cache: 'no-store',
+      });
+    } catch (error) {
+      // Only reads are reported as retryable; other callers keep their error.
+      if (!options?.retryRead) throw error;
+      if (last)
+        throw new MeetCallAccessError(
+          503,
+          'Room action is unavailable',
+          undefined,
+          1
+        );
+      await new Promise((resolve) => setTimeout(resolve, ROOM_READ_RETRY_MS));
+      continue;
+    }
+    if (response.status < 500 || last) break;
+    await response.body?.cancel().catch(() => undefined);
+    await new Promise((resolve) => setTimeout(resolve, ROOM_READ_RETRY_MS));
+  }
+  if (!response?.ok) {
+    await response?.body?.cancel().catch(() => undefined);
     throw new MeetCallAccessError(
-      response.status,
-      'Room action is unavailable'
+      response?.status ?? 503,
+      'Room action is unavailable',
+      undefined,
+      options?.retryRead && (response?.status ?? 503) >= 500 ? 1 : undefined
     );
+  }
   return response.json() as Promise<T>;
 }
 export async function personalWorkspace(userId: string) {
