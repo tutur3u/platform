@@ -99,6 +99,17 @@ export function CallStage({
   const [spotlightHeight, setSpotlightHeight] = useState(70);
   const [shareHeight, setShareHeight] = useState(78);
   const [requestedPage, setPage] = useState(0);
+  // Phone: tiles whose own audio the browser blocked, with their retries.
+  const tileRetries = useRef(new Map<string, () => void>());
+  const [tileBlocked, setTileBlocked] = useState(0);
+  const onTilePlayback = useCallback(
+    (key: string, retry: (() => void) | null) => {
+      if (retry) tileRetries.current.set(key, retry);
+      else tileRetries.current.delete(key);
+      setTileBlocked(tileRetries.current.size);
+    },
+    []
+  );
   const [blockedAudio, setBlockedAudio] = useState<Set<string>>(
     () => new Set()
   );
@@ -280,6 +291,7 @@ export function CallStage({
         tile.participant.userId
       )}
       resumePlaybackLabel={t('resume_audio')}
+      onPlaybackBlocked={phone ? onTilePlayback : undefined}
       focused={(!share || tile.kind === 'screen') && focus === tile.key}
       focusKey={tile.key}
       onFocus={share && tile.kind === 'camera' ? undefined : focusTile}
@@ -424,12 +436,14 @@ export function CallStage({
               onBlocked={onAudioBlocked}
             />
           ))}
-      {paged && blockedAudio.size > 0 && (
+      {((paged && blockedAudio.size > 0) || (phone && tileBlocked > 0)) && (
         <Button
           size="sm"
-          className="mx-auto shrink-0"
+          className={cn('mx-auto shrink-0', phone && 'h-11')}
           variant="outline"
           onClick={(event) => {
+            // One press, one gesture: retry every blocked tile and stage element.
+            for (const retry of tileRetries.current.values()) retry();
             for (const audio of event.currentTarget.parentElement?.querySelectorAll(
               'audio[data-stage-audio]'
             ) ?? [])

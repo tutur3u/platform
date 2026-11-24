@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
 import { observeVideoPresentation } from '../lib/video-presentation';
 import { meetParticipantName } from '../lib/participant-identity';
@@ -31,6 +31,7 @@ function ParticipantTileImpl({
   silenced: controlledSilence,
   onSilence,
   resumePlaybackLabel,
+  onPlaybackBlocked,
   handRaised,
   floating = false,
   condensed = false,
@@ -54,6 +55,11 @@ function ParticipantTileImpl({
   silenced?: boolean;
   onSilence?: (key: string) => void;
   resumePlaybackLabel: string;
+  /**
+   * Phone stage: reports this tile's blocked playback with a retry (or null once
+   * it clears), so the stage can offer one Play meeting audio press for all tiles.
+   */
+  onPlaybackBlocked?: (key: string, retry: (() => void) | null) => void;
   handRaised?: boolean;
   /** Compact chrome for the floating self-preview: no per-tile controls. */
   floating?: boolean;
@@ -95,7 +101,19 @@ function ParticipantTileImpl({
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const volume = usePlaybackVolume(participant.userId);
+  const tileKey = focusKey ?? `${participant.userId}:${kind}`;
   const audioRef = useRef<HTMLAudioElement>(null);
+  // One retry for this tile's blocked audio; run inside a press so the browser allows it.
+  const resumePlayback = useCallback(() => {
+    const playing = audioRef.current?.play();
+    if (playing)
+      void playing.then(() => setPlaybackBlocked(false)).catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (!onPlaybackBlocked || !playbackBlocked || isSelf) return;
+    onPlaybackBlocked(tileKey, resumePlayback);
+    return () => onPlaybackBlocked(tileKey, null);
+  }, [isSelf, onPlaybackBlocked, playbackBlocked, resumePlayback, tileKey]);
   const videoTrack = stream?.getVideoTracks()[0];
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
@@ -279,12 +297,7 @@ function ParticipantTileImpl({
         <Button
           variant="secondary"
           className="absolute bottom-16 left-3 z-20"
-          onClick={() => {
-            void audioRef.current
-              ?.play()
-              .then(() => setPlaybackBlocked(false))
-              .catch(() => undefined);
-          }}
+          onClick={resumePlayback}
         >
           {resumePlaybackLabel}
         </Button>
@@ -431,6 +444,7 @@ export const ParticipantTile = memo(
     a.silenced === b.silenced &&
     a.onSilence === b.onSilence &&
     a.resumePlaybackLabel === b.resumePlaybackLabel &&
+    a.onPlaybackBlocked === b.onPlaybackBlocked &&
     a.kind === b.kind &&
     a.focused === b.focused &&
     a.focusKey === b.focusKey &&
