@@ -50,7 +50,9 @@ export async function endMiraAcceptance(input: {
   const { error } = await db.rpc('end_meet_mira_acceptance', {
     p_meeting_id: input.meetingId,
     p_revision: input.revision,
-    p_user_id: input.userId,
+    // The function accepts NULL for an end with no acting user; generated
+    // RPC argument types are non-null.
+    p_user_id: input.userId ?? (null as unknown as string),
     p_reason: input.reason,
   });
   if (error) throw new Error('Mira acceptance end could not be recorded');
