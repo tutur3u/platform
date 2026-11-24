@@ -91,7 +91,9 @@ it('reports the unavailable reason without touching the room', async () => {
 });
 
 it('never forwards the room outbox to the browser', async () => {
-  const pending = [{ sessionId: 's', accountId: 'other', seq: 2, kind: 'revoke' }];
+  const pending = [
+    { sessionId: 's', accountId: 'other', seq: 2, kind: 'revoke' },
+  ];
   f.room.mockResolvedValue({ ...read, pending });
   const got = await (
     await GET(new Request('https://meet.test/x'), params)

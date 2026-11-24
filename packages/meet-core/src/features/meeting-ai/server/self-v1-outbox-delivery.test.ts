@@ -54,7 +54,12 @@ const claims = {
   exp: Math.floor(Date.now() / 1000) + 60,
 };
 type Kind = 'withdraw' | 'revoke' | 'close';
-const entry = (accountId: string, seq: number, kind: Kind, session = sessionId) => ({
+const entry = (
+  accountId: string,
+  seq: number,
+  kind: Kind,
+  session = sessionId
+) => ({
   sessionId: session,
   accountId,
   seq,
@@ -131,7 +136,11 @@ const ackedOf = async (body: unknown) =>
 
 beforeEach(() => {
   vi.resetAllMocks();
-  sessions = [row(sessionId), row(olderSession), row(foreignSession, otherMeeting)];
+  sessions = [
+    row(sessionId),
+    row(olderSession),
+    row(foreignSession, otherMeeting),
+  ];
   liveStreams = 0;
   mocks.verify.mockReturnValue(claims);
   mocks.admin.mockImplementation(async () => fakeDb());
@@ -247,7 +256,11 @@ describe('self_v1 outbox delivery body', () => {
 describe('self_v1 outbox delivery writes', () => {
   it('writes in order per account and acknowledges what landed', async () => {
     const acked = await ackedOf(
-      body([entry(a, 2, 'withdraw'), entry(a, 1, 'withdraw'), entry(b, 1, 'revoke')])
+      body([
+        entry(a, 2, 'withdraw'),
+        entry(a, 1, 'withdraw'),
+        entry(b, 1, 'revoke'),
+      ])
     );
     expect(acked).toHaveLength(3);
     expect(acked).toEqual(
@@ -286,7 +299,10 @@ describe('self_v1 outbox delivery writes', () => {
     const replayed = body([entry(a, 1, 'withdraw')]);
     const first = await ackedOf(replayed);
     // The database treats the same room sequence and kind as a no-op.
-    mocks.rpc.recordDecision.mockResolvedValue({ revision: 2, recorded: false });
+    mocks.rpc.recordDecision.mockResolvedValue({
+      revision: 2,
+      recorded: false,
+    });
     expect(await ackedOf(replayed)).toEqual(first);
     expect(first).toEqual([ack(a, 1)]);
   });
@@ -303,7 +319,11 @@ describe('self_v1 outbox delivery writes', () => {
     );
     liveStreams = 1;
     const acked = await ackedOf(
-      body([entry(a, 3, 'withdraw'), entry(b, 2, 'revoke'), entry(host, 1, 'close')])
+      body([
+        entry(a, 3, 'withdraw'),
+        entry(b, 2, 'revoke'),
+        entry(host, 1, 'close'),
+      ])
     );
     // A stale withdraw and a missing session settle; a stale revoke retries.
     expect(acked).toEqual(expect.arrayContaining([ack(a, 3), ack(host, 1)]));
@@ -315,7 +335,11 @@ describe('self_v1 outbox delivery writes', () => {
       new MeetSelfRpcError(503, 'down', '')
     );
     const response = await deliver(
-      body([entry(a, 1, 'withdraw'), entry(a, 2, 'close'), entry(b, 1, 'withdraw')])
+      body([
+        entry(a, 1, 'withdraw'),
+        entry(a, 2, 'close'),
+        entry(b, 1, 'withdraw'),
+      ])
     );
     expect(response.status).toBe(200);
     expect((await response.json()).acked).toEqual([]);
@@ -326,7 +350,9 @@ describe('self_v1 outbox delivery writes', () => {
 describe('room end through the outbox', () => {
   it('closes the session once the last close lands, then refuses uploads', async () => {
     liveStreams = 0;
-    const acked = await ackedOf(body([entry(a, 5, 'close'), entry(b, 2, 'close')]));
+    const acked = await ackedOf(
+      body([entry(a, 5, 'close'), entry(b, 2, 'close')])
+    );
     expect(acked).toHaveLength(2);
     expect(mocks.rpc.stopSession).toHaveBeenCalledWith(expect.anything(), {
       sessionId,
@@ -339,7 +365,11 @@ describe('room end through the outbox', () => {
     );
     // The upload path loads the session first and refuses before reserving.
     await expect(
-      loadSelfSession(fakeDb() as never, { sessionId, meetingId, wsId: ws }, 'upload')
+      loadSelfSession(
+        fakeDb() as never,
+        { sessionId, meetingId, wsId: ws },
+        'upload'
+      )
     ).rejects.toMatchObject({ status: 409 });
   });
 
@@ -353,7 +383,9 @@ describe('room end through the outbox', () => {
     mocks.rpc.stopSession.mockRejectedValue(
       new MeetSelfRpcError(503, 'down', '')
     );
-    const acked = await ackedOf(body([entry(a, 5, 'close'), entry(b, 1, 'withdraw')]));
+    const acked = await ackedOf(
+      body([entry(a, 5, 'close'), entry(b, 1, 'withdraw')])
+    );
     expect(acked).toEqual([ack(b, 1)]);
   });
 
