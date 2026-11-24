@@ -4748,7 +4748,7 @@
   "privacy-consent": {
     "accept_optional": "Accept optional",
     "analytics": "Analytics and performance",
-    "analytics_disabled": "Analytics is currently disabled. Your preference does not activate a provider.",
+    "analytics_description": "Helps us understand overall product use, such as daily active users and feature adoption. Signed-in activity is counted only in groups of 10 or more people, is never shared individually, and stops being counted when you turn this off.",
     "choice_outdated": "Your saved preference is no longer valid. Please choose again.",
     "close": "Close",
     "customize": "Customize",

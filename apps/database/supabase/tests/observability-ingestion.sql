@@ -168,6 +168,9 @@ values
   ('40000000-0000-4000-8000-000000000010', null,
    '40000000-0000-4000-8000-000000000020', 'deduction', -2, 'tts', 10, 5, now());
 
+-- Suppression is checked under the 'opt_out' basis so the fixture people
+-- count; consent filtering is covered by product-analytics-consent.sql.
+update private.product_analytics_consent_control set basis = 'opt_out' where id;
 select is(private.rollup_product_analytics_daily(1000)->>'days', '2', 'the rollup covers two days');
 select ok(exists (
   select 1 from private.product_analytics_daily

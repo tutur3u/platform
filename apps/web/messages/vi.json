@@ -14779,7 +14779,7 @@
   "privacy-consent": {
     "accept_optional": "Chấp nhận mục tùy chọn",
     "analytics": "Phân tích và hiệu suất",
-    "analytics_disabled": "Tính năng phân tích hiện đang tắt. Lựa chọn của bạn không kích hoạt nhà cung cấp nào.",
+    "analytics_description": "Giúp chúng tôi hiểu cách sản phẩm được sử dụng nói chung, ví dụ số người dùng hoạt động hằng ngày và mức độ sử dụng tính năng. Hoạt động khi đã đăng nhập chỉ được đếm theo nhóm từ 10 người trở lên, không bao giờ được chia sẻ riêng cho từng người và sẽ ngừng được đếm khi bạn tắt mục này.",
     "choice_outdated": "Lựa chọn đã lưu không còn hợp lệ. Vui lòng chọn lại.",
     "close": "Đóng",
     "customize": "Tùy chỉnh",

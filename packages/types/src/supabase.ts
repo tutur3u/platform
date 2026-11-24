@@ -62753,6 +62753,17 @@ export type Database = {
           username: string;
         }[];
       };
+      get_product_analytics_consent: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          granted: boolean;
+          granted_at: string;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          withdrawn_at: string;
+        }[];
+      };
       get_product_email_consent: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -64950,6 +64961,21 @@ export type Database = {
           is_default: boolean;
           name: string;
           ws_id: string;
+        }[];
+      };
+      set_product_analytics_consent: {
+        Args: {
+          p_granted: boolean;
+          p_policy_version: string;
+          p_source: string;
+        };
+        Returns: {
+          granted: boolean;
+          granted_at: string;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          withdrawn_at: string;
         }[];
       };
       set_product_email_consent: {

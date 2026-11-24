@@ -22,10 +22,16 @@ import {
   savePrivacyConsent,
 } from '@/lib/privacy-consent';
 import {
+  detectPrivacyRegion,
+  optionalDefaultOn,
+  type PrivacyRegion,
+} from '@/lib/privacy-consent-region';
+import {
   loadPrivacyConsentState,
   type PrivacyConsentState,
   transitionPrivacyConsentState,
 } from '@/lib/privacy-consent-state';
+import { syncAnalyticsConsent } from '@/lib/privacy-consent-sync';
 
 const enabled = evaluateFlags(
   [cookieConsentBanner],
@@ -53,12 +59,16 @@ export function PrivacyConsent() {
   const [open, setOpen] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  // Restricted until detected, so nothing is pre-selected by accident.
+  const [region, setRegion] = useState<PrivacyRegion>('restricted');
+  const defaultOn = optionalDefaultOn(region);
   const hasMarketing = PRIVACY_PROVIDERS.some(
     ({ purpose }) => purpose === 'marketing'
   );
 
   useEffect(() => {
     if (!enabled) return;
+    setRegion(detectPrivacyRegion(locale));
     const restore = () => {
       dispatch({
         kind: 'restore',
@@ -82,7 +92,7 @@ export function PrivacyConsent() {
       window.removeEventListener('pageshow', restore);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, []);
+  }, [locale]);
 
   if (!enabled) return null;
 
@@ -94,6 +104,8 @@ export function PrivacyConsent() {
     });
     setAnalytics(allowAnalytics);
     setMarketing(hasMarketing && allowMarketing);
+    // A withdrawal is synced even when this browser cannot store it.
+    if (result.ok || !allowAnalytics) void syncAnalyticsConsent(allowAnalytics);
     if (result.ok) {
       dispatch({ kind: 'save-succeeded', choice: result.choice });
       setOpen(false);
@@ -107,8 +119,13 @@ export function PrivacyConsent() {
       const restored = loadPrivacyConsentState({ storage: browserStorage() });
       dispatch({ kind: 'restore', state: restored });
       if (state.kind !== 'save-error') {
-        setAnalytics(restored.kind === 'saved' && restored.choice.analytics);
-        setMarketing(restored.kind === 'saved' && restored.choice.marketing);
+        setAnalytics(
+          restored.kind === 'saved' ? restored.choice.analytics : defaultOn
+        );
+        setMarketing(
+          hasMarketing &&
+            (restored.kind === 'saved' ? restored.choice.marketing : defaultOn)
+        );
       }
     }
     setOpen(nextOpen);
@@ -130,7 +147,7 @@ export function PrivacyConsent() {
       <h2 className="font-semibold">{t('title')}</h2>
       <p className="mt-2 text-muted-foreground text-sm">{t('description')}</p>
       <p className="mt-2 text-muted-foreground text-sm">
-        {t('analytics_disabled')}
+        {t('analytics_description')}
       </p>
       <p className="mt-2 text-sm">{privacyLink}</p>
       {reason === 'stale' && (
@@ -152,7 +169,10 @@ export function PrivacyConsent() {
         <Button variant="outline" onClick={() => save(false, false)}>
           {t('reject')}
         </Button>
-        <Button variant="outline" onClick={() => save(true, hasMarketing)}>
+        <Button
+          variant={defaultOn ? 'default' : 'outline'}
+          onClick={() => save(true, hasMarketing)}
+        >
           {t('accept_optional')}
         </Button>
         <Button variant="outline" onClick={() => settings(true)}>
@@ -223,7 +243,7 @@ export function PrivacyConsent() {
               {t('analytics')}
             </label>
             <p className="mt-1 text-muted-foreground text-sm">
-              {t('analytics_disabled')}
+              {t('analytics_description')}
             </p>
           </div>
           <Switch

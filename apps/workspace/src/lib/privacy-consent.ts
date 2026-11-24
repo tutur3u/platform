@@ -1,6 +1,6 @@
 export const PRIVACY_CONSENT_STORAGE_KEY = 'tuturuuu:privacy-consent';
 export const PRIVACY_CONSENT_VERSION = 1;
-export const PRIVACY_POLICY_VERSION = '2026-11-08-draft';
+export const PRIVACY_POLICY_VERSION = '2026-11-24';
 export const PRIVACY_CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
 
 export interface PrivacyConsent {
@@ -24,7 +24,8 @@ export interface PrivacyProvider {
   enabled: boolean;
 }
 
-// Provider activation requires a separate USER decision; this delivery collects nothing.
+// Browser analytics providers need a separate USER decision; none is active.
+// Product analytics is server-side and reads the synced choice instead.
 export const PRIVACY_PROVIDERS: readonly PrivacyProvider[] = [];
 
 function isCurrentPrivacyConsent(
