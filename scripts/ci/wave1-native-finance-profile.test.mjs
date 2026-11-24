@@ -16,9 +16,14 @@ import { fileURLToPath } from 'node:url';
 import { prepare, verify } from './wave1-native-artifact.mjs';
 import { assertRouteFree } from './wave1-native-production.mjs';
 import {
+  buildInfoMutationStatuses,
+  nativeRuntimeHostTargets,
+} from './wave1-native-runtime.mjs';
+import {
   profileFor,
   profiles,
   publicationConfig,
+  releaseRecipes,
 } from './wave1-native-profile.mjs';
 import {
   assertReleaseInputs,
@@ -363,4 +368,24 @@ test('the configure step writes the same public URLs for existing apps and only 
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+});
+
+test('anonymous build-info mutations: Finance subdomain refuses at the proxy, the apex mount at the route', () => {
+  const { pathTarget } = nativeRuntimeHostTargets(
+    'finance',
+    'production',
+    releaseRecipes.finance
+  );
+  assert.deepEqual(pathTarget, { host: 'tuturuuu.com', basePath: '/finance' });
+  assert.deepEqual(buildInfoMutationStatuses('finance', false), [401]);
+  assert.deepEqual(buildInfoMutationStatuses('finance', true), [401, 405]);
+  assert.deepEqual(buildInfoMutationStatuses('drive', true), [401, 405]);
+  for (const app of ['mail', 'calendar', 'apps'])
+    assert.deepEqual(buildInfoMutationStatuses(app, false), [405]);
+  for (const mounted of [false, true])
+    for (const status of [200, 201, 204])
+      assert.equal(
+        buildInfoMutationStatuses('finance', mounted).includes(status),
+        false
+      );
 });

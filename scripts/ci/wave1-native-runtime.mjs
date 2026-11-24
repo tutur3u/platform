@@ -56,6 +56,20 @@ export function calendarProductionRuntimeTarget(profile) {
 }
 
 /**
+ * Statuses an anonymous POST to the GET-only `/api/build-info` may receive.
+ * Finance's subdomain proxy refreshes the app session for an unregistered API
+ * request and answers 401 without one. Its apex mount skips that refresh, so
+ * the request reaches the route and gets 405; the mount relies on each
+ * route's own authentication, as Drive's does. Every other app's route answers
+ * 405. A 2xx never qualifies.
+ */
+export function buildInfoMutationStatuses(app, mounted) {
+  if (app === 'finance') return mounted ? [401, 405] : [401];
+  if (app === 'drive') return [401, 405];
+  return [405];
+}
+
+/**
  * The extra hosts a sealed artifact is exercised on. Each Calendar and Mail
  * artifact must 404 the other environment's host; the production Finance and
  * Drive artifacts reject the staging subdomain and also answer on their
@@ -421,10 +435,10 @@ async function runRuntimeAcceptance() {
           }
         }
         const post = await fetchWorker('/api/build-info', { method: 'POST' });
-        // Finance's proxy refuses every unregistered anonymous API request;
-        // Drive's refuses it or lets the read-only route answer 405.
-        const mutationStatuses =
-          app === 'finance' ? [401] : app === 'drive' ? [401, 405] : [405];
+        const mutationStatuses = buildInfoMutationStatuses(
+          app,
+          host === pathTarget?.host
+        );
         assert.ok(
           mutationStatuses.includes(post.status),
           `Identity route must not accept mutations, got ${post.status}`

@@ -62,7 +62,15 @@ curl -sS -D - -o /dev/null 'https://tuturuuu.com/finance?ref=a&ref=b'
 curl -sS -D - -o /dev/null "https://tuturuuu.com/finance/en/${FINANCE_SMOKE_WORKSPACE_ID}/wallets?ref=a&ref=b"
 ```
 
-Only exact GET and HEAD `/api/build-info` are public. The rollback smoke is the
+Only exact GET and HEAD `/api/build-info` are public. Other anonymous API
+requests differ by host. `finance.tuturuuu.com` refreshes the app session first
+and answers 401 without one. The `tuturuuu.com/finance` mount skips that refresh,
+so each route enforces its own authentication: an anonymous POST to
+`/api/build-info` gets 405 from the GET-only route, and an anonymous request to a
+workspace data route such as `/api/v1/workspaces/<wsId>/finance/budgets` gets
+401. Release acceptance (`buildInfoMutationStatuses` in
+`scripts/ci/wave1-native-runtime.mjs`) requires 401 on the subdomain and accepts
+401 or 405 on the mount; any 2xx fails it. The rollback smoke is the
 same runner with `--expect legacy`. After the flip, watch 5xx rate, authentication
 failures and p95 latency for 30 to 60 minutes and roll back on regression.
 
