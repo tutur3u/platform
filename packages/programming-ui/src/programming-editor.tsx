@@ -53,6 +53,7 @@ export function ProgrammingEditor({
   onCursor,
   onSelection,
   onRunShortcut,
+  onFormatShortcut,
   scriptDiagnostics = false,
 }: {
   path: string;
@@ -69,6 +70,8 @@ export function ProgrammingEditor({
   ) => void;
   /** Cmd/Ctrl+Enter inside the editor; Monaco consumes the key before the page sees it. */
   onRunShortcut?: () => void;
+  /** Shift+Alt+F inside the editor; it replaces Monaco's own document formatting. */
+  onFormatShortcut?: () => void;
   /** Meetings only: TypeScript and JavaScript problems tuned for a Node playground. */
   scriptDiagnostics?: boolean;
 }) {
@@ -76,6 +79,8 @@ export function ProgrammingEditor({
   const theme = useEditorTheme(host);
   const runShortcut = useRef(onRunShortcut);
   runShortcut.current = onRunShortcut;
+  const formatShortcut = useRef(onFormatShortcut);
+  formatShortcut.current = onFormatShortcut;
   const [editor, setEditor] =
     useState<monaco.editor.IStandaloneCodeEditor | null>(null);
   const labels = useMiraCodeLabels(mira);
@@ -90,6 +95,10 @@ export function ProgrammingEditor({
     setEditor(instance);
     instance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () =>
       runShortcut.current?.()
+    );
+    instance.addCommand(
+      monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF,
+      () => formatShortcut.current?.()
     );
     decorations.current = instance.createDecorationsCollection();
     instance.onDidChangeCursorSelection(({ selection }) =>

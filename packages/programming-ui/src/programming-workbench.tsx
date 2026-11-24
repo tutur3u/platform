@@ -19,10 +19,12 @@ import {
   MiraEditorBar,
   miraFocus,
 } from './mira-code-presence';
+import { isFormatShortcut } from './format-shortcut';
 import { isRunShortcut } from './run-shortcut';
 import { useProgrammingRoom } from './use-programming-room';
 import { runnerGate } from './use-runner-availability';
 import { useWorkbenchDiagnostics } from './use-workbench-diagnostics';
+import { useWorkbenchFormat } from './use-workbench-format';
 import { useWorkbenchRun, type WorkbenchExecution } from './use-workbench-run';
 import { WorkbenchEditorStage } from './workbench-editor-stage';
 import { WorkbenchEditorStatus } from './workbench-editor-status';
@@ -109,6 +111,11 @@ export function ProgrammingWorkbench({
     room.snapshot.files.find((file) => file.path === selected) ??
     room.snapshot.files[0];
   const activePath = active?.path;
+  const formatting = useWorkbenchFormat({
+    doc: room.client?.doc,
+    path: activePath,
+    editable,
+  });
   const collaborationClient = room.client;
   const collaborationOpen = room.status === 'open';
   useEffect(() => {
@@ -332,8 +339,14 @@ export function ProgrammingWorkbench({
     });
   };
   const onShortcut = (event: KeyboardEvent<HTMLElement>) => {
-    // Monaco handles the shortcut itself and marks the event as handled.
-    if (event.defaultPrevented || !isRunShortcut(event.nativeEvent)) return;
+    // Monaco handles the shortcuts itself and marks the event as handled.
+    if (event.defaultPrevented) return;
+    if (isFormatShortcut(event.nativeEvent)) {
+      event.preventDefault();
+      formatting.format();
+      return;
+    }
+    if (!isRunShortcut(event.nativeEvent)) return;
     event.preventDefault();
     runFromShortcut();
   };
@@ -385,6 +398,16 @@ export function ProgrammingWorkbench({
               : { kind: 'none' }
         }
         actions={menu}
+        format={
+          active
+            ? {
+                support: formatting.support,
+                editable,
+                pending: formatting.pending,
+                onFormat: formatting.format,
+              }
+            : undefined
+        }
       />
       {problem && promptOpen && (
         <div className="max-h-40 shrink-0 overflow-auto whitespace-pre-wrap border-b bg-muted/20 px-3 py-2 text-sm">
@@ -455,6 +478,7 @@ export function ProgrammingWorkbench({
             mira={filePresence}
             jump={jump?.path === active?.path ? jump : undefined}
             onRunShortcut={runFromShortcut}
+            onFormatShortcut={formatting.format}
             scriptDiagnostics={!!meeting}
             onSelection={
               meeting && active

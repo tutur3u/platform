@@ -44,6 +44,28 @@ it('shows the activity name and editors once, without repeating the pane header'
   ).toBeNull();
 });
 
+it('puts Format in the toolbar for the open file', () => {
+  render(
+    intl(
+      <WorkbenchToolbar
+        title="Java playground"
+        language="java"
+        status="open"
+        participants={[]}
+        controls={{ kind: 'none' }}
+        actions={[]}
+        format={{
+          support: { supported: false, reason: 'rust' },
+          editable: true,
+          pending: false,
+          onFormat: vi.fn(),
+        }}
+      />
+    )
+  );
+  expect(screen.getByRole('button', { name: t.format })).toBeTruthy();
+});
+
 it('keeps the runtime in one control, read-only for people who cannot switch it', () => {
   toolbar(true);
   expect(screen.getAllByText('Java')).toHaveLength(1);

@@ -24,6 +24,7 @@ export function WorkbenchEditorStage({
   jump,
   onSelection,
   onRunShortcut,
+  onFormatShortcut,
   scriptDiagnostics,
 }: {
   roomKey: string;
@@ -39,6 +40,7 @@ export function WorkbenchEditorStage({
     selection: NonNullable<CollaborationPresence['selection']>
   ) => void;
   onRunShortcut?: () => void;
+  onFormatShortcut?: () => void;
   scriptDiagnostics?: boolean;
 }) {
   const others = presence.filter((person) => person.userId !== actorId);
@@ -69,6 +71,7 @@ export function WorkbenchEditorStage({
           value={file.content}
           readOnly={!editable}
           onRunShortcut={onRunShortcut}
+          onFormatShortcut={onFormatShortcut}
           scriptDiagnostics={scriptDiagnostics}
           mira={mira}
           jump={jump}

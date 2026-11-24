@@ -25,6 +25,8 @@ import {
   LANGUAGE_LABELS,
   WorkbenchLanguagePicker,
 } from './workbench-language-picker';
+import type { FormatSupport } from './format/formatters';
+import { WorkbenchFormatButton } from './workbench-format-button';
 import { WorkbenchRunButton } from './workbench-run-button';
 
 export type WorkbenchControls =
@@ -58,6 +60,7 @@ export function WorkbenchToolbar({
   controls,
   actions,
   meeting,
+  format,
   problem = false,
 }: {
   title: string;
@@ -67,6 +70,13 @@ export function WorkbenchToolbar({
   controls: WorkbenchControls;
   actions: WorkbenchAction[];
   problem?: boolean;
+  /** Format for the open file; absent while no file is open. */
+  format?: {
+    support: FormatSupport;
+    editable: boolean;
+    pending: boolean;
+    onFormat: () => void;
+  };
   meeting?: {
     mark?: ReactNode;
     onRuntime?: (value: PlaygroundLanguage) => void;
@@ -119,6 +129,7 @@ export function WorkbenchToolbar({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
+        {format && <WorkbenchFormatButton {...format} />}
         {controls.kind === 'problem' && (
           <WorkbenchRunButton
             label={t('test')}
