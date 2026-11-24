@@ -70,6 +70,7 @@ beforeEach(() => {
   mocks.availability.mockResolvedValue({ available: true });
   mocks.flag.mockResolvedValue(true);
   mocks.setMode.mockResolvedValue({ mode: 'self' });
+  mocks.drain.mockResolvedValue(undefined);
 });
 
 describe('capture mode setter', () => {

@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
+vi.mock('@tuturuuu/satellite/auth', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
+vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
 import { encodeMeetWav } from '../audio';
 import { readSelfChunkAudio, readSelfChunkFields } from './self-v1-audio';
 
