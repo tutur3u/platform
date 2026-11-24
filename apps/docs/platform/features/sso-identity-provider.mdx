@@ -6,8 +6,8 @@ audience: users
 ---
 
 <Note>
-**Status: design proposal, not yet approved.** This page describes target behavior.
-Nothing on this page is enabled. The implemented SAML foundation (phases 1 to 4)
+**Status: approved design; slice S1 is in progress.** This page describes target
+behavior. Nothing on this page is enabled. The implemented SAML foundation (phases 1 to 4)
 and its current, binding rules are in [Outbound SSO to Claude](/platform/features/sso).
 Where the two pages disagree, that page describes what ships today.
 </Note>
@@ -381,8 +381,8 @@ receipt and an exact-SQL ACK.
 2. **S2 Claude pilot**: catalog flag, operator runbook, staging acceptance
    against the local Node-SAML SP, then the real Claude test connection (needs
    USER actions and an Iris ACK).
-3. **S3 Role-based assignment and remembered consent** (if D1 and D2 are
-   approved). Migration.
+3. **S3 Remembered consent, per-client MFA age and constrained role grants**
+   (D1, D2). Migration.
 4. **S4 OIDC provider core**: tables, discovery, JWKS, authorize, token and
    userinfo, behind `sso_oidc_provider`. Migration.
 5. **S5 Admin UI for OIDC and keyring, plus the app launcher.**
@@ -429,21 +429,22 @@ receipt and an exact-SQL ACK.
    authority stores the WorkOS bearer token as a Worker secret. The token is
    never pasted into the Tuturuuu UI.
 
-## Open decisions (for the USER)
+## Decisions (2026-11-24)
 
-- **D1 Consent**: ask on every login (today), or remember per app until the
-  claims or policy change (recommended for internal apps)?
-- **D2 MFA freshness**: 10 minutes (today; more prompts), or up to 12 hours
-  from the last TOTP proof for ordinary apps, with 10 minutes for
-  high-privilege apps (recommended)?
-- **D3 Key custody**: an assertion-building Cloudflare signer Worker with keys
-  as Worker secrets (recommended to start), the same Worker backed by a
-  non-exportable cloud KMS key (stronger, adds a vendor), or Vercel env (today)?
-- **D4 OIDC issuer**: `https://tuturuuu.com/api/v1/oidc` (recommended), or a
-  dedicated `https://sso.tuturuuu.com`?
-- **D5 Certificate lifetime**: 2 years (recommended), or 1 year?
-- **D6 Claude plan and connection**: Team (JIT only, no SCIM) or Enterprise
-  (SCIM)? Is a separate Claude test organization available for the pilot?
-- **D7 Audit retention**: 1 year (recommended), or 2 years?
-- **D8 Internal workspace**: which workspace owns the internal applications (the
-  root workspace is recommended)?
+- **D1 Consent**: remembered per app, keyed on actor, client, claims hash and
+  policy revision. Users can revoke it in account settings. Every login still
+  writes a disclosure receipt.
+- **D2 MFA freshness**: at most 12 hours from the last factor-bound TOTP proof
+  for ordinary apps, and 10 minutes for high-privilege apps.
+- **D3 Key custody**: an assertion-building Cloudflare signer Worker that holds
+  keys as Worker secrets by name. Non-exportable KMS stays a later hardening
+  option.
+- **D4 OIDC issuer** (default): `https://tuturuuu.com/api/v1/oidc`.
+- **D5 Certificate lifetime** (default): 2 years, with dual-publish rotation.
+- **D6 Claude plan**: Enterprise, with SCIM through WorkOS directory sync.
+- **D7 Audit retention** (default): 1 year.
+- **D8 Internal workspace** (default): the root workspace owns the internal
+  applications.
+
+Still open: whether a separate Claude test organization exists for the pilot,
+and Claude domain verification of `tuturuuu.com`.
