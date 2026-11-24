@@ -34,6 +34,9 @@ export const PURPOSES = [
   'keyring-attestation',
   'keyring-confirm',
   'witness-confirm',
+  // Workspace secret credential payloads (tuturuuu-workspace-secrets).
+  'workspace-secret/value',
+  'workspace-secret/wrap',
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];

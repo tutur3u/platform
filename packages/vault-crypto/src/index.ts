@@ -167,3 +167,11 @@ export {
   type WitnessConfirmation,
   type WitnessHeadView,
 } from './witness-heads';
+export {
+  openWorkspaceSecret,
+  rewrapWorkspaceSecretKey,
+  type SealedWorkspaceSecret,
+  sealWorkspaceSecret,
+  type WorkspaceSecretBinding,
+  workspaceSecretLast4,
+} from './workspace-secret';
