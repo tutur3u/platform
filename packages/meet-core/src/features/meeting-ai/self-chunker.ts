@@ -58,9 +58,8 @@ export class SelfChunker {
     this.energies[index % FLOOR_WINDOW] = energy;
     if (index % FLOOR_REFRESH_FRAMES === 0) this.refreshFloor(index + 1);
     const loud = energy > Math.max(MIN_SPEECH_ENERGY, this.floor * FLOOR_RATIO);
-    if (loud) this.hang = HANGOVER_FRAMES;
-    else this.hang = Math.max(0, this.hang - 1);
     const speaking = loud || this.hang > 0;
+    this.hang = loud ? HANGOVER_FRAMES : Math.max(0, this.hang - 1);
     if (!this.open.length) {
       if (!speaking) {
         this.preRoll.push(frame);

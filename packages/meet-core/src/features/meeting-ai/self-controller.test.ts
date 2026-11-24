@@ -103,7 +103,7 @@ describe('per-speaker capture controller', () => {
   it('does not capture without confirmed echo cancellation', async () => {
     const { api, controller, factory } = setup();
     controller.update(eligibleInputs(fakeTrack(false)));
-    controller.update(eligibleInputs(fakeTrack(undefined)));
+    controller.update(eligibleInputs(fakeTrack(null)));
     await settle();
     expect(api.open).not.toHaveBeenCalled();
     expect(factory).not.toHaveBeenCalled();

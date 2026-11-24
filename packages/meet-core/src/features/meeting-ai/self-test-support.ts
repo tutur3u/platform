@@ -3,8 +3,10 @@ import type { SelfCaptureApi } from './self-api';
 import type { SelfCaptureInputs } from './self-controller';
 import type { SelfEngineFactory } from './self-engine';
 
-export function fakeTrack(echoCancellation: boolean | undefined = true) {
-  const settings: MediaTrackSettings = { echoCancellation };
+export function fakeTrack(echoCancellation: boolean | null = true) {
+  const settings: MediaTrackSettings = {
+    echoCancellation: echoCancellation ?? undefined,
+  };
   const track = {
     readyState: 'live',
     stop: vi.fn(),
