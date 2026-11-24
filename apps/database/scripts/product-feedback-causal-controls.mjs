@@ -12,7 +12,7 @@ export const causalPins = Object.freeze({
   fixture:
     'apps/database/supabase/tests/product-feedback-staff-eligibility.sql',
   fixtureSha256:
-    '4be384c033d332f45a578dba1b0d511b2dda7369e847e0d4a57c25f778a845da',
+    'ced042e2334c59fd06aa6f13e6a8b2ee0912e4344f6b8f0eb33319f1669b2796',
 });
 export const digest = (value) =>
   createHash('sha256').update(value).digest('hex');
