@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   drain: vi.fn(),
   notice: vi.fn(),
+  resolveWs: vi.fn(),
   access: {
     isHost: false,
     canReadWorkspace: true,
@@ -40,7 +41,10 @@ vi.mock('./self-v1-room', async (original) => ({
   selfRoomCommands: { setMode: mocks.setMode },
 }));
 vi.mock('./self-v1-notice', () => ({ requireShownSelfNotice: mocks.notice }));
-vi.mock('./self-v1-access', () => ({ meetSelfAccess: mocks.selfAccess }));
+vi.mock('./self-v1-access', () => ({
+  meetSelfAccess: mocks.selfAccess,
+  resolveSelfWorkspace: mocks.resolveWs,
+}));
 vi.mock('./self-v1-outbox', () => ({ drainSelfOutbox: mocks.drain }));
 vi.mock('./transcription-availability', () => ({
   readMeetTranscriptionAvailability: mocks.availability,
@@ -82,6 +86,7 @@ beforeEach(() => {
   mocks.flag.mockResolvedValue(true);
   mocks.setMode.mockResolvedValue({ mode: 'self' });
   mocks.drain.mockResolvedValue(undefined);
+  mocks.resolveWs.mockResolvedValue('w');
 });
 
 describe('capture mode setter', () => {
@@ -199,6 +204,7 @@ describe('per-speaker notice evidence', () => {
   });
 
   it('refuses an allow whose hash does not match the shown notice text', async () => {
+    mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
     mocks.notice.mockRejectedValue(
       Object.assign(new Error('mismatch'), {
         status: 409,
@@ -211,7 +217,8 @@ describe('per-speaker notice evidence', () => {
     expect(mocks.notice).toHaveBeenCalledWith(
       expect.objectContaining({ locale: 'vi', textHash: 'a'.repeat(64) })
     );
-    expect(mocks.selfAccess).not.toHaveBeenCalled();
+    // The uploader check (flag, allowlist, membership) runs first.
+    expect(mocks.selfAccess).toHaveBeenCalledOnce();
     expect(mocks.room).not.toHaveBeenCalled();
   });
 
@@ -366,5 +373,66 @@ describe('transcript-consent extras', () => {
       session: null,
       canManageMode: false,
     });
+  });
+});
+
+describe('self control ordering', () => {
+  it('authenticates before reading the body', async () => {
+    mocks.user.mockResolvedValue(null);
+    const request = new Request(
+      'https://meet.tuturuuu.com/api/meet-ai/w/m/self/choice',
+      {
+        method: 'POST',
+        headers: { origin: 'https://meet.tuturuuu.com' },
+        body: 'not json',
+      }
+    );
+    const response = await meetAiResponse(() =>
+      chooseSelfTranscript(request, params)
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.resolveWs).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cross-origin request before anything else', async () => {
+    const request = new Request(
+      'https://meet.tuturuuu.com/api/meet-ai/w/m/self/mode',
+      {
+        method: 'POST',
+        headers: { origin: 'https://evil.example' },
+        body: JSON.stringify({ mode: 'room' }),
+      }
+    );
+    const response = await meetAiResponse(() => setSelfMode(request, params));
+    expect(response.status).toBe(403);
+    expect(mocks.user).not.toHaveBeenCalled();
+  });
+
+  it.each(['choice', 'mode'])(
+    'refuses a meeting outside the route workspace for %s',
+    async (route) => {
+      mocks.resolveWs.mockResolvedValue('another-workspace');
+      const response = await meetAiResponse(() =>
+        route === 'choice'
+          ? chooseSelfTranscript(post({ choice: 'decline' }), params)
+          : setSelfMode(post({ mode: 'room' }), params)
+      );
+      expect(response.status).toBe(404);
+      expect(mocks.room).not.toHaveBeenCalled();
+      expect(mocks.setMode).not.toHaveBeenCalled();
+    }
+  );
+
+  it('checks the flag before the notice evidence on Allow', async () => {
+    mocks.selfAccess.mockRejectedValue(
+      Object.assign(new Error('off'), {
+        status: 403,
+        code: 'MEET_SELF_UNAVAILABLE',
+      })
+    );
+    await expect(
+      chooseSelfTranscript(post(allowBody), params)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.notice).not.toHaveBeenCalled();
   });
 });

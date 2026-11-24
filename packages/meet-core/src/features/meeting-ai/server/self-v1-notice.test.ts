@@ -66,3 +66,21 @@ describe('per-speaker notice evidence hash', () => {
     });
   });
 });
+
+describe('missing notice text', () => {
+  it.each([
+    ['falls back to its key path', (key: string) => `meet.ai.${key}`],
+    ['is empty', () => ''],
+    [
+      'throws',
+      () => {
+        throw new Error('missing');
+      },
+    ],
+  ])('refuses Allow as unavailable when the text %s', async (_label, t) => {
+    mocks.translations.mockResolvedValue(t);
+    await expect(
+      requireShownSelfNotice({ locale: 'en', textHash: 'a'.repeat(64) })
+    ).rejects.toMatchObject({ status: 409, code: 'MEET_SELF_UNAVAILABLE' });
+  });
+});
