@@ -6,42 +6,42 @@
       "file": "apps/mobile/store/screenshots/windows/web/01-dashboard.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 33858
+      "bytes": 31578
     },
     {
       "id": "tasks",
       "file": "apps/mobile/store/screenshots/windows/web/02-tasks.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 46022
+      "bytes": 38396
     },
     {
       "id": "calendar",
       "file": "apps/mobile/store/screenshots/windows/web/03-calendar.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 37318
+      "bytes": 40320
     },
     {
       "id": "assistant",
       "file": "apps/mobile/store/screenshots/windows/web/04-assistant.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 24726
+      "bytes": 29102
     },
     {
       "id": "time-tracker",
       "file": "apps/mobile/store/screenshots/windows/web/05-time-tracker.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 25632
+      "bytes": 24432
     },
     {
       "id": "notes",
       "file": "apps/mobile/store/screenshots/windows/web/06-notes.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 46430
+      "bytes": 43010
     }
   ]
 }
