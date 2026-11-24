@@ -17,7 +17,9 @@ export const MEET_SELF_OUTBOX_MAX_BYTES = 32 * 1024;
 const bodySchema = z
   .object({
     roomId: z.string().min(1).max(200),
-    meetingId: z.uuid(),
+    // Informational only: every entry resolves by its own session id. A room
+    // holding entries with no recorded session sends null or nothing.
+    meetingId: z.uuid().nullable().optional(),
     entries: z
       .array(selfOutboxEntrySchema.strict())
       .max(MEET_SELF_OUTBOX_MAX_ENTRIES),

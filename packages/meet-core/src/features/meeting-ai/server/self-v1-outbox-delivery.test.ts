@@ -271,6 +271,21 @@ describe('self_v1 outbox delivery writes', () => {
     ).toEqual([1, 2]);
   });
 
+  it.each([
+    ['null', { meetingId: null }],
+    ['missing', { meetingId: undefined }],
+  ])('accepts a %s body meeting id', async (_label, extra) => {
+    const acked = await ackedOf(body([entry(a, 4, 'withdraw')], extra));
+    expect(acked).toEqual([ack(a, 4)]);
+  });
+
+  it('still refuses a malformed body meeting id', async () => {
+    const response = await deliver(
+      body([entry(a, 4, 'withdraw')], { meetingId: 'not-a-uuid' })
+    );
+    expect(response.status).toBe(400);
+  });
+
   it('resolves each entry by its own session, not the body meeting id', async () => {
     const acked = await ackedOf(
       body([entry(a, 4, 'withdraw', olderSession)], { meetingId: otherMeeting })
