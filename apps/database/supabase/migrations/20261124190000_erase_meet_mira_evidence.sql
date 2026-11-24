@@ -295,11 +295,11 @@ begin
     or (p_ws_id is not null and c.ws_id = p_ws_id);
   get diagnostics choices_copied = row_count;
 
-  -- room_seq is read through jsonb so this works before and after the column
-  -- exists; guest labels are never copied.
+  -- room_seq and text_hash are read through jsonb so this works before and
+  -- after those columns exist; guest labels are never copied.
   insert into private.meet_consent_proofs(
     kind, meeting_id, ws_id, user_id, participant_ref, choice, revision,
-    notice_version, room_seq, decided_at, erase_reason
+    notice_version, text_hash, room_seq, decided_at, erase_reason
   )
   select 'self_v1_decision', s.meeting_id, m.ws_id,
     case when exists (select 1 from auth.users u where u.id = c.user_id)
@@ -316,7 +316,8 @@ begin
       partition by c.session_id, c.participant_ref
       order by c.created_at, c.id
     ),
-    c.notice_version, (pg_catalog.to_jsonb(c) ->> 'room_seq')::bigint,
+    c.notice_version, pg_catalog.to_jsonb(c) ->> 'text_hash',
+    (pg_catalog.to_jsonb(c) ->> 'room_seq')::bigint,
     c.created_at, p_reason
   from private.meet_ai_consents c
   join public.meet_ai_sessions s on s.id = c.session_id
