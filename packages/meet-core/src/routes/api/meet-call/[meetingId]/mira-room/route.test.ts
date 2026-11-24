@@ -523,9 +523,8 @@ describe('room on without evidence is always compensated', () => {
   });
 
   it('does not retry an evidence refusal the database will repeat', async () => {
-    const { MiraChoiceRecordError } = await import(
-      '../../../../../features/live-assistant/server/room-mira-evidence'
-    );
+    const { MiraChoiceRecordError } =
+      await import('../../../../../features/live-assistant/server/room-mira-evidence');
     f.record.mockImplementation(async (evidence: { source: string }) => {
       if (evidence.source !== 'system_fallback')
         throw new MiraChoiceRecordError('23514');
