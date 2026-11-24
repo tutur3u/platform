@@ -248,17 +248,12 @@ it('(gap d) tells the host the plan lacks transcription after a 402, with a bill
 });
 
 it('(gap d) offers the billing link only for a plan refusal', () => {
+  // Exhausted credits stop a running session; only a plan refusal links to
+  // billing.
   show(
     hook({
       creditFailure: 'credits_exhausted',
-      data: data({
-        sessions: [
-          session({
-            ended_at: '2026-11-23T09:30:00Z',
-            notes_status: 'completed',
-          }),
-        ],
-      }),
+      data: data({ sessions: [session()] }),
     })
   );
   expect(screen.getByText(ai.credits_exhausted)).toBeTruthy();
