@@ -576,6 +576,33 @@ bun apps/meet-realtime/src/reconnect-check.ts
 That check stops the room server mid-session and asserts the client recovers,
 mints a new token for the retry, and stays closed when the close was intentional.
 
+## Creating a meeting
+
+The meetings page and the ended screen offer one action, **New meeting**
+(Vietnamese: Cuộc họp mới), that starts an instant meeting and opens its
+pre-join stage. **Schedule** is a separate quiet button beside it that opens the
+scheduling dialog; a plain button pair replaces the earlier one-item split menu.
+The dialog says once that the meeting is added to Tuturuuu Calendar, and the join
+dialog submits with **Join** and carries no explainer sentence.
+
+An instant meeting is titled "{name}'s meeting" (Vietnamese: "Cuộc họp của
+{name}") when the host has a saved display name, the account's metadata name
+otherwise, and stays "Untitled meeting" when neither exists. The title is stored
+as the meeting name like any other, so calendar events, notes and transcripts show
+it unchanged, and no code compares a name against the untitled literal: the
+untitled label is only the display fallback for a meeting with no name. The host
+can rename it inline on the pre-join stage or from the in-call title. The ended
+screen's New meeting button does not know the host's name, so it keeps the
+untitled default.
+
+Regression coverage: `meeting-entry.test.tsx` and `host-name.test.ts`.
+
+Known chrome follow-ups, not yet done: the playback volume range still uses a
+native input, the title and share-option buttons keep their hand-written hover
+styles, the resize-handle grip and skeleton bars keep their small radii, and the
+chat panel, conversation tabs, header and top bar still carry 12–14 px icons,
+mixed radii and a sub-12 px time stamp.
+
 ## Meeting codes
 
 Every meeting has a shareable code and a `/r/<code>` link. The call header has

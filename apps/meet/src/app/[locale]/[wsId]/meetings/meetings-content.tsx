@@ -29,6 +29,8 @@ import {
 interface MeetingsContentProps {
   accountId: string;
   canCreate: boolean;
+  /** The host's display name, for an instant meeting's default title. */
+  hostName?: string;
   wsId: string;
   /** Initial Past search, e.g. from `?search=`. */
   search: string;
@@ -39,6 +41,7 @@ interface MeetingsContentProps {
 export function MeetingsContent({
   accountId,
   canCreate,
+  hostName,
   wsId,
   search: initialSearch,
   initialPastChoice = DEFAULT_PAST_CHOICE,
@@ -131,6 +134,7 @@ export function MeetingsContent({
       <div className="space-y-8">
         <MeetingEntry
           canCreate={canCreate}
+          hostName={hostName}
           onCreated={() => void refresh()}
           onScheduleOpenChange={setScheduleOpen}
           scheduleOpen={scheduleOpen}

@@ -6665,7 +6665,7 @@
       "complete_task": "Đánh dấu {name} đã xong",
       "complete_task_failed": "Không thể hoàn thành công việc. Vui lòng thử lại.",
       "create_failed": "Không thể tạo cuộc họp. Vui lòng thử lại.",
-      "create_meeting": "Tạo cuộc họp",
+      "create_meeting": "Cuộc họp mới",
       "creating": "Đang tạo…",
       "critical": "Khẩn cấp",
       "empty": "Chưa có nội dung để hiển thị.",

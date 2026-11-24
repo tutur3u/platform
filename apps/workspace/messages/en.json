@@ -6665,7 +6665,7 @@
       "complete_task": "Mark {name} as done",
       "complete_task_failed": "Could not complete the task. Please try again.",
       "create_failed": "Could not create the meeting. Please try again.",
-      "create_meeting": "Create meeting",
+      "create_meeting": "New meeting",
       "creating": "Creating…",
       "critical": "Critical",
       "empty": "Nothing to show yet.",

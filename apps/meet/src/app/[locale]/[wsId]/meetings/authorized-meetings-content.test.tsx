@@ -21,6 +21,7 @@ vi.mock('next/server', () => ({ connection: async () => {} }));
 vi.mock('../workspace-context', () => ({
   getMeetWorkspaceContext: mocks.context,
 }));
+vi.mock('./host-name', () => ({ readMeetingHostName: async () => 'Minh Anh' }));
 vi.mock('./meetings-content', () => ({ MeetingsContent: () => null }));
 vi.mock('@tuturuuu/ui/card', () => ({
   Card: () => null,
@@ -81,7 +82,11 @@ test('verified hosting eligibility enables controls for exactly the supplied act
   );
   expect(result[1]).toEqual(
     expect.objectContaining({
-      props: expect.objectContaining({ canCreate: true, accountId: 'actor' }),
+      props: expect.objectContaining({
+        canCreate: true,
+        accountId: 'actor',
+        hostName: 'Minh Anh',
+      }),
     })
   );
 });

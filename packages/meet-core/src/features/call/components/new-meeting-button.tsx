@@ -14,12 +14,15 @@ import { encodeRoomCode } from '../lib/room-code';
  */
 export function NewMeetingButton({
   wsId,
+  hostName,
   disabled,
   variant = 'outline',
   size = 'sm',
   className,
 }: {
   wsId: string;
+  /** The host's display name, for the default title of the new meeting. */
+  hostName?: string;
   disabled?: boolean;
   variant?: ButtonProps['variant'];
   size?: ButtonProps['size'];
@@ -35,7 +38,9 @@ export function NewMeetingButton({
       const response = await createWorkspaceMeeting<{
         meeting: { id: string };
       }>(wsId, {
-        name: t('meetings.untitled'),
+        name: hostName?.trim()
+          ? t('meetings.default_title', { name: hostName.trim() })
+          : t('meetings.untitled'),
         time: new Date().toISOString(),
       });
       router.push(`/r/${encodeRoomCode(response.meeting.id)}`);

@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { getTranslations } from 'next-intl/server';
+import { readMeetingHostName } from './host-name';
 import { MeetingsContent } from './meetings-content';
 
 /** Hosting eligibility gates controls, not the already-authorized workspace heading. */
@@ -21,6 +22,13 @@ export async function AuthorizedMeetingsContent(props: {
         return false;
       }
     ));
+  const hostName = identityError
+    ? ''
+    : await readMeetingHostName(
+        admin,
+        props.accountId,
+        identity.user.user_metadata
+      );
   const t = await getTranslations('meet.call');
   return (
     <>
@@ -32,7 +40,7 @@ export async function AuthorizedMeetingsContent(props: {
           {t(unavailable ? 'hosting_unavailable' : 'creation_restricted')}
         </p>
       )}
-      <MeetingsContent {...props} canCreate={canCreate} />
+      <MeetingsContent {...props} canCreate={canCreate} hostName={hostName} />
     </>
   );
 }

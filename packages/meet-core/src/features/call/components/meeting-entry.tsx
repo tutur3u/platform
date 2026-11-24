@@ -1,11 +1,6 @@
 'use client';
 
-import { LogIn, Video } from '@tuturuuu/icons';
-import {
-  CalendarClock,
-  ChevronDownIcon,
-  ExternalLink,
-} from '@tuturuuu/icons/lucide-static';
+import { CalendarClock, Loader2, LogIn, Video } from '@tuturuuu/icons';
 import { createWorkspaceMeeting } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,12 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -49,12 +38,15 @@ function defaultScheduledTime() {
 
 export function MeetingEntry({
   canCreate,
+  hostName,
   onCreated,
   onScheduleOpenChange,
   scheduleOpen: controlledScheduleOpen,
   wsId,
 }: {
   canCreate: boolean;
+  /** The host's display name, for the default title of an instant meeting. */
+  hostName?: string;
   onCreated: () => void;
   /** Lets the page open the schedule dialog from elsewhere (an empty state). */
   onScheduleOpenChange?: (open: boolean) => void;
@@ -79,7 +71,9 @@ export function MeetingEntry({
     setBusy(true);
     try {
       const response = await createWorkspaceMeeting<CreatedMeeting>(wsId, {
-        name: t('untitled'),
+        name: hostName?.trim()
+          ? t('default_title', { name: hostName.trim() })
+          : t('untitled'),
         time: new Date().toISOString(),
       });
       router.push(`/r/${encodeRoomCode(response.meeting.id)}`);
@@ -155,46 +149,27 @@ export function MeetingEntry({
 
   return (
     <div className="flex shrink-0 items-center gap-2">
-      {/* One split button: the outer corners use the same rounded-md radius as
-          Join meeting (a dialog trigger, which Sorbet's button rule does not
-          reach) and the seam stays square. data-sorbet-shape keeps Sorbet's
-          four-corner pill rule off these buttons so the side radii apply. */}
-      <div className="flex items-center">
-        <Button
-          className="rounded-l-md rounded-r-none pr-3 focus-visible:z-10"
-          data-sorbet-shape="keep"
-          disabled={!canCreate || busy}
-          onClick={() => void startMeeting()}
-          size="sm"
-        >
+      <Button
+        disabled={!canCreate || busy}
+        onClick={() => void startMeeting()}
+        size="sm"
+      >
+        {busy ? (
+          <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+        ) : (
           <Video className="size-4" />
-          {busy ? t('creating') : t('create')}
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label={t('create_options')}
-              className="rounded-l-none rounded-r-md border-l border-l-primary-foreground/25 px-2 focus-visible:z-10"
-              data-sorbet-shape="keep"
-              disabled={!canCreate || busy}
-              size="sm"
-            >
-              <ChevronDownIcon className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => setScheduleOpen(true)}>
-              <CalendarClock className="size-4" />
-              <div>
-                <div className="font-medium">{t('schedule_later')}</div>
-                <div className="text-muted-foreground text-xs">
-                  {t('schedule_later_hint')}
-                </div>
-              </div>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        )}
+        {t('create')}
+      </Button>
+      <Button
+        disabled={!canCreate || busy}
+        onClick={() => setScheduleOpen(true)}
+        size="sm"
+        variant="ghost"
+      >
+        <CalendarClock className="size-4" />
+        {t('schedule_later')}
+      </Button>
 
       <Dialog
         open={scheduleOpen}
@@ -205,11 +180,8 @@ export function MeetingEntry({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <div className="mb-2 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <CalendarClock className="size-5" />
-            </div>
             <DialogTitle>{t('schedule_title')}</DialogTitle>
-            <DialogDescription>{t('schedule_description')}</DialogDescription>
+            <DialogDescription>{t('schedule_later_hint')}</DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={scheduleMeeting}>
             <div className="space-y-2">
@@ -246,12 +218,8 @@ export function MeetingEntry({
                 />
               </div>
             </div>
-            <p className="flex items-center gap-1.5 text-muted-foreground text-xs">
-              <ExternalLink className="size-3.5" />
-              {t('calendar_hint')}
-            </p>
             {error && (
-              <p className="text-dynamic-red text-sm" role="alert">
+              <p className="text-destructive text-sm" role="alert">
                 {error}
               </p>
             )}
@@ -262,7 +230,10 @@ export function MeetingEntry({
                 </Button>
               </DialogClose>
               <Button disabled={busy} type="submit">
-                {busy ? t('scheduling') : t('schedule')}
+                {busy && (
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+                )}
+                {t('save')}
               </Button>
             </DialogFooter>
           </form>
@@ -282,13 +253,9 @@ export function MeetingEntry({
             {t('join')}
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent aria-describedby={undefined} className="sm:max-w-md">
           <DialogHeader>
-            <div className="mb-2 flex size-10 items-center justify-center rounded-xl bg-muted text-foreground">
-              <LogIn className="size-5" />
-            </div>
             <DialogTitle>{t('join_title')}</DialogTitle>
-            <DialogDescription>{t('join_description')}</DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={joinMeeting}>
             <div className="space-y-2">
@@ -302,7 +269,7 @@ export function MeetingEntry({
               />
             </div>
             {error && (
-              <p className="text-dynamic-red text-sm" role="alert">
+              <p className="text-destructive text-sm" role="alert">
                 {error}
               </p>
             )}
@@ -313,7 +280,7 @@ export function MeetingEntry({
                 </Button>
               </DialogClose>
               <Button disabled={!code.trim()} type="submit">
-                {t('join')}
+                {t('join_submit')}
               </Button>
             </DialogFooter>
           </form>
