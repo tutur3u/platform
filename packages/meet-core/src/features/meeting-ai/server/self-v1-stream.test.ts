@@ -240,3 +240,59 @@ describe('self_v1 stream open', () => {
     expect(await response.json()).toMatchObject({ code });
   });
 });
+
+describe('self_v1 open refusals and evidence', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.access.mockResolvedValue({
+      db: {},
+      user: { id: uploader },
+      wsId: 'w',
+      meetingId: 'm',
+    });
+    mocks.loadSession.mockResolvedValue({ id: sessionId, generation: 4 });
+  });
+
+  it.each([
+    ['notice_required', 'MEET_SELF_NOTICE_REQUIRED'],
+    ['capacity', 'MEET_SELF_UNAVAILABLE'],
+    ['rate_limited', 'MEET_SELF_RATE_LIMITED'],
+    ['allow_limit', 'MEET_SELF_NOT_ELIGIBLE'],
+  ])('answers an open refused for %s with 409 %s', async (reason, code) => {
+    mocks.begin.mockResolvedValue({ allowed: false, reason, pending: [] });
+    const response = await meetAiResponse(() =>
+      openSelfStream(post({ sessionId }), params)
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code });
+    expect(mocks.rpc.openStream).not.toHaveBeenCalled();
+  });
+
+  it('records a fresh allow with the room notice evidence', async () => {
+    mocks.begin.mockResolvedValue({
+      allowed: true,
+      epoch: 1,
+      allowSeq: 7,
+      noticeVersion: 'notice-room',
+      evidence: { locale: 'en', textHash: 'c'.repeat(64) },
+      pending: [],
+    });
+    mocks.rpc.consentState.mockResolvedValue(null);
+    mocks.rpc.recordDecision.mockResolvedValue({ revision: 1, recorded: true });
+    mocks.rpc.openStream.mockResolvedValue({
+      stream_id: streamId,
+      lease_expires_at: '2026-11-24T00:01:00Z',
+    });
+    mocks.commit.mockResolvedValue({ committed: true, pending: [] });
+    await openSelfStream(post({ sessionId }), params);
+    expect(mocks.rpc.recordDecision).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        decision: 'allow',
+        roomSeq: 7,
+        noticeVersion: 'notice-room',
+        evidence: { locale: 'en', textHash: 'c'.repeat(64) },
+      })
+    );
+  });
+});

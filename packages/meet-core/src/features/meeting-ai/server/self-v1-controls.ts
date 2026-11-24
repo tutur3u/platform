@@ -152,7 +152,17 @@ export async function chooseSelfTranscript(
     await meetSelfAccess(request, params);
   }
   const room = await roomFor(request, params);
-  return recordSelfChoice(room, parsed.data.choice);
+  return recordSelfChoice(
+    room,
+    parsed.data.choice,
+    parsed.data.choice === 'allow'
+      ? {
+          locale: parsed.data.locale,
+          textHash: parsed.data.textHash,
+          noticeVersion: parsed.data.noticeVersion,
+        }
+      : undefined
+  );
 }
 
 /**
@@ -186,14 +196,17 @@ export async function selfModeConsentChoice(
 /** Sends the caller's own choice to the room, then writes its legal entries. */
 async function recordSelfChoice(
   room: MeetSelfRoom,
-  choice: 'allow' | 'decline'
+  choice: 'allow' | 'decline',
+  notice?: { locale: string; textHash: string; noticeVersion: string }
 ) {
   let view: MeetTranscriptConsentView & { pending?: unknown };
   try {
+    // A per-speaker Allow carries the shown notice evidence to the room.
     view = await callRoomService(room.access, {
       action: 'transcript.consent.choice',
       choice,
       version: MEET_TRANSCRIPT_NOTICE_VERSION,
+      ...(notice ? { notice } : {}),
     });
   } catch (error) {
     throw selfRoomError(error);

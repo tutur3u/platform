@@ -26,9 +26,27 @@ const status = (error: unknown) =>
     : 0;
 
 /** Room refusals become fixed client codes; room text never passes through. */
+const roomCode = (error: unknown) =>
+  typeof error === 'object' && error !== null && 'code' in error
+    ? (error as { code?: unknown }).code
+    : undefined;
+
 export function selfRoomError(error: unknown) {
   if (error instanceof MeetAiError) return error;
   const code = status(error);
+  // Notice refusals ask the participant to Allow again from the notice.
+  if (roomCode(error) === 'MEET_SELF_NOTICE_REQUIRED')
+    return new MeetAiError(
+      400,
+      'Allow transcription of your voice from its notice',
+      'MEET_SELF_NOTICE_REQUIRED'
+    );
+  if (roomCode(error) === 'MEET_SELF_NOTICE_STALE')
+    return new MeetAiError(
+      409,
+      'The transcription notice changed; review it and try again',
+      'MEET_SELF_NOTICE_STALE'
+    );
   if (code === 429)
     return new MeetAiError(
       409,
@@ -94,6 +112,8 @@ export const selfRoomCommands = {
       epoch?: number;
       allowSeq?: number;
       noticeVersion?: string;
+      locale?: string;
+      textHash?: string;
       pending?: MeetSelfOutboxEntry[];
     }>(room, { action: 'transcription.self.openBegin', sessionId });
     const pending = pendingOf(reply?.pending);
@@ -115,6 +135,14 @@ export const selfRoomCommands = {
       epoch: reply.epoch as number,
       allowSeq: reply.allowSeq as number,
       noticeVersion: reply.noticeVersion,
+      // The notice evidence the room holds for this allow, when it has one.
+      evidence:
+        typeof reply.locale === 'string' &&
+        /^[a-z]{2}(-[A-Z]{2})?$/.test(reply.locale) &&
+        typeof reply.textHash === 'string' &&
+        /^[0-9a-f]{64}$/.test(reply.textHash)
+          ? { locale: reply.locale, textHash: reply.textHash }
+          : undefined,
       pending,
     };
   },
@@ -222,7 +250,19 @@ export const selfRoomCommands = {
       });
     } catch (error) {
       const code = status(error);
-      // A stale or ended session, or a room in room-capture mode.
+      if (code === 409 && roomCode(error) === 'MEET_SELF_SESSION_LIVE')
+        throw new MeetAiError(
+          409,
+          'A transcription session is already running',
+          'MEET_SELF_SESSION_LIVE'
+        );
+      if (code === 409 && roomCode(error) === 'MEET_SELF_SESSION_ENDED')
+        throw new MeetAiError(
+          409,
+          'This transcription session has ended',
+          'MEET_SELF_SESSION_ENDED'
+        );
+      // A room in room-capture mode.
       if (code === 409)
         throw new MeetAiError(
           409,
@@ -238,7 +278,7 @@ export const selfRoomCommands = {
       if (code === 403)
         throw new MeetAiError(
           403,
-          'Only the host or a co-host can start transcription'
+          'Only the host or a co-host can start or end transcription'
         );
       throw selfRoomError(error);
     }

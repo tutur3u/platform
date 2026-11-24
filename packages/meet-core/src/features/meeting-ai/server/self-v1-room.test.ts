@@ -17,8 +17,10 @@ import { selfRoomCommands } from './self-v1-room';
 const room = { access: {} as never, accountId: 'u' };
 const sessionId = '00000000-0000-4000-8000-0000000000cc';
 const pending = [{ sessionId, accountId: 'u', seq: 4, kind: 'withdraw' }];
-const failWith = (status: number) =>
-  mocks.room.mockRejectedValue(Object.assign(new Error('x'), { status }));
+const failWith = (status: number, code?: string) =>
+  mocks.room.mockRejectedValue(
+    Object.assign(new Error('x'), { status, code })
+  );
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -54,6 +56,35 @@ describe('self_v1 room replies', () => {
       noticeVersion: 'notice-room',
       pending: [],
     });
+  });
+
+  it('returns the notice evidence the room holds for the allow', async () => {
+    mocks.room.mockResolvedValue({
+      allowed: true,
+      epoch: 2,
+      allowSeq: 5,
+      noticeVersion: 'notice-room',
+      locale: 'vi',
+      textHash: 'b'.repeat(64),
+      pending: [],
+    });
+    expect(await selfRoomCommands.openBegin(room, sessionId)).toMatchObject({
+      evidence: { locale: 'vi', textHash: 'b'.repeat(64) },
+    });
+  });
+
+  it('drops malformed notice evidence', async () => {
+    mocks.room.mockResolvedValue({
+      allowed: true,
+      epoch: 2,
+      allowSeq: 5,
+      noticeVersion: 'notice-room',
+      locale: 'Vietnamese',
+      textHash: 'nope',
+    });
+    expect(
+      (await selfRoomCommands.openBegin(room, sessionId)).evidence
+    ).toBeUndefined();
   });
 
   it('refuses an allowed open without a notice version', async () => {
@@ -105,10 +136,14 @@ describe('capture mode refusals', () => {
 describe('session record refusals', () => {
   it.each([
     [409, 409, 'MEET_SELF_PROTOCOL_MISMATCH'],
+    [409, 409, 'MEET_SELF_SESSION_LIVE', 'MEET_SELF_SESSION_LIVE'],
+    [409, 409, 'MEET_SELF_SESSION_ENDED', 'MEET_SELF_SESSION_ENDED'],
     [412, 409, 'MEET_SELF_UNAVAILABLE'],
     [403, 403, undefined],
-  ])('maps room %i to %i %s', async (roomStatus, status, code) => {
-    failWith(roomStatus);
+  ] as Array<[number, number, string | undefined, string?]>)(
+    'maps room %i to %i %s',
+    async (roomStatus, status, code, roomCode) => {
+    failWith(roomStatus, roomCode);
     await expect(
       selfRoomCommands.recordSession(room, {
         sessionId,
@@ -116,5 +151,18 @@ describe('session record refusals', () => {
         generation: 1,
       })
     ).rejects.toMatchObject({ status, code });
+    }
+  );
+});
+
+describe('notice refusals from the room', () => {
+  it.each([
+    [400, 'MEET_SELF_NOTICE_REQUIRED', 400],
+    [409, 'MEET_SELF_NOTICE_STALE', 409],
+  ])('keeps room %i %s as a fixed client code', async (roomStatus, code, status) => {
+    const { selfRoomError } = await import('./self-v1-room');
+    expect(
+      selfRoomError(Object.assign(new Error('x'), { status: roomStatus, code }))
+    ).toMatchObject({ status, code });
   });
 });

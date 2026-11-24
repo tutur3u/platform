@@ -215,6 +215,21 @@ describe('per-speaker notice evidence', () => {
     expect(mocks.room).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [400, 'MEET_SELF_NOTICE_REQUIRED'],
+    [409, 'MEET_SELF_NOTICE_STALE'],
+  ])('passes the room %i %s back to the client', async (status, code) => {
+    mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
+    mocks.room.mockRejectedValue(
+      Object.assign(new Error('room'), { status, code })
+    );
+    const response = await meetAiResponse(() =>
+      chooseSelfTranscript(post(allowBody), params)
+    );
+    expect(response.status).toBe(status);
+    expect(await response.json()).toMatchObject({ code });
+  });
+
   it('records a decline without checking the notice text', async () => {
     mocks.room.mockResolvedValue({ choice: 'decline' });
     await chooseSelfTranscript(post({ choice: 'decline' }), params);
@@ -229,6 +244,11 @@ describe('per-speaker notice evidence', () => {
       action: 'transcript.consent.choice',
       choice: 'allow',
       version: MEET_TRANSCRIPT_NOTICE_VERSION,
+      notice: {
+        locale: 'vi',
+        textHash: 'a'.repeat(64),
+        noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
+      },
     });
   });
 });

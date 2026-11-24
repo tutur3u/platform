@@ -112,11 +112,22 @@ export async function callRoomService<T>(
     await new Promise((resolve) => setTimeout(resolve, ROOM_READ_RETRY_MS));
   }
   if (!response?.ok) {
-    await response?.body?.cancel().catch(() => undefined);
+    // A room refusal may name a fixed code; its message never passes through.
+    const code =
+      response && response.status < 500
+        ? await response
+            .json()
+            .then((body: { code?: unknown }) =>
+              typeof body?.code === 'string' && /^[A-Z_]{3,64}$/.test(body.code)
+                ? body.code
+                : undefined
+            )
+            .catch(() => undefined)
+        : (await response?.body?.cancel().catch(() => undefined), undefined);
     throw new MeetCallAccessError(
       response?.status ?? 503,
       'Room action is unavailable',
-      undefined,
+      code,
       options?.retryRead && (response?.status ?? 503) >= 500 ? 1 : undefined
     );
   }

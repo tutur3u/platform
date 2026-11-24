@@ -104,3 +104,39 @@ it('reports a room that stays unreachable as retryable, not a 500', async () => 
   ).rejects.toMatchObject({ status: 503, retryAfterSeconds: 1 });
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
+
+it('keeps a fixed refusal code from the room, never its message', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      Response.json(
+        { code: 'MEET_SELF_SESSION_LIVE', error: 'room text' },
+        { status: 409 }
+      )
+    )
+  );
+  const error = await callRoomService(access, {
+    action: 'transcript.session',
+  }).catch((caught: unknown) => caught);
+  expect(error).toMatchObject({
+    status: 409,
+    code: 'MEET_SELF_SESSION_LIVE',
+    message: 'Room action is unavailable',
+  });
+});
+
+it('ignores a malformed or missing refusal code', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ code: 'not a code!' }, { status: 403 })
+      )
+      .mockResolvedValueOnce(new Response('plain', { status: 400 }))
+  );
+  for (let index = 0; index < 2; index++)
+    await expect(
+      callRoomService(access, { action: 'transcript.session' })
+    ).rejects.toMatchObject({ code: undefined });
+});

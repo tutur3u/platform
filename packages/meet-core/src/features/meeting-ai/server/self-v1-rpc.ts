@@ -90,6 +90,9 @@ async function call<F extends Fn>(
   return result.data as PrivateFunctions[F]['Returns'];
 }
 
+/** Whether `record_decision` takes notice evidence; unknown until tried. */
+let evidenceParams: boolean | undefined;
+
 const first = <T>(rows: T | T[] | null | undefined): T | undefined =>
   Array.isArray(rows) ? rows[0] : (rows ?? undefined);
 
@@ -127,17 +130,47 @@ export const selfRpc = {
       decision: 'allow' | 'deny' | 'withdraw';
       noticeVersion: string;
       roomSeq: number;
+      /** Notice evidence for an allow, stored once the database accepts it. */
+      evidence?: { locale: string; textHash: string };
     }
   ) => {
-    const row = first(
-      await call(db, 'meet_ai_self_v1_record_decision', {
-        p_session_id: input.sessionId,
-        p_account_id: input.accountId,
-        p_decision: input.decision,
-        p_notice_version: input.noticeVersion,
-        p_room_seq: input.roomSeq,
-      })
-    );
+    const args = {
+      p_session_id: input.sessionId,
+      p_account_id: input.accountId,
+      p_decision: input.decision,
+      p_notice_version: input.noticeVersion,
+      p_room_seq: input.roomSeq,
+    };
+    const send = (withEvidence: boolean) =>
+      call(
+        db,
+        'meet_ai_self_v1_record_decision',
+        (withEvidence && input.evidence
+          ? {
+              ...args,
+              p_locale: input.evidence.locale,
+              p_text_hash: input.evidence.textHash,
+            }
+          : args) as PrivateFunctions['meet_ai_self_v1_record_decision']['Args']
+      );
+    let rows: Awaited<ReturnType<typeof send>>;
+    const tryEvidence = !!input.evidence && evidenceParams !== false;
+    try {
+      rows = await send(tryEvidence);
+      if (tryEvidence) evidenceParams = true;
+    } catch (error) {
+      // Feature check: a database without the evidence parameters answers
+      // PGRST202 (no matching function); record the decision without them.
+      if (
+        !tryEvidence ||
+        !(error instanceof MeetSelfRpcError) ||
+        error.pgCode !== 'PGRST202'
+      )
+        throw error;
+      evidenceParams = false;
+      rows = await send(false);
+    }
+    const row = first(rows);
     if (!row) throw new MeetSelfRpcError(503, 'Consent was not recorded', '');
     return row;
   },

@@ -35,7 +35,18 @@ function openRefusal(reason: string | undefined) {
       'Too many changes; try again shortly',
       'MEET_SELF_RATE_LIMITED'
     );
-  if (reason === 'unavailable' || reason === 'no_session')
+  // Consent is held but the room has no notice evidence: Allow again.
+  if (reason === 'notice_required')
+    return new MeetAiError(
+      409,
+      'Allow transcription of your voice from its notice',
+      'MEET_SELF_NOTICE_REQUIRED'
+    );
+  if (
+    reason === 'unavailable' ||
+    reason === 'no_session' ||
+    reason === 'capacity'
+  )
     return new MeetAiError(
       409,
       'Transcription of your voice is not available',
@@ -95,6 +106,7 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
               decision: 'allow',
               // The room names the notice the participant accepted.
               noticeVersion: begin.noticeVersion,
+              evidence: begin.evidence,
               roomSeq: begin.allowSeq,
             })
           ).revision;
