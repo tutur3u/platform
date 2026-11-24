@@ -85,7 +85,8 @@ control (a short label and a status dot: on, pending the participant's choice,
 or off). Its accessible name is the full statement **Mira is on, turned on by
 {acceptor}**, which is also the first line of its popover; it cannot be hidden.
 The popover opens on its own until the participant confirms their choice and
-holds the Mira box, **Turn Mira off for me**, who is using Mira privately, the
+holds the Mira box, **Turn Mira off for me**, who is using Mira privately (shown
+to everyone in the call, guests and people without Mira included), the
 host's **Turn off Mira for everyone**, **Open private assistant** (opens the
 Private Assistant choice dialog) with Mira's voice picker, an **About Mira**
 disclosure (the 18+ rule, retention, privacy links) and a two-step **Report
@@ -93,9 +94,11 @@ someone under 18**. This is the only Mira control in the header. Without room
 Mira it still appears, named **Mira**, for anyone who has a Private Assistant,
 including when that assistant is unavailable (the choice dialog states the
 reason, such as a deployment without Private Mira). It is absent only when the
-person has no Private Assistant and room Mira is unavailable; the chat's
+person has no Private Assistant, room Mira is unavailable and nobody is using
+Mira privately; the chat's
 **Private Assistant** tab follows the same rule, and a failed or pending read
-never hides either. Room chat carries no Mira chip; it shows one dismissable **Mira is on** line per
+never hides either. A popover that closes for a new acceptance revision opens
+again for a choice not yet made. Room chat carries no Mira chip; it shows one dismissable **Mira is on** line per
 acceptance revision. The host or a co-host who is present sees **Turn on Mira**,
 which asks them to accept the Terms of Service and AI use and to confirm that
 everyone in the meeting is 18 or older.

@@ -77,21 +77,28 @@ function session(status = 'idle'): LiveSessionSnapshot {
     controls,
   };
 }
-function show(locale: 'en' | 'vi' = 'en') {
+function show(
+  locale: 'en' | 'vi' = 'en',
+  privateUsers?: { userId: string; displayName: string }[]
+) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+    <QueryClientProvider client={client}>
       <NextIntlClientProvider
         locale={locale}
         messages={locale === 'en' ? messages : vi_messages}
       >
-        <RoomMiraNotice meetingId="room" accountId="me" />
+        <RoomMiraNotice
+          meetingId="room"
+          accountId="me"
+          privateUsers={privateUsers}
+        />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
+  return client;
 }
 beforeEach(() => {
   vi.resetAllMocks();
@@ -209,6 +216,94 @@ it('keeps the control when the room Mira read fails', async () => {
   show();
   expect(
     await screen.findByRole('button', { name: messages.meet.live.title })
+  ).toBeTruthy();
+});
+
+const lan = [{ userId: 'u1', displayName: 'Lan' }];
+const indicator =
+  'Lan is using Mira privately; it hears only their microphone.';
+
+it('tells a guest without a Private Assistant who is using Mira privately', async () => {
+  f.read.mockResolvedValue({ available: false });
+  show('en', lan);
+  fireEvent.click(
+    await screen.findByRole('button', { name: messages.meet.live.title })
+  );
+  expect((await screen.findByRole('status')).textContent).toBe(indicator);
+  expect(
+    screen.queryByRole('button', { name: messages.meet.live.open_private })
+  ).toBeNull();
+});
+
+it('tells a member with room Mira off who is using Mira privately', async () => {
+  f.read.mockResolvedValue(base);
+  act(() => publishLiveSession(session()));
+  show('en', lan);
+  fireEvent.click(
+    await screen.findByRole('button', { name: messages.meet.live.title })
+  );
+  expect((await screen.findByRole('status')).textContent).toBe(indicator);
+});
+
+it('tells the host who is using Mira privately before room Mira is on', async () => {
+  f.read.mockResolvedValue({ ...base, canAccept: true });
+  show('en', lan);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.host_turn_on,
+    })
+  );
+  expect((await screen.findByRole('status')).textContent).toBe(indicator);
+});
+
+it('leaves focus with the assistant dialog when the popover closes', async () => {
+  f.read.mockResolvedValue(accepted);
+  const dialog = document.createElement('button');
+  dialog.textContent = 'dialog';
+  document.body.append(dialog);
+  controls.openConsent.mockImplementation(() => dialog.focus());
+  act(() => publishLiveSession(session()));
+  show();
+  fireEvent.click(
+    await screen.findByRole('button', { name: /Mira is on, turned on by Lan/ })
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: messages.meet.live.open_private })
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: messages.meet.live.open_private })
+    ).toBeNull()
+  );
+  // Radix returns focus to the trigger on a timer after the popover unmounts.
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(document.activeElement).toBe(dialog);
+  dialog.remove();
+});
+
+it('opens again for a new acceptance the person has not answered', async () => {
+  f.read.mockResolvedValue({ ...accepted, choice: null });
+  const client = show();
+  const confirm = () =>
+    screen.queryByRole('button', { name: messages.meet.mira_consent.confirm });
+  expect(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.confirm,
+    })
+  ).toBeTruthy();
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  await waitFor(() => expect(confirm()).toBeNull());
+  act(() =>
+    client.setQueryData(['room-mira-consent', 'room'], {
+      ...accepted,
+      choice: null,
+      acceptance: { ...accepted.acceptance, revision: 4 },
+    })
+  );
+  expect(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.confirm,
+    })
   ).toBeTruthy();
 });
 

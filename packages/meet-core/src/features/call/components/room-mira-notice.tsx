@@ -48,38 +48,42 @@ export function RoomMiraNotice({
   const t = useTranslations('meet.mira_consent');
   const tl = useTranslations('meet.live');
   const mira = useRoomMira(meetingId);
-  const [open, setOpen] = useState<boolean | null>(null);
+  const data = mira.data;
+  // The popover's own open state belongs to one acceptance revision, so a new
+  // revision opens it again for a choice the person has not made.
+  const revision = data?.acceptance?.revision ?? 0;
+  const [openState, setOpenState] = useState<{
+    revision: number;
+    open: boolean | null;
+  }>({ revision, open: null });
+  const open = openState.revision === revision ? openState.open : null;
+  const restoreFocus = useRef(true);
+  const setOpen = (next: boolean) => {
+    if (next) restoreFocus.current = true;
+    setOpenState({ revision, open: next });
+  };
   const session = useLiveSession(meetingId, accountId);
   const trigger = useRef<HTMLButtonElement>(null);
-  const data = mira.data;
-  // Focus returns to the control, then the assistant's dialog opens.
+  // The assistant's dialog takes focus, so the popover must not take it back.
+  const closeFocus = (event: Event) => {
+    if (restoreFocus.current) return;
+    event.preventDefault();
+    restoreFocus.current = true;
+  };
+  // Focus goes to the control first, so the dialog's close returns there.
   const privateEntry = session && (
     <MiraPrivateEntry
       session={session}
       onOpen={() => {
+        restoreFocus.current = false;
         trigger.current?.focus();
         setOpen(false);
         session.controls.openConsent();
       }}
     />
   );
-  // Room Mira is off, unavailable or unreadable for this person. The control
-  // then holds only their Private Assistant, and is absent without one.
-  if (!data || (!data.acceptance && !data.canAccept)) {
-    if (!session) return null;
-    return (
-      <RoomMiraChip
-        state="off"
-        title={tl('title')}
-        open={open ?? false}
-        onOpenChange={setOpen}
-        triggerRef={trigger}
-      >
-        {privateEntry}
-        <MiraAbout />
-      </RoomMiraChip>
-    );
-  }
+  // Everyone in the call sees who is using Mira privately, whether or not
+  // they have Mira themselves.
   const privateList = privateUsers.length > 0 && (
     <ul className="space-y-1 text-muted-foreground text-xs">
       {privateUsers.map((person) => (
@@ -90,6 +94,26 @@ export function RoomMiraNotice({
       ))}
     </ul>
   );
+  // Room Mira is off, unavailable or unreadable for this person. The control
+  // then holds their Private Assistant and who else uses one, and is absent
+  // without either.
+  if (!data || (!data.acceptance && !data.canAccept)) {
+    if (!session && !privateList) return null;
+    return (
+      <RoomMiraChip
+        state="off"
+        title={tl('title')}
+        open={open ?? false}
+        onOpenChange={setOpen}
+        triggerRef={trigger}
+        onCloseAutoFocus={closeFocus}
+      >
+        {privateList}
+        {privateEntry}
+        <MiraAbout />
+      </RoomMiraChip>
+    );
+  }
   if (!data.acceptance)
     return (
       <RoomMiraChip
@@ -98,9 +122,11 @@ export function RoomMiraNotice({
         open={open ?? false}
         onOpenChange={setOpen}
         triggerRef={trigger}
+        onCloseAutoFocus={closeFocus}
       >
         <p className="font-medium">{t('host_title')}</p>
         <HostAcceptance mira={mira} />
+        {privateList}
         {privateEntry}
         <MiraAbout />
       </RoomMiraChip>
@@ -129,6 +155,7 @@ export function RoomMiraNotice({
       open={open ?? state === 'choose'}
       onOpenChange={setOpen}
       triggerRef={trigger}
+      onCloseAutoFocus={closeFocus}
     >
       <p className="font-medium">{label}</p>
       <ParticipantChoice

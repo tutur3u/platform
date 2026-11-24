@@ -28,6 +28,7 @@ export function RoomMiraChip({
   open,
   onOpenChange,
   triggerRef,
+  onCloseAutoFocus,
   children,
 }: {
   state: RoomMiraChipState;
@@ -38,6 +39,8 @@ export function RoomMiraChip({
   onOpenChange?: (open: boolean) => void;
   /** Lets a popover item return focus to the control before it opens a dialog. */
   triggerRef?: Ref<HTMLButtonElement>;
+  /** Runs when the popover closes and returns focus to the control. */
+  onCloseAutoFocus?: (event: Event) => void;
   children: ReactNode;
 }) {
   const descriptionId = useId();
@@ -69,6 +72,7 @@ export function RoomMiraChip({
         aria-label={title}
         align="end"
         collisionPadding={12}
+        onCloseAutoFocus={onCloseAutoFocus}
         className="max-h-[min(32rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-1.5rem))] space-y-3 overflow-y-auto text-sm [--popover-padding:0.875rem]"
       >
         {children}

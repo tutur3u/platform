@@ -4,13 +4,14 @@ const storageKey = (meetingId: string) => `meet:mira-lines:${meetingId}`;
 
 /**
  * A room Mira system line shows once per acceptance revision, however many
- * times it is delivered or replayed. A line without a revision is its own.
+ * times it is delivered or replayed. A line without a valid revision (an integer above 0) is its own.
  */
 export function miraLineKey(message: Pick<CallChatMessage, 'id' | 'notice'>) {
   const { notice } = message;
-  return notice?.revision === undefined
-    ? `id:${message.id}`
-    : `${notice.kind}:${notice.revision}`;
+  const revision = notice?.revision;
+  return notice && Number.isInteger(revision) && revision! > 0
+    ? `${notice.kind}:${revision}`
+    : `id:${message.id}`;
 }
 
 /** The chat without repeated or dismissed Mira system lines. */
