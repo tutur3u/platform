@@ -65,8 +65,8 @@ stack and workdir when it finishes.
 
 ## Staging Worker
 
-Staging is a separate Worker, `tuturuuu-chat-realtime-staging`, selected by
-`CHAT_REALTIME_DEPLOY_ENV=staging` in `cloudflare.config.ts`. It has its own
+Staging is a separate Worker, named in `cloudflare.config.ts` and selected by
+`CHAT_REALTIME_DEPLOY_ENV=staging`. It has its own
 Durable Object namespaces and is reached only on its `workers.dev` origin, with
 no zone route or custom domain. Production keeps the canonical name with
 `workers.dev` off.
