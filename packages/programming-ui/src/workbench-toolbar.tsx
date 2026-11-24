@@ -1,7 +1,6 @@
 'use client';
 import {
   Bookmark,
-  CodeXml,
   Ellipsis,
   Loader2,
   Save,
@@ -82,19 +81,10 @@ export function WorkbenchToolbar({
   return (
     <header className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b px-3 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        {meeting ? (
-          <span
-            aria-hidden="true"
-            className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
-          >
-            <CodeXml className="size-4" />
-          </span>
-        ) : null}
         {meeting?.mark}
         <div className="flex min-w-0 flex-col leading-tight">
           <strong className="truncate font-semibold text-sm">{title}</strong>
           <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
-            {meeting && <span className="truncate">{t('coding')}</span>}
             {status !== 'open' ? (
               <output className="flex shrink-0 items-center gap-1">
                 <Loader2

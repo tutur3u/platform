@@ -1,5 +1,5 @@
 'use client';
-import { Captions, CodeXml, FileText, LayoutGrid } from '@tuturuuu/icons';
+import { Captions } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -30,22 +30,16 @@ import { useRoomNavigationControls } from './room-navigation-controls';
 type Device = 'microphone' | 'camera' | 'screen';
 type Toggle = { active: boolean; toggle: () => void };
 
-/** Quiet label of where this person is, shown left of the root controls. */
+/**
+ * Quiet label of where this person is, shown left of the root controls. It is
+ * text only: the surface's own header already carries its icon.
+ */
 function SurfaceContext({ nav }: { nav: RoomNavigation }) {
   const t = useTranslations('meet.call.navigation');
   if (nav.onStage) return null;
-  const Icon =
-    nav.view.surface === 'programming'
-      ? CodeXml
-      : nav.view.surface === 'document'
-        ? FileText
-        : LayoutGrid;
   return (
-    <span className="flex min-w-0 items-center gap-2">
-      <Icon aria-hidden="true" className="size-4 shrink-0" />
-      <span className="truncate">
-        {t('context', { surface: nav.surfaceName })}
-      </span>
+    <span className="min-w-0 truncate">
+      {t('context', { surface: nav.surfaceName })}
     </span>
   );
 }

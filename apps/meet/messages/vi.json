@@ -5676,6 +5676,8 @@
       "stage_layout": {
         "close": "Đóng {title}",
         "error": "Không tải được {title}",
+        "exit_fullscreen": "Thoát toàn màn hình {title}",
+        "fullscreen": "Toàn màn hình {title}",
         "loading": "Đang tải {title}",
         "maximize": "Phóng to {title}",
         "move": "Di chuyển {title}",

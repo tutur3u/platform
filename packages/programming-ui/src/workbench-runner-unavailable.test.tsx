@@ -280,11 +280,12 @@ it('treats a failed checkpoint or the save before a retried run as unsaved', () 
   expect(runnerGate('card', true, null).saveFailed).toBe(false);
 });
 
-it('names the language in full in the editor footer and flags read-only', () => {
-  render(intl(<WorkbenchEditorStatus language="cpp" editable={false} />));
-  const footer = screen.getByText('C++').closest('div')!;
-  expect(footer.textContent).toContain(`${t.language}: C++`);
+it('flags read-only in the editor footer without repeating the runtime', () => {
+  render(intl(<WorkbenchEditorStatus editable={false} />));
+  const footer = screen.getByText(t.readOnly).closest('div')!;
   expect(footer.textContent).toContain(t.readOnly);
+  expect(footer.querySelector('[data-language]')).toBeNull();
+  expect(footer.textContent).not.toContain('C++');
 });
 
 it('disables runs only in meetings, only for a refused run, and reports it', () => {

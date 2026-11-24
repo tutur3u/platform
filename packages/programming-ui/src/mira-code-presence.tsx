@@ -100,74 +100,39 @@ export function useMiraCodeLabels(presence?: ProgrammingMiraPresence) {
   };
 }
 
+/** Mira's own status in the editor: what it is checking or has attributed, and why it failed. Absent when there is nothing to say. */
 export function MiraEditorBar({
   mira,
   presence,
-  onAnalyze,
-  editable,
 }: {
   mira: WorkbenchMira;
   presence?: ProgrammingMiraPresence;
-  onAnalyze: (source: 'chat' | 'live', intent: 'explain' | 'fix') => void;
-  editable: boolean;
 }) {
   const t = useTranslations('programmingPlayground');
   const labels = useMiraCodeLabels(presence);
-  const draft = mira.voiceDraft;
+  const checking =
+    (presence?.active || presence?.proposedFix?.status === 'proposed') &&
+    !labels.attribution &&
+    labels.checking;
+  if (!checking && !labels.attribution && !mira.error) return null;
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b bg-muted/25 px-2 py-1">
-      {(presence?.active || presence?.proposedFix?.status === 'proposed') &&
-        !labels.attribution &&
-        labels.checking && (
-          <span role="status" className={`${pill} bg-calendar-bg-purple`}>
-            <span className="size-2 shrink-0 animate-pulse rounded-full border border-current bg-current motion-reduce:animate-none motion-reduce:bg-transparent" />
-            <span className="truncate">{labels.checking}</span>
-          </span>
-        )}
+      {checking && (
+        <span role="status" className={`${pill} bg-calendar-bg-purple`}>
+          <span className="size-2 shrink-0 animate-pulse rounded-full border border-current bg-current motion-reduce:animate-none motion-reduce:bg-transparent" />
+          <span className="truncate">{labels.checking}</span>
+        </span>
+      )}
       {labels.attribution && (
         <span className={`${pill} bg-card`}>
           {mira.mark}
           {presence?.source === 'live' ? (
-            <AudioLines className="size-3 shrink-0" />
+            <AudioLines className="size-4 shrink-0" />
           ) : (
-            <MessageSquare className="size-3 shrink-0" />
+            <MessageSquare className="size-4 shrink-0" />
           )}
           <span>{labels.attribution}</span>
         </span>
-      )}
-      {mira.manage && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              className="ml-auto h-7 rounded-full motion-reduce:transition-none"
-              size="sm"
-              variant="outline"
-              disabled={
-                !editable ||
-                mira.pending ||
-                !!draft ||
-                mira.presence?.proposedFix?.status === 'proposed'
-              }
-            >
-              {mira.mark ?? <Sparkles className="size-3.5" />}
-              {t('miraReview')}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => onAnalyze('chat', 'explain')}>
-              <MessageSquare className="size-4" /> {t('miraExplainChat')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onAnalyze('chat', 'fix')}>
-              <MessageSquare className="size-4" /> {t('miraFixChat')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onAnalyze('live', 'explain')}>
-              <AudioLines className="size-4" /> {t('miraExplainLive')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onAnalyze('live', 'fix')}>
-              <AudioLines className="size-4" /> {t('miraFixLive')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       )}
       {mira.error && (
         <p role="alert" className="w-full text-destructive text-xs">
@@ -175,6 +140,55 @@ export function MiraEditorBar({
         </p>
       )}
     </div>
+  );
+}
+
+/** The host's Ask Mira menu, small enough to sit in the file tab row. */
+export function MiraAskMenu({
+  mira,
+  onAnalyze,
+  editable,
+}: {
+  mira: WorkbenchMira;
+  onAnalyze: (source: 'chat' | 'live', intent: 'explain' | 'fix') => void;
+  editable: boolean;
+}) {
+  const t = useTranslations('programmingPlayground');
+  const draft = mira.voiceDraft;
+  if (!mira.manage) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          className="h-7 shrink-0 rounded-full motion-reduce:transition-none"
+          size="sm"
+          variant="outline"
+          disabled={
+            !editable ||
+            mira.pending ||
+            !!draft ||
+            mira.presence?.proposedFix?.status === 'proposed'
+          }
+        >
+          {mira.mark ?? <Sparkles className="size-4" />}
+          {t('miraReview')}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => onAnalyze('chat', 'explain')}>
+          <MessageSquare className="size-4" /> {t('miraExplainChat')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onAnalyze('chat', 'fix')}>
+          <MessageSquare className="size-4" /> {t('miraFixChat')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onAnalyze('live', 'explain')}>
+          <AudioLines className="size-4" /> {t('miraExplainLive')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onAnalyze('live', 'fix')}>
+          <AudioLines className="size-4" /> {t('miraFixLive')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

@@ -27,6 +27,7 @@ import {
 } from './pane-chrome';
 import { PhoneSwitcher } from './phone-switcher';
 import type { StageLayoutController } from './use-stage-layout';
+import { useStageFullscreen } from './use-stage-fullscreen';
 
 export interface StageActivity {
   id: string;
@@ -37,14 +38,19 @@ export interface StageActivity {
 
 const FULL: Rect = { x: 0, y: 0, w: 1, h: 1 };
 
-/** Where the people sit: filling the stage, in a row above panes, or a pill. */
-export type VideoStripMode = 'full' | 'row' | 'pill';
+/**
+ * Where the people sit: filling the stage, in a row above panes, a pill, or,
+ * while a pane is maximized, a small overlay on top of it.
+ */
+export type VideoStripMode = 'full' | 'row' | 'pill' | 'overlay';
 
 export function videoStripMode(
   hasPanes: boolean,
-  controller: Pick<StageLayoutController, 'strip' | 'tier'>
+  controller: Pick<StageLayoutController, 'strip' | 'tier'>,
+  maximized = false
 ): VideoStripMode {
   if (!hasPanes) return 'full';
+  if (maximized && controller.tier !== 'phone') return 'overlay';
   if (controller.strip !== 'auto') return controller.strip;
   return controller.tier === 'desktop' ? 'row' : 'pill';
 }
@@ -91,6 +97,8 @@ export function StageLayoutView({
     [controller.layout, drag]
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [peopleHidden, setPeopleHidden] = useState(false);
   const [slots, setSlots] = useState<Record<string, HTMLElement | null>>({});
   const [switcher, setSwitcher] = useState(false);
   const onSlot = useCallback(
@@ -116,13 +124,19 @@ export function StageLayoutView({
   const panes = paneLeaves(layout.root);
   const geometry = useMemo(() => layoutGeometry(layout), [layout]);
   const hasPanes = panes.length > 0;
-  const mode = videoStripMode(hasPanes, controller);
   const paneCount = countPanes(layout);
   const maximizedId = layout.maximizedPaneId;
+  const mode = videoStripMode(hasPanes, controller, !!maximizedId);
   const phone = tier === 'phone';
   // Following someone shows their arrangement; rearranging waits until the
   // person leaves follow mode.
   const locked = controller.locked;
+  const full = useStageFullscreen({
+    root: rootRef,
+    maximizedId,
+    maximize: controller.maximize,
+  });
+  const canFullscreen = full.supported && !phone && !locked;
 
   const rectOf = (paneId: string) =>
     paneId === maximizedId ? FULL : (geometry.panes[paneId] ?? FULL);
@@ -132,6 +146,23 @@ export function StageLayoutView({
   const toggleMaximize = (paneId: string) =>
     controller.maximize(maximizedId === paneId ? null : paneId);
 
+  const focusedPaneId = layout.focusedPaneId ?? panes[0]?.id;
+  // Shift+Alt+Enter toggles fullscreen from anywhere in the stage, the code
+  // editor included, which is why it is read in the capture phase.
+  const fullscreenKey = (event: KeyboardEvent) => {
+    if (
+      !canFullscreen ||
+      !focusedPaneId ||
+      event.key !== 'Enter' ||
+      !event.shiftKey ||
+      !event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return;
+    event.preventDefault();
+    full.toggle(focusedPaneId);
+  };
   const cycleFocus = (event: KeyboardEvent) => {
     if (event.key !== 'F6' || panes.length < 2) return;
     event.preventDefault();
@@ -145,6 +176,7 @@ export function StageLayoutView({
       ?.focus();
   };
 
+  const overlayHidden = mode === 'overlay' && peopleHidden;
   const focusedPane = panes.find((pane) => pane.id === layout.focusedPaneId);
   const switchItems = useMemo(
     () => controller.openIds.map(meta),
@@ -156,19 +188,41 @@ export function StageLayoutView({
   };
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col gap-2">
+    <div
+      ref={rootRef}
+      className={cn(
+        'relative flex h-full min-h-0 min-w-0 flex-col gap-2',
+        full.fullscreen && 'bg-background p-2'
+      )}
+    >
       {stage != null && (
         <div
-          aria-hidden={mode === 'pill' || undefined}
-          inert={mode === 'pill' || undefined}
+          aria-hidden={mode === 'pill' || overlayHidden || undefined}
+          inert={mode === 'pill' || overlayHidden || undefined}
           className={cn(
             'relative min-w-0',
             mode === 'full' && 'min-h-0 flex-1',
             mode === 'row' && 'h-32 shrink-0',
-            mode === 'pill' && 'h-0 overflow-hidden'
+            mode === 'pill' && 'h-0 overflow-hidden',
+            mode === 'overlay' &&
+              'absolute right-3 bottom-3 z-30 h-28 w-48 overflow-hidden rounded-2xl border bg-background shadow-elevation-2',
+            overlayHidden && 'h-0 w-0 border-0'
           )}
         >
           {stage}
+          {mode === 'overlay' && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="absolute top-1 right-1 size-7 rounded-full bg-background/80 backdrop-blur"
+              aria-label={t('video_hide')}
+              title={t('video_hide')}
+              onClick={() => setPeopleHidden(true)}
+            >
+              <ChevronDown aria-hidden="true" className="size-4" />
+            </Button>
+          )}
           {mode === 'row' && (
             <Button
               type="button"
@@ -183,6 +237,20 @@ export function StageLayoutView({
             </Button>
           )}
         </div>
+      )}
+      {stage != null && overlayHidden && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="absolute right-3 bottom-3 z-30 h-8 gap-1.5 rounded-full bg-background px-3"
+          aria-label={t('video_show')}
+          onClick={() => setPeopleHidden(false)}
+        >
+          <Video aria-hidden="true" className="size-4" />
+          {t('video_count', { count: peopleCount })}
+          <ChevronUp aria-hidden="true" className="size-4" />
+        </Button>
       )}
       {stage != null && mode === 'pill' && (
         <div className="flex shrink-0 justify-end">
@@ -206,6 +274,7 @@ export function StageLayoutView({
           role="group"
           aria-label={t('region')}
           className="relative min-h-0 flex-1"
+          onKeyDownCapture={fullscreenKey}
           onKeyDown={cycleFocus}
         >
           {panes.map((pane) => (
@@ -219,8 +288,10 @@ export function StageLayoutView({
               hidden={hiddenPane(pane.id)}
               maximized={pane.id === maximizedId}
               reorderable={paneCount > 1 && !phone && !locked}
-              canMaximize={paneCount > 1 && !phone && !locked}
+              canMaximize={!phone && !locked}
               locked={locked}
+              fullscreen={full.fullscreen}
+              onToggleFullscreen={canFullscreen ? full.toggle : undefined}
               onSlot={onSlot}
               onFocus={controller.focusPane}
               onActivate={controller.activate}
@@ -298,12 +369,7 @@ export function StageLayoutView({
                   visible={!hidden && pane.active === activity.id}
                   maximized={pane.id === maximizedId}
                   slot={slots[pane.id] ?? null}
-                  canMaximize={
-                    paneCount > 1 &&
-                    !phone &&
-                    !locked &&
-                    pane.id !== maximizedId
-                  }
+                  canMaximize={!phone && !locked && pane.id !== maximizedId}
                   tab={
                     pane.tabs.length > 1 &&
                     !(phone && !locked && switchItems.length > 1)

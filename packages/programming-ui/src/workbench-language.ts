@@ -15,40 +15,6 @@ export const LANGUAGE_LABELS: Record<PlaygroundLanguage, string> = {
   shell: 'Shell',
 };
 
-/** Short codes for the file tab badge, where the full name does not fit. */
-export const LANGUAGE_CODES: Record<PlaygroundLanguage, string> = {
-  python: 'PY',
-  javascript: 'JS',
-  typescript: 'TS',
-  c: 'C',
-  cpp: 'C++',
-  java: 'JAVA',
-  rust: 'RS',
-  go: 'GO',
-  ruby: 'RB',
-  php: 'PHP',
-  shell: 'SH',
-};
-
-/**
- * Tinted badge tones, limited to the hues Sorbet tunes for light and dark
- * (blue, green, orange, red, yellow, purple, pink, teal, gray) so every ink
- * keeps AA contrast on its own tint.
- */
-export const LANGUAGE_TONES: Record<PlaygroundLanguage, string> = {
-  python: 'bg-dynamic-blue/10 text-dynamic-blue',
-  javascript: 'bg-dynamic-yellow/10 text-dynamic-yellow',
-  typescript: 'bg-dynamic-purple/10 text-dynamic-purple',
-  c: 'bg-dynamic-gray/10 text-dynamic-gray',
-  cpp: 'bg-dynamic-blue/10 text-dynamic-blue',
-  java: 'bg-dynamic-red/10 text-dynamic-red',
-  rust: 'bg-dynamic-orange/10 text-dynamic-orange',
-  go: 'bg-dynamic-teal/10 text-dynamic-teal',
-  ruby: 'bg-dynamic-pink/10 text-dynamic-pink',
-  php: 'bg-dynamic-purple/10 text-dynamic-purple',
-  shell: 'bg-dynamic-green/10 text-dynamic-green',
-};
-
 const EXTENSIONS: Record<string, PlaygroundLanguage> = {
   py: 'python',
   js: 'javascript',

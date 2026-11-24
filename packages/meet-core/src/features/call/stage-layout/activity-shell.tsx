@@ -1,6 +1,13 @@
 'use client';
 
-import { Maximize, Minimize, RefreshCw, X } from '@tuturuuu/icons';
+import {
+  Maximize,
+  Maximize2,
+  Minimize,
+  Minimize2,
+  RefreshCw,
+  X,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
@@ -211,7 +218,7 @@ export function ActivityShell({
   );
 }
 
-/** Maximize and close, shared by the pane header and the phone header. */
+/** Fullscreen, maximize and close for a pane header. */
 export function PaneWindowActions({
   title,
   maximized,
@@ -219,6 +226,8 @@ export function PaneWindowActions({
   onClose,
   canMaximize = true,
   canClose = true,
+  fullscreen = false,
+  onToggleFullscreen,
 }: {
   title: string;
   maximized: boolean;
@@ -226,14 +235,37 @@ export function PaneWindowActions({
   onClose: () => void;
   canMaximize?: boolean;
   canClose?: boolean;
+  /** The stage is in browser fullscreen. */
+  fullscreen?: boolean;
+  /** Absent where fullscreen is unavailable: phones, following, or a browser without it. */
+  onToggleFullscreen?: () => void;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   // Corner brackets: the pane fills the stage. Activities with their own full
   // screen use the diagonal arrows, so the two are told apart.
   const MaximizeIcon = maximized ? Minimize : Maximize;
   const maximizeLabel = t(maximized ? 'restore' : 'maximize', { title });
+  const FullscreenIcon = fullscreen ? Minimize2 : Maximize2;
+  const fullscreenLabel = t(fullscreen ? 'exit_fullscreen' : 'fullscreen', {
+    title,
+  });
   return (
     <>
+      {onToggleFullscreen && (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
+          aria-label={fullscreenLabel}
+          aria-pressed={fullscreen}
+          aria-keyshortcuts="Shift+Alt+Enter"
+          title={`${fullscreenLabel} (Shift+Alt+Enter)`}
+          onClick={onToggleFullscreen}
+        >
+          <FullscreenIcon aria-hidden="true" className="size-4" />
+        </Button>
+      )}
       {canMaximize && (
         <Button
           type="button"

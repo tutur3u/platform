@@ -5251,6 +5251,8 @@
       "class_timer_started": "Đã bắt đầu hẹn giờ",
       "class_timer_stopped": "Đã dừng hẹn giờ",
       "stage_layout": {
+        "fullscreen": "Toàn màn hình {title}",
+        "exit_fullscreen": "Thoát toàn màn hình {title}",
         "close": "Đóng {title}",
         "error": "Không tải được {title}",
         "loading": "Đang tải {title}",

@@ -5251,6 +5251,8 @@
       "class_timer_started": "Timer started",
       "class_timer_stopped": "Timer stopped",
       "stage_layout": {
+        "fullscreen": "Full screen {title}",
+        "exit_fullscreen": "Exit full screen {title}",
         "close": "Close {title}",
         "error": "Couldn't load {title}",
         "loading": "Loading {title}",

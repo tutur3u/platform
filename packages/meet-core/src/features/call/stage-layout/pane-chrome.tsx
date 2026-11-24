@@ -41,6 +41,8 @@ export function PaneChrome({
   reorderable,
   canMaximize,
   locked = false,
+  fullscreen = false,
+  onToggleFullscreen,
   onSlot,
   onFocus,
   onActivate,
@@ -64,6 +66,10 @@ export function PaneChrome({
   canMaximize: boolean;
   /** Following someone: the arrangement is theirs, so nothing here edits it. */
   locked?: boolean;
+  /** The stage is in browser fullscreen. */
+  fullscreen?: boolean;
+  /** Absent where fullscreen is unavailable. */
+  onToggleFullscreen?: (paneId: string) => void;
   onSlot: (paneId: string, element: HTMLElement | null) => void;
   onFocus: (paneId: string) => void;
   onActivate: (paneId: string, activityId: string) => void;
@@ -227,6 +233,10 @@ export function PaneChrome({
           canMaximize={canMaximize}
           canClose={!locked}
           maximized={maximized}
+          fullscreen={fullscreen}
+          onToggleFullscreen={
+            onToggleFullscreen ? () => onToggleFullscreen(pane.id) : undefined
+          }
           onToggleMaximize={() => onToggleMaximize(pane.id)}
           onClose={() => onClose(pane.active)}
         />

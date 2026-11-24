@@ -13,7 +13,12 @@ import { useTranslations } from 'next-intl';
 import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 import { classNames as cn } from './class-names';
-import { MiraCodeReview, MiraEditorBar, miraFocus } from './mira-code-presence';
+import {
+  MiraAskMenu,
+  MiraCodeReview,
+  MiraEditorBar,
+  miraFocus,
+} from './mira-code-presence';
 import { isRunShortcut } from './run-shortcut';
 import { useProgrammingRoom } from './use-programming-room';
 import { runnerGate } from './use-runner-availability';
@@ -306,6 +311,26 @@ export function ProgrammingWorkbench({
     )
       runOperation('run');
   };
+  const analyze = (source: 'chat' | 'live', intent: 'explain' | 'fix') => {
+    if (!active || !mira) return;
+    const selection =
+      cursor?.path === active.path ? cursor.selection : undefined;
+    const startLine = selection?.startLine ?? 1;
+    const endLine =
+      selection && selection.endLine > startLine && selection.endColumn === 1
+        ? selection.endLine - 1
+        : (selection?.endLine ?? startLine);
+    mira.onAction({
+      action: 'analyze',
+      source,
+      intent,
+      range: { filePath: active.path, startLine, endLine },
+      failure:
+        intent === 'fix' && tests && failedIndex !== undefined
+          ? { submissionId: tests.submissionId, index: failedIndex }
+          : undefined,
+    });
+  };
   const onShortcut = (event: KeyboardEvent<HTMLElement>) => {
     // Monaco handles the shortcut itself and marks the event as handled.
     if (event.defaultPrevented || !isRunShortcut(event.nativeEvent)) return;
@@ -396,7 +421,15 @@ export function ProgrammingWorkbench({
             collaborators={meeting ? collaborators : undefined}
             miraFile={miraFile}
             miraMark={mira?.mark}
-            languageBadge={!!meeting}
+            trailing={
+              mira && (active || filePresence) ? (
+                <MiraAskMenu
+                  mira={mira}
+                  editable={editable}
+                  onAnalyze={analyze}
+                />
+              ) : undefined
+            }
             onAdd={
               !problem && editable
                 ? (path) => {
@@ -409,33 +442,7 @@ export function ProgrammingWorkbench({
             }
           />
           {mira && (active || filePresence) && (
-            <MiraEditorBar
-              mira={mira}
-              presence={filePresence}
-              editable={editable}
-              onAnalyze={(source, intent) => {
-                if (!active) return;
-                const selection =
-                  cursor?.path === active.path ? cursor.selection : undefined;
-                const startLine = selection?.startLine ?? 1;
-                const endLine =
-                  selection &&
-                  selection.endLine > startLine &&
-                  selection.endColumn === 1
-                    ? selection.endLine - 1
-                    : (selection?.endLine ?? startLine);
-                mira.onAction({
-                  action: 'analyze',
-                  source,
-                  intent,
-                  range: { filePath: active.path, startLine, endLine },
-                  failure:
-                    intent === 'fix' && tests && failedIndex !== undefined
-                      ? { submissionId: tests.submissionId, index: failedIndex }
-                      : undefined,
-                });
-              }}
-            />
+            <MiraEditorBar mira={mira} presence={filePresence} />
           )}
           <WorkbenchEditorStage
             roomKey={roomKey}
@@ -457,7 +464,6 @@ export function ProgrammingWorkbench({
           />
           {meeting && (
             <WorkbenchEditorStatus
-              language={project.language}
               editable={editable}
               diagnostics={diagnostics}
             />

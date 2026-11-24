@@ -5676,6 +5676,8 @@
       "stage_layout": {
         "close": "Close {title}",
         "error": "Couldn't load {title}",
+        "exit_fullscreen": "Exit full screen {title}",
+        "fullscreen": "Full screen {title}",
         "loading": "Loading {title}",
         "maximize": "Maximize {title}",
         "move": "Move {title}",

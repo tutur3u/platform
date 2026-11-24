@@ -207,12 +207,13 @@ it('shows a Needs more room card below 280 by 220 and maximizes from it', () => 
   expect(controller.layout.maximizedPaneId).not.toBeNull();
 });
 
-it('offers no maximize from the card on a single pane', () => {
+it('maximizes a single pane from the card too', () => {
   sizes.set('a', { width: 200, height: 150 });
   view();
   open('a');
   expect(screen.getByText('Needs more room')).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'Maximize' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Maximize' }));
+  expect(controller.layout.maximizedPaneId).not.toBeNull();
 });
 
 it('tags each pane with its container-query size class', () => {

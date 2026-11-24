@@ -231,6 +231,7 @@ export function WorkbenchMeetingOutput({
             open
             onToggle={() => undefined}
             embedded
+            runnerUnavailable={!!runner}
           />
         )}
       </div>

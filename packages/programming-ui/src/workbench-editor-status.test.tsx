@@ -16,11 +16,7 @@ const t = messages.programmingPlayground;
 function ui(diagnostics?: DiagnosticsStatus) {
   return (
     <NextIntlClientProvider locale="en" messages={messages}>
-      <WorkbenchEditorStatus
-        language="cpp"
-        editable
-        diagnostics={diagnostics}
-      />
+      <WorkbenchEditorStatus editable diagnostics={diagnostics} />
     </NextIntlClientProvider>
   );
 }

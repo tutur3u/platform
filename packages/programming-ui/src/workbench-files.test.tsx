@@ -7,7 +7,7 @@ import { WorkbenchFiles } from './workbench-files';
 
 afterEach(cleanup);
 const t = messages.programmingPlayground;
-function mount(onAdd?: (path: string) => void, languageBadge?: boolean) {
+function mount(onAdd?: (path: string) => void) {
   const onSelect = vi.fn();
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
@@ -16,7 +16,6 @@ function mount(onAdd?: (path: string) => void, languageBadge?: boolean) {
         active="main.py"
         onSelect={onSelect}
         onAdd={onAdd}
-        languageBadge={languageBadge}
       />
     </NextIntlClientProvider>
   );
@@ -92,15 +91,12 @@ it('shows Mira and collaborator chips on their open file only', () => {
   ).toBeNull();
 });
 
-it('badges only the active tab with its language code when asked to', () => {
-  mount(undefined, true);
-  const [main, util] = screen.getAllByRole('tab');
-  const badge = main!.querySelector('[data-language]');
-  expect(badge?.getAttribute('data-language')).toBe('python');
-  expect(badge?.querySelector('[aria-hidden="true"]')?.textContent).toBe('PY');
-  expect(badge?.className).toContain('bg-dynamic-blue/10');
-  // The visible code is hidden from the accessible name; the label is separated.
-  expect(main!.textContent).toBe('main.pyPY, Python');
-  expect(main!.querySelector('.sr-only')?.textContent).toBe(', Python');
-  expect(util!.querySelector('[data-language]')).toBeNull();
+it('leaves the runtime to the toolbar, with no badge on a tab', () => {
+  mount();
+  for (const tab of screen.getAllByRole('tab'))
+    expect(tab.querySelector('[data-language]')).toBeNull();
+  expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+    'main.py',
+    'util.py',
+  ]);
 });

@@ -83,6 +83,7 @@ export function WorkbenchOutput({
   run,
   preview,
   embedded = false,
+  runnerUnavailable = false,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -97,6 +98,8 @@ export function WorkbenchOutput({
   run?: WorkbenchRunInput;
   preview?: WorkbenchPreview;
   embedded?: boolean;
+  /** A card above already says runs are unavailable, so no "output appears here" promise. */
+  runnerUnavailable?: boolean;
 }) {
   const t = useTranslations('programmingPlayground');
   const stdinId = useId();
@@ -110,11 +113,14 @@ export function WorkbenchOutput({
         ? 'runnerStarting'
         : 'running'
   );
+  // Embedded in the meeting's output tabs, the Checkpoints row owns the save
+  // status, so it is not repeated beside the console.
+  const showSave = !embedded;
   const status = running
     ? runningLabel
-    : save === 'failed'
+    : showSave && save === 'failed'
       ? t('saveFailed')
-      : save === 'saved'
+      : showSave && save === 'saved'
         ? t('saved')
         : null;
   const statusLine = status && (
@@ -123,7 +129,7 @@ export function WorkbenchOutput({
       aria-live={view.slowStart ? 'off' : undefined}
       className={cn(
         'truncate text-xs',
-        save === 'failed' && !running
+        showSave && save === 'failed' && !running
           ? 'text-destructive'
           : 'text-muted-foreground'
       )}
@@ -280,7 +286,7 @@ export function WorkbenchOutput({
                 embedded ? 'min-h-28' : 'min-h-0'
               )}
             />
-          ) : (
+          ) : runnerUnavailable && !view.text && !running ? null : (
             <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words rounded-[var(--radius-lg)] border bg-card px-3 py-2.5 font-mono text-xs leading-relaxed">
               {preview && !port
                 ? t('webPreviewPortHint')

@@ -3106,12 +3106,28 @@ Learn uses the same workbench without the meeting-only controls.
   that language, with its code; the host's browser tab remembers them for the
   session. Every playground stays in the host's projects. Other participants see
   the language but cannot change it.
-- **Language at a glance.** The active language shows in three places: the
-  header control (a filled pill with a check, exposed as a checked radio; a
-  read-only pill for participants who cannot switch it), a short code such as
-  PY, JS or C++ on the active file tab, derived from the file extension and
-  omitted for docs and data files, and the full language name in the editor
-  footer. Learn's hosted playground keeps its plain header chip.
+- **One of each.** The pane header names the activity and carries its icon;
+  the workbench toolbar shows only the project name and how many people are
+  editing, never a second icon or subtitle. The language shows in one place: the
+  toolbar control (a filled pill with a check, exposed as a checked radio; a
+  read-only pill for participants who cannot switch it). The file tab and the
+  editor footer do not repeat it, and the editor footer holds only problems and
+  the read-only note. Saving shows once, in the Checkpoints row under the output
+  tabs. Learn's hosted playground keeps its plain header chip and its own save
+  line. The call bar's "You are in Co-Programming" label is text only.
+- **Ask Mira.** The host's Ask Mira menu sits at the end of the file tab row.
+  Mira's own status (checking, attribution, a failure) takes a row above the
+  editor only while it has something to say.
+- **Full screen.** The pane header has Maximize and Full screen even for a lone
+  pane. Maximize makes the pane fill the stage; Full screen does that and asks
+  the browser for true full screen on the whole stage. While a pane is maximized
+  the participant tiles collapse into a small overlay in the corner (the tiles
+  stay mounted, so audio and video never restart) that can be hidden and shown
+  again. Esc, the toggle or Shift+Alt+Enter leave full screen and put the layout
+  back as it was before. Shift+Alt+Enter also enters it, from anywhere in the
+  stage, the editor included. Full screen is unavailable on phones, while
+  following someone, and in browsers without the Fullscreen API; Maximize
+  remains. Coverage: `stage-fullscreen.test.tsx` and `workbench-chrome.test.tsx`.
 - **Run.** Cmd+Enter on macOS and Ctrl+Enter elsewhere runs the playground, or
   runs the tests for a problem. The Run control shows the shortcut. The shortcut
   works while focus is in the editor or elsewhere in the workbench, and nowhere
@@ -3132,8 +3148,9 @@ Learn uses the same workbench without the meeting-only controls.
   `aria-describedby` point at a status card above the output tabs. The card says
   running code is not available yet and that the code is saved with the meeting
   (not while the last save failed), and offers Copy code, Download for the
-  active file and, for people who can run, Retry. A run that starts again
-  re-enables Run. Only a refused run counts: save, result, test and stop
+  active file and, for people who can run, Retry. While the card shows, the console does not promise output (no "Output
+  appears here" placeholder); output a run already produced stays visible. A run
+  that starts again re-enables Run. Only a refused run counts: save, result, test and stop
   failures keep their own notice. Learn problems opened in the meeting never
   show the card, and Learn's hosted playground keeps the retry notice for every
   failure.

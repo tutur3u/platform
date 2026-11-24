@@ -1,5 +1,5 @@
 'use client';
-import { Check, ChevronDown, CodeXml, Loader2 } from '@tuturuuu/icons';
+import { Check, ChevronDown, Loader2 } from '@tuturuuu/icons';
 import type { PlaygroundLanguage } from '@tuturuuu/types/primitives/playgrounds';
 import {
   DropdownMenu,
@@ -53,7 +53,6 @@ export function WorkbenchLanguagePicker({
         title={t('languageHostOnly')}
         className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 font-semibold text-foreground text-xs"
       >
-        <CodeXml aria-hidden="true" className="size-3.5 text-primary" />
         <span className="sr-only">{t('language')}: </span>
         {LANGUAGE_LABELS[language]}
       </span>
