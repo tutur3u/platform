@@ -8,7 +8,7 @@ import {
   restartDelivery,
   type SelfOutboxDelivery,
 } from './room-self-capture-cycle';
-import { releasableEntries } from './room-self-capture-order';
+import { releasableEnds } from './room-self-capture-order';
 import {
   MEET_TRANSCRIPT_NOTICE_VERSION,
   type MeetTranscriptState,
@@ -531,8 +531,9 @@ export function ackSelfOutbox(
 
 /**
  * The caller's own entries, then up to `others` entries of other accounts, in
- * queue order. A session's `end` entry comes only with every earlier entry
- * of that session.
+ * queue order. Participant entries take the budget first; a session's `end`
+ * entry comes only with every earlier entry of that session, in the budget
+ * left (the caller's own ends always).
  */
 export function pendingFor(
   capture: SelfCaptureState | undefined,
@@ -541,15 +542,13 @@ export function pendingFor(
 ): SelfOutboxEntry[] {
   let budget = others;
   const outbox = capture?.outbox ?? [];
-  return releasableEntries(
-    outbox,
-    outbox.filter((entry) => {
-      if (entry.accountId === accountId) return true;
-      if (budget <= 0) return false;
-      budget--;
-      return true;
-    })
+  const take = (entry: SelfOutboxEntry) =>
+    entry.accountId === accountId || budget-- > 0;
+  const picked = new Set(
+    outbox.filter((entry) => entry.kind !== 'end' && take(entry))
   );
+  const ends = new Set(releasableEnds(outbox, picked, take));
+  return outbox.filter((entry) => picked.has(entry) || ends.has(entry));
 }
 
 export function currentAcceptanceRevision(state: State) {

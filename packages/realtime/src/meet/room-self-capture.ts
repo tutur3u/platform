@@ -390,9 +390,9 @@ function recordSession(
   }
   const existing = capture.session;
   const accountId = token.accountId ?? token.userId;
-  // A removed account never ends a session or clears its indicator.
-  if (!message.active && isRevoked(capture, accountId))
-    return mismatch(403, 'Forbidden');
+  // A removed account never starts, re-records or ends a session, and never
+  // clears its indicator.
+  if (isRevoked(capture, accountId)) return mismatch(403, 'Forbidden');
   if (message.active && protocol === 'self_v1') {
     const same = existing?.sessionId === message.sessionId;
     // Re-recording belongs to the session's host; starting one to a manager.
@@ -407,9 +407,16 @@ function recordSession(
       return mismatch(409, 'MEET_SELF_SESSION_ENDED');
     if (!same && isSelfSessionLive(existing, now))
       return mismatch(409, 'MEET_SELF_SESSION_LIVE');
-    // A draining session is stopped: a re-record keeps it draining and never
-    // shows its indicator again.
+    // A draining session is stopped: a re-record by its host, admitted and
+    // present like any start, keeps it draining and never shows its
+    // indicator again.
     if (same && existing.status !== 'active') {
+      if (!isPresent(state, accountId))
+        return {
+          state,
+          body: { error: 'Join an active meeting first' },
+          status: 403,
+        };
       const next = {
         ...state,
         selfCapture: {

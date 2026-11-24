@@ -1,24 +1,24 @@
 import type { SelfOutboxEntry } from './room-self-capture-state';
 
 /**
- * Keeps the outbox order across accounts for session ends: an `end` entry is
- * released only together with, or after, every earlier entry of its session,
- * so the Meet Worker stops a session only after its participant entries.
- * `chosen` is a subset of `outbox`; the result keeps its order.
+ * Session ends in outbox order that may go out with `picked`: an `end` entry
+ * is released only when every earlier entry of its session is in `picked`
+ * (or already acknowledged), so the Meet Worker stops a session only after
+ * its participant entries. Callers pick their non-end entries first and offer
+ * ends only the capacity left, so a held end never takes a slot. `admit`
+ * decides whether a releasable end fits.
  */
-export function releasableEntries(
+export function releasableEnds(
   outbox: readonly SelfOutboxEntry[],
-  chosen: readonly SelfOutboxEntry[]
+  picked: ReadonlySet<SelfOutboxEntry>,
+  admit: (entry: SelfOutboxEntry) => boolean
 ): SelfOutboxEntry[] {
-  const picked = new Set(chosen);
-  const blocked = new Set<SelfOutboxEntry>();
   const held = new Set<string>();
+  const ends: SelfOutboxEntry[] = [];
   for (const entry of outbox) {
-    if (!picked.has(entry)) held.add(entry.sessionId);
-    else if (entry.kind === 'end' && held.has(entry.sessionId))
-      blocked.add(entry);
+    if (entry.kind !== 'end') {
+      if (!picked.has(entry)) held.add(entry.sessionId);
+    } else if (!held.has(entry.sessionId) && admit(entry)) ends.push(entry);
   }
-  return blocked.size
-    ? chosen.filter((entry) => !blocked.has(entry))
-    : [...chosen];
+  return ends;
 }

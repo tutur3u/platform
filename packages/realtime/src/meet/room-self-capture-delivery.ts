@@ -1,5 +1,5 @@
 import type { MeetRoomSnapshot } from './room';
-import { releasableEntries } from './room-self-capture-order';
+import { releasableEnds } from './room-self-capture-order';
 import {
   deliveryDue,
   restartDelivery,
@@ -60,6 +60,8 @@ export function selfOutboxDeadline(
 ) {
   const capture = state.selfCapture;
   if (!outboxBinding(env) || !capture?.outbox.length) return undefined;
+  // Nothing to send never wakes the room.
+  if (!selectSelfOutboxBatch(capture).length) return undefined;
   // A stored outbox without a cycle (older state) starts one now.
   const due = deliveryDue(capture.delivery ?? restartDelivery(undefined, 0));
   const day = capture.deliveryDay;
@@ -95,29 +97,29 @@ export function earliestDeadline(...deadlines: Array<number | undefined>) {
 }
 
 /**
- * Up to eight entries per account in queue order, accounts that failed least
- * first, so an account whose entries keep failing never blocks the others.
+ * Up to eight participant entries per account in queue order, accounts that
+ * failed least first, so an account whose entries keep failing never blocks
+ * the others. Session ends fill only the capacity left, after them, and only
+ * once every earlier entry of their session is in the batch, so a held end
+ * never takes a slot from an entry that can go now.
  */
 export function selectSelfOutboxBatch(capture: SelfCaptureState) {
   const byAccount = new Map<string, SelfOutboxEntry[]>();
   for (const entry of capture.outbox) {
+    if (entry.kind === 'end') continue;
     const list = byAccount.get(entry.accountId) ?? [];
     if (list.length < SELF_OUTBOX_ACCOUNT_BATCH) list.push(entry);
     byAccount.set(entry.accountId, list);
   }
   const failures = capture.delivery?.failures ?? {};
-  const chosen = releasableEntries(
-    capture.outbox,
-    [...byAccount.entries()]
-      .sort(([a], [b]) => (failures[a] ?? 0) - (failures[b] ?? 0))
-      .flatMap(([, list]) => list)
-      .slice(0, SELF_OUTBOX_BATCH)
-  );
-  // A session's `end` entry is sent only with every earlier entry of its
-  // session, and after all of them.
+  const picked = [...byAccount.entries()]
+    .sort(([a], [b]) => (failures[a] ?? 0) - (failures[b] ?? 0))
+    .flatMap(([, list]) => list)
+    .slice(0, SELF_OUTBOX_BATCH);
+  let room = SELF_OUTBOX_BATCH - picked.length;
   return [
-    ...chosen.filter((entry) => entry.kind !== 'end'),
-    ...chosen.filter((entry) => entry.kind === 'end'),
+    ...picked,
+    ...releasableEnds(capture.outbox, new Set(picked), () => room-- > 0),
   ];
 }
 
@@ -149,10 +151,22 @@ function recordFailures(
   const heads = new Map<string, SelfOutboxEntry>();
   for (const entry of sent)
     if (!heads.has(entry.accountId)) heads.set(entry.accountId, entry);
+  // A session's end cannot be applied before its earlier entries, so it is
+  // not counted against the host while one of those stayed unacknowledged.
+  const waiting = new Set(
+    sent
+      .filter(
+        (e) =>
+          e.kind !== 'end' &&
+          !done.has(`${e.sessionId}:${e.accountId}:${e.seq}`)
+      )
+      .map((e) => e.sessionId)
+  );
   const failures = { ...capture.delivery.failures };
   let changed = false;
   for (const [accountId, head] of heads) {
     if (done.has(`${head.sessionId}:${head.accountId}:${head.seq}`)) continue;
+    if (head.kind === 'end' && waiting.has(head.sessionId)) continue;
     if (!capture.outbox.some((e) => e.accountId === accountId)) continue;
     failures[accountId] = (failures[accountId] ?? 0) + 1;
     changed = true;
@@ -186,6 +200,9 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
   const day = Math.floor(input.now / DAY_MS);
   const sent = capture.deliveryDay?.day === day ? capture.deliveryDay.count : 0;
   if (sent >= SELF_OUTBOX_DAILY_DELIVERIES) return;
+  // An empty batch is never posted, and costs no attempt or daily delivery.
+  const entries = selectSelfOutboxBatch(capture);
+  if (!entries.length) return;
   const delivery = capture.delivery ?? restartDelivery(undefined, input.now);
   await input.commit({
     ...before,
@@ -195,7 +212,6 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
       deliveryDay: { day, count: sent + 1 },
     },
   });
-  const entries = selectSelfOutboxBatch(capture);
   let acked: Acked[] = [];
   try {
     const response = await binding.fetch(

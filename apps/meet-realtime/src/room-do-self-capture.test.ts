@@ -587,3 +587,50 @@ test('a change to room capture needs Mira confirmed under the room notice', asyn
   // Nothing recorded was rewritten: the transcript Allows are the same ones.
   assert.equal(f.snapshot().transcriptConsent?.choices[alice]?.revision, 1);
 });
+
+test('the alarm posts waiting participant entries before held session ends', async () => {
+  const seed = liveRoom();
+  const outbox: SelfOutboxEntry[] = [];
+  const failures: Record<string, number> = {};
+  for (let i = 0; i < 64; i++) {
+    const n = String(i).padStart(12, '0');
+    const participant = `00000000-0000-4000-8000-${n}`;
+    failures[participant] = 1;
+    outbox.push(
+      {
+        sessionId: `00000000-0000-4000-9000-${n}`,
+        accountId: participant,
+        seq: 1000 + 2 * i,
+        kind: 'close',
+      },
+      {
+        sessionId: `00000000-0000-4000-9000-${n}`,
+        accountId: host,
+        seq: 1001 + 2 * i,
+        kind: 'end',
+      }
+    );
+  }
+  seed.selfCapture = {
+    ...seed.selfCapture!,
+    outbox,
+    delivery: { attempts: 0, nextAt: 0, startedAt: 0, failures },
+  };
+  seed.roomName = 'ws:room';
+  const posted: SelfOutboxEntry[][] = [];
+  const f = fixture(seed, {
+    MEET_AI_SELF_OUTBOX: {
+      fetch: async (request: Request) => {
+        posted.push(
+          ((await request.json()) as { entries: SelfOutboxEntry[] }).entries
+        );
+        return Response.json({ acked: [] });
+      },
+    },
+  } as Partial<MeetRoomEnv>);
+  await f.alarm();
+  assert.equal(posted.length, 1);
+  assert.equal(posted[0]!.length, 64);
+  assert.ok(posted[0]!.every((entry) => entry.kind === 'close'));
+  assert.equal(f.snapshot().selfCapture?.deliveryDay?.count, 1);
+});
