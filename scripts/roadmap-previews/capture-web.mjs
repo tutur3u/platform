@@ -166,9 +166,15 @@ async function main() {
             );
             if (fs.existsSync(out)) continue;
             fs.mkdirSync(path.dirname(out), { recursive: true });
-            const data = scene.before
-              ? await scene.before({ browser: mediaBrowser, state, locale })
-              : null;
+            let data = null;
+            try {
+              data = scene.before
+                ? await scene.before({ browser: mediaBrowser, state, locale })
+                : null;
+            } catch (error) {
+              log('FAILED', scene.id, device, theme, locale, String(error.message).split('\n')[0]);
+              continue;
+            }
             const ctx = await newContext(
               browser,
               storages.get(scene.app),

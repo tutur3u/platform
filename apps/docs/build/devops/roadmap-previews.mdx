@@ -7,8 +7,8 @@ audience: developers
 
 The roadmap feature previews are screenshots of the real Sorbet web UI
 (`data-ui="sorbet"`), captured from a fictional fixture workspace on a local
-stack and composed into transparent device frames. Nothing is drawn by hand:
-every pixel inside a frame is the running app.
+stack and composed into frameless rounded cards on a transparent canvas. Nothing
+is drawn by hand: every pixel inside a card is the running app.
 
 Output lives in `packages/roadmap-core/src/assets/previews/web/`:
 
@@ -23,16 +23,24 @@ Output lives in `packages/roadmap-core/src/assets/previews/web/`:
 | `tasks-board`, `tasks-list` | Tasks | board (Kanban, List view) |
 | `calendar-week` | Calendar | week view |
 | `settings-profile` | Web | settings dialog, Profile tab |
-| `mira-chat` | Web | Mira landing view |
+| `mira-chat` | Web | Mira landing view (wider devices only: phone widths open the navigation sheet over it) |
 | `meet-call`, `meet-assistant` | Meet | two-person call, Private Assistant tab |
 
 Devices: `mac` 1512x982 @2x, `ipad` 1024x1366 @2x, `ipad-landscape` 1366x1024
 @2x, `iphone` 393x852 @3x, `duo-folded` 466x678 @3x (outer display) and
 `duo-unfolded` 951x669 @3x (inner display). Both themes (`light`, `dark`) come
 from the app's own theme setting. Locales are `en` and `vi` where the route
-supports it; Meet is English only. Mac captures sit in a generic window frame,
-the others in a generic device frame (the open foldable has a faint centre
-crease). Backgrounds are transparent and there is no headline text.
+supports it; Meet is English only.
+
+Each preview is the "colour field" card: the raw screen inside a frameless white
+rounded card on a transparent background, with no bezel, window chrome, headline
+or wave (the page supplies its own wash). The corner radius is 5% of the card
+width for `iphone` and `duo-folded` and 2.2% for `mac`, `ipad`, `ipad-landscape`
+and `duo-unfolded`. The shadow is two layers scaled to the card width,
+`0 2% 4% rgb(38 33 43/.08), 0 6% 12% rgb(42 85 168/.22)`, and the canvas is
+padded so it is never clipped. Light-theme cards carry a 1px `#f0e1dd` hairline
+so they read on white, and `duo-unfolded` has a 1px centre crease at
+`rgba(38,33,43,.08)`. The card geometry lives in `scripts/roadmap-previews/frames.mjs`.
 
 Exports cap the long edge at 1280 px for `iphone` and `duo-folded` and 1600 px
 for everything else, and search for the highest quality that fits 100 KB (AVIF)
@@ -89,6 +97,9 @@ output and are not committed.
 
 ## Known gaps
 
+- The Meet call view keeps its microphone control in the pending state because the
+  local stack has no media SFU, and Mira is captured at its landing view because a
+  reply needs a model provider.
 - The task detail panel crashes in `next dev` (`RichTextEditor` reads
   `editor.commands` after the editor is destroyed), so there is no task detail
   preview.
