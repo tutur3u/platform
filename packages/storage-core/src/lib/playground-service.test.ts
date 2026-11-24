@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createPlayground,
@@ -212,7 +213,7 @@ describe('personal Drive playground checkpoints', () => {
       );
       const bytes = mocks.upload.mock.calls[0]?.[2] as Uint8Array;
       expect(Buffer.from(bytes).toString()).toEqual(
-        empty ? '' : 'print("Hello, playground!")\n'
+        empty ? '' : playgroundTemplates.python.content
       );
       expect(mocks.rpc).not.toHaveBeenCalledWith(
         'discard_uninitialized_playground',

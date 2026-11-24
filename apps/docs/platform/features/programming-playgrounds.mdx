@@ -13,6 +13,18 @@ Registered customer devboxes are not selected automatically. Supported language
 templates are Python, JavaScript, TypeScript, C, C++, Java, Rust, Go, Ruby, PHP and
 shell. Creation only offers languages reported ready by the managed pool.
 
+Starter files are idiomatic, multi-line and formatted as the language's own
+formatter writes them (a `public class Main` in `Main.java` for Java, tabs for
+Go, one `main` function everywhere). The single source is
+`packages/utils/src/playground-templates.ts`. Every starter prints exactly
+`Hello, playground!` and exits 0, uses only the standard library with no
+network, keeps its run `command` unchanged, and, for Go, imports only packages
+inside the image's prebuilt build cache (`bufio`, `bytes`, `container/heap`,
+`container/list`, `encoding/json`, `errors`, `fmt`, `math`, `math/big`,
+`math/rand`, `os`, `regexp`, `slices`, `sort`, `strconv`, `strings`, `sync`,
+`time`, `unicode`). `playground-templates.test.ts` pins the commands and these
+rules.
+
 Normal access requires a paid personal-workspace subscription or the active
 `feature.learn.playgrounds` account benefit. Workspace membership or somebody
 else's paid team subscription does not confer personal playground access.
