@@ -318,6 +318,19 @@ export {
   type MeetTranscriptFence,
   meetTranscriptFence,
 } from './room-transcript-consent';
+export {
+  isMeetAiPerSpeakerEnabled,
+  isMeetAiPerSpeakerOn,
+  MEET_AI_PER_SPEAKER_ENV,
+  MEET_AI_PER_SPEAKER_WORKSPACES_ENV,
+  meetAiPerSpeakerWorkspaceIds,
+} from './per-speaker-gate';
+export type {
+  SelfCaptureMode,
+  SelfCaptureProtocol,
+  SelfOutboxEntry,
+  SelfOutboxKind,
+} from './room-self-capture-state';
 
 export {
   canCloseMeetSubscriptions,

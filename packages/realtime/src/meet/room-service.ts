@@ -47,6 +47,7 @@ import type { RoomProgrammingMira } from './room-programming-mira';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
+import { locksClientTranscription } from './room-self-capture-state';
 import type { MiraRoomState } from './room-mira-consent';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
 import { isGuestRemovalBlocked } from './room-removed-guests';
@@ -215,6 +216,8 @@ export function roomService(
   const { message } = parsed.data;
   if (message.action === 'transcription.speaker') {
     if (!admin) return fail('Only the host can attribute transcription');
+    if (locksClientTranscription(snapshot))
+      return fail('Per-speaker sessions attribute speakers on the server', 409);
     const known =
       message.accountId === accountId ||
       !!snapshot.approved?.[message.accountId] ||

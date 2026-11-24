@@ -3,6 +3,7 @@ import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import type { MeetRoomSnapshot } from './room';
 import { ENDED_ROOM_TOOLS } from './room-outcome';
 import { failActiveRecording } from './room-recording';
+import { endSelfCaptureSession } from './room-self-capture-state';
 import { publicationCleanupKey } from './room-tracks';
 
 /** Ending never discards provider cleanup or creates another resource allowance. */
@@ -42,6 +43,7 @@ export function endMeetRoom(
       ? { ...state.transcription, active: false }
       : undefined,
     transcriptionConsents: undefined,
+    selfCapture: endSelfCaptureSession(state.selfCapture, Date.parse(now)),
     lifecycle: {
       ...state.lifecycle,
       version: (state.lifecycle?.version ?? 0) + 1,

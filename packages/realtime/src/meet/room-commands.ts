@@ -44,6 +44,7 @@ import { applyRecording } from './room-recording';
 import { applyParticipantRename } from './room-rename';
 import { applySfuCommand } from './room-sfu';
 import { recordRemovedGuest } from './room-removed-guests';
+import { revokeSelfCapture } from './room-self-capture-state';
 import { applyUsageReport, createRoomUsage } from './room-usage';
 import {
   applyMediaQualityReport,
@@ -419,11 +420,16 @@ function dispatchMeetRoomCommand(
         classFeatures
       );
       const removedAt = Date.parse(now);
-      const nextState = recordRemovedGuest(
-        released.state,
+      // Removal revokes the account's per-speaker upload grant.
+      const nextState = revokeSelfCapture(
+        recordRemovedGuest(
+          released.state,
+          accountId ?? message.userId,
+          removedAt,
+          !!removedPerson?.guest
+        ),
         accountId ?? message.userId,
-        removedAt,
-        !!removedPerson?.guest
+        removedAt
       );
       return {
         ...released,

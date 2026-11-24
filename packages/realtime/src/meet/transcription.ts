@@ -6,6 +6,10 @@ import type {
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
+import {
+  locksClientTranscription,
+  type SelfCaptureRoomState,
+} from './room-self-capture-state';
 
 const fields = {
   sessionId: z.uuid(),
@@ -40,7 +44,7 @@ export type TranscriptionStateMessage = z.infer<
 export type TranscriptionConsentMessage = z.infer<
   typeof transcriptionConsentMessageSchema
 >;
-export interface TranscriptionRoomState {
+export interface TranscriptionRoomState extends SelfCaptureRoomState {
   transcription?: TranscriptionState;
   // Ephemeral room state, not the legal consent record in private.meet_ai_consents.
   transcriptionConsents?: {
@@ -80,6 +84,9 @@ export function applyTranscription(
   if (!state.presence[token.userId] || state.waiting[token.userId])
     return denied(state, 'awaiting_admission', message.requestId);
   if (message.type === 'transcription.state') {
+    // Per-speaker sessions are recorded by the server, never a client.
+    if (locksClientTranscription(state))
+      return denied(state, 'per_speaker_session', message.requestId);
     if (
       token.role !== 'host' ||
       (message.state.active && message.state.startedBy !== token.userId)

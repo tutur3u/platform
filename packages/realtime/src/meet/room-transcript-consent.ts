@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type { MeetRealtimeTokenPayload } from './primitives';
+import { MEET_CLASS_COHOST_SCOPE } from './class-timer';
 import type { RoomServiceState } from './room-service';
+import { isSelfSessionLive } from './room-self-capture-state';
 
 /**
  * All-participant fence for the meeting's live transcript. The host's browser
@@ -44,6 +46,15 @@ export type MeetTranscriptConsentView = {
   sourcesAllowed?: boolean;
   /** Present when the read named a session: it is the running recording. */
   sessionActive?: boolean;
+  /** Capture mode: host room capture, or each person's own device. */
+  mode?: 'room' | 'self';
+  session?: {
+    sessionId: string;
+    protocol: 'legacy' | 'self_v1';
+    generation: number;
+  } | null;
+  /** Host or co-host may change the mode. */
+  canManageMode?: boolean;
 };
 
 const command = z.discriminatedUnion('action', [
@@ -118,14 +129,44 @@ export function meetTranscriptFence(
   };
 }
 
+function sessionView(
+  state: RoomServiceState,
+  now: number
+): NonNullable<MeetTranscriptConsentView['session']> | null {
+  const self = state.selfCapture?.session;
+  if (!state.ended && isSelfSessionLive(self, now))
+    return {
+      sessionId: self.sessionId,
+      protocol: 'self_v1',
+      generation: self.generation,
+    };
+  const active = state.ended ? undefined : state.transcriptConsent?.active;
+  return active
+    ? { sessionId: active.sessionId, protocol: 'legacy', generation: 0 }
+    : null;
+}
+
+/** A recorded self_v1 session never admits room-mix chunks. */
+const isSelfSession = (state: RoomServiceState, sessionId: string) =>
+  state.selfCapture?.session?.sessionId === sessionId;
+
 function view(
   state: RoomServiceState,
   meetingId: string | undefined,
-  accountId: string
+  accountId: string,
+  token?: MeetRealtimeTokenPayload,
+  now = Date.now()
 ): MeetTranscriptConsentView {
   const own = state.transcriptConsent?.choices[accountId];
   const active = state.ended ? undefined : state.transcriptConsent?.active;
   return {
+    mode: state.selfCapture?.mode ?? 'room',
+    session: sessionView(state, now),
+    canManageMode:
+      !!token &&
+      token.guest !== true &&
+      token.participantKind !== 'guest' &&
+      (token.role === 'host' || token.scopes.includes(MEET_CLASS_COHOST_SCOPE)),
     version: MEET_TRANSCRIPT_NOTICE_VERSION,
     choice:
       own?.version === MEET_TRANSCRIPT_NOTICE_VERSION &&
@@ -157,7 +198,7 @@ export function applyMeetTranscriptConsent(
   const meetingId = token.meetingId;
   const reply = (next: RoomServiceState) => ({
     state: next,
-    body: view(next, meetingId, accountId),
+    body: view(next, meetingId, accountId, token, now),
   });
   const current = state.transcriptConsent ?? { choices: {} };
   if (parsed.data.action === 'transcript.session') {
@@ -214,7 +255,9 @@ export function applyMeetTranscriptConsent(
         ...(sessionId
           ? {
               sessionActive:
-                !state.ended && current.active?.sessionId === sessionId,
+                !state.ended &&
+                current.active?.sessionId === sessionId &&
+                !isSelfSession(state, sessionId),
             }
           : {}),
       },

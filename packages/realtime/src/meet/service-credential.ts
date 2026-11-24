@@ -6,7 +6,9 @@ export type MeetServicePurpose =
   | 'attendance-ledger'
   | 'class-timer'
   | 'attendance-erase'
-  | 'attendance-index';
+  | 'attendance-index'
+  /** Room to Meet Worker delivery of the per-speaker legal outbox. */
+  | 'self-outbox';
 
 export type MeetServiceClaims = {
   aud: 'meet-service';
@@ -95,4 +97,32 @@ export function verifyMeetServiceCredential(
     }
   }
   return parsed as MeetServiceClaims;
+}
+
+/**
+ * Verifies a room's per-speaker outbox delivery. Only the Meet Worker
+ * accepts this purpose; the realtime Worker's own service endpoints refuse it.
+ */
+export function verifyMeetSelfOutboxCredential(
+  token: string,
+  secret?: string,
+  nowMs = Date.now()
+): (MeetServiceClaims & { purpose: 'self-outbox' }) | null {
+  let parsed: unknown;
+  try {
+    parsed = verifyRealtimePayload(token, secret);
+  } catch {
+    return null;
+  }
+  if (
+    !isRecord(parsed) ||
+    parsed.aud !== 'meet-service' ||
+    parsed.purpose !== 'self-outbox' ||
+    typeof parsed.roomId !== 'string' ||
+    !parsed.roomId ||
+    typeof parsed.exp !== 'number' ||
+    parsed.exp * 1000 <= nowMs
+  )
+    return null;
+  return parsed as MeetServiceClaims & { purpose: 'self-outbox' };
 }

@@ -11,6 +11,7 @@ import {
   guardMeetTranscriptAllow,
 } from '../../../packages/realtime/src/meet/room-mira-consent';
 import { MIRA_ROOM_DENIED } from '../../../packages/realtime/src/meet/room-mira-private';
+import { routeSelfCapture } from '../../../packages/realtime/src/meet/room-self-capture-route';
 import { applyMeetTranscriptConsent } from '../../../packages/realtime/src/meet/room-transcript-consent';
 import {
   type RoomServiceResult,
@@ -39,6 +40,20 @@ export function roomService(
     ].includes(String(input.action))
   )
     return { state, body: { error: MIRA_ROOM_DENIED }, status: 403 };
+  // Per-speaker commands first; every other command settles the
+  // per-speaker fence afterwards. The room env carries the flag bindings.
+  return routeSelfCapture(state, token, input, formsEnv, (current) =>
+    roomCommands(current, token, input, features, formsEnv)
+  );
+}
+
+function roomCommands(
+  state: RoomServiceState,
+  token: MeetRealtimeTokenPayload,
+  input: unknown,
+  features: MeetClassFeatures,
+  formsEnv: MeetRoomFormsEnv
+): RoomServiceResult {
   const classroom = applyRoomClassroomTools(state, token, input);
   if (classroom) return classroom;
   const consent = applyMiraRoomConsent(state, token, input);

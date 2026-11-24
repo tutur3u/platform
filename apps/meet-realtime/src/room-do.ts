@@ -23,11 +23,9 @@ import {
 } from '../../../packages/realtime/src/meet';
 import { isMeetMessageWithinLimit } from '../../../packages/realtime/src/meet/message-size';
 import {
-  emptyRoomDeadline,
   expireEmptyRoom,
   observeRoomConnections,
 } from '../../../packages/realtime/src/meet/room-lifecycle';
-import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import {
   expireRoomLive,
   liveRoomAnnouncements,
@@ -55,19 +53,9 @@ import { privateRoomStorage } from './private-room-storage';
 import { restoreRoomSnapshot } from './restore-room-snapshot';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
-import type { TurnEnv } from './turn-credentials';
-export interface MeetRoomEnv extends TurnEnv, MeetRoomFormsEnv {
-  CLOUDFLARE_REALTIME_API_BASE_URL?: string;
-  CLOUDFLARE_REALTIME_APP_ID: string;
-  CLOUDFLARE_REALTIME_APP_SECRET: string;
-  MEET_REALTIME_TOKEN_SECRET: string;
-  MEET_ROOM: DurableObjectNamespace;
-  MEET_AI_ENABLED_WORKSPACE_IDS?: string; // Server-only. Absent = deny.
-  MEET_AI_ALL_WORKSPACES?: string; // only the reviewed value counts
-  MEET_AI_DISABLED?: string;
-  MEET_AI_DISABLED_WORKSPACE_IDS?: string;
-  MEET_AI_PROTECTED_WORKSPACE_IDS?: string;
-}
+import type { MeetRoomEnv } from './room-env';
+import { selfOutbox } from './room-self-outbox';
+export type { MeetRoomEnv };
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;
 export class MeetRoomDurableObject implements DurableObject {
@@ -137,8 +125,9 @@ export class MeetRoomDurableObject implements DurableObject {
   private persist() {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
     this.snapshotStored = true;
-    // Output gating keeps acknowledgements behind the durable write.
-    const snapshot = this.snapshot;
+    // Output gating keeps acknowledgements behind the durable write. Every
+    // write settles the per-speaker fence, so endings reach the outbox.
+    const snapshot = (this.snapshot = selfOutbox.settle(this.snapshot));
     publishStoredAttendance(
       this.env,
       this.state.storage,
@@ -200,7 +189,7 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   private async scheduleEmptyRoom() {
-    const deadline = emptyRoomDeadline(this.snapshot);
+    const deadline = selfOutbox.wakeAt(this.snapshot, this.env);
     if (deadline !== undefined) await this.scheduleSweep(deadline);
   }
 
@@ -585,6 +574,16 @@ export class MeetRoomDurableObject implements DurableObject {
       })
     )
       return;
+    await selfOutbox.deliver({
+      env: this.env,
+      roomName: this.roomName,
+      now,
+      read: () => this.snapshot,
+      commit: async (snapshot) => {
+        this.snapshot = snapshot;
+        await this.persist();
+      },
+    });
     const features = meetClassFeatures(this.env);
     const retained = retainRoomAttendance(this.snapshot, features, now);
     if (retained !== this.snapshot) {
