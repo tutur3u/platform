@@ -60,6 +60,26 @@ describe('Cloudflare Images transformer', () => {
     });
   });
 
+  it('refuses an input whose dimensions the binding does not report', async () => {
+    for (const info of [
+      { format: 'image/png' },
+      { format: 'image/png', width: 10 },
+      { format: 'image/png', width: 0, height: 10 },
+      { format: 'image/png', width: Number.NaN, height: 10 },
+    ]) {
+      const { images, transform } = binding(info);
+      const image = createImagesTransformer(images).decode(
+        Buffer.from('x'),
+        options
+      );
+      await expect(image.metadata()).rejects.toThrow('dimensions are unknown');
+      await expect(
+        image.webp({ width: 8, height: 8, quality: 80, effort: 4 })
+      ).rejects.toThrow('dimensions are unknown');
+      expect(transform).not.toHaveBeenCalled();
+    }
+  });
+
   it('rejects inputs over the pixel limit before transforming', async () => {
     const { images, output } = binding({
       format: 'image/png',

@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { BRIDGE_ATTACHMENT_CAPABILITY } from '../../packages/utils/src/mastermind-store/bridge-protocol.ts';
+import {
+  BRIDGE_ATTACHMENT_CAPABILITY,
+  bridgeMachineFrameSchema,
+} from '../../packages/utils/src/mastermind-store/bridge-protocol.ts';
 import {
   ATTACHMENT_CAPABILITY as WEB_CAPABILITY,
   BRIDGE_BUNDLE_DOMAIN,
@@ -255,4 +258,13 @@ test('no v1 text digest can equal a v2 bundle digest', async () => {
     textDigest(SECRET, bundleString(frame.envelope, payload)),
     frame.envelope.textDigest
   );
+});
+
+test('a hello may name unknown capabilities, within bounds', () => {
+  const hello = (caps) =>
+    bridgeMachineFrameSchema.safeParse({ v: 1, t: 'hello', caps }).success;
+  assert.equal(hello([ATTACHMENT_CAPABILITY, 'future-cap.v3']), true);
+  assert.equal(hello(Array.from({ length: 9 }, (_, n) => `cap-${n}`)), false);
+  assert.equal(hello(['x'.repeat(49)]), false);
+  assert.equal(hello(['Bad Cap']), false);
 });

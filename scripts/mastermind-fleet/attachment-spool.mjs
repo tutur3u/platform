@@ -128,6 +128,19 @@ export function openSpool(dir) {
   };
 }
 
+/**
+ * Writes every byte of `bytes`, however many calls the kernel needs. A call
+ * that writes nothing or fails stops the download, which then keeps nothing.
+ */
+export function writeAll(fd, bytes, write = fs.writeSync) {
+  for (let offset = 0; offset < bytes.byteLength;) {
+    const written = write(fd, bytes, offset, bytes.byteLength - offset);
+    if (!Number.isSafeInteger(written) || written <= 0)
+      throw new AttachmentError('unavailable');
+    offset += written;
+  }
+}
+
 /** The https store origin of the bridge socket (ws loopback only in tests). */
 export function storeOrigin(socketUrl) {
   const url = new URL(socketUrl);
@@ -194,7 +207,7 @@ export async function downloadObject({
         throw new AttachmentError('attachment_invalid');
       }
       hash.update(value);
-      fs.writeSync(fd, value);
+      writeAll(fd, value);
     }
     fs.fsyncSync(fd);
     if (total !== file.size || hash.digest('hex') !== file.sha256)

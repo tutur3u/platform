@@ -55,6 +55,11 @@ export const BRIDGE_LIMITS = {
    */
   machineFramesPerMinute: 300,
   ownerFramesPerMinute: 10,
+  /**
+   * Capabilities a `hello` may name. Unknown names are allowed and ignored,
+   * so a newer bridge never loses its replay to a name this store lacks.
+   */
+  maxHelloCaps: 8,
   /** A `hello` (outbox replay) is honoured at most this often per socket. */
   helloMinIntervalMs: 10_000,
   /**
@@ -227,8 +232,8 @@ export const bridgeMachineFrameSchema = z.discriminatedUnion('t', [
     t: z.literal('hello'),
     /** What this machine's bridge can take; older stores ignore it. */
     caps: z
-      .array(z.enum([BRIDGE_ATTACHMENT_CAPABILITY]))
-      .max(4)
+      .array(z.string().regex(/^[a-z0-9][a-z0-9.-]{0,47}$/u))
+      .max(BRIDGE_LIMITS.maxHelloCaps)
       .optional(),
   }),
   z.object({

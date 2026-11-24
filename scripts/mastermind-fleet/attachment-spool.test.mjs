@@ -7,6 +7,7 @@ import {
   downloadObject,
   openSpool,
   storeOrigin,
+  writeAll,
 } from './attachment-spool.mjs';
 import { fakeStore, manifestFile } from './bridge-attach-test-fixture.mjs';
 import { tempDir, uuid } from './bridge-test-fixture.mjs';
@@ -195,4 +196,25 @@ test('reconcile removes settled and day-old orphan files but keeps pending ones'
   assert.equal(removed, 2);
   assert.deepEqual(spool.list(), [pending]);
   assert.ok(!spool.list().includes(settled));
+});
+
+test('spool writes loop over short writes and fail closed on a stalled one', () => {
+  const bytes = Buffer.from('0123456789');
+  const out = [];
+  // At most three bytes per call, as a short write would.
+  writeAll(7, bytes, (fd, buffer, offset, length) => {
+    const n = Math.min(3, length);
+    out.push(Buffer.from(buffer.subarray(offset, offset + n)));
+    return n;
+  });
+  assert.deepEqual(Buffer.concat(out), bytes);
+  assert.throws(() => writeAll(7, bytes, () => 0), AttachmentError);
+  assert.throws(() => writeAll(7, bytes, () => -1), AttachmentError);
+  assert.throws(
+    () =>
+      writeAll(7, bytes, () => {
+        throw Object.assign(new Error('disk full'), { code: 'ENOSPC' });
+      }),
+    /disk full/
+  );
 });

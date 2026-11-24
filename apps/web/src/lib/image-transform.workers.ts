@@ -44,7 +44,17 @@ export function createImagesTransformer(
       let info: ReturnType<ImagesBinding['info']> | null = null;
       const inspect = () => {
         info ??= images.info(streamOf(input)).then((details) => {
-          const pixels = (details.width ?? 0) * (details.height ?? 0);
+          // Unknown dimensions cannot be held to the pixel limit: refuse them.
+          const { width, height } = details;
+          if (
+            !Number.isSafeInteger(width) ||
+            !Number.isSafeInteger(height) ||
+            (width as number) < 1 ||
+            (height as number) < 1
+          ) {
+            throw new Error('Input image dimensions are unknown');
+          }
+          const pixels = (width as number) * (height as number);
           if (pixels > limitInputPixels) {
             throw new Error('Input image exceeds the pixel limit');
           }

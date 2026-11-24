@@ -209,7 +209,10 @@ Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
   bound to the owner, a keyed digest of the session, the machine, the thread
   and the reply's idempotency key. The store reserves the per-reply,
   outstanding (150 MB, 60 uploads) and hourly (300 MB, 120 uploads) quotas
-  first, and only when the machine's live socket advertised attachments. The
+  first, and only when the machine's live socket advertised attachments. An
+  image holds the full 10 MB cap against the store-wide quotas, since it may
+  grow when re-encoded; finalize releases what the derived bytes do not use.
+  The
   display name is sanitized and sealed for the store, which keeps it without
   a key for it.
 - **The byte cap is enforced where the bytes arrive.**
@@ -221,7 +224,8 @@ Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
   Node, the Images binding on Workers); text must be strict UTF-8 without
   control characters or bidirectional overrides. Only the derived bytes are stored, in 512 KB chunk rows
   of the FleetBridge Durable Object, and the record is finalized once, by the
-  session that reserved it; the store computes the digest itself.
+  session that reserved it, with the one type its kind allows (WebP for an
+  image, plain text for text); the store computes the digest itself.
 - **Envelope v2.** A reply that names upload ids is sealed with the manifest
   (names, kinds, sizes, digests) and signed under
   `mastermind-fleet-reply-v2`. The bundle digest, under its own key (never
@@ -242,6 +246,12 @@ Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
   secret, its own machine id, the reply id, the object id and its digest, and
   presents it in an `Authorization: MM-Fetch` header (never in a URL) to
   `GET /v1/bridge/attachments/fetch` on the store origin of its bridge socket.
+  That origin is pinned: with `storeHost` set in the bridge config
+  (`~/.local/share/fleet-sync/config.json`) the daemon refuses a ticket whose
+  socket URL names any other host, and only then advertises
+  `reply-attachments-v2`; without it the bridge takes text replies only. A
+  `hello` may name capabilities this store does not know (at most 8, each a
+  short name); they are ignored rather than dropping the hello.
   Deriving it takes the fleet secret and the sealed manifest, which only the
   addressed machine receives. The store serves the bytes only while that
   reply waits for that machine, at most 8 times per object. Only a matching
@@ -276,7 +286,7 @@ Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
 
 Rollout, in order, each its own approval: publish the store Worker and set
 `MASTERMIND_BRIDGE_ATTACHMENTS=on`; deploy Web; install the bridge files on the orchestrator Mac (an exact-sha256
-packet), then confirm its `hello` advertises the capability in
+packet) and set `storeHost` in its config, then confirm its `hello` advertises the capability in
 `GET /api/v1/mastermind/fleet/live`; then turn the flag on for an end-to-end
 send to a disposable thread. Rollback: turn the Web flag off, then the store
 flag (text replies are untouched). Keep the v2 bridge installed until every v2 reply has settled
@@ -582,4 +592,8 @@ addressee and manifest checks, per-machine capabilities, a v1 bridge
 refusing v2 without delivering text, spool permissions and symlinks, no
 redirects or other hosts, oversize or altered objects removed, one T3
 submission, and reconciliation from the thread after a crash with no second
-submission).
+submission). Also covered: finalize refusing a type its kind does not allow, an image
+outgrowing its upload within its released headroom, unknown or excess
+`hello` capabilities, a ticket for an unpinned store host refused, short
+spool writes looped and stalled ones failing closed, and the Workers image
+path refusing an input whose dimensions are not reported.

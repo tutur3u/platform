@@ -11,8 +11,8 @@ import {
 import { NOW, replyFrame, SECRET, uuid } from './bridge-test-fixture.mjs';
 import { signRequest } from './publish.mjs';
 
-/** Every hello advertises what this bridge takes (reply attachments). */
-const HELLO = { v: 1, t: 'hello', caps: ['reply-attachments-v2'] };
+/** A hello without a pinned store host offers no capabilities. */
+const HELLO = { v: 1, t: 'hello' };
 
 test('asks Web for a ticket with the publisher signature and trusts only a TLS socket address', async () => {
   const seen = [];
@@ -290,4 +290,46 @@ test('reconnects with a growing, bounded wait and one ticket per attempt', async
     waits,
     [2000, 4000, 8000, 16000, 32000, 60000, 60000, 60000, 60000]
   );
+});
+
+test('a pinned store host refuses tickets for any other host and offers attachments', async () => {
+  const ticket = 't'.repeat(43);
+  const ask = (url, storeHost) =>
+    fetchTicket({
+      origin: 'https://tuturuuu.com',
+      secret: SECRET,
+      machineId: 'skr-m4',
+      storeHost,
+      fetchImpl: async () =>
+        new Response(JSON.stringify({ url, ticket }), { status: 200 }),
+      now: () => NOW,
+    });
+  assert.deepEqual(
+    await ask('wss://Store.Example/v1/bridge/connect', 'store.example'),
+    { url: 'wss://Store.Example/v1/bridge/connect', ticket }
+  );
+  for (const url of [
+    'wss://evil.example/v1/bridge/connect',
+    'wss://store.example.evil.example/v1/bridge/connect',
+    'wss://store.example:8443/v1/bridge/connect',
+  ])
+    await assert.rejects(ask(url, 'store.example'), /ticket_host/);
+
+  // With a pinned host the connection advertises attachments in its hello.
+  const { FakeSocket, sockets } = fakeSocketClass();
+  runConnection({
+    url: 'wss://store.example/v1/bridge/connect',
+    ticket: 'the-ticket',
+    caps: ['reply-attachments-v2'],
+    WebSocketImpl: FakeSocket,
+    timers: {
+      setInterval: () => 0,
+      clearInterval: () => undefined,
+    },
+    onReply: async () => null,
+  });
+  sockets[0].emit('open');
+  assert.deepEqual(sockets[0].frames(), [
+    { v: 1, t: 'hello', caps: ['reply-attachments-v2'] },
+  ]);
 });

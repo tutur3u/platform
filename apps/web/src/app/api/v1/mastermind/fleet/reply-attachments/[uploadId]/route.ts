@@ -76,8 +76,9 @@ export const PUT = withSessionAuth<{ uploadId: string }>(
     if (!bytes) return fleetError('attachment_size_mismatch', 422);
     const derived = await ingestAttachment(record.kind, bytes);
     if (!derived.ok) return fleetError(derived.error, STATUS[derived.error]);
-    // Re-encoding never stores more than was reserved.
-    if (derived.bytes.byteLength > record.size)
+    // A re-encoded image may outgrow its upload, never the per-file cap; the
+    // store holds the full cap for images until finalize releases the rest.
+    if (derived.bytes.byteLength > ATTACHMENT_LIMITS.maxFileBytes)
       return fleetError('attachment_too_large', 413);
 
     try {

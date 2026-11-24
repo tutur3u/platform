@@ -13,6 +13,7 @@
  */
 import {
   ATTACHMENT_LIMITS,
+  ATTACHMENT_MIME,
   type AttachmentFinalize,
   type AttachmentRecord,
   type AttachmentReserve,
@@ -78,8 +79,14 @@ export function createAttachmentEngine(sql: SqlLike) {
          reply TEXT NOT NULL, kind TEXT NOT NULL, size INTEGER NOT NULL,
          state TEXT NOT NULL, meta_iv TEXT NOT NULL, meta_data TEXT NOT NULL,
          sha TEXT, mime TEXT, done_at INTEGER, exp INTEGER NOT NULL,
-         fetch_hash TEXT, fetches INTEGER NOT NULL DEFAULT 0)`
+         fetch_hash TEXT, fetches INTEGER NOT NULL DEFAULT 0, quota INTEGER)`
     );
+    // Stores created before the quota column hold their reservation in size.
+    const columns = new Set(
+      rows('PRAGMA table_info(attachments)').map((column) => column.name)
+    );
+    if (!columns.has('quota'))
+      rows('ALTER TABLE attachments ADD COLUMN quota INTEGER');
     rows('CREATE INDEX IF NOT EXISTS attachments_reply ON attachments (reply)');
     rows('CREATE INDEX IF NOT EXISTS attachments_at ON attachments (at)');
     rows(
@@ -154,31 +161,34 @@ export function createAttachmentEngine(sql: SqlLike) {
           ATTACHMENT_LIMITS.maxReplyBytes
       )
         throw new BridgeError('full');
+      // An image may grow when re-encoded, so it holds the full file cap of
+      // storage until finalize releases what the derived bytes do not use.
+      const quota =
+        input.kind === 'image' ? ATTACHMENT_LIMITS.maxFileBytes : input.size;
       const live = rows(
-        `SELECT count(*) AS n, coalesce(sum(size), 0) AS bytes FROM attachments
-          WHERE state IN ${LIVE_STATES}`
+        `SELECT count(*) AS n, coalesce(sum(coalesce(quota, size)), 0) AS bytes
+           FROM attachments WHERE state IN ${LIVE_STATES}`
       )[0];
       const hour = rows(
-        `SELECT count(*) AS n, coalesce(sum(size), 0) AS bytes FROM attachments
-          WHERE at > ?`,
+        `SELECT count(*) AS n, coalesce(sum(coalesce(quota, size)), 0) AS bytes
+           FROM attachments WHERE at > ?`,
         now - 3_600_000
       )[0];
       if (
         Number(live?.n ?? 0) + 1 > ATTACHMENT_LIMITS.maxOutstandingUploads ||
-        Number(live?.bytes ?? 0) + input.size >
-          ATTACHMENT_LIMITS.maxOutstandingBytes
+        Number(live?.bytes ?? 0) + quota > ATTACHMENT_LIMITS.maxOutstandingBytes
       )
         throw new BridgeError('full');
       if (
         Number(hour?.n ?? 0) + 1 > ATTACHMENT_LIMITS.maxHourlyUploads ||
-        Number(hour?.bytes ?? 0) + input.size > ATTACHMENT_LIMITS.maxHourlyBytes
+        Number(hour?.bytes ?? 0) + quota > ATTACHMENT_LIMITS.maxHourlyBytes
       )
         throw new BridgeError('rate_limited');
       const expiresAt = now + ATTACHMENT_LIMITS.reserveTtlMs;
       rows(
         `INSERT INTO attachments (id, at, actor, cred, machine, thread, reply, kind,
-           size, state, meta_iv, meta_data, exp)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?, ?, ?)`,
+           size, quota, state, meta_iv, meta_data, exp)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'reserved', ?, ?, ?)`,
         id,
         now,
         input.actorId,
@@ -188,6 +198,7 @@ export function createAttachmentEngine(sql: SqlLike) {
         input.replyId,
         input.kind,
         input.size,
+        quota,
         input.meta.iv,
         input.meta.data,
         expiresAt
@@ -197,7 +208,8 @@ export function createAttachmentEngine(sql: SqlLike) {
 
     /**
      * Stores the derived bytes of a reserved record, once, for the owner and
-     * credential that reserved it. Never larger than the reservation.
+     * credential that reserved it: never larger than its reserved quota, and
+     * of the one type its kind allows. The unused quota is released.
      */
     finalize(
       id: string,
@@ -215,7 +227,12 @@ export function createAttachmentEngine(sql: SqlLike) {
         row.cred !== input.credential
       )
         throw new BridgeError('attachment_refused');
-      if (bytes.byteLength < 1 || bytes.byteLength > Number(row.size))
+      const kind = row.kind as AttachmentRecord['kind'];
+      if (
+        input.mime !== ATTACHMENT_MIME[kind] ||
+        bytes.byteLength < 1 ||
+        bytes.byteLength > Number(row.quota ?? row.size)
+      )
         throw new BridgeError('bad_request');
       const step = ATTACHMENT_LIMITS.chunkBytes;
       for (let offset = 0, n = 0; offset < bytes.byteLength; n++) {
@@ -230,9 +247,10 @@ export function createAttachmentEngine(sql: SqlLike) {
       }
       rows(
         `UPDATE attachments SET state = 'ready', sha = ?, mime = ?, size = ?,
-           done_at = ?, exp = ? WHERE id = ?`,
+           quota = ?, done_at = ?, exp = ? WHERE id = ?`,
         input.sha256,
         input.mime,
+        bytes.byteLength,
         bytes.byteLength,
         now,
         Number(row.at) + ATTACHMENT_LIMITS.recordTtlMs,

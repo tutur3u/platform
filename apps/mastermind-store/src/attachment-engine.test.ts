@@ -179,12 +179,12 @@ describe('attachment engine', () => {
 
   it('finalizes once, only for the reserving owner and credential, never past the reservation', () => {
     const { files } = setup();
-    files.reserve(reserve({ size: 4 }), uuid(10), NOW);
+    files.reserve(reserve({ size: 4, kind: 'text' }), uuid(10), NOW);
     const fields = {
       actorId: ACTOR,
       credential: CRED,
       sha256: 'e'.repeat(64),
-      mime: 'image/webp' as const,
+      mime: 'text/plain' as const,
     };
     expect(
       code(() =>
@@ -206,7 +206,11 @@ describe('attachment engine', () => {
       code(() => files.finalize(uuid(10), fields, new Uint8Array(4), NOW))
     ).toBe('attachment_refused');
     // A reservation that lapsed cannot be finalized.
-    files.reserve(reserve({ size: 4, replyId: uuid(3) }), uuid(11), NOW);
+    files.reserve(
+      reserve({ size: 4, replyId: uuid(3), kind: 'text' }),
+      uuid(11),
+      NOW
+    );
     expect(
       code(() =>
         files.finalize(
@@ -287,5 +291,98 @@ describe('attachment engine', () => {
     expect(
       db.prepare('SELECT count(*) AS n FROM attachment_chunks').get()
     ).toEqual({ n: 0 });
+  });
+  it('stores only the type its kind allows', () => {
+    const { files } = setup();
+    const fields = { actorId: ACTOR, credential: CRED, sha256: 'e'.repeat(64) };
+    files.reserve(reserve({ size: 4, kind: 'text' }), uuid(10), NOW);
+    expect(
+      code(() =>
+        files.finalize(
+          uuid(10),
+          { ...fields, mime: 'image/webp' },
+          new Uint8Array(4),
+          NOW
+        )
+      )
+    ).toBe('bad_request');
+    files.reserve(reserve({ size: 4, replyId: uuid(2) }), uuid(11), NOW);
+    expect(
+      code(() =>
+        files.finalize(
+          uuid(11),
+          { ...fields, mime: 'text/plain' },
+          new Uint8Array(4),
+          NOW
+        )
+      )
+    ).toBe('bad_request');
+  });
+
+  it('lets a re-encoded image outgrow its upload, then releases the unused headroom', () => {
+    const { files, db } = setup();
+    const quota = (id: string) =>
+      (
+        db.prepare('SELECT quota FROM attachments WHERE id = ?').get(id) as {
+          quota: number;
+        }
+      ).quota;
+    files.reserve(reserve({ size: 10 }), uuid(10), NOW);
+    expect(quota(uuid(10))).toBe(ATTACHMENT_LIMITS.maxFileBytes);
+    const grown = new Uint8Array(300);
+    const record = files.finalize(
+      uuid(10),
+      {
+        actorId: ACTOR,
+        credential: CRED,
+        sha256: sha(grown),
+        mime: 'image/webp',
+      },
+      grown,
+      NOW + 1
+    );
+    expect(record.size).toBe(300);
+    expect(quota(uuid(10))).toBe(300);
+  });
+
+  it('holds image headroom against the store-wide quota until finalize', () => {
+    const { files } = setup();
+    const headroom = Math.floor(
+      ATTACHMENT_LIMITS.maxOutstandingBytes / ATTACHMENT_LIMITS.maxFileBytes
+    );
+    for (let n = 0; n < headroom; n++)
+      files.reserve(
+        reserve({ size: 1, replyId: uuid(1000 + n) }),
+        uuid(n + 1),
+        NOW
+      );
+    // Small uploads still count at the full cap while unfinished.
+    expect(
+      code(() =>
+        files.reserve(reserve({ size: 1, replyId: uuid(999) }), uuid(900), NOW)
+      )
+    ).toBe('full');
+    // Finalizing releases headroom, and the next reservation fits.
+    for (const n of [1, 2])
+      files.finalize(
+        uuid(n),
+        {
+          actorId: ACTOR,
+          credential: CRED,
+          sha256: sha(new Uint8Array(1)),
+          mime: 'image/webp',
+        },
+        new Uint8Array(1),
+        NOW + 1
+      );
+    expect(
+      code(() =>
+        files.reserve(
+          reserve({ size: 1, replyId: uuid(999) }),
+          uuid(900),
+          NOW + 2
+        )
+      )
+    ).toBe('ok');
   });
 });

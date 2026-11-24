@@ -40,6 +40,8 @@ const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1(:\d+)?$/;
 const SOCKET_URL =
   /^(wss:\/\/[a-z0-9.-]+(:\d+)?|ws:\/\/127\.0\.0\.1(:\d+)?)\//i;
 const TICKET = /^[\w-]{32,128}$/;
+/** A store host as the bridge config pins it: name, optional port. */
+const STORE_HOST = /^[a-z0-9][a-z0-9.-]{0,252}(:\d{1,5})?$/i;
 /** Replies are small (a v2 manifest included); a read request is smaller still. */
 const MAX_FRAME_CHARS = 32 * 1024;
 export const BACKOFF = { minMs: 1_000, maxMs: 60_000, stableMs: 30_000 };
@@ -85,11 +87,15 @@ export function backoffDelay(step, random = Math.random) {
   return Math.round(ceiling / 2 + (ceiling / 2) * random());
 }
 
-/** One signed ticket request; throws a closed code. */
+/**
+ * One signed ticket request; throws a closed code. With `storeHost`, the
+ * socket URL Web hands back must be on exactly that host.
+ */
 export async function fetchTicket({
   origin,
   secret,
   machineId,
+  storeHost,
   fetchImpl = fetch,
   now = Date.now,
 }) {
@@ -118,6 +124,11 @@ export async function fetchTicket({
     !TICKET.test(String(issued?.ticket ?? ''))
   )
     throw new Error('ticket_invalid');
+  if (
+    storeHost !== undefined &&
+    new URL(issued.url).host.toLowerCase() !== storeHost.toLowerCase()
+  )
+    throw new Error('ticket_host');
   return { url: issued.url, ticket: issued.ticket };
 }
 
@@ -132,6 +143,7 @@ export function runConnection({
   onRequest = async () => null,
   pokes = () => [],
   hasPending = () => false,
+  caps = [],
   WebSocketImpl = WebSocket,
   log = () => undefined,
   timers = { setInterval, clearInterval, setTimeout, clearTimeout },
@@ -173,7 +185,7 @@ export function runConnection({
       send({
         v: BRIDGE_PROTOCOL_VERSION,
         t: 'hello',
-        caps: [ATTACHMENT_CAPABILITY],
+        ...(caps.length > 0 ? { caps } : {}),
       });
     };
     const ping = timers.setInterval(() => {
@@ -266,6 +278,7 @@ export async function runBridge({
   origin,
   secret,
   machineId,
+  storeHost,
   onReply,
   onRequest,
   pokes,
@@ -285,6 +298,7 @@ export async function runBridge({
         origin,
         secret,
         machineId,
+        storeHost,
         fetchImpl,
       });
       outcome = await runConnection({
@@ -294,6 +308,8 @@ export async function runBridge({
         onRequest,
         pokes,
         hasPending,
+        // Attachments only with a pinned store host: their bytes come from it.
+        caps: storeHost ? [ATTACHMENT_CAPABILITY] : [],
         WebSocketImpl,
         log,
       });
@@ -329,6 +345,14 @@ async function main() {
   const config = readConfig(paths.configFile);
   const label = config.machineLabel || os.hostname().split('.')[0];
   const machineId = slugify(config.machineId || label, 'local');
+  // The store Worker's host. Set, tickets naming any other host are refused
+  // and attachments are offered; unset, the bridge takes text replies only.
+  const storeHost =
+    typeof config.storeHost === 'string' && STORE_HOST.test(config.storeHost)
+      ? config.storeHost
+      : undefined;
+  if (config.storeHost !== undefined && storeHost === undefined)
+    throw new Error('store_host_invalid');
   const ledger = createLedger(paths.ledgerFile);
   // Keeps a retried reply from being sent twice across T3 sign-ins.
   const journal = createSendJournal(localT3Paths().journalFile);
@@ -387,6 +411,7 @@ async function main() {
     origin,
     secret,
     machineId,
+    storeHost,
     onReply: (frame, { socketUrl }) =>
       frame?.v === 2
         ? handleReplyV2(frame, {

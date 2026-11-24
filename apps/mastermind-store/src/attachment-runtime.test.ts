@@ -355,4 +355,32 @@ describe('reply attachments on the bridge', () => {
       await mf.dispose();
     }
   });
+  it('ignores capability names it does not know, within bounds', async () => {
+    const mf = runtime();
+    try {
+      const id = await upload(mf, new Uint8Array([7]));
+      // A newer bridge naming extra capabilities keeps its hello.
+      const link = await machine(mf, ['future-cap.v3', ATTACHMENT_CAPABILITY]);
+      expect((await sendV2(mf, [id])).body).toMatchObject({ ok: true });
+      link.socket.close();
+    } finally {
+      await mf.dispose();
+    }
+    const bounded = runtime();
+    try {
+      const id = await upload(bounded, new Uint8Array([7]));
+      // Past the bound, the hello is not honoured at all.
+      const link = await machine(bounded, [
+        ...Array.from({ length: 8 }, (_, n) => `cap-${n}`),
+        ATTACHMENT_CAPABILITY,
+      ]);
+      expect((await sendV2(bounded, [id])).body).toEqual({
+        ok: false,
+        error: 'unsupported',
+      });
+      link.socket.close();
+    } finally {
+      await bounded.dispose();
+    }
+  });
 });
