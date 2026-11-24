@@ -42,6 +42,13 @@ export default defineConfig({
           '../../packages/supabase/src/next/secret-env.ts'
         ),
       },
+      {
+        find: '@tuturuuu/supabase/next/proxy',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/proxy.ts'
+        ),
+      },
       // The source server client imports the same reader by its package-internal name.
       {
         find: '#secret-env',
