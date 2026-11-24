@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(21);
+select plan(24);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
 values ('39140000-0000-4000-8000-000000000002', 'wcv-creator@example.com', now(), '{}'::jsonb, '{}'::jsonb)
@@ -79,6 +79,33 @@ select ok(not exists (
 ), 'anon and authenticated cannot execute the config RPCs');
 select ok(not has_function_privilege('service_role', 'private.workspace_secret_config_value(uuid,text)', 'EXECUTE'),
   'service_role cannot call the private config readers directly');
+
+-- Policies -----------------------------------------------------------------------
+
+select ok(not exists (
+  select 1 from pg_policies
+  where schemaname = 'private'
+    and tablename in (
+      'workspace_secret_payloads', 'workspace_secrets_migration_state',
+      'workspace_secret_name_tiers', 'workspace_secret_backfill_status')
+    and roles <> array['workspace_secrets_definer']::name[]
+), 'every policy on the private secrets tables applies to workspace_secrets_definer only');
+select ok(exists (
+  select 1 from pg_policies
+  where schemaname = 'public' and tablename = 'workspace_secrets'
+    and policyname = 'workspace_secrets_definer_all'
+    and roles = array['workspace_secrets_definer']::name[]
+) and not exists (
+  select 1 from pg_policies
+  where schemaname = 'public' and tablename = 'workspace_secrets'
+    and 'workspace_secrets_definer' = any(roles)
+    and roles <> array['workspace_secrets_definer']::name[]
+), 'the definer policy on public.workspace_secrets names only the definer role');
+select ok(not exists (
+  select 1 from pg_policies
+  where schemaname = 'public' and tablename = 'workspace_secrets'
+    and roles && array['public', 'anon', 'service_role']::name[]
+), 'no policy on public.workspace_secrets applies to public, anon or service_role');
 
 -- Dual write ---------------------------------------------------------------------
 
