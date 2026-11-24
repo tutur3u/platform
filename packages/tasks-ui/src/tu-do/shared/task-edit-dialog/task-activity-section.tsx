@@ -22,7 +22,6 @@ import {
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
-import { getWorkspaceTaskHistory } from '@tuturuuu/internal-api/tasks';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -34,6 +33,17 @@ import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { EstimationType } from '../estimation-mapping';
+import {
+  type TaskHistoryEntry,
+  timelineEventToEntry,
+} from './collaboration/activity-entries';
+import { listTaskTimeline } from './collaboration/api';
+import type { TaskTimelineEvent } from './collaboration/types';
+import {
+  type CollaborationTranslate,
+  getCollaborationEntry,
+  TimelineCommentBody,
+} from './collaboration/timeline-entries';
 import { mapEstimationPoints } from '../estimation-mapping';
 import type { RecoverableTaskDescriptionVersion } from './description-versions';
 import { isTaskDescriptionHistoryEntry } from './description-versions';
@@ -41,31 +51,7 @@ import { TaskDescriptionChangeDialog } from './task-description-change-dialog';
 import { TaskMoveHistoryDetails } from './task-move-history-details';
 import { TaskSnapshotDialog } from './task-snapshot-dialog';
 
-/** Represents a task history entry from the API */
-export interface TaskHistoryEntry {
-  id: string;
-  task_id: string;
-  changed_by: string | null;
-  changed_at: string;
-  change_type:
-    | 'task_created'
-    | 'field_updated'
-    | 'assignee_added'
-    | 'assignee_removed'
-    | 'label_added'
-    | 'label_removed'
-    | 'project_linked'
-    | 'project_unlinked';
-  field_name?: string | null;
-  old_value: unknown;
-  new_value: unknown;
-  metadata: Record<string, unknown>;
-  user: {
-    id: string;
-    name: string;
-    avatar_url?: string | null;
-  } | null;
-}
+export type { TaskHistoryEntry };
 
 interface TaskActivitySectionProps {
   wsId: string;
@@ -116,12 +102,11 @@ export function TaskActivitySection({
     queryKey: ['task-history', wsId, taskId],
     queryFn: async () => {
       if (!taskId) return null;
-      return getWorkspaceTaskHistory(wsId, taskId, {
-        limit: 50,
-      }) as Promise<{
-        history: TaskHistoryEntry[];
-        count: number;
-      }>;
+      const { events } = await listTaskTimeline(wsId, taskId, { limit: 50 });
+      const history = events.map((event: TaskTimelineEvent) =>
+        timelineEventToEntry(taskId, event)
+      );
+      return { history, count: history.length };
     },
     enabled: !!taskId && !!wsId && (embedded || isExpanded),
     staleTime: 30 * 1000, // 30 seconds
@@ -173,7 +158,7 @@ export function TaskActivitySection({
               </div>
             ) : (
               <div className="space-y-2">
-                {displayedEntries.map((entry) => (
+                {displayedEntries.map((entry: TaskHistoryEntry) => (
                   <ActivityEntry
                     key={entry.id}
                     entry={entry}
@@ -293,13 +278,15 @@ function ActivityEntry({
   viewLabel,
   estimationType,
 }: ActivityEntryProps) {
-  const { icon, color } = getChangeIcon(entry.change_type, entry.field_name);
-  const description = getChangeDescription(
+  const collaborationT = useTranslations('task-collaboration');
+  const collaboration = getCollaborationEntry(
     entry,
-    t,
-    estimationType,
-    dateLocale
+    collaborationT as CollaborationTranslate
   );
+  const { icon, color } =
+    collaboration ?? getChangeIcon(entry.change_type, entry.field_name);
+  const description =
+    collaboration ?? getChangeDescription(entry, t, estimationType, dateLocale);
   const timeAgo = formatDistanceToNow(new Date(entry.changed_at), {
     addSuffix: true,
     locale: dateLocale,
@@ -308,7 +295,8 @@ function ActivityEntry({
     locale: dateLocale,
   });
 
-  const userName = entry.user?.name || t('unknown_user');
+  const userName =
+    entry.external_actor || entry.user?.name || t('unknown_user');
   const userInitials = userName
     .split(' ')
     .map((n) => n[0])
@@ -332,7 +320,11 @@ function ActivityEntry({
           <div className="flex items-center gap-1">
             <Avatar className="h-4 w-4">
               <AvatarImage
-                src={entry.user?.avatar_url || undefined}
+                src={
+                  entry.external_actor
+                    ? undefined
+                    : entry.user?.avatar_url || undefined
+                }
                 alt={userName}
               />
               <AvatarFallback className="text-[8px]">
@@ -350,6 +342,8 @@ function ActivityEntry({
             </span>
           )}
         </div>
+
+        <TimelineCommentBody entry={entry} />
 
         <p className="mt-0.5 text-muted-foreground text-xs">
           <span title={exactTime}>{timeAgo}</span>

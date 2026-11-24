@@ -347,6 +347,18 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 - Android opens supported links by default only after App Links verification succeeds. Keep `apps/web/public/.well-known/assetlinks.json` in sync with the production Android signing certificate fingerprint; if Play App Signing uses a different app-signing certificate than the repo release keystore, add the Play Console SHA-256 fingerprint before release.
 - Keep `GoRouter.overridePlatformDefaultLocation` enabled in mobile. iOS can provide a universal link URL as Flutter's platform default route on cold start, and GoRouter will show a no-route page unless `app_links` is allowed to normalize that URL first.
 
+## Task dialog collaboration
+
+Scope: the shared task dialog in `@tuturuuu/tasks-ui` (Web, Tasks, Calendar, Workspace and Track), for saved tasks only.
+
+- The dialog adds a Comments tab and a Linked resources tab beside Properties and Activity. Comments render Markdown with the same renderer as description previews; the author edits their own comment, the author or a workspace `manage_projects` holder deletes one, and deleting asks for confirmation in an alert dialog. Imported comments show the external GitHub login, a GitHub marker and a link to the original comment instead of an avatar.
+- Linked resources are grouped by kind (pull requests, commits, CI runs, issues, docs, links) with state badges (open, merged, closed, draft, success, failure, pending, cancelled). Pasting a URL adds a link and the server infers its kind. Legacy `task_resources` entries appear under links without a remove button and point to the task links field for editing.
+- Activity reads the timeline route, which interleaves comment bodies and the comment, link and external change types. External actors show as their GitHub login.
+- A task with an external reference shows a "GitHub #N" badge under the title linking to the issue, with its original author and created date. The badge reads the external reference, never the task name.
+- The status control lists the board's own lists grouped under Backlog, Todo, In progress, Review, Done and Cancelled. A list maps to Backlog when it is not started and named like "backlog", to Todo for other not-started lists, and by list status otherwise. Resolving a status to a single list (as the CLI does) prefers the board default done or closed list and otherwise the lowest-position list of that status.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/collaboration/*.test.tsx` and `task-activity-section.timeline.test.tsx`.
+
 ## Mobile Task settings
 
 The last slot of the mobile Tasks dock is **Settings** (vi: *Cài đặt*). It

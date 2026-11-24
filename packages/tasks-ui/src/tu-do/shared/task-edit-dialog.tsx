@@ -73,6 +73,11 @@ import {
   TaskActivitySection,
   TaskDescriptionEditor,
 } from './task-edit-dialog/components/task-dialog-lazy-sections';
+import {
+  getCollaborationPanels,
+  TaskDialogMetaRow,
+} from './task-edit-dialog/collaboration/dialog-slots';
+import { getCompactStatusActions } from './task-edit-dialog/compact-status-actions';
 import { TaskDialogLoadingShell } from './task-edit-dialog/components/task-dialog-loading-shell';
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
 import { TaskSprintRow } from './task-edit-dialog/components/task-sprint-row';
@@ -1108,44 +1113,24 @@ export function TaskEditDialog({
     onUpdate,
   });
 
-  const doneList = availableLists?.find(
-    (list) => list.status === 'done' && !list.deleted
-  );
-  const closedList = availableLists?.find(
-    (list) => list.status === 'closed' && !list.deleted
-  );
-  const isDeletedTask = Boolean(
-    task?.deleted_at ||
-    (task as (Task & { deleted?: boolean }) | undefined)?.deleted
-  );
-  const canShowCompactEditActions =
-    !isCreateMode &&
-    !!task?.id &&
-    task.id !== 'new' &&
-    !isDeletedTask &&
-    !disabled &&
-    !taskLoadError;
-  const compactEditActionsDisabled = isLoading || isHydratingTask;
-  const isDocumentTask = currentList?.status === 'documents';
-  const canShowCompactStatusActions =
-    canShowCompactEditActions && !isDocumentTask;
-  const canShowArchiveAction =
-    canShowCompactEditActions &&
-    !!closedList &&
-    closedList.id !== formState.selectedListId &&
-    currentList?.status !== 'closed';
-  const showCompactDoneAction =
-    canShowCompactStatusActions &&
-    !!doneList &&
-    doneList.id !== formState.selectedListId &&
-    currentList?.status !== 'done';
-  const showCompactClosedAction =
-    canShowCompactStatusActions &&
-    !!closedList &&
-    closedList.id !== formState.selectedListId &&
-    closedList.id !== doneList?.id &&
-    currentList?.status !== 'closed';
-  const showDocumentArchiveAction = canShowArchiveAction && isDocumentTask;
+  const {
+    canShowCompactEditActions,
+    closedList,
+    compactEditActionsDisabled,
+    doneList,
+    showCompactClosedAction,
+    showCompactDoneAction,
+    showDocumentArchiveAction,
+  } = getCompactStatusActions({
+    availableLists,
+    disabled,
+    isCreateMode,
+    isHydratingTask,
+    isLoading,
+    selectedListId: formState.selectedListId,
+    task,
+    taskLoadError,
+  });
 
   const {
     toggleLabel,
@@ -2776,6 +2761,15 @@ export function TaskEditDialog({
                       ticketLabel={ticketLabel}
                     />
 
+                    <TaskDialogMetaRow
+                      currentListId={formState.selectedListId || task?.list_id}
+                      disabled={taskControlsDisabled}
+                      lists={availableLists}
+                      onSelectList={(listId) => void updateList(listId)}
+                      taskId={isCreateMode ? undefined : task?.id}
+                      wsId={effectiveTaskWsId}
+                    />
+
                     {smartSuggestionsButton && (
                       <div className="flex justify-end px-4 pb-2 md:px-8">
                         {smartSuggestionsButton}
@@ -2785,6 +2779,12 @@ export function TaskEditDialog({
                     {!disabled && (
                       <TaskDetailsSection
                         activity={renderTaskActivitySection()}
+                        {...getCollaborationPanels({
+                          currentUserId: user?.id,
+                          disabled,
+                          taskId: isCreateMode ? undefined : task?.id,
+                          wsId: effectiveTaskWsId,
+                        })}
                         assigneeCount={formState.selectedAssignees.length}
                         defaultTab={
                           parentTaskId || pendingRelationship?.relatedTaskId

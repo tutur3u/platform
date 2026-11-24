@@ -4,8 +4,10 @@ import {
   Calendar,
   ChevronDown,
   Flag,
+  GitPullRequest,
   History,
   Link2,
+  MessageSquare,
   Tag,
   Timer,
   UserRoundCog,
@@ -24,6 +26,8 @@ export type TaskDetailsTab =
   | 'properties'
   | 'personal'
   | 'relationships'
+  | 'comments'
+  | 'links'
   | 'activity';
 
 export interface TaskDetailsSectionProps {
@@ -33,6 +37,10 @@ export interface TaskDetailsSectionProps {
   personal?: ReactNode;
   /** Rendered inside the Relationships tab; omit to hide the tab entirely. */
   relationships?: ReactNode;
+  /** Rendered inside the Comments tab; omit for unsaved tasks. */
+  comments?: ReactNode;
+  /** Rendered inside the Linked resources tab; omit for unsaved tasks. */
+  links?: ReactNode;
   /** Rendered inside the Activity tab; omit for unsaved tasks. */
   activity?: ReactNode;
   taskId?: string;
@@ -78,6 +86,8 @@ function SummaryChip({ children, className, icon }: SummaryChipProps) {
  */
 export function TaskDetailsSection({
   activity,
+  comments,
+  links,
   properties,
   personal,
   relationships,
@@ -121,6 +131,24 @@ export function TaskDetailsSection({
             id: 'relationships' as const,
             count: relationshipCount,
             label: t('ws-task-boards.dialog.relationships'),
+          },
+        ]
+      : []),
+    ...(comments
+      ? [
+          {
+            content: comments,
+            id: 'comments' as const,
+            label: t('task-collaboration.comments'),
+          },
+        ]
+      : []),
+    ...(links
+      ? [
+          {
+            content: links,
+            id: 'links' as const,
+            label: t('task-collaboration.linked_resources'),
           },
         ]
       : []),
@@ -259,6 +287,12 @@ export function TaskDetailsSection({
                     )}
                     {tab.id === 'relationships' && (
                       <Link2 className="h-3 w-3" />
+                    )}
+                    {tab.id === 'comments' && (
+                      <MessageSquare className="h-3 w-3" />
+                    )}
+                    {tab.id === 'links' && (
+                      <GitPullRequest className="h-3 w-3" />
                     )}
                     {tab.id === 'activity' && <History className="h-3 w-3" />}
                     {tab.label}
