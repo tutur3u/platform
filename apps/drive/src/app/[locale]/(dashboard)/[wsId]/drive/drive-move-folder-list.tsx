@@ -72,7 +72,7 @@ export function DriveMoveFolderList({
           {foldersQuery.data.map((folder) => (
             <li key={folder.name}>
               <Button
-                className="w-full justify-start gap-3 px-3 font-normal"
+                className="w-full justify-start gap-3 px-3 font-normal pointer-coarse:min-h-11"
                 onClick={() =>
                   onOpen(path ? `${path}/${folder.name}` : (folder.name ?? ''))
                 }

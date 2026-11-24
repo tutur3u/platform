@@ -4175,6 +4175,7 @@
       "upload": "Upload"
     },
     "breadcrumb": "Folder path",
+    "breadcrumb_more": "Earlier folders",
     "chips": {
       "archive": "Archives",
       "document": "Documents",

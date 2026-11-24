@@ -2,12 +2,19 @@
 
 import {
   Breadcrumb,
+  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
@@ -35,11 +42,38 @@ export default function DriveBreadcrumbs({
   ];
   const current = trail.at(-1);
   const parents = trail.slice(0, -1);
+  // Phones show only the nearest parent; the rest open from the ellipsis.
+  const hidden = parents.slice(0, -1);
 
   return (
     <Breadcrumb aria-label={t('breadcrumb')} className="flex min-w-0 flex-1">
       {/* One line: parents truncate first; phones keep only the nearest one. */}
       <BreadcrumbList className="min-w-0 flex-nowrap sm:gap-1.5">
+        {hidden.length > 0 ? (
+          <>
+            <BreadcrumbItem className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  aria-label={t('breadcrumb_more')}
+                  className="rounded-md focus-visible:outline-2 focus-visible:outline-ring"
+                >
+                  <BreadcrumbEllipsis className="size-7" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {hidden.map((crumb) => (
+                    <DropdownMenuItem
+                      key={crumb.path}
+                      onSelect={() => onNavigate(crumb.path)}
+                    >
+                      {crumb.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="sm:hidden" />
+          </>
+        ) : null}
         {parents.map((crumb, index) => (
           <Fragment key={crumb.path}>
             <BreadcrumbItem

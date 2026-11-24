@@ -360,6 +360,15 @@ describe('Sorbet token contract', () => {
     const coarse = css.slice(css.indexOf('@media (pointer: coarse)'));
     expect(coarse).toContain('min-height: var(--sorbet-touch-target)');
     expect(coarse).toContain('@layer components');
+    for (const slot of [
+      'button',
+      'tabs-trigger',
+      'switch',
+      'breadcrumb-link',
+      'toggle-group-item',
+    ]) {
+      expect(coarse).toContain(`[data-slot="${slot}"]`);
+    }
 
     const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion'));
     for (const name of ['fast', 'base', 'slow', 'sheet']) {

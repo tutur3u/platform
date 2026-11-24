@@ -1,7 +1,7 @@
 ---
 title: 'Drive'
 description: 'Standalone Drive app with centralized workspace storage APIs.'
-updatedAt: "2026-11-23"
+updatedAt: "2026-11-24"
 audience: users
 ---
 
@@ -85,7 +85,9 @@ stored and finalize only runs post-processing such as archive extraction.
 - **Download** fetches each file into memory, because the share route cannot
   sign a link with a download disposition; at 50 MB or more the page warns to
   keep the tab open. Text previews load up to 1 MB and offer Download above
-  that.
+  that. Types without an in-page preview are download-only: the preview shows
+  the file name and a Download button, not a link that opens the file in a new
+  tab.
   Until 5 January 2027 the Share dialog and the file details panel show a
   dismissible notice that links created before the 5 December 2026 storage move
   stop working; dismissal is kept in the viewer's browser only.
@@ -98,6 +100,8 @@ stored and finalize only runs post-processing such as archive extraction.
   disables write actions with that reason instead of redirecting. The sidebar
   storage card is hidden, because the analytics endpoint requires the same
   permission.
+- On phones the folder trail shows only the nearest parent; an ellipsis
+  before it lists the earlier folders.
 - On phones the product dock keeps destinations only and browser history owns
   Back; a floating New button opens a sheet with Upload and Folder. The New
   button, the uploads panel and the selection bar share one bottom stack, so
@@ -110,7 +114,8 @@ Regression coverage: the Drive explorer tests in
 `apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/` (`drive-explorer-client`,
 `drive-browser-state`, `drive-upload-queue`, `use-drive-uploads`,
 `use-drive-drop-target`, `drive-download`, `drive-preview-text`,
-`drive-share-dialog`, `drive-move-dialog`, `drive-explorer-rules`),
+`drive-share-dialog`, `drive-move-dialog`, `drive-explorer-rules`,
+`drive-browser-surfaces`, `export-links-dialog`),
 `packages/internal-api/src/storage-move.test.ts` and `storage-share.test.ts`,
 and the share route test in
 `apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.test.ts`.

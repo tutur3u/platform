@@ -70,7 +70,7 @@ describe('DriveBreadcrumbs', () => {
     expect(nav).toHaveAttribute('data-slot', 'breadcrumb');
     expect(
       container.querySelectorAll('[data-slot="breadcrumb-separator"]')
-    ).toHaveLength(2);
+    ).toHaveLength(3);
 
     fireEvent.click(screen.getByRole('button', { name: 'files' }));
     fireEvent.click(screen.getByRole('button', { name: 'Logos' }));
@@ -83,6 +83,27 @@ describe('DriveBreadcrumbs', () => {
     );
     expect(
       screen.queryByRole('button', { name: '2026' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('lists the ancestors phones hide behind the ellipsis', async () => {
+    const onNavigate = vi.fn();
+    render(<DriveBreadcrumbs onNavigate={onNavigate} path="Logos/2026/Q1" />);
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'breadcrumb_more' }),
+      { button: 0, ctrlKey: false, pointerType: 'mouse' }
+    );
+    await screen.findByRole('menu');
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual(['files', 'Logos']);
+    fireEvent.click(items[1]!);
+    expect(onNavigate).toHaveBeenCalledWith('Logos');
+  });
+
+  it('shows no ellipsis with a single parent', () => {
+    render(<DriveBreadcrumbs onNavigate={vi.fn()} path="Logos" />);
+    expect(
+      screen.queryByRole('button', { name: 'breadcrumb_more' })
     ).not.toBeInTheDocument();
   });
 

@@ -259,6 +259,9 @@ describe('Drive Empty state views', () => {
     rerender(<DriveDeniedState />);
     const deniedAlert = screen.getByRole('alert');
     expect(deniedAlert).toHaveAttribute('data-slot', 'empty');
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'drive.denied.title' })
+    ).toBeInTheDocument();
     expect(deniedAlert).toHaveTextContent('drive.denied.title');
     expect(deniedAlert).toHaveTextContent('drive.denied.description');
   });
@@ -280,7 +283,9 @@ describe('FilePreviewRenderer', () => {
 
     const empty = container.querySelector('[data-slot="empty"]');
     expect(empty).not.toBeNull();
-    expect(screen.getByText('archive.bin')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'archive.bin' })
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'common.download' }));
     expect(onDownload).toHaveBeenCalledTimes(1);
 

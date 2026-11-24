@@ -32,6 +32,7 @@ export function DriveEmptyState({
 
   return (
     <Empty
+      headingLevel={2}
       action={
         canManage ? (
           <div className="flex flex-wrap justify-center gap-2">
@@ -66,6 +67,7 @@ export function DriveNoResultsState({
 
   return (
     <Empty
+      headingLevel={2}
       action={
         <Button onClick={onClear} type="button" variant="outline">
           {t('states.clear_filters')}
@@ -98,6 +100,7 @@ export function DriveFilteringMoreState({
 
   return (
     <Empty
+      headingLevel={2}
       action={
         <Button onClick={onClear} type="button" variant="outline">
           {t('states.clear_filters')}
@@ -126,6 +129,7 @@ export function DriveErrorState({
 
   return (
     <Empty
+      headingLevel={2}
       action={
         <div className="flex flex-wrap justify-center gap-2">
           <Button onClick={onRetry} type="button" variant="outline">
@@ -153,6 +157,7 @@ export function DriveDeniedState() {
 
   return (
     <Empty
+      headingLevel={2}
       description={t('denied.description')}
       icon={Lock}
       role="alert"

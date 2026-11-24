@@ -462,7 +462,9 @@
       :where(
         [data-slot="button"],
         [data-slot="tabs-trigger"],
-        [data-slot="switch"]
+        [data-slot="switch"],
+        [data-slot="breadcrumb-link"],
+        [data-slot="toggle-group-item"]
       ) {
       position: relative;
     }
@@ -471,7 +473,9 @@
       :where(
         [data-slot="button"],
         [data-slot="tabs-trigger"],
-        [data-slot="switch"]
+        [data-slot="switch"],
+        [data-slot="breadcrumb-link"],
+        [data-slot="toggle-group-item"]
       )::after {
       content: "";
       position: absolute;

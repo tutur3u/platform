@@ -138,7 +138,7 @@ export function DriveFileGrid(props: DriveCollectionProps) {
                       label={t('actions.preview_named', { name })}
                       onOpen={() => actions.onOpen(file)}
                     />
-                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[calc(var(--radius-xl)_-_0.5rem)] bg-muted">
+                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-[calc(var(--radius-xl,0.75rem)_-_0.5rem)] bg-muted">
                       {isImage ? (
                         <DriveGridThumbnail
                           item={file}

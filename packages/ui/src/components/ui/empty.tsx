@@ -22,6 +22,11 @@ export interface EmptyProps extends Omit<React.ComponentProps<'div'>, 'title'> {
   dashed?: boolean;
   /** Announces the state to screen readers when it appears after loading. */
   announce?: boolean;
+  /**
+   * Renders the title as a heading of this level when the empty state stands
+   * in for a page or section. Without it the title is a paragraph.
+   */
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
 }
 
 export function Empty({
@@ -33,9 +38,11 @@ export function Empty({
   compact = false,
   dashed = false,
   announce = false,
+  headingLevel,
   className,
   ...props
 }: EmptyProps) {
+  const Title = headingLevel ? (`h${headingLevel}` as const) : 'p';
   return (
     <div
       data-slot="empty"
@@ -63,12 +70,12 @@ export function Empty({
           </div>
         ) : null)}
       <div className="flex max-w-sm flex-col items-center gap-1">
-        <p
+        <Title
           data-slot="empty-title"
           className={cn('font-medium', compact ? 'text-sm' : 'text-base')}
         >
           {title}
-        </p>
+        </Title>
         {description ? (
           <p
             data-slot="empty-description"

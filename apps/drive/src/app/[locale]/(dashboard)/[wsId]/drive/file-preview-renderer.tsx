@@ -173,8 +173,9 @@ export function FilePreviewRenderer({
           </Button>
         }
         description={t('ws-storage-objects.no_preview')}
+        headingLevel={3}
         icon={FileText}
-        title={cleanFileName}
+        title={<span className="break-all">{cleanFileName}</span>}
       />
     </div>
   );
