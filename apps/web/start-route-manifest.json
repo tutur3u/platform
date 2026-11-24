@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 901,
+    "total": 902,
     "categories": {
-      "api": 701,
+      "api": 702,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 889 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 890 }
   },
   "routes": [
     {
@@ -3624,6 +3624,14 @@
     {
       "pattern": "/api/v1/product-feedback/receipts/[key]",
       "source": "apps/web/src/app/api/v1/product-feedback/receipts/[key]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/product-feedback/receipts",
+      "source": "apps/web/src/app/api/v1/product-feedback/receipts/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
