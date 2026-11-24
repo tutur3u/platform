@@ -441,7 +441,10 @@ function CallShellContent({
         <main className="relative min-h-0 min-w-0 flex-1 p-2 sm:p-3">
           {room.screenStream && (
             <div className="absolute top-3 left-3 z-20">
-              <ScreenAudioStatus stream={room.screenStream} />
+              <ScreenAudioStatus
+                key={room.screenStream.id}
+                stream={room.screenStream}
+              />
             </div>
           )}
           <RoomStage
