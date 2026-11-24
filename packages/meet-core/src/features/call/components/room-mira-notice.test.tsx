@@ -29,6 +29,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 import { MIRA_CONSENT_INFO_KEYS } from '../../live-assistant/mira-consent-box';
 import {
   forgetMiraJoinChoice,
+  peekMiraJoinChoice,
   rememberMiraJoinChoice,
 } from '../../live-assistant/mira-join-choice';
 import { RoomMiraNotice } from './room-mira-notice';

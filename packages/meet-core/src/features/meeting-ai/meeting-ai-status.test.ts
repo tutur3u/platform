@@ -117,7 +117,7 @@ describe('meeting AI status', () => {
     ).toMatchObject({ kind: 'failed', retryable: false });
   });
 
-  it('lets other credit failures keep the ended session\'s own status', () => {
+  it("lets other credit failures keep the ended session's own status", () => {
     const ended = session({
       ended_at: '2026-11-23T09:59:00Z',
       notes_status: 'completed',
