@@ -34,7 +34,7 @@ export default function PermissionSetupBanner({
   }
 
   return (
-    <Alert className="border-dynamic-yellow/50 bg-dynamic-yellow/10 lg:col-span-2">
+    <Alert className="shrink-0 border-dynamic-yellow/50 bg-dynamic-yellow/10">
       <ShieldAlert className="size-5 text-dynamic-yellow" />
       <AlertTitle className="flex items-center justify-between">
         <span>{t('dashboard.permission_setup_title')}</span>

@@ -99,6 +99,30 @@ export function focusAccountAnchor(anchor: HTMLElement | null) {
   target?.focus();
 }
 
+/** The account menu while it animates out after handing off to a popover. */
+const CLOSING_MENU_SELECTOR = '[data-account-menu][data-state="closed"]';
+
+/**
+ * Cancels a dismissal caused by the account menu that opened a popover. The
+ * avatar is the popover's anchor, not its trigger, and the menu is still on
+ * screen while it closes: focus returning to the avatar, or landing on the
+ * closing menu, or a press on either must not close the popover.
+ */
+export function keepForAccountAnchor(
+  event: { target: EventTarget | null; preventDefault: () => void },
+  anchorRef: RefObject<HTMLElement | null>
+) {
+  const { target } = event;
+  if (!(target instanceof Node)) return;
+  const element = target instanceof Element ? target : target.parentElement;
+  if (
+    anchorRef.current?.contains(target) ||
+    element?.closest(CLOSING_MENU_SELECTOR)
+  ) {
+    event.preventDefault();
+  }
+}
+
 /** Null outside the shared sidebar, where controls render standalone. */
 export function useAccountHub() {
   const state = useContext(AccountHubStateContext);

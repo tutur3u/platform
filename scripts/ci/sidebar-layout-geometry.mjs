@@ -124,6 +124,25 @@ export async function checkAccountHub(page, shots) {
   );
   if (shots)
     await page.screenshot({ path: path.join(shots, '7-notifications.png') });
+  // Pressing inside the popover, away from the sidebar, keeps both open.
+  const panel = page.getByTestId('notifications-panel');
+  const box = await panel.boundingBox();
+  assert.ok(box, 'the notifications panel has a box');
+  await page.mouse.move(box.x + 8, box.y + 8, { steps: 6 });
+  await page.waitForTimeout(500);
+  await page.mouse.click(box.x + 8, box.y + 8);
+  await page.getByTestId('notifications-action').click();
+  await page.waitForTimeout(900);
+  assert.equal(
+    await panel.isVisible(),
+    true,
+    'the notifications popover survives a press inside it'
+  );
+  assert.equal(
+    await page.locator('aside[data-overlay-state="open"]').count(),
+    1,
+    'the hover sidebar stays open while the popover is pressed'
+  );
   // The pointer stays on the sidebar, as it does when the avatar is clicked.
   await page.mouse.move(24, 420);
   await page.keyboard.press('Escape');

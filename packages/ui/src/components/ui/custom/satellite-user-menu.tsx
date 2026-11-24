@@ -109,7 +109,13 @@ export function SatelliteUserMenu({
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" side="right" align="end" forceMount>
+      <DropdownMenuContent
+        className="w-56"
+        side="right"
+        align="end"
+        forceMount
+        data-account-menu
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
             {onNameClick ? (

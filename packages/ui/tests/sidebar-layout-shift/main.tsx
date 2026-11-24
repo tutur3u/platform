@@ -19,6 +19,7 @@ import {
 } from '@tuturuuu/ui/custom/satellite-navigation';
 import {
   focusAccountAnchor,
+  keepForAccountAnchor,
   useAccountHub,
   usePublishAccountHub,
 } from '@tuturuuu/ui/custom/sidebar-footer-context';
@@ -190,6 +191,10 @@ function NotificationsStandIn() {
       <PopoverAnchor virtualRef={hub.anchorRef} />
       <PopoverContent
         align="end"
+        onFocusOutside={(event) => keepForAccountAnchor(event, hub.anchorRef)}
+        onInteractOutside={(event) =>
+          keepForAccountAnchor(event, hub.anchorRef)
+        }
         onCloseAutoFocus={(event) => {
           event.preventDefault();
           focusAccountAnchor(hub.anchorRef.current);
@@ -197,6 +202,9 @@ function NotificationsStandIn() {
         side="right"
       >
         <p data-testid="notifications-panel">Notifications panel</p>
+        <button data-testid="notifications-action" type="button">
+          Mark all as read
+        </button>
       </PopoverContent>
     </Popover>
   );

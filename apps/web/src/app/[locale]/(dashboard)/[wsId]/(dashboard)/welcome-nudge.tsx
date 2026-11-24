@@ -30,7 +30,7 @@ export default function WelcomeNudge() {
   return (
     <section
       aria-label={t('nudge_title')}
-      className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-calendar-bg-pink px-4 py-3"
+      className="flex shrink-0 flex-wrap items-center gap-3 rounded-2xl bg-calendar-bg-pink px-4 py-3"
     >
       <span
         aria-hidden="true"

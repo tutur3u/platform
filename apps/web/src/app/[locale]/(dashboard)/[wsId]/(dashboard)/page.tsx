@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { Locale } from '@/i18n/routing';
 import MiraDashboardClient from './components/mira-dashboard-client';
+import { DashboardHomeFrame } from './dashboard-home-frame';
 
 const DEFAULT_ASSISTANT_NAME = 'Mira';
 
@@ -111,7 +112,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
   });
 
   return (
-    <>
+    <DashboardHomeFrame>
       {!workspace.personal && (
         <Suspense fallback={null}>
           <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
@@ -138,6 +139,6 @@ export default async function WorkspaceHomePage({ params }: Props) {
         initialAssistantName={DEFAULT_ASSISTANT_NAME}
         wsId={wsId}
       />
-    </>
+    </DashboardHomeFrame>
   );
 }

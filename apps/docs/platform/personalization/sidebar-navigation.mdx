@@ -172,9 +172,14 @@ Language and Theme submenus, Notifications, Feedback and the workspace dialog.
 Portalled content counts as inside the sidebar. A closing overlay keeps the pin
 for 400ms so the next one can mount (the account menu hands off to the
 Notifications popover and to dialogs), and the panel collapses only after every
-overlay has closed and the pointer is outside. Coverage:
-`notification-popover.test.tsx` (account menu to Notifications),
-`structure.test.tsx` (hand-off between overlays) and the Chromium harness.
+overlay has closed and the pointer is outside. The Notifications popover is
+anchored to the avatar, not triggered by it, so it ignores focus or presses on
+the avatar and on the account menu while that menu animates out
+(`keepForAccountAnchor`); a press inside the popover keeps it and the panel
+open until Escape or a press elsewhere. Coverage: `sidebar-footer-context.test.tsx`
+(dismissal guard), `notification-popover.test.tsx` (account menu to
+Notifications), `structure.test.tsx` (hand-off between overlays) and the
+Chromium harness, which also presses inside the popover.
 
 ## Icon alignment across rail and panel
 

@@ -40,6 +40,7 @@ import {
   focusAccountAnchor,
   useAccountHub,
   usePublishAccountHub,
+  keepForAccountAnchor,
 } from './sidebar-footer-context';
 
 const NOTIFICATION_POLL_INTERVAL_MS = 2 * 60_000;
@@ -195,10 +196,14 @@ export default function SatelliteNotificationPopover({
         // focus returning to it (the menu closing) or a press on it must not
         // dismiss the popover.
         onFocusOutside={
-          merged ? (event) => keepForAnchor(event, hub.anchorRef) : undefined
+          merged
+            ? (event) => keepForAccountAnchor(event, hub.anchorRef)
+            : undefined
         }
         onInteractOutside={
-          merged ? (event) => keepForAnchor(event, hub.anchorRef) : undefined
+          merged
+            ? (event) => keepForAccountAnchor(event, hub.anchorRef)
+            : undefined
         }
         onCloseAutoFocus={
           merged
@@ -259,17 +264,6 @@ export default function SatelliteNotificationPopover({
       </PopoverContent>
     </Popover>
   );
-}
-
-/** Cancels a dismissal caused by the account avatar the popover is anchored to. */
-function keepForAnchor(
-  event: { target: EventTarget | null; preventDefault: () => void },
-  anchorRef: { current: HTMLElement | null }
-) {
-  const anchor = anchorRef.current;
-  if (anchor && event.target instanceof Node && anchor.contains(event.target)) {
-    event.preventDefault();
-  }
 }
 
 /** Merged labels keep one identity per host label object so rows stay memoized. */
