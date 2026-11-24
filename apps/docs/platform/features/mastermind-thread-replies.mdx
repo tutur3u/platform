@@ -248,8 +248,11 @@ Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
   `GET /v1/bridge/attachments/fetch` on the store origin of its bridge socket.
   That origin is pinned: with `storeHost` set in the bridge config
   (`~/.local/share/fleet-sync/config.json`) the daemon refuses a ticket whose
-  socket URL names any other host, and only then advertises
-  `reply-attachments-v2`; without it the bridge takes text replies only. A
+  socket URL names any other host (compared as `URL.host` reports it, so
+  `store.example:443` matches), and only then advertises
+  `reply-attachments-v2`. Without it the bridge takes text replies only, and
+  answers any v2 reply it is still sent (an outbox replay) with a signed
+  `attachment_invalid` instead of fetching its files. A
   `hello` may name capabilities this store does not know (at most 8, each a
   short name); they are ignored rather than dropping the hello.
   Deriving it takes the fleet secret and the sealed manifest, which only the

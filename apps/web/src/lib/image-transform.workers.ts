@@ -44,8 +44,11 @@ export function createImagesTransformer(
       let info: ReturnType<ImagesBinding['info']> | null = null;
       const inspect = () => {
         info ??= images.info(streamOf(input)).then((details) => {
-          // Unknown dimensions cannot be held to the pixel limit: refuse them.
+          // A raster input with unknown dimensions cannot be held to the
+          // pixel limit: refuse it. SVG has no pixel size of its own; it is
+          // rendered at the requested output size.
           const { width, height } = details;
+          if (details.format === 'image/svg+xml') return details;
           if (
             !Number.isSafeInteger(width) ||
             !Number.isSafeInteger(height) ||

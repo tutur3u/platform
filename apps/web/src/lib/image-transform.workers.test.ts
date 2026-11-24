@@ -80,6 +80,22 @@ describe('Cloudflare Images transformer', () => {
     }
   });
 
+  it('renders an SVG without reported dimensions at the requested size', async () => {
+    const { images, transform } = binding({ format: 'image/svg+xml' });
+    const image = createImagesTransformer(images).decode(
+      Buffer.from('x'),
+      options
+    );
+    expect(await image.metadata()).toEqual({ format: 'svg' });
+    await image.webp({ width: 8, height: 8, quality: 80, effort: 4 });
+    expect(transform).toHaveBeenCalledWith({
+      width: 8,
+      height: 8,
+      fit: 'scale-down',
+      metadata: 'none',
+    });
+  });
+
   it('rejects inputs over the pixel limit before transforming', async () => {
     const { images, output } = binding({
       format: 'image/png',

@@ -25,7 +25,12 @@ import {
   handleReply,
 } from './bridge-core.mjs';
 import { openSpool, storeOrigin } from './attachment-spool.mjs';
-import { ATTACHMENT_CAPABILITY, handleReplyV2 } from './bridge-attach.mjs';
+import {
+  ATTACHMENT_CAPABILITY,
+  handleReplyV2,
+  normalizeStoreHost,
+  pinnedDelivery,
+} from './bridge-attach.mjs';
 import { handleRequest } from './bridge-rpc.mjs';
 import { slugify } from './fleet-state.mjs';
 import { pokesDir, readPokes } from './poke.mjs';
@@ -40,8 +45,6 @@ const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1(:\d+)?$/;
 const SOCKET_URL =
   /^(wss:\/\/[a-z0-9.-]+(:\d+)?|ws:\/\/127\.0\.0\.1(:\d+)?)\//i;
 const TICKET = /^[\w-]{32,128}$/;
-/** A store host as the bridge config pins it: name, optional port. */
-const STORE_HOST = /^[a-z0-9][a-z0-9.-]{0,252}(:\d{1,5})?$/i;
 /** Replies are small (a v2 manifest included); a read request is smaller still. */
 const MAX_FRAME_CHARS = 32 * 1024;
 export const BACKOFF = { minMs: 1_000, maxMs: 60_000, stableMs: 30_000 };
@@ -347,10 +350,7 @@ async function main() {
   const machineId = slugify(config.machineId || label, 'local');
   // The store Worker's host. Set, tickets naming any other host are refused
   // and attachments are offered; unset, the bridge takes text replies only.
-  const storeHost =
-    typeof config.storeHost === 'string' && STORE_HOST.test(config.storeHost)
-      ? config.storeHost
-      : undefined;
+  const storeHost = normalizeStoreHost(config.storeHost);
   if (config.storeHost !== undefined && storeHost === undefined)
     throw new Error('store_host_invalid');
   const ledger = createLedger(paths.ledgerFile);
@@ -419,7 +419,9 @@ async function main() {
             machineId,
             ledger,
             firstSeen,
-            deliver: (input) => deliverAttachments(input, socketUrl),
+            deliver: pinnedDelivery(storeHost, (input) =>
+              deliverAttachments(input, socketUrl)
+            ),
             cleanup: (id) => spool.clear(id),
           })
         : handleReply(frame, { secret, machineId, ledger, steer, firstSeen }),

@@ -366,6 +366,37 @@ export function attachmentMessage(id, digest, text, files) {
  * First words of the T3 message: the reply id and the start of its bundle
  * digest, so an earlier submission of exactly this bundle can be recognised.
  */
+/**
+ * The v2 delivery for a bridge: without a pinned store host there is no
+ * origin to trust for the files, so a v2 reply (a replay from the outbox,
+ * say) is refused with a signed `attachment_invalid`, never fetched.
+ */
+export function pinnedDelivery(storeHost, deliver) {
+  return storeHost
+    ? deliver
+    : async () => {
+        throw new AttachmentError('attachment_invalid');
+      };
+}
+
+/**
+ * A configured store host in the form `URL.host` reports: lower case, and
+ * without the default TLS port, so `store.example:443` matches its tickets.
+ * Undefined for anything that is not a bare host with an optional port.
+ */
+export function normalizeStoreHost(raw) {
+  if (
+    typeof raw !== 'string' ||
+    !/^[a-z0-9][a-z0-9.-]{0,252}(:\d{1,5})?$/i.test(raw)
+  )
+    return undefined;
+  try {
+    return new URL(`wss://${raw}`).host;
+  } catch {
+    return undefined;
+  }
+}
+
 export const replyMarker = (id, digest) =>
   `[mm-reply ${id} ${String(digest).slice(0, 16)}]`;
 

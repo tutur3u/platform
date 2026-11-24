@@ -268,3 +268,28 @@ test('a hello may name unknown capabilities, within bounds', () => {
   assert.equal(hello(['x'.repeat(49)]), false);
   assert.equal(hello(['Bad Cap']), false);
 });
+
+test('a bridge without a pinned store host refuses v2 replies instead of fetching', async () => {
+  const { normalizeStoreHost, pinnedDelivery } =
+    await import('./bridge-attach.mjs');
+  const fetched = [];
+  const deliver = async (input) => {
+    fetched.push(input);
+    return { delivery: 'steered' };
+  };
+  const { deps } = harness();
+  const frame = replyV2Frame(30, { files: [manifestFile(1, text('x'))] });
+  const ack = await handleReplyV2(frame, {
+    ...deps,
+    deliver: pinnedDelivery(undefined, deliver),
+  });
+  assert.deepEqual([ack.state, ack.code], ['failed', 'attachment_invalid']);
+  assert.equal(fetched.length, 0);
+  assert.equal(pinnedDelivery('store.example', deliver), deliver);
+
+  // The configured host is compared as URL.host reports it.
+  assert.equal(normalizeStoreHost('Store.Example:443'), 'store.example');
+  assert.equal(normalizeStoreHost('store.example:8443'), 'store.example:8443');
+  for (const bad of ['user@store.example', 'store.example/x', '', 7, 'a b'])
+    assert.equal(normalizeStoreHost(bad), undefined);
+});
