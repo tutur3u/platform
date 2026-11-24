@@ -21,7 +21,8 @@ const LINKS = {
   ai: 'https://tuturuuu.com/ai',
 } as const;
 
-/** Info keys shown beside the box, in order; every one is required content. */
+/** Info keys shown beside the box in a room-capture meeting, in order; every
+ * one is required content. */
 export const MIRA_CONSENT_INFO_KEYS = [
   'info_what',
   'info_controller',
@@ -33,13 +34,29 @@ export const MIRA_CONSENT_INFO_KEYS = [
   'info_off',
 ] as const;
 
-/** The exact notice text a participant sees, hashed into their choice. */
-export function useMiraConsentText() {
+/**
+ * Which notice a meeting shows: `self` when each person's device transcribes
+ * only their own voice, so turning Mira off stops only that voice.
+ */
+export type MiraNoticeMode = 'room' | 'self';
+
+/** The info keys for one meeting's mode; exactly one turning-off line. */
+export function miraConsentInfoKeys(mode: MiraNoticeMode = 'room') {
+  return MIRA_CONSENT_INFO_KEYS.map((key) =>
+    key === 'info_off' && mode === 'self' ? 'info_off_self' : key
+  );
+}
+
+/**
+ * The exact notice text a participant sees for the meeting's mode, hashed
+ * into their choice. Room capture keeps the text it has always hashed.
+ */
+export function useMiraConsentText(mode: MiraNoticeMode = 'room') {
   const t = useTranslations('meet.mira_consent');
   return [
     t('box_label'),
     t('adults'),
-    ...MIRA_CONSENT_INFO_KEYS.map((key) => t(key)),
+    ...miraConsentInfoKeys(mode).map((key) => t(key)),
   ].join('\n');
 }
 
@@ -54,7 +71,7 @@ export async function hashMiraConsentText(text: string) {
     .join('');
 }
 
-function MiraConsentInfo() {
+function MiraConsentInfo({ mode }: { mode: MiraNoticeMode }) {
   const t = useTranslations('meet.mira_consent');
   return (
     <Popover>
@@ -75,7 +92,7 @@ function MiraConsentInfo() {
         className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(22rem,calc(100vw-1.5rem))] space-y-2 overflow-y-auto text-sm"
       >
         <p className="font-medium">{t('info_title')}</p>
-        {MIRA_CONSENT_INFO_KEYS.map((key) => (
+        {miraConsentInfoKeys(mode).map((key) => (
           <p key={key} className="text-pretty text-muted-foreground text-xs">
             {t(key)}
           </p>
@@ -110,12 +127,15 @@ export function MiraConsentBox({
   onCheckedChange,
   disabled,
   className,
+  mode = 'room',
 }: {
   id: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
   className?: string;
+  /** The meeting's notice; the hashed text must use the same mode. */
+  mode?: MiraNoticeMode;
 }) {
   const t = useTranslations('meet.mira_consent');
   return (
@@ -135,7 +155,7 @@ export function MiraConsentBox({
         >
           {t('box_label')}
         </Label>
-        <MiraConsentInfo />
+        <MiraConsentInfo mode={mode} />
       </div>
       <p
         id={`${id}-adults`}

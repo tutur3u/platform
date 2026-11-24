@@ -11,7 +11,8 @@ import { useCallback, useSyncExternalStore } from 'react';
  *   new, monotonic epoch; the flag (never audio) is mirrored in session
  *   storage so a reload of the tab keeps it.
  * - `noticeRequired`: the server wants the person to confirm the
- *   per-speaker notice; only a successful per-speaker Allow clears it.
+ *   per-speaker notice; any recorded per-speaker choice (Allow or decline)
+ *   clears it.
  * - `ineligible`: the server says this person cannot contribute here.
  */
 export type SelfCaptureFlags = {

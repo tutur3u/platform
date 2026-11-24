@@ -5539,6 +5539,7 @@
       "info_data": "Mira uses your speech, transcripts and chat messages only to help in this meeting.",
       "info_limits": "Mira may still process other people's speech or messages that mention you, and your voice can be picked up by someone else's microphone.",
       "info_off": "You can turn Mira off for yourself at any time from the Mira indicator. Turning it off pauses the live transcript for everyone. You can ask the workspace to access or erase your data.",
+      "info_off_self": "Turning it off stops only your voice from being transcribed; the transcript continues for others.",
       "info_readers": "The host and the workspace admins can read transcripts and notes.",
       "info_retention": "Transcripts and notes are kept for the workspace's retention period. Audio is not kept.",
       "info_sensitive": "Please don't share sensitive personal information with Mira.",

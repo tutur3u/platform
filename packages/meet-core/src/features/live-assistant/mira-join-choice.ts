@@ -22,6 +22,12 @@ export type MiraJoinChoice = {
   seenRevision: number;
   /** The acceptance revision this Join state was recorded for, once. */
   appliedRevision?: number;
+  /**
+   * The notice the join screen showed. The join screen cannot see the
+   * meeting's mode, so this is the room-capture notice; a per-speaker
+   * meeting asks to confirm instead of applying it.
+   */
+  noticeMode?: 'room' | 'self';
 };
 
 const key = (meetingId: string) => `meet-mira-join:${meetingId}`;

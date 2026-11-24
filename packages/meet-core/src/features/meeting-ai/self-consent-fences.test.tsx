@@ -39,7 +39,14 @@ vi.mock('./self-engine', () => ({ createSelfEngine: f.engine }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
 
 import { useRoomMira } from '../call/components/use-room-mira';
-import { hashMiraConsentText } from '../live-assistant/mira-consent-box';
+import {
+  hashMiraConsentText,
+  miraConsentInfoKeys,
+} from '../live-assistant/mira-consent-box';
+import {
+  forgetMiraJoinChoice,
+  rememberMiraJoinChoice,
+} from '../live-assistant/mira-join-choice';
 import {
   isSelfCaptureHeld,
   resetSelfCaptureFlags,
@@ -49,6 +56,13 @@ import { SELF_NOTICE_KEYS } from './self-notice-text';
 import { TranscriptControls } from './transcript-controls';
 
 const ai = messages.meet.ai;
+const mc = messages.meet.mira_consent;
+const miraText = (mode: 'room' | 'self') =>
+  [
+    mc.box_label,
+    mc.adults,
+    ...miraConsentInfoKeys(mode).map((key) => mc[key]),
+  ].join('\n');
 const view = (over: object = {}) => ({
   available: true,
   version: 'notice-v2',
@@ -127,6 +141,7 @@ const speech = () => {
 beforeEach(() => {
   vi.resetAllMocks();
   resetSelfCaptureFlags('m');
+  forgetMiraJoinChoice('m');
   f.read.mockResolvedValue(view());
   f.mira.mockResolvedValue(miraOn);
   f.upload.mockResolvedValue({});
@@ -391,6 +406,74 @@ describe('Mira and the per-speaker transcript', () => {
       hook.result.current.choose.mutateAsync({ choice: 'on', source: 'toggle' })
     );
     expect(f.legacyChoice).not.toHaveBeenCalled();
+  });
+
+  it('hashes the per-speaker Mira notice and says so in a per-speaker meeting', async () => {
+    f.miraChoose.mockResolvedValue({ ...miraOn, choice: 'off' });
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.noticeMode).toBe('self'));
+    await act(() =>
+      hook.result.current.choose.mutateAsync({
+        choice: 'off',
+        source: 'toggle',
+      })
+    );
+    const sent = f.miraChoose.mock.calls[0]![1];
+    expect(sent.noticeMode).toBe('self');
+    expect(sent.textHash).toBe(await hashMiraConsentText(miraText('self')));
+  });
+
+  it('keeps the room-capture Mira payload as it was', async () => {
+    f.read.mockResolvedValue(view({ mode: 'room', session: null }));
+    f.miraChoose.mockResolvedValue({ ...miraOn, choice: 'off' });
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.data).toBeTruthy());
+    await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+    await act(() =>
+      hook.result.current.choose.mutateAsync({
+        choice: 'off',
+        source: 'toggle',
+      })
+    );
+    const sent = f.miraChoose.mock.calls[0]![1];
+    expect('noticeMode' in sent).toBe(false);
+    expect(sent.textHash).toBe(await hashMiraConsentText(miraText('room')));
+  });
+
+  it('asks to confirm instead of applying a join choice in a per-speaker meeting', async () => {
+    rememberMiraJoinChoice('m', {
+      ticked: true,
+      textHash: 'a'.repeat(64),
+      locale: 'en',
+      seenRevision: 1,
+      noticeMode: 'room',
+    });
+    f.mira.mockResolvedValue({ ...miraOn, choice: null, lastChoice: null });
+    f.miraChoose.mockResolvedValue(miraOn);
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.noticeMode).toBe('self'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(f.miraChoose).not.toHaveBeenCalled();
+  });
+
+  it('still applies a join choice in a room-capture meeting', async () => {
+    rememberMiraJoinChoice('m', {
+      ticked: true,
+      textHash: 'a'.repeat(64),
+      locale: 'en',
+      seenRevision: 1,
+      noticeMode: 'room',
+    });
+    f.read.mockResolvedValue(view({ mode: 'room', session: null }));
+    f.mira.mockResolvedValue({ ...miraOn, choice: null, lastChoice: null });
+    f.miraChoose.mockResolvedValue(miraOn);
+    mira();
+    await vi.waitFor(() =>
+      expect(f.miraChoose).toHaveBeenCalledWith(
+        'm',
+        expect.objectContaining({ source: 'join', textHash: 'a'.repeat(64) })
+      )
+    );
   });
 
   it('Mira on still allows the room-capture transcript', async () => {

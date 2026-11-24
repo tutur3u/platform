@@ -58,6 +58,7 @@ export function useRememberMiraJoin() {
           textHash,
           locale,
           seenRevision,
+          noticeMode: 'room',
         });
       } catch {
         // The participant stays off until they choose in the call.

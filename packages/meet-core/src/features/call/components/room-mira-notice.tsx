@@ -181,6 +181,7 @@ function ParticipantChoice({
         checked={ticked}
         onCheckedChange={setTicked}
         disabled={busy}
+        mode={mira.noticeMode}
       />
       <Button
         type="button"

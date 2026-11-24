@@ -6183,6 +6183,7 @@
       "info_data": "Mira chỉ dùng giọng nói, bản chép lời và tin nhắn trò chuyện của bạn để hỗ trợ trong cuộc họp này.",
       "info_limits": "Mira vẫn có thể xử lý lời nói hoặc tin nhắn của người khác có nhắc đến bạn, và giọng bạn có thể lọt vào micrô của người khác.",
       "info_off": "Bạn có thể tắt Mira cho mình bất cứ lúc nào từ chỉ báo Mira. Khi tắt, phần chép lời trực tiếp tạm dừng với mọi người. Bạn có thể yêu cầu không gian làm việc cho xem hoặc xóa dữ liệu của mình.",
+      "info_off_self": "Khi tắt, chỉ giọng nói của bạn ngừng được chép lời; phần chép lời vẫn tiếp tục với những người khác.",
       "info_readers": "Người chủ trì và quản trị viên không gian làm việc có thể đọc bản chép lời và ghi chú.",
       "info_retention": "Bản chép lời và ghi chú được lưu theo thời hạn của không gian làm việc. Âm thanh không được lưu.",
       "info_sensitive": "Vui lòng không chia sẻ thông tin cá nhân nhạy cảm với Mira.",

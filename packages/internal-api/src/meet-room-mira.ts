@@ -49,6 +49,11 @@ export type RoomMiraChoiceInput = {
   /** SHA-256 hex of the exact notice text shown. */
   textHash: string;
   locale: string;
+  /**
+   * Sent only for the per-speaker notice; a room-capture choice omits it so
+   * its payload stays the same.
+   */
+  noticeMode?: 'self';
 };
 
 const roomMiraPath = (meetingId: string) =>

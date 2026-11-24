@@ -32,6 +32,7 @@ import {
 import { holdSelfCapture } from '../../meeting-ai/self-hold';
 import { readSelfRoom } from '../../meeting-ai/self-room';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
+import { useMiraNoticeMode } from './use-mira-notice-mode';
 
 export const roomMiraConsentKey = (meetingId: string) => [
   'room-mira-consent',
@@ -110,7 +111,10 @@ const failedAt = new Map<string, number>();
 export function useRoomMira(meetingId: string) {
   const t = useTranslations('meet.mira_consent');
   const queryClient = useQueryClient();
-  const text = useMiraConsentText();
+  // The box and its hash use the same notice: the per-speaker one in a
+  // per-speaker meeting, never both.
+  const notice = useMiraNoticeMode(meetingId);
+  const text = useMiraConsentText(notice.mode);
   const locale = useLocale();
   const query = useRoomMiraConsent(meetingId);
   const data = query.data?.available ? query.data : undefined;
@@ -127,15 +131,19 @@ export function useRoomMira(meetingId: string) {
       source: Source;
       textHash?: string;
       locale?: string;
-    }) =>
-      setRoomMiraChoice(meetingId, {
+    }) => {
+      // A Join state carries the hash of the room-capture notice it showed.
+      const mode = input.textHash ? 'room' : notice.mode;
+      return setRoomMiraChoice(meetingId, {
         choice: input.choice,
         version: MIRA_ROOM_NOTICE_VERSION,
         acceptanceRevision: data?.acceptance?.revision ?? 0,
         source: input.source,
         textHash: input.textHash ?? (await hashMiraConsentText(text)),
         locale: input.locale ?? locale,
-      }),
+        ...(mode === 'self' ? { noticeMode: 'self' as const } : {}),
+      });
+    },
     // Off stops this device's own per-speaker capture before the request is
     // sent, and keeps it stopped until the person allows the transcript again.
     onMutate: (input) => {
@@ -162,9 +170,11 @@ export function useRoomMira(meetingId: string) {
         ).catch(() => undefined);
       refreshTranscript();
     },
-    // A Join state is retried quietly on the next read.
+    // A Join state is retried quietly on the next read. A refused choice
+    // may follow a mode change, so the meeting's notice is read again.
     onError: (_error, input) => {
       if (input.source !== 'join') toast.error(t('save_failed'));
+      refreshTranscript();
     },
   });
 
@@ -193,8 +203,15 @@ export function useRoomMira(meetingId: string) {
     !!data?.acceptance && data.choice === null
       ? peekMiraJoinChoice(meetingId)
       : null;
+  const noticeMode = notice.mode;
+  const noticeKnown = notice.known;
   useEffect(() => {
     if (!data?.acceptance || data.choice !== null || !pendingJoin) return;
+    // The join screen showed the room-capture notice. It applies only once
+    // the meeting's notice is known to be that one; a per-speaker meeting
+    // asks the person to confirm under its own notice instead.
+    if (!noticeKnown || (pendingJoin.noticeMode ?? 'room') !== noticeMode)
+      return;
     const acceptance = data.acceptance;
     const flight = `${meetingId}:${acceptance.revision}`;
     // Only the acceptance that was open on the join screen takes the Join
@@ -237,9 +254,20 @@ export function useRoomMira(meetingId: string) {
         () => failedAt.set(flight, dataUpdatedAt)
       )
       .finally(() => applying.delete(flight));
-  }, [data, pendingJoin, meetingId, choose, revision, dataUpdatedAt]);
+  }, [
+    data,
+    pendingJoin,
+    meetingId,
+    choose,
+    revision,
+    dataUpdatedAt,
+    noticeKnown,
+    noticeMode,
+  ]);
 
   return {
+    /** The notice the box must show; the choice is hashed over it. */
+    noticeMode,
     loading: query.isLoading,
     available: query.data?.available === true,
     data,
