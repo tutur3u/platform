@@ -34,7 +34,7 @@ export function ConfidentialField({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex items-center gap-1.5 text-dynamic-foreground/40">
+        <span className="inline-flex items-center gap-1.5 text-foreground/40">
           <Lock className="h-3.5 w-3.5" />
           <span className="italic">{t('confidential-field-redacted')}</span>
         </span>
@@ -98,7 +98,7 @@ export function ConfidentialAmount({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
-            className={`inline-flex items-center gap-2 text-dynamic-foreground/40 ${className}`}
+            className={`inline-flex items-center gap-2 text-foreground/40 ${className}`}
           >
             <Lock className="h-4 w-4" />
             <span className="font-mono font-semibold tracking-wider">
@@ -147,7 +147,7 @@ export function ConfidentialDescription({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
-            className={`inline-flex items-center gap-2 text-dynamic-foreground/40 ${className}`}
+            className={`inline-flex items-center gap-2 text-foreground/40 ${className}`}
           >
             <Lock className="h-4 w-4" />
             <span className="italic">{t('description-redacted')}</span>
@@ -192,7 +192,7 @@ export function ConfidentialCategory({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
-            className={`inline-flex items-center gap-2 rounded-md bg-dynamic-surface/80 px-2 py-1 text-dynamic-foreground/40 text-sm ${className}`}
+            className={`inline-flex items-center gap-2 rounded-md bg-background/80 px-2 py-1 text-foreground/40 text-sm ${className}`}
           >
             <Lock className="h-3.5 w-3.5" />
             <span className="text-xs italic">{t('category-redacted')}</span>
@@ -243,31 +243,27 @@ export function ConfidentialToggle({
     <Tooltip>
       <TooltipTrigger asChild>
         <label
-          className={`flex items-start gap-3 rounded-lg border border-dynamic-border p-4 transition-colors ${
+          className={`flex items-start gap-3 rounded-lg border border-border p-4 transition-colors ${
             disabled
-              ? 'cursor-not-allowed bg-dynamic-surface/40 opacity-60'
-              : 'cursor-pointer hover:bg-dynamic-surface/60'
+              ? 'cursor-not-allowed bg-background/40 opacity-60'
+              : 'cursor-pointer hover:bg-background/60'
           }`}
         >
           <div className="flex flex-1 items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-surface">
-              <Icon className="h-5 w-5 text-dynamic-foreground/70" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background">
+              <Icon className="h-5 w-5 text-foreground/70" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-dynamic-foreground">
-                  {label}
-                </span>
+                <span className="font-medium text-foreground">{label}</span>
                 {checked && (
-                  <span className="flex items-center gap-1 text-dynamic-foreground/60 text-xs">
+                  <span className="flex items-center gap-1 text-foreground/60 text-xs">
                     <Lock className="h-3 w-3" />
                     {t('mark-as-confidential')}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-dynamic-foreground/60 text-sm">
-                {description}
-              </p>
+              <p className="mt-1 text-foreground/60 text-sm">{description}</p>
             </div>
           </div>
           <div className="flex items-center">

@@ -22,7 +22,7 @@ export function tierClass(tier: string | null | undefined) {
   if (tier === 'PRO')
     return 'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple';
   if (tier === 'ENTERPRISE')
-    return 'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber';
+    return 'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow';
   return 'border-muted-foreground/30 bg-muted/50 text-muted-foreground';
 }
 

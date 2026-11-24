@@ -100,7 +100,7 @@ export function ManageTasksDialog({
                   {project.linkedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center justify-between gap-2 rounded-md border border-dynamic-surface/40 bg-dynamic-surface/25 px-3 py-2"
+                      className="flex items-center justify-between gap-2 rounded-md border border-border/40 bg-background/25 px-3 py-2"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-sm">

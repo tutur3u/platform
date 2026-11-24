@@ -60,7 +60,7 @@ export function ProjectMetrics({ stats }: ProjectMetricsProps) {
         return (
           <Card
             key={item.label}
-            className="rounded-lg border-dynamic-surface/60 bg-background p-4 shadow-none"
+            className="rounded-lg border-border/60 bg-background p-4 shadow-none"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -71,7 +71,7 @@ export function ProjectMetrics({ stats }: ProjectMetricsProps) {
               </div>
               <div
                 className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-md bg-dynamic-surface/40',
+                  'flex h-9 w-9 items-center justify-center rounded-md bg-background/40',
                   item.className
                 )}
               >

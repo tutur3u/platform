@@ -63,7 +63,7 @@ export default function StatsOverview({
           <div className="mb-2 font-bold text-3xl text-dynamic-blue">
             {stats.total_sessions}
           </div>
-          <p className="text-dynamic-muted text-sm">
+          <p className="text-muted-foreground text-sm">
             {stats.total_sessions > 0
               ? t('acrossUsers', { count: stats.active_users })
               : t('noSessionsYet')}
@@ -90,7 +90,7 @@ export default function StatsOverview({
           <div className="mb-2 font-bold text-3xl text-dynamic-green">
             {stats.active_sessions}
           </div>
-          <p className="text-dynamic-muted text-sm">
+          <p className="text-muted-foreground text-sm">
             {stats.active_sessions > 0
               ? t('currentlyInProgress')
               : t('noActiveSessions')}
@@ -125,12 +125,12 @@ export default function StatsOverview({
           <div className="mb-2 font-bold text-3xl text-dynamic-yellow">
             {formatDuration(stats.today_time)}
           </div>
-          <p className="text-dynamic-muted text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('sessionsToday', { count: stats.today_sessions })}
           </p>
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-dynamic-muted">{t('progress')}</span>
+              <span className="text-muted-foreground">{t('progress')}</span>
               <span className="font-medium text-dynamic-yellow">
                 {Math.min(
                   100,
@@ -179,7 +179,7 @@ export default function StatsOverview({
                 ? formatDuration(stats.week_time)
                 : formatDuration(stats.month_time)}
           </div>
-          <p className="text-dynamic-muted text-sm">
+          <p className="text-muted-foreground text-sm">
             {period === 'day'
               ? t('perSessionAverage')
               : t('currentPeriodTotal', {

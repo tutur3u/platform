@@ -137,7 +137,7 @@ export function WorkspaceSelectTrigger({
                   tier === 'PRO' &&
                     'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
                   tier === 'ENTERPRISE' &&
-                    'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                    'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow'
                 )}
                 variant="outline"
               >

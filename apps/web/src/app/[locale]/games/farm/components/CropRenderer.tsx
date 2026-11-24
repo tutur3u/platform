@@ -9,28 +9,28 @@ interface CropRendererProps {
 
 const cropColors = {
   [CropType.WHEAT]: {
-    [GrowthStage.SEED]: 'bg-dynamic-brown',
+    [GrowthStage.SEED]: 'bg-dynamic-orange',
     [GrowthStage.SPROUT]: 'bg-dynamic-green/60',
     [GrowthStage.GROWING]: 'bg-dynamic-green/80',
     [GrowthStage.MATURE]: 'bg-dynamic-yellow',
     [GrowthStage.HARVESTED]: 'bg-dynamic-gray/30',
   },
   [CropType.CORN]: {
-    [GrowthStage.SEED]: 'bg-dynamic-brown',
+    [GrowthStage.SEED]: 'bg-dynamic-orange',
     [GrowthStage.SPROUT]: 'bg-dynamic-green/60',
     [GrowthStage.GROWING]: 'bg-dynamic-green/80',
     [GrowthStage.MATURE]: 'bg-dynamic-orange',
     [GrowthStage.HARVESTED]: 'bg-dynamic-gray/30',
   },
   [CropType.TOMATO]: {
-    [GrowthStage.SEED]: 'bg-dynamic-brown',
+    [GrowthStage.SEED]: 'bg-dynamic-orange',
     [GrowthStage.SPROUT]: 'bg-dynamic-green/60',
     [GrowthStage.GROWING]: 'bg-dynamic-green/80',
     [GrowthStage.MATURE]: 'bg-dynamic-red',
     [GrowthStage.HARVESTED]: 'bg-dynamic-gray/30',
   },
   [CropType.CARROT]: {
-    [GrowthStage.SEED]: 'bg-dynamic-brown',
+    [GrowthStage.SEED]: 'bg-dynamic-orange',
     [GrowthStage.SPROUT]: 'bg-dynamic-green/60',
     [GrowthStage.GROWING]: 'bg-dynamic-green/80',
     [GrowthStage.MATURE]: 'bg-dynamic-orange',

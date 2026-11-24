@@ -57,7 +57,7 @@ export function AccessRequestCard({
   }, [approvedRedirectPath, hasAccess, router]);
 
   return (
-    <section className="w-full max-w-xl rounded-2xl border border-dynamic-border bg-dynamic-card p-6 shadow-2xl shadow-dynamic-background/40 sm:p-8">
+    <section className="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-2xl shadow-background/40 sm:p-8">
       <div className="flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-dynamic-green/10 text-dynamic-green">
           {hasAccess ? (
@@ -78,11 +78,11 @@ export function AccessRequestCard({
         </div>
       </div>
 
-      <p className="mt-4 text-dynamic-muted-foreground leading-7">
+      <p className="mt-4 text-muted-foreground leading-7">
         {t('notWhitelistedBody')}
       </p>
 
-      <div className="mt-5 rounded-lg border border-dynamic-border/70 bg-dynamic-muted/30 p-4">
+      <div className="mt-5 rounded-lg border border-border/70 bg-muted/30 p-4">
         <div className="flex items-center gap-2 font-medium text-sm">
           {statusQuery.isFetching && !hasAccess ? (
             <LoaderCircle className="h-4 w-4 animate-spin text-dynamic-blue" />
@@ -99,7 +99,7 @@ export function AccessRequestCard({
               ? t('requestAccessPending')
               : t('requestAccessTitle')}
         </div>
-        <p className="mt-2 text-dynamic-muted-foreground text-sm">
+        <p className="mt-2 text-muted-foreground text-sm">
           {hasAccess
             ? t('requestAccessApprovedBody')
             : isPending
@@ -107,7 +107,7 @@ export function AccessRequestCard({
               : t('requestAccessDescription')}
         </p>
         {email && (
-          <p className="mt-3 text-dynamic-muted-foreground text-xs">
+          <p className="mt-3 text-muted-foreground text-xs">
             {t('requestAccessAccount', { email })}
           </p>
         )}

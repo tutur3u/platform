@@ -481,11 +481,11 @@ export function StudentTestDetailPage({
                 let cardStyle = 'border-border bg-background';
                 if (isSelected) {
                   cardStyle = isCorrect
-                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red';
                 } else if (isOptionCorrect) {
                   cardStyle =
-                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green border-dashed';
                 }
 
                 return (
@@ -540,12 +540,12 @@ export function StudentTestDetailPage({
                 let cardStyle = 'border-border bg-background';
                 if (isSelected) {
                   cardStyle = isCorrect
-                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                    ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                    : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red';
                 } else if (studentVal !== null && !isSelected && !isCorrect) {
                   // If student was wrong, the other option is correct
                   cardStyle =
-                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green-foreground border-dashed';
+                    'border-dynamic-green bg-dynamic-green/5 text-dynamic-green border-dashed';
                 }
 
                 return (
@@ -756,8 +756,8 @@ export function StudentTestDetailPage({
                               className={cn(
                                 'flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-xs',
                                 isQuizCorrect
-                                  ? 'bg-dynamic-green/15 text-dynamic-green-foreground'
-                                  : 'bg-dynamic-red/15 text-dynamic-red-foreground'
+                                  ? 'bg-dynamic-green/15 text-dynamic-green'
+                                  : 'bg-dynamic-red/15 text-dynamic-red'
                               )}
                             >
                               {index + 1}
@@ -770,8 +770,8 @@ export function StudentTestDetailPage({
                             className={cn(
                               'rounded-lg border border-border px-2 py-0.5 font-bold text-xs',
                               isQuizCorrect
-                                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-                                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
+                                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red'
                             )}
                           >
                             {t('courses.questionScore', {

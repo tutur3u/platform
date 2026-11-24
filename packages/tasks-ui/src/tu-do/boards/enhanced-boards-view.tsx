@@ -271,7 +271,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
 
         <TabsContent value="cards" className="mt-4">
           {filteredData.length === 0 ? (
-            <div className="rounded-lg border border-dynamic-border bg-muted/30 p-10 text-center">
+            <div className="rounded-lg border border-border bg-muted/30 p-10 text-center">
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border bg-background">
                 <LayoutGrid className="h-5 w-5 text-muted-foreground" />
               </div>

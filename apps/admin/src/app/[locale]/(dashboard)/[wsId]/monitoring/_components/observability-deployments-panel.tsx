@@ -469,9 +469,9 @@ export function ObservabilityDeploymentsPanel({
             </div>
 
             {deploymentPin ? (
-              <div className="flex flex-col gap-3 rounded-md border border-dynamic-amber/25 bg-dynamic-amber/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-md border border-dynamic-yellow/25 bg-dynamic-yellow/10 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <p className="font-medium text-dynamic-amber text-sm">
+                  <p className="font-medium text-dynamic-yellow text-sm">
                     {rootT('controls.pin_active_title')}
                   </p>
                   <p className="mt-1 text-muted-foreground text-sm">

@@ -149,7 +149,7 @@ export function InvoiceUserHistoryAccordion({
                   {invoices.map((invoice: Invoice) => (
                     <div
                       key={invoice.id}
-                      className="flex flex-col gap-2 rounded-lg border p-3 transition-colors hover:bg-dynamic-surface/50"
+                      className="flex flex-col gap-2 rounded-lg border p-3 transition-colors hover:bg-background/50"
                     >
                       <div className="flex w-full items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-start gap-2">

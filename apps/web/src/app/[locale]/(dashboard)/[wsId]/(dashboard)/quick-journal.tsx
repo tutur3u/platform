@@ -256,7 +256,7 @@ const PRIORITY_STYLES: Record<string, string> = {
   high: 'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
   normal: 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
   low: 'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
-  none: 'border-dynamic-muted/40 bg-dynamic-muted/10 text-dynamic-muted-foreground',
+  none: 'border-border/40 bg-muted/10 text-muted-foreground',
 };
 
 const LABEL_COLOR_CLASSES: Record<string, string> = {
@@ -267,7 +267,7 @@ const LABEL_COLOR_CLASSES: Record<string, string> = {
   blue: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
   purple: 'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple',
   pink: 'border-dynamic-pink/30 bg-dynamic-pink/10 text-dynamic-pink',
-  gray: 'border-dynamic-muted/30 bg-dynamic-muted/10 text-dynamic-muted-foreground',
+  gray: 'border-border/30 bg-muted/10 text-muted-foreground',
 };
 
 function QuickJournalContent({ wsId }: QuickJournalContentProps) {
@@ -1086,7 +1086,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3">
-            <div className="flex items-start justify-between gap-3 rounded-lg border border-dynamic-muted/40 bg-dynamic-muted/5 p-3">
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-border/40 bg-muted/5 p-3">
               <div>
                 <p className="font-medium text-foreground text-sm">
                   {t('toggle_descriptions_label')}
@@ -1102,7 +1102,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
               />
             </div>
 
-            <div className="flex items-start justify-between gap-3 rounded-lg border border-dynamic-muted/40 bg-dynamic-muted/5 p-3">
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-border/40 bg-muted/5 p-3">
               <div>
                 <p className="font-medium text-foreground text-sm">
                   {t('toggle_priority_label')}
@@ -1118,7 +1118,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
               />
             </div>
 
-            <div className="flex items-start justify-between gap-3 rounded-lg border border-dynamic-muted/40 bg-dynamic-muted/5 p-3">
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-border/40 bg-muted/5 p-3">
               <div>
                 <p className="font-medium text-foreground text-sm">
                   {t('toggle_labels_label')}
@@ -1284,7 +1284,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
               </div>
 
               {!enableLabels ? (
-                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
+                <p className="rounded-lg border border-border/30 bg-muted/10 p-3 text-muted-foreground text-xs">
                   {t('labels_disabled_notice')}
                 </p>
               ) : labelsLoading ? (
@@ -1332,7 +1332,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
                   ) : null}
                 </>
               ) : (
-                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
+                <p className="rounded-lg border border-border/30 bg-muted/10 p-3 text-muted-foreground text-xs">
                   {t('labels_none')}
                 </p>
               )}
@@ -1370,7 +1370,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
                   return (
                     <div
                       key={task.id ?? `${task.name}-${index}`}
-                      className="rounded-md border border-dynamic-surface/30 bg-background/80 p-3"
+                      className="rounded-md border border-border/30 bg-background/80 p-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-1">
@@ -1450,7 +1450,7 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
                                       'rounded-full border px-3 py-1 font-medium text-xs transition',
                                       option.selected
                                         ? 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple'
-                                        : 'border-dynamic-muted/40 text-muted-foreground'
+                                        : 'border-border/40 text-muted-foreground'
                                     )}
                                   >
                                     {option.displayName}
@@ -1539,7 +1539,7 @@ export default function QuickJournal({
 
   if (!enabled) {
     return (
-      <Card className="border-dynamic-muted/50">
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle>{t('restricted_title')}</CardTitle>
           <CardDescription>{t('restricted_description')}</CardDescription>

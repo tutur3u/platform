@@ -53,9 +53,9 @@ export function CitationNodeView({
           ? 'underline decoration-dynamic-orange decoration-wavy'
           : validation === 'warning'
             ? 'underline decoration-dynamic-orange decoration-dotted'
-            : 'underline decoration-dynamic-border decoration-dotted',
+            : 'underline decoration-border decoration-dotted',
         recovery?.kind === 'invalid' && 'decoration-destructive',
-        selected && 'bg-dynamic-surface'
+        selected && 'bg-background'
       )}
     >
       {text}

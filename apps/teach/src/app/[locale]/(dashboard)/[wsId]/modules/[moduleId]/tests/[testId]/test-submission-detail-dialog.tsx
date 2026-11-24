@@ -241,8 +241,8 @@ function SubmissionContent({
                     className={cn(
                       'flex h-7 w-7 shrink-0 items-center justify-center border border-border font-semibold text-xs',
                       quizAns.is_correct
-                        ? 'bg-dynamic-green/15 text-dynamic-green-foreground'
-                        : 'bg-dynamic-red/15 text-dynamic-red-foreground'
+                        ? 'bg-dynamic-green/15 text-dynamic-green'
+                        : 'bg-dynamic-red/15 text-dynamic-red'
                     )}
                   >
                     {index + 1}
@@ -255,8 +255,8 @@ function SubmissionContent({
                   className={cn(
                     'rounded-lg border border-border px-2 py-0.5 font-bold text-xs',
                     quizAns.is_correct
-                      ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-                      : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground'
+                      ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                      : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red'
                   )}
                 >
                   {t('teachModules.questionScore', {

@@ -233,24 +233,24 @@ export function getEditorExtensions({
       allowTableNodeSelection: !readOnly,
       HTMLAttributes: {
         class:
-          'border-collapse my-6 w-full overflow-hidden rounded-lg border border-dynamic-border',
+          'border-collapse my-6 w-full overflow-hidden rounded-lg border border-border',
       },
     }),
     TableRow.configure({
       HTMLAttributes: {
-        class: 'border-b border-dynamic-border last:border-0',
+        class: 'border-b border-border last:border-0',
       },
     }),
     TableHeader.configure({
       HTMLAttributes: {
         class:
-          'relative border-r border-dynamic-border bg-dynamic-border/30 px-4 py-3 text-left font-semibold text-foreground last:border-r-0 [&>p]:my-0',
+          'relative border-r border-border bg-border/30 px-4 py-3 text-left font-semibold text-foreground last:border-r-0 [&>p]:my-0',
       },
     }),
     TableCell.configure({
       HTMLAttributes: {
         class:
-          'relative border-r border-dynamic-border px-4 py-3 last:border-r-0 [&>p]:my-0 hover:bg-dynamic-surface/50 focus:bg-dynamic-surface/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50 focus-visible:ring-inset',
+          'relative border-r border-border px-4 py-3 last:border-r-0 [&>p]:my-0 hover:bg-background/50 focus:bg-background/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue/50 focus-visible:ring-inset',
       },
     }),
     CustomImage({

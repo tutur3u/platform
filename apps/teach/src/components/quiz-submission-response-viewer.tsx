@@ -203,11 +203,11 @@ export function QuizSubmissionResponseViewer({
           let optionStyle = 'border-border bg-background';
           if (isSelected) {
             optionStyle = isCorrect
-              ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-              : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+              ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+              : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red';
           } else if (isOptionCorrect) {
             optionStyle =
-              'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
+              'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green';
           }
 
           return (
@@ -256,11 +256,11 @@ export function QuizSubmissionResponseViewer({
             let optionStyle = 'border-border bg-background';
             if (isSelected) {
               optionStyle = isCorrect
-                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red';
             } else if (studentVal !== null && !isSelected && !isCorrect) {
               optionStyle =
-                'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
+                'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green';
             }
 
             return (

@@ -44,7 +44,7 @@ export function PeriodicReportDeliveryReadiness({
           ready ? (
             <Mail className="size-4 text-dynamic-green" />
           ) : (
-            <ShieldAlert className="size-4 text-dynamic-amber" />
+            <ShieldAlert className="size-4 text-dynamic-yellow" />
           )
         }
         title={
@@ -54,7 +54,7 @@ export function PeriodicReportDeliveryReadiness({
               className={
                 ready
                   ? 'border-dynamic-green/30 text-dynamic-green'
-                  : 'border-dynamic-amber/30 text-dynamic-amber'
+                  : 'border-dynamic-yellow/30 text-dynamic-yellow'
               }
               variant="outline"
             >

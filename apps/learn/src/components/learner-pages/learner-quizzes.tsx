@@ -541,7 +541,7 @@ export function LearnerQuizzes({
           ) : (
             <Button
               onClick={handleNext}
-              className="h-12 border border-border bg-dynamic-green font-semibold text-dynamic-green-foreground hover:bg-dynamic-green/90"
+              className="h-12 border border-border bg-dynamic-green font-semibold text-background hover:bg-dynamic-green/90"
             >
               {currentIdx + 1 < quizzes.length
                 ? t('courses.quizNextQuestion')

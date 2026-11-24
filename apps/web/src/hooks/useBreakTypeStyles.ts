@@ -27,7 +27,7 @@ export const getBreakTypeColor = (
     PINK: 'dynamic-pink',
     INDIGO: 'dynamic-indigo',
     CYAN: 'dynamic-cyan',
-    GRAY: 'dynamic-surface',
+    GRAY: 'dynamic-gray',
   };
 
   return colorMap[colorName.toUpperCase()] || 'dynamic-blue';
@@ -109,13 +109,13 @@ export const BREAK_COLOR_CLASSES = {
     badgeBg: 'bg-dynamic-cyan/30',
     bgOpaque: 'bg-dynamic-cyan/10',
   },
-  'dynamic-surface': {
-    border: 'border-dynamic-surface/20',
-    bg: 'bg-dynamic-surface/5',
-    text: 'text-dynamic-surface',
-    textMuted: 'text-dynamic-surface/75',
-    badgeBg: 'bg-dynamic-surface/30',
-    bgOpaque: 'bg-dynamic-surface/10',
+  'dynamic-gray': {
+    border: 'border-dynamic-gray/20',
+    bg: 'bg-dynamic-gray/5',
+    text: 'text-dynamic-gray',
+    textMuted: 'text-dynamic-gray/75',
+    badgeBg: 'bg-dynamic-gray/30',
+    bgOpaque: 'bg-dynamic-gray/10',
   },
 } as const;
 

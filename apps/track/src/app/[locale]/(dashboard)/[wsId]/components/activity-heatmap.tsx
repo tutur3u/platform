@@ -1379,10 +1379,10 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
             <Calendar className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-dynamic-foreground text-lg sm:text-xl">
+            <h3 className="font-semibold text-foreground text-lg sm:text-xl">
               {t('title')}
             </h3>
-            <p className="text-dynamic-muted text-sm sm:text-base">
+            <p className="text-muted-foreground text-sm sm:text-base">
               {totalDuration > 0
                 ? t('trackedThisYear', {
                     duration: formatDuration(totalDuration),
@@ -1502,11 +1502,11 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
           {/* Legend */}
           <div
             className={cn(
-              'flex items-center gap-2 rounded-lg border border-dynamic-border/60 bg-dynamic-surface/80 px-3 py-2 text-dynamic-muted text-xs shadow-sm sm:gap-3',
+              'flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 px-3 py-2 text-muted-foreground text-xs shadow-sm sm:gap-3',
               classes.heatmapColors
             )}
           >
-            <span className="hidden font-medium text-dynamic-foreground sm:inline">
+            <span className="hidden font-medium text-foreground sm:inline">
               {t('legend.less')}
             </span>
             <div className="flex items-center gap-1">
@@ -1521,7 +1521,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
                 />
               ))}
             </div>
-            <span className="hidden font-medium text-dynamic-foreground sm:inline">
+            <span className="hidden font-medium text-foreground sm:inline">
               {t('legend.more')}
             </span>
           </div>
@@ -1588,7 +1588,7 @@ export function ActivityHeatmap({ dailyActivity = [] }: ActivityHeatmapProps) {
       {settings.viewMode === 'original' && (
         <div
           className={cn(
-            'w-full bg-dynamic-surface/50 p-4',
+            'w-full bg-background/50 p-4',
             classes.heatmapContainer,
             classes.heatmapColors
           )}

@@ -70,7 +70,7 @@ export function ExportLinksDialogContent({
   if (exportQuery.isLoading || revokeMutation.isPending) {
     return (
       <LoadingRegion
-        className="flex min-h-56 flex-col gap-3 rounded-2xl border border-dynamic-border border-dashed bg-muted/20 p-4"
+        className="flex min-h-56 flex-col gap-3 rounded-2xl border border-border border-dashed bg-muted/20 p-4"
         srLabel={t('loading')}
       >
         <SkeletonLine barClassName="w-1/3" />

@@ -70,7 +70,7 @@ export function E2EEStatusBadge({
                 isVerifying
                   ? 'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue'
                   : isFixing
-                    ? 'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                    ? 'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow'
                     : 'border-dynamic-green/50 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
               }`}
             >
@@ -108,7 +108,7 @@ export function E2EEStatusBadge({
               size="sm"
               onClick={onMigrate}
               disabled={isMigrating}
-              className="flex items-center gap-1.5 border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber hover:bg-dynamic-amber/20"
+              className="flex items-center gap-1.5 border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20"
             >
               {isMigrating ? (
                 <>
@@ -165,7 +165,7 @@ export function E2EEStatusBadge({
               size="sm"
               onClick={onEnable}
               disabled={isEnabling}
-              className="flex items-center gap-1.5 border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber hover:bg-dynamic-amber/20"
+              className="flex items-center gap-1.5 border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20"
             >
               {isEnabling ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -3,7 +3,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 
 export default function ManagementCardSkeleton() {
   return (
-    <Card className="border-dynamic-border/20">
+    <Card className="border-border/20">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
           <Skeleton className="size-5 rounded" />

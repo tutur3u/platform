@@ -238,8 +238,8 @@ function QuizResponseCard({
     : isPendingReview
       ? 'border-dynamic-yellow bg-dynamic-yellow/10 text-dynamic-yellow'
       : isCorrectAnswer
-        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-        : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
+        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+        : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red';
 
   const handleAiFeedback = async () => {
     setIsAiLoading(true);

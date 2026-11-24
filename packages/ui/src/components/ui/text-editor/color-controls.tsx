@@ -182,9 +182,9 @@ function ColorControlPopover({
               aria-label={label}
               aria-pressed={active}
               className={cn(
-                'relative h-8 w-8 shrink-0 rounded-md border border-transparent transition-colors hover:bg-dynamic-surface/80',
+                'relative h-8 w-8 shrink-0 rounded-md border border-transparent transition-colors hover:bg-background/80',
                 active &&
-                  'border-foreground/10 bg-dynamic-surface/80 text-foreground'
+                  'border-foreground/10 bg-background/80 text-foreground'
               )}
               onMouseDown={(event) => event.preventDefault()}
               size="icon"
@@ -258,7 +258,7 @@ function SwatchButton({
     <Button
       aria-label={`${swatch.name} ${swatchKind}`}
       className={cn(
-        'h-8 w-8 rounded-md border border-dynamic-border p-0 transition-all hover:scale-105',
+        'h-8 w-8 rounded-md border border-border p-0 transition-all hover:scale-105',
         active &&
           'ring-2 ring-foreground/30 ring-offset-1 ring-offset-background'
       )}

@@ -52,21 +52,21 @@ export default function SDKSmokePage() {
           Back to demos
         </Link>
         <div>
-          <h1 className="font-bold text-3xl text-dynamic-foreground">
+          <h1 className="font-bold text-3xl text-foreground">
             Tuturuuu SDK Smoke Test
           </h1>
-          <p className="text-dynamic-muted-foreground">
+          <p className="text-muted-foreground">
             This page exists to ensure Next.js and Turbopack can compile the
             published SDK entrypoints from an external app.
           </p>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-dynamic-border bg-dynamic-background p-6">
-        <h2 className="mb-3 font-semibold text-dynamic-foreground text-xl">
+      <section className="rounded-2xl border border-border bg-background p-6">
+        <h2 className="mb-3 font-semibold text-foreground text-xl">
           Import Results
         </h2>
-        <pre className="overflow-x-auto rounded-xl bg-dynamic-muted p-4 text-dynamic-foreground text-sm">
+        <pre className="overflow-x-auto rounded-xl bg-muted p-4 text-foreground text-sm">
           {JSON.stringify(smokeSummary, null, 2)}
         </pre>
       </section>

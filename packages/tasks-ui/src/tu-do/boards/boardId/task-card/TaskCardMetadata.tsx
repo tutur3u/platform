@@ -99,7 +99,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
             <div className="flex min-w-0 shrink-0 items-center gap-0.5">
               {descriptionMeta.hasText && (
                 <div
-                  className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                  className="flex items-center gap-0.5 rounded bg-background/50 py-0.5"
                   title="Has description"
                 >
                   <FileText className="h-3.5 w-3.5 text-muted-foreground" />
@@ -107,7 +107,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
               )}
               {descriptionMeta.hasImages && (
                 <div
-                  className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                  className="flex items-center gap-0.5 rounded bg-background/50 py-0.5"
                   title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
                 >
                   <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
@@ -120,7 +120,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
               )}
               {descriptionMeta.hasVideos && (
                 <div
-                  className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                  className="flex items-center gap-0.5 rounded bg-background/50 py-0.5"
                   title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
                 >
                   <Play className="h-3.5 w-3.5 text-muted-foreground" />
@@ -133,7 +133,7 @@ export const TaskCardMetadata = memo(function TaskCardMetadata({
               )}
               {descriptionMeta.hasLinks && (
                 <div
-                  className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
+                  className="flex items-center gap-0.5 rounded bg-background/50 px-1 py-0.5"
                   title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
                 >
                   <Link2 className="h-2.5 w-2.5 text-muted-foreground" />

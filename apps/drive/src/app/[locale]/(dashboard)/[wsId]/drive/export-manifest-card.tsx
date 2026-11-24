@@ -27,7 +27,7 @@ export function ExportManifestCard({
   title,
 }: ExportManifestCardProps) {
   return (
-    <Card className="border-dynamic-border">
+    <Card className="border-border">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <Code2 className="h-4 w-4 text-dynamic-green" />
@@ -35,7 +35,7 @@ export function ExportManifestCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-2xl border border-dynamic-border bg-muted/20 p-3 text-muted-foreground text-xs leading-5">
+        <div className="rounded-2xl border border-border bg-muted/20 p-3 text-muted-foreground text-xs leading-5">
           {description}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -58,7 +58,7 @@ export function ExportManifestCard({
             {copyAssetMapLabel}
           </Button>
         </div>
-        <ScrollArea className="h-56 rounded-2xl border border-dynamic-border bg-muted/40 p-0">
+        <ScrollArea className="h-56 rounded-2xl border border-border bg-muted/40 p-0">
           <pre className="p-4 font-mono text-[11px] text-dynamic-cyan leading-6">
             {loaderManifest || assetMapJson}
           </pre>

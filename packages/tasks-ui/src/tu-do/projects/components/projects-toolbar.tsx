@@ -64,7 +64,7 @@ export function ProjectsToolbar({
   const t = useTranslations('task-projects');
 
   return (
-    <section className="space-y-4 rounded-lg border border-dynamic-surface/60 bg-dynamic-surface/10 p-4">
+    <section className="space-y-4 rounded-lg border border-border/60 bg-background/10 p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-1">
           <p className="font-medium text-muted-foreground text-xs">
@@ -168,7 +168,7 @@ function ViewButton({
       type="button"
       variant="ghost"
       size="icon"
-      className={cn('h-8 w-8 rounded-sm', active && 'bg-dynamic-surface/60')}
+      className={cn('h-8 w-8 rounded-sm', active && 'bg-background/60')}
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}

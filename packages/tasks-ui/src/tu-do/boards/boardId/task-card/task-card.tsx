@@ -2611,7 +2611,7 @@ function TaskCardInner({
                 >
                   {descriptionMeta.hasText && (
                     <TaskCardMetadataTooltip content={t('has_description')}>
-                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                      <div className="flex items-center gap-0.5 rounded bg-background/50 py-0.5">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                       </div>
                     </TaskCardMetadataTooltip>
@@ -2622,7 +2622,7 @@ function TaskCardInner({
                         count: descriptionMeta.imageCount,
                       })}
                     >
-                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                      <div className="flex items-center gap-0.5 rounded bg-background/50 py-0.5">
                         <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
                         {descriptionMeta.imageCount > 1 && (
                           <span className="text-[9px] text-muted-foreground">
@@ -2638,7 +2638,7 @@ function TaskCardInner({
                         count: descriptionMeta.videoCount,
                       })}
                     >
-                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                      <div className="flex items-center gap-0.5 rounded bg-background/50 py-0.5">
                         <Play className="h-3.5 w-3.5 text-muted-foreground" />
                         {descriptionMeta.videoCount > 1 && (
                           <span className="text-[9px] text-muted-foreground">
@@ -2654,7 +2654,7 @@ function TaskCardInner({
                         count: descriptionMeta.linkCount,
                       })}
                     >
-                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5">
+                      <div className="flex items-center gap-0.5 rounded bg-background/50 px-1 py-0.5">
                         <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
                         {descriptionMeta.linkCount > 1 && (
                           <span className="text-[9px] text-muted-foreground">

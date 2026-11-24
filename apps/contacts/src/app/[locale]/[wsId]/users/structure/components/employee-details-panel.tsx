@@ -117,7 +117,7 @@ export function EmployeeDetailsPanel({
       case 'negative':
         return 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red';
       default:
-        return 'border-dynamic-slate/20 bg-dynamic-slate/10 text-dynamic-slate';
+        return 'border-dynamic-gray/20 bg-dynamic-gray/10 text-dynamic-gray';
     }
   };
 

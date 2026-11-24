@@ -67,7 +67,7 @@ export default function GroupShareButton({ groupId }: Props) {
                   value={shareUrl}
                   size={256}
                   marginSize={1}
-                  className="rounded-lg border border-dynamic-border bg-background p-2"
+                  className="rounded-lg border border-border bg-background p-2"
                 />
               </div>
             )}

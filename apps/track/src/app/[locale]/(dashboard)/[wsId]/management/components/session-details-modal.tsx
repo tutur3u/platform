@@ -41,8 +41,8 @@ export default function SessionDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex h-[90vh] w-[95vw] max-w-2xl flex-col overflow-hidden border-dynamic-border/30 bg-linear-to-b from-dynamic-background to-dynamic-muted/20 sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
-        <DialogHeader className="shrink-0 border-dynamic-border/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 pt-6 pb-6">
+      <DialogContent className="flex h-[90vh] w-[95vw] max-w-2xl flex-col overflow-hidden border-border/30 bg-linear-to-b from-background to-border/20 sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
+        <DialogHeader className="shrink-0 border-border/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 pt-6 pb-6">
           <div className="flex items-center gap-4">
             <div className="relative flex size-12 items-center justify-center rounded-full border-2 border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 sm:size-14">
               <span className="font-bold text-dynamic-blue text-lg sm:text-xl">
@@ -60,11 +60,11 @@ export default function SessionDetailsModal({
                   fallback: 'Unknown User',
                 })}
               </DialogTitle>
-              <p className="mt-1 text-dynamic-muted text-sm">
+              <p className="mt-1 text-muted-foreground text-sm">
                 <span className="inline-block rounded-full bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue">
                   {t('sessionsCount', { count: session.sessions.length })}
                 </span>
-                <span className="mx-2 text-dynamic-muted/50">•</span>
+                <span className="mx-2 text-muted-foreground/50">•</span>
                 <span className="capitalize">
                   {t('period', { period: tPeriod(period) })}
                 </span>
@@ -115,8 +115,8 @@ export default function SessionDetailsModal({
             </div>
 
             {/* Session List */}
-            <div className="rounded-lg border border-dynamic-border/20 bg-dynamic-muted/5 p-5 backdrop-blur-sm">
-              <h4 className="mb-4 flex items-center gap-2 font-bold text-dynamic-foreground text-lg">
+            <div className="rounded-lg border border-border/20 bg-muted/5 p-5 backdrop-blur-sm">
+              <h4 className="mb-4 flex items-center gap-2 font-bold text-foreground text-lg">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20">
                   <Clock className="h-4 w-4 text-dynamic-blue" />
                 </div>
@@ -124,7 +124,7 @@ export default function SessionDetailsModal({
               </h4>
               <div className="space-y-2">
                 {session.sessions.length === 0 ? (
-                  <div className="py-8 text-center text-dynamic-muted text-sm">
+                  <div className="py-8 text-center text-muted-foreground text-sm">
                     {t('noSessionsFound')}
                   </div>
                 ) : (
@@ -210,7 +210,9 @@ function StatCard({ icon, value, label, colorClass }: StatCardProps) {
           <div className={`font-bold text-2xl ${colorsOrDefault.text}`}>
             {value}
           </div>
-          <div className="font-medium text-dynamic-muted text-xs">{label}</div>
+          <div className="font-medium text-muted-foreground text-xs">
+            {label}
+          </div>
         </div>
       </div>
     </div>
@@ -231,7 +233,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
       className={`group relative overflow-hidden rounded-lg border-2 transition-all duration-300 ${
         isActive
           ? 'border-dynamic-green/40 bg-linear-to-r from-dynamic-green/5 to-dynamic-blue/5 shadow-dynamic-green/10 shadow-sm'
-          : 'border-dynamic-border/20 bg-dynamic-muted/5 hover:border-dynamic-border/40'
+          : 'border-border/20 bg-muted/5 hover:border-border/40'
       }`}
       style={{
         animationDelay: `${index * 50}ms`,
@@ -246,7 +248,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h5 className="font-semibold text-dynamic-foreground">
+              <h5 className="font-semibold text-foreground">
                 {session.title || t('untitledSession')}
               </h5>
               {session.category && (
@@ -260,7 +262,7 @@ function SessionListItem({ session, index }: SessionListItemProps) {
                 </span>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-dynamic-muted text-xs">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
                 {dayjs(session.start_time).format('MMM D, YYYY')} -{' '}
@@ -268,12 +270,12 @@ function SessionListItem({ session, index }: SessionListItemProps) {
               </div>
               {session.end_time ? (
                 <div className="flex items-center gap-1">
-                  <span className="text-dynamic-muted/50">→</span>
+                  <span className="text-muted-foreground/50">→</span>
                   {!dayjs(session.start_time).isSame(
                     session.end_time,
                     'day'
                   ) && (
-                    <span className="text-dynamic-muted/70">
+                    <span className="text-muted-foreground/70">
                       {dayjs(session.end_time).format('MMM D, YYYY')} -{' '}
                     </span>
                   )}
@@ -286,13 +288,13 @@ function SessionListItem({ session, index }: SessionListItemProps) {
               )}
             </div>
             {session.description && (
-              <div className="mt-3 rounded-md border border-dynamic-border/10 bg-dynamic-muted/20 p-3 text-dynamic-muted text-xs">
+              <div className="mt-3 rounded-md border border-border/10 bg-muted/20 p-3 text-muted-foreground text-xs">
                 {getDescriptionText(session.description)}
               </div>
             )}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
-            <div className="font-bold font-mono text-dynamic-foreground text-lg">
+            <div className="font-bold font-mono text-foreground text-lg">
               {session.duration_seconds
                 ? dayjs
                     .duration(session.duration_seconds, 'seconds')

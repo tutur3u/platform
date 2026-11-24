@@ -37,7 +37,7 @@ export function WorkspaceStorageExportLinksDialog({
         <div className="border-b bg-linear-to-br from-dynamic-blue/8 via-dynamic-cyan/8 to-dynamic-green/8 p-6">
           <DialogHeader className="gap-3 text-left">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-dynamic-border bg-background/80 shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background/80 shadow-sm">
                 <PackageOpen className="h-5 w-5 text-dynamic-blue" />
               </div>
               <div className="space-y-1">

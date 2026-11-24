@@ -207,7 +207,7 @@ export const STEP_CONFIG: Record<
   checking_permissions: {
     icon: 'shield',
     label: 'Access Control',
-    color: 'bg-dynamic-amber',
+    color: 'bg-dynamic-yellow',
     description: 'Verifying permissions',
     category: 'validation',
     weight: 1,
@@ -216,7 +216,7 @@ export const STEP_CONFIG: Record<
   plagiarism_check: {
     icon: 'search',
     label: 'Originality Scan',
-    color: 'bg-dynamic-amber',
+    color: 'bg-dynamic-yellow',
     description: 'Analyzing originality',
     category: 'validation',
     weight: 2,
@@ -369,7 +369,7 @@ export const STEP_CONFIG: Record<
   parsing_error: {
     icon: 'alert-circle',
     label: 'Communication Issue',
-    color: 'bg-dynamic-amber',
+    color: 'bg-dynamic-yellow',
     description: 'Data parsing issue detected',
     category: 'validation',
     weight: 0,
@@ -390,7 +390,7 @@ export const CATEGORY_CONFIG = {
   validation: {
     label: 'Validation',
     icon: 'shield',
-    color: 'dynamic-amber',
+    color: 'dynamic-yellow',
     description: 'Verifying submission requirements',
   },
   'ai-processing': {

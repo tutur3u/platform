@@ -73,7 +73,7 @@ export function getListStatusBadgeClasses(status?: string | null) {
     case 'active':
       return 'border-dynamic-blue/35 bg-dynamic-blue/12 text-dynamic-blue';
     case 'not_started':
-      return 'border-dynamic-amber/35 bg-dynamic-amber/12 text-dynamic-amber';
+      return 'border-dynamic-yellow/35 bg-dynamic-yellow/12 text-dynamic-yellow';
     default:
       return '';
   }

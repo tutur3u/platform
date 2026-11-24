@@ -34,7 +34,7 @@ function TargetGoalBody({ goal, t }: { goal: TaskProgressGoal; t: Translate }) {
         <div
           className={cn(
             'h-full rounded-full transition-all',
-            goal.on_track === false ? 'bg-dynamic-amber' : 'bg-dynamic-green'
+            goal.on_track === false ? 'bg-dynamic-yellow' : 'bg-dynamic-green'
           )}
           style={{ width: `${percent}%` }}
         />
@@ -147,7 +147,7 @@ function GoalCard({ goal, t }: { goal: TaskProgressGoal; t: Translate }) {
                 className={
                   goal.on_track
                     ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-                    : 'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber'
+                    : 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow'
                 }
                 variant="outline"
               >

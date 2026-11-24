@@ -57,7 +57,7 @@ export function ProjectListItem({
 
   return (
     <Card
-      className="group cursor-pointer rounded-lg border-dynamic-surface/70 bg-background p-4 shadow-none transition-colors hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5"
+      className="group cursor-pointer rounded-lg border-border/70 bg-background p-4 shadow-none transition-colors hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5"
       onClick={() => onNavigate(project.id)}
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px_132px] xl:items-center">
@@ -170,7 +170,7 @@ function Stat({
   value: number;
 }) {
   return (
-    <div className="rounded-md border bg-dynamic-surface/20 p-2">
+    <div className="rounded-md border bg-background/20 p-2">
       <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
         <Icon className="h-3.5 w-3.5" />
         {label}

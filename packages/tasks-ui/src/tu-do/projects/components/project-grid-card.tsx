@@ -58,7 +58,7 @@ export function ProjectGridCard({
 
   return (
     <Card
-      className="group flex min-h-[360px] cursor-pointer flex-col rounded-lg border-dynamic-surface/70 bg-background p-4 shadow-none transition-colors hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5"
+      className="group flex min-h-[360px] cursor-pointer flex-col rounded-lg border-border/70 bg-background p-4 shadow-none transition-colors hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5"
       onClick={() => onNavigate(project.id)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -178,7 +178,7 @@ function Signal({
   value: number;
 }) {
   return (
-    <div className="rounded-md border bg-dynamic-surface/20 p-3">
+    <div className="rounded-md border bg-background/20 p-3">
       <div className="flex items-center gap-2 text-muted-foreground text-xs">
         <Icon className="h-3.5 w-3.5" />
         {label}

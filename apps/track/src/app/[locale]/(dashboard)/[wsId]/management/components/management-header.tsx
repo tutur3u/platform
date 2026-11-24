@@ -7,7 +7,7 @@ export default function ManagementHeader() {
   const t = useTranslations('time-tracker.management.header');
 
   return (
-    <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
+    <div className="space-y-6 rounded-xl border border-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
       <div className="flex items-center justify-between">
         <div className="space-y-3">
           <div className="flex items-center gap-4">
@@ -18,7 +18,7 @@ export default function ManagementHeader() {
               <h1 className="bg-linear-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
                 {t('title')}
               </h1>
-              <p className="mt-1 text-base text-dynamic-muted">
+              <p className="mt-1 text-base text-muted-foreground">
                 {t('description')}
               </p>
             </div>

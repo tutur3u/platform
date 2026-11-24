@@ -115,7 +115,7 @@ function SecretQuickCard({
   value: string | null;
 }) {
   return (
-    <div className="rounded-2xl border border-dynamic-border bg-background/80 p-4 shadow-black/5 shadow-sm">
+    <div className="rounded-2xl border border-border bg-background/80 p-4 shadow-black/5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <div className="font-medium text-sm">{label}</div>
@@ -133,7 +133,7 @@ function SecretQuickCard({
           {configured ? readyLabel : missingLabel}
         </span>
       </div>
-      <div className="mt-4 rounded-xl border border-dynamic-border/70 bg-muted/35 px-3 py-2 font-mono text-xs">
+      <div className="mt-4 rounded-xl border border-border/70 bg-muted/35 px-3 py-2 font-mono text-xs">
         {value || noValueLabel}
       </div>
       <div className="mt-4 flex items-center justify-between">
@@ -200,14 +200,14 @@ function BackendOverviewCard({
       className={`relative overflow-hidden rounded-3xl border p-5 ${
         active
           ? 'border-dynamic-blue/40 bg-linear-to-br from-dynamic-blue/10 via-background to-background'
-          : 'border-dynamic-border bg-card'
+          : 'border-border bg-card'
       }`}
     >
       <div className="absolute -top-8 -right-8 h-28 w-28 rounded-full bg-dynamic-blue/8 blur-2xl" />
       <div className="relative space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-dynamic-border bg-background/80 p-3">
+            <div className="rounded-2xl border border-border bg-background/80 p-3">
               <Icon className="h-5 w-5 text-dynamic-blue" />
             </div>
             <div>
@@ -236,7 +236,7 @@ function BackendOverviewCard({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-dynamic-border/70 bg-background/80 p-4">
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
             <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
               {objectsLabel}
             </div>
@@ -244,7 +244,7 @@ function BackendOverviewCard({
               {available ? (fileCount ?? 0) : '—'}
             </div>
           </div>
-          <div className="rounded-2xl border border-dynamic-border/70 bg-background/80 p-4">
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
             <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
               {inventoryLabel}
             </div>
@@ -254,7 +254,7 @@ function BackendOverviewCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dynamic-border/70 bg-muted/25 p-4 text-sm leading-6">
+        <div className="rounded-2xl border border-border/70 bg-muted/25 p-4 text-sm leading-6">
           {message || (available ? readyBackendMessage : missingBackendMessage)}
         </div>
 
@@ -349,8 +349,8 @@ export function StorageRolloutPanel({
 
   return (
     <>
-      <section className="mb-6 overflow-hidden rounded-[28px] border border-dynamic-border bg-linear-to-br from-background via-background to-dynamic-blue/5">
-        <div className="border-dynamic-border/70 border-b px-6 py-6 lg:px-8">
+      <section className="mb-6 overflow-hidden rounded-[28px] border border-border bg-linear-to-br from-background via-background to-dynamic-blue/5">
+        <div className="border-border/70 border-b px-6 py-6 lg:px-8">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl space-y-3">
               <div className="flex items-center gap-2 text-dynamic-blue text-xs uppercase tracking-[0.24em]">
@@ -368,7 +368,7 @@ export function StorageRolloutPanel({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-dynamic-border bg-background/80 px-4 py-3">
+              <div className="rounded-2xl border border-border bg-background/80 px-4 py-3">
                 <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
                   {t('rollout.metrics.active_backend')}
                 </div>
@@ -376,7 +376,7 @@ export function StorageRolloutPanel({
                   {providerLabels[activeProvider]}
                 </div>
               </div>
-              <div className="rounded-2xl border border-dynamic-border bg-background/80 px-4 py-3">
+              <div className="rounded-2xl border border-border bg-background/80 px-4 py-3">
                 <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
                   {t('rollout.metrics.provider_secrets')}
                 </div>
@@ -384,7 +384,7 @@ export function StorageRolloutPanel({
                   {providerConfiguredCount}/{providerRequiredCount}
                 </div>
               </div>
-              <div className="rounded-2xl border border-dynamic-border bg-background/80 px-4 py-3">
+              <div className="rounded-2xl border border-border bg-background/80 px-4 py-3">
                 <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
                   {t('rollout.metrics.zip_automation')}
                 </div>
@@ -469,7 +469,7 @@ export function StorageRolloutPanel({
               />
             </div>
 
-            <div className="rounded-3xl border border-dynamic-border bg-card p-5">
+            <div className="rounded-3xl border border-border bg-card p-5">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="font-semibold text-lg">
@@ -545,7 +545,7 @@ export function StorageRolloutPanel({
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-3xl border border-dynamic-border bg-card p-5">
+            <div className="rounded-3xl border border-border bg-card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="font-semibold text-lg">
@@ -573,7 +573,7 @@ export function StorageRolloutPanel({
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-dynamic-border/70 bg-background/80 px-4 py-3">
+                <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
                   <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
                     {t('rollout.auto_extract.switch')}
                   </div>
@@ -583,7 +583,7 @@ export function StorageRolloutPanel({
                       : t('rollout.states.disabled')}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-dynamic-border/70 bg-background/80 px-4 py-3">
+                <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
                   <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
                     {t('rollout.auto_extract.proxy_url')}
                   </div>
@@ -593,7 +593,7 @@ export function StorageRolloutPanel({
                       : t('rollout.states.missing')}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-dynamic-border/70 bg-background/80 px-4 py-3">
+                <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
                   <div className="text-[11px] text-muted-foreground uppercase tracking-[0.18em]">
                     {t('rollout.auto_extract.shared_token')}
                   </div>
@@ -606,7 +606,7 @@ export function StorageRolloutPanel({
               </div>
             </div>
 
-            <div className="rounded-3xl border border-dynamic-border bg-card p-5">
+            <div className="rounded-3xl border border-border bg-card p-5">
               <div className="font-semibold text-lg">
                 {t('rollout.provider_secrets.title')}
               </div>
@@ -632,7 +632,7 @@ export function StorageRolloutPanel({
               </div>
             </div>
 
-            <div className="rounded-3xl border border-dynamic-border bg-card p-5">
+            <div className="rounded-3xl border border-border bg-card p-5">
               <div className="font-semibold text-lg">
                 {t('rollout.proxy_secrets.title')}
               </div>

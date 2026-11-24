@@ -34,7 +34,7 @@ export function SummaryCard({
   const accentClass = {
     blue: 'bg-dynamic-blue/10 text-dynamic-blue',
     green: 'bg-dynamic-green/10 text-dynamic-green',
-    amber: 'bg-dynamic-amber/10 text-dynamic-amber',
+    amber: 'bg-dynamic-yellow/10 text-dynamic-yellow',
     purple: 'bg-dynamic-purple/10 text-dynamic-purple',
   }[accent];
 

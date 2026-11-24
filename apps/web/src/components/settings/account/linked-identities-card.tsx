@@ -345,7 +345,7 @@ export default function LinkedIdentitiesCard({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
+                  <AlertTriangle className="h-5 w-5 text-dynamic-yellow" />
                   {t('unlink-account')}
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-left">

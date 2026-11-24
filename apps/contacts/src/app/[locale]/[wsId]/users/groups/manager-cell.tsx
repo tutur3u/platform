@@ -58,7 +58,7 @@ function getLinkedSummary(managers: Manager[], labels: ManagerCellLabels) {
 
   return {
     Icon: Link2,
-    className: 'text-dynamic-amber',
+    className: 'text-dynamic-yellow',
     label: labels.linkedSome,
     linkedCount,
   };

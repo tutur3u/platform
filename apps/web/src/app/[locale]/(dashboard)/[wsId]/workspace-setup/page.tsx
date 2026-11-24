@@ -67,7 +67,7 @@ export default async function WorkspaceSetupPage({
       <Card className="w-full max-w-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
+            <AlertTriangle className="h-5 w-5 text-dynamic-yellow" />
             {t('return_failed_title')}
           </CardTitle>
         </CardHeader>

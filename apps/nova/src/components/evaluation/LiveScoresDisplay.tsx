@@ -308,7 +308,7 @@ export function LiveResultsPreview({
                                         : hasMatchData
                                           ? 'bg-dynamic-red'
                                           : isProcessing
-                                            ? 'animate-pulse bg-dynamic-amber'
+                                            ? 'animate-pulse bg-dynamic-yellow'
                                             : 'bg-foreground/20'
                                   )}
                                   title={

@@ -107,12 +107,12 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
         <CommandGroup>
           <CommandItem
             onSelect={handleAddTask}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-green/30 hover:bg-linear-to-r hover:from-dynamic-green/5 hover:to-dynamic-emerald/5"
+            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-green/30 hover:bg-linear-to-r hover:from-dynamic-green/5 hover:to-dynamic-green/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-green/20 to-dynamic-emerald/20 blur-sm transition-all group-hover:blur-md" />
-                <div className="relative rounded-lg border border-dynamic-green/20 bg-linear-to-br from-dynamic-green/10 to-dynamic-emerald/10 p-2.5">
+                <div className="absolute inset-0 rounded-lg bg-linear-to-br from-dynamic-green/20 to-dynamic-green/20 blur-sm transition-all group-hover:blur-md" />
+                <div className="relative rounded-lg border border-dynamic-green/20 bg-linear-to-br from-dynamic-green/10 to-dynamic-green/10 p-2.5">
                   <PlusCircle className="h-5 w-5 text-dynamic-green" />
                 </div>
               </div>

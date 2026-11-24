@@ -47,12 +47,12 @@ export default function ExportProgressDialog({
               <Loader2 className="size-6 animate-spin text-dynamic-green" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-dynamic-foreground text-lg">
+              <h3 className="font-semibold text-foreground text-lg">
                 {t('exportingFile', {
                   type: exportType === 'csv' ? 'CSV' : 'Excel',
                 })}
               </h3>
-              <p className="text-dynamic-muted text-sm">
+              <p className="text-muted-foreground text-sm">
                 {t('dontCloseWindow')}
               </p>
             </div>
@@ -61,21 +61,18 @@ export default function ExportProgressDialog({
           {/* Progress Bar */}
           <div className="space-y-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-dynamic-foreground">{t('progress')}</span>
+              <span className="text-foreground">{t('progress')}</span>
               <span className="font-medium font-mono text-dynamic-green">
                 {Math.round(exportProgress)}%
               </span>
             </div>
 
-            <Progress
-              value={exportProgress}
-              className="h-3 bg-dynamic-muted/20"
-            />
+            <Progress value={exportProgress} className="h-3 bg-muted/20" />
 
             <div className="flex items-center justify-between text-xs">
-              <span className="text-dynamic-muted">{exportStatus}</span>
+              <span className="text-muted-foreground">{exportStatus}</span>
               {estimatedTimeRemaining > 0 && (
-                <span className="text-dynamic-muted">
+                <span className="text-muted-foreground">
                   {t('timeRemaining', {
                     time: formatTimeRemaining(estimatedTimeRemaining),
                   })}

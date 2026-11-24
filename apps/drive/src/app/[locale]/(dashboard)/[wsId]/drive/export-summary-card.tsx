@@ -42,7 +42,7 @@ export function ExportSummaryCard({
   title,
 }: ExportSummaryCardProps) {
   return (
-    <Card className="overflow-hidden border-dynamic-border">
+    <Card className="overflow-hidden border-border">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <Globe className="h-4 w-4 text-dynamic-blue" />
@@ -51,13 +51,13 @@ export function ExportSummaryCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-dynamic-border bg-muted/30 p-4">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
               {assetsLabel}
             </div>
             <div className="mt-2 font-semibold text-2xl">{assetCount}</div>
           </div>
-          <div className="rounded-xl border border-dynamic-border bg-muted/30 p-4">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
               {entryTitle}
             </div>
@@ -65,7 +65,7 @@ export function ExportSummaryCard({
               {entryLabel || noIndexHtmlLabel}
             </div>
           </div>
-          <div className="rounded-xl border border-dynamic-border bg-muted/30 p-4">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
               {modeTitle}
             </div>
@@ -73,7 +73,7 @@ export function ExportSummaryCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-dynamic-border bg-background p-4">
+        <div className="rounded-2xl border border-border bg-background p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <div className="font-medium text-sm">{entryUrlTitle}</div>
@@ -100,7 +100,7 @@ export function ExportSummaryCard({
             ) : null}
           </div>
 
-          <div className="break-all rounded-xl border border-dynamic-border border-dashed bg-muted/20 p-3 font-mono text-xs leading-6">
+          <div className="break-all rounded-xl border border-border border-dashed bg-muted/20 p-3 font-mono text-xs leading-6">
             {entryUrl ?? noIndexHtmlDescription}
           </div>
         </div>

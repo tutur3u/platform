@@ -280,7 +280,7 @@ export function SubscriptionAttendanceSummary({
                     <span>{t('ws-invoices.absent')}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 rounded-full bg-dynamic-muted"></div>
+                    <div className="h-2 w-2 rounded-full bg-muted"></div>
                     <span>{t('ws-invoices.no_session')}</span>
                   </div>
                 </div>

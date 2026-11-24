@@ -195,7 +195,7 @@ export default function SessionsTable({
     <Card className="overflow-hidden border-dynamic-blue/20 transition-all duration-300">
       <CardHeader className="border-dynamic-blue/20 border-b bg-linear-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3 text-dynamic-foreground">
+          <CardTitle className="flex items-center gap-3 text-foreground">
             <div className="rounded-lg bg-dynamic-blue/10 p-2 text-dynamic-blue">
               <Clock className="size-5" />
             </div>
@@ -215,7 +215,7 @@ export default function SessionsTable({
                 </Badge>
               </div>
               {pagination && (
-                <p className="font-normal text-dynamic-muted text-sm">
+                <p className="font-normal text-muted-foreground text-sm">
                   {t('showing', {
                     start: (pagination.page - 1) * pagination.limit + 1,
                     end: Math.min(
@@ -297,10 +297,10 @@ export default function SessionsTable({
             </div>
 
             <div className="space-y-3">
-              <h3 className="font-semibold text-base text-dynamic-foreground">
+              <h3 className="font-semibold text-base text-foreground">
                 {hasActiveFilters ? t('noMatchingSessions') : t('noSessions')}
               </h3>
-              <p className="mx-auto max-w-md text-dynamic-muted text-sm">
+              <p className="mx-auto max-w-md text-muted-foreground text-sm">
                 {hasActiveFilters
                   ? t('noMatchingSessionsDescription')
                   : t('noSessionsDescription')}
@@ -324,7 +324,7 @@ export default function SessionsTable({
         ) : (
           <div className="space-y-3 p-6">
             {/* Header Row */}
-            <div className="grid grid-cols-12 gap-4 rounded-lg bg-dynamic-muted/5 px-4 py-3 font-medium text-dynamic-muted text-sm">
+            <div className="grid grid-cols-12 gap-4 rounded-lg bg-muted/5 px-4 py-3 font-medium text-muted-foreground text-sm">
               <div className="col-span-3">
                 {t('userAnd')}{' '}
                 {period === 'day'
@@ -350,7 +350,7 @@ export default function SessionsTable({
                 return (
                   <div
                     key={`grouped-session-${index}`}
-                    className={`group grid grid-cols-12 gap-4 rounded-lg border border-dynamic-border/10 bg-dynamic-background p-4 transition-all duration-200 hover:border-dynamic-blue/20 hover:bg-dynamic-blue/5 hover:shadow-sm ${
+                    className={`group grid grid-cols-12 gap-4 rounded-lg border border-border/10 bg-background p-4 transition-all duration-200 hover:border-dynamic-blue/20 hover:bg-dynamic-blue/5 hover:shadow-sm ${
                       isFirstOfPeriod
                         ? 'border-dynamic-blue/20 bg-linear-to-r from-dynamic-blue/5 to-transparent'
                         : ''
@@ -358,7 +358,7 @@ export default function SessionsTable({
                   >
                     {/* User & Period */}
                     <div className="col-span-3 flex items-center gap-3">
-                      <Avatar className="size-11 ring-2 ring-dynamic-blue/10 ring-offset-1 ring-offset-dynamic-background">
+                      <Avatar className="size-11 ring-2 ring-dynamic-blue/10 ring-offset-1 ring-offset-background">
                         <AvatarImage
                           src={
                             session.user.avatarUrl ||
@@ -377,12 +377,12 @@ export default function SessionsTable({
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-dynamic-foreground text-sm">
+                        <p className="font-semibold text-foreground text-sm">
                           {resolveUserDisplayName(session.user, {
                             fallback: 'Unknown User',
                           })}
                         </p>
-                        <p className="truncate text-dynamic-muted text-xs">
+                        <p className="truncate text-muted-foreground text-xs">
                           {formatPeriodDisplay(session.period, period)}
                         </p>
                       </div>
@@ -392,10 +392,10 @@ export default function SessionsTable({
                     <div className="col-span-2">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-dynamic-foreground text-sm">
+                          <span className="font-medium text-foreground text-sm">
                             {session.sessions.length}
                           </span>
-                          <span className="text-dynamic-muted text-xs">
+                          <span className="text-muted-foreground text-xs">
                             {session.sessions.length !== 1
                               ? t('sessionPlural')
                               : t('sessionSingular')}
@@ -428,7 +428,7 @@ export default function SessionsTable({
                           ).length > 1 && (
                             <Badge
                               variant="outline"
-                              className="border-dynamic-muted/30 bg-dynamic-muted/10 text-dynamic-muted text-xs"
+                              className="border-border/30 bg-muted/10 text-muted-foreground text-xs"
                             >
                               +
                               {Array.from(
@@ -447,13 +447,13 @@ export default function SessionsTable({
                     {/* Duration & Progress */}
                     <div className="col-span-2">
                       <div className="space-y-2">
-                        <div className="font-mono font-semibold text-dynamic-foreground">
+                        <div className="font-mono font-semibold text-foreground">
                           {formatDuration(
                             session.periodDuration ?? session.totalDuration
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 rounded-full bg-dynamic-muted/20">
+                          <div className="h-1.5 w-16 rounded-full bg-muted/20">
                             <div
                               className="h-1.5 rounded-full bg-linear-to-r from-dynamic-blue to-dynamic-purple transition-all duration-300"
                               style={{
@@ -461,7 +461,7 @@ export default function SessionsTable({
                               }}
                             />
                           </div>
-                          <span className="text-dynamic-muted text-xs">
+                          <span className="text-muted-foreground text-xs">
                             {Math.round(
                               ((session.periodDuration ??
                                 session.totalDuration) /
@@ -471,7 +471,7 @@ export default function SessionsTable({
                             %
                           </span>
                         </div>
-                        <p className="text-dynamic-muted text-xs">
+                        <p className="text-muted-foreground text-xs">
                           {t('avg')}{' '}
                           {formatDuration(
                             (session.periodDuration ?? session.totalDuration) /
@@ -484,7 +484,7 @@ export default function SessionsTable({
                     {/* Time Range */}
                     <div className="col-span-2">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-dynamic-foreground text-xs">
+                        <div className="flex items-center gap-1 text-foreground text-xs">
                           <div className="rounded bg-dynamic-green/10 p-0.5">
                             <Play className="size-2 text-dynamic-green" />
                           </div>
@@ -493,7 +493,7 @@ export default function SessionsTable({
                           </span>
                         </div>
                         {session.lastEndTime && (
-                          <div className="flex items-center gap-1 text-dynamic-foreground text-xs">
+                          <div className="flex items-center gap-1 text-foreground text-xs">
                             <div className="rounded bg-dynamic-red/10 p-0.5">
                               <Pause className="size-2 text-dynamic-red" />
                             </div>
@@ -538,10 +538,10 @@ export default function SessionsTable({
 
         {/* Pagination */}
         {pagination && pagination.pages > 1 && (
-          <div className="border-dynamic-border/20 border-t bg-dynamic-muted/5 p-6">
+          <div className="border-border/20 border-t bg-muted/5 p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <span className="text-dynamic-muted text-sm">
+                <span className="text-muted-foreground text-sm">
                   {t('itemsPerPage')}
                 </span>
                 <Select
@@ -549,7 +549,7 @@ export default function SessionsTable({
                   onValueChange={onLimitChange}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className="w-20 border-dynamic-border/20 transition-colors hover:border-dynamic-blue/30">
+                  <SelectTrigger className="w-20 border-border/20 transition-colors hover:border-dynamic-blue/30">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -567,14 +567,14 @@ export default function SessionsTable({
                   size="sm"
                   onClick={() => onPageChange(pagination.page - 1)}
                   disabled={pagination.page <= 1 || isLoading}
-                  className="border-dynamic-border/20 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 disabled:opacity-50"
+                  className="border-border/20 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 disabled:opacity-50"
                 >
                   <ChevronLeft className="size-4" />
                   {t('previous')}
                 </Button>
 
-                <div className="flex items-center gap-2 rounded-lg bg-dynamic-background px-3 py-1.5">
-                  <span className="text-dynamic-muted text-sm">
+                <div className="flex items-center gap-2 rounded-lg bg-background px-3 py-1.5">
+                  <span className="text-muted-foreground text-sm">
                     {t('pageOf', {
                       page: pagination.page,
                       pages: pagination.pages,
@@ -587,7 +587,7 @@ export default function SessionsTable({
                   size="sm"
                   onClick={() => onPageChange(pagination.page + 1)}
                   disabled={pagination.page >= pagination.pages || isLoading}
-                  className="border-dynamic-border/20 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 disabled:opacity-50"
+                  className="border-border/20 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10 disabled:opacity-50"
                 >
                   {t('next')}
                   <ChevronRight className="size-4" />

@@ -129,10 +129,10 @@ export default function PersonalWorkspacePrompt({
           </DialogHeader>
 
           <div className="space-y-6">
-            <div className="rounded-md border border-dynamic-foreground/10 bg-background/40 p-3 text-muted-foreground text-xs">
+            <div className="rounded-md border border-foreground/10 bg-background/40 p-3 text-muted-foreground text-xs">
               {nameRule}
             </div>
-            <div className="rounded-md border border-dynamic-foreground/10 bg-background/40 p-4">
+            <div className="rounded-md border border-foreground/10 bg-background/40 p-4">
               <div className="mb-2 font-medium text-sm">{createLabel}</div>
               <div className="mb-4 text-muted-foreground text-sm">
                 {t('create_new_personal_workspace')}
@@ -155,7 +155,7 @@ export default function PersonalWorkspacePrompt({
                     or
                   </span>
                 </div>
-                <div className="rounded-md border border-dynamic-foreground/10 bg-background/40 p-4">
+                <div className="rounded-md border border-foreground/10 bg-background/40 p-4">
                   <div className="mb-2 font-medium text-sm">{markLabel}</div>
                   <div className="mb-4 text-muted-foreground text-sm">
                     Choose one of your existing workspaces (must be owned by you

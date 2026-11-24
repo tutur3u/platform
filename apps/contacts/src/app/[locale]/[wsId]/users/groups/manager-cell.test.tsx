@@ -67,6 +67,6 @@ describe('ManagerCell', () => {
     expect(screen.getByRole('button')).toHaveAccessibleName(
       'Some managers linked: 1/2 linked'
     );
-    expect(container.querySelector('.text-dynamic-amber')).toBeTruthy();
+    expect(container.querySelector('.text-dynamic-yellow')).toBeTruthy();
   });
 });

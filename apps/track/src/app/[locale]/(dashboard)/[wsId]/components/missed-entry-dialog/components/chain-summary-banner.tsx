@@ -50,11 +50,11 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
               {formatDuration(chainSummary.total_work_seconds)}
             </div>
           </div>
-          <div className="rounded-lg bg-dynamic-amber/10 p-3">
-            <div className="font-medium text-dynamic-amber text-xs">
+          <div className="rounded-lg bg-dynamic-yellow/10 p-3">
+            <div className="font-medium text-dynamic-yellow text-xs">
               {t('exceeded.totalBreakTime')}
             </div>
-            <div className="mt-1 font-bold text-dynamic-amber text-xl">
+            <div className="mt-1 font-bold text-dynamic-yellow text-xl">
               {formatDuration(chainSummary.total_break_seconds)}
             </div>
           </div>
@@ -93,9 +93,9 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
               {sessionBreaks.map((brk: ChainBreak) => (
                 <div
                   key={brk.id}
-                  className="ml-9 flex items-start gap-3 rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/10 p-2"
+                  className="ml-9 flex items-start gap-3 rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-2"
                 >
-                  <Coffee className="mt-0.5 h-4 w-4 text-dynamic-amber" />
+                  <Coffee className="mt-0.5 h-4 w-4 text-dynamic-yellow" />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm">
                       {brk.break_type_icon && (
@@ -103,7 +103,7 @@ export function ChainSummaryBanner({ chainSummary }: ChainSummaryBannerProps) {
                       )}
                       {brk.break_type_name}
                     </div>
-                    <div className="font-medium text-dynamic-amber text-xs">
+                    <div className="font-medium text-dynamic-yellow text-xs">
                       {formatDuration(brk.break_duration_seconds)}
                     </div>
                   </div>

@@ -71,7 +71,7 @@ export function MiraModelListItem({
           )}
           <span className="font-medium font-mono text-xs">{model.label}</span>
           {isPlanDefault ? (
-            <span className="rounded-full border border-dynamic-primary/25 bg-dynamic-primary/10 px-1.5 py-0.5 font-sans text-[8px] text-dynamic-primary uppercase tracking-[0.16em]">
+            <span className="rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.5 font-sans text-[8px] text-primary uppercase tracking-[0.16em]">
               {t('model_default_badge')}
             </span>
           ) : null}

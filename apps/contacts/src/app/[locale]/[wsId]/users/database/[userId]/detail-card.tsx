@@ -17,7 +17,7 @@ export function DetailCard({
   return (
     <section
       className={cn(
-        'rounded-xl border border-dynamic-border bg-card/70 p-4 shadow-sm',
+        'rounded-xl border border-border bg-card/70 p-4 shadow-sm',
         className
       )}
     >
@@ -45,7 +45,7 @@ export function EmptyPanel({
   return (
     <div
       className={cn(
-        'flex min-h-32 items-center justify-center rounded-lg border border-dynamic-border border-dashed bg-muted/20 px-4 text-center text-muted-foreground text-sm',
+        'flex min-h-32 items-center justify-center rounded-lg border border-border border-dashed bg-muted/20 px-4 text-center text-muted-foreground text-sm',
         className
       )}
     >

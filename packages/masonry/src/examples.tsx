@@ -70,11 +70,9 @@ interface CardProps {
 
 function Card({ title, description, children }: CardProps) {
   return (
-    <div className="rounded-lg bg-dynamic-background p-6 shadow-lg">
-      <h3 className="mb-2 font-bold text-dynamic-foreground text-xl">
-        {title}
-      </h3>
-      <p className="text-dynamic-muted-foreground">{description}</p>
+    <div className="rounded-lg bg-background p-6 shadow-lg">
+      <h3 className="mb-2 font-bold text-foreground text-xl">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
       {children}
     </div>
   );
@@ -103,9 +101,9 @@ export function DynamicMasonry() {
         <div
           key={item.id}
           style={{ height: `${item.height}px` }}
-          className="flex items-center justify-center rounded-lg bg-dynamic-muted"
+          className="flex items-center justify-center rounded-lg bg-muted"
         >
-          <span className="text-dynamic-foreground">#{item.id}</span>
+          <span className="text-foreground">#{item.id}</span>
         </div>
       ))}
     </Masonry>
@@ -125,7 +123,7 @@ export function PerformanceExample() {
         <div
           key={item.id}
           style={{ height: `${item.height}px` }}
-          className="flex items-center justify-center rounded-lg border border-dynamic-border bg-dynamic-background text-dynamic-foreground"
+          className="flex items-center justify-center rounded-lg border border-border bg-background text-foreground"
         >
           #{item.id + 1}
         </div>
@@ -153,7 +151,7 @@ export function SmoothTransitionsExample() {
         <div
           key={item.id}
           style={{ height: `${item.height}px` }}
-          className="flex items-center justify-center rounded-lg bg-dynamic-accent text-white"
+          className="flex items-center justify-center rounded-lg bg-primary text-primary-foreground"
         >
           Item {item.id + 1}
         </div>
@@ -180,10 +178,10 @@ export function CustomThresholdExample() {
         <div
           key={item.id}
           style={{ height: `${item.height}px` }}
-          className="rounded-lg bg-dynamic-muted p-4"
+          className="rounded-lg bg-muted p-4"
         >
           <h4 className="font-bold">Item {item.id + 1}</h4>
-          <p className="text-dynamic-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm">
             Height: {item.height}px
           </p>
         </div>

@@ -353,7 +353,7 @@ export default function DiscordIntegrationDashboard({
                   <h4 className="mb-2 font-medium text-sm">
                     1. Invite the Bot
                   </h4>
-                  <p className="mb-2 text-dynamic-muted-foreground text-sm">
+                  <p className="mb-2 text-muted-foreground text-sm">
                     First, invite our Discord bot to your server:
                   </p>
                   <Button asChild variant="outline" size="sm">
@@ -370,7 +370,7 @@ export default function DiscordIntegrationDashboard({
 
                 <div>
                   <h4 className="mb-2 font-medium text-sm">2. Get Guild ID</h4>
-                  <p className="text-dynamic-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-sm">
                     Enable Developer Mode in Discord, right-click your server,
                     and select "Copy Server ID"
                   </p>
@@ -380,7 +380,7 @@ export default function DiscordIntegrationDashboard({
                   <h4 className="mb-2 font-medium text-sm">
                     3. Connect Integration
                   </h4>
-                  <p className="text-dynamic-muted-foreground text-sm">
+                  <p className="text-muted-foreground text-sm">
                     Enter your Discord Guild ID below to complete the setup
                   </p>
                 </div>
@@ -452,11 +452,11 @@ export default function DiscordIntegrationDashboard({
           <CardContent className="h-full space-y-6 p-6">
             <div className="space-y-4">
               <div>
-                <Label className="font-medium text-dynamic-foreground text-sm">
+                <Label className="font-medium text-foreground text-sm">
                   Guild ID
                 </Label>
-                <div className="mt-2 flex items-center gap-2 rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3">
-                  <code className="flex-1 font-mono text-dynamic-foreground text-sm">
+                <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/10 bg-muted/5 p-3">
+                  <code className="flex-1 font-mono text-foreground text-sm">
                     {integration.discord_guild_id}
                   </code>
                   <Button
@@ -471,20 +471,20 @@ export default function DiscordIntegrationDashboard({
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3">
-                  <Label className="font-medium text-dynamic-muted-foreground text-sm">
+                <div className="rounded-lg border border-border/10 bg-muted/5 p-3">
+                  <Label className="font-medium text-muted-foreground text-sm">
                     Connected
                   </Label>
-                  <p className="mt-1 font-medium text-dynamic-foreground text-sm">
+                  <p className="mt-1 font-medium text-foreground text-sm">
                     {moment(integration.created_at).format('MMM DD, YYYY')}
                   </p>
                 </div>
 
-                <div className="rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3">
-                  <Label className="font-medium text-dynamic-muted-foreground text-sm">
+                <div className="rounded-lg border border-border/10 bg-muted/5 p-3">
+                  <Label className="font-medium text-muted-foreground text-sm">
                     Created by
                   </Label>
-                  <p className="mt-1 font-medium text-dynamic-foreground text-sm">
+                  <p className="mt-1 font-medium text-foreground text-sm">
                     {integration.creator_id === user.id
                       ? 'You'
                       : 'Another member'}
@@ -534,7 +534,7 @@ export default function DiscordIntegrationDashboard({
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3 transition-all duration-200 hover:border-dynamic-blue/20 hover:bg-dynamic-blue/5"
+                    className="flex items-center justify-between rounded-lg border border-border/10 bg-muted/5 p-3 transition-all duration-200 hover:border-dynamic-blue/20 hover:bg-dynamic-blue/5"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -549,15 +549,15 @@ export default function DiscordIntegrationDashboard({
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-dynamic-foreground text-sm">
+                        <p className="truncate font-medium text-foreground text-sm">
                           {member.users?.display_name || `Discord User`}
                         </p>
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <p className="text-dynamic-muted-foreground text-xs">
+                            <p className="text-muted-foreground text-xs">
                               <span className="font-medium">Platform ID:</span>
                             </p>
-                            <div className="flex items-center gap-1 rounded bg-dynamic-muted/30 px-2 py-1">
+                            <div className="flex items-center gap-1 rounded bg-muted/30 px-2 py-1">
                               <button
                                 className="cursor-pointer border-none bg-transparent p-0 text-left font-mono text-xs transition-colors hover:text-dynamic-blue"
                                 title={member.platform_user_id}
@@ -580,7 +580,7 @@ export default function DiscordIntegrationDashboard({
                                     'Platform ID'
                                   )
                                 }
-                                className="h-4 w-4 p-0 hover:bg-dynamic-muted/50"
+                                className="h-4 w-4 p-0 hover:bg-muted/50"
                                 title="Copy full Platform ID"
                               >
                                 <Copy className="h-2.5 w-2.5" />
@@ -588,10 +588,10 @@ export default function DiscordIntegrationDashboard({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <p className="text-dynamic-muted-foreground text-xs">
+                            <p className="text-muted-foreground text-xs">
                               <span className="font-medium">Discord ID:</span>
                             </p>
-                            <div className="flex items-center gap-1 rounded bg-dynamic-muted/30 px-2 py-1">
+                            <div className="flex items-center gap-1 rounded bg-muted/30 px-2 py-1">
                               <code className="font-mono text-xs">
                                 {member.discord_user_id}
                               </code>
@@ -604,7 +604,7 @@ export default function DiscordIntegrationDashboard({
                                     'Discord ID'
                                   )
                                 }
-                                className="h-4 w-4 p-0 hover:bg-dynamic-muted/50"
+                                className="h-4 w-4 p-0 hover:bg-muted/50"
                                 title="Copy Discord ID"
                               >
                                 <Copy className="h-2.5 w-2.5" />
@@ -637,7 +637,7 @@ export default function DiscordIntegrationDashboard({
               </div>
             ) : (
               <div className="py-8 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-gray/10">
                   <Users className="h-8 w-8 text-dynamic-gray/60" />
                 </div>
                 <div className="space-y-2">
@@ -692,7 +692,7 @@ export default function DiscordIntegrationDashboard({
             <div className="space-y-2">
               <Label htmlFor="member-search">Search Members</Label>
               <div className="relative">
-                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-dynamic-muted-foreground" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="member-search"
                   placeholder="Search by name or handle..."
@@ -701,7 +701,7 @@ export default function DiscordIntegrationDashboard({
                   className="pl-10"
                 />
                 {isSearchingMembers && (
-                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-dynamic-muted-foreground" />
+                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
                 )}
               </div>
             </div>
@@ -711,7 +711,7 @@ export default function DiscordIntegrationDashboard({
                 availableMembers.map((member) => (
                   <div
                     key={member.user_id}
-                    className="flex items-center justify-between rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3"
+                    className="flex items-center justify-between rounded-lg border border-border/10 bg-muted/5 p-3"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -727,13 +727,13 @@ export default function DiscordIntegrationDashboard({
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-dynamic-foreground text-sm">
+                        <p className="truncate font-medium text-foreground text-sm">
                           {resolveUserDisplayName(member.users, {
                             fallback: 'Unknown User',
                           })}
                         </p>
                         {member.users?.handle && (
-                          <p className="text-dynamic-muted-foreground text-xs">
+                          <p className="text-muted-foreground text-xs">
                             @{member.users.handle}
                           </p>
                         )}
@@ -755,7 +755,7 @@ export default function DiscordIntegrationDashboard({
                   </div>
                 ))
               ) : (
-                <div className="py-6 text-center text-dynamic-muted-foreground">
+                <div className="py-6 text-center text-muted-foreground">
                   <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
                   <p className="text-sm">
                     {memberSearchQuery.trim()
@@ -792,7 +792,7 @@ export default function DiscordIntegrationDashboard({
             </DialogTitle>
             <DialogDescription>
               Enter the Discord User ID for{' '}
-              <span className="font-medium text-dynamic-foreground">
+              <span className="font-medium text-foreground">
                 {selectedMember?.users?.display_name || 'this user'}
               </span>
             </DialogDescription>
@@ -808,7 +808,7 @@ export default function DiscordIntegrationDashboard({
                 onChange={(e) => setDiscordUserId(e.target.value)}
                 className="font-mono"
               />
-              <p className="text-dynamic-muted-foreground text-xs">
+              <p className="text-muted-foreground text-xs">
                 Enter a 17-19 digit Discord User ID
               </p>
             </div>

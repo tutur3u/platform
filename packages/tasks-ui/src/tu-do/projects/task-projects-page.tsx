@@ -105,7 +105,7 @@ export default async function TaskProjectsPage({ params }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-dynamic-surface/60 bg-background p-5">
+      <div className="rounded-lg border border-border/60 bg-background p-5">
         <p className="font-medium text-muted-foreground text-xs">
           {t('page_kicker')}
         </p>

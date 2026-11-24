@@ -78,7 +78,7 @@ export function MembersCard({ data, isFullscreen = false }: MembersCardProps) {
 
               {/* Pending badge */}
               {member.isPending && (
-                <span className="rounded bg-dynamic-amber/20 px-1.5 py-0.5 text-[10px] text-dynamic-amber">
+                <span className="rounded bg-dynamic-yellow/20 px-1.5 py-0.5 text-[10px] text-dynamic-yellow">
                   Invited
                 </span>
               )}

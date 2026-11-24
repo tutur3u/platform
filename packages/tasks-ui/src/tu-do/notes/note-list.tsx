@@ -721,7 +721,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
                 ) : boardsLoading ? (
                   <LoadSelect srLabel={t('conversion_dialog.loading_lists')} />
                 ) : (
-                  <div className="rounded-md border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center">
+                  <div className="rounded-md border border-border/30 bg-muted/10 p-3 text-center">
                     <p className="text-muted-foreground text-sm">
                       {t('conversion_dialog.no_lists')}
                     </p>

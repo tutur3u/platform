@@ -65,7 +65,7 @@ export function UserGroupsSection({
         <Collapsible
           open={showUnscheduled}
           onOpenChange={setShowUnscheduled}
-          className="rounded-xl border border-dynamic-border bg-card/70 p-4 shadow-sm"
+          className="rounded-xl border border-border bg-card/70 p-4 shadow-sm"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">

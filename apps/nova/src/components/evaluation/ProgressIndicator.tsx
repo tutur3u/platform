@@ -118,7 +118,7 @@ export function ProgressIndicator({
           : isError
             ? 'border-dynamic-red/30 shadow-dynamic-red/20'
             : isWarning
-              ? 'border-dynamic-amber/30 shadow-dynamic-amber/20'
+              ? 'border-dynamic-yellow/30 shadow-dynamic-yellow/20'
               : 'border-dynamic-blue/30 shadow-dynamic-blue/20',
         completionAnimation && 'animate-pulse'
       )}
@@ -135,7 +135,7 @@ export function ProgressIndicator({
                   <div className="h-8 w-8 rounded-full bg-dynamic-green/60" />
                 </div>
               </div>
-              <span className="bg-linear-to-r from-dynamic-green to-dynamic-emerald bg-clip-text font-bold text-transparent">
+              <span className="bg-linear-to-r from-dynamic-green to-dynamic-green bg-clip-text font-bold text-transparent">
                 ✨ Evaluation Complete!
               </span>
             </div>
@@ -193,7 +193,7 @@ export function ProgressIndicator({
                       'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
                     STEP_CONFIG[currentStepInfo.currentStep.step]?.category ===
                       'validation' &&
-                      'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber',
+                      'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
                     STEP_CONFIG[currentStepInfo.currentStep.step]?.category ===
                       'finalization' &&
                       'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
@@ -217,7 +217,7 @@ export function ProgressIndicator({
                   : isError
                     ? 'bg-dynamic-red'
                     : isWarning
-                      ? 'bg-dynamic-amber'
+                      ? 'bg-dynamic-yellow'
                       : 'bg-linear-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo'
               )}
             />
@@ -237,7 +237,7 @@ export function ProgressIndicator({
               className={cn(
                 'rounded-lg border p-4',
                 currentStepInfo.currentStep.step === 'parsing_error'
-                  ? 'border-dynamic-amber/20 bg-dynamic-amber/5'
+                  ? 'border-dynamic-yellow/20 bg-dynamic-yellow/5'
                   : currentStepInfo.currentStep.step === 'error'
                     ? 'border-dynamic-red/20 bg-dynamic-red/5'
                     : 'border-dynamic-blue/20 bg-dynamic-blue/5'
@@ -248,14 +248,14 @@ export function ProgressIndicator({
                   className={cn(
                     'flex h-10 w-10 items-center justify-center rounded-full border',
                     currentStepInfo.currentStep.step === 'parsing_error'
-                      ? 'border-dynamic-amber/30 bg-dynamic-amber/20'
+                      ? 'border-dynamic-yellow/30 bg-dynamic-yellow/20'
                       : currentStepInfo.currentStep.step === 'error'
                         ? 'border-dynamic-red/30 bg-dynamic-red/20'
                         : 'border-dynamic-blue/30 bg-dynamic-blue/20'
                   )}
                 >
                   {currentStepInfo.currentStep.step === 'parsing_error' ? (
-                    <AlertCircle className="h-5 w-5 text-dynamic-amber" />
+                    <AlertCircle className="h-5 w-5 text-dynamic-yellow" />
                   ) : currentStepInfo.currentStep.step === 'error' ? (
                     <AlertCircle className="h-5 w-5 text-dynamic-red" />
                   ) : (
@@ -271,7 +271,7 @@ export function ProgressIndicator({
                     className={cn(
                       'text-sm',
                       currentStepInfo.currentStep.step === 'parsing_error'
-                        ? 'text-dynamic-amber/80'
+                        ? 'text-dynamic-yellow/80'
                         : currentStepInfo.currentStep.step === 'error'
                           ? 'text-dynamic-red/80'
                           : 'text-foreground/70'
@@ -290,10 +290,10 @@ export function ProgressIndicator({
                   )}
                   {currentStepInfo.currentStep.step === 'parsing_error' && (
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="h-1 w-1 animate-pulse rounded-full bg-dynamic-amber" />
-                      <div className="animation-delay-200 h-1 w-1 animate-pulse rounded-full bg-dynamic-amber" />
-                      <div className="animation-delay-400 h-1 w-1 animate-pulse rounded-full bg-dynamic-amber" />
-                      <span className="text-dynamic-amber/70 text-xs">
+                      <div className="h-1 w-1 animate-pulse rounded-full bg-dynamic-yellow" />
+                      <div className="animation-delay-200 h-1 w-1 animate-pulse rounded-full bg-dynamic-yellow" />
+                      <div className="animation-delay-400 h-1 w-1 animate-pulse rounded-full bg-dynamic-yellow" />
+                      <span className="text-dynamic-yellow/70 text-xs">
                         Evaluation is continuing despite communication issues
                       </span>
                     </div>

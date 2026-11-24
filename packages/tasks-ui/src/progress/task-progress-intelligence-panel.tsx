@@ -79,7 +79,7 @@ export function TaskProgressIntelligencePanel({
         <Card className="overflow-hidden">
           <CardHeader className="border-b bg-muted/20">
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="size-4 text-dynamic-amber" />
+              <Lightbulb className="size-4 text-dynamic-yellow" />
               {t('intelligence.title')}
               <Badge className="ml-auto" variant="secondary">
                 {t(

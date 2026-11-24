@@ -171,7 +171,7 @@ export default function OverviewTab() {
             </p>
             <div className="mt-4 h-3 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-linear-to-r from-dynamic-primary via-dynamic-secondary to-dynamic-purple"
+                className="h-full rounded-full bg-linear-to-r from-primary via-secondary to-dynamic-purple"
                 style={{ width: `${Math.min(usagePct, 100)}%` }}
               />
             </div>

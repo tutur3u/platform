@@ -89,8 +89,8 @@ export function ProfileInfoPanel({
               key={field.label}
               className={
                 field.wide
-                  ? 'rounded-lg border border-dynamic-border bg-muted/20 p-3 md:col-span-2'
-                  : 'rounded-lg border border-dynamic-border bg-muted/20 p-3'
+                  ? 'rounded-lg border border-border bg-muted/20 p-3 md:col-span-2'
+                  : 'rounded-lg border border-border bg-muted/20 p-3'
               }
             >
               <dt className="text-muted-foreground text-xs">{field.label}</dt>

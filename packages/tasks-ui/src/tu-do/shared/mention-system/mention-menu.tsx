@@ -50,13 +50,13 @@ export function MentionMenu({
   return createPortal(
     <div
       role="dialog"
-      className="pointer-events-auto fixed z-200 flex w-[360px] flex-col overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
+      className="pointer-events-auto fixed z-200 flex w-[360px] flex-col overflow-hidden rounded-lg border border-border bg-popover/95 shadow-xl backdrop-blur"
       style={{
         top: position.top,
         left: position.left,
       }}
     >
-      <div className="shrink-0 border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+      <div className="shrink-0 border-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
         Mention people, workspaces, projects, dates, or tasks
       </div>
       {isLoading && (
@@ -133,7 +133,7 @@ export function MentionMenu({
                         'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
                         isActive
                           ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
-                          : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
+                          : 'text-muted-foreground hover:bg-background/70 hover:text-foreground'
                       )}
                       onMouseDown={(event) => {
                         event.preventDefault();

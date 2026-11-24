@@ -30,7 +30,7 @@ export function ExportAssetListCard({
   title,
 }: ExportAssetListCardProps) {
   return (
-    <Card className="border-dynamic-border">
+    <Card className="border-border">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <PackageOpen className="h-4 w-4 text-dynamic-orange" />
@@ -38,7 +38,7 @@ export function ExportAssetListCard({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[320px] rounded-2xl border border-dynamic-border">
+        <ScrollArea className="h-[320px] rounded-2xl border border-border">
           <div className="divide-y">
             {files.map((file) => (
               <div

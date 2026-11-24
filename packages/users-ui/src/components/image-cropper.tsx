@@ -225,12 +225,12 @@ export function ImageCropper({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col p-4 sm:max-w-4xl">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="text-dynamic-foreground">{title}</DialogTitle>
+          <DialogTitle className="text-foreground">{title}</DialogTitle>
         </DialogHeader>
 
         <div className="min-h-0 space-y-4 overflow-y-auto">
           {/* Cropper Container */}
-          <div className="relative h-125 w-full overflow-hidden rounded-lg border bg-dynamic-muted/20">
+          <div className="relative h-125 w-full overflow-hidden rounded-lg border bg-muted/20">
             <Cropper
               image={image}
               crop={crop}
@@ -267,7 +267,7 @@ export function ImageCropper({
           <div className="space-y-2">
             <label
               htmlFor="zoom-slider"
-              className="font-medium text-dynamic-foreground text-sm"
+              className="font-medium text-foreground text-sm"
             >
               Zoom
             </label>
@@ -283,7 +283,7 @@ export function ImageCropper({
           </div>
 
           {/* Instructions */}
-          <div className="text-center text-dynamic-muted-foreground text-sm">
+          <div className="text-center text-muted-foreground text-sm">
             Drag to reposition • Use slider to zoom •{' '}
             {aspectRatio === 1 ? 'Square' : 'Custom'} crop
           </div>

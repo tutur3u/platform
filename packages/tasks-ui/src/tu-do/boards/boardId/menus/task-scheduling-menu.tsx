@@ -306,7 +306,7 @@ export function TaskSchedulingMenu({
       onOpenChange={setOpen}
     >
       <DropdownMenuSubTrigger className="min-w-0">
-        <CalendarClock className="h-4 w-4 shrink-0 text-dynamic-amber" />
+        <CalendarClock className="h-4 w-4 shrink-0 text-dynamic-yellow" />
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <span className="min-w-0 flex-1 truncate whitespace-nowrap">
             {t.schedule}

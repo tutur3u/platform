@@ -30,7 +30,7 @@ export function MiraModelSelectorToolbar({
   return (
     <>
       {showUpgradeCta ? (
-        <div className="m-2 mb-0 rounded-xl border border-dynamic-primary/25 bg-linear-to-r from-dynamic-primary/20 via-dynamic-secondary/15 to-dynamic-purple/20 p-3">
+        <div className="m-2 mb-0 rounded-xl border border-primary/25 bg-linear-to-r from-primary/20 via-secondary/15 to-dynamic-purple/20 p-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-medium text-foreground text-sm">

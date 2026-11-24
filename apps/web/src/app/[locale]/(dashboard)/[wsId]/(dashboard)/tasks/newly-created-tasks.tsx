@@ -92,7 +92,7 @@ export default async function NewlyCreatedTasks({
           <ExpandableTaskList tasks={recentTasks as any} isPersonal={false} />
         ) : (
           <div className="py-12 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-slate/10 shadow-sm ring-1 ring-dynamic-gray/10">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 via-dynamic-gray/5 to-dynamic-gray/10 shadow-sm ring-1 ring-dynamic-gray/10">
               <Plus className="h-10 w-10 text-dynamic-gray/60" />
             </div>
             <div className="space-y-3">

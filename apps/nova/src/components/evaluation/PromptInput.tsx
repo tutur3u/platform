@@ -85,7 +85,7 @@ export function PromptInput({
                       isAtLimit
                         ? 'border-dynamic-red/40 bg-dynamic-red/15 text-dynamic-red shadow-dynamic-red/20'
                         : isNearLimit
-                          ? 'border-dynamic-amber/40 bg-dynamic-amber/15 text-dynamic-amber shadow-dynamic-amber/20'
+                          ? 'border-dynamic-yellow/40 bg-dynamic-yellow/15 text-dynamic-yellow shadow-dynamic-yellow/20'
                           : 'border-dynamic-blue/40 bg-dynamic-blue/15 text-dynamic-blue shadow-dynamic-blue/20',
                       characterAnimation && 'scale-110'
                     )}
@@ -107,7 +107,7 @@ export function PromptInput({
                       isAtLimit
                         ? 'bg-linear-to-r from-dynamic-red to-dynamic-rose'
                         : isNearLimit
-                          ? 'bg-linear-to-r from-dynamic-amber to-dynamic-orange'
+                          ? 'bg-linear-to-r from-dynamic-yellow to-dynamic-orange'
                           : 'bg-linear-to-r from-dynamic-blue to-dynamic-purple'
                     )}
                     style={{ width: `${Math.min(characterPercentage, 100)}%` }}
@@ -125,7 +125,7 @@ export function PromptInput({
                       'border font-medium text-xs transition-all duration-300',
                       isAtLimit
                         ? 'animate-pulse border-dynamic-red/40 bg-dynamic-red/15 text-dynamic-red'
-                        : 'border-dynamic-amber/40 bg-dynamic-amber/15 text-dynamic-amber'
+                        : 'border-dynamic-yellow/40 bg-dynamic-yellow/15 text-dynamic-yellow'
                     )}
                   >
                     {isAtLimit
@@ -145,7 +145,7 @@ export function PromptInput({
                     remainingAttempts === 0
                       ? 'border-dynamic-red/30 bg-dynamic-red/15 text-dynamic-red shadow-dynamic-red/20'
                       : remainingAttempts <= 1
-                        ? 'border-dynamic-amber/30 bg-dynamic-amber/15 text-dynamic-amber shadow-dynamic-amber/20'
+                        ? 'border-dynamic-yellow/30 bg-dynamic-yellow/15 text-dynamic-yellow shadow-dynamic-yellow/20'
                         : 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green shadow-dynamic-green/20'
                   )}
                 >
@@ -239,7 +239,7 @@ export function PromptInput({
                   isAtLimit
                     ? 'border-dynamic-red/40 focus-visible:border-dynamic-red/60'
                     : isNearLimit
-                      ? 'border-dynamic-amber/40 focus-visible:border-dynamic-amber/60'
+                      ? 'border-dynamic-yellow/40 focus-visible:border-dynamic-yellow/60'
                       : 'border-foreground/20 focus-visible:border-dynamic-blue/60',
                   'hover:border-foreground/30'
                 )}

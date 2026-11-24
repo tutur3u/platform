@@ -98,7 +98,7 @@ const priorityBadgeClass = (priority: TaskPriority | null) => {
     case 'low':
       return 'border-dynamic-blue/60 bg-dynamic-blue/15 text-dynamic-blue';
     default:
-      return 'border-dynamic-muted/60 bg-dynamic-muted/15 text-muted-foreground';
+      return 'border-border/60 bg-muted/15 text-muted-foreground';
   }
 };
 
@@ -1498,7 +1498,7 @@ export function TaskPreviewDialog({
                                           'rounded-full border px-2.5 py-0.5 font-medium text-xs transition',
                                           option.selected
                                             ? 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple'
-                                            : 'border-dynamic-muted/40 text-muted-foreground'
+                                            : 'border-border/40 text-muted-foreground'
                                         )}
                                       >
                                         {option.displayName}
@@ -1546,7 +1546,7 @@ export function TaskPreviewDialog({
               </div>
 
               {visiblePreviewTasks.length === 0 && (
-                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center text-muted-foreground text-sm">
+                <p className="rounded-lg border border-border/30 bg-muted/10 p-3 text-center text-muted-foreground text-sm">
                   {t('ws-tasks.no_tasks_to_preview')}
                 </p>
               )}

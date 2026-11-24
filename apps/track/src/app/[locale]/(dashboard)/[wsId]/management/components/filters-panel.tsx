@@ -55,7 +55,7 @@ export default function FiltersPanel({
     <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
       <CardHeader className="border-dynamic-purple/20 border-b bg-linear-to-r from-dynamic-purple/5 to-dynamic-blue/5 p-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-3 text-dynamic-foreground">
+          <CardTitle className="flex items-center gap-3 text-foreground">
             <div className="rounded-lg bg-dynamic-purple/10 p-2 text-dynamic-purple">
               <Filter className="size-5" />
             </div>
@@ -71,7 +71,7 @@ export default function FiltersPanel({
                   </Badge>
                 )}
               </div>
-              <p className="font-normal text-dynamic-muted text-sm">
+              <p className="font-normal text-muted-foreground text-sm">
                 {t('description')}
               </p>
             </div>
@@ -82,7 +82,7 @@ export default function FiltersPanel({
               size="sm"
               onClick={clearAllFilters}
               disabled={isLoading}
-              className="text-dynamic-muted transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
+              className="text-muted-foreground transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
             >
               <X className="mr-1 size-4" />
               {t('clearAll')}
@@ -94,12 +94,12 @@ export default function FiltersPanel({
         {/* Search and View Controls */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="relative max-w-sm flex-1">
-            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 transform text-dynamic-muted" />
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 transform text-muted-foreground" />
             <Input
               placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className={`border-dynamic-border/20 bg-dynamic-muted/5 pl-10 transition-all duration-200 focus:border-dynamic-purple/40 focus:bg-dynamic-purple/5 ${
+              className={`border-border/20 bg-muted/5 pl-10 transition-all duration-200 focus:border-dynamic-purple/40 focus:bg-dynamic-purple/5 ${
                 searchQuery
                   ? 'border-dynamic-purple/40 bg-dynamic-purple/5 ring-1 ring-dynamic-purple/20'
                   : ''
@@ -109,7 +109,7 @@ export default function FiltersPanel({
           </div>
 
           <div className="flex items-center gap-3">
-            <label className="whitespace-nowrap font-medium text-dynamic-muted text-sm">
+            <label className="whitespace-nowrap font-medium text-muted-foreground text-sm">
               {t('viewBy')}
             </label>
             <Select
@@ -117,7 +117,7 @@ export default function FiltersPanel({
               onValueChange={onPeriodChange}
               disabled={isLoading}
             >
-              <SelectTrigger className="w-40 border-dynamic-border/20 transition-colors hover:border-dynamic-purple/30">
+              <SelectTrigger className="w-40 border-border/20 transition-colors hover:border-dynamic-purple/30">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -133,8 +133,8 @@ export default function FiltersPanel({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="size-4 text-dynamic-muted" />
-              <span className="font-medium text-dynamic-muted text-sm">
+              <Calendar className="size-4 text-muted-foreground" />
+              <span className="font-medium text-muted-foreground text-sm">
                 {t('dateRange')}
               </span>
               {(startDate || endDate) && (
@@ -153,7 +153,7 @@ export default function FiltersPanel({
                 size="sm"
                 onClick={onClearDateFilters}
                 disabled={isLoading}
-                className="text-dynamic-muted transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
+                className="text-muted-foreground transition-all hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
               >
                 <X className="mr-1 size-3" />
                 {t('clear')}
@@ -161,12 +161,12 @@ export default function FiltersPanel({
             )}
           </div>
 
-          <div className="rounded-lg border border-dynamic-border/20 bg-dynamic-muted/5 p-4">
+          <div className="rounded-lg border border-border/20 bg-muted/5 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <div className="flex items-center gap-3">
                 <label
                   htmlFor="start-date"
-                  className="whitespace-nowrap font-medium text-dynamic-muted text-sm"
+                  className="whitespace-nowrap font-medium text-muted-foreground text-sm"
                 >
                   {t('from')}
                 </label>
@@ -175,7 +175,7 @@ export default function FiltersPanel({
                   type="date"
                   value={startDate}
                   onChange={(e) => onStartDateChange(e.target.value)}
-                  className={`w-40 border-dynamic-border/20 bg-dynamic-background transition-all duration-200 focus:border-dynamic-purple/40 ${
+                  className={`w-40 border-border/20 bg-background transition-all duration-200 focus:border-dynamic-purple/40 ${
                     startDate
                       ? 'border-dynamic-purple/40 bg-dynamic-purple/5 ring-1 ring-dynamic-purple/20'
                       : ''
@@ -187,7 +187,7 @@ export default function FiltersPanel({
               <div className="flex items-center gap-3">
                 <label
                   htmlFor="end-date"
-                  className="whitespace-nowrap font-medium text-dynamic-muted text-sm"
+                  className="whitespace-nowrap font-medium text-muted-foreground text-sm"
                 >
                   {t('to')}
                 </label>
@@ -196,7 +196,7 @@ export default function FiltersPanel({
                   type="date"
                   value={endDate}
                   onChange={(e) => onEndDateChange(e.target.value)}
-                  className={`w-40 border-dynamic-border/20 bg-dynamic-background transition-all duration-200 focus:border-dynamic-purple/40 ${
+                  className={`w-40 border-border/20 bg-background transition-all duration-200 focus:border-dynamic-purple/40 ${
                     endDate
                       ? 'border-dynamic-purple/40 bg-dynamic-purple/5 ring-1 ring-dynamic-purple/20'
                       : ''
@@ -209,7 +209,7 @@ export default function FiltersPanel({
 
           {/* Quick Date Presets */}
           <div className="space-y-3">
-            <span className="font-medium text-dynamic-muted text-sm">
+            <span className="font-medium text-muted-foreground text-sm">
               {t('quickPresets')}
             </span>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -221,7 +221,7 @@ export default function FiltersPanel({
                   onDateRangeChange(today, today);
                 }}
                 disabled={isLoading}
-                className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
+                className="h-9 border-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
                 {t('today')}
               </Button>
@@ -240,7 +240,7 @@ export default function FiltersPanel({
                   onDateRangeChange(startOfWeek, endOfWeek);
                 }}
                 disabled={isLoading}
-                className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
+                className="h-9 border-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
                 {t('thisWeek')}
               </Button>
@@ -257,7 +257,7 @@ export default function FiltersPanel({
                   onDateRangeChange(startOfMonth, endOfMonth);
                 }}
                 disabled={isLoading}
-                className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
+                className="h-9 border-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
                 {t('thisMonth')}
               </Button>
@@ -272,7 +272,7 @@ export default function FiltersPanel({
                   onDateRangeChange(last7Days, today);
                 }}
                 disabled={isLoading}
-                className="h-9 border-dynamic-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
+                className="h-9 border-border/20 text-xs transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/10"
               >
                 {t('last7Days')}
               </Button>

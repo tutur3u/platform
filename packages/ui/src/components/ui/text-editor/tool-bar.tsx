@@ -563,7 +563,7 @@ export function ToolBar({
 
   const renderYoutubeInput = useCallback(
     () => (
-      <div className="space-y-2 rounded-md border border-dynamic-border bg-dynamic-surface/80 p-3">
+      <div className="space-y-2 rounded-md border border-border bg-background/80 p-3">
         <div className="space-y-1">
           <label className="font-medium text-muted-foreground text-xs">
             YouTube URL
@@ -609,8 +609,8 @@ export function ToolBar({
 
   const renderTableControls = useCallback(
     () => (
-      <div className="min-w-[320px] space-y-3 rounded-md border border-dynamic-border bg-dynamic-surface/80 p-3">
-        <div className="flex items-center justify-between border-dynamic-border/50 border-b pb-2">
+      <div className="min-w-[320px] space-y-3 rounded-md border border-border bg-background/80 p-3">
+        <div className="flex items-center justify-between border-border/50 border-b pb-2">
           <div className="flex items-center gap-2">
             <Table className="size-4 text-dynamic-blue" />
             <span className="font-semibold text-foreground text-sm">
@@ -733,7 +733,7 @@ export function ToolBar({
         </div>
 
         {/* Delete Table */}
-        <div className="border-dynamic-border/50 border-t pt-2">
+        <div className="border-border/50 border-t pt-2">
           <Button
             type="button"
             variant="outline"
@@ -755,7 +755,7 @@ export function ToolBar({
 
   const renderLinkEditor = useCallback(
     (source: 'bubble' | 'popover') => (
-      <div className="space-y-2 rounded-md border border-dynamic-border bg-dynamic-surface/80 p-3">
+      <div className="space-y-2 rounded-md border border-border bg-background/80 p-3">
         <div className="space-y-1">
           <label className="font-medium text-muted-foreground text-xs">
             Link URL
@@ -830,7 +830,7 @@ export function ToolBar({
           return true;
         }}
       >
-        <div className="flex flex-col gap-2 rounded-lg border border-dynamic-border bg-background p-2 shadow-lg">
+        <div className="flex flex-col gap-2 rounded-lg border border-border bg-background p-2 shadow-lg">
           {renderFormattingOptions('bubble')}
           {linkEditorContext === 'bubble' ? renderLinkEditor('bubble') : null}
           {showYoutubeInput ? renderYoutubeInput() : null}
@@ -1086,7 +1086,7 @@ export function FixedToolbar({
     <div
       ref={ref}
       className={cn(
-        '@container scrollbar-hide sticky -top-px z-40 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain whitespace-nowrap rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
+        '@container scrollbar-hide sticky -top-px z-40 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain whitespace-nowrap rounded-t-md border-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
         className
       )}
     >

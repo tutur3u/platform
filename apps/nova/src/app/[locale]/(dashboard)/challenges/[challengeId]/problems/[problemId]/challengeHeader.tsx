@@ -172,13 +172,13 @@ export default function ChallengeHeader({
 
   const getTimeColor = () => {
     if (timeLeft.totalSeconds < 300) return 'text-dynamic-red'; // Less than 5 minutes
-    if (timeLeft.totalSeconds < 900) return 'text-dynamic-amber'; // Less than 15 minutes
+    if (timeLeft.totalSeconds < 900) return 'text-dynamic-yellow'; // Less than 15 minutes
     return 'text-dynamic-green';
   };
 
   const getProgressColor = () => {
     if (timeLeft.totalSeconds < 300) return 'bg-dynamic-red/20';
-    if (timeLeft.totalSeconds < 900) return 'bg-dynamic-amber/20';
+    if (timeLeft.totalSeconds < 900) return 'bg-dynamic-yellow/20';
     return 'bg-dynamic-green/20';
   };
 

@@ -28,17 +28,17 @@ export default function NoSubscriptionMessage({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-dynamic-foreground/80">{t('prod.description')}</p>
+          <p className="text-foreground/80">{t('prod.description')}</p>
 
-          <div className="space-y-2 rounded-lg bg-dynamic-surface p-4">
+          <div className="space-y-2 rounded-lg bg-background p-4">
             <div className="flex justify-between text-sm">
-              <span className="text-dynamic-foreground/60">
+              <span className="text-foreground/60">
                 {t('prod.error-code')}:
               </span>
               <span className="font-mono">SUBSCRIPTION_NOT_FOUND</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-dynamic-foreground/60">
+              <span className="text-foreground/60">
                 {t('prod.workspace-id')}:
               </span>
               <span className="font-mono">{wsId}</span>
@@ -50,7 +50,7 @@ export default function NoSubscriptionMessage({
                 <h3 className="mb-2 font-semibold">
                   {t('dev.polar-config.title')}
                 </h3>
-                <ul className="ml-6 list-disc space-y-1 text-dynamic-foreground/70 text-sm">
+                <ul className="ml-6 list-disc space-y-1 text-foreground/70 text-sm">
                   <li>{t('dev.polar-config.sandbox')}</li>
                   <li>{t('dev.polar-config.token')}</li>
                 </ul>
@@ -60,7 +60,7 @@ export default function NoSubscriptionMessage({
                 <h3 className="mb-2 font-semibold">
                   {t('dev.webhook-config.title')}
                 </h3>
-                <ul className="ml-6 list-disc space-y-1 text-dynamic-foreground/70 text-sm">
+                <ul className="ml-6 list-disc space-y-1 text-foreground/70 text-sm">
                   <li>
                     {t('dev.webhook-config.ngrok')}{' '}
                     <Link
@@ -79,7 +79,7 @@ export default function NoSubscriptionMessage({
 
               <div>
                 <h3 className="mb-2 font-semibold">{t('dev.reload.title')}</h3>
-                <p className="text-dynamic-foreground/70 text-sm">
+                <p className="text-foreground/70 text-sm">
                   {t('dev.reload.description')}
                 </p>
               </div>

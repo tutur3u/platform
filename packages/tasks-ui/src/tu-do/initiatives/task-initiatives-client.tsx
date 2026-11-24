@@ -788,7 +788,7 @@ export function TaskInitiativesClient({
                     {managingInitiative.linkedProjects.map((project) => (
                       <div
                         key={project.id}
-                        className="flex items-center justify-between rounded-md border border-dynamic-surface/50 bg-dynamic-surface/40 px-3 py-2"
+                        className="flex items-center justify-between rounded-md border border-border/50 bg-background/40 px-3 py-2"
                       >
                         <div>
                           <p className="font-medium text-sm">{project.name}</p>

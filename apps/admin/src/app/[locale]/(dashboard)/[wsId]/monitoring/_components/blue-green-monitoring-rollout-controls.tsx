@@ -321,7 +321,7 @@ export function BlueGreenMonitoringRolloutControls({
 
           <div className="rounded-lg border border-border/60 bg-muted/20 p-4">
             <div className="flex items-start gap-3">
-              <div className="rounded-md border border-dynamic-amber/25 bg-dynamic-amber/10 p-2.5 text-dynamic-amber">
+              <div className="rounded-md border border-dynamic-yellow/25 bg-dynamic-yellow/10 p-2.5 text-dynamic-yellow">
                 <Pin className="h-5 w-5" />
               </div>
               <div className="space-y-2">

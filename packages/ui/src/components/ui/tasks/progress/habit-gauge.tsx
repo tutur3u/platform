@@ -58,7 +58,7 @@ export function HabitGauge({
           <circle
             className={cn(
               'transition-all duration-500',
-              met ? 'text-dynamic-amber' : 'text-dynamic-green'
+              met ? 'text-dynamic-yellow' : 'text-dynamic-green'
             )}
             cx={size / 2}
             cy={size / 2}
@@ -74,7 +74,7 @@ export function HabitGauge({
           <span
             className={cn(
               'font-bold text-2xl tabular-nums',
-              met && 'text-dynamic-amber'
+              met && 'text-dynamic-yellow'
             )}
           >
             {percent}%

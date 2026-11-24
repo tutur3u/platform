@@ -515,7 +515,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                 <Loader2 className="h-6 w-6 animate-spin text-dynamic-purple" />
               </div>
             ) : displayedNotes.length === 0 ? (
-              <div className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-4 text-center">
+              <div className="rounded-lg border border-border/30 bg-muted/10 p-4 text-center">
                 <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
                 <p className="mt-2 text-muted-foreground text-sm">
                   {showArchived ? t('no_archived_notes') : t('no_notes')}
@@ -529,7 +529,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                     className={`group rounded-lg border p-3 transition ${
                       note.archived
                         ? 'border-dynamic-green/30 bg-dynamic-green/5'
-                        : 'border-dynamic-surface/30 bg-background/80 hover:border-dynamic-purple/30'
+                        : 'border-border/30 bg-background/80 hover:border-dynamic-purple/30'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -691,7 +691,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="rounded-md border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center">
+                  <div className="rounded-md border border-border/30 bg-muted/10 p-3 text-center">
                     <p className="text-muted-foreground text-sm">
                       {t('conversion_dialog.no_lists')}
                     </p>
@@ -747,7 +747,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                 <Label className="font-medium text-sm">
                   {t('conversion_dialog.note_preview_label')}
                 </Label>
-                <div className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3">
+                <div className="rounded-lg border border-border/30 bg-muted/10 p-3">
                   <p className="text-foreground text-sm">
                     {selectedNote.content}
                   </p>
@@ -861,7 +861,7 @@ export default function BucketDump({ wsId, enabled = true }: BucketDumpProps) {
 
   if (!enabled) {
     return (
-      <Card className="border-dynamic-muted/50">
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle>{t('restricted_title')}</CardTitle>
           <CardDescription>{t('restricted_description')}</CardDescription>

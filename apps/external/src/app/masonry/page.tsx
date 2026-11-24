@@ -49,27 +49,27 @@ export default function MasonryDemo() {
   const displayItems = allItems.slice(0, itemCount);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-dynamic-surface to-dynamic-muted p-8">
+    <div className="min-h-screen bg-linear-to-br from-border to-border p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-2 font-bold text-4xl text-dynamic-foreground">
+          <h1 className="mb-2 font-bold text-4xl text-foreground">
             Masonry Grid Demo
           </h1>
-          <p className="text-dynamic-muted-foreground text-lg">
+          <p className="text-muted-foreground text-lg">
             A responsive Pinterest-style masonry layout component
           </p>
         </div>
 
         {/* Controls */}
-        <div className="mb-8 rounded-lg bg-dynamic-background p-6 shadow-lg">
-          <h2 className="mb-4 font-semibold text-dynamic-foreground text-xl">
+        <div className="mb-8 rounded-lg bg-background p-6 shadow-lg">
+          <h2 className="mb-4 font-semibold text-foreground text-xl">
             Controls
           </h2>
           <div className="grid gap-6 md:grid-cols-4">
             {/* Columns Control */}
             <div>
-              <label className="mb-2 block font-medium text-dynamic-foreground text-sm">
+              <label className="mb-2 block font-medium text-foreground text-sm">
                 Columns: {columns}
               </label>
               <input
@@ -84,7 +84,7 @@ export default function MasonryDemo() {
 
             {/* Gap Control */}
             <div>
-              <label className="mb-2 block font-medium text-dynamic-foreground text-sm">
+              <label className="mb-2 block font-medium text-foreground text-sm">
                 Gap: {gap}px
               </label>
               <input
@@ -100,7 +100,7 @@ export default function MasonryDemo() {
 
             {/* Item Count Control */}
             <div>
-              <label className="mb-2 block font-medium text-dynamic-foreground text-sm">
+              <label className="mb-2 block font-medium text-foreground text-sm">
                 Items: {itemCount}
               </label>
               <input
@@ -116,7 +116,7 @@ export default function MasonryDemo() {
 
             {/* Strategy Control */}
             <div>
-              <label className="mb-2 block font-medium text-dynamic-foreground text-sm">
+              <label className="mb-2 block font-medium text-foreground text-sm">
                 Strategy
               </label>
               <div className="flex gap-2">
@@ -126,7 +126,7 @@ export default function MasonryDemo() {
                   className={`flex-1 rounded-md px-3 py-2 text-sm transition-colors ${
                     strategy === 'count'
                       ? 'bg-dynamic-blue text-white'
-                      : 'bg-dynamic-muted text-dynamic-foreground hover:bg-dynamic-muted/80'
+                      : 'bg-muted text-foreground hover:bg-muted/80'
                   }`}
                 >
                   Count
@@ -137,7 +137,7 @@ export default function MasonryDemo() {
                   className={`flex-1 rounded-md px-3 py-2 text-sm transition-colors ${
                     strategy === 'balanced'
                       ? 'bg-dynamic-blue text-white'
-                      : 'bg-dynamic-muted text-dynamic-foreground hover:bg-dynamic-muted/80'
+                      : 'bg-muted text-foreground hover:bg-muted/80'
                   }`}
                 >
                   Balanced
@@ -147,8 +147,8 @@ export default function MasonryDemo() {
           </div>
 
           {/* Strategy Info */}
-          <div className="mt-4 rounded-md bg-dynamic-muted p-4">
-            <p className="text-dynamic-muted-foreground text-sm">
+          <div className="mt-4 rounded-md bg-muted p-4">
+            <p className="text-muted-foreground text-sm">
               {strategy === 'count' ? (
                 <>
                   <strong>Count Strategy:</strong> Fast distribution by item
@@ -205,11 +205,11 @@ export default function MasonryDemo() {
         </Masonry>
 
         {/* Features Section */}
-        <div className="mt-12 rounded-lg bg-dynamic-background p-6 shadow-lg">
-          <h2 className="mb-4 font-semibold text-dynamic-foreground text-xl">
+        <div className="mt-12 rounded-lg bg-background p-6 shadow-lg">
+          <h2 className="mb-4 font-semibold text-foreground text-xl">
             Features
           </h2>
-          <ul className="space-y-2 text-dynamic-muted-foreground">
+          <ul className="space-y-2 text-muted-foreground">
             <li className="flex items-start gap-2">
               <span className="mt-1 text-dynamic-green">✓</span>
               <span>
@@ -270,11 +270,11 @@ export default function MasonryDemo() {
         </div>
 
         {/* Code Example */}
-        <div className="mt-8 rounded-lg bg-dynamic-background p-6 shadow-lg">
-          <h2 className="mb-4 font-semibold text-dynamic-foreground text-xl">
+        <div className="mt-8 rounded-lg bg-background p-6 shadow-lg">
+          <h2 className="mb-4 font-semibold text-foreground text-xl">
             Usage Example
           </h2>
-          <pre className="overflow-x-auto rounded-lg bg-dynamic-muted p-4 text-dynamic-foreground text-sm">
+          <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-foreground text-sm">
             {`import { Masonry } from '@tuturuuu/masonry';
 
 export function Gallery() {

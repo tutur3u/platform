@@ -57,7 +57,7 @@ export function ProfileHeader({
   );
 
   return (
-    <section className="rounded-xl border border-dynamic-border bg-card/80 p-4 shadow-sm">
+    <section className="rounded-xl border border-border bg-card/80 p-4 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex min-w-0 flex-1 gap-4">
           <ResolvedUserAvatar
@@ -66,7 +66,7 @@ export function ProfileHeader({
             width={88}
             height={88}
             loading="lazy"
-            className="hidden size-20 shrink-0 rounded-xl border border-dynamic-border bg-muted/30 sm:block"
+            className="hidden size-20 shrink-0 rounded-xl border border-border bg-muted/30 sm:block"
           />
 
           <div className="min-w-0 flex-1">
@@ -82,7 +82,7 @@ export function ProfileHeader({
               {user.referrer?.id && (
                 <Link
                   href={`/${wsId}/users/database/${user.referrer.id}`}
-                  className="inline-flex min-w-0 items-center gap-1 rounded-full border border-dynamic-border bg-muted/30 px-2.5 py-1 text-sm transition-colors hover:bg-muted/60"
+                  className="inline-flex min-w-0 items-center gap-1 rounded-full border border-border bg-muted/30 px-2.5 py-1 text-sm transition-colors hover:bg-muted/60"
                 >
                   <span className="shrink-0 text-muted-foreground">
                     {labels.referredBy}
@@ -118,7 +118,7 @@ export function ProfileHeader({
                 {contactItems.map(({ icon: Icon, label, value }) => (
                   <div
                     key={label}
-                    className="inline-flex max-w-full items-center gap-2 rounded-lg border border-dynamic-border bg-muted/20 px-2.5 py-1.5 text-sm"
+                    className="inline-flex max-w-full items-center gap-2 rounded-lg border border-border bg-muted/20 px-2.5 py-1.5 text-sm"
                   >
                     <Icon className="size-4 shrink-0 text-muted-foreground" />
                     <span className="text-muted-foreground">{label}</span>
@@ -148,7 +148,7 @@ function MetricTile({ metric }: { metric: UserDetailMetric }) {
   return (
     <div
       className={cn(
-        'rounded-lg border border-dynamic-border bg-background/70 px-3 py-2',
+        'rounded-lg border border-border bg-background/70 px-3 py-2',
         'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
       )}
     >

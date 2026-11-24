@@ -365,7 +365,7 @@ export function NavLink({
         isDisabled,
       }),
       link.preferenceHiddenActive &&
-        'bg-dynamic-amber/10 ring-1 ring-dynamic-amber/40',
+        'bg-dynamic-yellow/10 ring-1 ring-dynamic-yellow/40',
       link.isBack && 'mb-2 cursor-pointer',
       isResolvingHref && 'pointer-events-none opacity-70'
     ),
@@ -469,7 +469,7 @@ export function NavLink({
             badgeTier === 'PRO' &&
               'bg-linear-to-b from-dynamic-purple/10 to-transparent',
             badgeTier === 'ENTERPRISE' &&
-              'bg-linear-to-b from-dynamic-amber/10 to-transparent'
+              'bg-linear-to-b from-dynamic-yellow/10 to-transparent'
           )}
         >
           {/* Icon */}
@@ -479,7 +479,7 @@ export function NavLink({
               badgeTier === 'PLUS' && 'bg-dynamic-blue/10 text-dynamic-blue',
               badgeTier === 'PRO' && 'bg-dynamic-purple/10 text-dynamic-purple',
               badgeTier === 'ENTERPRISE' &&
-                'bg-dynamic-amber/10 text-dynamic-amber'
+                'bg-dynamic-yellow/10 text-dynamic-yellow'
             )}
           >
             <Sparkles className="h-6 w-6" />
@@ -494,7 +494,7 @@ export function NavLink({
               badgeTier === 'PRO' &&
                 'border-dynamic-purple/50 bg-dynamic-purple/15 text-dynamic-purple',
               badgeTier === 'ENTERPRISE' &&
-                'border-dynamic-amber/50 bg-dynamic-amber/15 text-dynamic-amber'
+                'border-dynamic-yellow/50 bg-dynamic-yellow/15 text-dynamic-yellow'
             )}
             variant="outline"
           >

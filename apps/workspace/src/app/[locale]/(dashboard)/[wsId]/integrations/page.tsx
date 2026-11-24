@@ -108,7 +108,7 @@ export default async function IntegrationsPage({
       ) : null}
 
       {/* Header */}
-      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
+      <div className="space-y-6 rounded-xl border border-border/20 bg-linear-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
         <div className="flex items-center justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
@@ -119,7 +119,7 @@ export default async function IntegrationsPage({
                 <h1 className="bg-linear-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
                   Integrations
                 </h1>
-                <p className="mt-1 text-base text-dynamic-muted">
+                <p className="mt-1 text-base text-muted-foreground">
                   Connect external services and platforms to extend your
                   workspace capabilities
                 </p>
@@ -151,7 +151,7 @@ export default async function IntegrationsPage({
               key={integration.id}
               className={`overflow-hidden transition-all duration-300 hover:shadow-lg ${colorClasses[integration.color as keyof typeof colorClasses]}`}
             >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-border/20 border-b p-4">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-border/20 border-b p-4">
                 <CardTitle className="flex items-center gap-2 font-semibold text-base">
                   <div
                     className={`rounded-lg p-1.5 ${iconBgClasses[integration.color as keyof typeof iconBgClasses]}`}
@@ -173,22 +173,22 @@ export default async function IntegrationsPage({
               </CardHeader>
               <CardContent className="h-full space-y-6 p-6">
                 <div className="space-y-4">
-                  <p className="text-dynamic-muted-foreground text-sm leading-relaxed">
+                  <p className="text-muted-foreground text-sm leading-relaxed">
                     {integration.description}
                   </p>
 
                   <div>
-                    <h4 className="mb-3 font-semibold text-dynamic-foreground text-sm">
+                    <h4 className="mb-3 font-semibold text-foreground text-sm">
                       Features
                     </h4>
                     <div className="space-y-2">
                       {integration.features.map((feature, index) => (
                         <div
                           key={index}
-                          className="flex items-center gap-2 rounded-md border border-dynamic-border/10 bg-dynamic-muted/5 p-2"
+                          className="flex items-center gap-2 rounded-md border border-border/10 bg-muted/5 p-2"
                         >
                           <div className="size-1.5 rounded-full bg-dynamic-blue" />
-                          <span className="text-dynamic-muted-foreground text-sm">
+                          <span className="text-muted-foreground text-sm">
                             {feature}
                           </span>
                         </div>
@@ -223,7 +223,7 @@ export default async function IntegrationsPage({
 
       {integrations.length === 0 && (
         <div className="py-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-linear-to-br from-dynamic-gray/10 to-dynamic-gray/10">
             <Bot className="h-8 w-8 text-dynamic-gray/60" />
           </div>
           <div className="space-y-2">

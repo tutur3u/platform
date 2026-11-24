@@ -226,7 +226,7 @@ export function ActivityTimeline({
                 )}
               </div>
               {feedback_reason && (
-                <div className="mt-2 rounded-md border border-dynamic-border bg-dynamic-surface/50 p-3">
+                <div className="mt-2 rounded-md border border-border bg-background/50 p-3">
                   <p className="mb-1 font-medium text-foreground/80 text-sm">
                     {t('activity.feedbackLabel')}:
                   </p>
@@ -270,7 +270,7 @@ export function ActivityTimeline({
                 {t('activity.actions.commentAdded')}
               </p>
               {comment_content && (
-                <div className="rounded-md border border-dynamic-border bg-dynamic-surface/50 p-3">
+                <div className="rounded-md border border-border bg-background/50 p-3">
                   <p className="text-foreground/80 text-sm">
                     {comment_content}
                   </p>
@@ -286,7 +286,7 @@ export function ActivityTimeline({
                 {t('activity.actions.commentUpdated')}
               </p>
               {comment_content && (
-                <div className="rounded-md border border-dynamic-border bg-dynamic-surface/50 p-3">
+                <div className="rounded-md border border-border bg-background/50 p-3">
                   <p className="text-foreground/80 text-sm">
                     {comment_content}
                   </p>
@@ -372,7 +372,7 @@ export function ActivityTimeline({
             <div className="relative space-y-4 pt-2">
               {/* Loading Overlay */}
               {isLoading && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-dynamic-surface/60 backdrop-blur-sm">
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/60 backdrop-blur-sm">
                   <Loader2 className="h-6 w-6 animate-spin text-foreground/60" />
                 </div>
               )}
@@ -381,11 +381,11 @@ export function ActivityTimeline({
                 <div key={activity.id} className="flex gap-4">
                   {/* Timeline line */}
                   <div className="flex flex-col items-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-dynamic-border bg-dynamic-surface">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-background">
                       {getActionIcon(activity.action_type)}
                     </div>
                     {index < activities.length - 1 && (
-                      <div className="min-h-10 w-0.5 flex-1 bg-dynamic-border" />
+                      <div className="min-h-10 w-0.5 flex-1 bg-border" />
                     )}
                   </div>
 
@@ -427,7 +427,7 @@ export function ActivityTimeline({
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex flex-wrap items-center justify-center gap-3 border-dynamic-border border-t pt-4">
+                <div className="flex flex-wrap items-center justify-center gap-3 border-border border-t pt-4">
                   <div className="flex min-w-0 items-center gap-2">
                     <label className="whitespace-nowrap text-foreground/60 text-sm">
                       {t('activity.itemsPerPage')}:
@@ -438,7 +438,7 @@ export function ActivityTimeline({
                         onItemsPerPageChange(Number(e.target.value));
                         onPageChange(1); // Reset to first page
                       }}
-                      className="rounded-md border border-dynamic-border bg-dynamic-surface px-2 py-1 text-sm transition-colors hover:bg-dynamic-surface/80"
+                      className="rounded-md border border-border bg-background px-2 py-1 text-sm transition-colors hover:bg-background/80"
                       disabled={isLoading}
                     >
                       {paginationOptions.map((option) => (

@@ -60,7 +60,7 @@ const ACCENTS: Record<ShowcaseCategory, DocsAccent> = {
     bg: 'bg-dynamic-orange/10',
     border: 'border-dynamic-orange/30',
     dot: 'bg-dynamic-orange',
-    gradient: 'from-dynamic-orange to-dynamic-amber',
+    gradient: 'from-dynamic-orange to-dynamic-yellow',
     ring: 'ring-dynamic-orange/20',
   },
   data: {

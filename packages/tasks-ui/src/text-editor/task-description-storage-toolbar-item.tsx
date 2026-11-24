@@ -46,12 +46,12 @@ export function TaskDescriptionStorageToolbarItem({
             type="button"
             aria-label={liveMessage}
             className={cn(
-              'flex h-8 shrink-0 items-center gap-1 rounded-lg border bg-dynamic-surface/35 px-1.5 text-xs transition-colors hover:bg-dynamic-surface/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              'flex h-8 shrink-0 items-center gap-1 rounded-lg border bg-background/35 px-1.5 text-xs transition-colors hover:bg-background/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               isOverLimit
                 ? 'border-destructive/40'
                 : isWarning
                   ? 'border-dynamic-yellow/40'
-                  : 'border-dynamic-border/70'
+                  : 'border-border/70'
             )}
             onMouseDown={(event) => event.preventDefault()}
           >
@@ -61,7 +61,7 @@ export function TaskDescriptionStorageToolbarItem({
               viewBox="0 0 20 20"
             >
               <circle
-                className="stroke-dynamic-border/60"
+                className="stroke-border/60"
                 cx="10"
                 cy="10"
                 r={radius}
@@ -82,7 +82,7 @@ export function TaskDescriptionStorageToolbarItem({
             </svg>
             <span
               className={cn(
-                'min-w-8 shrink-0 rounded-full bg-dynamic-surface px-1.5 py-0.5 text-center font-semibold text-[11px] tabular-nums leading-none',
+                'min-w-8 shrink-0 rounded-full bg-background px-1.5 py-0.5 text-center font-semibold text-[11px] tabular-nums leading-none',
                 toneClass
               )}
             >

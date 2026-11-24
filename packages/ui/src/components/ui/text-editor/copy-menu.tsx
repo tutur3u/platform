@@ -85,7 +85,7 @@ export function EditorCopyMenu({ editor, labels }: EditorCopyMenuProps) {
           pressed={open}
           disabled={editor.isEmpty}
           aria-label={copyLabel}
-          className={`${TOOLBAR_BUTTON_CLASS_NAME} data-[state=open]:border-foreground/10 data-[state=open]:bg-dynamic-surface/80 data-[state=open]:text-foreground`}
+          className={`${TOOLBAR_BUTTON_CLASS_NAME} data-[state=open]:border-foreground/10 data-[state=open]:bg-background/80 data-[state=open]:text-foreground`}
         >
           <Copy className="size-4" />
         </Toggle>

@@ -2,12 +2,12 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-dynamic-surface to-dynamic-muted">
-      <div className="max-w-4xl rounded-2xl bg-dynamic-background p-12 shadow-2xl">
-        <h1 className="mb-4 font-bold text-5xl text-dynamic-foreground">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-border to-border">
+      <div className="max-w-4xl rounded-2xl bg-background p-12 shadow-2xl">
+        <h1 className="mb-4 font-bold text-5xl text-foreground">
           External App Demos
         </h1>
-        <p className="mb-8 text-dynamic-muted-foreground text-lg">
+        <p className="mb-8 text-muted-foreground text-lg">
           Explore various component demonstrations and examples
         </p>
 
@@ -26,11 +26,11 @@ export default function Home() {
           </Link>
 
           {/* Placeholder for future demos */}
-          <div className="rounded-xl bg-dynamic-muted/50 p-6 opacity-50">
-            <h2 className="mb-2 font-bold text-2xl text-dynamic-muted-foreground">
+          <div className="rounded-xl bg-muted/50 p-6 opacity-50">
+            <h2 className="mb-2 font-bold text-2xl text-muted-foreground">
               More Demos
             </h2>
-            <p className="text-dynamic-muted-foreground">Coming soon...</p>
+            <p className="text-muted-foreground">Coming soon...</p>
           </div>
         </div>
       </div>

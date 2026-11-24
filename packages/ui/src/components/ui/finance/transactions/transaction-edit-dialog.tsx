@@ -871,7 +871,7 @@ export function TransactionEditDialog({
                           'workspace-finance-transactions.confidential-settings'
                         )}
                       </h3>
-                      <p className="text-dynamic-foreground/60 text-sm">
+                      <p className="text-foreground/60 text-sm">
                         {t(
                           'workspace-finance-transactions.confidential-settings-description'
                         )}

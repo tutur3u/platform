@@ -254,7 +254,7 @@ export function TaskForm({
       case 'low':
         return 'border-dynamic-blue/70 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/15';
       default:
-        return 'border-dynamic-gray/60 bg-dynamic-surface/5 text-foreground hover:bg-dynamic-surface/10';
+        return 'border-dynamic-gray/60 bg-background/5 text-foreground hover:bg-background/10';
     }
   };
 

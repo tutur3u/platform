@@ -13,7 +13,7 @@ interface ToolbarButtonProps {
 }
 
 export const TOOLBAR_BUTTON_CLASS_NAME =
-  'h-8 w-8 shrink-0 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground';
+  'h-8 w-8 shrink-0 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-background/80 data-[state=on]:text-foreground';
 
 /** A toolbar toggle with an accessible label and optional hotkey hint. */
 export function ToolbarButton({
@@ -55,5 +55,5 @@ export function ToolbarButton({
 
 /** Vertical divider between toolbar groups. */
 export function ToolbarSeparator() {
-  return <div className="mx-0.5 h-5 w-px shrink-0 bg-dynamic-border/60" />;
+  return <div className="mx-0.5 h-5 w-px shrink-0 bg-border/60" />;
 }

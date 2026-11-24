@@ -10,7 +10,7 @@ export default async function NotWhitelistedPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-dynamic-background p-6 text-dynamic-foreground">
+    <main className="flex min-h-dvh items-center justify-center bg-background p-6 text-foreground">
       <HiveAccessRequestCard email={appSession.email ?? null} />
     </main>
   );
