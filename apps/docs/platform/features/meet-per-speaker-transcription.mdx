@@ -432,8 +432,18 @@ Regression coverage:
 - `apps/meet-realtime/src/room-do-self-capture.test.ts`: "an Allow given in
   room mode needs per-speaker evidence before an open" and "a change to room
   capture needs Mira confirmed under the room notice".
-- Client coverage of the re-confirmation prompt is added with the per-speaker
-  client update.
+- Client tests (land with the per-speaker client update):
+  `packages/meet-core/src/features/meeting-ai/self-mira-fences.test.tsx` ›
+  "Mira re-confirmation after a capture mode change": "asks again under the
+  per-speaker notice after room to self, never on its own" (it also checks
+  that the recorded text hash is the hash of the plain per-speaker notice, so
+  the re-confirmation reason line is never part of the hashed text), "asks
+  again under the room notice after self to room, never on its own", "sends no
+  transcript Allow under a stale Mira on until Mira is confirmed again",
+  "never captures under an on given for the other notice" and "reads both
+  again on a stale-notice refusal and resends nothing"; and
+  `packages/meet-core/src/features/meeting-ai/meeting-ai-panel.test.tsx` ›
+  "sends no host Allow while the host’s Mira on is for the other notice".
 
 ## Release gates
 
