@@ -207,7 +207,7 @@ test('qualification passes only when every case passes', async () => {
       return {
         exitCode: 0,
         outcome: 'exited',
-        output: '5\n',
+        output: '7\n',
         files: [{ path: 'out.txt', content: 'kept\n' }],
       };
     if (source.includes('os.fork'))

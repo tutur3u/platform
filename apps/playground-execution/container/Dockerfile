@@ -30,6 +30,14 @@ ENV HOME=/tmp \
     GOTOOLCHAIN=local \
     PYTHONDONTWRITEBYTECODE=1
 
+# Compile the standard-library packages programs commonly import into a
+# cache each Run overlays at GOCACHE, so a Run links instead of building them.
+RUN GOCACHE=/usr/local/lib/playground/go-cache go build \
+        bufio bytes container/heap container/list encoding/json errors fmt \
+        math math/big math/rand os regexp slices sort strconv strings sync \
+        time unicode \
+    && find /usr/local/lib/playground/go-cache -type d -exec chown 65534:65534 {} +
+
 COPY --chmod=0444 run.py /usr/local/lib/playground/run.py
 
 WORKDIR /

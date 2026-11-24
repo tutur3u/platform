@@ -247,9 +247,19 @@ runs the write-bound case both with Landlock and under a seccomp profile
 that makes its syscalls return `ENOSYS`, asserting the fallback really ran
 and that a user namespace cannot make the mounts writable again. Without
 Landlock the program can still write to `zero`, `full` and the random
-devices (harmless) and to its own `/proc/self` tunables such as `comm` and
-`oom_score_adj`; Landlock is used only from ABI 3, the first with every
-right the rules need. The launcher then runs the same
+devices (harmless). `/proc` is read-only too: the launcher re-enters itself
+as PID 1 of the program's namespaces, mounts that namespace's `/proc`
+read-only with `nosuid`, `nodev` and `noexec`, and only then execs the
+privilege drop, so the program cannot write its own `/proc/self` tunables
+(`comm`, `oom_score_adj`, `attr`) and cannot mount a writable `/proc` from a
+user namespace. Go's standard library is compiled into the image
+(`/usr/local/lib/playground/go-cache`), and each Run gets a writable overlay of
+it at `GOCACHE` whose upper layer lives on the workspace tmpfs, so `go run`
+links instead of building the standard library, which takes longer than the
+30-second command timeout on the smallest guests. The hosted chain probe
+reports whether that overlay mounted (`gocache True`). Landlock is used only
+from ABI 3, the first with every right
+the rules need. The launcher then runs the same
 namespace and privilege-drop chain around `/bin/true`. If any stage fails,
 the Run is `sandbox_failed` before user code runs, and its output names only
 the stage (`input`, `workspace`, `devices`, `confinement`, `landlock`,

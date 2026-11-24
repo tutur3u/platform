@@ -174,10 +174,33 @@ for (const language of PLAYGROUND_LANGUAGES) {
     language,
     result.outcome === 'exited' &&
       result.exitCode === 0 &&
-      result.output.trim() === 'Hello, playground!',
+      result.output.trim() === 'Hello, playground!' &&
+      // Go links against the image's warmed build cache instead of
+      // compiling the standard library, which outlasts the Run timeout.
+      (language !== 'go' || result.seconds < 12),
     result
   );
 }
+
+// Without Landlock too, Go builds against the overlay of the image cache.
+const goWithoutLandlock = launch(
+  {
+    command: `${playgroundTemplates.go.command} && grep -c ' /tmp/go-build .* - overlay ' /proc/self/mountinfo`,
+    files: [
+      {
+        path: playgroundTemplates.go.path,
+        content: playgroundTemplates.go.content,
+      },
+    ],
+  },
+  { seccomp: noLandlock }
+);
+expect(
+  'go uses the warmed cache overlay without Landlock',
+  goWithoutLandlock.outcome === 'exited' &&
+    goWithoutLandlock.output.trim() === 'Hello, playground!\n1',
+  goWithoutLandlock
+);
 
 const identity = launch(
   python(`
@@ -263,7 +286,7 @@ expect(
 const writesJob = python(`
 import os
 denied = []
-for target in ("/etc/playground", "/usr/local/lib/playground/run.py", "/var/tmp/x", "/root/x", "/dev/shm/x"):
+for target in ("/etc/playground", "/usr/local/lib/playground/run.py", "/var/tmp/x", "/root/x", "/dev/shm/x", "/proc/self/comm", "/proc/self/oom_score_adj"):
     try:
         with open(target, "a") as handle:
             handle.write("x")
@@ -278,7 +301,7 @@ const writes = launch(writesJob);
 expect(
   'writes bounded to the workspace',
   writes.outcome === 'exited' &&
-    writes.output.trim() === '5' &&
+    writes.output.trim() === '7' &&
     writes.files.some(
       (file) => file.path === 'out.txt' && file.content === 'kept\n'
     ) &&
@@ -290,7 +313,7 @@ const writesWithoutLandlock = launch(writesJob, { seccomp: noLandlock });
 expect(
   'writes bounded to the workspace without Landlock',
   writesWithoutLandlock.outcome === 'exited' &&
-    writesWithoutLandlock.output.trim() === '5' &&
+    writesWithoutLandlock.output.trim() === '7' &&
     writesWithoutLandlock.files.some(
       (file) => file.path === 'out.txt' && file.content === 'kept\n'
     ) &&
@@ -333,6 +356,32 @@ expect(
   remount.outcome === 'exited' && remount.output.trim() === 'denied',
   remount
 );
+
+// Nor can it mount a writable /proc of its own from a new user and PID
+// namespace: the kernel refuses a proc mount less restricted than the
+// locked read-only one it already sees. "skipped" means the runner offers
+// no user namespaces, so the case proves nothing there.
+const procRemount = launch(
+  {
+    command: [
+      'if /usr/bin/unshare -U /bin/true 2>/dev/null; then',
+      '  /usr/bin/unshare -Upfm --mount-proc /bin/sh -c \'grep " /proc " /proc/self/mountinfo | grep -qv " /proc ro" && echo rwproc; echo x > /proc/self/comm 2>/dev/null && echo writable; echo mounted\' 2>/dev/null || echo refused',
+      'else echo skipped; fi',
+    ].join('\n'),
+    files: [],
+  },
+  { seccomp: noLandlock }
+);
+expect(
+  'a user namespace cannot mount a writable /proc',
+  procRemount.outcome === 'exited' &&
+    ['refused', 'mounted', 'skipped'].includes(procRemount.output.trim()),
+  procRemount
+);
+if (procRemount.output.trim() === 'skipped')
+  console.log(
+    'user namespaces unavailable; the /proc remount case was skipped'
+  );
 
 const timeout = launch(python('import time\ntime.sleep(120)\n'));
 expect(

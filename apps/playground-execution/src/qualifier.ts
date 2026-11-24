@@ -34,7 +34,8 @@ try:
     run.confine_writes()
     landlock = run.landlock_supported()
     p = subprocess.run(run.sandboxed("/bin/true", landlock=landlock), cwd=run.WORKSPACE, env=run.GUEST_ENV, preexec_fn=run.set_limits, capture_output=True, timeout=5)
-    print("landlock", landlock, p.returncode, p.stderr.decode(errors="replace"))
+    gocache = any(line.split()[4] == "/tmp/go-build" for line in open("/proc/self/mountinfo"))
+    print("landlock", landlock, "gocache", gocache, p.returncode, p.stderr.decode(errors="replace"))
 except Exception:
     traceback.print_exc()
 '
@@ -137,7 +138,7 @@ function cases(): Case[] {
       job: python(
         [
           'denied = 0',
-          'for target in ("/etc/x", "/usr/local/lib/playground/run.py", "/var/tmp/x", "/root/x", "/dev/shm/x"):',
+          'for target in ("/etc/x", "/usr/local/lib/playground/run.py", "/var/tmp/x", "/root/x", "/dev/shm/x", "/proc/self/comm", "/proc/self/oom_score_adj"):',
           '    try:',
           '        open(target, "a").write("x")',
           '    except OSError:',
@@ -148,7 +149,7 @@ function cases(): Case[] {
       ),
       pass: (r) =>
         r.outcome === 'exited' &&
-        r.output?.trim() === '5' &&
+        r.output?.trim() === '7' &&
         !!r.files?.some(
           ({ path, content }) => path === 'out.txt' && content === 'kept\n'
         ),

@@ -45,6 +45,11 @@ LANDLOCK_MIN_ABI = 3
 # The only devices the sandbox sees; Landlock-equivalent except that zero,
 # full and the random devices also accept harmless writes.
 DEVICES = ("null", "zero", "full", "random", "urandom")
+LAUNCHER_PATH = "/usr/local/lib/playground/run.py"
+# Standard-library build results compiled into the image. A cold build of
+# them takes longer than the command timeout on the smallest guests.
+GO_CACHE = Path("/usr/local/lib/playground/go-cache")
+READONLY_PROC = "--readonly-proc"
 # The workspace tmpfs stays writable; the sandbox mounts a fresh /proc.
 WRITABLE_MOUNTS = ("/tmp", "/proc")
 MAX_CHECK_FILES = 20
@@ -164,6 +169,7 @@ def stage_files(files):
     )
     WORKSPACE.mkdir(mode=0o700)
     os.chown(WORKSPACE, UID, UID)
+    mount_go_cache()
     for file in files:
         target = WORKSPACE / file["path"]
         for directory in reversed(target.parents):
@@ -176,6 +182,37 @@ def stage_files(files):
             handle.write(file["content"].encode())
         os.chown(target, UID, UID)
         target.chmod(0o600)
+
+
+def mount_go_cache():
+    """Give the program a writable overlay of the image's Go build cache.
+
+    The overlay's upper and work directories sit in a root-only directory on
+    the workspace tmpfs, so they vanish with it and the program cannot reach
+    them. Where overlay is unavailable, Go builds the standard library cold.
+    """
+    target = Path("/tmp/go-build")
+    target.mkdir(mode=0o700)
+    os.chown(target, UID, UID)
+    if not GO_CACHE.is_dir():
+        return
+    private = Path("/tmp/.go-cache")
+    private.mkdir(mode=0o700)
+    upper, work = private / "upper", private / "work"
+    upper.mkdir(mode=0o700)
+    work.mkdir(mode=0o700)
+    os.chown(upper, UID, UID)
+    # Go trims entries unused for days when trim.txt says the last trim was
+    # over a day ago; a fresh stamp keeps a Run from trimming the image cache.
+    stamp = upper / "trim.txt"
+    stamp.write_text(str(int(time.time())))
+    os.chown(stamp, UID, UID)
+    options = "lowerdir={},upperdir={},workdir={}".format(GO_CACHE, upper, work)
+    try:
+        mount(ctypes.CDLL(None, use_errno=True), "overlay", str(target),
+              MS_NOSUID | MS_NODEV, "overlay", options.encode())
+    except OSError:
+        pass
 
 
 def die_with_launcher():
@@ -307,9 +344,12 @@ def sandboxed(*command, landlock=True):
         "--landlock-rule", "path-beneath:" + WORKSPACE_RIGHTS + ":/tmp",
         "--landlock-rule", "path-beneath:write-file:/dev/null",
     ] if landlock else []
+    # The launcher re-enters itself as PID 1 of the new namespaces to mount
+    # that namespace's /proc read-only, then execs the privilege drop.
     return [
-        "/usr/bin/unshare", "--net", "--pid", "--ipc", "--uts", "--fork", "--kill-child",
-        "--mount-proc",
+        "/usr/bin/unshare", "--net", "--pid", "--ipc", "--uts", "--mount",
+        "--propagation", "private", "--fork", "--kill-child",
+        "/usr/bin/python3", "-I", "-S", "-B", LAUNCHER_PATH, READONLY_PROC,
         "/usr/bin/setpriv", "--reuid", str(UID), "--regid", str(UID), "--clear-groups",
         "--pdeathsig", "KILL",
         "--bounding-set=-all", "--inh-caps=-all", "--ambient-caps=-all", "--no-new-privs",
@@ -466,5 +506,22 @@ def main():
     }, sys.stdout, ensure_ascii=True)
 
 
+def enter_readonly_proc(command):
+    """Mount this PID namespace's /proc read-only, then exec the sandbox.
+
+    The program's own /proc/self tunables (comm, oom_score_adj, attr) are
+    then refused with EROFS, as are all other proc writes.
+    """
+    try:
+        mount(ctypes.CDLL(None, use_errno=True), "proc", "/proc",
+              MS_RDONLY | MS_NOSUID | MS_NODEV | MS_NOEXEC, "proc")
+        os.execv(command[0], command)
+    except Exception:
+        os._exit(126)
+
+
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:2] == [READONLY_PROC]:
+        enter_readonly_proc(sys.argv[2:])
+    else:
+        main()
