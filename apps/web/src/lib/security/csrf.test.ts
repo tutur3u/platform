@@ -220,18 +220,20 @@ describe('guardWebApiCsrf', () => {
     );
   });
 
-  it('trusts the workspace subdomain and the tuturuuu.com/workspace mount without Fetch Metadata', () => {
+  it('trusts the workspace and Drive subdomains and the shared origin without Fetch Metadata', () => {
     const forwarded = (origin: string) =>
       request('/api/v1/workspaces/ws/tasks', {
         cookie: SESSION_COOKIE,
         origin,
       });
 
-    expect(WEB_CSRF_TRUSTED_ORIGINS).toContain(
-      'https://workspace.tuturuuu.com'
-    );
+    expect(WEB_CSRF_TRUSTED_ORIGINS).toEqual([
+      'https://workspace.tuturuuu.com',
+      'https://drive.tuturuuu.com',
+    ]);
     for (const origin of [
       'https://workspace.tuturuuu.com',
+      'https://drive.tuturuuu.com',
       'https://tuturuuu.com',
     ]) {
       expect(
@@ -249,6 +251,9 @@ describe('guardWebApiCsrf', () => {
       'http://workspace.tuturuuu.com',
       'https://workspace.tuturuuu.com:8443',
       'https://other.tuturuuu.com',
+      'https://drive.tuturuuu.com.evil.example',
+      'http://drive.tuturuuu.com',
+      'https://drives.tuturuuu.com',
     ]) {
       expect(
         guardWebApiCsrf(
@@ -260,6 +265,34 @@ describe('guardWebApiCsrf', () => {
         )?.status
       ).toBe(403);
     }
+  });
+
+  it('accepts the exact Drive origin with same-site metadata', () => {
+    expect(
+      guardWebApiCsrf(
+        request('/api/v1/workspaces/ws/storage/objects', {
+          cookie: SESSION_COOKIE,
+          origin: 'https://drive.tuturuuu.com',
+          'sec-fetch-site': 'same-site',
+        }),
+        { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+      )
+    ).toBeNull();
+    for (const origin of [
+      'https://drive.tuturuuu.com:443',
+      'https://user@drive.tuturuuu.com',
+      'null',
+    ])
+      expect(
+        guardWebApiCsrf(
+          request('/api/v1/workspaces/ws/storage/objects', {
+            cookie: SESSION_COOKIE,
+            origin,
+            'sec-fetch-site': 'same-site',
+          }),
+          { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+        )?.status
+      ).toBe(403);
   });
 
   it('accepts an exact trusted workspace origin with same-site metadata', () => {

@@ -63,14 +63,17 @@ keep running, so abuse blocking, the cost guard and the CSRF check still apply
 to anonymous traffic.
 
 - CSRF: `guardWebApiCsrf` accepts the request origin, the configured origin and
-  `WEB_CSRF_TRUSTED_ORIGINS`, which lists only the workspace origin today
-  (`apps/web/src/lib/security/csrf.ts:38`); the `tuturuuu.com/<app>` mounts share
-  web's origin and need no entry. A `POST` `open` from a **standalone Drive
-  origin** carries that origin and is refused once `TTR_CSRF_MODE` is `enforce`,
-  so `drive.tuturuuu.com` joins `WEB_CSRF_TRUSTED_ORIGINS` **only until the 301 to
+  `WEB_CSRF_TRUSTED_ORIGINS` (`apps/web/src/lib/security/csrf.ts`), which lists
+  the workspace origin and `https://drive.tuturuuu.com`. The `tuturuuu.com/<app>`
+  mounts share web's origin and need no entry. The anonymous `POST` `open`
+  carries no session cookie, so the CSRF check admits it from any origin
+  (`no-session-cookie`); the Drive entry does not exist for it. It trusts
+  cookie-bearing Drive requests from clients that send no Fetch Metadata or send
+  `same-site`, the same grant the workspace origin has. Browsers that send
+  `same-origin` for Drive's forwarded `/api` calls pass without it.
+  `drive.tuturuuu.com` stays in the list **only until the 301 to
   `tuturuuu.com/drive` is on**, then leaves it (release-authority decision, in
-  [Sharing](/build/drive/sharing#decisions)). The request carries no session
-  cookie by then, so the check protects nothing but the origin.
+  [Sharing](/build/drive/sharing#decisions)).
 
 ### Tests
 

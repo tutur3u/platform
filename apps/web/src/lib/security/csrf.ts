@@ -37,6 +37,10 @@ export const WEB_SESSION_CLEARING_PATHS: ReadonlySet<string> = new Set([
  */
 export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
   'https://workspace.tuturuuu.com',
+  // Drive's subdomain forwards its cookie-bearing /api requests to Web while it
+  // still serves pages. It leaves this list once its navigations answer 301 to
+  // tuturuuu.com/drive (docs-internal/build/drive/sharing.mdx).
+  'https://drive.tuturuuu.com',
 ];
 
 const shouldReportCsrfFailure = createCsrfReportLimiter();
