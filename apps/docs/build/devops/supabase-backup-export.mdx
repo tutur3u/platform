@@ -65,6 +65,20 @@ the locked, private backup bucket.
     live traffic deleted. Only differences the live listing cannot explain
     (`missing`, `sizeMismatch`, `unexpected`) fail. If that read fails, every
     difference fails (`liveChecked: false`);
+  - a key whose row is still live but which did not arrive is fetched again
+    on its own with `GetObject`, at most 100 keys and 3 attempts each with
+    backoff (up to about 40 minutes in the worst case), because a sync download can fail transiently. After each failed
+    attempt it is probed with `HeadObject`: only the CLI's service-error exit
+    code with its exact 404 line means the row has no bytes in storage, an
+    orphan row no backup can hold, and the key is then counted as
+    `sourceMissing` and does not fail parity. A re-fetched file counts as
+    downloaded and must match its size. Any other outcome, a run with more
+    than 100 such keys, a bucket that was not synced (unsafe id or keys), a
+    folder key, or a run without the
+    live listing keeps the key in `missing`, which fails. The job summary says
+    when `sourceMissing` keys exist, the manifest carries the count, and the
+    encrypted report names them. Each one needs an owner decision: restore the
+    bytes or delete the row;
   - a bucket whose id is not a safe directory name, or that holds a key with a
     leading `/` or an empty, `.` or `..` segment, is **not synced**, so nothing
     can be written outside its directory. Storage parity then fails, and the

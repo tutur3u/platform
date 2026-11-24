@@ -164,6 +164,110 @@ test('compare-storage uses the optional live listing and prints no keys', () => 
   }
 });
 
+test('missing-keys writes bounded NUL records to a file and nothing to stdout', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'backup-missing-'));
+  try {
+    const report = join(dir, 'report.json');
+    const out = join(dir, 'missing.bin');
+    writeFileSync(
+      report,
+      JSON.stringify({ missing: ['workspaces/a/b c.png', 'avatars/x'] })
+    );
+    const stdout = execFileSync('node', [
+      cli,
+      'missing-keys',
+      report,
+      out,
+      '5',
+    ]).toString();
+    assert.equal(stdout, '');
+    assert.equal(
+      readFileSync(out, 'utf8'),
+      'workspaces\u0000a/b c.png\u0000avatars\u0000x\u0000'
+    );
+    let status = 0;
+    try {
+      execFileSync('node', [
+        cli,
+        'missing-keys',
+        report,
+        join(dir, 'over.bin'),
+        '1',
+      ]);
+    } catch (error) {
+      status = error.status;
+    }
+    assert.equal(status, 3);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('missing-keys accepts exactly the limit, a parse-failed report and refuses a non-numeric limit', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'backup-missing-limit-'));
+  const run = (args) => {
+    try {
+      execFileSync('node', [cli, 'missing-keys', ...args]);
+      return 0;
+    } catch (error) {
+      return error.status;
+    }
+  };
+  try {
+    const report = join(dir, 'report.json');
+    writeFileSync(report, JSON.stringify({ missing: ['a/1', 'a/2'] }));
+    assert.equal(run([report, join(dir, 'two.bin'), '2']), 0);
+    assert.equal(run([report, join(dir, 'nan.bin'), 'many']), 1);
+    writeFileSync(report, JSON.stringify({ ok: false, error: 'parse' }));
+    assert.equal(run([report, join(dir, 'none.bin'), '2']), 0);
+    assert.equal(readFileSync(join(dir, 'none.bin'), 'utf8'), '');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('classify-probe accepts only the CLI service-error exit code with the exact 404 line', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'backup-probe-'));
+  const classify = (exitCode, stderr) => {
+    const path = join(dir, 'probe.err');
+    writeFileSync(path, stderr);
+    try {
+      execFileSync('node', [cli, 'classify-probe', String(exitCode), path]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const notFound =
+    '\nAn error occurred (404) when calling the HeadObject operation: Not Found\n';
+  try {
+    assert.equal(classify(254, notFound), true);
+    assert.equal(classify(255, notFound), false);
+    assert.equal(
+      classify(
+        254,
+        'An error occurred (403) when calling the HeadObject operation: Forbidden'
+      ),
+      false
+    );
+    assert.equal(
+      classify(
+        254,
+        'An error occurred (503) when calling the HeadObject operation: Not Found upstream'
+      ),
+      false
+    );
+    assert.equal(classify(254, '<html>404 Not Found</html>'), false);
+    assert.equal(
+      classify(252, 'aws: error: argument --key: expected one argument'),
+      false
+    );
+    assert.equal(classify(254, ''), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('buildManifest hashes each file and records parity without row data', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'backup-manifest-'));
   try {

@@ -283,9 +283,65 @@ if [ "$MODE" = export ]; then
     live_query "$STORAGE_EXCLUDED_KEYS_SQL" "$PLAIN/live-excluded-keys.csv"; then
     live_args=("$PLAIN/live-keys.csv" "$PLAIN/live-excluded-keys.csv")
   fi
-  node "$HERE/backup-manifest.mjs" compare-storage "$PLAIN/storage-keys.csv" \
-    "$PLAIN/storage-excluded-keys.csv" "$PLAIN/storage" "$PLAIN/buckets.csv" \
-    "$PLAIN/storage-report.json" "${live_args[@]}" || storage_ok=$?
+  compare_storage() {
+    node "$HERE/backup-manifest.mjs" compare-storage "$PLAIN/storage-keys.csv" \
+      "$PLAIN/storage-excluded-keys.csv" "$PLAIN/storage" "$PLAIN/buckets.csv" \
+      "$PLAIN/storage-report.json" "$@"
+  }
+  # The first line is printed only if no probe re-runs the comparison, so
+  # the public log shows one verdict.
+  compare_storage "${live_args[@]}" >"$PLAIN/parity-line" || storage_ok=$?
+  # A key whose row is still live but which did not arrive is fetched again
+  # on its own, at most 100 keys and 3 attempts each with backoff, because a
+  # sync download can fail transiently. After a failed attempt the key is
+  # probed with HeadObject: only a confirmed 404 (an orphan row with no bytes
+  # in storage) stops the retries and reports it as sourceMissing instead of
+  # failing parity. Keys in a bucket that was not synced are never fetched.
+  # Any other outcome, or more than 100 keys, keeps the key failing.
+  if [ "$storage_ok" != 0 ] && [ "${#live_args[@]}" = 2 ] &&
+    node "$HERE/backup-manifest.mjs" missing-keys "$PLAIN/storage-report.json" \
+      "$PLAIN/missing-keys.bin" 100; then
+    : >"$PLAIN/source-missing.bin"
+    storage_s3() {
+      AWS_ACCESS_KEY_ID="$STORAGE_S3_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$STORAGE_S3_SECRET_ACCESS_KEY" \
+        AWS_DEFAULT_REGION="$STORAGE_S3_REGION" aws s3api "$@" --endpoint-url "$STORAGE_S3_ENDPOINT"
+    }
+    while IFS= read -r -d '' probe_bucket && IFS= read -r -d '' probe_name; do
+      if ! [[ "$probe_bucket" =~ ^[a-z0-9][a-z0-9._-]*$ ]] ||
+        grep -qxF -e "$probe_bucket" -e '*' "$PLAIN/unsafe-buckets.txt"; then
+        continue
+      fi
+      dest="$PLAIN/storage/$probe_bucket/$probe_name"
+      # A folder key, or a name that collides with a downloaded directory,
+      # cannot be fetched as a file; it stays missing.
+      [[ "$probe_name" != */ ]] && [ ! -d "$dest" ] || continue
+      for attempt in 1 2 3; do
+        mkdir -p "$(dirname -- "$dest")" 2>/dev/null || break
+        if storage_s3 get-object --bucket="$probe_bucket" --key="$probe_name" "$dest" \
+          >/dev/null 2>"$PLAIN/probe.err"; then
+          break
+        fi
+        rm -f -- "$dest" 2>/dev/null || true
+        cat "$PLAIN/probe.err" >>"$PLAIN/storage-sync.err"
+        probe_exit=0
+        storage_s3 head-object --bucket="$probe_bucket" --key="$probe_name" \
+          >/dev/null 2>"$PLAIN/probe.err" || probe_exit=$?
+        if [ "$probe_exit" != 0 ] &&
+          node "$HERE/backup-manifest.mjs" classify-probe "$probe_exit" "$PLAIN/probe.err"; then
+          printf '%s\0%s\0' "$probe_bucket" "$probe_name" >>"$PLAIN/source-missing.bin"
+          break
+        fi
+        [ "$attempt" = 3 ] || sleep $((attempt * attempt * 5))
+      done
+    done <"$PLAIN/missing-keys.bin"
+    rm -f "$PLAIN/missing-keys.bin" "$PLAIN/probe.err"
+    # Re-run the comparison: re-fetched files now count as downloaded.
+    storage_ok=0
+    source_args=()
+    [ -s "$PLAIN/source-missing.bin" ] && source_args=("$PLAIN/source-missing.bin")
+    compare_storage "${live_args[@]}" "${source_args[@]}" >"$PLAIN/parity-line" || storage_ok=$?
+  fi
+  cat "$PLAIN/parity-line"
   [ "${storage_skipped:-0}" = 0 ] || storage_ok=1
   # Stream the archive straight into age so no plaintext tar is written.
   { tar -C "$PLAIN" -cf - storage | age "${RECIPIENT_ARGS[@]}" -o "$OUT/storage.tar.age"; } \
@@ -367,6 +423,9 @@ MANIFEST_SHA="$(sha256sum "$OUT/manifest.json" | cut -d' ' -f1)"
   if [ "$MODE" = export ]; then
     echo "- row-count parity: $([ "$parity_ok" = 0 ] && echo ok || echo FAILED)"
     echo "- storage parity: $([ "$storage_ok" = 0 ] && echo ok || echo FAILED)"
+    if [ -s "$PLAIN/source-missing.bin" ]; then
+      echo "- storage: some rows have no source bytes (sourceMissing); counts are in the manifest"
+    fi
   fi
 } >>"${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 

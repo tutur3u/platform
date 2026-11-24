@@ -135,6 +135,19 @@ export function parseExcludedKeys(text) {
   return keys;
 }
 
+// NUL-separated `bucket\0name\0` records, as written by `missing-keys`.
+export function parseKeyRecords(text) {
+  const parts = text.split('\u0000');
+  const keys = new Set();
+  for (let i = 0; i + 1 < parts.length; i += 2) {
+    if (!BUCKET.test(parts[i]) || parts[i + 1] === '') {
+      throw new Error('Malformed key record.');
+    }
+    keys.add(keyOf(parts[i], parts[i + 1]));
+  }
+  return keys;
+}
+
 // Every file under <root>/<bucket>/, keyed by its path inside the bucket.
 export function listDownloads(root, buckets) {
   const files = new Map();
@@ -183,9 +196,20 @@ export const STORAGE_CATEGORIES = [
   'deletedSinceSnapshot',
   'changedSinceSnapshot',
   'createdSinceSnapshot',
+  'sourceMissing',
 ];
 
-export function compareStorageKeys(expected, excluded, downloaded, live) {
+// `sourceMissing` holds keys the job probed after the copy and the storage
+// backend answered 404 for: the row exists but the source has no bytes, so
+// no backup can hold them. They are counted, not hidden, and do not fail
+// parity; any other missing key does. It applies only with `live`.
+export function compareStorageKeys(
+  expected,
+  excluded,
+  downloaded,
+  live,
+  sourceMissing = new Set()
+) {
   const unsafe = [...expected.keys(), ...excluded].filter((key) =>
     isUnsafeKey(key.split('\u0000')[1])
   );
@@ -197,10 +221,13 @@ export function compareStorageKeys(expected, excluded, downloaded, live) {
   const deletedSinceSnapshot = [];
   const changedSinceSnapshot = [];
   const createdSinceSnapshot = [];
+  const sourceMissingKeys = [];
   for (const [key, size] of expected) {
     if (!downloaded.has(key)) {
       if (live !== undefined && !liveHas(key)) deletedSinceSnapshot.push(key);
-      else missing.push(key);
+      else if (live !== undefined && sourceMissing.has(key)) {
+        sourceMissingKeys.push(key);
+      } else missing.push(key);
     } else if (downloaded.get(key) !== size) {
       if (live?.keys.get(key) === downloaded.get(key)) {
         changedSinceSnapshot.push(key);
@@ -222,6 +249,7 @@ export function compareStorageKeys(expected, excluded, downloaded, live) {
     deletedSinceSnapshot,
     changedSinceSnapshot,
     createdSinceSnapshot,
+    sourceMissing: sourceMissingKeys,
   };
   const counts = {};
   // A Map, so a bucket id such as `constructor` is an ordinary key.

@@ -12,6 +12,7 @@ import {
   parseCsv,
   parseExcludedKeys,
   parseExpectedKeys,
+  parseKeyRecords,
   parseTable,
 } from './storage-parity.mjs';
 
@@ -83,6 +84,94 @@ test('compareStorageKeys fails on missing, resized or unexpected files', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('a probed 404 is sourceMissing only while its row is live, and other missing keys still fail', () => {
+  const root = fixture();
+  try {
+    const snapshot = parseExpectedKeys(
+      `${expectedCsv}workspaces,orphan.png,7\nworkspaces,lost.png,4\n`
+    );
+    const live = {
+      keys: parseExpectedKeys(
+        `${expectedCsv}workspaces,orphan.png,7\nworkspaces,lost.png,4\n`
+      ),
+      excluded: parseExcludedKeys('bucket,name\n'),
+    };
+    const probed = parseKeyRecords('workspaces\u0000orphan.png\u0000');
+    const failing = compareStorageKeys(
+      snapshot,
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces']),
+      live,
+      probed
+    );
+    assert.equal(failing.ok, false);
+    assert.deepEqual(failing.sourceMissing, ['workspaces/orphan.png']);
+    assert.deepEqual(failing.missing, ['workspaces/lost.png']);
+    assert.equal(failing.counts.sourceMissing, 1);
+
+    const passing = compareStorageKeys(
+      parseExpectedKeys(`${expectedCsv}workspaces,orphan.png,7\n`),
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces']),
+      live,
+      probed
+    );
+    assert.equal(passing.ok, true);
+    assert.deepEqual(passing.byBucket, { workspaces: { sourceMissing: 1 } });
+
+    // Without the live listing a probe result is ignored: strict parity.
+    const strict = compareStorageKeys(
+      parseExpectedKeys(`${expectedCsv}workspaces,orphan.png,7\n`),
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces']),
+      undefined,
+      probed
+    );
+    assert.equal(strict.ok, false);
+    assert.deepEqual(strict.missing, ['workspaces/orphan.png']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('sourceMissing never masks other failures, deletions or downloaded keys', () => {
+  const root = fixture();
+  try {
+    writeFileSync(join(root, 'avatars', 'stray.bin'), 'x');
+    const probed = parseKeyRecords(
+      'workspaces\u0000orphan.png\u0000workspaces\u0000gone.png\u0000avatars\u0000u1/a.webp\u0000'
+    );
+    const report = compareStorageKeys(
+      parseExpectedKeys(
+        `${expectedCsv}workspaces,orphan.png,7\nworkspaces,gone.png,2\n`
+      ),
+      parseExcludedKeys('bucket,name\n'),
+      listDownloads(root, ['avatars', 'workspaces']),
+      {
+        // gone.png is no longer live; a.webp was downloaded.
+        keys: parseExpectedKeys(`${expectedCsv}workspaces,orphan.png,7\n`),
+        excluded: parseExcludedKeys('bucket,name\n'),
+      },
+      probed
+    );
+    assert.equal(report.ok, false, 'the unexpected stray file still fails');
+    assert.deepEqual(report.unexpected, ['avatars/stray.bin']);
+    assert.deepEqual(report.sourceMissing, ['workspaces/orphan.png']);
+    assert.deepEqual(report.deletedSinceSnapshot, ['workspaces/gone.png']);
+    assert.equal(report.counts.missing, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('parseKeyRecords reads NUL records and rejects malformed ones', () => {
+  const keys = parseKeyRecords('a\u0000x/y z.png\u0000b\u0000n,1\u0000');
+  assert.equal(keys.size, 2);
+  assert.throws(() => parseKeyRecords('Bad Bucket\u0000x\u0000'), /Malformed/);
+  assert.throws(() => parseKeyRecords('a\u0000\u0000'), /Malformed/);
+  assert.equal(parseKeyRecords('').size, 0);
 });
 
 test('the live listing explains keys moved after the snapshot', () => {

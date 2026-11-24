@@ -14,6 +14,7 @@ import {
   exportDiskBytes,
   findUnsafeBuckets,
   listDownloads,
+  parseKeyRecords,
   STORAGE_CATEGORIES,
   parseExcludedKeys,
   parseExpectedKeys,
@@ -111,6 +112,8 @@ export async function buildManifest({
 }
 
 const BUCKET_ID = /^[a-z0-9][a-z0-9._-]*$/;
+export const HEAD_404 =
+  'An error occurred (404) when calling the HeadObject operation: Not Found';
 const isCount = (value) => Number.isSafeInteger(value) && value >= 0;
 
 function categoryCounts(source) {
@@ -202,6 +205,7 @@ async function main(argv) {
       reportPath,
       liveKeysPath,
       liveExcludedPath,
+      sourceMissingPath,
     ] = args;
     return guarded(reportPath, 'Storage parity', () => {
       const buckets = parseTable(readFileSync(bucketsPath, 'utf8'), ['id']).map(
@@ -220,9 +224,49 @@ async function main(argv) {
         parseExpectedKeys(readFileSync(expectedPath, 'utf8')),
         parseExcludedKeys(readFileSync(excludedPath, 'utf8')),
         listDownloads(root, buckets),
-        live
+        live,
+        sourceMissingPath
+          ? parseKeyRecords(readFileSync(sourceMissingPath, 'utf8'))
+          : undefined
       );
     });
+  }
+  if (command === 'missing-keys') {
+    // Writes the report's missing keys as NUL-separated records to a file,
+    // never to stdout. More than `limit` keys writes nothing and exits 3,
+    // so the probe stays bounded.
+    const [reportPath, outPath, limit = '100'] = args;
+    if (!/^\d+$/.test(limit)) return 1;
+    try {
+      const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+      const missing = Array.isArray(report.missing) ? report.missing : [];
+      if (missing.length > Number(limit)) return 3;
+      writeFileSync(
+        outPath,
+        missing
+          .map((key) => {
+            const slash = key.indexOf('/');
+            return `${key.slice(0, slash)}\u0000${key.slice(slash + 1)}\u0000`;
+          })
+          .join('')
+      );
+      return 0;
+    } catch {
+      return 1;
+    }
+  }
+  if (command === 'classify-probe') {
+    // Exit 0 only for a HeadObject 404: the aws CLI service-error exit code
+    // (254) and its exact 404 line. Anything else is not proof of absence.
+    const [exitCode, stderrPath] = args;
+    try {
+      const lines = readFileSync(stderrPath, 'utf8')
+        .split('\n')
+        .map((line) => line.trim());
+      return exitCode === '254' && lines.includes(HEAD_404) ? 0 : 1;
+    } catch {
+      return 1;
+    }
   }
   if (command === 'unsafe-buckets') {
     // Writes bucket ids (one per line) to a file, never to stdout.
