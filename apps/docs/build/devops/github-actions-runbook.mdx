@@ -190,7 +190,11 @@ settings and filesystem-layer content under the
 Registry pulls additionally require the pinned registry manifest reference.
 [Docker save/load does not guarantee preserved registry references](https://github.com/moby/moby/issues/43570),
 so archive verification uses the content identity instead of relying on tag
-presence or restored `RepoDigests`. Ordinary non-catalog consumers retain their
+presence or restored `RepoDigests`. The local image `Id` must be one of the
+pinned digests: the config under the classic image store, or, under the
+containerd image store (Docker 29 on the `ubuntu-26.04` runner images), the
+pinned index for a tag pull or the pinned amd64 manifest for a pull by platform
+digest. Ordinary non-catalog consumers retain their
 existing cache behavior. Hosted restore acceptance is separate from static tests.
 
 ## Frozen workflow installs

@@ -173,6 +173,26 @@ test('the containerd image store layout is accepted when bound to the pinned ind
   );
 });
 
+test('a pull by the pinned amd64 manifest digest is accepted under the containerd image store', () => {
+  // Docker 29 with the containerd snapshotter reports the pulled platform
+  // manifest digest as Id after `docker pull --platform linux/amd64 repo@<amd64>`.
+  for (const image of images) {
+    const pin = catalogPin(catalog, image);
+    const reference = digestReference(image, pin);
+    assert.doesNotThrow(() =>
+      verifyPinned(reference, pin, {
+        deadline: 100,
+        now: () => 0,
+        spawn: () =>
+          containerdInspect(image, {
+            Id: pin.amd64,
+            RepoDigests: [reference],
+          }),
+      })
+    );
+  }
+});
+
 test('index-bound content is refused for a wrong id, index, platform or reference', () => {
   const image = images[0];
   const pin = catalogPin(catalog, image);

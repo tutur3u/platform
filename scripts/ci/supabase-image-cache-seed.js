@@ -58,12 +58,14 @@ function verifyPinnedContent(
   if (result.status !== 0) throw new Error('Seed image inspection failed');
   const [local] = JSON.parse(result.stdout);
   // The config digest binds runtime settings and uncompressed filesystem layers.
-  // The classic image store reports it as Id; the containerd image store reports
-  // the pinned index digest, which is content-addressed over the same config.
+  // The classic image store reports it as Id. The containerd image store
+  // reports the digest of the descriptor that was pulled: the pinned index for
+  // a tag pull, or the pinned amd64 manifest for a pull by platform digest.
+  // Both are content-addressed over the same config.
   if (
     local?.Os !== 'linux' ||
     local?.Architecture !== 'amd64' ||
-    ![pin.config, pin.index].filter(Boolean).includes(local?.Id)
+    ![pin.config, pin.index, pin.amd64].filter(Boolean).includes(local?.Id)
   )
     throw new Error('Seed platform digest mismatch');
   return local;
