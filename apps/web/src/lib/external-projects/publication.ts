@@ -197,7 +197,7 @@ async function publishAtomically(
 
   if (result.error)
     throw new PublicationDatabaseError('atomic publish', result.error);
-  return { ...result.data, excludedAssets };
+  return { ...(result.data as ExternalProjectEntry), excludedAssets };
 }
 
 export async function recordEntryPublication(

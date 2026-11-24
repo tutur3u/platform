@@ -19,7 +19,11 @@ import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 
 export interface ContactsEnvironment {
   ASSETS: AssetsBinding;
-  ABUSE_GUARD?: import('@tuturuuu/utils/abuse-guard/client').AbuseGuardBinding;
+  // Emitted binding types describe the guard service by its fetch surface;
+  // configureContactsAbuseGuard calls it through its RPC API.
+  ABUSE_GUARD?:
+    | import('@tuturuuu/utils/abuse-guard/client').AbuseGuardBinding
+    | { fetch(...args: never[]): Promise<unknown>; run?: never };
   ABUSE_GUARD_KEY_PEPPER?: string;
   ABUSE_GUARD_FAMILIES?: string;
   ABUSE_GUARD_TIMEOUT_MS?: string;

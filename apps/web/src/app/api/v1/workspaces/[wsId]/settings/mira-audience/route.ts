@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
@@ -20,7 +21,7 @@ async function access(req: Request, params: Params['params']) {
   return resolveWorkspaceRouteAccess(req, wsId, ['manage_workspace_settings']);
 }
 
-type AdminClient = Awaited<ReturnType<typeof createAdminClient>>;
+type AdminClient = TypedSupabaseClient;
 
 async function readOwner(db: AdminClient, wsId: string) {
   const { data, error } = await db
