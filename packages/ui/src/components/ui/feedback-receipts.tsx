@@ -6,6 +6,7 @@ import {
   SettingsSection,
   SettingsSectionMessage,
 } from './custom/settings-section';
+import { LoadingRegion, SkeletonList } from './skeleton';
 import type {
   FeedbackReceipt,
   ReportProblemDialogProps,
@@ -54,11 +55,9 @@ export function FeedbackReceipts({
   if (isLoading) {
     return (
       <SettingsSection surface="card">
-        <SettingsSectionMessage
-          icon={<MessageSquareWarning className="size-4 shrink-0" />}
-        >
-          {t('feedback-dialog-history-loading')}
-        </SettingsSectionMessage>
+        <LoadingRegion srLabel={t('feedback-dialog-history-loading')}>
+          <SkeletonList rows={3} withAvatar={false} withSubtitle />
+        </LoadingRegion>
       </SettingsSection>
     );
   }
