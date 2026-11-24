@@ -411,6 +411,12 @@ test('an Allow given in room mode needs per-speaker evidence before an open', as
     await serviceCall(f.room, alice, { action: 'mira.room.read' })
   ).json()) as { noticeMode: string; noticeStale: boolean };
   assert.deepEqual(stale, { ...stale, noticeMode: 'self', noticeStale: true });
+  // An Allow sent before re-confirming is refused and costs no choice token,
+  // so the open below is never rate limited.
+  assert.equal(
+    (await serviceCall(f.room, alice, transcriptChoice('allow'))).status,
+    409
+  );
   // An on under the room notice is refused in the same turn now.
   assert.equal(
     (await serviceCall(f.room, alice, { ...miraOnChoice, noticeMode: 'room' }))

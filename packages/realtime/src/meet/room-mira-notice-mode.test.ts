@@ -178,3 +178,46 @@ describe('a change from per-speaker mode to room capture', () => {
     expect(view(state)).toMatchObject({ noticeStale: false });
   });
 });
+
+describe('re-confirming after a mode change', () => {
+  it('a refused Allow costs no choice token', () => {
+    let state = ok(choose(room(), 'on'));
+    state = miraOn(state, host, T);
+    state = ok(svc(state, alice, transcriptChoice('allow'), T));
+    state = ok(svc(mode(state, 'self'), host, session(sessionId, true), T));
+    const refused = begin(state, alice, T);
+    expect(refused.body).toMatchObject({ reason: 'notice_required' });
+    const before = refused.state.selfCapture?.buckets;
+    const early = svc(refused.state, alice, transcriptChoice('allow'), T);
+    expect(early.status).toBe(409);
+    expect(early.state.selfCapture?.buckets).toEqual(before);
+    state = ok(choose(early.state, 'on', 'self'));
+    state = ok(svc(state, alice, transcriptChoice('allow'), T));
+    expect(begin(state, alice, T).body).toMatchObject({ allowed: true });
+  });
+});
+
+describe('switching the mode back', () => {
+  it('makes an earlier on under the room notice valid again', () => {
+    let state = room();
+    for (const id of [host, alice]) {
+      state = miraOn(state, id, T);
+      state = ok(svc(state, id, transcriptChoice('allow'), T));
+    }
+    expect(fence(state)).toMatchObject({ ready: true });
+    state = mode(mode(state, 'self'), 'room');
+    expect(fence(state)).toMatchObject({ ready: true });
+    expect(view(state)).toMatchObject({ noticeStale: false });
+  });
+
+  it('makes an earlier on under the per-speaker notice valid again', () => {
+    let state = mode(room(), 'self');
+    state = miraOn(state, host, T);
+    state = miraOn(state, alice, T);
+    state = ok(svc(state, alice, transcriptChoice('allow'), T));
+    state = mode(mode(state, 'room'), 'self');
+    expect(view(state)).toMatchObject({ noticeStale: false });
+    state = ok(svc(state, host, session(sessionId, true), T));
+    expect(begin(state, alice, T).body).toMatchObject({ allowed: true });
+  });
+});

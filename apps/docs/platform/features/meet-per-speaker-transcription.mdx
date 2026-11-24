@@ -405,15 +405,18 @@ the capture mode between room capture and per-speaker capture.
 - The room refuses, in the same turn, a Mira on given under a notice other than
   the room's current mode (`MIRA_ROOM_NOTICE_MODE_STALE`). Turning Mira off is
   never refused.
-- Affected surfaces: the Mira notice and consent popover, which asks the
-  person to confirm again (`noticeStale` in the room Mira view); per-speaker
-  stream open (`/self/open`), which answers `notice_required` until the person
-  confirms; and room capture, which counts the person as undecided, so the
-  transcript pauses for everyone until they confirm under the room notice. A
-  new transcript Allow also waits for Mira on under the current notice.
+- Affected surfaces: per-speaker stream open (`/self/open`), which answers
+  `notice_required` until the person confirms; room capture, which counts the
+  person as undecided, so the transcript pauses for everyone until they confirm
+  under the room notice; and a new transcript Allow, which waits for Mira on
+  under the current notice (`MIRA_ROOM_NOTICE_MODE_STALE`). The room Mira view
+  reports `noticeMode` and `noticeStale`; the prompt that asks the person to
+  confirm again ships with the per-speaker client update.
 - Exceptions: room Mira chat is not affected and keeps counting the earlier on.
   Nothing already recorded is rewritten at the mode change; the stale state is
-  derived from the stored notice mode.
+  derived from the stored notice mode. Switching the mode back makes an earlier
+  on given under that mode's notice valid again without a new confirmation, in
+  both directions, because that on was given under the notice now in force.
 
 Regression coverage:
 
@@ -421,13 +424,16 @@ Regression coverage:
   of a Mira choice" (refuses an on given under the other mode in the same turn;
   never refuses off), "a change from room capture to per-speaker mode" (needs
   Mira confirmed again under the per-speaker notice; a repeated on under the
-  same notice changes nothing) and "a change from per-speaker mode to room
-  capture" (pauses room capture until Mira is confirmed under the room notice).
+  same notice changes nothing), "a change from per-speaker mode to room
+  capture" (pauses room capture until Mira is confirmed under the room notice),
+  "re-confirming after a mode change" (a refused Allow costs no choice token)
+  and "switching the mode back" (makes an earlier on under the room notice, or
+  under the per-speaker notice, valid again).
 - `apps/meet-realtime/src/room-do-self-capture.test.ts`: "an Allow given in
   room mode needs per-speaker evidence before an open" and "a change to room
   capture needs Mira confirmed under the room notice".
-- Client coverage of the re-confirmation prompt lives with the Meet call client
-  tests in `packages/meet-core`.
+- Client coverage of the re-confirmation prompt is added with the per-speaker
+  client update.
 
 ## Release gates
 

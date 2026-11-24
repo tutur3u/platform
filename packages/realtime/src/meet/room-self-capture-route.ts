@@ -99,7 +99,23 @@ export function routeSelfCapture<R extends Result>(
   if (handled) return handled;
   const prepared = prepareSelfCaptureChoice(state, token, input, now);
   if (prepared && 'status' in prepared && prepared.status) return prepared;
-  const result = next(prepared?.state ?? state);
+  const ran = next(prepared?.state ?? state);
+  // Only an accepted Allow spends the open/choice token. A refusal after the
+  // token was taken (for example Mira on under another notice) keeps the
+  // caller's bucket, so re-confirming never runs into the limit.
+  const result =
+    prepared && ran.status && ran.state.selfCapture
+      ? {
+          ...ran,
+          state: {
+            ...ran.state,
+            selfCapture: {
+              ...ran.state.selfCapture,
+              buckets: state.selfCapture?.buckets,
+            },
+          },
+        }
+      : ran;
   const notice = prepared && 'notice' in prepared ? prepared.notice : undefined;
   const stored =
     notice && !result.status && result.state.selfCapture
