@@ -333,6 +333,11 @@
   --pink: #7d1a50;
   --teal: #0c4d46;
   --gray: #3d383f;
+  --cyan: #08454d;
+  --sky: #0f3f63;
+  --lime: #2f4705;
+  --indigo: #2b2275;
+  --rose: #7a1630;
 }
 
 :root[data-ui="sorbet"][data-sorbet-preset="high-contrast"].dark,
@@ -357,6 +362,11 @@
   --pink: #ffcfe5;
   --teal: #b6efe6;
   --gray: #e0dae1;
+  --cyan: #bdeff7;
+  --sky: #cde7ff;
+  --lime: #e0f3bd;
+  --indigo: #dcdaff;
+  --rose: #ffd0db;
 }
 
 /* High Contrast: solid borders, no soft shadows, a wider focus ring. */

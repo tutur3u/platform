@@ -247,6 +247,34 @@
       }
     }
   },
+  "webHues": {
+    "note": "Inks for the web dynamic hues outside the nine Sorbet hues. Each --light-<hue> follows its ink under Sorbet. Text on Sorbet grounds is 4.5:1, and 7:1 under High Contrast.",
+    "cyan": {
+      "light": "#0f6470",
+      "dark": "#8edcea",
+      "highContrast": { "light": "#08454d", "dark": "#bdeff7" }
+    },
+    "sky": {
+      "light": "#1d5f8f",
+      "dark": "#a6d6ff",
+      "highContrast": { "light": "#0f3f63", "dark": "#cde7ff" }
+    },
+    "lime": {
+      "light": "#4a6b0d",
+      "dark": "#c8e88f",
+      "highContrast": { "light": "#2f4705", "dark": "#e0f3bd" }
+    },
+    "indigo": {
+      "light": "#4338a8",
+      "dark": "#c3c0ff",
+      "highContrast": { "light": "#2b2275", "dark": "#dcdaff" }
+    },
+    "rose": {
+      "light": "#a32444",
+      "dark": "#ffb3c4",
+      "highContrast": { "light": "#7a1630", "dark": "#ffd0db" }
+    }
+  },
   "type": {
     "families": {
       "sans": ["Nunito", "Noto Sans", "ui-rounded", "system-ui", "sans-serif"],

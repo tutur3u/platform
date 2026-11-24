@@ -59,6 +59,31 @@
   --teal: #17675e;
   --gray: #5a535c;
 
+  /*
+    The remaining web hues get Sorbet inks too, and every --light-<hue> (text,
+    rings and borders on calendar pastels) follows its ink, so no hue falls
+    back to the classic palette. sorbet-web-hues.test.ts checks the ratios.
+  */
+  --cyan: #0f6470;
+  --sky: #1d5f8f;
+  --lime: #4a6b0d;
+  --indigo: #4338a8;
+  --rose: #a32444;
+  --light-blue: var(--blue);
+  --light-cyan: var(--cyan);
+  --light-gray: var(--gray);
+  --light-green: var(--green);
+  --light-indigo: var(--indigo);
+  --light-lime: var(--lime);
+  --light-orange: var(--orange);
+  --light-pink: var(--pink);
+  --light-purple: var(--purple);
+  --light-red: var(--red);
+  --light-rose: var(--rose);
+  --light-sky: var(--sky);
+  --light-teal: var(--teal);
+  --light-yellow: var(--yellow);
+
   --calendar-bg-blue: #dce7ff;
   --calendar-bg-red: #ffdddb;
   --calendar-bg-green: #dcf3d6;
@@ -159,6 +184,11 @@
   --pink: #ffb4d6;
   --teal: #93e0d5;
   --gray: #c9c0ca;
+  --cyan: #8edcea;
+  --sky: #a6d6ff;
+  --lime: #c8e88f;
+  --indigo: #c3c0ff;
+  --rose: #ffb3c4;
 
   --calendar-bg-blue: #22304f;
   --calendar-bg-red: #432121;
