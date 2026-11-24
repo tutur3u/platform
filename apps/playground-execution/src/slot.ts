@@ -17,6 +17,10 @@ import {
   type RunIdentity,
 } from './protocol';
 
+// True once this Worker isolate has started a guest, so the first Run after a
+// cold isolate can be told apart in the guest timing logs.
+let isolateServed = false;
+
 const ASSIGNMENT = 'assignment';
 const SEALED_INPUT = 'stdin';
 
@@ -153,13 +157,33 @@ export class PlaygroundSlot extends DurableObject<Env> {
       const input = await this.source(assigned, stop.signal);
       if (!(await coordinator(this.env).mayExecute(claim))) return;
       if (stop.signal.aborted || !this.ctx.container) return;
-      result = await runInFreshContainer(
-        this.ctx.container,
-        input,
-        claim.deadline,
-        stop.signal,
-        () => coordinator(this.env).mayExecute(claim)
-      );
+      const guestStarted = Date.now();
+      const firstInIsolate = !isolateServed;
+      isolateServed = true;
+      try {
+        result = await runInFreshContainer(
+          this.ctx.container,
+          input,
+          claim.deadline,
+          stop.signal,
+          () => coordinator(this.env).mayExecute(claim)
+        );
+      } finally {
+        // Always logged, so a guest that never finishes (the deadline, a Stop or
+        // a launcher fault) is visible. Timing and outcome only: no user,
+        // project, file, command or output.
+        console.info(
+          JSON.stringify({
+            event: 'playground.run.guest',
+            runId: claim.run_id,
+            slot: claim.slot,
+            guestMs: Date.now() - guestStarted,
+            outcome:
+              result?.outcome ?? (stop.signal.aborted ? 'stopped' : 'error'),
+            firstInIsolate,
+          })
+        );
+      }
       // A fixture template has no saved project to write back to.
       if (
         result.outcome === 'exited' &&

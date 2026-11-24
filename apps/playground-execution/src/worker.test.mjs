@@ -198,3 +198,45 @@ test('a pause stays draining until every check guest confirms it stopped', async
     assert.deepEqual(await response.json(), state);
   }
 });
+
+test('an accepted Run logs only its runId and colo', async () => {
+  const fx = env();
+  const runId = '4e5f6071-8293-4a41-9cde-3f4a5b6c7d8e';
+  fx.env.PLAYGROUND_COORDINATOR.getByName = () => ({
+    enqueue: async () => ({ kind: 'accepted', runId, startedAt: 9 }),
+  });
+  const secret = 'ticket-user-content-'.repeat(4);
+  const request = new Request('https://execution.example/run', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${SECRET}` },
+    body: JSON.stringify({
+      ownerId: '5f607182-9304-4b52-8def-4a5b6c7d8e9f',
+      projectId: '60718293-0415-4c63-9e0f-5b6c7d8e9fa0',
+      meetingId: MEETING,
+      requester: body.requester,
+      requestId: body.requestId,
+      revision: 1,
+      stdin: 'secret stdin',
+      sourceTicket: secret,
+      exportTicket: secret,
+    }),
+  });
+  Object.defineProperty(request, 'cf', { value: { colo: 'SIN' } });
+  const lines = [];
+  const original = console.info;
+  console.info = (line) => lines.push(line);
+  try {
+    const response = await worker.fetch(request, fx.env);
+    assert.equal(response.status, 202);
+  } finally {
+    console.info = original;
+  }
+  assert.equal(lines.length, 1);
+  assert.deepEqual(JSON.parse(lines[0]), {
+    event: 'playground.run.accepted',
+    runId,
+    colo: 'SIN',
+  });
+  assert.equal(lines[0].includes('secret stdin'), false);
+  assert.equal(lines[0].includes(secret), false);
+});

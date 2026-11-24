@@ -155,6 +155,79 @@ const claim = (runId = 'run-1') => ({
 const identity = { ownerId: OWNER, projectId: PROJECT, meetingId: MEETING };
 const tickets = ['s'.repeat(64), 'e'.repeat(64)];
 
+// Keep first: the cold-isolate flag is module state, set by the first guest.
+async function guestLogs(t, runId) {
+  const fx = setup(t);
+  const lines = [];
+  const original = console.info;
+  console.info = (line) => lines.push(JSON.parse(line));
+  t.after(() => {
+    console.info = original;
+  });
+  const slot = fx.slot();
+  await slot.assign(claim(runId), identity, 3, ...tickets, 'private stdin');
+  await slot.alarm();
+  console.info = original;
+  return lines;
+}
+
+test('a Run logs its guest timing and whether the isolate was cold', async (t) => {
+  // This is the first guest this isolate starts.
+  const [first] = await guestLogs(t, 'run-first');
+  assert.deepEqual(Object.keys(first).sort(), [
+    'event',
+    'firstInIsolate',
+    'guestMs',
+    'outcome',
+    'runId',
+    'slot',
+  ]);
+  assert.equal(first.event, 'playground.run.guest');
+  assert.equal(first.runId, 'run-first');
+  assert.equal(first.slot, 0);
+  assert.equal(first.outcome, 'exited');
+  assert.equal(first.firstInIsolate, true);
+  assert.equal(Number.isInteger(first.guestMs) && first.guestMs >= 0, true);
+  // Nothing from the project, command, input or output is logged.
+  assert.equal(JSON.stringify(first).includes('private stdin'), false);
+
+  const [later] = await guestLogs(t, 'run-later');
+  assert.equal(later.firstInIsolate, false);
+});
+
+test('a guest that fails still logs its timing with an error outcome', async (t) => {
+  const fx = setup(t);
+  fx.guest.container.exec = async () => {
+    throw new Error('launcher fault with private stdin');
+  };
+  const lines = [];
+  const warnings = [];
+  const original = console.info;
+  const warn = console.warn;
+  console.info = (line) => lines.push(JSON.parse(line));
+  console.warn = (...args) => warnings.push(args.join(' '));
+  t.after(() => {
+    console.info = original;
+    console.warn = warn;
+  });
+  const slot = fx.slot();
+  await slot.assign(
+    claim('run-fault'),
+    identity,
+    3,
+    ...tickets,
+    'private stdin'
+  );
+  await slot.alarm();
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0].event, 'playground.run.guest');
+  assert.equal(lines[0].runId, 'run-fault');
+  assert.equal(lines[0].outcome, 'error');
+  assert.equal(typeof lines[0].firstInIsolate, 'boolean');
+  assert.equal(JSON.stringify(lines[0]).includes('private'), false);
+  assert.equal(warnings.join('\n').includes('private'), false);
+});
+
 test('a normal Run makes one source fetch, one guest start, one command and one completion', async (t) => {
   const fx = setup(t);
   const slot = fx.slot();

@@ -81,6 +81,12 @@ export default defineConfig({
     // every route still requires its bearer secret.
     workersDev: staging,
     previewUrls: false,
+    // Worker logs carry only the runId, colo and guest timing events; the
+    // per-invocation request log is off to keep the volume and cost bounded.
+    observability: {
+      enabled: true,
+      logs: { enabled: true, invocationLogs: false },
+    },
     ...(ingress ? { domains: [ingress] } : {}),
     env: {
       PLAYGROUND_COORDINATOR: bindings.durableObject({

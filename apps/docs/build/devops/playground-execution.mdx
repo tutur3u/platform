@@ -339,6 +339,57 @@ project file still exists but cannot be saved, or the workspace exceeds the
 inventory or size limits, nothing is exported and the Run keeps its output.
 An export problem never replaces the program's output.
 
+## Logs and first-Run telemetry
+
+The Worker has Worker logs on and per-invocation request logs off, so the
+volume stays bounded. Two events carry only identifiers, an outcome and
+timings. No user, project, file, command, input or output value is ever logged.
+
+| Event | Where | Fields |
+| --- | --- | --- |
+| `playground.run.accepted` | `/run`, on admission | `runId`, `colo` |
+| `playground.run.guest` | the slot, once per guest attempt | `runId`, `slot`, `guestMs`, `outcome`, `firstInIsolate` |
+
+- `colo` is the Cloudflare data centre that took the `/run` request. `/run` is
+  a server-to-server call from Web or Meet, so this is the data centre nearest
+  that caller's egress, not the participant and not where the slot or container
+  runs.
+- `guestMs` runs from the guest start through teardown. It includes setting the
+  inactivity timeout, the coordinator's execution check, reading and parsing the
+  output and destroying the container. It excludes the source fetch and any
+  isolate start-up before it.
+- `outcome` is the guest's `exited`, `timeout`, `output_limit` or
+  `sandbox_failed`. When the guest produced no result it is `stopped` (a Stop
+  arrived) or `error` (the Worker deadline, a launcher fault, a malformed
+  response, a refusal while the guest is starting or an unconfirmed teardown).
+- `firstInIsolate` is true for the first guest this Worker isolate starts, as a
+  rough proxy for a cold start. Every Run still starts a fresh container.
+
+Join the two events on `runId` to compare `guestMs` for first and later Runs
+against the first-Run latency users see. A Run that stops before a guest
+attempt (source fetch, claim, or a refusal before the guest attempt starts)
+logs no `playground.run.guest` event.
+
+## Image size baseline
+
+The shared image measured 1,672,640,086 bytes (about 1.67 GB, image run
+45378869075). The largest contributors:
+
+| Path | Size |
+| --- | ---: |
+| `x86_64-linux-gnu` libraries | 439 MB |
+| `jvm` | 287 MB |
+| Rust `rustlib` | 172 MB |
+| `share/go` | 170 MB |
+| `lib/go` | 113 MB |
+| `local/bin` (Bun) | 103 MB |
+| `libexec/gcc` | 101 MB |
+
+Slimming the image is parked. If first-Run telemetry shows start latency is a
+problem, dropping Bun is the first option to evaluate, then the toolchains
+that the stock templates need least. Qualify any slimmer image with the same
+fixture and staging gates before it is used.
+
 ## Usage and cost
 
 The initial instance size is 0.5 vCPU, 4 GiB of memory, and an 8 GB disk.
