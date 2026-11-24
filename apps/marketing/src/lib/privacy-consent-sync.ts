@@ -1,4 +1,3 @@
-import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { setCurrentUserAnalyticsConsent } from '@tuturuuu/internal-api/privacy-consent';
 import { PRIVACY_POLICY_VERSION } from './privacy-consent';
 
@@ -26,13 +25,14 @@ export async function syncAnalyticsConsent(
       source: ANALYTICS_CONSENT_SOURCE,
     });
     return 'saved';
-  } catch (error) {
-    if (
-      error instanceof InternalApiError &&
-      (error.status === 401 || error.status === 403)
-    ) {
-      return 'signed-out';
-    }
+  } catch (error: unknown) {
+    // InternalApiError carries the HTTP status; read it by shape so this
+    // helper does not depend on the error class identity.
+    const status =
+      typeof error === 'object' && error !== null && 'status' in error
+        ? (error as { status?: unknown }).status
+        : undefined;
+    if (status === 401 || status === 403) return 'signed-out';
     return 'failed';
   }
 }
