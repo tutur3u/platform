@@ -156,8 +156,28 @@ function rules(): WorkspaceSecretTierRule[] {
       type,
     })),
   ];
-  return list.map((rule, index) => ({ ...rule, priority: (index + 1) * 10 }));
+  return [
+    ...list.map((rule, index) => ({ ...rule, priority: (index + 1) * 10 })),
+    ...LATER_RULES,
+  ];
 }
+
+/**
+ * Rules added after the tier mirror was first seeded. Each keeps the fixed
+ * priority its own migration inserts, so the seeded rows above keep theirs.
+ */
+const LATER_RULES: readonly WorkspaceSecretTierRule[] = [
+  // The newsletter feature flag (packages/utils/src/feature-flags/data.ts)
+  // predates the upper-case flag prefixes.
+  {
+    clientVisible: true,
+    kind: 'exact',
+    match: 'newsletter_sending',
+    priority: 350,
+    tier: 'config',
+    type: 'boolean',
+  },
+];
 
 export const WORKSPACE_SECRET_TIER_RULES: readonly WorkspaceSecretTierRule[] =
   Object.freeze(rules());
