@@ -1,9 +1,5 @@
 import { forwardToCentralApi } from '@tuturuuu/start-bridge/api-forward';
-import {
-  contentSecurityPolicy,
-  createNonce,
-  WASM_COMPILE_SOURCE,
-} from '@tuturuuu/start-bridge/csp';
+import { createNonce } from '@tuturuuu/start-bridge/csp';
 import {
   admitMountedMutation,
   isMountedLogoutPath,
@@ -21,6 +17,7 @@ import {
 } from '../lib/legacy-meet-ai-api';
 import { proxy } from '../proxy';
 import { meetRequestBase } from './app-base';
+import { withMeetDocumentCsp } from './document-csp';
 import { mountedMeetCookieHeader } from './mounted-cookies';
 import { dispatchMeetEndpoint } from './api-registry';
 import { createLoginRedirectProbe } from './login-redirect-diagnostics';
@@ -154,20 +151,7 @@ async function dispatchMeetRequest(
   });
   const finalized = base.finalizeResponse(response);
   if (base.isRoot) return finalized;
-  const mounted = stripMountedSessionWrites(finalized);
-  if (
-    !nonce ||
-    !mounted.headers.get('content-type')?.startsWith('text/html') ||
-    mounted.headers.has('content-security-policy')
-  )
-    return mounted;
-  const secured = new Response(mounted.body, mounted);
-  // Meet alone adds 'wasm-unsafe-eval', for its WebAssembly code formatters.
-  secured.headers.set(
-    'content-security-policy',
-    contentSecurityPolicy(nonce, { extraScriptSources: [WASM_COMPILE_SOURCE] })
-  );
-  return secured;
+  return withMeetDocumentCsp(stripMountedSessionWrites(finalized), nonce);
 }
 
 function isFunction(path: string) {
