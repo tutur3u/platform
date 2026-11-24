@@ -580,3 +580,38 @@ test('both store paths use the shared mobile note policy and bounded Play metada
   assert.match(notes, /normalizer\s*\.normalizeMobileReleaseNotes/);
   assert.match(notes, /notes\.length \+ bullet\.length > 4000/);
 });
+
+test('a profile without Time Sensitive Notifications omits the entitlement instead of blocking TestFlight', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'mobile-deploy-stores.yaml'),
+    'utf8'
+  );
+  const importStep = workflow.slice(
+    workflow.indexOf('- name: Import Apple signing assets'),
+    workflow.indexOf('- name: Omit Live screen broadcast from TestFlight beta')
+  );
+  assert.ok(importStep.length > 0, 'iOS signing import step must exist');
+  assert.doesNotMatch(
+    importStep,
+    /test "\$\(\/usr\/libexec\/PlistBuddy -c 'Print Entitlements:com\.apple\.developer\.usernotifications\.time-sensitive'/,
+    'a missing optional entitlement must not fail the iOS signing import'
+  );
+  assert.match(
+    importStep,
+    /Delete :\$\{time_sensitive_key\}" ios\/Runner\/Runner-Production\.entitlements/
+  );
+  assert.match(
+    importStep,
+    /::warning title=Time Sensitive Notifications omitted::/
+  );
+  assert.match(
+    importStep,
+    /MOBILE_TIME_SENSITIVE_ENTITLEMENT=\$time_sensitive_entitlement/
+  );
+  assert.match(
+    workflow,
+    /if \[ "\$\{MOBILE_TIME_SENSITIVE_ENTITLEMENT:-\}" = true \]; then/,
+    'the exported app must match the profile decision'
+  );
+  assert.match(workflow, /Unexpected Time Sensitive entitlement/);
+});

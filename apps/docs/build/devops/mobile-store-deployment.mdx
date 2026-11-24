@@ -540,14 +540,19 @@ release metadata; only missing Vietnamese notes are added.
 Leave `GOOGLE_PLAY_BETA_TRACKS` empty to publish to internal testing only.
 Regression coverage: `scripts/mobile-deployment/play-beta.test.mjs`.
 
-iOS validates the profile's expiration, exact team and bundle ID, App Store
-distribution type, production push, and Time Sensitive Notifications
-entitlements. For a profile missing Time Sensitive Notifications, enable the
-capability on the production Runner App ID in Apple Developer, generate a new
-App Store profile for the existing distribution certificate, and replace the
-profile through an Infrastructure Mobile Deployment vault draft. CI checks
-the hydrated profile before signing and the profile and entitlements in the
-exported app before upload. CI uses a temporary
+iOS requires the profile's expiration, exact team and bundle ID, App Store
+distribution type, production push entitlement and Live App Group. Time
+Sensitive Notifications is optional for beta delivery. When the hydrated
+profile lacks it, CI removes the entitlement from
+`Runner-Production.entitlements`, emits a "Time Sensitive Notifications
+omitted" warning and still ships the TestFlight build. iOS then delivers urgent
+and decision alerts at the active level. To restore it, enable the capability on
+the production Runner App ID in Apple Developer, generate a new App Store
+profile for the existing distribution certificate, and replace the profile
+through an Infrastructure Mobile Deployment vault draft. CI checks the hydrated
+profile before signing, and checks that the exported app's profile and
+entitlements match that decision before upload. Regression coverage:
+`scripts/ci/mobile-store-workflow.test.js`. CI uses a temporary
 keychain and an ignored `ios/Flutter/StoreSigning.xcconfig` for manual
 distribution signing. Export uses the profile UUID and App Store Connect export
 method. Local development keeps its existing signing settings when that file
