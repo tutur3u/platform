@@ -47,22 +47,8 @@ export async function preflight({ env, mode, app, fetcher = fetch }) {
     const path = encodeURIComponent(name);
     const environment = await get(path);
     assert.equal(environment.name, name, 'Environment identity mismatch');
-    assert.ok(
-      environment.protection_rules?.some(
-        (rule) =>
-          rule.type === 'required_reviewers' &&
-          rule.prevent_self_review === true &&
-          Array.isArray(rule.reviewers) &&
-          rule.reviewers.length > 0 &&
-          rule.reviewers.every(
-            (entry) =>
-              ['User', 'Team'].includes(entry.type) &&
-              Number.isInteger(entry.reviewer?.id) &&
-              entry.reviewer.id > 0
-          )
-      ),
-      'Environment requires reviewers'
-    );
+    // Reviewers are optional: the repository fence, the exact admission and
+    // the main-only branch policy below gate staging publication.
     assert.deepEqual(
       environment.deployment_branch_policy,
       {
@@ -107,7 +93,7 @@ if (
     )
     .catch(() => {
       console.error(
-        'Staging preflight refused: check repo fences, environment reviewers and main-only branch policies'
+        'Staging preflight refused: check repo fences, admission and main-only branch policies'
       );
       process.exitCode = 1;
     });

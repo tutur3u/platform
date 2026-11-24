@@ -63,48 +63,8 @@ for (const mode of ['web', 'native']) {
   });
 }
 for (const [name, options] of [
-  [
-    'missing prevent_self_review',
-    {
-      mutateEnvironment: (e) => {
-        delete e.protection_rules[0].prevent_self_review;
-      },
-    },
-  ],
-  [
-    'false prevent_self_review',
-    {
-      mutateEnvironment: (e) => {
-        e.protection_rules[0].prevent_self_review = false;
-      },
-    },
-  ],
   ['missing environment', { status: 404 }],
   ['API denies access', { status: 403 }],
-  [
-    'no reviewers',
-    {
-      mutateEnvironment: (e) => {
-        e.protection_rules = [];
-      },
-    },
-  ],
-  [
-    'empty reviewers',
-    {
-      mutateEnvironment: (e) => {
-        e.protection_rules[0].reviewers = [];
-      },
-    },
-  ],
-  [
-    'malformed reviewers',
-    {
-      mutateEnvironment: (e) => {
-        e.protection_rules[0].reviewers = [{}];
-      },
-    },
-  ],
   [
     'unrestricted branches',
     {
@@ -169,10 +129,23 @@ for (const [name, options] of [
     );
   });
 }
-test('unprotected Web environment refuses native-only publication', async () => {
+test('environments without reviewers pass when restricted to main', async () => {
+  for (const rules of [[], undefined]) {
+    const mock = api({
+      mutateEnvironment: (e) => {
+        e.protection_rules = rules;
+      },
+    });
+    assert.deepEqual(
+      await preflight({ env, mode: 'native', app: 'mail', ...mock }),
+      ['wave1-mail-staging']
+    );
+  }
+});
+test('an unrestricted Web environment refuses publication', async () => {
   const mock = api({
     mutateEnvironment: (e) => {
-      if (e.name === 'wave1-web-staging') e.protection_rules = [];
+      if (e.name === 'wave1-web-staging') e.deployment_branch_policy = null;
     },
   });
   await assert.rejects(preflight({ env, mode: 'web', app: 'web', ...mock }));

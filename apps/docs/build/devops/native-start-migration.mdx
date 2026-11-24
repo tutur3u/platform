@@ -75,9 +75,10 @@ The Web staging publisher and reusable native staging publisher run
 `scripts/ci/wave1-staging-preflight.mjs` before any job references a deployment
 environment or provider secret. The preflight checks both
 `wave1-web-next-staging` and `wave1-web-staging` for Web, or
-`wave1-<app>-staging` for a native app. Each environment must already exist,
-have required reviewers, and allow only the exact `main` branch through a custom
-branch policy. Tags, wildcard patterns, additional policies, missing fields and
+`wave1-<app>-staging` for a native app. Each environment must already exist
+and allow only the exact `main` branch through a custom branch policy. Required
+reviewers are not part of the gate: the repository fence, the exact admission
+and the main-only policy decide whether staging publishes. Tags, wildcard patterns, additional policies, missing fields and
 API errors refuse the run. The preflight never creates environments.
 
 Repository `WAVE1_STAGING_PUBLISH_ENABLED` must equal the string `true`.
@@ -93,7 +94,7 @@ run admission; owners must preserve it throughout the run.
 
 Verify this gate with
 `node --test scripts/ci/wave1-staging-preflight.test.mjs`. Mocked API tests cover
-missing environments, reviewers and branch restrictions; workflow tests enforce
+missing environments, environments without reviewers, and branch restrictions; workflow tests enforce
 the transitive dependency on preflight for every protected or secret-bearing job.
 
 ## Ownership
