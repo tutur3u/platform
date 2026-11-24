@@ -58,11 +58,26 @@ alter table private.meet_ai_self_v1_room_ops enable row level security;
 revoke all on private.meet_ai_self_v1_room_ops from public, anon, authenticated, service_role;
 grant select, insert on private.meet_ai_self_v1_room_ops to service_role;
 
+-- An account whose Auth user is gone (public.users is only soft-deleted) or
+-- that carries an account_deletion fence takes no new room or consent writes:
+-- they would re-link the anonymized account. Writes for it succeed as no-ops,
+-- so a late outbox entry is acknowledged.
+create function private.meet_ai_self_v1_account_gone(p_account_id uuid)
+returns boolean language sql stable security definer set search_path = pg_catalog, pg_temp
+as $$
+  select not exists (select 1 from auth.users u where u.id = p_account_id)
+    or exists (select 1 from private.meet_ai_account_fences f
+      where f.account_id = p_account_id and f.reason = 'account_deletion');
+$$;
+revoke all on function private.meet_ai_self_v1_account_gone(uuid) from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_account_gone(uuid) to service_role;
+
 -- Consent rows: room_seq only on self_v1 account decisions, ordered against
 -- the shared watermark; every self_v1 account `allow` carries one; at most 10
 -- `allow` decisions per account per session (`deny` and `withdraw` are never
--- capped). Runs after prepare_meet_ai_consent (which locks the session) and
--- before sequence_meet_ai_self_v1_consent.
+-- capped). A decision for a gone account is skipped. Runs after
+-- prepare_meet_ai_consent (which locks the session) and before
+-- sequence_meet_ai_self_v1_consent.
 create function private.order_meet_ai_self_v1_room_seq()
 returns trigger language plpgsql security definer set search_path = pg_catalog, pg_temp
 as $$
@@ -74,6 +89,9 @@ begin
         using errcode = '23514';
     end if;
     return new;
+  end if;
+  if private.meet_ai_self_v1_account_gone(new.user_id) then
+    return null;
   end if;
   if new.decision = 'allow' and new.room_seq is null then
     raise exception 'A self_v1 allow needs a room sequence number' using errcode = '23514';
@@ -102,9 +120,12 @@ grant execute on function private.order_meet_ai_self_v1_room_seq() to service_ro
 create trigger room_seq_meet_ai_self_v1_consent before insert on private.meet_ai_consents
   for each row execute function private.order_meet_ai_self_v1_room_seq();
 
--- Room entries link an account to its consent rows through room_seq, so they
--- go when the account is anonymized (Auth deletion), when the session's
--- transcript is purged, and when a session or person erasure completes.
+-- Room entries link an account to its consent rows through room_seq. They go
+-- at once when the account is anonymized (Auth deletion; later writes for it
+-- are no-ops). A transcript purge or a completed session or person erasure
+-- removes them only once capture has ended (closed or deleted), because while
+-- capture runs they are the watermark that refuses stale room entries; ending
+-- capture later removes them, and deleting the session cascades.
 create function private.erase_meet_ai_self_v1_room_ops()
 returns trigger language plpgsql security definer set search_path = pg_catalog, pg_temp
 as $$
@@ -113,8 +134,15 @@ begin
     delete from private.meet_ai_self_v1_room_ops o where o.account_id = old.id;
     return old;
   elsif tg_table_name = 'meet_ai_sessions' then
-    delete from private.meet_ai_self_v1_room_ops o where o.session_id = new.id;
-  elsif new.session_id is not null then
+    if new.capture_state in ('closed', 'deleted') then
+      delete from private.meet_ai_self_v1_room_ops o where o.session_id = new.id
+        and (new.transcript_purged_at is not null or exists (
+          select 1 from private.meet_ai_erasure_jobs j
+          where j.session_id = new.id and j.status = 'completed'
+            and (j.scope = 'session' or j.subject_account_id = o.account_id)));
+    end if;
+  elsif new.session_id is not null and exists (select 1 from public.meet_ai_sessions x
+      where x.id = new.session_id and x.capture_state in ('closed', 'deleted')) then
     delete from private.meet_ai_self_v1_room_ops o where o.session_id = new.session_id
       and (new.scope = 'session' or o.account_id = new.subject_account_id);
   end if;
@@ -125,17 +153,20 @@ revoke all on function private.erase_meet_ai_self_v1_room_ops() from public, ano
 grant execute on function private.erase_meet_ai_self_v1_room_ops() to service_role;
 create trigger erase_meet_ai_self_v1_room_ops after delete on auth.users
   for each row execute function private.erase_meet_ai_self_v1_room_ops();
-create trigger erase_meet_ai_self_v1_room_ops after update of transcript_purged_at
+create trigger erase_meet_ai_self_v1_room_ops after update of transcript_purged_at, capture_state
   on public.meet_ai_sessions for each row
-  when (old.transcript_purged_at is null and new.transcript_purged_at is not null)
+  when (new.capture_state in ('closed', 'deleted')
+    and (old.capture_state is distinct from new.capture_state
+      or (old.transcript_purged_at is null and new.transcript_purged_at is not null)))
   execute function private.erase_meet_ai_self_v1_room_ops();
 create trigger erase_meet_ai_self_v1_room_ops after insert or update of status
   on private.meet_ai_erasure_jobs for each row when (new.status = 'completed')
   execute function private.erase_meet_ai_self_v1_room_ops();
 
--- Discarded usage keeps no provider text: an object whose values are numbers,
--- booleans, nulls, nested objects of the same shape, or short strings under
--- named metadata keys. Any other string and every array is refused.
+-- Discarded usage keeps no provider text: an object of at most 4096 bytes
+-- whose keys are short identifiers and whose values are numbers, booleans,
+-- nulls, nested objects of the same shape, or short strings under named
+-- metadata keys. Any other key or string and every array is refused.
 create function private.meet_ai_usage_is_text_free(p_usage jsonb)
 returns boolean language plpgsql immutable set search_path = pg_catalog, pg_temp
 as $$
@@ -144,8 +175,11 @@ declare
   v jsonb;
 begin
   if p_usage is null then return true; end if;
-  if jsonb_typeof(p_usage) <> 'object' then return false; end if;
+  if jsonb_typeof(p_usage) <> 'object' or octet_length(p_usage::text) > 4096 then
+    return false;
+  end if;
   for k, v in select e.key, e.value from jsonb_each(p_usage) e loop
+    if k !~ '^[A-Za-z0-9_]{1,64}$' then return false; end if;
     if jsonb_typeof(v) = 'object' then
       if not private.meet_ai_usage_is_text_free(v) then return false; end if;
     elsif jsonb_typeof(v) = 'string' then
@@ -163,15 +197,18 @@ $$;
 revoke all on function private.meet_ai_usage_is_text_free(jsonb) from public, anon, authenticated;
 grant execute on function private.meet_ai_usage_is_text_free(jsonb) to service_role;
 
--- Account-deletion and erasure fences stop capture for that person at once.
+-- Account fences and erasure jobs stop capture for that person at once. A
+-- session erasure fences the session permanently, whatever its status; a
+-- person erasure fences that person until it completes (handoff included).
 create function private.meet_ai_self_v1_upload_fenced(p_session_id uuid, p_account_id uuid)
 returns boolean language sql stable set search_path = pg_catalog, pg_temp
 as $$
   select exists (select 1 from private.meet_ai_account_fences f
       where f.account_id = p_account_id)
     or exists (select 1 from private.meet_ai_erasure_jobs j
-      where j.session_id = p_session_id and j.status in ('pending', 'running')
-        and (j.scope = 'session' or j.subject_account_id = p_account_id));
+      where j.session_id = p_session_id
+        and (j.scope = 'session'
+          or (j.subject_account_id = p_account_id and j.status <> 'completed')));
 $$;
 revoke all on function private.meet_ai_self_v1_upload_fenced(uuid, uuid)
   from public, anon, authenticated;
@@ -233,6 +270,13 @@ begin
        or coalesce(new.reserved_cost_usd, 0) <= 0 then
       raise exception 'self_v1 chunks are inserted processing and reserved, without text'
         using errcode = '23514';
+    end if;
+    -- reserve_chunk names the chunk it inserts in a transaction-local setting,
+    -- so a direct insert cannot skip the cost reservation. This guards against
+    -- stray writes; it is not a privilege boundary for the service role.
+    if current_setting('meet_ai.self_v1_reserve', true) is distinct from new.id::text then
+      raise exception 'self_v1 chunks are inserted by meet_ai_self_v1_reserve_chunk'
+        using errcode = '55000';
     end if;
     -- guard_meet_ai_chunk has checked the grant, stream state and consent; a
     -- missing admission or stream is left to the composite FK (23503).
@@ -433,7 +477,8 @@ begin
     raise exception 'Unknown consent decision' using errcode = '23514';
   end if;
   perform private.meet_ai_self_v1_lock_session(p_session_id);
-  if private.meet_ai_self_v1_room_seq_state(p_session_id, p_account_id, p_room_seq,
+  if private.meet_ai_self_v1_account_gone(p_account_id)
+     or private.meet_ai_self_v1_room_seq_state(p_session_id, p_account_id, p_room_seq,
       p_decision) = 'duplicate' then
     return query select st.revision, false
       from private.meet_ai_self_v1_consent_state(p_session_id, p_account_id) st;
@@ -473,6 +518,9 @@ begin
       where o.session_id = p_session_id and o.account_id = p_account_id
         and o.kind = 'revoke') then
     raise exception 'Upload was revoked for this session' using errcode = '55000';
+  end if;
+  if private.meet_ai_self_v1_upload_fenced(p_session_id, p_account_id) then
+    raise exception 'Uploader is fenced by deletion or erasure' using errcode = '55000';
   end if;
   select * into consent from private.meet_ai_self_v1_consent_state(p_session_id, p_account_id);
   if consent.decision is distinct from 'allow'
@@ -533,7 +581,7 @@ grant execute on function private.meet_ai_self_v1_renew_stream(uuid, uuid) to se
 -- expiry) closes only the live stream, so a later allow and open can capture
 -- again; a stale close is refused (40001). `revoke` (removal by the host or a
 -- co-host) is permanent for the session, recorded at any room_seq, even for an
--- account that was never admitted.
+-- account that was never admitted. Both are no-ops for a gone account.
 create function private.meet_ai_self_v1_end_upload(
   p_session_id uuid, p_account_id uuid, p_room_seq bigint, p_kind text
 ) returns boolean language plpgsql set search_path = pg_catalog, pg_temp
@@ -544,9 +592,13 @@ begin
   if p_kind not in ('close', 'revoke') then
     raise exception 'Only close and revoke end an upload' using errcode = '23514'; end if;
   perform private.meet_ai_self_v1_lock_session(p_session_id);
+  if private.meet_ai_self_v1_account_gone(p_account_id) then
+    return false;
+  end if;
   if p_kind = 'revoke' then
     -- Removal is never refused as stale: it is recorded at its own room_seq
-    -- without moving the watermark, and an exact replay is a no-op.
+    -- (which becomes the watermark when it is the newest entry), and an exact
+    -- replay is a no-op.
     if exists (select 1 from private.meet_ai_self_v1_room_ops o
         where o.session_id = p_session_id and o.account_id = p_account_id
           and o.room_seq = p_room_seq and o.kind = 'revoke') then

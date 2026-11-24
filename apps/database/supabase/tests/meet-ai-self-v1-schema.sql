@@ -40,8 +40,8 @@ select ok((select bool_and(has_function_privilege('service_role', p.oid, 'EXECUT
   where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'),
   'self_v1 functions are service-executable with an explicit pg_temp-last path');
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 35,
-  'thirty-five self_v1 functions exist (contracts plus the capture path)');
+  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 36,
+  'thirty-six self_v1 functions exist (contracts plus the capture path)');
 
 -- N2 FK actions are explicit.
 select is((select confdeltype::text from pg_constraint where conname = 'meet_ai_sessions_user_id_fkey'), 'n',
@@ -172,6 +172,8 @@ insert into private.meet_ai_capture_streams(id, session_id, account_id, device_e
  values (pg_temp.cid(89053), pg_temp.cid(89032), pg_temp.cid(89003), 2, 'processed_aec', now() + interval '30 seconds');
 create function pg_temp.self_chunk(chunk integer, stream integer, account integer, seq integer, start_ms bigint)
 returns void language sql as $$
+  -- Fixture rows stand in for reserve_chunk, which names each insert.
+  select set_config('meet_ai.self_v1_reserve', pg_temp.cid(chunk)::text, true);
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
     capture_consent_revision, erase_generation, transcript_revision,

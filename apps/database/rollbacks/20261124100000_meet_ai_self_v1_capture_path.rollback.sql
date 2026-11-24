@@ -1,5 +1,6 @@
--- Rollback of 20261124100000_meet_ai_self_v1_capture_path.sql, after the
--- 20261124100100 rollback. Consent evidence is kept; only its room_seq column,
+-- Rollback of 20261124100000_meet_ai_self_v1_capture_path.sql. Run the
+-- 20261124100100 rollback and then this one back-to-back, with no self_v1
+-- session started in between. Consent evidence is kept; only its room_seq column,
 -- key and triggers are removed. Discarded chunks hold no text and become
 -- `failed` so the original status check can return. Per-chunk reservations and
 -- the room-entry log are dropped; session cost counters stay.
@@ -70,6 +71,7 @@ drop trigger if exists erase_meet_ai_self_v1_room_ops on private.meet_ai_erasure
 drop function if exists private.erase_meet_ai_self_v1_room_ops();
 drop trigger if exists room_seq_meet_ai_self_v1_consent on private.meet_ai_consents;
 drop function if exists private.order_meet_ai_self_v1_room_seq();
+drop function if exists private.meet_ai_self_v1_account_gone(uuid);
 drop table if exists private.meet_ai_self_v1_room_ops;
 drop index if exists private.meet_ai_consents_room_seq_key;
 alter table private.meet_ai_consents

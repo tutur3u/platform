@@ -72,6 +72,8 @@ begin
     where c.id = p_stream_id and c.session_id = p_session_id
       and c.account_id = p_account_id
     for update;
+  -- The chunk guard admits only the insert named here (transaction-local).
+  perform set_config('meet_ai.self_v1_reserve', p_id::text, true);
   insert into public.meet_ai_chunks (id, session_id, sequence, start_seconds,
     duration_seconds, status, stream_id, account_id, source_kind, content_digest,
     start_ms, end_ms, timing_uncertainty_ms, start_sample, capture_consent_revision,
@@ -82,6 +84,7 @@ begin
     p_consent_revision, s.erase_generation, s.transcript_revision, p_max_cost_usd,
     'reserved')
   returning * into chunk;
+  perform set_config('meet_ai.self_v1_reserve', '', true);
   update public.meet_ai_sessions x set cost_reserved_usd = x.cost_reserved_usd + p_max_cost_usd
     where x.id = p_session_id;
   update private.meet_ai_session_participants p set

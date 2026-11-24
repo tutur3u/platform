@@ -1,5 +1,6 @@
--- Rollback of 20261124100100_meet_ai_self_v1_cost_rpcs.sql. Run before the
--- 20261124100000 rollback. Session counters and chunk rows are kept.
+-- Rollback of 20261124100100_meet_ai_self_v1_cost_rpcs.sql. Run this and then
+-- the 20261124100000 rollback back-to-back, with no self_v1 session started in
+-- between. Session counters and chunk rows are kept.
 -- Refuses while any self_v1 session can capture or any self_v1 chunk is in
 -- flight, so no reservation is stranded without its settlement RPC.
 -- Closing a session (hard stop or close_drained) releases every reservation

@@ -44,6 +44,8 @@ returns void language sql as $$
 $$;
 create function pg_temp.chunk(chunk integer, stream integer, account integer, seq integer, revision integer)
 returns void language sql as $$
+  -- Fixture rows stand in for reserve_chunk, which names each insert.
+  select set_config('meet_ai.self_v1_reserve', pg_temp.cid(chunk)::text, true);
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
     capture_consent_revision, erase_generation, transcript_revision,

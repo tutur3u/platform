@@ -47,11 +47,13 @@ insert into private.meet_ai_capture_streams(id, session_id, account_id, device_e
  from generate_series(89204, 89205) n;
 create function pg_temp.chunk(session integer, stream integer, account integer, seq integer, start_ms bigint)
 returns void language sql as $$
+  -- Fixture rows stand in for reserve_chunk, which names each insert.
+  select set_config('meet_ai.self_v1_reserve', md5('rc:' || stream || ':' || seq)::uuid::text, true);
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
     capture_consent_revision, erase_generation, transcript_revision,
     reserved_cost_usd, reservation_state)
-  values (gen_random_uuid(), pg_temp.cid(session), seq, start_ms / 1000.0, 10, 'processing', null,
+  values (md5('rc:' || stream || ':' || seq)::uuid, pg_temp.cid(session), seq, start_ms / 1000.0, 10, 'processing', null,
     pg_temp.cid(stream), pg_temp.cid(account), 'microphone', sha256((stream || ':' || seq)::bytea), start_ms,
     start_ms + 10000, 100, start_ms * 16, 1, 0, 0, 1, 'reserved');
   -- Inserts are processing only; text is stored after dispatch at revision 1.

@@ -269,6 +269,12 @@ select throws_ok($$select pg_temp.settle(89455, 'discarded', null, '{"output": "
   null, 'discarded usage refuses free-text output');
 select throws_ok($$select pg_temp.settle(89455, 'discarded', null, '[1, 2]', 0.3)$$, '23514', null,
   'discarded usage refuses a top-level array');
+select throws_ok($$select pg_temp.settle(89455, 'discarded', null,
+  '{"details": {"the speaker said hello": 1}}', 0.3)$$, '23514', null,
+  'discarded usage refuses a text-carrying key at any depth');
+select throws_ok($$select pg_temp.settle(89455, 'discarded', null,
+  (select jsonb_object_agg('k' || n, n) from generate_series(1, 600) n), 0.3)$$, '23514', null,
+  'discarded usage is at most 4096 bytes');
 select is((pg_temp.settle(89455, 'discarded', null,
   '{"inputTokens": 9, "model": "gemini", "details": {"cachedTokens": 1}}', 0.30)).status, 'discarded',
   'a discarded chunk keeps only text-free usage');
@@ -312,6 +318,14 @@ select throws_ok($$insert into public.meet_ai_chunks(id, session_id, sequence, s
   transcript_revision) values (gen_random_uuid(), pg_temp.sid(), 0, 0, 5, 'processing',
   current_setting('test.sa')::uuid, pg_temp.cid(89403), 'microphone', sha256('a'::bytea), 0, 5000,
   0, 0, 3, 0, 0)$$, '23514', null, 'direct self_v1 inserts need a reservation');
+select throws_ok($$insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds,
+  duration_seconds, status, stream_id, account_id, source_kind, content_digest, start_ms,
+  end_ms, timing_uncertainty_ms, start_sample, capture_consent_revision, erase_generation,
+  transcript_revision, reserved_cost_usd, reservation_state) values (gen_random_uuid(),
+  pg_temp.sid(), 0, 0, 5, 'processing', current_setting('test.sa')::uuid, pg_temp.cid(89403),
+  'microphone', sha256('a'::bytea), 0, 5000, 0, 0, 3, 0, 0, 1, 'reserved')$$, '55000',
+  'self_v1 chunks are inserted by meet_ai_self_v1_reserve_chunk',
+  'a reserved insert that skips reserve_chunk is refused');
 select throws_ok($$insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds,
   duration_seconds, status) values (pg_temp.cid(89460), pg_temp.cid(89433), 9, 0, 8, 'discarded')$$,
   '23514', null, 'legacy chunks are never discarded');
@@ -434,6 +448,18 @@ select is((pg_temp.settle(89498, 'discarded', null, null, 0.10)).status, 'discar
   'in-flight text after an account fence is discarded');
 select is((pg_temp.settle(89499, 'released')).reservation_state, 'released',
   'the fenced undispatched chunk is released');
+select throws_ok($$select pg_temp.open(89411, 1)$$, '55000', 'Uploader is fenced by deletion or erasure',
+  'a fenced account opens no stream');
+select set_config('test.io', (select count(*) from private.meet_ai_self_v1_room_ops
+  where session_id = pg_temp.sid() and account_id = pg_temp.cid(89411))::text, true);
+select is((select recorded from private.meet_ai_self_v1_record_decision(pg_temp.sid(),
+  pg_temp.cid(89411), 'withdraw', 'v1', 50)), false,
+  'a withdraw for an account_deletion fence is acknowledged without a write');
+select ok(not private.meet_ai_self_v1_revoke_upload(pg_temp.sid(), pg_temp.cid(89411), 51),
+  'a revoke for an account_deletion fence is acknowledged without a write');
+select is((select count(*) from private.meet_ai_self_v1_room_ops where session_id = pg_temp.sid()
+    and account_id = pg_temp.cid(89411))::text, current_setting('test.io'),
+  'no room entry is added for a fenced account');
 
 -- A pending person erasure fences capture; its completion erases room entries.
 select is(pg_temp.decide(89412, 'allow', 1), '1/true', 'J allows');
@@ -449,11 +475,28 @@ select throws_ok($$select private.meet_ai_self_v1_mark_dispatch(pg_temp.cid(8950
   '55000', null, 'a pending person erasure fences dispatch');
 select is((pg_temp.settle(89503, 'released')).reservation_state, 'released',
   'the chunk fenced by erasure is released');
+select ok(private.meet_ai_self_v1_close_stream(pg_temp.sid(), pg_temp.cid(89412), 2), 'J leaves');
 update private.meet_ai_erasure_jobs set status = 'completed', completed_at = now()
   where id = pg_temp.cid(89505);
-select ok(not exists (select 1 from private.meet_ai_self_v1_room_ops
+select ok(exists (select 1 from private.meet_ai_self_v1_room_ops
   where session_id = pg_temp.sid() and account_id = pg_temp.cid(89412)),
-  'a completed person erasure removes that person''s room entries');
+  'a person erasure completed mid-capture keeps the watermark');
+select throws_ok($$select pg_temp.decide(89412, 'allow', 2)$$, '40001', null,
+  'a stale allow replayed after the erasure is still refused');
+select ok(not private.meet_ai_self_v1_upload_fenced(pg_temp.sid(), pg_temp.cid(89412)),
+  'a completed person erasure lifts its fence');
+insert into private.meet_ai_erasure_jobs(operation_id, scope, session_id, subject_account_id,
+  subject_digest, requested_by, fence_generation, status, expires_at)
+  values (gen_random_uuid(), 'person_session', pg_temp.sid(), pg_temp.cid(89412), sha256('j2'::bytea),
+    'subject', 2, 'handoff', now() + interval '30 days');
+select ok(private.meet_ai_self_v1_upload_fenced(pg_temp.sid(), pg_temp.cid(89412)),
+  'a person erasure in handoff still fences that person');
+insert into private.meet_ai_erasure_jobs(operation_id, scope, session_id, subject_account_id,
+  subject_digest, requested_by, fence_generation, status, completed_at, expires_at)
+  values (gen_random_uuid(), 'person_session', pg_temp.sid(), pg_temp.cid(89405), sha256('c'::bytea),
+    'subject', 1, 'completed', now(), now() + interval '30 days');
+select throws_ok($$select pg_temp.open(89405, 1)$$, '55000', 'Upload was revoked for this session',
+  'a revoke before admission still refuses capture after that person''s erasure');
 select is(pg_temp.costs(), '0.00/2.00/1.10', 'fenced and discarded chunks keep the counters exact');
 
 -- Auth deletion anonymizes consent rows and removes the room entries that
@@ -463,6 +506,23 @@ select ok(not exists (select 1 from private.meet_ai_self_v1_room_ops
     where account_id = pg_temp.cid(89406))
   and not exists (select 1 from private.meet_ai_consents where user_id = pg_temp.cid(89406)),
   'anonymization leaves no room entry for the deleted account');
+select is((select recorded from private.meet_ai_self_v1_record_decision(pg_temp.sid(),
+  pg_temp.cid(89406), 'withdraw', 'v1', 90)), false,
+  'a withdraw drained after Auth deletion is acknowledged without a write');
+select ok(not private.meet_ai_self_v1_close_stream(pg_temp.sid(), pg_temp.cid(89406), 91),
+  'a close drained after Auth deletion is acknowledged without a write');
+select ok(not private.meet_ai_self_v1_revoke_upload(pg_temp.sid(), pg_temp.cid(89406), 92),
+  'a revoke drained after Auth deletion is acknowledged without a write');
+select ok(not exists (select 1 from private.meet_ai_self_v1_room_ops
+    where account_id = pg_temp.cid(89406))
+  and not exists (select 1 from private.meet_ai_consents where user_id = pg_temp.cid(89406)),
+  'late room entries never re-link the deleted account');
+select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
+  values (pg_temp.sid(), pg_temp.cid(89410), 'deny', 'v1')$$,
+  'a self_v1 deny needs no room sequence number');
+select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
+  values (pg_temp.sid(), pg_temp.cid(89410), 'withdraw', 'v1')$$,
+  'a self_v1 withdraw needs no room sequence number');
 
 -- Notes attempts: at most 3 per session.
 select is(private.meet_ai_self_v1_note_attempt(pg_temp.sid()), 1, 'first notes attempt');
@@ -503,6 +563,11 @@ select is((select state from private.meet_ai_capture_streams where id = current_
   'closed', 'closing ends every stream');
 select is((select reservation_state from public.meet_ai_chunks where id = pg_temp.cid(89471)), 'released',
   'close_drained releases undispatched reservations');
+select ok(not exists (select 1 from private.meet_ai_self_v1_room_ops where session_id = pg_temp.sid()
+    and account_id in (pg_temp.cid(89412), pg_temp.cid(89405)))
+  and exists (select 1 from private.meet_ai_self_v1_room_ops where session_id = pg_temp.sid()
+    and account_id = pg_temp.cid(89403)),
+  'ending capture removes the room entries of completed person erasures only');
 update public.meet_ai_sessions set transcript_purged_at = now() where id = pg_temp.sid();
 select ok(not exists (select 1 from private.meet_ai_self_v1_room_ops where session_id = pg_temp.sid()),
   'a transcript purge removes the session''s room entries');
@@ -534,5 +599,12 @@ select is((pg_temp.settle(89483, 'unknown')).reservation_state, 'unknown',
 select is(pg_temp.costs(), '0.00/1.00/0.00', 'only the dispatched chunk counts after stop');
 select throws_ok($$select pg_temp.reserve(89482, current_setting('test.sf')::uuid, 89408, 2, 1, 1)$$,
   '55000', null, 'a closed session admits no chunks');
+insert into private.meet_ai_erasure_jobs(operation_id, scope, session_id, requested_by,
+  fence_generation, status, completed_at, expires_at)
+  values (gen_random_uuid(), 'session', pg_temp.sid(), 'workspace_admin', 1, 'completed', now(),
+    now() + interval '30 days');
+select ok(private.meet_ai_self_v1_upload_fenced(pg_temp.sid(), pg_temp.cid(89408))
+    and not exists (select 1 from private.meet_ai_self_v1_room_ops where session_id = pg_temp.sid()),
+  'a completed session erasure fences the session for good and clears a closed session''s entries');
 select * from finish();
 rollback;
