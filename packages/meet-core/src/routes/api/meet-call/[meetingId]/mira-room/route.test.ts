@@ -10,9 +10,11 @@ const f = vi.hoisted(() => ({
   lastChoice: vi.fn(),
   openRevision: vi.fn(),
   canStore: vi.fn(),
+  cf: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
+vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: f.cf }));
 vi.mock('../../../../../features/meeting-ai/server/per-speaker-flag', () => ({
   meetPerSpeakerEnabled: f.perSpeaker,
 }));
@@ -464,6 +466,33 @@ describe('two-phase on', () => {
       action: 'mira.room.confirm',
       pendingId: PENDING,
     });
+  });
+
+  it('treats a null pending id as already on: no evidence, no confirm', async () => {
+    f.room.mockImplementation(
+      async (access, command: { action: string; choice?: string }) =>
+        command.action === 'mira.room.choice' && command.choice === 'on'
+          ? { ...read, choice: 'on', pendingId: null }
+          : roomDefault(access, command)
+    );
+    expect((await post(choice())).status).toBe(200);
+    expect(f.record).not.toHaveBeenCalled();
+    expect(confirmCalls()).toHaveLength(0);
+  });
+
+  it('keeps the evidence and confirm alive with waitUntil when the Worker offers it', async () => {
+    const waitUntil = vi.fn();
+    f.cf.mockResolvedValue({ ctx: { waitUntil } });
+    expect((await post(choice())).status).toBe(200);
+    expect(waitUntil).toHaveBeenCalledOnce();
+    expect(waitUntil.mock.calls[0]?.[0]).toBeInstanceOf(Promise);
+    expect(confirmCalls()).toHaveLength(1);
+  });
+
+  it('still answers when no Worker context exists', async () => {
+    f.cf.mockRejectedValue(new Error('no context'));
+    expect((await post(choice())).status).toBe(200);
+    expect(confirmCalls()).toHaveLength(1);
   });
 
   it('passes the notice mode through to the confirm', async () => {

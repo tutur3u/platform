@@ -1,4 +1,5 @@
 import 'server-only';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MeetCallAccessError } from '../../call/lib/call-access';
 import {
   callRoomService,
@@ -118,6 +119,20 @@ async function recordOff(
   if (roomError) throw roomFailure(roomError);
 }
 
+/**
+ * Lets work finish after the response when the Worker offers waitUntil;
+ * the caller still awaits the same promise for its answer.
+ */
+async function keepAlive<T>(work: Promise<T>) {
+  try {
+    const { ctx } = await getCloudflareContext({ async: true });
+    ctx?.waitUntil?.(work.catch(() => undefined));
+  } catch {
+    // Outside a Worker there is nothing to extend.
+  }
+  return work;
+}
+
 const PENDING_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -141,12 +156,25 @@ async function recordOn(
   } catch (error) {
     throw roomFailure(error);
   }
+  // Already on under the same acceptance and notice: nothing was staged, and
+  // the evidence for that on was recorded when it was confirmed.
+  if (reply?.pendingId === null) return;
   const pendingId =
     typeof reply?.pendingId === 'string' && PENDING_ID.test(reply.pendingId)
       ? reply.pendingId
       : undefined;
   // A room without the pending fence cannot guarantee the on; refuse it.
   if (!pendingId) throw notSaved();
+  // The evidence and confirm finish even if the client disconnects.
+  await keepAlive(confirmWithEvidence(access, input, requireNoticeMode, pendingId));
+}
+
+async function confirmWithEvidence(
+  access: MeetCallRouteAccess,
+  input: RoomMiraChoiceInput,
+  requireNoticeMode: boolean,
+  pendingId: string
+) {
   try {
     await recordWithRetry(
       evidenceOf(access, input, requireNoticeMode, pendingId)
