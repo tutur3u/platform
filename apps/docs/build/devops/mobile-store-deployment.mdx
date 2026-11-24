@@ -587,18 +587,22 @@ groups and reads the assignments back. External groups require explicit opt-in
 by exact name or ID; newly created external groups are never included by default.
 An accepted upload alone does not pass verification.
 
-### Distribution policy: internal testing only
+### Distribution policy: external TestFlight beta, internal Play
 
-The release owner's standing decision is that store betas stay on internal
-testing:
+The release owner's standing decision for store betas:
 
+- **TestFlight:** builds go to the internal group and to the external group
+  named exactly `External`, so external testers receive every iOS update.
+  `TESTFLIGHT_EXTERNAL_BETA_GROUPS=External` enables external assignment, beta
+  App Review submission and tester notification, and lets the review retry job
+  resubmit a deferred review.
 - **Google Play:** builds publish to the internal track only. No automatic
   promotion to closed (`alpha`) or open (`beta`) testing.
   `GOOGLE_PLAY_BETA_TRACKS` stays empty, so the promotion step logs
   `testing tracks [none opted in]`.
-- **TestFlight:** builds go to the internal group only. No external tester
-  group and no beta App Review submission. `TESTFLIGHT_EXTERNAL_BETA_GROUPS`
-  stays empty, which also keeps the review retry job from submitting anything.
+- **Production store releases:** CI never submits them. App Store review
+  submission and Play production releases are manual, and each needs the
+  release authority's exact-SHA acknowledgement.
 
 Setting either variable changes this policy. Do it only on a new explicit
 decision from the release owner, and update this section in the same change.
