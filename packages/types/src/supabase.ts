@@ -15791,10 +15791,12 @@ export type Database = {
           decision: string;
           guest_label: string | null;
           id: string;
+          locale: string | null;
           notice_version: string;
           participant_ref: string;
           room_seq: number | null;
           session_id: string;
+          text_hash: string | null;
           user_id: string | null;
         };
         ComputedFields: never;
@@ -15803,10 +15805,12 @@ export type Database = {
           decision: string;
           guest_label?: string | null;
           id?: string;
+          locale?: string | null;
           notice_version: string;
           participant_ref: string;
           room_seq?: number | null;
           session_id: string;
+          text_hash?: string | null;
           user_id?: string | null;
         };
         Update: {
@@ -15814,10 +15818,12 @@ export type Database = {
           decision?: string;
           guest_label?: string | null;
           id?: string;
+          locale?: string | null;
           notice_version?: string;
           participant_ref?: string;
           room_seq?: number | null;
           session_id?: string;
+          text_hash?: string | null;
           user_id?: string | null;
         };
         Relationships: [
@@ -16384,8 +16390,10 @@ export type Database = {
           id: string;
           locale: string;
           meeting_id: string;
+          notice_mode: string;
           notice_version: string;
           participant_ref: string;
+          pending_id: string | null;
           source: string;
           text_hash: string;
           user_id: string | null;
@@ -16401,8 +16409,10 @@ export type Database = {
           id?: string;
           locale: string;
           meeting_id: string;
+          notice_mode?: string;
           notice_version: string;
           participant_ref: string;
+          pending_id?: string | null;
           source: string;
           text_hash: string;
           user_id?: string | null;
@@ -16417,8 +16427,10 @@ export type Database = {
           id?: string;
           locale?: string;
           meeting_id?: string;
+          notice_mode?: string;
           notice_version?: string;
           participant_ref?: string;
+          pending_id?: string | null;
           source?: string;
           text_hash?: string;
           user_id?: string | null;
@@ -34554,6 +34566,16 @@ export type Database = {
         };
         Returns: boolean;
       };
+      meet_ai_self_v1_closed_out: {
+        Args: {
+          p_account_id: string;
+          p_session: Omit<
+            Database['public']['Tables']['meet_ai_sessions']['Row'],
+            Database['public']['Tables']['meet_ai_sessions']['ComputedFields']
+          >;
+        };
+        Returns: boolean;
+      };
       meet_ai_self_v1_consent_state: {
         Args: { p_account_id: string; p_session_id: string };
         Returns: {
@@ -34639,9 +34661,11 @@ export type Database = {
         Args: {
           p_account_id: string;
           p_decision: string;
+          p_locale?: string;
           p_notice_version: string;
           p_room_seq: number;
           p_session_id: string;
+          p_text_hash?: string;
         };
         Returns: {
           recorded: boolean;
