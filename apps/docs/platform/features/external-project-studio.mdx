@@ -520,6 +520,57 @@ Regression coverage: `packages/internal-api/src/external-projects.test.ts`,
 edge-cache unit tests and the pgTAP version-counter test that ship with the web change.
 Operations: see [CMS caching and purge](/build/devops/cms-start-void#cms-caching-and-purge).
 
+## Typed entry relations
+
+Scope: relation definitions and the entry relations written through the entry
+bundle routes, for every bound workspace. Affected surfaces: `apps/web`
+(relation-definition, bundle and delivery routes) and every delivery client.
+
+- **Definitions.** `GET /api/v1/workspaces/{wsId}/external-projects/relation-definitions`
+  (read access) lists the workspace's definitions with `targetCollectionIds`;
+  `?sourceCollectionId={uuid}` narrows the list to one collection. `POST` on the
+  same path and `PATCH`/`DELETE` on `/relation-definitions/{id}` need manage access.
+  A definition has a `key` (no whitespace, unique per source collection), `label`,
+  optional `inverse_label`, `cardinality` (`one` or `many`), `isRequired`,
+  `sortOrder` and at least one target collection. Source and target collections
+  must belong to the same workspace; composite foreign keys enforce it. Linked apps
+  call these routes with their app token (`external-projects:read` or
+  `external-projects:manage`), as with every other studio route.
+- **Writes.** `POST /entries/bundle` and `PUT /entries/{id}/bundle` replace an
+  entry's outgoing relations. Each relation is
+  `{ definitionId, toEntryId, sortOrder, metadata }`. The definition must start
+  at the entry's collection and target the far entry's collection, and
+  `cardinality: one` allows a single relation per definition. A pair of entries holds
+  at most one relation per definition. `metadata` is a flat object of string
+  (up to 280 characters), number, boolean or null values, at most 2 KB as UTF-8
+  JSON; a bundle carries at most 256 relations. Anything else is refused with
+  `400` before the database is written.
+- **Studio view.** `GET /api/v1/workspaces/{wsId}/external-projects` (including
+  `?view=content&collectionSlugs=…`) returns `relations` for the view's source
+  entries. Relations, definitions and targets are read page by page past the API
+  row limit, and the response carries `relationsComplete: true` to say so; a client
+  can trust the list when it saves an entry's relations.
+- **Delivery.** Each delivered entry's `relations` lists its typed relations whose
+  far entry is also delivered (published, in a delivered collection, not flagged
+  private), with `relation_definition_id`, `relation_type` (the definition key
+  when the relation was written; `key` is the definition's current key),
+  `sort_order`, `metadata`, `to_entry_id`, and the `definitionId`/`key` aliases.
+  Relations without a definition are not delivered. The payload's
+  `relationDefinitions` lists definitions whose source collection is delivered,
+  with `target_collection_ids` limited to delivered collections; a definition
+  with no delivered target is left out.
+- **Default and compatibility.** All of these fields are additive. A workspace with
+  no relation definitions for its delivered collections has no
+  `relationDefinitions` key, and its payload and revision are unchanged. When
+  definitions are present, they are folded into the revision, so a label or target
+  change refreshes the public `ETag`. Writes to relations, definitions, targets and
+  blocks bump the delivery version counter, so edge caches revalidate without a purge.
+
+Regression coverage: `apps/web/src/lib/external-projects/delivery-relations.test.ts`,
+`apps/web/src/lib/external-projects/entry-bundle-relations.test.ts`, the
+relation-definitions and entry-bundle route tests, and the pgTAP
+`external-project-entry-bundles.sql` suite.
+
 ## Implementation Notes
 
 - Keep CMS as a pure satellite frontend. Do not move API ownership into `apps/cms`.

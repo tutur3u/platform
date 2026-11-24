@@ -2,6 +2,10 @@ import type {
   ExternalProjectAsset,
   ExternalProjectDeliveryAsset,
 } from './external-project-assets';
+import type {
+  ExternalProjectDeliveryRelation,
+  ExternalProjectDeliveryRelationDefinition,
+} from './external-project-relations';
 import type { User as PrimitiveUser } from './primitives/User';
 import type { Database, Json, Tables } from './supabase';
 import type { TaskProjectRelationRow } from './task-project-ticket';
@@ -10,6 +14,7 @@ import type { InternalApiWorkspaceSummary } from './workspace-summary';
 
 export type * from './db-desktop-deployment';
 export type * from './db-task-actor';
+export type * from './external-project-relations';
 export type {
   ExternalProjectAsset,
   ExternalProjectDeliveryAsset,
@@ -816,14 +821,6 @@ export type ExternalProjectStudioAsset = ExternalProjectAsset & {
   preview_url: string | null;
 };
 
-export type ExternalProjectDeliveryRelation = Pick<
-  ExternalProjectEntryRelation,
-  'id' | 'to_entry_id' | 'metadata'
-> & {
-  definitionId: string;
-  key: string;
-};
-
 export type ExternalProjectDeliveryEntry = Pick<
   ExternalProjectEntry,
   | 'id'
@@ -1064,6 +1061,7 @@ export type ExternalProjectDeliveryPayload = {
   revision: string;
   collections: ExternalProjectDeliveryCollection[];
   profileData: Record<string, unknown>;
+  relationDefinitions?: ExternalProjectDeliveryRelationDefinition[];
   template?: CmsSiteTemplateMetadataV1;
   loadingData: ExternalProjectLoadingData | null;
 };

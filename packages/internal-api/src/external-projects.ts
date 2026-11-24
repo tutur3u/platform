@@ -168,7 +168,7 @@ type WorkspaceExternalProjectEntryBundleBasePayload = {
   }>;
   relations: Array<{
     definitionId: string;
-    metadata?: Json;
+    metadata?: Record<string, string | number | boolean | null>;
     sortOrder?: number;
     toEntryId: string;
   }>;

@@ -66,6 +66,9 @@ export async function GET(
       ...studio,
       publishEvents: contentOnly ? [] : studio.publishEvents,
       importJobs: contentOnly ? [] : studio.importJobs,
+      // Relations are read page by page, so `relations` is not truncated at
+      // the API row limit.
+      relationsComplete: true,
       cmsCapabilities: getExternalProjectCmsEditorCapabilities({
         binding: access.binding,
         collections: studio.collections,

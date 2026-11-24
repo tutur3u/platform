@@ -9,6 +9,7 @@ import type {
   Json,
 } from '@tuturuuu/types';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
+import { fetchAllExternalProjectRowsById } from './paged-rows';
 
 type AdminDb = TypedSupabaseClient;
 
@@ -59,36 +60,53 @@ export async function listWorkspaceExternalProjectRelationData(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const [definitionsResult, targetsResult, relationsResult] = await Promise.all(
-    [
-      admin
-        .from('workspace_external_project_relation_definitions')
-        .select('*')
-        .eq('ws_id', workspaceId)
-        .order('sort_order', { ascending: true })
-        .order('key', { ascending: true }),
-      admin
-        .from('workspace_external_project_relation_definition_targets')
-        .select('*')
-        .eq('ws_id', workspaceId),
-      admin
-        .from('workspace_external_project_entry_relations')
-        .select('*')
-        .eq('ws_id', workspaceId)
-        .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: true }),
-    ]
-  );
-
-  if (definitionsResult.error) throw new Error(definitionsResult.error.message);
-  if (targetsResult.error) throw new Error(targetsResult.error.message);
-  if (relationsResult.error) throw new Error(relationsResult.error.message);
+  // Each read pages by id past the default row limit and is scoped to the
+  // workspace on every page; rows are then ordered in memory, ending on id so
+  // ties sort the same way on every request.
+  const page =
+    (
+      table:
+        | 'workspace_external_project_entry_relations'
+        | 'workspace_external_project_relation_definition_targets'
+        | 'workspace_external_project_relation_definitions'
+    ) =>
+    (afterId: string | null, limit: number) => {
+      let query = admin.from(table).select('*').eq('ws_id', workspaceId);
+      if (afterId) query = query.gt('id', afterId);
+      return query.order('id', { ascending: true }).range(0, limit - 1);
+    };
+  const [definitions, targets, relations] = await Promise.all([
+    fetchAllExternalProjectRowsById<ExternalProjectRelationDefinition>(
+      page('workspace_external_project_relation_definitions')
+    ),
+    fetchAllExternalProjectRowsById<ExternalProjectRelationDefinitionTarget>(
+      page('workspace_external_project_relation_definition_targets')
+    ),
+    fetchAllExternalProjectRowsById<ExternalProjectEntryRelation>(
+      page('workspace_external_project_entry_relations')
+    ),
+  ]);
 
   return {
-    definitions: definitionsResult.data ?? [],
-    relations: relationsResult.data ?? [],
-    targets: targetsResult.data ?? [],
+    definitions: definitions.sort(
+      (left, right) =>
+        left.sort_order - right.sort_order ||
+        compareText(left.key, right.key) ||
+        compareText(left.id, right.id)
+    ),
+    relations: relations.sort(
+      (left, right) =>
+        left.sort_order - right.sort_order ||
+        compareText(left.created_at, right.created_at) ||
+        compareText(left.id, right.id)
+    ),
+    targets,
   };
+}
+
+function compareText(left: string, right: string) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
 }
 
 export async function listWorkspaceExternalProjectRelationDefinitions(

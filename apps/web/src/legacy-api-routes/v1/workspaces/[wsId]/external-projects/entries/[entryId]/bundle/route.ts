@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
+import { entryBundleRelationsSchema } from '@/lib/external-projects/entry-bundle-relations';
 import { upsertWorkspaceExternalProjectEntryBundle } from '@/lib/external-projects/store-relations';
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
@@ -34,14 +35,7 @@ const updateBundleSchema = z.object({
     })
     .default({}),
   expectedUpdatedAt: z.string().datetime({ offset: true }),
-  relations: z.array(
-    z.object({
-      definitionId: z.string().uuid(),
-      metadata: jsonObjectSchema.default({}),
-      sortOrder: z.number().int().min(0).default(0),
-      toEntryId: z.string().uuid(),
-    })
-  ),
+  relations: entryBundleRelationsSchema,
 });
 const privateHeaders = {
   'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,

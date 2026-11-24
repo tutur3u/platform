@@ -64,6 +64,7 @@ describe('external-project studio route', () => {
     });
 
     expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ relationsComplete: true });
     expect(
       mocks.getWorkspaceExternalProjectScopedStudioData
     ).toHaveBeenCalledWith(

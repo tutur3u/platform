@@ -4,6 +4,7 @@ import type {
   ExternalProjectDeliveryCollection,
   ExternalProjectStudioData,
 } from '@tuturuuu/types';
+import { projectEntryRelations } from './delivery-relations';
 import {
   buildDeliveryAssetUrl,
   buildExternalProjectLoadingData,
@@ -126,24 +127,11 @@ export async function getWorkspaceExternalProjectScopedStudioData(
               assetRevision: getExternalProjectAssetRevision(asset.updated_at),
             })),
           blocks: blocks.filter((block) => block.entry_id === entry.id),
-          relations: relationData.relations
-            .filter((relation) => relation.from_entry_id === entry.id)
-            .flatMap((relation) => {
-              const definition = relationDefinitions.find(
-                (item) => item.id === relation.relation_definition_id
-              );
-              return definition && relation.relation_definition_id
-                ? [
-                    {
-                      definitionId: relation.relation_definition_id,
-                      id: relation.id,
-                      key: definition.key,
-                      metadata: relation.metadata,
-                      to_entry_id: relation.to_entry_id,
-                    },
-                  ]
-                : [];
-            }),
+          relations: projectEntryRelations(
+            entry.id,
+            relationData.relations,
+            relationDefinitions
+          ),
         })),
     }));
 

@@ -34,12 +34,34 @@ export async function GET(
   });
   if (!access.ok) return access.response;
 
+  const sourceCollectionId =
+    new URL(request.url).searchParams
+      .get('sourceCollectionId')
+      ?.toLowerCase() ?? null;
+  if (
+    sourceCollectionId !== null &&
+    !z.string().uuid().safeParse(sourceCollectionId).success
+  ) {
+    return NextResponse.json(
+      { error: 'Invalid source collection ID' },
+      { headers: privateHeaders, status: 400 }
+    );
+  }
+
   try {
     const definitions = await listWorkspaceExternalProjectRelationDefinitions(
       access.normalizedWorkspaceId,
       access.admin
     );
-    return NextResponse.json(definitions, { headers: privateHeaders });
+    return NextResponse.json(
+      sourceCollectionId === null
+        ? definitions
+        : definitions.filter(
+            (definition) =>
+              definition.source_collection_id === sourceCollectionId
+          ),
+      { headers: privateHeaders }
+    );
   } catch (error) {
     console.error(
       'Failed to list external project relation definitions',

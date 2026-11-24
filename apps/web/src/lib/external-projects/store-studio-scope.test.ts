@@ -65,7 +65,10 @@ describe('scoped external-project studio data', () => {
         {
           from_entry_id: 'story-entry',
           id: 'story-world-row',
+          metadata: { kind: 'setting' },
           relation_definition_id: 'story-world',
+          relation_type: 'world',
+          sort_order: 1,
           to_entry_id: 'world-entry',
         },
         {
@@ -133,17 +136,17 @@ describe('scoped external-project studio data', () => {
       ['story-entry', 'tag-entry'],
       expect.anything()
     );
-    expect(studio.collections.map((collection) => collection.id)).toEqual([
-      'stories',
-      'tags',
-      'worlds',
-    ]);
     expect(
-      studio.relationDefinitions?.map((definition) => definition.id)
+      studio.collections.map((collection: { id: string }) => collection.id)
+    ).toEqual(['stories', 'tags', 'worlds']);
+    expect(
+      studio.relationDefinitions?.map(
+        (definition: { id: string }) => definition.id
+      )
     ).toEqual(['story-world']);
-    expect(studio.relations?.map((relation) => relation.id)).toEqual([
-      'story-world-row',
-    ]);
+    expect(
+      studio.relations?.map((relation: { id: string }) => relation.id)
+    ).toEqual(['story-world-row']);
     expect(studio.importJobs).toEqual([]);
     expect(studio.publishEvents).toEqual([]);
   });
