@@ -14,7 +14,12 @@ const round = (value) => Math.round(value * 10) / 10;
 
 /** Rounds a measured `{ x, y, width, height }` box. */
 function box({ x, y, width, height }) {
-  return { x: round(x), y: round(y), width: round(width), height: round(height) };
+  return {
+    x: round(x),
+    y: round(y),
+    width: round(width),
+    height: round(height),
+  };
 }
 
 /**

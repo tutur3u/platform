@@ -139,7 +139,10 @@ test('records the card, chip and hash of a measured image', () => {
     height: 1400,
   });
   assert.equal(entryWithChip.chip.fontSize, 30.1);
-  assert.equal('chip' in reportEntry(target, { ...measured, chip: null }, 'a'), false);
+  assert.equal(
+    'chip' in reportEntry(target, { ...measured, chip: null }, 'a'),
+    false
+  );
 });
 
 test('keeps the caption clear of the card', () => {
@@ -175,7 +178,10 @@ test('keeps the chip inside the card at a readable size', () => {
     checkCardLayout('a.jpg', entry({ chip: small }), PHONE)[0],
     /chip text is 25 px, needs at least 26 px/
   );
-  assert.deepEqual(checkCardLayout('a.jpg', entry({ chip: small }), TABLET), []);
+  assert.deepEqual(
+    checkCardLayout('a.jpg', entry({ chip: small }), TABLET),
+    []
+  );
 });
 
 test('merges measured entries into layout-report.json', () => {
@@ -314,7 +320,9 @@ test('a cropped tablet card is wider and carries its crop', () => {
 });
 
 test('a layout without a cropped box ignores the crop', () => {
-  for (const target of SCREENSHOT_TARGETS.filter((t) => t.layout !== 'tablet')) {
+  for (const target of SCREENSHOT_TARGETS.filter(
+    (t) => t.layout !== 'tablet'
+  )) {
     assert.deepEqual(
       screenshotSpec(target, { crop: true }).card,
       screenshotSpec(target, {}).card,

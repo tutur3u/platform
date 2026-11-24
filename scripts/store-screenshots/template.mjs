@@ -92,7 +92,8 @@ export function screenshotHtml({
   });
   const kind = target.layout === 'window' ? '' : target.frame;
   const windowStrip =
-    target.layout === 'window' && (target.store === 'windows' ? 'windows' : 'mac');
+    target.layout === 'window' &&
+    (target.store === 'windows' ? 'windows' : 'mac');
   const main = { ...spec.card, main: true, z: 2, crop };
   let cards;
   if (spec.fan) {
