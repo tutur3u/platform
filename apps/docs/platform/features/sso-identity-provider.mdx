@@ -129,9 +129,12 @@ signing:
    - every role-derived grant is audited.
 4. The account's **factor-bound TOTP proof** is no older than the client's
    `mfa_max_age` (see D2). Age is measured from the proof time, never from the
-   session's aal2 or a refresh `iat`. The maximum is 12 hours. High-privilege
-   SPs (GitHub Enterprise, admin consoles) keep 10 minutes or less. `ForceAuthn`
-   and OIDC `max_age` always require a fresh proof.
+   session's aal2 or a refresh `iat`. `mfa_max_age` defaults to 600 seconds.
+   A manager with a current MFA proof can raise it to at most 12 hours. A
+   client marked high-privilege (GitHub Enterprise, admin consoles) is capped at
+   600 seconds by schema. `ForceAuthn` and OIDC `prompt=login` always require a
+   fresh proof. OIDC `max_age` is checked against `auth_time` (primary sign-in)
+   as well as the MFA proof age.
 
 Per-workspace domains (for customers using Tuturuuu as their IdP) come later. A
 domain is added only after Tuturuuu verifies it with its own DNS TXT challenge.
@@ -178,12 +181,17 @@ That lets a workspace approve a domain it controls, not one it only typed.
   authorization response carries `iss` (RFC 9207) to stop mix-up attacks.
 - **Token** `POST {issuer}/token`: `client_secret_basic` or `private_key_jwt`.
   A `private_key_jwt` assertion must use the pinned algorithm (never `none` or
-  `HS*`). Its `aud` must be exactly the issuer, `exp` is at most 5 minutes
-  out, and `jti` is single use (cached until expiry).
+  `HS*`). `iss` and `sub` must both equal the `client_id`. Its `aud` must be
+  exactly the issuer or exactly the token endpoint URL, and an array carrying
+  any other value is rejected. `exp` is at most 5 minutes out, and `jti` is
+  required and single use per client (cached until expiry). Client secrets
+  are 256-bit random values stored as SHA-256 hashes (high entropy needs no
+  slow hash). Rotation allows two valid secrets during an overlap window.
   Codes are 256-bit random, stored hashed, single use, valid for 60 seconds and
-  bound to client, redirect URI, PKCE challenge, nonce, account, session and
-  policy revision. Reusing a code burns it and revokes every token issued from
-  it.
+  bound to client, redirect URI, PKCE challenge, nonce, account, session,
+  policy revision, granted scopes and claims hash. Access tokens carry the same
+  scopes and claims hash. Reusing a code burns it and revokes every token
+  issued from it.
 - **Tokens**: the id_token is RS256-signed, valid 5 minutes, with claims `iss`,
   `sub` (pairwise per client), `aud`, `azp`, `exp`, `iat`, `auth_time`, `nonce`,
   `acr` (`urn:tuturuuu:aal2`), `amr` (the methods actually used, such as `pwd`
@@ -192,7 +200,12 @@ That lets a workspace approve a domain it controls, not one it only typed.
   `email_verified`, `given_name`, `family_name`. The access token is opaque,
   hashed at rest, valid 10 minutes, and grants only `userinfo`. **There are no
   refresh tokens** in the first OIDC release.
-- **UserInfo** `GET {issuer}/userinfo`: the same claims, rechecking eligibility.
+- **UserInfo** `GET {issuer}/userinfo`: only the claims the token's scopes
+  granted. It rechecks the account, membership, assignment and token
+  revocation, but not MFA age, which applied at authorization.
+- **`prompt`**: `login` forces a fresh sign-in plus MFA. `consent` bypasses a
+  remembered grant. `none` returns `login_required`, `interaction_required` or
+  `consent_required` instead of showing any page.
 - **Scopes**: `openid` (required), `email`, `profile`. Unknown scopes are rejected.
 - OIDC signing keys are never shared with SAML. Each `kid` is bound to one client
   and one protocol.
@@ -223,13 +236,25 @@ That lets a workspace approve a domain it controls, not one it only typed.
 - **Custody**: private keys are Worker secrets named `SSO_SIGNING_KEY_<KID>` on a
   dedicated signer Worker, or non-exportable KMS keys the Worker calls (D3).
   The Worker is **not** a raw signing oracle:
-  - `apps/web` sends structured input: client, transaction, subject, audience
+  - `apps/web` sends structured input: client, protocol, transaction, subject,
+    the consented attribute values (`email`, `firstName`, `lastName`), audience
     or ACS, `NotOnOrAfter` or `exp`, and nonce or `InResponseTo`.
-  - The Worker builds and canonicalizes the assertion or JWS itself.
+  - The Worker builds the assertion or JWS itself, through the same
+    `packages/sso` builder and canonicalizer, and signs both the SAML
+    `Response` and `Assertion`.
   - It accepts a request only with a finalization permit issued at
-    `sso_finalize_issuance`, bound to that transaction and `kid`. The permit
-    lives 60 seconds or less and is single use (the Worker records its ID until
-    expiry).
+    `sso_finalize_issuance`. The permit binds a hash of every structured field
+    plus the `kid`, lives 60 seconds or less, and is single use.
+  - Permit IDs and request nonces are recorded in a Durable Object
+    (strongly consistent), never in KV or isolate memory, so a replay to
+    another isolate or region is still refused.
+  - The Worker also confirms the transaction independently, through a
+    dedicated Worker-only database role that can read only an approved,
+    consumed, not-yet-signed transaction and its bound fields. A compromised
+    `apps/web` holds the HMAC and permit keys, but still cannot mint an
+    assertion for a subject, client or destination with no real consumed
+    transaction. Without that check the Worker would only protect the
+    private key from extraction.
   - The permit is signed with a dedicated Ed25519 key. The service-only
     finalization path signs it with a secret held outside Postgres (a server
     secret, never a database column or setting). The Worker holds only the
@@ -239,6 +264,12 @@ That lets a workspace approve a domain it controls, not one it only typed.
   - Requests are authenticated by an HMAC over the body plus a timestamp and a
     single-use nonce, never a static bearer.
   - It rate-caps issuance and logs a correlation ID only.
+  - `issuance.signed` is appended only after the Worker returns a signature.
+    A Worker timeout or error appends `issuance.failed` and burns the
+    transaction. The existing five-second budget covers finalization, the
+    Worker call and the final MFA recheck together, so the 60-second permit
+    lifetime never extends it. This amends the finalization order in
+    [Outbound SSO to Claude](/platform/features/sso) once S1c ships.
   - Deploying it and writing its secrets is restricted to the release authority
     in Cloudflare.
 
@@ -291,19 +322,27 @@ append-only triggers. Designing that function is part of its slice.
   endpoint, for example Claude Enterprise through WorkOS directory sync.
 - Triggers: assignment granted or revoked, role change, membership removal,
   demotion to guest, account deletion, Auth ban or disable, name change and a
-  change of email or email domain. Each writes an outbox row in the same
-  transaction. The row holds only IDs (no PII).
+  change of email or email domain. These fire only for users who are assigned
+  to, or already SCIM-linked with, that client, so changes to other workspace
+  members never touch existing SP accounts. Each writes an outbox row in the
+  same transaction. The row holds only IDs (no PII).
+- Each linked user has a stored `(client_id, user_id) → scim_remote_id`
+  mapping, created from the SP's response to the first create. Updates and
+  deactivation address that ID only, and never match accounts by email. That
+  way an email change cannot relink another existing account, including a
+  Claude Owner.
 - A Cloudflare Queue consumer delivers the user's **current state**, computed
   when the call is sent and ordered by a per-user sequence number, not raw
   events. A reordered event therefore cannot re-activate a revoked user.
   Operations are idempotent `PUT` or `PATCH active=false` calls.
-- Stop fence: `sso_scim_connections.enabled = false` is checked before **every**
-  HTTP call.
+- Stop fence: both the `sso_scim_push` flag and
+  `sso_scim_connections.enabled` are checked before **every** HTTP call.
 - Retries are bounded (5, exponential) behind a per-client circuit breaker.
   After the limit, an operation goes to a dead-letter queue, and an alert fires
   for any missed deprovision.
 - Endpoints must be HTTPS on an allowlisted host. Private and internal addresses
-  are refused.
+  are refused. Requests use `redirect: 'manual'`, and any 3xx is treated as a
+  failure, so the bearer token is never forwarded to another origin.
 - Cost bounds follow the Cloudflare billing rules in AGENTS.md: bounded work per
   invocation, terminal-state scheduling, and operation-count tests.
 - Bearer tokens are Worker secrets by name, written only by the release
@@ -325,15 +364,22 @@ design-system lead before the UI slices.
   registered domain, the claims list, and Allow/Deny. With D1 "remember", later
   logins skip the prompt and show a short "Signing you in to {app}"
   interstitial. That flow works like this:
+  - the interstitial does not auto-submit. The user selects **Continue**, a
+    same-origin, CSRF-protected POST bound to the session, before any
+    assertion or code is released. A cross-site page that starts SP-initiated
+    SSO therefore cannot complete a login silently;
   - the server approves the transaction and still writes the per-login
     disclosure receipt;
-  - the remembered grant is keyed on actor, client, claims hash and policy
-    revision;
+  - the remembered grant is keyed on actor, client, policy revision and a hash
+    of the claim names and their current values, so a changed email or name
+    asks again;
   - users can revoke it;
+  - `ForceAuthn`, OIDC `prompt=consent` and `prompt=login` bypass it;
   - it never applies to IdP-initiated logins.
 
-  Adopting D1 amends the every-login rule in
-  [Outbound SSO to Claude](/platform/features/sso).
+  D1 and D2 amend the every-login consent rule and the fixed ten-minute MFA
+  rule in [Outbound SSO to Claude](/platform/features/sso). That page is
+  updated in S3, when they ship.
 - **My apps launcher** (new) at `/{locale}/apps`: the tiles the user is assigned
   to. Each tile goes to the SP's registered SSO start URL, so the SP initiates.
 - **Admin applications** (exists at `/{wsId}/sso`; extended): a protocol picker
@@ -363,7 +409,10 @@ organization (Enterprise, with SCIM). That makes these pilot rules binding:
    through SSO, and email-link login has been confirmed to work as break-glass.
 2. **Break-glass owner.** A documented Claude Owner account that is not bound
    to SSO, signs in by email link, and is never assigned to the Tuturuuu SSO
-   application. Record its existence (not its credentials) in the pilot packet.
+   application. Prefer an address on a domain that is not verified for SSO, if
+   Claude allows such an Owner, so that a later Require SSO cannot bind it.
+   Record its existence (not its credentials) in the pilot packet. During S2
+   setup, confirm and record Claude's JIT setting (kept off).
 3. **Named pilot users first.** Assign only one or two named `@tuturuuu.com`
    pilot users. Widen to the rest of the organization only after their logins,
    denials and revocations behave as specified. SCIM starts in dry-run (compute
