@@ -218,12 +218,14 @@ export function PaneWindowActions({
   onToggleMaximize,
   onClose,
   canMaximize = true,
+  canClose = true,
 }: {
   title: string;
   maximized: boolean;
   onToggleMaximize: () => void;
   onClose: () => void;
   canMaximize?: boolean;
+  canClose?: boolean;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   // Corner brackets: the pane fills the stage. Activities with their own full
@@ -246,17 +248,19 @@ export function PaneWindowActions({
           <MaximizeIcon aria-hidden="true" className="size-4" />
         </Button>
       )}
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
-        aria-label={t('close', { title })}
-        title={t('close', { title })}
-        onClick={onClose}
-      >
-        <X aria-hidden="true" className="size-4" />
-      </Button>
+      {canClose && (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
+          aria-label={t('close', { title })}
+          title={t('close', { title })}
+          onClick={onClose}
+        >
+          <X aria-hidden="true" className="size-4" />
+        </Button>
+      )}
     </>
   );
 }

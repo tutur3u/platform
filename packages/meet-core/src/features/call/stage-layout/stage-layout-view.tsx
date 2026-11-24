@@ -120,6 +120,9 @@ export function StageLayoutView({
   const paneCount = countPanes(layout);
   const maximizedId = layout.maximizedPaneId;
   const phone = tier === 'phone';
+  // Following someone shows their arrangement; rearranging waits until the
+  // person leaves follow mode.
+  const locked = controller.locked;
 
   const rectOf = (paneId: string) =>
     paneId === maximizedId ? FULL : (geometry.panes[paneId] ?? FULL);
@@ -215,8 +218,9 @@ export function StageLayoutView({
               current={pane.id === layout.focusedPaneId}
               hidden={hiddenPane(pane.id)}
               maximized={pane.id === maximizedId}
-              reorderable={paneCount > 1 && !phone}
-              canMaximize={paneCount > 1 && !phone}
+              reorderable={paneCount > 1 && !phone && !locked}
+              canMaximize={paneCount > 1 && !phone && !locked}
+              locked={locked}
               onSlot={onSlot}
               onFocus={controller.focusPane}
               onActivate={controller.activate}
@@ -226,13 +230,14 @@ export function StageLayoutView({
               onToggleMaximize={toggleMaximize}
               onClose={controller.close}
               onSwitcher={
-                phone && controller.openIds.length > 1
+                phone && !locked && controller.openIds.length > 1
                   ? () => setSwitcher(true)
                   : undefined
               }
             />
           ))}
           {!maximizedId &&
+            !locked &&
             geometry.boundaries.map((boundary) => (
               <LayoutSeparator
                 key={boundary.key}
@@ -294,10 +299,14 @@ export function StageLayoutView({
                   maximized={pane.id === maximizedId}
                   slot={slots[pane.id] ?? null}
                   canMaximize={
-                    paneCount > 1 && !phone && pane.id !== maximizedId
+                    paneCount > 1 &&
+                    !phone &&
+                    !locked &&
+                    pane.id !== maximizedId
                   }
                   tab={
-                    pane.tabs.length > 1 && !(phone && switchItems.length > 1)
+                    pane.tabs.length > 1 &&
+                    !(phone && !locked && switchItems.length > 1)
                       ? {
                           panelId: panelId(activity.id),
                           tabId: tabId(pane.id, activity.id),

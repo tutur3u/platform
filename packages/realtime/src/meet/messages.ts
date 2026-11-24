@@ -40,6 +40,10 @@ import {
 } from './primitives';
 import { normalizeDisplayNameText } from './room-display-name';
 import {
+  type MeetStageLayoutSnapshot,
+  meetStageLayoutSnapshotSchema,
+} from './stage-layout-snapshot';
+import {
   type MeetApprovedParticipant,
   type MeetReaction,
   type MeetRoomSettings,
@@ -88,6 +92,8 @@ const navigationRequestSchema = z
       z.array(participantId).min(1).max(MEET_NAVIGATION_MAX_TARGETS),
     ]),
     view: meetRoomViewSchema.optional(),
+    /** The leader's stage arrangement; Follow mirrors it, Summon ignores it. */
+    layout: meetStageLayoutSnapshotSchema.optional(),
   })
   .refine((message) => message.mode === 'follow.stop' || !!message.view, {
     message: 'view is required',
@@ -335,6 +341,8 @@ export type MeetRealtimeServerMessage =
       /** Sender user id. */
       from: string;
       view?: MeetRoomView;
+      /** The leader's stage arrangement on `follow` and `follow.update`. */
+      layout?: MeetStageLayoutSnapshot;
       /** Hosts and co-hosts move people directly; others ask for consent. */
       forced: boolean;
       createdAt: string;

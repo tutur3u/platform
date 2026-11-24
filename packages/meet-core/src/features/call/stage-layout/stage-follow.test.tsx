@@ -124,7 +124,7 @@ it('follows the leader to an activity after starting from the stage', () => {
   expect(summoned).toEqual(['tool:live-qa']);
 });
 
-it('ends following when the person moves on their own', () => {
+it('keeps the person where the leader is while following', () => {
   const view = mount();
   act(() => {
     stage.open('tool:live-qa');
@@ -133,9 +133,11 @@ it('ends following when the person moves on their own', () => {
   deliver({ surface: 'stage' }, 'follow');
   view.rerender(tree());
   expect(nav.following).not.toBeNull();
+  // Their own move waits until they leave follow mode.
   act(() => stage.open('tool:live-qa'));
   view.rerender(tree());
-  expect(nav.following).toBeNull();
+  expect(stage.focused).toBe('programming');
+  expect(nav.following).not.toBeNull();
 });
 
 const goBack = () => {

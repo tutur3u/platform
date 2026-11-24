@@ -81,6 +81,11 @@ export function applyRoomNavigation(
     mode: message.mode,
     from: sender,
     ...(message.view ? { view: message.view } : {}),
+    // Only Follow mirrors an arrangement; a Summon brings one surface.
+    ...(message.layout &&
+    (message.mode === 'follow' || message.mode === 'follow.update')
+      ? { layout: message.layout }
+      : {}),
     forced,
     createdAt: now,
   };

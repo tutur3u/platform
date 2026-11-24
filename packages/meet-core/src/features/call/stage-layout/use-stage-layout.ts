@@ -32,7 +32,9 @@ import {
   swapPanes,
   type ViewportTier,
 } from './layout-model';
+import type { MeetStageLayoutSnapshot } from '@tuturuuu/realtime/meet';
 import {
+  parseStageLayout,
   readStoredStage,
   stageLayoutKey,
   type StoredStage,
@@ -138,6 +140,15 @@ export function useStageLayout({
     [stored, tier, isAvailable]
   );
 
+  // Following someone mirrors their arrangement, so the person's own edits
+  // wait until they leave follow mode. Mirroring itself is not an edit.
+  const lockedRef = useRef(false);
+  const [locked, setLockedState] = useState(false);
+  const setLocked = useCallback((next: boolean) => {
+    lockedRef.current = next;
+    setLockedState(next);
+  }, []);
+
   const dirty = useRef(false);
   useEffect(() => {
     if (!dirty.current) return;
@@ -154,7 +165,8 @@ export function useStageLayout({
    * that changes nothing keeps the stored object as it is.
    */
   const edit = useCallback(
-    (change: Change, shared = false, reveal?: string) => {
+    (change: Change, shared = false, reveal?: string, force = false) => {
+      if (lockedRef.current && !force) return;
       setStored((current) => {
         const { tier: at, isAvailable: available } = limits.current;
         if (reveal && at !== 'desktop' && !current.views[at]) {
@@ -197,6 +209,53 @@ export function useStageLayout({
     []
   );
 
+  /**
+   * Shows a leader's arrangement as it is. Activities `keep` refuses are left
+   * out; narrower screens fold it instead of keeping arrangements of their
+   * own. Returns the activity in focus afterwards, as this person sees it.
+   */
+  const mirror = useCallback(
+    (snapshot: MeetStageLayoutSnapshot, keep: (id: string) => boolean) => {
+      const parsed = parseStageLayout({ layout: snapshot });
+      const layout = openActivities(parsed)
+        .filter((id) => !keep(id))
+        .reduce(closeActivity, parsed);
+      const { tier: at, isAvailable: available } = limits.current;
+      setStored((current) => {
+        const same =
+          !current.views.tablet &&
+          !current.views.phone &&
+          JSON.stringify(current.layout) === JSON.stringify(layout);
+        if (same) return current;
+        dirty.current = true;
+        return { ...current, layout, views: {} };
+      });
+      return focusedActivity(
+        fitLayout(pruneLayout(layout, available), MAX_PANES[at])
+      );
+    },
+    []
+  );
+  /** Opens an activity someone brought this person to, even while locked. */
+  const bring = useCallback(
+    (id: string) =>
+      edit(
+        (layout, max) => openActivity(layout, id, { maxPanes: max }),
+        true,
+        undefined,
+        true
+      ),
+    [edit]
+  );
+  const snapshot = useMemo<MeetStageLayoutSnapshot>(
+    () => ({
+      root: shown.root,
+      focusedPaneId: shown.focusedPaneId,
+      maximizedPaneId: shown.maximizedPaneId,
+    }),
+    [shown]
+  );
+
   const open = useCallback(
     (id: string, options?: Pick<OpenOptions, 'placement'>) =>
       edit(
@@ -221,6 +280,8 @@ export function useStageLayout({
       ),
     [edit]
   );
+  // Where the people sit is a viewing preference, not an arrangement, so it
+  // stays the person's own while following.
   const setStrip = useCallback((strip: VideoStripPreference) => {
     setStored((current) => {
       if (current.strip === strip) return current;
@@ -234,6 +295,13 @@ export function useStageLayout({
     tier,
     maxPanes: MAX_PANES[tier],
     strip: stored.strip,
+    /** Following someone: their arrangement shows and edits wait. */
+    locked,
+    setLocked,
+    mirror,
+    bring,
+    /** What a leader shares: the arrangement on this person's screen. */
+    snapshot,
     openIds: useMemo(() => openActivities(shown), [shown]),
     focused: focusedActivity(shown),
     isOpen: (id: string) => isActivityOpen(shown, id),

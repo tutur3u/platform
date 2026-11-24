@@ -1,4 +1,8 @@
-import type { MeetNavigationMode, MeetRoomView } from '@tuturuuu/realtime/meet';
+import type {
+  MeetNavigationMode,
+  MeetRoomView,
+  MeetStageLayoutSnapshot,
+} from '@tuturuuu/realtime/meet';
 
 /** What the call shows this person right now, as call-shell tracks it. */
 export interface CallSurfaceState {
@@ -15,6 +19,8 @@ export interface NavigationEvent {
   mode: MeetNavigationMode;
   from: string;
   view?: MeetRoomView;
+  /** The leader's stage arrangement, which Follow mirrors. */
+  layout?: MeetStageLayoutSnapshot;
   forced: boolean;
 }
 
@@ -98,9 +104,23 @@ export type NavigationDecision =
   | { kind: 'navigate'; view: MeetRoomView }
   | { kind: 'invite'; view: MeetRoomView }
   | { kind: 'blocked'; view: MeetRoomView }
-  | { kind: 'follow-start'; leaderId: string; view?: MeetRoomView }
-  | { kind: 'follow-invite'; leaderId: string; view?: MeetRoomView }
-  | { kind: 'follow-apply'; view: MeetRoomView }
+  | {
+      kind: 'follow-start';
+      leaderId: string;
+      view?: MeetRoomView;
+      layout?: MeetStageLayoutSnapshot;
+    }
+  | {
+      kind: 'follow-invite';
+      leaderId: string;
+      view?: MeetRoomView;
+      layout?: MeetStageLayoutSnapshot;
+    }
+  | {
+      kind: 'follow-apply';
+      view: MeetRoomView;
+      layout?: MeetStageLayoutSnapshot;
+    }
   | { kind: 'follow-end'; leaderId: string }
   | { kind: 'follow-withdrawn'; leaderId: string };
 
@@ -137,16 +157,25 @@ export function decideNavigation(
       return event.forced
         ? { kind: 'navigate', view: event.view }
         : { kind: 'invite', view: event.view };
-    case 'follow':
-      if (context.following === event.from) return { kind: 'ignore' };
+    case 'follow': {
+      const { view, layout } = event;
+      // A repeated start from the leader already followed brings their
+      // current arrangement again.
+      if (context.following === event.from)
+        return view && (layout || context.canOpen(view, event.forced))
+          ? { kind: 'follow-apply', view, layout }
+          : { kind: 'ignore' };
       return event.forced
-        ? { kind: 'follow-start', leaderId: event.from, view: event.view }
-        : { kind: 'follow-invite', leaderId: event.from, view: event.view };
+        ? { kind: 'follow-start', leaderId: event.from, view, layout }
+        : { kind: 'follow-invite', leaderId: event.from, view, layout };
+    }
     case 'follow.update':
       if (context.following !== event.from || !event.view)
         return { kind: 'ignore' };
-      return context.canOpen(event.view, event.forced)
-        ? { kind: 'follow-apply', view: event.view }
+      // An arrangement still mirrors what this person may open around a
+      // focused surface they may not.
+      return event.layout || context.canOpen(event.view, event.forced)
+        ? { kind: 'follow-apply', view: event.view, layout: event.layout }
         : { kind: 'blocked', view: event.view };
     case 'follow.stop':
       // Not following yet: the leader withdrew an invitation still on screen.

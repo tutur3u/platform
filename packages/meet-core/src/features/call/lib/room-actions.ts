@@ -10,6 +10,7 @@ import type {
   MeetRoomMediaQualitySummary,
   MeetRoomSettings,
   MeetRoomView,
+  MeetStageLayoutSnapshot,
 } from '@tuturuuu/realtime/meet';
 import { DISPLAY_NAME_LOCKED } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
@@ -279,6 +280,7 @@ export function createRoomActions(
       mode: MeetNavigationMode;
       targets: 'everyone' | string[];
       view?: MeetRoomView;
+      layout?: MeetStageLayoutSnapshot;
     }) =>
       signaling.current?.send({
         type: 'navigation.request',

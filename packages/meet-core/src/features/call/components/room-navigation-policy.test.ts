@@ -168,9 +168,14 @@ describe('decideNavigation', () => {
       kind: 'follow-invite',
     });
     const following = { ...context, following: 'leader' };
+    // A repeated start from the same leader brings their arrangement again.
     expect(decideNavigation(event({ mode: 'follow' }), following)).toEqual({
-      kind: 'ignore',
+      kind: 'follow-apply',
+      view: { surface: 'programming' },
     });
+    expect(
+      decideNavigation(event({ mode: 'follow', view: undefined }), following)
+    ).toEqual({ kind: 'ignore' });
     expect(
       decideNavigation(
         event({ mode: 'follow.update', view: { surface: 'document' } }),
@@ -183,6 +188,29 @@ describe('decideNavigation', () => {
         following
       )
     ).toEqual({ kind: 'ignore' });
+    // A layout still mirrors around a focused surface this person may not open.
+    const layout = {
+      root: {
+        kind: 'pane' as const,
+        id: 'p1',
+        tabs: ['tool:x'],
+        active: 'tool:x',
+      },
+      focusedPaneId: 'p1',
+      maximizedPaneId: null,
+    };
+    const closed = { ...following, canOpen: () => false };
+    expect(
+      decideNavigation(event({ mode: 'follow.update', layout }), closed)
+    ).toEqual({
+      kind: 'follow-apply',
+      view: { surface: 'programming' },
+      layout,
+    });
+    expect(decideNavigation(event({ mode: 'follow.update' }), closed)).toEqual({
+      kind: 'blocked',
+      view: { surface: 'programming' },
+    });
     expect(decideNavigation(event({ mode: 'follow.update' }), context)).toEqual(
       {
         kind: 'ignore',

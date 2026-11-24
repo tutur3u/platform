@@ -1,5 +1,8 @@
 'use client';
-import type { MeetRoomView } from '@tuturuuu/realtime/meet';
+import type {
+  MeetRoomView,
+  MeetStageLayoutSnapshot,
+} from '@tuturuuu/realtime/meet';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -8,7 +11,6 @@ import {
   canOpenRoomView,
   currentRoomView,
   decideNavigation,
-  followUpdateDelay,
   type NavigationTargets,
   type RoomViewAccess,
   sameRoomView,
@@ -18,6 +20,7 @@ import {
 } from '../components/room-navigation-policy';
 import type { MeetRoomController } from '../lib/room-controller';
 import { findMeetTool } from '../tools/registry';
+import { useFollowBroadcast } from './use-follow-broadcast';
 
 export type { NavigationTargets };
 
@@ -62,20 +65,24 @@ export function useSurfaceLabel() {
 export function useRoomNavigation({
   room,
   surface,
+  layout,
   apply,
   access,
 }: {
   room: MeetRoomController;
   surface: CallSurfaceState;
+  /** This person's stage arrangement, which the people following them mirror. */
+  layout?: MeetStageLayoutSnapshot;
   /**
    * `forced` marks a move a host or co-host made, which opens the surface.
    * It may report the view the person is on afterwards when that is not
    * `next` (a view that opens nothing leaves them where they are), and a
-   * `back` that undoes the move.
+   * `back` that undoes the move. `layout` is the leader's arrangement when
+   * the move comes from someone this person follows.
    */
   apply: (
     next: CallSurfaceState,
-    options: { forced: boolean }
+    options: { forced: boolean; layout?: MeetStageLayoutSnapshot }
   ) => ApplyResult | void;
   access: RoomViewAccess;
 }) {
@@ -121,8 +128,6 @@ export function useRoomNavigation({
   const [following, setFollowing] = useState<string | null>(null);
   const followingRef = useRef(following);
   followingRef.current = following;
-  const appliedKey = useRef<string | null>(null);
-  const sentKey = useRef<string | null>(null);
   const seen = useRef(new Set<string>());
   const surfaceRef = useRef(surface);
   surfaceRef.current = surface;
@@ -139,26 +144,35 @@ export function useRoomNavigation({
   );
   // Follow invitations still on screen, with the leader's latest surface.
   const invitations = useRef(
-    new Map<string, { view?: MeetRoomView; forced: boolean }>()
+    new Map<
+      string,
+      { view?: MeetRoomView; layout?: MeetStageLayoutSnapshot; forced: boolean }
+    >()
   );
 
-  const go = useCallback((next: MeetRoomView, forced: boolean) => {
-    const result = applyRef.current(
-      surfaceFromView(next, surfaceRef.current.drawer),
-      { forced }
-    );
-    // Following ends when the view I am on stops matching what was applied,
-    // so record where applying actually left me.
-    appliedKey.current = viewKey(result?.reached ?? next);
-    return result?.back;
-  }, []);
+  const go = useCallback(
+    (next: MeetRoomView, forced: boolean, layout?: MeetStageLayoutSnapshot) => {
+      const result = applyRef.current(
+        surfaceFromView(next, surfaceRef.current.drawer),
+        { forced, layout }
+      );
+      return result?.back;
+    },
+    []
+  );
 
   const startFollowing = useCallback(
-    (leaderId: string, next: MeetRoomView | undefined, forced: boolean) => {
+    (
+      leaderId: string,
+      next: MeetRoomView | undefined,
+      forced: boolean,
+      layout?: MeetStageLayoutSnapshot
+    ) => {
       setFollowing(leaderId);
       followingRef.current = leaderId;
-      if (next && canOpen(next, forced)) go(next, forced);
-      else appliedKey.current = viewKey(currentRoomView(surfaceRef.current));
+      // An arrangement is mirrored even when its focused surface is one this
+      // person may not open; the mirror leaves such activities out.
+      if (next && (layout || canOpen(next, forced))) go(next, forced, layout);
     },
     [canOpen, go]
   );
@@ -167,7 +181,11 @@ export function useRoomNavigation({
     for (const event of unseenNavigation(state.navigation, seen.current)) {
       const invited = invitations.current.get(event.from);
       if (invited && event.mode === 'follow.update')
-        invitations.current.set(event.from, { ...invited, view: event.view });
+        invitations.current.set(event.from, {
+          ...invited,
+          view: event.view,
+          layout: event.layout,
+        });
       const decision = decideNavigation(event, {
         selfUserId: state.selfUserId,
         following: followingRef.current,
@@ -199,10 +217,14 @@ export function useRoomNavigation({
             duration: 15_000,
             action: {
               label: t('summon.join'),
-              onClick: () =>
-                canOpen(decision.view, false)
-                  ? go(decision.view, false)
-                  : void toast(blocked, { id: blockedToast(event.from) }),
+              onClick: () => {
+                if (!canOpen(decision.view, false))
+                  return void toast(blocked, { id: blockedToast(event.from) });
+                // Joining someone else's surface leaves follow mode.
+                setFollowing(null);
+                followingRef.current = null;
+                go(decision.view, false);
+              },
             },
             cancel: { label: t('navigation.not_now'), onClick: () => {} },
           });
@@ -214,13 +236,19 @@ export function useRoomNavigation({
           });
           break;
         case 'follow-start':
-          startFollowing(decision.leaderId, decision.view, true);
+          startFollowing(
+            decision.leaderId,
+            decision.view,
+            true,
+            decision.layout
+          );
           toast(t('follow.started', { name }));
           break;
         case 'follow-invite': {
           const leaderId = decision.leaderId;
           invitations.current.set(leaderId, {
             view: decision.view,
+            layout: decision.layout,
             forced: event.forced,
           });
           const forget = () => invitations.current.delete(leaderId);
@@ -238,7 +266,8 @@ export function useRoomNavigation({
                 startFollowing(
                   leaderId,
                   latest?.view ?? decision.view,
-                  latest?.forced ?? false
+                  latest?.forced ?? false,
+                  latest ? latest.layout : decision.layout
                 );
               },
             },
@@ -247,7 +276,7 @@ export function useRoomNavigation({
           break;
         }
         case 'follow-apply':
-          go(decision.view, event.forced);
+          go(decision.view, event.forced, decision.layout);
           break;
         case 'follow-end':
           setFollowing(null);
@@ -292,18 +321,13 @@ export function useRoomNavigation({
       }
   }, [state.participants]);
 
-  // Moving on my own, or the leader leaving the call, ends following.
+  // The leader leaving the call ends following. Nothing else on this side
+  // does: the stage is locked while following, so what is on screen may
+  // differ from the leader's view only through access, which the mirror
+  // already accounts for.
   useEffect(() => {
-    if (!following) return;
-    if (!state.participants[following]) {
-      setFollowing(null);
-      return;
-    }
-    if (appliedKey.current !== null && appliedKey.current !== key) {
-      setFollowing(null);
-      toast(t('follow.ended_manual', { name: nameOf(following) }));
-    }
-  }, [following, key, nameOf, state.participants, t]);
+    if (following && !state.participants[following]) setFollowing(null);
+  }, [following, state.participants]);
 
   // Losing permission mid-session ends leading; the room would refuse updates.
   const allowed = canManage || state.settings.participantNavigation !== false;
@@ -311,35 +335,15 @@ export function useRoomNavigation({
     if (!allowed) setLeading(null);
   }, [allowed]);
 
-  // A leader's moves reach the people following them. Updates are spaced, and
-  // the last surface always goes out, so nobody is left one switch behind.
-  const lastSentAt = useRef(0);
-  const updateTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
-  );
-  const latest = useRef({ key, view });
-  latest.current = { key, view };
-  const request = room.requestNavigation;
-  useEffect(() => () => clearTimeout(updateTimer.current), []);
-  useEffect(() => {
-    clearTimeout(updateTimer.current);
-    if (!leading) {
-      sentKey.current = null;
-      return;
-    }
-    if (sentKey.current === null) sentKey.current = key;
-    if (sentKey.current === key) return;
-    const send = () => {
-      const current = latest.current;
-      if (sentKey.current === current.key) return;
-      sentKey.current = current.key;
-      lastSentAt.current = Date.now();
-      request({ mode: 'follow.update', targets: leading, view: current.view });
-    };
-    const wait = followUpdateDelay(lastSentAt.current, Date.now());
-    if (wait) updateTimer.current = setTimeout(send, wait);
-    else send();
-  }, [key, leading, request]);
+  const broadcast = useFollowBroadcast({
+    request: room.requestNavigation,
+    leading,
+    canManage,
+    otherIds,
+    viewKey: key,
+    view,
+    layout,
+  });
 
   const reached = (targets: NavigationTargets) =>
     targetCount(targets, otherIds);
@@ -356,9 +360,7 @@ export function useRoomNavigation({
     startLeading: (targets: NavigationTargets) => {
       if (!reached(targets) || paused) return;
       setLeading(targets);
-      sentKey.current = key;
-      lastSentAt.current = Date.now();
-      room.requestNavigation({ mode: 'follow', targets, view });
+      broadcast.start(targets);
       pace();
     },
     stopLeading: () => {

@@ -1519,8 +1519,9 @@ people between the room's surfaces: the stage, Co-Programming, the live document
 and any tool panel. They never change admission, media, or tool access.
 
 - **Summon** brings the chosen people to the surface the sender has open, once.
-- **Follow** keeps the chosen people on the sender's surface as the sender moves,
-  until the sender stops or the follower leaves.
+- **Follow** mirrors the sender's whole stage layout as the sender changes it,
+  until the sender stops or the follower leaves follow mode. See Follow mode
+  below.
 - Both target one person, several people, or everyone in the call.
 
 Default and permissions:
@@ -1530,8 +1531,8 @@ Default and permissions:
   following at any time.
 - Any other participant sends an invitation. The recipient chooses Join or
   Follow, or dismisses it. Nothing moves without that consent.
-- A follower who navigates on their own stops following. A banner names the
-  person being followed and offers Stop following for as long as it applies.
+- A banner names the person being followed and offers Stop following for as
+  long as it applies. Stop following is the way out of follow mode.
 - A host or co-host who brings someone to an activity also opens it for them,
   which is how a room with Activity visibility set to Hosts and co-hosts shares
   one. An invitation from anyone else opens only what the recipient could
@@ -1544,6 +1545,53 @@ people present in the room, delivers the request only to those targets, and
 rate-limits each sender. It stores no navigation history. Regression coverage:
 `room-navigation.test.ts` (permissions, targeting and limits) and
 `room-navigation-policy.test.ts` (recipient decisions and the follow lifecycle).
+
+#### Follow mode
+
+Scope: a web participant following a leader in one Meet or Parley room. A
+leader whose client sends no layout is followed by focused surface only, which
+opens or focuses that activity as a Summon would.
+
+- **Mirror.** A follower sees the leader's full stage layout: the open
+  activities, the panes, their sizes and order, the tabs, the focused surface
+  and a maximized pane. Activities the follower has open that the leader does
+  not are closed. The layout shown is the one on the leader's screen; a
+  follower on a narrower screen sees it folded to their pane limit, as their own
+  layout would be.
+- **Locked.** While following, the follower cannot rearrange the stage: no
+  opening, closing, focusing, tab switching, resizing, reordering or
+  maximizing. Pane grips, separators, maximize and close are hidden. Where the
+  video strip sits stays the follower's own choice.
+- **Leaving.** Stop following ends follow mode explicitly and unlocks the
+  stage, keeping the layout on screen as the follower's own. Being summoned,
+  or joining someone's Summon invitation, also ends it, as does the leader
+  stopping or leaving the call. Nothing else does: the follower cannot drift
+  away on their own while the stage is locked. Updates from the former leader
+  are ignored afterwards.
+- **Leader change.** A follow start from another host or co-host switches the
+  follower to that leader's layout at once; one from anyone else is an
+  invitation. Updates from the previous leader are ignored.
+- **Late joiners.** Someone who joins the call (or reconnects) while a leader is
+  leading them, everyone included, gets a follow start of their own with the
+  current layout: immediately from a host or co-host, as an invitation from
+  anyone else. Non-host leaders wait out the room's five-second start pacing
+  first, and their followers' updates resume right after.
+- **Access.** An activity the follower may not open (an unknown tool, a tool or
+  collaboration surface they cannot browse on an invitation, Co-Programming,
+  the live document or the saved whiteboard for a guest) is left out of the
+  mirrored layout rather than shown, and the rest of the layout still mirrors.
+  Activities a host or co-host's Follow brings are opened for the follower, as
+  a Summon would.
+
+Bounds: the layout rides on `follow` and `follow.update` requests as a
+snapshot of at most three panes, four levels, 24 tabs and 4 KB, with
+pattern-checked pane and activity ids. The room relays it only on Follow, never
+on Summon. Follow updates are paced at one per second per leader by the room;
+the leader's client spaces them 1.1 s apart and always sends the latest layout
+last, and a drag is sent once on release. Regression coverage:
+`stage-layout-snapshot.test.ts` (schema bounds and relay),
+`stage-follow-layout.test.tsx` (mirror, lock, leaving, leader change, access
+and late joiners) and `stage-follow.test.tsx`.
 
 ### Activity layout
 
@@ -1565,7 +1613,8 @@ media, or tool access.
   `aria-orientation`, `aria-valuenow`, `aria-valuemin` and `aria-valuemax`
   (percent of the split, 15 to 85). Drag it, or use the arrow keys (Shift for a
   larger step), Home and End; Enter or a double click shares the two panes
-  equally.
+  equally. Escape returns the separator to where keyboard resizing started, or
+  drops a drag in progress without saving it.
 - **Maximize and restore.** Maximize makes one pane fill the stage. Other panes
   stay mounted but hidden and report themselves inactive. Restore returns the
   exact split. Opening a new activity restores the split; summoning an activity
@@ -1621,9 +1670,8 @@ media, or tool access.
 - **Follow and Summon.** The view a person shares is the activity in their
   focused pane. A summoned or followed view opens that activity or focuses the
   pane that already has it, and never closes the activities the person has open.
-  Following a leader who is on the stage keeps the follower on what they have
-  open and keeps following until they move on their own. Follow and Summon
-  carry the focused activity, not the arrangement of panes.
+  A Summon carries the focused activity only. Following mirrors the leader's
+  whole arrangement and locks the follower's own rearranging (see Follow mode).
 - **Intentional exceptions.** In-call forms remain a dialog; once opened it
   stays mounted, so closing it keeps a draft, its receipt and the submission. Presence-only rooms
   have no video strip; the roster shows only while nothing is open.
@@ -1631,6 +1679,7 @@ media, or tool access.
 Regression coverage: `layout-model.test.ts` (open, close, split, stack,
 maximize and restore, reorder, pane limits, fitting), `layout-storage.test.ts`
 and `use-stage-layout.test.tsx` (per-room persistence and reconnect restore),
+`layout-separator.test.tsx` (Escape cancelling a keyboard resize or a drag),
 `stage-layout-view.test.tsx` (separator keyboard resize, hidden panes staying
 mounted, the minimum-size card, the phone switcher, size classes),
 `stage-layout-media.test.tsx` (participant media staying mounted),

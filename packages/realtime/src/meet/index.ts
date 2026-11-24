@@ -61,6 +61,7 @@ export {
   meetRealtimeClientMessageSchema,
   meetRoomViewSchema,
 } from './messages';
+export * from './stage-layout-snapshot';
 export {
   applyRoomNavigation,
   MEET_NAVIGATION_REQUEST_INTERVAL_MS,

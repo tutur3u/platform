@@ -13,7 +13,9 @@ export const STAGE_GUTTER = 12;
 /**
  * The draggable line between two panes. It is a focusable separator, so
  * arrow keys resize it, Home and End move it to either limit, and Enter or a
- * double click shares the two panes equally.
+ * double click shares the two panes equally. Escape puts back the position
+ * the separator had before this round of keyboard steps, or drops a drag
+ * still in progress.
  */
 export function LayoutSeparator({
   boundary,
@@ -45,6 +47,9 @@ export function LayoutSeparator({
     scheduled: boolean;
     frame: number;
   } | null>(null);
+  // Where keyboard resizing started; Escape returns there. Cleared when focus
+  // leaves, when the panes are shared equally, and after Escape.
+  const keyOrigin = useRef<number | null>(null);
   const cancel = useRef(onCancel);
   cancel.current = onCancel;
   // A separator that unmounts during a drag (the pane count changed, a pane
@@ -67,6 +72,24 @@ export function LayoutSeparator({
     cancelAnimationFrame(active.frame);
     onCommit(active.latest);
   };
+  const step = (position: number) => {
+    keyOrigin.current ??= boundary.now;
+    onCommit(position);
+  };
+  const escape = () => {
+    const active = drag.current;
+    if (active) {
+      drag.current = null;
+      cancelAnimationFrame(active.frame);
+      onCancel();
+      return true;
+    }
+    const origin = keyOrigin.current;
+    keyOrigin.current = null;
+    if (origin === null) return false;
+    if (Math.round(origin) !== Math.round(boundary.now)) onCommit(origin);
+    return true;
+  };
   const decrease = vertical ? 'ArrowLeft' : 'ArrowUp';
   const increase = vertical ? 'ArrowRight' : 'ArrowDown';
   return (
@@ -85,6 +108,7 @@ export function LayoutSeparator({
       )}
       onPointerDown={(event) => {
         if (event.button !== 0 || drag.current) return;
+        keyOrigin.current = null;
         const length = extent();
         if (!length) return;
         event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -119,23 +143,32 @@ export function LayoutSeparator({
       onPointerCancel={(event) => finish(event.pointerId)}
       onLostPointerCapture={(event) => finish(event.pointerId)}
       onDoubleClick={onReset}
+      onBlur={() => {
+        keyOrigin.current = null;
+      }}
       onKeyDown={(event) => {
-        const step = event.shiftKey ? BIG_STEP : STEP;
+        const amount = event.shiftKey ? BIG_STEP : STEP;
         switch (event.key) {
           case decrease:
-            onCommit(boundary.now - step);
+            step(boundary.now - amount);
             break;
           case increase:
-            onCommit(boundary.now + step);
+            step(boundary.now + amount);
             break;
           case 'Home':
-            onCommit(boundary.min);
+            step(boundary.min);
             break;
           case 'End':
-            onCommit(boundary.max);
+            step(boundary.max);
             break;
           case 'Enter':
+            keyOrigin.current = null;
             onReset();
+            break;
+          case 'Escape':
+            // Nothing to undo: let the dialog or call around handle Escape.
+            if (!escape()) return;
+            event.stopPropagation();
             break;
           default:
             return;

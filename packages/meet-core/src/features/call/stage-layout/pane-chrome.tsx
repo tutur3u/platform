@@ -40,6 +40,7 @@ export function PaneChrome({
   maximized,
   reorderable,
   canMaximize,
+  locked = false,
   onSlot,
   onFocus,
   onActivate,
@@ -61,6 +62,8 @@ export function PaneChrome({
   maximized: boolean;
   reorderable: boolean;
   canMaximize: boolean;
+  /** Following someone: the arrangement is theirs, so nothing here edits it. */
+  locked?: boolean;
   onSlot: (paneId: string, element: HTMLElement | null) => void;
   onFocus: (paneId: string) => void;
   onActivate: (paneId: string, activityId: string) => void;
@@ -90,6 +93,7 @@ export function PaneChrome({
     onMove(pane.id, step);
   };
   const tabKey = (event: KeyboardEvent, id: string) => {
+    if (locked) return;
     const step =
       event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
     if (!step) return;
@@ -182,6 +186,7 @@ export function PaneChrome({
                   aria-selected={selected}
                   aria-controls={panelId(id)}
                   tabIndex={selected ? 0 : -1}
+                  aria-disabled={locked || undefined}
                   className={cn(
                     'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg px-2.5 font-semibold text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     selected
@@ -220,6 +225,7 @@ export function PaneChrome({
         <PaneWindowActions
           title={active.title}
           canMaximize={canMaximize}
+          canClose={!locked}
           maximized={maximized}
           onToggleMaximize={() => onToggleMaximize(pane.id)}
           onClose={() => onClose(pane.active)}
