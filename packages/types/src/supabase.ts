@@ -33401,6 +33401,10 @@ export type Database = {
         Args: { p_series_id: string; p_until?: string };
         Returns: number;
       };
+      meet_ai_self_v1_account_gone: {
+        Args: { p_account_id: string };
+        Returns: boolean;
+      };
       meet_ai_self_v1_capturing: {
         Args: {
           p_session: Omit<
