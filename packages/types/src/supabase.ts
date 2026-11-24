@@ -455,6 +455,48 @@ export type Database = {
           },
         ];
       };
+      ai_credit_reservation_pack_draws: {
+        Row: {
+          amount: number;
+          created_at: string;
+          draw_order: number;
+          forfeited: number;
+          pack_granted_at: string;
+          pack_purchase_id: string;
+          refunded: number;
+          reservation_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          created_at?: string;
+          draw_order: number;
+          forfeited?: number;
+          pack_granted_at: string;
+          pack_purchase_id: string;
+          refunded?: number;
+          reservation_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          draw_order?: number;
+          forfeited?: number;
+          pack_granted_at?: string;
+          pack_purchase_id?: string;
+          refunded?: number;
+          reservation_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_credit_reservation_pack_draws_reservation_id_fkey';
+            columns: ['reservation_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_credit_reservations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ai_credit_reservations: {
         Row: {
           amount: number;
@@ -466,6 +508,7 @@ export type Database = {
           id: string;
           metadata: NonNullable<Json>;
           model_id: string | null;
+          pack_amount: number;
           released_at: string | null;
           status: string;
           updated_at: string;
@@ -483,6 +526,7 @@ export type Database = {
           id?: string;
           metadata?: NonNullable<Json>;
           model_id?: string | null;
+          pack_amount?: number;
           released_at?: string | null;
           status: string;
           updated_at?: string;
@@ -499,6 +543,7 @@ export type Database = {
           id?: string;
           metadata?: NonNullable<Json>;
           model_id?: string | null;
+          pack_amount?: number;
           released_at?: string | null;
           status?: string;
           updated_at?: string;
@@ -6372,6 +6417,49 @@ export type Database = {
             referencedColumns: ['user_id'];
           },
         ];
+      };
+      external_account_links: {
+        Row: {
+          external_email: string | null;
+          external_subject: string;
+          id: string;
+          link_jti: string | null;
+          linked_at: string;
+          provider: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          scopes: string[];
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          external_email?: string | null;
+          external_subject: string;
+          id?: string;
+          link_jti?: string | null;
+          linked_at?: string;
+          provider: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          scopes?: string[];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          external_email?: string | null;
+          external_subject?: string;
+          id?: string;
+          link_jti?: string | null;
+          linked_at?: string;
+          provider?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          scopes?: string[];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       external_chat_binding_credentials: {
         Row: {
@@ -15749,101 +15837,6 @@ export type Database = {
           },
         ];
       };
-      meet_mira_host_acceptances: {
-        Row: {
-          audience_adult_confirmed: boolean;
-          capabilities: string[];
-          created_at: string;
-          end_reason: string | null;
-          event: string;
-          id: string;
-          meeting_id: string;
-          notice_version: string;
-          revision: number;
-          user_id: string | null;
-          ws_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          audience_adult_confirmed?: boolean;
-          capabilities?: string[];
-          created_at?: string;
-          end_reason?: string | null;
-          event: string;
-          id?: string;
-          meeting_id: string;
-          notice_version: string;
-          revision: number;
-          user_id?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          audience_adult_confirmed?: boolean;
-          capabilities?: string[];
-          created_at?: string;
-          end_reason?: string | null;
-          event?: string;
-          id?: string;
-          meeting_id?: string;
-          notice_version?: string;
-          revision?: number;
-          user_id?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [];
-      };
-      meet_mira_participant_choices: {
-        Row: {
-          acceptance_id: string | null;
-          acceptance_revision: number;
-          choice: string;
-          created_at: string;
-          guest: boolean;
-          id: string;
-          locale: string;
-          meeting_id: string;
-          notice_version: string;
-          participant_ref: string;
-          source: string;
-          text_hash: string;
-          user_id: string | null;
-          ws_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          acceptance_id?: string | null;
-          acceptance_revision: number;
-          choice: string;
-          created_at?: string;
-          guest?: boolean;
-          id?: string;
-          locale: string;
-          meeting_id: string;
-          notice_version: string;
-          participant_ref?: string;
-          source: string;
-          text_hash: string;
-          user_id?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          acceptance_id?: string | null;
-          acceptance_revision?: number;
-          choice?: string;
-          created_at?: string;
-          guest?: boolean;
-          id?: string;
-          locale?: string;
-          meeting_id?: string;
-          notice_version?: string;
-          participant_ref?: string;
-          source?: string;
-          text_hash?: string;
-          user_id?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [];
-      };
       meet_attendance_erasure_readiness: {
         Row: {
           id: boolean;
@@ -16054,6 +16047,138 @@ export type Database = {
           {
             foreignKeyName: 'meet_form_creation_intents_actor_id_fkey';
             columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_mira_host_acceptances: {
+        Row: {
+          audience_adult_confirmed: boolean;
+          capabilities: string[];
+          created_at: string;
+          end_reason: string | null;
+          event: string;
+          id: string;
+          meeting_id: string;
+          notice_version: string;
+          revision: number;
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          audience_adult_confirmed?: boolean;
+          capabilities?: string[];
+          created_at?: string;
+          end_reason?: string | null;
+          event: string;
+          id?: string;
+          meeting_id: string;
+          notice_version: string;
+          revision: number;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          audience_adult_confirmed?: boolean;
+          capabilities?: string[];
+          created_at?: string;
+          end_reason?: string | null;
+          event?: string;
+          id?: string;
+          meeting_id?: string;
+          notice_version?: string;
+          revision?: number;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_mira_host_acceptances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_mira_host_acceptances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_mira_participant_choices: {
+        Row: {
+          acceptance_id: string | null;
+          acceptance_revision: number;
+          choice: string;
+          created_at: string;
+          guest: boolean;
+          id: string;
+          locale: string;
+          meeting_id: string;
+          notice_version: string;
+          participant_ref: string;
+          source: string;
+          text_hash: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          acceptance_id?: string | null;
+          acceptance_revision: number;
+          choice: string;
+          created_at?: string;
+          guest?: boolean;
+          id?: string;
+          locale: string;
+          meeting_id: string;
+          notice_version: string;
+          participant_ref: string;
+          source: string;
+          text_hash: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          acceptance_id?: string | null;
+          acceptance_revision?: number;
+          choice?: string;
+          created_at?: string;
+          guest?: boolean;
+          id?: string;
+          locale?: string;
+          meeting_id?: string;
+          notice_version?: string;
+          participant_ref?: string;
+          source?: string;
+          text_hash?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_mira_participant_choices_acceptance_id_fkey';
+            columns: ['acceptance_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_mira_host_acceptances';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_mira_participant_choices_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_mira_participant_choices_user_id_fkey';
+            columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -16400,7 +16525,22 @@ export type Database = {
           updated_at?: string;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'meeting_record_items_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meeting_record_items_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       meeting_task_links: {
         Row: {
@@ -16431,7 +16571,22 @@ export type Database = {
           task_id?: string;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'meeting_task_links_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meeting_task_links_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       mfa_verification_failures: {
         Row: {
@@ -22530,6 +22685,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_comments: {
+        Row: {
+          author_id: string | null;
+          body: string;
+          created_at: string;
+          deleted_at: string | null;
+          edited_at: string | null;
+          external_author: string | null;
+          external_url: string | null;
+          id: string;
+          task_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id?: string | null;
+          body: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          external_author?: string | null;
+          external_url?: string | null;
+          id?: string;
+          task_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          author_id?: string | null;
+          body?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          external_author?: string | null;
+          external_url?: string | null;
+          id?: string;
+          task_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_comments_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_comments_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_comments_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_comments_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       task_description_chunk_sessions: {
         Row: {
           created_at: string;
@@ -22591,6 +22821,166 @@ export type Database = {
           },
         ];
       };
+      task_external_refs: {
+        Row: {
+          external_assignees: string[];
+          external_author: string | null;
+          external_closed_at: string | null;
+          external_created_at: string | null;
+          external_labels: string[];
+          external_number: number | null;
+          external_repo: string | null;
+          external_state: string | null;
+          external_state_reason: string | null;
+          external_url: string;
+          id: string;
+          imported_at: string;
+          imported_by: string | null;
+          last_synced_at: string;
+          provider: string;
+          task_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          external_assignees?: string[];
+          external_author?: string | null;
+          external_closed_at?: string | null;
+          external_created_at?: string | null;
+          external_labels?: string[];
+          external_number?: number | null;
+          external_repo?: string | null;
+          external_state?: string | null;
+          external_state_reason?: string | null;
+          external_url: string;
+          id?: string;
+          imported_at?: string;
+          imported_by?: string | null;
+          last_synced_at?: string;
+          provider: string;
+          task_id: string;
+          ws_id: string;
+        };
+        Update: {
+          external_assignees?: string[];
+          external_author?: string | null;
+          external_closed_at?: string | null;
+          external_created_at?: string | null;
+          external_labels?: string[];
+          external_number?: number | null;
+          external_repo?: string | null;
+          external_state?: string | null;
+          external_state_reason?: string | null;
+          external_url?: string;
+          id?: string;
+          imported_at?: string;
+          imported_by?: string | null;
+          last_synced_at?: string;
+          provider?: string;
+          task_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_external_refs_imported_by_fkey';
+            columns: ['imported_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_external_refs_imported_by_fkey';
+            columns: ['imported_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      task_links: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          external_id: string | null;
+          id: string;
+          kind: string;
+          metadata: NonNullable<Json>;
+          provider: string;
+          removed_at: string | null;
+          removed_by: string | null;
+          state: string | null;
+          task_id: string;
+          title: string | null;
+          updated_at: string;
+          url: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          external_id?: string | null;
+          id?: string;
+          kind: string;
+          metadata?: NonNullable<Json>;
+          provider?: string;
+          removed_at?: string | null;
+          removed_by?: string | null;
+          state?: string | null;
+          task_id: string;
+          title?: string | null;
+          updated_at?: string;
+          url: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          external_id?: string | null;
+          id?: string;
+          kind?: string;
+          metadata?: NonNullable<Json>;
+          provider?: string;
+          removed_at?: string | null;
+          removed_by?: string | null;
+          state?: string | null;
+          task_id?: string;
+          title?: string | null;
+          updated_at?: string;
+          url?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_links_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_links_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_links_removed_by_fkey';
+            columns: ['removed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_links_removed_by_fkey';
+            columns: ['removed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       task_project_links: {
         Row: {
           created_at: string;
@@ -22620,7 +23010,22 @@ export type Database = {
           project_id?: string;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'task_project_links_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_project_links_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       task_recurrence_active_slots: {
         Row: {
@@ -26946,7 +27351,22 @@ export type Database = {
           id?: string;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_mira_consent_defaults_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_mira_consent_defaults_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       workspace_promotions: {
         Row: {
@@ -30279,6 +30699,10 @@ export type Database = {
         Args: { p_session_data: Json; p_user_id: string };
         Returns: Json;
       };
+      cross_app_worker_only_target_names: {
+        Args: Record<PropertyKey, never>;
+        Returns: string[];
+      };
       deduct_ai_credits_from_balance: {
         Args: {
           p_balance_id: string;
@@ -30724,7 +31148,7 @@ export type Database = {
           p_meeting_id: string;
           p_reason: string;
           p_revision: number;
-          p_user_id: string | null;
+          p_user_id: string;
         };
         Returns: boolean;
       };
@@ -35012,7 +35436,10 @@ export type Database = {
           p_notice_version: string;
           p_user_id: string;
         };
-        Returns: { acceptance_id: string; revision: number }[];
+        Returns: {
+          acceptance_id: string;
+          revision: number;
+        }[];
       };
       record_observability_ingest_run: {
         Args: {
@@ -35089,6 +35516,19 @@ export type Database = {
       refresh_posts_dashboard_view: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      refund_ai_credit_reservation_packs: {
+        Args: { p_refund: number; p_reservation_id: string };
+        Returns: number;
+      };
+      refund_credit_pack_hold: {
+        Args: {
+          p_amount: number;
+          p_draw_granted_at: string;
+          p_hold_created_at: string;
+          p_pack_id: string;
+        };
+        Returns: boolean;
       };
       release_discord_interaction: {
         Args: {
@@ -35229,6 +35669,24 @@ export type Database = {
           p_window: number;
         };
         Returns: boolean;
+      };
+      reserve_live_ai_credits: {
+        Args: {
+          p_cap: number;
+          p_expires_in_seconds: number;
+          p_feature: string;
+          p_metadata: Json;
+          p_minimum: number;
+          p_model_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          error_code: string;
+          reservation_id: string;
+          reserved_credits: number;
+          success: boolean;
+        }[];
       };
       reserve_report_email_reply_identity: {
         Args: {
@@ -35714,6 +36172,24 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      sync_credit_pack_purchase: {
+        Args: {
+          p_credit_pack_id: string;
+          p_expires_at: string;
+          p_period_start: string;
+          p_polar_subscription_id: string;
+          p_status: Database['public']['Enums']['subscription_status'];
+          p_tokens: number;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['workspace_credit_pack_purchases']['Row'][];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_credit_pack_purchases';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       task_capacity_rule_usage: {
         Args: { p_rule_id: string };
