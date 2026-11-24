@@ -68,6 +68,14 @@ export function bindingsFor(identity) {
       class_name: className,
       namespace_id: `namespace-${className}`,
     })),
+    ...Object.entries(identity.services ?? {}).map(
+      ([name, { service, entrypoint }]) => ({
+        name,
+        type: 'service',
+        service,
+        entrypoint,
+      })
+    ),
   ];
 }
 
