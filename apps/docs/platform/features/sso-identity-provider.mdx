@@ -1,7 +1,7 @@
 ---
 title: "Tuturuuu identity provider"
 description: "Design for signing internal accounts into external SaaS (Claude, GitHub, Slack, Notion) over SAML 2.0 and OIDC"
-updatedAt: "2026-11-24"
+updatedAt: "2026-11-25"
 audience: users
 ---
 
@@ -254,7 +254,25 @@ That lets a workspace approve a domain it controls, not one it only typed.
     `apps/web` holds the HMAC and permit keys, but still cannot mint an
     assertion for a subject, client or destination with no real consumed
     transaction. Without that check the Worker would only protect the
-    private key from extraction.
+    private key from extraction. The role is `sso_signer` (NOLOGIN until the
+    release authority enables it, no table privileges) and its one function
+    is `public.sso_signer_confirm_transaction`, reached through a
+    cache-disabled Hyperdrive with an uncacheable statement; the Worker signs
+    only when the stored fields reproduce the permit's field hash exactly.
+    Keys alone are not enough for another subject, client or destination,
+    but one residual remains: the database does not bind the assurance
+    times (`authenticatedAt`, `mfaVerifiedAt`), the IdP block, `forceAuthn`,
+    `relayState` or `issueInstant`, so a holder of both keys could sign a
+    real, just-consumed transaction with self-asserted MFA freshness. The
+    assertion builder caps it (MFA at most 10 minutes old, expiry at most
+    120 seconds, the 5-second issuance window), and a later slice may bind
+    an assurance hash in the transaction. The Worker also claims each
+    transaction ID once in its replay Durable Object, together with the
+    permit and nonce, so a caller that can mint permits still gets one
+    signature per transaction.
+  - Requests and permits name their environment (`SSO_SIGNER_ENV`) as the
+    audience, and each environment has its own keys, so neither crosses
+    environments.
   - The permit is signed with a dedicated Ed25519 key. The service-only
     finalization path signs it with a secret held outside Postgres (a server
     secret, never a database column or setting). The Worker holds only the
@@ -403,9 +421,16 @@ design-system lead before the UI slices.
 Add every flag to `config/feature-flag-catalog.json`. The per-client `enabled`
 column is a second independent gate.
 
-Rollout: staging with a local SP and RP first. No separate Claude test
-organization exists, so the pilot runs on the production Tuturuuu Claude
-organization (Enterprise, with SCIM). That makes these pilot rules binding:
+Rollout: there is no staging environment. Each piece ships dark to
+production: the signer Worker with its stop fence `stopped`,
+`SSO_SAML_ENABLED` off and the pilot reachable only with a staff secret.
+Staff accounts verify it there, first against the local Node-SAML SP and RP
+harnesses and then against the pilot SP, with rollback ready (fence
+`stopped`, flag off, or the previous Worker deployment). Every production
+deploy, secret, migration, DNS record and flag change still needs the release
+authority's exact-hash ACK. No separate Claude test organization exists, so
+the pilot runs on the production Tuturuuu Claude organization (Enterprise,
+with SCIM). That makes these pilot rules binding:
 
 1. **Require SSO stays off for the entire pilot.** SSO is optional. Require SSO
    can be considered only after at least two Claude admins have signed in
@@ -449,9 +474,10 @@ receipt and an exact-SQL ACK.
 1. **S1 Multi-client and keyring (SAML)**: drop the env client pin, publish
    `pending` and `active` keys in metadata, add the async signer port, and build the
    Worker spike. Migration.
-2. **S2 Claude pilot**: catalog flag, operator runbook, staging acceptance
-   against the local Node-SAML SP, then the real Claude test connection (needs
-   USER actions and an Iris ACK).
+2. **S2 Claude pilot**: catalog flag, operator runbook, the dark production
+   deploy of the signer Worker (fence `stopped`, flag off, staff secret),
+   staff verification against the local Node-SAML SP, then the real Claude
+   test connection (needs USER actions and an Iris ACK).
 3. **S3 Remembered consent, per-client MFA age and constrained role grants**
    (D1, D2). Migration.
 4. **S4 OIDC provider core**: tables, discovery, JWKS, authorize, token and

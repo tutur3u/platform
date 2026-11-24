@@ -1,7 +1,7 @@
 ---
 title: "SSO signer Worker"
 description: "The dark Cloudflare Worker that builds and signs SAML login responses for the Tuturuuu identity provider: request authentication, finalization permits, kid binding, replay store, stop fence, budget and deployment plan."
-updatedAt: "2026-11-24"
+updatedAt: "2026-11-25"
 audience: developers
 ---
 
@@ -9,7 +9,8 @@ audience: developers
 **Status: dark spike.** `apps/sso-signer` (`tuturuuu-sso-signer`) has no
 routes, no workers.dev and no preview URLs, and no CI workflow publishes it.
 Nothing in `apps/web` calls it. Its shipped configuration refuses every sign
-request. The design it implements is
+request: the transaction check is off and its Hyperdrive binding names a
+placeholder configuration. The design it implements is
 [Key custody and rotation](/platform/features/sso-identity-provider#key-custody-and-rotation).
 </Note>
 
@@ -46,41 +47,69 @@ The default handler answers 404.
 A successful sign returns `correlationId`, `responseId`, `assertionId`,
 `samlResponse` (base64), `destination`, `relayState` and `expiresAt`. A refusal
 returns `{ error, correlationId }` and, for protocol refusals, the `SAML_` code
-as `reason`. Logs carry the correlation ID and an outcome code only.
+as `reason`. Logs carry the correlation ID and an outcome code only. A
+configuration fault (an unknown `SSO_SIGNER_ENV`, a build without the
+confirmation define, a throwing binding) answers the coded `misconfigured`
+(503) and never a raw message; `ControlEntry` answers `misconfigured` without
+an environment and `unavailable` when its object call fails.
 
 ## Checks, cheapest first
 
 No Durable Object is called before the request HMAC, the body, the permit and
 the kid binding pass, and the private key is parsed only after every check.
 
-1. Path and method, then `SSO_SIGNER_FENCE_FLOOR` (break-glass `stopped`).
+1. Path and method, then `SSO_SIGNER_FENCE_FLOOR` (break-glass `stopped`),
+   then `SSO_SIGNER_ENV`: anything but `production` or `local` refuses as
+   `misconfigured` before any object is named.
 2. **Request HMAC.** Headers `x-ttr-sso-timestamp` (Unix ms),
    `x-ttr-sso-nonce` (base64url, 16 to 32 bytes) and `x-ttr-sso-signature`:
    HMAC-SHA256 with `SSO_SIGNER_REQUEST_KEY` over
-   `ttr-sso-signer-request-v1`, method, path, timestamp, nonce and the
-   base64url SHA-256 of the body, joined by newlines. At most 60 seconds of
-   skew. No bearer form exists.
-3. **Body** against a strict schema.
-4. **Permit.** `{ v: 1, id, kid, iat, exp, fields, sig }`: `fields` is the
+   `ttr-sso-signer-request-v2`, the audience (this deployment's
+   `SSO_SIGNER_ENV`), method, path, timestamp, nonce and the base64url
+   SHA-256 of the body, joined by newlines. At most 60 seconds of skew. No
+   bearer form exists. A request signed for another environment never
+   verifies.
+3. **Body** against a strict schema. The body must be exactly
+   `JSON.stringify({ input, permit })`: compact, with no duplicate key at any
+   depth, no `__proto__` member and no key or string holding a lone UTF-16
+   surrogate (an escaped `"\ud800"` is valid JSON but has no canonical
+   form), so the bytes the HMAC covers and the value checked are the same.
+   Fields that still have no canonical form refuse as `permit_invalid`.
+4. **Permit.** `{ v: 2, aud, id, kid, iat, exp, fields, sig }`: `aud` is the
+   signer environment and must equal `SSO_SIGNER_ENV`; `fields` is the
    base64url SHA-256 of `ttr-sso-permit-fields-v1`, a newline and the
    canonical JSON of the whole `input` (so every field, the kid included, is
-   bound), and `sig` is Ed25519 over `ttr-sso-permit-v1`, a newline and
-   `[v, id, kid, iat, exp, fields]`. The Worker holds only
+   bound), and `sig` is Ed25519 over `ttr-sso-permit-v2`, a newline and
+   `[v, aud, id, kid, iat, exp, fields]`. The Worker holds only
    `SSO_SIGNER_PERMIT_PUBLIC_KEY`. Lifetime is at most 60 seconds; `iat` may
    lead the Worker clock by at most 5 seconds.
 5. **Kid binding.** `SSO_SIGNER_KEYS` maps each kid (lowercase letters, digits
-   and hyphens) to exactly one `client`, one `protocol` and its certificate,
-   for at most eight kids. A mismatch is refused. The private key is the
-   secret `SSO_SIGNING_KEY_<KID>` (kid upper-cased, `-` as `_`).
+   and hyphens) to exactly one `client`, one `protocol`, its certificate, the
+   service provider's `entityId` and one to four `acsOrigins` (`https:`
+   origins), for at most eight kids. A request whose client, protocol, SP
+   entity ID or ACS origin differs is refused, so a valid permit cannot aim a
+   kid at another service provider. The private key is the secret
+   `SSO_SIGNING_KEY_<KID>` (kid upper-cased, `-` as `_`).
 6. **Stop fence** (`SignerControl`). With no record it is `stopped`: a fresh
    deployment signs nothing until an operator sets it to `running`.
-7. **Daily budget** (`SignerBudget`): one unit per admitted request, replays
-   included, `SSO_SIGNER_DAILY_BUDGET` (default 5,000) per UTC day.
-8. **Replay claim** (`SignerReplay`): the nonce and the permit ID together,
-   all or nothing.
-9. **Transaction confirmation.**
+7. **Replay claim** (`SignerReplay`): the nonce, the permit ID and the
+   transaction ID (lower-cased) together, all or nothing. The transaction
+   claim makes signing single-use per transaction even for a caller that can
+   mint fresh permits and nonces. It comes before the budget, so a replay
+   spends no budget.
+8. **Daily budget** (`SignerBudget`): one unit per request that passed its
+   claim, `SSO_SIGNER_DAILY_BUDGET` (default 5,000) per UTC day.
+9. **Transaction confirmation** through the database (below).
 10. **Stop fence again**, so a stop during the checks above also applies to
-    this request; then build and sign.
+    this request.
+11. **Freshness again.** The permit's `exp` and the request HMAC's 60-second
+    skew are checked a second time against the clock after every await, so
+    a slow object call or confirmation cannot carry an expired permit or a
+    stale request into signing (`permit_expired`, `unauthenticated`); then
+    build and sign.
+
+A request refused after its claim (budget, confirmation, fence or freshness)
+leaves its transaction spent; the user starts a new sign-in.
 
 ### Permit wire form
 
@@ -98,10 +127,12 @@ All three objects use SQLite storage, are named `<role>:<SSO_SIGNER_ENV>`, and
 set no alarms.
 
 - `SignerReplay` deletes at most 32 expired rows per claim, inserts at most
-  two, keeps its live count in a meta row instead of scanning, and refuses new
-  claims at 50,000 live rows (fail closed). Rows outlive acceptance: a nonce
-  row is kept 120 seconds (twice the skew) past its timestamp and a permit
-  row 60 seconds past its expiry.
+  three, keeps its live count in a meta row instead of scanning, and refuses
+  new claims at 50,000 live rows (fail closed). Rows outlive acceptance: a
+  nonce row is kept 120 seconds (twice the skew) past its timestamp, a permit
+  row 60 seconds past its expiry, and a transaction row 10 minutes from its
+  claim (a transaction lives 5 minutes; the claim outlives it and the skew).
+  The transaction claim is in addition to the database confirmation.
 - `SignerBudget` keeps only the current UTC day's row.
 - An isolate remembers a `stopped` fence for 10 seconds and an exhausted budget
   until its UTC midnight, so a flood against a stopped or exhausted signer costs
@@ -111,14 +142,105 @@ set no alarms.
 An admitted request costs four object calls (the fence is read twice); a
 request refused before step 6 costs none.
 
-## Transaction confirmation (later slice)
+## Transaction confirmation
 
-`src/transaction-confirmation.ts` defines the `TransactionConfirmation` port:
-resolve `ok` only when the consumed transaction `transactionId` matches the
-bound fields, failing closed on any error. It will be backed by a Worker-only
-database role that can read only an approved, consumed, not-yet-signed
-transaction; that role needs a migration and lands separately. Until then
-every deployed build uses `refuseAllConfirmation`.
+With `SSO_SIGNER_TRANSACTION_CHECK` set to `database` and the `SSO_SIGNER_DB`
+Hyperdrive binding present, the Worker confirms every request against
+Postgres (`src/database-confirmation.ts`, `src/hyperdrive-query.ts`). Any
+other value, or a missing binding, selects `refuseAllConfirmation`.
+
+- **One call.** As the role `sso_signer`, the Worker runs
+  `CONFIRMATION_STATEMENT`
+  (`select public.sso_signer_confirm_transaction($1, $2, $3) as fields, now(), clock_timestamp()`)
+  once, through a fresh postgres.js client with one connection, no type fetch
+  and a 2-second deadline (`CONFIRMATION_TIMEOUT_MS`). There is no retry:
+  a timeout, connection failure, query error or a reply of any shape other
+  than one JSON object or NULL refuses with `confirmation_unavailable` (503).
+- **Exact match.** NULL refuses with `transaction_unconfirmed` (403).
+  Otherwise the Worker replaces the request's `client`, `kid`, `subject`,
+  `attributes`, `profile` and `request.id` with the stored values, and signs
+  only when the canonical JSON of the result equals the request and its
+  `fieldsHash` equals the verified permit's `fields`. A difference in any
+  bound field refuses with `transaction_unconfirmed`.
+- **Never cached.** Hyperdrive does not cache a query that calls a volatile
+  or stable built-in, and it finds the common ones (`NOW()`, `RANDOM()`) by
+  matching the query text. The statement carries `now()` and
+  `clock_timestamp()` in its select list, so it is uncacheable by
+  construction, and a unit test pins its text. The Hyperdrive configuration
+  also has caching disabled (defence in depth).
+- **Residual.** The database binds the subject, client, SP, ACS,
+  `InResponseTo` and kid, not the assurance times (`authenticatedAt`,
+  `mfaVerifiedAt`), the IdP block, `forceAuthn`, `relayState` or
+  `issueInstant`. A holder of both the request and permit keys could still
+  sign a real, just-consumed transaction with self-asserted MFA freshness,
+  within the assertion builder's caps: MFA at most 10 minutes old, an expiry
+  at most 120 seconds out, and the 5-second issuance window. A later slice
+  may bind an assurance hash in the transaction.
+
+### The database function and role
+
+`public.sso_signer_confirm_transaction(p_transaction_id uuid, p_client_id uuid, p_kid text)`
+is a `STABLE` SQL `SECURITY DEFINER` function with `search_path` set to
+`pg_catalog, pg_temp`. It writes nothing and returns `jsonb`:
+`client_id`, `acs_url`, `sp_entity_id`, `in_response_to`, `subject` (the
+actor's pairwise subject), `email`, `given_name`, `family_name` and `kid`.
+Email and names are read from `auth.users` when the Worker asks, the same
+source `apps/web/src/lib/sso/identity.ts` reads through the Auth admin API
+(`email`, and the string `given_name` and `family_name` of the user
+metadata). It returns NULL unless all of these hold:
+
+- the transaction is `approved` and consumed, has no `issuance.signed` or
+  `issuance.failed` audit event, has not expired, and was consumed less than
+  five seconds ago (the issuance window `sso_finalize_issuance` enforces);
+- the client is enabled, SAML, still on the transaction's policy revision and
+  in a non-personal, non-deleted workspace, and the transaction's ACS is still
+  one of its ACS URLs;
+- the actor is still a `MEMBER` with an active assignment, has a pairwise
+  subject, and has an allowed Auth account (confirmed email, not anonymous,
+  banned or deleted, string given and family names);
+- `p_kid` is the client's current `active` key inside its validity window.
+
+`sso_signer` is created `NOLOGIN NOINHERIT` with no superuser, role, database,
+replication or RLS-bypass attribute, a connection limit of 8 and per-session
+`statement_timeout` 2 s, `lock_timeout` 1 s and
+`idle_in_transaction_session_timeout` 5 s. It may execute only this function
+(EXECUTE is revoked from `PUBLIC`, `anon`, `authenticated` and
+`service_role`). Besides `USAGE` on schema `public`, which name resolution
+needs, it holds no other object grant and no role membership; the only row
+naming it is its creator's administrative grant, which lets the release
+authority enable LOGIN. Like every role it still reaches what `PUBLIC` can
+(on a local stack: the pg_net queue tables and the RLS helpers
+`has_workspace_permission` and `is_org_member`). pgTAP asserts that it
+reaches no schema, relation or routine that `anon` cannot, pins its grants to
+exactly that allow-list (EXECUTE on the function, USAGE on `public`, across
+every ACL kind including column and parameter grants), checks it owns
+nothing, and prints the `PUBLIC` residue.
+pgTAP in `apps/database/supabase/tests/sso-signer-confirmation.sql` covers
+each NULL case against a positive control (including an anonymous,
+soft-deleted or email-less account, a non-string family name, a missing
+pairwise subject and a key before its `not_before`), the happy path, the
+grants, the role's lack of direct table access and its refused reads, and
+runs in `node apps/database/scripts/verify-sso-persistence.mjs`, which also
+rehearses the rollback inside a rolled-back transaction as `postgres` (not
+the superuser), so a missing CREATEROLE, ADMIN OPTION or ownership fails.
+The rollback is deliberately not idempotent: run it once, after the
+migration.
+
+### Build output check
+
+`apps/sso-signer/scripts/check-build-output.mjs` runs as part of the package
+`build` script (`vp build && node scripts/check-build-output.mjs`), so every
+build of the Worker, local or in CI, scans the real emitted artifact
+(`.cloudflare/output`, the Build Output that `cf deploy --prebuilt`
+publishes, and `dist`) and fails when `unchecked-local` or
+`__SSO_SIGNER_UNCHECKED__` appears or when `.cloudflare/output` holds no
+script: a `dist`-only build is refused, because it is not what gets
+deployed. A clean build prints `build output clean: N script(s) checked`.
+Its own tests are `scripts/check-build-output.test.mjs`. No CI workflow builds this dark
+Worker yet; the deploy workflow that S2 adds must build it through this
+script.
+
+### Unchecked runtime-test path
 
 `uncheckedLocalConfirmation` exists only for the workerd runtime test. It is
 behind the build-time constant `__SSO_SIGNER_UNCHECKED__`
@@ -134,12 +256,13 @@ absent and that it refuses to sign in workerd with the unchecked bindings set.
 
 | Binding | Kind | Shipped value |
 | --- | --- | --- |
-| `SSO_SIGNER_ENV` | text | empty: names no object, every call fails closed; set `staging` or `production` per environment |
+| `SSO_SIGNER_ENV` | text | empty: names no object and every call answers `misconfigured`; `production` on the deployed Worker, `local` in workerd tests (there is no staging signer) |
 | `SSO_SIGNER_FENCE_FLOOR` | text | empty (`running`) |
 | `SSO_SIGNER_DAILY_BUDGET` | text | empty (default) |
-| `SSO_SIGNER_KEYS` | text | empty (refuses) |
+| `SSO_SIGNER_KEYS` | text | empty (refuses); JSON `{ "<kid>": { client, protocol, certificate, entityId, acsOrigins } }` |
 | `SSO_SIGNER_PERMIT_PUBLIC_KEY` | text | empty (refuses) |
-| `SSO_SIGNER_TRANSACTION_CHECK` | text | empty (refuses) |
+| `SSO_SIGNER_TRANSACTION_CHECK` | text | empty (refuses); `database` enables the check |
+| `SSO_SIGNER_DB` | Hyperdrive | placeholder id `000…0` (no configuration exists) |
 | `SSO_SIGNER_REQUEST_KEY` | secret | not provisioned |
 | `SSO_SIGNER_CONTROL_KEY` | secret | not provisioned |
 | `SSO_SIGNING_KEY_<KID>` | secret | not declared or provisioned |
@@ -148,21 +271,96 @@ Key sets (`SSO_SIGNER_REQUEST_KEY`, `SSO_SIGNER_PERMIT_PUBLIC_KEY`,
 `SSO_SIGNER_CONTROL_KEY`) are one base64url 32-byte key, or JSON
 `{"current","previous"}` during a dual-publish rotation.
 
+Observability keeps console logs (correlation ID and outcome code only) and
+turns invocation logs off, because invocation logs would record request
+metadata and the sign request's headers carry the nonce and the signature.
+
+### Release checklist: one key set per environment
+
+- Generate the request key, the permit key pair and the control key
+  separately for every environment; never copy one environment's key to
+  another. The audience in the HMAC and the permit already refuses a
+  cross-environment request, and distinct keys keep a leaked `local` key from
+  reaching production at all.
+- Set `SSO_SIGNER_ENV` to `production` on the deployed Worker before any
+  secret is written. The permit issuer that `apps/web` will add (none exists
+  yet) will sign with `aud: "production"` there.
+- Bind each production kid to its client, protocol, certificate, the SP
+  entity ID and the SP's ACS origins.
+- Build with `bun run build` in `apps/sso-signer` (never a bare `vp build`,
+  which skips the output check) and deploy only that checked
+  `.cloudflare/output` artifact.
+- After the migration applies, run this read-only check as `postgres` on
+  production and keep its output with the release record:
+
+  ```sql
+  select current_setting('createrole_self_grant') as createrole_self_grant;
+  select rolname, rolcanlogin, rolsuper, rolinherit, rolcreaterole,
+    rolcreatedb, rolreplication, rolbypassrls, rolconnlimit, rolconfig
+  from pg_roles where rolname in ('sso_signer', current_user);
+  select roleid::regrole as role, member::regrole as member,
+    grantor::regrole as grantor, admin_option, inherit_option, set_option
+  from pg_auth_members
+  where roleid = 'sso_signer'::regrole or member = 'sso_signer'::regrole;
+  select p.oid::regprocedure, pg_get_userbyid(p.proowner) as owner,
+    p.prosecdef, p.provolatile, p.proconfig, p.proacl
+  from pg_proc p
+  where p.oid = 'public.sso_signer_confirm_transaction(uuid,uuid,text)'::regprocedure;
+  ```
+
+  Expect `sso_signer` with every attribute false (`rolcanlogin` false until
+  step 2 below), `rolconnlimit` 8 and the three timeouts in `rolconfig`;
+  `current_user` with `rolcreaterole` true. Expect no row whose member is
+  `sso_signer`, and exactly one row naming it as the role: the applying role
+  with `admin_option` true, which the rollback needs. That row's
+  `inherit_option` and `set_option` follow `createrole_self_grant` (both
+  false when it is empty, as on the local stack, where pgTAP asserts it);
+  `set` or `inherit` there gives the creator nothing it does not already
+  hold, but record it. The function is owned by the applying role, `SECURITY
+  DEFINER`, `STABLE`, with `search_path=pg_catalog, pg_temp`, and its ACL
+  names only the owner and `sso_signer`. Any other result: stop and roll
+  back.
+
 ## Tests
 
 `apps/sso-signer/src/*.test.ts` run under `vp test`:
 
-- request HMAC: bad signature (key, body, method, path, nonce, flipped byte),
-  skew, malformed headers, bearer refusal, rotation;
-- permit: foreign key, changed signature or claim, expiry, future `iat`,
-  lifetime over 60 seconds, a mismatch on every structured field (derived from
-  the input's leaf paths) and rotation; a replayed permit under a fresh nonce;
-- kid binding: unknown kid, another client or protocol, missing secret,
-  malformed maps;
+- request HMAC: bad signature (key, body, method, path, environment, nonce,
+  flipped byte), skew (including 61 seconds), malformed headers, bearer
+  refusal, rotation; at the handler, a signature made for another method,
+  path or environment;
+- permit: foreign key, changed signature or claim, another environment,
+  expiry, future `iat`, lifetime over 60 seconds, a mismatch on every
+  structured field (derived from the input's leaf paths) and rotation; a
+  replayed permit under a fresh nonce;
+- single use per transaction: two distinct permits and nonces for one
+  transaction (sequential, racing, upper-cased) sign once; a refused
+  confirmation still spends the transaction; a replay spends no budget;
+- body: `__proto__` members, duplicate keys, non-compact JSON and escaped
+  lone surrogates (refused before any object call; the permit check maps
+  fields with no canonical form to `permit_invalid`);
+- freshness at signing, on a controlled clock: a permit that expires and a
+  request HMAC that leaves the skew window while the confirmation runs are
+  refused with nothing signed, against a control that signs;
+- kid binding: unknown kid, another client, protocol, SP entity ID or ACS
+  origin, missing secret, malformed maps;
+- coded failures: a throwing config answers `misconfigured` with no raw
+  message, a throwing object call `unavailable`, and logs carry no header or
+  token; no non-test source (`.ts`, `.tsx`, `.cts`, `.mts`, `.js`) imports the
+  `packages/sso` test fixtures or a relative `__tests__` path, statically,
+  for side effects, by re-export, dynamically or through `require`;
 - replay store bounds, retention past the acceptance edge and concurrent
   claims of one token, budget cap and day rollover, fence default and control
   keys, the fence re-read before signing, and the isolate guards;
 - the confirmation selection over every mode and environment pair;
+- the database confirmation: exact match signs, NULL and a mismatch on every
+  bound field refuse, a reply that matches the request but not the permit
+  refuses, malformed replies, a query error and the deadline refuse with one
+  attempt, and the real postgres.js client against a closed port and a
+  silent server refuses in time;
+- the Hyperdrive statement: its select list carries `now()` and
+  `clock_timestamp()` beside the one confirmation call, and the client sends
+  exactly that text with the three bound parameters, once;
 - the handler end to end through Node-SAML, including log redaction;
 - `worker-runtime.test.ts`: the esbuild bundle in workerd (Miniflare 4,
   `nodejs_compat`), through both named entry points. Miniflare 4's workerd
@@ -170,23 +368,83 @@ Key sets (`SSO_SIGNER_REQUEST_KEY`, `SSO_SIGNER_PERMIT_PUBLIC_KEY`,
   2026-08-01; the deployed config's later date adds no flag the Worker uses.
   The bundle turns CommonJS `require` of Node built-ins (xml-crypto's
   `require("crypto")`) into `node:` imports, as the Cloudflare Vite plugin does.
+  The production bundle in `database` mode refuses without a Hyperdrive
+  binding and, through a Miniflare Hyperdrive to a silent server, at the
+  deadline. In workerd, two permits for one transaction sign once, a request
+  for another environment is refused, and without `SSO_SIGNER_ENV` both
+  entries answer the coded `misconfigured`.
+
+## Enabling the transaction check
+
+Each step needs the release authority. No password, connection string or
+Hyperdrive credential is ever committed.
+
+1. **Migration.** The gated Supabase workflow applies
+   `20261125073000_sso_signer_transaction_confirmation.sql`, which creates
+   `sso_signer` as `NOLOGIN`.
+2. **Login.** In a `psql` session as `postgres` against the target database,
+   run `\password sso_signer` (the client sends only a SCRAM verifier, so the
+   password never reaches server logs) with at least 32 random bytes, then
+   `ALTER ROLE sso_signer LOGIN;`. Keep the password only in the Hyperdrive
+   configuration.
+3. **Hyperdrive.** Create one configuration per environment in the Cloudflare
+   dashboard, user `sso_signer`, to the direct database host on port 5432
+   (or the session-mode pooler, user `sso_signer.<project-ref>`), with
+   **caching disabled** and an origin connection limit of at most 8. A cached
+   reply would outlive a revocation or a signature. The statement is already
+   uncacheable by construction (above); the setting is defence in depth.
+4. **Binding.** In a reviewed change, replace the placeholder id of
+   `SSO_SIGNER_DB` with that configuration's id (an id, not a credential),
+   and set `SSO_SIGNER_TRANSACTION_CHECK` to `database`.
+5. **Acceptance.** In production, with the fence `running` only for the
+   check, `SSO_SAML_ENABLED` off for everyone else and the staff secret
+   gating the pilot, sign one login end to end with a staff account, and
+   check as `sso_signer` that `select 1 from private.sso_transactions` is
+   refused. Then prove no reply is cached: as `postgres`, read `calls` from
+   `extensions.pg_stat_statements` for user `sso_signer` and the
+   confirmation statement; send two identical probes (the same
+   `CONFIRMATION_STATEMENT` with the same random transaction ID, client and
+   kid) through this Hyperdrive configuration, for example from a throwaway
+   probe Worker without routes, bound to it and run with `wrangler dev
+   --remote`, that calls `hyperdriveQuery` twice (the signer itself refuses a
+   repeated transaction before the database); read `calls` again. It must
+   have grown by 2: both probes reached Postgres. Growth of 1 means Hyperdrive
+   served a cached reply; clear `SSO_SIGNER_TRANSACTION_CHECK` and stop.
+   There is no staging signer.
+
+**Rotation.** Postgres holds one password per role. Run `\password sso_signer`
+and then update the Hyperdrive configuration's password at once; new
+connections fail closed in between, so rotate with Require SSO off or the
+fence `stopped`. **Kill switch.** `ALTER ROLE sso_signer NOLOGIN;` and
+`pg_terminate_backend` for its sessions refuse every sign request at once,
+as does clearing `SSO_SIGNER_TRANSACTION_CHECK`.
 
 ## Deployment plan
 
-Deployment is held. Each step needs the release authority:
+Deployment is held. Tuturuuu has no staging environment: the dark Worker
+deploys straight to production behind three independent gates, and each step
+needs the release authority with an exact-hash ACK (deploy, secret, migration,
+DNS and flag changes alike):
 
 1. **Route choice, later.** The Worker stays without routes or custom domains.
    `apps/web` will reach it through a service binding to `SignerEntry`; adding
    any public route or domain is a separate reviewed change.
-2. **Staging first.** Publish to staging only after the transaction
-   confirmation slice is merged. The release authority sets `SSO_SIGNER_ENV`
-   to `staging`, writes the staging secrets and kid map, sets the fence to `running` through `ControlEntry`, and
-   runs acceptance against the local Node-SAML SP before any real SP.
-3. **Rollback.** Stop signing at once by setting the fence to `stopped` (or
-   deploying `SSO_SIGNER_FENCE_FLOOR: 'stopped'`); `apps/web` keeps its Node
-   signer path until the Worker is accepted, so turning the Worker off restores
-   the current behavior. Keep the previous Worker version for a one-step
-   version rollback.
-4. **Production** deploys and production secrets need the release authority's
-   explicit ACK. A production kid is written only by the release authority, and
-   rotation follows the dual-publish schedule in the design.
+2. **Dark production deploy.** Deploy the checked build artifact to
+   production with the fence `stopped` (the default with no record, or
+   `SSO_SIGNER_FENCE_FLOOR: 'stopped'`), `SSO_SAML_ENABLED` off and the pilot
+   reachable only with the staff secret. Then write the production secrets and
+   kid map (one key set per environment, above) and enable the transaction
+   check.
+3. **Staff verification.** Set the fence to `running` through `ControlEntry`
+   for the verification window only, sign in with staff accounts against the
+   local Node-SAML SP and then the pilot SP, and confirm the refusals (another
+   environment, a replayed transaction, a stopped fence). Return the fence to
+   `stopped` unless the pilot continues. An optional local `wrangler dev`
+   replay of the sealed artifact may precede the deploy; nothing blocks on a
+   staging smoke.
+4. **Rollback**, in order of speed: set the fence to `stopped` (or deploy
+   `SSO_SIGNER_FENCE_FLOOR: 'stopped'`); turn `SSO_SAML_ENABLED` off; roll back
+   to the previous Worker deployment. `apps/web` keeps its Node signer path
+   until the Worker is accepted, so turning the Worker off restores the
+   current behavior. A production kid is written only by the release
+   authority, and rotation follows the dual-publish schedule in the design.
