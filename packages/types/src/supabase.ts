@@ -33452,6 +33452,14 @@ export type Database = {
         };
         Returns: boolean;
       };
+      meet_ai_self_v1_lock_live_upload: {
+        Args: {
+          p_account_id: string;
+          p_session_id: string;
+          p_stream_id: string;
+        };
+        Returns: undefined;
+      };
       meet_ai_self_v1_lock_session: {
         Args: { p_session_id: string };
         Returns: Database['public']['Tables']['meet_ai_sessions']['Row'];
