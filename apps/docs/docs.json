@@ -326,6 +326,7 @@
                   "build/devops/web-cloudflare-migration",
                   "build/devops/mobile-store-deployment",
                   "build/devops/mobile-store-screenshots",
+                  "build/devops/roadmap-previews",
                   "build/devops/desktop-beta-distribution",
                   "build/devops/mac-app-store-distribution",
                   "build/devops/desktop-release-versioning",
