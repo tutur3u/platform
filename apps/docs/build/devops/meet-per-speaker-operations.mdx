@@ -30,12 +30,22 @@ where c.stream_id is not null
   and c.status = 'processing'
   and c.reservation_state = 'reserved'
   and c.dispatch_consent_revision is not null
-  and c.attempt_started_at < now() - interval '5 minutes';
+  and c.attempt_started_at < now() - interval '10 minutes';
 ```
 
 `dispatch_consent_revision is not null` means `mark_dispatch` ran, so the
 provider may have been called and billed. A chunk with a null dispatch
 revision never reached the provider and is not part of this procedure.
+
+The 10-minute threshold keeps the procedure away from chunks a live Worker is
+still settling. `attempt_started_at` is set by `mark_dispatch`; after it, a
+Worker makes one room check (10 s request timeout), one provider call (aborted
+after 55 s, `abortSignal` in `packages/ai/src/meetings/gemini.ts`), a second
+room check, a consent read and the settle, so it settles within about 80
+seconds or not at all. Settling a chunk the Worker is still processing makes
+the Worker's own `completed` settle fail with `55000`, and the transcript text
+is lost. Never shorten the threshold below about 2 minutes, and raise it if
+the provider timeout grows.
 
 ### Settle as `unknown`
 
