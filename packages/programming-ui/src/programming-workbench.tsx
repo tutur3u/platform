@@ -10,9 +10,16 @@ import {
   replaceProgrammingText,
 } from '@tuturuuu/realtime';
 import { useTranslations } from 'next-intl';
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import {
+  type KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as Y from 'yjs';
 import { classNames as cn } from './class-names';
+import type { EditorSelectionHandle } from './format/selection';
 import {
   MiraAskMenu,
   MiraCodeReview,
@@ -111,10 +118,12 @@ export function ProgrammingWorkbench({
     room.snapshot.files.find((file) => file.path === selected) ??
     room.snapshot.files[0];
   const activePath = active?.path;
+  const editorHandle = useRef<EditorSelectionHandle | null>(null);
   const formatting = useWorkbenchFormat({
     doc: room.client?.doc,
     path: activePath,
     editable,
+    editor: editorHandle,
   });
   const collaborationClient = room.client;
   const collaborationOpen = room.status === 'open';
@@ -479,6 +488,9 @@ export function ProgrammingWorkbench({
             jump={jump?.path === active?.path ? jump : undefined}
             onRunShortcut={runFromShortcut}
             onFormatShortcut={formatting.format}
+            onEditor={(handle) => {
+              editorHandle.current = handle;
+            }}
             scriptDiagnostics={!!meeting}
             onSelection={
               meeting && active

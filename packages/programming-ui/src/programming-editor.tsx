@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useEditorTheme } from './editor-colors';
 import { configureScriptDiagnostics } from './editor-markers';
 import { EDITOR_THEME_NAME } from './editor-theme';
+import { selectionHandle } from './format/editor-selection';
+import type { EditorSelectionHandle } from './format/selection';
 import { useMiraCodeLabels } from './mira-code-presence';
 
 const miraEditorStyles = `
@@ -54,6 +56,7 @@ export function ProgrammingEditor({
   onSelection,
   onRunShortcut,
   onFormatShortcut,
+  onEditor,
   scriptDiagnostics = false,
 }: {
   path: string;
@@ -72,6 +75,8 @@ export function ProgrammingEditor({
   onRunShortcut?: () => void;
   /** Shift+Alt+F inside the editor; it replaces Monaco's own document formatting. */
   onFormatShortcut?: () => void;
+  /** The editor's selection controls, for actions that rewrite the whole file. */
+  onEditor?: (handle: EditorSelectionHandle | null) => void;
   /** Meetings only: TypeScript and JavaScript problems tuned for a Node playground. */
   scriptDiagnostics?: boolean;
 }) {
@@ -79,6 +84,8 @@ export function ProgrammingEditor({
   const theme = useEditorTheme(host);
   const runShortcut = useRef(onRunShortcut);
   runShortcut.current = onRunShortcut;
+  const editorCallback = useRef(onEditor);
+  editorCallback.current = onEditor;
   const formatShortcut = useRef(onFormatShortcut);
   formatShortcut.current = onFormatShortcut;
   const [editor, setEditor] =
@@ -93,6 +100,8 @@ export function ProgrammingEditor({
   selectionCallback.current = onSelection;
   const onMount: OnMount = (instance) => {
     setEditor(instance);
+    editorCallback.current?.(selectionHandle(instance));
+    instance.onDidDispose(() => editorCallback.current?.(null));
     instance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () =>
       runShortcut.current?.()
     );

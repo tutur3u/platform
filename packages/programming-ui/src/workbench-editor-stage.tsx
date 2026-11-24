@@ -7,6 +7,7 @@ import type {
 import { replaceProgrammingText } from '@tuturuuu/realtime';
 import type { ProgrammingMiraPresence } from '@tuturuuu/realtime/meet';
 import type * as Y from 'yjs';
+import type { EditorSelectionHandle } from './format/selection';
 import { ProgrammingEditor } from './programming-editor';
 
 const REMOTE_STYLES = `.programming-remote-selection{background:color-mix(in srgb,var(--primary) 20%,transparent)}.programming-remote-caret{border-left:2px solid var(--primary)}.programming-remote-label{background:var(--primary);color:var(--primary-foreground);font-size:10px;border-radius:3px}`;
@@ -25,6 +26,7 @@ export function WorkbenchEditorStage({
   onSelection,
   onRunShortcut,
   onFormatShortcut,
+  onEditor,
   scriptDiagnostics,
 }: {
   roomKey: string;
@@ -41,6 +43,7 @@ export function WorkbenchEditorStage({
   ) => void;
   onRunShortcut?: () => void;
   onFormatShortcut?: () => void;
+  onEditor?: (handle: EditorSelectionHandle | null) => void;
   scriptDiagnostics?: boolean;
 }) {
   const others = presence.filter((person) => person.userId !== actorId);
@@ -72,6 +75,7 @@ export function WorkbenchEditorStage({
           readOnly={!editable}
           onRunShortcut={onRunShortcut}
           onFormatShortcut={onFormatShortcut}
+          onEditor={onEditor}
           scriptDiagnostics={scriptDiagnostics}
           mira={mira}
           jump={jump}

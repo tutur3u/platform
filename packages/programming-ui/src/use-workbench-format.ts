@@ -5,6 +5,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type * as Y from 'yjs';
 import { type FormatSupport, formatSupport } from './format/formatters';
+import { type EditorSelectionHandle, keepSelection } from './format/selection';
 
 class FileChangedError extends Error {}
 
@@ -21,16 +22,20 @@ const isLoadFailure = (error: unknown) =>
  * on the shared text, and its result is written back in a single Yjs
  * transaction, so there is one update to send and one step to undo. If
  * someone else edits the file while the formatter runs, nothing is written,
- * because the result would overwrite their change.
+ * because the result would overwrite their change. The caret and selection
+ * stay on the same text: they are held as shared-document positions across
+ * the write and put back once the editor shows the formatted file.
  */
 export function useWorkbenchFormat({
   doc,
   path,
   editable,
+  editor,
 }: {
   doc: Y.Doc | undefined;
   path: string | undefined;
   editable: boolean;
+  editor?: { current: EditorSelectionHandle | null };
 }) {
   const t = useTranslations('programmingPlayground');
   const support: FormatSupport = formatSupport(path);
@@ -43,7 +48,13 @@ export function useWorkbenchFormat({
       const after = await support.formatter.format(before, path);
       if (text.toString() !== before) throw new FileChangedError();
       if (after === before) return 'unchanged';
-      replaceProgrammingText(text, after, 'format');
+      const handle = editor?.current ?? null;
+      const selection = keepSelection(
+        text,
+        handle?.getSelection() ?? null,
+        () => replaceProgrammingText(text, after, 'format')
+      );
+      if (selection) handle?.setSelection(selection, after);
       return 'formatted';
     },
     onSuccess: (result) => {
