@@ -301,6 +301,25 @@ describe('self_v1 outbox delivery writes', () => {
     expect(mocks.rpc.recordDecision).toHaveBeenCalledTimes(1);
   });
 
+  it('never writes or acknowledges a room-capture session of the same meeting', async () => {
+    const legacy = '00000000-0000-4000-8000-0000000000c8';
+    sessions.push({ ...row(legacy), protocol: 'legacy' });
+    const acked = await ackedOf(
+      body([
+        entry(a, 1, 'withdraw', legacy),
+        entry(a, 2, 'revoke', legacy),
+        entry(a, 3, 'close', legacy),
+        entry(host, 4, 'end', legacy),
+        entry(b, 1, 'withdraw'),
+      ])
+    );
+    expect(acked).toEqual([ack(b, 1)]);
+    expect(mocks.rpc.recordDecision).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc.revokeUpload).not.toHaveBeenCalled();
+    expect(mocks.rpc.closeStream).not.toHaveBeenCalled();
+    expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
+  });
+
   it('acknowledges and logs entries of a session that is gone', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const acked = await ackedOf(body([entry(a, 1, 'withdraw', goneSession)]));
