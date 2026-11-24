@@ -1,0 +1,356 @@
+---
+title: "Tuturuuu identity provider"
+description: "Design for signing internal accounts into external SaaS (Claude, GitHub, Slack, Notion) over SAML 2.0 and OIDC"
+updatedAt: "2026-11-24"
+audience: users
+---
+
+<Note>
+**Status: design proposal, not yet approved.** This page describes target behavior.
+Nothing on this page is enabled. The implemented SAML foundation (phases 1 to 4)
+and its current, binding rules are in [Outbound SSO to Claude](/platform/features/sso).
+Where the two pages disagree, that page describes what ships today.
+</Note>
+
+## Goal
+
+A verified internal Tuturuuu account can sign into external systems without a
+separate password: Claude first, then GitHub Enterprise, Slack, Notion, Google
+Workspace-style apps and any SAML 2.0 or OpenID Connect relying party. Tuturuuu
+is the **identity provider (IdP)** here. This is the reverse of inbound enterprise
+sign-in to Tuturuuu, and it is separate from internal cross-app and satellite
+sessions. No Tuturuuu bearer, refresh token or Supabase session ever leaves
+Tuturuuu.
+
+"Seamless" means one Tuturuuu sign-in (with MFA) and then one click per app,
+including through an app launcher. "Secure" means the rules below fail closed.
+
+## What exists today (inventory)
+
+| Area | State on `main` | Gap for this design |
+| --- | --- | --- |
+| Protocol library `packages/sso` | SAML AuthnRequest parse (Redirect/POST), pinned request signatures, signed response plus assertion (RSA-SHA256, exclusive c14n), IdP metadata, Node-SAML SP harness. No framework imports | No OIDC. Metadata publishes one certificate |
+| Persistence (migrations `20261022100000` to `20261022160000`) | `sso_clients`, `sso_saml_clients`, `sso_assignments`, `sso_subjects` (random pairwise), `sso_disclosure_grants`, `sso_transactions`, `sso_signing_keys` (public only), `sso_audit_events`; service-only RPCs, replay-safe consume, `manage_sso_clients` permission | No OIDC client, code or token tables. One active key per client. Assignments are per user only |
+| Issuance routes `apps/web/src/app/api/v1/sso/**` | SAML metadata, SSO Redirect/POST, decision endpoint, Redis rate limits, encrypted transaction cookie, session binding, MFA recheck after signing | One deployment-pinned client (`SSO_SAML_CLIENT_ID`) and one private key (`SSO_SAML_SIGNING_KEY`) in server env |
+| Consent UI `/{locale}/sso/consent` | Sorbet consent and reauthenticate screens, EN/VI, a prompt on every login | No remembered consent and no app launcher |
+| Admin UI `/{wsId}/sso` | Create (disabled), edit trust, enable/disable, MEMBER assignment, public key panel, 50 sanitized audit events | SAML only, with no OIDC, keyring rotation, group/role assignment or SCIM status |
+| MFA | `checkRequiredAccountMfa`, factor-bound TOTP proof no older than 10 minutes, `mfa=totp` login hint | Freshness is fixed at 10 minutes |
+| Feature flags | `SSO_SAML_ENABLED` server env, literal `true`; `config/feature-flag-catalog.json` lifecycle catalog | No catalog entry yet. No OIDC or SCIM flags |
+
+Pilot status: no client has been enabled, the flag is off, and no real Claude or
+WorkOS login has been run. Phase 5 of the existing page, which covers rotation,
+operator custody and real acceptance, is still open.
+
+### Verified claude.ai requirements (help center, read 2026-11-24)
+
+- Claude uses **WorkOS** as its SSO broker. An Owner opens **Organization settings
+  → Authentication → Setup SSO** and completes a WorkOS setup flow.
+- Both **SAML** (X.509 signing certificate) and **OpenID Connect** (client secret)
+  are supported, on Team, Enterprise and Console organizations.
+- Domains must be verified with a DNS TXT record starting
+  `anthropic-domain-verification-` at the exact domain. All domains of a parent
+  organization must use one IdP.
+- **SCIM is Enterprise only**, through WorkOS directory sync. Team plans get
+  just-in-time (JIT) provisioning, and JIT never removes members.
+- **Require SSO for Claude** makes every user on the domain use SSO. An expired
+  certificate or secret then locks out everyone until Anthropic support helps.
+  Deleting the connection signs out every user on the verified domains.
+- IdP-initiated login is documented as unsupported for Console organizations.
+  The help center does not state the exact WorkOS entity ID, ACS URL, NameID
+  format or required attributes. Read them from the WorkOS setup flow at
+  connection time.
+
+Sources: support.claude.com articles 13132885 (set up SSO), 10276682
+(considerations), 13133195 (JIT/SCIM) and 9797531 (Enterprise plan).
+
+## Decisions proposed by this design
+
+1. **SAML first, OIDC second.** Claude accepts both, but SAML is already built
+   and reviewed through phase 4. The first live connection is Claude over SAML.
+   OIDC follows for relying parties that support only OIDC, or that prefer it
+   (for example Notion or custom internal tools).
+2. **Issuance stays in `apps/web`** on the Next.js Node runtime, where the
+   active runtime policy puts live API and page behavior. Protocol and policy
+   logic stays in `packages/sso`, free of framework imports, so a later Worker
+   port reuses it. Background work (SCIM push, key-expiry alerts, audit
+   retention) goes to Cloudflare Workers, per the
+   [background work inventory](/build/devops/background-work-inventory).
+3. **Private signing keys never live in the database**, and should not live in
+   Vercel env either. Sign through a dedicated Cloudflare signer Worker that
+   holds keys as Worker secrets by name (`SSO_SIGNING_KEY_<KID>`). See
+   [Key custody](#key-custody-and-rotation) and open decision D3.
+4. **Eligibility is narrow by default.** Only current MEMBERs of the selected
+   internal workspace can use SSO, with a confirmed email in an approved domain
+   (initially `tuturuuu.com` only), current MFA, and an assignment to that app.
+   The assignment can be per user or by workspace role.
+5. **No unsolicited (IdP-initiated) assertions by default.** The app launcher
+   opens each SP's own SSO start URL (SP-initiated). Per-client IdP-initiated
+   SAML is a later, explicit opt-in, and never for Claude.
+6. **No single logout.** Tuturuuu logout does not end SP sessions. Deprovisioning
+   uses SCIM where the SP supports it, plus short assertion lifetimes and
+   assignment revocation.
+
+## Eligibility and the application registry
+
+An **application** is a row in `sso_clients` with a protocol profile (SAML today,
+OIDC added). Each belongs to one active non-personal workspace. Its fields:
+
+| Field | SAML | OIDC |
+| --- | --- | --- |
+| Identity | SP entity ID | `client_id` (server-generated UUID) |
+| Destinations | One to eight exact HTTPS ACS URLs | One to eight exact HTTPS redirect URIs, plus loopback for native clients only if allowed |
+| Credentials | Optional pinned SP request-signing certificate | Confidential: hashed client secret or `private_key_jwt` JWKS (pinned, never fetched). Public: PKCE only |
+| Claims | NameID (persistent pairwise) plus `email`, `firstName`, `lastName` | `sub` (pairwise) plus `email`, `email_verified`, `given_name`, `family_name` |
+| Access | Assigned users, plus allowed workspace roles (new) | Same |
+| Session | Assertion lifetime (default 2 minutes, maximum 5) | Code 60 seconds, id_token 5 minutes, access token 10 minutes |
+| State | Disabled at creation; enable is a separate, MFA-confirmed action | Same |
+
+Login eligibility is checked at admission, at consent, at consume and again after
+signing:
+
+1. The Tuturuuu account is active, its email is confirmed, and the domain of the
+   **fresh Auth email** (not the profile email) is in the client's approved
+   domains. The initial internal allowlist is exactly `tuturuuu.com`. Subdomains
+   and plus-addressing tricks get no special handling: the domain must match
+   exactly after lowercasing.
+2. The account is a current MEMBER of the client's workspace. Guests, invitees
+   and domain matches alone are not enough.
+3. The account has an active assignment for the client, either directly or
+   through an allowed workspace role. Role grants are re-evaluated on every
+   login, so a role removal applies at once.
+4. The session is **aal2**, and its TOTP proof is no older than the client's
+   `mfa_max_age` (see D2). `ForceAuthn` always requires a fresh primary sign-in
+   plus MFA.
+
+Per-workspace domains (for customers using Tuturuuu as their IdP) come later. A
+domain is added only after Tuturuuu verifies it with its own DNS TXT challenge.
+That lets a workspace approve a domain it controls, not one it only typed.
+
+## Protocols
+
+### SAML 2.0 (built; extended)
+
+- **Endpoints**: `GET /api/v1/sso/saml/{clientId}/metadata`, and
+  `GET|POST /api/v1/sso/saml/{clientId}/sso`. The issuer and entity ID are derived
+  from `SSO_SAML_ORIGIN`, never from Host.
+- **Change**: remove the single-client env pin. Each enabled client resolves its
+  own profile, active key and request-signing policy from the database.
+- **Change**: metadata publishes every key in `active` and `next` states as
+  separate `KeyDescriptor use="signing"` elements, so an SP that imports metadata
+  trusts the new certificate before it is used.
+- NameID stays `persistent`, carrying the random pairwise subject. Before
+  enabling Claude, confirm in the WorkOS flow whether it requires
+  `emailAddress`. If it does, add `emailAddress` as a per-client NameID format
+  that carries the confirmed email, and keep the pairwise `id` attribute.
+- IdP-initiated (later, per-client opt-in): requires a registered default ACS and
+  RelayState allowlist, an `IdPInitiatedAllowed` flag, and a one-time server
+  transaction, since there is no `InResponseTo`. It stays off for Claude.
+
+### OpenID Connect provider (new)
+
+- **Issuer**: `https://tuturuuu.com/api/v1/oidc` (decision D4). The issuer must
+  never change once clients exist.
+- **Discovery**: `{issuer}/.well-known/openid-configuration`. **JWKS**:
+  `{issuer}/jwks`, which publishes `active` and `next` keys.
+- **Flow**: authorization code only. `response_type=code`, PKCE `S256` is
+  mandatory for every client (including confidential ones), and `state` and
+  `nonce` are required. Implicit, hybrid, `plain` PKCE, `request_uri` and dynamic
+  client registration are not supported.
+- **Authorize** `GET {issuer}/authorize`: the exact `redirect_uri` match (byte
+  equal to a registered URI) is checked **before** any redirect. Errors with an
+  unknown client or redirect render a local error page and never redirect.
+  The same Sorbet consent page and transaction machinery as SAML apply.
+- **Token** `POST {issuer}/token`: `client_secret_basic` or `private_key_jwt`.
+  Codes are 256-bit random, stored hashed, single use, valid for 60 seconds and
+  bound to client, redirect URI, PKCE challenge, nonce, account, session and
+  policy revision. Reusing a code burns it and revokes every token issued from
+  it.
+- **Tokens**: the id_token is RS256-signed, valid 5 minutes, with claims `iss`,
+  `sub` (pairwise per client), `aud`, `azp`, `exp`, `iat`, `auth_time`, `nonce`,
+  `acr` (`urn:tuturuuu:aal2`), `amr` (`["pwd","otp"]`), and with consent `email`,
+  `email_verified`, `given_name`, `family_name`. The access token is opaque,
+  hashed at rest, valid 10 minutes, and grants only `userinfo`. **There are no
+  refresh tokens** in the first OIDC release.
+- **UserInfo** `GET {issuer}/userinfo`: the same claims, rechecking eligibility.
+- **Scopes**: `openid` (required), `email`, `profile`. Unknown scopes are rejected.
+- These OIDC keys, codes and tokens are separate from the external-app bearer
+  and cross-app token systems, and never reuse their signing keys.
+
+## Security model
+
+| Threat | Control |
+| --- | --- |
+| Signing-key theft | Keys live only in the signer Worker (or KMS). Database and UI hold public certificates. Rotation and an emergency revoke runbook are covered below |
+| Assertion or code replay | Unique request ID per client (`sso_transactions`), single-use consume under row locks, `InResponseTo` binding, 2-minute assertions, 60-second codes |
+| Open redirect or ACS injection | Exact string match against registered ACS/redirect URIs. HTTPS only, with no wildcards, credentials, fragments or custom ports. Errors before validation never redirect. RelayState is length-bounded and returned opaque |
+| Signature wrapping or XML attacks | Covered in phase 1: DTD rejection, bounded inflate, unique IDs, and `getSignedReferences()` after verification |
+| Session fixation or account switch | The transaction is bound to the starting account and session hash. An account switch burns it |
+| Stale privilege | Membership, assignment, role, domain and MFA age are rechecked at consume and after signing. Revocation applies to the next login |
+| Phishing-style consent | The consent page names the app, its registered domain and the exact claims, and is never framed (`frame-ancestors 'none'`) |
+| Brute force or abuse | Existing fail-closed Redis limits. OIDC adds a per-client token limit (60/min) and a per-IP authorize limit (20/min) |
+| Insider misconfiguration | `manage_sso_clients` permission, an MFA proof under 10 minutes for every trust write, revisioned updates, and creation disabled |
+| Audit tampering | Append-only `sso_audit_events` with no email, assertion or token material, only event codes and UUID correlation |
+
+### Key custody and rotation
+
+- Each key has a `kid`, a status (`next` → `active` → `retiring` → `revoked`) and
+  validity dates. At most one key is `active` per client, enforced today by a
+  partial unique index. Add one `next` key.
+- **Custody**: private keys are Worker secrets named `SSO_SIGNING_KEY_<KID>` on
+  a dedicated signer Worker. `apps/web` sends the canonicalized SignedInfo bytes
+  (SAML) or the JWS signing input (OIDC) plus `kid`, client and transaction ID.
+  It authenticates with a service secret (`SSO_SIGNER_TOKEN`) and receives only
+  the signature. The Worker refuses unknown or revoked `kid`s, caps its rate, and
+  logs a correlation ID. Spike first: `xml-crypto` must accept an injected
+  remote signature. The `node-signer.ts` seam in `packages/sso` is that
+  injection point.
+- **Rotation (SAML dual-publish)**: generate `next`, publish it in metadata
+  alongside `active`, then have the admin re-import metadata or upload the new
+  certificate in WorkOS. After the SP confirms, promote `next` to `active` and
+  demote the old key to `retiring`, which stays in metadata for 7 days, then
+  `revoked`. Claude's portal accepts one certificate at a time, so with **Require
+  SSO** on, rotation is a short coordinated swap. Keep a non-SSO Owner recovery
+  path. Alert 30 days and 7 days before expiry from a Cloudflare cron. The
+  certificate validity is 2 years (D5).
+- **Rotation (OIDC)**: publish `next` in JWKS at least 24 hours before promotion.
+  RPs cache JWKS, so do the same staged promotion.
+- **Compromise**: set the key to `revoked`, disable issuance, rotate, and update
+  SP trust. Every assertion already issued stays valid until its 2-minute expiry.
+
+### Audit
+
+Each admission, consent, denial, consume, signature, failure, OIDC code exchange
+and userinfo read appends one event: type, client, policy revision, `kid`,
+correlation and transaction UUIDs, and time. No email, names, tokens, assertions
+or IP addresses are stored in audit rows. A security review can map the actor
+UUID to an email through access-controlled tables. This is stricter than "email
+only" on purpose. Retention runs from the existing Cron Control Worker (D7).
+
+## SCIM provisioning (phase 2 of this design)
+
+- Tuturuuu acts as the **SCIM client**. It pushes users to each SP's SCIM 2.0
+  endpoint, for example Claude Enterprise through WorkOS directory sync.
+- Triggers: assignment granted or revoked, role change, membership removal,
+  demotion to guest, account deletion and name change. Each writes an outbox row
+  in the same transaction.
+- A Cloudflare Queue consumer delivers idempotent `PUT`/`PATCH active=false`
+  operations, with bounded retries (5, exponential), a per-client circuit breaker
+  and a durable stop fence (`sso_scim_connections.enabled = false` stops delivery
+  within one batch). Bearer tokens are Worker secrets by name.
+- Deprovisioning sends `active=false`. Hard delete only follows an explicit
+  admin policy.
+- Team-plan Claude has no SCIM. There, deprovisioning means revoking the
+  assignment (so SSO is denied on the next login), plus removing the user
+  manually in Claude. With Require SSO on, the existing Claude session ends at
+  its own expiry.
+
+## User experience
+
+All strings are in EN and VI. The UI uses `@tuturuuu/ui` Sorbet components only,
+with mockups made in Claude Design and Artifacts and reviewed with the
+design-system lead before the UI slices.
+
+- **Sign in with Tuturuuu** (exists; extended): the app's name and icon, its
+  registered domain, the claims list, and Allow/Deny. With D1 "remember", later
+  logins for the same app, claims and policy revision skip the prompt and show a
+  short "Signing you in to {app}" interstitial that auto-submits.
+- **My apps launcher** (new) at `/{locale}/apps`: the tiles the user is assigned
+  to. Each tile goes to the SP's registered SSO start URL, so the SP initiates.
+- **Admin applications** (exists at `/{wsId}/sso`; extended): a protocol picker
+  (SAML or OIDC), templates (Claude, GitHub Enterprise, Slack, Notion) that
+  pre-fill only non-secret defaults, role-based access, a keyring panel with
+  "publish next key" and "promote", an OIDC client secret shown once, SCIM
+  connection health, and the audit list.
+
+## Feature flags and rollout
+
+| Flag | Kind | Default |
+| --- | --- | --- |
+| `SSO_SAML_ENABLED` (exists) | kill-switch | off everywhere |
+| `sso_oidc_provider` | release | off everywhere |
+| `sso_scim_push` | release | off everywhere |
+| `sso_app_launcher` | release | off everywhere |
+
+Add every flag to `config/feature-flag-catalog.json`. The per-client `enabled`
+column is a second independent gate.
+
+Rollout: staging with a local SP and RP, then production with one named tester
+on a separate Claude test organization (if available), then the whole internal
+Claude organization with Require SSO still **off** for one week, and only then
+Require SSO on. Rollback: flag off plus client disable. Users then sign in to
+Claude by email link (Require SSO off).
+
+## Delivery slices
+
+Each slice gets tests, a cross-family security review and a `check:changed`
+pass, and lands separately. Migrations need an isolated reset plus a pgTAP
+receipt and an exact-SQL ACK.
+
+1. **S1 Multi-client and keyring (SAML)**: drop the env client pin, add
+   `next`/`retiring` key states, multi-key metadata, and the signer port and
+   Worker spike. Migration.
+2. **S2 Claude pilot**: catalog flag, operator runbook, staging acceptance
+   against the local Node-SAML SP, then the real Claude test connection (needs
+   USER actions and an Iris ACK).
+3. **S3 Role-based assignment and remembered consent** (if D1 and D2 are
+   approved). Migration.
+4. **S4 OIDC provider core**: tables, discovery, JWKS, authorize, token and
+   userinfo, behind `sso_oidc_provider`. Migration.
+5. **S5 Admin UI for OIDC and keyring, plus the app launcher.**
+6. **S6 SCIM push Worker** behind `sso_scim_push`. Migration.
+7. **S7 Per-workspace verified domains** for customer IdP use.
+
+## Test plan
+
+- **Unit** (`packages/sso`): OIDC request validation (redirect mismatch, missing
+  PKCE, `plain` PKCE, missing nonce, unknown scope), id_token claims and
+  expiry, multi-key metadata and JWKS, the `kid` selection state machine, and
+  remote-signer error handling (timeout, wrong `kid`, malformed signature).
+- **Route** (`apps/web`): the real handlers with mocked Auth/RPC. They cover
+  ineligible domain, guest, unassigned, role-removed, stale MFA, account
+  switch, replayed code or assertion, disabled client and limiter outage.
+- **pgTAP** (`sso-persistence.sql` plus new OIDC/SCIM fixtures): code
+  single-use races, the token revocation cascade, role-grant re-evaluation,
+  outbox atomicity, and append-only audit.
+- **End to end** in an isolated environment: the Node-SAML SP harness and an
+  `openid-client` RP harness log in with a seeded MFA user. Add a SCIM mock
+  server for idempotency and stop-fence tests.
+- **Acceptance**: the real Claude connection test, Test SSO in WorkOS, denial
+  cases, and a rotation rehearsal on the test connection.
+
+## Connecting claude.ai (USER, as Claude organization Owner)
+
+1. In Claude, open **Organization settings → Organization and access → Add or
+   edit domains**. Add `tuturuuu.com` and create the `anthropic-domain-verification-…`
+   TXT record at the apex domain. Wait for **Verified**.
+2. In Tuturuuu, open the internal workspace's **Single sign-on** page, then
+   **Add SSO application → Claude**. Leave it disabled for now.
+3. In Claude, go to **Authentication → Setup SSO**, choose **Custom SAML**, and
+   copy the WorkOS **ACS URL** and **SP Entity ID** into the Tuturuuu
+   application. Note the WorkOS NameID and attribute requirements.
+4. Copy the Tuturuuu **metadata URL** (or the IdP entity ID, SSO URL and public
+   certificate) into WorkOS. Map `email`, `firstName`, `lastName` and `id`.
+5. In Tuturuuu, assign yourself only. After Iris ACKs the exact configuration,
+   enable the application and run **Test SSO** in WorkOS.
+6. Keep **Require SSO for Claude off** and **JIT off** (members stay invited),
+   and keep a non-SSO Owner. Assign the rest of the team, wait one week, then
+   decide whether to turn Require SSO on.
+7. On Enterprise, connect SCIM after S6 ships: paste the WorkOS directory-sync
+   endpoint and bearer token into the Tuturuuu SCIM connection.
+
+## Open decisions (for the USER)
+
+- **D1 Consent**: ask on every login (today), or remember per app until the
+  claims or policy change (recommended for internal apps)?
+- **D2 MFA freshness**: 10 minutes (today; more prompts), 12 hours of an aal2
+  session (recommended), or once per session?
+- **D3 Key custody**: Cloudflare signer Worker (recommended), a cloud KMS key
+  that cannot be exported, or Vercel env (today)?
+- **D4 OIDC issuer**: `https://tuturuuu.com/api/v1/oidc` (recommended), or a
+  dedicated `https://sso.tuturuuu.com`?
+- **D5 Certificate lifetime**: 2 years (recommended), or 1 year?
+- **D6 Claude plan and connection**: Team (JIT only, no SCIM) or Enterprise
+  (SCIM)? Is a separate Claude test organization available for the pilot?
+- **D7 Audit retention**: 1 year (recommended), or 2 years?
+- **D8 Internal workspace**: which workspace owns the internal applications (the
+  root workspace is recommended)?

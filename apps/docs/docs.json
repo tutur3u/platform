@@ -179,6 +179,7 @@
               "platform/features/notification-access",
               "platform/features/notifications-popover",
               "platform/features/sso",
+              "platform/features/sso-identity-provider",
               "platform/features/inventory-stock-health",
               "platform/features/inventory-season-pricing-mobile",
               "platform/features/user-management",
