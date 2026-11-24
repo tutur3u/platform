@@ -17,11 +17,22 @@ if [[ "$status" == 404 ]]; then
   exit 0
 fi
 
-curl --fail --silent --show-error --max-time 30 -X PUT \
-  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  -H 'Content-Type: application/json' \
-  --data '{"name":"CHAT_REALTIME_STOPPED","text":"true","type":"secret_text"}' \
-  "$api/secrets" | jq -e '.success == true' > /dev/null
+fenced=false
+for attempt in 1 2 3; do
+  if curl --fail --silent --show-error --max-time 30 -X PUT \
+    -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+    -H 'Content-Type: application/json' \
+    --data '{"name":"CHAT_REALTIME_STOPPED","text":"true","type":"secret_text"}' \
+    "$api/secrets" | jq -e '.success == true' > /dev/null; then
+    fenced=true
+    break
+  fi
+  sleep $((attempt * 5))
+done
+if [[ "$fenced" != true ]]; then
+  echo "could not set the stop fence" >&2
+  exit 1
+fi
 echo "stop fence set"
 
 if [[ -z "${CHAT_REALTIME_SMOKE_ORIGIN:-}" ]]; then

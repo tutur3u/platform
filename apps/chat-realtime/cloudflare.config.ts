@@ -6,6 +6,10 @@ const staging = process.env.CHAT_REALTIME_DEPLOY_ENV === 'staging';
 const worker = staging
   ? 'tuturuuu-chat-realtime-staging'
   : 'tuturuuu-chat-realtime';
+// `cf deploy` refuses to publish while any declared secret is unset, so the
+// rotation overlap secret is declared only for a rotation build. Every other
+// build, staging and production alike, deploys with it absent.
+const rotating = process.env.CHAT_REALTIME_TOKEN_ROTATION === 'overlap';
 
 export default defineConfig({
   worker: {
@@ -26,9 +30,10 @@ export default defineConfig({
       // secret update instead of a code deploy. Any other value runs.
       CHAT_REALTIME_STOPPED: bindings.secret(),
       CHAT_REALTIME_TOKEN_SECRET: bindings.secret(),
-      // Optional during a rotation: tickets signed with the previous secret
-      // stay valid until it is unset. Signers always use the current secret.
-      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: bindings.secret(),
+      // Rotation builds only: tickets signed with the previous secret stay
+      // valid until a default build replaces it. Signers always use the
+      // current secret.
+      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: rotating && bindings.secret(),
       INBOX: bindings.durableObject({
         worker,
         exportName: 'ChatInboxRoom',

@@ -45,11 +45,16 @@ jobs:
           jq -e '.name == "tuturuuu-chat-realtime-staging"
             and .workersDev == true
             and .previewUrls == false
-            and ((.routes // []) | length) == 0
+            and ((.domains // []) | length) == 0
+            and ([(.triggers // [])[] | select(.type == "fetch")] | length) == 0
+            and .env.INBOX.worker == "tuturuuu-chat-realtime-staging"
+            and .env.INBOX.exportName == "ChatInboxRoom"
+            and .env.CONVERSATION.worker == "tuturuuu-chat-realtime-staging"
+            and .env.CONVERSATION.exportName == "ChatConversationRoom"
             and .exports.ChatInboxRoom.storage == "sqlite"
             and .exports.ChatConversationRoom.storage == "sqlite"
             and .env.CHAT_REALTIME_TOKEN_SECRET.type == "secret"
-            and .env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET.type == "secret"
+            and (.env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET // null) == null
             and .env.CHAT_REALTIME_STOPPED.type == "secret"' \
             workers/default/worker.config.json
           ! grep -rqF '"tuturuuu-chat-realtime"' workers/default/worker.config.json
@@ -124,10 +129,12 @@ jobs:
         run: |
           set -euo pipefail
           test "${#CHAT_REALTIME_TOKEN_SECRET}" -ge 32
-          secrets="$RUNNER_TEMP/chat-realtime-secrets.env"
+          secrets="$RUNNER_TEMP/chat-realtime-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           umask 077
-          printf 'CHAT_REALTIME_TOKEN_SECRET=${CHAT_REALTIME_TOKEN_SECRET}\nCHAT_REALTIME_STOPPED=false\n' > "$secrets"
+          # JSON, written from the environment, so no dotenv parsing or
+          # expansion can alter the value.
+          node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({ CHAT_REALTIME_TOKEN_SECRET: process.env.CHAT_REALTIME_TOKEN_SECRET, CHAT_REALTIME_STOPPED: "false" }), { mode: 0o600 })' "$secrets"
           bun x --no-install cf deploy --prebuilt --no-provision \
             --secrets-file "$secrets" \
             --tag "${GITHUB_SHA:0:12}" \

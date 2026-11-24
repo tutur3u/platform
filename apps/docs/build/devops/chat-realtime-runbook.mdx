@@ -74,7 +74,8 @@ no zone route or custom domain. Production keeps the canonical name with
 The **Chat Realtime Staging Deploy** workflow is `workflow_dispatch` only, from
 `main`. Its build job holds no credentials: it runs the chat tests and the
 workerd runtime checks, builds the staging config, asserts the staging name,
-`workers.dev` and no routes, and uploads the tar with its SHA-256. The deploy
+`workers.dev`, no domains or fetch triggers, staging Durable Object bindings
+and no previous ticket secret, and uploads the tar with its SHA-256. The deploy
 job runs behind the reviewer-gated `chat-realtime-staging` environment, which
 holds two secrets:
 
@@ -84,9 +85,10 @@ holds two secrets:
 - `CHAT_REALTIME_STAGING_TOKEN_SECRET`: the staging-only ticket HMAC secret,
   at least 32 characters. Never reuse the production value.
 
-The deploy job verifies the digest, publishes once with
-`CHAT_REALTIME_STOPPED=false` and no `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`, and
-confirms by secret name that the previous secret is unset. It then runs
+The deploy job verifies the digest and publishes the default build once, with
+`CHAT_REALTIME_STOPPED=false` and the ticket secret from a JSON secrets file.
+It then confirms by secret name that `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET` is
+unset. It then runs
 `scripts/staging-smoke.mjs --phase=live`, which checks that a signed ticket
 connects and that one publish is accepted and delivered. It also checks that a
 subscribe ticket, a body digest mismatch, a foreign signing key and an
@@ -146,16 +148,22 @@ request volume and account cost require monitoring during acceptance.
 
 ### Ticket secret rotation
 
-Signers (`apps/web` and Cron Control) use `CHAT_REALTIME_TOKEN_SECRET`. The
-Worker also accepts tickets signed with the optional
-`CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`, which must be at least 32 characters
-when set.
+Signers (`apps/web` and Cron Control) use `CHAT_REALTIME_TOKEN_SECRET`. A
+rotation build also accepts tickets signed with
+`CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`, which must be at least 32 characters.
+`cf deploy` refuses to publish while any declared secret is unset, so
+`cloudflare.config.ts` declares the previous secret only when
+`CHAT_REALTIME_TOKEN_ROTATION=overlap` is set at build time. The artifact
+workflow and the staging deploy build without it, and the build steps assert
+that it is absent.
 
-1. On the Worker, set `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET` to the current
+1. Build with `CHAT_REALTIME_TOKEN_ROTATION=overlap` and publish it with a
+   secrets file that sets `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET` to the current
    secret and `CHAT_REALTIME_TOKEN_SECRET` to the new one.
 2. Update `CHAT_REALTIME_TOKEN_SECRET` on `apps/web` and Cron Control.
-3. After 15 minutes (the longest ticket lifetime), unset
-   `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`.
+3. After 15 minutes (the longest ticket lifetime), publish the default build,
+   which drops the previous secret. Do not publish a default build during the
+   overlap; doing so ends it early.
 
 For a suspected leak, skip the overlap: replace the secret everywhere and
 leave the previous secret unset. Clients re-ticket and reconnect.

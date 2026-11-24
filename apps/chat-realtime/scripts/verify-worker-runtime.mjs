@@ -17,7 +17,6 @@ import {
 import { runLive, runStopped } from './staging-smoke.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const PREVIOUS_SECRET = 'runtime-fixture-only-chat-realtime-previous-000';
 let server;
 const conversationTicket = (userId, extra = {}) =>
   subscribeTicket({
@@ -34,7 +33,6 @@ before(async () => {
     secrets: {
       CHAT_REALTIME_STOPPED: 'false',
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
-      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: PREVIOUS_SECRET,
     },
   });
 });
@@ -487,7 +485,6 @@ test('a live workerd room closes its existing socket when stopped', async () => 
     secrets: {
       CHAT_REALTIME_STOPPED: 'false',
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
-      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: PREVIOUS_SECRET,
     },
   });
   const client = await openSocket(
@@ -548,7 +545,7 @@ test('the staging smoke passes its live phase against workerd', async () => {
     [],
     'every live smoke check passes'
   );
-  assert.equal(results.length, 7);
+  assert.equal(results.length, 8);
 });
 
 test('the Worker stop fence rejects new connects and publishes', async () => {
@@ -559,7 +556,6 @@ test('the Worker stop fence rejects new connects and publishes', async () => {
     secrets: {
       CHAT_REALTIME_STOPPED: 'true',
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
-      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: PREVIOUS_SECRET,
     },
   });
   assert.deepEqual(await (await server.fetch('/health')).json(), {
