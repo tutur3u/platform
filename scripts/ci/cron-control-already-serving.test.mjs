@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import {
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   symlinkSync,
   truncateSync,
@@ -15,7 +16,9 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   alreadyServing,
+  CRON_CONTROL_EXPORTS,
   confirmStillServing,
+  exportsMatchDeclared,
 } from '../../apps/cron-control/scripts/verify-already-serving.mjs';
 
 import { captureAfter, settingsPlan } from './cf-worker-settings.mjs';
@@ -457,6 +460,41 @@ for (const [name, mutate, diagnostic] of [
     /migration identity differs/,
   ],
   [
+    'exports absent from the version',
+    (s) => {
+      delete s.live.exports;
+    },
+    /exports differ from the declared CronLedger/,
+  ],
+  [
+    'null exports',
+    (s) => {
+      s.live.exports = null;
+    },
+    /exports differ from the declared CronLedger/,
+  ],
+  [
+    'CronLedger exported with key-value storage',
+    (s) => {
+      s.live.exports.CronLedger.storage = 'kv';
+    },
+    /exports differ from the declared CronLedger/,
+  ],
+  [
+    'CronLedger exported as another type',
+    (s) => {
+      s.live.exports.CronLedger.type = 'worker-entrypoint';
+    },
+    /exports differ from the declared CronLedger/,
+  ],
+  [
+    'an undeclared extra export',
+    (s) => {
+      s.live.exports.Other = { type: 'durable-object', storage: 'sqlite' };
+    },
+    /exports differ from the declared CronLedger/,
+  ],
+  [
     'fresh settings drift',
     (s) => {
       s.fresh.settingsHash = 'different';
@@ -602,4 +640,29 @@ test('refuses a FIFO module without blocking', async (t) => {
   const made = spawnSync('mkfifo', [path]);
   if (made.error || made.status !== 0) return t.skip('mkfifo unavailable');
   await assert.rejects(check(state), /module bytes unavailable/);
+});
+
+test('the verifier requires exactly the exports cloudflare.config.ts declares', () => {
+  const config = readFileSync(
+    fileURLToPath(
+      new URL('../../apps/cron-control/cloudflare.config.ts', import.meta.url)
+    ),
+    'utf8'
+  );
+  const block = /\n {4}exports: \{\n([\s\S]*?)\n {4}\},/.exec(config);
+  assert.ok(block, 'cloudflare.config.ts declares Worker exports');
+  assert.deepEqual(block[1].trim().split('\n'), [
+    "CronLedger: exports.durableObject({ storage: 'sqlite' }),",
+  ]);
+  assert.deepEqual(CRON_CONTROL_EXPORTS, {
+    CronLedger: { type: 'durable-object', storage: 'sqlite' },
+  });
+  assert.equal(
+    exportsMatchDeclared({
+      CronLedger: { type: 'durable-object', storage: 'sqlite' },
+    }),
+    true
+  );
+  for (const value of [undefined, null, [], {}, 'CronLedger'])
+    assert.equal(exportsMatchDeclared(value), false);
 });

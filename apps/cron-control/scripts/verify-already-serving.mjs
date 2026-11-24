@@ -261,10 +261,39 @@ function requireServingModule(serving, bytes, proof) {
       ledgers[0].type === 'durable_object_namespace' &&
       ledgers[0].class_name === 'CronLedger' &&
       ledgers[0].namespace_id === proof.ledgerNamespaceId &&
-      (serving.migration_tag ?? null) === proof.migrationTag &&
-      (serving.exports === undefined ||
-        serving.exports?.CronLedger?.storage === 'sqlite'),
+      (serving.migration_tag ?? null) === proof.migrationTag,
     'serving CronLedger namespace or migration identity differs'
+  );
+  // Cloudflare refuses to deploy a version uploaded without its Durable
+  // Object exports (100402), so an absent or different set never qualifies.
+  assert.ok(
+    exportsMatchDeclared(serving.exports),
+    'serving Cron Control version exports differ from the declared CronLedger durable-object (sqlite) export'
+  );
+}
+
+/** The exports cloudflare.config.ts declares for the Worker. */
+export const CRON_CONTROL_EXPORTS = Object.freeze({
+  CronLedger: Object.freeze({ type: 'durable-object', storage: 'sqlite' }),
+});
+
+export function exportsMatchDeclared(actual) {
+  if (!actual || typeof actual !== 'object' || Array.isArray(actual))
+    return false;
+  const names = Object.keys(actual).sort();
+  const declared = Object.keys(CRON_CONTROL_EXPORTS).sort();
+  return (
+    names.length === declared.length &&
+    names.every((name, index) => name === declared[index]) &&
+    declared.every((name) => {
+      const entry = actual[name];
+      return (
+        !!entry &&
+        typeof entry === 'object' &&
+        entry.type === CRON_CONTROL_EXPORTS[name].type &&
+        entry.storage === CRON_CONTROL_EXPORTS[name].storage
+      );
+    })
   );
 }
 
