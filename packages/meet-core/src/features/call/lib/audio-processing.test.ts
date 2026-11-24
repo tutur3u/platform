@@ -7,13 +7,19 @@ import {
 } from './audio-processing';
 import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
-it('enables native speech processing and avoids whole-system feedback by default', () => {
+it("keeps native speech processing on the microphone and excludes Meet's own sound from a shared screen", () => {
   expect(microphoneConstraints()).toMatchObject({
     echoCancellation: true,
     noiseSuppression: true,
     autoGainControl: true,
   });
-  expect(SCREEN_CAPTURE_OPTIONS.systemAudio).toBe('exclude');
+  // Shared content stays unprocessed; only the microphone gets speech processing.
+  expect(SCREEN_CAPTURE_OPTIONS.audio).toMatchObject({
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+  });
+  expect(SCREEN_CAPTURE_OPTIONS.systemAudio).toBe('include');
   expect(SCREEN_CAPTURE_OPTIONS.audio.restrictOwnAudio).toBe(true);
 });
 
