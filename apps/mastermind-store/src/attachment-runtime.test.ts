@@ -314,6 +314,12 @@ describe('reply attachments on the bridge', () => {
         }
       );
       expect(reserve.status).toBe(404);
+      // Even without the service token: off means absent, not forbidden.
+      const anonymous = await mf.dispatchFetch(`${ORIGIN}/v1/bridge/send2`, {
+        method: 'POST',
+        body: '{}',
+      });
+      expect(anonymous.status).toBe(404);
       expect((await fetchObject(mf, uuid(9))).status).toBe(404);
       expect(await bridgeOps(mf)).toBe(0);
     } finally {

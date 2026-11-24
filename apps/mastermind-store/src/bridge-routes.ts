@@ -22,6 +22,8 @@ import {
   bridgeTicketRequestSchema,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
 import {
+  ATTACHMENT_PATHS,
+  attachmentsEnabled,
   handleAttachmentFetch,
   handleAttachmentRoutes,
 } from './attachment-routes';
@@ -71,6 +73,12 @@ export async function handleBridge(
   if (path === '/v1/bridge/connect' && request.method === 'GET')
     // The Durable Object checks the ticket; nothing else admits a socket.
     return { response: await stub(env).fetch(request), kind: 'bridge:connect' };
+  // Turned off, attachment routes do not exist: 404 before any other check.
+  if (ATTACHMENT_PATHS.has(path) && !attachmentsEnabled(env))
+    return {
+      response: json({ ok: false, error: 'bad_request' }, 404),
+      kind: 'bridge:attachments:off',
+    };
   if (path === '/v1/bridge/attachments/fetch' && request.method === 'GET')
     // The capability, which only the addressed machine can derive, is the gate.
     return handleAttachmentFetch(

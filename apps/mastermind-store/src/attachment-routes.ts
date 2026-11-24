@@ -35,7 +35,8 @@ type Result = { response: Response; kind: string };
 /** Whether this deployment exposes reply attachments at all. */
 export const attachmentsEnabled = (env: StoreEnv) =>
   env.MASTERMIND_BRIDGE_ATTACHMENTS?.trim() === 'on';
-const ATTACHMENT_PATHS = new Set([
+export const ATTACHMENT_PATHS = new Set([
+  '/v1/bridge/attachments/fetch',
   '/v1/bridge/send2',
   '/v1/bridge/attachments/reserve',
   '/v1/bridge/attachments/object',
@@ -69,6 +70,12 @@ export async function handleAttachmentFetch(
   const capability = header.startsWith(`${ATTACHMENT_FETCH_SCHEME} `)
     ? header.slice(ATTACHMENT_FETCH_SCHEME.length + 1)
     : '';
+  // A misconfigured budget is the store's fault, not the object's: retry.
+  if (attachmentsEnabled(env) && budget === null)
+    return {
+      response: new Response(null, { status: 503 }),
+      kind: 'bridge:fetch:config',
+    };
   if (
     !attachmentsEnabled(env) ||
     budget === null ||
