@@ -47,7 +47,10 @@ export function fakeApi(overrides: Partial<SelfCaptureApi> = {}) {
   } satisfies SelfCaptureApi;
 }
 
-export const SELF_SESSION = { sessionId: 'session-1', protocol: 'self_v1' } as const;
+export const SELF_SESSION = {
+  sessionId: 'session-1',
+  protocol: 'self_v1',
+} as const;
 export function eligibleInputs(
   track: MediaStreamTrack,
   over: Partial<SelfCaptureInputs> = {}

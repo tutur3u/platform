@@ -37,7 +37,9 @@ const ai = messages.meet.ai;
 const wrap = (node: ReactNode) =>
   render(
     <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
     >
       <NextIntlClientProvider locale="en" messages={messages}>
         {node}
@@ -77,8 +79,16 @@ describe('capture mode picker', () => {
   it('is hidden unless the server offers per-speaker capture to a manager', () => {
     wrap(
       <>
-        <CaptureModePicker wsId="w" meetingId="m" room={room({ available: false })} />
-        <CaptureModePicker wsId="w" meetingId="m" room={room({ canManageMode: false })} />
+        <CaptureModePicker
+          wsId="w"
+          meetingId="m"
+          room={room({ available: false })}
+        />
+        <CaptureModePicker
+          wsId="w"
+          meetingId="m"
+          room={room({ canManageMode: false })}
+        />
         <CaptureModePicker wsId="w" meetingId="m" room={ROOM_ONLY} />
       </>
     );
@@ -106,8 +116,11 @@ describe('capture mode picker', () => {
       />
     );
     expect(
-      (screen.getByRole('radio', { name: ai.self_mode_room }) as HTMLButtonElement)
-        .disabled
+      (
+        screen.getByRole('radio', {
+          name: ai.self_mode_room,
+        }) as HTMLButtonElement
+      ).disabled
     ).toBe(true);
     expect(screen.getByText(ai.self_mode_locked)).toBeTruthy();
   });
@@ -149,7 +162,13 @@ describe('per-speaker consent notice', () => {
 
   it('replaces the all-or-nothing wording with the per-speaker notice', async () => {
     f.read.mockResolvedValue(view());
-    wrap(<TranscriptConsentNotice meetingId="m" wsId="w" capture={{ kind: 'off' }} />);
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'off' }}
+      />
+    );
     expect(await screen.findByText(ai.self_notice)).toBeTruthy();
     expect(screen.queryByText(ai.consent_body)).toBeNull();
     expect(screen.queryByText(ai.consent_readers)).toBeNull();
@@ -159,8 +178,16 @@ describe('per-speaker consent notice', () => {
 
   it('tells a participant who declined that others keep their transcript', async () => {
     f.read.mockResolvedValue(view({ choice: 'decline' }));
-    wrap(<TranscriptConsentNotice meetingId="m" wsId="w" capture={{ kind: 'off' }} />);
-    fireEvent.click(await screen.findByRole('button', { name: ai.consent_title }));
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'off' }}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_title })
+    );
     expect(await screen.findByText(ai.self_untick)).toBeTruthy();
     expect(screen.queryByText(ai.consent_you_declined)).toBeNull();
   });
@@ -175,8 +202,16 @@ describe('per-speaker consent notice', () => {
   it('records the choice through the per-speaker route', async () => {
     f.read.mockResolvedValue(view());
     f.json.mockResolvedValue({ ...view({ choice: 'decline' }) });
-    wrap(<TranscriptConsentNotice meetingId="m" wsId="w" capture={{ kind: 'off' }} />);
-    fireEvent.click(await screen.findByRole('button', { name: ai.consent_decline }));
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'off' }}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_decline })
+    );
     await vi.waitFor(() => expect(f.json).toHaveBeenCalled());
     expect(f.json.mock.calls[0]![0]).toBe('/api/meet-ai/w/m/self/choice');
     expect(f.choose).not.toHaveBeenCalled();

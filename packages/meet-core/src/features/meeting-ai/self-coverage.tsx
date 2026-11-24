@@ -28,7 +28,9 @@ export function SelfCoverage({
           >
             <span className="truncate">{names[entry.accountId] ?? ''}</span>
             <span className="shrink-0 text-muted-foreground">
-              {entry.contributing ? t('self_coverage_yes') : t('self_coverage_no')}
+              {entry.contributing
+                ? t('self_coverage_yes')
+                : t('self_coverage_no')}
             </span>
           </li>
         ))}

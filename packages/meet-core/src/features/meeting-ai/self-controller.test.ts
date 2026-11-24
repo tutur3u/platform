@@ -116,7 +116,8 @@ describe('per-speaker capture controller', () => {
     controller.update(eligibleInputs(track));
     await settle();
     track.setEcho(false);
-    for (let i = 0; i < 25; i++) frames.push(new Float32Array(SELF_FRAME_SAMPLES));
+    for (let i = 0; i < 25; i++)
+      frames.push(new Float32Array(SELF_FRAME_SAMPLES));
     expect(engine.dispose).toHaveBeenCalledTimes(1);
     expect(controller.getState()).toEqual({ kind: 'unsupported' });
   });
@@ -192,7 +193,11 @@ describe('per-speaker capture controller', () => {
   it('a refused chunk stops capture and only a rejoin opens again', async () => {
     const api = fakeApi({
       upload: vi.fn(async () => {
-        throw new FakeInternalApiError('gone', 409, 'MEET_TRANSCRIPT_CONSENT_REQUIRED');
+        throw new FakeInternalApiError(
+          'gone',
+          409,
+          'MEET_TRANSCRIPT_CONSENT_REQUIRED'
+        );
       }),
     });
     const { controller, engine, frames } = setup(api);

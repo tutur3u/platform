@@ -39,7 +39,12 @@ afterEach(() => vi.useRealTimers());
 describe('self uploader', () => {
   it('sends only the allowed fields and numbers chunks from zero', async () => {
     const api = fakeApi();
-    const uploader = new SelfUploader(api, grant, { onFailure: vi.fn() }, ids());
+    const uploader = new SelfUploader(
+      api,
+      grant,
+      { onFailure: vi.fn() },
+      ids()
+    );
     uploader.enqueue(chunk(0));
     await vi.advanceTimersByTimeAsync(0);
     expect(api.upload).toHaveBeenCalledTimes(1);
@@ -71,7 +76,12 @@ describe('self uploader', () => {
         () => new Promise((resolve) => (release = () => resolve({})))
       ),
     });
-    const uploader = new SelfUploader(api, grant, { onFailure: vi.fn() }, ids());
+    const uploader = new SelfUploader(
+      api,
+      grant,
+      { onFailure: vi.fn() },
+      ids()
+    );
     uploader.enqueue(chunk(0));
     uploader.enqueue(chunk(32_000));
     uploader.enqueue(chunk(64_000));
@@ -84,9 +94,16 @@ describe('self uploader', () => {
 
   it('holds at most 60 seconds of pending audio and drops the rest', async () => {
     const api = fakeApi({ upload: vi.fn(() => new Promise(() => undefined)) });
-    const uploader = new SelfUploader(api, grant, { onFailure: vi.fn() }, ids());
+    const uploader = new SelfUploader(
+      api,
+      grant,
+      { onFailure: vi.fn() },
+      ids()
+    );
     for (let i = 0; i < 8; i++) uploader.enqueue(chunk(i * 160_000, 10));
-    expect(uploader.pendingSamples).toBeLessThanOrEqual(SELF_PENDING_MAX_SAMPLES);
+    expect(uploader.pendingSamples).toBeLessThanOrEqual(
+      SELF_PENDING_MAX_SAMPLES
+    );
     expect(uploader.pendingSamples).toBe(SELF_PENDING_MAX_SAMPLES);
     expect(uploader.droppedForCap).toBe(2);
   });
@@ -95,7 +112,11 @@ describe('self uploader', () => {
     const onFailure = vi.fn();
     const api = fakeApi({
       upload: vi.fn(async () => {
-        throw new FakeInternalApiError('conflict', 409, 'MEET_TRANSCRIPT_CONSENT_REQUIRED');
+        throw new FakeInternalApiError(
+          'conflict',
+          409,
+          'MEET_TRANSCRIPT_CONSENT_REQUIRED'
+        );
       }),
     });
     const uploader = new SelfUploader(api, grant, { onFailure }, ids());
@@ -126,7 +147,12 @@ describe('self uploader', () => {
 
   it('aborts the request in flight when stopped', async () => {
     const api = fakeApi({ upload: vi.fn(() => new Promise(() => undefined)) });
-    const uploader = new SelfUploader(api, grant, { onFailure: vi.fn() }, ids());
+    const uploader = new SelfUploader(
+      api,
+      grant,
+      { onFailure: vi.fn() },
+      ids()
+    );
     uploader.enqueue(chunk(0));
     await vi.advanceTimersByTimeAsync(0);
     const signal = api.upload.mock.calls[0]![1];

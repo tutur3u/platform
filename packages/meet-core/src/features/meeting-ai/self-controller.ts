@@ -1,6 +1,10 @@
 import { classifySelfFailure, type SelfCaptureApi } from './self-api';
 import { SELF_FRAME_SAMPLES, SelfChunker } from './self-chunker';
-import { createSelfEngine, type SelfEngine, type SelfEngineFactory } from './self-engine';
+import {
+  createSelfEngine,
+  type SelfEngine,
+  type SelfEngineFactory,
+} from './self-engine';
 import {
   nextSelfLifecycle,
   SELF_RATE_LIMIT_MS,

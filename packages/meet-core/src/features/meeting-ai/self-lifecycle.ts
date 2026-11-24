@@ -89,7 +89,8 @@ export function nextSelfLifecycle(
         : state;
     case 'renew_failed':
       if (state.kind !== 'open') return state;
-      if (event.failure !== 'retry') return { kind: event.failure, key: state.key };
+      if (event.failure !== 'retry')
+        return { kind: event.failure, key: state.key };
       // A lease that lapsed cannot admit chunks; start over with a new stream.
       return event.now >= state.leaseExpiresAt
         ? { kind: 'opening', key: state.key }

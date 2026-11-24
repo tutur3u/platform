@@ -6,8 +6,10 @@ import {
   selfCaptureViewOf,
 } from './self-lifecycle';
 
-const run = (events: SelfLifecycleEvent[], from: SelfLifecycle = { kind: 'idle' }) =>
-  events.reduce(nextSelfLifecycle, from);
+const run = (
+  events: SelfLifecycleEvent[],
+  from: SelfLifecycle = { kind: 'idle' }
+) => events.reduce(nextSelfLifecycle, from);
 const opened: SelfLifecycleEvent = {
   type: 'opened',
   streamId: 's1',
@@ -27,13 +29,11 @@ describe('stream lifecycle', () => {
   });
 
   it('treats a failed renewal inside the lease as paused, then recovers', () => {
-    const degraded = run(
-      [
-        { type: 'eligible', key: 'a:0' },
-        opened,
-        { type: 'renew_failed', failure: 'retry', now: 500 },
-      ]
-    );
+    const degraded = run([
+      { type: 'eligible', key: 'a:0' },
+      opened,
+      { type: 'renew_failed', failure: 'retry', now: 500 },
+    ]);
     expect(selfCaptureViewOf(degraded)).toEqual({ kind: 'paused' });
     expect(
       selfCaptureViewOf(
@@ -59,9 +59,9 @@ describe('stream lifecycle', () => {
     ]);
     expect(refused).toEqual({ kind: 'refused', key: 'a:0' });
     expect(selfCaptureViewOf(refused)).toEqual({ kind: 'stopped' });
-    expect(
-      nextSelfLifecycle(refused, { type: 'eligible', key: 'a:0' })
-    ).toBe(refused);
+    expect(nextSelfLifecycle(refused, { type: 'eligible', key: 'a:0' })).toBe(
+      refused
+    );
     expect(
       nextSelfLifecycle(refused, { type: 'eligible', key: 'a:1' })
     ).toEqual({ kind: 'opening', key: 'a:1' });
@@ -69,13 +69,11 @@ describe('stream lifecycle', () => {
 
   it('refuses on a renew 409 and on an ineligible open', () => {
     expect(
-      run(
-        [
-          { type: 'eligible', key: 'a:0' },
-          opened,
-          { type: 'renew_failed', failure: 'refused', now: 1 },
-        ]
-      ).kind
+      run([
+        { type: 'eligible', key: 'a:0' },
+        opened,
+        { type: 'renew_failed', failure: 'refused', now: 1 },
+      ]).kind
     ).toBe('refused');
     const guest = run([
       { type: 'eligible', key: 'a:0' },
@@ -90,9 +88,10 @@ describe('stream lifecycle', () => {
       { type: 'open_failed', failure: 'retry', attempt: 0 },
     ]);
     expect(state).toEqual({ kind: 'backoff', key: 'a:0', attempt: 1 });
-    expect(
-      nextSelfLifecycle(state, { type: 'backoff_elapsed' })
-    ).toEqual({ kind: 'opening', key: 'a:0' });
+    expect(nextSelfLifecycle(state, { type: 'backoff_elapsed' })).toEqual({
+      kind: 'opening',
+      key: 'a:0',
+    });
   });
 
   it('returns to idle when no longer eligible', () => {
