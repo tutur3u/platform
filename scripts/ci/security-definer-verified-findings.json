@@ -502,5 +502,16 @@
     "classification": "verified false positive",
     "effectiveRoles": ["service_role"],
     "reason": "The defining DO block revokes EXECUTE on this exact signature from PUBLIC, anon, authenticated and service_role and grants it only to service_role; the registry pgTAP suite asserts no client role can execute it. 20261121151500 recreates the unchanged definition with search_path pg_catalog, pg_temp and a static ACL block."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261124150200_workspace_secrets_config_vault.sql",
+    "line": 57,
+    "sourceDigest": "5d27cfaf2d9fce91d4ad43b532fffe0d48b2731428d8dc7b06e745fb5c5965c2",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "7fa7a2f125c4332eff221a30e2dcc6e9a06ea6d95c1cd16355d4ae9185dc8209",
+    "classification": "verified false positive",
+    "effectiveRoles": [],
+    "reason": "Grants vault._crypto_aead_det_decrypt (signature resolved from pg_proc at migration time) to the NOLOGIN workspace_secrets_definer role only; accepted residual (d) of workspace-secrets step 1; approved by Iris 2026-11-24."
   }
 ]

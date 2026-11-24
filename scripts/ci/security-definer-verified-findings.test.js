@@ -257,6 +257,11 @@ const expectedVerifiedIdentities = [
     'public.has_workspace_permission(uuid,uuid,text)',
     'public-execute',
   ],
+  [
+    'apps/database/supabase/migrations/20261124150200_workspace_secrets_config_vault.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>
@@ -286,7 +291,9 @@ test('verified findings remain separate from the historical debt inventory', () 
                 entry.file.includes('20261104213040') ||
                 entry.file.includes('20261120194100') ||
                 (entry.file.includes('20261121140000') &&
-                  entry.rule === 'dynamic-execute-acl')
+                  entry.rule === 'dynamic-execute-acl') ||
+                // Grants only to the NOLOGIN workspace_secrets_definer role.
+                entry.file.includes('20261124150200')
               ? []
               : ['service_role']
     );

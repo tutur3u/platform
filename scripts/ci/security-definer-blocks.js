@@ -323,6 +323,20 @@ const storageAclReviewedLater = [
     reason:
       "Adds the manage_courses teacher-transfer fence to the Contacts merge routines. It never names workspace_storage, changes role membership or runs dynamic SQL; the only escape literal is the E'\\n\\n[Merged from user ...]' note separator in an UPDATE of public.workspace_users, and its ACL statements touch only the three merge routines it defines.",
   },
+  {
+    file: 'apps/database/supabase/migrations/20261124150100_workspace_secrets_credential_rpcs.sql',
+    sourceDigest:
+      '0fdf29faac13c1b55d43adf93d002b28ca5ad374d92470b201da3a56877cb9c9',
+    reason:
+      "Workspace secrets step 1 credential RPCs. It never names workspace_storage, changes role membership or has ALTER DEFAULT PRIVILEGES; its only GRANTs give service_role EXECUTE on public.put_, get_workspace_secret_credential and workspace_secret_credential_status. It runs no dynamic SQL: the end-of-migration DO block only passes the 'EXECUTE' privilege name to has_function_privilege() and raises.",
+  },
+  {
+    file: 'apps/database/supabase/migrations/20261124150200_workspace_secrets_config_vault.sql',
+    sourceDigest:
+      '5d27cfaf2d9fce91d4ad43b532fffe0d48b2731428d8dc7b06e745fb5c5965c2',
+    reason:
+      'Workspace secrets step 1 config tier. It never names workspace_storage and has no ALTER DEFAULT PRIVILEGES. Every GRANT targets workspace_secrets_definer (vault, private.workspace_secret_* and public.workspace_secrets objects, plus a CREATE on private and public revoked right after ALTER OWNER), service_role (public.list_ and put_workspace_secret_config) or the migration user (role membership, private config readers). Its only dynamic EXECUTE grants vault._crypto_aead_det_decrypt, resolved from pg_proc, to workspace_secrets_definer.',
+  },
 ];
 
 function withoutReviewedLater(sources, reviewed = storageAclReviewedLater) {
