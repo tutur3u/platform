@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(29);
+select plan(30);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
 values ('39140000-0000-4000-8000-000000000002', 'wcv-creator@example.com', now(), '{}'::jsonb, '{}'::jsonb)
@@ -106,6 +106,16 @@ select ok(not exists (
   where schemaname = 'public' and tablename = 'workspace_secrets'
     and roles && array['public', 'anon', 'service_role']::name[]
 ), 'no policy on public.workspace_secrets applies to public, anon or service_role');
+select is(
+  (select array_agg(row(policyname, permissive, roles::text)::text order by policyname)
+   from pg_policies
+   where schemaname = 'public' and tablename = 'workspace_secrets'
+     and policyname <> 'workspace_secrets_definer_all'),
+  array[
+    row('Allow platform admins to manage workspace secrets', 'PERMISSIVE', '{authenticated}')::text,
+    row('account_required_mfa', 'RESTRICTIVE', '{authenticated}')::text
+  ],
+  'public.workspace_secrets keeps exactly its two pre-existing authenticated policies');
 
 -- Dual write ---------------------------------------------------------------------
 
