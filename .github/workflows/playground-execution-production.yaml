@@ -28,12 +28,16 @@ jobs:
     if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    env:
-      PLAYGROUND_IMAGE: ${{ inputs.image_reference }}
-      PLAYGROUND_INGRESS_HOST: playground-execution.tuturuuu.com
-      PLAYGROUND_SOURCE_ORIGIN: ${{ vars.PLAYGROUND_PRODUCTION_SOURCE_ORIGIN }}
+    # The production identity is set only on the steps that build and check
+    # the Worker, so the Worker tests run without it.
     steps:
       - name: Accept only a pinned Playground registry digest and an HTTPS source origin
+        env:
+          PLAYGROUND_IMAGE: ${{ inputs.image_reference }}
+          PLAYGROUND_INGRESS_HOST: playground-execution.tuturuuu.com
+          # Web production, which serves the source and export routes. A
+          # literal: this job binds no environment, so it cannot read one.
+          PLAYGROUND_SOURCE_ORIGIN: https://tuturuuu.com
         run: |
           set -euo pipefail
           [[ "$PLAYGROUND_IMAGE" =~ ^registry\.cloudflare\.com/[a-f0-9]{32}/tuturuuu-playground@sha256:[a-f0-9]{64}$ ]]
@@ -54,9 +58,21 @@ jobs:
         run: bun run --cwd packages/types build
       - name: Build the production Worker
         working-directory: apps/playground-execution
+        env:
+          PLAYGROUND_IMAGE: ${{ inputs.image_reference }}
+          PLAYGROUND_INGRESS_HOST: playground-execution.tuturuuu.com
+          # Web production, which serves the source and export routes. A
+          # literal: this job binds no environment, so it cannot read one.
+          PLAYGROUND_SOURCE_ORIGIN: https://tuturuuu.com
         run: bun x --no-install cf build
       - name: Check the emitted Worker is the production shape
         working-directory: apps/playground-execution
+        env:
+          PLAYGROUND_IMAGE: ${{ inputs.image_reference }}
+          PLAYGROUND_INGRESS_HOST: playground-execution.tuturuuu.com
+          # Web production, which serves the source and export routes. A
+          # literal: this job binds no environment, so it cannot read one.
+          PLAYGROUND_SOURCE_ORIGIN: https://tuturuuu.com
         run: |
           set -euo pipefail
           test -d .cloudflare/output

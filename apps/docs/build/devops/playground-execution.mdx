@@ -118,10 +118,12 @@ Run adapter on by default.
 
 Dispatch `Playground execution production deploy`
 (`playground-execution-production.yaml`) on `main` with the registry
-reference staging qualified. The credential-free build job requires the
-`PLAYGROUND_PRODUCTION_SOURCE_ORIGIN` variable (Web's HTTPS origin, which
-serves `/api/v1/internal/playground-execution/source` and `/export`) and
-checks that the emitted output names only that digest, the custom domain
+reference staging qualified. The credential-free build job pins the source
+origin to `https://tuturuuu.com` (Web production, which serves
+`/api/v1/internal/playground-execution/source` and `/export`) in the workflow,
+like the ingress host: a job that binds no environment reads an
+environment's variables as empty, which `workflow-environment-scope.test.js`
+refuses for any name carrying an environment's prefix. It checks that the emitted output names only that digest, the custom domain
 `playground-execution.tuturuuu.com` and the source origin, with no qualifier
 class and no staging name. The deploy job runs in the reviewer-gated
 `playground-production` environment with `PLAYGROUND_PRODUCTION_CLOUDFLARE_API_TOKEN`,
@@ -130,7 +132,7 @@ class and no staging name. The deploy job runs in the reviewer-gated
 `tuturuuu.com` zone, so the token also needs that zone's Workers route
 permission.
 
-The source origin must be a `tuturuuu.com` host. The environment's reviewer
+The environment's reviewer
 confirms the digest passed staging qualification before approving. The
 admission gate is durable: it starts paused, and when the domain already
 serves the Worker the job pauses admission before rolling out containers.

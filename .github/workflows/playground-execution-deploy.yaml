@@ -28,15 +28,11 @@ jobs:
     env:
       PLAYGROUND_IMAGE: ${{ inputs.image_reference }}
       PLAYGROUND_DEPLOY_ENV: staging
-      # Optional: staging Web's origin, so Runs from a staging Meet room can
-      # fetch and save their source. Without it only fixtures run.
-      PLAYGROUND_SOURCE_ORIGIN: ${{ vars.PLAYGROUND_STAGING_SOURCE_ORIGIN }}
     steps:
       - name: Accept only a pinned Playground registry digest
         run: |
           set -euo pipefail
           [[ "$PLAYGROUND_IMAGE" =~ ^registry\.cloudflare\.com/[a-f0-9]{32}/tuturuuu-playground@sha256:[a-f0-9]{64}$ ]]
-          [[ -z "$PLAYGROUND_SOURCE_ORIGIN" || "$PLAYGROUND_SOURCE_ORIGIN" =~ ^https://([a-z0-9-]+\.)*tuturuuu\.com$ ]]
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

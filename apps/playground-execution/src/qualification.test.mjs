@@ -11,7 +11,18 @@ const IMAGE = `registry.cloudflare.com/${'a'.repeat(32)}/tuturuuu-playground@sha
 async function config(environment) {
   const previous = { ...process.env };
   try {
-    delete process.env.PLAYGROUND_DEPLOY_ENV;
+    // Hermetic: a deploy job's own identity must not leak into the config.
+    for (const name of [
+      'PLAYGROUND_DEPLOY_ENV',
+      'PLAYGROUND_INGRESS_HOST',
+      'PLAYGROUND_SOURCE_ORIGIN',
+      'PLAYGROUND_MAX_CONCURRENT',
+      'PLAYGROUND_MAX_CONCURRENT_PER_USER',
+      'PLAYGROUND_MAX_RUNS_PER_USER_10_MINUTES',
+      'PLAYGROUND_MAX_STARTS_PER_UTC_DAY',
+      'PLAYGROUND_MAX_CHECKS_PER_UTC_DAY',
+    ])
+      delete process.env[name];
     if (environment) process.env.PLAYGROUND_DEPLOY_ENV = environment;
     process.env.PLAYGROUND_IMAGE = IMAGE;
     const url = new URL('../cloudflare.config.ts', import.meta.url);
