@@ -71,8 +71,9 @@ describe('room-side endings reach the legal outbox', () => {
       const ended = endMira(base, who, reason, role, T);
       const state = settleSelfCapture(ended.state, T);
       expect(outbox(state)).toEqual([
-        { accountId: alice, seq: 2, kind: 'withdraw' },
-        { accountId: bob, seq: 2, kind: 'withdraw' },
+        // One room-wide counter: Bob's open took seq 2.
+        { accountId: alice, seq: 3, kind: 'withdraw' },
+        { accountId: bob, seq: 4, kind: 'withdraw' },
       ]);
     }
   });
@@ -150,8 +151,8 @@ describe('room-side endings reach the legal outbox', () => {
     let state = open(open(selfRoom(), alice, streamA), bob, streamB);
     state = endMeetRoom(state, new Date(T).toISOString()) as RoomServiceState;
     expect(outbox(state)).toEqual([
-      { accountId: alice, seq: 2, kind: 'close' },
-      { accountId: bob, seq: 2, kind: 'close' },
+      { accountId: alice, seq: 3, kind: 'close' },
+      { accountId: bob, seq: 4, kind: 'close' },
     ]);
     expect(state.selfCapture?.session?.status).toBe('ended');
     expect(settleSelfCapture(state, T)).toBe(state);
@@ -191,7 +192,7 @@ describe('open-stream epoch race', () => {
     ]);
   });
 
-  it('a stale epoch queues a compensating withdraw with a higher seq', () => {
+  it('a stale second-device commit queues a close while consent is held', () => {
     const first = begin(selfRoom(), alice);
     const second = begin(first.state, alice, T + 1);
     const stale = commit(
@@ -202,9 +203,11 @@ describe('open-stream epoch race', () => {
     );
     expect(stale.body.committed).toBe(false);
     expect(stale.body.pending).toEqual([
-      expect.objectContaining({ accountId: alice, seq: 3, kind: 'withdraw' }),
+      expect.objectContaining({ accountId: alice, seq: 3, kind: 'close' }),
     ]);
-    // The newer begin is fenced too; the client opens again.
+    // Consent stays recorded; the close ends both streams, so the newer
+    // begin is fenced too and the client opens again.
+    expect(stale.state.selfCapture?.accounts[alice]?.legalAllow).toBeDefined();
     const newer = commit(
       stale.state,
       alice,
@@ -282,7 +285,7 @@ describe('room restore', () => {
       ...state,
       selfCapture: {
         ...state.selfCapture!,
-        delivery: { attempts: 2, nextAt: T + 40_000 },
+        delivery: { attempts: 2, nextAt: T + 40_000, startedAt: T },
       },
     };
     const before = state.selfCapture!;
@@ -299,6 +302,7 @@ describe('room restore', () => {
     expect(restored.state.selfCapture?.delivery).toEqual({
       attempts: 2,
       nextAt: T + 40_000,
+      startedAt: T,
     });
     expect(restored.state.selfCapture?.mode).toBe('self');
     // The ended session stays ended; a new allow needs a new session.

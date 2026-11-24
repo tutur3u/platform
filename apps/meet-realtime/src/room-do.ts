@@ -262,15 +262,16 @@ export class MeetRoomDurableObject implements DurableObject {
       );
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
-      if (!result.status) {
-        if (
-          changed &&
-          !['live.audio', 'live.share.audio'].includes(
-            (body as { action?: string } | null)?.action ?? ''
-          )
+      // Refusals can carry state too (a spent token, a queued ending).
+      if (
+        changed &&
+        !['live.audio', 'live.share.audio'].includes(
+          (body as { action?: string } | null)?.action ?? ''
         )
-          await this.persist();
-        await this.scheduleEmptyRoom();
+      )
+        await this.persist();
+      await this.scheduleEmptyRoom();
+      if (!result.status) {
         if (this.snapshot.budget?.pendingPublications?.length)
           await this.scheduleSweep(
             this.snapshot.budget.nextCleanupAt ?? Date.now()

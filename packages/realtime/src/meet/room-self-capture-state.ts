@@ -5,6 +5,10 @@ import {
 } from './room-mira-acceptance';
 import type { MiraRoomState } from './room-mira-choices';
 import {
+  restartDelivery,
+  type SelfOutboxDelivery,
+} from './room-self-capture-cycle';
+import {
   MEET_TRANSCRIPT_NOTICE_VERSION,
   type MeetTranscriptState,
 } from './room-transcript-consent';
@@ -14,7 +18,9 @@ import {
  * live consent fence; the database is the legal record, written only by the
  * Meet Worker. Every ending the room observes bumps the account's choice
  * epoch and appends an ordered entry to a per-account legal outbox with a
- * room sequence number that strictly increases per (session, account).
+ * room sequence number. Sequence numbers come from one room-wide counter, so
+ * they strictly increase per (session, account) across restores and even if
+ * a session id is ever recorded again.
  */
 export type SelfCaptureMode = 'room' | 'self';
 export type SelfCaptureProtocol = 'legacy' | 'self_v1';
@@ -30,7 +36,7 @@ export type SelfCaptureBucket = { tokens: number; at: number };
 export type SelfCaptureAccount = {
   /** Choice epoch: grows on every ending and every new open. */
   epoch: number;
-  /** Last room sequence number handed out for this (session, account). */
+  /** Last room sequence number handed out to this account in the session. */
   seq: number;
   /** Allow sequence numbers issued after a transition out of allow. */
   allows: number;
@@ -40,7 +46,7 @@ export type SelfCaptureAccount = {
   /** The latest begin, kept after endings so a late commit can be fenced. */
   lastBegin?: { epoch: number; seq: number };
   committed?: { epoch: number; revision: number; streamId: string };
-  /** Removed by a host or co-host: no further opens in this session. */
+  /** Removed by a host or co-host: no further opens. */
   revoked?: true;
 };
 export type SelfCaptureSession = {
@@ -58,12 +64,18 @@ export type SelfCaptureState = {
   /** Ledger of the current self_v1 session, keyed by account. */
   accounts: Record<string, SelfCaptureAccount>;
   outbox: SelfOutboxEntry[];
+  /** Room-wide room sequence counter; never decreases. */
+  seqCounter?: number;
+  /** Accounts a host or co-host removed; kept across sessions. */
+  revoked?: Record<string, true>;
+  /** Recent ended self_v1 session ids, which are never recorded again. */
+  endedSessions?: string[];
   buckets?: Record<
     string,
     { chunk?: SelfCaptureBucket; open?: SelfCaptureBucket }
   >;
-  /** Alarm deliveries of the current non-empty outbox. */
-  delivery?: { attempts: number; nextAt: number };
+  /** Alarm delivery cycle of the current non-empty outbox. */
+  delivery?: SelfOutboxDelivery;
 };
 export interface SelfCaptureRoomState {
   selfCapture?: SelfCaptureState;
@@ -76,7 +88,9 @@ type State = MeetRoomSnapshot & {
 export const SELF_CAPTURE_DRAIN_MS = 20_000;
 export const SELF_CAPTURE_MAX_ACCOUNTS = 24;
 export const SELF_CAPTURE_MAX_ALLOWS = 10;
-export const SELF_OUTBOX_FIRST_DELIVERY_MS = 10_000;
+export const SELF_OUTBOX_MAX_ENTRIES = 512;
+export const SELF_CAPTURE_MAX_REVOKED = 1024;
+export const SELF_CAPTURE_MAX_ENDED_SESSIONS = 32;
 export const SELF_CAPTURE_BUCKETS = {
   chunk: { burst: 3, refillMs: 10_000 },
   open: { burst: 3, refillMs: 30_000 },
@@ -221,9 +235,10 @@ export function enqueue(
       return capture;
     outbox = outbox.filter((e) => !sameStream(e));
   }
-  const seq = account.seq + 1;
+  const seq = nextSeq(capture, account);
   return {
     ...capture,
+    seqCounter: seq,
     accounts: {
       ...capture.accounts,
       [accountId]: { ...account, seq, epoch: account.epoch + 1 },
@@ -238,12 +253,17 @@ export function enqueue(
         ...(noticeVersion ? { noticeVersion } : {}),
       },
     ],
-    delivery:
-      capture.outbox.length && capture.delivery
-        ? capture.delivery
-        : { attempts: 0, nextAt: now + SELF_OUTBOX_FIRST_DELIVERY_MS },
+    delivery: restartDelivery(capture.delivery, now),
   };
 }
+
+/** The next room sequence number; above every number already handed out. */
+export function nextSeq(capture: SelfCaptureState, account?: { seq: number }) {
+  return Math.max(capture.seqCounter ?? 0, account?.seq ?? 0) + 1;
+}
+
+export const isRevoked = (capture: SelfCaptureState, accountId: string) =>
+  !!capture.revoked?.[accountId] || !!capture.accounts[accountId]?.revoked;
 
 /** Withdraws a possible legal allow and forgets the account's stream. */
 export function withdraw(
@@ -303,7 +323,16 @@ export function endSelfCaptureSession(
   let next = capture;
   for (const accountId of Object.keys(capture.accounts))
     next = endStream(next, accountId, 'close', now);
-  return { ...next, session: { ...next.session!, status: 'ended' } };
+  return {
+    ...next,
+    session: { ...next.session!, status: 'ended' },
+    endedSessions: [
+      ...(next.endedSessions ?? []).filter(
+        (id) => id !== capture.session!.sessionId
+      ),
+      capture.session.sessionId,
+    ].slice(-SELF_CAPTURE_MAX_ENDED_SESSIONS),
+  };
 }
 
 /**
@@ -338,25 +367,38 @@ export function settleSelfCapture<T extends State & SelfCaptureRoomState>(
   return next === capture ? state : { ...state, selfCapture: next };
 }
 
-/** A host or co-host removed the account: revoke its upload grant. */
+/**
+ * A host or co-host removed the account during a live session: its upload
+ * grant is revoked and it can never open again in this meeting. Only an
+ * account with a ledger entry needs a legal revoke entry.
+ */
 export function revokeSelfCapture<T extends SelfCaptureRoomState>(
   state: T,
   accountId: string,
   now = Date.now()
 ): T {
   const capture = state.selfCapture;
-  if (!capture?.accounts[accountId] || !isSelfSessionLive(capture.session, now))
-    return state;
-  return {
-    ...state,
-    selfCapture: endStream(capture, accountId, 'revoke', now),
-  };
+  if (!capture || !isSelfSessionLive(capture.session, now)) return state;
+  const revoked =
+    capture.revoked?.[accountId] ||
+    Object.keys(capture.revoked ?? {}).length >= SELF_CAPTURE_MAX_REVOKED
+      ? capture.revoked
+      : { ...capture.revoked, [accountId]: true as const };
+  const next = capture.accounts[accountId]
+    ? endStream(capture, accountId, 'revoke', now)
+    : capture;
+  if (next === capture && revoked === capture.revoked) return state;
+  return { ...state, selfCapture: { ...next, revoked } };
 }
 
-/** Removes exactly the acknowledged entries; the cycle ends when empty. */
+/**
+ * Removes exactly the acknowledged entries. Progress restarts the delivery
+ * cycle; the cycle ends when the outbox is empty.
+ */
 export function ackSelfOutbox(
   capture: SelfCaptureState,
-  acked: ReadonlyArray<{ sessionId: string; accountId: string; seq: number }>
+  acked: ReadonlyArray<{ sessionId: string; accountId: string; seq: number }>,
+  now: number
 ): SelfCaptureState {
   const keys = new Set(
     acked.map((e) => `${e.sessionId}:${e.accountId}:${e.seq}`)
@@ -366,7 +408,20 @@ export function ackSelfOutbox(
   );
   if (outbox.length === capture.outbox.length) return capture;
   const { delivery, ...rest } = capture;
-  return outbox.length ? { ...rest, delivery, outbox } : { ...rest, outbox };
+  if (!outbox.length) return { ...rest, outbox };
+  const waiting = new Set(outbox.map((entry) => entry.accountId));
+  const failures = Object.fromEntries(
+    Object.entries(delivery?.failures ?? {}).filter(([id]) => waiting.has(id))
+  );
+  const restarted = restartDelivery(delivery, now);
+  delete restarted.failures;
+  return {
+    ...rest,
+    outbox,
+    delivery: Object.keys(failures).length
+      ? { ...restarted, failures }
+      : restarted,
+  };
 }
 
 /** The caller's own entries, then up to `others` entries of other accounts. */

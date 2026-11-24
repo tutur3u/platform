@@ -2,12 +2,19 @@ import assert from 'node:assert/strict';
 import { test } from 'bun:test';
 import {
   alice,
+  env as selfEnv,
   host,
   open,
+  otherSession,
   selfRoom,
+  sessionId,
   streamA,
   tokenOf,
 } from '../../../packages/realtime/src/meet/room-self-capture.fixtures';
+import {
+  SELF_OUTBOX_MAX_ENTRIES,
+  type SelfOutboxEntry,
+} from '../../../packages/realtime/src/meet/room-self-capture-state';
 import { MIRA_ROOM_NOTICE_VERSION } from '../../../packages/realtime/src/meet/room-mira-acceptance';
 import { endMeetRoom } from '../../../packages/realtime/src/meet/room-ending';
 import { verifyMeetSelfOutboxCredential } from '../../../packages/realtime/src/meet/service-credential';
@@ -47,6 +54,8 @@ function fixture(seed: RoomServiceState, env: Partial<MeetRoomEnv> = {}) {
     waitUntil: () => undefined,
   } as unknown as DurableObjectState;
   const room = new MeetRoomDurableObject(state, {
+    // The per-speaker flag and allowlist for the fixture workspace.
+    ...selfEnv,
     MEET_REALTIME_TOKEN_SECRET: secret,
     ...env,
   } as MeetRoomEnv);
@@ -98,7 +107,7 @@ test('the bound alarm delivers the outbox once due and drops acknowledged entrie
   await f.alarm();
   assert.equal(requests.length, 0);
   const stored = f.snapshot();
-  stored.selfCapture!.delivery = { attempts: 0, nextAt: 0 };
+  stored.selfCapture!.delivery = { attempts: 0, nextAt: 0, startedAt: 0 };
   // Every persist records the durable room id; a cold alarm reads it there.
   stored.roomName = 'ws:room';
   const g = fixture(stored, {
@@ -192,4 +201,134 @@ test('room.restore keeps undrained entries, epochs and sequences', async () => {
   await g.room.prepareForRestart();
   assert.deepEqual(g.snapshot().selfCapture?.outbox, before.outbox);
   assert.deepEqual(g.snapshot().selfCapture?.accounts, before.accounts);
+});
+
+const miraOff = {
+  action: 'mira.room.choice',
+  choice: 'off',
+  version: MIRA_ROOM_NOTICE_VERSION,
+  acceptanceRevision: 1,
+  source: 'toggle',
+};
+const outboxFetch = {
+  fetch: async () => Response.json({ acked: [] }),
+};
+
+test('a new ending restarts an exhausted delivery cycle', async () => {
+  const seed = open(selfRoom(), alice, streamA);
+  const stale: SelfOutboxEntry = {
+    sessionId: otherSession,
+    accountId: host,
+    seq: 1,
+    kind: 'close',
+  };
+  seed.selfCapture = {
+    ...seed.selfCapture!,
+    outbox: [stale],
+    delivery: { attempts: 30, startedAt: 0, nextAt: 25 * 3_600_000 },
+  };
+  const f = fixture(seed, {
+    MEET_AI_SELF_OUTBOX: outboxFetch,
+  } as Partial<MeetRoomEnv>);
+  const before = Date.now();
+  const response = await serviceCall(f.room, alice, miraOff);
+  assert.equal(response.status, 200);
+  const delivery = f.snapshot().selfCapture?.delivery;
+  assert.equal(delivery?.attempts, 0);
+  assert.ok((delivery?.startedAt ?? 0) >= before);
+  assert.deepEqual(
+    f.snapshot().selfCapture?.outbox.map((e) => e.kind),
+    ['close', 'withdraw']
+  );
+  const deadline = f.deadline();
+  assert.ok(deadline !== null && deadline <= Date.now() + 10_000);
+});
+
+test('the room refuses a second live session and never restarts an ended one', async () => {
+  const f = fixture(open(selfRoom(), alice, streamA));
+  const start = (id: string) => ({
+    action: 'transcript.session',
+    sessionId: id,
+    active: true,
+    protocol: 'self_v1',
+    generation: 3,
+  });
+  const live = await serviceCall(f.room, host, start(otherSession));
+  assert.equal(live.status, 409);
+  assert.equal(
+    ((await live.json()) as { code: string }).code,
+    'MEET_SELF_SESSION_LIVE'
+  );
+
+  const seed = open(selfRoom(), alice, streamA);
+  seed.selfCapture = {
+    ...seed.selfCapture!,
+    session: { ...seed.selfCapture!.session!, status: 'ended' },
+    endedSessions: [otherSession],
+  };
+  const g = fixture(seed);
+  const ended = await serviceCall(g.room, host, start(otherSession));
+  assert.equal(ended.status, 409);
+  assert.equal(
+    ((await ended.json()) as { code: string }).code,
+    'MEET_SELF_SESSION_ENDED'
+  );
+  // Re-recording the ended session keeps it ended: nothing reopens.
+  assert.equal((await serviceCall(g.room, host, start(sessionId))).status, 200);
+  assert.equal(g.snapshot().selfCapture?.session?.status, 'ended');
+  const begin = await serviceCall(g.room, alice, {
+    action: 'transcription.self.openBegin',
+    sessionId,
+  });
+  assert.equal(
+    ((await begin.json()) as { reason: string }).reason,
+    'no_session'
+  );
+});
+
+test('a full outbox refuses new opens and keeps every entry', async () => {
+  const seed = open(selfRoom(), alice, streamA);
+  seed.selfCapture = {
+    ...seed.selfCapture!,
+    outbox: Array.from({ length: SELF_OUTBOX_MAX_ENTRIES }, (_, i) => ({
+      sessionId: otherSession,
+      accountId: host,
+      seq: i + 1,
+      kind: 'close' as const,
+    })),
+  };
+  const f = fixture(seed);
+  const response = await serviceCall(f.room, alice, {
+    action: 'transcription.self.openBegin',
+    sessionId,
+  });
+  assert.equal(response.status, 200);
+  assert.equal(
+    ((await response.json()) as { reason: string }).reason,
+    'capacity'
+  );
+  assert.equal(
+    f.snapshot().selfCapture?.outbox.length,
+    SELF_OUTBOX_MAX_ENTRIES
+  );
+});
+
+test('a refused command still stores the endings it settled', async () => {
+  const seed = open(selfRoom(), alice, streamA);
+  // An untick the fence has not settled yet.
+  const choices = seed.transcriptConsent!.choices;
+  seed.transcriptConsent = {
+    ...seed.transcriptConsent!,
+    choices: { ...choices, [alice]: { ...choices[alice]!, choice: 'decline' } },
+  };
+  const f = fixture(seed);
+  const refused = await serviceCall(f.room, alice, {
+    action: 'transcript.mode.set',
+    mode: 'room',
+  });
+  assert.equal(refused.status, 403);
+  assert.deepEqual(
+    f.snapshot().selfCapture?.outbox.map((e) => e.kind),
+    ['withdraw']
+  );
 });

@@ -1,8 +1,14 @@
 import type { MeetRoomSnapshot } from './room';
 import {
+  deliveryDue,
+  restartDelivery,
+  scheduleNextDelivery,
+  SELF_OUTBOX_FAST_DELIVERIES,
+} from './room-self-capture-cycle';
+import {
   ackSelfOutbox,
-  SELF_OUTBOX_FIRST_DELIVERY_MS,
   type SelfCaptureState,
+  type SelfOutboxEntry,
 } from './room-self-capture-state';
 import {
   MEET_SERVICE_TTL_SECONDS,
@@ -13,13 +19,17 @@ import {
  * Alarm delivery of the per-speaker legal outbox to the Meet Worker, for
  * endings no request will drain (room end, leave, removal). It runs only when
  * the realtime Worker has the `MEET_AI_SELF_OUTBOX` service binding; without
- * it nothing is scheduled or sent. At most six deliveries per non-empty
- * outbox, with doubling backoff, counted in storage before each send.
+ * it nothing is scheduled or sent. Each attempt is counted in storage before
+ * the send; the cycle bounds are in room-self-capture-cycle. The Meet Worker
+ * acknowledges every entry it applied or found already applied or terminal
+ * (stale room sequence, account or session gone); anything else is retried.
  */
 export const MEET_SELF_OUTBOX_BINDING = 'MEET_AI_SELF_OUTBOX';
 export const MEET_SELF_OUTBOX_PURPOSE = 'self-outbox' as const;
-export const SELF_OUTBOX_MAX_DELIVERIES = 6;
+export const SELF_OUTBOX_MAX_DELIVERIES = SELF_OUTBOX_FAST_DELIVERIES;
 export const SELF_OUTBOX_BATCH = 64;
+/** Per-account share of one delivery, so one account never fills it. */
+export const SELF_OUTBOX_ACCOUNT_BATCH = 8;
 export const SELF_OUTBOX_URL = 'https://meet.internal/api/meet-ai/self/outbox';
 
 type Fetcher = { fetch(request: Request): Promise<Response> };
@@ -46,9 +56,8 @@ export function selfOutboxDeadline(
 ) {
   const capture = state.selfCapture;
   if (!outboxBinding(env) || !capture?.outbox.length) return undefined;
-  const delivery = capture.delivery;
-  if ((delivery?.attempts ?? 0) >= SELF_OUTBOX_MAX_DELIVERIES) return undefined;
-  return delivery?.nextAt ?? 0;
+  // A stored outbox without a cycle (older state) starts one now.
+  return deliveryDue(capture.delivery ?? restartDelivery(undefined, 0));
 }
 
 /** The earlier of the empty-room deadline and the next outbox delivery. */
@@ -57,8 +66,65 @@ export function earliestDeadline(...deadlines: Array<number | undefined>) {
   return set.length ? Math.min(...set) : undefined;
 }
 
-function backoff(attempts: number) {
-  return SELF_OUTBOX_FIRST_DELIVERY_MS * 2 ** attempts;
+/**
+ * Up to eight entries per account in queue order, accounts that failed least
+ * first, so an account whose entries keep failing never blocks the others.
+ */
+export function selectSelfOutboxBatch(capture: SelfCaptureState) {
+  const byAccount = new Map<string, SelfOutboxEntry[]>();
+  for (const entry of capture.outbox) {
+    const list = byAccount.get(entry.accountId) ?? [];
+    if (list.length < SELF_OUTBOX_ACCOUNT_BATCH) list.push(entry);
+    byAccount.set(entry.accountId, list);
+  }
+  const failures = capture.delivery?.failures ?? {};
+  return [...byAccount.entries()]
+    .sort(([a], [b]) => (failures[a] ?? 0) - (failures[b] ?? 0))
+    .flatMap(([, list]) => list)
+    .slice(0, SELF_OUTBOX_BATCH);
+}
+
+type Acked = { sessionId: string; accountId: string; seq: number };
+
+function readAcked(body: { acked?: unknown } | null): Acked[] {
+  return Array.isArray(body?.acked)
+    ? body.acked.filter(
+        (e): e is Acked =>
+          !!e &&
+          typeof e === 'object' &&
+          typeof (e as { sessionId?: unknown }).sessionId === 'string' &&
+          typeof (e as { accountId?: unknown }).accountId === 'string' &&
+          Number.isSafeInteger((e as { seq?: unknown }).seq)
+      )
+    : [];
+}
+
+/** Counts a failed delivery for each account whose oldest entry stayed. */
+function recordFailures(
+  capture: SelfCaptureState,
+  sent: SelfOutboxEntry[],
+  acked: Acked[]
+): SelfCaptureState {
+  if (!capture.delivery) return capture;
+  const done = new Set(
+    acked.map((e) => `${e.sessionId}:${e.accountId}:${e.seq}`)
+  );
+  const heads = new Map<string, SelfOutboxEntry>();
+  for (const entry of sent)
+    if (!heads.has(entry.accountId)) heads.set(entry.accountId, entry);
+  const failures = { ...capture.delivery.failures };
+  let changed = false;
+  for (const [accountId, head] of heads) {
+    if (done.has(`${head.sessionId}:${head.accountId}:${head.seq}`)) continue;
+    if (!capture.outbox.some((e) => e.accountId === accountId)) continue;
+    failures[accountId] = (failures[accountId] ?? 0) + 1;
+    changed = true;
+    if (failures[accountId] === SELF_OUTBOX_FAST_DELIVERIES)
+      console.warn('[meet-self-outbox] an account entry keeps failing');
+  }
+  return changed
+    ? { ...capture, delivery: { ...capture.delivery, failures } }
+    : capture;
 }
 
 /**
@@ -80,16 +146,16 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
   const due = selfOutboxDeadline(before, input.env);
   if (!binding || !capture || due === undefined || due > input.now) return;
   if (!input.secret || !input.roomName) return;
-  const attempts = (capture.delivery?.attempts ?? 0) + 1;
+  const delivery = capture.delivery ?? restartDelivery(undefined, input.now);
   await input.commit({
     ...before,
     selfCapture: {
       ...capture,
-      delivery: { attempts, nextAt: input.now + backoff(attempts) },
+      delivery: scheduleNextDelivery(delivery, input.now),
     },
   });
-  const entries = capture.outbox.slice(0, SELF_OUTBOX_BATCH);
-  let acked: Array<{ sessionId: string; accountId: string; seq: number }> = [];
+  const entries = selectSelfOutboxBatch(capture);
+  let acked: Acked[] = [];
   try {
     const response = await binding.fetch(
       new Request(SELF_OUTBOX_URL, {
@@ -113,30 +179,22 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
         }),
       })
     );
-    if (!response.ok) {
+    if (response.ok)
+      acked = readAcked(
+        (await response.json().catch(() => null)) as { acked?: unknown } | null
+      );
+    else
       console.warn(`[meet-self-outbox] delivery refused (${response.status})`);
-      return;
-    }
-    const body = (await response.json().catch(() => null)) as {
-      acked?: unknown;
-    } | null;
-    acked = Array.isArray(body?.acked)
-      ? body.acked.filter(
-          (e): e is { sessionId: string; accountId: string; seq: number } =>
-            !!e &&
-            typeof e === 'object' &&
-            typeof (e as { sessionId?: unknown }).sessionId === 'string' &&
-            typeof (e as { accountId?: unknown }).accountId === 'string' &&
-            Number.isSafeInteger((e as { seq?: unknown }).seq)
-        )
-      : [];
   } catch {
     console.warn('[meet-self-outbox] delivery failed');
-    return;
   }
   const current = input.read();
-  if (!current.selfCapture || !acked.length) return;
-  const next = ackSelfOutbox(current.selfCapture, acked);
+  if (!current.selfCapture) return;
+  const next = ackSelfOutbox(
+    recordFailures(current.selfCapture, entries, acked),
+    acked,
+    input.now
+  );
   if (next !== current.selfCapture)
     await input.commit({ ...current, selfCapture: next });
 }

@@ -1,6 +1,7 @@
 import { signRealtimePayload, verifyRealtimePayload } from '../core/token';
 
 export const MEET_SERVICE_TTL_SECONDS = 60;
+export const MEET_SERVICE_CLOCK_SKEW_SECONDS = 30;
 
 export type MeetServicePurpose =
   | 'attendance-ledger'
@@ -121,7 +122,11 @@ export function verifyMeetSelfOutboxCredential(
     typeof parsed.roomId !== 'string' ||
     !parsed.roomId ||
     typeof parsed.exp !== 'number' ||
-    parsed.exp * 1000 <= nowMs
+    parsed.exp * 1000 <= nowMs ||
+    // A credential is minted for one delivery; refuse longer lifetimes.
+    parsed.exp * 1000 >
+      nowMs +
+        (MEET_SERVICE_TTL_SECONDS + MEET_SERVICE_CLOCK_SKEW_SECONDS) * 1000
   )
     return null;
   return parsed as MeetServiceClaims & { purpose: 'self-outbox' };

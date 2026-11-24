@@ -130,6 +130,7 @@
     "../../packages/realtime/src/meet/room-mira-private.ts",
     "../../packages/realtime/src/meet/room-transcript-consent.ts",
     "../../packages/realtime/src/meet/room-self-capture.ts",
+    "../../packages/realtime/src/meet/room-self-capture-cycle.ts",
     "../../packages/realtime/src/meet/room-self-capture-delivery.ts",
     "../../packages/realtime/src/meet/room-self-capture-route.ts",
     "../../packages/realtime/src/meet/room-self-capture-state.ts",
