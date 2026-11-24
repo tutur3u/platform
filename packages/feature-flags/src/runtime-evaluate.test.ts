@@ -313,10 +313,6 @@ describe('evaluateRuntimeFlag', () => {
         allowUserIds: Array.from({ length: 501 }, () => USER),
       },
     ],
-    [
-      'a non-UUID workspace subject',
-      { scope: 'workspace', subjectId: 'workspace-1' },
-    ],
     ['an unknown mode', { mode: 'maybe' as never }],
     [
       'a string allow-list',

@@ -26,6 +26,9 @@ const permission = read(
 const rollback = read(
   'apps/database/rollbacks/20261125030000_feature_flag_rules.rollback.sql'
 );
+const permissionRollback = read(
+  'apps/database/rollbacks/20261125030100_manage_feature_flags_permission.rollback.sql'
+);
 const pgtap = read('apps/database/supabase/tests/feature-flag-rule-store.sql');
 
 const WS = '11111111-1111-4111-8111-111111111111';
@@ -188,7 +191,10 @@ describe('rule validation agrees with the rule store', () => {
       `environment in (${RULE_ENVIRONMENTS.map((env) => `'${env}'`).join(', ')})`
     );
     expect(sql).toContain(
-      `client in (${RULE_CLIENTS.map((client) => `'${client}'`).join(', ')})`
+      `p_client not in (${RULE_CLIENTS.map((client) => `'${client}'`).join(', ')})`
+    );
+    expect(sql).toContain(
+      `client in (${[...RULE_CLIENTS, 'erasure'].map((client) => `'${client}'`).join(', ')})`
     );
     expect(sql).toContain(
       'unique nulls not distinct (flag_key, scope, subject_id, environment)'
@@ -220,39 +226,80 @@ describe('rule validation agrees with the rule store', () => {
   });
 
   it('keeps tables private and grants execute only to service_role', () => {
-    expect(sql.split('\n').length).toBeLessThanOrEqual(700);
-    for (const table of ['definitions', 'rules', 'audit']) {
+    for (const table of ['definitions', 'rules', 'audit', 'definition_audit']) {
       expect(sql).toContain(
         `revoke all on table private.feature_flag_${table}\n  from public, anon, authenticated, service_role;`
       );
     }
-    const definers = [...sql.matchAll(/create function (private\.\w+)\(/g)];
-    const bodies = [...sql.matchAll(/as \$flag\$/g)];
-    expect(sql.match(/set search_path = pg_catalog, pg_temp/g)?.length).toBe(
-      bodies.length
-    );
-    expect(definers.length).toBe(bodies.length);
-    for (const name of [
-      'feature_flag_sync_definitions(jsonb)',
-      'feature_flag_mutate_rule(uuid, uuid, text, text, text, uuid, text, integer, uuid[], uuid[], bigint, text, text)',
-      'feature_flag_read_snapshot(text)',
-      'feature_flag_read_rules(uuid, text, text)',
-      'feature_flag_read_audit(uuid, integer, timestamptz)',
-    ]) {
-      expect(sql).toContain(
-        `grant execute on function private.${name}\n  to service_role;`
+    const grants: [string, string[]][] = [
+      [
+        sql,
+        [
+          'feature_flag_sync_definitions(jsonb, boolean)',
+          'feature_flag_mutate_rule(uuid, uuid, text, text, text, uuid, text, integer, uuid[], uuid[], bigint, text, text)',
+        ],
+      ],
+      [
+        permission,
+        [
+          'feature_flag_read_snapshot(text)',
+          'feature_flag_read_subject_rules(text, uuid, uuid)',
+          'feature_flag_read_rules(uuid, text, text)',
+          'feature_flag_read_audit(uuid, integer, timestamptz, uuid)',
+          'feature_flag_erase_subject(text, uuid)',
+        ],
+      ],
+    ];
+    for (const [source, names] of grants) {
+      expect(source.split('\n').length).toBeLessThanOrEqual(700);
+      const definers = [
+        ...source.matchAll(/create function (private\.\w+)\(/g),
+      ];
+      const bodies = [...source.matchAll(/as \$flag\$/g)];
+      expect(
+        source.match(/set search_path = pg_catalog, pg_temp/g)?.length
+      ).toBe(bodies.length);
+      expect(definers.length).toBe(bodies.length);
+      for (const name of names) {
+        expect(source).toContain(
+          `grant execute on function private.${name}\n  to service_role;`
+        );
+      }
+      expect(source.match(/^grant /gm)).toHaveLength(names.length);
+      expect(source).not.toMatch(
+        /^grant[^;]*to (?:anon|authenticated|public)\b/im
       );
     }
-    expect(sql.match(/^grant /gm)).toHaveLength(5);
-    expect(sql).not.toMatch(/^grant[^;]*to (?:anon|authenticated|public)\b/im);
+    // Every service-role RPC also refuses a non-service request JWT.
+    expect(
+      (sql + permission).match(
+        /perform private\.feature_flag_require_service_role\(\);/g
+      )
+    ).toHaveLength(7);
     expect(sql).toContain("array['manage_feature_flags']::text[]");
     expect(sql).toContain("'manage_workspace_settings'");
-    expect(sql).toContain(
+    expect(permission).toContain(
       "array['view_infrastructure', 'manage_feature_flags']::text[]"
     );
     expect(permission).toContain(
       "add value if not exists 'manage_feature_flags'"
     );
+  });
+
+  it('bounds replay, subject reads and control widening', () => {
+    expect(sql).toContain("raise exception 'feature_flag_operation_conflict'");
+    expect(sql).toContain('v_audit.actor_id is distinct from p_actor');
+    expect(sql).toContain("raise exception 'feature_flag_rule_limit'");
+    expect(sql).toContain(') >= 50000 then');
+    expect(sql).toContain("raise exception 'feature_flag_write_lost'");
+    expect(sql).toContain(
+      "raise exception 'feature_flag_definition_widens_control'"
+    );
+    expect(sql).toContain('insert into private.feature_flag_definition_audit');
+    expect(permission).toContain(
+      "where r.environment = p_environment and r.scope = 'platform' and r.mode is not null;"
+    );
+    expect(permission).toContain('(occurred_at, id) < (p_before, p_before_id)');
   });
 
   it('guards writes and keeps the audit append-only', () => {
@@ -269,17 +316,26 @@ describe('rule validation agrees with the rule store', () => {
     expect(
       sql.match(/set_config\('feature_flags\.entrypoint', '', true\)/g)
     ).toHaveLength(2);
+    expect(
+      permission.match(/set_config\('feature_flags\.entrypoint', '', true\)/g)
+    ).toHaveLength(1);
+    expect(sql).toContain("v_entry = 'erase_subject'");
     expect(sql).not.toMatch(/delete from private\.feature_flag/i);
     expect(sql).not.toContain('platform_feature_flag');
   });
 
   it('rolls back every object without a client grant', () => {
-    for (const match of sql.matchAll(
-      /create (?:function|table) (private\.\w+)/g
-    )) {
-      expect(rollback).toContain(match[1]);
+    for (const [source, undo] of [
+      [sql, rollback],
+      [permission, permissionRollback],
+    ] as const) {
+      for (const match of source.matchAll(
+        /create (?:function|table) (private\.\w+)/g
+      )) {
+        expect(undo).toContain(match[1]);
+      }
+      expect(undo.toLowerCase()).not.toContain('grant ');
+      expect(undo).not.toContain('platform_feature_flag');
     }
-    expect(rollback.toLowerCase()).not.toContain('grant ');
-    expect(rollback).not.toContain('platform_feature_flag');
   });
 });

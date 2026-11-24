@@ -7306,7 +7306,7 @@ export type Database = {
       };
       feature_flag_audit: {
         Row: {
-          actor_id: string;
+          actor_id: string | null;
           client: string;
           environment: string;
           flag_key: string;
@@ -7323,7 +7323,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
-          actor_id: string;
+          actor_id?: string | null;
           client: string;
           environment: string;
           flag_key: string;
@@ -7339,7 +7339,7 @@ export type Database = {
           subject_id?: string | null;
         };
         Update: {
-          actor_id?: string;
+          actor_id?: string | null;
           client?: string;
           environment?: string;
           flag_key?: string;
@@ -7363,6 +7363,34 @@ export type Database = {
             referencedColumns: ['flag_key'];
           },
         ];
+      };
+      feature_flag_definition_audit: {
+        Row: {
+          acknowledged_widening: boolean;
+          flag_key: string;
+          id: string;
+          new_definition: NonNullable<Json>;
+          occurred_at: string;
+          old_definition: Json | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          acknowledged_widening: boolean;
+          flag_key: string;
+          id?: string;
+          new_definition: NonNullable<Json>;
+          occurred_at?: string;
+          old_definition?: Json | null;
+        };
+        Update: {
+          acknowledged_widening?: boolean;
+          flag_key?: string;
+          id?: string;
+          new_definition?: NonNullable<Json>;
+          occurred_at?: string;
+          old_definition?: Json | null;
+        };
+        Relationships: [];
       };
       feature_flag_definitions: {
         Row: {
@@ -7404,9 +7432,10 @@ export type Database = {
           scope: string;
           subject_id: string | null;
           updated_at: string;
-          updated_by: string;
+          updated_by: string | null;
+          feature_flag_live_rule_json: Json | null;
         };
-        ComputedFields: never;
+        ComputedFields: 'feature_flag_live_rule_json';
         Insert: {
           allow_user_ids?: string[] | null;
           allow_workspace_ids?: string[] | null;
@@ -7418,7 +7447,7 @@ export type Database = {
           scope: string;
           subject_id?: string | null;
           updated_at?: string;
-          updated_by: string;
+          updated_by?: string | null;
         };
         Update: {
           allow_user_ids?: string[] | null;
@@ -7431,7 +7460,7 @@ export type Database = {
           scope?: string;
           subject_id?: string | null;
           updated_at?: string;
-          updated_by?: string;
+          updated_by?: string | null;
         };
         Relationships: [
           {
@@ -32043,6 +32072,23 @@ export type Database = {
         };
         Returns: string;
       };
+      feature_flag_erase_json: {
+        Args: { p_field: string; p_id: string; p_rule: Json };
+        Returns: Json;
+      };
+      feature_flag_erase_subject: {
+        Args: { p_scope: string; p_subject_id: string };
+        Returns: Json;
+      };
+      feature_flag_live_rule_json: {
+        Args: {
+          p_rule: Omit<
+            Database['private']['Tables']['feature_flag_rules']['Row'],
+            Database['private']['Tables']['feature_flag_rules']['ComputedFields']
+          >;
+        };
+        Returns: Json;
+      };
       feature_flag_mutate_rule: {
         Args: {
           p_actor: string;
@@ -32062,7 +32108,12 @@ export type Database = {
         Returns: Json;
       };
       feature_flag_read_audit: {
-        Args: { p_actor: string; p_before?: string; p_limit?: number };
+        Args: {
+          p_actor: string;
+          p_before?: string;
+          p_before_id?: string;
+          p_limit?: number;
+        };
         Returns: Json;
       };
       feature_flag_read_rules: {
@@ -32073,8 +32124,20 @@ export type Database = {
         Args: { p_environment: string };
         Returns: Json;
       };
+      feature_flag_read_subject_rules: {
+        Args: {
+          p_environment: string;
+          p_user_id: string;
+          p_workspace_id: string;
+        };
+        Returns: Json;
+      };
       feature_flag_require_root: {
         Args: { p_actor: string; p_permissions: string[] };
+        Returns: undefined;
+      };
+      feature_flag_require_service_role: {
+        Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
       feature_flag_rule_json: {
@@ -32098,7 +32161,7 @@ export type Database = {
         Returns: string;
       };
       feature_flag_sync_definitions: {
-        Args: { p_definitions: Json };
+        Args: { p_acknowledge_widening?: boolean; p_definitions: Json };
         Returns: Json;
       };
       fee_lock_baseline: {

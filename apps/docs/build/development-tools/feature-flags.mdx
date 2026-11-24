@@ -96,14 +96,19 @@ dark registers one, so production can carry the code with the feature off.
 `evaluateRuntimeFlag({ flag, context, rules, envValue })` is pure. The adapter
 passes the verified actor (`userId`, `workspaceId`, `isStaff` from the server's
 verified identity), the stored rules for the flag (or `null` when no snapshot is
-available) and the raw environment value. Only `null` means "no snapshot": any
+available) and the raw environment value. Adapters pass lowercase UUIDs; the
+evaluator also lowercases context and subject ids before comparing, and
+buckets rollouts on the lowercase ids. Only `null` means "no snapshot": any
 other non-list value, including `undefined`, and any list holding a non-object
 entry is a malformed snapshot and turns every flag off.
 
 The platform rule is a **ceiling**. Precedence:
 
-1. A malformed rule, or two rules for the same scope and subject, turns the
-   flag off for everyone (`invalid-rules`). Rules for other flags are ignored.
+1. A malformed snapshot, a rule with an unknown scope, or a malformed or
+   duplicated platform rule turns the flag off for everyone (`invalid-rules`).
+   A malformed or duplicated workspace or user rule, or one for a scope the
+   flag does not declare, turns the flag off only for its own subject; other
+   workspaces and users are unaffected. Rules for other flags are ignored.
 2. A platform `off` rule on a `kill-switch` flag turns it off (`kill-switch`).
 3. While the platform rule is `off`, `staff` or `rollout`, a workspace or user
    rule can only narrow it: the result is the override's decision AND the
@@ -123,7 +128,9 @@ The platform rule is a **ceiling**. Precedence:
    and it also applies when the snapshot is `null`), then the catalog default,
    which is off.
 
-A `self` user rule can only turn an enabled result off; a user never grants a
+Only a stored platform `off` rule is a kill for every subject, including on a
+`delegate: 'workspace'` flag; an environment fallback of `false` is not. A
+`self` user rule can only turn an enabled result off; a user never grants a
 feature to themselves. Per-person access beyond a platform `staff` or `rollout`
 rule goes through that platform rule (`staff` mode or its allow-lists), not a
 user rule.
@@ -157,42 +164,86 @@ everyone:
 ### Rule store
 
 Migration `20261125030000_feature_flag_rules.sql` keeps runtime rules in the
-`private` schema, with no client table access:
+`private` schema with its write RPCs, and
+`20261125030100_manage_feature_flags_permission.sql` adds the
+`manage_feature_flags` root permission with the read and erasure RPCs. Clients
+have no table access.
 
 | Object | Purpose |
 | --- | --- |
 | `feature_flag_definitions` | The runtime block of each catalog runtime flag (`scopes`, `controllers`, `kind`, `delegate`). |
+| `feature_flag_definition_audit` | Append-only receipt of each definition change, with the old and new definition and whether a control widening was acknowledged. |
 | `feature_flag_rules` | One rule per flag, scope, subject and environment (`development` or `production`; there is no staging store). A null `mode` is an unset rule that keeps its revision. |
-| `feature_flag_audit` | Append-only receipt per write: operation id, actor, old and new rule, old and new revision, `reason` (1 to 500 characters) and `client` (`admin-ui`, `workspace-ui`, `ttr`, `migration`). |
+| `feature_flag_audit` | Append-only receipt per write: operation id, actor, old and new rule, old and new revision, `reason` (1 to 500 characters) and `client` (`admin-ui`, `workspace-ui`, `ttr`, `migration`, or `erasure` for subject erasure). |
 
 The rule table's CHECK calls the same SQL shape function as the mutate RPC.
-Triggers reject deletes, truncation, audit updates, and any write outside the
-RPC entrypoints. Every function pins `search_path = pg_catalog, pg_temp`, and
-only `service_role` may execute the RPCs:
+Triggers reject truncation, deletes, audit updates and any write outside the
+RPC entrypoints; only the erasure entrypoint may delete rules and anonymize
+audit rows. Every function pins `search_path = pg_catalog, pg_temp`. Only
+`service_role` may execute the RPCs, and each RPC also refuses a request JWT
+that names another role.
 
-- `feature_flag_sync_definitions(p_definitions)` upserts the deployed catalog's
-  `runtimeDefinitionRows(featureFlagCatalog.flags)`. It refuses malformed or
-  duplicate definitions and refuses to drop a scope that still holds a live
-  rule; unset those rules first.
-- `feature_flag_mutate_rule(...)` validates the write, authorizes it by the
-  scope's controller, compares `p_expected_revision` (0 for a rule that has
-  never existed), replays a known `p_operation_id`, and writes the rule and its
-  audit row in one transaction. `platform-admin` requires the root permission
-  `manage_feature_flags`; `workspace-admin` requires `manage_workspace_settings`
-  in the subject workspace; `self` requires the actor to be the subject, and
-  the mode may only be `off` or null. A null `p_mode` unsets the rule.
-- `feature_flag_read_snapshot(p_environment)` returns the live rules for one
-  environment with a `version` digest for snapshot caches.
-- `feature_flag_read_rules(p_actor, p_flag_key, p_environment)` and
-  `feature_flag_read_audit(p_actor, p_limit, p_before)` need root
-  `view_infrastructure` or `manage_feature_flags`.
+**Definitions.** The admin app's server calls
+`feature_flag_sync_definitions(p_definitions, p_acknowledge_widening)` at deploy
+time with `runtimeDefinitionRows(featureFlagCatalog.flags)`, and a `ttr`
+command runs the same sync by hand for the fleet. The call is idempotent: an
+unchanged definition writes nothing, and each change appends a definition
+audit row. It refuses malformed or duplicate definitions, a scope removal that
+would orphan a live rule (`feature_flag_definition_orphans_rules`; unset those
+rules first), and, unless `p_acknowledge_widening` is `true`, a change that
+widens control over live rules (`feature_flag_definition_widens_control`):
+moving a scope from `platform-admin` to `workspace-admin` or `self`, or newly
+adding `delegate: 'workspace'` while workspace rules exist.
 
-Migration `20261125030100_manage_feature_flags_permission.sql` adds the
-`manage_feature_flags` permission, listed in the root-only Infrastructure
-permission group. Regression coverage is in
+**Writes.** `feature_flag_mutate_rule(...)` validates the write, authorizes it
+by the scope's controller, compares `p_expected_revision` (0 for a rule that
+has never existed), and writes the rule and its audit row in one transaction:
+
+- `platform-admin` requires the root permission `manage_feature_flags`; a
+  tenant role holding the same permission name does not qualify.
+- `workspace-admin` requires `manage_workspace_settings` in the subject
+  workspace. Only that workspace's settings managers write a delegated
+  workspace rule; root flag managers act through the platform ceiling and never
+  edit a tenant's rule.
+- `self` requires the actor to be the subject, and the mode may only be `off`
+  or null. A null `p_mode` unsets the rule.
+- A known `p_operation_id` replays its result only for the same actor and rule
+  identity; otherwise the call fails with `feature_flag_operation_conflict`.
+- A flag holds at most 50000 live workspace and user rules per environment
+  (`feature_flag_rule_limit`); allow-lists hold at most 500 ids each.
+- The server sets `p_client` for its own surface; it never comes from a request
+  body.
+
+**Reads.** Evaluation combines two service-role reads:
+
+- `feature_flag_read_snapshot(p_environment)` returns the live **platform**
+  rules with a `version` digest. Cache it per isolate by version.
+- `feature_flag_read_subject_rules(p_environment, p_workspace_id, p_user_id)`
+  returns only the live workspace rules of the request's workspace and the
+  user rules of its verified user, for a request-scoped lookup.
+
+Pass both lists to `evaluateRuntimeFlag` as `rules`. Admin screens use
+`feature_flag_read_rules(p_actor, p_flag_key, p_environment)` and
+`feature_flag_read_audit(p_actor, p_limit, p_before, p_before_id)`, which need
+root `view_infrastructure` or `manage_feature_flags`; the audit pages newest
+first on the `(occurredAt, id)` cursor of the last row.
+
+**Retention and erasure.** Rules and audit rows hold user ids (user-rule
+subjects, allow-lists, authors and actors). Account erasure calls
+`feature_flag_erase_subject('user', <id>)` and a workspace purge calls
+`feature_flag_erase_subject('workspace', <id>)`; see the
+[data protection standard](/platform/data-protection-standard#runtime-feature-flag-rules).
+
+**Rollback.** The `manage_feature_flags` enum value cannot be removed; its
+rollback drops only the read and erasure RPCs. The rule store rollback drops
+every rule and audit row, so export `private.feature_flag_audit` and
+`private.feature_flag_definition_audit` first.
+
+Regression coverage is in
 `packages/feature-flags/src/rule-store-contract.test.ts`, which binds each shape
 case to the same named case in
-`apps/database/supabase/tests/feature-flag-rule-store.sql`.
+`apps/database/supabase/tests/feature-flag-rule-store.sql`, and
+`runtime-ceiling.test.ts` for subject-scoped invalid rules.
 
 Dependencies between flags stay with the caller: for example
 `MEET_FORMS_EXTENDED_ENABLED` also requires `MEET_FORMS_ENABLED`. Runtime

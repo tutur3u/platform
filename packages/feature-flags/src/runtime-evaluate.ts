@@ -1,6 +1,7 @@
 import type { CatalogFlag } from './lifecycle.mjs';
 import type { RuntimeRuleScope } from './runtime-definition.mjs';
-import { ruleShapeError } from './rule-validation';
+import { RUNTIME_RULE_SCOPES } from './runtime-definition.mjs';
+import { isIncluded, ruleShapeError } from './rule-validation';
 
 export type RuntimeRuleMode = 'on' | 'off' | 'staff' | 'rollout';
 
@@ -64,6 +65,11 @@ export interface RuntimeEvaluationInput {
   readonly rules: readonly RuntimeRule[] | null;
 }
 
+/** Context and subject ids compare in lowercase, the store's UUID form. */
+function lowerId(value: unknown): string | null {
+  return typeof value === 'string' ? value.toLowerCase() : null;
+}
+
 function isWellFormed(rule: RuntimeRule, flag: CatalogFlag) {
   return ruleShapeError(rule, flag.runtime?.scopes ?? []) === null;
 }
@@ -118,7 +124,9 @@ function ruleDecides(
 /**
  * Evaluates one runtime flag. Precedence:
  *
- * 1. A malformed or duplicated rule set fails closed (`invalid-rules`).
+ * 1. A malformed snapshot, or a malformed or duplicated platform rule, fails
+ *    closed for everyone (`invalid-rules`). A malformed, duplicated or
+ *    undeclared-scope workspace or user rule denies only its own subject.
  * 2. A platform `off` rule on a kill switch is final (`kill-switch`).
  * 3. The platform rule is a ceiling. While it is `off`, `staff` or `rollout`,
  *    a workspace or user rule can only narrow it: the result is the override
@@ -148,8 +156,10 @@ export function evaluateRuntimeFlag(
     return { enabled: fallbackDefault, source: 'default', trace };
   }
 
-  // Any malformed or duplicated rule for this flag fails closed: the store
-  // owns the flag, and an ambiguous rule set must never turn a feature on.
+  // A malformed snapshot, or a malformed or duplicated platform rule, fails
+  // closed for everyone: an ambiguous ceiling must never turn a feature on. A
+  // malformed or duplicated workspace or user rule denies only its own
+  // subject, so one bad tenant rule cannot switch the flag off platform-wide.
   if (input.rules !== null && !Array.isArray(input.rules)) {
     trace.push('rule snapshot is not a list');
     return { enabled: false, source: 'invalid-rules', trace };
@@ -158,33 +168,53 @@ export function evaluateRuntimeFlag(
     trace.push('rule snapshot holds a non-object entry');
     return { enabled: false, source: 'invalid-rules', trace };
   }
-  const rules = (input.rules ?? []).filter((rule) => rule.flagKey === flag.key);
-  const identities = new Set<string>();
-  for (const rule of rules) {
-    if (!isWellFormed(rule, flag)) {
-      trace.push(`invalid ${String(rule.scope)} rule`);
+  const workspaceId = lowerId(context.workspaceId);
+  const userId = lowerId(context.userId);
+  const scoped = { ...context, userId, workspaceId };
+  const rules: RuntimeRule[] = [];
+  const seen = new Set<string>();
+  const denied = new Set<string>();
+  for (const rule of input.rules ?? []) {
+    if (rule.flagKey !== flag.key) continue;
+    if (!isIncluded(RUNTIME_RULE_SCOPES, rule.scope)) {
+      trace.push('rule with an unknown scope');
       return { enabled: false, source: 'invalid-rules', trace };
     }
-    const identity = `${rule.scope}:${rule.subjectId ?? ''}`;
-    if (identities.has(identity)) {
-      trace.push(`duplicate ${rule.scope} rule`);
+    const identity = `${rule.scope}:${
+      typeof rule.subjectId === 'string' ? rule.subjectId.toLowerCase() : ''
+    }`;
+    const bad = !isWellFormed(rule, flag) || seen.has(identity);
+    seen.add(identity);
+    if (bad && rule.scope === 'platform') {
+      trace.push('invalid or duplicate platform rule');
       return { enabled: false, source: 'invalid-rules', trace };
     }
-    identities.add(identity);
+    if (bad) denied.add(identity);
+    else rules.push(rule);
+  }
+  for (const [scope, id] of [
+    ['workspace', workspaceId],
+    ['user', userId],
+  ] as const) {
+    if (id !== null && denied.has(`${scope}:${id}`)) {
+      trace.push(`invalid or duplicate ${scope} rule for this ${scope}`);
+      return { enabled: false, source: 'invalid-rules', trace };
+    }
   }
   const platform = rules.find((rule) => rule.scope === 'platform');
   const workspace =
-    context.workspaceId === null
+    workspaceId === null
       ? undefined
       : rules.find(
           (rule) =>
-            rule.scope === 'workspace' && rule.subjectId === context.workspaceId
+            rule.scope === 'workspace' &&
+            lowerId(rule.subjectId) === workspaceId
         );
   const user =
-    context.userId === null
+    userId === null
       ? undefined
       : rules.find(
-          (rule) => rule.scope === 'user' && rule.subjectId === context.userId
+          (rule) => rule.scope === 'user' && lowerId(rule.subjectId) === userId
         );
   const { controllers, delegate, envFallback } = flag.runtime;
 
@@ -212,7 +242,7 @@ export function evaluateRuntimeFlag(
   const base = (): RuntimeDecision => {
     if (platform) {
       return {
-        enabled: ruleDecides(platform, flag.key, context),
+        enabled: ruleDecides(platform, flag.key, scoped),
         source: 'platform',
         trace: [...trace, `platform rule ${platform.mode}`],
       };
@@ -255,7 +285,7 @@ export function evaluateRuntimeFlag(
     };
   }
   return withSelfOptOut({
-    enabled: ruleDecides(override.rule, flag.key, context),
+    enabled: ruleDecides(override.rule, flag.key, scoped),
     source: override.scope,
     trace: [...(ceiling?.trace ?? trace), step],
   });

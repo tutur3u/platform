@@ -193,6 +193,95 @@ describe('platform rule ceiling', () => {
   });
 });
 
+describe('subject rule isolation', () => {
+  const OTHER_WS = '22222222-2222-4222-8222-222222222222';
+  const elsewhere = { ...member, workspaceId: OTHER_WS };
+
+  it('denies only the subject of a malformed workspace rule', () => {
+    const rules = [
+      platformRule(),
+      { ...workspaceOn, mode: 'rollout' } as RuntimeRule,
+    ];
+    expect(decide(flagWith(), rules)).toMatchObject({
+      enabled: false,
+      source: 'invalid-rules',
+    });
+    expect(decide(flagWith(), rules, elsewhere)).toMatchObject({
+      enabled: true,
+      source: 'platform',
+    });
+  });
+
+  it('denies only the subject of a duplicated workspace or user rule', () => {
+    const rules = [platformRule(), workspaceOn, workspaceOff];
+    expect(decide(flagWith(), rules).enabled).toBe(false);
+    expect(decide(flagWith(), rules, elsewhere).enabled).toBe(true);
+    const users: RuntimeRule[] = [
+      platformRule(),
+      userOn,
+      { ...userOn, mode: 'off' },
+    ];
+    expect(decide(flagWith(), users)).toMatchObject({
+      enabled: false,
+      source: 'invalid-rules',
+    });
+    expect(
+      decide(flagWith(), users, { ...member, userId: OTHER_WS }).enabled
+    ).toBe(true);
+  });
+
+  it('keeps an old catalog working when a workspace scope is undeclared', () => {
+    const old = flagWith({
+      scopes: ['platform'],
+      controllers: { platform: 'platform-admin' },
+    });
+    const rules = [platformRule(), workspaceOn];
+    expect(decide(old, rules).enabled).toBe(false);
+    expect(decide(old, rules, elsewhere)).toMatchObject({
+      enabled: true,
+      source: 'platform',
+    });
+  });
+
+  it('ignores a workspace rule whose subject is not a UUID', () => {
+    const rules = [
+      platformRule(),
+      { ...workspaceOff, subjectId: 'workspace-1' },
+    ];
+    expect(decide(flagWith(), rules).enabled).toBe(true);
+  });
+
+  it('fails closed for everyone on a malformed or duplicated platform rule', () => {
+    for (const rules of [
+      [platformRule({ mode: 'rollout' })],
+      [platformRule(), platformRule({ mode: 'off' })],
+      [{ ...workspaceOn, scope: 'team' } as unknown as RuntimeRule],
+    ]) {
+      expect(decide(flagWith(), rules, elsewhere)).toMatchObject({
+        enabled: false,
+        source: 'invalid-rules',
+      });
+    }
+  });
+
+  it('compares context and subject ids in lowercase', () => {
+    const upper = {
+      ...member,
+      userId: USER.toUpperCase(),
+      workspaceId: WS.toUpperCase(),
+    };
+    expect(
+      decide(flagWith(), [platformRule(), workspaceOff], upper).enabled
+    ).toBe(false);
+    const allow = platformRule({
+      mode: 'rollout',
+      percentage: 0,
+      allowUserIds: [USER],
+    });
+    expect(decide(flagWith(), [allow], upper).enabled).toBe(true);
+  });
+});
+
 describe('runtime delegate field', () => {
   const base = {
     type: 'boolean',

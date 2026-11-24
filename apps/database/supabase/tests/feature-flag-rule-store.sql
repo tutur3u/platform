@@ -2,11 +2,12 @@
 -- isolation, service-role-only RPCs, definition sync, shape validation that
 -- matches ruleMutationError (packages/feature-flags/src/rule-store-contract.test.ts
 -- binds each 'shape: <name>' row to the TypeScript table), controller
--- authorization, compare-and-swap, replay, unset and append-only audit.
+-- authorization, compare-and-swap, replay, unset, append-only audits, control
+-- widening, subject erasure and the per-flag subject rule cap.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(84);
+select plan(113);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data) values
   ('5ff00000-0000-4000-8000-000000000001', 'ff-root-creator@example.com', now(), '{}', '{}'),
@@ -14,7 +15,9 @@ insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_us
   ('5ff00000-0000-4000-8000-000000000003', 'ff-root-viewer@example.com', now(), '{}', '{}'),
   ('5ff00000-0000-4000-8000-000000000004', 'ff-ws-creator@example.com', now(), '{}', '{}'),
   ('5ff00000-0000-4000-8000-000000000005', 'ff-ws-member@example.com', now(), '{}', '{}'),
-  ('5ff00000-0000-4000-8000-000000000006', 'ff-self@example.com', now(), '{}', '{}')
+  ('5ff00000-0000-4000-8000-000000000006', 'ff-self@example.com', now(), '{}', '{}'),
+  ('5ff00000-0000-4000-8000-000000000007', 'ff-root-member-admin@example.com', now(), '{}', '{}'),
+  ('5ff00000-0000-4000-8000-000000000008', 'ff-guest@example.com', now(), '{}', '{}')
 on conflict (id) do nothing;
 insert into public.workspaces (id, name, personal, creator_id) values
   ('00000000-0000-0000-0000-000000000000', 'Root', false, '5ff00000-0000-4000-8000-000000000001')
@@ -25,17 +28,27 @@ insert into public.workspaces (id, name, personal, creator_id) values
 insert into public.workspace_members (ws_id, user_id, type) values
   ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-000000000002', 'MEMBER'),
   ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-000000000003', 'MEMBER'),
+  ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-000000000007', 'MEMBER'),
   ('5ff00000-0000-4000-8000-0000000000a1', '5ff00000-0000-4000-8000-000000000005', 'MEMBER')
 on conflict (ws_id, user_id) do update set type = 'MEMBER';
+insert into public.workspace_members (ws_id, user_id, type) values
+  ('5ff00000-0000-4000-8000-0000000000a1', '5ff00000-0000-4000-8000-000000000008', 'GUEST')
+on conflict (ws_id, user_id) do update set type = 'GUEST';
 insert into public.workspace_roles (id, ws_id, name) values
   ('5ff00000-0000-4000-8000-0000000000c1', '00000000-0000-0000-0000-000000000000', 'FF managers'),
-  ('5ff00000-0000-4000-8000-0000000000c2', '00000000-0000-0000-0000-000000000000', 'FF viewers');
+  ('5ff00000-0000-4000-8000-0000000000c2', '00000000-0000-0000-0000-000000000000', 'FF viewers'),
+  ('5ff00000-0000-4000-8000-0000000000c3', '00000000-0000-0000-0000-000000000000', 'FF root admins'),
+  ('5ff00000-0000-4000-8000-0000000000c4', '5ff00000-0000-4000-8000-0000000000a1', 'Tenant flag managers');
 insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled) values
   ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-0000000000c1', 'manage_feature_flags', true),
-  ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-0000000000c2', 'view_infrastructure', true);
+  ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-0000000000c2', 'view_infrastructure', true),
+  ('00000000-0000-0000-0000-000000000000', '5ff00000-0000-4000-8000-0000000000c3', 'admin', true),
+  ('5ff00000-0000-4000-8000-0000000000a1', '5ff00000-0000-4000-8000-0000000000c4', 'manage_feature_flags', true);
 insert into public.workspace_role_members (role_id, user_id) values
   ('5ff00000-0000-4000-8000-0000000000c1', '5ff00000-0000-4000-8000-000000000002'),
-  ('5ff00000-0000-4000-8000-0000000000c2', '5ff00000-0000-4000-8000-000000000003');
+  ('5ff00000-0000-4000-8000-0000000000c2', '5ff00000-0000-4000-8000-000000000003'),
+  ('5ff00000-0000-4000-8000-0000000000c3', '5ff00000-0000-4000-8000-000000000007'),
+  ('5ff00000-0000-4000-8000-0000000000c4', '5ff00000-0000-4000-8000-000000000005');
 
 -- Runs one statement under a role; returns 'ok' or the SQLSTATE it raised.
 create function pg_temp.as_role(p_sql text, p_role text) returns text language plpgsql as $$
@@ -108,7 +121,7 @@ select ok(not exists (
   select 1
   from unnest(array['anon', 'authenticated', 'service_role']) as r(role),
        unnest(array['private.feature_flag_definitions', 'private.feature_flag_rules',
-         'private.feature_flag_audit']) as t(name),
+         'private.feature_flag_audit', 'private.feature_flag_definition_audit']) as t(name),
        unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) as p(priv)
   where has_table_privilege(r.role, t.name, p.priv)
 ), 'no client or service role has table privileges on the rule store');
@@ -116,22 +129,26 @@ select ok(not exists (
   select 1
   from unnest(array['anon', 'authenticated']) as r(role),
        unnest(array[
-         'private.feature_flag_sync_definitions(jsonb)',
+         'private.feature_flag_sync_definitions(jsonb,boolean)',
          'private.feature_flag_mutate_rule(uuid,uuid,text,text,text,uuid,text,integer,uuid[],uuid[],bigint,text,text)',
          'private.feature_flag_read_snapshot(text)',
          'private.feature_flag_read_rules(uuid,text,text)',
-         'private.feature_flag_read_audit(uuid,integer,timestamptz)'
+         'private.feature_flag_read_audit(uuid,integer,timestamptz,uuid)',
+         'private.feature_flag_read_subject_rules(text,uuid,uuid)',
+         'private.feature_flag_erase_subject(text,uuid)'
        ]) as f(fn)
   where has_function_privilege(r.role, f.fn, 'EXECUTE')
 ), 'anon and authenticated cannot execute the rule store RPCs');
 select ok((
   select bool_and(has_function_privilege('service_role', f.fn, 'EXECUTE'))
   from unnest(array[
-    'private.feature_flag_sync_definitions(jsonb)',
+    'private.feature_flag_sync_definitions(jsonb,boolean)',
     'private.feature_flag_mutate_rule(uuid,uuid,text,text,text,uuid,text,integer,uuid[],uuid[],bigint,text,text)',
     'private.feature_flag_read_snapshot(text)',
     'private.feature_flag_read_rules(uuid,text,text)',
-    'private.feature_flag_read_audit(uuid,integer,timestamptz)'
+    'private.feature_flag_read_audit(uuid,integer,timestamptz,uuid)',
+    'private.feature_flag_read_subject_rules(text,uuid,uuid)',
+    'private.feature_flag_erase_subject(text,uuid)'
   ]) as f(fn)
 ), 'service_role can execute the rule store RPCs');
 select ok(not exists (
@@ -142,7 +159,10 @@ select ok(not exists (
          'private.feature_flag_definition_error(text,text,text[],jsonb,text)',
          'private.feature_flag_require_root(uuid,text[])',
          'private.feature_flag_rule_json(text,integer,uuid[],uuid[])',
-         'private.feature_flag_guard_write()'
+         'private.feature_flag_guard_write()',
+         'private.feature_flag_require_service_role()',
+         'private.feature_flag_live_rule_json(private.feature_flag_rules)',
+         'private.feature_flag_erase_json(jsonb,text,text)'
        ]) as f(fn)
   where has_function_privilege(r.role, f.fn, 'EXECUTE')
 ), 'internal helpers have no client or service grant');
@@ -157,6 +177,9 @@ select ok(not public.has_workspace_permission('00000000-0000-0000-0000-000000000
   '5ff00000-0000-4000-8000-000000000003', 'manage_feature_flags'), 'the root viewer lacks manage_feature_flags');
 select ok(not public.has_workspace_permission('5ff00000-0000-4000-8000-0000000000a1',
   '5ff00000-0000-4000-8000-000000000005', 'manage_workspace_settings'), 'the tenant member lacks manage_workspace_settings');
+select ok(public.has_workspace_permission('5ff00000-0000-4000-8000-0000000000a1',
+  '5ff00000-0000-4000-8000-000000000005', 'manage_feature_flags'), 'the tenant member holds a tenant-level manage_feature_flags');
+select is((select count(*)::int from private.feature_flag_definition_audit), 0, 'no definition audit before the first sync');
 
 -- Definitions ---------------------------------------------------------------------
 
@@ -173,6 +196,8 @@ select is(pg_temp.rpc($q$private.feature_flag_sync_definitions('[{"key":"FF_RULE
   "scopes":["platform","workspace","user"],"controllers":{"platform":"platform-admin",
   "workspace":"workspace-admin","user":"self"},"delegate":null}]'::jsonb)$q$) ->> 'changed', '0',
   'an unchanged definition sync is a no-op');
+select is((select count(*)::int from private.feature_flag_definition_audit where old_definition is null), 3,
+  'each new definition has one definition audit row');
 select is(pg_temp.rpc($q$private.feature_flag_sync_definitions('[{"key":"FF_BAD","kind":"release",
   "scopes":["platform"],"controllers":{"platform":"platform-admin"},"delegate":"workspace"}]'::jsonb)$q$) ->> 'error',
   'feature_flag_invalid_definition_delegate', 'a delegate without the workspace scope is refused');
@@ -270,6 +295,15 @@ select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000003', gen_random_uu
 select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'production',
   'platform', null, 'on', null, null, null, 0, 'Tenant creator attempt', 'admin-ui'),
   'feature_flag_denied', 'a non-root workspace creator cannot write a platform rule');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000005', gen_random_uuid(), 'FF_RULE_TEST', 'production',
+  'platform', null, 'on', null, null, null, 0, 'Tenant role attempt', 'admin-ui'),
+  'feature_flag_denied', 'a tenant role with manage_feature_flags cannot write a platform rule');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000007', gen_random_uuid(), 'FF_RULE_TEST', 'production',
+  'platform', null, 'on', null, null, null, 0, 'Root admin', 'admin-ui'),
+  'applied', 'a root member with the admin permission can write a platform rule');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000008', gen_random_uuid(), 'FF_RULE_TEST', 'production',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'off', null, null, null, 0, 'Guest attempt', 'workspace-ui'),
+  'feature_flag_denied', 'a workspace guest cannot write the workspace-admin rule');
 select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'production',
   'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 0, 'Tenant opt-in', 'workspace-ui', true),
   'applied', 'a workspace settings manager can write its workspace-admin rule');
@@ -318,6 +352,12 @@ select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', '5ff00000-000
 select is((pg_temp.rpc($q$private.feature_flag_mutate_rule('5ff00000-0000-4000-8000-000000000002',
   '5ff00000-0000-4000-8000-0000000000e1', 'FF_RULE_TEST', 'production', 'platform', null, 'on', null, null, null,
   0, 'Different body', 'admin-ui')$q$) ->> 'matchesRequest'), 'false', 'a reused operation id with another rule does not match');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000007', '5ff00000-0000-4000-8000-0000000000e1', 'FF_RULE_TEST', 'production',
+  'platform', null, 'staff', null, null, null, 0, 'Staff dogfood', 'admin-ui', true),
+  'feature_flag_operation_conflict', 'another actor cannot replay an operation id');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', '5ff00000-0000-4000-8000-0000000000e1', 'FF_RULE_TEST', 'development',
+  'platform', null, 'staff', null, null, null, 0, 'Staff dogfood', 'admin-ui', true),
+  'feature_flag_operation_conflict', 'an operation id cannot be replayed against another rule identity');
 select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_TEST', 'production',
   'platform', null, 'staff', null, null, null, 1, 'Same rule', 'admin-ui', true),
   'noop', 'writing the same rule is a no-op');
@@ -343,24 +383,46 @@ select is(coalesce(current_setting('feature_flags.entrypoint', true), ''), '',
 
 -- Reads -----------------------------------------------------------------------------
 
-select is((select jsonb_agg(r ->> 'scope' order by r ->> 'scope')
-  from jsonb_array_elements(pg_temp.rpc($q$private.feature_flag_read_snapshot('production')$q$) -> 'rules') as r
-  where r ->> 'flagKey' = 'FF_RULE_TEST'),
-  '["user", "workspace"]'::jsonb, 'the snapshot lists live rules and omits the unset one');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_PLATFORM_ONLY', 'production',
+  'platform', null, 'rollout', 0, null, array['5ff00000-0000-4000-8000-000000000006']::uuid[], 0, 'Allow one tester', 'admin-ui', true),
+  'applied', 'a platform rollout allow-lists one user');
+select is((select jsonb_agg(r ->> 'flagKey' || ':' || (r ->> 'scope'))
+  from jsonb_array_elements(pg_temp.rpc($q$private.feature_flag_read_snapshot('production')$q$) -> 'rules') as r),
+  '["FF_RULE_PLATFORM_ONLY:platform"]'::jsonb, 'the snapshot holds only live platform rules');
 select ok(length(pg_temp.rpc($q$private.feature_flag_read_snapshot('production')$q$) ->> 'version') = 32
   and pg_temp.rpc($q$private.feature_flag_read_snapshot('production')$q$) ->> 'version'
     <> pg_temp.rpc($q$private.feature_flag_read_snapshot('development')$q$) ->> 'version',
   'the snapshot carries a content version');
 select is(pg_temp.rpc($q$private.feature_flag_read_snapshot('staging')$q$) ->> 'error',
   'feature_flag_unknown_environment', 'the snapshot has no staging environment');
+select is((select jsonb_agg(r ->> 'flagKey' || ':' || (r ->> 'scope') order by r ->> 'flagKey', r ->> 'scope')
+  from jsonb_array_elements(pg_temp.rpc($q$private.feature_flag_read_subject_rules('production',
+    '5ff00000-0000-4000-8000-0000000000a1', '5ff00000-0000-4000-8000-000000000006')$q$) -> 'rules') as r),
+  '["FF_RULE_ADMIN_USER:user", "FF_RULE_TEST:user", "FF_RULE_TEST:workspace"]'::jsonb,
+  'the subject read returns only the actor workspace and user rules');
+select is(jsonb_array_length(pg_temp.rpc($q$private.feature_flag_read_subject_rules('production',
+  '5ff00000-0000-4000-8000-0000000000a2', '5ff00000-0000-4000-8000-000000000005')$q$) -> 'rules'), 0,
+  'another workspace and user see no subject rules');
 select is(jsonb_array_length(pg_temp.rpc($q$private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000003',
   'FF_RULE_TEST', 'production')$q$) -> 'rules'), 3, 'a root viewer reads every rule, including the unset one');
 select is(pg_temp.rpc($q$private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000004', null, 'production')$q$) ->> 'error',
   'feature_flag_denied', 'a non-root workspace creator cannot read the rules');
-select is(jsonb_array_length(pg_temp.rpc($q$private.feature_flag_read_audit('5ff00000-0000-4000-8000-000000000002',
-  2, null)$q$) -> 'rows'), 2, 'the audit read is bounded by its limit');
-select is(pg_temp.rpc($q$private.feature_flag_read_audit('5ff00000-0000-4000-8000-000000000005', 10, null)$q$) ->> 'error',
+create temp table ff_page as select pg_temp.rpc($q$private.feature_flag_read_audit('5ff00000-0000-4000-8000-000000000002',
+  2, null, null)$q$) -> 'rows' as rows;
+select is(jsonb_array_length((select rows from ff_page)), 2, 'the audit read is bounded by its limit');
+select ok(not exists (
+  select 1
+  from jsonb_array_elements(pg_temp.rpc(format($q$private.feature_flag_read_audit('5ff00000-0000-4000-8000-000000000002',
+    100, %L::timestamptz, %L::uuid)$q$, (select rows -> 1 ->> 'occurredAt' from ff_page),
+    (select rows -> 1 ->> 'id' from ff_page))) -> 'rows') as next_row
+  join jsonb_array_elements((select rows from ff_page)) as seen on seen ->> 'id' = next_row ->> 'id'
+), 'the next audit page starts after the cursor row');
+select is(pg_temp.rpc($q$private.feature_flag_read_audit('5ff00000-0000-4000-8000-000000000005', 10, null, null)$q$) ->> 'error',
   'feature_flag_denied', 'a tenant member cannot read the audit');
+select set_config('request.jwt.claims', '{"role":"authenticated"}', true);
+select throws_ok($q$select private.feature_flag_read_rules('5ff00000-0000-4000-8000-000000000003', null, 'production')$q$,
+  '42501', 'feature_flag_denied', 'a definer RPC refuses a non-service request JWT');
+select set_config('request.jwt.claims', '', true);
 
 -- Append-only audit and guarded rules ---------------------------------------------------
 
@@ -384,6 +446,67 @@ select is(pg_temp.rpc($q$private.feature_flag_sync_definitions('[{"key":"FF_RULE
   'feature_flag_definition_orphans_rules', 'removing a scope that holds a live rule is refused');
 select is((select scopes from private.feature_flag_definitions where flag_key = 'FF_RULE_TEST'),
   array['platform', 'workspace', 'user']::text[], 'the refused sync leaves the definition unchanged');
+
+-- Control widening needs an acknowledgement ---------------------------------------------
+
+select is(pg_temp.rpc($q$private.feature_flag_sync_definitions('[{"key":"FF_RULE_ADMIN_USER","kind":"release",
+  "scopes":["platform","workspace","user"],"controllers":{"platform":"platform-admin",
+  "workspace":"platform-admin","user":"self"},"delegate":"workspace"}]'::jsonb)$q$) ->> 'error',
+  'feature_flag_definition_widens_control', 'handing live platform-admin user rules to users is refused');
+select is(pg_temp.rpc($q$private.feature_flag_sync_definitions('[{"key":"FF_RULE_TEST","kind":"release",
+  "scopes":["platform","workspace","user"],"controllers":{"platform":"platform-admin",
+  "workspace":"workspace-admin","user":"self"},"delegate":"workspace"}]'::jsonb)$q$) ->> 'error',
+  'feature_flag_definition_widens_control', 'newly delegating a scope with live workspace rules is refused');
+select is(pg_temp.rpc($q$private.feature_flag_sync_definitions('[{"key":"FF_RULE_ADMIN_USER","kind":"release",
+  "scopes":["platform","workspace","user"],"controllers":{"platform":"platform-admin",
+  "workspace":"platform-admin","user":"self"},"delegate":"workspace"}]'::jsonb, true)$q$) ->> 'changed', '1',
+  'an acknowledged widening applies');
+select is((select row(old_definition -> 'controllers' ->> 'user', new_definition -> 'controllers' ->> 'user',
+  acknowledged_widening)::text from private.feature_flag_definition_audit
+  where flag_key = 'FF_RULE_ADMIN_USER' and old_definition is not null),
+  row('platform-admin', 'self', true)::text, 'the definition audit records the acknowledged widening');
+select throws_ok($q$update private.feature_flag_definition_audit set acknowledged_widening = false$q$, '42501',
+  'feature_flag_audit_immutable', 'definition audit rows cannot be updated');
+
+-- Subject erasure -----------------------------------------------------------------------
+
+select is(pg_temp.rpc($q$private.feature_flag_erase_subject('user', '5ff00000-0000-4000-8000-000000000006')$q$)
+  - 'status' - 'anonymizedAudit', '{"deletedRules": 2, "strippedRules": 1}'::jsonb,
+  'erasure deletes the user rules and strips the user from allow-lists');
+select ok(not exists (select 1 from private.feature_flag_rules
+  where subject_id = '5ff00000-0000-4000-8000-000000000006' or updated_by = '5ff00000-0000-4000-8000-000000000006'
+    or '5ff00000-0000-4000-8000-000000000006' = any (allow_user_ids)), 'no rule names the erased user');
+select ok(not exists (select 1 from private.feature_flag_audit
+  where actor_id = '5ff00000-0000-4000-8000-000000000006' or subject_id = '5ff00000-0000-4000-8000-000000000006'
+    or coalesce(old_rule::text, '') || coalesce(new_rule::text, '') like '%5ff00000-0000-4000-8000-000000000006%'),
+  'no audit row names the erased user');
+select is((select row(allow_user_ids, revision)::text from private.feature_flag_rules
+  where flag_key = 'FF_RULE_PLATFORM_ONLY' and environment = 'production'),
+  row('{}'::uuid[], 2::bigint)::text, 'the stripped allow-list bumps its revision');
+select is((select count(*)::int from private.feature_flag_audit where client = 'erasure' and actor_id is null), 3,
+  'each erasure write has an audit row with no actor');
+select is(pg_temp.rpc($q$private.feature_flag_erase_subject('user', '5ff00000-0000-4000-8000-000000000006')$q$) ->> 'deletedRules',
+  '0', 'erasure is idempotent');
+select is(pg_temp.rpc($q$private.feature_flag_erase_subject('workspace', '5ff00000-0000-4000-8000-0000000000a1')$q$) ->> 'deletedRules',
+  '1', 'a workspace purge erases its workspace rules');
+select is(pg_temp.rpc($q$private.feature_flag_erase_subject('platform', null)$q$) ->> 'error',
+  'feature_flag_invalid_subject', 'erasure needs a user or workspace subject');
+select is(coalesce(current_setting('feature_flags.entrypoint', true), ''), '',
+  'the erasure entrypoint is cleared once it returns');
+
+-- Per-flag cap on live subject rules ------------------------------------------------------
+
+select set_config('feature_flags.entrypoint', 'mutate_rule', true);
+insert into private.feature_flag_rules (flag_key, scope, subject_id, environment, mode, revision, updated_by)
+select 'FF_RULE_ADMIN_USER', 'workspace', gen_random_uuid(), 'production', 'on', 1, null
+from generate_series(1, 50000);
+select set_config('feature_flags.entrypoint', '', true);
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_ADMIN_USER', 'production',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Over the cap', 'admin-ui'),
+  'feature_flag_rule_limit', 'a flag holds at most 50000 live workspace and user rules per environment');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_ADMIN_USER', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Other environment', 'admin-ui'),
+  'applied', 'the cap counts one environment');
 
 select * from finish();
 rollback;

@@ -3,7 +3,8 @@
 -- Clients have no table DML. Service-role definer RPCs are the only writers; a
 -- transaction-local entrypoint setting, cleared before each RPC returns,
 -- rejects direct owner writes. The rule CHECK and the mutate RPC share one
--- shape function, mirroring ruleShapeError in @tuturuuu/feature-flags.
+-- shape function, mirroring ruleShapeError in @tuturuuu/feature-flags. Read
+-- and erasure RPCs are in 20261125030100_manage_feature_flags_permission.sql.
 -- Rollback: apps/database/rollbacks/20261125030000_feature_flag_rules.rollback.sql
 
 set lock_timeout = '5s';
@@ -137,7 +138,7 @@ create table private.feature_flag_rules (
   allow_workspace_ids uuid[],
   allow_user_ids uuid[],
   revision bigint not null,
-  updated_by uuid not null,
+  updated_by uuid,
   updated_at timestamptz not null default pg_catalog.clock_timestamp(),
   constraint feature_flag_rules_identity_key
     unique nulls not distinct (flag_key, scope, subject_id, environment),
@@ -152,12 +153,15 @@ create table private.feature_flag_rules (
 );
 
 comment on table private.feature_flag_rules is
-  'One rule per flag, scope, subject and environment. A null mode is an unset rule that keeps its revision, so revisions never restart.';
+  'One rule per flag, scope, subject and environment. A null mode is an unset rule that keeps its revision. updated_by is null after account erasure.';
+
+create index feature_flag_rules_subject_idx on private.feature_flag_rules (subject_id, environment)
+  where mode is not null and subject_id is not null;
 
 create table private.feature_flag_audit (
   id uuid primary key default pg_catalog.gen_random_uuid(),
   operation_id uuid not null,
-  actor_id uuid not null,
+  actor_id uuid,
   flag_key text not null
     references private.feature_flag_definitions (flag_key) on delete restrict,
   scope text not null,
@@ -178,24 +182,41 @@ create table private.feature_flag_audit (
   constraint feature_flag_audit_reason_check
     check (pg_catalog.char_length(reason) between 1 and 500),
   constraint feature_flag_audit_client_check
-    check (client in ('admin-ui', 'workspace-ui', 'ttr', 'migration')),
+    check (client in ('admin-ui', 'workspace-ui', 'ttr', 'migration', 'erasure')),
   constraint feature_flag_audit_revision_check check (
     old_revision >= 0 and new_revision = old_revision + 1
   )
 );
 
 comment on table private.feature_flag_audit is
-  'Append-only rule mutation receipt with the old and new rule. Not a cryptographic tamper-evidence log.';
+  'Append-only rule mutation receipt. Account erasure nulls the user ids it holds. Not a cryptographic tamper-evidence log.';
+
+create index feature_flag_audit_page_idx on private.feature_flag_audit (occurred_at desc, id desc);
+
+create table private.feature_flag_definition_audit (
+  id uuid primary key default pg_catalog.gen_random_uuid(),
+  flag_key text not null,
+  old_definition jsonb,
+  new_definition jsonb not null,
+  acknowledged_widening boolean not null,
+  occurred_at timestamptz not null default pg_catalog.clock_timestamp()
+);
+
+comment on table private.feature_flag_definition_audit is
+  'Append-only receipt of each definition change made by private.feature_flag_sync_definitions.';
 
 alter table private.feature_flag_definitions enable row level security;
 alter table private.feature_flag_rules enable row level security;
 alter table private.feature_flag_audit enable row level security;
+alter table private.feature_flag_definition_audit enable row level security;
 
 create policy feature_flag_definitions_deny_client on private.feature_flag_definitions
   as restrictive for all to anon, authenticated using (false) with check (false);
 create policy feature_flag_rules_deny_client on private.feature_flag_rules
   as restrictive for all to anon, authenticated using (false) with check (false);
 create policy feature_flag_audit_deny_client on private.feature_flag_audit
+  as restrictive for all to anon, authenticated using (false) with check (false);
+create policy feature_flag_definition_audit_deny_client on private.feature_flag_definition_audit
   as restrictive for all to anon, authenticated using (false) with check (false);
 
 revoke all on table private.feature_flag_definitions
@@ -204,21 +225,32 @@ revoke all on table private.feature_flag_rules
   from public, anon, authenticated, service_role;
 revoke all on table private.feature_flag_audit
   from public, anon, authenticated, service_role;
+revoke all on table private.feature_flag_definition_audit
+  from public, anon, authenticated, service_role;
 
 create function private.feature_flag_guard_write()
 returns trigger language plpgsql
 set search_path = pg_catalog, pg_temp
 as $flag$
+declare
+  v_entry text := pg_catalog.current_setting('feature_flags.entrypoint', true);
 begin
-  if tg_op = 'DELETE' or tg_op = 'TRUNCATE' then
+  if tg_op = 'TRUNCATE' then
     raise exception 'feature_flag_store_delete' using errcode = '42501';
   end if;
-  if tg_table_name = 'feature_flag_audit' and tg_op = 'UPDATE' then
+  -- Account erasure deletes user rules and nulls user ids in rules and audit.
+  if v_entry = 'erase_subject'
+    and tg_table_name in ('feature_flag_rules', 'feature_flag_audit')
+  then
+    return case when tg_op = 'DELETE' then old else new end;
+  end if;
+  if tg_op = 'DELETE' then
+    raise exception 'feature_flag_store_delete' using errcode = '42501';
+  end if;
+  if tg_op = 'UPDATE' and tg_table_name like '%audit' then
     raise exception 'feature_flag_audit_immutable' using errcode = '42501';
   end if;
-  if pg_catalog.current_setting('feature_flags.entrypoint', true)
-    is distinct from tg_argv[0]
-  then
+  if v_entry is distinct from tg_argv[0] then
     raise exception 'feature_flag_direct_write' using errcode = '42501';
   end if;
   return new;
@@ -226,7 +258,7 @@ end;
 $flag$;
 
 comment on function private.feature_flag_guard_write() is
-  'Rejects deletes, audit updates and writes outside the entrypoint named by the trigger argument.';
+  'Rejects truncation, deletes, audit updates and writes outside the entrypoint named by the trigger argument; the erasure entrypoint may delete and anonymize.';
 
 -- tuturuuu: no-grant (trigger)
 revoke all on function private.feature_flag_guard_write()
@@ -241,6 +273,12 @@ create trigger feature_flag_rules_guard
 create trigger feature_flag_audit_guard
   before insert or update or delete on private.feature_flag_audit
   for each row execute function private.feature_flag_guard_write('mutate_rule');
+create trigger feature_flag_definition_audit_guard
+  before insert or update or delete on private.feature_flag_definition_audit
+  for each row execute function private.feature_flag_guard_write('sync_definitions');
+create trigger feature_flag_definition_audit_truncate_guard
+  before truncate on private.feature_flag_definition_audit
+  for each statement execute function private.feature_flag_guard_write('none');
 create trigger feature_flag_definitions_truncate_guard
   before truncate on private.feature_flag_definitions
   for each statement execute function private.feature_flag_guard_write('none');
@@ -277,6 +315,28 @@ comment on function private.feature_flag_require_root(uuid, text[]) is
 revoke all on function private.feature_flag_require_root(uuid, text[])
   from public, anon, authenticated, service_role;
 
+create function private.feature_flag_require_service_role()
+returns void language plpgsql stable
+set search_path = pg_catalog, pg_temp
+as $flag$
+begin
+  if coalesce(
+    nullif(pg_catalog.current_setting('request.jwt.claim.role', true), ''),
+    nullif(pg_catalog.current_setting('request.jwt.claims', true), '')::jsonb ->> 'role',
+    'service_role'
+  ) <> 'service_role' then
+    raise exception 'feature_flag_denied' using errcode = '42501';
+  end if;
+end;
+$flag$;
+
+comment on function private.feature_flag_require_service_role() is
+  'Raises when a request JWT names a role other than service_role.';
+
+-- tuturuuu: no-grant (internal)
+revoke all on function private.feature_flag_require_service_role()
+  from public, anon, authenticated, service_role;
+
 create function private.feature_flag_rule_json(
   p_mode text, p_percentage integer, p_allow_workspace_ids uuid[],
   p_allow_user_ids uuid[]
@@ -296,27 +356,26 @@ $flag$;
 revoke all on function private.feature_flag_rule_json(text, integer, uuid[], uuid[])
   from public, anon, authenticated, service_role;
 
-create function private.feature_flag_sync_definitions(p_definitions jsonb)
+create function private.feature_flag_sync_definitions(
+  p_definitions jsonb, p_acknowledge_widening boolean default false
+)
 returns jsonb language plpgsql security definer
 set search_path = pg_catalog, pg_temp
 set lock_timeout = '5s'
 as $flag$
 declare
-  v_role text := coalesce(
-    nullif(pg_catalog.current_setting('request.jwt.claim.role', true), ''),
-    nullif(pg_catalog.current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
-  );
   v_item jsonb;
   v_key text;
   v_scopes text[];
   v_error text;
   v_seen text[] := '{}'::text[];
-  v_rows integer;
   v_changed integer := 0;
+  v_old private.feature_flag_definitions%rowtype;
+  v_old_json jsonb;
+  v_new_json jsonb;
+  v_widened boolean;
 begin
-  if v_role is not null and v_role is distinct from 'service_role' then
-    raise exception 'feature_flag_denied' using errcode = '42501';
-  end if;
+  perform private.feature_flag_require_service_role();
   if p_definitions is null
     or pg_catalog.jsonb_typeof(p_definitions) is distinct from 'array'
     or pg_catalog.jsonb_array_length(p_definitions) > 500
@@ -364,7 +423,15 @@ begin
     end if;
     v_seen := v_seen || v_key;
 
-    perform 1 from private.feature_flag_definitions where flag_key = v_key for update;
+    v_new_json := pg_catalog.jsonb_build_object('kind', v_item ->> 'kind',
+      'scopes', pg_catalog.to_jsonb(v_scopes), 'controllers', v_item -> 'controllers',
+      'delegate', pg_catalog.to_jsonb(v_item ->> 'delegate'));
+    select * into v_old from private.feature_flag_definitions where flag_key = v_key for update;
+    v_old_json := case when found then pg_catalog.jsonb_build_object('kind', v_old.kind,
+      'scopes', pg_catalog.to_jsonb(v_old.scopes), 'controllers', v_old.controllers,
+      'delegate', pg_catalog.to_jsonb(v_old.delegate)) end;
+    continue when v_old_json is not distinct from v_new_json;
+
     if exists (
       select 1 from private.feature_flag_rules
       where flag_key = v_key and mode is not null and not (scope = any (v_scopes))
@@ -372,22 +439,36 @@ begin
       raise exception 'feature_flag_definition_orphans_rules'
         using errcode = '23503', detail = v_key;
     end if;
+    -- Handing a scope with live rules from platform admins to workspace admins
+    -- or to users, or newly delegating it, needs an explicit acknowledgement.
+    v_widened := v_old_json is not null and exists (
+      select 1 from private.feature_flag_rules as r
+      where r.flag_key = v_key and r.mode is not null and r.scope <> 'platform'
+        and (
+          (v_old.controllers ->> r.scope = 'platform-admin'
+            and v_item -> 'controllers' ->> r.scope in ('workspace-admin', 'self'))
+          or (r.scope = 'workspace' and v_old.delegate is null
+            and v_item ->> 'delegate' = 'workspace')
+        )
+    );
+    if v_widened and p_acknowledge_widening is not true then
+      raise exception 'feature_flag_definition_widens_control'
+        using errcode = '42501', detail = v_key;
+    end if;
 
-    insert into private.feature_flag_definitions as current (
-      flag_key, kind, scopes, controllers, delegate, updated_at
-    ) values (
-      v_key, v_item ->> 'kind', v_scopes, v_item -> 'controllers',
-      v_item ->> 'delegate', pg_catalog.clock_timestamp()
-    )
-    on conflict (flag_key) do update
-      set kind = excluded.kind, scopes = excluded.scopes,
-          controllers = excluded.controllers, delegate = excluded.delegate,
-          updated_at = excluded.updated_at
-      where (current.kind, current.scopes, current.controllers, current.delegate)
-        is distinct from
-        (excluded.kind, excluded.scopes, excluded.controllers, excluded.delegate);
-    get diagnostics v_rows = row_count;
-    v_changed := v_changed + v_rows;
+    if v_old_json is null then
+      insert into private.feature_flag_definitions (flag_key, kind, scopes, controllers, delegate)
+      values (v_key, v_item ->> 'kind', v_scopes, v_item -> 'controllers', v_item ->> 'delegate');
+    else
+      update private.feature_flag_definitions
+        set kind = v_item ->> 'kind', scopes = v_scopes, controllers = v_item -> 'controllers',
+            delegate = v_item ->> 'delegate', updated_at = pg_catalog.clock_timestamp()
+      where flag_key = v_key;
+    end if;
+    insert into private.feature_flag_definition_audit (
+      flag_key, old_definition, new_definition, acknowledged_widening
+    ) values (v_key, v_old_json, v_new_json, v_widened);
+    v_changed := v_changed + 1;
   end loop;
   perform pg_catalog.set_config('feature_flags.entrypoint', '', true);
 
@@ -396,12 +477,12 @@ begin
 end;
 $flag$;
 
-comment on function private.feature_flag_sync_definitions(jsonb) is
-  'Upserts runtime flag definitions from deployed code. Refuses malformed or duplicate entries and a scope removal that would orphan a stored rule.';
+comment on function private.feature_flag_sync_definitions(jsonb, boolean) is
+  'Upserts runtime flag definitions from deployed code and audits each change. Refuses malformed or duplicate entries, a scope removal that would orphan a live rule, and an unacknowledged control widening over live rules.';
 
-revoke all on function private.feature_flag_sync_definitions(jsonb)
+revoke all on function private.feature_flag_sync_definitions(jsonb, boolean)
   from public, anon, authenticated;
-grant execute on function private.feature_flag_sync_definitions(jsonb)
+grant execute on function private.feature_flag_sync_definitions(jsonb, boolean)
   to service_role;
 
 create function private.feature_flag_mutate_rule(
@@ -425,7 +506,9 @@ declare
   );
   v_old jsonb;
   v_old_revision bigint;
+  v_rows integer;
 begin
+  perform private.feature_flag_require_service_role();
   if p_actor is null then
     raise exception 'feature_flag_denied' using errcode = '42501';
   end if;
@@ -490,12 +573,16 @@ begin
 
   select * into v_audit from private.feature_flag_audit where operation_id = p_operation_id;
   if found then
+    -- An operation id belongs to one actor and one rule identity.
+    if v_audit.actor_id is distinct from p_actor or v_audit.flag_key <> p_flag_key
+      or v_audit.environment <> p_environment or v_audit.scope <> p_scope
+      or v_audit.subject_id is distinct from p_subject_id
+    then
+      raise exception 'feature_flag_operation_conflict' using errcode = '22023';
+    end if;
     return pg_catalog.jsonb_build_object(
       'status', 'replayed', 'replayed', true,
-      'matchesRequest', v_audit.flag_key = p_flag_key
-        and v_audit.environment = p_environment and v_audit.scope = p_scope
-        and v_audit.subject_id is not distinct from p_subject_id
-        and v_audit.new_rule is not distinct from v_new,
+      'matchesRequest', v_audit.new_rule is not distinct from v_new,
       'operationId', v_audit.operation_id, 'flagKey', v_audit.flag_key,
       'environment', v_audit.environment, 'scope', v_audit.scope,
       'subjectId', v_audit.subject_id, 'oldRule', v_audit.old_rule,
@@ -530,6 +617,20 @@ begin
     );
   end if;
 
+  -- At most 50000 live workspace and user rules per flag and environment.
+  if p_scope <> 'platform' and v_old is null and v_new is not null then
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+      pg_catalog.concat_ws(':', 'feature_flag_rule_cap', p_flag_key, p_environment), 0
+    ));
+    if (
+      select pg_catalog.count(*) from private.feature_flag_rules
+      where flag_key = p_flag_key and environment = p_environment
+        and scope <> 'platform' and mode is not null
+    ) >= 50000 then
+      raise exception 'feature_flag_rule_limit' using errcode = '54000';
+    end if;
+  end if;
+
   perform pg_catalog.set_config('feature_flags.entrypoint', 'mutate_rule', true);
   insert into private.feature_flag_rules as current (
     flag_key, scope, subject_id, environment, mode, percentage,
@@ -548,6 +649,10 @@ begin
         updated_by = excluded.updated_by,
         updated_at = excluded.updated_at
     where current.revision = v_old_revision;
+  get diagnostics v_rows = row_count;
+  if v_rows <> 1 then
+    raise exception 'feature_flag_write_lost' using errcode = '40001';
+  end if;
 
   insert into private.feature_flag_audit (
     operation_id, actor_id, flag_key, scope, subject_id, environment,
@@ -576,124 +681,4 @@ comment on function private.feature_flag_mutate_rule(uuid, uuid, text, text, tex
 revoke all on function private.feature_flag_mutate_rule(uuid, uuid, text, text, text, uuid, text, integer, uuid[], uuid[], bigint, text, text)
   from public, anon, authenticated;
 grant execute on function private.feature_flag_mutate_rule(uuid, uuid, text, text, text, uuid, text, integer, uuid[], uuid[], bigint, text, text)
-  to service_role;
-
-create function private.feature_flag_read_snapshot(p_environment text)
-returns jsonb language plpgsql security definer stable
-set search_path = pg_catalog, pg_temp
-as $flag$
-declare
-  v_role text := coalesce(
-    nullif(pg_catalog.current_setting('request.jwt.claim.role', true), ''),
-    nullif(pg_catalog.current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
-  );
-  v_rules jsonb;
-begin
-  if v_role is not null and v_role is distinct from 'service_role' then
-    raise exception 'feature_flag_denied' using errcode = '42501';
-  end if;
-  if p_environment is null or p_environment not in ('development', 'production') then
-    raise exception 'feature_flag_unknown_environment' using errcode = '22023';
-  end if;
-  select coalesce(pg_catalog.jsonb_agg(item order by flag_key, scope, subject_id nulls first), '[]'::jsonb)
-    into v_rules
-  from (
-    select r.flag_key, r.scope, r.subject_id,
-      pg_catalog.jsonb_strip_nulls(private.feature_flag_rule_json(
-        r.mode, r.percentage, r.allow_workspace_ids, r.allow_user_ids
-      )) || pg_catalog.jsonb_build_object(
-        'flagKey', r.flag_key, 'scope', r.scope, 'subjectId', r.subject_id,
-        'revision', r.revision
-      ) as item
-    from private.feature_flag_rules as r
-    where r.environment = p_environment and r.mode is not null
-  ) as live;
-  return pg_catalog.jsonb_build_object(
-    'environment', p_environment,
-    'version', pg_catalog.md5(v_rules::text),
-    'rules', v_rules
-  );
-end;
-$flag$;
-
-comment on function private.feature_flag_read_snapshot(text) is
-  'Service-role rule snapshot for one server-selected environment. version is a digest of the returned rules for snapshot caches.';
-
-revoke all on function private.feature_flag_read_snapshot(text)
-  from public, anon, authenticated;
-grant execute on function private.feature_flag_read_snapshot(text)
-  to service_role;
-
-create function private.feature_flag_read_rules(
-  p_actor uuid, p_flag_key text, p_environment text
-)
-returns jsonb language plpgsql security definer stable
-set search_path = pg_catalog, pg_temp
-as $flag$
-begin
-  perform private.feature_flag_require_root(
-    p_actor, array['view_infrastructure', 'manage_feature_flags']::text[]
-  );
-  if p_environment is null or p_environment not in ('development', 'production') then
-    raise exception 'feature_flag_unknown_environment' using errcode = '22023';
-  end if;
-  return pg_catalog.jsonb_build_object('rules', coalesce((
-    select pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
-        'flagKey', flag_key, 'scope', scope, 'subjectId', subject_id,
-        'environment', environment,
-        'rule', private.feature_flag_rule_json(
-          mode, percentage, allow_workspace_ids, allow_user_ids
-        ),
-        'revision', revision, 'updatedBy', updated_by, 'updatedAt', updated_at
-      ) order by flag_key, scope, subject_id nulls first)
-    from private.feature_flag_rules
-    where environment = p_environment
-      and (p_flag_key is null or flag_key = p_flag_key)
-  ), '[]'::jsonb));
-end;
-$flag$;
-
-comment on function private.feature_flag_read_rules(uuid, text, text) is
-  'Stored rules, including unset rules and their revisions, for root flag viewers and managers.';
-
-revoke all on function private.feature_flag_read_rules(uuid, text, text)
-  from public, anon, authenticated;
-grant execute on function private.feature_flag_read_rules(uuid, text, text)
-  to service_role;
-
-create function private.feature_flag_read_audit(
-  p_actor uuid, p_limit integer default 50, p_before timestamptz default null
-)
-returns jsonb language plpgsql security definer stable
-set search_path = pg_catalog, pg_temp
-as $flag$
-begin
-  perform private.feature_flag_require_root(
-    p_actor, array['view_infrastructure', 'manage_feature_flags']::text[]
-  );
-  return pg_catalog.jsonb_build_object('rows', coalesce((
-    select pg_catalog.jsonb_agg(item order by occurred_at desc, id desc)
-    from (
-      select id, occurred_at, pg_catalog.jsonb_build_object(
-        'operationId', operation_id, 'actorId', actor_id, 'flagKey', flag_key,
-        'scope', scope, 'subjectId', subject_id, 'environment', environment,
-        'oldRule', old_rule, 'newRule', new_rule, 'oldRevision', old_revision,
-        'newRevision', new_revision, 'reason', reason, 'client', client,
-        'occurredAt', occurred_at
-      ) as item
-      from private.feature_flag_audit
-      where p_before is null or occurred_at < p_before
-      order by occurred_at desc, id desc
-      limit least(greatest(coalesce(p_limit, 50), 1), 100)
-    ) as page
-  ), '[]'::jsonb));
-end;
-$flag$;
-
-comment on function private.feature_flag_read_audit(uuid, integer, timestamptz) is
-  'Newest-first rule audit page (1 to 100 rows) for root flag viewers and managers.';
-
-revoke all on function private.feature_flag_read_audit(uuid, integer, timestamptz)
-  from public, anon, authenticated;
-grant execute on function private.feature_flag_read_audit(uuid, integer, timestamptz)
   to service_role;

@@ -58,7 +58,7 @@ function isAbsent(value: unknown) {
   return value === undefined || value === null;
 }
 
-function isIncluded<T extends string>(
+export function isIncluded<T extends string>(
   list: readonly T[],
   value: unknown
 ): value is T {
