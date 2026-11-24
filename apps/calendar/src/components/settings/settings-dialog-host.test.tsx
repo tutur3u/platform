@@ -152,7 +152,13 @@ describe('Calendar dedicated settings host', () => {
     expect(intent.defaultPrevented).toBe(true);
     expect(mocks.setQuery).toHaveBeenCalledTimes(1);
     expect(mocks.setQuery).toHaveBeenCalledWith(
-      { settingsDialog: 'open', settingsTab: 'calendar_hours' },
+      // Opening Settings closes Upgrade: one account dialog at a time.
+      {
+        settingsDialog: 'open',
+        settingsTab: 'calendar_hours',
+        upgradeDialog: null,
+        upgradeTab: null,
+      },
       expect.objectContaining({ history: 'push', shallow: true })
     );
     view.unmount();
@@ -165,7 +171,12 @@ describe('Calendar dedicated settings host', () => {
     );
     mocks.shortcut.mock.lastCall?.[0].onOpen();
     expect(mocks.setQuery).toHaveBeenCalledWith(
-      { settingsDialog: 'open', settingsTab: null },
+      {
+        settingsDialog: 'open',
+        settingsTab: null,
+        upgradeDialog: null,
+        upgradeTab: null,
+      },
       expect.objectContaining({ history: 'push', shallow: true })
     );
     mocks.setQuery.mockClear();
