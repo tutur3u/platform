@@ -35,6 +35,8 @@ self_v1=(
   20261111120206_meet_ai_chunks_stream_identity_guard
   20261111120207_validate_meet_ai_self_v1_constraints
   20261111120208_meet_ai_self_v1_read_contracts
+  20261124100000_meet_ai_self_v1_capture_path
+  20261124100100_meet_ai_self_v1_cost_rpcs
 )
 # main's meet-ai-consent-schema/-retention suites need main's full parent RLS
 # (workspace_meetings policies, creator membership triggers); run them on a
@@ -43,6 +45,7 @@ suites=(
   meet-ai-self-v1-schema
   meet-ai-self-v1-read-contract
   meet-ai-self-v1-consent
+  meet-ai-self-v1-capture-path
 )
 forward() {
   local m
@@ -86,7 +89,9 @@ echo '== forward'
 suites_pass
 
 # Rollback round trip, in the documented order, then forward again.
-for m in 20261111120208_meet_ai_self_v1_read_contracts \
+for m in 20261124100100_meet_ai_self_v1_cost_rpcs \
+  20261124100000_meet_ai_self_v1_capture_path \
+  20261111120208_meet_ai_self_v1_read_contracts \
   20261111120207_validate_meet_ai_self_v1_constraints \
   20261111120206_meet_ai_chunks_stream_identity_guard \
   20261111120205_meet_ai_chunks_timeline_idx \
