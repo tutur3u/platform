@@ -1,7 +1,7 @@
 ---
 title: "CMS Start cutover packet"
 description: "Source and operator checklist for a future CMS Worker cutover."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-24"
 audience: developers
 ---
 
@@ -59,3 +59,63 @@ restore command and rollback owner. No deployment ID is recorded in this
 repository, so Rex must capture it. Restore that routing to the prior deployment
 immediately if smoke or the post-cutover watch regresses. Keep the deployment
 available for the full release cycle.
+
+## CMS caching and purge
+
+Public CMS delivery and published assets are served by `apps/web` behind an edge
+cache keyed on the per-workspace delivery version. The product rules live in
+[Caching and publish visibility](/platform/features/external-project-studio#caching-and-publish-visibility);
+this section is the operator procedure.
+
+### Verify a HIT or MISS
+
+Read the response headers on the public delivery route (replace the workspace id; no
+credentials are needed for published content):
+
+```sh
+curl -sS -D - -o /dev/null \
+  "https://tuturuuu.com/api/v1/workspaces/<wsId>/external-projects/delivery" \
+  | grep -i -E '^(HTTP|cache-control|etag|x-tuturuuu-delivery-)'
+```
+
+- `X-Tuturuuu-Delivery-Cache: MISS` on the first read after a version change, then
+  `HIT` on repeats. `BYPASS` means the fence is on, the request was a preview, or the
+  read was not eligible for the edge cache.
+- `X-Tuturuuu-Delivery-Version` is the number the cache key is built from. It must
+  equal the `version` returned by
+  `GET /api/v1/workspaces/<wsId>/external-projects/delivery/version`.
+- Send the returned `ETag` back as `If-None-Match`; a `304` with no body confirms
+  revalidation. A preview read (`?preview=true`) must answer `private, no-store` and
+  `BYPASS`. A `public` Cache-Control on a preview read is a defect: stop and escalate.
+- Asset reads (`.../external-projects/assets/<assetId>?v=<digest>`) report the same
+  cache header and carry `public, max-age=3600, s-maxage=86400` only for published
+  digests.
+
+### Bust the cache
+
+- Normal edits need nothing: any content write (entries, blocks, assets, relations,
+  field definitions, page versions, publish events, asset publication proofs, binding
+  and template changes) bumps the workspace version in the same transaction, and the
+  next read after the 2 second isolate memo misses and rebuilds.
+- A manual bump goes only through a reviewed migration or an admin action. Never run
+  ad-hoc SQL against production and never edit the version table by hand.
+- `apps/cms-renderer` keys its rendered HTML on the delivery version as well, so a
+  publish needs no `/__cms/purge` call. `POST /__cms/purge` with
+  `{"scope":"workspace"}` and the site's purge token still rotates that site's HTML
+  namespace when an operator must force a re-render.
+- External apps that cache delivery compare
+  `GET .../external-projects/delivery/version` and re-read delivery only when the
+  number changed.
+
+### Fence and rollback
+
+- Fence: set `CMS_DELIVERY_EDGE_CACHE=0` on the web Worker and redeploy through the
+  normal release path. Delivery and asset reads then answer `BYPASS` and rebuild on
+  every request; the version endpoint and the editor are unaffected. Use it first when
+  stale content is reported and `X-Tuturuuu-Delivery-Version` already matches the
+  version endpoint.
+- Rollback: revert the web commit that introduced the edge cache. The version table
+  and its triggers are harmless if left in place, so the database needs no rollback.
+- Cost bound: one primary-key read per workspace per isolate every 2 seconds on the
+  version path and one row upsert per write statement. The Cache API adds no
+  per-operation charge and no new Cloudflare binding.

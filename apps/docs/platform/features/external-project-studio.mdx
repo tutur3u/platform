@@ -1,7 +1,7 @@
 ---
 title: 'Tuturuuu CMS'
 description: 'Site editing, publishing, preview, team access, and internal site-template operations for Tuturuuu CMS.'
-updatedAt: '2026-08-26'
+updatedAt: '2026-11-24'
 audience: users
 ---
 
@@ -455,6 +455,71 @@ bearer, manage access, quota (413), type (415) and duplicate (409) checks.
   it with a ruleset-wide or domain-wide skip.
 - Roll back: delete the rule by id from the `http_request_firewall_managed`
   entrypoint and read back that the other rules are unchanged.
+
+## Caching and publish visibility
+
+Scope: the public delivery read (`GET /api/v1/workspaces/{wsId}/external-projects/delivery`),
+published asset and image-variant reads, the version endpoint, and the CMS editor
+shell. Affected surfaces: `apps/web` (delivery and asset routes), `packages/sdk`,
+`packages/internal-api`, `apps/cms-renderer`, and `apps/cms`.
+
+Defaults:
+
+- **Delivery is edge-cached and keyed on the per-workspace delivery version.** Every
+  content write bumps the workspace version in the same transaction, so a publish is
+  visible to readers within about 2 seconds (the per-isolate version memo). Public
+  delivery answers `Cache-Control: public, max-age=0, s-maxage=5, stale-while-revalidate=30`
+  with a weak `ETag` and honors `If-None-Match` with a `304`.
+- **Preview and drafts are never cached.** `?preview=true` and every authenticated or
+  draft read answer `private, no-store` and skip the edge cache entirely. `404`, `400`
+  and `5xx` responses are never stored.
+- **Assets are cached for 1 hour in the browser and 1 day at the edge**
+  (`public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400`), keyed on the
+  asset, the published digest in `?v=`, the transform parameters and the delivery
+  version, so an unpublish or republish is re-verified at the edge within about 2
+  seconds. Signed-URL redirects and authenticated asset reads stay `private, no-store`.
+- **Fence:** set `CMS_DELIVERY_EDGE_CACHE=0` on the web Worker to bypass the delivery and
+  asset edge caches. The version endpoint keeps working while the fence is on.
+- **External apps key their own caches on the version.**
+  `GET /api/v1/workspaces/{wsId}/external-projects/delivery/version` returns
+  `{ "version": <number> }` with `no-store`, from one primary-key read memoized for
+  2 seconds. The number changes whenever any content, publish event, asset publication
+  or binding for the workspace changes; compare it, then re-read delivery only when it
+  moved. Delivery responses also carry `X-Tuturuuu-Delivery-Version` and
+  `X-Tuturuuu-Delivery-Cache: HIT | MISS | BYPASS`.
+
+Client behavior:
+
+- `EpmClient.getDelivery()` in `@tuturuuu/sdk` remembers the last `ETag` and body per
+  base URL and workspace, sends `If-None-Match`, and returns the remembered body on a
+  `304`. Preview reads never use the memo. `EpmClient.getDeliveryVersion()` reads the
+  version endpoint.
+- Public reads through `@tuturuuu/internal-api` leave the cache mode to the HTTP layer;
+  only preview forces `no-store`.
+- `apps/cms-renderer` revalidates delivery with `If-None-Match` from an in-isolate memo
+  and adds `X-Tuturuuu-Delivery-Version` to its rendered-HTML cache key, so a publish
+  misses the HTML cache without a `/__cms/purge` call. `/__cms/purge` still rotates
+  the workspace namespace when an operator needs it.
+
+Editor (`apps/cms`): authenticated editor responses are never shared-cached and every
+access check is unchanged. The workspace layout starts the workspace, root permission,
+binding and access reads together and consults each one only behind the same checks as
+a sequential flow. Root permissions, the default binding read and the games flag are
+memoized per request, so the layout, navigation and pages share one read. The content
+page streams the studio payload from the server with the editor's own session and falls
+back to the client fetch if that read fails.
+
+Intentional exceptions: draft edits also bump the version (over-invalidation is safe
+because drafts are never cached), and a hard delete that leaves the delivery `ETag`
+unchanged still moves the version, so keyed consumers pick it up on their next read.
+
+Regression coverage: `packages/sdk/src/epm-delivery.test.ts`,
+`packages/internal-api/src/external-projects.test.ts`,
+`apps/cms-renderer/src/delivery-cache.test.ts`,
+`apps/cms/src/app/[locale]/(dashboard)/[wsId]/layout.test.tsx`,
+`apps/cms/src/lib/external-projects/initial-studio.test.ts`, plus the delivery
+edge-cache unit tests and the pgTAP version-counter test that ship with the web change.
+Operations: see [CMS caching and purge](/build/devops/cms-start-void#cms-caching-and-purge).
 
 ## Implementation Notes
 

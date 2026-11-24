@@ -1026,14 +1026,12 @@ export class EpmClient {
   }
 
   /** Cheap per-workspace delivery revision, for keying an external cache. */
-  async getDeliveryVersion(
-    workspaceId: string
-  ): Promise<{ version: number | string }> {
+  async getDeliveryVersion(workspaceId: string): Promise<{ version: number }> {
     if (!workspaceId.trim()) {
       throw new ValidationError('Workspace ID is required');
     }
 
-    return this.request<{ version: number | string }>(
+    return this.request<{ version: number }>(
       `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/delivery/version`
     );
   }
