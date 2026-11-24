@@ -1,7 +1,7 @@
 import type { Ledger, ResourceState } from './ledger';
 import { OWNER_KINDS } from './ledger';
 import { LIMITS, QA_PURPOSE } from './policy';
-import type { TuturuuuQaClient } from './tuturuuu-qa';
+import { cleanupIncomplete, type TuturuuuQaClient } from './tuturuuu-qa';
 import type { PurgeResult, UpskiiProvisioner } from './upskii';
 
 /**
@@ -29,7 +29,13 @@ export interface Leak {
 const PURGE_ROUNDS = 10;
 const SWEEP_PAGES = 5;
 
+/** An empty listing proves nothing: a deleted run still lists its rows. */
+function runGone(rows: { deletedAt: string | null }[]) {
+  return rows.length > 0 && rows.every((u) => u.deletedAt !== null);
+}
+
 function purgeClean(result: PurgeResult) {
+  if (result.more) return false;
   const zero = Object.values(result.counts).every((count) => count === 0);
   return result.purge?.clean === undefined ? zero : result.purge.clean && zero;
 }
@@ -45,8 +51,11 @@ async function purgeIdentity(deps: CleanupDeps, userId: string) {
 async function cleanOwner(deps: CleanupDeps, owner: ResourceState) {
   if (!owner.id) return 'never-created';
   if (owner.kind === 'tuturuuu-qa-run') {
-    const result = await deps.tuturuuu.cleanupRun(owner.id);
-    if (result.pending?.length) throw new Error('Tuturuuu cleanup pending');
+    const incomplete = cleanupIncomplete(
+      await deps.tuturuuu.cleanupRun(owner.id)
+    );
+    if (incomplete)
+      throw new Error(`Tuturuuu cleanup incomplete: ${incomplete}`);
     return 'deleted';
   }
   await purgeIdentity(deps, owner.id);
@@ -99,9 +108,7 @@ export async function verify(ledger: Ledger, deps: CleanupDeps) {
     try {
       const gone =
         state.kind === 'tuturuuu-qa-run'
-          ? (await deps.tuturuuu.list(state.id)).every(
-              (u) => u.deletedAt !== null
-            )
+          ? runGone(await deps.tuturuuu.list(state.id))
           : purgeClean(await deps.upskii.purge(state.id, 'verify'));
       ledger.verified(state.key, gone);
       if (!gone)
@@ -147,7 +154,10 @@ export async function sweep(
   );
   for (const runId of runs) {
     try {
-      await deps.tuturuuu.cleanupRun(runId);
+      const incomplete = cleanupIncomplete(
+        await deps.tuturuuu.cleanupRun(runId)
+      );
+      if (incomplete) throw new Error(`incomplete: ${incomplete}`);
       swept.push(`tuturuuu-run:${runId}`);
     } catch (error) {
       failures.push(`tuturuuu-run:${runId}: ${(error as Error).message}`);

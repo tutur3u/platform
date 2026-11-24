@@ -1,5 +1,6 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { ensurePrivateDir } from './private-files';
 
 /**
  * Append-only run ledger. Every resource is recorded BEFORE the call that
@@ -73,7 +74,7 @@ export class Ledger {
     readonly path: string,
     private readonly now: () => Date = () => new Date()
   ) {
-    mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+    ensurePrivateDir(dirname(path));
   }
 
   private append(event: Event) {

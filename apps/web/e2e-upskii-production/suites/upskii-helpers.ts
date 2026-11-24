@@ -1,13 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import {
-  closeSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeSync,
-} from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { BrowserContext } from '@playwright/test';
 import { type Actors, loadActors } from '../actors';
@@ -15,6 +7,7 @@ import { owners, requiredInput, run } from '../fixtures';
 import { call, jsonInit } from '../http';
 import { type Actor, Ledger, type ResourceRecord } from '../ledger';
 import { HOSTS, on } from '../policy';
+import { writePrivateFile } from '../private-files';
 import {
   type UpskiiApp,
   type UpskiiIdentity,
@@ -291,34 +284,23 @@ type SeedCache = { teacherId?: string; classId?: string };
 
 /** Reads the cache in one call; a missing or unreadable file is a miss. */
 function readSeedCache(path: string): SeedCache | null {
+  let raw: string;
   try {
-    return JSON.parse(readFileSync(path, 'utf8')) as SeedCache;
+    raw = readFileSync(path, 'utf8');
   } catch {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as SeedCache;
+  } catch {
+    // A corrupt cache reseeds; say so, since both classes are then live.
+    console.warn('Upskii E2E: seed-class cache unreadable; seeding again');
     return null;
   }
 }
 
-/**
- * Writes the cache atomically: a fresh temp file created exclusively (0600)
- * in the 0700 run directory, written through its descriptor, then renamed
- * over the cache, so no reader sees a partial file and no existing path is
- * reused.
- */
 function writeSeedCache(path: string, value: SeedCache) {
-  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-  const temp = `${path}.${randomUUID()}.tmp`;
-  const fd = openSync(temp, 'wx', 0o600);
-  try {
-    writeSync(fd, JSON.stringify(value));
-  } finally {
-    closeSync(fd);
-  }
-  try {
-    renameSync(temp, path);
-  } catch (error) {
-    rmSync(temp, { force: true });
-    throw error;
-  }
+  writePrivateFile(path, JSON.stringify(value));
 }
 
 export async function isActiveMember(

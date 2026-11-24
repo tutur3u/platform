@@ -28,14 +28,14 @@ The `educator` and `learner` suites make at most one AI model call per run.
 | --- | --- |
 | `workflow_dispatch` (`mode: run`, optional `suites`) | The selected suites, then cleanup |
 | `workflow_dispatch` (`mode: sweep`) | Orphan cleanup only |
-| `workflow_run` after a successful `Production Deployment Planner` (web, `production`) or `Meet Cloudflare` (`main`) run | All suites |
+| `workflow_run` after a successful `Production Deployment Planner` or `Meet Cloudflare` run from the `production` branch | All suites |
 | `repository_dispatch` `upskii-production-deployed`, sent by Upskii's production deploy | All suites |
 | Daily schedule (20:43 UTC) | Orphan cleanup only; the suites never run on a schedule |
 
 - **Trusted triggers only.** A credential-free `gate` job re-proves every `workflow_run` completion with the canonical trust step (producer path, workflow ID, exact branch, event, conclusion and same repository) and applies the kill switch before the production job starts.
 - **One run at a time.** Runs share the concurrency group `upskii-production-e2e`, which never cancels a run that is cleaning up.
 - **No retries.** Playwright retries are `0`, and production writes are not repeated.
-- **Hard timeouts.** The job has 35 minutes, the suites 22, each test 120 seconds and each API request 20 seconds. Cleanup has a 5-minute deadline.
+- **Hard timeouts.** The job has 48 minutes, the suites 22, each test 120 seconds and each API request 20 seconds. Cleanup has a 5-minute deadline.
 - **Daily runs.** The Tuturuuu operator allows at most 12 QA runs per rolling 24 hours. Each suite run uses two (members and the non-member), so about six suite runs a day fit.
 
 ## Kill switch
@@ -58,15 +58,17 @@ Two upstream switches also stop provisioning:
 | `UPSKII_QA_PROVISIONER_TOKEN` | Secret in environment `upskii-production-e2e` | Upskii per-run QA identities, the seed class, and the purge |
 | `UPSKII_PRODUCTION_E2E_ENABLED` | Repository variable | Kill switch |
 
-Passwords that the provisioners return stay in a `0600` file in the runner's
-temp directory and are deleted in global teardown. Traces and video are off,
+Passwords that the provisioners return stay in a `0600` file, written
+atomically, in a private `0700` directory under the runner's temp directory.
+Global teardown deletes it, and `cli.ts cleanup` deletes it again in case
+Playwright crashed first. Traces and video are off,
 because they can capture session cookies. Failure screenshots are kept for
 3 days.
 
 ## Cleanup guarantees
 
 Cleanup works through two kinds of owner, recorded in an append-only run
-ledger (`tmp/upskii-production-e2e/ledger.jsonl`) before each create call
+ledger (`$RUNNER_TEMP/upskii-production-e2e/ledger.jsonl`) before each create call
 returns:
 
 - **A Tuturuuu QA run.** Deleting it deletes its accounts and run workspace.

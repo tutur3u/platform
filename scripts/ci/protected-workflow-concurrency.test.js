@@ -131,11 +131,11 @@ for (const file of serialized) {
       workflows[file].jobs?.deploy?.concurrency || workflows[file].concurrency;
     assert.equal(c['cancel-in-progress'], false);
     assert.equal(c.queue, 'max');
-    // Staging migrations and Cloudflare deploys are dispatched from main.
+    // Staging migrations, Cloudflare deploys and production E2E use main.
     const ref =
       file.endsWith('-cloudflare.yaml') ||
       file === 'supabase-staging.yaml' ||
-      file === 'release-sdk-dev.yaml'
+      ['release-sdk-dev.yaml', 'upskii-production-e2e.yaml'].includes(file)
         ? 'refs/heads/main'
         : 'refs/heads/production';
     const first = context(ref, 'first', 1, 'workflow_dispatch');

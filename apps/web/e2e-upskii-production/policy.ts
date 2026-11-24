@@ -1,3 +1,5 @@
+import { productionSupabaseProjectRefs } from '../../../scripts/wave1-staging/profiles.ts';
+
 /**
  * Production E2E policy for the Upskii suites (meet-flow, learner, educator,
  * admin). Hosts are fixed production origins; nothing here can be pointed at
@@ -104,6 +106,10 @@ export function readRunConfig(env: Env): RunConfig {
 }
 
 const ORIGINS: ReadonlySet<string> = new Set(Object.values(HOSTS));
+/** Only the production Supabase project's Auth endpoints may receive writes. */
+const PRODUCTION_SUPABASE_ORIGINS: ReadonlySet<string> = new Set(
+  productionSupabaseProjectRefs.map((ref) => `https://${ref}.supabase.co`)
+);
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
@@ -117,7 +123,7 @@ export function allowedBrowserRequest(url: string, method: string): boolean {
   if (ORIGINS.has(target.origin)) return true;
   if (target.origin === 'https://challenges.cloudflare.com') return true;
   return (
-    /^https:\/\/[a-z0-9]{20}\.supabase\.co$/u.test(target.origin) &&
+    PRODUCTION_SUPABASE_ORIGINS.has(target.origin) &&
     target.pathname.startsWith('/auth/v1/')
   );
 }

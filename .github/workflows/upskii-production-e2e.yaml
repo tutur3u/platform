@@ -20,11 +20,12 @@ on:
         description: Comma-separated subset of meet-flow,learner,educator,admin (or all)
         type: string
         default: all
-  # After Tuturuuu production deploys (Web marker; Meet release on main).
+  # After Tuturuuu production deploys (web and Meet, both from production).
   workflow_run:
     workflows: ["Production Deployment Planner", "Meet Cloudflare"]
     types: [completed]
-    branches: [main, production]
+    # Both producers deploy to production only from the production branch.
+    branches: [production]
   # Sent by Upskii's production deploy job after it goes live.
   repository_dispatch:
     types: [upskii-production-deployed]
@@ -36,8 +37,10 @@ permissions:
   contents: read
 
 concurrency:
-  # One run at a time across every trigger; never cancel a run mid-cleanup.
-  group: upskii-production-e2e
+  # One run at a time across every admissible trigger; never cancel a run
+  # mid-cleanup. Completions that the gate would refuse get their own group,
+  # so they can never replace a queued production run.
+  group: ${{ ((github.event_name == 'schedule' || github.event_name == 'repository_dispatch' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'production' && ((github.event.workflow_run.name == 'Production Deployment Planner' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Meet Cloudflare' && github.event.workflow_run.event == 'push')))) && 'upskii-production-e2e' || format('upskii-production-e2e-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
   queue: max
 
@@ -71,7 +74,7 @@ jobs:
           # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
           TRUSTED_PRODUCERS: |
             vercel-production.yaml 317228637 production push,workflow_dispatch success
-            meet-cloudflare.yaml 351494390 main push success
+            meet-cloudflare.yaml 351494390 production push success
         run: |
           set -euo pipefail
           # Expression `==` ignores case and workflow_run matches producers by name, so
@@ -188,10 +191,14 @@ jobs:
   e2e:
     name: Upskii production E2E (${{ github.event_name == 'schedule' && 'sweep' || inputs.mode || 'run' }})
     needs: [gate]
-    if: needs.gate.outputs.trusted == 'true'
+    # The kill switch is re-read here: a run queued before the switch was
+    # turned off must not start.
+    if: needs.gate.outputs.trusted == 'true' && vars.UPSKII_PRODUCTION_E2E_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: upskii-production-e2e
-    timeout-minutes: 35
+    # Covers setup, sweep (6) and suites (22) at their limits and still leaves
+    # cleanup (6) and verify (4) their full budgets.
+    timeout-minutes: 48
     permissions:
       contents: read
       # GitHub OIDC is the Tuturuuu QA operator credential; no stored secret.
@@ -200,7 +207,7 @@ jobs:
       UPSKII_PRODUCTION_E2E_ENABLED: ${{ vars.UPSKII_PRODUCTION_E2E_ENABLED }}
       UPSKII_E2E_RUN_LABEL: gh-${{ github.run_id }}-${{ github.run_attempt }}
       UPSKII_E2E_SUITES: ${{ inputs.suites || 'all' }}
-      UPSKII_E2E_LEDGER: ${{ github.workspace }}/tmp/upskii-production-e2e/ledger.jsonl
+      UPSKII_E2E_LEDGER: ${{ runner.temp }}/upskii-production-e2e/ledger.jsonl
       MODE: ${{ github.event_name == 'schedule' && 'sweep' || inputs.mode || 'run' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

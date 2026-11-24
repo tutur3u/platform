@@ -73,6 +73,22 @@ export interface SessionCookie {
   httpOnly: boolean;
 }
 
+/** `fenced` means cleanup is paused server-side; nothing was deleted. */
+export interface CleanupRunResult {
+  fenced?: boolean;
+  deleted?: string[];
+  pending?: string[];
+  skipped?: string[];
+}
+
+/** A cleanup is complete only when nothing was fenced, pending or skipped. */
+export function cleanupIncomplete(result: CleanupRunResult): string | null {
+  if (result.fenced) return 'cleanup is fenced';
+  if (result.pending?.length) return `${result.pending.length} pending`;
+  if (result.skipped?.length) return `${result.skipped.length} skipped`;
+  return null;
+}
+
 export function tuturuuuQaClient(
   auth: () => Promise<Record<string, string>>,
   fetchImpl: FetchLike = fetch
@@ -147,11 +163,7 @@ export function tuturuuuQaClient(
       const { json } = await req('qa cleanup', `${BASE}/cleanup`, {
         ...jsonInit('POST', { runId }),
       });
-      return json as {
-        deleted?: string[];
-        pending?: string[];
-        skipped?: string[];
-      };
+      return json as CleanupRunResult;
     },
   };
 }

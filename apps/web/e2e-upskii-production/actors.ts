@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Ledger } from './ledger';
+import { writePrivateFile } from './private-files';
 import { readRunConfig, type RunConfig, type Suite } from './policy';
 import type { QaUser, TuturuuuQaClient } from './tuturuuu-qa';
 import type { UpskiiIdentity, UpskiiProvisioner } from './upskii';
@@ -115,7 +116,7 @@ export async function provisionActors(
       outsider,
     };
   }
-  writeFileSync(actorsPath(config), JSON.stringify(actors), { mode: 0o600 });
+  writePrivateFile(actorsPath(config), JSON.stringify(actors));
   return actors;
 }
 

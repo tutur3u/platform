@@ -7,6 +7,7 @@
  * It prints only keys, kinds and status codes; never cookies or tokens.
  */
 import { appendFileSync } from 'node:fs';
+import { forgetActors } from './actors';
 import { cleanup, type CleanupDeps, sweep, verify } from './cleanup';
 import { Ledger } from './ledger';
 import { QA_PURPOSE, readRunConfig, required } from './policy';
@@ -57,6 +58,8 @@ async function main(command: string | undefined) {
     return;
   }
   if (command === 'cleanup') {
+    // Passwords leave the runner even when Playwright crashed before teardown.
+    forgetActors(config);
     const failures = await cleanup(ledger, deps);
     const owners = ledger.read().filter((r) => r.cleaned).length;
     summary([`Cleanup: ${owners} owner(s) settled`]);

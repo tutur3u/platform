@@ -97,13 +97,20 @@ describe('policy', () => {
     );
     expect(
       allowedBrowserRequest(
-        'https://abcdefghijabcdefghij.supabase.co/auth/v1/token',
+        'https://nzamlzqfdwaaxdefwraj.supabase.co/auth/v1/token',
         'POST'
       )
     ).toBe(true);
+    // Any other Supabase project, or a non-Auth path, is refused.
     expect(
       allowedBrowserRequest(
-        'https://abcdefghijabcdefghij.supabase.co/rest/v1/users',
+        'https://abcdefghijabcdefghij.supabase.co/auth/v1/token',
+        'POST'
+      )
+    ).toBe(false);
+    expect(
+      allowedBrowserRequest(
+        'https://nzamlzqfdwaaxdefwraj.supabase.co/rest/v1/users',
         'POST'
       )
     ).toBe(false);
@@ -303,5 +310,64 @@ describe('cleanup', () => {
     expect(result.failures).toContain(
       'upskii-identities: listing incomplete after sweep'
     );
+  });
+
+  it('treats fenced, pending or skipped Tuturuuu cleanup as incomplete', async () => {
+    for (const result of [
+      { fenced: true },
+      { pending: ['u'] },
+      { skipped: ['u'] },
+    ]) {
+      const l = ledger();
+      const { tuturuuu, deps } = fakes();
+      l.register({
+        key: 'tuturuuu-qa-run:r',
+        kind: 'tuturuuu-qa-run',
+        suite: 'm',
+        actor: 'operator',
+        id: 'run1',
+      });
+      tuturuuu.cleanupRun.mockResolvedValueOnce(result as never);
+      const failures = await cleanup(l, deps);
+      expect(failures).toHaveLength(1);
+      expect(l.read()[0]?.cleaned).toBe(false);
+    }
+    const { tuturuuu, deps } = fakes();
+    tuturuuu.list.mockResolvedValueOnce([
+      { runId: 'old', purpose: 'upskii-e2e', deletedAt: null },
+    ] as never);
+    tuturuuu.cleanupRun.mockResolvedValueOnce({ skipped: ['u'] } as never);
+    const swept = await sweep(deps);
+    expect(swept.swept).toEqual([]);
+    expect(swept.failures).toHaveLength(1);
+  });
+
+  it('verify never reads an empty listing or an unfinished purge as clean', async () => {
+    const l = ledger();
+    const { tuturuuu, upskii, deps } = fakes();
+    l.register({
+      key: 'tuturuuu-qa-run:r',
+      kind: 'tuturuuu-qa-run',
+      suite: 'm',
+      actor: 'operator',
+      id: 'run1',
+    });
+    l.register({
+      key: 'upskii-identity:r:teacher',
+      kind: 'upskii-identity',
+      suite: 'run',
+      actor: 'operator',
+      id: 'u1',
+    });
+    tuturuuu.list.mockResolvedValueOnce([] as never);
+    upskii.purge.mockResolvedValueOnce({
+      counts: { classes: 0 },
+      more: true,
+    } as never);
+    const leaks = await verify(l, deps);
+    expect(leaks.map((leak) => leak.key).sort()).toEqual([
+      'tuturuuu-qa-run:r',
+      'upskii-identity:r:teacher',
+    ]);
   });
 });
