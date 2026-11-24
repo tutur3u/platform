@@ -305,8 +305,12 @@ describe('room restore', () => {
       startedAt: T,
     });
     expect(restored.state.selfCapture?.mode).toBe('self');
-    // The ended session stays ended; a new allow needs a new session.
-    expect(settleSelfCapture(restored.state, T + 2000)).toBe(restored.state);
+    // The ended session stays ended and queues nothing; restore drops every
+    // Allow, so its notice evidence goes too.
+    const settled = settleSelfCapture(restored.state, T + 2000);
+    expect(settled.selfCapture?.outbox).toEqual(before.outbox);
+    expect(settled.selfCapture?.accounts).toEqual(before.accounts);
+    expect(settled.selfCapture?.allowNotices).toEqual({});
   });
 });
 

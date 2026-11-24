@@ -74,10 +74,14 @@ export function miraOn(state: RoomServiceState, id: string, now = 1_000_000) {
   );
 }
 
+/** Evidence of the notice shown: locale and the SHA-256 hex of its text. */
+export const notice = { locale: 'vi-VN', textHash: 'a'.repeat(64) };
+
 export const transcriptChoice = (choice: 'allow' | 'decline') => ({
   action: 'transcript.consent.choice',
   choice,
   version: MEET_TRANSCRIPT_NOTICE_VERSION,
+  ...(choice === 'allow' ? { notice } : {}),
 });
 
 /**
@@ -87,14 +91,16 @@ export const transcriptChoice = (choice: 'allow' | 'decline') => ({
 export function selfRoom(now = 1_000_000) {
   let state: RoomServiceState = createMeetRoomSnapshot();
   for (const id of [host, alice, bob]) state = admit(state, id);
-  state = acceptMira(state, host, 1, now);
-  for (const id of [host, alice, bob]) {
-    state = miraOn(state, id, now);
-    state = ok(svc(state, id, transcriptChoice('allow'), now));
-  }
+  // Choices are made early enough that every open bucket is full at `now`.
+  const earlier = now - 90_000;
+  state = acceptMira(state, host, 1, earlier);
   state = ok(
-    svc(state, host, { action: 'transcript.mode.set', mode: 'self' }, now)
+    svc(state, host, { action: 'transcript.mode.set', mode: 'self' }, earlier)
   );
+  for (const id of [host, alice, bob]) {
+    state = miraOn(state, id, earlier);
+    state = ok(svc(state, id, transcriptChoice('allow'), earlier));
+  }
   state = ok(
     svc(
       state,

@@ -7,9 +7,11 @@ import {
   settleSelfCapture,
   type SelfOutboxEntry,
 } from './room-self-capture-state';
+import { MEET_TRANSCRIPT_NOTICE_VERSION } from './room-transcript-consent';
 import {
   alice,
   begin,
+  notice,
   bob,
   host,
   ok,
@@ -198,5 +200,107 @@ describe('outbox credential', () => {
     expect(
       verifyMeetSelfOutboxCredential(token(now - 1), secret, nowMs)
     ).toBeNull();
+  });
+});
+
+describe('per-speaker notice evidence', () => {
+  const allow = (extra: Record<string, unknown>) => ({
+    action: 'transcript.consent.choice',
+    choice: 'allow',
+    version: MEET_TRANSCRIPT_NOTICE_VERSION,
+    ...extra,
+  });
+  const declined = () =>
+    ok(svc(selfRoom(), alice, transcriptChoice('decline'), T));
+
+  it('refuses a per-speaker Allow without valid evidence', () => {
+    const state = declined();
+    for (const bad of [
+      {},
+      { notice: { locale: 'vietnamese', textHash: 'a'.repeat(64) } },
+      { notice: { locale: 'vi', textHash: 'A'.repeat(64) } },
+      { notice: { locale: 'vi', textHash: 'a'.repeat(63) } },
+      { notice: { ...notice, text: 'the full notice' } },
+    ]) {
+      const result = svc(state, alice, allow(bad), T + 60_000);
+      expect(result.status).toBe(400);
+      expect(result.body).toMatchObject({ code: 'MEET_SELF_NOTICE_REQUIRED' });
+    }
+    const stale = svc(
+      state,
+      alice,
+      allow({ notice: { ...notice, noticeVersion: 'old' } }),
+      T + 60_000
+    );
+    expect(stale.status).toBe(409);
+    expect(stale.body).toMatchObject({ code: 'MEET_SELF_NOTICE_STALE' });
+    // Room capture keeps the plain Allow.
+    const roomMode = ok(
+      svc(
+        state,
+        host,
+        {
+          action: 'transcript.session',
+          sessionId,
+          active: false,
+          protocol: 'self_v1',
+        },
+        T
+      )
+    );
+    const room = ok(
+      svc(
+        roomMode,
+        host,
+        { action: 'transcript.mode.set', mode: 'room' },
+        T + 21_000
+      )
+    );
+    expect(svc(room, alice, allow({}), T + 60_000).status).toBeUndefined();
+  });
+
+  it('stores only version, locale and hash, returns them at open and clears them on withdraw', () => {
+    let state = ok(
+      svc(
+        declined(),
+        alice,
+        allow({ notice: { locale: 'en', textHash: 'b'.repeat(64) } }),
+        T + 60_000
+      )
+    );
+    expect(state.selfCapture?.allowNotices?.[alice]).toEqual({
+      noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
+      locale: 'en',
+      textHash: 'b'.repeat(64),
+    });
+    const begun = begin(state, alice, T + 60_000);
+    expect(begun.body).toMatchObject({
+      allowed: true,
+      noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
+      locale: 'en',
+      textHash: 'b'.repeat(64),
+    });
+    state = ok(
+      svc(begun.state, alice, transcriptChoice('decline'), T + 61_000)
+    );
+    expect(state.selfCapture?.allowNotices?.[alice]).toBeUndefined();
+    expect(state.selfCapture?.accounts[alice]?.legalAllow).toBeUndefined();
+    expect(state.selfCapture?.outbox.at(-1)).toMatchObject({
+      accountId: alice,
+      kind: 'withdraw',
+      noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
+    });
+  });
+
+  it('refuses an open without stored evidence', () => {
+    const state = selfRoom();
+    const bare: RoomServiceState = {
+      ...state,
+      selfCapture: { ...state.selfCapture!, allowNotices: {} },
+    };
+    expect(begin(bare, alice).body).toMatchObject({
+      allowed: false,
+      reason: 'consent',
+    });
   });
 });

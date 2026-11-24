@@ -219,6 +219,13 @@ export function applySelfCapture(
   )
     return refuse(spent, 'capacity');
   const base: SelfCaptureAccount = account ?? { epoch: 0, seq: 0, allows: 0 };
+  // A new legal allow needs the notice evidence of the current Allow.
+  const notice = capture.allowNotices?.[accountId];
+  if (
+    !base.legalAllow &&
+    notice?.noticeVersion !== MEET_TRANSCRIPT_NOTICE_VERSION
+  )
+    return refuse(spent, 'consent');
   if (!base.legalAllow && base.allows >= SELF_CAPTURE_MAX_ALLOWS)
     return refuse(spent, 'allow_limit');
   const seq = nextSeq(capture, base);
@@ -229,10 +236,7 @@ export function applySelfCapture(
     seq,
     epoch,
     allows: base.legalAllow ? base.allows : base.allows + 1,
-    legalAllow: base.legalAllow ?? {
-      seq,
-      noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
-    },
+    legalAllow: base.legalAllow ?? { seq, ...notice! },
     begun: { epoch, seq, acceptanceRevision: currentAcceptanceRevision(state) },
     lastBegin: { epoch, seq },
   };
@@ -250,6 +254,8 @@ export function applySelfCapture(
       allowSeq: seq,
       generation: current.generation,
       noticeVersion: opened.legalAllow!.noticeVersion,
+      locale: opened.legalAllow!.locale,
+      textHash: opened.legalAllow!.textHash,
       pending: pendingFor(selfCapture, accountId),
     },
   };

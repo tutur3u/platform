@@ -33,6 +33,15 @@ export type SelfOutboxEntry = {
   noticeVersion?: string;
 };
 export type SelfCaptureBucket = { tokens: number; at: number };
+/**
+ * The notice an Allow was given under: its version, the locale shown and a
+ * SHA-256 hex digest of the exact text. The room keeps no notice text.
+ */
+export type SelfAllowNotice = {
+  noticeVersion: string;
+  locale: string;
+  textHash: string;
+};
 export type SelfCaptureAccount = {
   /** Choice epoch: grows on every ending and every new open. */
   epoch: number;
@@ -41,7 +50,7 @@ export type SelfCaptureAccount = {
   /** Allow sequence numbers issued after a transition out of allow. */
   allows: number;
   /** The legal record may hold an allow given at this seq and notice. */
-  legalAllow?: { seq: number; noticeVersion: string };
+  legalAllow?: { seq: number } & SelfAllowNotice;
   begun?: { epoch: number; seq: number; acceptanceRevision: number };
   /** The latest begin, kept after endings so a late commit can be fenced. */
   lastBegin?: { epoch: number; seq: number };
@@ -64,6 +73,8 @@ export type SelfCaptureState = {
   /** Ledger of the current self_v1 session, keyed by account. */
   accounts: Record<string, SelfCaptureAccount>;
   outbox: SelfOutboxEntry[];
+  /** Notice evidence of each account's current per-speaker Allow. */
+  allowNotices?: Record<string, SelfAllowNotice>;
   /** Room-wide room sequence counter; never decreases. */
   seqCounter?: number;
   /** Accounts a host or co-host removed; kept across sessions. */
@@ -286,7 +297,40 @@ export function withdraw(
     committed: ___,
     ...rest
   } = next.accounts[accountId]!;
-  return { ...next, accounts: { ...next.accounts, [accountId]: rest } };
+  return {
+    ...next,
+    accounts: { ...next.accounts, [accountId]: rest },
+    allowNotices: withoutNotice(next.allowNotices, accountId),
+  };
+}
+
+function withoutNotice(
+  notices: SelfCaptureState['allowNotices'],
+  accountId: string
+) {
+  if (!notices?.[accountId]) return notices;
+  const { [accountId]: _, ...rest } = notices;
+  return rest;
+}
+
+/** Drops notice evidence for every account whose Allow is no longer current. */
+export function pruneAllowNotices<T extends State & SelfCaptureRoomState>(
+  state: T
+): T {
+  const notices = state.selfCapture?.allowNotices;
+  if (!notices) return state;
+  const kept = Object.fromEntries(
+    Object.entries(notices).filter(([accountId]) => {
+      const choice = state.transcriptConsent?.choices[accountId];
+      return (
+        choice?.choice === 'allow' &&
+        choice.version === MEET_TRANSCRIPT_NOTICE_VERSION
+      );
+    })
+  );
+  return Object.keys(kept).length === Object.keys(notices).length
+    ? state
+    : { ...state, selfCapture: { ...state.selfCapture!, allowNotices: kept } };
 }
 
 /** Closes (or revokes) the account's stream and forgets it. */
@@ -342,9 +386,10 @@ export function endSelfCaptureSession(
  * ends the session. Idempotent; returns the same object when unchanged.
  */
 export function settleSelfCapture<T extends State & SelfCaptureRoomState>(
-  state: T,
+  input: T,
   now = Date.now()
 ): T {
+  const state = pruneAllowNotices(input);
   const capture = state.selfCapture;
   const session = capture?.session;
   if (!capture || !session || session.status === 'ended') return state;
