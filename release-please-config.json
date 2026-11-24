@@ -191,6 +191,10 @@
       "component": "auth",
       "package-name": "@tuturuuu/auth"
     },
+    "packages/authz": {
+      "component": "authz",
+      "package-name": "@tuturuuu/authz"
+    },
     "packages/devbox": {
       "component": "devbox",
       "package-name": "@tuturuuu/devbox"

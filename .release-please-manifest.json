@@ -40,6 +40,7 @@
   "packages/ai": "0.19.0",
   "packages/apis": "0.13.2",
   "packages/auth": "0.8.0",
+  "packages/authz": "0.1.0",
   "packages/devbox": "0.3.2",
   "packages/education-core": "0.5.1",
   "packages/editor": "0.8.3",
