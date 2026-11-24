@@ -54,7 +54,7 @@ $$;
 comment on function private.ai_internal_payer_allows_model(uuid, text, text) is
   'Internal root allowance for the Meet AI model; root pays only for verified-staff Meet AI (D434).';
 
-revoke execute on function private.ai_internal_payer_allows_model(uuid, text, text)
+revoke all on function private.ai_internal_payer_allows_model(uuid, text, text)
   from public, anon, authenticated;
 grant execute on function private.ai_internal_payer_allows_model(uuid, text, text)
   to service_role;
@@ -77,7 +77,7 @@ returns table (
 language plpgsql
 volatile
 security definer
-set search_path to public, private, pg_temp
+set search_path to pg_catalog, public, private, pg_temp
 as $$
 declare
   v_tier workspace_product_tier;
@@ -241,7 +241,7 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path TO private, public, pg_temp
+SET search_path TO pg_catalog, private, public, pg_temp
 AS $$
 DECLARE
   v_global private.ai_studio_global_settings%ROWTYPE;
@@ -353,3 +353,17 @@ BEGIN
   RETURN TRUE;
 END;
 $$;
+
+-- CREATE OR REPLACE keeps each routine's existing ACL; restate it here so a
+-- fresh replay grants EXECUTE to service_role only. Staging carries
+-- check_ai_credit_allowance and ai_studio_model_allowed without the explicit
+-- pg_catalog search_path entry; PostgreSQL searches pg_catalog first either
+-- way, so their name resolution is the same.
+revoke all on function public.check_ai_credit_allowance(uuid, text, text, integer, uuid)
+  from public, anon, authenticated;
+grant execute on function public.check_ai_credit_allowance(uuid, text, text, integer, uuid)
+  to service_role;
+revoke all on function private.ai_studio_model_allowed(uuid, uuid, text)
+  from public, anon, authenticated;
+grant execute on function private.ai_studio_model_allowed(uuid, uuid, text)
+  to service_role;
