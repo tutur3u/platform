@@ -111,9 +111,9 @@ String formatWorkspaceStorageBytes(int bytes) {
 }
 
 bool isBooleanWorkspaceSecret(WorkspaceSecret secret) =>
-    secret.value == 'true' || secret.value == 'false';
+    !secret.valueMasked && (secret.value == 'true' || secret.value == 'false');
 
-/// Secrets whose name or value contains [query], sorted by name.
+/// Secrets whose name, or unmasked value, contains [query], sorted by name.
 List<WorkspaceSecret> filterWorkspaceSecrets(
   List<WorkspaceSecret> secrets,
   String query,
@@ -124,7 +124,8 @@ List<WorkspaceSecret> filterWorkspaceSecrets(
         (secret) =>
             needle.isEmpty ||
             (secret.name?.toLowerCase().contains(needle) ?? false) ||
-            (secret.value?.toLowerCase().contains(needle) ?? false),
+            (!secret.valueMasked &&
+                (secret.value?.toLowerCase().contains(needle) ?? false)),
       )
       .toList()
     ..sort(
@@ -396,7 +397,8 @@ class _DefinitionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final value = secret?.value ?? '';
-    final configured = value.isNotEmpty;
+    final configured = secret?.valueSet ?? false;
+    final hidden = definition.sensitive || (secret?.valueMasked ?? false);
     final (label, variant) = configured
         ? (l10n.settingsWorkspaceSecretsConfigured, AppBadgeVariant.success)
         : definition.required
@@ -410,7 +412,7 @@ class _DefinitionRow extends StatelessWidget {
       ),
       subtitle: Text(
         configured
-            ? definition.sensitive
+            ? hidden
                   ? workspaceSecretMask
                   : value
             : definition.description,
@@ -424,7 +426,8 @@ class _DefinitionRow extends StatelessWidget {
 }
 
 /// One secret: masked value with reveal and copy, or a switch for boolean
-/// values. Each row starts masked.
+/// values. Each row starts masked. A server-masked row has no value on the
+/// device, so it shows only whether one is stored.
 class WorkspaceSecretRow extends StatefulWidget {
   const WorkspaceSecretRow({
     required this.secret,
@@ -453,7 +456,9 @@ class _WorkspaceSecretRowState extends State<WorkspaceSecretRow> {
     final l10n = context.l10n;
     final secret = widget.secret;
     final value = secret.value ?? '';
+    final masked = secret.valueMasked;
     final boolean = isBooleanWorkspaceSecret(secret);
+    final revealed = _revealed && !masked;
     final Widget? trailing;
     if (widget.updating) {
       trailing = const AppLoadingIndicator.inline();
@@ -463,7 +468,7 @@ class _WorkspaceSecretRowState extends State<WorkspaceSecretRow> {
         semanticLabel: secret.name,
         onChanged: widget.onToggle,
       );
-    } else if (value.isEmpty) {
+    } else if (masked || value.isEmpty) {
       trailing = null;
     } else {
       trailing = Row(
@@ -490,9 +495,13 @@ class _WorkspaceSecretRowState extends State<WorkspaceSecretRow> {
         ? value == 'true'
               ? l10n.settingsWorkspaceSecretsStateEnabled
               : l10n.settingsWorkspaceSecretsStateDisabled
+        : masked
+        ? secret.valueSet
+              ? workspaceSecretMask
+              : l10n.settingsWorkspaceSecretsNoValue
         : value.isEmpty
         ? l10n.settingsWorkspaceSecretsNoValue
-        : _revealed
+        : revealed
         ? value
         : workspaceSecretMask;
     return AppGroupedRow(
@@ -503,7 +512,7 @@ class _WorkspaceSecretRowState extends State<WorkspaceSecretRow> {
       ),
       subtitle: Text(
         shown,
-        maxLines: _revealed ? 6 : 1,
+        maxLines: revealed ? 6 : 1,
         overflow: TextOverflow.ellipsis,
         style: boolean ? null : const TextStyle(fontFamily: 'monospace'),
       ),

@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   rollout: vi.fn(),
   verifySecret: vi.fn(),
   table: vi.fn(),
+  rolloutPanel: vi.fn(),
 }));
 
 vi.mock('next/server', () => ({ connection: mocks.connection }));
@@ -49,14 +50,31 @@ vi.mock('./form', () => ({ default: () => null }));
 vi.mock('./periodic-report-delivery-readiness', () => ({
   PeriodicReportDeliveryReadiness: () => null,
 }));
-vi.mock('./storage-rollout-panel', () => ({ StorageRolloutPanel: () => null }));
+vi.mock('./storage-rollout-panel', () => ({
+  StorageRolloutPanel: (props: unknown) => {
+    mocks.rolloutPanel(props);
+    return null;
+  },
+}));
 
 import Page from './page';
 
 const wsId = '00000000-0000-4000-8000-000000000011';
-const secret = { id: 'secret-1', ws_id: wsId, name: 'EXAMPLE', value: 'false' };
+const secret = {
+  id: 'secret-1',
+  ws_id: wsId,
+  name: 'ENABLE_EXAMPLE',
+  value: 'false',
+};
+const credentialMarker = 'credential-marker-value';
+const credential = {
+  id: 'secret-2',
+  ws_id: wsId,
+  name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+  value: credentialMarker,
+};
 const query = Object.assign(
-  Promise.resolve({ data: [secret], count: 1, error: null }),
+  Promise.resolve({ data: [secret, credential], count: 2, error: null }),
   {
     select: vi.fn(),
     eq: vi.fn(),
@@ -100,16 +118,38 @@ describe('Workspace secrets page', () => {
     'renders the resolved %s workspace with API-authorized access',
     async (id) => {
       const markup = renderToStaticMarkup(await renderPage(id));
-      expect(markup).toContain('EXAMPLE');
+      expect(markup).toContain('ENABLE_EXAMPLE');
       expect(mocks.connection).toHaveBeenCalledOnce();
       expect(mocks.getWorkspace).toHaveBeenCalledWith(id);
       expect(mocks.getWorkspaceSecretsAccess).toHaveBeenCalledWith(wsId);
       expect(query.eq).toHaveBeenCalledWith('ws_id', wsId);
       expect(mocks.table).toHaveBeenCalledWith(
-        expect.objectContaining({ data: [secret], count: 1 })
+        expect.objectContaining({
+          count: 2,
+          data: [
+            { ...secret, tier: 'config', value_masked: false, value_set: true },
+            {
+              ...credential,
+              tier: 'credential',
+              value: null,
+              value_masked: true,
+              value_set: true,
+            },
+          ],
+        })
       );
     }
   );
+
+  it('never passes credential values to client components', async () => {
+    renderToStaticMarkup(await renderPage());
+    const clientProps = JSON.stringify([
+      mocks.table.mock.calls,
+      mocks.rolloutPanel.mock.calls,
+    ]);
+    expect(clientProps).toContain('DRIVE_R2_SECRET_ACCESS_KEY');
+    expect(clientProps).not.toContain(credentialMarker);
+  });
 
   it('does not fetch secrets or storage when access is denied', async () => {
     mocks.getWorkspaceSecretsAccess.mockResolvedValue({

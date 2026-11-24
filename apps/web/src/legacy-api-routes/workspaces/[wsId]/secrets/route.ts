@@ -1,3 +1,4 @@
+import { toClientWorkspaceSecret } from '@tuturuuu/utils/workspace-secret-policy';
 import { NextResponse } from 'next/server';
 import {
   canMutateManagedCronEnableSecret,
@@ -38,7 +39,7 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json((data ?? []).map(toClientWorkspaceSecret));
 }
 
 export async function POST(req: Request, { params }: Params) {

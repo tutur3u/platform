@@ -25083,6 +25083,8 @@
     "singular": "Mã bí mật",
     "value": "Giá trị",
     "value_example": "Ví dụ: {value}",
+    "value_hidden": "Đã đặt (ẩn)",
+    "value_keep_placeholder": "Để trống để giữ giá trị hiện tại",
     "value_placeholder": "Giá trị",
     "workspace_secret": "Mã bí mật"
   },

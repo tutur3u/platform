@@ -90,17 +90,9 @@ export function useUpsertWorkspaceSecret(workspaceId: string) {
           : `/api/workspaces/${workspaceId}/secrets`,
         {
           method: id ? 'PUT' : 'POST',
+          // An empty value on update keeps the stored (possibly withheld) one.
           body: JSON.stringify(
-            id
-              ? {
-                  id,
-                  name,
-                  value,
-                }
-              : {
-                  name,
-                  value,
-                }
+            id && !value ? { keepValue: true, name } : { name, value }
           ),
         }
       );

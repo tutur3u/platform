@@ -4609,6 +4609,7 @@
   "settingsWorkspaceSecretsTotalSecrets": "Tất cả bí mật",
   "settingsWorkspaceSecretsUnavailable": "Không khả dụng",
   "settingsWorkspaceSecretsValueField": "Giá trị",
+  "settingsWorkspaceSecretsValueKeepPlaceholder": "Để trống để giữ giá trị đã lưu",
   "settingsWorkspaceSecretsValuePlaceholder": "Giá trị bí mật",
   "settingsWorkspaceSecretsValueRequired": "Hãy nhập giá trị bí mật.",
   "settingsWorkspaceSecretsVisibleSecrets": "Đang hiển thị",

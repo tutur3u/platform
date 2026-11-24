@@ -29,6 +29,7 @@ import {
   getSecretNameOptions,
   normalizeCustomSecretName,
 } from './secret-name-options';
+import { isSecretValueMasked } from './secret-value-state';
 
 interface Props {
   wsId: string;
@@ -46,7 +47,7 @@ interface Props {
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
-  value: z.string().min(1),
+  value: z.string(),
 });
 
 export const ApiConfigFormSchema = FormSchema;
@@ -98,8 +99,14 @@ export default function SecretForm({
     return options[0] ?? '';
   };
 
+  // A withheld value can be kept: leaving the field blank sends `keepValue`.
+  const canKeepValue = Boolean(data?.id) && isSecretValueMasked(data);
   const form = useForm({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(
+      FormSchema.refine((payload) => canKeepValue || payload.value.length > 0, {
+        path: ['value'],
+      })
+    ),
     values: {
       id: data?.id,
       name: initialSecretName,
@@ -137,7 +144,11 @@ export default function SecretForm({
           : `/api/workspaces/${wsId}/secrets`,
         {
           method: payload.id ? 'PUT' : 'POST',
-          body: JSON.stringify({ name: payload.name, value: payload.value }),
+          body: JSON.stringify(
+            payload.id && canKeepValue && !payload.value
+              ? { keepValue: true, name: payload.name }
+              : { name: payload.name, value: payload.value }
+          ),
         }
       );
 
@@ -288,11 +299,17 @@ export default function SecretForm({
                 ) : (
                   <Input
                     placeholder={
-                      selectedSecret?.placeholder ||
-                      t('ws-secrets.value_placeholder')
+                      canKeepValue
+                        ? t('ws-secrets.value_keep_placeholder')
+                        : selectedSecret?.placeholder ||
+                          t('ws-secrets.value_placeholder')
                     }
                     autoComplete="off"
-                    type={selectedSecret?.sensitive ? 'password' : 'text'}
+                    type={
+                      selectedSecret?.sensitive || canKeepValue
+                        ? 'password'
+                        : 'text'
+                    }
                     {...field}
                   />
                 )}

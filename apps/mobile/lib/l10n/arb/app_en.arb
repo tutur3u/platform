@@ -4940,6 +4940,7 @@
   "settingsWorkspaceSecretsTotalSecrets": "All secrets",
   "settingsWorkspaceSecretsUnavailable": "Unavailable",
   "settingsWorkspaceSecretsValueField": "Value",
+  "settingsWorkspaceSecretsValueKeepPlaceholder": "Leave blank to keep the stored value",
   "settingsWorkspaceSecretsValuePlaceholder": "Secret value",
   "settingsWorkspaceSecretsValueRequired": "Enter a secret value.",
   "settingsWorkspaceSecretsVisibleSecrets": "Visible",

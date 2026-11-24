@@ -3,13 +3,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace_management.dart';
+import 'package:mobile/data/models/workspace_secret.dart';
+import 'package:mobile/data/repositories/workspace_secrets_repository.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/settings/view/settings_workspace_member_sheets.dart';
 import 'package:mobile/features/settings/view/settings_workspace_members_view.dart';
+import 'package:mobile/features/settings/view/settings_workspace_secret_editor_sheet.dart';
+import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
 import 'package:mobile/features/settings/view/settings_workspace_secrets_view.dart';
 import 'package:mobile/features/settings/view/workspace_admin_widgets.dart';
 
+import 'package:mocktail/mocktail.dart';
+
 import 'workspace_admin_fixtures.dart';
+
+class _SecretsRepository extends Mock implements WorkspaceSecretsRepository {}
 
 Widget _members({
   String query = '',
@@ -61,6 +69,62 @@ void main() {
         's-3',
       ]);
       expect(filterWorkspaceSecrets(adminSecrets, 'sk-live'), hasLength(1));
+    });
+
+    test('masked secrets match by name only', () {
+      const masked = WorkspaceSecret(
+        id: 'm',
+        name: 'BOT_TOKEN',
+        value: 'stale',
+        valueSet: true,
+        valueMasked: true,
+      );
+      expect(filterWorkspaceSecrets([masked], 'stale'), isEmpty);
+      expect(filterWorkspaceSecrets([masked], 'bot'), hasLength(1));
+      expect(isBooleanWorkspaceSecret(maskedAdminSecret), isFalse);
+    });
+
+    test('saving a masked secret with no value keeps the stored one', () async {
+      final repository = _SecretsRepository();
+      when(
+        () => repository.updateSecret(
+          wsId: any(named: 'wsId'),
+          secretId: any(named: 'secretId'),
+          name: any(named: 'name'),
+          value: any(named: 'value'),
+          keepValue: any(named: 'keepValue'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await saveWorkspaceSecret(
+        repository: repository,
+        wsId: 'root',
+        secret: maskedAdminSecret,
+        name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+        value: '',
+      );
+      await saveWorkspaceSecret(
+        repository: repository,
+        wsId: 'root',
+        secret: maskedAdminSecret,
+        name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+        value: 'replacement',
+      );
+
+      verifyInOrder([
+        () => repository.updateSecret(
+          wsId: 'root',
+          secretId: 's-5',
+          name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+          keepValue: true,
+        ),
+        () => repository.updateSecret(
+          wsId: 'root',
+          secretId: 's-5',
+          name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+          value: 'replacement',
+        ),
+      ]);
     });
   });
 
@@ -259,6 +323,101 @@ void main() {
       );
       await tester.tap(find.byType(AppSwitch));
       expect(toggled, isTrue);
+    });
+  });
+
+  group('masked secrets', () {
+    testWidgets('rows show stored state without reveal or copy', (
+      tester,
+    ) async {
+      await pumpAdminSurface(
+        tester,
+        AppGroupedCard(
+          children: [
+            WorkspaceSecretRow(
+              secret: maskedAdminSecret,
+              onTap: () {},
+              onCopy: () {},
+              onToggle: (_) {},
+            ),
+            WorkspaceSecretRow(
+              secret: const WorkspaceSecret(
+                id: 's-6',
+                name: 'DISCORD_BOT_TOKEN',
+                valueSet: false,
+                valueMasked: true,
+              ),
+              onTap: () {},
+              onCopy: () {},
+              onToggle: (_) {},
+            ),
+          ],
+        ),
+      );
+      expect(find.text(workspaceSecretMask), findsOneWidget);
+      expect(find.text('No value'), findsOneWidget);
+      expect(find.byType(AppIconButton), findsNothing);
+      expect(find.byType(AppSwitch), findsNothing);
+    });
+
+    testWidgets('editor starts empty and submits an empty value to keep it', (
+      tester,
+    ) async {
+      String? submitted;
+      await pumpAdminSurface(
+        tester,
+        WorkspaceSecretEditorSheet(
+          title: 'Edit',
+          initialName: 'DRIVE_R2_SECRET_ACCESS_KEY',
+          initialValue: '',
+          nameLocked: true,
+          keepValueWhenEmpty: true,
+          onSubmit: (_, value) async => submitted = value,
+        ),
+      );
+      expect(find.text('Leave blank to keep the stored value'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('workspace-secret-save')));
+      await tester.pump();
+      expect(submitted, '');
+      expect(find.text('Enter a secret value.'), findsNothing);
+    });
+
+    testWidgets('rollout definitions count a masked value as configured', (
+      tester,
+    ) async {
+      await pumpAdminSurface(
+        tester,
+        AppPageListView(
+          children: [
+            WorkspaceSecretsView(
+              workspaceId: 'root',
+              secrets: const [maskedAdminSecret],
+              rolloutState: adminRollout,
+              onEditDefinition: (_) {},
+              onMigrate: (_, _) {},
+              onOpenSecret: (_) {},
+              onToggleBoolean: (_, _) {},
+              onCopySecret: (_) {},
+            ),
+          ],
+        ),
+      );
+      final definition = find.byKey(
+        const ValueKey(
+          'workspace-secret-definition-DRIVE_R2_SECRET_ACCESS_KEY',
+        ),
+      );
+      expect(
+        find.descendant(of: definition, matching: find.text('Configured')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: definition,
+          matching: find.text(workspaceSecretMask),
+        ),
+        findsOneWidget,
+      );
     });
   });
 

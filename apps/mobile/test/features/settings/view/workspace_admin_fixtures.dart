@@ -101,6 +101,15 @@ const adminSecrets = [
   WorkspaceSecret(id: 's-4', name: 'DRIVE_R2_BUCKET', value: 'tuturuuu-drive'),
 ];
 
+/// Credential row as the server returns it: the value is withheld.
+const maskedAdminSecret = WorkspaceSecret(
+  id: 's-5',
+  name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+  tier: workspaceSecretTierCredential,
+  valueSet: true,
+  valueMasked: true,
+);
+
 final adminRollout = WorkspaceStorageRolloutState.fromJson(const {
   'activeProvider': 'r2',
   'backends': {

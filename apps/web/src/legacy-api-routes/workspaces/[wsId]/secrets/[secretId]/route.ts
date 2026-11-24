@@ -1,3 +1,4 @@
+import { canKeepWorkspaceSecretValueOnRename } from '@tuturuuu/utils/workspace-secret-policy';
 import { NextResponse } from 'next/server';
 import {
   canMutateManagedCronEnableSecret,
@@ -5,7 +6,7 @@ import {
   isManagedCronEnableSecretName,
 } from '@/lib/workspace-secrets/managed-cron';
 import { getWorkspaceSecretsAccess } from '../access';
-import { workspaceSecretWriteSchema } from '../schema';
+import { workspaceSecretUpdateSchema } from '../schema';
 
 interface Params {
   params: Promise<{
@@ -26,14 +27,15 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const parsed = workspaceSecretWriteSchema.safeParse(body);
+  const parsed = workspaceSecretUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { message: 'Invalid workspace secret payload' },
       { status: 400 }
     );
   }
-  const { name, value } = parsed.data;
+  const { name } = parsed.data;
+  const value = 'value' in parsed.data ? parsed.data.value : undefined;
 
   const { wsId, secretId } = await params;
   const access = await getWorkspaceSecretsAccess(wsId, req);
@@ -70,6 +72,16 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  if (
+    value === undefined &&
+    !canKeepWorkspaceSecretValueOnRename(existingSecret.name, name)
+  ) {
+    return NextResponse.json(
+      { message: 'Enter a new value to move this secret to that name.' },
+      { status: 400 }
+    );
+  }
+
   const touchesManagedCron =
     isManagedCronEnableSecretName(existingSecret.name) ||
     isManagedCronEnableSecretName(name);
@@ -85,7 +97,7 @@ export async function PUT(req: Request, { params }: Params) {
     : access.db;
   const { error } = await db
     .from('workspace_secrets')
-    .update({ name, value })
+    .update(value === undefined ? { name } : { name, value })
     .eq('id', secretId)
     .eq('ws_id', access.resolvedWsId);
 

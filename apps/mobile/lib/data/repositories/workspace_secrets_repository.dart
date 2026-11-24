@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -11,18 +12,33 @@ import 'package:mobile/data/models/workspace_secret.dart';
 import 'package:mobile/data/models/workspace_storage_rollout.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
+/// Workspace secrets are fetched live and never persisted on the device:
+/// the list stays in this instance's memory only, and create/update requests
+/// (which carry values) bypass the persistent offline queue.
 class WorkspaceSecretsRepository {
-  WorkspaceSecretsRepository({ApiClient? apiClient})
-    : _api = apiClient ?? ApiClient();
+  WorkspaceSecretsRepository({ApiClient? apiClient, CacheStore? cacheStore})
+    : _api = apiClient ?? ApiClient(),
+      _cacheStore = cacheStore;
 
   final ApiClient _api;
+  final CacheStore? _cacheStore;
+  CacheStore get _cache => _cacheStore ?? CacheStore.instance;
   static const CachePolicy _cachePolicy = CachePolicies.metadata;
   static const _secretsCacheTag = 'settings:workspace-secrets:list';
   static const _rolloutCacheTag = 'settings:workspace-secrets:rollout';
+  static const _secretsListNamespace = 'settings.workspaceSecrets.list';
 
-  static CacheKey _secretsCacheKey(String wsId) {
+  /// Last list fetched per actor and workspace, kept in memory only so an
+  /// offline refresh can still show rows without a persisted copy.
+  final Map<String, List<WorkspaceSecret>> _sessionSecrets = {};
+
+  /// Key of the secrets list namespace, kept for regression checks only.
+  /// [CacheStore] refuses to persist this namespace and drops any record of
+  /// it found on disk when it opens.
+  @visibleForTesting
+  static CacheKey secretsListCacheKey(String wsId) {
     return CacheKey(
-      namespace: 'settings.workspaceSecrets.list',
+      namespace: _secretsListNamespace,
       userId: currentCacheUserId(),
       workspaceId: wsId,
       locale: currentCacheLocaleTag(),
@@ -38,16 +54,7 @@ class WorkspaceSecretsRepository {
     );
   }
 
-  static List<WorkspaceSecret> _decodeSecrets(Object? json) {
-    if (json is! List) {
-      throw const FormatException('Invalid workspace secrets cache payload.');
-    }
-
-    return json
-        .whereType<Map<String, dynamic>>()
-        .map(WorkspaceSecret.fromJson)
-        .toList(growable: false);
-  }
+  static String _sessionKey(String wsId) => '${currentCacheUserId()}|$wsId';
 
   static WorkspaceStorageRolloutState _decodeRolloutState(Object? json) {
     if (json is! Map) {
@@ -86,96 +93,68 @@ class WorkspaceSecretsRepository {
     return WorkspaceStorageRolloutState.fromJson(response);
   }
 
+  /// The secrets list has no persisted cache; this always reports a miss.
   Future<CacheReadResult<List<WorkspaceSecret>>> readCachedSecrets(
     String wsId,
-  ) {
-    return CacheStore.instance.read<List<WorkspaceSecret>>(
-      key: _secretsCacheKey(wsId),
-      decode: _decodeSecrets,
+  ) async {
+    return const CacheReadResult<List<WorkspaceSecret>>(
+      state: CacheEntryState.missing,
     );
   }
 
   Future<CacheReadResult<WorkspaceStorageRolloutState>> readCachedRolloutState(
     String wsId,
   ) {
-    return CacheStore.instance.read<WorkspaceStorageRolloutState>(
+    return _cache.read<WorkspaceStorageRolloutState>(
       key: _rolloutCacheKey(wsId),
       decode: _decodeRolloutState,
     );
   }
 
+  /// Fetches the live list. [forceRefresh] is accepted for call-site parity;
+  /// every call reaches the server.
   Future<List<WorkspaceSecret>> getSecrets(
     String wsId, {
     bool forceRefresh = false,
   }) async {
+    final sessionKey = _sessionKey(wsId);
     List<WorkspaceSecret> confirmed;
     try {
-      final cached = await CacheStore.instance.prefetch<List<WorkspaceSecret>>(
-        key: _secretsCacheKey(wsId),
-        policy: _cachePolicy,
-        decode: _decodeSecrets,
-        forceRefresh: forceRefresh,
-        fetch: () async => (await _fetchSecretsRemote(
-          wsId,
-        )).map((secret) => secret.toJson()).toList(growable: false),
-        tags: [_secretsCacheTag, 'workspace:$wsId', 'module:settings'],
-      );
-      confirmed = cached.data ?? const [];
+      confirmed = await _fetchSecretsRemote(wsId);
+      _sessionSecrets[sessionKey] = confirmed;
     } on ApiException catch (error) {
-      if (!isOfflineTransportFailure(error)) rethrow;
-      confirmed = const [];
+      final remembered = _sessionSecrets[sessionKey];
+      if (!isOfflineTransportFailure(error) || remembered == null) rethrow;
+      confirmed = remembered;
     }
 
-    final rows = {
-      for (final secret in confirmed)
-        if (secret.id != null) secret.id!: secret,
+    final pendingDeletes = {
+      for (final edit in OfflineMutationQueue.instance.pending.value)
+        if (edit.feature == 'settings' &&
+            edit.workspaceId == wsId &&
+            edit.method == 'DELETE' &&
+            edit.entityId != null &&
+            edit.path ==
+                WorkspaceSettingsEndpoints.secret(wsId, edit.entityId!))
+          edit.entityId!,
     };
-    for (final edit in OfflineMutationQueue.instance.pending.value) {
-      if (edit.feature != 'settings' || edit.workspaceId != wsId) continue;
-      final id = edit.entityId;
-      final payload = edit.payload;
-      if (id == null) continue;
-      if (edit.method == 'WORKSPACE_SECRET_CREATE' &&
-          edit.path == WorkspaceSettingsEndpoints.secrets(wsId) &&
-          payload != null) {
-        rows[id] = WorkspaceSecret(
-          id: id,
-          wsId: wsId,
-          name: payload['name'] as String?,
-          value: payload['value'] as String?,
-          createdAt: edit.createdAt,
-        );
-      } else if (edit.method == 'PUT' &&
-          edit.path == WorkspaceSettingsEndpoints.secret(wsId, id) &&
-          payload != null) {
-        rows[id] = WorkspaceSecret(
-          id: id,
-          wsId: wsId,
-          name: payload['name'] as String?,
-          value: payload['value'] as String?,
-          createdAt: rows[id]?.createdAt ?? edit.createdAt,
-        );
-      } else if (edit.method == 'DELETE' &&
-          edit.path == WorkspaceSettingsEndpoints.secret(wsId, id)) {
-        rows.remove(id);
-      }
-    }
-    return rows.values.toList(growable: false);
+    return confirmed
+        .where((secret) => !pendingDeletes.contains(secret.id))
+        .toList(growable: false);
   }
 
   Future<WorkspaceStorageRolloutState> getRolloutState(
     String wsId, {
     bool forceRefresh = false,
   }) async {
-    final cached = await CacheStore.instance
-        .prefetch<WorkspaceStorageRolloutState>(
-          key: _rolloutCacheKey(wsId),
-          policy: _cachePolicy,
-          decode: _decodeRolloutState,
-          forceRefresh: forceRefresh,
-          fetch: () async => (await _fetchRolloutStateRemote(wsId)).toJson(),
-          tags: [_rolloutCacheTag, 'workspace:$wsId', 'module:settings'],
-        );
+    final cached = await _cache.prefetch<WorkspaceStorageRolloutState>(
+      key: _rolloutCacheKey(wsId),
+      policy: _cachePolicy,
+      decode: _decodeRolloutState,
+      forceRefresh: forceRefresh,
+      fetch: () async => (await _fetchRolloutStateRemote(wsId)).toJson(),
+      tags: [_rolloutCacheTag, 'workspace:$wsId', 'module:settings'],
+    );
 
     if (cached.data == null) {
       throw const FormatException('Missing workspace rollout state payload.');
@@ -185,51 +164,45 @@ class WorkspaceSecretsRepository {
   }
 
   Future<void> invalidateWorkspaceCache(String wsId) {
-    return CacheStore.instance.invalidateTags(
+    return _cache.invalidateTags(
       [_secretsCacheTag, _rolloutCacheTag],
       workspaceId: wsId,
       userId: currentCacheUserId(),
     );
   }
 
+  /// Sends directly; an offline failure surfaces to the caller instead of
+  /// persisting the value in the offline queue.
   Future<void> createSecret({
     required String wsId,
     required String name,
     required String value,
   }) async {
-    final path = WorkspaceSettingsEndpoints.secrets(wsId);
-    final payload = {'name': name, 'value': value};
-    await queueOrSendVoid(
-      feature: 'settings',
-      method: 'WORKSPACE_SECRET_CREATE',
-      path: path,
-      workspaceId: wsId,
-      payload: payload,
-      send: () async {
-        await _api.postJson(path, payload);
-      },
-    );
+    await _api.postJson(WorkspaceSettingsEndpoints.secrets(wsId), {
+      'name': name,
+      'value': value,
+    });
     await invalidateWorkspaceCache(wsId);
   }
 
+  /// Sends directly like [createSecret]. With [keepValue] the server keeps
+  /// the stored value and [value] is ignored.
   Future<void> updateSecret({
     required String wsId,
     required String secretId,
     required String name,
-    required String value,
+    String? value,
+    bool keepValue = false,
   }) async {
-    final path = WorkspaceSettingsEndpoints.secret(wsId, secretId);
-    final payload = {'id': secretId, 'name': name, 'value': value};
-    await queueOrSendVoid(
-      feature: 'settings',
-      method: 'PUT',
-      path: path,
-      workspaceId: wsId,
-      entityId: secretId,
-      payload: payload,
-      send: () async {
-        await _api.putJson(path, payload);
-      },
+    if (!keepValue && value == null) {
+      throw ArgumentError.value(value, 'value', 'Required unless keepValue');
+    }
+    final payload = keepValue
+        ? <String, dynamic>{'name': name, 'keepValue': true}
+        : <String, dynamic>{'name': name, 'value': value};
+    await _api.putJson(
+      WorkspaceSettingsEndpoints.secret(wsId, secretId),
+      payload,
     );
     await invalidateWorkspaceCache(wsId);
   }
@@ -249,6 +222,12 @@ class WorkspaceSecretsRepository {
         await _api.deleteJson(path);
       },
     );
+    final sessionKey = _sessionKey(wsId);
+    if (_sessionSecrets[sessionKey] case final remembered?) {
+      _sessionSecrets[sessionKey] = remembered
+          .where((secret) => secret.id != secretId)
+          .toList(growable: false);
+    }
     await invalidateWorkspaceCache(wsId);
   }
 

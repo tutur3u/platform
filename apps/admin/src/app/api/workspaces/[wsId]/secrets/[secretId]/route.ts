@@ -1,3 +1,4 @@
+import { canKeepWorkspaceSecretValueOnRename } from '@tuturuuu/utils/workspace-secret-policy';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
@@ -8,12 +9,21 @@ interface Params {
   params: Promise<{ secretId: string; wsId: string }>;
 }
 
+// Omitting `value` (or sending `keepValue: true`) keeps the stored value.
 const secretUpdateSchema = z
   .object({
+    keepValue: z.literal(true).optional(),
     name: z.string().trim().min(1).max(128).optional(),
     value: z.string().max(16_384).optional(),
   })
-  .refine((value) => Object.keys(value).length > 0, 'No updates provided');
+  .refine(
+    (update) => update.name !== undefined || update.value !== undefined,
+    'No updates provided'
+  )
+  .refine(
+    (update) => !(update.keepValue && update.value !== undefined),
+    'keepValue cannot be combined with value'
+  );
 
 export async function PUT(req: Request, { params }: Params) {
   const { secretId, wsId } = await params;
@@ -63,9 +73,21 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  const { keepValue: _keepValue, ...update } = parsed.data;
+  if (
+    update.value === undefined &&
+    update.name !== undefined &&
+    !canKeepWorkspaceSecretValueOnRename(existingSecret.name, update.name)
+  ) {
+    return NextResponse.json(
+      { message: 'Enter a new value to move this secret to that name.' },
+      { status: 400 }
+    );
+  }
+
   const { data, error } = await auth.sbAdmin
     .from('workspace_secrets')
-    .update(parsed.data)
+    .update(update)
     .eq('id', secretId)
     .eq('ws_id', wsId)
     .select('id')

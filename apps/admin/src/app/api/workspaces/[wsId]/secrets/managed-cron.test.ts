@@ -149,9 +149,9 @@ describe('managed cron secret mutations', () => {
     expect(response.status).toBe(403);
     expect(mocks.write).not.toHaveBeenCalled();
   });
-  it('allows an employee to rename a normal secret into the managed setting', async () => {
+  it('allows an employee to rename a config secret into the managed setting', async () => {
     mocks.email = 'employee@tuturuuu.com';
-    mocks.rows = [{ id: 'secret', name: 'OTHER_SETTING', ws_id: 'tenant' }];
+    mocks.rows = [{ id: 'secret', name: 'ENABLE_OTHER', ws_id: 'tenant' }];
     const response = await PUT(
       new Request('https://example.test/secrets', {
         method: 'PUT',
@@ -161,6 +161,19 @@ describe('managed cron secret mutations', () => {
     );
     expect(response.status).toBe(200);
     expect(mocks.write).toHaveBeenCalled();
+  });
+  it('requires a value to move a hidden secret under a visible name', async () => {
+    mocks.email = 'employee@tuturuuu.com';
+    mocks.rows = [{ id: 'secret', name: 'OTHER_SETTING', ws_id: 'tenant' }];
+    const response = await PUT(
+      new Request('https://example.test/secrets', {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'MANAGED_CRON_ENABLED' }),
+      }),
+      { params: Promise.resolve({ wsId: 'tenant', secretId: 'secret' }) }
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.write).not.toHaveBeenCalled();
   });
   it.each([
     ['PUT', PUT],

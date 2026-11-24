@@ -581,6 +581,30 @@ Regression coverage: the secrets `page.test.tsx`, `row-actions.test.tsx`, and th
 API's `access.test.ts` cover resolved aliases, denied access before data reads,
 row controls, and database-client selection.
 
+### Secret value visibility
+
+`@tuturuuu/utils/workspace-secret-policy` assigns every secret name a tier.
+Flags and configuration (`ENABLE_*`, `DISABLE_*`, limits, `DRIVE_STORAGE_PROVIDER`,
+registry metadata) are `config`. Keys, tokens, webhook secrets and every
+unregistered name are `credential`.
+
+| Surface | Rule |
+| --- | --- |
+| Web, workspace and admin secrets GET | Credential values, and the credential-grade `EXTERNAL_APP_MANAGED_CRON_TOKEN`, are returned as `value: null` with `value_masked: true`; `value_set` says whether one is stored. |
+| Secrets page (web and workspace) | Rows reach client components already masked. Masked rows show **Set (hidden)**. |
+| Secrets PUT | `{ name, keepValue: true }` keeps the stored value. A hidden value cannot move under a name whose values are visible without a new value (400). |
+| Mobile | Secret values are never persisted on the device; see [mobile workspace tools](/platform/features/mobile-workspace-tools). |
+
+Server code that needs a credential reads it directly through its existing
+server path (storage-core, AI agent and external-app stores, managed cron).
+The registry scan in `workspace-secret-policy.test.ts` fails on a new direct
+`workspace_secrets` reader, on a credential name referenced outside the listed
+server paths, and on a SQL function that reads a non-config name.
+Encrypting the stored values is designed separately.
+
+Regression coverage: `workspace-secret-policy.test.ts`, the web and admin
+secrets `route.test.ts` files, and the web and workspace secrets `page.test.tsx`.
+
 ### Mobile module flags
 
 The mobile app can hide experimental app modules per workspace through

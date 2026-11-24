@@ -152,3 +152,63 @@ describe.each(['PUT', 'DELETE'] as const)(
     });
   }
 );
+
+describe('PUT keepValue updates', () => {
+  const user = { id: 'fixture-user' };
+
+  function setup(existingName: string) {
+    vi.resetAllMocks();
+    mocks.session.mockResolvedValue(user);
+    mocks.permissions.mockResolvedValue({
+      membershipType: 'MEMBER',
+      containsPermission: (p: string) => p === 'manage_workspace_secrets',
+    });
+    mocks.admin.mockResolvedValue({
+      auth: { getUser: mocks.getUser },
+      from: mocks.from,
+    });
+    const query = {
+      eq: mocks.eq,
+      maybeSingle: mocks.maybeSingle,
+      select: mocks.select,
+      update: mocks.update,
+    };
+    for (const fn of [mocks.from, mocks.select, mocks.eq, mocks.update])
+      fn.mockReturnValue(query);
+    mocks.maybeSingle
+      .mockResolvedValueOnce({ data: { name: existingName }, error: null })
+      .mockResolvedValue({ data: { id: 'secret' }, error: null });
+  }
+
+  async function put(body: unknown) {
+    const { PUT } = await import('./route');
+    return PUT(
+      new Request(
+        'https://infra.tuturuuu.com/api/workspaces/target/secrets/secret',
+        { body: JSON.stringify(body), method: 'PUT' }
+      ),
+      { params: Promise.resolve({ secretId: 'secret', wsId: 'target' }) }
+    );
+  }
+
+  it('renames without sending or overwriting the stored value', async () => {
+    setup('DRIVE_R2_SECRET_ACCESS_KEY');
+    const response = await put({ keepValue: true, name: 'LEGACY_R2_KEY' });
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith({ name: 'LEGACY_R2_KEY' });
+  });
+
+  it('refuses to move a hidden value under a client-visible name', async () => {
+    setup('DRIVE_R2_SECRET_ACCESS_KEY');
+    const response = await put({ keepValue: true, name: 'ENABLE_CHAT' });
+    expect(response.status).toBe(400);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects keepValue combined with a value', async () => {
+    setup('DRIVE_R2_SECRET_ACCESS_KEY');
+    const response = await put({ keepValue: true, name: 'X', value: 'v' });
+    expect(response.status).toBe(400);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+});

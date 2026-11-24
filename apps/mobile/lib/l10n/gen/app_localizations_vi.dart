@@ -9909,6 +9909,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsWorkspaceSecretsValueField => 'Giá trị';
 
   @override
+  String get settingsWorkspaceSecretsValueKeepPlaceholder => 'Để trống để giữ giá trị đã lưu';
+
+  @override
   String get settingsWorkspaceSecretsValuePlaceholder => 'Giá trị bí mật';
 
   @override

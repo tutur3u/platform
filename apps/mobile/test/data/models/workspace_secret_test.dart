@@ -45,6 +45,30 @@ void main() {
       expect(WorkspaceSecret.fromJson({'created_at': 123}).createdAt, isNull);
     });
 
+    test('parses masked credential rows without a value', () {
+      final secret = WorkspaceSecret.fromJson({
+        'id': 's1',
+        'name': 'DRIVE_R2_SECRET_ACCESS_KEY',
+        'value': 'leaked',
+        'tier': 'credential',
+        'value_set': true,
+        'value_masked': true,
+      });
+
+      expect(secret.tier, workspaceSecretTierCredential);
+      expect(secret.valueMasked, isTrue);
+      expect(secret.valueSet, isTrue);
+      expect(secret.value, isNull);
+    });
+
+    test('derives value set from the value on older servers', () {
+      expect(WorkspaceSecret.fromJson({'value': 'v'}).valueSet, isTrue);
+      expect(WorkspaceSecret.fromJson({'value': ''}).valueSet, isFalse);
+      expect(WorkspaceSecret.fromJson(const {}).valueSet, isFalse);
+      expect(WorkspaceSecret.fromJson({'value': 'v'}).valueMasked, isFalse);
+      expect(WorkspaceSecret.fromJson({'value': 'v'}).tier, isNull);
+    });
+
     test('parses an empty payload to all nulls', () {
       final secret = WorkspaceSecret.fromJson(const {});
 
@@ -70,6 +94,9 @@ void main() {
         'name': 'N',
         'value': 'v',
         'created_at': '2026-10-01T00:00:00.000Z',
+        'tier': null,
+        'value_set': null,
+        'value_masked': false,
       });
     });
 
@@ -77,7 +104,13 @@ void main() {
       const secret = WorkspaceSecret();
       final json = secret.toJson();
 
-      expect(json.values, everyElement(isNull));
+      expect(
+        json.entries.where((entry) => entry.key != 'value_masked'),
+        everyElement(
+          predicate<MapEntry<String, dynamic>>((e) => e.value == null),
+        ),
+      );
+      expect(json['value_masked'], isFalse);
       expect(WorkspaceSecret.fromJson(json).toJson(), json);
     });
   });

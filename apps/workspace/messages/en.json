@@ -25076,6 +25076,8 @@
     "singular": "Secret",
     "value": "Value",
     "value_example": "Example: {value}",
+    "value_hidden": "Set (hidden)",
+    "value_keep_placeholder": "Leave blank to keep the current value",
     "value_placeholder": "Value",
     "workspace_secret": "Workspace Secret"
   },

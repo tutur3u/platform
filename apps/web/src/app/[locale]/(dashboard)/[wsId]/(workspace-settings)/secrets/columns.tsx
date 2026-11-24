@@ -24,6 +24,7 @@ import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';
 import { KNOWN_SECRETS } from './constants';
 import { SecretRowActions } from './row-actions';
+import { isSecretValueMasked, isSecretValueSet } from './secret-value-state';
 
 export const secretColumns = ({
   t,
@@ -169,6 +170,16 @@ export const secretColumns = ({
         const value = row.getValue('value') as string;
         const id = row.getValue('id') as string;
         const name = row.getValue('name') as string;
+
+        if (isSecretValueMasked(row.original)) {
+          return (
+            <span className="text-muted-foreground">
+              {isSecretValueSet(row.original)
+                ? t('ws-secrets.value_hidden')
+                : '-'}
+            </span>
+          );
+        }
 
         // Check if the value is a boolean string
         const isBool = value === 'true' || value === 'false';

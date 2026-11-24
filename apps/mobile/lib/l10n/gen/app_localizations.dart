@@ -18847,6 +18847,12 @@ abstract class AppLocalizations {
   /// **'Value'**
   String get settingsWorkspaceSecretsValueField;
 
+  /// No description provided for @settingsWorkspaceSecretsValueKeepPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to keep the stored value'**
+  String get settingsWorkspaceSecretsValueKeepPlaceholder;
+
   /// No description provided for @settingsWorkspaceSecretsValuePlaceholder.
   ///
   /// In en, this message translates to:

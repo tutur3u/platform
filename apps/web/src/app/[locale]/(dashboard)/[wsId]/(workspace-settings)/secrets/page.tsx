@@ -4,6 +4,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toClientWorkspaceSecret } from '@tuturuuu/utils/workspace-secret-policy';
 import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -146,5 +147,9 @@ async function getSecrets(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data: data ?? [], count: count ?? 0 };
+  // Rows reach client components, so withheld values are removed here.
+  return {
+    data: (data ?? []).map(toClientWorkspaceSecret),
+    count: count ?? 0,
+  };
 }

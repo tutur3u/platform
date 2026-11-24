@@ -33,9 +33,10 @@ describe('workspace secrets collection route', () => {
   });
 
   it('uses the resolved workspace id for GET queries', async () => {
-    const orderMock = vi
-      .fn()
-      .mockResolvedValue({ data: [{ id: 'secret-1' }], error: null });
+    const orderMock = vi.fn().mockResolvedValue({
+      data: [{ id: 'secret-1', name: 'ENABLE_CHAT', value: 'true' }],
+      error: null,
+    });
     const eqMock = vi.fn(() => ({
       order: orderMock,
     }));
@@ -59,7 +60,59 @@ describe('workspace secrets collection route', () => {
     expect(fromMock).toHaveBeenCalledWith('workspace_secrets');
     expect(eqMock).toHaveBeenCalledWith('ws_id', 'resolved-ws');
     expect(orderMock).toHaveBeenCalledWith('name', { ascending: true });
-    await expect(response.json()).resolves.toEqual([{ id: 'secret-1' }]);
+    await expect(response.json()).resolves.toEqual([
+      {
+        id: 'secret-1',
+        name: 'ENABLE_CHAT',
+        tier: 'config',
+        value: 'true',
+        value_masked: false,
+        value_set: true,
+      },
+    ]);
+  });
+
+  it('never returns credential-tier values from GET', async () => {
+    const marker = 'raw-credential-marker';
+    const rows = [
+      { id: 'a', name: 'DRIVE_R2_SECRET_ACCESS_KEY', value: marker },
+      { id: 'b', name: 'UNREGISTERED_NAME', value: marker },
+      {
+        id: 'c',
+        name: 'AI_AGENT_REGISTRY:support:channel:main:secret:botToken',
+        value: marker,
+      },
+      { id: 'd', name: 'EXTERNAL_APP_MANAGED_CRON_TOKEN', value: marker },
+      { id: 'e', name: 'DRIVE_AUTO_EXTRACT_PROXY_TOKEN', value: '' },
+      { id: 'f', name: 'DRIVE_R2_BUCKET', value: 'bucket' },
+    ];
+    const orderMock = vi.fn().mockResolvedValue({ data: rows, error: null });
+    getWorkspaceSecretsAccessMock.mockResolvedValue({
+      allowed: true,
+      db: {
+        from: () => ({ select: () => ({ eq: () => ({ order: orderMock }) }) }),
+      },
+      resolvedWsId: 'resolved-ws',
+    });
+
+    const response = await GET(new Request('http://localhost'), {
+      params: Promise.resolve({ wsId: 'ws' }),
+    });
+    const text = await response.text();
+    const body = JSON.parse(text) as Array<Record<string, unknown>>;
+
+    expect(text).not.toContain(marker);
+    expect(
+      body.map((row) => [row.id, row.value_set, row.value_masked])
+    ).toEqual([
+      ['a', true, true],
+      ['b', true, true],
+      ['c', true, true],
+      ['d', true, true],
+      ['e', false, true],
+      ['f', true, false],
+    ]);
+    expect(body.at(-1)?.value).toBe('bucket');
   });
 
   it('uses the resolved workspace id for POST inserts', async () => {

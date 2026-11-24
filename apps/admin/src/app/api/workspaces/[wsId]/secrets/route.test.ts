@@ -62,7 +62,10 @@ describe('workspace secrets ADMIN boundary', () => {
     mocks.select.mockReturnValue({ eq: mocks.eq });
     mocks.eq.mockReturnValue({ order: mocks.order });
     mocks.order.mockResolvedValue({
-      data: [{ name: 'fixture-secret', value: 'fixture-value' }],
+      data: [
+        { name: 'ENABLE_CHAT', value: 'true' },
+        { name: 'fixture-secret', value: 'fixture-value' },
+      ],
       error: null,
     });
   });
@@ -97,8 +100,23 @@ describe('workspace secrets ADMIN boundary', () => {
     async (authorization) => {
       const response = await get(authorization);
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual([
-        { name: 'fixture-secret', value: 'fixture-value' },
+      const text = await response.text();
+      expect(text).not.toContain('fixture-value');
+      expect(JSON.parse(text)).toEqual([
+        {
+          name: 'ENABLE_CHAT',
+          tier: 'config',
+          value: 'true',
+          value_masked: false,
+          value_set: true,
+        },
+        {
+          name: 'fixture-secret',
+          tier: 'credential',
+          value: null,
+          value_masked: true,
+          value_set: true,
+        },
       ]);
       expect(mocks.permissions).toHaveBeenCalledWith({
         user,

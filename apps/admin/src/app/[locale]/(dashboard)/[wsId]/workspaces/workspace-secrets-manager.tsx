@@ -28,7 +28,15 @@ function getKnownSecret(name: string | null | undefined) {
   return NON_RATE_LIMIT_SECRETS.find((secret) => secret.name === name);
 }
 
-function renderSecretValue(secret: WorkspaceSecret) {
+function renderSecretValue(secret: WorkspaceSecret, hiddenLabel: string) {
+  if (secret.value_masked) {
+    return (
+      <span className="text-muted-foreground text-sm">
+        {secret.value_set ? hiddenLabel : '—'}
+      </span>
+    );
+  }
+
   const value = secret.value || '';
   const definition = getKnownSecret(secret.name);
 
@@ -72,6 +80,7 @@ function renderSecretValue(secret: WorkspaceSecret) {
 export function WorkspaceSecretsManager({ workspaceId }: Props) {
   const t = useTranslations('ws-overview');
   const tCommon = useTranslations('common');
+  const tSecrets = useTranslations('ws-secrets');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingSecretId, setEditingSecretId] = useState<string | null>(null);
   const {
@@ -259,7 +268,7 @@ export function WorkspaceSecretsManager({ workspaceId }: Props) {
                   </div>
 
                   <div className="rounded-2xl border border-border/80 bg-foreground/5 p-4">
-                    {renderSecretValue(secret)}
+                    {renderSecretValue(secret, tSecrets('value_hidden'))}
                   </div>
 
                   <div className="mt-auto flex items-center gap-2 text-muted-foreground text-xs">

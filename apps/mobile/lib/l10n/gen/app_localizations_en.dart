@@ -10024,6 +10024,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsWorkspaceSecretsValueField => 'Value';
 
   @override
+  String get settingsWorkspaceSecretsValueKeepPlaceholder => 'Leave blank to keep the stored value';
+
+  @override
   String get settingsWorkspaceSecretsValuePlaceholder => 'Secret value';
 
   @override

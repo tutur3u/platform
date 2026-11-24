@@ -413,10 +413,13 @@ claiming users were imported. User avatars stage encrypted bytes, obtain a new
 upload token at replay, and map their local placeholder to the returned URL
 before the dependent user edit runs. Duplicate detection remains a live server
 calculation and does not represent a local edit.
-Workspace secret create, edit, and delete queue in the encrypted settings
-outbox; pending secret cards are dimmed and dashed. A newly created secret is
-matched to its server ID after replay before dependent edits run. Ambiguous
-secret writes stop for manual review. Storage migration remains an online
+Workspace secret values never persist on the device: the secrets list is
+fetched live and kept only in memory, and create and edit send directly, so
+they fail offline rather than queueing a value. Delete carries no value and
+still queues in the encrypted settings outbox; pending deletes are dimmed and
+dashed. Credential rows arrive masked (`value_set`, `value_masked`), show only
+whether a value is stored, and an edit left blank saves with `keepValue`.
+Ambiguous secret writes stop for manual review. Storage migration remains an online
 operational command and is never represented as a completed offline change.
 Documents lists and details use scoped snapshots. Document create, update, and
 delete enter the encrypted outbox when offline, and list rows expose their

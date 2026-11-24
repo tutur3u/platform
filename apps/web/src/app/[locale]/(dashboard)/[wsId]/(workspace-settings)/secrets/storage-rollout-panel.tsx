@@ -26,6 +26,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { formatBytes } from '@/utils/file-helper';
 import SecretForm from './form';
+import { isSecretValueMasked, isSecretValueSet } from './secret-value-state';
 
 interface BackendState {
   provider: WorkspaceStorageProvider;
@@ -59,15 +60,9 @@ interface StorageRolloutPanelProps {
 }
 
 function formatSecretValue(secret?: WorkspaceSecret, sensitive?: boolean) {
-  if (!secret?.value) {
-    return null;
-  }
-
-  if (sensitive) {
-    return '••••••••';
-  }
-
-  return secret.value;
+  if (!isSecretValueSet(secret)) return null;
+  if (sensitive || isSecretValueMasked(secret)) return '••••••••';
+  return secret?.value ?? null;
 }
 
 function getRecommendedMigration(activeProvider: WorkspaceStorageProvider): {
@@ -314,7 +309,8 @@ export function StorageRolloutPanel({
       toast.success(
         t('rollout.migration_success', {
           files: result.filesCopied,
-          target: providerLabels[result.targetProvider],
+          target:
+            providerLabels[result.targetProvider as WorkspaceStorageProvider],
         })
       );
       router.refresh();
@@ -344,7 +340,8 @@ export function StorageRolloutPanel({
     (entry) => entry.definition.rolloutRequired
   ).length;
   const providerConfiguredCount = providerSecrets.filter(
-    (entry) => entry.definition.rolloutRequired && !!entry.secret?.value
+    (entry) =>
+      entry.definition.rolloutRequired && isSecretValueSet(entry.secret)
   ).length;
 
   return (
@@ -615,7 +612,7 @@ export function StorageRolloutPanel({
                   <SecretQuickCard
                     addLabel={t('rollout.add')}
                     key={definition.name}
-                    configured={!!secret?.value}
+                    configured={isSecretValueSet(secret)}
                     description={definition.description}
                     editLabel={t('rollout.edit')}
                     label={definition.name}
@@ -644,7 +641,7 @@ export function StorageRolloutPanel({
                   <SecretQuickCard
                     addLabel={t('rollout.add')}
                     key={definition.name}
-                    configured={!!secret?.value}
+                    configured={isSecretValueSet(secret)}
                     description={definition.description}
                     editLabel={t('rollout.edit')}
                     label={definition.name}

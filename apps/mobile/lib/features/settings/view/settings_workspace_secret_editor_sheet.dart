@@ -7,6 +7,8 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// Creates or edits one workspace secret. The value starts hidden when it
 /// already holds something, and resolves `true` once [onSubmit] completes.
+/// With [keepValueWhenEmpty] (a stored value the device never received) an
+/// empty value field submits an empty string, meaning "keep the stored value".
 Future<bool> showWorkspaceSecretEditor({
   required BuildContext context,
   required String title,
@@ -14,6 +16,7 @@ Future<bool> showWorkspaceSecretEditor({
   required String initialValue,
   required Future<void> Function(String name, String value) onSubmit,
   bool nameLocked = false,
+  bool keepValueWhenEmpty = false,
 }) async {
   final saved = await showAppSheet<bool>(
     context: context,
@@ -22,6 +25,7 @@ Future<bool> showWorkspaceSecretEditor({
       initialName: initialName,
       initialValue: initialValue,
       nameLocked: nameLocked,
+      keepValueWhenEmpty: keepValueWhenEmpty,
       onSubmit: onSubmit,
     ),
   );
@@ -35,6 +39,7 @@ class WorkspaceSecretEditorSheet extends StatefulWidget {
     required this.initialValue,
     required this.onSubmit,
     this.nameLocked = false,
+    this.keepValueWhenEmpty = false,
     super.key,
   });
 
@@ -42,6 +47,7 @@ class WorkspaceSecretEditorSheet extends StatefulWidget {
   final String initialName;
   final String initialValue;
   final bool nameLocked;
+  final bool keepValueWhenEmpty;
   final Future<void> Function(String name, String value) onSubmit;
 
   @override
@@ -55,7 +61,8 @@ class _WorkspaceSecretEditorSheetState
   late final _valueController = TextEditingController(
     text: widget.initialValue,
   );
-  late bool _hidden = widget.initialValue.isNotEmpty;
+  late bool _hidden =
+      widget.initialValue.isNotEmpty || widget.keepValueWhenEmpty;
   bool _saving = false;
   String? _nameError;
   String? _valueError;
@@ -76,7 +83,7 @@ class _WorkspaceSecretEditorSheetState
       _nameError = name.isEmpty
           ? l10n.settingsWorkspaceSecretsNameRequired
           : null;
-      _valueError = value.isEmpty
+      _valueError = value.isEmpty && !widget.keepValueWhenEmpty
           ? l10n.settingsWorkspaceSecretsValueRequired
           : null;
       _submitError = null;
@@ -135,7 +142,9 @@ class _WorkspaceSecretEditorSheetState
             key: const ValueKey('workspace-secret-value'),
             controller: _valueController,
             label: l10n.settingsWorkspaceSecretsValueField,
-            placeholder: l10n.settingsWorkspaceSecretsValuePlaceholder,
+            placeholder: widget.keepValueWhenEmpty
+                ? l10n.settingsWorkspaceSecretsValueKeepPlaceholder
+                : l10n.settingsWorkspaceSecretsValuePlaceholder,
             errorText: _valueError,
             enabled: !_saving,
             obscureText: _hidden,

@@ -21,9 +21,37 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
+/// Whether an empty value on save keeps the value the server withheld.
+bool keepsStoredSecretValue(WorkspaceSecret secret) =>
+    secret.valueMasked && secret.valueSet;
+
+/// Creates a secret, or updates [secret]; an empty [value] on a row whose
+/// stored value was withheld saves with `keepValue` instead of a value.
+Future<void> saveWorkspaceSecret({
+  required WorkspaceSecretsRepository repository,
+  required String wsId,
+  required String name,
+  required String value,
+  WorkspaceSecret? secret,
+}) async {
+  if (secret case WorkspaceSecret(id: final secretId?)) {
+    final keepValue = keepsStoredSecretValue(secret) && value.isEmpty;
+    await repository.updateSecret(
+      wsId: wsId,
+      secretId: secretId,
+      name: name,
+      value: keepValue ? null : value,
+      keepValue: keepValue,
+    );
+    return;
+  }
+  await repository.createSecret(wsId: wsId, name: name, value: value);
+}
+
 /// Root-workspace secrets: the Drive storage rollout and every workspace
 /// secret. Only holders of `manage_workspace_secrets` on the root workspace
-/// see values, which stay masked until revealed.
+/// open it. Credential values never reach the device, so those rows show only
+/// whether a value is stored; config values stay masked until revealed.
 class SettingsWorkspaceSecretsPage extends StatefulWidget {
   const SettingsWorkspaceSecretsPage({
     super.key,
@@ -369,6 +397,7 @@ class _SettingsWorkspaceSecretsPageState
     final workspaceId = _workspaceId;
     if (workspaceId == null) return;
     final l10n = context.l10n;
+    final keepStoredValue = secret != null && keepsStoredSecretValue(secret);
     final saved = await showWorkspaceSecretEditor(
       context: context,
       title: secret != null
@@ -377,22 +406,14 @@ class _SettingsWorkspaceSecretsPageState
       nameLocked: lockedName != null,
       initialName: lockedName ?? secret?.name ?? '',
       initialValue: initialValue ?? secret?.value ?? '',
-      onSubmit: (name, value) async {
-        if (secret?.id case final secretId?) {
-          await _repository.updateSecret(
-            wsId: workspaceId,
-            secretId: secretId,
-            name: name,
-            value: value,
-          );
-          return;
-        }
-        await _repository.createSecret(
-          wsId: workspaceId,
-          name: name,
-          value: value,
-        );
-      },
+      keepValueWhenEmpty: keepStoredValue,
+      onSubmit: (name, value) => saveWorkspaceSecret(
+        repository: _repository,
+        wsId: workspaceId,
+        secret: secret,
+        name: name,
+        value: value,
+      ),
     );
     if (!saved || !mounted) return;
     await _refreshDataAfterMutation();
@@ -409,7 +430,11 @@ class _SettingsWorkspaceSecretsPageState
     return _openSecretEditor(
       secret: existing,
       lockedName: definition.name,
-      initialValue: existing?.value ?? definition.defaultValue ?? '',
+      initialValue: existing == null
+          ? definition.defaultValue ?? ''
+          : existing.valueMasked
+          ? ''
+          : existing.value ?? definition.defaultValue ?? '',
     );
   }
 
@@ -425,7 +450,7 @@ class _SettingsWorkspaceSecretsPageState
           icon: LucideIcons.pencil,
           onPressed: () => _openSecretEditor(secret: secret),
         ),
-        if ((secret.value ?? '').isNotEmpty)
+        if (!secret.valueMasked && (secret.value ?? '').isNotEmpty)
           AppSheetAction(
             label: l10n.commonCopy,
             icon: LucideIcons.copy,
@@ -444,7 +469,7 @@ class _SettingsWorkspaceSecretsPageState
 
   Future<void> _copySecret(WorkspaceSecret secret) async {
     final value = secret.value;
-    if (value == null || value.isEmpty) return;
+    if (secret.valueMasked || value == null || value.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: value));
     if (!mounted) return;
     showAppToast(context, message: context.l10n.settingsWorkspaceSecretsCopied);

@@ -93,6 +93,81 @@ describe('workspace secret item route', () => {
     expect(response.status).toBe(200);
   });
 
+  describe('keepValue updates', () => {
+    function setup(existingName: string) {
+      const eqWsMock = vi.fn().mockResolvedValue({ error: null });
+      const updateMock = vi.fn(() => ({ eq: () => ({ eq: eqWsMock }) }));
+      getWorkspaceSecretsAccessMock.mockResolvedValue({
+        allowed: true,
+        db: {
+          from: () => ({
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: { name: existingName },
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+            update: updateMock,
+          }),
+        },
+        resolvedWsId: 'resolved-ws',
+      });
+      return updateMock;
+    }
+
+    function put(body: unknown) {
+      return PUT(
+        new Request('http://localhost', {
+          body: JSON.stringify(body),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'PUT',
+        }),
+        { params: Promise.resolve({ secretId: 'secret-1', wsId: 'ws' }) }
+      );
+    }
+
+    it('updates only the name and keeps the stored value', async () => {
+      const updateMock = setup('DRIVE_R2_SECRET_ACCESS_KEY');
+      const response = await put({
+        keepValue: true,
+        name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+      });
+      expect(response.status).toBe(200);
+      expect(updateMock).toHaveBeenCalledWith({
+        name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+      });
+    });
+
+    it('allows renaming a hidden value to another hidden name', async () => {
+      const updateMock = setup('LEGACY_PROVIDER_TOKEN');
+      const response = await put({ keepValue: true, name: 'NEW_TOKEN' });
+      expect(response.status).toBe(200);
+      expect(updateMock).toHaveBeenCalledWith({ name: 'NEW_TOKEN' });
+    });
+
+    it('refuses to move a hidden value under a client-visible name', async () => {
+      const updateMock = setup('DRIVE_R2_SECRET_ACCESS_KEY');
+      const response = await put({ keepValue: true, name: 'ENABLE_CHAT' });
+      expect(response.status).toBe(400);
+      expect(updateMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects keepValue combined with a value or set to false', async () => {
+      setup('DRIVE_R2_SECRET_ACCESS_KEY');
+      for (const body of [
+        { keepValue: true, name: 'X_TOKEN', value: 'v' },
+        { keepValue: false, name: 'X_TOKEN' },
+        { name: 'X_TOKEN' },
+      ]) {
+        expect((await put(body)).status).toBe(400);
+      }
+    });
+  });
+
   it('rejects managed cron enablement updates from non-employee users', async () => {
     const maybeSingleMock = vi.fn().mockResolvedValue({
       data: { name: 'EMAIL_RATE_LIMIT_MINUTE' },
