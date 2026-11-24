@@ -63,27 +63,37 @@ export async function listWorkspaceExternalProjectRelationData(
   // Each read pages by id past the default row limit and is scoped to the
   // workspace on every page; rows are then ordered in memory, ending on id so
   // ties sort the same way on every request.
-  const page =
-    (
-      table:
-        | 'workspace_external_project_entry_relations'
-        | 'workspace_external_project_relation_definition_targets'
-        | 'workspace_external_project_relation_definitions'
-    ) =>
-    (afterId: string | null, limit: number) => {
-      let query = admin.from(table).select('*').eq('ws_id', workspaceId);
-      if (afterId) query = query.gt('id', afterId);
-      return query.order('id', { ascending: true }).range(0, limit - 1);
-    };
+  // Each loader names its table literally so its rows keep that table's type.
   const [definitions, targets, relations] = await Promise.all([
     fetchAllExternalProjectRowsById<ExternalProjectRelationDefinition>(
-      page('workspace_external_project_relation_definitions')
+      (afterId, limit) => {
+        let query = admin
+          .from('workspace_external_project_relation_definitions')
+          .select('*')
+          .eq('ws_id', workspaceId);
+        if (afterId) query = query.gt('id', afterId);
+        return query.order('id', { ascending: true }).range(0, limit - 1);
+      }
     ),
     fetchAllExternalProjectRowsById<ExternalProjectRelationDefinitionTarget>(
-      page('workspace_external_project_relation_definition_targets')
+      (afterId, limit) => {
+        let query = admin
+          .from('workspace_external_project_relation_definition_targets')
+          .select('*')
+          .eq('ws_id', workspaceId);
+        if (afterId) query = query.gt('id', afterId);
+        return query.order('id', { ascending: true }).range(0, limit - 1);
+      }
     ),
     fetchAllExternalProjectRowsById<ExternalProjectEntryRelation>(
-      page('workspace_external_project_entry_relations')
+      (afterId, limit) => {
+        let query = admin
+          .from('workspace_external_project_entry_relations')
+          .select('*')
+          .eq('ws_id', workspaceId);
+        if (afterId) query = query.gt('id', afterId);
+        return query.order('id', { ascending: true }).range(0, limit - 1);
+      }
     ),
   ]);
 
