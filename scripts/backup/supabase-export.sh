@@ -262,6 +262,20 @@ if [ "$MODE" = export ]; then
   node "$HERE/backup-manifest.mjs" unsafe-buckets "$PLAIN/storage-keys.csv" \
     "$PLAIN/storage-excluded-keys.csv" "$PLAIN/unsafe-buckets.txt" ||
     printf '*\n' >"$PLAIN/unsafe-buckets.txt"
+  # A key that is also the directory prefix of other keys (K next to K/child)
+  # cannot share a file tree with them. The sync skips such a key, and it is
+  # copied on its own to a reserved file name that the comparison maps back.
+  # More keys than the cap, or an unreadable list, skips every bucket.
+  : >"$PLAIN/storage-collisions.bin"
+  node "$HERE/backup-manifest.mjs" collision-keys "$PLAIN/storage-keys.csv" \
+    "$PLAIN/storage-excluded-keys.csv" "$PLAIN/storage-collisions.bin" ||
+    printf '*\n' >"$PLAIN/unsafe-buckets.txt"
+  COLLISION_SUFFIX="$(node "$HERE/backup-manifest.mjs" collision-suffix)" ||
+    printf '*\n' >"$PLAIN/unsafe-buckets.txt"
+  storage_s3() {
+    AWS_ACCESS_KEY_ID="$STORAGE_S3_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$STORAGE_S3_SECRET_ACCESS_KEY" \
+      AWS_DEFAULT_REGION="$STORAGE_S3_REGION" aws s3api "$@" --endpoint-url "$STORAGE_S3_ENDPOINT"
+  }
   while IFS= read -r bucket; do
     if ! [[ "$bucket" =~ ^[a-z0-9][a-z0-9._-]*$ ]] || grep -qxF -e "$bucket" -e '*' "$PLAIN/unsafe-buckets.txt"; then
       echo "skipped one bucket (unsafe id or keys)" >>"$PLAIN/storage-sync.err"
@@ -269,11 +283,33 @@ if [ "$MODE" = export ]; then
       continue
     fi
     mkdir -p "$PLAIN/storage/$bucket"
+    sync_excludes=()
+    while IFS= read -r -d '' c_bucket && IFS= read -r -d '' _ && IFS= read -r -d '' c_pattern && IFS= read -r -d '' _; do
+      if [ "$c_bucket" = "$bucket" ]; then sync_excludes+=("--exclude=$c_pattern"); fi
+    done <"$PLAIN/storage-collisions.bin"
     AWS_ACCESS_KEY_ID="$STORAGE_S3_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$STORAGE_S3_SECRET_ACCESS_KEY" \
-      AWS_DEFAULT_REGION="$STORAGE_S3_REGION" aws s3 sync --only-show-errors \
+      AWS_DEFAULT_REGION="$STORAGE_S3_REGION" aws s3 sync --only-show-errors ${sync_excludes[@]+"${sync_excludes[@]}"} \
       --endpoint-url "$STORAGE_S3_ENDPOINT" "s3://$bucket" "$PLAIN/storage/$bucket" \
       >/dev/null 2>>"$PLAIN/storage-sync.err" || echo "sync exit $? for one bucket" >>"$PLAIN/storage-sync.err"
   done < <(tail -n +2 "$PLAIN/buckets.csv")
+  # Copy each sized colliding key to its reserved file name, 3 attempts each.
+  while IFS= read -r -d '' c_bucket && IFS= read -r -d '' c_name && IFS= read -r -d '' _ && IFS= read -r -d '' c_copy; do
+    [ -n "$c_copy" ] || continue
+    if ! [[ "$c_bucket" =~ ^[a-z0-9][a-z0-9._-]*$ ]] ||
+      grep -qxF -e "$c_bucket" -e '*' "$PLAIN/unsafe-buckets.txt"; then
+      continue
+    fi
+    c_dest="$PLAIN/storage/$c_bucket/$c_copy"
+    for attempt in 1 2 3; do
+      mkdir -p -- "${c_dest%/*}" 2>/dev/null || break
+      if storage_s3 get-object --bucket="$c_bucket" --key="$c_name" "$c_dest" \
+        >/dev/null 2>>"$PLAIN/storage-sync.err"; then
+        break
+      fi
+      rm -f -- "$c_dest" 2>/dev/null || true
+      [ "$attempt" = 3 ] || sleep $((attempt * 5))
+    done
+  done <"$PLAIN/storage-collisions.bin"
   # Read storage.objects again, outside the snapshot, so keys that live
   # traffic moved between the snapshot and the copy are told apart from real
   # losses. If this read fails, parity runs without it and every difference
@@ -302,21 +338,18 @@ if [ "$MODE" = export ]; then
     node "$HERE/backup-manifest.mjs" missing-keys "$PLAIN/storage-report.json" \
       "$PLAIN/missing-keys.bin" 100; then
     : >"$PLAIN/source-missing.bin"
-    storage_s3() {
-      AWS_ACCESS_KEY_ID="$STORAGE_S3_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$STORAGE_S3_SECRET_ACCESS_KEY" \
-        AWS_DEFAULT_REGION="$STORAGE_S3_REGION" aws s3api "$@" --endpoint-url "$STORAGE_S3_ENDPOINT"
-    }
     while IFS= read -r -d '' probe_bucket && IFS= read -r -d '' probe_name; do
       if ! [[ "$probe_bucket" =~ ^[a-z0-9][a-z0-9._-]*$ ]] ||
         grep -qxF -e "$probe_bucket" -e '*' "$PLAIN/unsafe-buckets.txt"; then
         continue
       fi
       dest="$PLAIN/storage/$probe_bucket/$probe_name"
-      # A folder key, or a name that collides with a downloaded directory,
-      # cannot be fetched as a file; it stays missing.
-      [[ "$probe_name" != */ ]] && [ ! -d "$dest" ] || continue
+      # A folder key cannot be fetched as a file; it stays missing. A key that
+      # is also a downloaded directory is fetched to its reserved file name.
+      [[ "$probe_name" != */ ]] || continue
+      if [ -d "$dest" ]; then dest="$dest$COLLISION_SUFFIX"; fi
       for attempt in 1 2 3; do
-        mkdir -p "$(dirname -- "$dest")" 2>/dev/null || break
+        mkdir -p -- "${dest%/*}" 2>/dev/null || break
         if storage_s3 get-object --bucket="$probe_bucket" --key="$probe_name" "$dest" \
           >/dev/null 2>"$PLAIN/probe.err"; then
           break

@@ -10,10 +10,13 @@ import { createReadStream, readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
+  COLLISION_SUFFIX,
   compareStorageKeys,
   exportDiskBytes,
+  findCollisionKeys,
   findUnsafeBuckets,
   listDownloads,
+  MAX_COLLISION_KEYS,
   parseKeyRecords,
   STORAGE_CATEGORIES,
   parseExcludedKeys,
@@ -282,6 +285,35 @@ async function main(argv) {
       return 1;
     }
   }
+  if (command === 'collision-suffix') {
+    process.stdout.write(COLLISION_SUFFIX);
+    return 0;
+  }
+  if (command === 'collision-keys') {
+    // Writes NUL-terminated `bucket, key, sync-exclude glob, copy-to name`
+    // fields per colliding key to a file, never to stdout. More than
+    // MAX_COLLISION_KEYS writes nothing and exits 3.
+    const [expectedPath, excludedPath, outPath] = args;
+    try {
+      const records = findCollisionKeys(
+        parseExpectedKeys(readFileSync(expectedPath, 'utf8')),
+        parseExcludedKeys(readFileSync(excludedPath, 'utf8'))
+      );
+      if (records.length > MAX_COLLISION_KEYS) return 3;
+      writeFileSync(
+        outPath,
+        records
+          .map(
+            (r) =>
+              `${r.bucket}\u0000${r.name}\u0000${r.pattern}\u0000${r.copyTo}\u0000`
+          )
+          .join('')
+      );
+      return 0;
+    } catch {
+      return 1;
+    }
+  }
   if (command === 'disk-needed') {
     const [sizesPath, expectedPath] = args;
     const relationBytes = sumColumn(
@@ -305,7 +337,7 @@ async function main(argv) {
     return 0;
   }
   console.error(
-    'Usage: backup-manifest.mjs compare-counts|compare-storage|disk-needed|manifest ...'
+    'Usage: backup-manifest.mjs compare-counts|compare-storage|collision-keys|collision-suffix|disk-needed|manifest ...'
   );
   return 2;
 }

@@ -80,9 +80,24 @@ the locked, private backup bucket.
     encrypted report names them. Each one needs an owner decision: restore the
     bytes or delete the row;
   - a bucket whose id is not a safe directory name, or that holds a key with a
-    leading `/` or an empty, `.` or `..` segment, is **not synced**, so nothing
-    can be written outside its directory. Storage parity then fails, and the
-    unsafe keys are listed in the encrypted report.
+    leading `/`, an empty, `.` or `..` segment, or a segment ending in
+    `.__tuturuuu_object__`, is **not synced**, so nothing can be written
+    outside its directory. Storage parity then fails, and the unsafe keys are
+    listed in the encrypted report;
+  - object storage allows a key `K` and keys `K/child` side by side, which a
+    file tree cannot hold. Every key that is the directory prefix of another
+    key in its bucket, at any depth and counted over sized and excluded keys
+    alike, is left out of the sync (`--exclude` with the key's glob characters
+    escaped) and its object is fetched with `GetObject`, 3 attempts, to
+    `K.__tuturuuu_object__` next to the directory `K/`. Parity maps that file
+    name back to `K`, so size checking stays exact and nothing is excluded
+    from the comparison. A plain file that already holds `K` is never
+    replaced by a reserved file name; the stray file fails parity as
+    `unexpected`. A copy that fails goes through the same retry and
+    `HeadObject` probe as any other missing key, so an orphan row is counted
+    as `sourceMissing`. A colliding key whose reserved file name would exceed
+    the 255-byte file name limit counts as unsafe. More than 500 such keys, or
+    a key list that cannot be read, skips every bucket and fails parity.
 - The archive is streamed straight into `age`, so no plaintext tar is written.
 - Counts run with `row_security = off`, so a count fails, as `pg_dump` does,
   instead of returning a number silently filtered by RLS.
@@ -197,6 +212,14 @@ up to 90 days. That is the documented backup exception to account erasure.
 3. Record the R2 prefix and the manifest's sha256 from the job summary.
 4. To restore, download the prefix, check every file against the manifest, then
    decrypt it with `age -d -i <key>`. Only key holders can do this.
+5. To restore storage, extract `storage.tar` and upload each file under
+   `storage/<bucket>/<path>` to the key `<path>` in that bucket. A file whose
+   name ends in `.__tuturuuu_object__` is the object stored at the key without
+   that suffix: upload `storage/<bucket>/a/b.__tuturuuu_object__` to the key
+   `a/b`, while the files inside the directory `a/b/` keep their paths. The
+   export refuses to run a bucket that already holds a key with a segment
+   ending in that suffix, so the mapping is never ambiguous. `storage-keys.csv`
+   lists every real key and its size for checking the upload.
 
 The helper tests in `scripts/backup/backup-manifest.test.mjs` cover:
 
@@ -205,6 +228,11 @@ The helper tests in `scripts/backup/backup-manifest.test.mjs` cover:
 - failed reports for unparseable input;
 - key-level storage parity (missing, resized, unexpected and excluded keys), and
   keys the post-copy live listing explains;
+- keys that are also directory prefixes (`K` beside `K/child`, nested chains,
+  glob characters and a leading dash in the key, folder keys, per-bucket
+  scope, the 500-key cap, the file name limit) and the reserved file name that
+  holds them, including stray reserved files and live-listing outcomes
+  (`scripts/backup/storage-collisions.test.mjs`);
 - disk sizing;
 - manifest hashing.
 

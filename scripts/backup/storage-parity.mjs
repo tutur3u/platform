@@ -75,8 +75,17 @@ function keyOf(bucket, name) {
 
 const MAX_SEGMENT_BYTES = 255;
 
+// Object storage lets a key K and keys K/child coexist; a file tree cannot
+// hold a file and a directory under one name. The object at K is therefore
+// copied to `K<COLLISION_SUFFIX>`, and the comparison maps that file back to
+// K. No real key may use a path segment ending in the suffix, or the mapping
+// would be ambiguous; such a bucket is treated as unsafe and not synced.
+export const COLLISION_SUFFIX = '.__tuturuuu_object__';
+export const MAX_COLLISION_KEYS = 500;
+
 // A key that cannot map to a path inside its bucket directory: a leading
-// '/', an empty, '.' or '..' segment, or a segment longer than a file name.
+// '/', an empty, '.' or '..' segment, a segment longer than a file name, or
+// a segment ending in the reserved collision suffix.
 // One trailing '/' marks a folder key, for which sync writes no file.
 export function isUnsafeKey(name) {
   if (name === '' || name.startsWith('/')) return true;
@@ -89,8 +98,61 @@ export function isUnsafeKey(name) {
         segment === '' ||
         segment === '.' ||
         segment === '..' ||
+        segment.endsWith(COLLISION_SUFFIX) ||
         Buffer.byteLength(segment) > MAX_SEGMENT_BYTES
     );
+}
+
+// Keys that are also the directory prefix of another key in the same
+// bucket (K next to K/child, at any depth), taken over sized and excluded
+// keys alike. Each record names the bucket, the key, a glob that matches
+// exactly that key for `aws s3 sync --exclude`, and, for a sized key, the
+// file name to copy it to inside the bucket directory.
+export function findCollisionKeys(expected, excluded) {
+  const byBucket = new Map();
+  for (const key of [...expected.keys(), ...excluded]) {
+    const [bucket, name] = key.split('\u0000');
+    if (!byBucket.has(bucket)) byBucket.set(bucket, new Set());
+    byBucket.get(bucket).add(name);
+  }
+  const records = [];
+  for (const [bucket, names] of byBucket) {
+    const prefixes = new Set();
+    for (const name of names) {
+      for (
+        let at = name.indexOf('/');
+        at !== -1;
+        at = name.indexOf('/', at + 1)
+      ) {
+        prefixes.add(name.slice(0, at));
+      }
+    }
+    for (const name of [...names].sort()) {
+      if (name.endsWith('/') || !prefixes.has(name)) continue;
+      records.push({
+        bucket,
+        name,
+        pattern: name.replace(/[*?[]/g, (char) => `[${char}]`),
+        copyTo: expected.has(keyOf(bucket, name))
+          ? `${name}${COLLISION_SUFFIX}`
+          : '',
+      });
+    }
+  }
+  return records;
+}
+
+// A sized colliding key whose copy name would exceed the file name limit
+// cannot be written, so it is unsafe like any other unmappable key.
+function unsafeCollisionKeys(expected, excluded) {
+  return findCollisionKeys(expected, excluded)
+    .filter(
+      ({ copyTo }) =>
+        copyTo !== '' &&
+        Buffer.byteLength(copyTo.slice(copyTo.lastIndexOf('/') + 1)) >
+          MAX_SEGMENT_BYTES
+    )
+    .map(({ bucket, name }) => keyOf(bucket, name));
 }
 
 // Buckets holding at least one unsafe key are not synced at all, so no file
@@ -100,6 +162,9 @@ export function findUnsafeBuckets(expected, excluded) {
   for (const key of [...expected.keys(), ...excluded]) {
     const [bucket, name] = key.split('\u0000');
     if (isUnsafeKey(name)) buckets.add(bucket);
+  }
+  for (const key of unsafeCollisionKeys(expected, excluded)) {
+    buckets.add(key.split('\u0000')[0]);
   }
   return buckets;
 }
@@ -148,11 +213,15 @@ export function parseKeyRecords(text) {
   return keys;
 }
 
-// Every file under <root>/<bucket>/, keyed by its path inside the bucket.
+// Every file under <root>/<bucket>/, keyed by its path inside the bucket. A
+// file named `K<COLLISION_SUFFIX>` is the object stored at key K, unless a
+// plain file already holds K: then it keeps its literal name and fails
+// parity as an unexpected key instead of replacing K's size.
 export function listDownloads(root, buckets) {
   const files = new Map();
   for (const bucket of buckets) {
     const base = join(root, bucket);
+    const reserved = [];
     const stack = [base];
     while (stack.length > 0) {
       const dir = stack.pop();
@@ -167,9 +236,17 @@ export function listDownloads(root, buckets) {
         if (entry.isDirectory()) stack.push(path);
         else if (entry.isFile()) {
           const name = relative(base, path).split(sep).join('/');
-          files.set(keyOf(bucket, name), statSync(path).size);
+          const size = statSync(path).size;
+          if (name.endsWith(COLLISION_SUFFIX)) reserved.push([name, size]);
+          else files.set(keyOf(bucket, name), size);
         }
       }
+    }
+    for (const [name, size] of reserved) {
+      const stem = name.slice(0, -COLLISION_SUFFIX.length);
+      const mapped =
+        stem !== '' && !stem.endsWith('/') && !files.has(keyOf(bucket, stem));
+      files.set(keyOf(bucket, mapped ? stem : name), size);
     }
   }
   return files;
@@ -210,9 +287,14 @@ export function compareStorageKeys(
   live,
   sourceMissing = new Set()
 ) {
-  const unsafe = [...expected.keys(), ...excluded].filter((key) =>
-    isUnsafeKey(key.split('\u0000')[1])
-  );
+  const unsafe = [
+    ...new Set([
+      ...[...expected.keys(), ...excluded].filter((key) =>
+        isUnsafeKey(key.split('\u0000')[1])
+      ),
+      ...unsafeCollisionKeys(expected, excluded),
+    ]),
+  ];
   const liveHas = (key) =>
     live !== undefined && (live.keys.has(key) || live.excluded.has(key));
   const missing = [];
