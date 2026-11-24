@@ -333,7 +333,7 @@
     "picker_state_hidden": "Hidden",
     "picker_unpin": "Unpin workspace",
     "processing": "Processing...",
-    "public_profile": "Public profile",
+    "public_profile": "Profile",
     "remove": "Remove",
     "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
@@ -1605,5 +1605,18 @@
     "upskii_disconnect_title": "Disconnect Upskii?",
     "upskii_disconnected": "Upskii disconnected",
     "upskii_linked_as": "Linked to {email}"
+  },
+  "public_profile": {
+    "copyFailed": "The link could not be copied. Select it below to copy manually.",
+    "copyLink": "Copy public profile link",
+    "description": "Public Tuturuuu profile.",
+    "edit_profile": "Edit profile",
+    "linkCopied": "Public link copied.",
+    "load_failed": "Your profile could not be loaded. Try again later.",
+    "manualCopyLink": "Public profile link",
+    "no_username": "Choose a username in Profile to get a public profile link.",
+    "tab_description": "See your profile as others see it and share its link.",
+    "tab_label": "Public profile",
+    "title": "Tuturuuu profile"
   }
 }

@@ -22,3 +22,29 @@ product rules for its entries.
   are not governed by this switch.
 - **Regression coverage:** `satellite-shell.test.tsx` and
   `satellite-user-menu-items.test.tsx` in `packages/ui`.
+
+## Profile
+
+- **Scope:** the account menu's Profile entry in `apps/web`, `apps/workspace`
+  and every satellite whose settings dialog uses
+  `createAccountSettingsNavGroup` (`packages/satellite`).
+- **Default:** Profile opens the Public profile tab
+  (`SHARED_SETTINGS_TAB_IDS.publicProfile`) in the current app's settings
+  dialog. The tab renders `PublicProfileCard`, the component the
+  `/u/[username]` page renders, limited to name, bio, avatar and banner.
+- **Address:** when the profile URL shares the page's origin (apps/web on
+  tuturuuu.com), the tab replaces the address with `/u/<username>` without
+  navigating (`packages/ui/src/hooks/public-profile-address.ts`). The shared
+  `useSettingsDialogUrlState` hook keeps the dialog open on that tagged entry.
+  Closing, switching tabs or Back restores the previous address. Other origins
+  keep `?settingsDialog=open&settingsTab=public_profile`.
+- **Deep links:** loading `/u/<username>` renders the full public page; a reload
+  while the tab is open does the same.
+- **Exceptions:** users without a username see a prompt to choose one in the
+  Profile tab. A menu rendered without a settings dialog keeps the link to the
+  public page.
+- **Regression coverage:** `public-profile-address.test.ts`,
+  `use-settings-dialog-url-state.test.tsx` and
+  `public-profile-menu-item.test.tsx` in `packages/ui`;
+  `public-profile-panel.test.tsx` in `packages/satellite`; the `/u/[username]`
+  page test in `apps/web`.

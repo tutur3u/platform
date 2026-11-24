@@ -63,7 +63,7 @@ export function SatelliteUserMenuItems({
   appItems?: ReactNode;
   workspaceSelect?: ReactNode;
   signedIn: boolean;
-  publicProfile?: { href: string; label: string };
+  publicProfile?: { href: string; label: string; onOpen?: () => void };
   /** Opens the in-app settings dialog (shared `?settingsTab=` contract). */
   settings?: { label: string; onOpen: () => void; shortcut?: string };
   /** Feedback where the sidebar's account hub does not publish one. */

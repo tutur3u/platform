@@ -1,23 +1,14 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
+export { publicProfileImage } from '@tuturuuu/utils/public-profile-url';
+
 export type PublicUserProfile = {
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
   banner_url: string | null;
 };
-
-export function publicProfileImage(value: string | null): string | undefined {
-  try {
-    const url = value ? new URL(value) : null;
-    return url?.protocol === 'https:' && !url.username && !url.password
-      ? url.href
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 // Never expand this projection from the current-user or workspace profile DTO.
 export async function readPublicUserProfile(

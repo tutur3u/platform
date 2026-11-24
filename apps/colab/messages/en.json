@@ -290,7 +290,7 @@
     "picker_state_default": "Default",
     "picker_state_hidden": "Hidden",
     "picker_unpin": "Unpin workspace",
-    "public_profile": "Public profile",
+    "public_profile": "Profile",
     "restore_workspace": "Restore workspace",
     "retry": "Retry",
     "search_workspace": "Search workspaces",
@@ -1040,5 +1040,18 @@
     "view_workspace_domains": "View workspace domains",
     "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement."
   },
-  "yourWorkspace": "Your team workspace"
+  "yourWorkspace": "Your team workspace",
+  "public_profile": {
+    "copyFailed": "The link could not be copied. Select it below to copy manually.",
+    "copyLink": "Copy public profile link",
+    "description": "Public Tuturuuu profile.",
+    "edit_profile": "Edit profile",
+    "linkCopied": "Public link copied.",
+    "load_failed": "Your profile could not be loaded. Try again later.",
+    "manualCopyLink": "Public profile link",
+    "no_username": "Choose a username in Profile to get a public profile link.",
+    "tab_description": "See your profile as others see it and share its link.",
+    "tab_label": "Public profile",
+    "title": "Tuturuuu profile"
+  }
 }

@@ -62,3 +62,32 @@ describe('useSettingsDialogUrlState', () => {
     expect(result.current.open).toBe(false);
   });
 });
+
+describe('useSettingsDialogUrlState with the public profile address', () => {
+  it('reports the Public profile tab while /u/<name> is shown and restores the address before switching tabs', async () => {
+    const address = await import('./public-profile-address');
+    window.history.replaceState(
+      null,
+      '',
+      '/ws?settingsDialog=open&settingsTab=public_profile'
+    );
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+    const { result } = renderUrlState('', onUrlUpdate);
+    expect(result.current.open).toBe(false);
+
+    act(() => {
+      address.enterPublicProfileAddress('/u/creator');
+    });
+    expect(window.location.pathname).toBe('/u/creator');
+    expect(result.current.open).toBe(true);
+    expect(result.current.tab).toBe('public_profile');
+
+    act(() => result.current.openSettings('security'));
+    expect(window.location.pathname).toBe('/ws');
+    expect(address.isPublicProfileAddressActive()).toBe(false);
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    expect(onUrlUpdate.mock.calls.at(-1)?.[0].options.history).toBe(
+      'replace'
+    );
+  });
+});

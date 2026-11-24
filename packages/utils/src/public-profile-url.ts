@@ -24,3 +24,17 @@ export function getPublicProfileUrl(
     return null;
   }
 }
+
+/** An https profile image without embedded credentials, or undefined. */
+export function publicProfileImage(
+  value: string | null | undefined
+): string | undefined {
+  try {
+    const url = value ? new URL(value) : null;
+    return url?.protocol === 'https:' && !url.username && !url.password
+      ? url.href
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}

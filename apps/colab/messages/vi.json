@@ -290,7 +290,7 @@
     "picker_state_default": "Mặc định",
     "picker_state_hidden": "Đã ẩn",
     "picker_unpin": "Bỏ ghim không gian làm việc",
-    "public_profile": "Hồ sơ công khai",
+    "public_profile": "Hồ sơ",
     "restore_workspace": "Khôi phục không gian làm việc",
     "retry": "Thử lại",
     "search_workspace": "Tìm kiếm không gian làm việc",
@@ -1040,5 +1040,18 @@
     "view_workspace_domains": "Xem tên miền không gian làm việc",
     "view_workspace_domains_description": "Xem các tên miền tùy chỉnh của không gian làm việc, trạng thái xác minh và quyền sử dụng tên miền."
   },
-  "yourWorkspace": "Không gian nhóm của bạn"
+  "yourWorkspace": "Không gian nhóm của bạn",
+  "public_profile": {
+    "copyFailed": "Không thể sao chép liên kết. Chọn liên kết bên dưới để sao chép thủ công.",
+    "copyLink": "Sao chép liên kết hồ sơ công khai",
+    "description": "Hồ sơ công khai trên Tuturuuu.",
+    "edit_profile": "Chỉnh sửa hồ sơ",
+    "linkCopied": "Đã sao chép liên kết công khai.",
+    "load_failed": "Không thể tải hồ sơ của bạn. Vui lòng thử lại sau.",
+    "manualCopyLink": "Liên kết hồ sơ công khai",
+    "no_username": "Chọn tên người dùng trong Hồ sơ để có liên kết hồ sơ công khai.",
+    "tab_description": "Xem hồ sơ của bạn như người khác thấy và chia sẻ liên kết.",
+    "tab_label": "Hồ sơ công khai",
+    "title": "Hồ sơ Tuturuuu"
+  }
 }

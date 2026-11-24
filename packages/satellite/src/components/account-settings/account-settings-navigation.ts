@@ -2,12 +2,14 @@ import { Laptop, Shield, User, Users } from '@tuturuuu/icons';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SHARED_SETTINGS_TAB_IDS } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { createAccountIntegrationsNavItem } from './account-integrations-navigation';
+import { createPublicProfileNavItem } from './public-profile-navigation';
 
 export type AccountSettingsTranslator = (key: string) => string;
 
 /** Account tabs every satellite settings dialog exposes, in display order. */
 export const ACCOUNT_SETTINGS_TAB_IDS = [
   SHARED_SETTINGS_TAB_IDS.profile,
+  SHARED_SETTINGS_TAB_IDS.publicProfile,
   SHARED_SETTINGS_TAB_IDS.accounts,
   SHARED_SETTINGS_TAB_IDS.security,
   SHARED_SETTINGS_TAB_IDS.sessions,
@@ -51,6 +53,7 @@ export function createAccountSettingsNavGroup(
         label: t('satellite-account-settings.profile'),
         name: SHARED_SETTINGS_TAB_IDS.profile,
       },
+      createPublicProfileNavItem(t),
       {
         description: t('satellite-account-settings.accounts_description'),
         icon: Users,

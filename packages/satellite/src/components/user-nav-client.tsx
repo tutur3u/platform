@@ -8,6 +8,7 @@ import { DropdownMenuSeparator } from '@tuturuuu/ui/dropdown-menu';
 import {
   SETTINGS_DIALOG_CLOSE_INTENT_EVENT,
   SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+  SHARED_SETTINGS_TAB_IDS,
 } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import {
   SettingsDialogFocusContext,
@@ -177,15 +178,21 @@ export default function UserNavClient({
     useSettingsDialogUrlState();
   const ownsSettingsDialog = shouldOwnSettingsDialog(externalSettingsHost);
 
-  const openSettings = useCallback(() => {
-    const unhandled = window.dispatchEvent(
-      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-        cancelable: true,
-        detail: { returnFocus: menuTrigger.current ?? undefined },
-      })
-    );
-    if (unhandled) openSettingsTab(null);
-  }, [openSettingsTab]);
+  const openSettings = useCallback(
+    (settingsTab?: string) => {
+      const unhandled = window.dispatchEvent(
+        new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+          cancelable: true,
+          detail: {
+            returnFocus: menuTrigger.current ?? undefined,
+            settingsTab,
+          },
+        })
+      );
+      if (unhandled) openSettingsTab(settingsTab ?? null);
+    },
+    [openSettingsTab]
+  );
 
   useEffect(() => {
     const openFeedback = () => setReportOpen(true);
@@ -263,14 +270,19 @@ export default function UserNavClient({
             user
               ? {
                   label: t('common.settings'),
-                  onOpen: openSettings,
+                  onOpen: () => openSettings(),
                   shortcut: `${modKey},`,
                 }
               : undefined
           }
           publicProfile={
             publicProfileUrl
-              ? { href: publicProfileUrl, label: t('common.public_profile') }
+              ? {
+                  href: publicProfileUrl,
+                  label: t('common.public_profile'),
+                  onOpen: () =>
+                    openSettings(SHARED_SETTINGS_TAB_IDS.publicProfile),
+                }
               : undefined
           }
           workspaceSelect={workspaceSelector?.renderWorkspaceSelect?.({

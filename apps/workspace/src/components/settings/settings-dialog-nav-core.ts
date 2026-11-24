@@ -10,6 +10,7 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
+import { createPublicProfileNavItem } from '@tuturuuu/satellite/public-profile-navigation';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import type { SettingsNavBuilderParams } from './settings-dialog-nav-types';
 
@@ -28,6 +29,7 @@ export function buildCoreSettingsNavGroups({
           description: t('settings.user.profile_description'),
           keywords: ['Profile'],
         },
+        createPublicProfileNavItem(t),
         {
           name: 'security',
           label: t('ws-settings.security'),

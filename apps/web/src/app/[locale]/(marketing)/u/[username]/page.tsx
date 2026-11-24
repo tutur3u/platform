@@ -1,16 +1,11 @@
-import { UserRound } from '@tuturuuu/icons';
-import { PublicLinkButton } from '@tuturuuu/ui/public-link-button';
-import { getPublicContentLink } from '@tuturuuu/utils/public-content-link';
+import { PublicProfileCard } from '@tuturuuu/ui/custom/public-profile-card';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import type { Locale } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import {
-  publicProfileImage,
-  readPublicUserProfile,
-} from '@/lib/public-user-profile';
+import { readPublicUserProfile } from '@/lib/public-user-profile';
 
 type Props = { params: Promise<{ locale: Locale; username: string }> };
 
@@ -32,54 +27,19 @@ async function Profile({ params }: Props) {
   const profile = await readPublicUserProfile(username);
   if (!profile) notFound();
   const t = await getTranslations({ locale, namespace: 'public_profile' });
-  const avatar = publicProfileImage(profile.avatar_url);
-  const banner = publicProfileImage(profile.banner_url);
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-8">
-      <article className="overflow-hidden rounded-2xl border bg-card">
-        <div className="h-48 bg-muted sm:h-64">
-          {banner && (
-            <img
-              src={banner}
-              alt=""
-              className="h-full w-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          )}
-        </div>
-        <div className="relative space-y-5 px-6 pb-8 sm:px-10">
-          <div className="-mt-12 flex size-24 items-center justify-center overflow-hidden rounded-full border-4 border-card bg-muted">
-            {avatar ? (
-              <img
-                src={avatar}
-                alt=""
-                className="h-full w-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <UserRound
-                className="size-10 text-muted-foreground"
-                aria-hidden="true"
-              />
-            )}
-          </div>
-          <h1 className="break-words font-semibold text-3xl">
-            {profile.display_name || t('title')}
-          </h1>
-          {profile.bio && (
-            <p className="whitespace-pre-wrap break-words text-muted-foreground">
-              {profile.bio}
-            </p>
-          )}
-          <PublicLinkButton
-            url={getPublicContentLink({ type: 'profile', username })}
-            label={t('copyLink')}
-            copiedLabel={t('linkCopied')}
-            errorLabel={t('copyFailed')}
-            manualCopyLabel={t('manualCopyLink')}
-          />
-        </div>
-      </article>
+      <PublicProfileCard
+        profile={profile}
+        username={username}
+        labels={{
+          title: t('title'),
+          copyLink: t('copyLink'),
+          linkCopied: t('linkCopied'),
+          copyFailed: t('copyFailed'),
+          manualCopyLink: t('manualCopyLink'),
+        }}
+      />
     </main>
   );
 }

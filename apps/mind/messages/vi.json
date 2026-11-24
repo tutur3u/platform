@@ -350,7 +350,7 @@
     "picker_state_default": "Mặc định",
     "picker_state_hidden": "Đã ẩn",
     "picker_unpin": "Bỏ ghim không gian làm việc",
-    "public_profile": "Hồ sơ công khai",
+    "public_profile": "Hồ sơ",
     "report-problem": "Báo lỗi",
     "report-problem-description": "Cho chúng tôi biết chuyện gì đã xảy ra và thêm ngữ cảnh hữu ích nếu có.",
     "report-submitted-success": "Đã gửi báo cáo",
@@ -905,6 +905,19 @@
     "step_try": "Thử một thao tác có hướng dẫn",
     "step_try_description": "Thực hành ngay trong ngữ cảnh. Bạn có thể bỏ qua hoặc đóng hướng dẫn bất cứ lúc nào.",
     "title": "Hướng dẫn và học lại"
+  },
+  "public_profile": {
+    "copyFailed": "Không thể sao chép liên kết. Chọn liên kết bên dưới để sao chép thủ công.",
+    "copyLink": "Sao chép liên kết hồ sơ công khai",
+    "description": "Hồ sơ công khai trên Tuturuuu.",
+    "edit_profile": "Chỉnh sửa hồ sơ",
+    "linkCopied": "Đã sao chép liên kết công khai.",
+    "load_failed": "Không thể tải hồ sơ của bạn. Vui lòng thử lại sau.",
+    "manualCopyLink": "Liên kết hồ sơ công khai",
+    "no_username": "Chọn tên người dùng trong Hồ sơ để có liên kết hồ sơ công khai.",
+    "tab_description": "Xem hồ sơ của bạn như người khác thấy và chia sẻ liên kết.",
+    "tab_label": "Hồ sơ công khai",
+    "title": "Hồ sơ Tuturuuu"
   },
   "satellite-account-settings": {
     "accounts": "Các tài khoản",

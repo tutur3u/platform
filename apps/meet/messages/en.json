@@ -2043,7 +2043,7 @@
     "productivity": "productivity",
     "products": "Products",
     "public_document": "Public document",
-    "public_profile": "Public profile",
+    "public_profile": "Profile",
     "published": "Published",
     "purple": "Purple",
     "qr_code": "QR Code",
@@ -7326,6 +7326,19 @@
     "id": "ID",
     "name": "Name",
     "value": "Value"
+  },
+  "public_profile": {
+    "copyFailed": "The link could not be copied. Select it below to copy manually.",
+    "copyLink": "Copy public profile link",
+    "description": "Public Tuturuuu profile.",
+    "edit_profile": "Edit profile",
+    "linkCopied": "Public link copied.",
+    "load_failed": "Your profile could not be loaded. Try again later.",
+    "manualCopyLink": "Public profile link",
+    "no_username": "Choose a username in Profile to get a public profile link.",
+    "tab_description": "See your profile as others see it and share its link.",
+    "tab_label": "Public profile",
+    "title": "Tuturuuu profile"
   },
   "qr": {
     "image_upload": {

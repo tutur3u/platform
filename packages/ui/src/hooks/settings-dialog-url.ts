@@ -24,6 +24,7 @@ export const SHARED_SETTINGS_TAB_IDS = {
   notifications: 'notifications',
   onboardingGuide: 'onboarding_guide',
   profile: 'profile',
+  publicProfile: 'public_profile',
   security: 'security',
   sessions: 'sessions',
 } as const;

@@ -16,3 +16,5 @@ export {
   ProfileAvatarEditor,
   satelliteProfileQueryKey,
 } from '../profile-settings/profile-avatar-editor';
+export { createPublicProfileNavItem } from './public-profile-navigation';
+export { PublicProfileSettingsPanel } from './public-profile-panel';

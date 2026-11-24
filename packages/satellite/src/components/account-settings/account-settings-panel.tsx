@@ -6,6 +6,7 @@ import { SatelliteProfileSettingsPanel } from '../profile-settings/profile-setti
 import { AccountIntegrationsPanel } from './account-integrations-panel';
 import { AccountSettingsLinkOut } from './account-settings-link-out';
 import { isWebManagedAccountTab } from './account-settings-navigation';
+import { PublicProfileSettingsPanel } from './public-profile-panel';
 
 /** Renders the shared account tab content; null for any other tab. */
 export function SatelliteAccountSettingsPanel({
@@ -23,6 +24,10 @@ export function SatelliteAccountSettingsPanel({
     return (
       <SatelliteProfileSettingsPanel centralUrl={centralUrl} user={user} />
     );
+  }
+
+  if (activeTab === SHARED_SETTINGS_TAB_IDS.publicProfile) {
+    return <PublicProfileSettingsPanel centralUrl={centralUrl} />;
   }
 
   if (activeTab === SHARED_SETTINGS_TAB_IDS.accountIntegrations) {

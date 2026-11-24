@@ -12,6 +12,7 @@ import {
   NavigationSidebarSettings,
   NotificationSettings,
   ProfileSettingsPanel,
+  PublicProfileSettingsPanel,
   SecuritySettings,
   SessionSettings,
   SettingsDialogNativeRoutePanels,
@@ -54,6 +55,7 @@ export function SettingsDialogContent({
   return (
     <>
       {activeTab === 'profile' && user && <ProfileSettingsPanel user={user} />}
+      {activeTab === 'public_profile' && user && <PublicProfileSettingsPanel />}
       {activeTab === 'security' && user && (
         <div className="h-full">
           <SecuritySettings

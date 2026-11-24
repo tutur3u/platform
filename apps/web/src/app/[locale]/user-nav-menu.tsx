@@ -94,7 +94,11 @@ export function UserNavMenu({
         }
         publicProfile={
           profilePath
-            ? { href: profilePath, label: t('common.public_profile') }
+            ? {
+                href: profilePath,
+                label: t('common.public_profile'),
+                onOpen: () => onOpenSettings('public_profile'),
+              }
             : undefined
         }
         settings={

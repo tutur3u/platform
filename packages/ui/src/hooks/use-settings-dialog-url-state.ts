@@ -1,9 +1,15 @@
 'use client';
 
 import { parseAsString, useQueryStates } from 'nuqs';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import {
+  isPublicProfileAddressActive,
+  leavePublicProfileAddress,
+  subscribePublicProfileAddress,
+} from './public-profile-address';
 import {
   CLOSED_SETTINGS_DIALOG_QUERY,
+  SHARED_SETTINGS_TAB_IDS,
   getSettingsDialogHistoryMode,
   parseSettingsDialogQuery,
   serializeSettingsDialogQuery,
@@ -41,10 +47,22 @@ export function useSettingsDialogUrlState<K extends string = never>(
     return parsers;
   }, [clearedExtras]);
   const [query, setQuery] = useQueryStates(keyMap, QUERY_OPTIONS);
-  const { open, tab } = parseSettingsDialogQuery(query);
+  const parsed = parseSettingsDialogQuery(query);
+  // While the Public profile tab shows `/u/<username>`, the settings params
+  // are off the URL; the tagged history entry keeps the dialog open.
+  const showsProfileAddress = useSyncExternalStore(
+    subscribePublicProfileAddress,
+    isPublicProfileAddressActive,
+    () => false
+  );
+  const open = parsed.open || showsProfileAddress;
+  const tab = showsProfileAddress
+    ? SHARED_SETTINGS_TAB_IDS.publicProfile
+    : parsed.tab;
 
   const openSettings = useCallback(
     (nextTab?: string | null, extras?: ExtraValues<K>) => {
+      leavePublicProfileAddress();
       void setQuery(
         {
           ...clearedExtras,
@@ -61,6 +79,7 @@ export function useSettingsDialogUrlState<K extends string = never>(
   );
 
   const closeSettings = useCallback(() => {
+    leavePublicProfileAddress();
     void setQuery(
       { ...clearedExtras, ...CLOSED_SETTINGS_DIALOG_QUERY },
       { ...QUERY_OPTIONS, history: getSettingsDialogHistoryMode('close', open) }

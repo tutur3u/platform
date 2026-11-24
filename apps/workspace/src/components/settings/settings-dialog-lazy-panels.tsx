@@ -7,6 +7,11 @@ const LazyAccountManagementSettings = lazy(
   () => import('./account/account-management-settings')
 );
 const LazyAppearanceSettings = lazy(() => import('./appearance-settings'));
+const LazyPublicProfileSettingsPanel = lazy(() =>
+  import('@tuturuuu/satellite/public-profile-panel').then((module) => ({
+    default: module.PublicProfileSettingsPanel,
+  }))
+);
 const LazyKeyboardShortcutsSettings = lazy(() =>
   import('./keyboard-shortcuts-settings').then((module) => ({
     default: module.KeyboardShortcutsSettings,
@@ -55,6 +60,9 @@ export const AccountManagementSettings = withPanelSuspense(
   LazyAccountManagementSettings
 );
 export const AppearanceSettings = withPanelSuspense(LazyAppearanceSettings);
+export const PublicProfileSettingsPanel = withPanelSuspense(
+  LazyPublicProfileSettingsPanel
+);
 export const KeyboardShortcutsSettings = withPanelSuspense(
   LazyKeyboardShortcutsSettings
 );

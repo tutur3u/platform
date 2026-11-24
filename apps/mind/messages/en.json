@@ -350,7 +350,7 @@
     "picker_state_default": "Default",
     "picker_state_hidden": "Hidden",
     "picker_unpin": "Unpin workspace",
-    "public_profile": "Public profile",
+    "public_profile": "Profile",
     "report-problem": "Report a problem",
     "report-problem-description": "Tell us what happened and include any helpful context.",
     "report-submitted-success": "Report submitted",
@@ -905,6 +905,19 @@
     "step_try": "Try a guided action",
     "step_try_description": "Practice in context. You can skip or close the guide at any time.",
     "title": "Guidance and learning"
+  },
+  "public_profile": {
+    "copyFailed": "The link could not be copied. Select it below to copy manually.",
+    "copyLink": "Copy public profile link",
+    "description": "Public Tuturuuu profile.",
+    "edit_profile": "Edit profile",
+    "linkCopied": "Public link copied.",
+    "load_failed": "Your profile could not be loaded. Try again later.",
+    "manualCopyLink": "Public profile link",
+    "no_username": "Choose a username in Profile to get a public profile link.",
+    "tab_description": "See your profile as others see it and share its link.",
+    "tab_label": "Public profile",
+    "title": "Tuturuuu profile"
   },
   "satellite-account-settings": {
     "accounts": "Accounts",
