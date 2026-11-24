@@ -488,6 +488,20 @@ validation stopped without recording credentials or the OIDC token. If that log
 is absent, inspect the proxy or deployment edge. Vault bundle-fetch rows appear
 only after OIDC validation and admin-client setup have succeeded.
 
+A failed bundle fetch ends with one `Mobile deployment bundle unavailable`
+annotation naming the HTTP status and, when present, the proxy guard reason, a
+short response code or message, the `server` header, the guard request id
+(matching the guard's log line) and the `cf-ray` id. A 503
+with a guard reason points at the proxy, and a 503 with only `cf-ray` points at
+the Worker or edge. `scripts/mobile-deployment/bundle-response.mjs` builds the
+summary from allowlisted fields and deletes the response, and each job's
+cleanup step removes any partial download and its headers file, so the bundle
+body is never printed or left behind. Store API failures likewise name Apple error codes or the Google
+API `status` and `reason` values (for example `FAILED_PRECONDITION`) without
+messages or account data. Regression coverage:
+`scripts/mobile-deployment/bundle-response.test.mjs` and
+`scripts/mobile-deployment/store-api-diagnostic.test.mjs`.
+
 **Allocate shared app version** assigns the commit's version and build number
 from the [release ledger](/build/devops/app-release-versioning). Desktop uses
 the same ledger, so iOS, Android and desktop report one `X.Y.Z` and one build

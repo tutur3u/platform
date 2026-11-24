@@ -182,11 +182,16 @@ jobs:
             -o "$oidc_response"
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
-          curl -fsSL \
+          # Without -f, curl keeps the status so a failure is summarized from
+          # bounded fields; the helper never prints a successful bundle.
+          bundle_status="$(curl -sSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            -D "$bundle_path.headers" \
+            -w '%{http_code}' \
             "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
-            -o "$bundle_path"
+            -o "$bundle_path")"
+          node ../../scripts/mobile-deployment/bundle-response.mjs "$bundle_status" "$bundle_path.headers" "$bundle_path"
 
           node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
             --platform ios \
@@ -232,7 +237,7 @@ jobs:
           rm -f ios/Runner/GoogleService-Info.plist
           rm -f ios/Runner/GoogleService-Info-production.plist
           rm -rf "$RUNNER_TEMP/mobile-deployment"
-          rm -f "$RUNNER_TEMP/mobile-deployment-ios-metadata.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-ios-metadata.json" "$RUNNER_TEMP/mobile-deployment-ios-metadata.json.headers"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-metadata-oidc.json"
 
   publish-android-internal:
@@ -319,11 +324,16 @@ jobs:
             -o "$oidc_response"
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
-          curl -fsSL \
+          # Without -f, curl keeps the status so a failure is summarized from
+          # bounded fields; the helper never prints a successful bundle.
+          bundle_status="$(curl -sSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            -D "$bundle_path.headers" \
+            -w '%{http_code}' \
             "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=android" \
-            -o "$bundle_path"
+            -o "$bundle_path")"
+          node ../../scripts/mobile-deployment/bundle-response.mjs "$bundle_status" "$bundle_path.headers" "$bundle_path"
 
           node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
             --platform android \
@@ -411,7 +421,7 @@ jobs:
           rm -f .env.github
           rm -f android/app/src/production/google-services.json
           rm -rf "$RUNNER_TEMP/mobile-deployment"
-          rm -f "$RUNNER_TEMP/mobile-deployment-android.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-android.json" "$RUNNER_TEMP/mobile-deployment-android.json.headers"
           rm -f "$RUNNER_TEMP/mobile-deployment-android-oidc.json"
 
       - name: Report to the deployment coordinator
@@ -510,11 +520,16 @@ jobs:
             -o "$oidc_response"
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
-          curl -fsSL \
+          # Without -f, curl keeps the status so a failure is summarized from
+          # bounded fields; the helper never prints a successful bundle.
+          bundle_status="$(curl -sSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            -D "$bundle_path.headers" \
+            -w '%{http_code}' \
             "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
-            -o "$bundle_path"
+            -o "$bundle_path")"
+          node ../../scripts/mobile-deployment/bundle-response.mjs "$bundle_status" "$bundle_path.headers" "$bundle_path"
 
           node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
             --platform ios \
@@ -707,7 +722,7 @@ jobs:
           rm -f ios/Runner/GoogleService-Info.plist
           rm -f ios/Runner/GoogleService-Info-production.plist
           rm -rf "$RUNNER_TEMP/mobile-deployment"
-          rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-ios.json" "$RUNNER_TEMP/mobile-deployment-ios.json.headers"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
       - name: Report to the deployment coordinator
@@ -783,11 +798,16 @@ jobs:
             -o "$oidc_response"
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
 
-          curl -fsSL \
+          # Without -f, curl keeps the status so a failure is summarized from
+          # bounded fields; the helper never prints a successful bundle.
+          bundle_status="$(curl -sSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            -D "$bundle_path.headers" \
+            -w '%{http_code}' \
             "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
-            -o "$bundle_path"
+            -o "$bundle_path")"
+          node ../../scripts/mobile-deployment/bundle-response.mjs "$bundle_status" "$bundle_path.headers" "$bundle_path"
 
           node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
             --platform ios \
@@ -901,7 +921,7 @@ jobs:
           rm -f ios/Runner/GoogleService-Info.plist
           rm -f ios/Runner/GoogleService-Info-production.plist
           rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mac-app-store"
-          rm -f "$RUNNER_TEMP/mobile-deployment-macos.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-macos.json" "$RUNNER_TEMP/mobile-deployment-macos.json.headers"
           rm -f "$RUNNER_TEMP/mobile-deployment-macos-oidc.json"
 
       - name: Report to the deployment coordinator
@@ -1103,11 +1123,16 @@ jobs:
             -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
             "$oidc_url" -o "$oidc_response"
           oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
-          curl -fsSL \
+          # Without -f, curl keeps the status so a failure is summarized from
+          # bounded fields; the helper never prints a successful bundle.
+          bundle_status="$(curl -sSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            -D "$bundle_path.headers" \
+            -w '%{http_code}' \
             "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
-            -o "$bundle_path"
+            -o "$bundle_path")"
+          node scripts/mobile-deployment/bundle-response.mjs "$bundle_status" "$bundle_path.headers" "$bundle_path"
           node scripts/mobile-deployment/hydrate-bundle.mjs \
             --platform ios --bundle "$bundle_path" \
             --mobile-root "$RUNNER_TEMP/mobile-review"
@@ -1127,7 +1152,7 @@ jobs:
         shell: bash
         run: |
           rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mobile-review"
-          rm -f "$RUNNER_TEMP/mobile-review-bundle.json" "$RUNNER_TEMP/mobile-review-oidc.json"
+          rm -f "$RUNNER_TEMP/mobile-review-bundle.json" "$RUNNER_TEMP/mobile-review-bundle.json.headers" "$RUNNER_TEMP/mobile-review-oidc.json"
 
   release-head-after-stale-retry:
     permissions:

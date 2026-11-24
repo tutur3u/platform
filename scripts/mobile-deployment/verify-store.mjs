@@ -13,6 +13,10 @@ import {
   uploadedBuildTestNotes,
 } from './build-test-notes.mjs';
 
+import { storeApiErrorDiagnostic } from './store-api-diagnostic.mjs';
+
+export { storeApiErrorDiagnostic };
+
 const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
 const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
@@ -59,31 +63,6 @@ export function isBetaReviewSubmissionLimit(pathname, payload) {
       (error) => error?.code === 'ENTITY_UNPROCESSABLE.SUBMISSION_LIMIT_REACHED'
     )
   );
-}
-
-export function storeApiErrorDiagnostic(payload) {
-  if (!Array.isArray(payload?.errors)) return '';
-  return payload.errors
-    .slice(0, 3)
-    .map((error) => {
-      const code = error?.code;
-      const pointer = error?.source?.pointer;
-      const safeCode =
-        typeof code === 'string' && /^[A-Za-z0-9_.-]{1,100}$/.test(code)
-          ? code
-          : '';
-      const safePointer =
-        typeof pointer === 'string' &&
-        /^\/(?:data|attributes|relationships)(?:\/[A-Za-z0-9_~.-]+){0,8}$/.test(
-          pointer
-        ) &&
-        pointer.length <= 120
-          ? pointer
-          : '';
-      return [safeCode, safePointer].filter(Boolean).join(' at ');
-    })
-    .filter(Boolean)
-    .join(', ');
 }
 
 export function playReleaseReady(track, buildNumber) {

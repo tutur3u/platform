@@ -134,6 +134,13 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     assert.ok(fetchStep.run.includes('audience=tuturuuu-mobile-deployment'));
     assert.ok(fetchStep.run.includes('X-GitHub-OIDC-Token'));
     assert.ok(fetchStep.run.includes('hydrate-bundle.mjs'));
+    // The bundle body holds credentials; failures are summarized by the
+    // bounded helper rather than curl -f, which hides the response.
+    assert.ok(fetchStep.run.includes('bundle-response.mjs'));
+    assert.doesNotMatch(
+      fetchStep.run,
+      /curl -fsSL[^\n]*\n[^\n]*MOBILE_DEPLOYMENT_CI_TOKEN/
+    );
     assert.equal(
       step(
         job,
