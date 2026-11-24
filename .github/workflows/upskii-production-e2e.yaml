@@ -207,12 +207,15 @@ jobs:
       UPSKII_PRODUCTION_E2E_ENABLED: ${{ vars.UPSKII_PRODUCTION_E2E_ENABLED }}
       UPSKII_E2E_RUN_LABEL: gh-${{ github.run_id }}-${{ github.run_attempt }}
       UPSKII_E2E_SUITES: ${{ inputs.suites || 'all' }}
-      UPSKII_E2E_LEDGER: ${{ runner.temp }}/upskii-production-e2e/ledger.jsonl
       MODE: ${{ github.event_name == 'schedule' && 'sweep' || inputs.mode || 'run' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The runner context is not available in job-level env, so the ledger
+      # path under the runner temp directory is exported here.
+      - name: Place the run ledger in the runner temp directory
+        run: echo "UPSKII_E2E_LEDGER=$RUNNER_TEMP/upskii-production-e2e/ledger.jsonl" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
