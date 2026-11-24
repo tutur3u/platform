@@ -45,6 +45,7 @@ vi.mock('./transcription-availability', () => ({
 }));
 vi.mock('./per-speaker-flag', () => ({ meetPerSpeakerEnabled: mocks.flag }));
 
+import { MEET_TRANSCRIPT_NOTICE_VERSION } from '@tuturuuu/realtime/meet';
 import { meetAiResponse } from './access';
 import {
   chooseSelfTranscript,
@@ -57,6 +58,12 @@ import {
 const meetingId = '00000000-0000-4000-8000-0000000000dd';
 const sessionId = '00000000-0000-4000-8000-0000000000cc';
 const params = { params: Promise.resolve({ wsId: 'w', meetingId }) };
+const allowBody = {
+  choice: 'allow',
+  noticeVersion: MEET_TRANSCRIPT_NOTICE_VERSION,
+  locale: 'vi',
+  textHash: 'a'.repeat(64),
+};
 const post = (body: unknown) =>
   new Request('https://meet.tuturuuu.com/api/meet-ai/w/m/self/x', {
     method: 'POST',
@@ -154,7 +161,7 @@ describe('per-speaker transcript choice', () => {
       Object.assign(new Error('x'), { status: 429 })
     );
     const response = await meetAiResponse(() =>
-      chooseSelfTranscript(post({ choice: 'allow' }), params)
+      chooseSelfTranscript(post(allowBody), params)
     );
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({
@@ -167,9 +174,37 @@ describe('per-speaker transcript choice', () => {
       Object.assign(new Error('no'), { status: 403 })
     );
     await expect(
-      chooseSelfTranscript(post({ choice: 'allow' }), params)
+      chooseSelfTranscript(post(allowBody), params)
     ).rejects.toMatchObject({ status: 403 });
     expect(mocks.room).not.toHaveBeenCalled();
+  });
+});
+
+describe('per-speaker notice evidence', () => {
+  it.each([
+    ['no evidence', { choice: 'allow' }],
+    ['an old notice', { ...allowBody, noticeVersion: 'old-notice' }],
+    ['a bad hash', { ...allowBody, textHash: 'abc' }],
+    ['a bad locale', { ...allowBody, locale: 'english' }],
+    ['an extra field', { ...allowBody, accountId: 'other' }],
+  ])('refuses an allow with %s before any check', async (_label, body) => {
+    const response = await meetAiResponse(() =>
+      chooseSelfTranscript(post(body), params)
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.selfAccess).not.toHaveBeenCalled();
+    expect(mocks.room).not.toHaveBeenCalled();
+  });
+
+  it('records a complete allow under the current notice', async () => {
+    mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
+    mocks.room.mockResolvedValue({ choice: 'allow' });
+    await chooseSelfTranscript(post(allowBody), params);
+    expect(mocks.room).toHaveBeenCalledWith(mocks.access, {
+      action: 'transcript.consent.choice',
+      choice: 'allow',
+      version: MEET_TRANSCRIPT_NOTICE_VERSION,
+    });
   });
 });
 
@@ -191,38 +226,16 @@ describe('legacy consent POST in a per-speaker room', () => {
     expect(mocks.selfAccess).not.toHaveBeenCalled();
   });
 
-  it('records an allow for this account only after the uploader check', async () => {
+  it('refuses an allow without the per-speaker notice evidence', async () => {
     mocks.room.mockImplementation(read('self'));
-    mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
     const response = await selfModeConsentChoice(post({}), roomAccess, 'allow');
-    expect(response?.status).toBe(200);
+    expect(response?.status).toBe(409);
     expect(await response?.json()).toMatchObject({
-      available: true,
-      choice: 'allow',
-      mode: 'self',
-      session: { sessionId, protocol: 'self_v1' },
+      code: 'MEET_SELF_EVIDENCE_REQUIRED',
     });
-    const params = await mocks.selfAccess.mock.calls[0]?.[1].params;
-    expect(params).toEqual({ wsId: 'w', meetingId: 'm' });
-    expect(mocks.room).toHaveBeenLastCalledWith(roomAccess, {
-      action: 'transcript.consent.choice',
-      choice: 'allow',
-      version: expect.any(String),
-    });
-  });
-
-  it('refuses an ineligible allow without a room choice', async () => {
-    mocks.room.mockImplementation(read('self'));
-    const { MeetAiError } = await import('./access');
-    mocks.selfAccess.mockRejectedValue(
-      new MeetAiError(403, 'no', 'MEET_SELF_UNAVAILABLE')
-    );
-    const response = await selfModeConsentChoice(post({}), roomAccess, 'allow');
-    expect(response?.status).toBe(403);
-    expect(await response?.json()).toMatchObject({
-      code: 'MEET_SELF_UNAVAILABLE',
-    });
+    // Only the mode read reached the room; no choice was recorded.
     expect(mocks.room).toHaveBeenCalledTimes(1);
+    expect(mocks.selfAccess).not.toHaveBeenCalled();
   });
 
   it('always records a decline, without the uploader check', async () => {

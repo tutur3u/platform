@@ -22,9 +22,12 @@ export async function closeSessionEndedByRoom(
     hostId: session.user_id,
     hard: true,
   });
-  await selfRpc.closeDrained(db, session.id).catch(() => {
+  try {
+    await selfRpc.closeDrained(db, session.id);
+  } catch {
+    // The hard stop already ended capture; the drained close is bookkeeping.
     console.warn('[meet-ai] self_v1 drained close pending');
-  });
+  }
   return true;
 }
 

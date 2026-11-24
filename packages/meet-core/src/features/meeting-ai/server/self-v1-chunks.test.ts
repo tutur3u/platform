@@ -94,17 +94,20 @@ const stream = {
   eq: () => stream,
   maybeSingle: vi.fn(),
 };
-// The stream opened 10 s into the session.
+// The stream opened 10 s into the session and holds a live lease.
+const liveStream = (overrides: Record<string, unknown> = {}) => ({
+  created_at: '2026-11-24T00:00:10.000Z',
+  state: 'active',
+  lease_expires_at: new Date(Date.now() + 30_000).toISOString(),
+  ...overrides,
+});
 const db = { schema: () => ({ from: () => stream }) };
 const run = (body = form()) =>
   meetAiResponse(() => transcribeSelfChunk(request(), params, body));
 
 beforeEach(() => {
   vi.resetAllMocks();
-  stream.maybeSingle.mockResolvedValue({
-    data: { created_at: '2026-11-24T00:00:10.000Z' },
-    error: null,
-  });
+  stream.maybeSingle.mockResolvedValue({ data: liveStream(), error: null });
   mocks.access.mockResolvedValue({
     db,
     user: { id: uploader },
@@ -275,6 +278,61 @@ describe('self_v1 chunk admission', () => {
     expect((await run()).status).toBe(409);
     expect(mocks.generate).not.toHaveBeenCalled();
     expect(mocks.rpc.settleChunk).not.toHaveBeenCalled();
+  });
+
+  it('answers a lapsed lease with the reopen code before the room spends', async () => {
+    stream.maybeSingle.mockResolvedValue({
+      data: liveStream({ lease_expires_at: '2026-11-24T00:00:00.000Z' }),
+      error: null,
+    });
+    const response = await run();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_SELF_LEASE_EXPIRED',
+    });
+    expect(mocks.authorize).not.toHaveBeenCalled();
+    noWork();
+  });
+
+  it('keeps a closed or revoked stream terminal', async () => {
+    for (const state of ['closed', 'revoked']) {
+      stream.maybeSingle.mockResolvedValue({
+        data: liveStream({ state, lease_expires_at: '2026-11-24T00:00:00Z' }),
+        error: null,
+      });
+      const response = await run();
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: 'MEET_TRANSCRIPT_CONSENT_REQUIRED',
+      });
+    }
+    noWork();
+  });
+
+  it('answers the reopen code when the lease lapses during the request', async () => {
+    stream.maybeSingle
+      .mockResolvedValueOnce({ data: liveStream(), error: null })
+      .mockResolvedValueOnce({
+        data: liveStream({ lease_expires_at: '2026-11-24T00:00:00.000Z' }),
+        error: null,
+      });
+    mocks.rpc.reserveChunk.mockRejectedValue(
+      new MeetSelfRpcError(409, 'lease', '55000')
+    );
+    const response = await run();
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_SELF_LEASE_EXPIRED',
+    });
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('accepts a sequence after a gap left by a dropped chunk', async () => {
+    const body = form();
+    body.set('sequence', '9');
+    expect((await run(body)).status).toBe(200);
+    expect(mocks.rpc.reserveChunk.mock.calls[0]?.[1]).toMatchObject({
+      sequence: 9,
+    });
   });
 
   it('returns a settled exact duplicate without dispatching again', async () => {

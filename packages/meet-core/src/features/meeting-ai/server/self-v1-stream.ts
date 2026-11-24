@@ -2,6 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams } from './access';
 import { loadSelfSession, meetSelfAccess } from './self-v1-access';
+import { leaseExpired, leaseLapsed, loadUploaderStream } from './self-v1-lease';
 import { drainSelfOutbox } from './self-v1-outbox';
 import { selfRoom, selfRoomCommands } from './self-v1-room';
 import { MeetSelfRpcError, selfRpc } from './self-v1-rpc';
@@ -140,6 +141,15 @@ export async function renewSelfStream(request: Request, params: MeetAiParams) {
     });
     return { leaseExpiresAt };
   } catch (error) {
+    // A lease that already lapsed cannot be renewed; the client reopens.
+    if (error instanceof MeetSelfRpcError && error.pgCode === '55000') {
+      const stream = await loadUploaderStream(db, {
+        sessionId,
+        streamId,
+        accountId: user.id,
+      }).catch(() => null);
+      if (leaseLapsed(stream)) throw leaseExpired();
+    }
     throw openError(error);
   }
 }

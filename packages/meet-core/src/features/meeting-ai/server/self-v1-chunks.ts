@@ -9,6 +9,12 @@ import { admitMeetCredits } from './credit-admission';
 import { meetPerSpeakerEnabled } from './per-speaker-flag';
 import { loadSelfSession, meetSelfAccess } from './self-v1-access';
 import { readSelfChunkAudio, readSelfChunkFields } from './self-v1-audio';
+import {
+  leaseExpired,
+  leaseLapsed,
+  loadUploaderStream,
+  type UploaderStream,
+} from './self-v1-lease';
 import { drainSelfOutbox } from './self-v1-outbox';
 import { type MeetSelfRoom, selfRoom, selfRoomCommands } from './self-v1-room';
 import { type MeetAiChunkRow, MeetSelfRpcError, selfRpc } from './self-v1-rpc';
@@ -54,32 +60,37 @@ function project(chunk: MeetAiChunkRow) {
 /**
  * Session time of a chunk: the uploader's own stream opened at a known
  * offset from the session start, and `startSample` counts 16 kHz samples
- * from that open. The stream must be this account's stream in this session.
+ * from that open.
  */
-async function sessionStartMs(
-  db: TypedSupabaseClient,
-  input: {
-    session: { id: string; created_at: string };
-    streamId: string;
-    accountId: string;
-    startSample: number;
-  }
+function sessionStartMs(
+  session: { created_at: string },
+  stream: UploaderStream,
+  startSample: number
 ) {
-  const { data: stream, error } = await db
-    .schema('private')
-    .from('meet_ai_capture_streams')
-    .select('created_at')
-    .eq('id', input.streamId)
-    .eq('session_id', input.session.id)
-    .eq('account_id', input.accountId)
-    .maybeSingle();
-  if (error) throw new MeetAiError(503, 'Capture stream lookup failed');
-  if (!stream) throw consentRefused();
   const offset = Math.max(
     0,
-    Date.parse(stream.created_at) - Date.parse(input.session.created_at)
+    Date.parse(stream.created_at) - Date.parse(session.created_at)
   );
-  return Math.round(offset) + Math.floor(input.startSample / 16);
+  return Math.round(offset) + Math.floor(startSample / 16);
+}
+
+/**
+ * Reserves the chunk. A state refusal from a lease that lapsed during this
+ * request answers the reopen code rather than a terminal one.
+ */
+async function reserveOrLeaseRefusal(
+  db: TypedSupabaseClient,
+  input: Parameters<typeof selfRpc.reserveChunk>[1]
+) {
+  try {
+    return await selfRpc.reserveChunk(db, input);
+  } catch (error) {
+    if (error instanceof MeetSelfRpcError && error.pgCode === '55000') {
+      const stream = await loadUploaderStream(db, input).catch(() => null);
+      if (leaseLapsed(stream)) throw leaseExpired();
+    }
+    throw error;
+  }
 }
 
 /** Room authority for this uploader; pending legal entries are written first. */
@@ -133,6 +144,15 @@ export async function transcribeSelfChunk(
     { sessionId: fields.sessionId, meetingId, wsId },
     'upload'
   );
+  // The stream must be this account's own stream in this session. A lapsed
+  // lease is refused before the room spends a token, so the client reopens.
+  const stream = await loadUploaderStream(db, {
+    sessionId: session.id,
+    streamId: fields.streamId,
+    accountId: user.id,
+  });
+  if (!stream) throw consentRefused();
+  if (leaseLapsed(stream)) throw leaseExpired();
   const room = await selfRoom(meetingId, user.id);
   const fence = {
     sessionId: session.id,
@@ -169,13 +189,8 @@ export async function transcribeSelfChunk(
     meetingId,
     billingWorkspaceId
   );
-  const startMs = await sessionStartMs(db, {
-    session,
-    streamId: fields.streamId,
-    accountId: user.id,
-    startSample: fields.startSample,
-  });
-  const chunk = await selfRpc.reserveChunk(db, {
+  const startMs = sessionStartMs(session, stream, fields.startSample);
+  const chunk = await reserveOrLeaseRefusal(db, {
     id: fields.id,
     sessionId: session.id,
     streamId: fields.streamId,

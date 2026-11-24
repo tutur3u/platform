@@ -207,4 +207,36 @@ describe('self_v1 stream open', () => {
       { streamId, accountId: uploader }
     );
   });
+
+  it.each([
+    ['a lapsed lease', 'active', 'MEET_SELF_LEASE_EXPIRED'],
+    ['a closed stream', 'closed', 'MEET_SELF_NOT_ELIGIBLE'],
+  ])('answers renewal of %s with %s', async (_label, state, code) => {
+    const query: Record<string, unknown> = {
+      maybeSingle: async () => ({
+        data: {
+          created_at: '2026-11-24T00:00:00Z',
+          state,
+          lease_expires_at: '2026-11-24T00:00:30Z',
+        },
+        error: null,
+      }),
+    };
+    for (const name of ['select', 'eq']) query[name] = () => query;
+    const db = { schema: () => ({ from: () => query }) };
+    mocks.access.mockResolvedValue({
+      db,
+      user: { id: uploader },
+      wsId: 'w',
+      meetingId: 'm',
+    });
+    mocks.rpc.renewStream.mockRejectedValue(
+      new MeetSelfRpcError(409, 'lapsed', '55000')
+    );
+    const response = await meetAiResponse(() =>
+      renewSelfStream(post({ sessionId, streamId }), params)
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code });
+  });
 });

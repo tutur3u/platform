@@ -100,23 +100,50 @@ const outboxSessions = (pending: unknown) =>
       ]
     : [];
 
+/** SHA-256 hex of the exact notice text shown, and its locale. */
+const evidence = {
+  noticeVersion: z.string().min(1).max(80),
+  locale: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
+  textHash: z.string().regex(/^[0-9a-f]{64}$/),
+};
+
+/**
+ * Allow carries the per-speaker notice evidence and must name the current
+ * notice; decline needs nothing and always records.
+ */
+export const selfChoiceSchema = z.discriminatedUnion('choice', [
+  z
+    .object({
+      choice: z.literal('allow'),
+      noticeVersion: z.literal(MEET_TRANSCRIPT_NOTICE_VERSION),
+      locale: evidence.locale,
+      textHash: evidence.textHash,
+    })
+    .strict(),
+  z
+    .object({
+      choice: z.literal('decline'),
+      noticeVersion: evidence.noticeVersion.optional(),
+      locale: evidence.locale.optional(),
+      textHash: evidence.textHash.optional(),
+    })
+    .strict(),
+]);
+
 /**
  * The participant's own transcript choice in a per-speaker meeting. Declining
- * always records, for anyone in the call. Allowing needs the per-speaker
- * uploader check. The room fences a decline at once; its legal entries are
- * then written for this meeting's per-speaker sessions only.
+ * always records, for anyone in the call. Allowing needs the current notice
+ * evidence and the per-speaker uploader check. The room fences a decline at
+ * once; its legal entries are then written for this meeting's per-speaker
+ * sessions only.
  */
 export async function chooseSelfTranscript(
   request: Request,
   params: MeetAiParams
 ) {
-  const parsed = z
-    .object({
-      choice: z.enum(['allow', 'decline']),
-      version: z.literal(MEET_TRANSCRIPT_NOTICE_VERSION).optional(),
-    })
-    .strict()
-    .safeParse(await request.json().catch(() => null));
+  const parsed = selfChoiceSchema.safeParse(
+    await request.json().catch(() => null)
+  );
   if (!parsed.success) throw new MeetAiError(400, 'Invalid choice');
   if (parsed.data.choice === 'allow') await meetSelfAccess(request, params);
   const room = await roomFor(request, params);
@@ -124,14 +151,14 @@ export async function chooseSelfTranscript(
 }
 
 /**
- * The transcript-consent POST in a room set to per-speaker capture gives the
- * same result as the per-speaker choice route: the room records this
- * account's own choice and never starts room capture, Allow passes the
- * uploader check first, and decline always records. Returns null in room
- * mode, where the consent route keeps its room-capture behaviour.
+ * The transcript-consent POST in a room set to per-speaker capture: the room
+ * records a decline for this account only and never starts room capture, so
+ * declining works through every path. Allow needs the per-speaker notice
+ * evidence and is accepted only on the per-speaker choice route. Returns null
+ * in room mode, where the consent route keeps its room-capture behaviour.
  */
 export async function selfModeConsentChoice(
-  request: Request,
+  _request: Request,
   access: MeetCallRouteAccess,
   choice: 'allow' | 'decline'
 ): Promise<Response | null> {
@@ -141,16 +168,12 @@ export async function selfModeConsentChoice(
   });
   if (read?.mode !== 'self') return null;
   return meetAiResponse(async () => {
-    if (choice === 'allow') {
-      const { user } = await meetSelfAccess(request, {
-        params: Promise.resolve({
-          wsId: access.meeting.ws_id,
-          meetingId: access.meeting.id,
-        }),
-      });
-      if (user.id !== access.user.id)
-        throw new MeetAiError(409, 'Account changed');
-    }
+    if (choice === 'allow')
+      throw new MeetAiError(
+        409,
+        'Allow transcription of your voice from its notice',
+        'MEET_SELF_EVIDENCE_REQUIRED'
+      );
     return recordSelfChoice({ access, accountId: access.user.id }, choice);
   });
 }
