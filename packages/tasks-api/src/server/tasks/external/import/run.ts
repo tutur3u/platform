@@ -160,10 +160,12 @@ async function importOne(
   }
 
   // A task is only ever touched through its own external ref.
-  const task = await store.loadTask(ref.task_id);
+  // The ref may point at a task that was moved to another workspace or
+  // removed; such a task is never read or written through this import.
+  const task = await store.loadTask(ref.task_id, wsId);
   if (!task || task.deleted_at) {
-    warnings.push('task_deleted');
-    return result('skip', ref.task_id);
+    warnings.push(task ? 'task_deleted' : 'task_outside_workspace');
+    return result('skip', task ? ref.task_id : null);
   }
 
   // Only a change of the issue's open/closed state moves the task. Name,
@@ -232,6 +234,14 @@ async function importOne(
     refChanged;
   if (!changed) return result('skip', task.id);
   if (ctx.dryRun) return result('update', task.id);
+
+  // Check again right before writing: the task can move or be deleted while
+  // the plan above was being built.
+  const current = await store.loadTask(task.id, wsId);
+  if (!current || current.deleted_at) {
+    warnings.push(current ? 'task_deleted' : 'task_outside_workspace');
+    return result('skip', current ? task.id : null);
+  }
 
   if (Object.keys(patch).length) await store.updateTask(task.id, patch);
   if (missingLabels.length) {

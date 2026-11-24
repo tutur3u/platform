@@ -45,6 +45,7 @@ type StoredTask = ExistingTask & {
   created_at: string | null;
   creator_id: string;
   description_yjs_state: number[] | null;
+  ws_id?: string;
 };
 
 /** In-memory ImportStore that enforces the same keys as the database. */
@@ -144,8 +145,9 @@ export class FakeImportStore implements ImportStore {
       )
     );
   }
-  async loadTask(id: string) {
-    return this.tasks.get(id) ?? null;
+  async loadTask(id: string, wsId: string) {
+    const task = this.tasks.get(id);
+    return task && (task.ws_id ?? this.board.ws_id) === wsId ? task : null;
   }
   async loadTaskLabelIds(id: string) {
     return [...(this.taskLabels.get(id) ?? [])];

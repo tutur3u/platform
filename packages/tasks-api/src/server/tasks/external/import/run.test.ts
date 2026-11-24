@@ -148,19 +148,19 @@ describe('creating tasks', () => {
           milestone: 'v0.12',
           comments: [
             {
-              url: 'https://github.com/t/p/issues/5#c1',
+              url: 'https://github.com/tutur3u/platform/issues/5#issuecomment-1',
               author: 'vhpx',
               body: 'mine',
               created_at: '2023-05-02T00:00:00Z',
             },
             {
-              url: 'https://github.com/t/p/issues/5#c2',
+              url: 'https://github.com/tutur3u/platform/issues/5#issuecomment-2',
               author: 'alice',
               body: 'not a member',
               created_at: '2023-05-02T01:00:00Z',
             },
             {
-              url: 'https://github.com/t/p/issues/5#c3',
+              url: 'https://github.com/tutur3u/platform/issues/5#issuecomment-3',
               author: 'bob',
               body: 'unmapped',
               created_at: '2023-05-02T02:00:00Z',

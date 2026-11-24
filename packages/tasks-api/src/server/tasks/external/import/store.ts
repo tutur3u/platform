@@ -132,14 +132,19 @@ export function createSupabaseImportStore(
       return refs;
     },
 
-    async loadTask(taskId) {
+    async loadTask(taskId, wsId) {
       const { data, error } = await db
         .from('tasks')
-        .select('id, name, description, list_id, priority, deleted_at')
+        .select(
+          'id, name, description, list_id, priority, deleted_at, task_lists!inner(workspace_boards!inner(ws_id))'
+        )
         .eq('id', taskId)
+        .eq('task_lists.workspace_boards.ws_id', wsId)
         .maybeSingle();
       if (error) fail('load task', error);
-      return data;
+      if (!data) return null;
+      const { task_lists: _lists, ...task } = data;
+      return task;
     },
 
     async loadTaskLabelIds(taskId) {

@@ -97,7 +97,8 @@ export interface ImportStore {
     options: { create: boolean; actorId: string }
   ): Promise<Map<string, string | null>>;
   findRefs(wsId: string, urls: string[]): Promise<Map<string, ExistingRef>>;
-  loadTask(taskId: string): Promise<ExistingTask | null>;
+  /** The task, or null when it does not sit on a board of this workspace. */
+  loadTask(taskId: string, wsId: string): Promise<ExistingTask | null>;
   loadTaskLabelIds(taskId: string): Promise<string[]>;
   createTask(
     board: ImportBoard,

@@ -18,7 +18,7 @@ export const node = (number: number, extra: Record<string, unknown> = {}) => ({
   comments: {
     nodes: [
       {
-        url: `https://github.com/tutur3u/platform/issues/${number}#c1`,
+        url: `https://github.com/tutur3u/platform/issues/${number}#issuecomment-1`,
         author: null,
         body: 'hi',
         createdAt: '2023-05-02T00:00:00Z',

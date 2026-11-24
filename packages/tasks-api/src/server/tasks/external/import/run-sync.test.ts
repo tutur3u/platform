@@ -41,7 +41,7 @@ describe('idempotency', () => {
       labels: ['bug'],
       comments: [
         {
-          url: 'https://github.com/t/p/issues/1#c1',
+          url: 'https://github.com/tutur3u/platform/issues/1#issuecomment-1',
           author: 'a',
           body: 'hi',
           created_at: '2023-05-02T00:00:00Z',
@@ -83,13 +83,13 @@ describe('idempotency', () => {
       closed_at: '2024-01-01T00:00:00Z',
       comments: [
         {
-          url: 'https://github.com/t/p/issues/1#c1',
+          url: 'https://github.com/tutur3u/platform/issues/1#issuecomment-1',
           author: 'a',
           body: 'hi',
           created_at: '2023-05-02T00:00:00Z',
         },
         {
-          url: 'https://github.com/t/p/issues/1#c2',
+          url: 'https://github.com/tutur3u/platform/issues/1#issuecomment-2',
           author: 'a',
           body: 'later',
           created_at: '2024-01-02T00:00:00Z',
@@ -161,6 +161,71 @@ describe('idempotency', () => {
     store.tasks.get(created!.task_id!)!.deleted_at = '2024-01-01T00:00:00Z';
     const [again] = await run([issue({ number: 1 })]);
     expect(again).toMatchObject({ action: 'skip', warnings: ['task_deleted'] });
+  });
+
+  it('skips a task that no longer sits on a board of this workspace and writes nothing', async () => {
+    const [created] = await run([issue({ number: 1 })]);
+    const task = store.tasks.get(created!.task_id!)!;
+    task.ws_id = 'another-workspace';
+    const writes = store.writes;
+    const changed = issue({
+      number: 1,
+      state: 'closed',
+      state_reason: 'completed',
+      closed_at: '2024-01-01T00:00:00Z',
+      labels: ['new'],
+      comments: [
+        {
+          url: 'https://github.com/tutur3u/platform/issues/1#issuecomment-9',
+          author: 'a',
+          body: 'x',
+          created_at: '2024-01-02T00:00:00Z',
+        },
+      ],
+    });
+    const [again] = await run([changed]);
+    expect(again).toMatchObject({
+      action: 'skip',
+      task_id: null,
+      warnings: ['task_outside_workspace'],
+    });
+    const [preview] = await run([changed], { dryRun: true });
+    expect(preview).toMatchObject({
+      action: 'skip',
+      warnings: ['task_outside_workspace'],
+    });
+    expect(store.writes).toBe(writes);
+    expect(task).toMatchObject({ list_id: 'l-queued', completed: false });
+    expect(store.comments.get(task.id) ?? []).toHaveLength(0);
+  });
+
+  it('re-checks the task right before writing', async () => {
+    const [created] = await run([issue({ number: 1 })]);
+    const task = store.tasks.get(created!.task_id!)!;
+    const load = store.loadTask.bind(store);
+    let calls = 0;
+    store.loadTask = async (id, wsId) => {
+      calls += 1;
+      if (calls === 2) task.ws_id = 'another-workspace';
+      return load(id, wsId);
+    };
+    const writes = store.writes;
+    const [again] = await run([
+      issue({
+        number: 1,
+        state: 'closed',
+        state_reason: 'completed',
+        closed_at: '2024-01-01T00:00:00Z',
+      }),
+    ]);
+    expect(calls).toBe(2);
+    expect(again).toMatchObject({
+      action: 'skip',
+      task_id: null,
+      warnings: ['task_outside_workspace'],
+    });
+    expect(store.writes).toBe(writes);
+    expect(task.list_id).toBe('l-queued');
   });
 
   it('dedupes on the ref URL, never on the name', async () => {
@@ -261,7 +326,7 @@ describe('human edits to imported tasks', () => {
       assignees: ['ghost'],
       comments: [
         {
-          url: 'https://github.com/t/p/issues/1#c9',
+          url: 'https://github.com/tutur3u/platform/issues/1#issuecomment-9',
           author: 'a',
           body: 'new',
           created_at: '2024-01-02T00:00:00Z',
@@ -304,6 +369,57 @@ describe('human edits to imported tasks', () => {
     expect(
       store.history.filter((h) => h.metadata.event === 'labeled')
     ).toHaveLength(1);
+  });
+
+  it('synthesizes a state event only when the source supplied none, on create and update', async () => {
+    const closedAt = '2024-01-01T00:00:00Z';
+    const closed = {
+      state: 'closed' as const,
+      state_reason: 'completed',
+      closed_at: closedAt,
+    };
+    const events = (number: number) =>
+      store.history
+        .filter(
+          (h) =>
+            h.change_type === 'external_event' &&
+            h.metadata.external_url ===
+              `https://github.com/tutur3u/platform/issues/${number}`
+        )
+        .map((h) => [
+          h.metadata.event,
+          h.metadata.external_actor,
+          h.changed_at,
+        ]);
+
+    // Created closed, with and without source events.
+    await run([
+      issue({ number: 1, ...closed }),
+      issue({
+        number: 2,
+        ...closed,
+        events: [{ event: 'closed', at: closedAt, actor: 'octocat' }],
+      }),
+    ]);
+    expect(events(1)).toEqual([['closed', null, '2024-01-01T00:00:00.000Z']]);
+    expect(events(2)).toEqual([
+      ['closed', 'octocat', '2024-01-01T00:00:00.000Z'],
+    ]);
+
+    // Closed on update, with and without source events.
+    await run([issue({ number: 3 }), issue({ number: 4 })]);
+    await run([
+      issue({ number: 3, ...closed }),
+      issue({
+        number: 4,
+        ...closed,
+        events: [{ event: 'closed', at: closedAt, actor: 'octocat' }],
+      }),
+    ]);
+    expect(events(3)).toEqual([['closed', null, '2024-01-01T00:00:00.000Z']]);
+    expect(events(4)).toEqual([
+      ['closed', 'octocat', '2024-01-01T00:00:00.000Z'],
+    ]);
   });
 
   it('moves the task when the issue state changed, and not otherwise', async () => {
