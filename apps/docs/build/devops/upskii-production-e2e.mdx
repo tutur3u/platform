@@ -1,0 +1,129 @@
+---
+title: Upskii production E2E
+description: What the Upskii production end-to-end workflow checks, how to read a failure, the kill switch, and the cleanup guarantees.
+---
+
+The `Upskii Production E2E` workflow
+(`.github/workflows/upskii-production-e2e.yaml`) runs Playwright suites
+against the production hosts `tuturuuu.com`, `meet.tuturuuu.com`,
+`app.upskii.com`, `upskii.com` and `admin.upskii.com`. Every account it uses is a
+disposable QA identity, and it removes everything it creates, including on
+failure. The hosts are fixed in code (`apps/web/e2e-upskii-production/policy.ts`),
+so the suite cannot be pointed at another deployment.
+
+## Suites
+
+| Suite | Checks |
+| --- | --- |
+| `meet-flow` | Upskii sign-in; linking a Tuturuuu account (consent on the Tuturuuu login page, the callback, link state on both sides); the host starting a Meet session and presenting Upskii content; a learner's lobby, admission and Mira consent; the meeting record; unlink and sign-out. Negative cases: forged and expired link state, a cross-account callback, a link conflict, an unadmitted join, a non-member or signed-out meeting-record read, and a participant who declines Mira being excluded. |
+| `educator` | Classes, invitations and membership, lessons and modules, files, assessments and grading, course quizzes, flashcards, one AI chat call, tutor sessions, announcements, and settings. Also the permission negatives: learner, outsider and signed-out callers are refused. |
+| `learner` | Courses, lessons and progress, materials, assessment attempts, flashcards, notifications, grades, and every learner navigation page. Also wrong-experience and outsider refusals. |
+| `admin` | Every admin API family refuses QA teachers, learners and signed-out callers, and the admin shell refuses non-admins. QA identities never hold an Upskii admin role. |
+
+The `educator` and `learner` suites make at most one AI model call per run.
+
+## Triggers and bounds
+
+| Trigger | Runs |
+| --- | --- |
+| `workflow_dispatch` (`mode: run`, optional `suites`) | The selected suites, then cleanup |
+| `workflow_dispatch` (`mode: sweep`) | Orphan cleanup only |
+| `workflow_run` after a successful `Production Deployment Planner` (web, `production`) or `Meet Cloudflare` (`main`) run | All suites |
+| `repository_dispatch` `upskii-production-deployed`, sent by Upskii's production deploy | All suites |
+| Daily schedule (20:43 UTC) | Orphan cleanup only; the suites never run on a schedule |
+
+- **Trusted triggers only.** A credential-free `gate` job re-proves every `workflow_run` completion with the canonical trust step (producer path, workflow ID, exact branch, event, conclusion and same repository) and applies the kill switch before the production job starts.
+- **One run at a time.** Runs share the concurrency group `upskii-production-e2e`, which never cancels a run that is cleaning up.
+- **No retries.** Playwright retries are `0`, and production writes are not repeated.
+- **Hard timeouts.** The job has 35 minutes, the suites 22, each test 120 seconds and each API request 20 seconds. Cleanup has a 5-minute deadline.
+- **Daily runs.** The Tuturuuu operator allows at most 12 QA runs per rolling 24 hours. Each suite run uses two (members and the non-member), so about six suite runs a day fit.
+
+## Kill switch
+
+Set the repository variable `UPSKII_PRODUCTION_E2E_ENABLED` to anything other
+than `true` to stop every trigger; the job is skipped. The suite code repeats
+the check (`readRunConfig`), so a local or forked invocation cannot reach
+production either. Cleanup-only runs (`mode: sweep`) need the switch on as well.
+
+Two upstream switches also stop provisioning:
+- `private.qa_test_user_control` for Tuturuuu QA accounts (see
+  [QA test users](/build/development-tools/qa-test-users));
+- `QA_PROVISIONER_ENABLED` on the Upskii Admin Worker.
+
+## Credentials
+
+| Name | Where | Purpose |
+| --- | --- | --- |
+| GitHub OIDC token, audience `https://tuturuuu.com/qa-operator` | Minted per job (`id-token: write`) | Tuturuuu QA operator. The server admits only this workflow file on `main` in environment `upskii-production-e2e`, and acts as `QA_CI_OPERATOR_USER_ID` within the CI caps. |
+| `UPSKII_QA_PROVISIONER_TOKEN` | Secret in environment `upskii-production-e2e` | Upskii per-run QA identities, the seed class, and the purge |
+| `UPSKII_PRODUCTION_E2E_ENABLED` | Repository variable | Kill switch |
+
+Passwords that the provisioners return stay in a `0600` file in the runner's
+temp directory and are deleted in global teardown. Traces and video are off,
+because they can capture session cookies. Failure screenshots are kept for
+3 days.
+
+## Cleanup guarantees
+
+Cleanup works through two kinds of owner, recorded in an append-only run
+ledger (`tmp/upskii-production-e2e/ledger.jsonl`) before each create call
+returns:
+
+- **A Tuturuuu QA run.** Deleting it deletes its accounts and run workspace.
+  The meetings, meeting records, uploads and external account links in that
+  workspace go with it.
+- **An Upskii QA identity.** The admin purge hard-deletes everything the
+  identity owns, then disables it. The purge refuses any account without the
+  provisioner-only QA marker.
+
+Every other object a test creates is tracked with the owner that removes it
+(`coveredBy`), and the test also deletes it through the product API in a
+`finally` block. The workflow runs four passes:
+
+1. **Sweep** before the tests: removes owners that earlier runs left behind. The workflow allows only one run at a time, so every remaining suite owner is an orphan.
+2. **Global teardown** (Playwright) cleans up in-process.
+3. **`cli.ts cleanup`** (`if: always()`) runs again, even if Playwright crashed.
+4. **`cli.ts verify`** (`if: always()`) re-reads both servers. The step fails if any owner in this ledger still exists, any tracked object has no owner, or any `upskii-e2e` QA account or run-labelled Upskii identity is still live from any run.
+
+Every step is idempotent, so re-running a failed workflow or dispatching
+`mode: sweep` is safe.
+
+The sweep is bounded: it reads at most five provisioner pages (500 Upskii
+identities) per run. Provisioning allows far fewer per day, so one sweep
+normally clears everything. If more remain, the sweep and verify steps fail
+and name the incomplete listing; dispatch `mode: sweep` again until verify
+passes.
+
+## Reading a failure
+
+Failures keep one open issue labelled `upskii-production-e2e-alert`. Fleet
+monitors watch the label, and the next green run comments on the issue and
+closes it.
+
+| Failed step | Meaning | Next step |
+| --- | --- | --- |
+| `Sweep orphans from earlier runs` | A provisioner or cleanup API refused or timed out | Check the provisioner switches and Tuturuuu `/api/v1/admin/qa/test-users` health; dispatch `mode: sweep` |
+| `Run production suites` | A product regression or an environment change | The job summary and JUnit report name the suite and test; screenshots are in the run artifact |
+| `Clean up this run` | An owner could not be deleted | Dispatch `mode: sweep`; if it keeps failing, the cleanup API is broken and needs a fix |
+| `Verify nothing leaked` | Test data is still present | Treat as a release blocker for the cleanup path; the annotations list each leaked owner |
+
+Run locally only with an operator's explicit approval: the suites write to
+production. Set the same variables, then run
+`bun x playwright test --config playwright.upskii-production.config.ts` from
+`apps/web`. The `cli.ts` commands are `sweep`, `cleanup` and `verify`.
+
+## Regression coverage
+
+- `apps/web/e2e-upskii-production/harness.test.ts` covers the kill switch,
+  QA-only addresses, the host and egress fences, the ledger fold, cleanup
+  order and idempotency, purge looping, leak detection and the sweep's
+  current-run protection.
+- `scripts/ci/upskii-production-e2e-alert.test.mjs` covers the alert issue
+  lifecycle.
+
+## Related
+
+- [Upskii account link](/platform/features/upskii-account-link)
+- [Meet Upskii presenter](/platform/features/meet-upskii-presenter)
+- [Meet Mira host consent](/platform/features/meet-mira-host-consent)
+- [QA test users](/build/development-tools/qa-test-users)

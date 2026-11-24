@@ -168,6 +168,7 @@
   "tutoring-absence-credit-contract.yaml": ["path-filters"],
   "tutoring-teacher-hours-contract.yaml": ["path-filters"],
   "type-check.yaml": ["planner-job"],
+  "upskii-production-e2e.yaml": ["always"],
   "vault-witness-cloudflare.yaml": ["path-filters"],
   "vercel-production.yaml": ["vercel-production-planner"],
   "wave1-native-app.yaml": ["always"],

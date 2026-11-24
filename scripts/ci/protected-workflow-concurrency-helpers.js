@@ -41,6 +41,7 @@ const serialized = [
   'security-review-reclassify.yaml',
   'supabase-production.yaml',
   'supabase-staging.yaml',
+  'upskii-production-e2e.yaml',
   'vercel-production.yaml',
 ];
 // Exceptions retain environment locks, bounded sandbox cleanup, or paused runtimes.

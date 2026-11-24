@@ -1,0 +1,290 @@
+name: Upskii Production E2E
+
+# Production end-to-end suites for Upskii and the Upskii-to-Meet flow
+# (meet-flow, learner, educator, admin). Runbook:
+# apps/docs/build/devops/upskii-production-e2e.mdx
+#
+# Bounded by design: one run at a time, no retries, hard timeouts, and a
+# kill switch (repository variable UPSKII_PRODUCTION_E2E_ENABLED must be
+# 'true'). Every run cleans up and verifies the cleanup even when tests fail.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: run = suites + cleanup; sweep = orphan cleanup only
+        type: choice
+        options: [run, sweep]
+        default: run
+      suites:
+        description: Comma-separated subset of meet-flow,learner,educator,admin (or all)
+        type: string
+        default: all
+  # After Tuturuuu production deploys (Web marker; Meet release on main).
+  workflow_run:
+    workflows: ["Production Deployment Planner", "Meet Cloudflare"]
+    types: [completed]
+    branches: [main, production]
+  # Sent by Upskii's production deploy job after it goes live.
+  repository_dispatch:
+    types: [upskii-production-deployed]
+  # Daily orphan sweep only; the suites never run on a schedule.
+  schedule:
+    - cron: "43 20 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run at a time across every trigger; never cancel a run mid-cleanup.
+  group: upskii-production-e2e
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  # Holds no secrets or credentials: decides whether this event may run.
+  gate:
+    name: Admit the run
+    if: >-
+      github.repository == 'tutur3u/platform' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+        (github.event.workflow_run.conclusion == 'success' &&
+         (github.event.workflow_run.event == 'push' ||
+          github.event.workflow_run.event == 'workflow_dispatch') &&
+         github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      trusted: ${{ steps.admit.outputs.trusted }}
+    steps:
+      - name: Verify trusted trigger
+        id: trigger
+        # repository_dispatch and schedule carry no producer to prove; only
+        # the default-branch workflow can receive them.
+        if: github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRUSTED_DISPATCH_REF: refs/heads/main
+          # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
+          TRUSTED_PRODUCERS: |
+            vercel-production.yaml 317228637 production push,workflow_dispatch success
+            meet-cloudflare.yaml 351494390 main push success
+        run: |
+          set -euo pipefail
+          # Expression `==` ignores case and workflow_run matches producers by name, so
+          # re-prove the trigger with exact comparisons before any privileged step runs.
+          # Values come from the event file and runner variables, never interpolation.
+          reject() {
+            echo "::error::Untrusted trigger: $1"
+            exit 1
+          }
+          field() {
+            jq -r "$1 // \"\" | tostring" "$GITHUB_EVENT_PATH"
+          }
+          listed() {
+            local item
+            local -a items
+            IFS=',' read -r -a items <<< "$2"
+            for item in "${items[@]}"; do
+              if [ "$item" = "$1" ] || [ "$item" = any ]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            workflow_dispatch)
+              if [ -z "${TRUSTED_DISPATCH_REF:-}" ] || [ "$GITHUB_REF" != "$TRUSTED_DISPATCH_REF" ]; then
+                reject "manual runs must start from ${TRUSTED_DISPATCH_REF:-a trusted producer}"
+              fi
+              branch="${TRUSTED_DISPATCH_REF#refs/heads/}"
+              head_sha="$GITHUB_SHA"
+              ;;
+            workflow_run)
+              run_path="$(field .workflow_run.path)"
+              file=""
+              while read -r candidate workflow_id branch events conclusions; do
+                if [ -n "$candidate" ] && [ "$run_path" = ".github/workflows/$candidate" ]; then
+                  file="$candidate"
+                  break
+                fi
+              done <<< "${TRUSTED_PRODUCERS:-}"
+              [ -n "$file" ] || reject "producer path '$run_path' is not trusted"
+              [ -n "$workflow_id" ] && [ "$(field .workflow_run.workflow_id)" = "$workflow_id" ] ||
+                reject "producer workflow ID is not $file's ID $workflow_id"
+              [ "$(field .workflow_run.head_branch)" = "$branch" ] ||
+                reject "producer branch is not exactly '$branch'"
+              listed "$(field .workflow_run.event)" "$events" ||
+                reject "producer event is not one of $events"
+              listed "$(field .workflow_run.conclusion)" "$conclusions" ||
+                reject "producer conclusion is not one of $conclusions"
+              [ "$(field .workflow_run.head_repository.full_name)" = "$GITHUB_REPOSITORY" ] &&
+                [ "$(field .workflow_run.head_repository.id)" = "$GITHUB_REPOSITORY_ID" ] ||
+                reject "producer head repository is not $GITHUB_REPOSITORY"
+              head_sha="$(field .workflow_run.head_sha)"
+              ;;
+            *)
+              reject "unsupported event '$GITHUB_EVENT_NAME'"
+              ;;
+          esac
+
+          [[ "$head_sha" =~ ^[0-9a-f]{40}$ ]] || reject "head SHA is not a full commit SHA"
+          # Compare against the fully qualified branch ref: a bare name resolves a
+          # same-named tag (refs/tags/<branch>) first. identical: the head SHA is the
+          # live branch tip; behind: it is reachable from the branch. Deploy
+          # consumers set REQUIRE_BRANCH_TIP so a re-run cannot redeploy an old commit.
+          # With TIP_TREE_PATH, a head behind the tip is still current when that
+          # directory's tree is unchanged at the tip (unrelated commits landed).
+          status="$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/$branch...$head_sha" --jq .status)"
+          if [ "${REQUIRE_BRANCH_TIP:-false}" = true ]; then
+            if [ "$status" = behind ] && [ -n "${TIP_TREE_PATH:-}" ]; then
+              [[ "$TIP_TREE_PATH" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$ ]] ||
+                reject "TIP_TREE_PATH is not a nested repository path"
+              tree_sha() {
+                gh api "repos/$GITHUB_REPOSITORY/contents/${TIP_TREE_PATH%/*}?ref=$1" \
+                  --jq ".[] | select(.type == \"dir\" and .name == \"${TIP_TREE_PATH##*/}\") | .sha"
+              }
+              tip_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq .object.sha)"
+              [[ "$tip_sha" =~ ^[0-9a-f]{40}$ ]] || reject "cannot resolve the tip of $branch"
+              head_tree="$(tree_sha "$head_sha")"
+              [[ "$head_tree" =~ ^[0-9a-f]{40}$ ]] && [ "$head_tree" = "$(tree_sha "$tip_sha")" ] ||
+                reject "head SHA is behind $branch and $TIP_TREE_PATH changed since"
+            else
+              [ "$status" = identical ] || reject "head SHA is not the live tip of $branch"
+            fi
+          else
+            [ "$status" = identical ] || [ "$status" = behind ] ||
+              reject "head SHA is not reachable from $branch"
+          fi
+          {
+            echo "trusted=true"
+            echo "head_sha=$head_sha"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+          echo "Trusted trigger: $head_sha on $branch"
+
+      - name: Apply the kill switch
+        id: admit
+        env:
+          ENABLED: ${{ vars.UPSKII_PRODUCTION_E2E_ENABLED }}
+          EVENT: ${{ github.event_name }}
+          TRUSTED: ${{ steps.trigger.outputs.trusted }}
+        run: |
+          admitted=false
+          if [ "$ENABLED" = "true" ]; then
+            case "$EVENT" in
+              repository_dispatch|schedule) admitted=true ;;
+              *) [ "$TRUSTED" = "true" ] && admitted=true ;;
+            esac
+          else
+            echo "::notice title=Upskii production E2E disabled::UPSKII_PRODUCTION_E2E_ENABLED is not true"
+          fi
+          echo "trusted=$admitted" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    name: Upskii production E2E (${{ github.event_name == 'schedule' && 'sweep' || inputs.mode || 'run' }})
+    needs: [gate]
+    if: needs.gate.outputs.trusted == 'true'
+    runs-on: ubuntu-latest
+    environment: upskii-production-e2e
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      # GitHub OIDC is the Tuturuuu QA operator credential; no stored secret.
+      id-token: write
+    env:
+      UPSKII_PRODUCTION_E2E_ENABLED: ${{ vars.UPSKII_PRODUCTION_E2E_ENABLED }}
+      UPSKII_E2E_RUN_LABEL: gh-${{ github.run_id }}-${{ github.run_attempt }}
+      UPSKII_E2E_SUITES: ${{ inputs.suites || 'all' }}
+      UPSKII_E2E_LEDGER: ${{ github.workspace }}/tmp/upskii-production-e2e/ledger.jsonl
+      MODE: ${{ github.event_name == 'schedule' && 'sweep' || inputs.mode || 'run' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+          package-cache-enabled: "false"
+      - name: Install dependencies
+        # Lifecycle scripts are off: this job holds production credentials.
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - name: Type-check the suites before touching production
+        run: bun x --no-install tsc --noEmit -p apps/web/tsconfig.upskii-production.json
+      - name: Install Chromium
+        if: env.MODE == 'run'
+        working-directory: apps/web
+        run: bun x playwright install --with-deps chromium
+
+      # Earlier failed runs: remove their QA owners before creating new ones.
+      - name: Sweep orphans from earlier runs
+        timeout-minutes: 6
+        env:
+          # Only the steps that call the provisioner see the token; dependency
+          # installation and lifecycle scripts never do.
+          UPSKII_QA_PROVISIONER_TOKEN: ${{ secrets.UPSKII_QA_PROVISIONER_TOKEN }}
+        run: bun apps/web/e2e-upskii-production/cli.ts sweep
+
+      - name: Run production suites
+        id: suites
+        if: env.MODE == 'run'
+        timeout-minutes: 22
+        working-directory: apps/web
+        env:
+          # Only the steps that call the provisioner see the token; dependency
+          # installation and lifecycle scripts never do.
+          UPSKII_QA_PROVISIONER_TOKEN: ${{ secrets.UPSKII_QA_PROVISIONER_TOKEN }}
+        run: bun x playwright test --config playwright.upskii-production.config.ts
+
+      - name: Clean up this run
+        if: always() && env.MODE == 'run'
+        timeout-minutes: 6
+        env:
+          # Only the steps that call the provisioner see the token; dependency
+          # installation and lifecycle scripts never do.
+          UPSKII_QA_PROVISIONER_TOKEN: ${{ secrets.UPSKII_QA_PROVISIONER_TOKEN }}
+        run: bun apps/web/e2e-upskii-production/cli.ts cleanup
+
+      - name: Verify nothing leaked
+        if: always()
+        timeout-minutes: 4
+        env:
+          # Only the steps that call the provisioner see the token; dependency
+          # installation and lifecycle scripts never do.
+          UPSKII_QA_PROVISIONER_TOKEN: ${{ secrets.UPSKII_QA_PROVISIONER_TOKEN }}
+        run: bun apps/web/e2e-upskii-production/cli.ts verify
+
+      - name: Upload failure screenshots
+        if: failure() && steps.suites.outcome == 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: upskii-production-e2e-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/upskii-production-e2e/results
+          retention-days: 3
+          if-no-files-found: ignore
+
+  alert:
+    name: Sync the upskii-production-e2e-alert issue
+    needs: [gate, e2e]
+    if: always() && needs.gate.outputs.trusted == 'true' && needs.e2e.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+      - name: Open, update or close the alert issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          E2E_TRIGGER: ${{ github.event_name }}
+          E2E_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/ci/upskii-production-e2e-alert.mjs

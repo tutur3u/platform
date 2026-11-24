@@ -120,6 +120,7 @@ test('every workflow_run consumer is gated by the canonical trust step', () => {
     'discord-modal-deploy.yml',
     'release-please-transient-retry.yaml',
     'supabase-production.yaml',
+    'upskii-production-e2e.yaml',
   ]);
   const scripts = new Set();
   for (const file of consumerFiles) {
