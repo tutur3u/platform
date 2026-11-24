@@ -70,12 +70,26 @@ export type MiraChoiceEvidence = {
   noticeVersion: string;
   textHash: string;
   locale: string;
+  /**
+   * Set only for a choice made under the per-speaker notice; room-capture
+   * choices omit it and keep the stored default.
+   */
+  noticeMode?: 'self';
+  /** Per-speaker capture is on: refuse to store a self choice without its mode. */
+  requireNoticeMode?: boolean;
 };
+
+/**
+ * When the choice table last refused the `notice_mode` column. Detection is
+ * retried after a short while, never latched for good.
+ */
+let noticeModeMissingAt: number | undefined;
+export const NOTICE_MODE_PROBE_TTL_MS = 60_000;
 
 /** Appends one participant's own choice; accounts are pseudonymized in SQL. */
 export async function recordMiraChoice(input: MiraChoiceEvidence) {
   const db = await privateDb();
-  const { error } = await db.from('meet_mira_participant_choices').insert({
+  const row = {
     meeting_id: input.meetingId,
     // SQL rederives it from the meeting, so a mismatch cannot be stored.
     ws_id: input.wsId,
@@ -88,7 +102,27 @@ export async function recordMiraChoice(input: MiraChoiceEvidence) {
     notice_version: input.noticeVersion,
     text_hash: input.textHash,
     locale: input.locale,
-  });
+  };
+  const missing =
+    noticeModeMissingAt !== undefined &&
+    Date.now() - noticeModeMissingAt < NOTICE_MODE_PROBE_TTL_MS;
+  const withMode = input.noticeMode === 'self' && !missing;
+  if (input.noticeMode === 'self' && missing && input.requireNoticeMode)
+    throw new Error('Mira choice notice mode cannot be stored');
+  const insert = (mode: boolean) =>
+    db
+      .from('meet_mira_participant_choices')
+      .insert(
+        (mode ? { ...row, notice_mode: 'self' } : row) as typeof row
+      );
+  let { error } = await insert(withMode);
+  // Feature check: without the column PostgREST answers PGRST204.
+  if (withMode && error?.code === 'PGRST204') {
+    noticeModeMissingAt = Date.now();
+    if (input.requireNoticeMode)
+      throw new Error('Mira choice notice mode cannot be stored');
+    ({ error } = await insert(false));
+  } else if (withMode && !error) noticeModeMissingAt = undefined;
   if (error) throw new Error('Mira choice could not be recorded');
 }
 

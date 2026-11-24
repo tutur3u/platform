@@ -16,6 +16,8 @@ import {
   endRoomMira,
 } from '../../../../../features/live-assistant/server/room-mira-acceptance';
 import { readRoomMiraAvailability } from '../../../../../features/live-assistant/server/room-mira-authority';
+import { requireCurrentMiraNoticeMode } from '../../../../../features/live-assistant/server/room-mira-notice-mode';
+import { meetPerSpeakerEnabled } from '../../../../../features/meeting-ai/server/per-speaker-flag';
 import {
   readMiraBoxTickedByDefault,
   readOpenMiraAcceptanceRevision,
@@ -33,6 +35,8 @@ const command = z.discriminatedUnion('action', [
       // SHA-256 hex of the exact notice text shown, and its locale.
       textHash: z.string().regex(/^[0-9a-f]{64}$/),
       locale: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
+      // The notice shown: room capture (default) or per-speaker capture.
+      noticeMode: z.enum(['room', 'self']).optional(),
     })
     .strict(),
   z
@@ -113,6 +117,9 @@ export async function POST(
     // Off always records, so anyone can turn Mira off for themselves.
     if (data.choice === 'on' && !(await readRoomMiraAvailability(access)))
       throw new MeetCallAccessError(403, 'Room Mira is unavailable');
+    // On counts only under the notice for the room's current transcript mode.
+    if (data.choice === 'on')
+      await requireCurrentMiraNoticeMode(access, data.noticeMode);
     await callRoomService(access, {
       action: 'mira.room.choice',
       choice: data.choice,
@@ -133,6 +140,14 @@ export async function POST(
         noticeVersion: data.version,
         textHash: data.textHash,
         locale: data.locale,
+        ...(data.noticeMode === 'self'
+          ? {
+              noticeMode: 'self' as const,
+              requireNoticeMode: await meetPerSpeakerEnabled(
+                access.meeting.ws_id
+              ),
+            }
+          : {}),
       });
     } catch (error) {
       console.error('Room Mira choice evidence failed', {
