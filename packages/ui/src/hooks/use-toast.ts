@@ -2,7 +2,7 @@
 
 import type * as React from 'react';
 import { toast as sonnerToast } from 'sonner';
-import type { ToastActionElement, ToastProps } from '../components/ui/toast';
+import type { ToastProps } from '../components/ui/toast';
 
 /**
  * Compatibility layer for the legacy Radix `useToast` API.
@@ -16,7 +16,8 @@ import type { ToastActionElement, ToastProps } from '../components/ui/toast';
 type LegacyToast = Omit<ToastProps, 'title'> & {
   title?: React.ReactNode;
   description?: React.ReactNode;
-  action?: ToastActionElement;
+  /** A Sonner action button. Radix `ToastAction` elements are not supported. */
+  action?: { label: React.ReactNode; onClick: () => void };
 };
 
 type LegacyToastUpdate = Partial<LegacyToast> & { id?: string };
@@ -72,7 +73,14 @@ function dismiss(toastId?: string) {
  */
 function useToast() {
   return {
-    toasts: [] as Array<LegacyToast & { id: string }>,
+    toasts: [] as Array<
+      Omit<ToastProps, 'title'> & {
+        id: string;
+        title?: React.ReactNode;
+        description?: React.ReactNode;
+        action?: React.ReactNode;
+      }
+    >,
     toast,
     dismiss,
   };

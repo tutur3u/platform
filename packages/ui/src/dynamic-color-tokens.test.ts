@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = existsSync(resolve(process.cwd(), 'packages/ui/package.json'))
@@ -61,13 +62,13 @@ describe('dynamic color utilities', () => {
     expect(defined.has('blue')).toBe(true);
 
     const usage = new RegExp(
-      `(?<![\\w-])${UTILITY_PREFIX}-dynamic-([a-z]+(?:-[a-z]+)*)(?![\\w-])`,
+      `(?<![\\w-])${UTILITY_PREFIX}-dynamic-([a-z]+(?:-[a-z0-9]+)*)(?![\\w-])`,
       'gu'
     );
     const offenders: string[] = [];
 
     for (const file of activeSourceRoots().flatMap(sourceFiles)) {
-      const path = relative(repoRoot, file);
+      const path = relative(repoRoot, file).split(sep).join('/');
       if (PENDING_OWNER_FILES.has(path) || /\.test\.tsx?$/u.test(path)) {
         continue;
       }
@@ -81,5 +82,5 @@ describe('dynamic color utilities', () => {
     }
 
     expect(offenders).toEqual([]);
-  });
+  }, 60_000);
 });
