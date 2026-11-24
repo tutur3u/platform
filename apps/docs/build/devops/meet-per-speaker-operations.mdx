@@ -39,13 +39,15 @@ revision never reached the provider and is not part of this procedure.
 
 The 10-minute threshold keeps the procedure away from chunks a live Worker is
 still settling. `attempt_started_at` is set by `mark_dispatch`; after it, a
-Worker makes one room check (10 s request timeout), one provider call (aborted
-after 55 s, `abortSignal` in `packages/ai/src/meetings/gemini.ts`), a second
-room check, a consent read and the settle, so it settles within about 80
-seconds or not at all. Settling a chunk the Worker is still processing makes
-the Worker's own `completed` settle fail with `55000`, and the transcript text
-is lost. Never shorten the threshold below about 2 minutes, and raise it if
-the provider timeout grows.
+Worker makes one provider call (aborted after 55 s, `abortSignal` in
+`packages/ai/src/meetings/gemini.ts`) and settles within about 2 minutes or
+not at all: two room checks, each an authorize plus an ack call of up to
+10 s, plus outbox and billing writes with no client timeout (the outbox
+drain writes up to 64 entries, billing settles retry up to 3 times, and the
+completed settle retries twice). Settling a chunk the Worker is still
+processing makes the Worker's own `completed` settle fail with `55000`, and
+the transcript text is lost. Never shorten the threshold below about 5
+minutes, and raise it if the provider timeout grows.
 
 ### Settle as `unknown`
 
