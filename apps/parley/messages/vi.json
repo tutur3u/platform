@@ -5312,34 +5312,6 @@
         "unlinked_title": "Chưa liên kết Upskii",
         "url_rejected": "Không thể chia sẻ liên kết này.",
         "waiting_title": "Chưa có nội dung được trình bày"
-      },
-      "miraEverywhere": {
-        "permissions": {
-          "blocked": "Bị chặn",
-          "disabled": "Đã tắt",
-          "draft": "Soạn bản nháp bình chọn và danh sách việc cần làm",
-          "editDocs": "Sửa tài liệu · ghi rõ người sửa ở mỗi lần chỉnh sửa",
-          "failed": "Không thể cập nhật quyền của Mira. Hãy thử lại.",
-          "host": "Do chủ phòng đặt",
-          "readPrivate": "Đọc ghi chú riêng tư hoặc cuộc trò chuyện với gia sư",
-          "suggestCode": "Đề xuất mã · cần người xác nhận",
-          "title": "Mira có thể",
-          "unavailable": "Không khả dụng"
-        },
-        "tutor": {
-          "assistant": {
-            "empty": "Chỉ bạn nhìn thấy nội dung này",
-            "info": "Giới thiệu Trợ lý riêng",
-            "orType": "hoặc nhập bên dưới",
-            "pause": "Tạm dừng",
-            "placeholder": "Hỏi riêng Mira…",
-            "private": "Riêng tư",
-            "resume": "Tiếp tục",
-            "stop": "Dừng",
-            "talk": "Nói chuyện"
-          },
-          "privacyDetail": "Mira chỉ đăng vào phòng khi bạn chia sẻ."
-        }
       }
     },
     "collaboration": {

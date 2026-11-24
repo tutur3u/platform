@@ -99,7 +99,7 @@ function EmptyState({ onTalk }: { onTalk?: () => void }) {
         <>
           <Button
             type="button"
-            className="h-10 gap-2 rounded-full px-5"
+            className="h-10 gap-2 rounded-full px-5 pointer-coarse:h-11"
             onClick={onTalk}
           >
             <Mic aria-hidden className="size-4" />

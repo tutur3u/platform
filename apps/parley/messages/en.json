@@ -5312,34 +5312,6 @@
         "unlinked_title": "Upskii isn't linked",
         "url_rejected": "This link can't be shared.",
         "waiting_title": "Nothing presented yet"
-      },
-      "miraEverywhere": {
-        "permissions": {
-          "blocked": "Blocked",
-          "disabled": "Off",
-          "draft": "Draft polls and action items",
-          "editDocs": "Edit docs · every edit attributed",
-          "failed": "Couldn’t update Mira’s permissions. Try again.",
-          "host": "Set by host",
-          "readPrivate": "Read private notes or tutor chats",
-          "suggestCode": "Suggest code · a person accepts",
-          "title": "Mira can",
-          "unavailable": "Unavailable"
-        },
-        "tutor": {
-          "assistant": {
-            "empty": "Only you can see this",
-            "info": "About the Private Assistant",
-            "orType": "or type below",
-            "pause": "Pause",
-            "placeholder": "Ask privately…",
-            "private": "Private",
-            "resume": "Resume",
-            "stop": "Stop",
-            "talk": "Talk"
-          },
-          "privacyDetail": "Mira only posts to the room if you share."
-        }
       }
     },
     "collaboration": {

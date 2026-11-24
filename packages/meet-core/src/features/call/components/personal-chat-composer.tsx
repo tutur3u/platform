@@ -77,7 +77,7 @@ export function PersonalChatComposer({
           size="icon"
           className="size-9 shrink-0 rounded-full pointer-coarse:size-11"
           aria-label={retrying ? liveT('retry') : t('send')}
-          disabled={!draft.trim() || busy}
+          disabled={!draft.trim() || locked}
         >
           {retrying ? (
             <RefreshCw aria-hidden className="size-4" />

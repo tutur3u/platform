@@ -42,7 +42,11 @@ export function EnableMiraDialog({
           <DialogTitle>{t('personal_enable')}</DialogTitle>
           <DialogDescription>{liveT('phase_notice')}</DialogDescription>
         </DialogHeader>
-        {failed && <p role="alert">{liveT('choice_failed')}</p>}
+        {failed && (
+          <p className="text-destructive text-sm" role="alert">
+            {liveT('choice_failed')}
+          </p>
+        )}
         <MiraAdultNotice consent id={adultNoticeId} />
         <Button
           type="button"
