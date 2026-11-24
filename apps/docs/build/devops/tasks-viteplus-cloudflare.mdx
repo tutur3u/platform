@@ -97,6 +97,19 @@ runtime header. `--local-upstream` makes the Worker see the admitted host; with
 `scripts/native-cutover/smoke.mjs` against the same origin. This smoke does not replace exact-commit CI, sealed-artifact
 checks or signed-in acceptance on staging.
 
+### Known limit: the native dev server
+
+`vp dev` for apps/tasks needs built output from the shared workspace packages,
+and the Worker dev runtime loads it as ES modules. A checkout without a build
+fails at startup: first on missing `@tuturuuu/supabase/next/proxy` output, and
+with output copied from another checkout, on `exports is not defined` from the
+CommonJS build of `@tuturuuu/internal-api`. Agents may not run builds on fleet
+machines, so a browser check of runtime-only UI (such as the page-transition
+placeholder) needs CI-built ES module output for `@tuturuuu/internal-api` and
+`@tuturuuu/types`, or a staging or production check after deploy. Create the
+dev worktree outside another checkout's `.worktrees/`, which otherwise fails
+with `TSCONFIG_ERROR`.
+
 ## Sealed artifact and signed-in browser gate
 
 `scripts/ci/tasks-native-artifact.py` seals and restores the Tasks staging
