@@ -127,5 +127,29 @@ describe('PublicProfileSettingsPanel', () => {
       <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
     );
     expect(mocks.enter).toHaveBeenCalledTimes(2);
+    expect(mocks.enter).toHaveBeenLastCalledWith(
+      'https://tuturuuu.example/u/creator'
+    );
+  });
+
+  it('leaves the profile address when another tab is selected', async () => {
+    mocks.getProfile.mockResolvedValue(PROFILE);
+    const { rerender } = renderPanel('https://tuturuuu.example');
+    await screen.findByRole('heading', { level: 2, name: 'Public Creator' });
+
+    dialogState.tab = 'security';
+    rerender(
+      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
+    );
+    expect(mocks.leave).toHaveBeenCalledTimes(1);
+
+    dialogState.tab = 'public_profile';
+    rerender(
+      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
+    );
+    expect(mocks.enter).toHaveBeenCalledTimes(2);
+    expect(mocks.enter).toHaveBeenLastCalledWith(
+      'https://tuturuuu.example/u/creator'
+    );
   });
 });
