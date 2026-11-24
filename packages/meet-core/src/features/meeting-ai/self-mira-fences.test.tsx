@@ -240,7 +240,7 @@ describe('Mira and the per-speaker transcript', () => {
   });
 
   it('asks again after the server expects another notice, without resending', async () => {
-    f.miraChoose.mockRejectedValue(conflict('MEET_MIRA_NOTICE_MODE_MISMATCH'));
+    f.miraChoose.mockRejectedValue(conflict('MIRA_ROOM_NOTICE_MODE_STALE'));
     const hook = mira();
     await vi.waitFor(() => expect(hook.result.current.noticeKnown).toBe(true));
     const reads = f.read.mock.calls.length;
@@ -270,13 +270,15 @@ describe('Mira and the per-speaker transcript', () => {
         <RoomMiraSelfChoice meetingId="m" />
       </Providers>
     );
+    // Ticked (the default here), it cannot turn Mira on yet; the box itself
+    // stays usable so an untick can always be recorded.
     const confirm = await screen.findByRole('button', { name: mc.confirm });
     expect((confirm as HTMLButtonElement).disabled).toBe(true);
     expect(
       screen
         .getByRole('checkbox', { name: mc.box_label })
         .hasAttribute('disabled')
-    ).toBe(true);
+    ).toBe(false);
     settle(view());
     await vi.waitFor(() =>
       expect((confirm as HTMLButtonElement).disabled).toBe(false)
@@ -364,6 +366,10 @@ describe('Mira re-confirmation after a capture mode change', () => {
     expect(await screen.findByText(mc.info_off_self)).toBeTruthy();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(f.miraChoose).not.toHaveBeenCalled();
+    // A re-confirmation for a new scope starts unticked.
+    const box = screen.getByRole('checkbox', { name: mc.box_label });
+    expect(box.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(box);
     fireEvent.click(screen.getByRole('button', { name: mc.confirm }));
     await vi.waitFor(() => expect(f.miraChoose).toHaveBeenCalledTimes(1));
     const sent = f.miraChoose.mock.calls[0]![1];
@@ -386,6 +392,10 @@ describe('Mira re-confirmation after a capture mode change', () => {
     expect(await screen.findByText(mc.info_off)).toBeTruthy();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(f.miraChoose).not.toHaveBeenCalled();
+    // A re-confirmation for a new scope starts unticked.
+    const box = screen.getByRole('checkbox', { name: mc.box_label });
+    expect(box.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(box);
     fireEvent.click(screen.getByRole('button', { name: mc.confirm }));
     await vi.waitFor(() => expect(f.miraChoose).toHaveBeenCalledTimes(1));
     const sent = f.miraChoose.mock.calls[0]![1];
@@ -461,6 +471,7 @@ describe('Mira re-confirmation after a capture mode change', () => {
     await new Promise((resolve) => setTimeout(resolve, 80));
     expect(choices()).toHaveLength(0);
     expect(f.legacyChoice).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox', { name: mc.box_label }));
     fireEvent.click(confirm);
     await vi.waitFor(() => expect(f.miraChoose).toHaveBeenCalledTimes(1));
     expect(f.miraChoose.mock.calls[0]![1]).toMatchObject({

@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   acceptRoomMira,
   type RoomMiraConsent,
@@ -32,12 +37,10 @@ import {
 import { holdSelfCapture } from '../../meeting-ai/self-hold';
 import { readSelfRoom } from '../../meeting-ai/self-room';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
+import { roomMiraChoiceKey, roomMiraConsentKey } from './room-mira-key';
 import { useMiraNoticeMode } from './use-mira-notice-mode';
 
-export const roomMiraConsentKey = (meetingId: string) => [
-  'room-mira-consent',
-  meetingId,
-];
+export { roomMiraConsentKey };
 
 /** How often a caller still outside the room re-reads what Mira is doing. */
 const JOIN_SEED_REFRESH_MS = 20_000;
@@ -121,6 +124,16 @@ const applying = new Set<string>();
  * retry on the next read, never in a tight loop.
  */
 const failedAt = new Map<string, number>();
+/** Failed recordings per Join state; it stops retrying after a few. */
+const failures = new Map<string, number>();
+const MAX_JOIN_FAILURES = 5;
+/**
+ * The latest Mira choice per meeting in this tab. A retried off stops as soon
+ * as a newer choice is made, so it can never undo it.
+ */
+const latestChoice = new Map<string, number>();
+
+class SupersededMiraChoice extends Error {}
 
 /**
  * Room Mira state and actions for the caller. A box state remembered at Join
@@ -152,12 +165,16 @@ export function useRoomMira(meetingId: string) {
     });
 
   const choose = useMutation({
+    mutationKey: roomMiraChoiceKey(meetingId),
     mutationFn: async (input: {
       choice: 'on' | 'off';
       source: Source;
       textHash?: string;
       locale?: string;
     }) => {
+      const ticket = (latestChoice.get(meetingId) ?? 0) + 1;
+      latestChoice.set(meetingId, ticket);
+      const superseded = () => latestChoice.get(meetingId) !== ticket;
       // A Join state carries the hash of the room-capture notice it showed.
       const mode = input.textHash ? 'room' : notice.mode;
       // Mira is turned on only under a notice known to be this meeting's.
@@ -184,7 +201,9 @@ export function useRoomMira(meetingId: string) {
         } catch (error) {
           const wait = MIRA_OFF_RETRY_MS[attempt];
           if (wait === undefined) throw error;
+          if (superseded()) throw new SupersededMiraChoice();
           await new Promise((resolve) => setTimeout(resolve, wait));
+          if (superseded()) throw new SupersededMiraChoice();
         }
       }
     },
@@ -220,7 +239,9 @@ export function useRoomMira(meetingId: string) {
     // the meeting's notice are read again, so a refusal for another notice
     // shows the current one and the person chooses again; nothing is resent
     // under a different notice.
-    onError: (_error, input) => {
+    onError: (error, input) => {
+      // A newer choice took over; it reports its own outcome.
+      if (error instanceof SupersededMiraChoice) return;
       if (input.source === 'join') return;
       toast.error(t('save_failed'));
       void queryClient.invalidateQueries({
@@ -279,7 +300,8 @@ export function useRoomMira(meetingId: string) {
       pendingJoin.seenRevision !== acceptance.revision ||
       !/^[0-9a-f]{64}$/.test(pendingJoin.textHash) ||
       applying.has(flight) ||
-      failedAt.get(flight) === dataUpdatedAt
+      failedAt.get(flight) === dataUpdatedAt ||
+      (failures.get(flight) ?? 0) >= MAX_JOIN_FAILURES
     )
       return;
     // A workspace that unticks the box by default never counts a box that
@@ -305,9 +327,13 @@ export function useRoomMira(meetingId: string) {
       .then(
         () => {
           failedAt.delete(flight);
+          failures.delete(flight);
           markMiraJoinChoiceApplied(meetingId, acceptance.revision);
         },
-        () => failedAt.set(flight, dataUpdatedAt)
+        () => {
+          failedAt.set(flight, dataUpdatedAt);
+          failures.set(flight, (failures.get(flight) ?? 0) + 1);
+        }
       )
       .finally(() => applying.delete(flight));
   }, [
@@ -369,6 +395,8 @@ export function useRoomMira(meetingId: string) {
      * to confirm under the current one. Nothing confirms on their behalf.
      */
     noticeStale: !!data?.noticeStale,
+    /** A Mira choice is in flight from any surface in this tab. */
+    choosing: useIsMutating({ mutationKey: roomMiraChoiceKey(meetingId) }) > 0,
     /**
      * An `on` is in flight or staged in the room and not yet in effect. The
      * request in flight decides; a staged `on` the room dropped (for example

@@ -19,6 +19,7 @@ import {
   releaseSelfCapture,
   selfHoldEpoch,
 } from './self-hold';
+import { roomMiraConsentKey } from '../call/components/room-mira-key';
 import { readSelfRoom } from './self-room';
 
 export const transcriptConsentKey = (meetingId: string) => [
@@ -36,10 +37,12 @@ export type SelfChoiceContext = {
   locale?: string;
 };
 
-/** Delays between reads of a room that could not be read; then it stops. */
+/** Delays between reads of a room that could not be read. */
 export const CONSENT_READ_BACKOFF_MS = [
   2000, 4000, 8000, 16_000, 30_000, 30_000,
 ];
+/** After the backoff, a slow read keeps going so the notice can recover. */
+export const CONSENT_READ_SLOW_MS = 60_000;
 
 const isConsentView = (value: unknown): value is MeetTranscriptConsent =>
   typeof value === 'object' &&
@@ -64,10 +67,11 @@ export function useTranscriptConsent(
     refetchInterval: (current) => {
       const data = current.state.data;
       // A room that could not be read is unknown, never room capture; read
-      // it again a bounded number of times.
+      // it again with a backoff, then slowly.
       if (!data && current.state.status === 'error')
         return (
-          CONSENT_READ_BACKOFF_MS[current.state.errorUpdateCount - 1] ?? false
+          CONSENT_READ_BACKOFF_MS[current.state.errorUpdateCount - 1] ??
+          CONSENT_READ_SLOW_MS
         );
       if (!data?.available) return false;
       return data.active || data.choice === null ? 5000 : 20_000;
@@ -133,8 +137,14 @@ export function useTranscriptConsent(
       // Someone the server will not let contribute here stops being asked.
       if (classifySelfFailure(error) === 'not_eligible')
         markSelfIneligible(meetingId);
-      // The notice changed since it was shown; show the current one.
-      if (isStaleSelfNotice(error)) void refresh();
+      // The notice changed since it was shown; show the current one. A Mira
+      // on for the other notice is asked again in the Mira notice too.
+      if (isStaleSelfNotice(error)) {
+        void refresh();
+        void queryClient.invalidateQueries({
+          queryKey: roomMiraConsentKey(meetingId),
+        });
+      }
     },
   });
   /**

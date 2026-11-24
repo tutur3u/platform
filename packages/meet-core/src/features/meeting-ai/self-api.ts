@@ -143,14 +143,13 @@ export function selfRetryDelay(error: unknown, fallback: number, min = 0) {
  * The person is asked again under the current notice; nothing is retried
  * on their behalf.
  */
+const STALE_NOTICE_CODES = new Set([
+  'MEET_SELF_NOTICE_STALE',
+  'MEET_SELF_NOTICE_MISMATCH',
+  'MIRA_ROOM_NOTICE_MODE_STALE',
+]);
+
 export function isStaleSelfNotice(error: unknown) {
   const code = fieldOf(error, 'code');
-  return (
-    code === 'MEET_SELF_NOTICE_STALE' ||
-    code === 'MEET_SELF_NOTICE_MISMATCH' ||
-    code === 'MIRA_ROOM_NOTICE_MODE_STALE' ||
-    (fieldOf(error, 'status') === 409 &&
-      typeof code === 'string' &&
-      /^MEET_(SELF|MIRA)_[A-Z_]*NOTICE[A-Z_]*MISMATCH$/.test(code))
-  );
+  return typeof code === 'string' && STALE_NOTICE_CODES.has(code);
 }

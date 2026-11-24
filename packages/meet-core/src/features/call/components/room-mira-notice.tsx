@@ -239,8 +239,14 @@ function ParticipantChoice({
 }) {
   const t = useTranslations('meet.mira_consent');
   const id = useId();
-  const [ticked, setTicked] = useState(mira.presetTicked);
-  const busy = mira.choose.isPending;
+  // Asking again for a new scope starts unticked, so a dismissing click never
+  // consents to it.
+  const [ticked, setTicked] = useState(
+    () => !mira.noticeStale && mira.presetTicked()
+  );
+  const busy = mira.choosing;
+  // Turning Mira on waits for the meeting's notice; an untick never does.
+  const waiting = ticked && !mira.noticeKnown;
   const pick = (choice: 'on' | 'off', source: 'confirm' | 'toggle') =>
     mira.choose.mutate({ choice, source }, { onSuccess: onDone });
   // Mira is never shown as on until the room has confirmed it.
@@ -289,16 +295,16 @@ function ParticipantChoice({
         id={`mira-confirm-${id}`}
         checked={ticked}
         onCheckedChange={setTicked}
-        disabled={busy || !mira.noticeKnown}
+        disabled={busy}
         mode={mira.noticeMode}
       />
-      {/* The confirm waits until the meeting's notice is known, so the box
-          shows and hashes the right text. */}
+      {/* An on waits until the meeting's notice is known, so the box shows
+          and hashes the right text. */}
       <Button
         type="button"
         size="sm"
-        disabled={busy || !mira.noticeKnown}
-        aria-busy={!mira.noticeKnown || undefined}
+        disabled={busy || waiting}
+        aria-busy={waiting || undefined}
         onClick={() =>
           pick(
             ticked ? 'on' : 'off',
@@ -306,7 +312,7 @@ function ParticipantChoice({
           )
         }
       >
-        {busy || !mira.noticeKnown ? (
+        {busy || waiting ? (
           <Loader2 aria-hidden className="size-4 animate-spin" />
         ) : (
           <Check aria-hidden className="size-4" />
