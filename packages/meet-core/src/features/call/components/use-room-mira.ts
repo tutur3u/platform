@@ -369,6 +369,14 @@ export function useRoomMira(meetingId: string) {
      * to confirm under the current one. Nothing confirms on their behalf.
      */
     noticeStale: !!data?.noticeStale,
+    /**
+     * An `on` is in flight or staged in the room and not yet in effect. The
+     * request in flight decides; a staged `on` the room dropped (for example
+     * on a restart) reads as not pending once nothing is in flight.
+     */
+    turningOn:
+      (choose.isPending && choose.variables?.choice === 'on') ||
+      (!choose.isPending && !!data?.pending),
     loading: query.isLoading,
     available: query.data?.available === true,
     data,

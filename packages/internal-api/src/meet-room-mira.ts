@@ -48,6 +48,11 @@ export type RoomMiraConsent =
       noticeMode?: 'room' | 'self';
       /** The caller's current `on` was given under the other notice. */
       noticeStale?: boolean;
+      /**
+       * The caller's `on` is staged and not yet in effect; `choice` still
+       * shows the previous state until the room confirms it.
+       */
+      pending?: boolean;
     };
 
 export type RoomMiraChoiceInput = {

@@ -59,7 +59,8 @@ export function useSelfSpeakerCapture({
   const miraOn =
     !!mira.data?.available &&
     mira.data.choice === 'on' &&
-    !mira.data.noticeStale;
+    !mira.data.noticeStale &&
+    !mira.data.pending;
   // Re-renders on any local fence change; the effects read them fresh.
   const flags = useSelfCaptureFlags(meetingId);
   // A reconnect is a rejoin: a stream refused before it may open again.

@@ -243,14 +243,15 @@ function ParticipantChoice({
   const busy = mira.choose.isPending;
   const pick = (choice: 'on' | 'off', source: 'confirm' | 'toggle') =>
     mira.choose.mutate({ choice, source }, { onSuccess: onDone });
-  if (data.pausing)
+  // Mira is never shown as on until the room has confirmed it.
+  if (data.pausing || mira.turningOn)
     return (
       <p
         role="status"
         className="inline-flex items-center gap-1.5 text-muted-foreground"
       >
         <Loader2 aria-hidden className="size-4 animate-spin" />
-        {t('pausing')}
+        {t(data.pausing ? 'pausing' : 'turning_on')}
       </p>
     );
   // An `on` under the other notice is confirmed again below, by the person.
