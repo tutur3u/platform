@@ -1,5 +1,5 @@
 -- Meet AI per-speaker transcription: the self_v1 capture path RPCs and chunk
--- fence (20261124100000, 20261124100100). Room sequence watermark across
+-- fence (20261124114100, 20261124114200). Room sequence watermark across
 -- decisions, close and revoke; the 10-allow cap; stream open, renewal and
 -- lease expiry; cost reservation and exactly-once settlement; the dispatch
 -- and text fences; stop, drain and the notes attempt budget. Legacy sessions

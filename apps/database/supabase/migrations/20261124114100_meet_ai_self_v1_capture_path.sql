@@ -10,7 +10,7 @@
 -- cannot deadlock with one another.
 -- Errcodes: 55000 state refused, 40001 stale room sequence or generation,
 -- 54000 cap, P0002 not found, 23514 invalid, 23505 identity conflict,
--- 22023 missing argument. Cost, dispatch and stop RPCs: 20261124100100.
+-- 22023 missing argument. Cost, dispatch and stop RPCs: 20261124114200.
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 

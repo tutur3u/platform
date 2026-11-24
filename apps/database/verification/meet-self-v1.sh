@@ -35,8 +35,8 @@ self_v1=(
   20261111120206_meet_ai_chunks_stream_identity_guard
   20261111120207_validate_meet_ai_self_v1_constraints
   20261111120208_meet_ai_self_v1_read_contracts
-  20261124100000_meet_ai_self_v1_capture_path
-  20261124100100_meet_ai_self_v1_cost_rpcs
+  20261124114100_meet_ai_self_v1_capture_path
+  20261124114200_meet_ai_self_v1_cost_rpcs
 )
 # main's meet-ai-consent-schema/-retention suites need main's full parent RLS
 # (workspace_meetings policies, creator membership triggers); run them on a
@@ -97,7 +97,7 @@ guard_sql() { $PSQL -X -q -v ON_ERROR_STOP=1 -c "do \$\$ declare u uuid; ws uuid
   begin $guard_ids $1 end \$\$"; }
 rollback_refused() { # rollback_refused <label>
   local m out
-  for m in 20261124100100_meet_ai_self_v1_cost_rpcs 20261124100000_meet_ai_self_v1_capture_path; do
+  for m in 20261124114200_meet_ai_self_v1_cost_rpcs 20261124114100_meet_ai_self_v1_capture_path; do
     if out=$(run "rollbacks/$m.rollback.sql" 2>&1); then
       echo "== rollback guard MISSING for $m ($1)"; status=1
     elif grep -q 'before rolling back' <<<"$out"; then
@@ -132,8 +132,8 @@ guard_sql "perform private.meet_ai_self_v1_settle_chunk(c, 'unknown', null, null
   delete from auth.users where id = u;"
 
 # Rollback round trip, in the documented order, then forward again.
-for m in 20261124100100_meet_ai_self_v1_cost_rpcs \
-  20261124100000_meet_ai_self_v1_capture_path \
+for m in 20261124114200_meet_ai_self_v1_cost_rpcs \
+  20261124114100_meet_ai_self_v1_capture_path \
   20261111120208_meet_ai_self_v1_read_contracts \
   20261111120207_validate_meet_ai_self_v1_constraints \
   20261111120206_meet_ai_chunks_stream_identity_guard \

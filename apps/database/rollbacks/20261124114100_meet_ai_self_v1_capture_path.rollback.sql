@@ -1,5 +1,5 @@
--- Rollback of 20261124100000_meet_ai_self_v1_capture_path.sql. Run the
--- 20261124100100 rollback and then this one back-to-back, with no self_v1
+-- Rollback of 20261124114100_meet_ai_self_v1_capture_path.sql. Run the
+-- 20261124114200 rollback and then this one back-to-back, with no self_v1
 -- session started in between. Consent evidence is kept; only its room_seq column,
 -- key and triggers are removed. Discarded chunks hold no text and become
 -- `failed` so the original status check can return. Per-chunk reservations and
@@ -37,7 +37,7 @@ begin
   end if;
 end;
 $$;
--- Functions of 20261124100100, in case its rollback was skipped.
+-- Functions of 20261124114200, in case its rollback was skipped.
 drop function if exists private.meet_ai_self_v1_close_drained(uuid);
 drop function if exists private.meet_ai_self_v1_stop_session(uuid, uuid, boolean);
 drop function if exists private.meet_ai_self_v1_release_undispatched(uuid);

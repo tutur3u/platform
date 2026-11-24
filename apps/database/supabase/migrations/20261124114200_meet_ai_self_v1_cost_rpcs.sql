@@ -1,7 +1,7 @@
 -- Meet AI per-speaker transcription: self_v1 cost, dispatch and stop RPCs.
 -- Design: apps/docs/platform/features/meet-per-speaker-transcription.mdx
 -- (Upload contract, In-flight fence, Billing). Builds on the capture path in
--- 20261124100000 (session lock, capture predicate, live-upload fence, chunk
+-- 20261124114100 (session lock, capture predicate, live-upload fence, chunk
 -- state guard). Session cost counters are the spend ceiling: each chunk stores
 -- its own reservation so settlement moves the counters exactly once. Every RPC
 -- takes the session row lock first, which serializes the session's writers.
