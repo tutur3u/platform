@@ -165,14 +165,8 @@
       "duo": "iPhone Duo"
     },
     "variants": {
-      "ipad": [
-        "Portrait",
-        "Landscape"
-      ],
-      "duo": [
-        "Closed",
-        "Open"
-      ]
+      "ipad": ["Portrait", "Landscape"],
+      "duo": ["Closed", "Open"]
     },
     "themes": {
       "light": "Light",

@@ -165,14 +165,8 @@
       "duo": "iPhone Duo"
     },
     "variants": {
-      "ipad": [
-        "Dọc",
-        "Ngang"
-      ],
-      "duo": [
-        "Gập",
-        "Mở"
-      ]
+      "ipad": ["Dọc", "Ngang"],
+      "duo": ["Gập", "Mở"]
     },
     "themes": {
       "light": "Sáng",

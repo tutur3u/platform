@@ -14,7 +14,8 @@ export const tasksTrack: Track = {
         {
           id: 'task-comments-links',
           title: 'Comments, linked resources and status in the task dialog',
-          titleVi: 'Bình luận, tài nguyên liên kết và trạng thái trong hộp thoại công việc',
+          titleVi:
+            'Bình luận, tài nguyên liên kết và trạng thái trong hộp thoại công việc',
           prs: [],
           commits: [
             '6f61b3309bb5513f30c3d074012b47e14b989c11',
@@ -26,8 +27,10 @@ export const tasksTrack: Track = {
         },
         {
           id: 'task-github-import',
-          title: 'Import GitHub issues with their timeline, keeping your edits on re-import',
-          titleVi: 'Nhập issue GitHub kèm dòng thời gian, giữ nguyên chỉnh sửa của bạn khi nhập lại',
+          title:
+            'Import GitHub issues with their timeline, keeping your edits on re-import',
+          titleVi:
+            'Nhập issue GitHub kèm dòng thời gian, giữ nguyên chỉnh sửa của bạn khi nhập lại',
           prs: [],
           commits: [
             '19eed42e2e560822fd8fe5777ad79fa8972b5772',

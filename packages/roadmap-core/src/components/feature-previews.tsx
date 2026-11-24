@@ -180,7 +180,10 @@ export function FeaturePreviews({ features, lang, t }: Props) {
         className="relative -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
       >
         {features.map((entry, position) => (
-          <li key={`${entry.source}/${entry.id}`} className="shrink-0 snap-start">
+          <li
+            key={`${entry.source}/${entry.id}`}
+            className="shrink-0 snap-start"
+          >
             <button
               type="button"
               aria-pressed={position === index}

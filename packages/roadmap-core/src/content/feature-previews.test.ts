@@ -81,11 +81,18 @@ describe('buildFeatures', () => {
   it('falls back to another group, theme or English, never to nothing', () => {
     const [tasks, calendar] = features;
     assert.ok(tasks && calendar);
-    const pick = (group: 'iphone' | 'ipad' | 'mac' | 'duo', variant: 0 | 1, theme: 'light' | 'dark', lang: 'en' | 'vi') =>
-      pickImage(tasks, { group, variant, theme, lang });
+    const pick = (
+      group: 'iphone' | 'ipad' | 'mac' | 'duo',
+      variant: 0 | 1,
+      theme: 'light' | 'dark',
+      lang: 'en' | 'vi'
+    ) => pickImage(tasks, { group, variant, theme, lang });
     assert.equal(pick('iphone', 0, 'light', 'vi')?.image.locale, 'vi');
     assert.equal(pick('iphone', 0, 'dark', 'vi')?.image.locale, 'en');
-    assert.equal(pick('ipad', 1, 'light', 'en')?.image.device, 'ipad-landscape');
+    assert.equal(
+      pick('ipad', 1, 'light', 'en')?.image.device,
+      'ipad-landscape'
+    );
     assert.equal(pick('duo', 1, 'dark', 'en')?.image.device, 'duo-folded');
     assert.equal(pick('duo', 1, 'dark', 'en')?.image.theme, 'light');
     assert.equal(pick('mac', 0, 'light', 'en')?.group, 'iphone');
@@ -138,7 +145,10 @@ describe('feature preview copy', () => {
 
 describe('committed preview manifests', () => {
   for (const source of ['app', 'web'] as const) {
-    const path = new URL(`../assets/previews/${source}/manifest.json`, import.meta.url);
+    const path = new URL(
+      `../assets/previews/${source}/manifest.json`,
+      import.meta.url
+    );
     it(`${source}: every file exists and stays within the web budget`, (t) => {
       if (!existsSync(path)) return t.skip('not captured yet');
       const { items } = JSON.parse(readFileSync(path, 'utf8')) as {
@@ -148,13 +158,24 @@ describe('committed preview manifests', () => {
       for (const entry of items) {
         for (const file of [entry.avif, entry.webp]) {
           assert.ok(
-            file.startsWith(`packages/roadmap-core/src/assets/previews/${source}/`),
+            file.startsWith(
+              `packages/roadmap-core/src/assets/previews/${source}/`
+            ),
             file
           );
-          assert.ok(existsSync(new URL(`../../../../${file}`, import.meta.url)), file);
+          assert.ok(
+            existsSync(new URL(`../../../../${file}`, import.meta.url)),
+            file
+          );
         }
-        assert.ok(entry.avifBytes <= 160_000, `${entry.avif} ${entry.avifBytes}`);
-        assert.ok(entry.webpBytes <= 200_000, `${entry.webp} ${entry.webpBytes}`);
+        assert.ok(
+          entry.avifBytes <= 160_000,
+          `${entry.avif} ${entry.avifBytes}`
+        );
+        assert.ok(
+          entry.webpBytes <= 200_000,
+          `${entry.webp} ${entry.webpBytes}`
+        );
         assert.ok(Math.max(entry.width, entry.height) <= 1600, entry.webp);
       }
     });

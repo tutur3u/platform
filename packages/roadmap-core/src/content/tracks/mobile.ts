@@ -62,8 +62,10 @@ export const mobileTrack: Track = {
         },
         {
           id: 'mobile-store-screenshots',
-          title: 'Refreshed store screenshots for iPhone, iPhone Duo, iPad and Mac in light and dark',
-          titleVi: 'Ảnh chụp cửa hàng mới cho iPhone, iPhone Duo, iPad và Mac, cả giao diện sáng và tối',
+          title:
+            'Refreshed store screenshots for iPhone, iPhone Duo, iPad and Mac in light and dark',
+          titleVi:
+            'Ảnh chụp cửa hàng mới cho iPhone, iPhone Duo, iPad và Mac, cả giao diện sáng và tối',
           prs: [],
           app: 'mobile',
           fallback: 'in_progress',
@@ -156,7 +158,8 @@ export const mobileTrack: Track = {
         {
           id: 'mobile-sorbet-sign-in',
           title: 'Sorbet sign-in, two-step verification and a one-time welcome',
-          titleVi: 'Đăng nhập, xác minh hai bước theo Sorbet và màn hình chào mừng một lần',
+          titleVi:
+            'Đăng nhập, xác minh hai bước theo Sorbet và màn hình chào mừng một lần',
           prs: [],
           commits: [
             'fd4f8948b1524afae92e670c5facbaf3b380c65f',
@@ -222,8 +225,10 @@ export const mobileTrack: Track = {
         },
         {
           id: 'mobile-contacts-reports',
-          title: 'Browse, search and preview Contacts reports and review approvals',
-          titleVi: 'Duyệt, tìm kiếm, xem trước báo cáo Liên hệ và duyệt từng yêu cầu',
+          title:
+            'Browse, search and preview Contacts reports and review approvals',
+          titleVi:
+            'Duyệt, tìm kiếm, xem trước báo cáo Liên hệ và duyệt từng yêu cầu',
           prs: [],
           commits: [
             '63feb3ada7c4daee47f7854b1010e23babd9cc0e',

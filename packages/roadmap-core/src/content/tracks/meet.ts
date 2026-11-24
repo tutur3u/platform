@@ -121,8 +121,7 @@ export const meetTrack: Track = {
       deliverables: [
         {
           id: 'meet-record-review',
-          title:
-            'A meeting record with every action item saved in one review',
+          title: 'A meeting record with every action item saved in one review',
           titleVi:
             'Biên bản cuộc họp, lưu mọi việc cần làm chỉ trong một lần xem lại',
           prs: [],
@@ -163,8 +162,9 @@ export const meetTrack: Track = {
         },
         {
           id: 'meet-per-speaker',
-          title: 'Per-speaker transcripts from each participant\'s microphone',
-          titleVi: 'Bản ghi theo từng người nói, từ micro của mỗi người tham gia',
+          title: "Per-speaker transcripts from each participant's microphone",
+          titleVi:
+            'Bản ghi theo từng người nói, từ micro của mỗi người tham gia',
           prs: [],
           app: 'meet',
           fallback: 'in_progress',
@@ -179,7 +179,7 @@ export const meetTrack: Track = {
         {
           id: 'meet-room-mira',
           title:
-            'Mira in the room, with host acceptance and each person\'s choice at join',
+            "Mira in the room, with host acceptance and each person's choice at join",
           titleVi:
             'Mira trong phòng họp, cần chủ phòng chấp nhận và mỗi người tự chọn khi tham gia',
           prs: [],
@@ -351,9 +351,7 @@ export const meetTrack: Track = {
           title: 'Live Q&A: the class asks and upvotes questions',
           titleVi: 'Hỏi đáp trực tiếp: cả lớp đặt câu hỏi và bình chọn',
           prs: [],
-          commits: [
-            '325288632f41971d50273368a61c0750076295cc',
-          ],
+          commits: ['325288632f41971d50273368a61c0750076295cc'],
           app: 'meet',
           fallback: 'in_progress',
         },

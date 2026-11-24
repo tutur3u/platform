@@ -75,7 +75,8 @@ export const workspaceTrack: Track = {
         {
           id: 'sorbet-sign-in',
           title: 'Sign-in, two-step verification and account choices on Sorbet',
-          titleVi: 'Đăng nhập, xác minh hai bước và chọn tài khoản theo thiết kế Sorbet',
+          titleVi:
+            'Đăng nhập, xác minh hai bước và chọn tài khoản theo thiết kế Sorbet',
           prs: [],
           commits: [
             '773ad7d5054f7f0a719f589593ad37759c8b11f0',
@@ -102,7 +103,8 @@ export const workspaceTrack: Track = {
         {
           id: 'shared-account-menu',
           title: 'One account menu across every app, with notifications inside',
-          titleVi: 'Một menu tài khoản chung cho mọi ứng dụng, gồm cả thông báo',
+          titleVi:
+            'Một menu tài khoản chung cho mọi ứng dụng, gồm cả thông báo',
           prs: [],
           commits: [
             '57a6972ed39b4f9b28f3db9307228e905d72714e',
@@ -116,9 +118,7 @@ export const workspaceTrack: Track = {
           title: 'A three-step welcome for new accounts',
           titleVi: 'Chào mừng tài khoản mới qua ba bước',
           prs: [],
-          commits: [
-            'e60a6346d3b4d02354a987225333499cb0165f49',
-          ],
+          commits: ['e60a6346d3b4d02354a987225333499cb0165f49'],
           app: 'web',
           fallback: 'planned',
         },

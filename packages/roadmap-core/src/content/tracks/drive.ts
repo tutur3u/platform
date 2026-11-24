@@ -15,9 +15,7 @@ export const driveTrack: Track = {
           title: 'File browser rebuilt on the Sorbet design',
           titleVi: 'Trình duyệt tệp được làm lại theo thiết kế Sorbet',
           prs: [],
-          commits: [
-            '8a590e242a213f36709b2c9198eecf0848c22820',
-          ],
+          commits: ['8a590e242a213f36709b2c9198eecf0848c22820'],
           app: 'drive',
           fallback: 'planned',
         },

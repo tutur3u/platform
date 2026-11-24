@@ -25,12 +25,12 @@ export const calendarTrack: Track = {
         },
         {
           id: 'calendar-meet-in-event',
-          title: 'Manage guests and add a Tuturuuu Meet link from the event dialog',
-          titleVi: 'Quản lý khách mời và thêm liên kết Tuturuuu Meet ngay trong hộp thoại sự kiện',
+          title:
+            'Manage guests and add a Tuturuuu Meet link from the event dialog',
+          titleVi:
+            'Quản lý khách mời và thêm liên kết Tuturuuu Meet ngay trong hộp thoại sự kiện',
           prs: [],
-          commits: [
-            '6d2a653604ea6583ca1b455605b265fb6837492c',
-          ],
+          commits: ['6d2a653604ea6583ca1b455605b265fb6837492c'],
           app: 'calendar',
           fallback: 'planned',
         },
