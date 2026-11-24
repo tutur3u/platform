@@ -119,6 +119,8 @@ export function WorkbenchOutput({
         : null;
   const statusLine = status && (
     <output
+      // The sandbox note speaks for the wait; the runner label stays quiet then.
+      aria-live={view.slowStart ? 'off' : undefined}
       className={cn(
         'truncate text-xs',
         save === 'failed' && !running
@@ -260,9 +262,11 @@ export function WorkbenchOutput({
               className="h-16 min-h-16 rounded-[var(--radius-lg)] font-mono text-xs"
             />
           )}
-          {view.slowStart && (
-            <output className="block text-muted-foreground text-xs">
-              {t('sandboxSlowStart')}
+          {view.slowStart !== undefined && (
+            // One live region that exists empty and then receives the text, so the
+            // note is announced once as it appears.
+            <output className="block min-h-4 text-muted-foreground text-xs">
+              {view.slowStart ? t('sandboxSlowStart') : ''}
             </output>
           )}
           {preview && port ? (

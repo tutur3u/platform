@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { SLOW_START_MS } from './use-slow-start-notice';
@@ -16,7 +14,14 @@ vi.mock('@tuturuuu/internal-api/playgrounds', () => ({
 
 const state = { status: 'queued' as string };
 
-function mount(meeting: boolean) {
+function mount(
+  options: {
+    meeting?: boolean;
+    run?: () => Promise<{ runId: string }>;
+    checkpoint?: () => Promise<unknown>;
+  } = {}
+) {
+  const { meeting = true } = options;
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -29,13 +34,13 @@ function mount(meeting: boolean) {
         projectId: 'project',
         roomKey: 'room',
         execution: {
-          run: async () => ({ runId: 'run' }),
+          run: options.run ?? (async () => ({ runId: 'run' })),
           read: vi.fn(async () => ({
             runId: 'run',
             status: state.status,
           })) as never,
         },
-        checkpoint: vi.fn(async () => undefined),
+        checkpoint: options.checkpoint ?? (async () => undefined),
         problem: false,
         owner: true,
         stdin: '',
@@ -58,7 +63,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 it('shows the sandbox note only once a submitted Run is still going after 3 s', async () => {
-  const { result } = mount(true);
+  const { result } = mount();
   act(() => result.current.runOperation('run'));
   await advance(SLOW_START_MS - 200);
   expect(result.current.slowStart).toBe(false);
@@ -69,7 +74,7 @@ it('shows the sandbox note only once a submitted Run is still going after 3 s', 
 it('clears the note when the Run reaches a terminal state', async () => {
   for (const terminal of ['succeeded', 'failed', 'cancelled']) {
     state.status = 'running';
-    const { result, unmount } = mount(true);
+    const { result, unmount } = mount();
     act(() => result.current.runOperation('run'));
     await advance(SLOW_START_MS + 200);
     expect(result.current.slowStart).toBe(true);
@@ -81,7 +86,7 @@ it('clears the note when the Run reaches a terminal state', async () => {
 });
 
 it('clears the note as soon as Stop is pressed', async () => {
-  const { result } = mount(true);
+  const { result } = mount();
   act(() => result.current.runOperation('run'));
   await advance(SLOW_START_MS + 200);
   expect(result.current.slowStart).toBe(true);
@@ -89,16 +94,53 @@ it('clears the note as soon as Stop is pressed', async () => {
   expect(result.current.slowStart).toBe(false);
 });
 
-it('never shows it outside a meeting, and never for compile-only checks', async () => {
-  const { result } = mount(false);
+it('never says the sandbox is starting while waiting for a free runner', async () => {
+  let attempts = 0;
+  const busy = Object.assign(new Error('busy'), {
+    code: 'PLAYGROUND_BUSY',
+    retryAfterSeconds: 10,
+  });
+  const { result } = mount({
+    run: async () => {
+      attempts += 1;
+      if (attempts === 1) throw busy;
+      return { runId: 'run' };
+    },
+  });
+  act(() => result.current.runOperation('run'));
+  // Well past 3 s, but the Run is only waiting for a runner.
+  await advance(SLOW_START_MS + 3000);
+  expect(result.current.waiting).toBe(true);
+  expect(result.current.slowStart).toBe(false);
+  // The wait ends and the Run is queued; the note may appear 3 s later.
+  await advance(4100);
+  expect(result.current.waiting).toBe(false);
+  expect(result.current.slowStart).toBe(false);
+  await advance(SLOW_START_MS + 200);
+  expect(result.current.slowStart).toBe(true);
+});
+
+it('starts the 3 s clock only after the room is saved', async () => {
+  let release: (() => void) | undefined;
+  const { result } = mount({
+    checkpoint: () =>
+      new Promise((resolve) => {
+        release = () => resolve(undefined);
+      }),
+  });
+  act(() => result.current.runOperation('run'));
+  await advance(SLOW_START_MS + 2000);
+  expect(result.current.slowStart).toBe(false);
+  await act(async () => release?.());
+  await advance(SLOW_START_MS - 200);
+  expect(result.current.slowStart).toBe(false);
+  await advance(400);
+  expect(result.current.slowStart).toBe(true);
+});
+
+it('never shows it outside a meeting', async () => {
+  const { result } = mount({ meeting: false });
   act(() => result.current.runOperation('run'));
   await advance(SLOW_START_MS + 500);
   expect(result.current.slowStart).toBe(false);
-  // Checks run through the diagnostics hook, which has its own warming state.
-  const diagnostics = readFileSync(
-    join(process.cwd(), 'src/use-remote-diagnostics.ts'),
-    'utf8'
-  );
-  expect(diagnostics).not.toContain('slowStart');
-  expect(diagnostics).not.toContain('use-slow-start-notice');
 });

@@ -226,7 +226,7 @@ export function ProgrammingWorkbench({
     view: {
       ...outputView(!!problem, testOutput, result.data),
       phase,
-      slowStart,
+      slowStart: meeting ? slowStart : undefined,
     },
     save: selectedSave,
     failure: gate.failure,

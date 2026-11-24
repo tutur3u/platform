@@ -7,13 +7,13 @@ import {
 import type { PlaygroundExecutionResult } from '@tuturuuu/types/primitives/playgrounds';
 import { useEffect, useRef, useState } from 'react';
 import { useRunnerAvailability } from './use-runner-availability';
+import { useSlowStartNotice } from './use-slow-start-notice';
 import {
   errorCode,
   failureReason,
   retryAfterSeconds,
   WorkbenchStepError,
 } from './workbench-errors';
-import { useSlowStartNotice } from './use-slow-start-notice';
 import { isRunActive } from './workbench-layout';
 
 /** Longest a Run waits on its own for a free runner before asking the person. */
@@ -106,6 +106,8 @@ export function useWorkbenchRun({
   const save = useMutation({ mutationFn: checkpointRoom });
   // Meetings wait once for a free runner; Stop or unmounting ends the wait without sending.
   const [waiting, setWaiting] = useState(false);
+  // The Run has been saved and is being sent; the slow-start clock starts here.
+  const [dispatched, setDispatched] = useState(false);
   const wake = useRef<() => void>(undefined);
   useEffect(() => () => wake.current?.(), []);
   // Resolves false when Stop or unmounting ends the wait early.
@@ -155,6 +157,8 @@ export function useWorkbenchRun({
         await checkpointRoom().catch((error: unknown) => {
           throw new WorkbenchStepError('save', error);
         });
+      // The slow-start clock runs from here, after the room is saved.
+      setDispatched(true);
       let busyRetried = false;
       let queued: { runId: string };
       for (;;) {
@@ -219,6 +223,7 @@ export function useWorkbenchRun({
   // Each new Run or Stop gets its own request ID; a retry reuses the last one.
   const runOperation = (operation: 'run' | 'stop') => {
     setStopped(operation === 'stop');
+    if (operation === 'run') setDispatched(false);
     // Stop while waiting for a free runner cancels the wait; there is no run to stop yet.
     if (operation === 'stop' && waiting) return wake.current?.();
     run.mutate({
@@ -234,7 +239,12 @@ export function useWorkbenchRun({
     (run.isPending && run.variables?.operation === 'run') ||
     (!!localRun && localRun.id === runId);
   const slowStart = useSlowStartNotice(
-    !!meeting && !stopped && submittedHere && (run.isPending || busy)
+    !!meeting &&
+      !stopped &&
+      !waiting &&
+      dispatched &&
+      submittedHere &&
+      (run.isPending || busy)
   );
   const finished = timing.current;
   const status = result.data?.status;

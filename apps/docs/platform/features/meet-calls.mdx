@@ -3048,9 +3048,11 @@ Learn uses the same workbench without the meeting-only controls.
   - A Run this browser submitted that is still queued or running 3 seconds
     later adds one quiet line above the output: "Starting the sandbox… the
     first Run can take up to 20 seconds." It uses the client clock only and
-    clears when the Run reaches a terminal state or Stop is pressed. Compile-only
-    checks keep their own warming state and never show it, and Learn does not
-    show it.
+    clears when the Run reaches a terminal state or Stop is pressed. The clock
+    starts after the room is saved, and the note is never shown while the Console
+    says it is waiting for a free runner; it can appear once that wait ends and the
+    Run is queued. Compile-only checks keep their own warming state and never
+    show it, and Learn does not show it.
   - `PLAYGROUND_BUSY` shows "Waiting for a free runner…" and retries once after
     `retryAfterSeconds` (5 seconds when absent, at most 30) under a new request
     ID, inside the same Run. Stop cancels the wait without sending a stop
