@@ -38,6 +38,7 @@ export const publicAssets = new Set([
   '/media/sounds/alarm.mp3',
   '/meet-audio-processor.js',
   '/meet-live-processor.js',
+  '/meet-self-audio-processor.js',
   '/robots.txt',
   '/site.webmanifest',
 ]);
