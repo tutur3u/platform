@@ -31,7 +31,9 @@ export function WorkbenchFormatButton({
           ? 'formatUnsupportedRust'
           : support.reason === 'ruby'
             ? 'formatUnsupportedRuby'
-            : 'formatUnsupportedUnknown'
+            : support.reason === 'php'
+              ? 'formatUnsupportedPhp'
+              : 'formatUnsupportedUnknown'
       )
     : !editable
       ? t('formatReadOnly')

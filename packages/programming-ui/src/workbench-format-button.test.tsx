@@ -44,6 +44,7 @@ it('formats on click and advertises Shift+Alt+F', () => {
 it.each([
   ['rust', t.formatUnsupportedRust],
   ['ruby', t.formatUnsupportedRuby],
+  ['php', t.formatUnsupportedPhp],
   ['unknown', t.formatUnsupportedUnknown],
 ] as const)(
   'stays focusable but disabled, saying why, for %s',

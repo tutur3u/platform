@@ -13,7 +13,7 @@ export interface Formatter {
 }
 
 /** Why a file has no formatter, as a message key suffix. */
-export type NoFormatterReason = 'rust' | 'ruby' | 'unknown';
+export type NoFormatterReason = 'rust' | 'ruby' | 'php' | 'unknown';
 
 export type FormatSupport =
   | { supported: true; formatter: Formatter; language: PlaygroundLanguage }
@@ -32,6 +32,23 @@ export function setWasmSource(
 ) {
   wasmSource = source;
 }
+
+/**
+ * Every module a formatter loads, as the bundler sees it. A guard test bundles
+ * each one for the browser and refuses a Node built-in, because one module a
+ * client bundle cannot resolve breaks the whole page, not only Format.
+ */
+export const FORMATTER_ENTRYPOINTS = [
+  'prettier/standalone',
+  'prettier/plugins/babel',
+  'prettier/plugins/estree',
+  'prettier/plugins/typescript',
+  'prettier-plugin-java',
+  '@wasm-fmt/ruff_fmt/web',
+  '@wasm-fmt/clang-format/web',
+  '@wasm-fmt/gofmt/web',
+  '@wasm-fmt/shfmt/web',
+] as const;
 
 const once = <T>(load: () => Promise<T>) => {
   let pending: Promise<T> | undefined;
@@ -92,21 +109,6 @@ const java: Formatter = {
   },
 };
 
-const php: Formatter = {
-  name: 'Prettier PHP',
-  async format(source) {
-    const [{ format }, plugin] = await Promise.all([
-      import('prettier/standalone'),
-      import('@prettier/plugin-php/standalone'),
-    ]);
-    return format(source, {
-      parser: 'php',
-      plugins: [plugin.default ?? plugin],
-      tabWidth: 4,
-    });
-  },
-};
-
 const ruff = once(async () => {
   const wasm = await import('@wasm-fmt/ruff_fmt/web');
   await wasm.default(wasmSource('ruff_fmt'));
@@ -160,7 +162,11 @@ const shell: Formatter = {
   },
 };
 
-/** Rust and Ruby have no maintained browser formatter, so they stay disabled. */
+/**
+ * Rust and Ruby have no maintained browser formatter. PHP's Prettier plugin
+ * is a UMD file that requires `fs` and `path`, which a browser bundle cannot
+ * resolve, so it stays disabled too. All three keep Format disabled.
+ */
 const FORMATTERS: Partial<Record<PlaygroundLanguage, Formatter>> = {
   python,
   javascript,
@@ -169,7 +175,6 @@ const FORMATTERS: Partial<Record<PlaygroundLanguage, Formatter>> = {
   cpp: cFamily,
   java,
   go,
-  php,
   shell,
 };
 
@@ -181,7 +186,7 @@ export function formatSupport(path: string | undefined): FormatSupport {
   if (formatter) return { supported: true, formatter, language };
   return {
     supported: false,
-    reason: language === 'rust' ? 'rust' : 'ruby',
+    reason: language === 'rust' ? 'rust' : language === 'php' ? 'php' : 'ruby',
   };
 }
 

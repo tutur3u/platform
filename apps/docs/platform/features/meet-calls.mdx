@@ -3131,8 +3131,7 @@ Learn uses the same workbench without the meeting-only controls.
 - **Format.** The toolbar's Format button, or Shift+Alt+F inside or outside
   the editor, formats the open file with the language's own formatter. Python
   uses Ruff, JavaScript and TypeScript Prettier, C and C++ clang-format (LLVM
-  style, 4-space indent), Go gofmt, Java Prettier Java, PHP Prettier PHP and
-  shell scripts shfmt. A file is formatted by its extension, so a `.md` file in
+  style, 4-space indent), Go gofmt, Java Prettier Java and shell scripts shfmt. A file is formatted by its extension, so a `.md` file in
   a Python project has none. The formatter is loaded on first use, never with
   the page. The result replaces the file in one Yjs transaction that changes only
   the differing span, so peers get one update and keep their cursors. The
@@ -3140,16 +3139,19 @@ Learn uses the same workbench without the meeting-only controls.
   shared-document positions across the write and put back once the editor shows
   the formatted file, and an end inside the rewritten span lands on its edge. If someone
   edits the file while the formatter runs, nothing is written and the person is
-  asked to try again. Formatting is not enabled in Rust and Ruby files: no
-  maintained browser formatter exists for either. A file with no formatter, or a
+  asked to try again. Formatting is not enabled in Rust, Ruby and PHP files: no
+  maintained browser formatter exists for Rust or Ruby, and the PHP Prettier
+  plugin is a UMD file that requires `fs` and `path`, which a browser bundle
+  cannot resolve and which would break the whole room's client build. A file with no formatter, or a
   read-only viewer, sees Format disabled with the reason in its tooltip. The
   starter files are already stable under Format. Packages (all lazy, sizes are
   gzip): `prettier` MIT (core 28 KB, Babel 81 KB, ESTree 64 KB, TypeScript
-  214 KB), `@prettier/plugin-php` MIT (46 KB), `prettier-plugin-java` Apache-2.0,
+  214 KB), `prettier-plugin-java` Apache-2.0,
   `@wasm-fmt/ruff_fmt` MIT (WASM 495 KB), `@wasm-fmt/clang-format` MIT (WASM
   1.1 MB), `@wasm-fmt/gofmt` MIT (132 KB), `@wasm-fmt/shfmt` MIT (173 KB). The
   WebAssembly formatters need `'wasm-unsafe-eval'` in `script-src` once the
-  Content Security Policy is enforced. Coverage: `format/formatters.test.ts`,
+  Content Security Policy is enforced. Coverage: `format/formatters.test.ts`, `format/browser-safety.test.ts` (bundles
+  every formatter module for the browser and fails on a Node built-in),
   `use-workbench-format.test.tsx`, `workbench-format-button.test.tsx`.
 - **Run.** Cmd+Enter on macOS and Ctrl+Enter elsewhere runs the playground, or
   runs the tests for a problem. The Run control shows the shortcut. The shortcut

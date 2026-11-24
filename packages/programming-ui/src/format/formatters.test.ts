@@ -37,7 +37,6 @@ const messy: Record<string, [path: string, source: string]> = {
     'main.go',
     'package main\nimport "fmt"\nfunc main(){fmt.Println("hi")}\n',
   ],
-  php: ['main.php', '<?php\nfunction  main( ){echo "hi";}\nmain( );\n'],
   shell: ['main.sh', 'main(){\nprintf "hi\\n"\n}\nmain\n'],
 };
 
@@ -50,7 +49,6 @@ describe('formatters', () => {
         'go',
         'java',
         'javascript',
-        'php',
         'python',
         'shell',
         'typescript',
@@ -63,6 +61,10 @@ describe('formatters', () => {
     expect(formatSupport('main.rb')).toEqual({
       supported: false,
       reason: 'ruby',
+    });
+    expect(formatSupport('main.php')).toEqual({
+      supported: false,
+      reason: 'php',
     });
     expect(formatSupport('README.md')).toEqual({
       supported: false,

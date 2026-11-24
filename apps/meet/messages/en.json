@@ -7262,6 +7262,7 @@
     "formatLoadFailed": "The formatter couldn't load. Check your connection and try again.",
     "formatReadOnly": "You can't edit this file",
     "formatting": "Formatting…",
+    "formatUnsupportedPhp": "PHP has no browser formatter yet",
     "formatUnsupportedRuby": "Ruby has no browser formatter yet",
     "formatUnsupportedRust": "Rust has no browser formatter yet",
     "formatUnsupportedUnknown": "This file type can't be formatted",

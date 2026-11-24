@@ -15695,6 +15695,7 @@
     "formatLoadFailed": "Không tải được trình định dạng. Hãy kiểm tra kết nối rồi thử lại.",
     "formatReadOnly": "Bạn không thể chỉnh sửa tệp này",
     "formatUnsupportedRuby": "Ruby chưa có trình định dạng trên trình duyệt",
+    "formatUnsupportedPhp": "PHP chưa có trình định dạng trên trình duyệt",
     "formatUnsupportedRust": "Rust chưa có trình định dạng trên trình duyệt",
     "formatUnsupportedUnknown": "Không thể định dạng loại tệp này",
     "runShortcut": "{action} ({shortcut})",
