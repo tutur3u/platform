@@ -47,6 +47,14 @@ const FRAMES = {
     bar: 0.03,
     maxWidth: 0.84,
   },
+  // Book-style inner display: a near-square screen with a centre hinge.
+  foldable: {
+    bezel: 0.028,
+    radius: 0.07,
+    screenRadius: 0.05,
+    bar: 0.055,
+    maxWidth: 0.84,
+  },
   'desktop-mac': {
     bezel: 0,
     radius: 0.012,
@@ -106,7 +114,7 @@ const STATUS_ICONS = `
 </svg>`;
 
 function frameBar(kind) {
-  if (kind === 'phone' || kind === 'tablet') {
+  if (kind === 'phone' || kind === 'tablet' || kind === 'foldable') {
     return `<div class="bar status"><span class="clock">9:41</span>${STATUS_ICONS}</div>`;
   }
   if (kind === 'desktop-mac') {
@@ -128,6 +136,7 @@ body{position:relative;font-family:Nunito,ui-rounded,system-ui,sans-serif;color:
 .device{position:absolute;background:${INK};box-shadow:0 0.02em 0.06em rgba(38,33,43,.16),0 0.18em 0.5em rgba(38,33,43,.18)}
 .device.desktop-mac,.device.desktop-windows{background:transparent}
 .screen{position:absolute;overflow:hidden;display:flex;flex-direction:column}
+.foldable .screen::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1.6%;transform:translateX(-50%);background:linear-gradient(90deg,rgba(38,33,43,0),rgba(38,33,43,.16) 50%,rgba(38,33,43,0));pointer-events:none}
 .raw{display:block;width:100%;height:auto;flex:none}
 .bar{flex:none;display:flex;align-items:center;width:100%}
 .status{justify-content:space-between;font-weight:700}

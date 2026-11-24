@@ -23,11 +23,11 @@
 // `<platform>/web/NN-<id>.webp` (at most 1280 px on the long edge and 150 KB
 // each) with a `manifest.json` that gives each file's width and height.
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { loadMetadata, planScreens } from './captions.mjs';
+import { loadChromium } from './deps.mjs';
 import { toOpaqueRgbPng } from './png-rgb.mjs';
 import { writeWebGallery } from './web-gallery.mjs';
 import {
@@ -48,31 +48,6 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..'
 );
-
-// The workspace uses Bun's isolated linker, so Playwright resolves from a
-// workspace that depends on it when the root cannot see it.
-async function loadChromium() {
-  const candidates = [
-    pathToFileURL(path.join(REPO_ROOT, 'package.json')).href,
-    pathToFileURL(path.join(REPO_ROOT, 'apps/admin/package.json')).href,
-    pathToFileURL(path.join(REPO_ROOT, 'apps/contacts/package.json')).href,
-  ];
-  for (const from of candidates) {
-    for (const name of ['playwright', '@playwright/test']) {
-      try {
-        const resolved = createRequire(from).resolve(name);
-        const mod = await import(pathToFileURL(resolved).href);
-        const chromium = mod.chromium ?? mod.default?.chromium;
-        if (chromium) return chromium;
-      } catch {
-        // Try the next workspace.
-      }
-    }
-  }
-  throw new Error(
-    'Playwright is not installed. Run `bun install`, then `bunx playwright install chromium`.'
-  );
-}
 
 function dataUrl(file) {
   const ext = path.extname(file).slice(1).toLowerCase();

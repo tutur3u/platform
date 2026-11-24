@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Checks composed store images: exact pixel sizes, RGB screenshots in each
-// target's format (JPEG, or opaque PNG), opaque PNG graphics, per-file store limits, the committed
+// target's format (JPEG, or opaque PNG) tagged sRGB or untagged, Google Play
+// side and aspect limits, per-locale counts per device class (English and
+// Vietnamese ship the same set), opaque PNG graphics, per-file store limits, the committed
 // size budget, that every screenshot the metadata lists exists, and the web
 // gallery WebP limits and manifest sizes.
 //
@@ -9,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { checkColorProfile } from './color-profile.mjs';
 import { readImageInfo } from './image-info.mjs';
 import {
   GRAPHIC_TARGETS,
@@ -18,6 +21,12 @@ import {
   screenshotExt,
   WEB_GALLERY,
 } from './specs.mjs';
+import {
+  TARGET_RULES,
+  checkBytes,
+  checkCounts,
+  checkGeometry,
+} from './store-rules.mjs';
 
 const WEB_PATTERN = /^([a-z]+)\/web\/(\d{2})-([a-z][a-z0-9-]*)\.webp$/;
 const FILE_PATTERN =
@@ -67,6 +76,12 @@ export function checkScreenshot(relativePath, buffer) {
       `${relativePath}: ${buffer.length} bytes exceeds the store limit of ${target.maxBytes}`
     );
   }
+  const rules = TARGET_RULES[`${store}/${device}`];
+  problems.push(
+    ...checkGeometry(relativePath, info.width, info.height, rules),
+    ...checkBytes(relativePath, buffer.length, rules),
+    ...checkColorProfile(relativePath, buffer)
+  );
   return problems;
 }
 
@@ -185,6 +200,7 @@ export function validateStoreImages(root) {
   const files = walk(screenshotDir);
   let totalBytes = 0;
   let screenshotCount = 0;
+  const screenshotFiles = [];
   const webPlatforms = new Set();
   const storesWithShots = new Set();
   for (const file of files) {
@@ -201,11 +217,13 @@ export function validateStoreImages(root) {
       continue;
     }
     screenshotCount += 1;
+    screenshotFiles.push(relative);
     storesWithShots.add(relative.split('/')[0]);
     problems.push(...checkScreenshot(relative, buffer));
   }
   for (const platform of webPlatforms)
     problems.push(...checkWebGallery(screenshotDir, platform));
+  problems.push(...checkCounts(screenshotFiles));
   if (totalBytes > OUTPUT_BUDGET_BYTES) {
     problems.push(
       `screenshots total ${totalBytes} bytes, over the ${OUTPUT_BUDGET_BYTES}-byte budget`

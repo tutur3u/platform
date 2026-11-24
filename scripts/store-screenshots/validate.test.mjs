@@ -232,6 +232,11 @@ test('reports missing listed screenshots once any are committed', () => {
       path.join(shots, '01-dashboard.jpg'),
       jpegHeader(1080, 1920)
     );
+    // Google Play takes at least two phone screenshots per locale.
+    fs.writeFileSync(
+      path.join(shots, '03-calendar.jpg'),
+      jpegHeader(1080, 1920)
+    );
     const listed = (id) => ({
       id,
       files: {
@@ -261,7 +266,7 @@ test('reports missing listed screenshots once any are committed', () => {
       })
     );
     const { problems, count } = validateStoreImages(root);
-    assert.equal(count, 1);
+    assert.equal(count, 2);
     // iOS has nothing committed yet, so only the started Android set is held complete.
     assert.deepEqual(problems, [
       'apps/mobile/store/screenshots/android/phone/en/02-tasks.jpg: listed in metadata but missing',
@@ -390,7 +395,12 @@ test('only the large canvases fill 80% of the width', () => {
   const filled = SCREENSHOT_TARGETS.filter((t) => t.fill).map(
     (t) => `${t.store}/${t.device}`
   );
-  assert.deepEqual(filled, ['ios/ipad-13', 'android/tablet10', 'macos/mac']);
+  assert.deepEqual(filled, [
+    'ios/ipad-13',
+    'android/tablet7',
+    'android/tablet10',
+    'macos/mac',
+  ]);
   for (const target of SCREENSHOT_TARGETS) {
     const spec = screenshotSpec(target);
     assert.equal(
