@@ -110,6 +110,7 @@ select is((select granted from public.set_product_analytics_consent(false, 'web_
 select is((select count(*) from public.get_product_analytics_consent()), 1::bigint,
   'a user reads only their own decision');
 reset role;
+select set_config('request.jwt.claims', '{}', true);
 
 select is((select count(*) from private.user_product_analytics_consent_events
   where user_id = '00000000-0000-4000-8000-000000009a01'), 1::bigint,

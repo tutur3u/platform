@@ -48,7 +48,9 @@ describe('reconcileAnalyticsWithdrawal', () => {
   it('re-sends a withdrawal once per session after it is saved', async () => {
     const s = store();
     const write = vi.fn(async () => ({ granted: false }));
-    expect(await reconcileAnalyticsWithdrawal({ store: s, write })).toBe('saved');
+    expect(await reconcileAnalyticsWithdrawal({ store: s, write })).toBe(
+      'saved'
+    );
     expect(await reconcileAnalyticsWithdrawal({ store: s, write })).toBe(
       'skipped'
     );
@@ -67,7 +69,11 @@ describe('reconcileAnalyticsWithdrawal', () => {
       await reconcileAnalyticsWithdrawal({ store: s, now: 0, write: signedOut })
     ).toBe('signed-out');
     expect(
-      await reconcileAnalyticsWithdrawal({ store: s, now: 60_000, write: signedOut })
+      await reconcileAnalyticsWithdrawal({
+        store: s,
+        now: 60_000,
+        write: signedOut,
+      })
     ).toBe('skipped');
     const ok = vi.fn(async () => ({ granted: false }));
     expect(
@@ -76,9 +82,9 @@ describe('reconcileAnalyticsWithdrawal', () => {
 
     const t = store();
     const failing = vi.fn(async () => Promise.reject(new Error('net')));
-    expect(await reconcileAnalyticsWithdrawal({ store: t, write: failing })).toBe(
-      'failed'
-    );
+    expect(
+      await reconcileAnalyticsWithdrawal({ store: t, write: failing })
+    ).toBe('failed');
     expect(await reconcileAnalyticsWithdrawal({ store: t, write: ok })).toBe(
       'saved'
     );
@@ -89,10 +95,14 @@ describe('recordAnalyticsChoiceSync', () => {
   it('re-arms reconciliation after a grant or an unsynced withdrawal', async () => {
     const s = store();
     const ok = vi.fn(async () => ({ granted: false }));
-    expect(await reconcileAnalyticsWithdrawal({ store: s, write: ok })).toBe('saved');
+    expect(await reconcileAnalyticsWithdrawal({ store: s, write: ok })).toBe(
+      'saved'
+    );
     recordAnalyticsChoiceSync(s, true, 'saved');
     recordAnalyticsChoiceSync(s, false, 'failed');
-    expect(await reconcileAnalyticsWithdrawal({ store: s, write: ok })).toBe('saved');
+    expect(await reconcileAnalyticsWithdrawal({ store: s, write: ok })).toBe(
+      'saved'
+    );
     recordAnalyticsChoiceSync(s, false, 'saved');
     expect(await reconcileAnalyticsWithdrawal({ store: s, write: ok })).toBe(
       'skipped'

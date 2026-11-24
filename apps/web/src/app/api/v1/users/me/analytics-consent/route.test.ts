@@ -56,7 +56,12 @@ describe('PUT /api/v1/users/me/analytics-consent', () => {
 
   it('rejects a caller-supplied user, unknown fields and bad input', async () => {
     for (const body of [
-      { granted: true, source: 'web_banner', policyVersion: '2026-11-24', userId: 'x' },
+      {
+        granted: true,
+        source: 'web_banner',
+        policyVersion: '2026-11-24',
+        userId: 'x',
+      },
       { granted: 'yes', source: 'web_banner', policyVersion: '2026-11-24' },
       { granted: true, source: 'elsewhere', policyVersion: '2026-11-24' },
       { granted: true, source: 'web_banner', policyVersion: ' bad' },
@@ -69,7 +74,10 @@ describe('PUT /api/v1/users/me/analytics-consent', () => {
 
   it('reports a failed write without leaking the error', async () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    f.rpc.mockResolvedValue({ data: null, error: { code: '23503', message: 'detail' } });
+    f.rpc.mockResolvedValue({
+      data: null,
+      error: { code: '23503', message: 'detail' },
+    });
     const response = await put({
       granted: true,
       source: 'web_banner',

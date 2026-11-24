@@ -59,7 +59,9 @@ export async function reconcileAnalyticsWithdrawal({
   try {
     const last = store?.getItem(RECONCILE_KEY);
     if (last === `${PRIVACY_POLICY_VERSION}:saved`) return 'skipped';
-    const signedOutAt = last?.startsWith(`${PRIVACY_POLICY_VERSION}:signed-out:`)
+    const signedOutAt = last?.startsWith(
+      `${PRIVACY_POLICY_VERSION}:signed-out:`
+    )
       ? Number(last.split(':').at(-1))
       : Number.NaN;
     if (now - signedOutAt < SIGNED_OUT_RETRY_MS) return 'skipped';
