@@ -1,0 +1,63 @@
+name: Mobile Golden Refresh
+
+# Regenerates one golden test file's images on the same Linux x64 runner image
+# and Flutter version as the Mobile Tests job, and uploads them for review.
+# It never commits: a maintainer inspects the images and commits them.
+
+concurrency:
+  group: mobile-golden-refresh-${{ github.ref }}-${{ inputs.test_file }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_file:
+        description: Golden test file under apps/mobile
+        required: true
+        default: test/features/tasks/view/tasks_experience_goldens_test.dart
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-flutter-with-cache
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Prepare verified LiteRT-LM native input
+        uses: ./.github/actions/cache-litertlm-native
+      - name: Generate localizations
+        run: flutter gen-l10n
+      - name: Regenerate goldens
+        env:
+          TEST_FILE: ${{ inputs.test_file }}
+        run: |
+          case "$TEST_FILE" in
+            *..*) echo "test_file must not contain .."; exit 1 ;;
+            test/*_goldens_test.dart) ;;
+            *) echo "test_file must be a test/**/*_goldens_test.dart path"; exit 1 ;;
+          esac
+          test -f "$TEST_FILE"
+          flutter test --update-goldens --tags golden -r expanded "$TEST_FILE"
+          git status --short -- test
+          mkdir -p "$RUNNER_TEMP/goldens"
+          cp "$(dirname "$TEST_FILE")"/goldens/*.png "$RUNNER_TEMP/goldens/"
+      - name: Upload regenerated goldens
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mobile-goldens
+          path: ${{ runner.temp }}/goldens/*.png
+          retention-days: 7
+          if-no-files-found: error

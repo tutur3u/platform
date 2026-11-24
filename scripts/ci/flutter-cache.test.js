@@ -148,7 +148,7 @@ test('all caching mobile jobs use the wrapper, retain version pins and trigger o
       );
     }
   }
-  assert.equal(adopted, 11);
+  assert.equal(adopted, 12);
 });
 
 test('desktop, release and employee jobs restore through the wrapper even when saving is disabled', () => {

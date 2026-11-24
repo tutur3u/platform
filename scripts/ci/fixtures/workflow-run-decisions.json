@@ -81,6 +81,7 @@
   "mobile-build-macos.yaml": ["path-filters"],
   "mobile-build-windows.yaml": ["path-filters"],
   "mobile-deploy-stores.yaml": ["path-filters"],
+  "mobile-golden-refresh.yaml": ["always"],
   "mobile-testflight-review-queue.yaml": ["always"],
   "mobile.yaml": ["path-filters"],
   "native-start-app.yaml": ["always"],
