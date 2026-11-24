@@ -330,6 +330,17 @@ the pilot workspace, the retention purge covers the admission, stream,
 erasure-job and account-fence stores. Notice text does not promise per-person
 erase or automated 365-day deletion until those exist.
 
+Deleting a meeting keeps only the minimal consent proof defined in
+[Mira host consent](/platform/features/meet-mira-host-consent): who chose
+(account or guest id), when, the notice version, the consent hash, the
+revision and the choice. That applies to per-speaker meetings too, through the
+same proof store, never a second one. No per-speaker audio, transcript text or
+room-sequence log (`private.meet_ai_self_v1_room_ops`) survives the deletion.
+Proof rows are anonymized when the account is deleted and purged when their
+retention period ends; that period is pending a release-authority decision
+(proposed: 3 years after deletion). Aligning `self_v1` erase with the proof store
+is a pilot gate (see Release gates). The hashed consent text does not change.
+
 ## Notice text (EN and VI)
 
 The transcript notice and the Mira info panel say, in per-speaker meetings:
@@ -359,6 +370,7 @@ release-authority ACK (see Release gates).
 | Production deploy with the flag off, exact-hash ACK | dark release |
 | Account-deletion fence hook; measured operation counts; tested stop fence | flag on for the pilot workspace |
 | Updated EN and VI consent text plus a notice-version bump (asks everyone again), with its own release-authority ACK | flag on for the pilot workspace |
+| `self_v1` erase keeps only the shared minimal consent proof (no second store); retention period decided | flag on for the pilot workspace |
 | Purge coverage for the `self_v1` stores; legal review of the notice | flag on for any other workspace |
 | Dedicated provider Worker with single-use dispatch permits | general availability |
 | Guest upload, mobile capture, per-person erase | their own reviews |
