@@ -119,7 +119,7 @@ it('uses theme-aware name bar colors on avatar tiles', () => {
   expect(html).not.toContain('from-media-scrim');
 });
 
-it('keeps the self marker with a long wrapped name', () => {
+it('keeps the self marker beside a long name that stays on one line', () => {
   const longName = 'Alexandria Montgomery-Featherstonehaugh the Third';
   const html = renderTile({
     participant: { ...participant, displayName: longName },
@@ -128,6 +128,18 @@ it('keeps the self marker with a long wrapped name', () => {
   });
   expect(html).toContain(longName);
   expect(html).toContain('· You');
-  expect(html).toContain('line-clamp-2');
-  expect(html).not.toContain('truncate');
+  expect(html).toContain('truncate text-sm');
+  expect(html).not.toContain('line-clamp');
+});
+
+it('keeps the avatar above the name row so a long name cannot overlap it', () => {
+  const html = renderTile({
+    participant: {
+      ...participant,
+      displayName: 'Alexandria Montgomery-Featherstonehaugh the Third',
+    },
+    resumePlaybackLabel: 'Play audio',
+  });
+  expect(html).toContain('bottom-9');
+  expect(html).not.toContain('absolute inset-0 grid size-full');
 });

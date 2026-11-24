@@ -229,8 +229,9 @@ function ParticipantTileImpl({
       {!showVideo && (
         <div
           className={cn(
-            'absolute inset-0 grid size-full place-items-center bg-muted/40',
-            floating && 'pb-7'
+            'absolute inset-x-0 top-0 grid place-items-center bg-muted/40',
+            // Stops above the one-line name row; the avatar sizes to what is left.
+            floating ? 'bottom-0 pb-7' : 'bottom-9 [container-type:size]'
           )}
         >
           {MEETING_APP === 'parley' && participant.assistantAudio ? (
@@ -240,7 +241,7 @@ function ParticipantTileImpl({
               className={
                 floating
                   ? 'size-[clamp(1.75rem,calc((100cqh-1.75rem)*0.75),5rem)] text-[clamp(0.75rem,16cqh,1.25rem)]'
-                  : 'size-20 text-xl'
+                  : 'size-[clamp(2rem,calc(100cqh-0.5rem),5rem)] text-[clamp(0.75rem,25cqh,1.25rem)]'
               }
             >
               <AvatarImage src={participant.avatarUrl} alt="" />
@@ -293,13 +294,11 @@ function ParticipantTileImpl({
             className="size-4 shrink-0"
           />
         )}
-        {/* Names wrap to two lines before clipping; the self label stays whole. */}
+        {/* One line with an ellipsis, so the name never rises into the avatar. */}
         <span
           className={cn(
             'min-w-0 font-medium leading-tight',
-            floating
-              ? 'truncate text-xs'
-              : 'line-clamp-2 break-words text-sm @max-[12rem]:line-clamp-1'
+            floating ? 'truncate text-xs' : 'truncate text-sm'
           )}
           title={floating ? undefined : displayName}
         >
