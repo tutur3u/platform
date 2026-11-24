@@ -76,6 +76,7 @@ export const playgroundTemplates: Record<
     path: 'Main.java',
     content: source(
       'public class Main {',
+      '',
       '    public static void main(String[] args) {',
       '        System.out.println("Hello, playground!");',
       '    }',
