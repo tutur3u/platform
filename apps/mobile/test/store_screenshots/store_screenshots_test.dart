@@ -16,6 +16,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/design_render_harness.dart';
 import 'fixtures/finance_fixture.dart';
 import 'screens/store_screens.dart';
+import 'screens/tasks_screen.dart'
+    show clearStoreConnectivity, mockStoreConnectivity;
 import 'store_screenshot_app.dart';
 
 Set<String>? _filter(String name) {
@@ -36,6 +38,10 @@ void main() {
     await DesignRender.loadFonts();
     await initStoreCache();
   });
+
+  // The task detail screen watches connectivity; report Wi-Fi per test.
+  setUp(mockStoreConnectivity);
+  tearDown(clearStoreConnectivity);
 
   for (final device in [...storeDevices, ...showcaseDevices]) {
     if (devices != null && !devices.contains(device.id)) continue;

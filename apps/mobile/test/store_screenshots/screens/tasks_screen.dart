@@ -80,24 +80,40 @@ final StoreScreen tasksStoreScreen = StoreScreen(
   },
 );
 
+const _connectivityChannel = MethodChannel(
+  'dev.fluttercommunity.plus/connectivity',
+);
+const _connectivityStatusChannel = MethodChannel(
+  'dev.fluttercommunity.plus/connectivity_status',
+);
+
+/// Reports Wi-Fi to the connectivity plugin the task detail screen watches.
+/// Call from a test `setUp` and pair it with [clearStoreConnectivity].
+void mockStoreConnectivity() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+    ..setMockMethodCallHandler(
+      _connectivityChannel,
+      (call) async => <String>['wifi'],
+    )
+    ..setMockMethodCallHandler(
+      _connectivityStatusChannel,
+      (call) async => null,
+    );
+}
+
+/// Removes the handlers [mockStoreConnectivity] installed.
+void clearStoreConnectivity() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+    ..setMockMethodCallHandler(_connectivityChannel, null)
+    ..setMockMethodCallHandler(_connectivityStatusChannel, null);
+}
+
 /// One launch task open in the board's detail screen. Showcase only.
 final StoreScreen taskDetailStoreScreen = StoreScreen(
   id: 'task-detail',
   order: 9,
-  build: (locale) {
-    // The detail screen watches connectivity; report Wi-Fi.
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      ..setMockMethodCallHandler(
-        const MethodChannel('dev.fluttercommunity.plus/connectivity'),
-        (call) async => <String>['wifi'],
-      )
-      ..setMockMethodCallHandler(
-        const MethodChannel('dev.fluttercommunity.plus/connectivity_status'),
-        (call) async => null,
-      );
-    return storeShellFrame(
-      location: Routes.taskBoardDetailPath(StoreTasksFixture.boardId(locale)),
-      child: storeTaskBoardPage(locale, initialTaskId: 'store-task-landing'),
-    );
-  },
+  build: (locale) => storeShellFrame(
+    location: Routes.taskBoardDetailPath(StoreTasksFixture.boardId(locale)),
+    child: storeTaskBoardPage(locale, initialTaskId: 'store-task-landing'),
+  ),
 );
