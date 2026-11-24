@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'bun:test';
 import {
+  admit,
   alice,
+  miraOn,
+  notice,
+  transcriptChoice,
   env as selfEnv,
   host,
   open,
@@ -16,6 +20,8 @@ import {
   type SelfOutboxEntry,
 } from '../../../packages/realtime/src/meet/room-self-capture-state';
 import { MIRA_ROOM_NOTICE_VERSION } from '../../../packages/realtime/src/meet/room-mira-acceptance';
+import { acceptMira } from '../../../packages/realtime/src/meet/room-mira.fixtures';
+import { createMeetRoomSnapshot } from '../../../packages/realtime/src/meet';
 import { endMeetRoom } from '../../../packages/realtime/src/meet/room-ending';
 import { verifyMeetSelfOutboxCredential } from '../../../packages/realtime/src/meet/service-credential';
 import { MeetRoomDurableObject, type MeetRoomEnv } from './room-do';
@@ -336,4 +342,47 @@ test('a refused command still stores the endings it settled', async () => {
     f.snapshot().selfCapture?.outbox.map((e) => e.kind),
     ['withdraw']
   );
+});
+
+test('an Allow given in room mode needs per-speaker evidence before an open', async () => {
+  const at = Date.now() - 120_000;
+  let seed: RoomServiceState = createMeetRoomSnapshot();
+  for (const id of [host, alice]) seed = admit(seed, id);
+  seed = acceptMira(seed, host, 1, at);
+  for (const id of [host, alice]) seed = miraOn(seed, id, at);
+  const f = fixture(seed);
+  // Room capture: the Allow carries no per-speaker evidence.
+  assert.equal((await serviceCall(f.room, alice, transcriptChoice('allow'))).status, 200);
+  assert.equal(f.snapshot().selfCapture?.allowNotices, undefined);
+  assert.equal(
+    (await serviceCall(f.room, host, { action: 'transcript.mode.set', mode: 'self' })).status,
+    200
+  );
+  const started = await serviceCall(f.room, host, {
+    action: 'transcript.session',
+    sessionId,
+    active: true,
+    protocol: 'self_v1',
+    generation: 1,
+  });
+  assert.equal(started.status, 200);
+  const open = { action: 'transcription.self.openBegin', sessionId };
+  const refused = (await (await serviceCall(f.room, alice, open)).json()) as {
+    allowed: boolean;
+    reason: string;
+  };
+  assert.deepEqual(
+    { allowed: refused.allowed, reason: refused.reason },
+    { allowed: false, reason: 'notice_required' }
+  );
+  // Re-sending the Allow with evidence recovers.
+  assert.equal((await serviceCall(f.room, alice, transcriptChoice('allow'))).status, 200);
+  const opened = (await (await serviceCall(f.room, alice, open)).json()) as {
+    allowed: boolean;
+    locale: string;
+    textHash: string;
+  };
+  assert.equal(opened.allowed, true);
+  assert.equal(opened.locale, notice.locale);
+  assert.equal(opened.textHash, notice.textHash);
 });
