@@ -6,7 +6,7 @@ import {
   classifyIcc,
   readColorProfile,
 } from './color-profile.mjs';
-import { SCREENSHOT_TARGETS } from './specs.mjs';
+import { LOCALES, SCREENSHOT_TARGETS } from './specs.mjs';
 import {
   TARGET_RULES,
   checkBytes,
@@ -187,46 +187,96 @@ const shots = (target, locale, count) =>
     (_, i) => `${target}/${locale}/${String(i + 1).padStart(2, '0')}-s${i}.jpg`
   );
 
+/** Every target of one store, in every locale, with [count] screenshots each. */
+const fullStore = (store, count) =>
+  Object.keys(TARGET_RULES)
+    .filter((target) => target.startsWith(`${store}/`))
+    .flatMap((target) =>
+      LOCALES.flatMap((locale) => shots(target, locale, count))
+    );
+
+const without = (files, prefix) =>
+  files.filter((file) => !file.startsWith(prefix));
+
+const replaceTarget = (files, target, replacement) => [
+  ...without(files, `${target}/`),
+  ...replacement,
+];
+
 test('counts per device class and locale stay within store limits', () => {
   assert.deepEqual(
-    checkCounts([
-      ...shots('ios/iphone-6.9', 'en', 10),
-      ...shots('ios/iphone-6.9', 'vi', 10),
-      ...shots('android/phone', 'en', 2),
-      ...shots('android/phone', 'vi', 2),
-    ]),
+    checkCounts([...fullStore('ios', 10), ...fullStore('android', 4)]),
     []
   );
   assert.deepEqual(
-    checkCounts([
-      ...shots('ios/iphone-6.9', 'en', 11),
-      ...shots('ios/iphone-6.9', 'vi', 11),
-    ]),
+    checkCounts(
+      replaceTarget(fullStore('ios', 10), 'ios/iphone-6.9', [
+        ...shots('ios/iphone-6.9', 'en', 11),
+        ...shots('ios/iphone-6.9', 'vi', 11),
+      ])
+    ),
     [
       'ios/iphone-6.9/en: 11 screenshots, expected 1-10',
       'ios/iphone-6.9/vi: 11 screenshots, expected 1-10',
     ]
   );
   assert.deepEqual(
-    checkCounts([
-      ...shots('android/phone', 'en', 1),
-      ...shots('android/phone', 'vi', 1),
-    ]),
+    checkCounts(
+      replaceTarget(fullStore('android', 4), 'android/phone', [
+        ...shots('android/phone', 'en', 1),
+        ...shots('android/phone', 'vi', 1),
+      ])
+    ),
     [
       'android/phone/en: 1 screenshots, expected 2-8',
       'android/phone/vi: 1 screenshots, expected 2-8',
     ]
   );
   assert.deepEqual(
-    checkCounts([
-      ...shots('android/tablet7', 'en', 3),
-      ...shots('android/tablet7', 'vi', 3),
-    ]),
+    checkCounts(
+      replaceTarget(fullStore('android', 4), 'android/tablet7', [
+        ...shots('android/tablet7', 'en', 3),
+        ...shots('android/tablet7', 'vi', 3),
+      ])
+    ),
     [
       'android/tablet7/en: 3 screenshots, expected 4-8',
       'android/tablet7/vi: 3 screenshots, expected 4-8',
     ]
   );
+});
+
+test('a store with screenshots needs every locale for every target', () => {
+  assert.deepEqual(
+    checkCounts(without(fullStore('ios', 3), 'ios/ipad-13/vi/')),
+    ['ios/ipad-13/vi: required locale has no screenshots']
+  );
+  assert.deepEqual(
+    checkCounts(without(fullStore('macos', 3), 'macos/mac/en/')),
+    ['macos/mac/en: required locale has no screenshots']
+  );
+  assert.deepEqual(
+    checkCounts(
+      replaceTarget(fullStore('android', 4), 'android/phone', [
+        ...shots('android/phone', 'en', 4),
+      ])
+    ),
+    ['android/phone/vi: required locale has no screenshots']
+  );
+});
+
+test('a store with screenshots needs every required target', () => {
+  assert.deepEqual(
+    checkCounts(without(fullStore('ios', 3), 'ios/iphone-6.3/')),
+    ['ios/iphone-6.3: required target has no screenshots']
+  );
+  assert.deepEqual(
+    checkCounts(without(fullStore('android', 4), 'android/tablet10/')),
+    ['android/tablet10: required target has no screenshots']
+  );
+  // A store with no screenshots yet is not required to ship any.
+  assert.deepEqual(checkCounts(fullStore('windows', 1)), []);
+  assert.deepEqual(checkCounts([]), []);
 });
 
 test('iPhone Duo screenshots take exact outer and inner sizes', () => {
@@ -251,25 +301,26 @@ test('iPhone Duo screenshots take exact outer and inner sizes', () => {
     )[0],
     /expected 2853x2007/
   );
-  assert.deepEqual(
-    checkCounts([
-      ...shots('ios/iphone-duo-outer', 'en', 4),
-      ...shots('ios/iphone-duo-outer', 'vi', 4),
-    ]),
-    []
-  );
+  assert.deepEqual(checkCounts(fullStore('ios', 4)), []);
 });
 
 test('English and Vietnamese must ship the same screenshots', () => {
   assert.deepEqual(
-    checkCounts([
-      ...shots('ios/iphone-6.9', 'en', 3),
-      ...shots('ios/iphone-6.9', 'vi', 2),
-    ]),
+    checkCounts(
+      replaceTarget(fullStore('ios', 3), 'ios/iphone-6.9', [
+        ...shots('ios/iphone-6.9', 'en', 3),
+        ...shots('ios/iphone-6.9', 'vi', 2),
+      ])
+    ),
     ['ios/iphone-6.9: en has 3, vi has 2; every locale must ship the same set']
   );
   assert.deepEqual(
-    checkCounts(['ios/iphone-6.9/en/01-a.jpg', 'ios/iphone-6.9/vi/01-b.jpg']),
+    checkCounts(
+      replaceTarget(fullStore('ios', 3), 'ios/iphone-6.9', [
+        'ios/iphone-6.9/en/01-a.jpg',
+        'ios/iphone-6.9/vi/01-b.jpg',
+      ])
+    ),
     ['ios/iphone-6.9: en has 1, vi has 1; every locale must ship the same set']
   );
 });

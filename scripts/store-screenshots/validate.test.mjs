@@ -267,8 +267,12 @@ test('reports missing listed screenshots once any are committed', () => {
     );
     const { problems, count } = validateStoreImages(root);
     assert.equal(count, 2);
-    // iOS has nothing committed yet, so only the started Android set is held complete.
+    // iOS has nothing committed yet, so only the started Android set is held
+    // complete: every Android target in every locale, and every listed file.
     assert.deepEqual(problems, [
+      'android/phone/vi: required locale has no screenshots',
+      'android/tablet7: required target has no screenshots',
+      'android/tablet10: required target has no screenshots',
       'apps/mobile/store/screenshots/android/phone/en/02-tasks.jpg: listed in metadata but missing',
     ]);
   } finally {

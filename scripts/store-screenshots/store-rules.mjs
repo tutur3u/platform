@@ -3,6 +3,8 @@
 // side lengths and aspect ratios Google Play accepts, and the encoded size cap.
 // Every check is a pure function over names, sizes and counts.
 
+import { LOCALES } from './specs.mjs';
+
 const PLAY_MAX_BYTES = 8 * 1024 * 1024;
 const PLAY_SIDE = { min: 320, max: 3840 };
 const PLAY_MAX_ASPECT = 2.3;
@@ -99,8 +101,9 @@ export function checkGeometry(label, width, height, rules) {
 
 /**
  * Checks per-locale counts and that English and Vietnamese ship the same set.
- * [files] are screenshot paths relative to the screenshot root:
- * `<store>/<device>/<locale>/NN-<id>.<ext>`.
+ * Once a store has any screenshot, each of its TARGET_RULES targets is
+ * required, in every locale of LOCALES. [files] are screenshot paths relative
+ * to the screenshot root: `<store>/<device>/<locale>/NN-<id>.<ext>`.
  */
 export function checkCounts(files) {
   const byTarget = new Map();
@@ -114,6 +117,22 @@ export function checkCounts(files) {
     locales.get(locale).add(name);
   }
   const problems = [];
+  const stores = new Set([...byTarget.keys()].map((key) => key.split('/')[0]));
+  for (const target of Object.keys(TARGET_RULES)) {
+    if (!stores.has(target.split('/')[0])) continue;
+    const locales = byTarget.get(target);
+    if (!locales) {
+      problems.push(`${target}: required target has no screenshots`);
+      continue;
+    }
+    for (const locale of LOCALES) {
+      if (!locales.has(locale)) {
+        problems.push(
+          `${target}/${locale}: required locale has no screenshots`
+        );
+      }
+    }
+  }
   const groups = new Map();
   for (const [target, locales] of byTarget) {
     const names = [...locales.values()].map((set) => [...set].sort().join());
