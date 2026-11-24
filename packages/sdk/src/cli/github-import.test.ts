@@ -203,7 +203,7 @@ describe('runGithubImport', () => {
     expect(
       importGithub.mock.calls.map(
         ([, payload]) =>
-          (payload as { refresh_content: boolean }).refresh_content
+          (payload as unknown as { refresh_content: boolean }).refresh_content
       )
     ).toEqual([false, true]);
   });

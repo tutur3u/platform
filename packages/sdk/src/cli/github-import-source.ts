@@ -1,6 +1,14 @@
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { createHash, randomBytes } from 'node:crypto';
+import {
+  chmod,
+  lstat,
+  mkdir,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { GithubImportIssue } from '@tuturuuu/internal-api/task-collaboration';
@@ -105,10 +113,31 @@ function cacheKey(repo: string, state: string, after: string | null) {
     .slice(0, 32);
 }
 
+/**
+ * The cache directory is private to the user: created 0700, never a symlink
+ * (a planted link could redirect cache writes), and re-chmodded on use.
+ */
+export async function ensureCacheDir(dir: string) {
+  const existing = await lstat(dir).catch(() => null);
+  if (existing?.isSymbolicLink()) {
+    throw new Error(`Refusing to use a symlinked cache directory: ${dir}`);
+  }
+  if (existing && !existing.isDirectory()) {
+    throw new Error(`The cache path is not a directory: ${dir}`);
+  }
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  const created = await lstat(dir);
+  if (created.isSymbolicLink() || !created.isDirectory()) {
+    throw new Error(`Refusing to use a symlinked cache directory: ${dir}`);
+  }
+  await chmod(dir, 0o700);
+}
+
 async function readCache(file: string, now: number) {
   try {
-    const info = await stat(file);
-    if (now - info.mtimeMs > CACHE_TTL_MS) return null;
+    // A symlink at a cache path is never followed.
+    const info = await lstat(file);
+    if (!info.isFile() || now - info.mtimeMs > CACHE_TTL_MS) return null;
     return JSON.parse(await readFile(file, 'utf8')) as {
       nodes: Node[];
       hasNextPage: boolean;
@@ -116,6 +145,19 @@ async function readCache(file: string, now: number) {
     };
   } catch {
     return null;
+  }
+}
+
+/** Writes through a temp file and a rename, so a reader never sees half a page. */
+async function writeCache(file: string, value: unknown) {
+  const temp = `${file}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`;
+  try {
+    await writeFile(temp, JSON.stringify(value), { mode: 0o600, flag: 'wx' });
+    await chmod(temp, 0o600);
+    await rename(temp, file);
+  } catch (error) {
+    await rm(temp, { force: true });
+    throw error;
   }
 }
 
@@ -137,7 +179,7 @@ export async function fetchGithubIssues(
     options.cacheDir ??
     process.env.TTR_GITHUB_IMPORT_CACHE ??
     join(homedir(), '.cache', 'tuturuuu', 'github-import');
-  await mkdir(dir, { recursive: true, mode: 0o700 });
+  await ensureCacheDir(dir);
 
   const states = options.state === 'all' ? [] : [options.state.toUpperCase()];
   const issues: Node[] = [];
@@ -181,7 +223,7 @@ export async function fetchGithubIssues(
             hasNextPage: connection.pageInfo.hasNextPage,
             endCursor: connection.pageInfo.endCursor,
           };
-          await writeFile(file, JSON.stringify(result), { mode: 0o600 });
+          await writeCache(file, result);
           const limit = parsed.data.rateLimit;
           if (limit && limit.remaining <= limit.cost * 2) {
             const wait = Math.min(

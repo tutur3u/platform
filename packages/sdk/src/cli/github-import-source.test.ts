@@ -1,4 +1,13 @@
-import { mkdtemp, readdir } from 'node:fs/promises';
+import {
+  chmod,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -118,6 +127,88 @@ describe('fetchGithubIssues', () => {
     });
     expect(second).toHaveLength(60);
     expect(runGh).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps the cache private and leaves no temp files', async () => {
+    const root = await dir();
+    const cacheDir = join(root, 'nested', 'cache');
+    const { runGh } = pagedGh(30);
+    await fetchGithubIssues({
+      repo: 'tutur3u/platform',
+      state: 'all',
+      runGh,
+      cacheDir,
+    });
+    expect((await lstat(cacheDir)).mode & 0o777).toBe(0o700);
+    const files = await readdir(cacheDir);
+    expect(files).toHaveLength(2);
+    expect(files.every((f) => f.endsWith('.json'))).toBe(true);
+    for (const file of files) {
+      expect((await lstat(join(cacheDir, file))).mode & 0o777).toBe(0o600);
+    }
+  });
+
+  it('tightens an existing loose cache directory', async () => {
+    const cacheDir = await dir();
+    await chmod(cacheDir, 0o755);
+    await fetchGithubIssues({
+      repo: 'tutur3u/platform',
+      state: 'all',
+      runGh: pagedGh(3).runGh,
+      cacheDir,
+    });
+    expect((await lstat(cacheDir)).mode & 0o777).toBe(0o700);
+  });
+
+  it('refuses a symlinked cache directory', async () => {
+    const root = await dir();
+    const target = join(root, 'target');
+    await mkdir(target);
+    const link = join(root, 'link');
+    await symlink(target, link);
+    const { runGh } = pagedGh(3);
+    await expect(
+      fetchGithubIssues({
+        repo: 'tutur3u/platform',
+        state: 'all',
+        runGh,
+        cacheDir: link,
+      })
+    ).rejects.toThrow('symlinked cache directory');
+    expect(runGh).not.toHaveBeenCalled();
+    expect(await readdir(target)).toEqual([]);
+  });
+
+  it('never reads or writes through a symlinked cache file', async () => {
+    const cacheDir = await dir();
+    const { runGh } = pagedGh(3);
+    await fetchGithubIssues({
+      repo: 'tutur3u/platform',
+      state: 'all',
+      runGh,
+      cacheDir,
+    });
+    const [name] = await readdir(cacheDir);
+    const cached = join(cacheDir, name!);
+    const outside = join(await dir(), 'outside.json');
+    await writeFile(
+      outside,
+      JSON.stringify({ nodes: [], hasNextPage: false, endCursor: null })
+    );
+    const { rm } = await import('node:fs/promises');
+    await rm(cached);
+    await symlink(outside, cached);
+
+    const issues = await fetchGithubIssues({
+      repo: 'tutur3u/platform',
+      state: 'all',
+      runGh,
+      cacheDir,
+    });
+    expect(issues).toHaveLength(3); // fetched again, not served from the link
+    expect(runGh).toHaveBeenCalledTimes(2);
+    expect((await lstat(cached)).isSymbolicLink()).toBe(false);
+    expect(JSON.parse(await readFile(outside, 'utf8')).nodes).toEqual([]);
   });
 
   it('bypasses the cache with refresh and keeps states apart', async () => {
