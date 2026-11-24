@@ -44,7 +44,7 @@ export function FeedbackMediaField({
         <label
           htmlFor={mediaUploadId}
           className={cn(
-            'relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors focus-within:ring-2 focus-within:ring-ring',
+            'relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
             isDragOver
               ? 'border-primary bg-primary/5'
               : 'border-border hover:border-foreground/30',
