@@ -2,6 +2,7 @@ import { VersionBadgeGate } from '@/components/version-badge-gate';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
+import { NuqsAdapter } from '@tuturuuu/ui/nuqs-adapter';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { generateCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { cn } from '@tuturuuu/utils/format';
@@ -83,14 +84,16 @@ export default async function RootLayout({ children }: Props) {
         )}
       >
         <Suspense>
-          <Providers>
-            <NextIntlClientProvider>
-              {children}
-              <Suspense fallback={null}>
-                <VersionBadgeGate />
-              </Suspense>
-            </NextIntlClientProvider>
-          </Providers>
+          <NuqsAdapter>
+            <Providers>
+              <NextIntlClientProvider>
+                {children}
+                <Suspense fallback={null}>
+                  <VersionBadgeGate />
+                </Suspense>
+              </NextIntlClientProvider>
+            </Providers>
+          </NuqsAdapter>
         </Suspense>
         <Toaster />
       </body>
