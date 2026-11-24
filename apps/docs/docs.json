@@ -293,6 +293,7 @@
                   "build/devops/mastermind-secret-entry",
                   "build/devops/mastermind-ship-collector",
                   "build/devops/storage-egress-protection",
+                  "build/devops/meet-per-speaker-operations",
                   "build/devops/meet-transcript-retention",
                   "build/devops/meet-standalone-release",
                   "build/devops/meet-volunteer-load-test",

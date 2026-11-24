@@ -1,0 +1,66 @@
+---
+title: Meet per-speaker operations
+description: How an operator settles a per-speaker transcript chunk that was dispatched to the provider but never answered.
+updatedAt: "2026-11-24"
+audience: developers
+---
+
+Per-speaker transcription (`self_v1`) reserves each chunk's maximum cost on
+its session before the provider is called, and settles the reservation once
+the outcome is known. The product rules are on
+[Per-speaker meeting transcription](/platform/features/meet-per-speaker-transcription).
+
+## Dispatched chunk that never settled
+
+The Meet Worker settles every chunk itself: `released` for a failure before
+dispatch, `discarded` or `completed` with the measured cost after the provider
+answers, and `unknown` when the provider call fails after dispatch. A Worker
+that is stopped or evicted during the provider call can leave a chunk with its
+reservation still open. Such a chunk keeps holding its reservation against the
+session's `cost_cap_usd` and never shows text.
+
+### Find them
+
+Read-only, with the service role:
+
+```sql
+select c.id, c.session_id, c.account_id, c.attempt_started_at, c.reserved_cost_usd
+from public.meet_ai_chunks c
+where c.stream_id is not null
+  and c.status = 'processing'
+  and c.reservation_state = 'reserved'
+  and c.dispatch_consent_revision is not null
+  and c.attempt_started_at < now() - interval '5 minutes';
+```
+
+`dispatch_consent_revision is not null` means `mark_dispatch` ran, so the
+provider may have been called and billed. A chunk with a null dispatch
+revision never reached the provider and is not part of this procedure.
+
+### Settle as `unknown`
+
+Settle each chunk found above as `unknown`. This is a production database
+write: it follows the production write approval rules, like any other.
+
+```sql
+select private.meet_ai_self_v1_settle_chunk('<chunk id>', 'unknown', null, null, null);
+```
+
+- `unknown` moves the chunk's full reservation into the session's
+  `cost_unknown_usd`, where it keeps counting against the cost cap. Unknown
+  cost is never released.
+- The call is idempotent: settling the same chunk as `unknown` again returns
+  the row unchanged. Any other outcome after settlement is refused (`55000`).
+- Never use `released` (the database refuses it after dispatch) and never use
+  `completed` or `discarded` (both need a measured provider cost, and
+  `completed` also needs the speaker's current consent).
+
+### What else to expect
+
+- The chunk shows as failed and keeps no text. A resend of the same chunk id
+  returns the failed chunk without another provider call.
+- The central AI run that was opened for the attempt stays pending until its
+  reservation expires (30 minutes); no credits are charged for it. The
+  uploader's own credits are never involved.
+- Once settled, the post-call review route counts the chunk in
+  `unpricedRequests` for the host.
