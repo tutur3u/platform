@@ -9,8 +9,6 @@
 // `stopped` checks the stop fence: health reports stopped and connect and
 // publish return 503. Synthetic workspace, conversation and user IDs keep the
 // smoke in its own rooms. Output names checks only, never the origin or secret.
-import http from 'node:http';
-import https from 'node:https';
 import { pathToFileURL } from 'node:url';
 import {
   chatRealtimeBodyDigest,
@@ -92,35 +90,6 @@ async function health(origin) {
   return response.ok ? response.json() : { status: response.status };
 }
 
-/** Sends one WebSocket upgrade and returns the HTTP status it is answered with. */
-export function upgradeStatus(origin, ticket) {
-  const url = new URL('/v1/connect', origin);
-  const client = url.protocol === 'https:' ? https : http;
-  return new Promise((resolve, reject) => {
-    const request = client.request(url, {
-      headers: {
-        connection: 'Upgrade',
-        'sec-websocket-key': Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64'),
-        'sec-websocket-protocol': `tuturuuu.chat.v1, ticket.${ticket}`,
-        'sec-websocket-version': '13',
-        upgrade: 'websocket',
-      },
-      timeout: TIMEOUT_MS,
-    });
-    request.on('upgrade', (response, socket) => {
-      socket.destroy();
-      resolve(response.statusCode);
-    });
-    request.on('response', (response) => {
-      response.resume();
-      resolve(response.statusCode);
-    });
-    request.on('timeout', () => request.destroy(new Error('upgrade timed out')));
-    request.on('error', reject);
-    request.end();
-  });
-}
-
 function check(results, name, ok) {
   results.push({ name, ok: Boolean(ok) });
 }
@@ -191,11 +160,21 @@ export async function runStopped({ origin, secret }) {
     'publish fenced',
     (await post(origin, body, await publishTicket(secret, body))).status === 503
   );
-  check(
-    results,
-    'connect fenced',
-    (await upgradeStatus(origin, await subscribe(secret))) === 503
+  // The fence answers before routing, so a plain connect request reports it
+  // directly (a running Worker answers 426 for a missing upgrade).
+  const connect = await fetch(new URL('/v1/connect', origin), {
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  check(results, 'connect fenced', connect.status === 503);
+  const opened = await openSocket(origin, await subscribe(secret)).then(
+    (client) => {
+      client.close();
+      return true;
+    },
+    () => false
   );
+  check(results, 'fenced socket never opens', !opened);
+
   return results;
 }
 

@@ -574,5 +574,5 @@ test('the Worker stop fence rejects new connects and publishes', async () => {
 test('the staging smoke passes its stopped phase against the fenced Worker', async () => {
   const results = await runStopped({ origin: server.origin, secret: SECRET });
   assert.deepEqual(results.filter(({ ok }) => !ok), []);
-  assert.equal(results.length, 3);
+  assert.equal(results.length, 4);
 });

@@ -33,7 +33,9 @@ export default defineConfig({
       // Rotation builds only: tickets signed with the previous secret stay
       // valid until a default build replaces it. Signers always use the
       // current secret.
-      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: rotating && bindings.secret(),
+      ...(rotating
+        ? { CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: bindings.secret() }
+        : {}),
       INBOX: bindings.durableObject({
         worker,
         exportName: 'ChatInboxRoom',
