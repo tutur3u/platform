@@ -85,6 +85,9 @@ client: `bridge-client.ts`.
 | `POST /v1/bridge/rpc` | service token | Relay one sealed read request to its machine and return the sealed answer; waits up to 12 s, stores nothing. |
 | `GET /v1/bridge/receipt?id=` | service token | A reply's receipt. |
 | `GET /v1/bridge/live` | service token | Machine presence and pokes. |
+| `POST /v1/bridge/send2` | service token | Store and push a reply with attachments (envelope v2); binds its upload records in the same transaction and needs a live machine that advertised `reply-attachments-v2`. |
+| `POST /v1/bridge/attachments/reserve`, `PUT .../object?id=`, `POST .../records` | service token | Mint an upload record under quota, finalize it once with derived bytes (chunk rows, at most 10 MB), read records. Behind the `mastermind_reply_attachments` flag on Web. |
+| `GET /v1/bridge/attachments/fetch?id=` | `MM-Fetch` capability | One bound object's bytes for its addressed machine while the reply waits; at most 8 fetches; every refusal is a bare 404. See [thread replies](/platform/features/mastermind-thread-replies#attachments). |
 
 Bounds and stop fence:
 

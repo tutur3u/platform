@@ -14,11 +14,23 @@ import {
   type BridgeReplyEnvelope,
   type BridgeRpcRequest,
   bridgeRpcResponseSchema,
+  bridgeErrorCodes,
   bridgeLiveResponseSchema,
   bridgeReceiptResponseSchema,
   bridgeSendResponseSchema,
   bridgeTicketResponseSchema,
 } from './bridge-protocol';
+import {
+  ATTACHMENT_FINALIZE_HEADER,
+  type AttachmentFinalize,
+  type AttachmentRecord,
+  type AttachmentReserve,
+  attachmentFinalizeResponseSchema,
+  attachmentRecordsResponseSchema,
+  attachmentReserveResponseSchema,
+  BRIDGE_REPLY_V2_VERSION,
+  type BridgeSendV2Request,
+} from './reply-attachments';
 
 export class MastermindBridgeError extends Error {
   constructor(
@@ -52,6 +64,21 @@ export interface MastermindBridge {
   }): Promise<{ iv: string; data: string }>;
   receipt(id: string): Promise<BridgeReceipt | null>;
   live(): Promise<BridgeLive>;
+  /** Mints one upload record; its quotas are held from now on. */
+  reserveAttachment(
+    input: Omit<AttachmentReserve, 'v'>
+  ): Promise<{ id: string; expiresAt: number }>;
+  /** Finalizes a reserved record once with the derived bytes. */
+  finalizeAttachment(
+    id: string,
+    input: AttachmentFinalize,
+    bytes: Uint8Array
+  ): Promise<AttachmentRecord>;
+  attachmentRecords(ids: string[]): Promise<(AttachmentRecord | null)[]>;
+  /** Stores and pushes a reply with attachments (envelope v2). */
+  sendV2(
+    input: Omit<BridgeSendV2Request, 'v'>
+  ): Promise<{ receipt: BridgeReceipt; replayed: boolean }>;
 }
 
 type Fetch = (input: string, init: RequestInit) => Promise<Response>;
@@ -67,16 +94,25 @@ export function createMastermindBridgeClient(options: {
   const socketUrl = new URL('/v1/bridge/connect', options.url);
   socketUrl.protocol = socketUrl.protocol === 'http:' ? 'ws:' : 'wss:';
 
-  async function call(path: string, body?: unknown, extraMs = 0) {
+  async function call(
+    path: string,
+    body?: unknown,
+    extraMs = 0,
+    raw?: { bytes: Uint8Array; headers: Record<string, string> }
+  ) {
     let response: Response;
     try {
       response = await doFetch(new URL(path, options.url).toString(), {
-        method: body === undefined ? 'GET' : 'POST',
+        method: raw ? 'PUT' : body === undefined ? 'GET' : 'POST',
         headers: {
           authorization: `Bearer ${options.token}`,
           ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+          ...(raw
+            ? { 'content-type': 'application/octet-stream', ...raw.headers }
+            : {}),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        ...(raw ? { body: raw.bytes as BodyInit } : {}),
         redirect: 'error',
         cache: 'no-store',
         signal: AbortSignal.timeout(timeoutMs + extraMs),
@@ -106,6 +142,22 @@ export function createMastermindBridgeClient(options: {
         (parsed.data as unknown as Failure).error
       );
     return parsed.data as Exclude<T, Failure>;
+  }
+
+  /** Attachment answers carry the store's closed code as a plain string. */
+  function unwrapAttachment<T extends { ok: boolean }>(
+    parsed: { success: true; data: T } | { success: false }
+  ): Exclude<T, { ok: false }> {
+    if (!parsed.success) throw new MastermindBridgeError('invalid_response');
+    if (!parsed.data.ok) {
+      const error = (parsed.data as unknown as { error: string }).error;
+      throw new MastermindBridgeError(
+        (bridgeErrorCodes as readonly string[]).includes(error)
+          ? (error as BridgeErrorCode)
+          : 'invalid_response'
+      );
+    }
+    return parsed.data as Exclude<T, { ok: false }>;
   }
 
   return {
@@ -163,6 +215,49 @@ export function createMastermindBridgeClient(options: {
       return unwrap(
         bridgeLiveResponseSchema.safeParse(await call('/v1/bridge/live'))
       ).live;
+    },
+    async reserveAttachment(input) {
+      const { id, expiresAt } = unwrapAttachment(
+        attachmentReserveResponseSchema.safeParse(
+          await call('/v1/bridge/attachments/reserve', { v: 1, ...input })
+        )
+      );
+      return { id, expiresAt };
+    },
+    async finalizeAttachment(id, input, bytes) {
+      return unwrapAttachment(
+        attachmentFinalizeResponseSchema.safeParse(
+          await call(
+            `/v1/bridge/attachments/object?id=${encodeURIComponent(id)}`,
+            undefined,
+            8000,
+            {
+              bytes,
+              headers: { [ATTACHMENT_FINALIZE_HEADER]: JSON.stringify(input) },
+            }
+          )
+        )
+      ).record;
+    },
+    async attachmentRecords(ids) {
+      return unwrapAttachment(
+        attachmentRecordsResponseSchema.safeParse(
+          await call('/v1/bridge/attachments/records', { v: 1, ids })
+        )
+      ).records;
+    },
+    async sendV2(input) {
+      const waitMs = Math.min(input.waitMs ?? 0, BRIDGE_LIMITS.maxWaitMs);
+      const { receipt, replayed } = unwrap(
+        bridgeSendResponseSchema.safeParse(
+          await call(
+            '/v1/bridge/send2',
+            { ...input, v: BRIDGE_REPLY_V2_VERSION, waitMs },
+            waitMs
+          )
+        )
+      );
+      return { receipt, replayed };
     },
   };
 }

@@ -11,6 +11,9 @@ import {
 import { NOW, replyFrame, SECRET, uuid } from './bridge-test-fixture.mjs';
 import { signRequest } from './publish.mjs';
 
+/** Every hello advertises what this bridge takes (reply attachments). */
+const HELLO = { v: 1, t: 'hello', caps: ['reply-attachments-v2'] };
+
 test('asks Web for a ticket with the publisher signature and trusts only a TLS socket address', async () => {
   const seen = [];
   const respond =
@@ -123,7 +126,7 @@ test('presents the ticket as a subprotocol, says hello, acknowledges replies and
   assert.ok(!socket.url.includes('the-ticket'));
   socket.emit('open');
   assert.deepEqual(socket.frames(), [
-    { v: 1, t: 'hello' },
+    HELLO,
     { v: 1, t: 'poke', topic: 'usage', revision: 4, observedAt: 'x' },
   ]);
   const data = JSON.stringify(replyFrame(1));
@@ -173,7 +176,7 @@ test('an idle connection sends pings and a rare safety request; it asks again at
   });
   const [socket] = sockets;
   socket.emit('open');
-  assert.deepEqual(socket.frames(), [{ v: 1, t: 'hello' }]);
+  assert.deepEqual(socket.frames(), [HELLO]);
   const tickAll = () => {
     clock += 15_000;
     socket.emit('message', { data: 'pong' });
@@ -184,10 +187,7 @@ test('an idle connection sends pings and a rare safety request; it asks again at
   assert.ok(socket.sent.includes('ping'));
   pending = true;
   tickAll();
-  assert.deepEqual(socket.frames(), [
-    { v: 1, t: 'hello' },
-    { v: 1, t: 'hello' },
-  ]);
+  assert.deepEqual(socket.frames(), [HELLO, HELLO]);
   // A replay that came back full means more is waiting: ask again once the
   // batch is handled, without any local backlog.
   pending = false;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BRIDGE_LIMITS } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
+import { ATTACHMENT_LIMITS } from '@tuturuuu/utils/mastermind-store/reply-attachments';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   isFleetOwner,
@@ -10,6 +11,7 @@ import {
   bridgeFailure,
   FLEET_REPLY_LIFETIME_MS,
   fleetBridge,
+  fleetSecret,
   replyAssurance,
   replyMfaMaxAgeSeconds,
   replyView,
@@ -20,6 +22,9 @@ import {
   fleetError,
   readCappedText,
 } from '@/lib/mastermind/fleet/http';
+import { attachmentBridgeFailure } from '@/lib/mastermind/fleet/reply-attachment-gate';
+import { prepareReplyV2 } from '@/lib/mastermind/fleet/reply-attachment-send';
+import { replyAttachmentsEnabled } from '@/lib/mastermind/fleet/reply-attachments';
 
 const IDEMPOTENCY_KEY =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -37,11 +42,14 @@ const replyInputSchema = z
       .regex(/^\w[\w-]{0,99}$/u)
       .optional(),
     threadId: z.string().regex(/^[\w:%.][\w:%.-]{0,399}$/u),
-    text: z
-      .string()
-      .min(1)
-      .max(BRIDGE_LIMITS.maxTextChars * 2),
+    text: z.string().max(BRIDGE_LIMITS.maxTextChars * 2),
     idempotencyKey: z.string().optional(),
+    /** Finalized upload ids; reserved with this reply's idempotency key. */
+    attachments: z
+      .array(z.string().regex(IDEMPOTENCY_KEY))
+      .min(1)
+      .max(ATTACHMENT_LIMITS.maxFiles)
+      .optional(),
   })
   .strict();
 
@@ -51,8 +59,10 @@ const replyInputSchema = z
  * of this very session, seals and signs the reply for the machine and hands
  * it to the bridge, which pushes it at once and keeps it
  * until the machine acknowledges. The machine delivers it steered (into the
- * running turn, or starting an idle thread); the receipt says which. Text
- * only: no attachments, no commands, no new threads.
+ * running turn, or starting an idle thread); the receipt says which. No
+ * commands and no new threads. With the `mastermind_reply_attachments` flag
+ * on, a reply may name finalized uploads (and then may have no text); it
+ * travels as envelope v2, and only to a machine that advertises it.
  */
 export const POST = withSessionAuth(
   async (request, { appSessionToken, user, supabase }) => {
@@ -83,8 +93,13 @@ export const POST = withSessionAuth(
     const parsed = replyInputSchema.safeParse(json);
     if (!parsed.success) return fleetError('invalid_reply', 422);
     const text = parsed.data.text.replace(UNSAFE, '').trim();
-    if (!text || text.length > BRIDGE_LIMITS.maxTextChars)
+    const attachments = parsed.data.attachments;
+    if ((!text && !attachments) || text.length > BRIDGE_LIMITS.maxTextChars)
       return fleetError('invalid_reply', 422);
+    if (attachments && !replyAttachmentsEnabled())
+      return fleetError('not_found', 404);
+    if (attachments && parsed.data.environmentId)
+      return fleetError('unsupported_for_linked_machine', 422);
     const id = (
       request.headers.get('idempotency-key') ??
       parsed.data.idempotencyKey ??
@@ -96,6 +111,49 @@ export const POST = withSessionAuth(
     const bridge = fleetBridge();
     if (!bridge) return fleetError('unavailable', 503);
     const now = Date.now();
+    if (attachments) {
+      const secret = fleetSecret(process.env);
+      if (!secret) return fleetError('unconfigured', 503);
+      const prepared = await prepareReplyV2({
+        bridge,
+        secret,
+        sessionId: assurance.proof.sessionId,
+        actorId: user.id.toLowerCase(),
+        id,
+        machineId: parsed.data.machineId,
+        threadId: parsed.data.threadId,
+        text,
+        uploadIds: attachments,
+        now,
+      });
+      if (!prepared.ok) return prepared.response;
+      try {
+        const { receipt, replayed } = await bridge.sendV2({
+          ...prepared.sealed,
+          waitMs: BRIDGE_LIMITS.maxWaitMs,
+        });
+        const view = replyView(receipt);
+        // Counts and sizes only: no names, and no digest of a file's bytes.
+        if (!replayed)
+          console.info('Mastermind fleet reply', {
+            replyId: id,
+            actorId: prepared.sealed.envelope.actorId,
+            sessionId: assurance.proof.sessionId,
+            machineId: prepared.sealed.envelope.machineId,
+            threadId: prepared.sealed.envelope.threadId,
+            bundleDigest: prepared.sealed.envelope.textDigest,
+            attachments: prepared.bytes.length,
+            attachmentBytes: prepared.bytes,
+            state: view.state,
+          });
+        return NextResponse.json(view, {
+          status: 202,
+          headers: FLEET_NO_STORE,
+        });
+      } catch (error) {
+        return attachmentBridgeFailure(error);
+      }
+    }
     const sealed = sealFleetReply({
       id,
       machineId: parsed.data.machineId,

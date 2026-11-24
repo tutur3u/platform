@@ -46,9 +46,15 @@ export async function readCapped(
   request: Request,
   maxBytes: number = MASTERMIND_STORE_LIMITS.maxBodyBytes
 ) {
+  const bytes = await readCappedBytes(request, maxBytes);
+  return bytes === null ? null : new TextDecoder().decode(bytes);
+}
+
+/** The body's bytes, or null past `maxBytes`; the stream is cancelled there. */
+export async function readCappedBytes(request: Request, maxBytes: number) {
   const declared = Number(request.headers.get('content-length') ?? '0');
   if (declared > maxBytes) return null;
-  if (!request.body) return '';
+  if (!request.body) return new Uint8Array(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -68,5 +74,5 @@ export async function readCapped(
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return new TextDecoder().decode(bytes);
+  return bytes;
 }

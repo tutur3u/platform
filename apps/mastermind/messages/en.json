@@ -447,6 +447,19 @@
         "checkAgain": "Check again",
         "writeAnother": "Write another",
         "stillDelivers": "This reply is still delivered when the machine takes it."
+      },
+      "attachments": {
+        "error": {
+          "attachments_unsupported": "This machine's bridge cannot take attachments yet. Send text, or update the bridge.",
+          "attachment_too_large": "This file is too large. Each file can be up to 10 MB.",
+          "attachment_type_unsupported": "Only images and plain UTF-8 text files can be attached.",
+          "attachment_invalid": "This file could not be read or did not arrive intact. Attach it again.",
+          "attachment_size_mismatch": "The upload did not match the file's size. Attach it again.",
+          "attachment_limit": "A reply can carry up to 6 files and 25 MB in total.",
+          "attachment_refused": "This attachment belongs to another reply or has already been sent. Attach it again.",
+          "attachment_expired": "These attachments expired before sending. Attach them again.",
+          "attachments_unavailable": "Attachments are unavailable right now. Try again later."
+        }
       }
     },
     "ship": {

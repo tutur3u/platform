@@ -10,8 +10,9 @@
 // publisher's signed request. Replies arrive signed by Web; each one is
 // verified, delivered steered through the local T3 server (t3-steer.mjs) and
 // acknowledged. A reply this machine cannot take yet stays in the bridge
-// outbox and is replayed on the next `hello`. It only ever sends text to an
-// existing thread: no attachments, no commands, no new threads.
+// outbox and is replayed on the next `hello`. It only ever messages an
+// existing thread: text, or (envelope v2, see bridge-attach.mjs) text with
+// verified attachment files; no commands, no new threads.
 // Runbook: apps/docs/platform/features/mastermind-thread-replies.mdx#fleet-bridge
 import fs from 'node:fs';
 import os from 'node:os';
@@ -23,11 +24,14 @@ import {
   createLedger,
   handleReply,
 } from './bridge-core.mjs';
+import { openSpool, storeOrigin } from './attachment-spool.mjs';
+import { ATTACHMENT_CAPABILITY, handleReplyV2 } from './bridge-attach.mjs';
 import { handleRequest } from './bridge-rpc.mjs';
 import { slugify } from './fleet-state.mjs';
 import { pokesDir, readPokes } from './poke.mjs';
 import { defaultPaths, readSecret, signRequest } from './publish.mjs';
-import { connectLocalMcp, localT3Paths } from './t3-mcp.mjs';
+import { deliverBundle } from './t3-attach.mjs';
+import { connectLocalMcp, localT3Paths, readLocalOrigin } from './t3-mcp.mjs';
 import { createSendJournal, steerThread } from './t3-steer.mjs';
 
 const TICKET_PATH = '/api/v1/mastermind/fleet/bridge/ticket';
@@ -36,7 +40,7 @@ const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1(:\d+)?$/;
 const SOCKET_URL =
   /^(wss:\/\/[a-z0-9.-]+(:\d+)?|ws:\/\/127\.0\.0\.1(:\d+)?)\//i;
 const TICKET = /^[\w-]{32,128}$/;
-/** Replies are small; a read request is smaller still. */
+/** Replies are small (a v2 manifest included); a read request is smaller still. */
 const MAX_FRAME_CHARS = 32 * 1024;
 export const BACKOFF = { minMs: 1_000, maxMs: 60_000, stableMs: 30_000 };
 const PING_MS = 25_000;
@@ -56,6 +60,7 @@ export function bridgePaths(home = os.homedir()) {
   return {
     ...base,
     ledgerFile: path.join(base.root, 'bridge-replies.jsonl'),
+    spoolDir: path.join(base.root, 'attachment-spool'),
     pokesDir: pokesDir(home),
     scratchRoot: scratchRoot(home),
   };
@@ -164,7 +169,12 @@ export function runConnection({
     const hello = () => {
       batch = 0;
       lastHello = now();
-      send({ v: BRIDGE_PROTOCOL_VERSION, t: 'hello' });
+      // Attachments are negotiated on this authenticated connection.
+      send({
+        v: BRIDGE_PROTOCOL_VERSION,
+        t: 'hello',
+        caps: [ATTACHMENT_CAPABILITY],
+      });
     };
     const ping = timers.setInterval(() => {
       if (now() - lastPong > PING_MS + PONG_GRACE_MS) return socket.close();
@@ -231,7 +241,7 @@ export function runConnection({
       // The same reply may arrive again from a `hello` while it is handled.
       if (typeof id === 'string' && inFlight.has(id)) return;
       if (typeof id === 'string') inFlight.add(id);
-      onReply(frame)
+      onReply(frame, { socketUrl: url })
         .then((ack) => {
           if (ack) send(ack);
           log({ event: 'reply', state: ack?.state ?? 'pending' });
@@ -340,6 +350,36 @@ async function main() {
     chain = run.catch(() => undefined);
     return run;
   };
+  // Attachment files wait here between the store and T3; files of settled
+  // replies and day-old orphans are removed at start.
+  const spool = openSpool(paths.spoolDir);
+  spool.reconcile({
+    settled: (id) => ledger.get(id) !== undefined,
+    pending: () => false,
+  });
+  const t3Paths = localT3Paths();
+  // One delivery at a time, in the same order as text replies.
+  const deliverAttachments = (input, socketUrl) => {
+    const run = chain.then(async () => {
+      const session = await connectLocalMcp();
+      try {
+        return await deliverBundle(input, {
+          call: session.call,
+          journal,
+          bearerId: session.bearerId,
+          spool,
+          secret,
+          machineId,
+          storeOrigin: storeOrigin(socketUrl),
+          t3Origin: readLocalOrigin(t3Paths.runtimeFile),
+        });
+      } finally {
+        await session.close();
+      }
+    });
+    chain = run.catch(() => undefined);
+    return run;
+  };
   // Counts and closed codes only: no ids, thread names or message text.
   const log = (entry) =>
     console.log(JSON.stringify({ at: new Date().toISOString(), ...entry }));
@@ -347,8 +387,17 @@ async function main() {
     origin,
     secret,
     machineId,
-    onReply: (frame) =>
-      handleReply(frame, { secret, machineId, ledger, steer, firstSeen }),
+    onReply: (frame, { socketUrl }) =>
+      frame?.v === 2
+        ? handleReplyV2(frame, {
+            secret,
+            machineId,
+            ledger,
+            firstSeen,
+            deliver: (input) => deliverAttachments(input, socketUrl),
+            cleanup: (id) => spool.clear(id),
+          })
+        : handleReply(frame, { secret, machineId, ledger, steer, firstSeen }),
     onRequest: async (frame) => {
       // A read of this machine comes from its own database; an MCP session
       // is opened only for a read of a linked machine.

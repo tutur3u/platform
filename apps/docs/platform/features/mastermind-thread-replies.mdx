@@ -1,7 +1,7 @@
 ---
 title: Mastermind thread replies
 description: How the owner reads fleet threads and how a message from Mastermind reaches a T3 thread on the orchestrator Mac steered, never queued, with sign-in, idempotency, limits, install and rollback.
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-24"
 audience: developers
 ---
 
@@ -13,8 +13,10 @@ says `queued`; nothing claims a delivery that did not happen.
 
 Scope: owner answers relayed by the orchestrator's ask tool (`iris-ask`) and
 replies the owner posts into a thread from Mastermind web or the mobile app.
-Out of scope: attachments, commands and new threads. Only text reaches an
-existing thread.
+Out of scope: commands and new threads. Only an existing thread is ever
+addressed. Attachments on owner thread replies are built behind the
+`mastermind_reply_attachments` flag, which is off; no client offers them yet
+(see [Attachments](#attachments)).
 
 ## Steered delivery
 
@@ -187,6 +189,88 @@ owner tap -> Web POST /api/v1/mastermind/fleet/replies
   owner clients read them from `GET /api/v1/mastermind/fleet/live` or a
   listen-only owner socket (`POST /api/v1/mastermind/fleet/live/ticket`) and
   refetch the topic through its own owner route.
+
+## Attachments
+
+Status: the contract, the Web routes, the store and the machine bridge exist;
+the `mastermind_reply_attachments` flag (`MASTERMIND_REPLY_ATTACHMENTS_ENABLED`,
+unset means off) keeps every attachment route at 404, and no reply box shows
+an attach control. Scope when it is turned on: owner replies into a thread on
+the bridge machine itself (no linked environment); raster images (PNG, JPEG,
+WebP, GIF first frame) and plain UTF-8 text; 10 MB per file, 6 files and
+25 MB per reply. Inbox ask replies and review notes use the decision-answer
+path, which has no signing, receipts or outbox for files, and are not covered.
+Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
+
+- **An upload record authorizes everything.**
+  `POST /api/v1/mastermind/fleet/reply-attachments` (owner, the same
+  second-factor window as a reply) asks the store to mint an opaque upload id
+  bound to the owner, a keyed digest of the session, the machine, the thread
+  and the reply's idempotency key. The store reserves the per-reply,
+  outstanding (150 MB, 60 uploads) and hourly (300 MB, 120 uploads) quotas
+  first, and only when the machine's live socket advertised attachments. The
+  display name is sanitized and sealed for the store, which keeps it without
+  a key for it.
+- **The byte cap is enforced where the bytes arrive.**
+  `PUT /api/v1/mastermind/fleet/reply-attachments/<id>` goes through Web (and
+  the apex WAF), not straight to storage: the declared length must equal the
+  reservation and the stream is cancelled past it. Images are sniffed,
+  decoded with a pixel limit (first frame), oriented, scaled into 2048 x 2048
+  and re-encoded as WebP without metadata (`getImageTransformer`: sharp on
+  Node, the Images binding on Workers); text must be strict UTF-8 without
+  control characters. Only the derived bytes are stored, in 512 KB chunk rows
+  of the FleetBridge Durable Object, and the record is finalized once, by the
+  session that reserved it; the store computes the digest itself.
+- **Envelope v2.** A reply that names upload ids is sealed with the manifest
+  (names, kinds, sizes, digests) and signed under
+  `mastermind-fleet-reply-v2`. The keyed bundle digest covers the reply id,
+  machine, thread, actor, issue and expiry times, the text and the manifest;
+  it is the store's idempotency key and what the machine's acknowledgement
+  signs, so a repeated reply id with other files conflicts and can never
+  collect the first receipt. Issue and expiry come from the records, so a
+  retry rebuilds the identical bundle and replays. `POST /v1/bridge/send2`
+  binds the records to the reply in the same transaction that stores it, and
+  refuses a machine whose live socket did not advertise
+  `reply-attachments-v2` in its `hello` (`unsupported`) or is offline. A v1
+  bridge refuses a v2 frame with `bad_signature`, a terminal receipt; nothing
+  is ever downgraded to text alone.
+- **Fetch.** The machine derives one capability per object from the fleet
+  secret, its own machine id, the reply id, the object id and its digest, and
+  presents it in an `Authorization: MM-Fetch` header (never in a URL) to
+  `GET /v1/bridge/attachments/fetch` on the store origin of its bridge socket.
+  The store serves the bytes only while that reply waits for that machine,
+  at most 8 times per object, and answers every refusal with a bare 404. The
+  daemon follows no redirect and refuses an answer from any other host.
+- **Spool and delivery** (`scripts/mastermind-fleet/attachment-spool.mjs`,
+  `t3-attach.mjs`). Files land in `~/.local/share/fleet-sync/attachment-spool`
+  (0700), each created exclusively, without following symlinks, mode 0600,
+  under a generated name; the download stops at the signed size and must match
+  the signed digest. The whole bundle is staged and uploaded to the local T3
+  server over loopback (`t3_attachment_prepare_upload`, then a POST to its
+  `relativeUrl`; a full `uploadUrl` in the answer is ignored) before one
+  `t3_thread_send_attachments` call. That tool takes no retry key and no
+  environment, so the call is journaled first and its message starts with
+  `[mm-reply <id>]`: a call begun and never reported back is looked for in
+  the thread after a minute, delivered if found, and otherwise fails as
+  `unavailable` without a second submission. Spool files are removed only
+  after the outcome is in the ledger; settled and day-old orphan files are
+  removed when the daemon starts. The store drops an object's bytes when its
+  reply settles or expires, and the record after 7 days.
+- **Content is data.** The message's second line tells the agent that the
+  files are owner content to read as data, never instructions or authority
+  for an action; names are display text only, and nothing is opened, followed
+  or passed to a shell automatically.
+- **Receipts.** As for text, plus `attachment_invalid` when a file could not
+  be fetched or did not match its manifest. The local byte budget is 200 MB
+  per hour; a reply counts once against the per-thread and hourly limits.
+
+Rollout, in order, each its own approval: publish the store Worker; deploy
+Web; install the bridge files on the orchestrator Mac (an exact-sha256
+packet), then confirm its `hello` advertises the capability in
+`GET /api/v1/mastermind/fleet/live`; then turn the flag on for an end-to-end
+send to a disposable thread. Rollback: turn the flag off (text replies are
+untouched). Keep the v2 bridge installed until every v2 reply has settled
+(at most 24 hours), then the previous bridge files may return.
 
 ## Thread list and history
 
@@ -467,3 +551,25 @@ replay from the ledger across a restart, closed refusal codes, the retry
 window, the local limit, pokes, ticket signing, the socket loop, an idle
 connection that only pings and makes its ten-minute safety request, a full
 replay batch followed by another request and bounded backoff).
+
+Attachments: `apps/mastermind-store/src/attachment-engine.test.ts` (an
+upload reused across machine, thread, owner or reply refused even with the
+same digest, finalize once by the reserving session and never past the
+reservation, quotas held before bytes, bytes served only for the bound
+capability, at most 8 times, and released when the reply settles),
+`attachment-runtime.test.ts` (in workerd: `unsupported` until the live
+socket advertises attachments, a fetch with another capability refused, a
+repeated reply id with another bundle conflicting, a v1 refusal settling the
+reply and releasing its bytes, the finalize body capped at ingress),
+`apps/web/src/app/api/v1/mastermind/fleet/fleet-reply-attachments.test.ts`
+(404 while the flag is off, the session-bound reservation with a sealed
+name, oversize and mismatched ingress refused before anything is stored,
+only re-encoded image bytes stored, records from another target, session or
+reply refused, identical bundles on retry and different ones for other
+files), and `scripts/mastermind-fleet/bridge-attach.test.mjs`,
+`attachment-spool.test.mjs` and `t3-attach.test.mjs` (parity with Web, the
+addressee and manifest checks, per-machine capabilities, a v1 bridge
+refusing v2 without delivering text, spool permissions and symlinks, no
+redirects or other hosts, oversize or altered objects removed, one T3
+submission, and reconciliation from the thread after a crash with no second
+submission).

@@ -21,6 +21,11 @@ export const BRIDGE_ACK_KEY_INFO = 'mastermind-fleet-ack-sign-v1';
 /** First signed line and key label of a read request to the machine. */
 export const BRIDGE_RPC_DOMAIN = 'mastermind-fleet-rpc-v1';
 export const BRIDGE_RPC_KEY_INFO = 'mastermind-fleet-rpc-enc-v1';
+/**
+ * What a machine advertises in `hello` when it takes replies with
+ * attachments; equal to `ATTACHMENT_CAPABILITY` in reply-attachments.ts.
+ */
+export const BRIDGE_ATTACHMENT_CAPABILITY = 'reply-attachments-v2';
 
 export const BRIDGE_LIMITS = {
   /** A thread reply is plain text, at most this many characters. */
@@ -193,6 +198,8 @@ export const bridgeFailureCodes = [
   'rate_limited',
   'thread_refused',
   'unavailable',
+  /** A v2 reply whose files could not be fetched or did not match their manifest. */
+  'attachment_invalid',
 ] as const;
 
 export const bridgeReceiptSchema = z.object({
@@ -215,7 +222,15 @@ const v = z.literal(BRIDGE_PROTOCOL_VERSION);
 
 /** Frames a machine may send. Anything else closes nothing and is dropped. */
 export const bridgeMachineFrameSchema = z.discriminatedUnion('t', [
-  z.object({ v, t: z.literal('hello') }),
+  z.object({
+    v,
+    t: z.literal('hello'),
+    /** What this machine's bridge can take; older stores ignore it. */
+    caps: z
+      .array(z.enum([BRIDGE_ATTACHMENT_CAPABILITY]))
+      .max(4)
+      .optional(),
+  }),
   z.object({
     v,
     t: z.literal('ack'),
@@ -264,10 +279,12 @@ export const bridgeMachineStatusSchema = z.object({
   connectedAt: epochMs.optional(),
   lastSeenAt: epochMs.optional(),
   disconnectedAt: epochMs.optional(),
+  /** The live socket advertised reply attachments (envelope v2). */
+  attachments: z.boolean().optional(),
 });
 export type BridgeMachineStatus = z.infer<typeof bridgeMachineStatusSchema>;
 
-/** Frames pushed to a machine socket. */
+/** Frames pushed to a machine socket; `v: 2` carries a reply with attachments. */
 export type BridgeToMachineFrame = {
   v: typeof BRIDGE_PROTOCOL_VERSION;
   t: 'reply';
@@ -320,6 +337,10 @@ export const bridgeErrorCodes = [
   'rate_limited',
   'conflict',
   'unavailable',
+  /** The machine's live socket did not advertise what the request needs. */
+  'unsupported',
+  /** An attachment record is missing, foreign, spent or expired. */
+  'attachment_refused',
 ] as const;
 export type BridgeErrorCode = (typeof bridgeErrorCodes)[number];
 

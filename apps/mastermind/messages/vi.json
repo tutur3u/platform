@@ -447,6 +447,19 @@
         "checkAgain": "Kiểm tra lại",
         "writeAnother": "Viết tin khác",
         "stillDelivers": "Tin này vẫn được gửi khi máy nhận."
+      },
+      "attachments": {
+        "error": {
+          "attachments_unsupported": "Cầu nối của máy này chưa nhận được tệp đính kèm. Hãy gửi văn bản hoặc cập nhật cầu nối.",
+          "attachment_too_large": "Tệp quá lớn. Mỗi tệp tối đa 10 MB.",
+          "attachment_type_unsupported": "Chỉ có thể đính kèm hình ảnh và tệp văn bản UTF-8 thuần.",
+          "attachment_invalid": "Không đọc được tệp này hoặc tệp đến không nguyên vẹn. Hãy đính kèm lại.",
+          "attachment_size_mismatch": "Dữ liệu tải lên không khớp kích thước tệp. Hãy đính kèm lại.",
+          "attachment_limit": "Mỗi phản hồi chứa tối đa 6 tệp, tổng cộng 25 MB.",
+          "attachment_refused": "Tệp đính kèm này thuộc phản hồi khác hoặc đã được gửi. Hãy đính kèm lại.",
+          "attachment_expired": "Các tệp đính kèm đã hết hạn trước khi gửi. Hãy đính kèm lại.",
+          "attachments_unavailable": "Tệp đính kèm tạm thời không khả dụng. Hãy thử lại sau."
+        }
       }
     },
     "ship": {

@@ -1132,6 +1132,16 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/reply-attachments/[uploadId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/reply-attachments"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/mastermind/fleet/review-assets/[assetId]"
     },
     {

@@ -346,12 +346,16 @@ export function sealFleetReply(
     sig: createHmac('sha256', secret)
       .update(bridgeReplySigningString(envelope), 'utf8')
       .digest('hex'),
-    // The raw 32-byte public key: the last bytes of its SPKI encoding.
-    ackKey: ackPublicKey(secret)
-      .export({ format: 'der', type: 'spki' })
-      .subarray(-32)
-      .toString('base64url'),
+    ackKey: fleetAckKey(secret),
   };
+}
+
+/** The raw 32-byte acknowledgement public key: the tail of its SPKI encoding. */
+export function fleetAckKey(secret: string) {
+  return ackPublicKey(secret)
+    .export({ format: 'der', type: 'spki' })
+    .subarray(-32)
+    .toString('base64url');
 }
 
 /**

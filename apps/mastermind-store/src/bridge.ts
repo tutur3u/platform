@@ -16,17 +16,33 @@ import {
   type BridgeOwnerFrame,
   type BridgeReceipt,
   type BridgeTicketRequest,
-  bridgeAckSigningString,
   bridgeMachineFrameSchema,
   type bridgeRpcSendSchema,
   type bridgeSendRequestSchema,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
+import {
+  ATTACHMENT_CAPABILITY,
+  type AttachmentFinalize,
+  type AttachmentReserve,
+  type bridgeSendV2Schema,
+} from '@tuturuuu/utils/mastermind-store/reply-attachments';
 import type { z } from 'zod';
+import {
+  type AttachmentEngine,
+  createAttachmentEngine,
+} from './attachment-engine';
 import {
   type BridgeEngine,
   BridgeError,
   createBridgeEngine,
 } from './bridge-engine';
+import {
+  authorizeOwnerNotice,
+  createAttachmentApi,
+} from './bridge-attachments';
+import { base64Url, bridgeBudget, sha256Hex, verifyAck } from './bridge-crypto';
+
+export { bridgeBudget } from './bridge-crypto';
 
 type Failure = { ok: false; error: BridgeErrorCode };
 type Attachment =
@@ -38,6 +54,8 @@ type Attachment =
       windowStart?: number;
       frames?: number;
       helloAt?: number;
+      /** Its last `hello` advertised reply attachments (envelope v2). */
+      attachments?: boolean;
     }
   | {
       role: 'owner';
@@ -50,6 +68,7 @@ type Attachment =
   /** Replaced or fenced: its close handshake may lag, its frames never count. */
   | { role: 'retired'; at: number; windowStart?: number; frames?: number };
 type ParsedSend = z.output<typeof bridgeSendRequestSchema>;
+type ParsedSendV2 = z.output<typeof bridgeSendV2Schema>;
 type ParsedRpc = z.output<typeof bridgeRpcSendSchema>;
 type RpcAnswer = { iv: string; data: string };
 /** Each owner frame without its version; `Omit` alone would merge the union. */
@@ -66,60 +85,10 @@ const CLOSE_FLOOD = 4008;
 const CLOSE_STOPPED = 4003;
 const CLOSE_OWNER_UNAUTHORIZED = 4004;
 
-async function sha256Hex(value: string) {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(value)
-  );
-  return [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-const fromHex = (hex: string) =>
-  Uint8Array.from(hex.match(/../gu) ?? [], (byte) => Number.parseInt(byte, 16));
-
-function fromBase64Url(text: string) {
-  const binary = atob(text.replaceAll('-', '+').replaceAll('_', '/'));
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-}
-
-/** Ed25519 check of an acknowledgement under the key stored with its reply. */
-async function verifyAck(
-  ackKey: string,
-  signature: string,
-  ack: Parameters<typeof bridgeAckSigningString>[0]
-) {
-  try {
-    const key = await crypto.subtle.importKey(
-      'raw',
-      fromBase64Url(ackKey),
-      { name: 'Ed25519' },
-      false,
-      ['verify']
-    );
-    return await crypto.subtle.verify(
-      { name: 'Ed25519' },
-      key,
-      fromHex(signature),
-      new TextEncoder().encode(bridgeAckSigningString(ack))
-    );
-  } catch {
-    return false;
-  }
-}
-
-function base64Url(bytes: Uint8Array) {
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replaceAll('=', '');
-}
-
 export class FleetBridge extends DurableObject {
   private readonly engine: BridgeEngine;
+  private readonly files: AttachmentEngine;
+  private readonly uploads: ReturnType<typeof createAttachmentApi>;
   private readonly waiters = new Map<
     string,
     Set<(receipt: BridgeReceipt) => void>
@@ -134,6 +103,12 @@ export class FleetBridge extends DurableObject {
   constructor(ctx: DurableObjectState, env: unknown) {
     super(ctx, env as never);
     this.engine = createBridgeEngine(ctx.storage.sql);
+    this.files = createAttachmentEngine(ctx.storage.sql);
+    this.uploads = createAttachmentApi({
+      attempt: (run) => this.attempt(run),
+      engine: this.engine,
+      files: this.files,
+    });
     ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair('ping', 'pong')
     );
@@ -142,6 +117,7 @@ export class FleetBridge extends DurableObject {
   private schema() {
     if (this.schemaReady) return;
     this.engine.ensureSchema();
+    this.files.ensureSchema();
     this.schemaReady = true;
   }
 
@@ -223,39 +199,13 @@ export class FleetBridge extends DurableObject {
     );
   }
 
-  private async authorizeOwnerNotice(ownerId: string) {
-    const env = this.env as {
-      MASTERMIND_BRIDGE_DAILY_OPS?: string;
-      MASTERMIND_STORE_TOKENS?: string;
-    };
-    const token = env.MASTERMIND_STORE_TOKENS?.split(',')[0]?.trim();
-    const budget = bridgeBudget(env.MASTERMIND_BRIDGE_DAILY_OPS);
-    if (!token || token.length < 32 || budget === null) return false;
-    // At most one Web authorization call per owner and notice, zero retries.
-    // Reserve from the persistent bridge budget before doing any outbound work.
-    const charged = this.attempt(() =>
-      this.engine.chargeFrame(Date.now(), budget)
+  private authorizeOwnerNotice(ownerId: string) {
+    return authorizeOwnerNotice(
+      this.env as Parameters<typeof authorizeOwnerNotice>[0],
+      ownerId,
+      (budget) =>
+        this.attempt(() => this.engine.chargeFrame(Date.now(), budget)).ok
     );
-    if (!charged.ok) return false;
-    try {
-      const response = await fetch(
-        'https://tuturuuu.com/api/v1/mastermind/fleet/live/owner-authorization',
-        {
-          method: 'POST',
-          headers: {
-            authorization: `Bearer ${token}`,
-            'content-type': 'application/json',
-            'user-agent': 'Tuturuuu-Mastermind-Store/1.0',
-          },
-          body: JSON.stringify({ ownerId }),
-          redirect: 'manual',
-          signal: AbortSignal.timeout(2_000),
-        }
-      );
-      return response.status === 204;
-    } catch {
-      return false;
-    }
   }
 
   private machineSockets(machineId: string) {
@@ -277,6 +227,7 @@ export class FleetBridge extends DurableObject {
   private liveNow(): BridgeLive {
     this.schema();
     const sockets = new Map<string, number>();
+    const capable = new Set<string>();
     for (const socket of this.ctx.getWebSockets()) {
       const who = this.attachment(socket);
       if (who?.role !== 'machine') continue;
@@ -286,13 +237,17 @@ export class FleetBridge extends DurableObject {
         who.machineId,
         Math.max(seen, sockets.get(who.machineId) ?? 0)
       );
+      if (who.attachments) capable.add(who.machineId);
     }
     return {
       machines: this.engine.machines().map((machine) => ({
         ...machine,
         connected: sockets.has(machine.machineId),
         ...(sockets.has(machine.machineId)
-          ? { lastSeenAt: sockets.get(machine.machineId) }
+          ? {
+              lastSeenAt: sockets.get(machine.machineId),
+              attachments: capable.has(machine.machineId),
+            }
           : {}),
       })),
       pokes: this.engine.pokes(),
@@ -340,8 +295,19 @@ export class FleetBridge extends DurableObject {
       )
     );
     if (!stored.ok) return stored;
-    const { replayed } = stored.value;
-    let receipt = this.engine.receipt(envelope.id, now) ?? stored.value.receipt;
+    return this.deliver(envelope, frame, stored.value, input.waitMs, now);
+  }
+
+  /** Pushes a newly stored reply and waits briefly for its receipt. */
+  private async deliver(
+    envelope: { id: string; machineId: string },
+    frame: string,
+    stored: { receipt: BridgeReceipt; replayed: boolean },
+    waitMs: number,
+    now: number
+  ) {
+    const { replayed } = stored;
+    let receipt = this.engine.receipt(envelope.id, now) ?? stored.receipt;
     if (receipt.state !== 'sent')
       return { ok: true, receipt, replayed } as const;
 
@@ -352,9 +318,56 @@ export class FleetBridge extends DurableObject {
       for (const socket of sockets) this.push(socket, frame);
       this.broadcast({ t: 'receipt', receipt });
     }
-    if (sockets.length > 0 && input.waitMs > 0)
-      receipt = await this.waitFor(envelope.id, input.waitMs, receipt);
+    if (sockets.length > 0 && waitMs > 0)
+      receipt = await this.waitFor(envelope.id, waitMs, receipt);
     return { ok: true, receipt, replayed } as const;
+  }
+
+  /**
+   * Stores and pushes a reply with attachments. A new one needs the
+   * machine's live socket to have advertised attachments, and every object
+   * to be a ready record of this reply; both are bound in one transaction.
+   * A repeat of the same id and bundle returns the first receipt.
+   */
+  async sendV2(input: ParsedSendV2, budget: number) {
+    const now = Date.now();
+    const { envelope } = input;
+    this.schema();
+    if (!this.engine.receipt(envelope.id, now)) {
+      const sockets = this.machineSockets(envelope.machineId);
+      if (sockets.length === 0) return { ok: false, error: 'offline' } as const;
+      const capable = sockets.some((socket) => {
+        const who = this.attachment(socket);
+        return who?.role === 'machine' && who.attachments === true;
+      });
+      if (!capable) return { ok: false, error: 'unsupported' } as const;
+    }
+    const { frame, stored } = this.uploads.storeV2(input, budget, now);
+    if (!stored.ok) return stored;
+    return this.deliver(envelope, frame, stored.value, input.waitMs, now);
+  }
+
+  /** Upload records and bytes; see bridge-attachments.ts. */
+  reserveAttachment(input: AttachmentReserve, budget: number) {
+    return this.uploads.reserve(input, budget);
+  }
+
+  finalizeAttachment(
+    id: string,
+    input: AttachmentFinalize,
+    bytes: ArrayBuffer,
+    budget: number
+  ) {
+    return this.uploads.finalize(id, input, bytes, budget);
+  }
+
+  async attachmentRecords(ids: string[]) {
+    this.schema();
+    return this.files.records(ids);
+  }
+
+  fetchAttachment(id: string, capability: string, budget: number) {
+    return this.uploads.fetch(id, capability, budget);
   }
 
   private waitFor(id: string, waitMs: number, fallback: BridgeReceipt) {
@@ -439,6 +452,7 @@ export class FleetBridge extends DurableObject {
     this.schema();
     return {
       ...this.engine.status(Date.now(), budget),
+      ...this.files.status(),
       sockets: this.ctx.getWebSockets().length,
     };
   }
@@ -578,6 +592,7 @@ export class FleetBridge extends DurableObject {
       socket.serializeAttachment({
         ...meter,
         helloAt: now,
+        attachments: frame.caps?.includes(ATTACHMENT_CAPABILITY) ?? false,
       } satisfies Attachment);
       const charged = this.attempt(() => this.engine.chargeFrame(now, budget));
       if (!charged.ok) return;
@@ -604,6 +619,7 @@ export class FleetBridge extends DurableObject {
       const settled = this.attempt(() => {
         // Never refused (the delivery already happened), but it counts.
         this.engine.countFrame(now);
+        this.files.releaseReply(frame.id);
         return this.engine.ack(
           {
             id: frame.id,
@@ -657,15 +673,4 @@ export class FleetBridge extends DurableObject {
         machine: { ...machine, connected: false },
       });
   }
-}
-
-const DEFAULT_DAILY_OPS = 20_000;
-const MAX_DAILY_OPS = 1_000_000;
-
-/** Billable bridge operations per UTC day; null when misconfigured. */
-export function bridgeBudget(raw: string | undefined) {
-  if (!raw?.trim()) return DEFAULT_DAILY_OPS;
-  if (!/^\d{1,7}$/u.test(raw.trim())) return null;
-  const value = Number(raw.trim());
-  return value > 0 && value <= MAX_DAILY_OPS ? value : null;
 }

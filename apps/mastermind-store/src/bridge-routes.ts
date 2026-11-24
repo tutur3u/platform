@@ -9,6 +9,7 @@
  *   its machine and return the sealed answer.
  * - `GET  /v1/bridge/receipt?id=` (service token): a reply's receipt.
  * - `GET  /v1/bridge/live` (service token): machine presence and pokes.
+ * - Reply attachments and `POST /v1/bridge/send2`: see attachment-routes.ts.
  *
  * Only Web holds the service token; machines and owners reach the socket
  * with a ticket Web minted for them after its own checks.
@@ -20,6 +21,10 @@ import {
   bridgeSendRequestSchema,
   bridgeTicketRequestSchema,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
+import {
+  handleAttachmentFetch,
+  handleAttachmentRoutes,
+} from './attachment-routes';
 import { bridgeBudget } from './bridge';
 import { json, readCapped, tokenMatches } from './http';
 import type { StoreEnv } from './worker';
@@ -35,6 +40,8 @@ const STATUS: Record<BridgeErrorCode, number> = {
   rate_limited: 429,
   conflict: 409,
   unavailable: 503,
+  unsupported: 409,
+  attachment_refused: 409,
 };
 const REPLY_ID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
@@ -64,6 +71,13 @@ export async function handleBridge(
   if (path === '/v1/bridge/connect' && request.method === 'GET')
     // The Durable Object checks the ticket; nothing else admits a socket.
     return { response: await stub(env).fetch(request), kind: 'bridge:connect' };
+  if (path === '/v1/bridge/attachments/fetch' && request.method === 'GET')
+    // The capability, which only the addressed machine can derive, is the gate.
+    return handleAttachmentFetch(
+      request,
+      env,
+      bridgeBudget(env.MASTERMIND_BRIDGE_DAILY_OPS)
+    );
 
   const auth = await tokenMatches(
     request.headers.get('authorization'),
@@ -76,6 +90,15 @@ export async function handleBridge(
   const budget = bridgeBudget(env.MASTERMIND_BRIDGE_DAILY_OPS);
   if (budget === null)
     return { response: fail('unavailable'), kind: 'bridge:config' };
+
+  const attachments = await handleAttachmentRoutes(
+    request,
+    env,
+    path,
+    budget,
+    fail
+  );
+  if (attachments) return attachments;
 
   if (path === '/v1/bridge/ticket' && request.method === 'POST') {
     const parsed = bridgeTicketRequestSchema.safeParse(

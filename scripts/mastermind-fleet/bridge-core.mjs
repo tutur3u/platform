@@ -32,10 +32,10 @@ const ED25519_PKCS8_PREFIX = Buffer.from(
   'hex'
 );
 const MAX_TEXT_CHARS = 4000;
-const MAX_LIFETIME_MS = 24 * 60 * 60 * 1000;
-const CLOCK_SKEW_MS = 5 * 60 * 1000;
-const PER_THREAD_PER_MINUTE = 6;
-const PER_HOUR = 60;
+export const MAX_LIFETIME_MS = 24 * 60 * 60 * 1000;
+export const CLOCK_SKEW_MS = 5 * 60 * 1000;
+export const PER_THREAD_PER_MINUTE = 6;
+export const PER_HOUR = 60;
 /** A reply the local T3 server cannot take yet is retried this long. */
 export const RETRY_WINDOW_MS = 10 * 60 * 1000;
 const LEDGER_KEEP = 5000;
@@ -60,7 +60,7 @@ const ENVELOPE_KEYS = new Set([
   'expiresAt',
 ]);
 
-const derive = (secret, info) =>
+export const derive = (secret, info) =>
   Buffer.from(hkdfSync('sha256', secret, Buffer.alloc(0), info, 32));
 
 /** Keyed digest of a reply text: the audit hash, useless without the secret. */
@@ -214,6 +214,18 @@ export function createLedger(file) {
   }
   return {
     get: (id) => settled.get(id),
+    /** Attachment bytes delivered since `sinceMs`, for the byte budget. */
+    recentBytes(sinceMs) {
+      let total = 0;
+      for (const row of settled.values())
+        if (
+          Date.parse(row.at) > sinceMs &&
+          row.state === 'delivered' &&
+          Number.isSafeInteger(row.bytes)
+        )
+          total += row.bytes;
+      return total;
+    },
     /** Replies delivered since `sinceMs`, for the rate limit. */
     recent(sinceMs, threadId) {
       let count = 0;
@@ -247,9 +259,9 @@ export function createLedger(file) {
   };
 }
 
-const KNOWN_DELIVERIES = new Set(['steered', 'started', 'queued']);
+export const KNOWN_DELIVERIES = new Set(['steered', 'started', 'queued']);
 /** A refusal is permanent only when T3 says the thread itself is not there. */
-const THREAD_GONE =
+export const THREAD_GONE =
   /\bthread\b[^.]*\b(was not found|not found|does not exist|no such)\b|\b(unknown|no such) thread\b/i;
 
 /**
@@ -264,7 +276,7 @@ export const ackPrivateKey = (secret) =>
   });
 
 /** The signed `ack` frame for an outcome; only this machine can make one. */
-function ack(secret, machineId, id, digest, outcome) {
+export function ack(secret, machineId, id, digest, outcome) {
   const body = {
     id,
     state: outcome.state,
