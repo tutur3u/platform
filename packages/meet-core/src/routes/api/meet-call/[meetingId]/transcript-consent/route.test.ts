@@ -90,6 +90,17 @@ it('reports the unavailable reason without touching the room', async () => {
   expect(f.room).not.toHaveBeenCalled();
 });
 
+it('never forwards the room outbox to the browser', async () => {
+  const pending = [{ sessionId: 's', accountId: 'other', seq: 2, kind: 'revoke' }];
+  f.room.mockResolvedValue({ ...read, pending });
+  const got = await (
+    await GET(new Request('https://meet.test/x'), params)
+  ).json();
+  expect(got).not.toHaveProperty('pending');
+  const posted = await (await post({ choice: 'decline', version })).json();
+  expect(posted).not.toHaveProperty('pending');
+});
+
 it('reads only the caller view, guests included', async () => {
   const response = await GET(new Request('https://meet.test/x'), params);
   expect(await response.json()).toEqual({

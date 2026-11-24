@@ -94,8 +94,14 @@ export async function meetSelfAccess(
   });
   if (membership.error === 'membership_lookup_failed')
     throw new MeetAiError(500, 'Workspace access lookup failed');
-  // Pilot: only signed-in members of the allowlisted workspace contribute.
-  if (!membership.ok) throw unavailable();
+  // Pilot: only signed-in members of the allowlisted workspace contribute;
+  // anyone else is refused like a guest.
+  if (!membership.ok)
+    throw new MeetAiError(
+      409,
+      'Transcription is not available for you right now',
+      'MEET_SELF_NOT_ELIGIBLE'
+    );
   return {
     db,
     user: { id: user.id },

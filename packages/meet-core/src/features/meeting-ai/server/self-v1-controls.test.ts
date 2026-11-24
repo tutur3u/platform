@@ -136,6 +136,8 @@ describe('per-speaker transcript choice', () => {
       mode: 'room',
       perSpeakerAvailable: true,
     });
+    // Other accounts' outbox entries never reach the browser.
+    expect(result).not.toHaveProperty('pending');
     expect(mocks.selfAccess).not.toHaveBeenCalled();
     expect(query.eq).toHaveBeenCalledWith('protocol', 'self_v1');
     expect(mocks.drain).toHaveBeenCalledWith(

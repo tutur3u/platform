@@ -24,6 +24,7 @@ import {
   selfRoomError,
 } from './self-v1-room';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
+import { withoutPending } from './self-v1-view';
 
 async function roomFor(request: Request, params: MeetAiParams) {
   if (MEETING_APP !== 'meet')
@@ -169,7 +170,8 @@ async function recordSelfChoice(
   } catch (error) {
     throw selfRoomError(error);
   }
-  const { pending, ...consent } = view;
+  const { pending } = view;
+  const consent = withoutPending(view);
   const sessions = outboxSessions(pending);
   if (sessions.length) {
     const db = await createAdminClient({ noCookie: true });

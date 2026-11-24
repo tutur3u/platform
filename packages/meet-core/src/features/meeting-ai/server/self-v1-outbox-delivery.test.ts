@@ -7,11 +7,14 @@ const mocks = vi.hoisted(() => ({
     recordDecision: vi.fn(),
     closeStream: vi.fn(),
     revokeUpload: vi.fn(),
+    stopSession: vi.fn(),
+    closeDrained: vi.fn(),
   },
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
 vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
+vi.mock('@tuturuuu/satellite/auth', () => ({}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('@tuturuuu/realtime/meet/service-credential', () => ({
   verifyMeetSelfOutboxCredential: mocks.verify,
@@ -29,13 +32,18 @@ vi.mock('./self-v1-rpc', async (original) => ({
 vi.mock('./self-v1-room', () => ({ selfRoomCommands: { ack: vi.fn() } }));
 
 import { POST } from '../../../routes/api/meet-ai/self/outbox/route';
+import { loadSelfSession } from './self-v1-access';
 import { MEET_SELF_OUTBOX_MAX_BYTES } from './self-v1-outbox-delivery';
 import { MeetSelfRpcError } from './self-v1-rpc';
 
 const ws = '00000000-0000-4000-8000-0000000000ee';
 const meetingId = '00000000-0000-4000-8000-0000000000dd';
+const otherMeeting = '00000000-0000-4000-8000-0000000000de';
 const sessionId = '00000000-0000-4000-8000-0000000000cc';
-const otherSession = '00000000-0000-4000-8000-0000000000cb';
+const olderSession = '00000000-0000-4000-8000-0000000000ca';
+const foreignSession = '00000000-0000-4000-8000-0000000000cb';
+const goneSession = '00000000-0000-4000-8000-0000000000c9';
+const host = '00000000-0000-4000-8000-0000000000a0';
 const a = '00000000-0000-4000-8000-0000000000a1';
 const b = '00000000-0000-4000-8000-0000000000a2';
 const roomId = `${ws}:${meetingId}`;
@@ -45,12 +53,66 @@ const claims = {
   roomId,
   exp: Math.floor(Date.now() / 1000) + 60,
 };
-const entry = (
-  accountId: string,
-  seq: number,
-  kind: 'withdraw' | 'revoke' | 'close',
-  session = sessionId
-) => ({ sessionId: session, accountId, seq, kind });
+type Kind = 'withdraw' | 'revoke' | 'close';
+const entry = (accountId: string, seq: number, kind: Kind, session = sessionId) => ({
+  sessionId: session,
+  accountId,
+  seq,
+  kind,
+});
+const ack = (accountId: string, seq: number, session = sessionId) => ({
+  sessionId: session,
+  accountId,
+  seq,
+});
+
+/** A session row the fake database serves and the stop RPC updates. */
+const future = () => new Date(Date.now() + 3_600_000).toISOString();
+const row = (id: string, meeting = meetingId) => ({
+  id,
+  meeting_id: meeting,
+  protocol: 'self_v1',
+  user_id: host,
+  billing_host_id: host,
+  billing_ws_id: ws,
+  capture_state: 'active',
+  capture_deadline_at: future(),
+  drain_deadline_at: null as string | null,
+  ended_at: null as string | null,
+});
+let sessions: ReturnType<typeof row>[] = [];
+let liveStreams = 0;
+
+function fakeDb() {
+  const table = (name: string) => {
+    const filters: Record<string, unknown> = {};
+    const query: Record<string, unknown> = {};
+    for (const method of ['select', 'in', 'gt', 'is'])
+      query[method] = () => query;
+    query.eq = (column: string, value: unknown) => {
+      filters[column] = value;
+      return query;
+    };
+    query.maybeSingle = async () => ({
+      data:
+        sessions.find(
+          (session) =>
+            session.id === filters.id &&
+            (filters.meeting_id === undefined ||
+              session.meeting_id === filters.meeting_id)
+        ) ?? null,
+      error: null,
+    });
+    query.then = (resolve: (value: unknown) => void) =>
+      resolve(
+        name === 'meet_ai_capture_streams'
+          ? { count: liveStreams, error: null }
+          : { data: sessions, error: null }
+      );
+    return query;
+  };
+  return { from: table, schema: () => ({ from: table }) };
+}
 
 function deliver(
   body: unknown,
@@ -64,24 +126,29 @@ function deliver(
     })
   );
 }
-const query = {
-  select: vi.fn(() => query),
-  in: vi.fn(() => query),
-  eq: vi.fn(() => query),
-  then: (resolve: (value: unknown) => void) =>
-    resolve({ data: [{ id: sessionId }], error: null }),
-};
+const ackedOf = async (body: unknown) =>
+  (await (await deliver(body)).json()).acked;
 
 beforeEach(() => {
   vi.resetAllMocks();
-  query.select.mockImplementation(() => query);
-  query.in.mockImplementation(() => query);
-  query.eq.mockImplementation(() => query);
+  sessions = [row(sessionId), row(olderSession), row(foreignSession, otherMeeting)];
+  liveStreams = 0;
   mocks.verify.mockReturnValue(claims);
-  mocks.admin.mockResolvedValue({ from: () => query });
+  mocks.admin.mockImplementation(async () => fakeDb());
   mocks.rpc.recordDecision.mockResolvedValue({ revision: 2, recorded: true });
   mocks.rpc.closeStream.mockResolvedValue(true);
   mocks.rpc.revokeUpload.mockResolvedValue(true);
+  mocks.rpc.stopSession.mockImplementation(async (_db, input) => {
+    const session = sessions.find((item) => item.id === input.sessionId);
+    if (session) {
+      session.capture_state = 'closed';
+      session.ended_at = new Date().toISOString();
+    }
+    return session;
+  });
+  mocks.rpc.closeDrained.mockImplementation(async (_db, id) =>
+    sessions.find((item) => item.id === id)
+  );
 });
 
 const noWrites = () => {
@@ -89,33 +156,32 @@ const noWrites = () => {
   expect(mocks.rpc.recordDecision).not.toHaveBeenCalled();
   expect(mocks.rpc.closeStream).not.toHaveBeenCalled();
 };
+const body = (entries: unknown[], extra: Record<string, unknown> = {}) => ({
+  roomId,
+  meetingId,
+  entries,
+  ...extra,
+});
 
 describe('self_v1 outbox delivery credential', () => {
   it('refuses a request with no credential, even with a session cookie', async () => {
-    const response = await deliver(
-      { roomId, meetingId, entries: [entry(a, 1, 'withdraw')] },
-      { cookie: 'sb-access-token=user' }
-    );
+    const response = await deliver(body([entry(a, 1, 'withdraw')]), {
+      cookie: 'sb-access-token=user',
+    });
     expect(response.status).toBe(401);
     expect(mocks.verify).not.toHaveBeenCalled();
     noWrites();
   });
 
-  it('refuses a credential that does not verify', async () => {
+  it('refuses a credential that does not verify or throws', async () => {
     mocks.verify.mockReturnValue(null);
-    const response = await deliver({ roomId, meetingId, entries: [] });
-    expect(response.status).toBe(401);
+    expect((await deliver(body([]))).status).toBe(401);
     expect(mocks.verify).toHaveBeenCalledWith('signed', 'secret');
-    noWrites();
-  });
-
-  it('refuses a verifier that throws', async () => {
     mocks.verify.mockImplementation(() => {
       throw new Error('bad signature');
     });
-    expect((await deliver({ roomId, meetingId, entries: [] })).status).toBe(
-      401
-    );
+    expect((await deliver(body([]))).status).toBe(401);
+    noWrites();
   });
 
   it.each([
@@ -124,31 +190,15 @@ describe('self_v1 outbox delivery credential', () => {
     ['an expired credential', { ...claims, exp: 1 }],
   ])('refuses %s', async (_label, value) => {
     mocks.verify.mockReturnValue(value);
-    const response = await deliver({
-      roomId,
-      meetingId,
-      entries: [entry(a, 1, 'withdraw')],
-    });
-    expect(response.status).toBe(401);
+    expect((await deliver(body([entry(a, 1, 'withdraw')]))).status).toBe(401);
     noWrites();
   });
 
   it('refuses a body for another room than the credential names', async () => {
-    const otherRoom = `${ws}:${otherSession}`;
     const response = await deliver({
-      roomId: otherRoom,
-      meetingId: otherSession,
-      entries: [entry(a, 1, 'withdraw')],
-    });
-    expect(response.status).toBe(403);
-    noWrites();
-  });
-
-  it('refuses a meeting id that differs from the room id', async () => {
-    const response = await deliver({
-      roomId,
-      meetingId: otherSession,
-      entries: [entry(a, 1, 'withdraw')],
+      roomId: `${ws}:${otherMeeting}`,
+      meetingId: otherMeeting,
+      entries: [entry(a, 1, 'withdraw', foreignSession)],
     });
     expect(response.status).toBe(403);
     noWrites();
@@ -157,24 +207,18 @@ describe('self_v1 outbox delivery credential', () => {
 
 describe('self_v1 outbox delivery body', () => {
   it('refuses a declared oversize body before reading it', async () => {
-    const response = await deliver(
-      { roomId, meetingId, entries: [] },
-      {
-        authorization: 'Bearer signed',
-        'content-length': String(MEET_SELF_OUTBOX_MAX_BYTES + 1),
-      }
-    );
+    const response = await deliver(body([]), {
+      authorization: 'Bearer signed',
+      'content-length': String(MEET_SELF_OUTBOX_MAX_BYTES + 1),
+    });
     expect(response.status).toBe(413);
     noWrites();
   });
 
   it('refuses an oversize body without a declared length', async () => {
-    const padded = JSON.stringify({
-      roomId,
-      meetingId,
-      entries: [],
-      pad: 'x'.repeat(MEET_SELF_OUTBOX_MAX_BYTES),
-    });
+    const padded = JSON.stringify(
+      body([], { pad: 'x'.repeat(MEET_SELF_OUTBOX_MAX_BYTES) })
+    );
     expect((await deliver(padded)).status).toBe(413);
     noWrites();
   });
@@ -183,7 +227,7 @@ describe('self_v1 outbox delivery body', () => {
     const entries = Array.from({ length: 65 }, (_, index) =>
       entry(a, index + 1, 'close')
     );
-    expect((await deliver({ roomId, meetingId, entries })).status).toBe(400);
+    expect((await deliver(body(entries))).status).toBe(400);
     noWrites();
   });
 
@@ -193,97 +237,124 @@ describe('self_v1 outbox delivery body', () => {
       [{ ...entry(a, 1, 'withdraw'), kind: 'allow' }],
       [{ ...entry(a, 0, 'withdraw') }],
     ])
-      expect((await deliver({ roomId, meetingId, entries })).status).toBe(400);
-    expect(
-      (await deliver({ roomId, meetingId, entries: [], extra: true })).status
-    ).toBe(400);
+      expect((await deliver(body(entries))).status).toBe(400);
+    expect((await deliver(body([], { extra: true }))).status).toBe(400);
     expect((await deliver('{not json')).status).toBe(400);
     noWrites();
   });
 });
 
 describe('self_v1 outbox delivery writes', () => {
-  it('writes in order per account and returns what landed', async () => {
-    const response = await deliver({
-      roomId,
-      meetingId,
-      entries: [
-        entry(a, 2, 'close'),
-        entry(a, 1, 'withdraw'),
-        entry(b, 1, 'revoke'),
-      ],
-    });
-    expect(response.status).toBe(200);
-    const { acked } = await response.json();
+  it('writes in order per account and acknowledges what landed', async () => {
+    const acked = await ackedOf(
+      body([entry(a, 2, 'withdraw'), entry(a, 1, 'withdraw'), entry(b, 1, 'revoke')])
+    );
     expect(acked).toHaveLength(3);
     expect(acked).toEqual(
-      expect.arrayContaining([
-        { sessionId, accountId: a, seq: 1 },
-        { sessionId, accountId: a, seq: 2 },
-        { sessionId, accountId: b, seq: 1 },
-      ])
+      expect.arrayContaining([ack(a, 1), ack(a, 2), ack(b, 1)])
     );
-    expect(query.eq).toHaveBeenCalledWith('meeting_id', meetingId);
-    expect(query.eq).toHaveBeenCalledWith('protocol', 'self_v1');
-    expect(mocks.rpc.recordDecision.mock.calls[0]?.[1]).toMatchObject({
-      accountId: a,
-      decision: 'withdraw',
-      roomSeq: 1,
-    });
+    expect(
+      mocks.rpc.recordDecision.mock.calls.map((call) => call[1].roomSeq)
+    ).toEqual([1, 2]);
+  });
+
+  it('resolves each entry by its own session, not the body meeting id', async () => {
+    const acked = await ackedOf(
+      body([entry(a, 4, 'withdraw', olderSession)], { meetingId: otherMeeting })
+    );
+    expect(acked).toEqual([ack(a, 4, olderSession)]);
+  });
+
+  it('never writes or acknowledges another meeting session', async () => {
+    const acked = await ackedOf(
+      body([entry(a, 1, 'withdraw', foreignSession), entry(b, 1, 'withdraw')])
+    );
+    expect(acked).toEqual([ack(b, 1)]);
+    expect(mocks.rpc.recordDecision).toHaveBeenCalledTimes(1);
+  });
+
+  it('acknowledges and logs entries of a session that is gone', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const acked = await ackedOf(body([entry(a, 1, 'withdraw', goneSession)]));
+    expect(acked).toEqual([ack(a, 1, goneSession)]);
+    expect(mocks.rpc.recordDecision).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('acknowledges a replayed delivery again without new effects', async () => {
-    const body = { roomId, meetingId, entries: [entry(a, 1, 'withdraw')] };
-    const first = await (await deliver(body)).json();
+    const replayed = body([entry(a, 1, 'withdraw')]);
+    const first = await ackedOf(replayed);
     // The database treats the same room sequence and kind as a no-op.
-    mocks.rpc.recordDecision.mockResolvedValue({
-      revision: 2,
-      recorded: false,
-    });
-    const replay = await (await deliver(body)).json();
-    expect(replay).toEqual(first);
-    expect(replay.acked).toEqual([{ sessionId, accountId: a, seq: 1 }]);
+    mocks.rpc.recordDecision.mockResolvedValue({ revision: 2, recorded: false });
+    expect(await ackedOf(replayed)).toEqual(first);
+    expect(first).toEqual([ack(a, 1)]);
   });
 
-  it('acknowledges a superseded entry', async () => {
-    mocks.rpc.closeStream.mockRejectedValue(
+  it('acknowledges only the outcomes the Worker itself settled', async () => {
+    mocks.rpc.recordDecision.mockRejectedValue(
       new MeetSelfRpcError(409, 'stale', '40001')
     );
-    const { acked } = await (
-      await deliver({ roomId, meetingId, entries: [entry(a, 3, 'close')] })
-    ).json();
-    expect(acked).toEqual([{ sessionId, accountId: a, seq: 3 }]);
-  });
-
-  it('never writes entries of another meeting session', async () => {
-    const { acked } = await (
-      await deliver({
-        roomId,
-        meetingId,
-        entries: [entry(a, 1, 'close', otherSession), entry(b, 1, 'close')],
-      })
-    ).json();
-    expect(acked).toEqual([{ sessionId, accountId: b, seq: 1 }]);
-    expect(mocks.rpc.closeStream).toHaveBeenCalledTimes(1);
+    mocks.rpc.revokeUpload.mockRejectedValue(
+      new MeetSelfRpcError(409, 'stale', '40001')
+    );
+    mocks.rpc.closeStream.mockRejectedValue(
+      new MeetSelfRpcError(404, 'gone', 'P0002')
+    );
+    liveStreams = 1;
+    const acked = await ackedOf(
+      body([entry(a, 3, 'withdraw'), entry(b, 2, 'revoke'), entry(host, 1, 'close')])
+    );
+    // A stale withdraw and a missing session settle; a stale revoke retries.
+    expect(acked).toEqual(expect.arrayContaining([ack(a, 3), ack(host, 1)]));
+    expect(acked).toHaveLength(2);
   });
 
   it('leaves a failed entry and the account later entries pending', async () => {
     mocks.rpc.recordDecision.mockRejectedValue(
       new MeetSelfRpcError(503, 'down', '')
     );
-    const response = await deliver({
-      roomId,
-      meetingId,
-      entries: [
-        entry(a, 1, 'withdraw'),
-        entry(a, 2, 'close'),
-        entry(b, 1, 'close'),
-      ],
-    });
+    const response = await deliver(
+      body([entry(a, 1, 'withdraw'), entry(a, 2, 'close'), entry(b, 1, 'withdraw')])
+    );
     expect(response.status).toBe(200);
-    expect((await response.json()).acked).toEqual([
-      { sessionId, accountId: b, seq: 1 },
-    ]);
+    expect((await response.json()).acked).toEqual([]);
+    expect(mocks.rpc.closeStream).not.toHaveBeenCalled();
+  });
+});
+
+describe('room end through the outbox', () => {
+  it('closes the session once the last close lands, then refuses uploads', async () => {
+    liveStreams = 0;
+    const acked = await ackedOf(body([entry(a, 5, 'close'), entry(b, 2, 'close')]));
+    expect(acked).toHaveLength(2);
+    expect(mocks.rpc.stopSession).toHaveBeenCalledWith(expect.anything(), {
+      sessionId,
+      hostId: host,
+      hard: true,
+    });
+    expect(mocks.rpc.closeDrained).toHaveBeenCalledWith(
+      expect.anything(),
+      sessionId
+    );
+    // The upload path loads the session first and refuses before reserving.
+    await expect(
+      loadSelfSession(fakeDb() as never, { sessionId, meetingId, wsId: ws }, 'upload')
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('keeps the session while another holder still has a live stream', async () => {
+    liveStreams = 1;
+    await ackedOf(body([entry(a, 5, 'close')]));
+    expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
+  });
+
+  it('withholds the close acknowledgement when the stop fails', async () => {
+    mocks.rpc.stopSession.mockRejectedValue(
+      new MeetSelfRpcError(503, 'down', '')
+    );
+    const acked = await ackedOf(body([entry(a, 5, 'close'), entry(b, 1, 'withdraw')]));
+    expect(acked).toEqual([ack(b, 1)]);
   });
 
   it('answers 503 when the session lookup fails', async () => {
@@ -293,9 +364,6 @@ describe('self_v1 outbox delivery writes', () => {
     };
     for (const name of ['select', 'in', 'eq']) failing[name] = () => failing;
     mocks.admin.mockResolvedValue({ from: () => failing });
-    expect(
-      (await deliver({ roomId, meetingId, entries: [entry(a, 1, 'close')] }))
-        .status
-    ).toBe(503);
+    expect((await deliver(body([entry(a, 1, 'close')]))).status).toBe(503);
   });
 });

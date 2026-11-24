@@ -105,6 +105,70 @@ describe('self_v1 session start', () => {
   });
 });
 
+describe('self_v1 session start over a room-ended session', () => {
+  const open = {
+    id: 'old',
+    user_id: 'host',
+    capture_state: 'active',
+    protocol: 'self_v1',
+  };
+  const db = (row: unknown) => {
+    const query: Record<string, unknown> = {
+      maybeSingle: async () => ({ data: row, error: null }),
+    };
+    for (const name of ['select', 'eq', 'is']) query[name] = () => query;
+    return { from: () => query } as never;
+  };
+  const roomSays = (roomSession: unknown) =>
+    mocks.room.mockImplementation(async (_access, command) =>
+      command.action === 'mira.room.read'
+        ? { acceptance: { revision: 1 } }
+        : { session: roomSession }
+    );
+  const running = () =>
+    new MeetAiError(409, 'Transcription is not available for you right now');
+
+  it('closes the session the room no longer runs and starts a new one', async () => {
+    roomSays(null);
+    mocks.rpc.startSession
+      .mockRejectedValueOnce(running())
+      .mockResolvedValueOnce(session);
+    expect(await startSelfSession({ ...input, db: db(open) })).toEqual({
+      sessionId: 's',
+      protocol: 'self_v1',
+    });
+    expect(mocks.rpc.stopSession).toHaveBeenCalledWith(expect.anything(), {
+      sessionId: 'old',
+      hostId: 'host',
+      hard: true,
+    });
+    expect(mocks.rpc.closeDrained).toHaveBeenCalledWith(
+      expect.anything(),
+      'old'
+    );
+    expect(mocks.rpc.startSession).toHaveBeenCalledTimes(2);
+  });
+
+  it('never reuses or stops a session the room still runs', async () => {
+    roomSays({ sessionId: 'old', protocol: 'self_v1', generation: 1 });
+    mocks.rpc.startSession.mockRejectedValue(running());
+    await expect(
+      startSelfSession({ ...input, db: db(open) })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
+    expect(mocks.record).not.toHaveBeenCalled();
+  });
+
+  it('leaves a running legacy session alone', async () => {
+    roomSays(null);
+    mocks.rpc.startSession.mockRejectedValue(running());
+    await expect(
+      startSelfSession({ ...input, db: db({ ...open, protocol: 'legacy' }) })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
+  });
+});
+
 describe('self_v1 session finish', () => {
   const finish = (row: Record<string, unknown>) =>
     finishSelfSession({

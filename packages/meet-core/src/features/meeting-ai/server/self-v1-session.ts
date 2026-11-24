@@ -5,7 +5,13 @@ import { callRoomService } from '../../call/server/room-service';
 import { MeetAiError } from './access';
 import { meetPerSpeakerEnabled } from './per-speaker-flag';
 import { drainSelfOutbox } from './self-v1-outbox';
-import { selfRoom, selfRoomCommands, selfRoomError } from './self-v1-room';
+import { closeSessionEndedByRoom } from './self-v1-room-end';
+import {
+  type MeetSelfRoom,
+  selfRoom,
+  selfRoomCommands,
+  selfRoomError,
+} from './self-v1-room';
 import { type MeetAiSessionRow, selfRpc } from './self-v1-rpc';
 import { generateSelfNotes } from './self-v1-notes';
 import { requireMeetTranscriptPayer } from './transcript-authority';
@@ -23,6 +29,55 @@ const unavailable = () =>
     'Transcription of each voice is not available here',
     'MEET_SELF_UNAVAILABLE'
   );
+
+const alreadyRunning = () =>
+  new MeetAiError(409, 'A transcription session is already running');
+
+/**
+ * Starts the database session. When one is still open but the room no
+ * longer runs it (the room ended or was restored), that session is never
+ * reused: it is stopped and closed, and a new one starts.
+ */
+async function startFresh(
+  db: TypedSupabaseClient,
+  room: MeetSelfRoom,
+  input: { meetingId: string; hostId: string; wsId: string }
+) {
+  const start = () =>
+    selfRpc.startSession(db, input).catch((error) => {
+      throw error instanceof MeetAiError && error.status === 409
+        ? alreadyRunning()
+        : error;
+    });
+  try {
+    return await start();
+  } catch (error) {
+    if (!(error instanceof MeetAiError) || error.status !== 409) throw error;
+  }
+  const { data: open, error } = await db
+    .from('meet_ai_sessions')
+    .select('id, user_id, capture_state, protocol')
+    .eq('meeting_id', input.meetingId)
+    .is('ended_at', null)
+    .maybeSingle();
+  if (error) throw new MeetAiError(500, 'Session lookup failed');
+  if (!open || open.protocol !== 'self_v1') throw alreadyRunning();
+  let roomSession: unknown;
+  try {
+    roomSession = (
+      await callRoomService<{ session?: { sessionId?: unknown } | null }>(
+        room.access,
+        { action: 'transcript.consent.read' }
+      )
+    )?.session;
+  } catch (roomError) {
+    throw selfRoomError(roomError);
+  }
+  if ((roomSession as { sessionId?: unknown } | null)?.sessionId === open.id)
+    throw alreadyRunning();
+  await closeSessionEndedByRoom(db, open);
+  return start();
+}
 
 /**
  * Starts a per-speaker session for the host, after the availability gate
@@ -50,13 +105,7 @@ export async function startSelfSession(input: HostInput) {
       'Turn on Mira for the meeting before transcribing',
       'MEET_SELF_MIRA_REQUIRED'
     );
-  const session = await selfRpc
-    .startSession(db, { meetingId, hostId, wsId })
-    .catch((error) => {
-      throw error instanceof MeetAiError && error.status === 409
-        ? new MeetAiError(409, 'A transcription session is already running')
-        : error;
-    });
+  const session = await startFresh(db, room, { meetingId, hostId, wsId });
   try {
     const recorded = await selfRoomCommands.recordSession(room, {
       sessionId: session.id,

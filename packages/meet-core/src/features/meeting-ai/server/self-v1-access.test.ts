@@ -106,16 +106,19 @@ describe('per-speaker uploader access', () => {
       403,
     ],
     ['a Parley session', () => mocks.parley.mockResolvedValue(true), 403],
-    [
-      'a pilot non-member',
-      () => mocks.membership.mockResolvedValue({ ok: false }),
-      403,
-    ],
   ] as const)('refuses %s', async (_label, arrange, expected, origin?) => {
     arrange?.();
     expect(await status(meetSelfAccess(request(origin), params))).toMatchObject(
       { status: expected }
     );
+  });
+
+  it('refuses a signed-in pilot non-member like a guest', async () => {
+    mocks.membership.mockResolvedValue({ ok: false });
+    expect(await status(meetSelfAccess(request(), params))).toMatchObject({
+      status: 409,
+      code: 'MEET_SELF_NOT_ELIGIBLE',
+    });
   });
 });
 

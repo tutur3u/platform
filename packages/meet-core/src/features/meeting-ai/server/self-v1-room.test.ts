@@ -101,3 +101,20 @@ describe('capture mode refusals', () => {
     ).rejects.toMatchObject({ status, code });
   });
 });
+
+describe('session record refusals', () => {
+  it.each([
+    [409, 409, 'MEET_SELF_PROTOCOL_MISMATCH'],
+    [412, 409, 'MEET_SELF_UNAVAILABLE'],
+    [403, 403, undefined],
+  ])('maps room %i to %i %s', async (roomStatus, status, code) => {
+    failWith(roomStatus);
+    await expect(
+      selfRoomCommands.recordSession(room, {
+        sessionId,
+        active: true,
+        generation: 1,
+      })
+    ).rejects.toMatchObject({ status, code });
+  });
+});

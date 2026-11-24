@@ -3,6 +3,7 @@ import { MEET_TRANSCRIPT_NOTICE_VERSION } from '@tuturuuu/realtime/meet';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { z } from 'zod';
 import { MeetAiError } from './access';
+import { settleRoomEnds } from './self-v1-room-end';
 import { MeetSelfRpcError, selfRpc } from './self-v1-rpc';
 import {
   type MeetSelfOutboxEntry,
@@ -19,9 +20,10 @@ export const selfOutboxEntrySchema = z.object({
 });
 
 /**
- * An entry is settled when it was written now, was an exact duplicate, or a
- * newer room sequence already landed for that account (40001), which means
- * this older entry can never take effect.
+ * An entry is settled when the Meet Worker wrote it now, it was an exact
+ * duplicate, the account is gone (the database answers recorded=false or
+ * false), a newer room sequence already landed for a withdraw or close
+ * (40001), or its session no longer exists (P0002). Anything else is retried.
  */
 async function writeEntry(db: TypedSupabaseClient, entry: MeetSelfOutboxEntry) {
   const input = {
@@ -39,8 +41,13 @@ async function writeEntry(db: TypedSupabaseClient, entry: MeetSelfOutboxEntry) {
     else if (entry.kind === 'revoke') await selfRpc.revokeUpload(db, input);
     else await selfRpc.closeStream(db, input);
   } catch (error) {
-    if (error instanceof MeetSelfRpcError && error.pgCode === '40001') {
+    if (!(error instanceof MeetSelfRpcError)) throw error;
+    if (error.pgCode === '40001' && entry.kind !== 'revoke') {
       console.warn('[meet-ai] self_v1 outbox entry superseded');
+      return;
+    }
+    if (error.pgCode === 'P0002') {
+      console.warn('[meet-ai] self_v1 outbox entry for a missing session');
       return;
     }
     throw error;
@@ -102,7 +109,9 @@ export async function drainSelfOutbox(
     (entry) => entry.sessionId === sessionId
   );
   if (!entries.length) return;
-  const { settled, failed } = await writeSelfOutboxEntries(db, entries);
+  const written = await writeSelfOutboxEntries(db, entries);
+  const settled = await settleRoomEnds(db, written.settled);
+  const failed = written.failed || settled.length < written.settled.length;
   try {
     await selfRoomCommands.ack(
       room,

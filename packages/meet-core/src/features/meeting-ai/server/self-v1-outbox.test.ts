@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   ack: vi.fn(),
+  roomEnd: vi.fn(),
   rpc: {
     recordDecision: vi.fn(),
     closeStream: vi.fn(),
@@ -14,6 +15,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
 vi.mock('./self-v1-room', () => ({ selfRoomCommands: { ack: mocks.ack } }));
+vi.mock('./self-v1-room-end', () => ({
+  settleRoomEnds: (...args: unknown[]) => mocks.roomEnd(...args),
+}));
 vi.mock('./self-v1-rpc', async (original) => ({
   ...(await original<object>()),
   selfRpc: mocks.rpc,
@@ -42,6 +46,7 @@ const entry = (
 describe('self_v1 legal outbox drain', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.roomEnd.mockImplementation(async (_db, settled) => settled);
     mocks.rpc.recordDecision.mockResolvedValue({ revision: 2, recorded: true });
     mocks.rpc.closeStream.mockResolvedValue(true);
     mocks.rpc.revokeUpload.mockResolvedValue(true);
@@ -133,5 +138,34 @@ describe('self_v1 legal outbox drain', () => {
     ]);
     expect(mocks.rpc.recordDecision).not.toHaveBeenCalled();
     expect(mocks.ack).not.toHaveBeenCalled();
+  });
+
+  it('holds a close back while its room-ended session stop is pending', async () => {
+    mocks.roomEnd.mockImplementation(async (_db, settled) =>
+      settled.filter((item: { kind: string }) => item.kind !== 'close')
+    );
+    await expect(
+      drainSelfOutbox({} as never, room, sessionId, [
+        entry(a, 5, 'withdraw'),
+        entry(b, 1, 'close'),
+      ])
+    ).rejects.toMatchObject({ status: 503 });
+    expect(mocks.ack.mock.calls[0]?.[2]).toEqual([{ accountId: a, seq: 5 }]);
+  });
+
+  it('retries a stale revoke but settles a missing session', async () => {
+    mocks.rpc.revokeUpload.mockRejectedValue(
+      new MeetSelfRpcError(409, 'stale', '40001')
+    );
+    mocks.rpc.closeStream.mockRejectedValue(
+      new MeetSelfRpcError(404, 'gone', 'P0002')
+    );
+    await expect(
+      drainSelfOutbox({} as never, room, sessionId, [
+        entry(a, 2, 'revoke'),
+        entry(b, 1, 'close'),
+      ])
+    ).rejects.toMatchObject({ status: 503 });
+    expect(mocks.ack.mock.calls[0]?.[2]).toEqual([{ accountId: b, seq: 1 }]);
   });
 });

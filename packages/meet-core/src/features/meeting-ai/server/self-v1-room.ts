@@ -211,13 +211,37 @@ export const selfRoomCommands = {
       generation: number;
     }
   ) {
-    const reply = await send<{ pending?: MeetSelfOutboxEntry[] }>(room, {
-      action: 'transcript.session',
-      sessionId: input.sessionId,
-      active: input.active,
-      protocol: 'self_v1',
-      generation: input.generation,
-    });
+    let reply: { pending?: MeetSelfOutboxEntry[] };
+    try {
+      reply = await callRoomService(room.access, {
+        action: 'transcript.session',
+        sessionId: input.sessionId,
+        active: input.active,
+        protocol: 'self_v1',
+        generation: input.generation,
+      });
+    } catch (error) {
+      const code = status(error);
+      // A stale or ended session, or a room in room-capture mode.
+      if (code === 409)
+        throw new MeetAiError(
+          409,
+          'The meeting room did not accept this transcription session',
+          'MEET_SELF_PROTOCOL_MISMATCH'
+        );
+      if (code === 412)
+        throw new MeetAiError(
+          409,
+          'Transcription of each voice is not available here',
+          'MEET_SELF_UNAVAILABLE'
+        );
+      if (code === 403)
+        throw new MeetAiError(
+          403,
+          'Only the host or a co-host can start transcription'
+        );
+      throw selfRoomError(error);
+    }
     return { pending: pendingOf(reply?.pending) };
   },
 };

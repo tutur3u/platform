@@ -13,6 +13,7 @@ import {
   consentViewExtras,
   selfModeConsentChoice,
 } from '../../../../../features/meeting-ai/server/self-v1-controls';
+import { withoutPending } from '../../../../../features/meeting-ai/server/self-v1-view';
 import { readMeetTranscriptionAvailability } from '../../../../../features/meeting-ai/server/transcription-availability';
 
 const choice = z
@@ -38,9 +39,11 @@ export async function GET(
       access.meeting.ws_id
     );
     if (!availability.available) return availability;
-    const consent = await callRoomService<MeetTranscriptConsentView>(access, {
-      action: 'transcript.consent.read',
-    });
+    const consent = withoutPending(
+      await callRoomService<MeetTranscriptConsentView>(access, {
+        action: 'transcript.consent.read',
+      })
+    );
     return {
       available: true,
       ...consent,
@@ -71,10 +74,12 @@ export async function POST(
       if (!availability.available)
         throw new MeetCallAccessError(403, 'Live transcript is unavailable');
     }
-    const consent = await callRoomService<MeetTranscriptConsentView>(access, {
-      action: 'transcript.consent.choice',
-      ...input.data,
-    });
+    const consent = withoutPending(
+      await callRoomService<MeetTranscriptConsentView>(access, {
+        action: 'transcript.consent.choice',
+        ...input.data,
+      })
+    );
     return {
       available: true,
       ...consent,
