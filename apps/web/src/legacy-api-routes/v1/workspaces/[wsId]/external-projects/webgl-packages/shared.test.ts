@@ -2,6 +2,14 @@ import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
 } from '@tuturuuu/storage-core/workspace-storage-config';
+import type {
+  WorkspaceSecretRevealResult,
+  WorkspaceSecretsBinding,
+} from '@tuturuuu/utils/workspace-secrets/protocol';
+import {
+  configureWorkspaceSecretsRuntime,
+  WorkspaceSecretsUnavailableError,
+} from '@tuturuuu/utils/workspace-secrets/runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -25,7 +33,29 @@ const policyKey = Symbol.for('tuturuuu.internalApi.webApiOriginPolicy');
 afterEach(() => {
   delete (globalThis as Record<symbol, unknown>)[policyKey];
   vi.unstubAllEnvs();
+  configureWorkspaceSecretsRuntime(null);
 });
+
+function installFakeBinding(result: WorkspaceSecretRevealResult) {
+  const binding = {
+    keyStatus: vi.fn(),
+    put: vi.fn(),
+    rename: vi.fn(),
+    reveal: vi.fn(async () => result),
+  };
+  configureWorkspaceSecretsRuntime(
+    binding as unknown as WorkspaceSecretsBinding
+  );
+  return binding;
+}
+
+const workspaceProxyRows = [
+  {
+    name: DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
+    value: 'https://workspace-proxy.example.com/extract',
+  },
+  { name: DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET, value: 'plaintext-token' },
+];
 
 describe('resolveWebglPackageExtractConfig', () => {
   it('rejects an untrusted callback origin without falling back to the request', async () => {
@@ -101,6 +131,56 @@ describe('resolveWebglPackageExtractConfig', () => {
       configured: true,
       proxyToken: 'workspace-token',
       proxyUrl: 'https://workspace-proxy.example.com/extract',
+    });
+  });
+
+  it('reads the workspace proxy token from the Worker when a binding is installed', async () => {
+    mocks.getSecrets.mockResolvedValue(workspaceProxyRows);
+    const binding = installFakeBinding({
+      status: 'ok',
+      value: 'worker-token',
+      valueRev: 3,
+    });
+
+    const { resolveWebglPackageExtractConfig } = await import('./shared');
+
+    await expect(resolveWebglPackageExtractConfig('ws-1')).resolves.toEqual({
+      configured: true,
+      proxyToken: 'worker-token',
+      proxyUrl: 'https://workspace-proxy.example.com/extract',
+    });
+    expect(binding.reveal).toHaveBeenCalledTimes(1);
+    expect(binding.reveal).toHaveBeenCalledWith({
+      name: DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
+      purpose: 'storage',
+      wsId: 'ws-1',
+    });
+  });
+
+  it('ignores the plaintext token when the Worker has none stored', async () => {
+    mocks.getSecrets.mockResolvedValue(workspaceProxyRows);
+    installFakeBinding({ status: 'not_found' });
+
+    const { resolveWebglPackageExtractConfig } = await import('./shared');
+
+    await expect(resolveWebglPackageExtractConfig('ws-1')).resolves.toEqual({
+      configured: false,
+      proxyToken: undefined,
+      proxyUrl: 'https://workspace-proxy.example.com/extract',
+    });
+  });
+
+  it('fails closed when the Worker is unavailable', async () => {
+    mocks.getSecrets.mockResolvedValue(workspaceProxyRows);
+    installFakeBinding({ status: 'unavailable' });
+
+    const { resolveWebglPackageExtractConfig } = await import('./shared');
+
+    await expect(
+      resolveWebglPackageExtractConfig('ws-1')
+    ).rejects.toMatchObject({
+      name: WorkspaceSecretsUnavailableError.name,
+      status: 'unavailable',
     });
   });
 });

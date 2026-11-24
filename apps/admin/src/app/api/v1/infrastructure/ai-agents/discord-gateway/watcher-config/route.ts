@@ -4,7 +4,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { connection, type NextRequest, NextResponse } from 'next/server';
-import { getRootSecretValue, listAiAgents } from '@/lib/ai-agents/registry';
+import { listAiAgents, revealRootCredential } from '@/lib/ai-agents/registry';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const WATCHER_SECRET_NAME = 'AI_AGENT_DISCORD_GATEWAY_WATCHER_SECRET';
@@ -37,7 +37,11 @@ async function readWatcherSecret(db: TypedSupabaseClient) {
     return envSecret;
   }
 
-  return (await getRootSecretValue(WATCHER_SECRET_NAME, db))?.trim() || null;
+  return (
+    (
+      await revealRootCredential(WATCHER_SECRET_NAME, 'discord-watcher', db)
+    )?.trim() || null
+  );
 }
 
 async function handleGet(request: NextRequest) {

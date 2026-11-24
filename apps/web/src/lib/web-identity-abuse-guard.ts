@@ -1,6 +1,8 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare/cloudflare-context';
 import type { AbuseGuardBinding } from '@tuturuuu/utils/abuse-guard/client';
 import { configureAbuseGuardRuntime } from '@tuturuuu/utils/abuse-guard/select';
+import type { WorkspaceSecretsBinding } from '@tuturuuu/utils/workspace-secrets/protocol';
+import { configureWorkspaceSecretsRuntime } from '@tuturuuu/utils/workspace-secrets/runtime';
 import { type NextRequest, NextResponse } from 'next/server';
 import { withStagingOriginProof } from './staging-origin-proof';
 
@@ -10,6 +12,7 @@ declare global {
     ABUSE_GUARD_FAMILIES?: string;
     ABUSE_GUARD_KEY_PEPPER?: string;
     ABUSE_GUARD_TIMEOUT_MS?: string;
+    WORKSPACE_SECRETS?: WorkspaceSecretsBinding;
   }
 }
 
@@ -28,11 +31,16 @@ export function isAbuseGuardWorkerService(
   );
 }
 
-/** Installs the Worker's ABUSE_GUARD binding in the current server bundle. */
+/**
+ * Installs the Worker's ABUSE_GUARD binding, and its WORKSPACE_SECRETS binding
+ * (the WebSecrets entrypoint of tuturuuu-workspace-secrets, for credential
+ * reads and writes), in the current server bundle.
+ */
 export function configureWebIdentityAbuseGuard() {
   if (!isAbuseGuardWorkerService()) return;
 
   const { env } = getCloudflareContext();
+  configureWorkspaceSecretsRuntime(env.WORKSPACE_SECRETS ?? null);
   configureAbuseGuardRuntime(
     env.ABUSE_GUARD
       ? {

@@ -11,6 +11,10 @@ import {
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
   DRIVE_AUTO_EXTRACT_ZIP_SECRET,
 } from './workspace-storage-config';
+import {
+  createWorkspaceStorageSecretsMap,
+  revealWorkspaceStorageCredentials,
+} from './workspace-storage-credentials';
 import { createWorkspaceStorageSignedReadUrl } from './workspace-storage-provider';
 
 type AutoExtractStatus =
@@ -76,26 +80,6 @@ function resolveAutoExtractCallbackOrigin(requestOrigin: string) {
   );
 }
 
-function createSecretsMap(
-  secrets: Awaited<ReturnType<typeof getSecrets>> | null
-): Map<string, string> {
-  const map = new Map<string, string>();
-
-  for (const secret of secrets ?? []) {
-    if (
-      !secret.name ||
-      typeof secret.value !== 'string' ||
-      map.has(secret.name)
-    ) {
-      continue;
-    }
-
-    map.set(secret.name, secret.value);
-  }
-
-  return map;
-}
-
 function isTruthySecret(value?: string) {
   if (!value) {
     return false;
@@ -136,8 +120,13 @@ function buildDestinationPrefix(path: string) {
 export async function resolveWorkspaceStorageAutoExtractConfig(
   wsId: string
 ): Promise<WorkspaceStorageAutoExtractConfig> {
-  const secrets = await getSecrets({ wsId, forceAdmin: true });
-  const secretMap = createSecretsMap(secrets);
+  const secretMap = await revealWorkspaceStorageCredentials(
+    wsId,
+    createWorkspaceStorageSecretsMap(
+      await getSecrets({ wsId, forceAdmin: true })
+    ),
+    [DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET]
+  );
   const enabled =
     isTruthySecret(secretMap.get(DRIVE_AUTO_EXTRACT_ZIP_SECRET)) ||
     isTruthySecret(secretMap.get(EXTERNAL_PROJECT_ENABLED_SECRET));

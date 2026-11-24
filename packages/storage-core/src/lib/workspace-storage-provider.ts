@@ -51,6 +51,11 @@ import {
   type WorkspaceStorageProvider,
 } from './workspace-storage-config';
 import {
+  createWorkspaceStorageSecretsMap,
+  DRIVE_R2_CREDENTIAL_SECRET_NAMES,
+  revealWorkspaceStorageCredentials,
+} from './workspace-storage-credentials';
+import {
   matchesSearch,
   sortStorageObjects,
   toNumber,
@@ -259,26 +264,6 @@ function createR2SignedUrl(
   );
 }
 
-function createSecretsMap(
-  secrets: Awaited<ReturnType<typeof getSecrets>> | null
-): Map<string, string> {
-  const map = new Map<string, string>();
-
-  for (const secret of secrets ?? []) {
-    if (
-      !secret.name ||
-      typeof secret.value !== 'string' ||
-      map.has(secret.name)
-    ) {
-      continue;
-    }
-
-    map.set(secret.name, secret.value);
-  }
-
-  return map;
-}
-
 function parseWorkspaceStorageProvider(
   value?: string
 ): WorkspaceStorageProvider {
@@ -338,11 +323,11 @@ function isNotFoundError(error: unknown) {
   return code === 'NotFound' || code === 'NoSuchKey';
 }
 
-function resolveWorkspaceStorageConfigForProvider(
+async function resolveWorkspaceStorageConfigForProvider(
   wsId: string,
-  secretMap: Map<string, string>,
+  configMap: Map<string, string>,
   provider: WorkspaceStorageProvider
-): ResolvedWorkspaceStorageConfig {
+): Promise<ResolvedWorkspaceStorageConfig> {
   if (provider !== WORKSPACE_STORAGE_PROVIDER_R2) {
     return {
       provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
@@ -350,6 +335,11 @@ function resolveWorkspaceStorageConfigForProvider(
     };
   }
 
+  const secretMap = await revealWorkspaceStorageCredentials(
+    wsId,
+    configMap,
+    DRIVE_R2_CREDENTIAL_SECRET_NAMES
+  );
   const bucket = secretMap.get(DRIVE_R2_BUCKET_SECRET)?.trim();
   const endpoint = secretMap.get(DRIVE_R2_ENDPOINT_SECRET)?.trim();
   const accessKeyId = secretMap.get(DRIVE_R2_ACCESS_KEY_ID_SECRET)?.trim();
@@ -381,8 +371,9 @@ function resolveWorkspaceStorageConfigForProvider(
 async function resolveWorkspaceStorageConfig(
   wsId: string
 ): Promise<ResolvedWorkspaceStorageConfig> {
-  const secrets = await getSecrets({ wsId, forceAdmin: true });
-  const secretMap = createSecretsMap(secrets);
+  const secretMap = createWorkspaceStorageSecretsMap(
+    await getSecrets({ wsId, forceAdmin: true })
+  );
   const provider = parseWorkspaceStorageProvider(
     secretMap.get(DRIVE_STORAGE_PROVIDER_SECRET)
   );
@@ -833,10 +824,11 @@ export async function resolveWorkspaceStorageBackendConfig(
   wsId: string,
   provider: WorkspaceStorageProvider
 ): Promise<ResolvedWorkspaceStorageConfig> {
-  const secrets = await getSecrets({ wsId, forceAdmin: true });
   return resolveWorkspaceStorageConfigForProvider(
     wsId,
-    createSecretsMap(secrets),
+    createWorkspaceStorageSecretsMap(
+      await getSecrets({ wsId, forceAdmin: true })
+    ),
     provider
   );
 }

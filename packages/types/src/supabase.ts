@@ -58459,6 +58459,7 @@ export type Database = {
           id: string;
           name: string;
           value: string | null;
+          value_rev: number;
           ws_id: string;
         };
         ComputedFields: never;
@@ -58467,6 +58468,7 @@ export type Database = {
           id?: string;
           name?: string;
           value?: string | null;
+          value_rev?: number;
           ws_id: string;
         };
         Update: {
@@ -58474,6 +58476,7 @@ export type Database = {
           id?: string;
           name?: string;
           value?: string | null;
+          value_rev?: number;
           ws_id?: string;
         };
         Relationships: [

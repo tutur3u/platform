@@ -2,6 +2,10 @@ import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  getWorkspaceSecretsBinding,
+  revealWorkspaceCredential,
+} from '@tuturuuu/utils/workspace-secrets/runtime';
 import { z } from 'zod';
 import {
   decryptDataKey,
@@ -19,6 +23,18 @@ const envelopeSchema = z.object({
   encryptedSecret: z.string().min(1),
 });
 
+async function readLegacyEnvelope() {
+  const db = await createAdminClient({ noCookie: true });
+  const { data, error } = await db
+    .from('workspace_secrets')
+    .select('value')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .eq('name', CALENDAR_GATEWAY_SECRET_NAME)
+    .maybeSingle();
+  if (error) throw new CalendarGatewayCredentialError('envelope-read');
+  return data?.value ?? null;
+}
+
 export async function loadCalendarGatewaySecret(): Promise<string> {
   const binding = process.env.MOBILE_CALENDAR_GATEWAY_SECRET;
   if (binding !== undefined) {
@@ -28,21 +44,26 @@ export async function loadCalendarGatewaySecret(): Promise<string> {
     return binding;
   }
 
-  const db = await createAdminClient({ noCookie: true });
-  const { data, error } = await db
-    .from('workspace_secrets')
-    .select('value')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .eq('name', CALENDAR_GATEWAY_SECRET_NAME)
-    .maybeSingle();
-  if (error) throw new CalendarGatewayCredentialError('envelope-read');
-  if (!data?.value) {
+  let stored: string | null;
+  try {
+    stored = await revealWorkspaceCredential({
+      legacyRead: readLegacyEnvelope,
+      name: CALENDAR_GATEWAY_SECRET_NAME,
+      purpose: 'mobile-calendar',
+      wsId: ROOT_WORKSPACE_ID,
+    });
+  } catch (error) {
+    // A secrets Worker failure fails closed under the read error class.
+    if (!getWorkspaceSecretsBinding()) throw error;
+    throw new CalendarGatewayCredentialError('envelope-read');
+  }
+  if (!stored) {
     throw new CalendarGatewayCredentialError('envelope-missing');
   }
 
   let payload: unknown;
   try {
-    payload = JSON.parse(data.value);
+    payload = JSON.parse(stored);
   } catch {
     throw new CalendarGatewayCredentialError('envelope-invalid');
   }

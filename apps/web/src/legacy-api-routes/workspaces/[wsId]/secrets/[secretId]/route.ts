@@ -1,10 +1,20 @@
-import { canKeepWorkspaceSecretValueOnRename } from '@tuturuuu/utils/workspace-secret-policy';
+import {
+  canKeepWorkspaceSecretValueOnRename,
+  getWorkspaceSecretTier,
+} from '@tuturuuu/utils/workspace-secret-policy';
+import { getWorkspaceSecretsBinding } from '@tuturuuu/utils/workspace-secrets/runtime';
 import { NextResponse } from 'next/server';
 import {
   canMutateManagedCronEnableSecret,
   createManagedCronSecretAdminClient,
   isManagedCronEnableSecretName,
 } from '@/lib/workspace-secrets/managed-cron';
+import {
+  credentialWriteResponse,
+  crossTierChangeResponse,
+  isReservedProviderKeyName,
+  reservedProviderKeyResponse,
+} from '@/lib/workspace-secrets/credential-writes';
 import { getWorkspaceSecretsAccess } from '../access';
 import { workspaceSecretUpdateSchema } from '../schema';
 
@@ -36,6 +46,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
   const { name } = parsed.data;
   const value = 'value' in parsed.data ? parsed.data.value : undefined;
+  if (isReservedProviderKeyName(name)) return reservedProviderKeyResponse();
 
   const { wsId, secretId } = await params;
   const access = await getWorkspaceSecretsAccess(wsId, req);
@@ -49,7 +60,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const { data: existingSecret, error: existingError } = await access.db
     .from('workspace_secrets')
-    .select('name')
+    .select('name, value_rev')
     .eq('id', secretId)
     .eq('ws_id', access.resolvedWsId)
     .maybeSingle();
@@ -89,6 +100,42 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
+    );
+  }
+
+  if (isReservedProviderKeyName(existingSecret.name)) {
+    return reservedProviderKeyResponse();
+  }
+
+  // With the workspace secrets Worker bound, credentials are re-encrypted
+  // there: a new value is a put, and a kept value under a new name is a
+  // rename that re-seals it for that name.
+  const credentials = getWorkspaceSecretsBinding();
+  const fromCredential =
+    getWorkspaceSecretTier(existingSecret.name) === 'credential';
+  const toCredential = getWorkspaceSecretTier(name) === 'credential';
+  if (credentials && (fromCredential || toCredential)) {
+    if (fromCredential !== toCredential) return crossTierChangeResponse();
+    const write = {
+      expectedValueRev: existingSecret.value_rev,
+      requestId: crypto.randomUUID(),
+      secretId,
+      wsId: access.resolvedWsId,
+    };
+    if (value !== undefined) {
+      return credentialWriteResponse(
+        await credentials.put({ ...write, name, value })
+      );
+    }
+    if (name === existingSecret.name.trim()) {
+      return NextResponse.json({ message: 'success' });
+    }
+    return credentialWriteResponse(
+      await credentials.rename({
+        ...write,
+        fromName: existingSecret.name,
+        toName: name,
+      })
     );
   }
 
@@ -176,6 +223,10 @@ export async function DELETE(request: Request, { params }: Params) {
       { message: 'Workspace secret not found' },
       { status: 404 }
     );
+  }
+
+  if (isReservedProviderKeyName(existingSecret.name)) {
+    return reservedProviderKeyResponse();
   }
 
   const touchesManagedCron = isManagedCronEnableSecretName(existingSecret.name);

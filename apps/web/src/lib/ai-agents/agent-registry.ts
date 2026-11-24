@@ -2,6 +2,10 @@ import { randomBytes } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
+  getWorkspaceSecretsBinding,
+  revealWorkspaceCredential,
+} from '@tuturuuu/utils/workspace-secrets/runtime';
+import {
   assertId,
   assertSecretName,
   buildAgentDefinitions,
@@ -31,6 +35,7 @@ import {
   getRootSecretValue,
   readSecretRows,
   replaceSecretRows,
+  revealRootCredential,
 } from './workspace-secret-store';
 
 export async function listAiAgents({
@@ -167,7 +172,11 @@ export async function deployAiAgentChannel({
     missing.push(AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET);
   }
   const redisConfigured = resolveAiAgentRedisUrl({
-    rootSecret: await getRootSecretValue(AI_AGENT_REDIS_SECRET, db),
+    rootSecret: await revealRootCredential(
+      AI_AGENT_REDIS_SECRET,
+      'ai-agents',
+      db
+    ),
   });
   if (!DEV_MODE && !redisConfigured) {
     missing.push(AI_AGENT_REDIS_SECRET);
@@ -378,7 +387,7 @@ export async function getChannelSecretValues({
   agentId: string;
   channelId: string;
   db?: TypedSupabaseClient;
-}) {
+}): Promise<Record<string, string>> {
   const rows = await readSecretRows({
     db,
     prefix: `${AI_AGENT_REGISTRY_PREFIX}:${assertId(
@@ -387,13 +396,36 @@ export async function getChannelSecretValues({
     )}:channel:${assertId(channelId, 'channel_id')}:secret`,
   });
 
-  return Object.fromEntries(
-    rows.flatMap((row) => {
+  if (!getWorkspaceSecretsBinding()) {
+    return Object.fromEntries(
+      rows.flatMap((row) => {
+        const parsed = parseAgentRowName(row.name);
+        return parsed?.field === 'channelSecret' && row.value
+          ? [[parsed.secret, row.value]]
+          : [];
+      })
+    );
+  }
+
+  const entries = await Promise.all(
+    rows.map(async (row) => {
       const parsed = parseAgentRowName(row.name);
-      return parsed?.field === 'channelSecret' && row.value
-        ? [[parsed.secret, row.value]]
-        : [];
+      if (parsed?.field !== 'channelSecret' || !row.stored) return null;
+
+      const value = await revealWorkspaceCredential({
+        legacyRead: async () => row.value,
+        name: row.name,
+        purpose: 'ai-agents',
+        wsId: ROOT_WORKSPACE_ID,
+      });
+      return value ? ([parsed.secret, value] as const) : null;
     })
+  );
+
+  return Object.fromEntries(
+    entries.filter((entry): entry is readonly [string, string] =>
+      Boolean(entry)
+    )
   );
 }
 

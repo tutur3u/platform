@@ -1,9 +1,19 @@
-import { canKeepWorkspaceSecretValueOnRename } from '@tuturuuu/utils/workspace-secret-policy';
+import {
+  canKeepWorkspaceSecretValueOnRename,
+  getWorkspaceSecretTier,
+} from '@tuturuuu/utils/workspace-secret-policy';
+import { getWorkspaceSecretsBinding } from '@tuturuuu/utils/workspace-secrets/runtime';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
 
 import { canMutateInfrastructureSecret } from '@/lib/managed-cron-secret';
+import {
+  credentialWriteResponse,
+  crossTierChangeResponse,
+  isReservedProviderKeyName,
+  reservedProviderKeyResponse,
+} from '@/lib/workspace-secrets/credential-writes';
 
 interface Params {
   params: Promise<{ secretId: string; wsId: string }>;
@@ -42,7 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const { data: existingSecret, error: existingError } = await auth.sbAdmin
     .from('workspace_secrets')
-    .select('name')
+    .select('name, value_rev')
     .eq('id', secretId)
     .eq('ws_id', wsId)
     .maybeSingle();
@@ -61,6 +71,13 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   if (
+    isReservedProviderKeyName(existingSecret.name) ||
+    isReservedProviderKeyName(parsed.data.name)
+  ) {
+    return reservedProviderKeyResponse();
+  }
+
+  if (
     !(await canMutateInfrastructureSecret(
       auth,
       existingSecret.name,
@@ -70,6 +87,43 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
+    );
+  }
+
+  // With the workspace secrets Worker bound, credentials are re-encrypted
+  // there: a new value is a put, and a kept value under a new name is a
+  // rename that re-seals it for that name.
+  const credentials = getWorkspaceSecretsBinding();
+  const nextName = parsed.data.name ?? existingSecret.name;
+  const fromCredential =
+    getWorkspaceSecretTier(existingSecret.name) === 'credential';
+  const toCredential = getWorkspaceSecretTier(nextName) === 'credential';
+  if (credentials && (fromCredential || toCredential)) {
+    if (fromCredential !== toCredential) return crossTierChangeResponse();
+    const write = {
+      expectedValueRev: existingSecret.value_rev,
+      requestId: crypto.randomUUID(),
+      secretId,
+      wsId,
+    };
+    if (parsed.data.value !== undefined) {
+      return credentialWriteResponse(
+        await credentials.put({
+          ...write,
+          name: nextName,
+          value: parsed.data.value,
+        })
+      );
+    }
+    if (nextName === existingSecret.name.trim()) {
+      return NextResponse.json({ message: 'success' });
+    }
+    return credentialWriteResponse(
+      await credentials.rename({
+        ...write,
+        fromName: existingSecret.name,
+        toName: nextName,
+      })
     );
   }
 
@@ -141,6 +195,10 @@ export async function DELETE(req: Request, { params }: Params) {
       { message: 'Workspace secret not found' },
       { status: 404 }
     );
+  }
+
+  if (isReservedProviderKeyName(existingSecret.name)) {
+    return reservedProviderKeyResponse();
   }
 
   if (!(await canMutateInfrastructureSecret(auth, existingSecret.name))) {

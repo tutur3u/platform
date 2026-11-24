@@ -8,11 +8,8 @@
 
 export type CallerId = 'admin' | 'key-status' | 'storage' | 'web';
 
-export type RevealPurpose =
-  | 'ai-agents'
-  | 'discord-watcher'
-  | 'mobile-calendar'
-  | 'storage';
+export type { WorkspaceSecretRevealPurpose as RevealPurpose } from '@tuturuuu/utils/workspace-secrets/protocol';
+import type { WorkspaceSecretRevealPurpose as RevealPurpose } from '@tuturuuu/utils/workspace-secrets/protocol';
 
 type NameMatcher = (name: string) => boolean;
 

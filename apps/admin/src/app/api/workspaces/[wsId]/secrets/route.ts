@@ -1,4 +1,8 @@
-import { toClientWorkspaceSecret } from '@tuturuuu/utils/workspace-secret-policy';
+import {
+  getWorkspaceSecretTier,
+  toClientWorkspaceSecret,
+} from '@tuturuuu/utils/workspace-secret-policy';
+import { getWorkspaceSecretsBinding } from '@tuturuuu/utils/workspace-secrets/runtime';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -7,6 +11,11 @@ import {
 } from '@/lib/infrastructure-admin-access';
 
 import { canMutateInfrastructureSecret } from '@/lib/managed-cron-secret';
+import {
+  credentialWriteResponse,
+  isReservedProviderKeyName,
+  reservedProviderKeyResponse,
+} from '@/lib/workspace-secrets/credential-writes';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -66,10 +75,31 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
+  if (isReservedProviderKeyName(parsed.data.name)) {
+    return reservedProviderKeyResponse();
+  }
+
   if (!(await canMutateInfrastructureSecret(auth, parsed.data.name))) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
+    );
+  }
+
+  // With the workspace secrets Worker bound, a credential is encrypted there
+  // and never written as plaintext.
+  const credentials = getWorkspaceSecretsBinding();
+  if (
+    credentials &&
+    getWorkspaceSecretTier(parsed.data.name) === 'credential'
+  ) {
+    return credentialWriteResponse(
+      await credentials.put({
+        name: parsed.data.name,
+        requestId: crypto.randomUUID(),
+        value: parsed.data.value,
+        wsId,
+      })
     );
   }
 

@@ -7,6 +7,10 @@ import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
 } from '@tuturuuu/storage-core/workspace-storage-config';
+import {
+  createWorkspaceStorageSecretsMap,
+  revealWorkspaceStorageCredentials,
+} from '@tuturuuu/storage-core/workspace-storage-credentials';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceExternalProjectBinding } from '@tuturuuu/types';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
@@ -44,26 +48,6 @@ function resolveConfiguredOrigin(value?: string) {
   }
 }
 
-function createSecretsMap(
-  secrets: Awaited<ReturnType<typeof getSecrets>> | null
-) {
-  const map = new Map<string, string>();
-
-  for (const secret of secrets ?? []) {
-    if (
-      !secret.name ||
-      typeof secret.value !== 'string' ||
-      map.has(secret.name)
-    ) {
-      continue;
-    }
-
-    map.set(secret.name, secret.value);
-  }
-
-  return map;
-}
-
 export function resolveWebglCallbackOrigin(requestOrigin: string) {
   return (
     resolveConfiguredOrigin(getValidatedInternalWebApiOrigin()) ||
@@ -78,8 +62,13 @@ export function resolveWebglCallbackOrigin(requestOrigin: string) {
 }
 
 export async function resolveWebglPackageExtractConfig(wsId: string) {
-  const secrets = await getSecrets({ forceAdmin: true, wsId });
-  const secretMap = createSecretsMap(secrets);
+  const secretMap = await revealWorkspaceStorageCredentials(
+    wsId,
+    createWorkspaceStorageSecretsMap(
+      await getSecrets({ forceAdmin: true, wsId })
+    ),
+    [DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET]
+  );
   const workspaceProxyUrl = secretMap
     .get(DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET)
     ?.trim();

@@ -80,8 +80,6 @@ export const WORKSPACE_SECRETS_DIRECT_READERS = [
  * storage credential names as display labels for those flags.
  */
 export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
-  'apps/admin/src/lib/app-coordination/external-apps-utils.ts',
-  'apps/admin/src/lib/app-coordination/external-apps.ts',
   'apps/admin/src/app/api/v1/infrastructure/ai-agents/discord-gateway/watcher-config/route.ts',
   'apps/admin/src/lib/ai-agents/agent-registry.ts',
   'apps/admin/src/lib/ai-agents/agent-save.ts',
@@ -89,6 +87,8 @@ export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
   'apps/admin/src/lib/ai-agents/registry.ts',
   'apps/admin/src/lib/ai-agents/runtime-config.ts',
   'apps/admin/src/lib/ai-agents/types.ts',
+  'apps/admin/src/lib/app-coordination/external-apps-utils.ts',
+  'apps/admin/src/lib/app-coordination/external-apps.ts',
   'apps/admin/src/lib/mobile-calendar/secret.ts',
   'apps/admin/src/lib/workspace-storage-config.ts',
   'apps/mobile/lib/features/settings/view/settings_workspace_secrets_view.dart',
@@ -99,13 +99,15 @@ export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
   'apps/web/src/lib/ai-agents/registry.ts',
   'apps/web/src/lib/ai-agents/runtime-config.ts',
   'apps/web/src/lib/ai-agents/types.ts',
-  'apps/web/src/lib/external-apps/workspace-cron.ts',
-  'packages/storage-core/src/lib/workspace-storage-auto-extract.ts',
-  'packages/storage-core/src/lib/workspace-storage-config.ts',
-  'packages/storage-core/src/lib/workspace-storage-provider.ts',
-  'packages/utils/src/workspace-secret-tier-rules.ts',
   'apps/web/src/lib/app-coordination/external-apps-utils.ts',
   'apps/web/src/lib/app-coordination/external-apps.ts',
+  'apps/web/src/lib/external-apps/workspace-cron.ts',
+  'apps/workspace-secrets/src/policy.ts',
   'apps/workspace/src/lib/app-coordination/external-apps-utils.ts',
   'apps/workspace/src/lib/app-coordination/external-apps.ts',
+  'packages/storage-core/src/lib/workspace-storage-auto-extract.ts',
+  'packages/storage-core/src/lib/workspace-storage-config.ts',
+  'packages/storage-core/src/lib/workspace-storage-credentials.ts',
+  'packages/storage-core/src/lib/workspace-storage-provider.ts',
+  'packages/utils/src/workspace-secret-tier-rules.ts',
 ];

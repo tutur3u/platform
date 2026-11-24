@@ -10,6 +10,15 @@ import {
   type WorkspaceSecretBinding,
 } from '@tuturuuu/vault-crypto';
 import { getWorkspaceSecretTier } from '@tuturuuu/utils/workspace-secret-policy';
+import type {
+  WorkspaceSecretFailure as Failure,
+  WorkspaceSecretKeyStatusResult as KeyStatusResult,
+  WorkspaceSecretPutInput as PutInput,
+  WorkspaceSecretPutResult as PutResult,
+  WorkspaceSecretRenameInput as RenameInput,
+  WorkspaceSecretRevealInput as RevealInput,
+  WorkspaceSecretRevealResult as RevealResult,
+} from '@tuturuuu/utils/workspace-secrets/protocol';
 import { type Db, DbError, fromByteaHex, toByteaHex } from './db';
 import { activeKekVersion, type KekEnv, KekConfigError, loadKek } from './kek';
 import {
@@ -30,52 +39,15 @@ const REVEAL_PURPOSES: readonly RevealPurpose[] = [
   'storage',
 ];
 
-export type Failure =
-  | { status: 'invalid' }
-  | { status: 'forbidden' }
-  | { status: 'not_credential' }
-  | { status: 'not_found' }
-  | { status: 'conflict'; currentValueRev: number | null }
-  | { status: 'unavailable' };
-
-export type PutResult =
-  | { status: 'ok'; secretId: string; valueRev: number; last4: string }
-  | Failure;
-
-export type RevealResult =
-  | { status: 'ok'; value: string; valueRev: number }
-  | Failure;
-
-export type KeyStatusResult =
-  | { status: 'ok'; keyStatus: 'active' | 'invalid' | 'missing' }
-  | Failure;
-
-export interface PutInput {
-  wsId: string;
-  name: string;
-  value: string;
-  /** Omit to create; the Worker then chooses the row id. */
-  secretId?: string;
-  /** The row's current value_rev; omit to create. */
-  expectedValueRev?: number;
-  /** A retry of the same put reuses its id and replays instead of failing. */
-  requestId: string;
-}
-
-export interface RenameInput {
-  wsId: string;
-  secretId: string;
-  fromName: string;
-  toName: string;
-  expectedValueRev: number;
-  requestId: string;
-}
-
-export interface RevealInput {
-  wsId: string;
-  name: string;
-  purpose: RevealPurpose;
-}
+export type {
+  WorkspaceSecretFailure as Failure,
+  WorkspaceSecretKeyStatusResult as KeyStatusResult,
+  WorkspaceSecretPutInput as PutInput,
+  WorkspaceSecretPutResult as PutResult,
+  WorkspaceSecretRenameInput as RenameInput,
+  WorkspaceSecretRevealInput as RevealInput,
+  WorkspaceSecretRevealResult as RevealResult,
+} from '@tuturuuu/utils/workspace-secrets/protocol';
 
 export interface ServiceDeps {
   db: Db;

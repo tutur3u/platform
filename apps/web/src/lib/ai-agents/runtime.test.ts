@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   deductAiCredits: vi.fn(),
   getChannelSecretValues: vi.fn(),
   getPermissions: vi.fn(),
-  getRootSecretValue: vi.fn(),
+  revealRootCredential: vi.fn(),
   google: vi.fn(),
   onNewMention: null as null | ((thread: unknown, message: unknown) => unknown),
   onSubscribedMessage: null as
@@ -134,12 +134,13 @@ vi.mock('./registry', () => ({
   getChannelSecretValues: (
     ...args: Parameters<typeof mocks.getChannelSecretValues>
   ) => mocks.getChannelSecretValues(...args),
-  getRootSecretValue: (...args: Parameters<typeof mocks.getRootSecretValue>) =>
-    mocks.getRootSecretValue(...args),
   markAiAgentChannelEvent: vi.fn(),
   resolveZaloIdentity: (
     ...args: Parameters<typeof mocks.resolveZaloIdentity>
   ) => mocks.resolveZaloIdentity(...args),
+  revealRootCredential: (
+    ...args: Parameters<typeof mocks.revealRootCredential>
+  ) => mocks.revealRootCredential(...args),
 }));
 
 import { createAiAgentChatRuntime } from './runtime';
@@ -222,7 +223,7 @@ describe('AI agent runtime billing controls', () => {
       botToken: 'bot-token',
       webhookSecret: 'webhook-secret',
     });
-    mocks.getRootSecretValue.mockResolvedValue(null);
+    mocks.revealRootCredential.mockResolvedValue(null);
     mocks.createChatSdkRuntime.mockResolvedValue({
       onNewMention: vi.fn((callback) => {
         mocks.onNewMention = callback;
@@ -424,6 +425,10 @@ describe('AI agent runtime billing controls', () => {
       },
     });
 
+    expect(mocks.revealRootCredential).toHaveBeenCalledWith(
+      'AI_AGENT_CHAT_SDK_STATE_REDIS_URL',
+      'ai-agents'
+    );
     expect(mocks.createZaloPersonalAdapter).toHaveBeenCalledWith({
       channelId: 'channel-1',
       cookieJson: '[{"name":"zpsid","value":"cookie"}]',

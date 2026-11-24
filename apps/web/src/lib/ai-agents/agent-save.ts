@@ -94,6 +94,8 @@ export async function saveAiAgent({
     prefix: `${AI_AGENT_REGISTRY_PREFIX}:${agentId}`,
   });
   const existingNames = existingRows.map((row) => row.name);
+  // Credentials held by the secrets Worker stay in place when unchanged.
+  const keptNames = new Set<string>();
 
   const meta: AgentMetaRecord = {
     createdAt: existing?.createdAt ?? now,
@@ -204,14 +206,16 @@ export async function saveAiAgent({
 
       if (submitted === undefined || submitted === '') {
         if (priorSecrets.has(secretName)) {
-          const existingValue = existingRows.find(
+          const existingRow = existingRows.find(
             (row) =>
               row.name === channelSecretKey(agentId, channel.id, secretName)
-          )?.value;
-          if (existingValue) {
+          );
+          if (existingRow?.stored) {
+            keptNames.add(existingRow.name);
+          } else if (existingRow?.value) {
             rows.push({
               name: channelSecretKey(agentId, channel.id, secretName),
-              value: existingValue,
+              value: existingRow.value,
             });
           }
         }
@@ -229,7 +233,11 @@ export async function saveAiAgent({
     }
   }
 
-  await replaceSecretRows({ db, names: existingNames, rows });
+  await replaceSecretRows({
+    db,
+    names: existingNames.filter((name) => !keptNames.has(name)),
+    rows,
+  });
 
   const saved = await getAiAgentById({ agentId, db, origin: webhookOrigin });
   if (!saved) {

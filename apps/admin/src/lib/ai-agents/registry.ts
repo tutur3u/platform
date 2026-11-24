@@ -26,4 +26,7 @@ export {
   parseAgentRowName,
   splitLongValue,
 } from './registry-codec';
-export { getRootSecretValue } from './workspace-secret-store';
+export {
+  getRootSecretValue,
+  revealRootCredential,
+} from './workspace-secret-store';

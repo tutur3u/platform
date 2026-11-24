@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
-  getRootSecretValue: vi.fn(),
+  revealRootCredential: vi.fn(),
   listAiAgents: vi.fn(),
   warn: vi.fn(),
 }));
@@ -14,7 +14,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@/lib/ai-agents/registry', () => ({
-  getRootSecretValue: (...args: unknown[]) => mocks.getRootSecretValue(...args),
+  revealRootCredential: (...args: unknown[]) =>
+    mocks.revealRootCredential(...args),
   listAiAgents: (...args: unknown[]) => mocks.listAiAgents(...args),
 }));
 
@@ -96,7 +97,7 @@ describe('Discord Gateway watcher config route', () => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     mocks.createAdminClient.mockResolvedValue(ADMIN_CLIENT);
-    mocks.getRootSecretValue.mockResolvedValue(WATCHER_SECRET);
+    mocks.revealRootCredential.mockResolvedValue(WATCHER_SECRET);
     mocks.listAiAgents.mockResolvedValue([agent()]);
   });
 
@@ -107,8 +108,30 @@ describe('Discord Gateway watcher config route', () => {
     expect(mocks.listAiAgents).not.toHaveBeenCalled();
   });
 
+  it('reveals the root watcher secret for the discord-watcher purpose', async () => {
+    const response = await callRoute();
+
+    expect(response.status).toBe(200);
+    expect(mocks.revealRootCredential).toHaveBeenCalledWith(
+      'AI_AGENT_DISCORD_GATEWAY_WATCHER_SECRET',
+      'discord-watcher',
+      ADMIN_CLIENT
+    );
+  });
+
+  it('fails closed when the secrets Worker cannot reveal the watcher secret', async () => {
+    mocks.revealRootCredential.mockRejectedValue(
+      new Error('workspace_secrets_unavailable')
+    );
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(500);
+    expect(mocks.listAiAgents).not.toHaveBeenCalled();
+  });
+
   it('fails closed when the root watcher secret is missing', async () => {
-    mocks.getRootSecretValue.mockResolvedValue(null);
+    mocks.revealRootCredential.mockResolvedValue(null);
 
     const response = await callRoute();
 

@@ -81,7 +81,7 @@ describe('workspace secret item route', () => {
       }
     );
 
-    expect(selectMock).toHaveBeenCalledWith('name');
+    expect(selectMock).toHaveBeenCalledWith('name, value_rev');
     expect(selectEqIdMock).toHaveBeenCalledWith('id', 'secret-1');
     expect(selectEqWsMock).toHaveBeenCalledWith('ws_id', 'resolved-ws');
     expect(updateMock).toHaveBeenCalledWith({

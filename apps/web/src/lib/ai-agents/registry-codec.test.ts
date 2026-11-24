@@ -32,6 +32,26 @@ describe('AI agent registry codec', () => {
     ]);
   });
 
+  it('marks Worker-held channel secrets configured without plaintext', () => {
+    const [agent] = buildAgentDefinitions([
+      {
+        name: channelMetaKey('support', 'discord-main'),
+        value: JSON.stringify({ adapter: 'discord' }),
+      },
+      {
+        name: channelSecretKey('support', 'discord-main', 'botToken'),
+        stored: true,
+        value: null,
+      },
+    ]);
+
+    expect(agent?.channels[0]?.secrets).toEqual([
+      { configured: false, lastFour: null, name: 'applicationId' },
+      { configured: true, lastFour: null, name: 'botToken' },
+      { configured: false, lastFour: null, name: 'publicKey' },
+    ]);
+  });
+
   it('builds redacted agent definitions from workspace secret rows', () => {
     const agents = buildAgentDefinitions(
       [

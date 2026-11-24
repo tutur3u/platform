@@ -38,9 +38,9 @@ import { resolveDiscordGuildMemberUser } from './discord-user-mapping';
 import { persistAiAgentExternalSdkMessage } from './external-chat-mirror';
 import {
   getChannelSecretValues,
-  getRootSecretValue,
   markAiAgentChannelEvent,
   resolveZaloIdentity,
+  revealRootCredential,
 } from './registry';
 import { resolveAiAgentRedisUrl } from './runtime-config';
 import {
@@ -479,7 +479,7 @@ async function createAiAgentChatRuntimeBundle({
     channelId: channel.id,
   });
   const redisUrl = resolveAiAgentRedisUrl({
-    rootSecret: await getRootSecretValue(AI_AGENT_REDIS_SECRET),
+    rootSecret: await revealRootCredential(AI_AGENT_REDIS_SECRET, 'ai-agents'),
   });
   const state = redisUrl
     ? {

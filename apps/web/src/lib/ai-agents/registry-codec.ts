@@ -21,6 +21,11 @@ export const DEFAULT_INSTRUCTIONS =
 export type SecretRow = {
   name: string;
   value: string | null;
+  /**
+   * Set when a credential row exists but its value is withheld because the
+   * secrets Worker holds it.
+   */
+  stored?: boolean;
 };
 
 export type AgentMetaRecord = {
@@ -223,9 +228,10 @@ export function normalizeAdapter(value: string): AiAgentAdapter {
 
 export function secretDescriptor(
   name: string,
-  value: string | null | undefined
+  value: string | null | undefined,
+  stored?: boolean
 ) {
-  const configured = Boolean(value);
+  const configured = stored ?? Boolean(value);
   return {
     configured,
     lastFour: value ? value.slice(-4) : null,
@@ -254,7 +260,7 @@ export function buildAgentDefinitions(
     string,
     {
       channelMeta: Map<string, ChannelMetaRecord>;
-      channelSecrets: Map<string, Map<string, string | null>>;
+      channelSecrets: Map<string, Map<string, SecretRow>>;
       instructions: Map<number, string>;
       meta: AgentMetaRecord;
       unsplitInstructions: string | null;
@@ -278,7 +284,7 @@ export function buildAgentDefinitions(
         unsplitInstructions: null,
       } satisfies {
         channelMeta: Map<string, ChannelMetaRecord>;
-        channelSecrets: Map<string, Map<string, string | null>>;
+        channelSecrets: Map<string, Map<string, SecretRow>>;
         instructions: Map<number, string>;
         meta: AgentMetaRecord;
         unsplitInstructions: string | null;
@@ -299,7 +305,7 @@ export function buildAgentDefinitions(
       );
     } else if (parsed.field === 'channelSecret') {
       const secrets = entry.channelSecrets.get(parsed.channelId) ?? new Map();
-      secrets.set(parsed.secret, row.value);
+      secrets.set(parsed.secret, row);
       entry.channelSecrets.set(parsed.channelId, secrets);
     }
 
@@ -323,7 +329,8 @@ export function buildAgentDefinitions(
           const zaloAccountMode = normalizeZaloAccountMode(
             channelMeta.zaloAccountMode
           );
-          const secrets = entry.channelSecrets.get(channelId) ?? new Map();
+          const secrets =
+            entry.channelSecrets.get(channelId) ?? new Map<string, SecretRow>();
           const secretNames = new Set([
             ...getRequiredSecrets(adapter, zaloAccountMode),
             ...secrets.keys(),
@@ -338,9 +345,10 @@ export function buildAgentDefinitions(
             lastError: channelMeta.lastError ?? null,
             lastEventAt: channelMeta.lastEventAt ?? null,
             mentionRoleIds: channelMeta.mentionRoleIds ?? [],
-            secrets: [...secretNames]
-              .sort()
-              .map((name) => secretDescriptor(name, secrets.get(name))),
+            secrets: [...secretNames].sort().map((name) => {
+              const row = secrets.get(name);
+              return secretDescriptor(name, row?.value, row?.stored);
+            }),
             status: channelMeta.status ?? 'draft',
             webhookUrl: origin
               ? buildWebhookUrl({ adapter, channelId, origin })

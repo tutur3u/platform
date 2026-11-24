@@ -30,7 +30,7 @@ const REPO_ROOT = resolve(__dirname, '../../..');
  * review.
  */
 const MAX_DIRECT_READERS = 68;
-const MAX_CREDENTIAL_REFERENCES = 28;
+const MAX_CREDENTIAL_REFERENCES = 30;
 
 describe('workspace secret policy', () => {
   it.each([

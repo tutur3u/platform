@@ -45,7 +45,8 @@ function fakeDb() {
         const id = args.p_secret_id as string;
         const existing = rows.get(id);
         if (
-          existing?.payload?.request_id === args.p_request_id &&
+          existing?.payload &&
+          existing.payload.request_id === args.p_request_id &&
           existing.payload.source_rev === existing.value_rev
         ) {
           return [
