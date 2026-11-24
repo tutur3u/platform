@@ -337,6 +337,13 @@ const storageAclReviewedLater = [
     reason:
       'Workspace secrets step 1 config tier. It never names workspace_storage and has no ALTER DEFAULT PRIVILEGES. Every GRANT targets workspace_secrets_definer (vault, private.workspace_secret_* and public.workspace_secrets objects, plus a CREATE on private and public revoked right after ALTER OWNER), service_role (public.list_ and put_workspace_secret_config) or the migration user (role membership, private config readers). Its only dynamic EXECUTE grants vault._crypto_aead_det_decrypt, resolved from pg_proc, to workspace_secrets_definer.',
   },
+  {
+    file: 'apps/database/supabase/migrations/20261125073000_sso_signer_transaction_confirmation.sql',
+    sourceDigest:
+      '775a62679521a2790619a36dbd17dd1eb0de8dabdf097d0d381f0029973ae895',
+    reason:
+      'SSO signer S1d transaction confirmation. It never names workspace_storage, has no ALTER DEFAULT PRIVILEGES and runs no dynamic SQL. Its role statements are CREATE ROLE sso_signer NOLOGIN NOINHERIT with no IN ROLE, ROLE or ADMIN clause, and three ALTER ROLE sso_signer SET timeouts. Its only GRANTs give sso_signer USAGE on schema public and EXECUTE on public.sso_signer_confirm_transaction(uuid, uuid, text); its only REVOKE removes that function from PUBLIC, anon, authenticated and service_role.',
+  },
 ];
 
 function withoutReviewedLater(sources, reviewed = storageAclReviewedLater) {

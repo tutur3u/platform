@@ -651,6 +651,13 @@ SELECT is((SELECT count(*)::integer FROM definer_added_later_authenticated l
     OR NOT has_function_privilege('authenticated', to_regprocedure(l.signature), 'EXECUTE')
     OR has_function_privilege('service_role', to_regprocedure(l.signature), 'EXECUTE')),
   0, 'public definers added later for signed-in users are authenticated-only');
+-- Later definers for one dedicated role only (20261125073000_sso_signer_transaction_confirmation).
+CREATE TEMP TABLE definer_added_later_dedicated (signature text PRIMARY KEY, grantee text NOT NULL);
+INSERT INTO definer_added_later_dedicated VALUES ('public.sso_signer_confirm_transaction(uuid,uuid,text)', 'sso_signer');
+SELECT is((SELECT count(*)::integer FROM definer_added_later_dedicated l, LATERAL (SELECT to_regprocedure(l.signature) f) p
+  WHERE p.f IS NULL OR NOT has_function_privilege(l.grantee, p.f, 'EXECUTE') OR EXISTS (SELECT 1
+    FROM unnest(ARRAY['anon', 'authenticated', 'service_role']) r WHERE has_function_privilege(r, p.f, 'EXECUTE'))),
+  0, 'public definers added later for a dedicated role admit only that role');
 SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.prosecdef
     AND p.proname NOT IN ('sb19_default_probe')
@@ -661,7 +668,8 @@ SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid 
     AND NOT EXISTS (SELECT 1 FROM definer_added_later l
       WHERE to_regprocedure(l.signature)::oid = p.oid)
     AND NOT EXISTS (SELECT 1 FROM definer_added_later_authenticated l
-      WHERE to_regprocedure(l.signature)::oid = p.oid)), 0,
+      WHERE to_regprocedure(l.signature)::oid = p.oid)
+    AND NOT EXISTS (SELECT 1 FROM definer_added_later_dedicated l WHERE to_regprocedure(l.signature)::oid = p.oid)), 0,
   'the snapshot, B-owned and later signatures cover every existing public definer');
 SELECT ok(has_schema_privilege('supabase_auth_admin', 'public', 'USAGE')
   AND has_function_privilege('supabase_auth_admin', 'public.hook_mfa_verification_attempt(jsonb)', 'EXECUTE'),

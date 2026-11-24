@@ -66756,6 +66756,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      sso_signer_confirm_transaction: {
+        Args: { p_client_id: string; p_kid: string; p_transaction_id: string };
+        Returns: Json;
+      };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
         Returns: number;
