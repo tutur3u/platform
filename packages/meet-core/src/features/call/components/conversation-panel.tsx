@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { ChatPanel } from './chat-panel';
 import { PersonalChat } from './personal-chat';
+import { useMiraSurface } from './use-mira-surface';
 
 export function ConversationPanel({
   solo: _solo,
@@ -25,9 +26,21 @@ export function ConversationPanel({
   // A room gaining participants never switches or publishes a private draft.
   const [mode, setMode] = useState('room');
   const privateTab = useRef<HTMLButtonElement>(null);
+  // The tab follows the header's Mira control: no assistant, no tab.
+  const { off } = useMiraSurface(props.meetingId, props.accountId);
   useEffect(() => {
     if (roomFeedback || props.mentionRequest) setMode('room');
   }, [props.mentionRequest, roomFeedback]);
+  if (off)
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <ChatPanel
+          {...props}
+          wsId={wsId}
+          mentionRequest={props.mentionRequest}
+        />
+      </div>
+    );
   return (
     <Tabs
       value={mode}

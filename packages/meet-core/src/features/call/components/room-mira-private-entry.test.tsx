@@ -167,6 +167,51 @@ it('stays the only entry for someone who cannot turn room Mira on', async () => 
   expect(controls.openConsent).toHaveBeenCalledTimes(1);
 });
 
+it('shows the host the Turn on Mira panel and the Private Assistant entry together', async () => {
+  f.read.mockResolvedValue({ ...base, canAccept: true });
+  act(() => publishLiveSession(session()));
+  show();
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.host_turn_on,
+    })
+  );
+  expect(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.host_confirm,
+    })
+  ).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.live.open_private })
+  );
+  expect(controls.openConsent).toHaveBeenCalledTimes(1);
+});
+
+it('keeps the control while room Mira is unavailable, so the creator can reach the assistant', async () => {
+  f.read.mockResolvedValue({ available: false });
+  act(() => publishLiveSession(session()));
+  show();
+  const control = await screen.findByRole('button', {
+    name: messages.meet.live.title,
+  });
+  fireEvent.click(control);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: messages.meet.live.open_private,
+    })
+  );
+  expect(controls.openConsent).toHaveBeenCalledTimes(1);
+});
+
+it('keeps the control when the room Mira read fails', async () => {
+  f.read.mockRejectedValue(new Error('offline'));
+  act(() => publishLiveSession(session()));
+  show();
+  expect(
+    await screen.findByRole('button', { name: messages.meet.live.title })
+  ).toBeTruthy();
+});
+
 it('shows no entry without a Private Assistant or a way to turn Mira on', async () => {
   f.read.mockResolvedValue(base);
   show();

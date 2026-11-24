@@ -168,6 +168,23 @@ it('renders no Mira control of its own and states the 18+ rule beside Continue',
   expect(screen.getByText(adults.consent)).toBeTruthy();
   expect(f.choice).not.toHaveBeenCalled();
 });
+it('explains why the Private Assistant is unavailable when its choice dialog opens', async () => {
+  f.read.mockResolvedValue({
+    version: 'synthetic-v1',
+    available: false,
+    unavailableReason: 'deployment',
+    choice: null,
+  });
+  showPanel(syntheticRoom());
+  const alert = await screen.findByRole('alert');
+  expect(alert.textContent).toContain(
+    messages.meet.call.personal_deployment_unavailable
+  );
+  const proceed = screen.getByRole('button', {
+    name: messages.meet.live.phase_continue,
+  });
+  expect((proceed as HTMLButtonElement).disabled).toBe(true);
+});
 it('leaves through the call shell instead of closing the room socket directly', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',

@@ -89,9 +89,13 @@ holds the Mira box, **Turn Mira off for me**, who is using Mira privately, the
 host's **Turn off Mira for everyone**, **Open private assistant** (opens the
 Private Assistant choice dialog) with Mira's voice picker, an **About Mira**
 disclosure (the 18+ rule, retention, privacy links) and a two-step **Report
-someone under 18**. This is the only Mira control in the header: without room
-Mira it still appears, named **Mira**, for anyone who can open the Private
-Assistant. Room chat carries no Mira chip; it shows one dismissable **Mira is on** line per
+someone under 18**. This is the only Mira control in the header. Without room
+Mira it still appears, named **Mira**, for anyone who has a Private Assistant,
+including when that assistant is unavailable (the choice dialog states the
+reason, such as a deployment without Private Mira). It is absent only when the
+person has no Private Assistant and room Mira is unavailable; the chat's
+**Private Assistant** tab follows the same rule, and a failed or pending read
+never hides either. Room chat carries no Mira chip; it shows one dismissable **Mira is on** line per
 acceptance revision. The host or a co-host who is present sees **Turn on Mira**,
 which asks them to accept the Terms of Service and AI use and to confirm that
 everyone in the meeting is 18 or older.
@@ -102,7 +106,7 @@ applies to joins after the change.
 
 Regression coverage (`*.test.tsx`): `mira-audience-settings`,
 `mira-workspace-off`, `call-settings-mira`, `private-notice`, `personal-chat`,
-`chat-assistant-notice`, `room-mira-notice` and `room-mira-private-entry`.
+`chat-assistant-notice`, `room-mira-notice`, `room-mira-private-entry` and `conversation-panel-mira-surface`.
 
 ## Participant choice and microphone privacy
 

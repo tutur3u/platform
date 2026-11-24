@@ -63,20 +63,10 @@ export function RoomMiraNotice({
       }}
     />
   );
-  // Without room Mira only an acceptor, or someone with a Private Assistant,
-  // sees the control.
-  if (!data || (!data.acceptance && !data.canAccept && !session)) return null;
-  const privateList = privateUsers.length > 0 && (
-    <ul className="space-y-1 text-muted-foreground text-xs">
-      {privateUsers.map((person) => (
-        <li key={person.userId} role="status" className="flex gap-1.5">
-          <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-          {tl('phase_private_indicator', { name: person.displayName })}
-        </li>
-      ))}
-    </ul>
-  );
-  if (!data.acceptance && !data.canAccept)
+  // Room Mira is off, unavailable or unreadable for this person. The control
+  // then holds only their Private Assistant, and is absent without one.
+  if (!data || (!data.acceptance && !data.canAccept)) {
+    if (!session) return null;
     return (
       <RoomMiraChip
         state="off"
@@ -89,6 +79,17 @@ export function RoomMiraNotice({
         <MiraAbout />
       </RoomMiraChip>
     );
+  }
+  const privateList = privateUsers.length > 0 && (
+    <ul className="space-y-1 text-muted-foreground text-xs">
+      {privateUsers.map((person) => (
+        <li key={person.userId} role="status" className="flex gap-1.5">
+          <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          {tl('phase_private_indicator', { name: person.displayName })}
+        </li>
+      ))}
+    </ul>
+  );
   if (!data.acceptance)
     return (
       <RoomMiraChip
