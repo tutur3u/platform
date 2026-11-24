@@ -3286,6 +3286,14 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
   (`update_user_groups`) before any course read, and offers only published,
   active, non-guest courses in the meeting's workspace and their published
   lessons. Unpublished or archived material is never importable from Meet.
+  The host-facing entry reads "Import from a course". Answer keys come from
+  the private quiz answer table, falling back to the legacy column. Teach
+  multiple-choice quizzes import as single-choice questions, short-answer
+  quizzes as open questions with their stored short answers accepted (an
+  empty key leaves the answer to the host), and flashcards as open questions.
+  True/false, matching and ordering quizzes, and quizzes whose key does not
+  name a usable option, are left out; the host sees how many. Regression
+  coverage: `packages/meet-core/src/features/call/server/quiz-arena.test.ts`.
 - **Provenance.** The browser API never chooses a board source or pick source:
   it stamps `manual` and `host`. Mira and lesson provenance come only from the
   server paths that produced them, and the room accepts a Mira pick only from

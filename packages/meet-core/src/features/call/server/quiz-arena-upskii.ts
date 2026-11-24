@@ -11,6 +11,7 @@ import {
   MAX_ARENA_TIERS,
 } from '@tuturuuu/realtime/meet/room-quiz-arena';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Json } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import {
   type getMeetCallAccess,
@@ -103,6 +104,14 @@ type QuizRow = {
   content?: unknown;
   answer?: unknown;
 };
+/** A lesson quiz row as read for import, with its answer key attached. */
+type StoredQuizRow = {
+  id: string;
+  question: string;
+  type: string | null;
+  content: Json | null;
+  answer: Json | null;
+};
 type OptionRow = {
   quiz_id: string;
   value: string;
@@ -180,12 +189,16 @@ export function questionFromStoredQuiz(
   const answer = record(quiz.answer);
   if (quiz.type === 'multiple_choice') {
     const options = Array.isArray(content?.options) ? content.options : [];
-    const correctIndex = answer?.correctIndex;
-    if (
-      typeof correctIndex !== 'number' ||
-      typeof options[correctIndex] !== 'string'
-    )
-      return null;
+    const rawIndex = answer?.correctIndex;
+    const correctIndex =
+      typeof rawIndex === 'string' && rawIndex.trim() !== ''
+        ? Number(rawIndex)
+        : rawIndex;
+    const correct =
+      typeof correctIndex === 'number' && Number.isInteger(correctIndex)
+        ? options[correctIndex]
+        : undefined;
+    if (typeof correct !== 'string' || correct.trim() === '') return null;
     return questionFromQuiz(
       quiz,
       options.flatMap((value, index) =>
@@ -269,9 +282,9 @@ async function moduleQuestions(db: Db, wsId: string, moduleIds: string[]) {
   if (quizzes?.error || options?.error || cards?.error)
     throw new MeetCallAccessError(503, 'Lesson content is unavailable');
   // Teach keeps answer keys in the private schema; the legacy column is a fallback.
-  const quizRows = await attachPrivateWorkspaceQuizAnswers(
+  const quizRows = await attachPrivateWorkspaceQuizAnswers<StoredQuizRow>(
     db,
-    quizzes?.data ?? []
+    (quizzes?.data ?? []) as StoredQuizRow[]
   ).catch((error: unknown) => {
     console.error('Lesson answer keys are unavailable', error);
     throw new MeetCallAccessError(503, 'Lesson content is unavailable');

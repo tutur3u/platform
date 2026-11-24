@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   authority: vi.fn(),
   context: vi.fn(),
   tables: {} as Record<string, Array<Record<string, unknown>>>,
+  failTables: undefined as Set<string> | undefined,
   reads: [] as string[],
   granted: new Set<string>(),
 }));
@@ -42,6 +43,10 @@ function fakeDb() {
           const rows = (mocks.tables[table] ?? []).filter((row) =>
             filters.every((filter) => filter(row))
           );
+          if (mocks.failTables?.has(table)) {
+            resolve({ data: null, error: { code: '500', message: 'down' } });
+            return;
+          }
           resolve({ data: single ? (rows[0] ?? null) : rows, error: null });
         },
       };
@@ -177,6 +182,7 @@ beforeEach(() => {
     command.action === 'arena.setup' ? { ok: true, seq: 1 } : { ok: true }
   );
   mocks.reads = [];
+  mocks.failTables = undefined;
   mocks.granted = new Set(['update_user_groups']);
   mocks.tables = {
     workspace_user_groups: [
@@ -389,6 +395,81 @@ it('imports Teach multiple choice and short answers with private keys and skips 
   });
   expect(byText('Recursion needs a base case.')).toBeUndefined();
   expect(byText('Pick one')).toBeUndefined();
+});
+
+it('skips Teach quizzes whose key names an empty or missing option and accepts string indexes', async () => {
+  mocks.tables.course_module_quizzes = ['k1', 'k2', 'k3', 'k4'].map(
+    (quiz_id) => ({ module_id: moduleId, quiz_id })
+  );
+  const choice = (id: string, options: string[]) => ({
+    id,
+    question: `Question ${id}?`,
+    type: 'multiple_choice',
+    content: { options },
+    ws_id: ws,
+  });
+  mocks.tables.workspace_quizzes = [
+    choice('k1', ['', 'A', 'B']),
+    choice('k2', ['A', 'B']),
+    choice('k3', ['Left', 'Right']),
+    {
+      id: 'k4',
+      question: 'Explain recursion.',
+      type: 'paragraph',
+      ws_id: ws,
+    },
+  ];
+  mocks.tables.workspace_quiz_answers = [
+    { quiz_id: 'k1', answer: { correctIndex: 0 } },
+    { quiz_id: 'k2', answer: { correctIndex: 5 } },
+    { quiz_id: 'k3', answer: { correctIndex: '1' } },
+    { quiz_id: 'k4', answer: {} },
+  ];
+  const action = quizArenaActionSchema.parse({
+    action: 'import_upskii',
+    courseId: course,
+    config,
+  });
+  await expect(runQuizArenaAction(access, action)).resolves.toMatchObject({
+    skipped: 2,
+  });
+  const board = mocks.room.mock.calls.find(
+    ([, command]) => command.action === 'arena.setup'
+  )?.[1].board;
+  const byText = (text: string) =>
+    board.tiles.find(
+      (tile: { question: { question: string } }) =>
+        tile.question.question === text
+    )?.question;
+  expect(byText('Question k1?')).toBeUndefined();
+  expect(byText('Question k2?')).toBeUndefined();
+  const k3 = byText('Question k3?');
+  expect(k3.options[k3.correctIndex]).toBe('Right');
+  expect(byText('Explain recursion.')).toMatchObject({
+    type: 'open_text',
+    acceptedAnswers: [],
+  });
+});
+
+it('answers 503 when lesson answer keys cannot be read', async () => {
+  mocks.tables.workspace_quizzes = [
+    {
+      id: 'q1',
+      question: 'Which?',
+      type: 'multiple_choice',
+      content: { options: ['A', 'B'] },
+      ws_id: ws,
+    },
+  ];
+  mocks.failTables = new Set(['workspace_quiz_answers']);
+  const action = quizArenaActionSchema.parse({
+    action: 'import_upskii',
+    courseId: course,
+    config,
+  });
+  await expect(runQuizArenaAction(access, action)).rejects.toMatchObject({
+    status: 503,
+  });
 });
 
 it('rejects lesson imports outside the meeting workspace or without membership', async () => {
