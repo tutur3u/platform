@@ -9,6 +9,8 @@ export const ALLOWED_INSTANCE_IDS = [
   'claude_kv',
   'claude_dd',
   'claude_hehe',
+  'claude_thanh',
+  'claude_phucvo_personal',
 ] as const;
 
 export function defaultCollectorPaths(base = stateRoot()) {

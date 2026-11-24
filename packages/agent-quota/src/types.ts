@@ -164,4 +164,6 @@ export const DEFAULT_INSTANCE_LABELS: Record<string, string> = {
   claude_kv: 'mira',
   claude_dd: 'soc',
   claude_hehe: 'skora',
+  claude_thanh: 'thanh',
+  claude_phucvo_personal: 'phucvo personal',
 };

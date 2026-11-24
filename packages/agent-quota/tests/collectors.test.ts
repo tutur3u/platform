@@ -6,8 +6,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { collectAllWith } from '../src/collectors';
 import { collectClaude } from '../src/collectors/claude';
 import { collectCodex } from '../src/collectors/codex';
+import { ALLOWED_INSTANCE_IDS } from '../src/collectors/paths';
 import { collectT3State } from '../src/collectors/t3';
 import { recommend } from '../src/policy';
+import { DEFAULT_INSTANCE_LABELS } from '../src/types';
 
 const temporary: string[] = [];
 async function tempDir(): Promise<string> {
@@ -375,8 +377,18 @@ describe('local collectors', () => {
       collectSnapshot: async (value) => value,
       readBlockLedger: async () => ({ version: 1 as const, blocks: [] }),
     });
-    expect(result.accounts).toHaveLength(8);
+    expect(result.accounts).toHaveLength(10);
+    expect(result.accounts.map((a) => a.instanceId)).toEqual(
+      expect.arrayContaining(['claude_thanh', 'claude_phucvo_personal'])
+    );
     expect(result.active).toBeUndefined();
     expect(result.t3Error).toBe('T3 activity state is unavailable.');
+  });
+
+  it('tracks claude_thanh and claude_phucvo_personal in the allowlist and default labels', () => {
+    for (const id of ['claude_thanh', 'claude_phucvo_personal']) {
+      expect(ALLOWED_INSTANCE_IDS).toContain(id);
+      expect(DEFAULT_INSTANCE_LABELS).toHaveProperty(id);
+    }
   });
 });
