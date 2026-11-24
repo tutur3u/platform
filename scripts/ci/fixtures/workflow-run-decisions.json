@@ -93,6 +93,7 @@
   "pay-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "people-registry-key.yaml": ["always"],
   "periodic-report-delivery-contract.yaml": ["path-filters"],
+  "planner-held-app-alert.yaml": ["always"],
   "playground-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "playground-execution-deploy.yaml": ["always"],
   "playground-execution-image.yaml": ["always"],

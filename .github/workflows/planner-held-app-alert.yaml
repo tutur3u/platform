@@ -1,0 +1,52 @@
+name: Production Planner Held-App Alerts
+
+# A held independent app does not block migrations, so its failure is easy to
+# miss. Report every held app loudly after each production planner run.
+on:
+  workflow_run:
+    workflows: ["Production Deployment Planner"]
+    types: [completed]
+    branches: [production]
+
+# One queue for every run, so two finishing planners never open duplicate
+# issues for the same app.
+concurrency:
+  group: planner-held-app-alert
+  cancel-in-progress: false
+  queue: max
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    if: >-
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/planner-held-app-alert.mjs
+            scripts/ci/production-planner-job-classes.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Report held apps and sync their alert issues
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: node scripts/ci/planner-held-app-alert.mjs

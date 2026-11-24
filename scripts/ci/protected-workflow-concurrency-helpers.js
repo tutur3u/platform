@@ -17,6 +17,7 @@ const serialized = [
   'meet-cloudflare.yaml',
   'mobile-deploy-stores.yaml',
   'parley-cloudflare.yaml',
+  'planner-held-app-alert.yaml',
   'playground-runtime-acceptance.yaml',
   'release-ai-package.yaml',
   'release-apis-package.yaml',

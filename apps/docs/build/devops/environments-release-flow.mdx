@@ -252,6 +252,15 @@ goes to the USER.
    when the pin has no Cron Control `main` push run, and Cron Control keeps
    serving its earlier version. `scripts/ci/production-planner-job-classes.test.mjs`
    keeps the classifier and the recovery check in agreement on that job.
+
+   Held apps never block the apply, so they are reported loudly instead:
+   after every planner run for the current `production` head,
+   `planner-held-app-alert.yaml` writes an error annotation per held job and
+   keeps one open issue per held app labeled `release-admission-alert`
+   (fleet monitors watch it), plus one for a planner blocked for migrations.
+   Each later round comments on the issue, and the first round in which the
+   app passes closes it. Regression coverage:
+   `scripts/ci/planner-held-app-alert.test.mjs`.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run
