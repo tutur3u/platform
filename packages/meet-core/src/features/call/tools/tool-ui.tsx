@@ -10,7 +10,8 @@ import { PaneHeaderExtras } from '../stage-layout/activity-shell';
 type Icon = ComponentType<{ className?: string }>;
 
 /** The one in-call action style: a pill with a 16px icon before a short label. */
-export const toolActionClass = 'h-8 gap-1.5 rounded-full px-3.5';
+export const toolActionClass =
+  'h-8 gap-1.5 rounded-full px-3.5 pointer-coarse:h-11';
 
 export function ToolAction({
   icon: Icon,

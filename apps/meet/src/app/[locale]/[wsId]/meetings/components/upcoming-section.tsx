@@ -68,9 +68,9 @@ export function UpcomingSection({
             rel="noreferrer"
             target="_blank"
           >
-            <Calendar aria-hidden className="size-3.5" />
+            <Calendar aria-hidden className="size-4" />
             {t('open_calendar')}
-            <ExternalLink aria-hidden className="size-3" />
+            <ExternalLink aria-hidden className="size-4" />
           </a>
         )}
       </div>

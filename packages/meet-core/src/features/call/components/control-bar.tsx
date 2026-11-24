@@ -19,7 +19,7 @@ import { type ReactNode, useSyncExternalStore } from 'react';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { readRoomControls, subscribeRoomControls } from '../lib/room-actions';
 import { CallMoreMenu } from './call-more-menu';
-import { ControlButton, controlPillClass } from './control-button';
+import { ControlButton, CountBadge, controlPillClass } from './control-button';
 
 export {
   ControlButton,
@@ -64,11 +64,7 @@ function PeopleControl({
         >
           <Users className="size-5" />
           {count}
-          {waiting ? (
-            <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-dynamic-blue px-1 font-medium text-[0.6rem] text-white">
-              {waiting > 9 ? '9+' : waiting}
-            </span>
-          ) : null}
+          {waiting ? <CountBadge count={waiting} /> : null}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
@@ -207,13 +203,13 @@ export function ControlBar({
     <div
       role="group"
       aria-label={t('control_bar')}
-      className="flex flex-nowrap items-center gap-1 border-t bg-background/95 px-2 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-2.5 sm:px-4"
+      className="flex flex-nowrap items-center gap-1 border-t bg-background/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-2 sm:px-4"
     >
       <div className="hidden min-w-0 flex-1 items-center gap-3 text-muted-foreground text-sm lg:flex">
         {leading}
         {context}
       </div>
-      <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {!presenceOnly && (
           <>
             <ControlButton
@@ -301,7 +297,7 @@ export function ControlBar({
           onClick={onLeave}
         />
       </div>
-      <div className="flex shrink-0 flex-1 items-center justify-end gap-1 sm:gap-2.5">
+      <div className="flex shrink-0 flex-1 items-center justify-end gap-1 sm:gap-2">
         {/* The narrowest phones reach chat through More, so nothing overlaps. */}
         <div className="hidden min-[360px]:block">{chat}</div>
         <PeopleControl

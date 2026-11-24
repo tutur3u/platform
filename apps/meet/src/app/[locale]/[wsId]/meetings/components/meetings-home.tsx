@@ -140,7 +140,7 @@ function SyncStatus({
     >
       {sync === 'refreshing' && (
         <>
-          <Loader2 aria-hidden className="size-3 motion-safe:animate-spin" />
+          <Loader2 aria-hidden className="size-4 motion-safe:animate-spin" />
           {t('refreshing')}
         </>
       )}

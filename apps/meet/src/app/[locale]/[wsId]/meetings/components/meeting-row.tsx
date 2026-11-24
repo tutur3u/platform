@@ -82,7 +82,7 @@ export function MeetingRow({
               rel="noreferrer"
               target="_blank"
             >
-              <Calendar aria-hidden className="size-3.5" />
+              <Calendar aria-hidden className="size-4" />
               {t('in_calendar')}
             </a>
           )}
@@ -102,7 +102,7 @@ export function MeetingRow({
               aria-label={t('more_actions', { name: meeting.name })}
               size="icon"
               variant="ghost"
-              className="size-8"
+              className="size-8 pointer-coarse:size-11"
             >
               <Ellipsis className="size-4" />
             </Button>

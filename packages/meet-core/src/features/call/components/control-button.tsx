@@ -27,9 +27,18 @@ export const controlPillClass =
  * trailing slot. Rows are 40px tall, 44px on touch screens.
  */
 export const controlRowClass =
-  'relative h-auto min-h-10 w-full justify-start gap-3 whitespace-normal rounded-lg px-3 py-2 text-left font-normal pointer-coarse:min-h-11';
+  'relative h-auto min-h-10 w-full justify-start gap-3 whitespace-normal rounded-xl px-3 py-2 text-left font-normal pointer-coarse:min-h-11';
 
 /** Renders ControlButtons as labelled menu rows that close the menu on use. */
+/** The unread or waiting count on a round control. */
+export function CountBadge({ count }: { count: number }) {
+  return (
+    <span className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-dynamic-blue px-1 font-medium text-white text-xs">
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
 export function ControlMenuScope({
   onClose,
   children,
@@ -125,11 +134,7 @@ export function ControlButton({
       {closeOverflow && detail ? (
         <span className="shrink-0 text-muted-foreground text-xs">{detail}</span>
       ) : null}
-      {badge ? (
-        <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-dynamic-blue px-1 font-medium text-[0.6rem] text-white">
-          {badge > 9 ? '9+' : badge}
-        </span>
-      ) : null}
+      {badge ? <CountBadge count={badge} /> : null}
     </Button>
   );
   const tip = closeOverflow ? hint : label;

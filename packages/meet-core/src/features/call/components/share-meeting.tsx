@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
@@ -57,9 +58,9 @@ function CopyField({
   const id = useId();
   return (
     <div className="grid min-w-0 gap-1.5">
-      <label className="font-medium text-sm" htmlFor={id}>
+      <Label className="font-medium text-sm" htmlFor={id}>
         {label}
-      </label>
+      </Label>
       <div className="flex min-w-0 gap-2">
         <Input
           id={id}

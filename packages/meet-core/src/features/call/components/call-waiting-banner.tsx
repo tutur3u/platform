@@ -27,7 +27,7 @@ export function CallWaitingBanner({
           className="h-8 rounded-full"
           onClick={onOpen}
         >
-          <Users className="size-3.5" />
+          <Users className="size-4" />
           {label}
         </Button>
       </MeetingActionHint>

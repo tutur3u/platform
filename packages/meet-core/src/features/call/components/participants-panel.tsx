@@ -127,7 +127,7 @@ export function ParticipantsPanel({
               <ul className="space-y-2">
                 {waiting.map((entry) => (
                   <li
-                    className="grid grid-cols-[2rem_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2"
+                    className="grid grid-cols-[2rem_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-xl border bg-muted/30 px-3 py-2"
                     key={entry.userId}
                   >
                     <Avatar className="size-8 pointer-coarse:size-11">
@@ -232,14 +232,14 @@ export function ParticipantsPanel({
                   <MiraAudioStatus participant={participant} />
                 )}
                 {raisedHandUserIds.includes(participant.userId) ? (
-                  <Hand className="size-3.5 shrink-0 text-dynamic-orange" />
+                  <Hand className="size-4 shrink-0 text-dynamic-orange" />
                 ) : null}
                 {presenceOnly || participant.media.audioEnabled ? null : (
                   <span
                     title={t('microphone_muted')}
                     className="grid size-7 shrink-0 place-items-center text-muted-foreground"
                   >
-                    <MicOff aria-hidden="true" className="size-3.5" />
+                    <MicOff aria-hidden="true" className="size-4" />
                     <span className="sr-only">{t('microphone_muted')}</span>
                   </span>
                 )}
