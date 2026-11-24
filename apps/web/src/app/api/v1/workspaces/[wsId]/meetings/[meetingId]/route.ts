@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { deleteMeetingErasingMira } from '@/lib/meet/mira-evidence-erasure';
 import { canManageLegacyRecording } from './_lib/recording-access';
 
 export async function PUT(
@@ -241,24 +242,25 @@ export async function DELETE(
     }
 
     if (!meetClassAttendanceEnabled()) {
-      const { data: deleted, error } = await supabase
-        .from('workspace_meetings')
-        .delete()
-        .eq('id', meetingId)
-        .eq('ws_id', wsId)
-        .select('id');
-
-      if (error?.code === '42501' || (!error && !deleted?.length)) {
-        return NextResponse.json(
-          { error: 'You no longer have permission to delete this meeting' },
-          { status: 403 }
-        );
-      }
-      if (error) {
-        console.error('Error deleting meeting:', error);
+      // The caller was authorized above. Deleting through the service role
+      // erases the meeting's Mira consent evidence in the same transaction,
+      // which a bare delete refuses to remove.
+      const removed = await deleteMeetingErasingMira(
+        await createAdminClient({ noCookie: true }),
+        wsId,
+        meetingId
+      );
+      if (removed.error) {
+        console.error('Error deleting meeting:', removed.error);
         return NextResponse.json(
           { error: 'Failed to delete meeting' },
           { status: 500 }
+        );
+      }
+      if (removed.data !== 'deleted') {
+        return NextResponse.json(
+          { error: 'You no longer have permission to delete this meeting' },
+          { status: 403 }
         );
       }
       return NextResponse.json({ success: true });

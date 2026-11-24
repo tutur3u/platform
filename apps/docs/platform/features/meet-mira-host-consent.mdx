@@ -98,8 +98,79 @@ anyone's content available to Mira.
 Room Live voice (mixed room audio) remains denied on the server; this decision
 does not enable it.
 
-Withdrawal does not erase content processed before it; erasure is a separate
-step. Who turned Mira on, when, and with which capabilities is logged.
+### Deleting a meeting or workspace
+
+Scope: every Meet and Parley meeting whose Mira acceptances, choices or
+per-speaker (`self_v1`) consent decisions exist when the meeting, its
+workspace or the account's workspaces are deleted.
+
+Default: the originals are removed and a minimal **proof of consent** is kept
+for three years, then purged. The proof exists to demonstrate that consent was
+given; it holds no content.
+
+`RESTRICT` stays on the evidence tables, so a bare delete of a meeting or
+workspace that holds evidence is refused: a delete path that does not erase
+first fails closed instead of destroying evidence. The product's delete flows
+call `private.erase_meet_mira_evidence(meeting, workspace, reason)` (exactly one
+scope, service role only) in the same transaction as the delete. It copies each
+host acceptance, each participant choice and each `private.meet_ai_consents`
+decision of that meeting or workspace into `private.meet_consent_proofs`,
+deletes the originals (choices, then acceptances, then per-speaker decisions)
+and writes one receipt in `private.meet_mira_evidence_erasures` (scope, ids and
+counts). A delete that fails afterwards rolls all of it back, and a concurrent
+write fails the transaction instead of losing evidence. A per-speaker session
+that can still capture refuses its own delete, so the room has to end first.
+
+A proof row holds only who consented (the account id, or the guest id), when,
+the notice version, the consent text hash, the revision and the choice
+(`accept` or `end` for a host acceptance, with what it covered; `on` or `off`
+for a participant; `allow`, `deny` or `withdraw` for a per-speaker decision),
+the per-speaker `room_seq` where present, the meeting and workspace ids as
+plain values with no foreign key, the erase reason and time, and `purge_after`.
+It holds no transcript, audio, name, email or guest label. The table is private,
+service role read-only, append-only, and rows cannot be deleted before
+`purge_after`. Deleting an account clears the account id and the per-meeting
+pseudonym that could link its rows back to it from its proof rows immediately,
+in the same trigger that anonymizes the other evidence, so an erased account
+leaves no identifiable "who". A guest id is not an account and stays.
+
+Retention: `purge_after` is the erase time plus three years, a column default
+that a later migration can change. Consent proof is the one exception to the
+30-day workspace-deletion purge in the
+[data protection standard](/platform/data-protection-standard#intentional-exceptions),
+on the legal basis of demonstrating consent. Exceptions: none for contents, which
+are always removed. The purge of rows past `purge_after` is a bounded Cloudflare
+job with a stop fence, delivered separately; until it ships, proof is kept past
+its date.
+
+The erase runs inside the owner workspace deletion
+(`public.delete_owned_workspace`), the attendance-aware meeting and workspace
+deletes, and two wrappers (`private.delete_meeting_erasing_mira`,
+`private.delete_workspace_erasing_mira`) used by the flows that carry no
+attendance intent: the meeting route while attendance is off, account
+deletion's workspace cleanup, onboarding rollback, orphaned-workspace cleanup,
+QA cleanup (which never deletes a Personal workspace) and the Cron Control QA
+expiry cleanup. Account deletion alone only anonymizes the account in the
+evidence and proof.
+
+The Web and Cron Control callers can deploy before the migration that adds the
+functions. When the function does not exist (PostgREST `PGRST202`, or 404 for
+Cron Control), they fall back to the bare delete, which RESTRICT still guards,
+so a deploy that runs ahead of the migration only loses the erase, never
+evidence. The QA expiry cleanup (a Cron Control Worker) deletes through the same
+function and fails closed the same way.
+
+The room's own copy goes with the room: ending a room drops its Mira state (the
+acceptor and every account's choice), since an ended room cannot run Mira.
+
+Regression coverage: `apps/database/supabase/tests/erase-meet-mira-evidence.sql`
+(a bare delete is refused; each delete flow keeps exactly the minimal proof with
+no content columns and removes the originals; the receipt; anonymization of proof
+rows on account deletion; proof immutable and kept until its purge date; a
+failing delete keeps the evidence; the Personal guard; settings and grants kept;
+client roles denied), `packages/realtime/src/meet/room-mira-end.test.ts` (an
+ended room keeps no Mira state), and the web, Cron Control and API tests for the
+wrappers, the meeting route and the QA cleanup.
 
 ### Affected surfaces
 

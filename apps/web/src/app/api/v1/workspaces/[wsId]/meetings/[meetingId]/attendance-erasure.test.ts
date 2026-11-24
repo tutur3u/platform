@@ -149,11 +149,16 @@ it('deletes the meeting while attendance is off without calling erasure', async 
   prepareMock.mockRejectedValue(new Error('missing migration'));
   const response = await call();
   expect(response.status).toBe(200);
-  expect(deleteMock).toHaveBeenCalledOnce();
+  // Only the Mira erase-and-delete function runs, never an attendance step.
+  expect(rpcMock).toHaveBeenCalledOnce();
+  expect(rpcMock).toHaveBeenCalledWith('delete_meeting_erasing_mira', {
+    p_ws_id: WS,
+    p_meeting_id: MEETING,
+  });
+  expect(deleteMock).not.toHaveBeenCalled();
   expect(prepareMock).not.toHaveBeenCalled();
   expect(readPendingMock).not.toHaveBeenCalled();
   expect(enqueueMock).not.toHaveBeenCalled();
-  expect(rpcMock).not.toHaveBeenCalled();
 });
 
 it('does not resume an erasure for a meeting outside this workspace', async () => {

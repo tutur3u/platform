@@ -20,13 +20,6 @@ vi.mock('@/lib/api-auth', () => ({
             }),
           }),
         }),
-        delete: () => ({
-          eq: () => ({
-            eq: () => ({
-              select: () => deleteMock(),
-            }),
-          }),
-        }),
       }),
     },
   }),
@@ -38,10 +31,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('./_lib/recording-access', () => ({
   canManageLegacyRecording: async () => true,
 }));
+// The delete goes through the service role's private erase-and-delete RPC.
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: () => {
-    throw new Error('admin client');
-  },
+  createAdminClient: async () => ({
+    schema: (name: string) => ({
+      rpc: (fn: string, args: unknown) => deleteMock(name, fn, args),
+    }),
+  }),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => false,
@@ -62,7 +58,7 @@ beforeEach(() => {
     data: { id: MEETING, creator_id: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691' },
     error: null,
   });
-  deleteMock.mockResolvedValue({ data: [{ id: MEETING }], error: null });
+  deleteMock.mockResolvedValue({ data: 'deleted', error: null });
 });
 
 function call() {
@@ -75,11 +71,30 @@ function call() {
   );
 }
 
-it('deletes a meeting while attendance storage is unavailable', async () => {
+it('deletes a meeting and erases its Mira evidence while attendance storage is unavailable', async () => {
   const response = await call();
   expect(response.status).toBe(200);
   expect(deleteMock).toHaveBeenCalledOnce();
+  expect(deleteMock).toHaveBeenCalledWith(
+    'private',
+    'delete_meeting_erasing_mira',
+    { p_ws_id: WS, p_meeting_id: MEETING }
+  );
   expect(imports.count).toBe(0);
+});
+
+it('reports a failed delete without claiming success', async () => {
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  deleteMock.mockResolvedValue({
+    data: null,
+    error: { code: '23503', message: 'blocked' },
+  });
+  expect((await call()).status).toBe(500);
+});
+
+it('answers 403 when the meeting is already gone at delete time', async () => {
+  deleteMock.mockResolvedValue({ data: 'not_deleted', error: null });
+  expect((await call()).status).toBe(403);
 });
 
 it('does not advance another workspace plan when the meeting row is absent', async () => {

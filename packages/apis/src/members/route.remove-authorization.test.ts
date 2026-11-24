@@ -72,7 +72,16 @@ function query(table: string) {
   };
   return q;
 }
-const admin = { from: vi.fn(query), rpc: vi.fn() };
+// The workspace delete runs through the private erase-and-delete function.
+const privateRpc = vi.fn(async (fn: string) => {
+  writes.push(`rpc:${fn}`);
+  return { data: 'deleted', error: null };
+});
+const admin = {
+  from: vi.fn(query),
+  rpc: vi.fn(),
+  schema: vi.fn(() => ({ rpc: privateRpc })),
+};
 
 function call(userId: string | null, email?: string, actorId = 'actor') {
   const params = new URLSearchParams();
@@ -261,7 +270,13 @@ describe('member removal target identity', () => {
         p_user_id: member,
       })
     );
-    expect(writes).toEqual(['workspace_invites', 'workspaces']);
+    expect(writes).toEqual([
+      'workspace_invites',
+      'rpc:delete_workspace_erasing_mira',
+    ]);
+    expect(privateRpc).toHaveBeenCalledWith('delete_workspace_erasing_mira', {
+      p_ws_id: 'ws-a',
+    });
   });
 
   describe('self-leave without manage_workspace_members', () => {

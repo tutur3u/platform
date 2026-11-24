@@ -12,6 +12,7 @@ import {
   refuseAccountDeletionForLastManager,
 } from '@/lib/account-deletion-guard';
 import { withSessionAuth } from '@/lib/api-auth';
+import { deleteWorkspaceErasingMira } from '@/lib/meet/mira-evidence-erasure';
 import { deleteWorkspaceWithAttendanceIntent } from '@/lib/meet/workspace-attendance-intent';
 
 const DeleteAccountSchema = z.object({
@@ -245,11 +246,7 @@ export const POST = withSessionAuth(
                   plan
                 );
               }
-              const removed = await sbAdmin
-                .from('workspaces')
-                .delete()
-                .eq('id', ws.wsId);
-              return removed;
+              return deleteWorkspaceErasingMira(sbAdmin, ws.wsId);
             });
             console.log(`Deleted orphaned workspace ${ws.wsId}`);
           } catch (error) {

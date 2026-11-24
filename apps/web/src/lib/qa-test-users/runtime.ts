@@ -5,6 +5,7 @@ import {
   getSupabaseCookieOptions,
 } from '@tuturuuu/supabase/next/common';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { deleteWorkspaceErasingMira } from '@/lib/meet/mira-evidence-erasure';
 import { deleteWorkspaceWithAttendanceIntent } from '@/lib/meet/workspace-attendance-intent';
 import type { QaDeletionDeps } from './deletion';
 import type { QaProvisionDeps } from './provision';
@@ -78,11 +79,7 @@ async function deleteRunWorkspace(admin: TypedSupabaseClient, wsId: string) {
   await deleteWorkspaceRowWithAttendance(wsId, async (plan) => {
     if (plan !== undefined)
       return deleteWorkspaceWithAttendanceIntent(admin, wsId, plan);
-    return admin
-      .from('workspaces')
-      .delete()
-      .eq('id', wsId)
-      .eq('personal', false);
+    return deleteWorkspaceErasingMira(admin, wsId, { onlyNonPersonal: true });
   });
 }
 

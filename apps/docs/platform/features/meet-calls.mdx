@@ -1245,6 +1245,15 @@ is not exposed to any client yet; legacy sessions keep the rule above.
   sessions) until the evidence is explicitly erased by its retention owner.
   The host profile foreign key is `SET NULL`, so participants keep their own
   speech.
+- Deleting a meeting or workspace over consent rows, including these
+  `private.meet_ai_consents` rows and the room Mira evidence
+  (`private.meet_mira_host_acceptances`, `private.meet_mira_participant_choices`),
+  is still refused by a bare delete. The product's delete flows instead call
+  `private.erase_meet_mira_evidence` in the same transaction as the delete: it
+  copies each decision into the minimal `private.meet_consent_proofs` (who,
+  when, notice version, hash, revision, choice, `room_seq`, no content), removes
+  the originals and keeps the proof for three years. See
+  [Mira host consent](/platform/features/meet-mira-host-consent#deleting-a-meeting-or-workspace).
 - Withdrawal does not hide speech captured before it; removing that speech is
   erasure, a separate later step.
 

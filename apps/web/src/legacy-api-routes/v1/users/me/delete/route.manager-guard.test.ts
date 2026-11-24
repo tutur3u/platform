@@ -29,7 +29,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
       rpc: (name: string, args: unknown) =>
         name === 'account_deletion_blocking_workspaces'
           ? f.guardRpc(name, args)
-          : f.privateRpc(name, args),
+          : name === 'delete_workspace_erasing_mira'
+            ? f.deleteWorkspace(args)
+            : f.privateRpc(name, args),
     }),
   }),
 }));
@@ -106,7 +108,7 @@ beforeEach(() => {
     data: { user: null },
     error: { status: 404, message: 'not found' },
   });
-  f.deleteWorkspace.mockResolvedValue({ error: null });
+  f.deleteWorkspace.mockResolvedValue({ data: 'deleted', error: null });
   f.revoke.mockResolvedValue({});
   f.revokeSeat.mockResolvedValue(undefined);
   erasure.withWorkspace.mockImplementation(

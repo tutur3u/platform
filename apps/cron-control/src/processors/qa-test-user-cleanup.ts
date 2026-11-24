@@ -6,7 +6,8 @@ import type { ProcessorContext, ProcessorResult } from './types';
 // Expiry cleanup for disposable QA test accounts. One slot lists at most
 // QA_CLEANUP_LIMIT expired accounts and deletes them one at a time through the
 // ledger: begin (marker re-check, cleanup fence and a 10-minute lease), remove
-// the run workspace once its last account goes and record that, ban then
+// the run workspace (with its Meet Mira consent evidence) once its last
+// account goes and record that, ban then
 // delete the Auth account, and settle only after Auth reports it absent.
 // The Cron Control fence is re-checked before every destructive request. An
 // unconfirmed write ends the slot as unknown; the deletion stays leased and a
@@ -88,6 +89,32 @@ async function deleteRunWorkspace(
   runId: unknown
 ): Promise<Step | null> {
   if (!(await fenceOpen(context))) return 'stopped';
+  // The delete erases the run workspace's Meet Mira consent evidence in the
+  // same transaction: a bare delete is refused while evidence exists, which
+  // would fail every slot. It never removes a Personal workspace.
+  const removed = await postPrivateRpc(
+    context,
+    'delete_workspace_erasing_mira',
+    { p_ws_id: wsId, p_only_non_personal: true }
+  );
+  // The function does not exist until its migration is applied, which can
+  // trail this deploy (PostgREST answers 404); the bare delete below is still
+  // guarded by the evidence tables' RESTRICT.
+  if (removed.kind === 'http' && removed.status === 404)
+    return deleteRunWorkspaceBare(context, wsId, runId);
+  // A redirect, 5xx or unreadable answer leaves the delete unconfirmed.
+  if (removed.kind !== 'ok') return rpcFailure(removed);
+  if (removed.value !== 'deleted' && removed.value !== 'not_deleted')
+    return 'unknown';
+  return recordWorkspaceDelete(context, runId);
+}
+
+async function deleteRunWorkspaceBare(
+  context: ProcessorContext,
+  wsId: string,
+  runId: unknown
+): Promise<Step | null> {
+  if (!(await fenceOpen(context))) return 'stopped';
   const url = new URL('/rest/v1/workspaces', context.env.SUPABASE_URL);
   url.searchParams.set('id', `eq.${wsId}`);
   url.searchParams.set('personal', 'eq.false');
@@ -102,6 +129,13 @@ async function deleteRunWorkspace(
   // A redirect or 5xx leaves the delete unconfirmed.
   if (status < 200 || status >= 300)
     return refused(status) ? 'failed' : 'unknown';
+  return recordWorkspaceDelete(context, runId);
+}
+
+async function recordWorkspaceDelete(
+  context: ProcessorContext,
+  runId: unknown
+): Promise<Step | null> {
   // The removal must be recorded before the last account settles, or nothing
   // would reconcile the workspace later.
   const recorded = await postPrivateRpc(

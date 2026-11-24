@@ -94,7 +94,26 @@ function createFakeClient(resolve: (call: Call) => QueryResult) {
     return builder;
   };
 
-  return { calls, from };
+  // Private-schema RPCs are recorded as calls of their own. Unless the test
+  // resolves them otherwise, a workspace delete reports that it deleted.
+  const schema = (name: string) => ({
+    rpc: (fn: string, args: unknown) => {
+      const call: Call = {
+        table: `${name}.${fn}`,
+        op: 'rpc',
+        payload: args,
+        filters: [],
+      };
+      calls.push(call);
+      const result = resolve(call);
+      return Promise.resolve({
+        ...result,
+        data: result.error ? result.data : (result.data ?? 'deleted'),
+      });
+    },
+  });
+
+  return { calls, from, schema };
 }
 
 function setup(adminResolve: (call: Call) => QueryResult) {
@@ -139,8 +158,9 @@ const isMemberLookup = (call: Call) =>
   call.table === 'workspace_members' && call.op === 'select';
 const isMemberInsert = (call: Call) =>
   call.table === 'workspace_members' && call.op === 'insert';
+// Deleting the workspace also erases its Mira consent evidence, in one RPC.
 const isWorkspaceDelete = (call: Call) =>
-  call.table === 'workspaces' && call.op === 'delete';
+  call.table === 'private.delete_workspace_erasing_mira' && call.op === 'rpc';
 
 describe('createWorkspaceFromOnboarding', () => {
   beforeEach(() => {
@@ -208,9 +228,10 @@ describe('createWorkspaceFromOnboarding', () => {
       success: false,
       error: 'Failed to add user to workspace',
     });
-    expect(admin.calls.find(isWorkspaceDelete)?.filters).toEqual([
-      ['id', WORKSPACE_ID],
-    ]);
+    expect(admin.calls.find(isWorkspaceDelete)?.payload).toEqual({
+      p_ws_id: WORKSPACE_ID,
+      p_only_non_personal: false,
+    });
   });
 
   it('reports a failed workspace cleanup', async () => {

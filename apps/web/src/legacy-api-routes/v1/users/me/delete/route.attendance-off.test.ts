@@ -24,7 +24,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     rpc: f.rpc,
     auth: { admin: { deleteUser: f.deleteUser } },
-    schema: () => ({ rpc: f.guardRpc }),
+    // The workspace delete runs through the private erase-and-delete RPC.
+    schema: () => ({
+      rpc: (name: string, args: unknown) =>
+        name === 'delete_workspace_erasing_mira'
+          ? f.deleteWorkspace(args)
+          : f.guardRpc(name, args),
+    }),
     from: () => ({
       delete: () => ({ eq: f.deleteWorkspace }),
     }),
@@ -75,7 +81,7 @@ beforeEach(() => {
   f.rpc.mockResolvedValue({ data: [row], error: null });
   f.guardRpc.mockResolvedValue({ data: [], error: null });
   f.deleteUser.mockResolvedValue({ error: null });
-  f.deleteWorkspace.mockResolvedValue({ error: null });
+  f.deleteWorkspace.mockResolvedValue({ data: 'deleted', error: null });
   f.revoke.mockResolvedValue({});
   f.revokeSeat.mockResolvedValue(undefined);
 });
@@ -91,6 +97,10 @@ it('deletes the account while attendance storage is unavailable', async () => {
   const response = await POST(request() as never);
   expect(response.status).toBe(200);
   expect(f.deleteWorkspace).toHaveBeenCalledOnce();
+  expect(f.deleteWorkspace).toHaveBeenCalledWith({
+    p_ws_id: expect.any(String),
+    p_only_non_personal: false,
+  });
   expect(f.deleteUser).toHaveBeenCalledOnce();
   expect(probe.imports).toBe(0);
 });

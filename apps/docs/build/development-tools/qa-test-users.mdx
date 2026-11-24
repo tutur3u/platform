@@ -213,6 +213,17 @@ unconfirmed write ends the slot as unknown before another deletion starts. A
 later slot re-verifies either; nothing is replayed blindly. Repeated failures
 trip Cron Control's consecutive-failure stop.
 
+Both cleanup paths remove the run workspace through
+`private.delete_workspace_erasing_mira`, which also moves the workspace's Meet
+Mira consent evidence into minimal consent proof in the same transaction (see
+[Mira host consent](/platform/features/meet-mira-host-consent#deleting-a-meeting-or-workspace)).
+A bare workspace delete is refused while that evidence exists, so a run whose
+meetings turned Mira on or unticked its box could not be removed otherwise.
+An account whose workspace delete failed stays `deleting`; once its 10-minute
+lease lapses the next slot, or `ttr qa users cleanup --run <id>`, replays the
+same delete and settles it without any manual SQL. The function never removes a
+Personal workspace.
+
 The Worker does not run Meet attendance subject erasure. Attendance rows of
 these synthetic accounts age out through attendance retention.
 `ttr qa users cleanup` uses the web operator path, which erases them

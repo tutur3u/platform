@@ -67,12 +67,15 @@ function ledger({
     runWorkspaceId: WS,
   },
   workspaceRecorded = true as unknown,
+  workspaceDelete = 'deleted' as unknown,
   authDelete = 200,
   authAfterDelete = 404,
 }: {
   userIds?: string[];
   begin?: Record<string, unknown> | Response;
   workspaceRecorded?: unknown;
+  /** What the erase-and-delete RPC answers: a JSON value or a Response. */
+  workspaceDelete?: unknown;
   authDelete?: number;
   authAfterDelete?: number;
 } = {}): Route {
@@ -82,6 +85,10 @@ function ledger({
         return Response.json({ mode: 'run', userIds });
       case 'qa_test_begin_delete':
         return begin instanceof Response ? begin.clone() : Response.json(begin);
+      case 'delete_workspace_erasing_mira':
+        return workspaceDelete instanceof Response
+          ? workspaceDelete.clone()
+          : Response.json(workspaceDelete);
       case 'qa_test_finish_workspace_delete':
         return workspaceRecorded instanceof Response
           ? workspaceRecorded.clone()
@@ -89,8 +96,9 @@ function ledger({
       case 'qa_test_finish_delete':
         return Response.json({ state: 'deleted' });
     }
+    // A bare table delete must never be used: Mira evidence would refuse it.
     if (url.pathname === '/rest/v1/workspaces')
-      return new Response(null, { status: 204 });
+      return new Response(null, { status: 409 });
     if (url.pathname.startsWith('/auth/v1/admin/users/')) {
       if (init.method === 'GET')
         return new Response('{}', { status: authAfterDelete });
@@ -158,7 +166,7 @@ it('removes and records the run workspace, bans then deletes the account, and se
   expect(sequence(calls)).toEqual([
     'POST /rest/v1/rpc/qa_test_list_expired',
     'POST /rest/v1/rpc/qa_test_begin_delete',
-    `DELETE /rest/v1/workspaces?id=eq.${WS}&personal=eq.false`,
+    'POST /rest/v1/rpc/delete_workspace_erasing_mira',
     'POST /rest/v1/rpc/qa_test_finish_workspace_delete',
     `PUT /auth/v1/admin/users/${USER}`,
     `DELETE /auth/v1/admin/users/${USER}`,
@@ -170,6 +178,15 @@ it('removes and records the run workspace, bans then deletes the account, and se
     p_actor: 'cron',
     p_actor_user: null,
   });
+  // The workspace goes through the erase-and-delete function, never a bare
+  // delete, and never a Personal workspace.
+  expect(JSON.parse(String(calls[2]?.init.body))).toEqual({
+    p_ws_id: WS,
+    p_only_non_personal: true,
+  });
+  expect(
+    calls.some((call) => call.path.startsWith('/rest/v1/workspaces'))
+  ).toBe(false);
   const auth = calls[4]?.init.headers as Record<string, string>;
   expect(auth.apikey).toBe('sb_secret_fixture');
   expect(auth.Authorization).toBeUndefined();
@@ -272,4 +289,118 @@ it('treats a malformed or oversized listing as an unknown outcome', async () => 
     });
     expect(calls).toHaveLength(1);
   }
+});
+
+it('deletes a run workspace that holds Mira evidence without a bare delete', async () => {
+  // The same fixture whose bare table delete answers 409 settles through the RPC.
+  const { state, calls } = context(ledger());
+  await expect(cleanupQaTestUsers(state)).resolves.toMatchObject({
+    outcome: 'ok',
+  });
+  expect(settled(calls)).toBe(true);
+});
+
+it('treats a workspace that is already gone as removed, and a Personal one as unrecorded', async () => {
+  const gone = context(ledger({ workspaceDelete: 'not_deleted' }));
+  await expect(cleanupQaTestUsers(gone.state)).resolves.toMatchObject({
+    outcome: 'ok',
+  });
+  // The ledger refuses to record a removal while the workspace row exists.
+  const personal = context(
+    ledger({ workspaceDelete: 'not_deleted', workspaceRecorded: false })
+  );
+  await expect(cleanupQaTestUsers(personal.state)).resolves.toEqual({
+    detail: { deleted: 0, unsettled: 1, skipped: 0 },
+    outcome: 'failed',
+  });
+  expect(touchedAuth(personal.calls)).toBe(false);
+});
+
+it('fails the slot on a refused workspace delete and leaves the account leased', async () => {
+  const refused = context(
+    ledger({ workspaceDelete: new Response('{}', { status: 409 }) })
+  );
+  await expect(cleanupQaTestUsers(refused.state)).resolves.toEqual({
+    detail: { deleted: 0, unsettled: 1, skipped: 0 },
+    outcome: 'failed',
+  });
+  expect(touchedAuth(refused.calls)).toBe(false);
+  expect(settled(refused.calls)).toBe(false);
+  // The next slot lists it again after the lease lapses and replays the same
+  // call, which now succeeds.
+  const retried = context(ledger());
+  await expect(cleanupQaTestUsers(retried.state)).resolves.toMatchObject({
+    outcome: 'ok',
+  });
+});
+
+it('ends the slot as unknown when the workspace delete is unconfirmed', async () => {
+  for (const workspaceDelete of [
+    new Response('{}', { status: 503 }),
+    new Response(null, { status: 307 }),
+    new Response('not json', { status: 200 }),
+    'surprise',
+  ]) {
+    const { state, calls } = context(
+      ledger({ workspaceDelete, userIds: [USER, OTHER] })
+    );
+    await expect(cleanupQaTestUsers(state)).resolves.toMatchObject({
+      outcome: 'unknown',
+    });
+    expect(touchedAuth(calls)).toBe(false);
+    expect(calls.some((call) => String(call.init.body).includes(OTHER))).toBe(
+      false
+    );
+  }
+});
+
+it('falls back to the guarded bare delete while the erase function is not deployed yet', async () => {
+  const { state, calls } = context(
+    ledger({ workspaceDelete: new Response('{}', { status: 404 }) }),
+    {}
+  );
+  // The fixture's bare table delete answers 409 (Mira evidence would refuse it),
+  // so this slot fails exactly as it did before, and nothing else is touched.
+  await expect(cleanupQaTestUsers(state)).resolves.toEqual({
+    detail: { deleted: 0, unsettled: 1, skipped: 0 },
+    outcome: 'failed',
+  });
+  expect(sequence(calls)).toContain(
+    `DELETE /rest/v1/workspaces?id=eq.${WS}&personal=eq.false`
+  );
+  expect(touchedAuth(calls)).toBe(false);
+  expect(settled(calls)).toBe(false);
+});
+
+it('records the removal after the fallback delete succeeds', async () => {
+  const route = ledger({
+    workspaceDelete: new Response('{}', { status: 404 }),
+  });
+  const { state, calls } = context((url, init) =>
+    url.pathname === '/rest/v1/workspaces'
+      ? new Response(null, { status: 204 })
+      : route(url, init)
+  );
+  await expect(cleanupQaTestUsers(state)).resolves.toMatchObject({
+    outcome: 'ok',
+  });
+  expect(settled(calls)).toBe(true);
+});
+
+it('stops before the fallback delete when the Cron Control fence closes', async () => {
+  const { state, calls } = context(
+    ledger({ workspaceDelete: new Response('{}', { status: 404 }) }),
+    {
+      fence: async (seen) =>
+        !seen.some((call) =>
+          call.path.endsWith('delete_workspace_erasing_mira')
+        ),
+    }
+  );
+  await expect(cleanupQaTestUsers(state)).resolves.toMatchObject({
+    outcome: 'stopped',
+  });
+  expect(
+    calls.some((call) => call.path.startsWith('/rest/v1/workspaces'))
+  ).toBe(false);
 });

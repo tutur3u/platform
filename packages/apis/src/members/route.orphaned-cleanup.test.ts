@@ -65,7 +65,14 @@ function adminClient(options: { workspaceMissingOnCleanup: boolean }) {
     return query;
   });
   const rpc = vi.fn().mockResolvedValue({ data: 'removed', error: null });
-  return { from, rpc, writes };
+  // The workspace delete runs through the private erase-and-delete function.
+  const schema = vi.fn(() => ({
+    rpc: async (fn: string) => {
+      writes.push(`rpc:${fn}`);
+      return { data: 'deleted', error: null };
+    },
+  }));
+  return { from, rpc, schema, writes };
 }
 
 function removeMember() {
@@ -110,7 +117,7 @@ describe('orphaned workspace cleanup', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ workspace_deleted: true });
     expect(calls).toEqual(['delete:ws-a']);
-    expect(admin.writes).toContain('workspaces');
+    expect(admin.writes).toContain('rpc:delete_workspace_erasing_mira');
   });
 
   it('resumes erasure when the workspace row is already gone', async () => {
@@ -131,7 +138,7 @@ describe('orphaned workspace cleanup', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ workspace_deleted: false });
     expect(calls).toEqual(['resume:ws-a']);
-    expect(admin.writes).not.toContain('workspaces');
+    expect(admin.writes).not.toContain('rpc:delete_workspace_erasing_mira');
   });
 
   it('keeps the workspace when the registered delete fails', async () => {
@@ -148,6 +155,6 @@ describe('orphaned workspace cleanup', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ workspace_deleted: false });
-    expect(admin.writes).not.toContain('workspaces');
+    expect(admin.writes).not.toContain('rpc:delete_workspace_erasing_mira');
   });
 });

@@ -12,9 +12,15 @@ export function endMeetRoom(
   now: string,
   _features: MeetClassFeatures = meetClassFeatures()
 ) {
+  // Room Mira state names the acceptor and keys every choice by account id.
+  // A room that has ended cannot run Mira, so it keeps none of it; the durable
+  // evidence in the database is what remains.
+  const { miraRoom: _miraRoom, ...kept } = state as MeetRoomSnapshot & {
+    miraRoom?: unknown;
+  };
   const attendance = closeOpenAttendanceIntervals(state.attendance, now);
   return {
-    ...failActiveRecording(state, now),
+    ...failActiveRecording(kept, now),
     ...(attendance === undefined ? {} : { attendance }),
     endedAt: state.endedAt ?? now,
     budget: state.budget

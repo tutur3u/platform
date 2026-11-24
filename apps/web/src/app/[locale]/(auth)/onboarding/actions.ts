@@ -18,6 +18,7 @@ import type {
   UseCase,
   WhitelistStatus,
 } from './types';
+import { deleteWorkspaceErasingMira } from '@/lib/meet/mira-evidence-erasure';
 import { deleteWorkspaceWithAttendanceIntent } from '@/lib/meet/workspace-attendance-intent';
 import { FLOW_TYPES, getFlowSteps, ONBOARDING_STEPS } from './types';
 
@@ -300,11 +301,7 @@ export async function createWorkspaceFromOnboarding(
               plan
             );
           }
-          const removed = await sbAdmin
-            .from('workspaces')
-            .delete()
-            .eq('id', workspace.id);
-          return removed;
+          return deleteWorkspaceErasingMira(sbAdmin, workspace.id);
         });
       } catch (cleanupError) {
         console.error('Error cleaning up workspace:', cleanupError);
