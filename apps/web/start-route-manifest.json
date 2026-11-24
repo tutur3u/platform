@@ -8,16 +8,13 @@
     "owner": "web-next",
     "source": "apps/web/src/app/sw.ts",
     "disposition": "Next-fallback",
-    "bypassPrefixes": [
-      "/meet",
-      "/mail"
-    ]
+    "bypassPrefixes": ["/meet", "/mail"]
   },
   "crons": [],
   "summary": {
-    "total": 900,
+    "total": 901,
     "categories": {
-      "api": 700,
+      "api": 701,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -26,10 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": {
-      "native-Start": 12,
-      "Next-fallback": 888
-    }
+    "dispositions": { "native-Start": 12, "Next-fallback": 889 }
   },
   "routes": [
     {
@@ -4246,6 +4240,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/avatar/upload-url",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/billing/upgrade-options",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/billing/upgrade-options/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
