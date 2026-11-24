@@ -3,7 +3,23 @@
 import { AudioLines, MessageSquare } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { MiraAvatar } from './mira-profile';
+
+const miraTagClass = 'gap-1 rounded-full bg-dynamic-purple text-background';
+
+/** The pill shown while Mira is writing, in the same style as its mode tag. */
+export function MiraTypingTag({ children }: { children: ReactNode }) {
+  return (
+    <Badge variant="secondary" className={miraTagClass}>
+      <span
+        aria-hidden
+        className="size-2 rounded-full bg-background motion-safe:animate-pulse"
+      />
+      {children}
+    </Badge>
+  );
+}
 
 export function MiraModeTag({
   mode,
@@ -15,10 +31,7 @@ export function MiraModeTag({
   const t = useTranslations('meet.call.miraEverywhere');
   const Icon = mode === 'chat' ? MessageSquare : AudioLines;
   return (
-    <Badge
-      variant="secondary"
-      className="gap-1 rounded-full bg-dynamic-purple text-background"
-    >
+    <Badge variant="secondary" className={miraTagClass}>
       <Icon aria-hidden className="size-3" />
       {t(compact ? `${mode}Mode` : `${mode}Tag`)}
     </Badge>

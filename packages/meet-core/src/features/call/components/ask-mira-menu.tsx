@@ -40,7 +40,7 @@ export function AskMiraMenu({
           className="shrink-0 gap-1.5"
         >
           <Sparkles aria-hidden className="size-4" />
-          <span className="hidden @[17rem]:inline">{t('ask_mira')}</span>
+          <span className="hidden @[23rem]:inline">{t('ask_mira')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent

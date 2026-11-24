@@ -88,7 +88,7 @@ export function RoomMiraNotice({
     <ul className="space-y-1 text-muted-foreground text-xs">
       {privateUsers.map((person) => (
         <li key={person.userId} role="status" className="flex gap-1.5">
-          <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          <Lock aria-hidden className="mt-0.5 size-4 shrink-0" />
           {tl('phase_private_indicator', { name: person.displayName })}
         </li>
       ))}
@@ -226,7 +226,7 @@ function ParticipantChoice({
         role="status"
         className="inline-flex items-center gap-1.5 text-muted-foreground"
       >
-        <Loader2 aria-hidden className="size-3.5 animate-spin" />
+        <Loader2 aria-hidden className="size-4 animate-spin" />
         {t('pausing')}
       </p>
     );

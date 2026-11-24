@@ -55,7 +55,7 @@ export function CallHeader({
             variant="secondary"
             className="h-7 shrink-0 gap-1.5 rounded-full px-2.5"
           >
-            <Eye aria-hidden="true" className="size-3.5" />
+            <Eye aria-hidden="true" className="size-4" />
             {t('presence_only')}
           </Badge>
         )}

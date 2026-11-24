@@ -190,7 +190,7 @@ export function PrivateMiraNotice({
   const action = (value: PrivateChoice, label: string) => (
     <Button
       autoFocus={value === 'continue'}
-      className="h-auto min-h-9 min-w-0 flex-1 whitespace-normal px-2 py-1.5 leading-tight pointer-coarse:min-h-11"
+      className="h-auto min-h-9 min-w-0 flex-1 whitespace-normal px-2 py-1.5 leading-tight pointer-coarse:min-h-11 sm:flex-none sm:whitespace-nowrap sm:px-3"
       aria-describedby={value === 'continue' ? adultNoticeId : undefined}
       variant={
         value === 'continue'
@@ -213,7 +213,7 @@ export function PrivateMiraNotice({
   );
   return (
     <section className="space-y-2" aria-label={t('phase_notice_title')}>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {action('continue', t('phase_continue'))}
         {action('mute', t('phase_mute'))}
         {action('leave', t('phase_leave'))}

@@ -210,6 +210,21 @@ it('keeps the control while room Mira is unavailable, so the creator can reach t
   expect(controls.openConsent).toHaveBeenCalledTimes(1);
 });
 
+it('starts the popover with the assistant entry, with no empty section above it', async () => {
+  f.read.mockResolvedValue({ available: false });
+  act(() => publishLiveSession(session()));
+  show();
+  fireEvent.click(
+    await screen.findByRole('button', { name: messages.meet.live.title })
+  );
+  const panel = await screen.findByRole('dialog');
+  const open = screen.getByRole('button', {
+    name: messages.meet.live.open_private,
+  });
+  expect(panel.firstElementChild?.contains(open)).toBe(true);
+  expect(panel.firstElementChild?.className).toContain('first:border-t-0');
+});
+
 it('keeps the control when the room Mira read fails', async () => {
   f.read.mockRejectedValue(new Error('offline'));
   act(() => publishLiveSession(session()));

@@ -250,6 +250,13 @@ it('renders action cards only for trusted Mira messages and dispatches authorize
     },
   });
   expect(screen.getByText('Mira is typing…')).toBeTruthy();
+  // The typing pill reuses the Mira tag style, never the calendar token.
+  expect(screen.getByText('Mira is typing…').className).toContain(
+    'bg-dynamic-purple'
+  );
+  expect(screen.getByText('Mira is typing…').className).not.toContain(
+    'calendar-bg'
+  );
   // No Chat pill on Mira messages; the profile still carries the AI marker.
   expect(screen.queryByText('Mira • Chat')).toBeNull();
   expect(screen.queryByText('Chat')).toBeNull();

@@ -45,7 +45,7 @@ export function CallTopBarConnection({
         type="button"
         variant="outline"
       >
-        <RefreshCw className="size-3.5" />
+        <RefreshCw className="size-4" />
         {t('connection_refresh')}
       </Button>
     </MeetingActionHint>

@@ -20,7 +20,7 @@ export function MiraPrivateEntry({
   const t = useTranslations('meet.live');
   const live = !['idle', 'error', 'ended'].includes(session.status);
   return (
-    <div className="space-y-2 border-t pt-2">
+    <div className="space-y-2 border-t pt-2 first:border-t-0 first:pt-0">
       <Button
         type="button"
         size="sm"

@@ -52,6 +52,14 @@ it('keeps a short placeholder while no Q&A is open', () => {
   expect(placeholder()?.length).toBeLessThan(45);
 });
 
+it('asks only for a message, and the Ask Mira button teaches the rest', () => {
+  show('en');
+  expect(placeholder()).toBe('Message everyone');
+  cleanup();
+  show('vi');
+  expect(placeholder()).toBe('Nhắn cho mọi người');
+});
+
 it('points questions to the Q&A while it is open', () => {
   show('en', true);
   expect(placeholder()).toBe('Message everyone · questions go to Q&A');

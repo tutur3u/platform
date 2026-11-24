@@ -19,13 +19,13 @@ import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 export function MiraAbout({ children }: { children?: ReactNode }) {
   const t = useTranslations('meet.mira_consent');
   return (
-    <Collapsible className="border-t pt-2">
-      <CollapsibleTrigger className="group flex min-h-8 w-full items-center gap-1.5 rounded-md text-start font-medium text-xs outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 [&[data-state=closed]]:text-muted-foreground">
-        <Info aria-hidden className="size-3.5 shrink-0" />
+    <Collapsible className="border-t pt-2 first:border-t-0 first:pt-0">
+      <CollapsibleTrigger className="group flex min-h-8 w-full items-center gap-1.5 rounded-xl text-start font-medium text-xs outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11 [&[data-state=closed]]:text-muted-foreground">
+        <Info aria-hidden className="size-4 shrink-0" />
         <span className="flex-1">{t('about')}</span>
         <ChevronDown
           aria-hidden
-          className="size-3.5 shrink-0 transition-transform group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+          className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180 motion-reduce:transition-none"
         />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 pt-2">

@@ -90,6 +90,14 @@ it('keeps the room audience note in the empty state only', () => {
   expect(empty?.textContent).toContain(call.room_chat_audience);
 });
 
+it('keeps one short audience line in the empty state, with no @mira hint', () => {
+  show();
+  const empty = screen.getByText(call.chat_empty).parentElement;
+  expect(empty?.querySelectorAll('p')).toHaveLength(2);
+  expect(empty?.textContent).not.toContain('@mira');
+  expect(empty?.textContent).not.toContain('@ttr');
+});
+
 it('keeps the host /summary command working in the Meeting Room tab', async () => {
   const sent = show();
   const composer = screen.getByRole('textbox', { name: call.chat });

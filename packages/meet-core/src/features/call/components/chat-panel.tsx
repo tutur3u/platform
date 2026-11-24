@@ -55,7 +55,7 @@ import { ChatMessageBody } from './chat-message-body';
 import { ChatAuthor } from './chat-author';
 import { ChatSystemLine } from './chat-system-line';
 import type { MiraPermissionsProps } from './mira-permissions-card';
-import { MiraLiveDot, MiraModeTag } from './mira-presence';
+import { MiraModeTag, MiraTypingTag } from './mira-presence';
 import { MiraAvatar, MiraProfile } from './mira-profile';
 import { roomMiraConsentKey } from './use-room-mira';
 import {
@@ -136,7 +136,7 @@ function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
             {(size / 1024 / 1024).toFixed(1)} MB
           </span>
         </span>
-        <Download className="size-3.5" />
+        <Download className="size-4" />
       </a>
     </div>
   );
@@ -367,7 +367,7 @@ export function ChatPanel({
                         youLabel={t('you')}
                       />
                     )}
-                    <time className="shrink-0 text-[0.65rem] text-muted-foreground">
+                    <time className="shrink-0 text-muted-foreground text-xs">
                       {new Date(message.createdAt).toLocaleTimeString(
                         undefined,
                         {
@@ -434,7 +434,7 @@ export function ChatPanel({
               className="mt-2"
               onClick={() => void reviews.refetch()}
             >
-              <RefreshCw className="size-3.5" />
+              <RefreshCw className="size-4" />
               {t('assistant_review_retry')}
             </Button>
           </div>
@@ -445,8 +445,7 @@ export function ChatPanel({
               <MiraAvatar size={36} />
             </div>
             <p className="text-muted-foreground text-sm">{t('chat_empty')}</p>
-            <p className="text-muted-foreground text-xs">{t('mira_hint')}</p>
-            <p className="mx-auto max-w-xs text-pretty text-muted-foreground text-xs">
+            <p className="text-muted-foreground text-xs">
               {t('room_chat_audience')}
             </p>
           </div>
@@ -454,10 +453,7 @@ export function ChatPanel({
         {miraTyping && (
           <div role="status" className="mt-3 flex flex-wrap items-center gap-2">
             <MiraAvatar size={24} />
-            <span className="inline-flex items-center gap-2 rounded-full border border-dynamic-purple/25 bg-calendar-bg-purple px-2.5 py-1 font-semibold text-dynamic-purple text-xs">
-              <MiraLiveDot />
-              {tm('typing')}
-            </span>
+            <MiraTypingTag>{tm('typing')}</MiraTypingTag>
           </div>
         )}
         {assistantNotice && !thinking && (
@@ -470,7 +466,7 @@ export function ChatPanel({
         <div ref={bottom} />
       </ScrollArea>
       <form
-        className="space-y-2 border-t p-3"
+        className="space-y-2 border-t px-4 py-3"
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
@@ -481,15 +477,15 @@ export function ChatPanel({
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className="flex items-center gap-2 rounded-lg bg-muted p-2 text-xs"
+                className="flex items-center gap-2 rounded-xl bg-muted p-2 text-xs"
               >
-                <Paperclip className="size-3 shrink-0" />
+                <Paperclip className="size-4 shrink-0" />
                 <span className="min-w-0 flex-1 truncate">{file.name}</span>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-5"
+                  className="size-8 pointer-coarse:size-11"
                   disabled={busy}
                   aria-label={t('remove_attachment')}
                   onClick={() => {
@@ -502,7 +498,7 @@ export function ChatPanel({
                     setFiles((all) => all.filter((_, i) => i !== index));
                   }}
                 >
-                  <X className="size-3" />
+                  <X className="size-4" />
                 </Button>
               </li>
             ))}
@@ -521,7 +517,7 @@ export function ChatPanel({
                 id={`${paletteId}-${command}`}
                 role="option"
                 aria-selected={command === activeCommand}
-                className="flex cursor-pointer flex-wrap items-baseline gap-x-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent aria-selected:bg-accent"
+                className="flex cursor-pointer flex-wrap items-baseline gap-x-2 rounded-xl px-2 py-1.5 text-xs hover:bg-accent aria-selected:bg-accent"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => chooseCommand(command)}
               >

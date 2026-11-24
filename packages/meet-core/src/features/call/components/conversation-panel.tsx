@@ -47,13 +47,13 @@ export function ConversationPanel({
       onValueChange={setMode}
       className="flex min-h-0 flex-1 flex-col gap-0"
     >
-      <TabsList className="mx-3 my-2 grid grid-cols-2">
+      <TabsList className="mx-4 my-2 grid grid-cols-2">
         <TabsTrigger value="room">
-          <Users aria-hidden className="size-3.5" />
+          <Users aria-hidden className="size-4" />
           <span className="truncate">{tm('roomTab')}</span>
         </TabsTrigger>
         <TabsTrigger ref={privateTab} value="personal">
-          <LockKeyhole aria-hidden className="size-3.5" />
+          <LockKeyhole aria-hidden className="size-4" />
           <span className="truncate">{tm('tutor.tab')}</span>
         </TabsTrigger>
       </TabsList>

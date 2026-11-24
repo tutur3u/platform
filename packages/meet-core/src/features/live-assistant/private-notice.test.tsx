@@ -213,6 +213,19 @@ it('states the 18+ rule beside Continue as part of the choice', async () => {
     ).toBeNull();
   expect(f.write).not.toHaveBeenCalled();
 });
+it('keeps each choice on one line from sm and wraps the row, not the labels', async () => {
+  show();
+  await enabledContinue();
+  for (const name of [live.phase_continue, live.phase_mute, live.phase_leave]) {
+    const button = screen.getByRole('button', { name });
+    expect(button.className).toContain('sm:whitespace-nowrap');
+    expect(button.className).toContain('whitespace-normal');
+  }
+  expect(
+    screen.getByRole('button', { name: live.phase_continue }).parentElement
+      ?.className
+  ).toContain('flex-wrap');
+});
 it('names the workspace 18+ setting when the workspace has not turned Mira on', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',
