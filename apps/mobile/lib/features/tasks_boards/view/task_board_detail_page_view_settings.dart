@@ -152,14 +152,11 @@ List<TaskBoardTask> _listViewTasksUnder(
       .toList(growable: false);
 }
 
-/// Whether [list] is known to have no visible tasks: the server count is zero,
-/// or every page has loaded and nothing passed the current filters.
 /// Whether [list] is known to have no visible tasks. Only the server task
 /// count decides, so columns do not disappear mid-session while pages load or
 /// tasks move, which would shift the Kanban page onto another list.
 bool _taskBoardListIsKnownEmpty(
   TaskBoardList list,
-  TaskBoardDetailState state,
   List<TaskBoardTask> visibleTasks,
 ) => visibleTasks.isEmpty && list.taskCount == 0;
 
@@ -175,7 +172,6 @@ List<TaskBoardList> _kanbanListsUnder(
       .where(
         (list) => !_taskBoardListIsKnownEmpty(
           list,
-          state,
           tasksByList[list.id] ?? const <TaskBoardTask>[],
         ),
       )
