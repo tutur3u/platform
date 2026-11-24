@@ -6,10 +6,11 @@ import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   write: vi.fn(),
+  selects: [] as string[],
   rows: [] as Array<{
     id: string;
     name: string;
-    value_rev: number;
+    value_rev?: number;
     ws_id: string;
   }>,
 }));
@@ -111,7 +112,7 @@ describe('admin Secrets routes with the workspace secrets Worker', () => {
     expect((await call(PUT, { value: MARKER })).status).toBe(200);
     expect(mocks.selects).not.toContain('value_rev');
     expect(
-      mocks.selects.every((columns) => !columns.includes('value_rev'))
+      mocks.selects.every((columns: string) => !columns.includes('value_rev'))
     ).toBe(true);
     expect(mocks.write).toHaveBeenCalledWith({ value: MARKER });
   });
