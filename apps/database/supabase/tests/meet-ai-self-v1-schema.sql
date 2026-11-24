@@ -40,7 +40,8 @@ select ok((select bool_and(has_function_privilege('service_role', p.oid, 'EXECUT
   where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'),
   'self_v1 functions are service-executable with an explicit pg_temp-last path');
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 12, 'twelve self_v1 functions exist');
+  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 30,
+  'thirty self_v1 functions exist (contracts plus the capture path)');
 
 -- N2 FK actions are explicit.
 select is((select confdeltype::text from pg_constraint where conname = 'meet_ai_sessions_user_id_fkey'), 'n',
@@ -172,9 +173,12 @@ returns void language sql as $$
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
     capture_consent_revision, erase_generation, transcript_revision)
-  values (pg_temp.cid(chunk), pg_temp.cid(89032), seq, start_ms / 1000.0, 10, 'completed', 'text ' || chunk,
+  values (pg_temp.cid(chunk), pg_temp.cid(89032), seq, start_ms / 1000.0, 10, 'processing', null,
     pg_temp.cid(stream), pg_temp.cid(account), 'microphone', sha256(chunk::text::bytea), start_ms, start_ms + 10000,
     100, start_ms * 16, 1, 0, 0);
+  -- Inserts are processing only; text is stored after dispatch at revision 1.
+  update public.meet_ai_chunks set dispatch_consent_revision = 1, status = 'completed',
+    transcript = 'text ' || chunk where id = pg_temp.cid(chunk);
 $$;
 select throws_ok($$select pg_temp.self_chunk(89060, 89051, 89003, 0, 0)$$, '55000', null,
   'a revoked (taken-over) stream stores no speech');
