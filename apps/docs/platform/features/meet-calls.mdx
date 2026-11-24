@@ -2366,8 +2366,8 @@ picker and operating system stay authoritative; Meet only says what it accepts:
 
 | Shared surface | Audio Meet requests | Where it is offered |
 | --- | --- | --- |
-| Browser tab | The tab's audio | Chrome and Edge on desktop |
-| Window | The window's audio (`windowAudio: 'window'`) | Only where the browser offers it; usually not |
+| Browser tab | The tab’s audio | Chrome and Edge on desktop |
+| Window | The window’s audio (`windowAudio: 'window'`) | Only where the browser offers it; usually not |
 | Entire screen | System audio (`systemAudio: 'include'`) | Chrome and Edge on Windows and ChromeOS; macOS needs recent browser and macOS versions |
 
 Every share requests `systemAudio: 'include'`; a browser that does not offer
@@ -2395,7 +2395,9 @@ agent:
 - Surface not reported: no audio is being shared.
 
 A live audio track that is still muted shows no badge until it delivers, so
-Meet never claims “no audio” for a track that is about to start. Remote screen
+Meet does not claim “no audio” for a track that is about to start. If it stays
+muted for 5 seconds the badge falls back to the no-audio explanation for the
+shared surface; any change to the track restarts that wait. Remote screen
 tiles play shared audio, and muting the microphone does not mute shared audio.
 Stopping screen sharing stops both its audio and video tracks. The host’s
 shared audio is included in the existing consent-controlled transcription
@@ -2841,9 +2843,12 @@ microphone and subsequent device switches in that call, without unmuting it.
 The status under each control comes from the captured track's `getSettings()`;
 a requested setting is not proof that a browser or device applied it.
 
-Screen capture excludes whole-system audio and requests `restrictOwnAudio` to
-avoid returning meeting playback to peers. These are browser hints, so browser
-compatibility still matters. Share a browser tab with audio when presenting media.
+Screen capture requests `systemAudio: 'include'` on entire-screen shares and
+sets `restrictOwnAudio` so meeting playback is not returned to peers. Meet’s own
+playback is excluded where the browser supports it (Chrome and Edge on Windows);
+macOS and ChromeOS are pending the manual QA in the screen audio section. These
+are browser hints, so browser compatibility still matters. Share a browser tab
+with audio when presenting media.
 Each remote camera or screen feed also has a local mute control: it silences only
 that feed on the listener's device, without changing room participant permissions.
 

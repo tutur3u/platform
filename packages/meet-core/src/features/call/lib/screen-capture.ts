@@ -66,7 +66,11 @@ function surfaceOf(stream: MediaStream): ScreenCaptureSurface {
 }
 
 /** Classifies a captured screen stream for the notice. */
-export function describeScreenAudio(stream: MediaStream): ScreenAudioState {
+export function describeScreenAudio(
+  stream: MediaStream,
+  /** Treats a track that stayed muted as no audio, once the wait is over. */
+  mutedIsOff = false
+): ScreenAudioState {
   const surface = surfaceOf(stream);
   const tracks = stream
     .getAudioTracks()
@@ -74,7 +78,8 @@ export function describeScreenAudio(stream: MediaStream): ScreenAudioState {
   if (tracks.some((track) => !track.muted))
     return { hasAudio: true, reason: 'sharing', surface };
   // A track that exists but is muted may still start delivering.
-  if (tracks.length) return { hasAudio: true, reason: 'pending', surface };
+  if (tracks.length && !mutedIsOff)
+    return { hasAudio: true, reason: 'pending', surface };
   const hasAudio = false;
   switch (surface) {
     case 'browser':

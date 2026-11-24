@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
-import vi from '../../../../../../apps/meet/messages/vi.json';
-import { ScreenAudioStatus } from './screen-audio-status';
+import viMessages from '../../../../../../apps/meet/messages/vi.json';
+import { PENDING_AUDIO_MS, ScreenAudioStatus } from './screen-audio-status';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 function track(kind: string, extra: Record<string, unknown> = {}) {
   const listeners = new Set<() => void>();
@@ -38,7 +41,7 @@ function show(value: MediaStream, locale = 'en') {
   render(
     <NextIntlClientProvider
       locale={locale}
-      messages={locale === 'vi' ? vi : messages}
+      messages={locale === 'vi' ? viMessages : messages}
     >
       <ScreenAudioStatus stream={value} />
     </NextIntlClientProvider>
@@ -64,8 +67,8 @@ it('explains a whole-screen share without audio in one text for every cause', ()
 it('explains a whole-screen share without audio in Vietnamese', () => {
   show(stream('monitor', false), 'vi');
   expect(screen.getByRole('status').textContent).toBe(
-    vi.meet.call.screen_audio_off +
-      vi.meet.call.screen_audio_reason_system_audio_off
+    viMessages.meet.call.screen_audio_off +
+      viMessages.meet.call.screen_audio_reason_system_audio_off
   );
 });
 
@@ -78,8 +81,8 @@ it('explains a tab share without audio in each language', () => {
   cleanup();
   show(stream('browser', false), 'vi');
   expect(screen.getByRole('status').textContent).toBe(
-    vi.meet.call.screen_audio_off +
-      vi.meet.call.screen_audio_reason_tab_audio_off
+    viMessages.meet.call.screen_audio_off +
+      viMessages.meet.call.screen_audio_reason_tab_audio_off
   );
 });
 
@@ -104,5 +107,30 @@ it('claims nothing while the audio track is muted, then reports sharing once it 
   act(() => audio.emit());
   expect(screen.getByRole('status').textContent).toBe(
     messages.meet.call.screen_audio_on
+  );
+});
+
+it('falls back to the no-audio explanation after the track stays muted, and restarts the wait on a change', () => {
+  vi.useFakeTimers();
+  const value = stream('monitor', true);
+  const audio = value.getAudioTracks()[0] as unknown as {
+    emit: () => void;
+    muted: boolean;
+  };
+  audio.muted = true;
+  show(value);
+  act(() => vi.advanceTimersByTime(PENDING_AUDIO_MS - 1000));
+  expect(screen.queryByRole('status')).toBeNull();
+  // Unmuting and muting again restarts the wait.
+  audio.muted = false;
+  act(() => audio.emit());
+  audio.muted = true;
+  act(() => audio.emit());
+  act(() => vi.advanceTimersByTime(PENDING_AUDIO_MS - 1000));
+  expect(screen.queryByRole('status')).toBeNull();
+  act(() => vi.advanceTimersByTime(1000));
+  expect(screen.getByRole('status').textContent).toBe(
+    messages.meet.call.screen_audio_off +
+      messages.meet.call.screen_audio_reason_system_audio_off
   );
 });

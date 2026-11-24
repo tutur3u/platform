@@ -66,6 +66,15 @@ describe('describeScreenAudio', () => {
     ).toMatchObject({ hasAudio: false, reason: 'system_audio_off' });
   });
 
+  it('counts a track that stayed muted as no audio once the wait is over', () => {
+    expect(
+      describeScreenAudio(
+        stream('monitor', [{ muted: true, readyState: 'live' }]),
+        true
+      )
+    ).toMatchObject({ hasAudio: false, reason: 'system_audio_off' });
+  });
+
   it('claims nothing about a live track that is still muted', () => {
     expect(
       describeScreenAudio(
