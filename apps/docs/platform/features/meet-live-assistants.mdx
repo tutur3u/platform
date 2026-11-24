@@ -347,6 +347,35 @@ settlements remain durable and retry after the session ends. Final provider usag
 is collected during shutdown. Interrupted turns without a final usage receipt
 remain marked incomplete even if subsequent turns succeed.
 
+### Transcription and notes model entitlement
+
+Product decision D434 (#8460) covers Meet AI transcription and notes, which
+always run on `google/gemini-3.1-flash-lite` (`MEET_AI_MODEL`) with the
+`generate` credit feature.
+
+- **Payer:** the host's payer is resolved by `requireMeetTranscriptPayer`, the
+  same rule as room Mira. A verified-staff session pays from the Tuturuuu root
+  workspace. Any other eligible host pays from the meeting workspace. QA test
+  accounts are never staff, including `--staff` QA hosts: they pay from the
+  meeting workspace.
+- **Plans:** the model is on the Plus, Pro and Enterprise plan allocations, the
+  tiers that `MEET_AI_RELEASE=paid-and-staff` targets. An empty allowed-model
+  list already allows every model. Free plans do not include it, so a Free
+  meeting workspace is refused with `402 MEET_AI_MODEL_NOT_ON_PLAN` even when
+  its host has a paid Personal plan.
+- **Staff:** the root workspace has no subscription and resolves to Free. An
+  internal allowance (`private.ai_internal_payer_allows_model`) grants root,
+  and only root, this model for `generate` in the plan model and feature gates.
+  The application selects root as the payer only for a verified-staff session.
+  Root's credit balance, daily limits and settlement still apply, and AI Studio
+  API keys never inherit the allowance.
+- **Refusals:** a 402 names the payer that refused: "Tuturuuu staff billing" or
+  "the meeting workspace".
+
+Regression coverage: `meet-transcription-model-entitlement.sql` (pgTAP, per
+tier and root) and `payer-rule.test.ts` (staff, paid, QA and model-not-on-plan
+payers).
+
 Room admins can see aggregated Live provider costs in meeting settings.
 The count represents billing periods, including renewed reservations and
 separate approved speech requests, rather than unique people. Updates are
@@ -523,7 +552,9 @@ Worker configuration for paid and staff Mira:
 `tuturuuu-meet-realtime` needs only the new source for the fence; its Meet AI
 variables still gate note sharing and can stay contained. To stop Mira
 everywhere, release with `MEET_AI_RELEASE=contained`; to exclude one workspace, list it in `MEET_AI_DISABLED_WORKSPACE_IDS`.
-The Tuturuuu root workspace needs AI credits for staff usage. The Worker needs its existing Supabase configuration,
+The Tuturuuu root workspace needs AI credits for staff usage, including the
+internal transcription allowance described in
+[Transcription and notes model entitlement](#transcription-and-notes-model-entitlement). The Worker needs its existing Supabase configuration,
 `MEET_REALTIME_TOKEN_SECRET`, and `GOOGLE_GENERATIVE_AI_API_KEY`; no key is sent
 to another Worker or to the browser. Wrangler's `meet-live-v1` migration creates
 the SQLite Durable Object binding `MEET_LIVE`.

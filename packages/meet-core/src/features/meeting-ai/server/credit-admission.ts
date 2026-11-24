@@ -2,6 +2,7 @@ import 'server-only';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
 import { MeetAiError } from './access';
 
@@ -75,12 +76,18 @@ export async function admitMeetCredits(
       'MEET_AI_CREDIT_CHECK_FAILED'
     );
   const allowance = checked.right;
+  // Name the payer that refused: verified-staff use is billed to root.
+  const staffPayer = workspaceId === ROOT_WORKSPACE_ID;
   if (!allowance.allowed)
     throw new MeetAiError(
       402,
       allowance.errorCode === 'CREDITS_EXHAUSTED'
-        ? 'The meeting workspace is out of AI credits'
-        : 'AI credits unavailable for the meeting workspace',
+        ? staffPayer
+          ? 'Tuturuuu staff billing is out of AI credits'
+          : 'The meeting workspace is out of AI credits'
+        : staffPayer
+          ? 'AI credits unavailable for Tuturuuu staff billing'
+          : 'AI credits unavailable for the meeting workspace',
       refusalCodes[allowance.errorCode ?? ''] ?? 'MEET_AI_CREDITS_UNAVAILABLE'
     );
   return { workspaceId, allowance };
