@@ -57,6 +57,7 @@
     "src/app/api/meet-ai/[wsId]/[meetingId]/self/mode/route.ts",
     "src/app/api/meet-ai/[wsId]/[meetingId]/self/open/route.ts",
     "src/app/api/meet-ai/[wsId]/[meetingId]/self/renew/route.ts",
+    "src/app/api/meet-ai/self/outbox/route.ts",
     "src/app/api/meet-call/[meetingId]/assistant/personal/route.ts",
     "src/app/api/meet-call/[meetingId]/assistant/review/route.ts",
     "src/app/api/meet-call/[meetingId]/assistant/route.ts",

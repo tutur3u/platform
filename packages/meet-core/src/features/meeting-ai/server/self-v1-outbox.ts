@@ -10,7 +10,7 @@ import {
   selfRoomCommands,
 } from './self-v1-room';
 
-const entrySchema = z.object({
+export const selfOutboxEntrySchema = z.object({
   sessionId: z.uuid(),
   accountId: z.uuid(),
   seq: z.number().int().positive(),
@@ -47,39 +47,36 @@ async function writeEntry(db: TypedSupabaseClient, entry: MeetSelfOutboxEntry) {
   }
 }
 
-/**
- * Writes the room's pending legal entries for one session, in room sequence
- * order per account, then acknowledges the ones that landed. A failed entry
- * stops that account's later entries so order is never broken; the room keeps
- * the rest for the next drain point. Throws 503 when any entry stayed pending.
- */
-export async function drainSelfOutbox(
-  db: TypedSupabaseClient,
-  room: MeetSelfRoom,
-  sessionId: string,
-  pending: unknown[]
-) {
-  const entries = pending.flatMap((value) => {
-    const parsed = entrySchema.safeParse(value);
-    return parsed.success && parsed.data.sessionId === sessionId
-      ? [parsed.data]
-      : [];
+/** Entries from an untrusted list, keeping only well-formed ones. */
+export function parseSelfOutboxEntries(pending: unknown[]) {
+  return pending.flatMap((value) => {
+    const parsed = selfOutboxEntrySchema.safeParse(value);
+    return parsed.success ? [parsed.data] : [];
   });
-  if (!entries.length) return;
-  const byAccount = new Map<string, MeetSelfOutboxEntry[]>();
-  for (const entry of entries)
-    byAccount.set(entry.accountId, [
-      ...(byAccount.get(entry.accountId) ?? []),
-      entry,
-    ]);
-  const settled: Array<{ accountId: string; seq: number }> = [];
+}
+
+/**
+ * Writes legal entries in room sequence order per session and account. A
+ * failed entry stops that account's later entries in its session so order is
+ * never broken. Returns the entries that landed and whether any stayed pending.
+ */
+export async function writeSelfOutboxEntries(
+  db: TypedSupabaseClient,
+  entries: MeetSelfOutboxEntry[]
+) {
+  const groups = new Map<string, MeetSelfOutboxEntry[]>();
+  for (const entry of entries) {
+    const key = `${entry.sessionId}:${entry.accountId}`;
+    groups.set(key, [...(groups.get(key) ?? []), entry]);
+  }
+  const settled: MeetSelfOutboxEntry[] = [];
   let failed = false;
   await Promise.all(
-    [...byAccount.values()].map(async (list) => {
+    [...groups.values()].map(async (list) => {
       for (const entry of list.sort((a, b) => a.seq - b.seq)) {
         try {
           await writeEntry(db, entry);
-          settled.push({ accountId: entry.accountId, seq: entry.seq });
+          settled.push(entry);
         } catch {
           failed = true;
           return;
@@ -87,8 +84,31 @@ export async function drainSelfOutbox(
       }
     })
   );
+  return { settled, failed };
+}
+
+/**
+ * Writes the room's pending legal entries for one session, then acknowledges
+ * the ones that landed; the room keeps the rest for the next drain point.
+ * Throws 503 when any entry stayed pending.
+ */
+export async function drainSelfOutbox(
+  db: TypedSupabaseClient,
+  room: MeetSelfRoom,
+  sessionId: string,
+  pending: unknown[]
+) {
+  const entries = parseSelfOutboxEntries(pending).filter(
+    (entry) => entry.sessionId === sessionId
+  );
+  if (!entries.length) return;
+  const { settled, failed } = await writeSelfOutboxEntries(db, entries);
   try {
-    await selfRoomCommands.ack(room, sessionId, settled);
+    await selfRoomCommands.ack(
+      room,
+      sessionId,
+      settled.map(({ accountId, seq }) => ({ accountId, seq }))
+    );
   } catch {
     // The room redelivers unacknowledged entries; writes are idempotent.
     console.warn('[meet-ai] self_v1 outbox acknowledgement pending');

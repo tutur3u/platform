@@ -600,6 +600,8 @@
     "./routes/api/meet-ai/[wsId]/[meetingId]/self/open/route.ts": "./src/routes/api/meet-ai/[wsId]/[meetingId]/self/open/route.ts",
     "./routes/api/meet-ai/[wsId]/[meetingId]/self/renew/route": "./src/routes/api/meet-ai/[wsId]/[meetingId]/self/renew/route.ts",
     "./routes/api/meet-ai/[wsId]/[meetingId]/self/renew/route.ts": "./src/routes/api/meet-ai/[wsId]/[meetingId]/self/renew/route.ts",
+    "./routes/api/meet-ai/self/outbox/route": "./src/routes/api/meet-ai/self/outbox/route.ts",
+    "./routes/api/meet-ai/self/outbox/route.ts": "./src/routes/api/meet-ai/self/outbox/route.ts",
     "./features/meeting-ai/server/self-v1-review": "./src/features/meeting-ai/server/self-v1-review.ts",
     "./features/meeting-ai/server/self-v1-review.ts": "./src/features/meeting-ai/server/self-v1-review.ts",
     "./parley/role-editor": "./src/parley/role-editor.tsx",
