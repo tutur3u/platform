@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(5);
+select plan(7);
 
 select is(private.workspace_secret_name_tier('newsletter_sending'), 'config',
   'newsletter_sending is config tier');
@@ -20,6 +20,14 @@ select is(
 select is(
   (select count(*)::int from private.workspace_secret_name_tiers where match = 'newsletter_sending'),
   1, 'the flag has exactly one rule');
+
+select is(private.workspace_secret_name_tier('ENABLE_X'), 'config',
+  'a seeded prefix rule still resolves unchanged');
+select is(
+  (select row(priority, kind, match, tier, client_visible, value_type)::text
+   from private.workspace_secret_name_tiers where priority = 340),
+  row(340, 'prefix', 'INVITE_RATE_LIMIT_', 'config', true, 'number')::text,
+  'the last seeded rule keeps its priority');
 
 select * from finish();
 rollback;

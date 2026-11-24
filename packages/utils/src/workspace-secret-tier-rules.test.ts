@@ -12,7 +12,11 @@ const MIGRATIONS_DIR = resolve(
   '../../../apps/database/supabase/migrations'
 );
 
-const TIER_INSERT = 'INSERT INTO private.workspace_secret_name_tiers';
+// Any case and spacing, so a differently written INSERT is never skipped.
+const TIER_INSERT = /insert\s+into\s+private\.workspace_secret_name_tiers\b/giu;
+// Statements that would change mirror rows without an INSERT the test reads.
+const TIER_REWRITE =
+  /\b(update\s+private\.workspace_secret_name_tiers|delete\s+from\s+private\.workspace_secret_name_tiers|truncate\s+(table\s+)?private\.workspace_secret_name_tiers|copy\s+private\.workspace_secret_name_tiers)\b/iu;
 
 /**
  * Every row the migrations insert into the tier mirror, in migration order:
@@ -23,9 +27,13 @@ function migrationTierRows(): WorkspaceSecretTierRule[] {
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((name) => name.endsWith('.sql'))
     .sort()
-    .filter((name) =>
-      readFileSync(join(MIGRATIONS_DIR, name), 'utf8').includes(TIER_INSERT)
-    );
+    .filter((name) => {
+      const sql = readFileSync(join(MIGRATIONS_DIR, name), 'utf8');
+      if (TIER_REWRITE.test(sql)) {
+        throw new Error(`${name} rewrites the tier mirror outside an INSERT`);
+      }
+      return new RegExp(TIER_INSERT.source, 'iu').test(sql);
+    });
   if (files.length === 0) throw new Error('tier mirror migration not found');
 
   const row =
@@ -33,11 +41,8 @@ function migrationTierRows(): WorkspaceSecretTierRule[] {
   return files.flatMap((file) => {
     const sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf8');
     const rows: WorkspaceSecretTierRule[] = [];
-    for (
-      let at = sql.indexOf(TIER_INSERT);
-      at !== -1;
-      at = sql.indexOf(TIER_INSERT, at + 1)
-    ) {
+    for (const found of sql.matchAll(TIER_INSERT)) {
+      const at = found.index ?? 0;
       const insert = sql.slice(at, sql.indexOf(';', at));
       for (const match of insert.matchAll(row)) {
         rows.push({
