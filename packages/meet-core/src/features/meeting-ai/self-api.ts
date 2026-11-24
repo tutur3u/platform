@@ -1,6 +1,5 @@
 import {
   getInternalApiClient,
-  InternalApiError,
   uploadMeetAiChunk,
 } from '@tuturuuu/internal-api';
 
@@ -90,11 +89,13 @@ export function setSelfTranscriptChoice(
 export type SelfFailure = 'refused' | 'not_eligible' | 'unavailable' | 'retry';
 /** How a failed open, renew or upload should be handled. */
 export function classifySelfFailure(error: unknown): SelfFailure {
-  if (!(error instanceof InternalApiError)) return 'retry';
-  if (error.code === 'MEET_SELF_NOT_ELIGIBLE') return 'not_eligible';
-  if (error.code === 'MEET_SELF_UNAVAILABLE') return 'unavailable';
-  if (error.code === 'MEET_SELF_RATE_LIMITED' || error.status === 429)
-    return 'retry';
-  if ([401, 402, 403, 409, 423].includes(error.status)) return 'refused';
+  const record = typeof error === 'object' && error !== null ? error : {};
+  const status = 'status' in record ? record.status : undefined;
+  const code = 'code' in record ? record.code : undefined;
+  if (code === 'MEET_SELF_NOT_ELIGIBLE') return 'not_eligible';
+  if (code === 'MEET_SELF_UNAVAILABLE') return 'unavailable';
+  if (code === 'MEET_SELF_RATE_LIMITED' || status === 429) return 'retry';
+  if (typeof status === 'number' && [401, 402, 403, 409, 423].includes(status))
+    return 'refused';
   return 'retry';
 }
