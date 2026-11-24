@@ -577,6 +577,17 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `.github/workflows/release-please.yaml`, and `tuturuuu.ts` aligned when
   changing release automation. Do not reintroduce checksum or PR-title package
   version bump generators.
+- A new workspace package (`packages/*`, `apps/*`) lands in the same commit as
+  its registration: a `release-please-config.json` entry, a
+  `.release-please-manifest.json` version, and a `COPY` of its `package.json`
+  in every Dockerfile whose frozen install covers the workspace (today the
+  web, chat-realtime, hive, hive-realtime, meet-realtime and supermemory
+  images). Re-run `node scripts/generate-docs-inventory.js`; the
+  `generated docs inventory` step of `bun check:changed` verifies it. Before
+  pushing, run
+  `node --test scripts/ci/release-workflows.test.js scripts/ci/web-e2e-dependency-context.test.js`;
+  `check:changed` does not select them for a package-only change, so a miss
+  shows up first as a red Test run on main.
 - Use `bun git-release-please` from a clean `main` checkout to merge the latest
   `release-please--branches--production` branch. The helper fetches the bot
   branch, merges without committing, syncs the platform badge version files from
