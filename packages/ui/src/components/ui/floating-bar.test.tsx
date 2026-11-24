@@ -67,7 +67,7 @@ describe('floating bar tokens', () => {
 
   it('keeps bar controls concentric under Sorbet pill controls', () => {
     expect(css).toMatch(
-      /:root\[data-ui="sorbet"\] :where\(\[data-slot="floating-bar"\]\) :where\( \[data-slot="button"\],[^{]*\) \{ border-radius: var\(--radius-bar-inner\); \}/
+      /@layer components \{ :root\[data-ui="sorbet"\] :where\(\[data-slot="floating-bar"\]\) :where\( \[data-slot="button"\], \[data-slot="tooltip-trigger"\]\[data-size\], \[data-slot="input"\], \[data-slot="select-trigger"\] \) \{ --button-radius: var\(--radius-bar-inner\); --field-radius: var\(--radius-bar-inner\); \} \}/
     );
   });
 
@@ -172,6 +172,7 @@ describe('FloatingBar', () => {
     expect(reply).toHaveAttribute('data-slot', 'tooltip-trigger');
     expect(reply).toHaveAttribute('data-size', 'icon');
     expect(css).toContain('[data-slot="tooltip-trigger"][data-size],');
+    expect(reply.className).toContain('rounded-[var(--button-radius');
   });
 
   it('gives tabs a concentric track and triggers', () => {

@@ -367,8 +367,28 @@ describe('Sorbet token contract', () => {
     }
   });
 
+  it('gives buttons and badges pills and fields the md corner', () => {
+    const vars = css.slice(css.indexOf('@layer components {'));
+    expect(vars).toContain('--button-radius: var(--sorbet-control-radius);');
+    expect(vars).toContain('--badge-radius: var(--sorbet-control-radius);');
+    expect(vars).toContain('--field-radius: var(--radius);');
+    expect(vars).toMatch(
+      /\[data-sorbet-shape="keep"\]\) \{\s*--button-radius: initial;/
+    );
+    expect(vars).toMatch(
+      /\[data-sorbet-shape="field"\],\s*\[data-slot="button"\]\[role="combobox"\]\s*\) \{\s*--button-radius: var\(--radius\);/
+    );
+    expect(vars).toContain('--card-shadow: var(--sorbet-shadow-md);');
+    expect(vars).toMatch(
+      /\[data-slot="card"\]\) \{\s*--card-border: color-mix\(in oklab, var\(--border\) 70%, transparent\);/
+    );
+    expect(vars).toMatch(
+      /\[data-slot="alert-dialog-content"\]\) \{\s*--dialog-radius: var\(--radius-xl\);/
+    );
+  });
+
   it('strokes every field-like control with the field role', () => {
-    const start = css.indexOf('Field strokes: text fields');
+    const start = css.indexOf('Field stroke role:');
     expect(start).toBeGreaterThan(-1);
     const rule = css.slice(start);
     const body = rule.slice(0, rule.indexOf('}'));
@@ -390,12 +410,22 @@ describe('Sorbet token contract', () => {
     ]) {
       expect(body).toContain(state);
     }
-    expect(body).toContain('border-color: var(--sorbet-field-stroke)');
+    expect(body).toContain('--field-stroke: var(--sorbet-field-stroke)');
+    expect(css).toMatch(
+      /\[data-slot="button"\]\[data-variant="outline"\]\) \{\s*--field-stroke: var\(--sorbet-field-stroke\);/
+    );
+    // Combobox triggers in any variant keep the stroke on a caller border.
+    expect(css).toMatch(
+      /:where\(\[data-slot="button"\]\[role="combobox"\]\):not\([^{]*\) \{\s*border-color: var\(--sorbet-field-stroke\);/
+    );
+    expect(css).toContain(
+      ':root[data-ui="sorbet"][data-sorbet-preset="high-contrast"] {\n  --sorbet-field-stroke: var(--input);'
+    );
   });
 
   it('fills unchecked switch tracks with the field role', () => {
     expect(css).toMatch(
-      /\[data-slot="switch"\]\[data-state="unchecked"\]\) \{\s*background-color: var\(--sorbet-field-stroke\);/
+      /\[data-slot="switch"\]\[data-state="unchecked"\]\) \{\s*--field-stroke: var\(--sorbet-field-stroke\);/
     );
   });
 

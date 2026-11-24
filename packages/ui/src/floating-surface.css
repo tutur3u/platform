@@ -60,12 +60,14 @@
 }
 
 /*
-  sorbet.css pins popover and dropdown content to --radius-xl, which would
-  ignore Shape. Same specificity, later in the cascade, so this one wins.
+  Popover and dropdown content follow Shape through --radius-popover. In
+  @layer components, so a caller's own rounded utility still wins.
 */
-:root[data-ui="sorbet"]
-  :where([data-slot="popover-content"], [data-slot="dropdown-menu-content"]) {
-  border-radius: var(--radius-popover);
+@layer components {
+  :root[data-ui="sorbet"]
+    :where([data-slot="popover-content"], [data-slot="dropdown-menu-content"]) {
+    border-radius: var(--radius-popover);
+  }
 }
 
 /*
@@ -273,7 +275,8 @@
   Phones and small tablets with the Sorbet dock: lift the stack above it,
   following the dock's resume correction (dock-viewport-anchor.ts). Sonner
   keeps its own z-index, which already clears the dock, sheets and every app
-  overlay.
+  overlay. Stays unlayered: Sonner's own unlayered position rules would
+  otherwise win.
 */
 @media (max-width: 767.98px) {
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
@@ -365,12 +368,15 @@
   type icon sits in a pastel chip of its own ink, and buttons are pill
   controls that follow the Corners choice through --sorbet-control-radius.
   Only colour and shape tokens change, so every palette and both modes follow.
+  These toast rules stay unlayered: Sonner injects unlayered CSS that would
+  otherwise win.
 */
 :root[data-ui="sorbet"] [data-sonner-toaster][data-sonner-theme] {
   --normal-border: color-mix(in oklab, var(--border) 70%, transparent);
   --normal-border-hover: var(--border);
 }
 
+/* Stays unlayered: Sonner's own unlayered toast padding would win. */
 :root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"] {
@@ -378,6 +384,7 @@
   padding: 0.75rem;
 }
 
+/* Stays unlayered: Sonner's own unlayered icon size would win. */
 :root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]
@@ -390,7 +397,10 @@
   background: color-mix(in oklab, currentColor 14%, transparent);
 }
 
-/* A one-line message centres on the chip; longer copy starts at its top. */
+/*
+  A one-line message centres on the chip; longer copy starts at its top.
+  These toast rules stay unlayered, like the ones above.
+*/
 :root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]:has([data-icon])
@@ -399,6 +409,7 @@
   justify-content: center;
 }
 
+/* Stays unlayered: Sonner's own unlayered button shape would win. */
 :root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]
@@ -408,6 +419,7 @@
   border-radius: var(--sorbet-control-radius, 9999px);
 }
 
+/* Stays unlayered: Sonner's own unlayered cancel colours would win. */
 :root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]
@@ -416,6 +428,7 @@
   color: var(--secondary-foreground);
 }
 
+/* Stays unlayered: Sonner's own unlayered close button edge would win. */
 :root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]

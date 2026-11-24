@@ -230,7 +230,10 @@
   --sorbet-sheet-radius: 1.75rem;
 }
 
-/* Typeface: Nunito, self-hosted through the shared next/font loader. */
+/*
+  Typeface: Nunito, self-hosted through the shared next/font loader. Stays
+  unlayered: next/font's own family class on the same element is unlayered.
+*/
 :root[data-ui="sorbet"] .ttr-sorbet-font {
   /* Start apps receive inert next/font objects, so fall back by family name. */
   font-family:
@@ -319,14 +322,12 @@
   }
 
   /* Outline buttons stroke with the field edge; the hairline is too faint. */
-  :root[data-ui="sorbet"]
-    :where([data-slot="button"][data-variant="outline"]) {
+  :root[data-ui="sorbet"] :where([data-slot="button"][data-variant="outline"]) {
     --field-stroke: var(--sorbet-field-stroke);
   }
 
   /* An unchecked switch track is a control edge too: fill it with the stroke. */
-  :root[data-ui="sorbet"]
-    :where([data-slot="switch"][data-state="unchecked"]) {
+  :root[data-ui="sorbet"] :where([data-slot="switch"][data-state="unchecked"]) {
     --field-stroke: var(--sorbet-field-stroke);
   }
 
@@ -337,62 +338,20 @@
 }
 
 /*
-  Pill buttons and badges. :where keeps the selectors light so local overrides
-  still win. A button opts out with data-sorbet-shape ("keep" holds its own
-  radius, "field" takes the field radius below); a combobox trigger is a field.
+  A combobox trigger in any button variant draws the field stroke on the
+  border its caller gives it. Layered, so a caller's border colour wins.
 */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="button"]:not([data-sorbet-shape], [role="combobox"]),
-    [data-slot="badge"]
-  ) {
-  border-radius: var(--sorbet-control-radius);
-}
-
-/*
-  Fields are rounded, never pills: inputs, textareas, select and combobox
-  triggers and field-shaped buttons such as date pickers take the md corner
-  (--radius), which the Corners option scales with the rest of the theme.
-*/
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="input"],
-    [data-slot="textarea"],
-    [data-slot="select-trigger"],
-    [data-slot="button"][data-sorbet-shape="field"],
-    [data-slot="button"][role="combobox"]
-  ) {
-  border-radius: var(--radius);
-}
-
-/*
-  Field strokes: text fields, select and combobox triggers, OTP slots and
-  unchecked checkboxes and radios draw their edge with the field-stroke role,
-  so an empty control reads against white (the --input hairline is only
-  1.6:1). Focus, invalid, active and checked states keep their own colours.
-*/
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="input"],
-    [data-slot="textarea"],
-    [data-slot="select-trigger"],
-    [data-slot="button"][role="combobox"],
-    [data-slot="input-otp-slot"],
-    [data-slot="checkbox"],
-    [data-slot="radio-group-item"]
-  ):not(
-    :focus-visible,
-    [aria-invalid="true"],
-    [data-active="true"],
-    [data-state="checked"],
-    [data-state="indeterminate"]
-  ) {
-  border-color: var(--sorbet-field-stroke);
-}
-
-/* An unchecked switch track is a control edge too: fill it with the stroke. */
-:root[data-ui="sorbet"] :where([data-slot="switch"][data-state="unchecked"]) {
-  background-color: var(--sorbet-field-stroke);
+@layer components {
+  :root[data-ui="sorbet"]
+    :where([data-slot="button"][role="combobox"]):not(
+      :focus-visible,
+      [aria-invalid="true"],
+      [data-active="true"],
+      [data-state="checked"],
+      [data-state="indeterminate"]
+    ) {
+    border-color: var(--sorbet-field-stroke);
+  }
 }
 
 /* High Contrast already draws fields with its full-strength input edge. */
@@ -400,30 +359,12 @@
   --sorbet-field-stroke: var(--input);
 }
 
-/* Surfaces float on soft shadows; borders recede. */
-:root[data-ui="sorbet"] :where([data-slot="card"]) {
-  border-color: color-mix(in oklab, var(--border) 70%, transparent);
-  box-shadow: var(--sorbet-shadow-md);
-}
-
-/* Full-screen and docked dialogs keep their square edges. */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="popover-content"],
-    [data-slot="dropdown-menu-content"],
-    [data-slot="dialog-content"]:not(
-      [data-presentation="fullscreen"],
-      [data-presentation="panel"]
-    )
-  ) {
-  border-radius: var(--radius-xl);
-}
-
 /*
   Focus: keyboard navigation only (see focus-modality.ts). Buttons take a solid
   ring that meets 3:1 on every surface. Fields keep their primitive treatment, a
   --ring edge with a soft halo from the same token, so no outline floats around
-  a text box.
+  a text box. Stays unlayered: the primitive's focus-visible:outline-1 utility
+  would otherwise thin the ring below 3:1.
 */
 :root[data-ui="sorbet"]:not([data-focus-modality="pointer"])
   :where(
@@ -433,7 +374,11 @@
   outline-offset: 2px;
 }
 
-/* Overlays: one scrim and one floating elevation for every sheet and dialog. */
+/*
+  Overlays: one scrim and one floating elevation for every sheet and dialog.
+  Stays unlayered: each overlay's own bg-black utility would otherwise win,
+  until the overlay primitives read a variable.
+*/
 :root[data-ui="sorbet"]
   :where(
     [data-slot="sheet-overlay"],
@@ -444,6 +389,7 @@
   background-color: var(--sorbet-scrim);
 }
 
+/* Stays unlayered: the sheet's own shadow-lg utility would otherwise win. */
 :root[data-ui="sorbet"]
   :where([data-slot="sheet-content"], [data-slot="drawer-content"]) {
   border-color: color-mix(in oklab, var(--border) 60%, transparent);
@@ -453,7 +399,8 @@
 /*
   Bottom sheets float over the scrim like popovers, so they take the surface
   (pages stay on the background), with a rounded top edge and room for the
-  home indicator.
+  home indicator. Stays unlayered: the sheet's bg-background and the drawer's
+  rounded-t-lg utilities would otherwise win.
 */
 :root[data-ui="sorbet"]
   :where(
@@ -483,13 +430,16 @@
   grows them to 44px instead, so dense toolbars keep their layout.
 */
 @media (pointer: coarse) {
-  :root[data-ui="sorbet"]
-    :where([data-slot="input"], [data-slot="select-trigger"]) {
-    min-height: var(--sorbet-touch-target);
-  }
-
-  /* Layered below utilities, so a button's own absolute or fixed position wins. */
+  /*
+    Layered below utilities, so a caller's own min-height and a button's own
+    absolute or fixed position win.
+  */
   @layer components {
+    :root[data-ui="sorbet"]
+      :where([data-slot="input"], [data-slot="select-trigger"]) {
+      min-height: var(--sorbet-touch-target);
+    }
+
     :root[data-ui="sorbet"]
       :where(
         [data-slot="button"],
@@ -522,8 +472,8 @@
 }
 
 /*
-  The mobile sidebar backdrop uses the Sorbet scrim, like modal overlays. This
-  file is unlayered, so the rule wins over the backdrop's bg-black utility.
+  The mobile sidebar backdrop uses the Sorbet scrim, like modal overlays.
+  Stays unlayered on purpose, so it wins over the backdrop's bg-black utility.
 */
 :root[data-ui="sorbet"] :where([data-slot="sidebar-backdrop"]) {
   background-color: var(--sorbet-scrim);
@@ -533,7 +483,8 @@
   Dark status fills are pastel, so white text on a solid dynamic fill drops
   below 2:1. That text takes the dark ground instead, which meets 4.5:1 on
   every Sorbet status ink (sorbet-presets.test.ts). Tinted fills such as
-  bg-dynamic-red/10 are separate class names and are not matched.
+  bg-dynamic-red/10 are separate class names and are not matched. Stays
+  unlayered on purpose: it corrects the text-white utility it matches.
 */
 :root[data-ui="sorbet"].dark
   :where(

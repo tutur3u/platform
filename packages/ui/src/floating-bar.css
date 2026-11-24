@@ -79,26 +79,11 @@
     :where([data-slot="floating-bar"])
     :where(
       [data-slot="button"],
+      [data-slot="tooltip-trigger"][data-size],
       [data-slot="input"],
       [data-slot="select-trigger"]
     ) {
     --button-radius: var(--radius-bar-inner);
     --field-radius: var(--radius-bar-inner);
   }
-}
-
-/*
-  Sorbet makes buttons, inputs and select triggers pills with an unlayered
-  rule (sorbet.css), which outranks the bar's utilities. Same specificity,
-  later in the cascade, so controls inside a bar keep the concentric radius.
-*/
-:root[data-ui="sorbet"]
-  :where([data-slot="floating-bar"])
-  :where(
-    [data-slot="button"],
-    [data-slot="tooltip-trigger"][data-size],
-    [data-slot="input"],
-    [data-slot="select-trigger"]
-  ) {
-  border-radius: var(--radius-bar-inner);
 }

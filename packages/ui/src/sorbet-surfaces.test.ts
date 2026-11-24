@@ -35,8 +35,24 @@ describe('Sorbet surfaces', () => {
 
   it('turns transitions off when motion is reduced', () => {
     expect(css).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)[\s\S]*transition-duration: 0ms/
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*--control-duration: 0ms/
     );
+  });
+
+  it('sets control motion and the tabs thumb through variables', () => {
+    expect(css).toContain(
+      '--control-transition: background-color, border-color, color, box-shadow;'
+    );
+    expect(css).toContain('--control-duration: var(--sorbet-duration-fast);');
+    expect(css).toContain('--tabs-thumb-shadow: var(--sorbet-shadow-sm);');
+    expect(css).toMatch(
+      /\[data-slot="tabs-trigger"\]\) \{\s*--tabs-thumb-bg: var\(--card\);/
+    );
+    expect(css).toMatch(
+      /\.dark :where\(\[data-slot="tabs-trigger"\]\) \{\s*--tabs-thumb-bg: color-mix/
+    );
+    // The sidebar menu button keeps its own width and padding transition.
+    expect(css).not.toMatch(/transition-property/);
   });
 
   it('gives navigation, tabs and switches a visible focus ring', () => {

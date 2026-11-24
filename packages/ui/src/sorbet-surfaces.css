@@ -4,28 +4,43 @@
   .settings-surface rules in globals.css). Every rule is scoped under
   html[data-ui="sorbet"], so the classic design is unchanged; :where keeps the
   selectors light. sorbet-surfaces.test.ts checks the scoping.
+
+  Rules sit in @layer components, below utilities, so a caller's own utility
+  wins. A rule stays unlayered only where its own primitive's utility would
+  otherwise replace it; its comment says so (sorbet-layering.test.ts).
 */
 
-/* Two planes: navigation on the ground, content on the surface. */
+/*
+  Two planes: navigation on the ground, content on the surface. Stays
+  unlayered: the panes' own bg-muted/20 and bg-background utilities would
+  otherwise win.
+*/
 :root[data-ui="sorbet"]
   :where([data-settings-pane="nav"], [data-settings-pane="nav-header"]) {
   background-color: var(--sidebar-background);
 }
 
-:root[data-ui="sorbet"] :where([data-settings-pane="nav-header"]) {
-  border-color: transparent;
+@layer components {
+  :root[data-ui="sorbet"] :where([data-settings-pane="nav-header"]) {
+    border-color: transparent;
+  }
+
+  :root[data-ui="sorbet"] :where([data-settings-pane="header"]) {
+    border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  }
 }
 
-:root[data-ui="sorbet"] :where([data-settings-pane="header"]) {
-  border-color: color-mix(in oklab, var(--border) 70%, transparent);
-}
-
-/* Navigation: the current page is a filled accent row, in the accent ink at 600 weight. */
+/*
+  Navigation: the current page is a filled accent row, in the accent ink at
+  600 weight. Stays unlayered: the menu button's own rounded-md and
+  data-[active=true]:font-medium utilities would otherwise win.
+*/
 :root[data-ui="sorbet"]
   :where([data-settings-pane="nav"] [data-slot="sidebar-menu-button"]) {
   border-radius: var(--radius);
 }
 
+/* Stays unlayered, with the navigation radius above. */
 :root[data-ui="sorbet"]
   :where(
     [data-settings-pane="nav"]
@@ -37,28 +52,35 @@
 }
 
 /* Settings sections are raised surfaces with quiet dividers. */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="settings-card"],
-    [data-slot="settings-row"]:not([data-slot="settings-card"] *)
-  ) {
-  border-radius: var(--radius-xl);
-  border-color: color-mix(in oklab, var(--border) 80%, transparent);
-  box-shadow: var(--sorbet-shadow-sm);
+@layer components {
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="settings-card"],
+      [data-slot="settings-row"]:not([data-slot="settings-card"] *)
+    ) {
+    border-radius: var(--radius-xl);
+    border-color: color-mix(in oklab, var(--border) 80%, transparent);
+    box-shadow: var(--sorbet-shadow-sm);
+  }
+
+  /* High contrast keeps every section edge solid. */
+  :root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
+    :where([data-slot="settings-card"], [data-slot="settings-row"]) {
+    border-color: var(--border);
+  }
 }
 
-/* High contrast keeps every section edge solid. */
-:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
-  :where([data-slot="settings-card"], [data-slot="settings-row"]) {
-  border-color: var(--border);
-}
-
-/* Row hierarchy: a firm title over a lighter, smaller description. */
+/*
+  Row hierarchy: a firm title over a lighter, smaller description. Stays
+  unlayered: the row's own font-medium and text-sm utilities would otherwise
+  win.
+*/
 :root[data-ui="sorbet"] :where([data-slot="settings-row-title"]) {
   font-weight: 600;
   letter-spacing: -0.005em;
 }
 
+/* Stays unlayered, with the row title above. */
 :root[data-ui="sorbet"] :where([data-slot="settings-row-description"]) {
   font-size: 0.8125rem;
   line-height: 1.25rem;
@@ -66,32 +88,23 @@
 
 /*
   Segmented tabs: a recessed track with a raised thumb. Sorbet sets only the
-  track radius; floating-bar.css derives the concentric trigger radius.
+  track radius; floating-bar.css derives the concentric trigger radius. The
+  thumb fill and shadow are variables (below), so underline tabs that pass
+  their own rounded-none, bg or shadow utilities keep them.
 */
 :root[data-ui="sorbet"] {
   --radius-segment: var(--sorbet-control-radius);
 }
 
-:root[data-ui="sorbet"] :where([data-slot="tabs-list"]) {
-  border-radius: var(--radius-segment);
-  background-color: var(--muted);
-}
+@layer components {
+  :root[data-ui="sorbet"] :where([data-slot="tabs-list"]) {
+    border-radius: var(--radius-segment);
+    background-color: var(--muted);
+  }
 
-:root[data-ui="sorbet"] :where([data-slot="tabs-trigger"]) {
-  border-radius: var(--radius-segment-inner);
-}
-
-:root[data-ui="sorbet"]
-  :where([data-slot="tabs-trigger"][data-state="active"]) {
-  background-color: var(--card);
-  color: var(--foreground);
-  box-shadow: var(--sorbet-shadow-sm);
-}
-
-/* Dark cards sit below the track, so the dark thumb lifts toward the ink. */
-:root[data-ui="sorbet"].dark
-  :where([data-slot="tabs-trigger"][data-state="active"]) {
-  background-color: color-mix(in oklab, var(--foreground) 12%, var(--card));
+  :root[data-ui="sorbet"] :where([data-slot="tabs-trigger"]) {
+    border-radius: var(--radius-segment-inner);
+  }
 }
 
 /*
@@ -107,14 +120,43 @@
   (dock-viewport-anchor.ts) corrects WebKit's stale layout viewport on resume.
 */
 @media (max-width: 767.98px) {
-  :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"]) {
-    border-color: transparent;
+  @layer components {
+    :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"]) {
+      border-color: transparent;
+    }
+
+    :root[data-ui="sorbet"] :where([data-slot="mobile-dock-pill"]) {
+      pointer-events: auto;
+      display: flex;
+      flex: 1 1 auto;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+      padding: 6px;
+      border-radius: 9999px;
+      background-color: var(--card);
+      box-shadow:
+        0 12px 24px -10px
+          color-mix(in oklab, var(--foreground) 22%, transparent),
+        0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
+    }
+
+    /* Dark shadows fall below the pill in black, as in the native dock. */
+    :root[data-ui="sorbet"].dark :where([data-slot="mobile-dock-pill"]) {
+      box-shadow:
+        0 12px 24px -10px rgb(0 0 0 / 0.6),
+        0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
+    }
   }
 
+  /* Stays unlayered: the bar's own bg-background/50 utility would win. */
   :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"] > div) {
     background-color: color-mix(in oklab, var(--background) 88%, transparent);
   }
 
+  /* Stays unlayered: the dock renders with a hidden utility until Sorbet. */
   :root[data-ui="sorbet"] :where([data-slot="mobile-dock"]) {
     position: fixed;
     z-index: 40;
@@ -131,30 +173,7 @@
     pointer-events: none;
   }
 
-  :root[data-ui="sorbet"] :where([data-slot="mobile-dock-pill"]) {
-    pointer-events: auto;
-    display: flex;
-    flex: 1 1 auto;
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-    min-width: 0;
-    height: 100%;
-    padding: 6px;
-    border-radius: 9999px;
-    background-color: var(--card);
-    box-shadow:
-      0 12px 24px -10px color-mix(in oklab, var(--foreground) 22%, transparent),
-      0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
-  }
-
-  /* Dark shadows fall below the pill in black, as in the native dock. */
-  :root[data-ui="sorbet"].dark :where([data-slot="mobile-dock-pill"]) {
-    box-shadow:
-      0 12px 24px -10px rgb(0 0 0 / 0.6),
-      0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
-  }
-
+  /* Stays unlayered: the fade renders with a hidden utility until Sorbet. */
   :root[data-ui="sorbet"] :where([data-slot="mobile-dock-fade"]) {
     position: fixed;
     z-index: 39;
@@ -171,11 +190,16 @@
     );
   }
 
+  /*
+    Stays unlayered: Structure's own safe-bottom, p-2 and pl-2 utilities would
+    otherwise drop the dock clearance and the mobile gutter.
+  */
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     :where([data-slot="structure-content"]) {
     padding-bottom: var(--sorbet-content-bottom-clearance);
   }
 
+  /* Stays unlayered, with the dock clearance above. */
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     :where(
       [data-slot="structure-content"]:not([data-content-full-bleed="true"])
@@ -185,7 +209,8 @@
 
   /*
     Full-height shells still cancel the legacy p-2 (-m-2) on mobile; when the
-    shell gutter is 16px they must pull back the full gutter, not 8px.
+    shell gutter is 16px they must pull back the full gutter, not 8px. Stays
+    unlayered: it must beat the -m-2 utility it matches.
   */
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     :where(
@@ -197,6 +222,7 @@
     max-width: none;
   }
 
+  /* Stays unlayered: .dashboard-embed-shell in globals.css is unlayered. */
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     :where(.dashboard-embed-shell) {
     margin-inline: calc(-1 * var(--sorbet-gutter));
@@ -214,7 +240,11 @@
   }
 }
 
-/* Focus: the same solid ring on navigation, tabs and switches, keyboard only. */
+/*
+  Focus: the same solid ring on navigation, tabs and switches, keyboard only.
+  Stays unlayered: the primitives' own outline-hidden and focus-visible
+  outline utilities would otherwise replace the ring.
+*/
 :root[data-ui="sorbet"]:not([data-focus-modality="pointer"])
   :where(
     [data-slot="sidebar-menu-button"],
@@ -229,9 +259,9 @@
   Tabs thumb and control motion, as primitive variables (classic defaults:
   globals.css). In @layer components, so a caller's own bg, shadow,
   transition or duration utility on the element still wins. Buttons, tabs
-  triggers and switches read the control motion; badges keep the classic
-  transition, and the sidebar menu button keeps its own width and padding
-  transition.
+  triggers and switches read the control motion (short colour and elevation
+  changes); badges keep the classic transition, and the sidebar menu button
+  keeps its own width and padding transition, so the collapse animates.
 */
 @layer components {
   :root[data-ui="sorbet"] {
@@ -252,35 +282,11 @@
   }
 }
 
+/* No control motion when motion is reduced. */
 @media (prefers-reduced-motion: reduce) {
   @layer components {
     :root[data-ui="sorbet"] {
       --control-duration: 0ms;
     }
-  }
-}
-
-/* Motion: short colour and elevation changes; none when motion is reduced. */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="button"],
-    [data-slot="sidebar-menu-button"],
-    [data-slot="tabs-trigger"],
-    [data-slot="switch"]
-  ) {
-  transition-property: background-color, border-color, color, box-shadow;
-  transition-duration: var(--sorbet-duration-fast);
-  transition-timing-function: var(--sorbet-ease-standard);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root[data-ui="sorbet"]
-    :where(
-      [data-slot="button"],
-      [data-slot="sidebar-menu-button"],
-      [data-slot="tabs-trigger"],
-      [data-slot="switch"]
-    ) {
-    transition-duration: 0ms;
   }
 }
