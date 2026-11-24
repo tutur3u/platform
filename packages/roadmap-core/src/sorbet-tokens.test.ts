@@ -50,12 +50,13 @@ const sha256 = (text: string) =>
 const STABLE =
   /^--(background|foreground|card|primary|muted-foreground|border|input|ring|accent|sidebar-[a-z-]+|blue|green|orange|red|yellow|purple|pink|teal|gray|calendar-bg-[a-z]+|radius|radius-xl|radius-2xl|sorbet-shadow-sm|sorbet-shadow-md|sorbet-(ground|surface|card|ink|muted-ink|hairline|input|accent|accent-ink|accent-soft|ring))$/;
 
-// Re-pinned 2026-11-23 for --sorbet-field-stroke (light #8f8491, dark
-// #7d7183), the input-edge role the roadmap does not read; no roadmap pair
-// below uses it, so its contrast checks are unchanged.
+// The blocks also carry roles the roadmap does not read: the field stroke,
+// the cyan, sky, lime, indigo and rose inks with their --light-* aliases, and
+// the success, warning and info status roles. No roadmap pair below uses
+// them, so the contrast checks cover only the stable surface.
 const PINNED = {
-  light: 'e16df395838061dcdbcbf04cd95de4e6d1ccdf4da683944c9c7b797de0934558',
-  dark: 'fedc7cf70f7f3f97798c2389d04040e40042b059efc4551b2bbb0b81395b078a',
+  light: '237cce237acd096bf12a344f3bb33e1c5d28adb751cd7746a504088969e55877',
+  dark: 'aca68a34befe0d9003326f8595142172eaee01cd532ed068fbd100ce162f399e',
 };
 
 function luminance(hex: string) {
