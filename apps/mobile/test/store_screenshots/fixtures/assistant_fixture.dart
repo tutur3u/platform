@@ -222,7 +222,7 @@ List<AssistantMessage> storeAssistantMessages(StoreLocale l) {
         _text(
           l.pick(
             'Done: **$block** is on your calendar, 1:00 to 2:30 PM. '
-                'Should I also remind Chi about the moodboard?',
+                'Want me to remind Chi about the moodboard?',
             'Xong: **$block** đã có trong lịch, 13:00 đến 14:30. '
                 'Mình nhắc Chi về moodboard luôn nhé?',
           ),

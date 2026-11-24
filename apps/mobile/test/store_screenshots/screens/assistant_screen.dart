@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,7 @@ const StoreScreen assistantStoreScreen = StoreScreen(
   id: 'assistant',
   order: 2,
   build: _build,
-  prepare: _openToolSteps,
+  prepare: _alignToLineGap,
   anchors: _anchors,
 );
 
@@ -36,6 +37,11 @@ Map<String, Rect> _anchors(WidgetTester tester) {
   return {
     'done': tester.getRect(done.last),
     'details': tester.getRect(details.last),
+    // The iPad's conversation ends well above its composer, which sits below
+    // the visible card; the composer crops the card after the last message.
+    // The Play tablet shows its composer and dock, so it keeps the full card.
+    if (currentStoreDevice?.id == 'ios/ipad-13')
+      ...storeContentAnchor(tester, _turns().last),
   };
 }
 
@@ -49,56 +55,107 @@ Finder _turns() => find.byWidgetPredicate((widget) {
       value.$1 == 'assistant-turn';
 });
 
-/// How far the turn under the header sticks out above the viewport, or 0 when
-/// the viewport starts at a turn's top. The turns end in a 14 px gap, which
-/// counts as clear.
-double _cutAtTop(WidgetTester tester) {
-  final turns = _turns();
-  if (turns.evaluate().isEmpty) return 0;
-  final viewTop = tester
-      .getTopLeft(
-        find.ancestor(of: turns.first, matching: find.byType(Scrollable)).first,
-      )
-      .dy;
-  var cut = 0.0;
-  for (final element in turns.evaluate()) {
-    final rect = tester.getRect(find.byWidget(element.widget));
-    if (rect.top < viewTop - 0.5 && rect.bottom - 14 > viewTop + 0.5) {
-      cut = cut < viewTop - rect.top ? viewTop - rect.top : cut;
+/// The transcript's scroll view.
+Finder _transcript() =>
+    find.ancestor(of: _turns().first, matching: find.byType(Scrollable)).first;
+
+/// The y of the first row of pixels the transcript shows. The page's header
+/// floats over the top of the scroll view, so the first row the view wins a
+/// hit test at is the first one in sight.
+double _visibleTop(WidgetTester tester) {
+  final view = tester.renderObject<RenderObject>(_transcript());
+  final rect = tester.getRect(_transcript());
+  for (var y = rect.top; y < rect.top + 200; y++) {
+    final hit = tester.hitTestOnBinding(Offset(rect.center.dx, y));
+    for (final entry in hit.path) {
+      final target = entry.target;
+      if (target is RenderObject && _within(target, view)) return y;
     }
   }
-  return cut;
+  return rect.top;
 }
 
-Future<void> _toggleToolSteps(WidgetTester tester) async {
-  final toggles = find.byKey(const ValueKey('assistant-tools-toggle'));
-  for (var i = 0; i < toggles.evaluate().length; i++) {
-    await tester.tap(toggles.at(i), warnIfMissed: false);
-    await tester.pump(const Duration(milliseconds: 300));
+bool _within(RenderObject node, RenderObject ancestor) {
+  for (RenderObject? it = node; it != null; it = it.parent) {
+    if (identical(it, ancestor)) return true;
   }
-  await settleStoreScreen(tester);
+  return false;
 }
 
-/// Shows what Mira looked up and changed by opening each turn's tool steps,
-/// then makes the viewport start at the top of a whole message, never in the
-/// middle of one. When open steps push the first turn under the header, the
-/// steps fold again; when the folded conversation still overflows, the list
-/// scrolls up to the top of the turn that was cut.
-Future<void> _openToolSteps(WidgetTester tester, StoreLocale locale) async {
-  final view = tester.view.physicalSize / tester.view.devicePixelRatio;
-  final roomy = view.height >= 950 || (view.height >= 900 && view.width >= 700);
-  if (roomy) {
-    await _toggleToolSteps(tester);
-    if (_cutAtTop(tester) > 0) await _toggleToolSteps(tester);
-  }
-  final cut = _cutAtTop(tester);
-  if (cut <= 0) return;
-  final turns = _turns();
-  final scrollable = tester.state<ScrollableState>(
-    find.ancestor(of: turns.first, matching: find.byType(Scrollable)).first,
+/// The global top and bottom of the glyphs of every line of text in the
+/// transcript.
+List<(double, double)> _textLines(WidgetTester tester) {
+  final lines = <(double, double)>[];
+  final texts = find.descendant(
+    of: _transcript(),
+    matching: find.byType(RichText),
   );
-  scrollable.position.jumpTo(scrollable.position.pixels - cut);
+  for (final element in texts.evaluate()) {
+    final paragraph = element.renderObject;
+    if (paragraph is! RenderParagraph) continue;
+    final boxes = paragraph.getBoxesForSelection(
+      TextSelection(
+        baseOffset: 0,
+        extentOffset: paragraph.text.toPlainText().length,
+      ),
+    );
+    for (final box in boxes) {
+      // The glyphs fill the middle of a line box; its leading above and below
+      // may sit under the header.
+      final top = paragraph.localToGlobal(Offset(0, box.top)).dy;
+      final bottom = paragraph.localToGlobal(Offset(0, box.bottom)).dy;
+      final leading = (bottom - top) * 0.15;
+      lines.add((top + leading, bottom - leading));
+    }
+  }
+  return lines;
+}
+
+bool _cutsALine(List<(double, double)> lines, double y) =>
+    lines.any((line) => line.$1 < y - 0.5 && line.$2 > y + 0.5);
+
+/// The distance to scroll the pinned list up, within the 24 px the page
+/// tolerates before it shows its "jump to latest" button, so that the visible
+/// top falls between two lines of text; 0 when it already does, null when no
+/// distance within 24 px does.
+double? _scrollUpToLineGap(WidgetTester tester) {
+  if (_turns().evaluate().isEmpty) return 0;
+  final top = _visibleTop(tester);
+  final lines = _textLines(tester);
+  for (var up = 0.0; up <= 24; up += 0.5) {
+    if (!_cutsALine(lines, top - up)) return up;
+  }
+  return null;
+}
+
+/// Starts the viewport between lines of text. The page pins the conversation
+/// to the bottom, so the view begins wherever the content overflows, often
+/// through a line. The list scrolls up the few pixels that reach a gap between
+/// lines, which stays within the distance the page tolerates before it shows
+/// its "jump to latest" button, and fails when no such gap exists.
+Future<void> _alignToLineGap(WidgetTester tester, StoreLocale locale) async {
+  final up = _scrollUpToLineGap(tester);
+  expect(
+    up,
+    isNotNull,
+    reason: 'no gap between lines of Mira text to start at',
+  );
+  if (up == 0) return;
+  // The page pins the list to the bottom until the reader drags away from it,
+  // and a drag that ends near the bottom pins it again. Drag well clear of the
+  // bottom to let go of the pin, then jump back to the line gap. The jump
+  // leaves the pin released, and the page shows its button only more than 24 px
+  // from the bottom, which this never is.
+  await tester.drag(_transcript(), const Offset(0, 80));
+  await settleStoreScreen(tester);
+  final position = tester.state<ScrollableState>(_transcript()).position;
+  position.jumpTo(position.maxScrollExtent - up!);
   await tester.pump(const Duration(milliseconds: 300));
+  expect(
+    _cutsALine(_textLines(tester), _visibleTop(tester)),
+    isFalse,
+    reason: 'a line of Mira text is cut',
+  );
 }
 
 Widget _build(StoreLocale locale) {

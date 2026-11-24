@@ -32,6 +32,16 @@ It renders each page in English and Vietnamese at every store device size in
   the other locale. `StoreLocale.pick` records each EN/VI pair, so a new
   fixture string is covered automatically. Fix a failure in the fixture. Never
   crop around it.
+- Every capture runs on one wall clock, 09:20 on the capture day
+  (`StoreTeam.now`, supplied through `storeWallClock`): Home reads it through
+  `HomeWallClock` and the calendar through `CalendarWallClock`, so the
+  greeting, the Mira conversation's times and the calendar's now line agree.
+  Fixtures dated today stay at or before 09:20, and the time tracker shows the
+  previous working day's log. Other pages read the device date, so a recapture
+  on another day moves every date label together.
+- The Mira capture scrolls its list up the few pixels that put the top of the
+  view between two lines of text, and fails when no gap lies within the 24 px
+  the page tolerates before it shows its "jump to latest" button.
 - The design render harness loads Nunito, Noto Sans and JetBrains Mono. Sorbet's
   overline and numeric roles use JetBrains Mono, and without it those runs draw
   as solid blocks.
