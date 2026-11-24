@@ -1,5 +1,6 @@
 import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { Providers } from '@tuturuuu/satellite/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -70,7 +71,9 @@ export default async function RootLayout({ children }: Props) {
         <OfflineProvider register={false}>
           <Suspense>
             <NuqsAdapter>
-              <Providers appName={siteConfig.name}>{children}</Providers>
+              <Providers appName={siteConfig.name} nonce={requestNonce()}>
+                {children}
+              </Providers>
             </NuqsAdapter>
           </Suspense>
           <TailwindIndicator />

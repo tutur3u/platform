@@ -13,6 +13,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { Providers } from '@/components/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
@@ -73,7 +74,9 @@ export default async function RootLayout({ children }: Props) {
         <OfflineProvider register={false}>
           <NuqsAdapter>
             <Suspense>
-              <Providers appName={siteConfig.name}>{children}</Providers>
+              <Providers appName={siteConfig.name} nonce={requestNonce()}>
+                {children}
+              </Providers>
             </Suspense>
           </NuqsAdapter>
           <TailwindIndicator />

@@ -1,4 +1,5 @@
 import { Providers } from '@tuturuuu/satellite/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -61,7 +62,11 @@ export default async function LocaleLayout({
       >
         <NuqsAdapter>
           <Suspense>
-            <Providers appName="AI Studio" currentApp="ai">
+            <Providers
+              appName="AI Studio"
+              currentApp="ai"
+              nonce={requestNonce()}
+            >
               {children}
               <ProductionIndicator />
               <StaffToolbar />

@@ -13,6 +13,7 @@ import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
 import { Providers } from '@/components/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -65,7 +66,9 @@ export default async function RootLayout({ children }: Props) {
       >
         <Suspense fallback={null}>
           <NuqsAdapter>
-            <Providers appName={siteConfig.name}>{children}</Providers>
+            <Providers appName={siteConfig.name} nonce={requestNonce()}>
+              {children}
+            </Providers>
           </NuqsAdapter>
         </Suspense>
         <TailwindIndicator />

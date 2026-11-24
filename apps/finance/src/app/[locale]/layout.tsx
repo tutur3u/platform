@@ -4,6 +4,7 @@ import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import { FINANCE_APEX_URL } from '@/start-bridge/finance-mounts.mjs';
@@ -78,7 +79,9 @@ export default async function RootLayout({ children }: Props) {
         <OfflineProvider register={false}>
           <NuqsAdapter>
             <Suspense>
-              <Providers appName={siteConfig.name}>{children}</Providers>
+              <Providers appName={siteConfig.name} nonce={requestNonce()}>
+                {children}
+              </Providers>
             </Suspense>
           </NuqsAdapter>
           <TailwindIndicator />

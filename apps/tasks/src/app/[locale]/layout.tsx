@@ -1,4 +1,5 @@
 import { Providers } from '@/components/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
@@ -84,7 +85,7 @@ export default async function RootLayout({ children }: Props) {
         <OfflineProvider options={{ scope: '/' }} register={!mounted}>
           <NuqsAdapter>
             <Suspense>
-              <Providers appName={siteConfig.name}>
+              <Providers appName={siteConfig.name} nonce={requestNonce()}>
                 <FadeSettingInitializer />
                 <TaskSoundEffectsInitializer />
                 {children}

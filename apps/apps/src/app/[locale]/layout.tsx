@@ -10,6 +10,7 @@ import { locale as getRootLocale } from 'next/root-params';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { Providers } from '@/components/providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { BASE_URL } from '@/constants/common';
 import { supportedLocales } from '@/i18n/routing';
 
@@ -62,7 +63,9 @@ export default async function RootLayout({ children }: Props) {
         )}
       >
         <Suspense>
-          <Providers appName="Tuturuuu Apps">{children}</Providers>
+          <Providers appName="Tuturuuu Apps" nonce={requestNonce()}>
+            {children}
+          </Providers>
         </Suspense>
         <TailwindIndicator />
         <Toaster />
