@@ -4,6 +4,9 @@
 // Docker's bridged network so the launcher's network namespace, not Docker,
 // is the barrier under test.
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { PLAYGROUND_LANGUAGES } from '../../packages/types/src/primitives/playgrounds.ts';
 import { playgroundTemplates } from '../../packages/utils/src/playground-templates.ts';
 
@@ -12,9 +15,39 @@ if (!image || !/^(?:[\w./:-]+@)?sha256:[a-f0-9]{64}$/u.test(image)) {
   throw new Error('Pass an immutable image ID or registry digest.');
 }
 
+// A kernel without Landlock, like the Cloudflare microVM: its syscalls fail
+// with ENOSYS, so the read-only mounts alone must hold the write bound.
+const noLandlock = join(
+  mkdtempSync(join(tmpdir(), 'playground-')),
+  'seccomp.json'
+);
+writeFileSync(
+  noLandlock,
+  JSON.stringify({
+    defaultAction: 'SCMP_ACT_ALLOW',
+    syscalls: [
+      {
+        names: [
+          'landlock_create_ruleset',
+          'landlock_add_rule',
+          'landlock_restrict_self',
+        ],
+        action: 'SCMP_ACT_ERRNO',
+        errnoRet: 38,
+      },
+    ],
+  })
+);
+
 function launch(
   job,
-  { network = 'none', timeout = 60_000, cpus = '0.5', memory = '2g' } = {}
+  {
+    network = 'none',
+    timeout = 60_000,
+    cpus = '0.5',
+    memory = '2g',
+    seccomp = 'unconfined',
+  } = {}
 ) {
   const started = Date.now();
   const result = spawnSync(
@@ -34,7 +67,7 @@ function launch(
       '--cap-add=FOWNER',
       '--cap-add=DAC_OVERRIDE',
       '--cap-add=KILL',
-      '--security-opt=seccomp=unconfined',
+      `--security-opt=seccomp=${seccomp}`,
       '--security-opt=apparmor=unconfined',
       `--memory=${memory}`,
       `--cpus=${cpus}`,
@@ -173,8 +206,7 @@ expect(
   egress
 );
 
-const writes = launch(
-  python(`
+const writesJob = python(`
 import os
 denied = []
 for target in ("/etc/playground", "/usr/local/lib/playground/run.py", "/var/tmp/x", "/root/x", "/dev/shm/x"):
@@ -187,8 +219,8 @@ with open("/tmp/workspace/out.txt", "w") as handle:
     handle.write("kept\\n")
 os.symlink("/etc/passwd", "/tmp/workspace/link")
 print(len(denied))
-`)
-);
+`);
+const writes = launch(writesJob);
 expect(
   'writes bounded to the workspace',
   writes.outcome === 'exited' &&
@@ -198,6 +230,54 @@ expect(
     ) &&
     !writes.files.some((file) => file.path === 'link'),
   writes
+);
+
+const writesWithoutLandlock = launch(writesJob, { seccomp: noLandlock });
+expect(
+  'writes bounded to the workspace without Landlock',
+  writesWithoutLandlock.outcome === 'exited' &&
+    writesWithoutLandlock.output.trim() === '5' &&
+    writesWithoutLandlock.files.some(
+      (file) => file.path === 'out.txt' && file.content === 'kept\n'
+    ) &&
+    !writesWithoutLandlock.files.some((file) => file.path === 'link'),
+  writesWithoutLandlock
+);
+// The profile must really remove Landlock, or the case above proves nothing.
+const fallback = launch(
+  python(`
+import ctypes, os
+libc = ctypes.CDLL(None, use_errno=True)
+libc.syscall.restype = ctypes.c_long
+abi = libc.syscall(444, None, ctypes.c_size_t(0), ctypes.c_uint32(1))
+print(abi, ctypes.get_errno(), sorted(os.listdir("/dev")))
+`),
+  { seccomp: noLandlock }
+);
+expect(
+  'the read-only fallback runs where Landlock is missing',
+  fallback.outcome === 'exited' &&
+    fallback.output.trim() ===
+      "-1 38 ['fd', 'full', 'null', 'random', 'stderr', 'stdin', 'stdout', 'urandom', 'zero']",
+  fallback
+);
+
+// The program cannot undo the read-only mounts, even from a user namespace
+// where it would hold capabilities.
+const remount = launch(
+  {
+    command: [
+      "/usr/bin/unshare -Urm /bin/sh -c 'mount -o remount,rw,bind / 2>/dev/null; mount -o remount,rw,bind /usr 2>/dev/null; echo x > /etc/playground' 2>/dev/null",
+      'test -e /etc/playground && echo writable || echo denied',
+    ].join('; '),
+    files: [],
+  },
+  { seccomp: noLandlock }
+);
+expect(
+  'a user namespace cannot make the mounts writable',
+  remount.outcome === 'exited' && remount.output.trim() === 'denied',
+  remount
 );
 
 const timeout = launch(python('import time\ntime.sleep(120)\n'));

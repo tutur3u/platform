@@ -205,7 +205,8 @@ the older one (`check_superseded`). A room runs at most two checks at once
 (`check_busy`).
 
 Every check is a separate exec with its own mount namespace, a fresh `/tmp`
-workspace, PID and network namespaces, the dropped identity and Landlock, so
+workspace, PID and network namespaces, the dropped identity and the write
+bound below, so
 nothing a check writes survives it or reaches another check. The launcher
 runs a fixed command, never one from the request: `gcc` or `g++` with
 `-fsyntax-only`, or `javac -proc:none -implicit:none` with a throwaway class
@@ -230,9 +231,28 @@ its checks, about $0.012 per active room-hour at the published overage rates.
 ## Launcher behaviour
 
 The trusted launcher (`container/run.py`) runs as root only to mount a fresh
-`/tmp` and build the sandbox. It first runs the same namespace, privilege drop
-and Landlock chain around `/bin/true`; if the kernel or runtime cannot provide
-any part of it, the Run fails as `sandbox_failed` before user code runs. The
+`/tmp` and build the sandbox. In its private mount namespace it then
+replaces `/dev` with a tmpfs holding only `null`, `zero`, `full`, `random`,
+`urandom` and the `fd`/`std*` links, remounts every mount except `/tmp` and
+`/proc` read-only, keeping each mount's `nosuid`, `nodev`, `noexec`,
+`nosymfollow` and atime flags, and checks that no reachable mount is left
+writable. The program has no capabilities, so it cannot remount them: the
+read-only mounts are the write bound. Landlock (writes only beneath `/tmp`
+and to `/dev/null`) is layered on top when the kernel implements it. The
+Cloudflare microVM kernel does not (`landlock_create_ruleset` returns
+`ENOSYS`), so hosted guests rely on the read-only mounts alone; the hosted
+qualifier's layer probe reports which applies, and `qualify-launcher.mjs`
+runs the write-bound case both with Landlock and under a seccomp profile
+that makes its syscalls return `ENOSYS`, asserting the fallback really ran
+and that a user namespace cannot make the mounts writable again. Without
+Landlock the program can still write to `zero`, `full` and the random
+devices (harmless) and to its own `/proc/self` tunables such as `comm` and
+`oom_score_adj`; Landlock is used only from ABI 3, the first with every
+right the rules need. The launcher then runs the same
+namespace and privilege-drop chain around `/bin/true`. If any stage fails,
+the Run is `sandbox_failed` before user code runs, and its output names only
+the stage (`input`, `workspace`, `confinement`, `landlock`, `preflight` or
+`command`). The
 program then runs as UID and GID 65534 with no capabilities, no new
 privileges, an empty network namespace, its own PID namespace and writes limited to
 `/tmp`.

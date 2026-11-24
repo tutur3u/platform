@@ -24,6 +24,29 @@ COMMAND_TIMEOUT = 30
 CHECK_SECONDS = {"c": 4, "cpp": 4, "java": 8}
 CHECK_ADDRESS_SPACE = 512 * 1024 * 1024
 PR_SET_PDEATHSIG = 1
+# landlock_create_ruleset has the same number on every Linux architecture.
+SYS_LANDLOCK_CREATE_RULESET = 444
+LANDLOCK_CREATE_RULESET_VERSION = 1
+MS_RDONLY, MS_NOSUID, MS_NODEV, MS_NOEXEC = 1, 2, 4, 8
+MS_REMOUNT, MS_BIND = 32, 4096
+MOUNT_FLAGS = {
+    "nosuid": MS_NOSUID,
+    "nodev": MS_NODEV,
+    "noexec": MS_NOEXEC,
+    "noatime": 1024,
+    "nodiratime": 2048,
+    "relatime": 1 << 21,
+    "strictatime": 1 << 24,
+    "nosymfollow": 256,
+}
+# Landlock ABI 3 is the first with every right in WRITE_RIGHTS (refer needs
+# 2, truncate needs 3).
+LANDLOCK_MIN_ABI = 3
+# The only devices the sandbox sees; Landlock-equivalent except that zero,
+# full and the random devices also accept harmless writes.
+DEVICES = {"null": (1, 3), "zero": (1, 5), "full": (1, 7), "random": (1, 8), "urandom": (1, 9)}
+# The workspace tmpfs stays writable; the sandbox mounts a fresh /proc.
+WRITABLE_MOUNTS = ("/tmp", "/proc")
 MAX_CHECK_FILES = 20
 MAX_CHECK_FILE_BYTES = 128 * 1024
 MAX_CHECK_BYTES = 200 * 1024
@@ -182,26 +205,109 @@ def set_check_limits(language):
     return apply
 
 
-def sandboxed(*command):
+def landlock_supported():
+    """Whether the kernel implements the Landlock ABI the rules need.
+
+    ENOSYS, EOPNOTSUPP or a filtered syscall means no; the read-only mounts
+    then hold the write bound alone.
+    """
+    libc = ctypes.CDLL(None, use_errno=True)
+    libc.syscall.restype = ctypes.c_long
+    abi = libc.syscall(
+        SYS_LANDLOCK_CREATE_RULESET, None, ctypes.c_size_t(0),
+        ctypes.c_uint32(LANDLOCK_CREATE_RULESET_VERSION),
+    )
+    return abi >= LANDLOCK_MIN_ABI
+
+
+def mounts():
+    """The reachable mount at each mount point, with its per-mount options.
+
+    mountinfo lists a mount after the mounts it covers. A mount at a path, or
+    above it, hides every earlier mount there, so only the latest survives.
+    """
+    reachable = {}
+    with open("/proc/self/mountinfo", "rb") as handle:
+        for line in handle:
+            fields = line.split()
+            point = os.fsdecode(
+                re.sub(rb"\\([0-7]{3})", lambda m: bytes([int(m.group(1), 8)]), fields[4])
+            )
+            for covered in [path for path in reachable if path == point or path.startswith(point.rstrip("/") + "/")]:
+                del reachable[covered]
+            reachable[point] = os.fsdecode(fields[5]).split(",")
+    return reachable
+
+
+def minimal_dev(libc):
+    """Replace /dev with a tmpfs holding only the devices programs need."""
+    flags = MS_NOSUID | MS_NOEXEC
+    if libc.mount(b"tmpfs", b"/dev", b"tmpfs", ctypes.c_ulong(flags), b"size=64k,mode=0755") != 0:
+        raise OSError(ctypes.get_errno(), "dev mount failed")
+    for name, (major, minor) in DEVICES.items():
+        os.mknod("/dev/" + name, stat.S_IFCHR | 0o666, os.makedev(major, minor))
+        os.chmod("/dev/" + name, 0o666)
+    for name, target in (("fd", "/proc/self/fd"), ("stdin", "/proc/self/fd/0"),
+                         ("stdout", "/proc/self/fd/1"), ("stderr", "/proc/self/fd/2")):
+        os.symlink(target, "/dev/" + name)
+
+
+def writable_mount(point):
+    return any(point == root or point.startswith(root + "/") for root in WRITABLE_MOUNTS)
+
+
+def confine_writes():
+    """Make every mount but the workspace tmpfs read-only in this namespace.
+
+    /dev is first replaced with a tmpfs of fixed devices, so the program can
+    write to no device node beyond those, and none it creates.
+
+    The bind remounts keep each mount's own nosuid, nodev, noexec and atime
+    flags. The sandboxed program has no capabilities and no new privileges, so
+    it cannot remount them. This holds the write bound on kernels without
+    Landlock and backs Landlock up where it exists.
+    """
+    libc = ctypes.CDLL(None, use_errno=True)
+    minimal_dev(libc)
+    for point, options in mounts().items():
+        if writable_mount(point) or "ro" in options:
+            continue
+        flags = MS_REMOUNT | MS_BIND | MS_RDONLY
+        for option in options:
+            flags |= MOUNT_FLAGS.get(option, 0)
+        if libc.mount(None, point.encode(), None, ctypes.c_ulong(flags), None) != 0:
+            raise OSError(ctypes.get_errno(), "read-only remount failed: " + point)
+    left = [
+        point for point, options in mounts().items()
+        if not writable_mount(point) and "ro" not in options
+    ]
+    if left:
+        raise OSError(0, "mounts left writable: " + ",".join(left))
+
+
+def sandboxed(*command, landlock=True):
+    rules = [
+        "--landlock-access", "fs:" + WRITE_RIGHTS,
+        "--landlock-rule", "path-beneath:" + WORKSPACE_RIGHTS + ":/tmp",
+        "--landlock-rule", "path-beneath:write-file:/dev/null",
+    ] if landlock else []
     return [
         "/usr/bin/unshare", "--net", "--pid", "--ipc", "--uts", "--fork", "--kill-child",
         "--mount-proc",
         "/usr/bin/setpriv", "--reuid", str(UID), "--regid", str(UID), "--clear-groups",
         "--pdeathsig", "KILL",
         "--bounding-set=-all", "--inh-caps=-all", "--ambient-caps=-all", "--no-new-privs",
-        "--landlock-access", "fs:" + WRITE_RIGHTS,
-        "--landlock-rule", "path-beneath:" + WORKSPACE_RIGHTS + ":/tmp",
-        "--landlock-rule", "path-beneath:write-file:/dev/null",
+        *rules,
         *command,
     ]
 
 
-def preflight():
+def preflight(landlock):
     # Build the same sandbox around a no-op first. A kernel or runtime that
     # cannot provide a namespace, the privilege drop or Landlock fails here,
     # before user code runs, and never surfaces as the program's own output.
     subprocess.run(
-        sandboxed("/bin/true"),
+        sandboxed("/bin/true", landlock=landlock),
         check=True,
         cwd=WORKSPACE,
         env=GUEST_ENV,
@@ -299,22 +405,33 @@ def export_files(sources):
 
 
 def main():
+    stage = "input"
     try:
         job = read_job()
         checking = job.get("mode") == "check"
+        stage = "workspace"
         stage_files(job["files"])
-        preflight()
+        stage = "confinement"
+        confine_writes()
+        stage = "landlock"
+        landlock = landlock_supported()
+        stage = "preflight"
+        preflight(landlock)
+        stage = "command"
         if checking:
             exit_code, output, outcome = run(
-                sandboxed(*check_command(job)), "", CHECK_SECONDS[job["language"]],
-                set_check_limits(job["language"]),
+                sandboxed(*check_command(job), landlock=landlock), "",
+                CHECK_SECONDS[job["language"]], set_check_limits(job["language"]),
             )
         else:
             exit_code, output, outcome = run(
-                sandboxed("/bin/sh", "-c", job["command"]), job.get("stdin", "")
+                sandboxed("/bin/sh", "-c", job["command"], landlock=landlock),
+                job.get("stdin", ""),
             )
     except (KeyError, OSError, TypeError, ValueError, subprocess.SubprocessError):
-        checking, exit_code, output, outcome = False, 126, b"", "sandbox_failed"
+        # Only the fixed stage name leaves the guest, never the error text.
+        checking, exit_code, outcome = False, 126, "sandbox_failed"
+        output = ("sandbox_failed: " + stage + "\n").encode()
     files = None
     if outcome == "exited" and not checking:
         try:
