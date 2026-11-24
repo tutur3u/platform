@@ -160,6 +160,7 @@ describe('per-speaker consent notice', () => {
   it('tells a participant who declined that others keep their transcript', async () => {
     f.read.mockResolvedValue(view({ choice: 'decline' }));
     wrap(<TranscriptConsentNotice meetingId="m" wsId="w" capture={{ kind: 'off' }} />);
+    fireEvent.click(await screen.findByRole('button', { name: ai.consent_title }));
     expect(await screen.findByText(ai.self_untick)).toBeTruthy();
     expect(screen.queryByText(ai.consent_you_declined)).toBeNull();
   });

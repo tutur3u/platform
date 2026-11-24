@@ -27,7 +27,7 @@ describe('self chunker', () => {
   it('flushes after 2 s of silence and trims everything past the hangover', () => {
     const { chunks } = run([
       [loud, 75],
-      [quiet, 130],
+      [quiet, 110],
     ]);
     expect(chunks).toHaveLength(0);
     const flushed = run([

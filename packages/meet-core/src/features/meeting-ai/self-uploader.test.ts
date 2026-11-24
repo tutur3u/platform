@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-class FakeInternalApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly code?: string
-  ) {
-    super(message);
-  }
-}
+const { FakeInternalApiError } = vi.hoisted(() => ({
+  FakeInternalApiError: class extends Error {
+    constructor(
+      message: string,
+      readonly status: number,
+      readonly code?: string
+    ) {
+      super(message);
+    }
+  },
+}));
 vi.mock('@tuturuuu/internal-api', () => ({
   getInternalApiClient: vi.fn(),
   uploadMeetAiChunk: vi.fn(),
