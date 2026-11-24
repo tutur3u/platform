@@ -56,17 +56,14 @@
 }
 
 /*
-  Primitive shape, stroke and motion. Buttons, badges, fields, cards, tabs and
-  dialogs read these variables instead of fixed utilities. A design such as
-  Sorbet only sets the variables (in @layer components), so the primitive
-  changes while a caller's own utility on the element still wins. These are
-  the classic values and render exactly as the utilities they replace
-  (border-input, shadow-sm, bg-background, the default transition).
-
-  --button-radius, --badge-radius, --field-radius and --dialog-radius stay
-  unset in classic: the primitives fall back to calc(var(--radius) - 2px) or
-  var(--radius) on the element itself, so a subtree that sets its own --radius
-  (Lettin's .notebook-theme) still reaches them.
+  Primitive shape, stroke and motion. Buttons, badges, fields, cards, tabs,
+  dialogs and sheets read these variables instead of fixed utilities. A design
+  such as Sorbet only sets the variables (in @layer components), so the
+  primitive changes while a caller's own utility on the element still wins.
+  These are the classic values (border-input, shadow-sm, shadow-lg,
+  bg-background, the default transition). The rest (sorbet.css lists them)
+  stay unset: each primitive falls back to its classic value on the element
+  itself, so a subtree's own --radius or palette still reaches it.
 */
 @layer base {
   :root {
@@ -74,6 +71,8 @@
     --card-border: var(--border);
     --card-shadow:
       0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --sheet-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --tabs-thumb-bg: var(--background);
     --tabs-thumb-shadow:
       0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);

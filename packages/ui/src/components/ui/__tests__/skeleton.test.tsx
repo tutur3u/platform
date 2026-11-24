@@ -26,7 +26,9 @@ describe('skeleton kit', () => {
   });
 
   it('uses token colours, a shimmer sweep and a reduced-motion opt-out', () => {
-    expect(skeletonClassName).toContain('bg-primary/10');
+    expect(skeletonClassName).toContain(
+      'bg-[var(--skeleton-bg,color-mix(in_oklab,var(--primary)_10%,transparent))]'
+    );
     expect(skeletonClassName).toContain('before:animate-[shimmer');
     expect(skeletonClassName).toContain('motion-reduce:before:hidden');
     // Design tokens only: no hard-coded hue utilities.

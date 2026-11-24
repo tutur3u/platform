@@ -245,6 +245,15 @@
   Primitive variables (classic defaults: globals.css). Sorbet sets them in
   @layer components, above the classic base values and below utilities, so a
   caller's rounded-r-none, border or shadow utility on the element still wins.
+
+  These stay unset in classic, and each primitive falls back to its classic
+  utility value: --button-radius, --badge-radius, --field-radius,
+  --dialog-radius, --overlay-scrim (black at 50% on dialogs, 80% elsewhere),
+  --sheet-bg, --sheet-radius, --toggle-radius, --toggle-group-radius,
+  --toggle-weight, --toggle-border, --toggle-on-bg, --toggle-on-fg,
+  --toggle-shadow, --skeleton-bg, --alert-radius, --alert-border, --alert-bg,
+  --table-head-weight, --table-row-hover, --mobile-top-bar-bg and
+  --mobile-dock-display (none, so the dock shows only under Sorbet).
 */
 @layer components {
   /*
@@ -376,41 +385,45 @@
 
 /*
   Overlays: one scrim and one floating elevation for every sheet and dialog.
-  Stays unlayered: each overlay's own bg-black utility would otherwise win,
-  until the overlay primitives read a variable.
+  The overlays, sheets and drawers read --overlay-scrim, --sheet-shadow,
+  --sheet-bg and --sheet-radius; the border and text colours have no
+  primitive utility to replace.
 */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="sheet-overlay"],
-    [data-slot="dialog-overlay"],
-    [data-slot="drawer-overlay"],
-    [data-slot="alert-dialog-overlay"]
-  ) {
-  background-color: var(--sorbet-scrim);
-}
+@layer components {
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="sheet-overlay"],
+      [data-slot="dialog-overlay"],
+      [data-slot="drawer-overlay"],
+      [data-slot="alert-dialog-overlay"]
+    ) {
+    --overlay-scrim: var(--sorbet-scrim);
+  }
 
-/* Stays unlayered: the sheet's own shadow-lg utility would otherwise win. */
-:root[data-ui="sorbet"]
-  :where([data-slot="sheet-content"], [data-slot="drawer-content"]) {
-  border-color: color-mix(in oklab, var(--border) 60%, transparent);
-  box-shadow: var(--sorbet-shadow-lg);
-}
+  /* The drawer has no shadow utility, so it takes the shadow directly. */
+  :root[data-ui="sorbet"]
+    :where([data-slot="sheet-content"], [data-slot="drawer-content"]) {
+    --sheet-shadow: var(--sorbet-shadow-lg);
+    border-color: color-mix(in oklab, var(--border) 60%, transparent);
+    box-shadow: var(--sheet-shadow);
+  }
 
-/*
-  Bottom sheets float over the scrim like popovers, so they take the surface
-  (pages stay on the background), with a rounded top edge and room for the
-  home indicator. Stays unlayered: the sheet's bg-background and the drawer's
-  rounded-t-lg utilities would otherwise win.
-*/
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="sheet-content"][data-side="bottom"],
-    [data-slot="drawer-content"][data-vaul-drawer-direction="bottom"]
-  ) {
-  background-color: var(--popover);
-  color: var(--popover-foreground);
-  border-top-left-radius: var(--sorbet-sheet-radius);
-  border-top-right-radius: var(--sorbet-sheet-radius);
+  /*
+    Bottom sheets float over the scrim like popovers, so they take the
+    surface (pages stay on the background), with a rounded top edge and room
+    for the home indicator.
+  */
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="sheet-content"][data-side="bottom"],
+      [data-slot="drawer-content"][data-vaul-drawer-direction="bottom"]
+    ) {
+    --sheet-bg: var(--popover);
+    --sheet-radius: var(--sorbet-sheet-radius);
+    color: var(--popover-foreground);
+    border-top-left-radius: var(--sheet-radius);
+    border-top-right-radius: var(--sheet-radius);
+  }
 }
 
 /* Layered below utilities, so a caller's own bottom padding still wins. */

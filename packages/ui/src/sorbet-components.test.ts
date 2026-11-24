@@ -60,6 +60,29 @@ describe('Sorbet components', () => {
     }
   });
 
+  it('restyles toggles, skeletons, tables and alerts through variables', () => {
+    expect(css).toMatch(
+      /\[data-slot="toggle"\],\s*\[data-slot="toggle-group-item"\]\) \{\s*--toggle-radius: var\(--sorbet-control-radius\);/
+    );
+    expect(css).toMatch(
+      /\[data-slot="toggle-group-item"\]\[data-state="on"\]\s*\) \{\s*--toggle-border: transparent;\s*--toggle-on-bg: var\(--accent\);\s*--toggle-on-fg: var\(--foreground\);\s*--toggle-weight: 700;/
+    );
+    expect(css).toMatch(
+      /\[data-state="on"\]\s*\) \{\s*--toggle-on-bg: var\(--card\);\s*--toggle-shadow: var\(--sorbet-shadow-sm\);/
+    );
+    expect(css).toMatch(
+      /\[data-slot="skeleton"\]\) \{\s*--skeleton-bg: var\(--secondary\);/
+    );
+    expect(css).toMatch(
+      /\[data-slot="table-head"\]\) \{\s*--table-head-weight: 600;/
+    );
+    expect(css).toMatch(
+      /\[data-slot="alert"\]\) \{\s*--alert-radius: var\(--radius-xl\);\s*--alert-border: [^;]+;\s*--alert-bg: var\(--card\);/
+    );
+    // Only the pagination link keeps an unlayered pill and accent fill.
+    expect(css).not.toMatch(/\[data-slot="toggle"\]\) \{\s*border-radius/);
+  });
+
   it('reads only shared tokens, never raw colours', () => {
     expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\(|hsl\(/i);
   });

@@ -53,8 +53,16 @@ export function MobileDock({
 
   return (
     <>
-      <div aria-hidden data-slot="mobile-dock-fade" className="hidden" />
-      <nav aria-label={label} data-slot="mobile-dock" className="hidden">
+      <div
+        aria-hidden
+        data-slot="mobile-dock-fade"
+        className="[display:var(--mobile-dock-display,none)]"
+      />
+      <nav
+        aria-label={label}
+        data-slot="mobile-dock"
+        className="[display:var(--mobile-dock-display,none)]"
+      >
         <div data-slot="mobile-dock-pill">
           {items.slice(0, 5).map((item) => {
             const className = cn(

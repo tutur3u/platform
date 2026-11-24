@@ -77,6 +77,15 @@ describe('Sorbet surfaces', () => {
     );
     expect(css).not.toMatch(/mobile-dock-back-lane/);
     expect(css).toMatch(
+      /\[data-slot="mobile-dock"\]\) \{\s*--mobile-dock-display: flex;/
+    );
+    expect(css).toMatch(
+      /\[data-slot="mobile-dock-fade"\]\) \{\s*--mobile-dock-display: block;/
+    );
+    expect(css).toMatch(
+      /\[data-slot="mobile-top-bar"\] > div\) \{\s*--mobile-top-bar-bg: color-mix\(/
+    );
+    expect(css).toMatch(
       /\[data-slot="mobile-dock-pill"\][\s\S]*background-color: var\(--card\)/
     );
   });

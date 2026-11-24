@@ -375,11 +375,21 @@
   --sorbet-shadow-md: none;
 }
 
-:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
-  :where([data-slot="card"]) {
-  border-color: var(--border);
+/*
+  Cards keep the full-strength edge. Layered and set on the card, so a
+  caller's own border colour still wins.
+*/
+@layer components {
+  :root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
+    :where([data-slot="card"]) {
+    --card-border: var(--border);
+  }
 }
 
+/*
+  Stays unlayered: it widens the unlayered Sorbet button ring (sorbet.css),
+  which a layered rule cannot reach.
+*/
 :root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]:not(
     [data-focus-modality="pointer"]
   )
@@ -387,7 +397,11 @@
   outline-width: 3px;
 }
 
-/* Fields draw their keyboard ring as a solid token edge instead of a halo. */
+/*
+  Fields draw their keyboard ring as a solid token edge instead of a halo.
+  Stays unlayered: the fields' own focus-visible ring utilities would
+  otherwise keep the halo.
+*/
 :root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]:not(
     [data-focus-modality="pointer"]
   )

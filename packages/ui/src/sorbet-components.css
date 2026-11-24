@@ -79,26 +79,18 @@
 }
 
 /*
-  Pagination and toggles: pills; the selected one is the accent fill. Stays
-  unlayered: the toggle's own rounded-md and font-medium utilities would
-  otherwise win.
+  Pagination: pills; the current page is the accent fill. Stays unlayered:
+  the link takes buttonVariants() alone, whose rounded-md and outline
+  utilities stay classic for elements outside Button, so they would otherwise
+  win.
 */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="pagination-link"],
-    [data-slot="toggle"],
-    [data-slot="toggle-group-item"]
-  ) {
+:root[data-ui="sorbet"] :where([data-slot="pagination-link"]) {
   border-radius: var(--sorbet-control-radius);
 }
 
-/* Stays unlayered, with the toggle pills above. */
+/* Stays unlayered, with the pagination pills above. */
 :root[data-ui="sorbet"]
-  :where(
-    [data-slot="pagination-link"][data-active="true"],
-    [data-slot="toggle"][data-state="on"],
-    [data-slot="toggle-group-item"][data-state="on"]
-  ) {
+  :where([data-slot="pagination-link"][data-active="true"]) {
   border-color: transparent;
   background-color: var(--accent);
   color: var(--foreground);
@@ -106,50 +98,62 @@
 }
 
 /*
-  A default toggle group reads as one segmented control. Stays unlayered: the
-  group's own rounded-md and the item's data-[state=on]:bg-accent utilities
-  would otherwise win.
+  Toggles: pills; the selected one is the accent fill in ink. A default
+  toggle group reads as one segmented control: a sunken track whose selected
+  item is a raised card. Toggles and groups read the --toggle-* variables;
+  the track fill, padding and gap have no primitive utility to replace.
 */
-:root[data-ui="sorbet"]
-  :where([data-slot="toggle-group"][data-variant="default"]) {
-  border-radius: var(--sorbet-control-radius);
-  background-color: var(--muted);
-  padding: 2px;
-  gap: 2px;
-}
+@layer components {
+  :root[data-ui="sorbet"]
+    :where([data-slot="toggle"], [data-slot="toggle-group-item"]) {
+    --toggle-radius: var(--sorbet-control-radius);
+  }
 
-/* Stays unlayered, with the segmented toggle group above. */
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="toggle-group"][data-variant="default"]
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="toggle"][data-state="on"],
       [data-slot="toggle-group-item"][data-state="on"]
-  ) {
-  background-color: var(--card);
-  box-shadow: var(--sorbet-shadow-sm);
-}
+    ) {
+    --toggle-border: transparent;
+    --toggle-on-bg: var(--accent);
+    --toggle-on-fg: var(--foreground);
+    --toggle-weight: 700;
+  }
 
-/*
-  Items nest inside the 2px track padding, so their corners stay concentric.
-  Stays unlayered, with the segmented toggle group above.
-*/
-:root[data-ui="sorbet"]
-  :where(
-    [data-slot="toggle-group"][data-variant="default"]
-      [data-slot="toggle-group-item"]
-  ) {
-  border-radius: max(0px, calc(var(--sorbet-control-radius) - 2px));
-}
+  :root[data-ui="sorbet"]
+    :where([data-slot="toggle-group"][data-variant="default"]) {
+    --toggle-group-radius: var(--sorbet-control-radius);
+    background-color: var(--muted);
+    padding: 2px;
+    gap: 2px;
+  }
 
-/*
-  Dark cards sit below the track, so the dark thumb lifts toward the ink.
-  Stays unlayered, with the segmented toggle group above.
-*/
-:root[data-ui="sorbet"].dark
-  :where(
-    [data-slot="toggle-group"][data-variant="default"]
-      [data-slot="toggle-group-item"][data-state="on"]
-  ) {
-  background-color: color-mix(in oklab, var(--foreground) 12%, var(--card));
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="toggle-group"][data-variant="default"]
+        [data-slot="toggle-group-item"][data-state="on"]
+    ) {
+    --toggle-on-bg: var(--card);
+    --toggle-shadow: var(--sorbet-shadow-sm);
+  }
+
+  /* Items nest inside the 2px track padding, so their corners match. */
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="toggle-group"][data-variant="default"]
+        [data-slot="toggle-group-item"]
+    ) {
+    --toggle-radius: max(0px, calc(var(--sorbet-control-radius) - 2px));
+  }
+
+  /* Dark cards sit below the track, so the dark thumb lifts toward the ink. */
+  :root[data-ui="sorbet"].dark
+    :where(
+      [data-slot="toggle-group"][data-variant="default"]
+        [data-slot="toggle-group-item"][data-state="on"]
+    ) {
+    --toggle-on-bg: color-mix(in oklab, var(--foreground) 12%, var(--card));
+  }
 }
 
 /*
@@ -176,30 +180,34 @@
 }
 
 /*
-  Skeleton: the sunken surface with a slow pulse; still when motion is
-  reduced. Stays unlayered: the skeleton's own bg-primary/10 and animate-pulse
-  utilities would otherwise win.
+  Skeleton: the sunken surface (--skeleton-bg), and quiet header labels with
+  a hover wash on table rows (--table-head-weight, --table-row-hover). The
+  head's own text-muted-foreground already sets its colour, and its font size
+  has no primitive utility to replace.
 */
-:root[data-ui="sorbet"] :where([data-slot="skeleton"]) {
-  background-color: var(--secondary);
-  animation-duration: var(--sorbet-skeleton-pulse);
+@layer components {
+  :root[data-ui="sorbet"] :where([data-slot="skeleton"]) {
+    --skeleton-bg: var(--secondary);
+  }
+
+  :root[data-ui="sorbet"] :where([data-slot="table-head"]) {
+    --table-head-weight: 600;
+    font-size: 0.8125rem;
+  }
+
+  :root[data-ui="sorbet"]
+    :where([data-slot="table-body"] [data-slot="table-row"]) {
+    --table-row-hover: color-mix(in oklab, var(--foreground) 4%, transparent);
+  }
 }
 
 /*
-  Table: quiet header labels and the hover wash. Stays unlayered: the head's
-  own font-medium and the row's hover:bg-muted/50 utilities would otherwise
-  win.
+  A caller's animate-pulse on a skeleton pulses slowly; still when motion is
+  reduced. Stays unlayered: the animate-pulse shorthand would otherwise reset
+  the duration (the skeleton's own shimmer runs on ::before and is unchanged).
 */
-:root[data-ui="sorbet"] :where([data-slot="table-head"]) {
-  color: var(--muted-foreground);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-/* Stays unlayered, with the table head above. */
-:root[data-ui="sorbet"]
-  :where([data-slot="table-body"] [data-slot="table-row"]:hover) {
-  background-color: color-mix(in oklab, var(--foreground) 4%, transparent);
+:root[data-ui="sorbet"] :where([data-slot="skeleton"]) {
+  animation-duration: var(--sorbet-skeleton-pulse);
 }
 
 /*
@@ -233,21 +241,21 @@
 }
 
 /*
-  Alert: a card-like note; destructive takes a red wash with red ink. Stays
-  unlayered: the alert's own rounded-lg and variant utilities would otherwise
-  win.
+  Alert: a card-like note; destructive takes a red wash with red ink. The
+  alert reads --alert-radius, --alert-border and --alert-bg.
 */
-:root[data-ui="sorbet"] :where([data-slot="alert"]) {
-  border-color: color-mix(in oklab, var(--border) 70%, transparent);
-  border-radius: var(--radius-xl);
-  background-color: var(--card);
-}
+@layer components {
+  :root[data-ui="sorbet"] :where([data-slot="alert"]) {
+    --alert-radius: var(--radius-xl);
+    --alert-border: color-mix(in oklab, var(--border) 70%, transparent);
+    --alert-bg: var(--card);
+  }
 
-/* Stays unlayered, with the alert above. */
-:root[data-ui="sorbet"]
-  :where([data-slot="alert"][data-variant="destructive"]) {
-  border-color: color-mix(in oklab, var(--destructive) 35%, transparent);
-  background-color: color-mix(in oklab, var(--destructive) 8%, var(--card));
+  :root[data-ui="sorbet"]
+    :where([data-slot="alert"][data-variant="destructive"]) {
+    --alert-border: color-mix(in oklab, var(--destructive) 35%, transparent);
+    --alert-bg: color-mix(in oklab, var(--destructive) 8%, var(--card));
+  }
 }
 
 /*
@@ -291,7 +299,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Stays unlayered: the skeleton's own animate-pulse utility would win. */
+  /* Stays unlayered: a caller's animate-pulse would otherwise keep pulsing. */
   :root[data-ui="sorbet"] :where([data-slot="skeleton"]) {
     animation: none;
   }

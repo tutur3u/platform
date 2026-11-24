@@ -149,45 +149,48 @@
         0 12px 24px -10px rgb(0 0 0 / 0.6),
         0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
     }
-  }
 
-  /* Stays unlayered: the bar's own bg-background/50 utility would win. */
-  :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"] > div) {
-    background-color: color-mix(in oklab, var(--background) 88%, transparent);
-  }
+    /* The bar's inner row reads --mobile-top-bar-bg. */
+    :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"] > div) {
+      --mobile-top-bar-bg: color-mix(
+        in oklab,
+        var(--background) 88%,
+        transparent
+      );
+    }
 
-  /* Stays unlayered: the dock renders with a hidden utility until Sorbet. */
-  :root[data-ui="sorbet"] :where([data-slot="mobile-dock"]) {
-    position: fixed;
-    z-index: 40;
-    right: var(--sorbet-dock-inset);
-    bottom: var(--sorbet-dock-bottom-offset);
-    left: var(--sorbet-dock-inset);
-    transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: 480px;
-    height: var(--sorbet-dock-height);
-    margin-inline: auto;
-    pointer-events: none;
-  }
+    /* The dock and its fade read --mobile-dock-display (none in classic). */
+    :root[data-ui="sorbet"] :where([data-slot="mobile-dock"]) {
+      --mobile-dock-display: flex;
+      position: fixed;
+      z-index: 40;
+      right: var(--sorbet-dock-inset);
+      bottom: var(--sorbet-dock-bottom-offset);
+      left: var(--sorbet-dock-inset);
+      transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
+      align-items: center;
+      justify-content: center;
+      max-width: 480px;
+      height: var(--sorbet-dock-height);
+      margin-inline: auto;
+      pointer-events: none;
+    }
 
-  /* Stays unlayered: the fade renders with a hidden utility until Sorbet. */
-  :root[data-ui="sorbet"] :where([data-slot="mobile-dock-fade"]) {
-    position: fixed;
-    z-index: 39;
-    inset-inline: 0;
-    bottom: 0;
-    transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
-    display: block;
-    height: var(--sorbet-content-bottom-clearance);
-    pointer-events: none;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      color-mix(in oklab, var(--background) 55%, transparent) 12px
-    );
+    :root[data-ui="sorbet"] :where([data-slot="mobile-dock-fade"]) {
+      --mobile-dock-display: block;
+      position: fixed;
+      z-index: 39;
+      inset-inline: 0;
+      bottom: 0;
+      transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
+      height: var(--sorbet-content-bottom-clearance);
+      pointer-events: none;
+      background: linear-gradient(
+        to bottom,
+        transparent,
+        color-mix(in oklab, var(--background) 55%, transparent) 12px
+      );
+    }
   }
 
   /*

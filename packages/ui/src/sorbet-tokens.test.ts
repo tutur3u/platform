@@ -387,6 +387,19 @@ describe('Sorbet token contract', () => {
     );
   });
 
+  it('gives overlays the scrim and sheets their elevation through variables', () => {
+    const vars = css.slice(css.indexOf('@layer components {'));
+    expect(vars).toMatch(
+      /\[data-slot="alert-dialog-overlay"\]\s*\) \{\s*--overlay-scrim: var\(--sorbet-scrim\);/
+    );
+    expect(vars).toMatch(
+      /\[data-slot="drawer-content"\]\) \{\s*--sheet-shadow: var\(--sorbet-shadow-lg\);/
+    );
+    expect(vars).toMatch(
+      /\[data-vaul-drawer-direction="bottom"\]\s*\) \{\s*--sheet-bg: var\(--popover\);\s*--sheet-radius: var\(--sorbet-sheet-radius\);/
+    );
+  });
+
   it('strokes every field-like control with the field role', () => {
     const start = css.indexOf('Field stroke role:');
     expect(start).toBeGreaterThan(-1);

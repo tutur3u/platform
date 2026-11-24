@@ -44,7 +44,7 @@ export function Thumb({
         <span
           aria-hidden
           data-slot="skeleton"
-          className="absolute inset-0 animate-pulse bg-primary/10"
+          className="absolute inset-0 animate-pulse bg-[var(--skeleton-bg,color-mix(in_oklab,var(--primary)_10%,transparent))]"
         />
       )}
       <img

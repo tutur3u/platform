@@ -9,7 +9,7 @@ import type { ComponentProps, ReactNode } from 'react';
  * children (`isolate` + `before:-z-10`).
  */
 export const skeletonClassName =
-  'relative isolate overflow-hidden rounded-md bg-primary/10 before:pointer-events-none before:absolute before:-z-10 before:inset-0 before:animate-[shimmer_2.4s_ease-in-out_infinite] before:bg-linear-to-r before:from-transparent before:via-foreground/[0.06] before:to-transparent motion-reduce:before:hidden';
+  'relative isolate overflow-hidden rounded-md bg-[var(--skeleton-bg,color-mix(in_oklab,var(--primary)_10%,transparent))] before:pointer-events-none before:absolute before:-z-10 before:inset-0 before:animate-[shimmer_2.4s_ease-in-out_infinite] before:bg-linear-to-r before:from-transparent before:via-foreground/[0.06] before:to-transparent motion-reduce:before:hidden';
 
 export function Skeleton({ className, ...props }: ComponentProps<'div'>) {
   return (

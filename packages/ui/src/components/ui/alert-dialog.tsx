@@ -44,7 +44,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80 data-[state=closed]:animate-out data-[state=open]:animate-in',
+        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-[var(--overlay-scrim,rgb(0_0_0/0.8))] data-[state=closed]:animate-out data-[state=open]:animate-in',
         className
       )}
       onClick={(e) => e.stopPropagation()}

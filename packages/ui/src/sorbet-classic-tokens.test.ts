@@ -104,7 +104,7 @@ describe('classic theme role table', () => {
 
   it('matches the classic dialog scrim and radius scale', () => {
     const dialog = read('packages/ui/src/components/ui/dialog.tsx');
-    expect(dialog).toContain('bg-black/50');
+    expect(dialog).toContain('bg-[var(--overlay-scrim,rgb(0_0_0/0.5))]');
     for (const mode of ['light', 'dark'] as const) {
       expect(tokens.classic.color[mode].scrim).toBe('rgba(0,0,0,0.5)');
     }

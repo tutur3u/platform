@@ -281,8 +281,20 @@ Form fields are rounded, never pills (decided 2026-11-22). `Input`, `Textarea`,
 such as date pickers (`data-sorbet-shape="field"`) use the design-system radius:
 `rounded-md` in the classic theme and the Corners option's row radius
 (`--radius`: 12, 6 or 16px) in Sorbet. Buttons and badges keep Sorbet's pill
-`--sorbet-control-radius`. Do not add `rounded-full` to a field; Sorbet's field
-rule is unlayered, so it already overrides app radius utilities on fields.
+`--sorbet-control-radius`. Do not add `rounded-full` to a field: Sorbet sets
+the field corner through `--field-radius`, so a caller's radius utility wins
+over the theme.
+
+Sorbet restyles primitives by setting CSS variables (`--field-radius`,
+`--card-border`, `--overlay-scrim`, `--sheet-bg`, `--toggle-on-bg`,
+`--skeleton-bg`, `--alert-bg` and the rest listed in `sorbet.css`) inside
+`@layer components`. Each primitive reads its variable with the classic value
+as the fallback, so classic renders unchanged and a caller's own utility on the
+element always wins, in both themes. Pass a utility only when a screen needs to
+differ from the theme. Rules stay unlayered only for keyboard focus rings, the
+mobile sidebar backdrop, the dark `text-white` fix, the skeleton pulse timing,
+Sonner, pagination links and shell layout that its own utilities would replace;
+`sorbet-layering.test.ts` requires each to say why.
 
 Focus rings and outlines are for keyboard navigation only:
 

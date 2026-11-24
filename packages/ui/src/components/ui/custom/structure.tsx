@@ -195,7 +195,7 @@ export function Structure({
           data-slot="mobile-top-bar"
           className="safe-top safe-x fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden"
         >
-          <div className="bg-background/50 p-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
+          <div className="bg-[var(--mobile-top-bar-bg,color-mix(in_oklab,var(--background)_50%,transparent))] p-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
             <div className="relative flex items-center justify-between gap-2 md:gap-4">
               <div className="flex w-full items-center gap-2">
                 {mobileHeader}

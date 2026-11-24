@@ -3,13 +3,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 const alertVariants = cva(
-  'relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground',
+  'relative w-full rounded-[var(--alert-radius,var(--radius))] border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground',
   {
     variants: {
       variant: {
-        default: 'bg-background text-foreground',
+        default:
+          'border-[color:var(--alert-border,var(--border))] bg-[var(--alert-bg,var(--background))] text-foreground',
         destructive:
-          'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+          'border-[color:var(--alert-border,color-mix(in_oklab,var(--destructive)_50%,transparent))] bg-[var(--alert-bg,transparent)] text-destructive dark:border-[color:var(--alert-border,var(--destructive))] [&>svg]:text-destructive',
       },
     },
     defaultVariants: {

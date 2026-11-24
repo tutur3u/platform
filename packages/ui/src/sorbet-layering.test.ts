@@ -13,8 +13,9 @@ import { describe, expect, it } from 'vitest';
   Tailwind utilities live in @layer utilities and unlayered CSS outranks every
   layer, so Sorbet rules sit in @layer components (or base) or set variables
   that the primitives read. A rule may stay unlayered only when its comment
-  says why (focus rings, the sidebar backdrop, the dark text-white fix, and
-  rules whose own primitive utility would otherwise replace them).
+  says why (focus rings, the sidebar backdrop, the dark text-white fix, the
+  skeleton's pulse timing, Sonner, and rules whose own primitive utility would
+  otherwise replace them).
 */
 
 const repoRoot = existsSync(resolve(process.cwd(), 'packages/ui/package.json'))
@@ -27,6 +28,7 @@ function readUiFile(name: string) {
 
 const SORBET_FILES = [
   'sorbet.css',
+  'sorbet-presets.css',
   'sorbet-surfaces.css',
   'sorbet-components.css',
   'floating-surface.css',
@@ -50,6 +52,20 @@ const VARIABLE_SLOTS = [
   'checkbox',
   'radio-group-item',
   'input-otp-slot',
+  'sheet-overlay',
+  'dialog-overlay',
+  'drawer-overlay',
+  'alert-dialog-overlay',
+  'sheet-content',
+  'drawer-content',
+  'toggle',
+  'toggle-group',
+  'toggle-group-item',
+  'alert',
+  'table-head',
+  'table-row',
+  'mobile-top-bar',
+  'mobile-dock-fade',
 ];
 
 interface SorbetRule {
@@ -76,7 +92,6 @@ function isLayered(rule: Rule) {
   return false;
 }
 
-/** The nearest comment before a node, climbing out of @media blocks. */
 /**
  * The comment directly before a rule. A rule that opens an @media block may
  * take the comment directly before that block instead.
@@ -119,7 +134,19 @@ const unlayered = sorbetRules.filter(
 
 const isFocusRule = (rule: Rule) =>
   rule.selector.includes(':focus-visible') &&
-  rule.some((node) => node.type === 'decl' && node.prop === 'outline');
+  rule.some(
+    (node) =>
+      node.type === 'decl' &&
+      /^(outline|outline-width|box-shadow)$/.test(node.prop)
+  );
+
+const declaredProps = (rule: Rule) => {
+  const props: string[] = [];
+  rule.walkDecls((decl) => {
+    if (!decl.prop.startsWith('--')) props.push(decl.prop);
+  });
+  return props;
+};
 
 describe('Sorbet cascade layering', () => {
   it('finds Sorbet rules in every file', () => {
@@ -172,6 +199,35 @@ describe('Sorbet cascade layering', () => {
     expect(selectors.some((s) => s.includes(':where(.text-white)'))).toBe(true);
   });
 
+  it('keeps only animation timing unlayered on the skeleton and the dock', () => {
+    const skeleton = unlayered.filter(({ rule }) =>
+      rule.selector.includes('[data-slot="skeleton"]')
+    );
+    expect(skeleton.length).toBeGreaterThan(0);
+    for (const { rule } of skeleton) {
+      for (const prop of declaredProps(rule)) {
+        expect(prop, rule.selector).toMatch(/^animation/);
+      }
+    }
+    for (const { file, rule } of unlayered) {
+      expect(rule.selector, file).not.toContain(
+        ':where([data-slot="mobile-dock"])'
+      );
+    }
+  });
+
+  it('draws the High Contrast card edge through --card-border', () => {
+    const cards = sorbetRules.filter(
+      ({ file, rule }) =>
+        file === 'sorbet-presets.css' &&
+        rule.selector.includes('[data-slot="card"]')
+    );
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.inLayer).toBe(true);
+    expect(cards[0]!.setsProperty).toBe(false);
+    expect(cards[0]!.rule.toString()).toContain('--card-border: var(--border)');
+  });
+
   it('imports tailwindcss before the Sorbet files', () => {
     const globals = readUiFile('globals.css');
     const tailwind = globals.indexOf('@import "tailwindcss";');
@@ -196,6 +252,7 @@ describe('Sorbet cascade layering', () => {
       '--field-stroke',
       '--card-border',
       '--card-shadow',
+      '--sheet-shadow',
       '--tabs-thumb-bg',
       '--tabs-thumb-shadow',
       '--control-transition',
@@ -204,13 +261,32 @@ describe('Sorbet cascade layering', () => {
     ]) {
       expect(declared.has(name), name).toBe(true);
     }
-    // Radius variables stay unset in classic, so each primitive falls back
-    // to the --radius of its own subtree.
+    // These stay unset in classic, so each primitive falls back to its
+    // classic value, resolved against the --radius and palette of its own
+    // subtree.
     for (const name of [
       '--button-radius',
       '--badge-radius',
       '--field-radius',
       '--dialog-radius',
+      '--overlay-scrim',
+      '--sheet-bg',
+      '--sheet-radius',
+      '--toggle-radius',
+      '--toggle-group-radius',
+      '--toggle-weight',
+      '--toggle-border',
+      '--toggle-on-bg',
+      '--toggle-on-fg',
+      '--toggle-shadow',
+      '--skeleton-bg',
+      '--alert-radius',
+      '--alert-border',
+      '--alert-bg',
+      '--table-head-weight',
+      '--table-row-hover',
+      '--mobile-top-bar-bg',
+      '--mobile-dock-display',
     ]) {
       expect(declared.has(name), name).toBe(false);
     }
@@ -247,8 +323,90 @@ describe('Sorbet cascade layering', () => {
         'border-(--field-stroke)',
       ],
     ],
-    ['dialog.tsx', ['rounded-[var(--dialog-radius,var(--radius))]']],
-    ['alert-dialog.tsx', ['rounded-[var(--dialog-radius,var(--radius))]']],
+    [
+      'dialog.tsx',
+      [
+        'rounded-[var(--dialog-radius,var(--radius))]',
+        'bg-[var(--overlay-scrim,rgb(0_0_0/0.5))]',
+      ],
+    ],
+    [
+      'alert-dialog.tsx',
+      [
+        'rounded-[var(--dialog-radius,var(--radius))]',
+        'bg-[var(--overlay-scrim,rgb(0_0_0/0.8))]',
+      ],
+    ],
+    [
+      'sheet.tsx',
+      [
+        'bg-[var(--overlay-scrim,rgb(0_0_0/0.8))]',
+        'bg-[var(--sheet-bg,var(--background))]',
+        'shadow-(--sheet-shadow)',
+      ],
+    ],
+    [
+      'drawer.tsx',
+      [
+        'bg-[var(--overlay-scrim,rgb(0_0_0/0.8))]',
+        'bg-[var(--sheet-bg,var(--background))]',
+        'data-[vaul-drawer-direction=bottom]:rounded-t-[var(--sheet-radius,var(--radius))]',
+      ],
+    ],
+    [
+      'toggle.tsx',
+      [
+        'rounded-[var(--toggle-radius,calc(var(--radius)_-_2px))]',
+        'font-[var(--toggle-weight,var(--font-weight-medium))]',
+        'data-[state=on]:bg-[var(--toggle-on-bg,var(--accent))]',
+        'data-[state=on]:text-[var(--toggle-on-fg,var(--accent-foreground))]',
+        'border-[color:var(--toggle-border,var(--input))]',
+      ],
+    ],
+    [
+      'toggle-group.tsx',
+      [
+        'rounded-[var(--toggle-group-radius,calc(var(--radius)_-_2px))]',
+        'rounded-[var(--toggle-radius,0px)]',
+        'shadow-(--toggle-shadow,0_0_#0000)',
+        'first:rounded-l-[var(--toggle-radius,calc(var(--radius)_-_2px))]',
+        'last:rounded-r-[var(--toggle-radius,calc(var(--radius)_-_2px))]',
+      ],
+    ],
+    [
+      'skeleton-primitive.tsx',
+      [
+        'bg-[var(--skeleton-bg,color-mix(in_oklab,var(--primary)_10%,transparent))]',
+      ],
+    ],
+    [
+      'alert.tsx',
+      [
+        'rounded-[var(--alert-radius,var(--radius))]',
+        'border-[color:var(--alert-border,var(--border))]',
+        'bg-[var(--alert-bg,var(--background))]',
+        'border-[color:var(--alert-border,color-mix(in_oklab,var(--destructive)_50%,transparent))]',
+        'bg-[var(--alert-bg,transparent)]',
+        'dark:border-[color:var(--alert-border,var(--destructive))]',
+      ],
+    ],
+    [
+      'table.tsx',
+      [
+        'font-[var(--table-head-weight,var(--font-weight-medium))]',
+        'hover:bg-[var(--table-row-hover,color-mix(in_oklab,var(--muted)_50%,transparent))]',
+      ],
+    ],
+    [
+      'custom/structure.tsx',
+      [
+        'bg-[var(--mobile-top-bar-bg,color-mix(in_oklab,var(--background)_50%,transparent))]',
+      ],
+    ],
+    [
+      'custom/mobile-shell/mobile-dock.tsx',
+      ['[display:var(--mobile-dock-display,none)]'],
+    ],
   ])('%s reads the Sorbet variables', (file, classes) => {
     const source = readUiFile(`components/ui/${file}`);
     for (const className of classes) {
