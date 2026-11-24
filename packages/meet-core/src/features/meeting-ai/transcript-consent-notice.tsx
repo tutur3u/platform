@@ -53,9 +53,12 @@ export function TranscriptConsentNotice({
   const mira = useRoomMiraConsent(meetingId);
   // An `on` given under the other notice counts as off here until the
   // person confirms it under the current one.
-  const miraOff =
+  const miraStale =
     !!mira.data?.available &&
-    (mira.data.choice !== 'on' || !!mira.data.noticeStale);
+    mira.data.choice === 'on' &&
+    !!mira.data.noticeStale;
+  const miraOff =
+    !!mira.data?.available && (mira.data.choice !== 'on' || miraStale);
   // Without a host acceptance nobody can turn Mira on for themselves.
   const miraNotOn = !!mira.data?.available && !mira.data.acceptance;
   const miraPending = mira.isPending;
@@ -139,11 +142,15 @@ export function TranscriptConsentNotice({
               : t(solo ? 'self_untick' : 'consent_you_declined')}
           </p>
         )}
-        {miraOff && choice !== 'allow' && !selfGuest && (
+        {/* Mira is confirmed first: a transcript Allow under a stale Mira
+            on is refused by the room, so it is not offered until then. */}
+        {miraOff && (choice !== 'allow' || miraStale) && !selfGuest && (
           <div className="space-y-2">
-            <p role="status" className="text-xs">
-              {miraNotOn ? t('consent_mira_not_on') : t('consent_mira_off')}
-            </p>
+            {!miraStale && (
+              <p role="status" className="text-xs">
+                {miraNotOn ? t('consent_mira_not_on') : t('consent_mira_off')}
+              </p>
+            )}
             <RoomMiraSelfChoice meetingId={meetingId} />
           </div>
         )}

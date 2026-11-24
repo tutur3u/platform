@@ -44,10 +44,11 @@ export const roomMiraConsentKey = (meetingId: string) => [
 const JOIN_SEED_REFRESH_MS = 20_000;
 
 /** The caller's room Mira state, shared by every surface in the call. */
-export function useRoomMiraConsent(meetingId: string) {
+export function useRoomMiraConsent(meetingId: string, enabled = true) {
   return useQuery({
     queryKey: roomMiraConsentKey(meetingId),
     queryFn: () => readRoomMiraConsent(meetingId),
+    enabled,
     // A pending opt-out settles within the in-flight request.
     refetchInterval: (current) => {
       const data = current.state.data;

@@ -48,6 +48,7 @@ import {
   rememberMiraJoinChoice,
 } from '../live-assistant/mira-join-choice';
 import {
+  ai,
   conflict,
   grant,
   mc,
@@ -64,6 +65,8 @@ const mira = () => renderHook(() => useRoomMira('m'), { wrapper: Providers });
 const opens = () =>
   f.json.mock.calls.filter(([path]) => String(path).endsWith('/self/open'))
     .length;
+const choices = () =>
+  f.json.mock.calls.filter(([path]) => String(path).endsWith('/self/choice'));
 const show = () =>
   render(
     <Providers>
@@ -438,5 +441,44 @@ describe('Mira re-confirmation after a capture mode change', () => {
     await new Promise((resolve) => setTimeout(resolve, 80));
     expect(opens()).toBe(0);
     expect(f.engine).not.toHaveBeenCalled();
+  });
+
+  it('sends no transcript Allow under a stale Mira on until Mira is confirmed again', async () => {
+    f.read.mockResolvedValue(view({ choice: null }));
+    f.mira.mockResolvedValue(staleOn('self'));
+    f.miraChoose.mockResolvedValue({
+      ...miraOn,
+      noticeMode: 'self',
+      noticeStale: false,
+    });
+    f.json.mockImplementation((path: string) =>
+      Promise.resolve(path.endsWith('/self/choice') ? view() : grant())
+    );
+    show();
+    // The transcript notice asks for Mira first and offers no Allow yet.
+    const confirm = await screen.findByRole('button', { name: mc.confirm });
+    expect(screen.queryByRole('button', { name: ai.consent_allow })).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(choices()).toHaveLength(0);
+    expect(f.legacyChoice).not.toHaveBeenCalled();
+    fireEvent.click(confirm);
+    await vi.waitFor(() => expect(f.miraChoose).toHaveBeenCalledTimes(1));
+    expect(f.miraChoose.mock.calls[0]![1]).toMatchObject({
+      choice: 'on',
+      noticeMode: 'self',
+    });
+    // Only now is the Allow offered, and only the person sends it.
+    const allow = await screen.findByRole('button', { name: ai.consent_allow });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(choices()).toHaveLength(0);
+    fireEvent.click(allow);
+    await vi.waitFor(() => expect(choices()).toHaveLength(1));
+    expect(f.miraChoose.mock.invocationCallOrder[0]).toBeLessThan(
+      f.json.mock.invocationCallOrder[
+        f.json.mock.calls.findIndex(([path]) =>
+          String(path).endsWith('/self/choice')
+        )
+      ]!
+    );
   });
 });

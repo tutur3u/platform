@@ -4,6 +4,7 @@ import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { TTR_URL } from '../../constants/common';
+import { useRoomMiraConsent } from '../call/components/use-room-mira';
 import { showMeetingAiFailure } from './failure-toast';
 import { MeetingAiStatusBar } from './meeting-ai-status-bar';
 import { meetingAiStatus } from './meeting-ai-status';
@@ -52,8 +53,13 @@ export function MeetingAiPanel({
     (session: MeetAiSession) => !session.ended_at
   );
   // The room's session and capture mode change with a start or a stop.
+  // A Mira on given under the other notice is confirmed in the Mira notice
+  // first; the room would refuse the host's Allow until then.
+  const mira = useRoomMiraConsent(ai.meetingId, inCall);
+  const miraStale =
+    !!mira.data?.available && mira.data.choice === 'on' && !!mira.data.noticeStale;
   const start = async () => {
-    if (inCall) await ensureAllowed();
+    if (inCall && !miraStale) await ensureAllowed();
     await ai.start();
     if (inCall) void refresh();
   };

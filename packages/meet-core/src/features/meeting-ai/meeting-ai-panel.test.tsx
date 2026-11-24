@@ -10,11 +10,13 @@ const f = vi.hoisted(() => ({
   read: vi.fn(),
   choose: vi.fn(),
   draft: vi.fn(),
+  mira: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   readMeetTranscriptConsent: f.read,
   setMeetTranscriptChoice: f.choose,
   draftMeetAiNotes: f.draft,
+  readRoomMiraConsent: f.mira,
 }));
 vi.mock('./meeting-session-notes', () => ({ MeetingSessionNotes: () => null }));
 // The billing link uses the configured platform origin.
@@ -268,4 +270,31 @@ it('(gap d) ships the plan message and billing link in Vietnamese too', async ()
   expect(vi_messages.credits_model_not_on_plan).not.toBe(
     ai.credits_model_not_on_plan
   );
+});
+
+it('sends no host Allow while the host’s Mira on is for the other notice', async () => {
+  f.read.mockResolvedValue({ ...consent(true, null), mode: 'room' });
+  f.mira.mockResolvedValue({
+    available: true,
+    version: 'v',
+    acceptance: { revision: 1, acceptorName: 'Lan', capabilities: ['chat'], acceptedAt: 0 },
+    choice: 'on',
+    lastChoice: 'on',
+    pausing: false,
+    ready: true,
+    canAccept: true,
+    status: { active: true, included: 1, admitted: 2 },
+    boxTickedByDefault: true,
+    noticeMode: 'room',
+    noticeStale: true,
+  });
+  const value = hook();
+  show(value as never);
+  await vi.waitFor(() => expect(f.mira).toHaveBeenCalled());
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  fireEvent.click(screen.getByRole('button', { name: ai.start }));
+  await vi.waitFor(() =>
+    expect((value as { start: () => void }).start).toHaveBeenCalled()
+  );
+  expect(f.choose).not.toHaveBeenCalled();
 });
