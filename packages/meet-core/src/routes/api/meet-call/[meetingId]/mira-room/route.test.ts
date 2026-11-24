@@ -468,31 +468,65 @@ describe('two-phase on', () => {
     });
   });
 
-  it.each([
-    ['records it and answers 200', undefined, 200],
-    ['answers 503 when its evidence fails', new Error('db'), 503],
-  ])(
-    'treats an old room on without a pending id as effective: %s',
-    async (_label, failure, status) => {
-      f.room.mockImplementation(
-        async (access, command: { action: string; choice?: string }) =>
-          command.action === 'mira.room.choice' && command.choice === 'on'
-            ? { ...read, choice: 'on' }
-            : roomDefault(access, command)
-      );
-      if (failure) f.record.mockRejectedValue(failure);
-      const outcome = await post(choice()).then(
-        (response) => response.status,
-        (error: { status: number }) => error.status
-      );
-      expect(outcome).toBe(status);
-      expect(f.record).toHaveBeenCalledWith(
-        expect.objectContaining({ choice: 'on' })
-      );
-      expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('pendingId');
-      expect(confirmCalls()).toHaveLength(0);
-    }
-  );
+  const oldRoom = () =>
+    f.room.mockImplementation(
+      async (access, command: { action: string; choice?: string }) =>
+        command.action === 'mira.room.choice' && command.choice === 'on'
+          ? { ...read, choice: 'on' }
+          : roomDefault(access, command)
+    );
+  const choicesSent = () =>
+    f.room.mock.calls
+      .filter(
+        ([, command]) =>
+          (command as { action: string }).action === 'mira.room.choice'
+      )
+      .map(([, command]) => (command as { choice: string }).choice);
+
+  it('records an old room on without a pending id as effective', async () => {
+    oldRoom();
+    expect((await post(choice())).status).toBe(200);
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({ choice: 'on' })
+    );
+    expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('pendingId');
+    expect(confirmCalls()).toHaveLength(0);
+    expect(choicesSent()).toEqual(['on']);
+  });
+
+  it('compensates an old room on whose evidence fails, then answers 503', async () => {
+    oldRoom();
+    f.record.mockImplementation(async (evidence: { source: string }) => {
+      if (evidence.source !== 'system_fallback') throw new Error('db');
+    });
+    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+    expect(choicesSent()).toEqual(['on', 'off']);
+    expect(f.record).toHaveBeenLastCalledWith(
+      expect.objectContaining({ choice: 'off', source: 'system_fallback' })
+    );
+    expect(confirmCalls()).toHaveLength(0);
+  });
+
+  it('alerts when an old room cannot be turned back off', async () => {
+    const alert = vi.spyOn(console, 'error').mockImplementation(() => {});
+    f.room.mockImplementation(
+      async (access, command: { action: string; choice?: string }) => {
+        if (command.action === 'mira.room.choice' && command.choice === 'on')
+          return { ...read, choice: 'on' };
+        if (command.action === 'mira.room.choice' && command.choice === 'off')
+          throw Object.assign(new Error('room'), { status: 504 });
+        return roomDefault(access, command);
+      }
+    );
+    f.record.mockRejectedValue(new Error('db'));
+    await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+    expect(choicesSent()).toEqual(['on', 'off', 'off']);
+    expect(alert).toHaveBeenCalledWith(
+      '[meet-mira] room on left without evidence',
+      { meetingId: 'room', accountId: guestAccess.user.id }
+    );
+    alert.mockRestore();
+  });
 
   it('treats a null pending id as already on: no evidence, no confirm', async () => {
     f.room.mockImplementation(
@@ -564,24 +598,43 @@ describe('two-phase on', () => {
     expect(f.record).toHaveBeenCalledOnce();
   });
 
-  it.each([
-    ['a malformed pending id', { pendingId: 'not-a-uuid' }],
-    ['an unparseable 2xx body', new SyntaxError('Unexpected token')],
-    ['a lost answer', Object.assign(new Error('fetch failed'), {})],
-  ])('refuses an on with %s and never writes or confirms', async (_l, reply) => {
+  it('refuses an on with a malformed pending id and never writes or confirms', async () => {
     f.room.mockImplementation(
-      async (access, command: { action: string; choice?: string }) => {
-        if (command.action === 'mira.room.choice' && command.choice === 'on') {
-          if (reply instanceof Error) throw reply;
-          return reply;
-        }
-        return roomDefault(access, command);
-      }
+      async (access, command: { action: string; choice?: string }) =>
+        command.action === 'mira.room.choice' && command.choice === 'on'
+          ? { ...read, pendingId: 'not-a-uuid' }
+          : roomDefault(access, command)
     );
     await expect(post(choice())).rejects.toMatchObject({ status: 503 });
     expect(f.record).not.toHaveBeenCalled();
     expect(confirmCalls()).toHaveLength(0);
   });
+
+  it.each([
+    ['an unparseable 2xx body', new SyntaxError('Unexpected token')],
+    ['a lost answer', new Error('fetch failed')],
+    ['a room 5xx', Object.assign(new Error('room'), { status: 502 })],
+  ])(
+    'answers 503 for an on with %s, turning the room back off first',
+    async (_label, failure) => {
+      f.room.mockImplementation(
+        async (access, command: { action: string; choice?: string }) => {
+          if (command.action === 'mira.room.choice' && command.choice === 'on')
+            throw failure;
+          return roomDefault(access, command);
+        }
+      );
+      await expect(post(choice())).rejects.toMatchObject({ status: 503 });
+      expect(f.record).not.toHaveBeenCalledWith(
+        expect.objectContaining({ choice: 'on' })
+      );
+      expect(confirmCalls()).toHaveLength(0);
+      const offs = f.room.mock.calls.filter(
+        ([, command]) => (command as { choice?: string }).choice === 'off'
+      );
+      expect(offs).toHaveLength(1);
+    }
+  );
 
   it('passes a clear room refusal of the on through', async () => {
     const { MeetCallAccessError } =

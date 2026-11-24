@@ -65,7 +65,11 @@ export type MiraChoiceEvidence = {
   participantId: string;
   guest: boolean;
   choice: 'on' | 'off';
-  source: 'join' | 'confirm' | 'toggle';
+  /**
+   * `system_fallback`: the server turned an older room back off after an on
+   * it could not record (rooms without two-phase Mira support only).
+   */
+  source: 'join' | 'confirm' | 'toggle' | 'system_fallback';
   acceptanceRevision: number;
   noticeVersion: string;
   textHash: string;

@@ -10,6 +10,7 @@ import {
   MiraChoiceRecordError,
   recordMiraChoice,
 } from './room-mira-evidence';
+import { compensateLegacyOn, roomOutcomeUnknown } from './room-mira-legacy-on';
 
 export type RoomMiraChoiceInput = {
   choice: 'on' | 'off';
@@ -150,10 +151,15 @@ async function recordOn(
   input: RoomMiraChoiceInput,
   requireNoticeMode: boolean
 ) {
+  const offEvidence = evidenceOf(access, { ...input, choice: 'off' }, false);
   let reply: { pendingId?: unknown };
   try {
     reply = await roomChoice(access, input);
   } catch (error) {
+    // Legacy rooms may have applied an on whose answer was lost; on a
+    // two-phase room this off only drops the pending on.
+    if (roomOutcomeUnknown(error))
+      await keepAlive(compensateLegacyOn(access, input, offEvidence));
     throw roomFailure(error);
   }
   // Already on under the same acceptance and notice: nothing was staged, and
@@ -163,7 +169,9 @@ async function recordOn(
   // once: record its evidence as before. The server can therefore deploy
   // before or with the room, never after it.
   if (reply?.pendingId === undefined) {
-    await keepAlive(recordEffectiveOn(access, input, requireNoticeMode));
+    await keepAlive(
+      recordEffectiveOn(access, input, requireNoticeMode, offEvidence)
+    );
     return;
   }
   const pendingId =
@@ -175,10 +183,15 @@ async function recordOn(
   await keepAlive(confirmWithEvidence(access, input, requireNoticeMode, pendingId));
 }
 
+/**
+ * Rooms without two-phase Mira support: the on is already effective, so an
+ * on whose evidence fails is compensated (see room-mira-legacy-on.ts).
+ */
 async function recordEffectiveOn(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput,
-  requireNoticeMode: boolean
+  requireNoticeMode: boolean,
+  offEvidence: MiraChoiceEvidence
 ) {
   try {
     await recordWithRetry(evidenceOf(access, input, requireNoticeMode));
@@ -186,6 +199,7 @@ async function recordEffectiveOn(
     console.error('Room Mira choice evidence failed', {
       name: error instanceof Error ? error.name : 'unknown',
     });
+    await compensateLegacyOn(access, input, offEvidence);
     throw notSaved();
   }
 }
