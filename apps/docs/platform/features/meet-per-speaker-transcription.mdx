@@ -1,0 +1,381 @@
+---
+title: Per-speaker meeting transcription
+updatedAt: '2026-11-24'
+description: Each participant's own device transcribes only their own microphone while they allow it, so one opt-out mutes only that person instead of pausing the transcript for everyone.
+audience: users
+---
+
+## Product decision
+
+Decision (24 November 2026). Status: design approved by security and privacy
+review with implementation conditions; implementation in progress. Nothing
+here is enabled.
+
+Scope: Meet live transcription and AI notes. Parley stays off. This changes
+the transcript part of [Mira host consent in meetings](/platform/features/meet-mira-host-consent)
+("Effect of one opt-out"); room chat Mira, the host acceptance, the 18+
+declaration and the join tick box are unchanged.
+
+Default: off. A deployment flag must be on, and then the host picks the capture
+mode per meeting. Host room capture stays available as the fallback mode.
+
+| Rule | Decision |
+| --- | --- |
+| Who captures | Each participant's own device uploads only its own processed call microphone. Nobody uploads anyone else's audio, screen audio or the room mix. |
+| When | Only while the meeting's Mira acceptance is current, that participant's Mira choice is on, and their transcript choice is Allow under the current notice. |
+| Effect of one opt-out | Only that person is not transcribed. Everyone else keeps the transcript. Their audio is never captured, uploaded or sent to a model. |
+| Speaker label | The server sets the speaker to the authenticated uploader. Client labels are ignored. |
+| Merged transcript | The server merges segments from all speakers by session time, each with the speaker's current profile name and a timestamp. Notes and action items use only this merged transcript. |
+| Coverage | Notes say when coverage is partial. A participant who is off, undecided, on an unsupported device or offline is shown only as "not contributing", never why. |
+| Host capture | Off for the whole session in per-speaker mode. The server refuses room-mix chunks for a per-speaker session, so the room is never captured twice. |
+| Fallback | The host may choose room capture for the next session (with its all-or-nothing pause). The mode is locked while a session is active or draining and never switches by itself; a per-speaker failure never falls back to room capture. |
+| Guests | Same consent rules: a guest's choice is keyed to the server-issued guest id. In this release a guest device does not upload; the guest's own screen says "Transcription of your voice is not available for guests", and others see them as not contributing. |
+| Mobile app | The mobile Meet client has no capture. It does not upload; the participant sees "Transcription of your voice is not available in the app". |
+| Unsupported browsers | A browser that cannot confirm echo cancellation on the microphone does not upload and shows "not available on this device". |
+| Internal pilot | When the flag is first turned on, only signed-in members of the allowlisted workspace may contribute. Signed-in non-members are labelled like guests. |
+
+## Architecture
+
+The design adopts the participant self-capture contract (`self_v1`) whose
+database half is already on main
+([Self-capture read contract](/platform/features/meet-calls#self-capture-read-contract-not-yet-enabled)).
+It ships the smallest application path that uses those contracts; the parts it
+defers are listed under Release gates.
+
+### Flag and mode
+
+- `MEET_AI_PER_SPEAKER` is on only when it equals `true`, and
+  `MEET_AI_PER_SPEAKER_WORKSPACES` is a server-side allowlist; an empty or
+  unparseable value admits no workspace. Both are set on the Meet Worker
+  (`tuturuuu-meet`) and the realtime Worker (`tuturuuu-meet-realtime`). The
+  Meet Worker re-reads them at session start, stream open, chunk admission,
+  dispatch and notes; the room refuses the per-speaker mode and every
+  per-speaker command when its own copy is off. The uploader path also requires
+  `MEETING_APP === 'meet'` and a same-origin request. The existing kill switch
+  `MEET_AI_DISABLED` overrides both.
+- The room Durable Object stores the capture mode per meeting
+  (`transcript.mode`, host or co-host only). It refuses a mode change while a
+  session is active or draining.
+- The existing `transcription-availability` gate (kill switch, workspace gate,
+  owner-bound 18+ declaration) and the room Mira acceptance apply unchanged
+  before a session can start.
+
+### Session
+
+When the flag allows it and the mode is **Each person's device**, the host's
+start request creates a `meet_ai_sessions` row with `protocol = 'self_v1'`, a
+fixed payer (`billing_host_id` = the host account and `billing_ws_id` = the
+meeting workspace, as the session guard requires), a 3-hour capture deadline,
+`capture_state = 'active'` and `cost_cap_usd = 20`. `billing_ws_id` records
+which meeting the payer pays for; the AI credit workspace is derived, not
+stored (see Billing).
+The room records the session id, protocol and generation. For a `self_v1`
+session the room refuses the client-writable `transcription.state` and
+`transcription.speaker` commands.
+
+### Consent: one live fence, one legal record
+
+The realtime Worker has no database credentials, so the two stores have fixed
+roles:
+
+- **Live fence (room Durable Object).** Per account (guests included): the
+  transcript choice, the Mira choice, presence, and the current Mira acceptance
+  revision. Every admission, the dispatch step and the persist step read it.
+  Anything that ends a person's eligibility (untick, **Turn Mira off for me**,
+  leave, removal, heartbeat expiry, Mira turned off, a minor report, a notice
+  bump) takes effect here first and at once.
+- **Legal record (`private.meet_ai_consents`).** Written only by the Meet Worker,
+  which holds the server credential. Its `self_v1` triggers derive the
+  per-session consent revision, revoke live streams on `deny` or `withdraw` in
+  the same transaction, and refuse chunk inserts and dispatch under an old
+  revision.
+
+Each account's room entry has a **choice epoch** that increases on every
+ending and every new Allow. Every legal write the room asks for carries a
+**room sequence number**, assigned by the room, strictly increasing per
+`(session, account)`. Endings append an entry to an ordered per-account
+**legal outbox** in the room:
+
+- `withdraw` for a consent ending: untick, Mira off for me, Mira turned off,
+  minor report, notice bump.
+- `revoke` for removal by the host or a co-host. It sets the session's
+  permanent `upload_revoked_at`.
+- `close` for leave or heartbeat expiry. It closes only the live capture stream,
+  so a participant who reloads or rejoins can open a new stream under their
+  current consent.
+
+The outbox never drops a `withdraw`, `revoke` or `close` entry. It stays
+bounded because each account may record at most 10 `allow` decisions per
+session (new migration check; `deny` and `withdraw` are never capped), so it
+holds at most 11 consent entries plus one stream entry per account.
+
+A migration adds `room_seq` to `private.meet_ai_consents` and the revoke and
+close RPCs for `self_v1` sessions, with a unique `(session_id, user_id,
+room_seq)` key and a trigger that refuses any `room_seq` not greater than the
+largest already recorded for that account. A duplicate drain of the same
+entry is therefore a no-op, and a slower drain of an older entry can never land
+after a newer decision. The Meet Worker treats "already recorded" as success
+and acknowledges the entry.
+
+**Open stream** (the client calls it when its live choice is Allow and a
+`self_v1` session is active):
+
+1. `openSelf.begin`: the room checks the live fence, returns the pending outbox
+   entries, bumps the choice epoch to `E`, and assigns the next room sequence
+   number to the coming `allow`.
+2. The Meet Worker writes the pending entries in order and acknowledges them.
+3. It appends `allow` with its room sequence number whenever the latest
+   decision is not `allow` (always after a `withdraw`), giving revision `R`;
+   calls `private.record_meet_ai_self_v1_admission` with the room's
+   generation; and opens stream `S` with a 60-second lease.
+4. `openSelf.commit {E, R, S}`: the room stores `R` and `S` only if the epoch is
+   still `E`, the choice is still Allow and the acceptance is unchanged.
+   Otherwise the room queues a `withdraw` with a new, higher sequence number,
+   and the Meet Worker writes it at once, which closes `S`.
+
+A stream without a committed room entry can never upload, because admission
+needs the room's `R` and `S`.
+
+Drain points: every Meet Worker request that touches the room for the session
+(open stream, chunk admission including refused ones, stop, finish, the
+participant's choice request). When the room ends, expires, turns Mira off or
+removes someone with entries still pending, it arms one Durable Object alarm
+that posts the outbox to a signed Meet Worker endpoint, at most 6 deliveries
+with backoff, counting deliveries in storage and stopping when the outbox is
+empty. A room restore keeps undrained outbox entries and the delivery count.
+Capture safety never waits for a drain: the room refuses the account at once,
+and the database refuses chunks on a stream whose lease has expired (a
+migration adds that check). Each admitted chunk renews the lease; a capturing
+client renews it every 30 seconds.
+
+### Upload contract
+
+Uploads keep the route `POST /api/meet-ai/{wsId}/{meetingId}/chunks`, which the
+Cloudflare WAF exception covers on both Meet hosts. The server decides the
+protocol from the session row, never from the request.
+
+For a `self_v1` session the request carries `sessionId`, `streamId`, `id`,
+`sequence`, `startSample`, `consentRevision` and one `audio` part. A batch
+header, a second part, or any client speaker, account or source field is
+refused (400). A `self_v1` uploader is not checked with the host-only
+`meetAiAccess(…, true)`; a dedicated uploader access check runs, in order,
+before any limiter, credit, row or provider work:
+
+1. Authenticate with the Meet app session (target-app bound token); resolve the
+   meeting and workspace server-side; require `MEETING_APP === 'meet'`, a
+   same-origin request and `readMeetTranscriptionAvailability` (kill switch,
+   workspace gate, 18+ declaration); refuse if the flag, allowlist, or (for the
+   pilot) workspace membership fails.
+2. Load the session by id and meeting (not by uploader); require `self_v1`,
+   non-null `user_id` and `billing_host_id`, `capture_state = 'active'`, or
+   `draining` before its drain deadline, and an unexpired capture deadline.
+3. Room authority (`transcription.authorizeSelf` on the signed server channel):
+   the session is the room's session at the same generation; the uploader is
+   admitted and present (not lobby, removed or expired); the Mira acceptance is
+   current; their Mira choice is on and transcript choice is Allow; the stored
+   legal revision equals `consentRevision`; and the per-account token bucket
+   (burst 3, refill one per 10 seconds) has a token. The reply also returns any
+   pending outbox entries, which the Worker writes before continuing.
+4. Validate a canonical mono 16 kHz PCM16 WAV of at least 1 and at most
+   10 seconds (320,044 bytes, 350 KB request cap), derive duration from the
+   byte count and re-wrap the PCM in a server-built header.
+5. Charge the Meet AI usage limiter (`ABUSE_GUARD`, `meet` family) per uploader, meeting and workspace. Each chunk is
+   charged at least 5 audio seconds, so short bursts cannot multiply calls.
+6. Reserve cost and the chunk in one new service-role RPC: it locks the
+   session, re-checks non-null host and payer, refuses unless `cost_reserved_usd + cost_unknown_usd +
+   cost_settled_usd + this chunk's maximum cost <= cost_cap_usd`, adds the
+   reservation, and inserts the chunk under the stream, account and
+   `consentRevision`. The `self_v1` triggers refuse it without an unrevoked
+   upload grant, a live stream and a current `allow` at exactly that revision.
+
+`streamId` is never a bearer capability: the database matches
+`(stream, session, account)` to the authenticated uploader. One live stream per
+account; opening a stream on a second device revokes the first.
+
+### In-flight fence
+
+1. **Before dispatch.** The server commits `dispatch_consent_revision` on the
+   chunk in its own short transaction. The trigger refuses it if a withdraw has
+   committed; the chunk is failed and never sent. It then re-runs the room
+   check from step 3 (without spending a token); any refusal fails the chunk.
+2. **After the provider returns.** It re-runs the room check and re-reads the
+   database consent state. If either no longer allows this account at this
+   revision, the text is discarded: it is never stored, returned or shown, and
+   the chunk is saved as `discarded`.
+3. **In the database.** A migration adds `discarded` to the chunk status check
+   and a `BEFORE INSERT OR UPDATE` trigger on `self_v1` chunks. It refuses
+   `completed` unless `dispatch_consent_revision` is set and the account's
+   current decision is `allow` at that revision, and refuses any transcript
+   text or `usage` segment text on a `discarded` chunk. Inserts are always
+   `processing`. It locks the admission row `FOR SHARE` before reading the
+   consent state, and never blocks an erasure update that clears text.
+
+Withdrawal is forward-only for text stored before it; removing that text is
+erasure.
+
+### Billing
+
+Every payer check, credit admission, `beginAiStudioRun` call and settlement for
+a `self_v1` chunk or notes run starts from the session's `(billing_host_id,
+billing_ws_id)`, never the uploader, the route workspace or client fields. The
+AI credit workspace is derived for that pair on each dispatch by
+`requireMeetTranscriptPayer`, exactly as for room capture: the Tuturuuu root
+workspace for verified staff hosts, the meeting workspace for paid hosts. A host
+who loses payer authority stops new dispatch. An uploader's own credits and
+daily counters never change; the uploader appears only as provenance.
+
+Session cost counters are the spend ceiling, independent of the central
+ledger. A known pre-dispatch failure releases its session reservation. After
+dispatch, the measured cost moves it to `cost_settled_usd`. A timeout, abort,
+provider error or missing usage after dispatch moves the full reservation to
+`cost_unknown_usd`, even when the central run records zero credits on provider
+error; it keeps counting against the cap after the central reservation expires
+at 30 minutes. Only a proven no-dispatch failure is retried.
+
+### Capture quality on the client
+
+- Capture taps only the local processed call microphone track. Before and after
+  every device or settings change the client requires
+  `track.getSettings().echoCancellation === true`; otherwise it does not
+  capture. It never taps remote tracks, screen audio or Mira's voice output.
+- Voice activity detection runs on 20 ms frames (energy above an adaptive noise
+  floor, 300 ms hangover). A chunk flushes after 10 seconds or 2 seconds of
+  silence, and is dropped if it holds under 1 second of speech. Silent and
+  muted time advance the timeline but upload nothing.
+- At most 60 seconds of pending audio per device, one upload in flight, no
+  persistent audio queue. Audio buffered before Allow, or after any refusal, is
+  dropped.
+
+### Merged transcript, notes and reads
+
+- Reads of a `self_v1` session go through the database contracts
+  `list_meet_ai_self_v1_segments`, `get_meet_ai_self_v1_notes` and
+  `list_meet_ai_self_v1_coverage`, not the live room sharing used for room
+  capture: own speech always; the host and workspace admins see everything;
+  admitted participants see others only while the host shares. Names come
+  from current profiles, never stored labels.
+- Segments are ordered by `(start_ms, account, stream, sequence)`. Overlapping
+  speech stays as separate segments.
+- Notes for a `self_v1` session are generated only from those segments, with
+  the host payer, at most 3 provider attempts per session in total
+  (`notes_provider_attempts`, including any regeneration after redaction), the
+  existing 500,000-character bound and pagination over all segments. Each
+  attempt increments `notes_provider_attempts` before dispatch, and a session
+  with a null host or payer generates no notes. Notes
+  never list anyone who did not contribute.
+- The room-capture paths refuse `self_v1` sessions and read only `legacy`
+  rows: the session read (`GET /api/meet-ai/…`), draft notes, notes generation,
+  follow-up context, and the web and mobile post-call review route
+  (`GET /api/v1/workspaces/{wsId}/meetings/{meetingId}/review`). The review
+  route serves a `self_v1` session only through the `self_v1` contracts, so
+  hidden, fenced, discarded and redacted content never appears there.
+- Coverage for guests and other non-account participants is a client-side
+  label, not a database row.
+
+### Stop fence
+
+The durable fence is the session's `capture_state`, `stop_generation` and cost
+counters in the database, mirrored by the room's terminal state. Stop, room
+end, kill switch, flag off, exhausted cap and deadline set the state first.
+Every admission, the dispatch step and notes re-read it, so no new provider
+call starts after a stop. Stop drains for at most 20 seconds for chunks
+captured before the cutoff; a hard stop (kill switch, flag off, cap) drains
+nothing.
+
+### Cost and operation bounds
+
+N uploaders turn one host request stream into N. Every application-created
+operation is request-driven; this adds no cron, queue or scheduler.
+
+| Bound | Value |
+| --- | --- |
+| Contributing accounts per session | 24 (database cap); others are not contributing |
+| Per-account ingress | room token bucket, burst 3, refill 1 per 10 s, before any database read |
+| Open stream and choice changes | room token bucket per account, burst 3, refill 1 per 30 s; at most 10 `allow` decisions per account per session (database) |
+| Outbox delivery | at most 6 alarm deliveries per room ending, then stop |
+| Chunk | 1 to 10 s of speech, 350 KB, one per account in flight |
+| Per account per session | 1,080 chunks and 10,800 audio seconds (database checks) |
+| Limiter, per uploader | 20 requests/min, 1,800 audio s per 10 min, 28,800 s/day |
+| Limiter, per meeting | 3,600 audio s per 10 min, each chunk charged at least 5 s |
+| Limiter, per workspace | 144,000 audio s/day |
+| Session cost cap | USD 20, reserved before dispatch, unknown cost never released |
+| Provider attempts | at most 5 per chunk; no resend after a dispatched attempt |
+
+**Operation estimate, 50-person room, 60 minutes.** At most 24 accounts can
+contribute; the other 26 make no requests.
+
+| Case | Chunk requests | Provider calls | Other operations |
+| --- | --- | --- | --- |
+| Typical class: one speaker at a time, VAD on | 360–480 | 360–480 | per admitted chunk: about 3 room Durable Object calls, 4 abuse-guard Durable Object calls (one control, three subjects), 10 database round trips |
+| Worst case: 24 accounts flushing as fast as allowed | 8,640 (token bucket: 24 × 6 per minute) | at most 4,320 (meeting limiter: 3,600 s per 10 min at 5 s each) | at most about 26,000 room DO calls, 34,560 abuse-guard DO calls and 43,000 database round trips; requests refused by the token bucket stop before the limiter |
+
+Today's host capture makes about 360 batched requests per hour. Provider cost
+follows speech seconds plus per-request prompt overhead, about USD 0.05 per
+speaking hour of audio input; the USD 20 cap ends capture before any runaway.
+Measured counts and a tested stop receipt go into the Cloudflare adoption
+guidance before the flag is turned on.
+
+## Retention and erasure
+
+`self_v1` sessions follow the
+[transcript retention](/build/devops/meet-transcript-retention) rules: a finite
+`purge_after` of at most 365 days that can only move earlier, consent evidence
+kept with `RESTRICT`, and an account fence that hides that person's speech and
+redacts the mixed notes for every reader. Raw audio is never stored.
+
+Deleting an account soft-deletes `public.users`, so cascades do not run. Before
+the flag is on anywhere, an account-deletion hook installs
+`private.meet_ai_account_fences` for the account. Before the flag is on outside
+the pilot workspace, the retention purge covers the admission, stream,
+erasure-job and account-fence stores. Notice text does not promise per-person
+erase or automated 365-day deletion until those exist.
+
+## Notice text (EN and VI)
+
+The transcript notice and the Mira info panel say, in per-speaker meetings:
+*In this meeting each person's device transcribes only their own voice. If you
+turn Mira off, your voice is not captured and the others keep their
+transcript. Your voice can still be picked up by someone else's microphone;
+using headphones helps.* After an untick in a per-speaker meeting the
+participant sees *Mira is off for you. Your voice is not transcribed; the
+transcript continues for others.* instead of the room-capture "paused for
+everyone" message. Room-capture meetings keep today's wording. All other
+required notice items stay, in English and Vietnamese. The notice version
+bumps, so every choice is asked again.
+
+## Release gates
+
+| Gate | Before |
+| --- | --- |
+| Security and privacy review of this design | any code |
+| Security review of each slice's exact head | each push |
+| Migration exact-SQL ACK and isolated reset with pgTAP | the migration |
+| Production deploy with the flag off, exact-hash ACK | dark release |
+| Account-deletion fence hook; measured operation counts; tested stop fence | flag on for the pilot workspace |
+| Purge coverage for the `self_v1` stores; legal review of the notice | flag on for any other workspace |
+| Dedicated provider Worker with single-use dispatch permits | general availability |
+| Guest upload, mobile capture, per-person erase | their own reviews |
+
+## Regression coverage (required)
+
+1. A participant who is off is never captured: the client starts no tap, and the server refuses their chunk at the room check and in the database.
+2. One opt-out leaves every other participant's chunks accepted.
+3. A chunk naming another account or stream, a batch, a second part, a screen-audio part or a client speaker field is refused.
+4. A withdraw before dispatch fails the chunk without a provider call; a withdraw, Mira off or acceptance end during the provider call discards the text; the database refuses completed text under a stale revision.
+5. Duplicate and out-of-order outbox drains are no-ops; leave and heartbeat expiry close only the stream, and the person can reopen one after rejoining; `withdraw` always commits even after 10 `allow` decisions. Room-side endings reach the legal record through the outbox, in order, including after a refused admission and after the room ends; a pending entry never reopens capture; Withdraw then Allow before a drain yields withdraw then a fresh allow; an ending between open-stream begin and commit closes the new stream; an expired stream lease refuses chunks; removal sets `upload_revoked_at`.
+6. A per-speaker session refuses room-mix chunks, `transcription.state` and `transcription.speaker`; a room-capture session refuses per-speaker chunks; the mode cannot change during a session.
+7. Flag off, allowlist miss, kill switch, stop, room end, deadline and exhausted cap refuse new admissions; no provider call starts after stop.
+8. Billing always starts from the session's host pair (root workspace for staff hosts, meeting workspace for paid hosts); the uploader's balance never changes; post-dispatch failures count as unknown cost against the cap; a session with a null host or payer starts no work.
+9. Guests, mobile and pilot non-members never upload and see the not-available state.
+10. The merged transcript orders by session time, uses current profile names, respects the `self_v1` read rule and omits non-contributors from notes.
+11. Limiter, token bucket, 5-second minimum charge and per-account caps refuse without database or provider work.
+12. EN and VI notice text matches this page.
+13. The room-capture session read, draft notes, notes, follow-up and post-call review paths refuse `self_v1` sessions; the database refuses `completed` chunks without a current dispatch revision and any text on `discarded` chunks, on insert and update.
+
+## Implementation conditions
+
+- The room emits `withdraw` only on a transition out of Allow (plus at most one initial `deny`) and coalesces pending stream entries per account, with `revoke` superseding `close`, so the outbox stays within its bound.
+- One `last_room_seq` watermark per `(session, account)` covers consent rows and the revoke and close RPCs; an exact duplicate `room_seq` returns success before the ordering check.
+- The chunk guard enforces `lease_expires_at > now()`, `processing` on insert, no text on `discarded`, a current dispatch revision on `completed`, and allows erasure updates that only clear text.
+- The uploader path loads the session after non-host authentication and branches on its protocol; `legacy` keeps the host-only check.
+- Account-deletion fencing and outbox survival across room restore are verified before the pilot flag.
