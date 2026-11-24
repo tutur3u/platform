@@ -12,9 +12,21 @@
  * registered as `config` on purpose.
  */
 
-export type WorkspaceSecretTier = 'config' | 'credential';
+import {
+  matchWorkspaceSecretTierRule,
+  type WorkspaceSecretTier,
+  type WorkspaceSecretValueType,
+} from './workspace-secret-tier-rules';
 
-export type WorkspaceSecretValueType = 'boolean' | 'json' | 'number' | 'string';
+export {
+  EXTERNAL_APP_REGISTRY_CONFIG_FIELDS,
+  WORKSPACE_CREDENTIAL_SECRET_NAMES,
+  WORKSPACE_SECRET_TIER_RULES,
+  WORKSPACE_SERVER_ONLY_CONFIG_SECRET_NAMES,
+  type WorkspaceSecretTier,
+  type WorkspaceSecretTierRule,
+  type WorkspaceSecretValueType,
+} from './workspace-secret-tier-rules';
 
 export interface WorkspaceSecretPolicy {
   tier: WorkspaceSecretTier;
@@ -27,153 +39,26 @@ export interface WorkspaceSecretPolicy {
   clientVisible: boolean;
 }
 
-type PolicyRule = (name: string) => WorkspaceSecretPolicy | null;
-
-const CONFIG = (type: WorkspaceSecretValueType): WorkspaceSecretPolicy => ({
-  clientVisible: true,
-  tier: 'config',
-  type,
-});
-
 const CREDENTIAL: WorkspaceSecretPolicy = {
   clientVisible: false,
   tier: 'credential',
   type: 'string',
 };
 
-/** Credential-tier names known today. Unknown names are credential too. */
-export const WORKSPACE_CREDENTIAL_SECRET_NAMES = [
-  'DRIVE_R2_ACCESS_KEY_ID',
-  'DRIVE_R2_SECRET_ACCESS_KEY',
-  'DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
-  'AI_AGENT_CHAT_SDK_STATE_REDIS_URL',
-  'AI_AGENT_DISCORD_GATEWAY_WATCHER_SECRET',
-  'mobile_calendar_gateway:v1',
-] as const;
-
-/**
- * Config-tier names Postgres reads that are still credential grade, so their
- * values stay server-side.
- */
-export const WORKSPACE_SERVER_ONLY_CONFIG_SECRET_NAMES = [
-  'EXTERNAL_APP_MANAGED_CRON_TOKEN',
-] as const;
-
-const CONFIG_EXACT = new Map<string, WorkspaceSecretValueType>(
-  Object.entries({
-    AUTO_SEND_APPROVED_REPORTS: 'boolean',
-    DRIVE_AUTO_EXTRACT_PROXY_URL: 'string',
-    DRIVE_AUTO_EXTRACT_ZIP: 'boolean',
-    DRIVE_R2_BUCKET: 'string',
-    DRIVE_R2_ENDPOINT: 'string',
-    DRIVE_STORAGE_PROVIDER: 'string',
-    EXTERNAL_PROJECT_CANONICAL_ID: 'string',
-    EXTERNAL_PROJECT_ENABLED: 'boolean',
-    FINANCE_SHOW_INVOICES: 'boolean',
-    MANAGED_CRON_ENABLED: 'boolean',
-    MOBILE_HIDDEN_MODULES: 'json',
-    MOBILE_HIDE_EXPERIMENTAL_MODULES: 'boolean',
-    STORAGE_LIMIT_BYTES: 'number',
-  } satisfies Record<string, WorkspaceSecretValueType>)
-);
-
-const CONFIG_PREFIXES: ReadonlyArray<
-  readonly [prefix: string, type: WorkspaceSecretValueType]
-> = [
-  ['ENABLE_', 'boolean'],
-  ['DISABLE_', 'boolean'],
-  ['ALLOW_', 'boolean'],
-  ['PREVENT_', 'boolean'],
-  ['HIDE_', 'boolean'],
-  ['SHOW_', 'boolean'],
-  ['RATE_LIMIT_', 'number'],
-  ['EMAIL_RATE_LIMIT_', 'number'],
-  ['INVITE_RATE_LIMIT_', 'number'],
-];
-
-const SESSION_TTL_PATTERN = /^TUTURUUU_[A-Z0-9_]+_SECONDS$/u;
-
-/**
- * Registry rows hold one field per name. Only these exact shapes are config;
- * every other registry name, including channel secrets, a secret hash or a
- * field added later, is credential until it is listed here.
- */
-const SEGMENT = '[^:]+';
-const REGISTRY_CONFIG_PATTERNS: readonly RegExp[] = [
-  // AI_AGENT_REGISTRY:<agent>:meta | :instructions | :instructions:<n>
-  new RegExp(
-    `^AI_AGENT_REGISTRY:${SEGMENT}:(?:meta|instructions(?::\\d+)?)$`,
-    'u'
-  ),
-  // AI_AGENT_REGISTRY:<agent>:channel:<channel>:meta
-  new RegExp(`^AI_AGENT_REGISTRY:${SEGMENT}:channel:${SEGMENT}:meta$`, 'u'),
-  // AI_AGENT_IDENTITY:<workspace>:zalo:<account>:<user> -> platform user id
-  new RegExp(`^AI_AGENT_IDENTITY:${SEGMENT}:zalo:${SEGMENT}:${SEGMENT}$`, 'u'),
-];
-
-/** Non-secret external app registry fields; `secretHash` stays credential. */
-export const EXTERNAL_APP_REGISTRY_CONFIG_FIELDS = [
-  'allowedScopes',
-  'allowedWorkspaceIds',
-  'callbackPaths',
-  'createdAt',
-  'createdBy',
-  'displayName',
-  'enabled',
-  'logoUrl',
-  'maxBearerTtlSeconds',
-  'origins',
-  'requirePkce',
-  'secretIssuedAt',
-  'secretLastFour',
-  'updatedAt',
-  'updatedBy',
-] as const;
-
-const EXTERNAL_APP_REGISTRY_CONFIG_PATTERN = new RegExp(
-  `^EXTERNAL_APP_REGISTRY:${SEGMENT}:(?:${EXTERNAL_APP_REGISTRY_CONFIG_FIELDS.join('|')})$`,
-  'u'
-);
-
-const RULES: PolicyRule[] = [
-  (name) =>
-    (WORKSPACE_CREDENTIAL_SECRET_NAMES as readonly string[]).includes(name)
-      ? CREDENTIAL
-      : null,
-  (name) =>
-    (WORKSPACE_SERVER_ONLY_CONFIG_SECRET_NAMES as readonly string[]).includes(
-      name
-    )
-      ? { clientVisible: false, tier: 'config', type: 'string' }
-      : null,
-  (name) =>
-    REGISTRY_CONFIG_PATTERNS.some((pattern) => pattern.test(name)) ||
-    EXTERNAL_APP_REGISTRY_CONFIG_PATTERN.test(name)
-      ? CONFIG('string')
-      : null,
-  (name) => {
-    const type = CONFIG_EXACT.get(name);
-    return type ? CONFIG(type) : null;
-  },
-  (name) => (SESSION_TTL_PATTERN.test(name) ? CONFIG('number') : null),
-  (name) => {
-    const entry = CONFIG_PREFIXES.find(([prefix]) => name.startsWith(prefix));
-    return entry ? CONFIG(entry[1]) : null;
-  },
-];
-
+/** Classifies a name by the shared tier rules; unmatched names are credential. */
 export function getWorkspaceSecretPolicy(
   name: string | null | undefined
 ): WorkspaceSecretPolicy {
   const normalized = name?.trim() ?? '';
   if (!normalized) return CREDENTIAL;
 
-  for (const rule of RULES) {
-    const policy = rule(normalized);
-    if (policy) return policy;
-  }
-
-  return CREDENTIAL;
+  const rule = matchWorkspaceSecretTierRule(normalized);
+  if (!rule) return CREDENTIAL;
+  return {
+    clientVisible: rule.clientVisible,
+    tier: rule.tier,
+    type: rule.type,
+  };
 }
 
 export function getWorkspaceSecretTier(

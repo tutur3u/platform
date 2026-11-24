@@ -103,7 +103,7 @@ export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
   'packages/storage-core/src/lib/workspace-storage-auto-extract.ts',
   'packages/storage-core/src/lib/workspace-storage-config.ts',
   'packages/storage-core/src/lib/workspace-storage-provider.ts',
-  'packages/utils/src/workspace-secret-policy.ts',
+  'packages/utils/src/workspace-secret-tier-rules.ts',
   'apps/web/src/lib/app-coordination/external-apps-utils.ts',
   'apps/web/src/lib/app-coordination/external-apps.ts',
   'apps/workspace/src/lib/app-coordination/external-apps-utils.ts',
