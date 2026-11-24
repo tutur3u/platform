@@ -196,7 +196,6 @@ export function PersonalChat({
         onDraft={setDraft}
         onSubmit={submit}
         onTalk={canTalk && !live ? talk : undefined}
-        busy={ask.isPending}
         locked={ask.isPending || enable.isPending || confirmEnable}
         retrying={ask.isError && ask.variables === draft.trim()}
       >

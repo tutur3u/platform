@@ -11,7 +11,6 @@ export function PersonalChatComposer({
   onDraft,
   onSubmit,
   onTalk,
-  busy,
   locked,
   retrying,
   children,
@@ -21,7 +20,6 @@ export function PersonalChatComposer({
   onSubmit: () => void;
   /** Present only while Mira can start listening. */
   onTalk?: () => void;
-  busy: boolean;
   locked: boolean;
   retrying: boolean;
   children?: ReactNode;
