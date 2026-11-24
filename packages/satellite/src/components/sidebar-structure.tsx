@@ -159,7 +159,7 @@ export function SidebarStructure({
           feedbackButton={
             <SidebarFooterActions
               isCollapsed={isCollapsed}
-              isFreeTier={!workspace?.tier || workspace.tier === 'FREE'}
+              isFreeTier={workspace && (workspace.tier ?? 'FREE') === 'FREE'}
               showUpgrade={showUpgrade ?? true}
               upgradeExternal={upgradeExternal}
               upgradeHref={upgradeHref}

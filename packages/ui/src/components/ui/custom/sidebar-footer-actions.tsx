@@ -10,7 +10,7 @@ import {
 } from './satellite-footer-actions';
 import { UpgradeDialog } from './upgrade-dialog';
 export function SidebarFooterActions({
-  isFreeTier = true,
+  isFreeTier,
   ...props
 }: Omit<
   SatelliteFooterActionsProps,
@@ -18,22 +18,25 @@ export function SidebarFooterActions({
 > & {
   /**
    * Free workspaces see "Upgrade" on the Plans tab; paid workspaces see
-   * "Current plan" on the Current plan tab of the same dialog.
+   * "Current plan" on the Current plan tab of the same dialog. While the tier
+   * is unknown (`null` or `undefined`) the entry is not published, so a paid
+   * workspace never flashes "Upgrade".
    */
-  isFreeTier?: boolean;
+  isFreeTier?: boolean | null;
 }) {
   const t = useTranslations('common');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const openFeedback = useCallback(() => setFeedbackOpen(true), []);
   const { openUpgrade } = useUpgradeDialogUrlState();
   const onUpgrade = useCallback(
-    () => openUpgrade(isFreeTier ? 'plans' : 'current'),
+    () => openUpgrade(isFreeTier === false ? 'current' : 'plans'),
     [isFreeTier, openUpgrade]
   );
   return (
     <>
       <SatelliteFooterActions
         {...props}
+        showUpgrade={props.showUpgrade && isFreeTier != null}
         labels={{
           upgrade: isFreeTier ? t('upgrade') : t('current_plan'),
           feedback: t('feedback'),

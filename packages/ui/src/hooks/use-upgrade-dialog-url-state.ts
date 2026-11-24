@@ -2,8 +2,14 @@
 
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useCallback } from 'react';
-import { leavePublicProfileAddress } from './public-profile-address';
-import { SETTINGS_DIALOG_DEEP_LINK_PARAMS } from './settings-dialog-url';
+import {
+  isPublicProfileAddressActive,
+  leavePublicProfileAddress,
+} from './public-profile-address';
+import {
+  SETTINGS_DIALOG_DEEP_LINK_PARAMS,
+  parseSettingsDialogQuery,
+} from './settings-dialog-url';
 
 export const UPGRADE_DIALOG_PARAM = 'upgradeDialog';
 export const UPGRADE_TAB_PARAM = 'upgradeTab';
@@ -37,7 +43,8 @@ export function resolveUpgradeTab(value: string | null | undefined) {
 /**
  * URL-backed open/tab state of the Upgrade dialog (`?upgradeDialog=open&
  * upgradeTab=compare`). Opening pushes a history entry so Back closes the
- * dialog; switching tabs and closing replace the current entry.
+ * dialog; switching tabs, closing and swapping from Settings replace the
+ * current entry.
  */
 export function useUpgradeDialogUrlState() {
   const [query, setQuery] = useQueryStates(
@@ -53,6 +60,12 @@ export function useUpgradeDialogUrlState() {
 
   const openUpgrade = useCallback(
     (nextTab?: UpgradeTabId) => {
+      // Swapping from another account dialog replaces its entry, so Back
+      // does not reopen the dialog that was just replaced.
+      const switching =
+        open ||
+        parseSettingsDialogQuery(query).open ||
+        isPublicProfileAddressActive();
       leavePublicProfileAddress();
       void setQuery(
         {
@@ -60,10 +73,10 @@ export function useUpgradeDialogUrlState() {
           [UPGRADE_DIALOG_PARAM]: UPGRADE_DIALOG_OPEN_VALUE,
           [UPGRADE_TAB_PARAM]: nextTab ?? null,
         },
-        { ...QUERY_OPTIONS, history: open ? 'replace' : 'push' }
+        { ...QUERY_OPTIONS, history: switching ? 'replace' : 'push' }
       );
     },
-    [open, setQuery]
+    [open, query, setQuery]
   );
   const selectTab = useCallback(
     (next: string) => {

@@ -128,3 +128,25 @@ describe('retry hints', () => {
     ).toBeUndefined();
   });
 });
+
+describe('envelope error codes', () => {
+  it('reads the code nested under error and keeps a string message', async () => {
+    const { parseInternalApiError } = await import('./internal-api-error');
+    const nested = await parseInternalApiError(
+      Response.json(
+        { error: { code: 'feedback_disabled' } },
+        { status: 503, headers: { 'Retry-After': '300' } }
+      )
+    );
+    expect(nested).toMatchObject({
+      status: 503,
+      code: 'feedback_disabled',
+      retryAfter: 300,
+    });
+    expect(nested.message).toBe('Internal API request failed: 503');
+    const flat = await parseInternalApiError(
+      Response.json({ error: 'Nope' }, { status: 400 })
+    );
+    expect(flat).toMatchObject({ message: 'Nope', code: undefined });
+  });
+});

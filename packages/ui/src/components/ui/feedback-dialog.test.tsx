@@ -197,9 +197,31 @@ describe('feedback dialog', () => {
     expect(resetWidget).toHaveBeenCalled();
   });
 
+  const unavailableError = (code?: string) =>
+    Object.assign(new Error('Service unavailable'), { status: 503, code });
+
+  it('shows the retryable failure toast for a transient 503 and keeps submit enabled', async () => {
+    const { toast } = await import('@tuturuuu/ui/sonner');
+    submitProductFeedback.mockRejectedValue(
+      unavailableError('feedback_unavailable')
+    );
+    renderDialog();
+    fillForm('Keep this text');
+    solve();
+    fireEvent.click(submit());
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('feedback-dialog-submit-failed')
+    );
+    expect(screen.queryByText('feedback-dialog-unavailable')).toBeNull();
+    expect(screen.queryByText('feedback-dialog-media-unavailable')).toBeNull();
+    solve();
+    expect(submit().disabled).toBe(false);
+  });
+
   it('explains a switched-off intake and keeps the text instead of failing silently', async () => {
     submitProductFeedback.mockRejectedValue(
-      Object.assign(new Error('Service unavailable'), { status: 503 })
+      unavailableError('feedback_disabled')
     );
     renderDialog();
     fillForm('Keep this text');
@@ -218,6 +240,39 @@ describe('feedback dialog', () => {
     ).toBe('Keep this text');
     solve();
     expect(submit().disabled).toBe(true);
+  });
+
+  it('explains switched-off attachments and clears the notice when the image is removed', async () => {
+    submitProductFeedback.mockRejectedValue(
+      unavailableError('feedback_media_disabled')
+    );
+    const { container } = renderDialog();
+    fillForm();
+    fireEvent.change(
+      container.ownerDocument.querySelector(
+        'input[type="file"]'
+      ) as HTMLElement,
+      {
+        target: {
+          files: [new File(['abc'], 'shot.png', { type: 'image/png' })],
+        },
+      }
+    );
+    await waitFor(() =>
+      expect(container.ownerDocument.querySelector('ul img')).not.toBeNull()
+    );
+    solve();
+    fireEvent.click(submit());
+
+    expect(
+      await screen.findByText('feedback-dialog-media-unavailable')
+    ).toBeDefined();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /feedback-dialog-remove-media/,
+      })
+    );
+    expect(screen.queryByText('feedback-dialog-media-unavailable')).toBeNull();
   });
 
   it('reuses the key on a retry of the same submission and mints a new one after an edit', async () => {

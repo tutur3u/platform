@@ -202,6 +202,39 @@ describe('active feedback Web service boundaries', () => {
       }
     }
   );
+  it('reports a switched-off intake and switched-off attachments with distinct 503 codes', async () => {
+    const post = (body: Record<string, unknown> = {}) =>
+      submitProductFeedbackRequest(
+        new Request(request(), {
+          headers: {
+            authorization: 'Bearer fixture-user',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: 'Subject',
+            body: 'Details',
+            idempotencyKey: key,
+            turnstileToken: 'PRIVATE_TOKEN',
+            ...body,
+          }),
+        })
+      );
+    vi.stubEnv('PRODUCT_FEEDBACK_MEDIA_ENABLED', 'false');
+    const media = await post({
+      media: { contentType: 'image/png', data: 'AAAA' },
+    });
+    expect(media.status).toBe(503);
+    expect(media.headers.get('retry-after')).toBe('300');
+    expect(await media.json()).toEqual({
+      error: { code: 'feedback_media_disabled' },
+    });
+    vi.stubEnv('PRODUCT_FEEDBACK_SUBMISSION_ENABLED', 'false');
+    const all = await post();
+    expect(all.status).toBe(503);
+    expect(all.headers.get('retry-after')).toBe('300');
+    expect(await all.json()).toEqual({ error: { code: 'feedback_disabled' } });
+    expect(sql).not.toHaveBeenCalled();
+  });
   it('fails closed when the media-aware RPC is unavailable for a text-only submission', async () => {
     error = { code: 'PGRST202', message: 'PRIVATE_SCHEMA_DETAILS' };
     const req = request();

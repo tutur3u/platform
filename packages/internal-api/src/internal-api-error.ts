@@ -40,14 +40,19 @@ export async function parseInternalApiError(response: Response) {
   try {
     const data = (await response.json()) as {
       code?: string;
-      error?: string;
+      error?: string | { code?: unknown };
       message?: string;
       retryAfter?: number;
       retryAfterSeconds?: number;
       existingId?: unknown;
       billingStatus?: unknown;
     };
-    code = data.code;
+    // Envelope errors nest the code: `{ error: { code } }`.
+    const nested =
+      data.error && typeof data.error === 'object'
+        ? data.error.code
+        : undefined;
+    code = data.code ?? (typeof nested === 'string' ? nested : undefined);
     if (data.billingStatus === 'unknown' || data.billingStatus === 'settled')
       billingStatus = data.billingStatus;
     if (
@@ -70,7 +75,11 @@ export async function parseInternalApiError(response: Response) {
         'This API request needs a browser verification challenge that the CLI cannot complete automatically.',
         'Open Tuturuuu in a browser to complete verification, then retry the CLI command.',
       ].join(' ');
-    } else message = data.message || data.error || fallbackMessage;
+    } else
+      message =
+        data.message ||
+        (typeof data.error === 'string' ? data.error : '') ||
+        fallbackMessage;
   } catch {
     message = fallbackMessage;
   }

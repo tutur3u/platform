@@ -57,8 +57,9 @@ export function useReportProblem({
   const mediaPreviewsRef = useRef<string[]>([]);
   const submitFeedbackMutation = useSubmitFeedbackMutation(apiOptions);
   const isSubmitting = submitFeedbackMutation.isPending;
-  // The intake answers 503 while submissions (or image attachments) are
-  // switched off; the form then explains it instead of failing silently.
+  // The intake answers 503 with `feedback_disabled` / `feedback_media_disabled`
+  // while submissions (or image attachments) are switched off; the form then
+  // explains it instead of failing silently.
   const [unavailable, setUnavailable] = useState<'all' | 'media' | null>(null);
   const turnstile = useFeedbackTurnstile();
   // One key per submission: retries of the same content reuse it so the intake
@@ -318,8 +319,9 @@ export function useReportProblem({
         resetForm();
       }
     } catch (error) {
-      if (isServiceUnavailable(error)) {
-        setUnavailable(formData.media.length > 0 ? 'media' : 'all');
+      const switchedOff = switchedOffScope(error);
+      if (switchedOff) {
+        setUnavailable(switchedOff);
         return;
       }
       console.error('Failed to submit feedback:', error);
@@ -403,11 +405,15 @@ export function useReportProblem({
   };
 }
 
-function isServiceUnavailable(error: unknown) {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    error.status === 503
-  );
+/**
+ * The intake names a deliberate switch-off with a dedicated 503 code; any
+ * other failure, including a generic 503, stays retryable.
+ */
+function switchedOffScope(error: unknown): 'all' | 'media' | null {
+  if (typeof error !== 'object' || error === null) return null;
+  if (!('status' in error) || error.status !== 503) return null;
+  if (!('code' in error)) return null;
+  if (error.code === 'feedback_disabled') return 'all';
+  if (error.code === 'feedback_media_disabled') return 'media';
+  return null;
 }

@@ -27,7 +27,10 @@ function Probe() {
   return <output data-testid="upgrade">{upgrade?.label ?? 'none'}</output>;
 }
 
-function renderActions(props: { isFreeTier?: boolean; showUpgrade: boolean }) {
+function renderActions(props: {
+  isFreeTier?: boolean | null;
+  showUpgrade: boolean;
+}) {
   return render(
     <QueryClientProvider client={new QueryClient()}>
       <NextIntlClientProvider locale="en" messages={messages}>
@@ -57,6 +60,14 @@ describe('SidebarFooterActions upgrade entry', () => {
 
   it('omits the entry where an app opts out', () => {
     renderActions({ isFreeTier: false, showUpgrade: false });
+    expect(screen.getByTestId('upgrade').textContent).toBe('none');
+  });
+
+  it('publishes no entry while the tier is unknown', () => {
+    renderActions({ isFreeTier: undefined, showUpgrade: true });
+    expect(screen.getByTestId('upgrade').textContent).toBe('none');
+    cleanup();
+    renderActions({ isFreeTier: null, showUpgrade: true });
     expect(screen.getByTestId('upgrade').textContent).toBe('none');
   });
 });

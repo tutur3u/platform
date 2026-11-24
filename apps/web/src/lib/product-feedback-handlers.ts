@@ -15,7 +15,15 @@ export const feedbackHeaders = {
   'Cache-Control': 'private, no-store',
   Vary: 'Authorization, Cookie',
 };
-export function feedbackFailure(status: number, retryAfter?: number) {
+/** Retry hint for a switched-off intake or image attachment. */
+const FEEDBACK_DISABLED_RETRY_SECONDS = 300;
+
+/** `code` overrides the status-derived code (e.g. the 503 switched-off codes). */
+export function feedbackFailure(
+  status: number,
+  retryAfter?: number,
+  code?: 'feedback_disabled' | 'feedback_media_disabled'
+) {
   const codes: Record<number, string> = {
     400: 'feedback_invalid_submission',
     401: 'feedback_unauthorized',
@@ -26,7 +34,7 @@ export function feedbackFailure(status: number, retryAfter?: number) {
     429: 'feedback_rate_limited',
   };
   return Response.json(
-    { error: { code: codes[status] ?? 'feedback_unavailable' } },
+    { error: { code: code ?? codes[status] ?? 'feedback_unavailable' } },
     {
       status,
       headers: {
@@ -83,7 +91,12 @@ export function createFeedbackSubmissionHandler(
       operation.phase(async (op) => {
         try {
           const actor = await deps.actor(request, op);
-          if (!deps.enabled()) return feedbackFailure(503);
+          if (!deps.enabled())
+            return feedbackFailure(
+              503,
+              FEEDBACK_DISABLED_RETRY_SECONDS,
+              'feedback_disabled'
+            );
           const origin = request.headers.get('origin');
           if (
             (origin !== null && origin !== new URL(request.url).origin) ||
@@ -97,7 +110,12 @@ export function createFeedbackSubmissionHandler(
           )
             return feedbackFailure(400);
           const input = await readFeedbackInput(request, op);
-          if (input.media && !deps.mediaEnabled()) return feedbackFailure(503);
+          if (input.media && !deps.mediaEnabled())
+            return feedbackFailure(
+              503,
+              FEEDBACK_DISABLED_RETRY_SECONDS,
+              'feedback_media_disabled'
+            );
           await deps.verify(request, input.turnstileToken, op);
           op.check();
           const media = input.media

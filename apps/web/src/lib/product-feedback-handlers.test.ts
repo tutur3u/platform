@@ -133,24 +133,45 @@ describe('secure product feedback intake', () => {
     expect((await handler(cookies)).status).toBe(201);
     expect(deps.submit).toHaveBeenCalledOnce();
   });
-  it('fails closed on disabled intake/media flags', async () => {
+  it('fails closed on disabled intake/media flags with distinct 503 codes', async () => {
     const deps = dependencies({ enabled: () => false });
-    expect(
-      (await createFeedbackSubmissionHandler(deps)(request())).status
-    ).toBe(503);
+    const disabled = await createFeedbackSubmissionHandler(deps)(request());
+    expect(disabled.status).toBe(503);
+    expect(disabled.headers.get('retry-after')).toBe('300');
+    expect(disabled.headers.get('cache-control')).toBe('private, no-store');
+    expect(await disabled.json()).toEqual({
+      error: { code: 'feedback_disabled' },
+    });
     expect(deps.submit).not.toHaveBeenCalled();
     const disabledMedia = dependencies({ mediaEnabled: () => false });
-    expect(
-      (
-        await createFeedbackSubmissionHandler(disabledMedia)(
-          request({
-            ...input,
-            media: { contentType: 'image/png', data: 'AAAA' },
-          })
-        )
-      ).status
-    ).toBe(503);
+    const noMedia = await createFeedbackSubmissionHandler(disabledMedia)(
+      request({
+        ...input,
+        media: { contentType: 'image/png', data: 'AAAA' },
+      })
+    );
+    expect(noMedia.status).toBe(503);
+    expect(noMedia.headers.get('retry-after')).toBe('300');
+    expect(await noMedia.json()).toEqual({
+      error: { code: 'feedback_media_disabled' },
+    });
     expect(disabledMedia.verify).not.toHaveBeenCalled();
+    // Text-only submissions are unaffected by the media flag.
+    expect(
+      (await createFeedbackSubmissionHandler(disabledMedia)(request())).status
+    ).toBe(201);
+  });
+  it('keeps the generic unavailable code for transient failures', async () => {
+    const deps = dependencies({
+      submit: vi.fn(async () => {
+        throw new Error('database offline');
+      }),
+    });
+    const response = await createFeedbackSubmissionHandler(deps)(request());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: { code: 'feedback_unavailable' },
+    });
   });
   it('validates actual image bytes and stores only a bounded metadata-free WebP', async () => {
     const png = await sharp({

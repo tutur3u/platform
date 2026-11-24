@@ -69,6 +69,8 @@ export function useSettingsDialogUrlState<K extends string = never>(
 
   const openSettings = useCallback(
     (nextTab?: string | null, extras?: ExtraValues<K>) => {
+      // Swapping from Upgrade replaces its entry, so Back does not reopen it.
+      const switching = open || query[UPGRADE_DIALOG_PARAM] === 'open';
       leavePublicProfileAddress();
       void setQuery(
         {
@@ -80,11 +82,11 @@ export function useSettingsDialogUrlState<K extends string = never>(
         },
         {
           ...QUERY_OPTIONS,
-          history: getSettingsDialogHistoryMode('open', open),
+          history: getSettingsDialogHistoryMode('open', switching),
         }
       );
     },
-    [clearedExtras, open, setQuery]
+    [clearedExtras, open, query, setQuery]
   );
 
   const closeSettings = useCallback(() => {

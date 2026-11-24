@@ -102,20 +102,45 @@ describe('own feedback receipt listing', () => {
   it.each([
     '?limit=0',
     '?limit=51',
+    '?limit=1e1',
     '?limit=abc',
+    '?limit=-1',
     '?cursor=nope',
     `?cursor=2026-11-24_${actor}`,
+    `?cursor=yesterday_${actor}`,
+    '?cursor=2026-11-24T06:00:00%2B00:00_not-a-uuid',
+    `?cursor=2026-11-24T06:00:00%2B00:00${actor}`,
     '?q=probe',
     '?actor=other',
+    '?limit=5&view=all',
   ])('rejects malformed query %s', async (query) => {
-    expect((await listProductFeedbackReceipts(get(query))).status).toBe(400);
+    const response = await listProductFeedbackReceipts(get(query));
+    expect(response.status).toBe(400);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({
+      error: { code: 'feedback_invalid_submission' },
+    });
     expect(sql).not.toHaveBeenCalled();
+  });
+
+  it('accepts the page-size bounds', async () => {
+    for (const limit of ['1', '50']) {
+      const response = await listProductFeedbackReceipts(
+        get(`?limit=${limit}`)
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+    expect(sql).toHaveBeenLastCalledWith('list_product_feedback_receipts', {
+      p_limit: 50,
+    });
   });
 
   it('answers 401 without a signed-in user', async () => {
     mocks.session.mockResolvedValue({ user: null, authError: null });
     const response = await listProductFeedbackReceipts(get('', {}));
     expect(response.status).toBe(401);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(sql).not.toHaveBeenCalled();
   });
 
@@ -132,6 +157,7 @@ describe('own feedback receipt listing', () => {
     error = { code: 'XX000', message: 'PRIVATE_DETAIL' };
     const response = await listProductFeedbackReceipts(get());
     expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(JSON.stringify(await response.json())).not.toContain('PRIVATE');
   });
 });

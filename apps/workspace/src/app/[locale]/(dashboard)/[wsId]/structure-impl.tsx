@@ -942,7 +942,7 @@ export function StructureImpl({
             <SidebarFooterActions
               wsId={wsId}
               isCollapsed={isCollapsed}
-              isFreeTier={!workspace?.tier || workspace.tier === 'FREE'}
+              isFreeTier={workspace && (workspace.tier ?? 'FREE') === 'FREE'}
               showUpgrade
             />
           }
