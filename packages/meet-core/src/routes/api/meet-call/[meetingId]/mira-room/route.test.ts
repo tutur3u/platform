@@ -8,9 +8,14 @@ const f = vi.hoisted(() => ({
   record: vi.fn(),
   boxDefault: vi.fn(),
   openRevision: vi.fn(),
+  perSpeaker: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
+vi.mock(
+  '../../../../../features/meeting-ai/server/per-speaker-flag',
+  () => ({ meetPerSpeakerEnabled: f.perSpeaker })
+);
 vi.mock(
   '../../../../../features/live-assistant/server/room-mira-authority',
   () => ({ readRoomMiraAvailability: f.available })
@@ -31,7 +36,8 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string
     ) {
       super(message);
     }
@@ -157,7 +163,11 @@ it('falls back to off when an on choice cannot be stored durably', async () => {
 it('records no evidence for a Join state the room refuses to turn back on', async () => {
   const { MeetCallAccessError } =
     await import('@tuturuuu/meet-core/features/call/lib/call-access');
-  f.room.mockRejectedValue(new MeetCallAccessError(409, 'Confirm in the call'));
+  f.room.mockImplementation(async (_access, command: { action: string }) => {
+    if (command.action === 'mira.room.choice')
+      throw new MeetCallAccessError(409, 'Confirm in the call');
+    return read;
+  });
   await expect(post(choice())).rejects.toMatchObject({ status: 409 });
   expect(f.room).toHaveBeenCalledWith(
     guestAccess,
@@ -201,4 +211,62 @@ it('gives a participant who is not admitted yet the join box default and the ope
   await expect(
     GET(new Request('https://meet.test/x'), params)
   ).rejects.toMatchObject({ status: 503 });
+});
+
+const roomIn = (mode: 'room' | 'self' | undefined) =>
+  f.room.mockImplementation(async (_access, command: { action: string }) =>
+    command.action === 'transcript.consent.read' ? { mode } : read
+  );
+const choiceCalls = () =>
+  f.room.mock.calls.filter(
+    ([, command]) => (command as { action: string }).action === 'mira.room.choice'
+  );
+
+it.each([
+  ['a room-capture notice in a per-speaker room', 'self', undefined],
+  ['an explicit room notice in a per-speaker room', 'self', 'room'],
+  ['a per-speaker notice in a room-capture room', 'room', 'self'],
+  ['a per-speaker notice in a room with no mode', undefined, 'self'],
+] as const)('refuses on under %s', async (_label, mode, noticeMode) => {
+  roomIn(mode);
+  await expect(
+    post(choice(noticeMode ? { noticeMode } : {}))
+  ).rejects.toMatchObject({ status: 409, code: 'MIRA_ROOM_NOTICE_MODE_STALE' });
+  expect(choiceCalls()).toHaveLength(0);
+  expect(f.record).not.toHaveBeenCalled();
+});
+
+it('never refuses off for a stale notice mode', async () => {
+  roomIn('self');
+  await post(choice({ choice: 'off' }));
+  expect(choiceCalls()).toHaveLength(1);
+  expect(f.record).toHaveBeenCalledWith(
+    expect.not.objectContaining({ noticeMode: expect.anything() })
+  );
+});
+
+it('keeps the room-capture on payload and evidence unchanged', async () => {
+  roomIn('room');
+  await post(choice());
+  expect(f.record.mock.calls[0]?.[0]).not.toHaveProperty('noticeMode');
+  expect(f.perSpeaker).not.toHaveBeenCalled();
+});
+
+it.each([true, false])(
+  'records a per-speaker on with its notice mode (flag on: %s)',
+  async (flag) => {
+    roomIn('self');
+    f.perSpeaker.mockResolvedValue(flag);
+    await post(choice({ noticeMode: 'self' }));
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({ noticeMode: 'self', requireNoticeMode: flag })
+    );
+    expect(f.perSpeaker).toHaveBeenCalledWith('ws');
+  }
+);
+
+it('refuses an unknown notice mode', async () => {
+  await expect(post(choice({ noticeMode: 'both' }))).rejects.toMatchObject({
+    status: 400,
+  });
 });
