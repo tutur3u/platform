@@ -30,7 +30,8 @@ Devices: `mac` 1512x982 @2x, `ipad` 1024x1366 @2x, `ipad-landscape` 1366x1024
 @2x, `iphone` 393x852 @3x, `duo-folded` 466x678 @3x (outer display) and
 `duo-unfolded` 951x669 @3x (inner display). Both themes (`light`, `dark`) come
 from the app's own theme setting. Locales are `en` and `vi` where the route
-supports it; Meet is English only.
+supports it. Meet scenes set `locales: ['en']`, because each capture joins a
+live call and takes about two minutes.
 
 Each preview is the "colour field" card: the raw screen inside a frameless white
 rounded card on a transparent background, with no bezel, window chrome, headline
@@ -90,8 +91,16 @@ node scripts/roadmap-previews/capture-web.mjs --raw <raw dir> --state <seed.json
 node scripts/roadmap-previews/compose.mjs --raw <raw dir>
 ```
 
-`seed` and `capture-web` read `PREVIEW_SB_URL` and `PREVIEW_SB_SECRET` (the local
-Supabase API URL and service key, from `supabase status`). `capture-web`
+`seed` and `capture-web` read `PREVIEW_SB_URL` and `PREVIEW_SB_SECRET`: export
+the "API URL" and "service_role key" fields of `supabase status` for the local
+stack. Every origin (`PREVIEW_WEB_ORIGIN`, `PREVIEW_TASKS_ORIGIN`,
+`PREVIEW_CALENDAR_ORIGIN`, `PREVIEW_MEET_ORIGIN`) and `PREVIEW_SB_URL` must be
+loopback: `localhost`, `127.0.0.1`, `::1`, or for the app origins also
+`*.localhost` (`PREVIEW_SB_URL` takes only the exact hosts, because Node does
+not pin `*.localhost` to loopback). `lib.mjs` throws on any other host before a
+request is sent, so the service key never leaves the machine. Each Meet capture
+inserts a fixture meeting and always deletes it afterwards, also when joining
+fails; a failed cleanup is logged. `capture-web`
 skips raw files that exist, so an interrupted run resumes. Raw PNGs are scratch
 output and are not committed.
 
@@ -105,3 +114,10 @@ output and are not committed.
   preview.
 - CMS and Upskii run as separate apps that are not part of the shared stack, and
   CMS needs fixture content, so neither has a preview yet.
+- Not captured: `ipad-landscape` for `mira-chat`, `settings-profile`,
+  `tasks-list`, `meet-call` and `meet-assistant`, and the Vietnamese
+  `ipad-landscape` shots of `calendar-week` and `tasks-board`. The Releases page
+  falls back to another capture for a missing device or language.
+- The Calendar mini month highlights the real date while the week header and
+  the now line use the fixed capture clock, and its week header stays in English
+  in Vietnamese captures (a product translation gap, captured as it is).

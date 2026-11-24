@@ -13,19 +13,11 @@ import { DEVICES } from './devices.mjs';
 import { exportImage } from './encode.mjs';
 import { composeFrame } from './frames.mjs';
 import { log, REPO_ROOT } from './lib.mjs';
+import { SCENES } from './scenes.mjs';
 
-const APP_FOR_FEATURE = {
-  'tasks-board': 'tasks',
-  'tasks-list': 'tasks',
-  'task-detail': 'tasks',
-  'calendar-week': 'calendar',
-  'settings-profile': 'web',
-  'meet-call': 'meet',
-  'meet-assistant': 'meet',
-  'mira-chat': 'web',
-  'cms-wiki': 'cms',
-  upskii: 'upskii',
-};
+const APP_FOR_FEATURE = Object.fromEntries(
+  SCENES.map((scene) => [scene.id, scene.app])
+);
 
 const { values } = parseArgs({
   options: { raw: { type: 'string' }, out: { type: 'string' } },

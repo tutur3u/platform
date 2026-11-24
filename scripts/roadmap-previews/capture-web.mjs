@@ -31,6 +31,11 @@ const HIDE_DEV_CHROME = `
   nextjs-portal, [data-nextjs-toast], [data-next-badge-root], [data-sonner-toaster] { display: none !important; }
 `;
 
+function logFailure(id, device, theme, locale, error) {
+  const reason = String(error.message).split('\n')[0];
+  log('FAILED', id, device, theme, locale, reason);
+}
+
 async function storageStateFor(browser, app, state) {
   const { origin, basePath = '' } = APPS[app];
   if (app === 'web' || app === 'meet') {
@@ -144,7 +149,6 @@ async function main() {
       '--use-fake-device-for-media-stream',
     ],
   });
-  const mediaBrowser = browser;
   const storages = new Map();
   try {
     for (const scene of SCENES.filter((s) => features.includes(s.id))) {
@@ -158,7 +162,9 @@ async function main() {
         (d) => !scene.devices || scene.devices.includes(d)
       )) {
         for (const theme of themes) {
-          for (const locale of locales) {
+          for (const locale of locales.filter(
+            (l) => !scene.locales || scene.locales.includes(l)
+          )) {
             const out = path.join(
               values.raw,
               scene.id,
@@ -169,10 +175,10 @@ async function main() {
             let data = null;
             try {
               data = scene.before
-                ? await scene.before({ browser: mediaBrowser, state, locale })
+                ? await scene.before({ browser, state, locale })
                 : null;
             } catch (error) {
-              log('FAILED', scene.id, device, theme, locale, String(error.message).split('\n')[0]);
+              logFailure(scene.id, device, theme, locale, error);
               continue;
             }
             const ctx = await newContext(
@@ -196,20 +202,16 @@ async function main() {
               await page.screenshot({ path: out });
               log('captured', scene.id, device, theme, locale);
             } catch (error) {
-              log(
-                'FAILED',
-                scene.id,
-                device,
-                theme,
-                locale,
-                String(error.message).split('\n')[0]
-              );
+              logFailure(scene.id, device, theme, locale, error);
               await page
                 .screenshot({ path: `${out}.failed.png` })
                 .catch(() => {});
             } finally {
               await ctx.close();
-              if (scene.after) await scene.after(data).catch(() => {});
+              if (scene.after) {
+                const where = [`${scene.id} cleanup`, device, theme, locale];
+                await scene.after(data).catch((e) => logFailure(...where, e));
+              }
             }
           }
         }

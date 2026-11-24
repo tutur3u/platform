@@ -1,7 +1,7 @@
 // Meet call scenes. A second fixture participant joins first so the call view
 // shows a real two-person room; media comes from Chromium's fake devices, with
 // cameras off (avatar tiles), so no synthetic video is involved.
-import { createMeeting, FIXTURE, MEET, signIn } from './lib.mjs';
+import { createMeeting, deleteMeeting, FIXTURE, MEET, signIn } from './lib.mjs';
 
 async function joinNow(page) {
   const join = page
@@ -34,8 +34,22 @@ async function joinAsTeammate(browser, state, meetingId, locale) {
 
 async function before({ browser, state, locale }) {
   const meetingId = await createMeeting(state);
-  const teammate = await joinAsTeammate(browser, state, meetingId, locale);
-  return { meetingId, teammate };
+  try {
+    const teammate = await joinAsTeammate(browser, state, meetingId, locale);
+    return { meetingId, teammate };
+  } catch (error) {
+    await deleteMeeting(meetingId);
+    throw error;
+  }
+}
+
+/** Closes the teammate and always removes the fixture meeting. */
+async function after(data) {
+  try {
+    await data.teammate.close();
+  } finally {
+    await deleteMeeting(data.meetingId);
+  }
 }
 
 async function inCall(page) {
@@ -61,16 +75,22 @@ export const MEET_SCENES = [
   {
     id: 'meet-call',
     app: 'meet',
+    // Each capture joins a live call, about two minutes apiece, so Meet is
+    // captured in English only.
+    locales: ['en'],
     before,
-    after: async (data) => data.teammate.close(),
+    after,
     url: ({ locale, data }) => `${MEET}/${locale}/r/${data.meetingId}`,
     prepare: async (page) => inCall(page),
   },
   {
     id: 'meet-assistant',
     app: 'meet',
+    // Each capture joins a live call, about two minutes apiece, so Meet is
+    // captured in English only.
+    locales: ['en'],
     before,
-    after: async (data) => data.teammate.close(),
+    after,
     url: ({ locale, data }) => `${MEET}/${locale}/r/${data.meetingId}`,
     prepare: async (page) => {
       await inCall(page);

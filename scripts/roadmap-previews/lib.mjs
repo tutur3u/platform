@@ -8,12 +8,46 @@ export const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '../..'
 );
-export const WEB = process.env.PREVIEW_WEB_ORIGIN ?? 'http://localhost:7803';
-export const TASKS =
-  process.env.PREVIEW_TASKS_ORIGIN ?? 'http://localhost:7809';
-export const CALENDAR =
-  process.env.PREVIEW_CALENDAR_ORIGIN ?? 'http://localhost:7806';
-export const MEET = process.env.PREVIEW_MEET_ORIGIN ?? 'http://localhost:7807';
+
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+/**
+ * Returns the URL when its host is loopback and throws otherwise. Every
+ * target, including the Supabase URL that receives the service key, must be
+ * the local stack, so an exported remote URL can never be seeded or captured.
+ */
+export function loopbackOnly(name, value, { subdomains = true } = {}) {
+  let host;
+  try {
+    host = new URL(value).hostname;
+  } catch {
+    throw new Error(`${name} is not a URL: ${value}`);
+  }
+  const local =
+    LOOPBACK.has(host) || (subdomains && host.endsWith('.localhost'));
+  if (!local) {
+    throw new Error(`${name} must point at the local stack, not ${host}`);
+  }
+  return value;
+}
+
+const origin = (name, fallback) =>
+  loopbackOnly(name, process.env[name] ?? fallback);
+
+export const WEB = origin('PREVIEW_WEB_ORIGIN', 'http://localhost:7803');
+export const TASKS = origin('PREVIEW_TASKS_ORIGIN', 'http://localhost:7809');
+export const CALENDAR = origin(
+  'PREVIEW_CALENDAR_ORIGIN',
+  'http://localhost:7806'
+);
+export const MEET = origin('PREVIEW_MEET_ORIGIN', 'http://localhost:7807');
+// The service key goes to this URL from Node, whose resolver does not pin
+// `*.localhost` to loopback, so only the exact loopback hosts are allowed.
+const supabaseUrl = () =>
+  loopbackOnly('PREVIEW_SB_URL', process.env.PREVIEW_SB_URL ?? '', {
+    subdomains: false,
+  });
+if (process.env.PREVIEW_SB_URL) supabaseUrl();
 
 // Bun's isolated linker only exposes Playwright and sharp inside workspaces
 // that depend on them, so resolve from apps/web.
@@ -148,7 +182,7 @@ export async function mountBasePathApi(ctx, origin, basePath) {
 
 /** Local Supabase REST with the service key (PREVIEW_SB_URL / PREVIEW_SB_SECRET). */
 export async function admin(method, route, body) {
-  const res = await fetch(`${process.env.PREVIEW_SB_URL}${route}`, {
+  const res = await fetch(`${supabaseUrl()}${route}`, {
     method,
     headers: {
       apikey: process.env.PREVIEW_SB_SECRET,
@@ -178,4 +212,9 @@ export async function createMeeting(state) {
     creator_id: state.linhId,
   });
   return meeting.id;
+}
+
+/** Removes a fixture meeting inserted by createMeeting. */
+export async function deleteMeeting(id) {
+  await admin('DELETE', `/rest/v1/workspace_meetings?id=eq.${id}`);
 }

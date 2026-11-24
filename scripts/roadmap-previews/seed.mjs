@@ -4,9 +4,11 @@
 //
 //   node scripts/roadmap-previews/seed.mjs --state <file.json>
 //
-// Reads PREVIEW_SB_URL and PREVIEW_SB_SECRET from the environment (see
-// capture-web.mjs for how they are resolved from `supabase status`).
+// Reads PREVIEW_SB_URL and PREVIEW_SB_SECRET from the environment: export the
+// "API URL" and "service_role key" fields of `supabase status` (see
+// apps/docs/build/devops/roadmap-previews.mdx). Both must be the local stack.
 import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { admin, api, chromium, FIXTURE, log, signIn, TASKS } from './lib.mjs';
 
@@ -266,7 +268,7 @@ export async function seed(stateFile) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { values } = parseArgs({ options: { state: { type: 'string' } } });
   await seed(values.state ?? 'tmp-state.json');
 }
