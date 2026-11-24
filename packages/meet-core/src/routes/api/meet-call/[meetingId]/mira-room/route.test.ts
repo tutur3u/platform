@@ -384,7 +384,9 @@ describe('withdrawal evidence', () => {
   });
 
   it('retries a transient evidence failure once for an off', async () => {
-    f.record.mockRejectedValueOnce(new Error('blip')).mockResolvedValue(undefined);
+    f.record
+      .mockRejectedValueOnce(new Error('blip'))
+      .mockResolvedValue(undefined);
     const response = await post(choice({ choice: 'off' }));
     expect(response.status).toBe(200);
     expect(f.record).toHaveBeenCalledTimes(2);
@@ -403,7 +405,9 @@ describe('withdrawal evidence', () => {
 
 describe('on without evidence', () => {
   it('retries the on evidence once before any fallback', async () => {
-    f.record.mockRejectedValueOnce(new Error('blip')).mockResolvedValue(undefined);
+    f.record
+      .mockRejectedValueOnce(new Error('blip'))
+      .mockResolvedValue(undefined);
     const response = await post(choice());
     expect(response.status).toBe(200);
     expect(choiceCalls()).toHaveLength(1);

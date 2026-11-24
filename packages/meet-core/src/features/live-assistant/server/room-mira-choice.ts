@@ -4,7 +4,10 @@ import {
   callRoomService,
   type MeetCallRouteAccess,
 } from '../../call/server/room-service';
-import { type MiraChoiceEvidence, recordMiraChoice } from './room-mira-evidence';
+import {
+  type MiraChoiceEvidence,
+  recordMiraChoice,
+} from './room-mira-evidence';
 
 export type RoomMiraChoiceInput = {
   choice: 'on' | 'off';
@@ -53,10 +56,7 @@ function evidenceOf(
   };
 }
 
-const roomChoice = (
-  access: MeetCallRouteAccess,
-  input: RoomMiraChoiceInput
-) =>
+const roomChoice = (access: MeetCallRouteAccess, input: RoomMiraChoiceInput) =>
   callRoomService(access, {
     action: 'mira.room.choice',
     choice: input.choice,
