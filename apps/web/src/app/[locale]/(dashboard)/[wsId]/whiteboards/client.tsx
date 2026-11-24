@@ -195,11 +195,11 @@ export default function WhiteboardsList({
             </DropdownMenu>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center rounded-lg border">
+            <div className="flex items-center overflow-hidden rounded-lg border">
               <Toggle
                 pressed={viewMode === 'grid'}
                 onPressedChange={() => setViewMode('grid')}
-                className="rounded-r-none"
+                className="rounded-none"
                 size="sm"
               >
                 <Grid3X3 className="h-4 w-4" />
@@ -207,7 +207,7 @@ export default function WhiteboardsList({
               <Toggle
                 pressed={viewMode === 'list'}
                 onPressedChange={() => setViewMode('list')}
-                className="rounded-l-none border-l"
+                className="rounded-none border-l"
                 size="sm"
               >
                 <List className="h-4 w-4" />

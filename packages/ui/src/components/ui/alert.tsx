@@ -10,7 +10,7 @@ const alertVariants = cva(
         default:
           'border-[color:var(--alert-border,var(--border))] bg-[var(--alert-bg,var(--background))] text-foreground',
         destructive:
-          'border-[color:var(--alert-border,color-mix(in_oklab,var(--destructive)_50%,transparent))] bg-[var(--alert-bg,transparent)] text-destructive dark:border-[color:var(--alert-border,var(--destructive))] [&>svg]:text-destructive',
+          'border-[color:var(--alert-border,var(--alert-destructive-edge))] bg-[var(--alert-bg,transparent)] text-destructive [&>svg]:text-destructive',
       },
     },
     defaultVariants: {

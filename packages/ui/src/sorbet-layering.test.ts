@@ -385,9 +385,8 @@ describe('Sorbet cascade layering', () => {
         'rounded-[var(--alert-radius,var(--radius))]',
         'border-[color:var(--alert-border,var(--border))]',
         'bg-[var(--alert-bg,var(--background))]',
-        'border-[color:var(--alert-border,color-mix(in_oklab,var(--destructive)_50%,transparent))]',
+        'border-[color:var(--alert-border,var(--alert-destructive-edge))]',
         'bg-[var(--alert-bg,transparent)]',
-        'dark:border-[color:var(--alert-border,var(--destructive))]',
       ],
     ],
     [

@@ -67,7 +67,7 @@ export function GroupMembershipFilterControl({
               key={option.value}
               value={option.value}
               variant="outline"
-              className="h-10 justify-center gap-2 rounded-lg border-0 bg-transparent px-3 text-center text-xs shadow-none data-[state=on]:bg-background data-[state=on]:shadow-sm"
+              className="h-10 justify-center gap-2 rounded-lg first:rounded-l-lg last:rounded-r-lg border-0 bg-transparent px-3 text-center text-xs shadow-none data-[state=on]:bg-background data-[state=on]:shadow-sm"
               aria-label={t(getGroupMembershipTranslationKey(option.value))}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" />

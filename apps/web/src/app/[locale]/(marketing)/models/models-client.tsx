@@ -255,14 +255,14 @@ export default function ModelsClient({
           <ToggleGroupItem
             value="grid"
             aria-label={t('view_grid')}
-            className="h-8 rounded-md px-2.5 data-[state=on]:bg-background data-[state=on]:shadow-sm"
+            className="h-8 rounded-md first:rounded-l-md last:rounded-r-md px-2.5 data-[state=on]:bg-background data-[state=on]:shadow-sm"
           >
             <LayoutGrid className="h-4 w-4" />
           </ToggleGroupItem>
           <ToggleGroupItem
             value="list"
             aria-label={t('view_list')}
-            className="h-8 rounded-md px-2.5 data-[state=on]:bg-background data-[state=on]:shadow-sm"
+            className="h-8 rounded-md first:rounded-l-md last:rounded-r-md px-2.5 data-[state=on]:bg-background data-[state=on]:shadow-sm"
           >
             <LayoutList className="h-4 w-4" />
           </ToggleGroupItem>

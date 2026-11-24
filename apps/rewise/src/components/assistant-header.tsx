@@ -87,7 +87,7 @@ export function AssistantHeader({
         >
           <ToggleGroupItem
             aria-label={t('chat_mode')}
-            className="h-7 gap-1.5 rounded-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            className="h-7 gap-1.5 rounded-lg first:rounded-l-lg last:rounded-r-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
             value="chat"
           >
             <MessageSquareText className="size-3.5" />
@@ -95,7 +95,7 @@ export function AssistantHeader({
           </ToggleGroupItem>
           <ToggleGroupItem
             aria-label={t('live_mode')}
-            className="h-7 gap-1.5 rounded-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+            className="h-7 gap-1.5 rounded-lg first:rounded-l-lg last:rounded-r-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
             disabled
             value="live"
           >

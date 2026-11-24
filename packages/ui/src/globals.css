@@ -65,6 +65,25 @@
   stay unset: each primitive falls back to its classic value on the element
   itself, so a subtree's own --radius or palette still reaches it.
 */
+/*
+  The destructive Alert edge: half-strength in light, full in dark. A
+  variable rather than a dark: utility, so a caller's border colour wins in
+  both themes.
+*/
+@layer base {
+  :root {
+    --alert-destructive-edge: color-mix(
+      in oklab,
+      var(--destructive) 50%,
+      transparent
+    );
+  }
+
+  .dark {
+    --alert-destructive-edge: var(--destructive);
+  }
+}
+
 @layer base {
   :root {
     --field-stroke: var(--input);
