@@ -293,8 +293,7 @@
 }
 
 /* An unchecked switch track is a control edge too: fill it with the stroke. */
-:root[data-ui="sorbet"]
-  :where([data-slot="switch"][data-state="unchecked"]) {
+:root[data-ui="sorbet"] :where([data-slot="switch"][data-state="unchecked"]) {
   background-color: var(--sorbet-field-stroke);
 }
 

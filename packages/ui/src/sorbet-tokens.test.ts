@@ -368,7 +368,7 @@ describe('Sorbet token contract', () => {
   });
 
   it('strokes every field-like control with the field role', () => {
-    const start = css.indexOf('Field strokes:');
+    const start = css.indexOf('Field strokes: text fields');
     expect(start).toBeGreaterThan(-1);
     const rule = css.slice(start);
     const body = rule.slice(0, rule.indexOf('}'));

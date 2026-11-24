@@ -83,11 +83,7 @@ export function DatasetCharts({
                 <XAxis dataKey="type" />
                 <YAxis />
                 <Tooltip />
-                <Bar
-                  dataKey="count"
-                  fill="var(--primary)"
-                  name="Columns"
-                />
+                <Bar dataKey="count" fill="var(--primary)" name="Columns" />
               </BarChart>
             </ResponsiveContainer>
           </div>
