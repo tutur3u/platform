@@ -38,6 +38,8 @@ export type SelfCaptureInputs = {
   joinEpoch: number;
   /** A local decline or Mira off is pending or failed; never capture. */
   held: boolean;
+  /** The per-speaker notice must be confirmed again; never capture. */
+  noticeRequired: boolean;
 };
 
 export const SELF_IDLE_INPUTS: SelfCaptureInputs = {
@@ -50,10 +52,13 @@ export const SELF_IDLE_INPUTS: SelfCaptureInputs = {
   stream: null,
   joinEpoch: 0,
   held: false,
+  noticeRequired: false,
 };
 
 type Deps = {
   api: SelfCaptureApi;
+  /** The server wants the per-speaker notice confirmed before capture. */
+  onNoticeRequired?: () => void;
   engine?: SelfEngineFactory;
   now?: () => number;
   newId?: () => string;
@@ -93,7 +98,9 @@ export class SelfCaptureController {
     this.makeEngine = deps.engine ?? createSelfEngine;
     this.now = deps.now ?? Date.now;
     this.newId = deps.newId;
+    this.onNoticeRequired = deps.onNoticeRequired;
   }
+  private readonly onNoticeRequired?: () => void;
 
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
@@ -111,7 +118,7 @@ export class SelfCaptureController {
     if (!session) return this.halt({ kind: 'off' });
     // A guest never captures, whatever their choices say.
     if (inputs.guest) return this.halt({ kind: 'guest' });
-    if (inputs.held || !inputs.allow || !inputs.miraOn)
+    if (inputs.held || inputs.noticeRequired || !inputs.allow || !inputs.miraOn)
       return this.halt({ kind: 'off' });
     if (!own) return this.halt({ kind: 'off' });
     if (!hasConfirmedEchoCancellation(own))
@@ -162,13 +169,17 @@ export class SelfCaptureController {
     const leftStream = prev.kind === 'open' && next.kind !== 'open';
     const newKey = 'key' in prev && 'key' in next && prev.key !== next.key;
     if (leftStream || newKey) this.stopCapture();
+    if (newKey) this.openAttempts = this.leaseReopens = 0;
     if (this.lifecycle.kind === 'opening') void this.open();
     if (this.lifecycle.kind === 'backoff') this.scheduleReopen();
     this.publish();
   }
 
   private publish() {
-    const next = this.override ?? selfCaptureViewOf(this.lifecycle);
+    const base = this.override ?? selfCaptureViewOf(this.lifecycle);
+    // Capture is reported only once the microphone tap is running.
+    const next: SelfCaptureState =
+      base.kind === 'capturing' && !this.engine ? { kind: 'paused' } : base;
     if (next.kind === this.view.kind) return;
     this.view = next;
     for (const listener of [...this.listeners]) listener();
@@ -217,6 +228,7 @@ export class SelfCaptureController {
 
   private failedOpen(error: unknown) {
     const failure = classifySelfFailure(error);
+    if (failure === 'notice_required') return this.needsNotice();
     const attempt = this.openAttempts++;
     this.openDelay = selfRetryDelay(
       error,
@@ -273,12 +285,20 @@ export class SelfCaptureController {
       const engine = await this.makeEngine(own, (frame) => this.onFrame(frame));
       if (token !== this.token) return engine.dispose();
       this.engine = engine;
+      this.publish();
     } catch {
       if (token === this.token) this.halt({ kind: 'unsupported' });
     }
   }
 
+  /** Stop and ask the person to confirm the per-speaker notice. */
+  private needsNotice() {
+    this.halt({ kind: 'off' });
+    this.onNoticeRequired?.();
+  }
+
   private uploadFailed(failure: Exclude<SelfFailure, 'retry'>) {
+    if (failure === 'notice_required') return this.needsNotice();
     if (failure !== 'lease_expired')
       return this.dispatch({ type: 'refused', failure });
     // A new stream is opened for a lapsed lease, a bounded number of times.
@@ -319,7 +339,8 @@ export class SelfCaptureController {
     } catch (error) {
       if (token !== this.token) return;
       const failure = classifySelfFailure(error);
-      if (failure === 'lease_expired') this.uploadFailed(failure);
+      if (failure === 'lease_expired' || failure === 'notice_required')
+        this.uploadFailed(failure);
       else this.dispatch({ type: 'renew_failed', failure, now: this.now() });
     }
     if (token === this.token && this.lifecycle.kind === 'open')

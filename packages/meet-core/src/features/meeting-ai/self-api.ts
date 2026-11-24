@@ -103,6 +103,8 @@ export type SelfFailure =
   | 'unavailable'
   /** The stream's lease lapsed; a new stream may be opened. */
   | 'lease_expired'
+  /** The person must confirm the per-speaker notice before capturing. */
+  | 'notice_required'
   | 'retry';
 
 const fieldOf = (error: unknown, key: 'status' | 'code' | 'retryAfter') => {
@@ -117,6 +119,7 @@ export function classifySelfFailure(error: unknown): SelfFailure {
   if (code === 'MEET_SELF_NOT_ELIGIBLE') return 'not_eligible';
   if (code === 'MEET_SELF_UNAVAILABLE') return 'unavailable';
   if (code === 'MEET_SELF_LEASE_EXPIRED') return 'lease_expired';
+  if (code === 'MEET_SELF_NOTICE_REQUIRED') return 'notice_required';
   if (code === 'MEET_SELF_RATE_LIMITED' || status === 429) return 'retry';
   if (typeof status === 'number' && [401, 402, 403, 409, 423].includes(status))
     return 'refused';
@@ -135,3 +138,7 @@ export function selfRetryDelay(error: unknown, fallback: number, min = 0) {
       : 0;
   return Math.max(min, asked);
 }
+
+/** The choice was made under a notice the server no longer offers. */
+export const isStaleSelfNotice = (error: unknown) =>
+  fieldOf(error, 'code') === 'MEET_SELF_NOTICE_STALE';

@@ -69,6 +69,7 @@ export function eligibleInputs(
     stream: streamOf(track),
     joinEpoch: 1,
     held: false,
+    noticeRequired: false,
     ...over,
   };
 }

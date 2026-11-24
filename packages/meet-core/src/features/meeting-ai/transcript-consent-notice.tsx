@@ -8,7 +8,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RoomMiraSelfChoice } from '../call/components/room-mira-notice';
 import { useRoomMiraConsent } from '../call/components/use-room-mira';
-import { useSelfCaptureHold } from './self-hold';
+import { classifySelfFailure } from './self-api';
+import { useSelfCaptureFlags } from './self-hold';
 import type { SelfCaptureState } from './self-lifecycle';
 import { useSelfNoticeText } from './self-notice-text';
 import { readSelfRoom } from './self-room';
@@ -43,7 +44,7 @@ export function TranscriptConsentNotice({
     true,
     wsId ? { wsId, noticeText, locale } : undefined
   );
-  const held = useSelfCaptureHold(meetingId);
+  const flags = useSelfCaptureFlags(meetingId);
   const [open, setOpen] = useState<boolean | null>(null);
   // An Allow needs the caller's own Mira choice on, so the Mira box comes
   // first. While Mira's state loads, Allow waits; on an error or where room
@@ -59,18 +60,30 @@ export function TranscriptConsentNotice({
   // One person's opt-out never pauses the others, so the room fence does not
   // describe a per-speaker meeting.
   const solo = room.mode === 'self';
-  // Guests never contribute in a per-speaker meeting; there is nothing to
-  // allow, only the reason.
-  const selfGuest = solo && (guest || capture?.kind === 'guest');
-  // A decline or Mira off that has not been confirmed reads as declined.
-  const choice =
-    solo && held && consent.choice === 'allow' ? 'decline' : consent.choice;
+  // Guests, and anyone the server says cannot contribute here, never
+  // contribute in a per-speaker meeting: there is nothing to choose, only
+  // the reason.
+  const selfGuest =
+    solo && (guest || flags.ineligible || capture?.kind === 'guest');
+  // A decline or Mira off that has not been confirmed reads as declined; a
+  // notice the server wants confirmed asks again.
+  const choice = !solo
+    ? consent.choice
+    : flags.held && consent.choice === 'allow'
+      ? 'decline'
+      : flags.noticeRequired
+        ? null
+        : consent.choice;
   const needsChoice = choice === null && !selfGuest;
   const live = solo ? !!room.session : consent.fence.ready;
   const pick = (next: 'allow' | 'decline') =>
     choose.mutate(next, {
       onSuccess: () => setOpen(false),
-      onError: () => toast.error(t('consent_failed')),
+      onError: (error) => {
+        if (solo && classifySelfFailure(error) === 'not_eligible')
+          return setOpen(false);
+        toast.error(t('consent_failed'));
+      },
     });
   return (
     <Popover open={open ?? needsChoice} onOpenChange={setOpen}>
@@ -138,7 +151,8 @@ export function TranscriptConsentNotice({
               {t('consent_allow')}
             </Button>
           )}
-          {choice !== 'decline' && (
+          {/* A failed decline stays retryable until the server has it. */}
+          {consent.choice !== 'decline' && !selfGuest && (
             <Button
               type="button"
               size="sm"

@@ -15,9 +15,10 @@ import {
   type SelfCaptureInputs,
 } from './self-controller';
 import {
-  isSelfCaptureHeld,
-  onSelfCaptureHold,
-  useSelfCaptureHold,
+  onSelfCaptureFlags,
+  requireSelfNotice,
+  selfCaptureFlags,
+  useSelfCaptureFlags,
 } from './self-hold';
 import type { SelfCaptureState } from './self-lifecycle';
 import { readSelfRoom, type SelfRoomView } from './self-room';
@@ -55,7 +56,8 @@ export function useSelfSpeakerCapture({
   const room = useMemo(() => readSelfRoom(consent), [consent]);
   const allow = !!consent?.available && consent.choice === 'allow';
   const miraOn = !!mira.data?.available && mira.data.choice === 'on';
-  const held = useSelfCaptureHold(meetingId);
+  // Re-renders on any local fence change; the effects read them fresh.
+  const flags = useSelfCaptureFlags(meetingId);
   // A reconnect is a rejoin: a stream refused before it may open again.
   const [epoch, setEpoch] = useState(0);
   const [wasConnected, setWasConnected] = useState(connected);
@@ -65,7 +67,10 @@ export function useSelfSpeakerCapture({
   }
   const controller = useMemo(
     () =>
-      new SelfCaptureController({ api: createSelfCaptureApi(wsId, meetingId) }),
+      new SelfCaptureController({
+        api: createSelfCaptureApi(wsId, meetingId),
+        onNoticeRequired: () => requireSelfNotice(meetingId),
+      }),
     [wsId, meetingId]
   );
   const latest = useRef<SelfCaptureInputs>(SELF_IDLE_INPUTS);
@@ -74,6 +79,7 @@ export function useSelfSpeakerCapture({
   // Syncs the capture controller (an external audio resource) with the
   // server's room state; it fetches nothing itself.
   useEffect(() => {
+    const local = selfCaptureFlags(meetingId);
     latest.current = {
       mode: room.mode,
       session: sessionId && protocol ? { sessionId, protocol } : null,
@@ -83,10 +89,12 @@ export function useSelfSpeakerCapture({
       guest,
       stream,
       joinEpoch: epoch,
-      held,
+      held: local.held,
+      noticeRequired: local.noticeRequired,
     };
     controller.update(latest.current);
   }, [
+    meetingId,
     controller,
     room.mode,
     sessionId,
@@ -98,18 +106,21 @@ export function useSelfSpeakerCapture({
     guest,
     stream,
     epoch,
-    held,
+    flags,
   ]);
   // A decline or Mira off halts capture in the same task, before React
   // re-renders and before its request leaves the device.
   useEffect(
     () =>
-      onSelfCaptureHold(meetingId, () =>
-        controller.update({
+      onSelfCaptureFlags(meetingId, () => {
+        const local = selfCaptureFlags(meetingId);
+        latest.current = {
           ...latest.current,
-          held: isSelfCaptureHeld(meetingId),
-        })
-      ),
+          held: local.held,
+          noticeRequired: local.noticeRequired,
+        };
+        controller.update(latest.current);
+      }),
     [controller, meetingId]
   );
   useEffect(() => controller.attachUnload(window), [controller]);

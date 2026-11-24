@@ -40,7 +40,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
 
 import { useRoomMira } from '../call/components/use-room-mira';
 import { hashMiraConsentText } from '../live-assistant/mira-consent-box';
-import { isSelfCaptureHeld, releaseSelfCapture } from './self-hold';
+import { isSelfCaptureHeld, resetSelfCaptureFlags } from './self-hold';
 import { SELF_NOTICE_KEYS } from './self-notice-text';
 import { TranscriptControls } from './transcript-controls';
 
@@ -122,7 +122,7 @@ const speech = () => {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  releaseSelfCapture('m');
+  resetSelfCaptureFlags('m');
   f.read.mockResolvedValue(view());
   f.mira.mockResolvedValue(miraOn);
   f.upload.mockResolvedValue({});
@@ -188,6 +188,10 @@ describe('local consent fences', () => {
     expect(f.dispose).toHaveBeenCalledTimes(1);
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(opens()).toBe(1);
+    // The decline can be tried again.
+    expect(
+      screen.getByRole('button', { name: ai.consent_decline })
+    ).toBeTruthy();
     fireEvent.click(
       await screen.findByRole('button', { name: ai.consent_allow })
     );
@@ -248,6 +252,85 @@ describe('local consent fences', () => {
     expect(f.dispose).toHaveBeenCalledTimes(1);
     expect(setItem).not.toHaveBeenCalled();
     setItem.mockRestore();
+  });
+});
+
+const conflict = (code: string) =>
+  Object.assign(new Error(code), { status: 409, code });
+
+describe('server notice and eligibility answers', () => {
+  it('asks for the per-speaker notice after a room-mode Allow, then captures', async () => {
+    // Allowed while the room used room capture: the server has no
+    // per-speaker notice evidence for that Allow.
+    let noticeConfirmed = false;
+    f.json.mockImplementation((path: string) => {
+      if (path.endsWith('/self/open'))
+        return noticeConfirmed
+          ? Promise.resolve(grant())
+          : Promise.reject(conflict('MEET_SELF_NOTICE_REQUIRED'));
+      if (path.endsWith('/self/choice')) {
+        noticeConfirmed = true;
+        return Promise.resolve(view());
+      }
+      return Promise.resolve({ leaseExpiresAt: grant().leaseExpiresAt });
+    });
+    show();
+    // The notice opens on its own with the per-speaker text and an Allow.
+    expect(await screen.findByText(ai.self_notice)).toBeTruthy();
+    const allow = await screen.findByRole('button', { name: ai.consent_allow });
+    expect(f.engine).not.toHaveBeenCalled();
+    // Nothing is allowed on the person's behalf.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(choices()).toHaveLength(0);
+    expect(opens()).toBe(1);
+    fireEvent.click(allow);
+    await vi.waitFor(() => expect(choices()).toHaveLength(1));
+    expect(JSON.parse(choices()[0]![1].body).choice).toBe('allow');
+    await vi.waitFor(() => expect(opens()).toBe(2));
+    await vi.waitFor(() => expect(f.engine).toHaveBeenCalledTimes(1));
+  });
+
+  it('stops asking a signed-in non-member who cannot contribute', async () => {
+    f.read.mockResolvedValue(view({ choice: null }));
+    f.json.mockImplementation((path: string) =>
+      path.endsWith('/self/choice')
+        ? Promise.reject(conflict('MEET_SELF_NOT_ELIGIBLE'))
+        : Promise.resolve(grant())
+    );
+    const { toast } = await import('@tuturuuu/ui/sonner');
+    show();
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_allow })
+    );
+    await vi.waitFor(() => expect(choices()).toHaveLength(1));
+    await vi.waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: ai.consent_allow })
+      ).toBeNull()
+    );
+    expect(toast.error).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: ai.consent_title }));
+    expect(await screen.findByText(ai.self_state_guest)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ai.consent_allow })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: ai.consent_decline })
+    ).toBeNull();
+  });
+
+  it('reads the current notice again when the shown one is stale', async () => {
+    f.read.mockResolvedValue(view({ choice: null }));
+    f.json.mockImplementation((path: string) =>
+      path.endsWith('/self/choice')
+        ? Promise.reject(conflict('MEET_SELF_NOTICE_STALE'))
+        : Promise.resolve(grant())
+    );
+    show();
+    const allow = await screen.findByRole('button', { name: ai.consent_allow });
+    const reads = f.read.mock.calls.length;
+    fireEvent.click(allow);
+    await vi.waitFor(() =>
+      expect(f.read.mock.calls.length).toBeGreaterThan(reads)
+    );
   });
 });
 

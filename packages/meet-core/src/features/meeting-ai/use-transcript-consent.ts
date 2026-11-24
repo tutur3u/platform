@@ -7,8 +7,18 @@ import {
   setMeetTranscriptChoice,
 } from '@tuturuuu/internal-api';
 import { hashMiraConsentText } from '../live-assistant/mira-consent-box';
-import { setSelfTranscriptChoice } from './self-api';
-import { holdSelfCapture, releaseSelfCapture } from './self-hold';
+import {
+  classifySelfFailure,
+  isStaleSelfNotice,
+  setSelfTranscriptChoice,
+} from './self-api';
+import {
+  confirmSelfNotice,
+  holdSelfCapture,
+  markSelfIneligible,
+  releaseSelfCapture,
+  selfHoldEpoch,
+} from './self-hold';
 import { readSelfRoom } from './self-room';
 
 export const transcriptConsentKey = (meetingId: string) => [
@@ -59,7 +69,7 @@ export function useTranscriptConsent(
   const submit = async (
     current: MeetTranscriptConsent | undefined,
     choice: 'allow' | 'decline'
-  ): Promise<MeetTranscriptConsent> => {
+  ): Promise<{ next: MeetTranscriptConsent; perSpeaker: boolean }> => {
     if (self && readSelfRoom(current).mode === 'self') {
       if (!current?.available) throw new Error('The transcript is unavailable');
       // An Allow is only valid for the notice the person saw; a decline is
@@ -72,24 +82,47 @@ export function useTranscriptConsent(
         locale: self.locale ?? 'en',
         textHash: await hashMiraConsentText(self.noticeText ?? ''),
       });
-      return isConsentView(next) ? next : readMeetTranscriptConsent(meetingId);
+      return {
+        next: isConsentView(next)
+          ? next
+          : await readMeetTranscriptConsent(meetingId),
+        perSpeaker: true,
+      };
     }
-    return setMeetTranscriptChoice(
-      meetingId,
-      choice,
-      current?.available ? current.version : ''
-    );
+    return {
+      next: await setMeetTranscriptChoice(
+        meetingId,
+        choice,
+        current?.available ? current.version : ''
+      ),
+      perSpeaker: false,
+    };
   };
+  const refresh = () =>
+    queryClient.invalidateQueries({
+      queryKey: transcriptConsentKey(meetingId),
+    });
   const choose = useMutation({
     mutationFn: (choice: 'allow' | 'decline') => submit(consent, choice),
     // A decline stops this device's own capture before the request is sent,
-    // and keeps it stopped if the request fails.
-    onMutate: (choice) => {
-      if (choice === 'decline') holdSelfCapture(meetingId);
-    },
-    onSuccess: (next: MeetTranscriptConsent, choice) => {
+    // and keeps it stopped if the request fails. An Allow remembers the
+    // latest hold it follows, so it never undoes a decline made after it.
+    onMutate: (choice) =>
+      choice === 'decline'
+        ? { since: holdSelfCapture(meetingId) }
+        : { since: selfHoldEpoch(meetingId) },
+    onSuccess: ({ next, perSpeaker }, choice, context) => {
       queryClient.setQueryData(transcriptConsentKey(meetingId), next);
-      if (choice === 'allow') releaseSelfCapture(meetingId);
+      if (choice !== 'allow') return;
+      releaseSelfCapture(meetingId, context?.since);
+      if (perSpeaker) confirmSelfNotice(meetingId);
+    },
+    onError: (error) => {
+      // Someone the server will not let contribute here stops being asked.
+      if (classifySelfFailure(error) === 'not_eligible')
+        markSelfIneligible(meetingId);
+      // The notice changed since it was shown; show the current one.
+      if (isStaleSelfNotice(error)) void refresh();
     },
   });
   /**
@@ -107,9 +140,10 @@ export function useTranscriptConsent(
       }));
     if (!current?.available || current.choice === 'allow') return;
     if (readSelfRoom(current).mode === 'self') return;
-    const next = await submit(current, 'allow');
+    const since = selfHoldEpoch(meetingId);
+    const { next } = await submit(current, 'allow');
     queryClient.setQueryData(transcriptConsentKey(meetingId), next);
-    releaseSelfCapture(meetingId);
+    releaseSelfCapture(meetingId, since);
   };
-  return { consent, choose, ensureAllowed, isError: query.isError };
+  return { consent, choose, ensureAllowed, refresh, isError: query.isError };
 }

@@ -4,7 +4,10 @@ export const SELF_RENEW_MS = 30_000;
 export const SELF_RETRY_MS = 5_000;
 export const SELF_RATE_LIMIT_MS = 30_000;
 
-type Terminal = Exclude<SelfFailure, 'retry' | 'lease_expired'>;
+type Terminal = Exclude<
+  SelfFailure,
+  'retry' | 'lease_expired' | 'notice_required'
+>;
 
 /**
  * Stream lifecycle for one participant. A refusal is terminal for the join
@@ -74,6 +77,8 @@ export function nextSelfLifecycle(
         : state;
     case 'open_failed':
       if (state.kind !== 'opening') return state;
+      // The person confirms the notice first; nothing reopens until then.
+      if (event.failure === 'notice_required') return { kind: 'idle' };
       return event.failure === 'retry' || event.failure === 'lease_expired'
         ? {
             kind: 'backoff',
@@ -93,6 +98,7 @@ export function nextSelfLifecycle(
       if (state.kind !== 'open') return state;
       if (event.failure === 'lease_expired')
         return { kind: 'opening', key: state.key };
+      if (event.failure === 'notice_required') return { kind: 'idle' };
       if (event.failure !== 'retry')
         return { kind: event.failure, key: state.key };
       // A lease that lapsed cannot admit chunks; start over with a new stream.

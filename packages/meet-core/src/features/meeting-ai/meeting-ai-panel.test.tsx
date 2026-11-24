@@ -163,3 +163,28 @@ it('lets a notes reader follow without host controls', () => {
   expect(screen.getByText(ai.status_idle_reader)).toBeTruthy();
   expect(screen.queryByRole('button', { name: ai.start })).toBeNull();
 });
+
+it('reads the room again after the host starts or stops a session', async () => {
+  f.read.mockResolvedValue(consent(true));
+  f.choose.mockResolvedValue(consent(true));
+  const value = hook() as never;
+  show(value);
+  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  const reads = f.read.mock.calls.length;
+  fireEvent.click(screen.getByRole('button', { name: ai.start }));
+  await vi.waitFor(() =>
+    expect(f.read.mock.calls.length).toBeGreaterThan(reads)
+  );
+  cleanup();
+  const running = hook({
+    data: data({ sessions: [session()] }),
+    capturing: true,
+  });
+  show(running as never);
+  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  const before = f.read.mock.calls.length;
+  fireEvent.click(screen.getByRole('button', { name: ai.finish }));
+  await vi.waitFor(() =>
+    expect(f.read.mock.calls.length).toBeGreaterThan(before)
+  );
+});

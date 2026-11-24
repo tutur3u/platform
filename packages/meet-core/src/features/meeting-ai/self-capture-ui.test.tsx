@@ -31,7 +31,7 @@ import { CaptureModePicker } from './capture-mode-picker';
 import { SelfCaptureStatus } from './self-capture-status';
 import { SelfCoverage } from './self-coverage';
 import type { SelfCaptureState } from './self-lifecycle';
-import { holdSelfCapture, releaseSelfCapture } from './self-hold';
+import { holdSelfCapture, resetSelfCaptureFlags } from './self-hold';
 import { ROOM_ONLY, type SelfRoomView } from './self-room';
 import { TranscriptConsentNotice } from './transcript-consent-notice';
 
@@ -58,7 +58,7 @@ const room = (over: Partial<SelfRoomView> = {}): SelfRoomView => ({
 beforeEach(() => {
   vi.resetAllMocks();
   f.mira.mockResolvedValue({ available: false });
-  releaseSelfCapture('m');
+  resetSelfCaptureFlags('m');
 });
 afterEach(cleanup);
 
@@ -306,6 +306,34 @@ describe('per-speaker header', () => {
     expect(screen.queryByRole('button', { name: ai.consent_allow })).toBeNull();
     expect(screen.queryByText(ai.consent_mira_off)).toBeNull();
     expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('hides Decline from guests in a per-speaker meeting only', async () => {
+    f.read.mockResolvedValue(view());
+    const { unmount } = wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        guest
+        capture={{ kind: 'guest' }}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_title })
+    );
+    await screen.findByText(ai.self_state_guest);
+    expect(
+      screen.queryByRole('button', { name: ai.consent_decline })
+    ).toBeNull();
+    unmount();
+    f.read.mockResolvedValue(view({ mode: 'room', session: null }));
+    wrap(<TranscriptConsentNotice meetingId="m" wsId="w" guest />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_title })
+    );
+    expect(
+      await screen.findByRole('button', { name: ai.consent_decline })
+    ).toBeTruthy();
   });
 
   it('reads as declined and offers Allow while a local decline is held', async () => {

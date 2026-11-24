@@ -462,3 +462,87 @@ describe('per-speaker capture controller, consent and lease fences', () => {
     detach();
   });
 });
+
+describe('per-speaker capture controller, notice and engine readiness', () => {
+  it('stops and asks for the notice when the server requires it', async () => {
+    const onNoticeRequired = vi.fn();
+    const api = fakeApi({
+      open: vi.fn(async () => {
+        throw new FakeInternalApiError(
+          'notice',
+          409,
+          'MEET_SELF_NOTICE_REQUIRED'
+        );
+      }),
+    });
+    const engine = fakeEngine();
+    const controller = new SelfCaptureController({
+      api,
+      engine: engine.factory,
+      onNoticeRequired,
+    });
+    controller.update(eligibleInputs(fakeTrack()));
+    await settle();
+    expect(onNoticeRequired).toHaveBeenCalledTimes(1);
+    expect(controller.getState()).toEqual({ kind: 'off' });
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(api.open).toHaveBeenCalledTimes(1);
+    expect(engine.factory).not.toHaveBeenCalled();
+    // While the notice is unconfirmed nothing opens, even on new inputs.
+    controller.update(eligibleInputs(fakeTrack(), { noticeRequired: true }));
+    await settle();
+    expect(api.open).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports capturing only once the microphone tap is running', async () => {
+    let ready!: (engine: {
+      swapTrack: () => void;
+      dispose: () => void;
+    }) => void;
+    const factory = vi.fn(
+      () =>
+        new Promise<{ swapTrack: () => void; dispose: () => void }>(
+          (resolve) => {
+            ready = resolve;
+          }
+        )
+    );
+    const controller = new SelfCaptureController({
+      api: fakeApi(),
+      engine: factory,
+    });
+    controller.update(eligibleInputs(fakeTrack()));
+    await settle();
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(controller.getState()).toEqual({ kind: 'paused' });
+    ready({ swapTrack: vi.fn(), dispose: vi.fn() });
+    await settle();
+    expect(controller.getState()).toEqual({ kind: 'capturing' });
+  });
+
+  it('starts the lapsed-lease budget again for a new session', async () => {
+    const upload = vi.fn(async () => {
+      throw new FakeInternalApiError('lease', 409, 'MEET_SELF_LEASE_EXPIRED');
+    });
+    const { api, controller, frames } = setup(fakeApi({ upload }));
+    const track = fakeTrack();
+    controller.update(eligibleInputs(track));
+    for (let round = 0; round < 3; round++) {
+      await settle();
+      speak(frames.push);
+      await settle();
+    }
+    expect(api.open).toHaveBeenCalledTimes(4);
+    controller.update(
+      eligibleInputs(track, {
+        session: { sessionId: 'session-2', protocol: 'self_v1' },
+      })
+    );
+    await settle();
+    speak(frames.push);
+    await settle();
+    // A fresh session reopens instead of counting the old session's reopens.
+    expect(api.open).toHaveBeenCalledTimes(6);
+    expect(controller.getState()).not.toEqual({ kind: 'stopped' });
+  });
+});

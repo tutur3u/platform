@@ -26,7 +26,7 @@ export function MeetingAiPanel({
   inCall?: boolean;
 }) {
   const t = useTranslations('meet.ai');
-  const { consent, choose, ensureAllowed } = useTranscriptConsent(
+  const { consent, choose, ensureAllowed, refresh } = useTranscriptConsent(
     ai.meetingId,
     inCall
   );
@@ -50,9 +50,15 @@ export function MeetingAiPanel({
   const active = data?.sessions.find(
     (session: MeetAiSession) => !session.ended_at
   );
+  // The room's session and capture mode change with a start or a stop.
   const start = async () => {
     if (inCall) await ensureAllowed();
     await ai.start();
+    if (inCall) void refresh();
+  };
+  const finish = async (sessionId: string) => {
+    await ai.finish(sessionId);
+    if (inCall) void refresh();
   };
   const live = status.kind === 'live';
   return (
@@ -65,7 +71,7 @@ export function MeetingAiPanel({
         busy={ai.busy || choose.isPending}
         creditFailure={ai.creditFailure}
         onStart={() => run(start)}
-        onFinish={(sessionId) => run(() => ai.finish(sessionId))}
+        onFinish={(sessionId) => run(() => finish(sessionId))}
         onRetryNotes={(sessionId) => run(() => ai.finish(sessionId))}
         onReload={() => void ai.refetch()}
         reloading={ai.isFetching}
