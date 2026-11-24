@@ -25,6 +25,7 @@ lineage=(
   20261029170000_meet_transcript_retention_purge
   20261030044719_meet_ai_consent_schema
   20261101090100_exclude_easy_center_from_meet_transcript_purge
+  20261124001000_meet_mira_host_consent
 )
 self_v1=(
   20261111120201_meet_ai_self_v1_contracts
@@ -37,6 +38,7 @@ self_v1=(
   20261111120208_meet_ai_self_v1_read_contracts
   20261124114100_meet_ai_self_v1_capture_path
   20261124114200_meet_ai_self_v1_cost_rpcs
+  20261125999901_meet_ai_self_v1_pilot_followup
 )
 # main's meet-ai-consent-schema/-retention suites need main's full parent RLS
 # (workspace_meetings policies, creator membership triggers); run them on a
@@ -46,6 +48,7 @@ suites=(
   meet-ai-self-v1-read-contract
   meet-ai-self-v1-consent
   meet-ai-self-v1-capture-path
+  meet-ai-self-v1-pilot-followup
 )
 forward() {
   local m
@@ -95,34 +98,39 @@ guard_ids="u := '00000000-0000-4000-8000-000000089901'::uuid; ws := '00000000-00
   sid := (select id from public.meet_ai_sessions where meeting_id = m);"
 guard_sql() { $PSQL -X -q -v ON_ERROR_STOP=1 -c "do \$\$ declare u uuid; ws uuid; m uuid; c uuid; sid uuid;
   begin $guard_ids $1 end \$\$"; }
-rollback_refused() { # rollback_refused <label>
-  local m out
-  for m in 20261124114200_meet_ai_self_v1_cost_rpcs 20261124114100_meet_ai_self_v1_capture_path; do
+rollback_refused() { # rollback_refused <label> <migration>...
+  local m out label=$1
+  shift
+  for m in "$@"; do
     if out=$(run "rollbacks/$m.rollback.sql" 2>&1); then
-      echo "== rollback guard MISSING for $m ($1)"; status=1
-    elif grep -q 'before rolling back' <<<"$out"; then
-      echo "== rollback $m refused ($1): $(grep -o '[A-Z][a-z]* every .*before rolling back' <<<"$out" | head -1)"
+      echo "== rollback guard MISSING for $m ($label)"; status=1
+    elif grep -q 'rolling back' <<<"$out"; then
+      echo "== rollback $m refused ($label): $(grep -o '[A-Z][a-z]* [a-z].*rolling back' <<<"$out" | head -1)"
     else
       echo "$out"; status=1
     fi
   done
   kept=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from pg_proc
     where proname in ('meet_ai_self_v1_reserve_chunk', 'meet_ai_self_v1_record_decision')")
-  if [[ $kept != 2 ]]; then echo "== refused rollback dropped functions ($1)"; status=1; fi
+  if [[ $kept != 2 ]]; then echo "== refused rollback dropped functions ($label)"; status=1; fi
 }
 guard_sql "insert into auth.users(id) values (u);
   insert into public.users(id) values (u) on conflict do nothing;
   insert into public.workspaces(id, name, personal, creator_id) values (ws, 'Rollback guard', false, u);
   insert into public.workspace_meetings(id, ws_id, creator_id, name) values (m, ws, u, 'Rollback guard');
   perform private.meet_ai_self_v1_start_session(m, u, ws);"
-rollback_refused 'live session'
-guard_sql "perform private.meet_ai_self_v1_record_decision(sid, u, 'allow', 'v1', 1);
+rollback_refused 'live session' 20261124114200_meet_ai_self_v1_cost_rpcs \
+  20261124114100_meet_ai_self_v1_capture_path
+guard_sql "perform private.meet_ai_self_v1_record_decision(sid, u, 'allow', 'v1', 1, 'en',
+    encode(sha256('notice'::bytea), 'hex'));
   perform private.meet_ai_self_v1_reserve_chunk(c, sid,
     (select o.stream_id from private.meet_ai_self_v1_open_stream(sid, u, 1, 1) o), u, 0, 0, 0, 1000,
     sha256('guard'::bytea), 1, 1, 1);
   perform private.meet_ai_self_v1_mark_dispatch(c, u, 1);
   perform private.meet_ai_self_v1_stop_session(sid, u, true);"
-rollback_refused 'closed session, chunk still reserved'
+rollback_refused 'closed session, chunk still reserved, allow evidence recorded' \
+  20261125999901_meet_ai_self_v1_pilot_followup 20261124114200_meet_ai_self_v1_cost_rpcs \
+  20261124114100_meet_ai_self_v1_capture_path
 guard_sql "perform private.meet_ai_self_v1_settle_chunk(c, 'unknown', null, null, null);
   delete from private.meet_ai_consents where session_id = sid;
   delete from public.meet_ai_sessions where id = sid;
@@ -131,8 +139,53 @@ guard_sql "perform private.meet_ai_self_v1_settle_chunk(c, 'unknown', null, null
   delete from public.users where id = u;
   delete from auth.users where id = u;"
 
+# L1: a late outbox write racing an Auth deletion never leaves a row linked to
+# the deleted account. Write first: the deletion waits for it and anonymizes
+# it. Deletion first: the write waits and becomes an acknowledged no-op.
+race_h=00000000-0000-4000-8000-000000089911; race_a=00000000-0000-4000-8000-000000089912
+race_b=00000000-0000-4000-8000-000000089913; race_ws=00000000-0000-4000-8000-000000089914
+race_m=00000000-0000-4000-8000-000000089915
+race_sid="(select id from public.meet_ai_sessions where meeting_id = '$race_m')"
+race_hash="encode(sha256('notice'::bytea), 'hex')"
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "insert into auth.users(id) values ('$race_h'), ('$race_a'), ('$race_b');
+  insert into public.users(id) values ('$race_h'), ('$race_a'), ('$race_b') on conflict do nothing;
+  insert into public.workspaces(id, name, personal, creator_id) values ('$race_ws', 'Race', false, '$race_h');
+  insert into public.workspace_meetings(id, ws_id, creator_id, name) values ('$race_m', '$race_ws', '$race_h', 'Race');
+  select private.meet_ai_self_v1_start_session('$race_m', '$race_h', '$race_ws');
+  select private.meet_ai_self_v1_record_decision($race_sid, u, 'allow', 'v1', 1, 'en', $race_hash)
+    from unnest(array['$race_a', '$race_b']::uuid[]) u;" >/dev/null
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "begin;
+  select private.meet_ai_self_v1_record_decision($race_sid, '$race_a', 'withdraw', 'v1', 2);
+  select pg_sleep(2); commit;" >/dev/null &
+race_pid=$!
+sleep 0.5
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "delete from auth.users where id = '$race_a'"
+wait $race_pid
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "begin; delete from auth.users where id = '$race_b';
+  select pg_sleep(2); commit;" >/dev/null &
+race_pid=$!
+sleep 0.5
+race_late=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select recorded
+  from private.meet_ai_self_v1_record_decision($race_sid, '$race_b', 'withdraw', 'v1', 2)")
+wait $race_pid
+race_linked=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select
+  (select count(*) from private.meet_ai_consents where user_id in ('$race_a', '$race_b'))
+  + (select count(*) from private.meet_ai_self_v1_room_ops where account_id in ('$race_a', '$race_b'))")
+race_rows=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from private.meet_ai_consents
+  where session_id = $race_sid")
+echo "== L1 race: linked_rows=$race_linked consent_rows=$race_rows (want 0 and 3) late_write_recorded=$race_late (want f)"
+if [[ $race_linked != 0 || $race_rows != 3 || $race_late != f ]]; then status=1; fi
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "select private.meet_ai_self_v1_stop_session($race_sid, '$race_h', true);
+  delete from private.meet_ai_consents where session_id = $race_sid;
+  delete from public.meet_ai_sessions where meeting_id = '$race_m';
+  delete from public.workspace_meetings where id = '$race_m';
+  delete from public.workspaces where id = '$race_ws';
+  delete from public.users where id in ('$race_h', '$race_a', '$race_b');
+  delete from auth.users where id = '$race_h';" >/dev/null
+
 # Rollback round trip, in the documented order, then forward again.
-for m in 20261124114200_meet_ai_self_v1_cost_rpcs \
+for m in 20261125999901_meet_ai_self_v1_pilot_followup \
+  20261124114200_meet_ai_self_v1_cost_rpcs \
   20261124114100_meet_ai_self_v1_capture_path \
   20261111120208_meet_ai_self_v1_read_contracts \
   20261111120207_validate_meet_ai_self_v1_constraints \
@@ -153,10 +206,13 @@ cols=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from information_sche
 tables=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'private' and c.relname in ('meet_ai_session_participants', 'meet_ai_capture_streams',
     'meet_ai_erasure_jobs', 'meet_ai_account_fences')")
+added=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from information_schema.columns
+  where table_schema = 'private' and ((table_name = 'meet_ai_consents' and column_name in ('locale', 'text_hash'))
+    or (table_name = 'meet_mira_participant_choices' and column_name in ('notice_mode', 'pending_id')))")
 consents=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from pg_trigger
   where tgrelid = 'private.meet_ai_consents'::regclass and not tgisinternal")
-echo "== rollback functions_left=$left columns_left=$cols tables_left=$tables consent_triggers=$consents (main has 2)"
-if [[ $left != 0 || $cols != 0 || $tables != 0 || $consents != 2 ]]; then status=1; fi
+echo "== rollback functions_left=$left columns_left=$cols added_columns_left=$added tables_left=$tables consent_triggers=$consents (main has 2)"
+if [[ $left != 0 || $cols != 0 || $added != 0 || $tables != 0 || $consents != 2 ]]; then status=1; fi
 
 forward
 echo '== forward again'

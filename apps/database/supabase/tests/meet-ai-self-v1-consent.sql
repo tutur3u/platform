@@ -29,12 +29,13 @@ set local role service_role;
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89331), pg_temp.cid(n), 1)
  from generate_series(89303, 89307) n;
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89332), pg_temp.cid(89303), 1);
--- Every self_v1 allow carries a room sequence number.
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq) values
- (pg_temp.cid(89331), pg_temp.cid(89303), 'allow', 'v1', 1),
- (pg_temp.cid(89331), pg_temp.cid(89304), 'deny', 'v1', null),
- (pg_temp.cid(89331), pg_temp.cid(89306), 'allow', 'v1', 1),
- (pg_temp.cid(89331), pg_temp.cid(89307), 'allow', 'v1', 1);
+-- Every self_v1 allow carries a room sequence number and its notice evidence.
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq, locale,
+  text_hash) values
+ (pg_temp.cid(89331), pg_temp.cid(89303), 'allow', 'v1', 1, 'en', encode(sha256('notice'::bytea), 'hex')),
+ (pg_temp.cid(89331), pg_temp.cid(89304), 'deny', 'v1', null, null, null),
+ (pg_temp.cid(89331), pg_temp.cid(89306), 'allow', 'v1', 1, 'en', encode(sha256('notice'::bytea), 'hex')),
+ (pg_temp.cid(89331), pg_temp.cid(89307), 'allow', 'v1', 1, 'en', encode(sha256('notice'::bytea), 'hex'));
 reset role;
 create function pg_temp.open_stream(stream integer, account integer, epoch integer)
 returns void language sql as $$
@@ -59,9 +60,12 @@ create function pg_temp.revision_of(account integer) returns integer language sq
   where p.session_id = pg_temp.cid(89331) and p.account_id = pg_temp.cid(account);
 $$;
 create function pg_temp.decide(account integer, decision text) returns void language sql as $$
-  insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq)
+  insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq, locale,
+    text_hash)
   values (pg_temp.cid(89331), pg_temp.cid(account), decision, 'v1',
-    case when decision = 'allow' then (extract(epoch from clock_timestamp()) * 1000000)::bigint end);
+    case when decision = 'allow' then (extract(epoch from clock_timestamp()) * 1000000)::bigint end,
+    case when decision = 'allow' then 'en' end,
+    case when decision = 'allow' then encode(sha256('notice'::bytea), 'hex') end);
 $$;
 
 -- No decision and deny are refused before any audio exists.
@@ -163,8 +167,8 @@ reset role;
 -- Client clock skew must never prevent a later withdrawal.
 set local role service_role;
 select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, created_at,
-  room_seq) values (pg_temp.cid(89331), pg_temp.cid(89305), 'allow', 'v1', clock_timestamp() + interval '10 minutes',
-  1)$$, 'a future-dated allow is accepted with server time');
+  room_seq, locale, text_hash) values (pg_temp.cid(89331), pg_temp.cid(89305), 'allow', 'v1',
+  clock_timestamp() + interval '10 minutes', 1, 'en', encode(sha256('notice'::bytea), 'hex'))$$, 'a future-dated allow is accepted with server time');
 select ok((select created_at <= clock_timestamp() from private.meet_ai_consents
   where session_id = pg_temp.cid(89331) and user_id = pg_temp.cid(89305)),
   'the client future timestamp is ignored');

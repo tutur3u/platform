@@ -40,8 +40,8 @@ select ok((select bool_and(has_function_privilege('service_role', p.oid, 'EXECUT
   where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'),
   'self_v1 functions are service-executable with an explicit pg_temp-last path');
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 36,
-  'thirty-six self_v1 functions exist (contracts plus the capture path)');
+  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 37,
+  'thirty-seven self_v1 functions exist (contracts plus the capture path)');
 
 -- N2 FK actions are explicit.
 select is((select confdeltype::text from pg_constraint where conname = 'meet_ai_sessions_user_id_fkey'), 'n',
@@ -147,8 +147,8 @@ select throws_ok($$insert into private.meet_ai_session_participants(session_id, 
 set local role service_role;
 select lives_ok($$select private.record_meet_ai_self_v1_admission(pg_temp.cid(89032), pg_temp.cid(n), 1)
   from generate_series(89002, 89004) n$$, 'room authority records actual admissions');
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq) values
- (pg_temp.cid(89032), pg_temp.cid(89003), 'allow', 'v1', 1), (pg_temp.cid(89032), pg_temp.cid(89004), 'allow', 'v1', 1);
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq, locale, text_hash)
+ select pg_temp.cid(89032), pg_temp.cid(n), 'allow', 'v1', 1, 'en', encode(sha256('notice'::bytea), 'hex') from generate_series(89003, 89004) n;
 reset role;
 select throws_ok($$insert into private.meet_ai_capture_streams(session_id, account_id, device_epoch, input_processing, lease_expires_at)
   values (pg_temp.cid(89032), pg_temp.cid(89005), 1, 'processed_aec', now() + interval '30 seconds')$$,

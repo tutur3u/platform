@@ -35,9 +35,10 @@ select private.record_meet_ai_self_v1_admission(pg_temp.cid(89231), pg_temp.cid(
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89233), pg_temp.cid(n), 1)
  from unnest(array[89203, 89204, 89205]) n;
 -- Capture needs each uploader's current allow decision (revision 1).
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq)
- select pg_temp.cid(89231), pg_temp.cid(n), 'allow', 'v1', 1 from generate_series(89203, 89206) n
- union all select pg_temp.cid(89233), pg_temp.cid(n), 'allow', 'v1', 1 from generate_series(89204, 89205) n;
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq, locale, text_hash)
+ select pg_temp.cid(89231), pg_temp.cid(n), 'allow', 'v1', 1, 'en', encode(sha256('notice'::bytea), 'hex') from generate_series(89203, 89206) n
+ union all select pg_temp.cid(89233), pg_temp.cid(n), 'allow', 'v1', 1, 'en', encode(sha256('notice'::bytea), 'hex')
+ from generate_series(89204, 89205) n;
 reset role;
 insert into private.meet_ai_capture_streams(id, session_id, account_id, device_epoch, input_processing, lease_expires_at)
  select pg_temp.cid(n + 38), pg_temp.cid(89231), pg_temp.cid(n), 1, 'processed_aec', now() + interval '30 seconds'
@@ -216,7 +217,9 @@ update public.meet_ai_sessions set notes_redacted_at = null where id = pg_temp.c
 insert into private.meet_ai_erasure_jobs(operation_id, scope, session_id, requested_by, fence_generation, expires_at)
  values (gen_random_uuid(), 'session', pg_temp.cid(89231), 'workspace_admin', 1, now() + interval '30 days');
 select is(pg_temp.role_of(89204), 'none', 'session erasure fences even own reads');
-delete from private.meet_ai_erasure_jobs where session_id = pg_temp.cid(89231);
+-- A session erasure job is kept while its session exists; detach it to reset.
+update private.meet_ai_erasure_jobs set session_id = null where session_id = pg_temp.cid(89231);
+delete from private.meet_ai_erasure_jobs where session_id is null and scope = 'session';
 update public.meet_ai_sessions set purge_after = now() - interval '1 second' where id = pg_temp.cid(89231);
 select is(pg_temp.role_of(89203) || '/' || pg_temp.role_of(89204), 'none/none', 'due retention fences every read');
 

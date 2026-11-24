@@ -35,7 +35,9 @@ $$;
 create function pg_temp.decide(acct integer, decision text, seq bigint)
 returns text language sql as $$
   select r.revision || '/' || r.recorded from private.meet_ai_self_v1_record_decision(
-    pg_temp.sid(), pg_temp.cid(acct), decision, 'v1', seq) r;
+    pg_temp.sid(), pg_temp.cid(acct), decision, 'v1', seq,
+    case when decision = 'allow' then 'en' end,
+    case when decision = 'allow' then encode(sha256('notice'::bytea), 'hex') end) r;
 $$;
 create function pg_temp.open(acct integer, rev integer, gen integer default 1)
 returns uuid language sql as $$
@@ -128,8 +130,8 @@ select throws_ok($$select private.meet_ai_self_v1_end_upload(pg_temp.sid(), pg_t
   '23514', null, 'the shared ending helper never records a decision');
 select throws_ok($$select pg_temp.decide(89403, 'allow', 4)$$, '40001', null,
   'decisions share the watermark advanced by close');
-select throws_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq)
-  values (pg_temp.sid(), pg_temp.cid(89403), 'allow', 'v1', 4)$$, '40001', null,
+select throws_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq,
+  locale, text_hash) values (pg_temp.sid(), pg_temp.cid(89403), 'allow', 'v1', 4, 'en', encode(sha256('notice'::bytea), 'hex'))$$, '40001', null,
   'direct consent inserts are ordered against the same watermark');
 select is(pg_temp.decide(89403, 'allow', 5), '3/true', 'a fresh allow after withdraw is recorded');
 select throws_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
@@ -481,8 +483,8 @@ update private.meet_ai_erasure_jobs set status = 'completed', completed_at = now
 select ok(exists (select 1 from private.meet_ai_self_v1_room_ops
   where session_id = pg_temp.sid() and account_id = pg_temp.cid(89412)),
   'a person erasure completed mid-capture keeps the watermark');
-select throws_ok($$select pg_temp.decide(89412, 'allow', 2)$$, '40001', null,
-  'a stale allow replayed after the erasure is still refused');
+select is(pg_temp.decide(89412, 'allow', 2), '1/false',
+  'a late allow after the person erasure completed is acknowledged without a write');
 select ok(not private.meet_ai_self_v1_upload_fenced(pg_temp.sid(), pg_temp.cid(89412)),
   'a completed person erasure lifts its fence');
 insert into private.meet_ai_erasure_jobs(operation_id, scope, session_id, subject_account_id,
