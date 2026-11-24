@@ -1,13 +1,11 @@
 'use client';
 
-import { getFeedbackTypeLabel } from './feedback-labels';
 import { CheckCircle, MessageSquareWarning } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   SettingsSection,
   SettingsSectionMessage,
 } from './custom/settings-section';
-import { DEFAULT_PRODUCTS } from './report-problem-model';
 import type {
   FeedbackReceipt,
   ReportProblemDialogProps,
@@ -15,15 +13,56 @@ import type {
 
 interface FeedbackReceiptsProps {
   receipts: FeedbackReceipt[];
+  isLoading: boolean;
+  isError: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
   t: ReportProblemDialogProps['t'];
   onSend: () => void;
+  onRetry: () => void;
+  onLoadMore: () => void;
 }
 
 export function FeedbackReceipts({
   receipts,
+  isLoading,
+  isError,
+  hasNextPage,
+  isFetchingNextPage,
   t,
   onSend,
+  onRetry,
+  onLoadMore,
 }: FeedbackReceiptsProps) {
+  if (isError && receipts.length === 0) {
+    return (
+      <SettingsSection surface="card">
+        <SettingsSectionMessage
+          icon={<MessageSquareWarning className="size-4 shrink-0" />}
+          action={
+            <Button type="button" size="sm" onClick={onRetry}>
+              {t('feedback-dialog-history-retry')}
+            </Button>
+          }
+        >
+          {t('feedback-dialog-history-error')}
+        </SettingsSectionMessage>
+      </SettingsSection>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <SettingsSection surface="card">
+        <SettingsSectionMessage
+          icon={<MessageSquareWarning className="size-4 shrink-0" />}
+        >
+          {t('feedback-dialog-history-loading')}
+        </SettingsSectionMessage>
+      </SettingsSection>
+    );
+  }
+
   if (receipts.length === 0) {
     return (
       <SettingsSection surface="card">
@@ -54,29 +93,33 @@ export function FeedbackReceipts({
               className="mt-0.5 size-4 shrink-0 text-dynamic-green"
             />
             <div className="min-w-0 flex-1 space-y-1">
-              <p className="font-medium text-sm">
-                {getFeedbackTypeLabel(t, receipt.type)}
-                {' · '}
-                {DEFAULT_PRODUCTS.find((p) => p.value === receipt.product)
-                  ?.label ?? receipt.product}
-              </p>
+              <p className="break-words font-medium text-sm">{receipt.title}</p>
               <p className="break-all text-muted-foreground text-xs">
                 {t('feedback-dialog-receipt-id', { id: receipt.id })}
-                {receipt.mediaCount > 0 &&
-                  ` · ${t('feedback-dialog-receipt-media', {
-                    count: receipt.mediaCount,
-                  })}`}
               </p>
             </div>
             <time
-              dateTime={receipt.submittedAt}
+              dateTime={receipt.createdAt}
               className="shrink-0 text-muted-foreground text-xs"
             >
-              {new Date(receipt.submittedAt).toLocaleString()}
+              {new Date(receipt.createdAt).toLocaleString()}
             </time>
           </li>
         ))}
       </ul>
+      {hasNextPage && (
+        <div className="flex justify-center pt-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isFetchingNextPage}
+            onClick={onLoadMore}
+          >
+            {t('feedback-dialog-history-more')}
+          </Button>
+        </div>
+      )}
     </SettingsSection>
   );
 }

@@ -21,7 +21,11 @@ import {
   feedbackFailure,
   feedbackHeaders,
 } from './product-feedback-handlers';
-import { feedbackReceipt } from './product-feedback-input';
+import {
+  feedbackReceipt,
+  feedbackReceiptPage,
+  parseFeedbackReceiptCursor,
+} from './product-feedback-input';
 
 async function session(request: Request, operation: StaffOperationContext) {
   const authorization = request.headers.get('authorization');
@@ -136,6 +140,71 @@ export async function readProductFeedbackReceipt(
         if (error) throw new StaffReadError(503);
         return Response.json(
           { receipt: data === null ? null : feedbackReceipt.parse(data) },
+          { headers: feedbackHeaders }
+        );
+      } catch (error) {
+        return feedbackFailure(
+          error instanceof StaffReadError ? error.status : 503
+        );
+      }
+    }),
+    (response) => response,
+    feedbackFailure
+  );
+}
+const RECEIPT_PAGE_SIZE_MAX = 50;
+/** The caller's own receipts, newest first; projection and scope are enforced in SQL. */
+export async function listProductFeedbackReceipts(request: Request) {
+  const operation = openStaffOperation(request, {
+    durationMs: 10000,
+    scope: 'feedback-intake-handler',
+    provenance:
+      'Own feedback receipt listing, current bearer/cookie actor and owner-only SQL RPC; no replay',
+  });
+  if (!operation) return feedbackFailure(503);
+  return operation.run(
+    operation.phase(async (op) => {
+      try {
+        const { client } = await session(request, op);
+        const params = new URL(request.url).searchParams;
+        const limit = params.get('limit');
+        const cursor = params.get('cursor');
+        const parsed =
+          cursor === null ? null : parseFeedbackReceiptCursor(cursor);
+        if (
+          [...params.keys()].some(
+            (name) => !['limit', 'cursor'].includes(name)
+          ) ||
+          (limit !== null &&
+            !(
+              /^\d{1,2}$/.test(limit) &&
+              Number(limit) >= 1 &&
+              Number(limit) <= RECEIPT_PAGE_SIZE_MAX
+            )) ||
+          (cursor !== null && !parsed)
+        )
+          return feedbackFailure(400);
+        const { data, error } = await client
+          .rpc('list_product_feedback_receipts', {
+            ...(limit === null ? {} : { p_limit: Number(limit) }),
+            ...(parsed
+              ? {
+                  p_cursor_created_at: parsed.createdAt,
+                  p_cursor_id: parsed.id,
+                }
+              : {}),
+          })
+          .abortSignal(op.signal);
+        op.check();
+        if (error) throw new StaffReadError(503);
+        const page = feedbackReceiptPage.parse(data);
+        const last = page.items.at(-1);
+        return Response.json(
+          {
+            items: page.items,
+            nextCursor:
+              page.hasMore && last ? `${last.createdAt}_${last.id}` : null,
+          },
           { headers: feedbackHeaders }
         );
       } catch (error) {

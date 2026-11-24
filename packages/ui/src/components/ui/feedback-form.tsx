@@ -1,5 +1,7 @@
 'use client';
 
+import { Turnstile } from '@marsidev/react-turnstile';
+import { SAFARI_SAFE_TURNSTILE_OPTIONS } from '@tuturuuu/cloudflare/turnstile/client';
 import { CheckCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -54,6 +56,7 @@ export function FeedbackForm({
     handleProductChange,
     handleTypeChange,
     handleSuggestionChange,
+    turnstile,
   } = report;
   const invalid = (message?: string) =>
     message
@@ -142,6 +145,29 @@ export function FeedbackForm({
           />
         </SettingsSectionBlock>
 
+        <SettingsSectionBlock className="space-y-2">
+          {turnstile.canRender && turnstile.siteKey ? (
+            <Turnstile
+              ref={turnstile.widgetRef}
+              siteKey={turnstile.siteKey}
+              options={SAFARI_SAFE_TURNSTILE_OPTIONS}
+              onSuccess={turnstile.onSuccess}
+              onExpire={turnstile.onExpire}
+              onTimeout={turnstile.onExpire}
+              onError={turnstile.onError}
+            />
+          ) : (
+            <p className="text-dynamic-red text-sm" role="alert">
+              {t('feedback-dialog-captcha-unavailable')}
+            </p>
+          )}
+          {turnstile.failed && (
+            <p className="text-dynamic-red text-sm" role="alert">
+              {t('feedback-dialog-captcha-failed')}
+            </p>
+          )}
+        </SettingsSectionBlock>
+
         <SettingsSectionFooter>
           <Button
             type="button"
@@ -157,6 +183,7 @@ export function FeedbackForm({
               !formData.product ||
               !formData.type ||
               !formData.suggestion.trim() ||
+              !turnstile.token ||
               isSubmitting
             }
           >

@@ -4,7 +4,7 @@ import { Upload, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { cn, isValidBlobUrl } from '@tuturuuu/utils/format';
-import { ALLOWED_VIDEO_TYPES, MAX_FILES } from './report-problem-model';
+import { MAX_FILES } from './report-problem-model';
 import type { ReportProblemDialogProps } from './report-problem-model';
 import type { useReportProblem } from './use-report-problem';
 
@@ -57,8 +57,7 @@ export function FeedbackMediaField({
           <Input
             ref={fileInputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
-            multiple
+            accept="image/png,image/jpeg,image/webp"
             onChange={handleMediaUpload}
             disabled={isSubmitting || isCompressing}
             className="sr-only"
@@ -96,31 +95,16 @@ export function FeedbackMediaField({
       {mediaPreviews.length > 0 && (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {mediaPreviews.map((preview, index) => {
-            const file = formData.media[index];
-            const isVideo = file && ALLOWED_VIDEO_TYPES.includes(file.type);
-
             return (
               <li key={preview} className="relative">
                 <div className="aspect-square overflow-hidden rounded-lg border bg-muted">
-                  {isVideo ? (
-                    <video
-                      src={isValidBlobUrl(preview) ? preview : ''}
-                      className="size-full object-cover"
-                      controls={false}
-                      muted
-                      playsInline
-                    />
-                  ) : (
-                    <PreviewImage
-                      src={
-                        isValidBlobUrl(preview) ? preview : '/placeholder.svg'
-                      }
-                      alt={t('media-alt', { number: index + 1 })}
-                      className="size-full object-cover"
-                      width={100}
-                      height={100}
-                    />
-                  )}
+                  <PreviewImage
+                    src={isValidBlobUrl(preview) ? preview : '/placeholder.svg'}
+                    alt={t('media-alt', { number: index + 1 })}
+                    className="size-full object-cover"
+                    width={100}
+                    height={100}
+                  />
                 </div>
                 <Button
                   type="button"

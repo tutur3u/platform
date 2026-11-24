@@ -9,21 +9,10 @@ export interface ReportProblemFormData {
   media: File[];
 }
 
-export const MAX_MEDIA_SIZE = 5 * 1024 * 1024; // 5MB
-export const MAX_FILES = 5;
-
-// Allowed media types
-export const ALLOWED_IMAGE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-];
-export const ALLOWED_VIDEO_TYPES = [
-  'video/mp4',
-  'video/webm',
-  'video/quicktime',
-];
+// The intake accepts one PNG, JPEG or WebP screenshot of at most 2 MiB.
+export const MAX_MEDIA_SIZE = 2 * 1024 * 1024;
+export const MAX_FILES = 1;
+export const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 // Zod schema for form validation
 export const reportProblemSchema = z.object({
@@ -58,29 +47,21 @@ export const reportProblemSchema = z.object({
     .array(z.instanceof(File))
     .max(MAX_FILES, `You can upload up to ${MAX_FILES} files`)
     .refine(
-      (files) =>
-        files.every(
-          (f) =>
-            ALLOWED_IMAGE_TYPES.includes(f.type) ||
-            ALLOWED_VIDEO_TYPES.includes(f.type)
-        ),
+      (files) => files.every((f) => ALLOWED_IMAGE_TYPES.includes(f.type)),
       {
-        message:
-          'Only image (PNG, JPEG, WebP, GIF) and video (MP4, WebM, MOV) files are allowed',
+        message: 'Only a PNG, JPEG or WebP image is allowed',
       }
     )
     .refine((files) => files.every((f) => f.size <= MAX_MEDIA_SIZE), {
-      message: 'Each file must be 5MB or less',
+      message: 'The image must be 2MB or less',
     }),
 });
 
+/** A receipt of the intake: the receipt id, its creation time and the submitted title. */
 export interface FeedbackReceipt {
   id: string;
-  product: Product;
-  type: SupportType;
-  subject: string;
-  mediaCount: number;
-  submittedAt: string;
+  title: string;
+  createdAt: string;
 }
 
 export interface ReportProblemDialogProps {
@@ -96,15 +77,20 @@ export interface ReportProblemDialogProps {
       | 'affected-product-required'
       | 'cancel'
       | 'feedback-dialog-back'
+      | 'feedback-dialog-captcha-failed'
+      | 'feedback-dialog-captcha-unavailable'
       | 'feedback-dialog-characters'
       | 'feedback-dialog-close'
       | 'feedback-dialog-group'
       | 'feedback-dialog-history'
       | 'feedback-dialog-history-description'
       | 'feedback-dialog-history-empty'
+      | 'feedback-dialog-history-error'
+      | 'feedback-dialog-history-loading'
+      | 'feedback-dialog-history-more'
+      | 'feedback-dialog-history-retry'
       | 'feedback-dialog-no-results'
       | 'feedback-dialog-receipt-id'
-      | 'feedback-dialog-receipt-media'
       | 'feedback-dialog-remove-media'
       | 'feedback-dialog-search'
       | 'feedback-dialog-send'
@@ -132,7 +118,7 @@ export interface ReportProblemDialogProps {
     values?: Record<string, string | number>
   ) => string;
   apiOptions?: InternalApiClientOptions;
-  /** Called with the receipt of each report the backend accepted. */
+  /** Called with the receipt of each submission the intake accepted. */
   onSubmitted?: (receipt: FeedbackReceipt) => void;
   /** Close the dialog after a submission. Defaults to true. */
   closeOnSubmit?: boolean;

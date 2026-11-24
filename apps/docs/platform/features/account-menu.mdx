@@ -93,20 +93,44 @@ product rules for its entries.
   `showOnboardingGuide={false}`. The shell supplies the full-screen layout, the
   navigation search, the mobile navigation and the dialog shortcuts. The
   navigation has one group with two sections: "Send feedback" (product, support
-  type, description and up to five image or video attachments) and "Your
-  feedback" (a receipt per report accepted in the current session). A
-  successful submission keeps the dialog open, clears the form and switches to
-  "Your feedback".
-- **Backend:** submissions still go through `useReportProblem` and
-  `useSubmitReportMutation`, which upload attachments with signed URLs and call
-  `submitReport` from `@tuturuuu/internal-api/reports`. The receipt id is the
-  `reportId` the backend returns. Receipts live in the TanStack Query cache
-  under `feedback-receipts` and are not persisted across reloads.
+  type, description of up to 1,000 characters, a Turnstile challenge and one
+  optional PNG, JPEG or WebP image of at most 2 MB) and "Your feedback" (the
+  signed-in user's own receipts, newest first, with a "Show older" page
+  control). A successful submission keeps the dialog open, clears the form and
+  switches to "Your feedback".
+- **Submission:** `useReportProblem` sends each submission through
+  `submitProductFeedback` from `@tuturuuu/internal-api/product-feedback` to
+  `POST /api/v1/product-feedback`. The title is `<support type> - <product>`,
+  the body is the description, and the image travels as base64 `media`. The
+  submit button stays disabled until the Turnstile widget (site key from
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) yields a token. A token is single use, so
+  the widget resets after every attempt, successful or not. Each submission
+  carries a UUID v4 idempotency key. Retries of the same content reuse it so
+  the intake deduplicates them; editing the product, type, description or image
+  starts a new submission with a new key. Satellite apps reach the same route
+  through their own `/api` proxy. The server flags
+  `PRODUCT_FEEDBACK_SUBMISSION_ENABLED` and `PRODUCT_FEEDBACK_MEDIA_ENABLED`
+  gate submission and attachments; when off, the dialog reports a failed
+  submission.
+- **Own receipts:** `GET /api/v1/product-feedback/receipts` returns
+  `{ items: [{ id, createdAt, title }], nextCursor }` for the caller only. It
+  reads `public.list_product_feedback_receipts`, a definer function that
+  filters on `auth.uid()`, projects only those three fields, clamps the page
+  size to 1-50 (default 20) and pages by a `(created_at, id)` keyset cursor.
+  It uses the same session handling as the single-receipt route, and
+  `listProductFeedbackReceipts` in `@tuturuuu/internal-api/product-feedback`
+  is the client helper. The staff list on `GET /api/v1/product-feedback` stays
+  staff-only. The query lives under `feedback-receipts` in TanStack Query.
 - **Exceptions:** the dialog open state is local to each host and has no URL
-  parameter, so Back does not close it. The `/api/v1/product-feedback`
-  receipts endpoint is keyed by the idempotency key of a product-feedback
-  submission and is not read here.
+  parameter, so Back does not close it. Videos, GIFs and several attachments
+  are not accepted by the intake. Receipts carry no status.
 - **Regression coverage:**
   `packages/ui/src/components/ui/feedback-dialog.test.tsx` covers the dialog
-  rendering inside the shell, a submission calling `submitReport` and listing
-  its receipt, and the empty "Your feedback" state.
+  inside the shell, submit disabled until the challenge is solved, the intake
+  payload with token and key, key reuse on retry and renewal after an edit,
+  the image payload, receipt paging and the load error.
+  `apps/web/src/lib/product-feedback-receipts-list.test.ts` covers the owner
+  route (no actor argument, projection, cursor, malformed queries, 401).
+  `apps/database/supabase/tests/product-feedback-intake.sql` covers the
+  function's owner scoping (user B cannot see user A), anonymous denial, the
+  limit clamp and the cursor.

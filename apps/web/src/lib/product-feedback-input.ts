@@ -33,6 +33,31 @@ export type FeedbackInput = z.infer<typeof feedbackInput>;
 export const feedbackReceipt = z
   .object({ id: z.uuid(), createdAt: z.iso.datetime({ offset: true }) })
   .strict();
+export const feedbackReceiptPage = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.uuid(),
+          createdAt: z.iso.datetime({ offset: true }),
+          title: z.string().min(1).max(160),
+        })
+        .strict()
+    ),
+    hasMore: z.boolean(),
+  })
+  .strict();
+/** Keyset cursor `<createdAt>_<id>` of the last receipt on a page. */
+export function parseFeedbackReceiptCursor(cursor: string) {
+  const split = cursor.lastIndexOf('_');
+  const createdAt = cursor.slice(0, split);
+  const id = cursor.slice(split + 1);
+  return split > 0 &&
+    z.iso.datetime({ offset: true }).safeParse(createdAt).success &&
+    z.uuid().safeParse(id).success
+    ? { createdAt, id }
+    : null;
+}
 export async function readFeedbackInput(
   request: Request,
   operation: StaffOperationContext

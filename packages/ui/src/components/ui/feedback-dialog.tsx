@@ -24,8 +24,8 @@ type FeedbackDialogProps = Omit<
 > & { initialTab?: FeedbackTab };
 
 /**
- * Feedback body for the settings dialog layout, rendered inside a Dialog: a "Send feedback" form and a
- * "Your feedback" list of receipts for the reports accepted this session.
+ * Feedback body for the settings dialog layout, rendered inside a Dialog: a "Send feedback" form that
+ * submits through the product-feedback intake and a "Your feedback" list of the signed-in user's own receipts.
  */
 export function FeedbackDialog({
   initialTab = FEEDBACK_TABS.send,
@@ -35,13 +35,17 @@ export function FeedbackDialog({
 }: FeedbackDialogProps) {
   const { t, products, ImageComponent } = props;
   const [tab, setTab] = useState<FeedbackTab>(initialTab);
-  const { receipts, addReceipt } = useFeedbackReceipts();
+  const receipts = useFeedbackReceipts(
+    props.apiOptions,
+    tab === FEEDBACK_TABS.history
+  );
+  const { refresh } = receipts;
   const report = useReportProblem({
     ...props,
     // Stays open on the receipt by default; a caller may still close it.
     closeOnSubmit,
     onSubmitted: (receipt) => {
-      addReceipt(receipt);
+      void refresh();
       setTab(FEEDBACK_TABS.history);
       onSubmitted?.(receipt);
     },
@@ -117,9 +121,15 @@ export function FeedbackDialog({
     >
       {tab === FEEDBACK_TABS.history ? (
         <FeedbackReceipts
-          receipts={receipts}
+          receipts={receipts.receipts}
+          isLoading={receipts.isLoading}
+          isError={receipts.isError}
+          hasNextPage={receipts.hasNextPage}
+          isFetchingNextPage={receipts.isFetchingNextPage}
           t={t}
           onSend={() => setTab(FEEDBACK_TABS.send)}
+          onRetry={() => void receipts.refetch()}
+          onLoadMore={() => void receipts.fetchNextPage()}
         />
       ) : (
         <FeedbackForm

@@ -65040,6 +65040,14 @@ export type Database = {
           source: string;
         }[];
       };
+      list_product_feedback_receipts: {
+        Args: {
+          p_cursor_created_at?: string;
+          p_cursor_id?: string;
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
       list_product_feedback_staff: {
         Args: {
           p_actor: string;

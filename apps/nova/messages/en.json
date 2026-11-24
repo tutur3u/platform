@@ -1331,7 +1331,13 @@
     "workspaces": "Workspaces",
     "year_old": "year old",
     "years_old": "years old",
-    "yellow": "Yellow"
+    "yellow": "Yellow",
+    "feedback-dialog-captcha-failed": "The human check failed. Please try again.",
+    "feedback-dialog-captcha-unavailable": "The human check is unavailable, so feedback cannot be sent right now.",
+    "feedback-dialog-history-error": "Your feedback could not be loaded.",
+    "feedback-dialog-history-loading": "Loading your feedback...",
+    "feedback-dialog-history-more": "Show older",
+    "feedback-dialog-history-retry": "Try again"
   },
   "contact": {
     "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",

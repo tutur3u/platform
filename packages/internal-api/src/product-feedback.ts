@@ -136,3 +136,29 @@ export function getProductFeedbackReceipt(
     cache: 'no-store',
   });
 }
+
+export interface ProductFeedbackOwnReceipt extends ProductFeedbackReceipt {
+  title: string;
+}
+export interface ProductFeedbackOwnReceiptsQuery {
+  limit?: number;
+  cursor?: string;
+}
+/** The signed-in user's own receipts, newest first. */
+export function listProductFeedbackReceipts(
+  query: ProductFeedbackOwnReceiptsQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const params = new URLSearchParams();
+  if (query.limit !== undefined) params.set('limit', String(query.limit));
+  if (query.cursor !== undefined) params.set('cursor', query.cursor);
+  const suffix = params.size ? `?${params}` : '';
+  return getInternalApiClient(options).json<{
+    items: ProductFeedbackOwnReceipt[];
+    nextCursor: string | null;
+  }>(`/api/v1/product-feedback/receipts${suffix}`, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  });
+}

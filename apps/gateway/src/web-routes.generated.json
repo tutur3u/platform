@@ -1407,6 +1407,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/product-feedback/receipts"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/product-feedback"
     },
     {

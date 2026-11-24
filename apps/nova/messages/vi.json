@@ -1331,7 +1331,13 @@
     "workspaces": "Không gian làm việc",
     "year_old": "tuổi",
     "years_old": "tuổi",
-    "yellow": "Vàng"
+    "yellow": "Vàng",
+    "feedback-dialog-captcha-failed": "Kiểm tra xác minh thất bại. Vui lòng thử lại.",
+    "feedback-dialog-captcha-unavailable": "Không thể xác minh con người nên hiện chưa thể gửi phản hồi.",
+    "feedback-dialog-history-error": "Không thể tải phản hồi của bạn.",
+    "feedback-dialog-history-loading": "Đang tải phản hồi của bạn...",
+    "feedback-dialog-history-more": "Xem cũ hơn",
+    "feedback-dialog-history-retry": "Thử lại"
   },
   "contact": {
     "description": "Có thắc mắc hoặc cần hỗ trợ? Chúng tôi ở đây để giúp đỡ. Hãy chọn cách ưa thích của bạn để tiếp cận chúng tôi.",

@@ -362,7 +362,13 @@
     "search_workspace": "Tìm kiếm không gian làm việc",
     "select_workspace": "Chọn không gian làm việc",
     "settings": "Cài đặt",
-    "switch_workspace": "Chuyển không gian làm việc"
+    "switch_workspace": "Chuyển không gian làm việc",
+    "feedback-dialog-captcha-failed": "Kiểm tra xác minh thất bại. Vui lòng thử lại.",
+    "feedback-dialog-captcha-unavailable": "Không thể xác minh con người nên hiện chưa thể gửi phản hồi.",
+    "feedback-dialog-history-error": "Không thể tải phản hồi của bạn.",
+    "feedback-dialog-history-loading": "Đang tải phản hồi của bạn...",
+    "feedback-dialog-history-more": "Xem cũ hơn",
+    "feedback-dialog-history-retry": "Thử lại"
   },
   "dashboard": {
     "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",

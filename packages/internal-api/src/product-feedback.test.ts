@@ -6,6 +6,7 @@ import {
   getProductFeedbackMedia,
   getProductFeedbackReceipt,
   listProductFeedback,
+  listProductFeedbackReceipts,
   submitProductFeedback,
 } from './product-feedback';
 
@@ -369,5 +370,26 @@ describe('private feedback media and original receipt transport', () => {
         credentials: 'include',
         cache: 'no-store',
       });
+  });
+  it('lists own receipts with a keyset cursor on the owner endpoint', async () => {
+    const page = {
+      items: [{ ...receipt, title: 'Synthetic subject' }],
+      nextCursor: null,
+    };
+    const fetchMock = vi.fn<typeof fetch>(async () => Response.json(page));
+    const options = {
+      baseUrl: 'https://feedback.example.test',
+      fetch: fetchMock,
+    };
+    expect(
+      await listProductFeedbackReceipts({ limit: 20, cursor: 'a_b' }, options)
+    ).toEqual(page);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toBe(
+      'https://feedback.example.test/api/v1/product-feedback/receipts?limit=20&cursor=a_b'
+    );
+    expect(init?.method).toBe('GET');
+    expect(init?.cache).toBe('no-store');
+    expect(init?.credentials).toBe('include');
   });
 });

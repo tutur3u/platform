@@ -2,7 +2,7 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(34);
+SELECT plan(52);
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid =
   'private.product_feedback_reports'::regclass), 'reports enable RLS');
 SELECT ok((SELECT relrowsecurity FROM pg_class WHERE oid =
@@ -108,6 +108,25 @@ SELECT is((SELECT used::int FROM private.security_budget_counters WHERE key LIKE
 UPDATE feedback_fixture SET result = public.submit_product_feedback(
   '90500000-0000-4000-8000-000000000002',
   '90500000-0000-4000-8000-000000000101','Subject','Details');
+-- Third actor with enough receipts to exercise the page cap and the keyset
+-- cursor; every row shares one created_at, so id breaks the ties.
+INSERT INTO auth.users(id,email) VALUES
+  ('90500000-0000-4000-8000-000000000003','feedback-many@example.test');
+WITH inserted AS (
+  INSERT INTO private.product_feedback_reports(actor_id, title, body)
+  SELECT '90500000-0000-4000-8000-000000000003', 'Bulk ' || n, 'Details'
+  FROM generate_series(1, 55) AS n
+  RETURNING id, actor_id, created_at
+)
+INSERT INTO private.product_feedback_receipts(id, actor_id, idempotency_key, payload_hash, created_at)
+SELECT id, actor_id, gen_random_uuid(), repeat('0', 64), created_at FROM inserted;
+CREATE TEMP TABLE feedback_actor_a_receipts AS
+  SELECT id::text AS id FROM private.product_feedback_receipts
+  WHERE actor_id = '90500000-0000-4000-8000-000000000001';
+CREATE TEMP TABLE feedback_actor_b_receipts AS
+  SELECT id::text AS id FROM private.product_feedback_receipts
+  WHERE actor_id = '90500000-0000-4000-8000-000000000002';
+GRANT SELECT ON feedback_actor_a_receipts, feedback_actor_b_receipts TO authenticated;
 GRANT SELECT ON feedback_fixture TO authenticated;
 -- Test-only access to exercise RLS directly; ROLLBACK removes this schema grant.
 GRANT USAGE ON SCHEMA private TO authenticated;
@@ -129,6 +148,73 @@ SELECT ok(NOT has_function_privilege('anon',
   'public.get_product_feedback_receipt(uuid)', 'EXECUTE'), 'anonymous cannot read receipts');
 SELECT throws_ok($$SELECT body FROM private.product_feedback_reports$$,
   '42501',NULL,'owner cannot read content');
+
+-- Own-receipt listing: caller-bound, keyset paged, server-side limit clamp.
+SELECT is(jsonb_array_length(public.list_product_feedback_receipts()->'items'),1,
+  'owner list returns only the caller receipts');
+SELECT is(public.list_product_feedback_receipts()->'items'->0->>'id',
+  (SELECT result->'receipt'->>'id' FROM feedback_fixture),
+  'owner list returns the caller receipt id');
+SELECT is((SELECT array_agg(k ORDER BY k) FROM
+  jsonb_object_keys(public.list_product_feedback_receipts()->'items'->0) AS k),
+  ARRAY['createdAt','id','title'],'owner list projects only receipt fields');
+SELECT is((SELECT count(*)::int FROM jsonb_array_elements(
+  public.list_product_feedback_receipts()->'items') e
+  WHERE e->>'id' IN (SELECT id FROM feedback_actor_a_receipts)),0,
+  'user B cannot see user A receipts');
+SELECT set_config('request.jwt.claims',
+  '{"role":"authenticated","sub":"90500000-0000-4000-8000-000000000001"}', true);
+SELECT is(jsonb_array_length(public.list_product_feedback_receipts()->'items'),5,
+  'user A lists exactly their own receipts');
+SELECT is((SELECT count(*)::int FROM jsonb_array_elements(
+  public.list_product_feedback_receipts()->'items') e
+  WHERE e->>'id' IN (SELECT id FROM feedback_actor_b_receipts)),0,
+  'user A cannot see user B receipts');
+SELECT set_config('request.jwt.claims','{"role":"authenticated"}', true);
+SELECT is(public.list_product_feedback_receipts(),
+  '{"items":[],"hasMore":false}'::jsonb,'a missing subject lists nothing');
+SELECT set_config('request.jwt.claims',
+  '{"role":"authenticated","sub":"90500000-0000-4000-8000-000000000003"}', true);
+SELECT is(jsonb_array_length(public.list_product_feedback_receipts(1000)->'items'),50,
+  'limit is clamped to 50');
+SELECT is(jsonb_array_length(public.list_product_feedback_receipts()->'items'),20,
+  'default limit is 20');
+SELECT is(jsonb_array_length(public.list_product_feedback_receipts(NULL)->'items'),20,
+  'null limit falls back to 20');
+SELECT is(jsonb_array_length(public.list_product_feedback_receipts(0)->'items'),1,
+  'limit below one is clamped to one');
+SELECT is((public.list_product_feedback_receipts(1000)->>'hasMore')::boolean,true,
+  'a full page reports more rows');
+CREATE TEMP TABLE feedback_first_page AS
+  SELECT public.list_product_feedback_receipts(50) AS page;
+GRANT SELECT ON feedback_first_page TO authenticated;
+CREATE TEMP TABLE feedback_second_page AS
+  SELECT public.list_product_feedback_receipts(50,
+    (page->'items'->49->>'createdAt')::timestamptz,
+    (page->'items'->49->>'id')::uuid) AS page FROM feedback_first_page;
+SELECT is((SELECT jsonb_array_length(page->'items') || ':' || (page->>'hasMore')
+  FROM feedback_second_page),'5:false','keyset cursor returns the remaining rows');
+SELECT is((SELECT count(DISTINCT e->>'id')::int FROM (
+  SELECT jsonb_array_elements(page->'items') AS e FROM feedback_first_page
+  UNION ALL
+  SELECT jsonb_array_elements(page->'items') FROM feedback_second_page) pages),55,
+  'pages are disjoint and cover every receipt');
+SELECT is((SELECT array_agg(e->>'id' ORDER BY ord) = array_agg(e->>'id' ORDER BY e->>'id' DESC)
+  FROM feedback_first_page,
+  jsonb_array_elements(page->'items') WITH ORDINALITY AS t(e, ord)),true,
+  'ties on created_at are ordered by id descending');
+RESET ROLE;
+SELECT ok(has_function_privilege('authenticated',
+  'public.list_product_feedback_receipts(integer,timestamptz,uuid)','EXECUTE'),
+  'signed-in users may list their receipts');
+SELECT ok(NOT has_function_privilege('anon',
+  'public.list_product_feedback_receipts(integer,timestamptz,uuid)','EXECUTE')
+  AND NOT has_function_privilege('service_role',
+  'public.list_product_feedback_receipts(integer,timestamptz,uuid)','EXECUTE'),
+  'anonymous and service roles cannot execute the listing');
+SET LOCAL ROLE anon;
+SELECT throws_ok($$SELECT public.list_product_feedback_receipts()$$,
+  '42501',NULL,'anonymous listing is denied');
 RESET ROLE;
 SELECT * FROM finish();
 ROLLBACK;

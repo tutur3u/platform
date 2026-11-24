@@ -11,17 +11,40 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReportProblemDialogContent } from './report-problem-dialog-content';
 import type { ReportProblemDialogProps } from './report-problem-model';
 
-const submitReport = vi.fn();
+const submitProductFeedback = vi.fn();
+const listProductFeedbackReceipts = vi.fn();
+const resetWidget = vi.fn();
+const imageCompression = vi.hoisted(() => vi.fn());
 
-vi.mock('@tuturuuu/internal-api/reports', () => ({
-  createReportUploadUrls: vi.fn(),
-  deleteReportUploadPaths: vi.fn(),
-  submitReport: (...args: unknown[]) => submitReport(...args),
+vi.mock('@tuturuuu/internal-api/product-feedback', () => ({
+  submitProductFeedback: (...args: unknown[]) => submitProductFeedback(...args),
+  listProductFeedbackReceipts: (...args: unknown[]) =>
+    listProductFeedbackReceipts(...args),
 }));
+// The widget stands in for Cloudflare's challenge: a button solves it.
+vi.mock('@marsidev/react-turnstile', async () => {
+  const react = await import('react');
+  return {
+    Turnstile: react.forwardRef(function MockTurnstile(
+      { onSuccess }: { onSuccess: (token: string) => void },
+      ref: React.Ref<{ reset: () => void }>
+    ) {
+      react.useImperativeHandle(ref, () => ({ reset: resetWidget }));
+      return (
+        <button
+          type="button"
+          onClick={() => onSuccess(`token-${Math.random()}`)}
+        >
+          solve-challenge
+        </button>
+      );
+    }),
+  };
+});
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-vi.mock('browser-image-compression', () => ({ default: vi.fn() }));
+vi.mock('browser-image-compression', () => ({ default: imageCompression }));
 // Radix Select needs pointer APIs jsdom lacks; a native select keeps the
 // field wiring under test.
 vi.mock('@tuturuuu/ui/select', () => ({
@@ -56,7 +79,9 @@ const t: ReportProblemDialogProps['t'] = (key, values) =>
   values ? `${key} ${JSON.stringify(values)}` : key;
 
 function renderDialog() {
-  const client = new QueryClient();
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
     <QueryClientProvider client={client}>
       <ReportProblemDialogContent open showTrigger={false} t={t} />
@@ -86,11 +111,21 @@ beforeEach(() => {
       disconnect() {}
     }
   );
-  submitReport.mockReset();
+  vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'site-key-fixture');
+  submitProductFeedback.mockReset();
+  listProductFeedbackReceipts.mockReset();
+  resetWidget.mockReset();
+  imageCompression.mockReset();
+  imageCompression.mockImplementation(async (file: File) => file);
+  listProductFeedbackReceipts.mockResolvedValue({
+    items: [],
+    nextCursor: null,
+  });
 });
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('feedback dialog', () => {
@@ -105,36 +140,173 @@ describe('feedback dialog', () => {
     expect(screen.getByRole('button', { name: 'submit-report' })).toBeDefined();
   });
 
-  it('submits through the report backend and lists the receipt', async () => {
-    submitReport.mockResolvedValue({
-      success: true,
-      message: 'ok',
-      reportId: 'report-123',
-      uploadedMedia: [],
-    });
-    renderDialog();
-
+  function fillForm(text = 'The sidebar flickers') {
     const [product, type] = screen.getAllByTestId('select');
     fireEvent.change(product as HTMLElement, { target: { value: 'web' } });
     fireEvent.change(type as HTMLElement, { target: { value: 'bug' } });
     fireEvent.change(screen.getByPlaceholderText('suggestion-placeholder'), {
-      target: { value: 'The sidebar flickers' },
+      target: { value: text },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'submit-report' }));
+  }
+  const submit = () =>
+    screen.getByRole('button', { name: 'submit-report' }) as HTMLButtonElement;
+  const solve = () =>
+    fireEvent.click(screen.getByRole('button', { name: 'solve-challenge' }));
 
-    await waitFor(() => expect(submitReport).toHaveBeenCalledTimes(1));
-    expect(submitReport.mock.calls[0]?.[0]).toMatchObject({
-      product: 'web',
-      type: 'bug',
-      suggestion: 'The sidebar flickers',
-      imagePaths: [],
+  it('keeps submit disabled until the challenge is solved', () => {
+    renderDialog();
+    fillForm();
+    expect(submit().disabled).toBe(true);
+    solve();
+    expect(submit().disabled).toBe(false);
+  });
+
+  it('submits through the intake with a Turnstile token and an idempotency key, then lists the receipt', async () => {
+    submitProductFeedback.mockResolvedValue({
+      id: 'receipt-123',
+      createdAt: '2026-11-24T05:00:00Z',
     });
+    listProductFeedbackReceipts.mockResolvedValue({
+      items: [
+        {
+          id: 'receipt-123',
+          createdAt: '2026-11-24T05:00:00Z',
+          title: 'Bug Report - Web Dashboard',
+        },
+      ],
+      nextCursor: null,
+    });
+    renderDialog();
+    fillForm();
+    solve();
+    fireEvent.click(submit());
+
+    await waitFor(() => expect(submitProductFeedback).toHaveBeenCalledTimes(1));
+    expect(submitProductFeedback.mock.calls[0]?.[0]).toMatchObject({
+      title: 'Bug Report - Web Dashboard',
+      body: 'The sidebar flickers',
+      idempotencyKey: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+      ),
+      turnstileToken: expect.stringMatching(/^token-/),
+    });
+    expect(await screen.findByText('Bug Report - Web Dashboard')).toBeDefined();
     expect(
-      await screen.findByText(/feedback-dialog-receipt-id.*report-123/)
+      screen.getByText(/feedback-dialog-receipt-id.*receipt-123/)
+    ).toBeDefined();
+    expect(resetWidget).toHaveBeenCalled();
+  });
+
+  it('reuses the key on a retry of the same submission and mints a new one after an edit', async () => {
+    submitProductFeedback.mockRejectedValueOnce(new Error('offline'));
+    submitProductFeedback.mockRejectedValueOnce(new Error('offline'));
+    submitProductFeedback.mockResolvedValue({
+      id: 'r',
+      createdAt: '2026-11-24T05:00:00Z',
+    });
+    renderDialog();
+    fillForm();
+    solve();
+    fireEvent.click(submit());
+    await waitFor(() => expect(submitProductFeedback).toHaveBeenCalledTimes(1));
+    // The failed attempt spent its token; the form waits for a new challenge.
+    await waitFor(() => expect(resetWidget).toHaveBeenCalled());
+    await waitFor(() => expect(submit().disabled).toBe(true));
+
+    solve();
+    fireEvent.click(submit());
+    await waitFor(() => expect(submitProductFeedback).toHaveBeenCalledTimes(2));
+    const [first, second] = submitProductFeedback.mock.calls.map(
+      (call) => call[0] as { idempotencyKey: string; turnstileToken: string }
+    );
+    expect(second?.idempotencyKey).toBe(first?.idempotencyKey);
+    expect(second?.turnstileToken).not.toBe(first?.turnstileToken);
+    await waitFor(() => expect(submit().disabled).toBe(true));
+
+    fireEvent.change(screen.getByPlaceholderText('suggestion-placeholder'), {
+      target: { value: 'An edited description' },
+    });
+    solve();
+    fireEvent.click(submit());
+    await waitFor(() => expect(submitProductFeedback).toHaveBeenCalledTimes(3));
+    const third = submitProductFeedback.mock.calls[2]?.[0] as
+      | { idempotencyKey: string }
+      | undefined;
+    expect(third?.idempotencyKey).not.toBe(first?.idempotencyKey);
+  });
+
+  it('sends one attached image as base64 media', async () => {
+    submitProductFeedback.mockResolvedValue({
+      id: 'r',
+      createdAt: '2026-11-24T05:00:00Z',
+    });
+    const { container } = renderDialog();
+    fillForm();
+    fireEvent.change(
+      container.ownerDocument.querySelector(
+        'input[type="file"]'
+      ) as HTMLElement,
+      {
+        target: {
+          files: [new File(['abc'], 'shot.png', { type: 'image/png' })],
+        },
+      }
+    );
+    await waitFor(() =>
+      expect(container.ownerDocument.querySelector('ul img')).not.toBeNull()
+    );
+    solve();
+    fireEvent.click(submit());
+    await waitFor(() => expect(submitProductFeedback).toHaveBeenCalledTimes(1));
+    expect(submitProductFeedback.mock.calls[0]?.[0]).toMatchObject({
+      media: { contentType: 'image/png', data: 'YWJj' },
+    });
+  });
+
+  it('pages through the signed-in user receipts with the keyset cursor', async () => {
+    listProductFeedbackReceipts
+      .mockResolvedValueOnce({
+        items: [
+          { id: 'a', createdAt: '2026-11-24T05:00:00Z', title: 'First title' },
+        ],
+        nextCursor: 'cursor-1',
+      })
+      .mockResolvedValueOnce({
+        items: [
+          { id: 'b', createdAt: '2026-11-23T05:00:00Z', title: 'Second title' },
+        ],
+        nextCursor: null,
+      });
+    renderDialog();
+    fireEvent.click(
+      screen.getAllByRole('button', {
+        name: /feedback-dialog-history/,
+      })[0] as HTMLElement
+    );
+    expect(await screen.findByText('First title')).toBeDefined();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'feedback-dialog-history-more' })
+    );
+    expect(await screen.findByText('Second title')).toBeDefined();
+    expect(listProductFeedbackReceipts.mock.calls[1]?.[0]).toMatchObject({
+      cursor: 'cursor-1',
+    });
+  });
+
+  it('offers a retry when the receipts cannot be read', async () => {
+    listProductFeedbackReceipts.mockRejectedValueOnce(new Error('offline'));
+    renderDialog();
+    fireEvent.click(
+      screen.getAllByRole('button', {
+        name: /feedback-dialog-history/,
+      })[0] as HTMLElement
+    );
+    expect(
+      await screen.findByText('feedback-dialog-history-error')
     ).toBeDefined();
   });
 
-  it('shows the empty history state with a way back to the form', () => {
+  it('shows the empty history state with a way back to the form', async () => {
     renderDialog();
 
     fireEvent.click(
@@ -143,7 +315,9 @@ describe('feedback dialog', () => {
       })[0] as HTMLElement
     );
 
-    expect(screen.getByText('feedback-dialog-history-empty')).toBeDefined();
+    expect(
+      await screen.findByText('feedback-dialog-history-empty')
+    ).toBeDefined();
     fireEvent.click(
       screen
         .getAllByRole('button', { name: 'feedback-dialog-send' })
