@@ -183,9 +183,6 @@ export function DrivePreviewMedia({
         fileType={previewType}
         loading={previewType !== 'other' && isText && textQuery.isPending}
         onDownload={onDownload}
-        onOpenExternal={() =>
-          urlQuery.data && window.open(urlQuery.data, '_blank', 'noopener')
-        }
         signedUrl={urlQuery.data ?? null}
         textContent={textQuery.data ?? ''}
       />

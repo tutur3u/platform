@@ -1,5 +1,3 @@
-import { FileText, Image as ImageIcon, Music, Video } from '@tuturuuu/icons';
-
 export type DrivePreviewFileType =
   | 'image'
   | 'video'
@@ -47,17 +45,4 @@ export function getFileType(fileName: string): DrivePreviewFileType {
   if (codeExtensions.includes(extension)) return 'code';
 
   return 'other';
-}
-
-export function getFileIcon(fileType: string) {
-  switch (fileType) {
-    case 'image':
-      return <ImageIcon className="h-5 w-5" />;
-    case 'video':
-      return <Video className="h-5 w-5" />;
-    case 'audio':
-      return <Music className="h-5 w-5" />;
-    default:
-      return <FileText className="h-5 w-5" />;
-  }
 }

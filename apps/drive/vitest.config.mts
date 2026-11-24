@@ -44,6 +44,13 @@ export default defineConfig({
         ).pathname,
       },
       {
+        find: /^@tuturuuu\/internal-api\/storage$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/storage.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/internal-api$/,
         replacement: resolve(
           __dirname,

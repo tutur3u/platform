@@ -30,12 +30,12 @@ export function ExportManifestCard({
     <Card className="border-border">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Code2 className="h-4 w-4 text-dynamic-green" />
+          <Code2 aria-hidden className="size-4 text-muted-foreground" />
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="rounded-2xl border border-border bg-muted/20 p-3 text-muted-foreground text-xs leading-5">
+        <div className="rounded-xl border border-border bg-muted/20 p-3 text-muted-foreground text-xs leading-5">
           {description}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -58,8 +58,8 @@ export function ExportManifestCard({
             {copyAssetMapLabel}
           </Button>
         </div>
-        <ScrollArea className="h-56 rounded-2xl border border-border bg-muted/40 p-0">
-          <pre className="p-4 font-mono text-[11px] text-dynamic-cyan leading-6">
+        <ScrollArea className="h-56 rounded-xl border border-border bg-muted/40 p-0">
+          <pre className="p-4 font-mono text-muted-foreground text-xs leading-6">
             {loaderManifest || assetMapJson}
           </pre>
         </ScrollArea>

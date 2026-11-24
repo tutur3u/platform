@@ -1,19 +1,31 @@
 'use client';
 
-import {
-  Download,
-  ExternalLink,
-  FileText,
-  Loader2,
-  Music,
-} from '@tuturuuu/icons';
+import { Download, FileText, Music } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { Empty } from '@tuturuuu/ui/empty';
 import { LoadingRegion, Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { type DrivePreviewFileType, getFileIcon } from './file-preview-utils';
+import type { DrivePreviewFileType } from './file-preview-utils';
+
+function PdfPreviewSkeleton() {
+  const t = useTranslations();
+
+  return (
+    <LoadingRegion
+      className="relative flex h-64 w-full items-center justify-center rounded-lg"
+      srLabel={t('common.loading')}
+    >
+      <Skeleton aria-hidden="true" className="absolute inset-0 rounded-lg" />
+      <FileText
+        aria-hidden="true"
+        className="relative size-16 text-muted-foreground/30"
+      />
+    </LoadingRegion>
+  );
+}
 
 const PDFViewer = dynamic(
   () =>
@@ -22,11 +34,7 @@ const PDFViewer = dynamic(
     ),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    ),
+    loading: () => <PdfPreviewSkeleton />,
   }
 );
 
@@ -35,7 +43,6 @@ interface FilePreviewRendererProps {
   fileType: DrivePreviewFileType;
   loading: boolean;
   onDownload: () => void;
-  onOpenExternal: () => void;
   signedUrl: string | null;
   textContent: string;
 }
@@ -45,7 +52,6 @@ export function FilePreviewRenderer({
   fileType,
   loading,
   onDownload,
-  onOpenExternal,
   signedUrl,
   textContent,
 }: FilePreviewRendererProps) {
@@ -60,7 +66,7 @@ export function FilePreviewRenderer({
         {fileType === 'pdf' ? (
           <FileText
             aria-hidden="true"
-            className="relative h-16 w-16 text-muted-foreground/30"
+            className="relative size-16 text-muted-foreground/30"
           />
         ) : null}
       </LoadingRegion>
@@ -70,12 +76,7 @@ export function FilePreviewRenderer({
   if (!signedUrl) {
     return (
       <div className={previewAreaClass}>
-        <div className="space-y-2 text-center">
-          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-          <p className="text-muted-foreground text-sm">
-            {t('ws-storage-objects.no_preview')}
-          </p>
-        </div>
+        <Empty icon={FileText} title={t('ws-storage-objects.no_preview')} />
       </div>
     );
   }
@@ -94,7 +95,7 @@ export function FilePreviewRenderer({
             src={signedUrl}
             alt={cleanFileName || 'File preview'}
             fill
-            className="h-full w-full cursor-zoom-in rounded-lg bg-white object-contain transition-opacity duration-300 dark:bg-black"
+            className="h-full w-full cursor-zoom-in rounded-lg bg-muted object-contain transition-opacity duration-300"
             sizes="100vw"
             priority
             unoptimized
@@ -125,7 +126,10 @@ export function FilePreviewRenderer({
       <div className={cn(previewAreaClass, 'min-h-[40vh] p-4')}>
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
-            <Music className="mx-auto mb-4 h-16 w-16 text-dynamic-blue" />
+            <Music
+              aria-hidden
+              className="mx-auto mb-4 size-16 text-muted-foreground"
+            />
             <h3 className="font-medium">{cleanFileName}</h3>
           </div>
           <audio src={signedUrl} controls className="w-full" preload="metadata">
@@ -161,25 +165,17 @@ export function FilePreviewRenderer({
 
   return (
     <div className={cn(previewAreaClass, 'h-[60vh]')}>
-      <div className="space-y-4 text-center">
-        {getFileIcon(fileType)}
-        <div>
-          <h3 className="mb-2 font-medium">{cleanFileName}</h3>
-          <p className="mb-4 text-muted-foreground text-sm">
-            {t('ws-storage-objects.no_preview')}
-          </p>
-          <div className="flex justify-center gap-2">
-            <Button onClick={onDownload} size="sm">
-              <Download className="size-4" />
-              {t('common.download')}
-            </Button>
-            <Button onClick={onOpenExternal} variant="outline" size="sm">
-              <ExternalLink className="size-4" />
-              {t('common.view')}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <Empty
+        action={
+          <Button onClick={onDownload} size="sm" type="button">
+            <Download className="size-4" />
+            {t('common.download')}
+          </Button>
+        }
+        description={t('ws-storage-objects.no_preview')}
+        icon={FileText}
+        title={cleanFileName}
+      />
     </div>
   );
 }

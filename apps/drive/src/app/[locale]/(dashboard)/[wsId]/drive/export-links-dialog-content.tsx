@@ -1,8 +1,10 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { TriangleAlert } from '@tuturuuu/icons';
 import { exportWorkspaceStorageLinks } from '@tuturuuu/internal-api';
 import { revokeWorkspaceStorageExportLinks } from '@tuturuuu/internal-api/storage';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
   LoadingRegion,
@@ -70,7 +72,7 @@ export function ExportLinksDialogContent({
   if (exportQuery.isLoading || revokeMutation.isPending) {
     return (
       <LoadingRegion
-        className="flex min-h-56 flex-col gap-3 rounded-2xl border border-border border-dashed bg-muted/20 p-4"
+        className="flex min-h-56 flex-col gap-3 rounded-xl border border-border border-dashed bg-muted/20 p-4"
         srLabel={t('loading')}
       >
         <SkeletonLine barClassName="w-1/3" />
@@ -81,11 +83,14 @@ export function ExportLinksDialogContent({
 
   if (exportQuery.isError) {
     return (
-      <div className="rounded-2xl border border-dynamic-red/20 bg-dynamic-red/5 p-4 text-dynamic-red text-sm">
-        {exportQuery.error instanceof Error
-          ? exportQuery.error.message
-          : t('load_failed')}
-      </div>
+      <Alert variant="destructive">
+        <TriangleAlert aria-hidden className="size-4" />
+        <AlertDescription>
+          {exportQuery.error instanceof Error
+            ? exportQuery.error.message
+            : t('load_failed')}
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -163,7 +168,6 @@ export function ExportLinksDialogContent({
       <ExportAssetListCard
         copiedPath={copiedPath}
         copyLabel={storageT('copy')}
-        entryLabel={t('entry')}
         files={exportQuery.data.files}
         openLabel={commonT('open')}
         title={t('asset_links')}

@@ -1,6 +1,7 @@
 'use client';
 
 import { Info, X } from '@tuturuuu/icons';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -43,25 +44,23 @@ export function DriveLinkNotice() {
   };
 
   return (
-    <div
-      className="flex items-start gap-2 rounded-xl border border-border bg-muted p-3 text-sm"
-      role="note"
-    >
-      <Info
-        aria-hidden
-        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-      />
-      <p className="min-w-0 flex-1">{t('share.migration_notice')}</p>
-      <Button
-        aria-label={t('share.dismiss_notice')}
-        className="-my-1 size-7"
-        onClick={dismiss}
-        size="icon"
-        type="button"
-        variant="ghost"
-      >
-        <X className="size-3.5" />
-      </Button>
-    </div>
+    <Alert role="note" variant="info">
+      <Info aria-hidden className="size-4" />
+      <div className="flex items-start gap-2">
+        <AlertDescription className="min-w-0 flex-1">
+          {t('share.migration_notice')}
+        </AlertDescription>
+        <Button
+          aria-label={t('share.dismiss_notice')}
+          className="-my-1 -mr-1 size-7 shrink-0"
+          onClick={dismiss}
+          size="icon"
+          type="button"
+          variant="ghost"
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
+    </Alert>
   );
 }

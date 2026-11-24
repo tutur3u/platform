@@ -71,22 +71,23 @@ export function DriveMoveFolderList({
         <ul className="p-1">
           {foldersQuery.data.map((folder) => (
             <li key={folder.name}>
-              <button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+              <Button
+                className="w-full justify-start gap-3 px-3 font-normal"
                 onClick={() =>
                   onOpen(path ? `${path}/${folder.name}` : (folder.name ?? ''))
                 }
                 type="button"
+                variant="ghost"
               >
                 <Folder aria-hidden className="size-4 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate">
+                <span className="min-w-0 flex-1 truncate text-left">
                   {getStoragePathSegmentDisplayName(folder.name ?? '')}
                 </span>
                 <ChevronRight
                   aria-hidden
                   className="size-4 text-muted-foreground"
                 />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

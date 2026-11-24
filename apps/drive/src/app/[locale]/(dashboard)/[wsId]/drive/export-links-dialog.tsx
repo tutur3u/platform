@@ -1,7 +1,6 @@
 'use client';
 
 import { PackageOpen } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -33,35 +32,17 @@ export function WorkspaceStorageExportLinksDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-5xl">
-        <div className="border-b bg-linear-to-br from-dynamic-blue/8 via-dynamic-cyan/8 to-dynamic-green/8 p-6">
-          <DialogHeader className="gap-3 text-left">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background/80 shadow-sm">
-                <PackageOpen className="h-5 w-5 text-dynamic-blue" />
-              </div>
-              <div className="space-y-1">
-                <DialogTitle className="flex items-center gap-2">
-                  {t('title')}
-                  <Badge className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/10">
-                    {t('rotating_badge')}
-                  </Badge>
-                </DialogTitle>
-                <DialogDescription>
-                  {t('description', {
-                    folderName,
-                  })}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-        </div>
+      <DialogContent className="sm:max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>
+            {t('description', { folderName })}
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-6 overflow-hidden p-6">
-          {open ? (
-            <ExportLinksDialogContent folderPath={folderPath} wsId={wsId} />
-          ) : null}
-        </div>
+        {open ? (
+          <ExportLinksDialogContent folderPath={folderPath} wsId={wsId} />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -87,10 +68,9 @@ export function WorkspaceStorageExportLinksButton({
         type="button"
         size="xs"
         variant="outline"
-        className="gap-2 border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue hover:bg-dynamic-blue/10"
         onClick={() => setOpen(true)}
       >
-        <PackageOpen className="h-4 w-4" />
+        <PackageOpen className="size-4" />
         {t('button')}
       </Button>
       <WorkspaceStorageExportLinksDialog

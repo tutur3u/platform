@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
+import { buttonVariants } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { getStorageObjectDisplayName } from './storage-display-name';
 
@@ -57,7 +58,7 @@ export function DriveDeleteDialog({
             {t('common.cancel')}
           </AlertDialogCancel>
           <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className={buttonVariants({ variant: 'destructive' })}
             disabled={isPending || !items?.length}
             onClick={(event) => {
               event.preventDefault();

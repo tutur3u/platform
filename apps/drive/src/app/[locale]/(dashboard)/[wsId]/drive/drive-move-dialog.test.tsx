@@ -59,7 +59,10 @@ describe('DriveMoveDialog', () => {
     expect(confirmAtRoot).toBeDisabled();
     expect(screen.getByText('move.blocked_same')).toBeInTheDocument();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'archive' }));
+    const archiveRow = await screen.findByRole('button', { name: 'archive' });
+    expect(archiveRow).toHaveAttribute('data-slot', 'button');
+    expect(archiveRow).toHaveAttribute('data-variant', 'ghost');
+    fireEvent.click(archiveRow);
     expect(
       screen.queryByRole('button', { name: 'x.png' })
     ).not.toBeInTheDocument();

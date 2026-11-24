@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { InternalApiError } from '@tuturuuu/internal-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import DriveExplorerClient from './drive-explorer-client';
@@ -138,6 +144,7 @@ describe('DriveExplorerClient', () => {
       })
     );
     renderExplorer();
+    expect(screen.getByRole('alert')).toHaveTextContent('states.error_title');
     fireEvent.click(screen.getByRole('button', { name: 'states.retry' }));
     expect(refetch).toHaveBeenCalled();
   });
@@ -151,7 +158,10 @@ describe('DriveExplorerClient', () => {
       })
     );
     renderExplorer('denied');
-    expect(screen.getByRole('alert')).toHaveTextContent('denied.title');
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveAttribute('data-slot', 'empty');
+    expect(alert).toHaveTextContent('denied.title');
+    expect(alert).toHaveTextContent('denied.description');
     expect(
       screen.getByRole('button', { name: 'actions.upload' })
     ).toBeDisabled();
@@ -194,7 +204,9 @@ describe('DriveExplorerClient', () => {
       directory({ data: { items: [], total: 0 } })
     );
     const { unmount } = renderExplorer();
-    expect(screen.getByText('states.empty_root_title')).toBeInTheDocument();
+    const emptyStatus = screen.getByRole('status');
+    expect(emptyStatus).toHaveAttribute('data-slot', 'empty');
+    expect(emptyStatus).toHaveTextContent('states.empty_root_title');
     unmount();
 
     mocks.queryState.q = 'invoice';
@@ -251,11 +263,11 @@ describe('DriveExplorerClient', () => {
       screen.getByRole('button', { name: 'actions.delete_forever' })
     );
     const dialog = await screen.findByRole('alertdialog');
-    fireEvent.click(
-      Array.from(dialog.querySelectorAll('button')).find(
-        (button) => button.textContent === 'actions.delete_forever'
-      ) as HTMLButtonElement
-    );
+    const confirmButton = within(dialog).getByRole('button', {
+      name: 'actions.delete_forever',
+    });
+    expect(confirmButton.className).toContain('bg-destructive');
+    fireEvent.click(confirmButton);
 
     await waitFor(() =>
       expect(mocks.deleteObjects).toHaveBeenCalledWith(

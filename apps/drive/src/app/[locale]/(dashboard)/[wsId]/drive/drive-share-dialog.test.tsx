@@ -88,6 +88,9 @@ describe('DriveShareDialog', () => {
 
   it('remembers a dismissed storage-move notice in this browser', () => {
     const { unmount } = renderDialog();
+    const notice = screen.getByRole('note');
+    expect(notice).toHaveAttribute('data-variant', 'info');
+    expect(notice).toHaveTextContent('share.migration_notice');
     fireEvent.click(
       screen.getByRole('button', { name: 'share.dismiss_notice' })
     );

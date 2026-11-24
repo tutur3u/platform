@@ -4202,7 +4202,7 @@
       "title_one": "Xóa vĩnh viễn “{name}”?"
     },
     "denied": {
-      "description": "Bạn cần quyền Quản lý Drive để xem và thay đổi tệp trong không gian làm việc này. Hãy nhờ quản trị viên cấp quyền.",
+      "description": "Hãy nhờ quản trị viên không gian làm việc cấp quyền Quản lý Drive để xem hoặc thay đổi tệp tại đây.",
       "title": "Bạn chưa có quyền truy cập Drive",
       "write_reason": "Cần quyền Quản lý Drive."
     },
@@ -14001,10 +14001,10 @@
       "button": "Xuất liên kết",
       "copy_asset_map": "Sao chép bản đồ tài nguyên",
       "copy_manifest": "Sao chép loader manifest",
-      "description": "Xuất các liên kết công khai dạng xoay vòng cho \"{folderName}\". Những URL ổn định này giữ nguyên đường dẫn tài nguyên tương đối và tự tạo lại signed URL của nhà cung cấp khi cần.",
+      "description": "Liên kết công khai cho “{folderName}” luôn hoạt động ngay cả khi URL tệp gốc được làm mới.",
       "entry": "Điểm vào",
       "entry_url": "URL điểm vào",
-      "entry_url_description": "Dùng URL ổn định này cho WebGL loader hoặc trình xem bên ngoài của bạn.",
+      "entry_url_description": "Dùng liên kết này để mở hoặc nhúng tệp điểm vào của thư mục.",
       "folder_action": "Xuất liên kết",
       "links": {
         "asset_copied": "Đã sao chép liên kết tài nguyên",
@@ -14017,16 +14017,15 @@
       },
       "load_failed": "Không thể tải liên kết xuất",
       "loader_manifest": "Loader Manifest",
-      "loader_manifest_description": "Manifest này giữ một URL điểm vào ổn định cùng bản đồ tài nguyên theo đường dẫn tương đối để bạn có thể sao chép trực tiếp vào tích hợp Next.js hoặc WebGL loader.",
-      "loading": "Đang chuẩn bị các liên kết xuất xoay vòng...",
+      "loader_manifest_description": "Tệp manifest JSON gồm URL điểm vào và liên kết tương đối cho từng tệp trong thư mục.",
+      "loading": "Đang chuẩn bị liên kết xuất",
       "mode": "Chế độ",
       "no_index_html": "Không có index.html ở thư mục gốc",
-      "no_index_html_description": "Thư mục này không chứa tệp index.html ở cấp gốc, nhưng tất cả liên kết tài nguyên vẫn có sẵn bên dưới.",
+      "no_index_html_description": "Thư mục này không có tệp index.html ở cấp gốc; hãy sao chép từng liên kết tệp bên dưới.",
       "revoke_and_replace": "Thu hồi và tạo lại liên kết",
-      "rotating_badge": "Xoay vòng",
-      "rotating_mode": "Liên kết ứng dụng ổn định với khả năng tự làm mới signed URL",
+      "rotating_mode": "Liên kết công khai tự làm mới",
       "title": "Xuất liên kết gói",
-      "webgl_ready": "Xuất gói WebGL"
+      "webgl_ready": "Tóm tắt gói"
     },
     "file_count_hint": "Số tệp hiện đang hiển thị trong thư mục này",
     "file_count_label": "Tệp đang hiển thị",

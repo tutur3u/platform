@@ -4202,7 +4202,7 @@
       "title_one": "Delete “{name}” forever?"
     },
     "denied": {
-      "description": "You need the Manage Drive permission to see and change files in this workspace. Ask a workspace admin for access.",
+      "description": "Ask a workspace admin for the Manage Drive permission to view or change files here.",
       "title": "You don’t have access to Drive",
       "write_reason": "Requires the Manage Drive permission."
     },
@@ -4319,8 +4319,8 @@
       "link": "Download link",
       "migration_notice": "Links created before 5 Dec 2026 stop working after the storage move. Create a new link.",
       "title": "Share {name}",
-      "works_for_hours": "{count, plural, one {The link works for # hour.} other {The link works for # hours.}} It can’t be turned off sooner.",
-      "works_for_minutes": "{count, plural, one {The link works for # minute.} other {The link works for # minutes.}} It can’t be turned off sooner.",
+      "works_for_hours": "{count, plural, one {The link works for # hour and can’t be turned off sooner.} other {The link works for # hours and can’t be turned off sooner.}}",
+      "works_for_minutes": "{count, plural, one {The link works for # minute and can’t be turned off sooner.} other {The link works for # minutes and can’t be turned off sooner.}}",
       "works_short": "The link works for a short time and can’t be turned off sooner."
     },
     "states": {
@@ -14001,10 +14001,10 @@
       "button": "Export Links",
       "copy_asset_map": "Copy asset map",
       "copy_manifest": "Copy loader manifest",
-      "description": "Export rotating public links for \"{folderName}\". These stable URLs keep relative asset paths intact and mint fresh provider URLs on demand.",
+      "description": "Public links for “{folderName}” that stay valid as underlying file URLs refresh.",
       "entry": "Entry",
       "entry_url": "Entry URL",
-      "entry_url_description": "Use this stable URL for your WebGL loader or external viewer.",
+      "entry_url_description": "Open or embed the folder entry file with this link.",
       "folder_action": "Export Links",
       "links": {
         "asset_copied": "Asset link copied",
@@ -14017,16 +14017,15 @@
       },
       "load_failed": "Failed to load export links",
       "loader_manifest": "Loader Manifest",
-      "loader_manifest_description": "This manifest keeps a stable entry URL plus a relative asset map that can be copied directly into a Next.js or WebGL loader integration.",
-      "loading": "Preparing rotating export links...",
+      "loader_manifest_description": "JSON manifest with the entry URL and relative links for every file in this folder.",
+      "loading": "Preparing export links",
       "mode": "Mode",
       "no_index_html": "No root index.html",
-      "no_index_html_description": "This folder does not contain an index.html file at its root, but all asset links are still available below.",
+      "no_index_html_description": "This folder has no root index.html file, so copy individual file links below.",
       "revoke_and_replace": "Revoke and replace links",
-      "rotating_badge": "Rotating",
-      "rotating_mode": "Stable app links with automatic signed URL refresh",
+      "rotating_mode": "Auto-refreshing public links",
       "title": "Export Package Links",
-      "webgl_ready": "WebGL Package Export"
+      "webgl_ready": "Package summary"
     },
     "file_count_hint": "Files currently visible in this directory",
     "file_count_label": "Visible files",

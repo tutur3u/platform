@@ -45,35 +45,29 @@ export function ExportSummaryCard({
     <Card className="overflow-hidden border-border">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Globe className="h-4 w-4 text-dynamic-blue" />
+          <Globe aria-hidden className="size-4 text-muted-foreground" />
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
-              {assetsLabel}
-            </div>
-            <div className="mt-2 font-semibold text-2xl">{assetCount}</div>
+        <dl className="divide-y divide-border rounded-xl bg-muted/50 px-4">
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="text-muted-foreground text-sm">{assetsLabel}</dt>
+            <dd className="font-medium text-sm tabular-nums">{assetCount}</dd>
           </div>
-          <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
-              {entryTitle}
-            </div>
-            <div className="mt-2 font-semibold text-sm">
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="text-muted-foreground text-sm">{entryTitle}</dt>
+            <dd className="truncate font-medium text-sm">
               {entryLabel || noIndexHtmlLabel}
-            </div>
+            </dd>
           </div>
-          <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <div className="text-muted-foreground text-xs uppercase tracking-[0.12em]">
-              {modeTitle}
-            </div>
-            <div className="mt-2 font-semibold text-sm">{modeLabel}</div>
+          <div className="flex items-center justify-between gap-4 py-3">
+            <dt className="text-muted-foreground text-sm">{modeTitle}</dt>
+            <dd className="text-right font-medium text-sm">{modeLabel}</dd>
           </div>
-        </div>
+        </dl>
 
-        <div className="rounded-2xl border border-border bg-background p-4">
+        <div className="rounded-xl border border-border bg-background p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <div className="font-medium text-sm">{entryUrlTitle}</div>
