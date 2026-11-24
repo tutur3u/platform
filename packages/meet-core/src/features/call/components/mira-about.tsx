@@ -8,7 +8,10 @@ import {
 } from '@tuturuuu/ui/collapsible';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { MiraConsentInfoContent } from '../../live-assistant/mira-consent-box';
+import {
+  MiraConsentInfoContent,
+  type MiraNoticeMode,
+} from '../../live-assistant/mira-consent-box';
 import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 
 /**
@@ -16,7 +19,14 @@ import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
  * data, retention, readers, the privacy links, and the way to report someone
  * under 18 (`children`).
  */
-export function MiraAbout({ children }: { children?: ReactNode }) {
+export function MiraAbout({
+  mode = 'room',
+  children,
+}: {
+  /** The meeting's notice, the one the participant's choice is hashed over. */
+  mode?: MiraNoticeMode;
+  children?: ReactNode;
+}) {
   const t = useTranslations('meet.mira_consent');
   return (
     <Collapsible className="border-t pt-2 first:border-t-0 first:pt-0">
@@ -30,7 +40,7 @@ export function MiraAbout({ children }: { children?: ReactNode }) {
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 pt-2">
         <MiraAdultNotice />
-        <MiraConsentInfoContent />
+        <MiraConsentInfoContent mode={mode} />
         {children}
       </CollapsibleContent>
     </Collapsible>

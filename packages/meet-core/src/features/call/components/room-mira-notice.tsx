@@ -116,7 +116,7 @@ export function RoomMiraNotice({
       >
         {privateList}
         {privateEntry}
-        <MiraAbout />
+        <MiraAbout mode={mira.noticeMode} />
       </RoomMiraChip>
     );
   }
@@ -135,7 +135,7 @@ export function RoomMiraNotice({
         <HostAcceptance mira={mira} />
         {privateList}
         {privateEntry}
-        <MiraAbout />
+        <MiraAbout mode={mira.noticeMode} />
       </RoomMiraChip>
     );
   const state: RoomMiraChipState = data.pausing
@@ -191,7 +191,7 @@ export function RoomMiraNotice({
           {t('host_turn_off')}
         </Button>
       )}
-      <MiraAbout>
+      <MiraAbout mode={mira.noticeMode}>
         <ReportMinor mira={mira} />
       </MiraAbout>
     </RoomMiraChip>
