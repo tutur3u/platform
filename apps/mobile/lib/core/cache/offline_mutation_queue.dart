@@ -136,7 +136,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
     await _store.init();
     if (_disposed) return;
     // Backfill legacy queued creates once, not on each dependency scan.
-    for (final record in await _store.listPendingMutations()) {
+    for (final record in await _withoutQueuedSecretWrites()) {
       if (_disposed) return;
       await _registerInventoryProvenance(record);
     }

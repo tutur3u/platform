@@ -6,6 +6,7 @@ import {
   WORKSPACE_SECRETS_DIRECT_READERS,
 } from './__tests__/workspace-secret-readers';
 import {
+  extractSqlSecretNames,
   filterWorkspaceSecretScanMatches,
   loadWorkspaceSecretScanSources,
   WORKSPACE_SECRETS_TABLE_PATTERN,
@@ -23,6 +24,14 @@ import {
 
 const REPO_ROOT = resolve(__dirname, '../../..');
 
+/**
+ * Pinned allowlist sizes. The lists may only shrink: lowering a number is
+ * expected, raising one means a new plaintext reader and needs a security
+ * review.
+ */
+const MAX_DIRECT_READERS = 68;
+const MAX_CREDENTIAL_REFERENCES = 28;
+
 describe('workspace secret policy', () => {
   it.each([
     ['ENABLE_CHAT', 'config', 'boolean'],
@@ -36,6 +45,14 @@ describe('workspace secret policy', () => {
     ['TUTURUUU_CLI_ACCESS_TTL_SECONDS', 'config', 'number'],
     ['EXTERNAL_APP_REGISTRY:cms:origins', 'config', 'string'],
     ['AI_AGENT_REGISTRY:support:meta', 'config', 'string'],
+    ['AI_AGENT_REGISTRY:support:instructions', 'config', 'string'],
+    ['AI_AGENT_REGISTRY:support:instructions:3', 'config', 'string'],
+    ['AI_AGENT_REGISTRY:support:channel:main:meta', 'config', 'string'],
+    ['AI_AGENT_IDENTITY:ws-1:zalo:acct-1:user-1', 'config', 'string'],
+    ['EXTERNAL_APP_REGISTRY:cms:allowedScopes', 'config', 'string'],
+    ['EXTERNAL_APP_REGISTRY:cms:secretLastFour', 'config', 'string'],
+    ['EXTERNAL_PROJECT_ENABLED', 'config', 'boolean'],
+    ['EXTERNAL_PROJECT_CANONICAL_ID', 'config', 'string'],
   ] as const)('classifies %s as %s', (name, tier, type) => {
     expect(getWorkspaceSecretPolicy(name)).toEqual({
       clientVisible: true,
@@ -48,6 +65,14 @@ describe('workspace secret policy', () => {
     ...WORKSPACE_CREDENTIAL_SECRET_NAMES,
     'AI_AGENT_REGISTRY:support:channel:main:secret:botToken',
     'EXTERNAL_APP_REGISTRY:cms:secretHash',
+    // Registry subkeys and names not on an allowlist default to credential.
+    'EXTERNAL_APP_REGISTRY:cms:signingKey',
+    'EXTERNAL_APP_REGISTRY:cms',
+    'AI_AGENT_REGISTRY:support:apiKey',
+    'AI_AGENT_REGISTRY:support:instructions:x',
+    'AI_AGENT_REGISTRY:support:channel:main:token',
+    'AI_AGENT_IDENTITY:ws-1:zalo:acct-1',
+    'EXTERNAL_PROJECT_WEBHOOK_SECRET',
     'SOME_UNREGISTERED_NAME',
     'constructor',
     '__proto__',
@@ -103,6 +128,18 @@ describe('workspace secret policy', () => {
   });
 });
 
+describe('SQL secret name extraction', () => {
+  it('reads every literal in =, IN and ANY(ARRAY[...]) comparisons', () => {
+    expect(
+      extractSqlSecretNames(`
+        where s.name = 'ENABLE_A' and name IN ('DISABLE_B', 'mobile_x:v1')
+          or name = any (array['ENABLE_C', 'X_TOKEN'])
+          and current_user in ('anon', 'authenticated')
+      `).sort()
+    ).toEqual(['DISABLE_B', 'ENABLE_A', 'ENABLE_C', 'X_TOKEN', 'mobile_x:v1']);
+  });
+});
+
 describe('workspace secret registry scan', () => {
   let sources: WorkspaceSecretScanSource[] = [];
 
@@ -116,6 +153,9 @@ describe('workspace secret registry scan', () => {
       WORKSPACE_SECRETS_TABLE_PATTERN
     );
     expect(readers).toEqual([...WORKSPACE_SECRETS_DIRECT_READERS].sort());
+    expect(WORKSPACE_SECRETS_DIRECT_READERS.length).toBeLessThanOrEqual(
+      MAX_DIRECT_READERS
+    );
   });
 
   it('references credential-tier names only from allowed server paths', () => {
@@ -124,6 +164,9 @@ describe('workspace secret registry scan', () => {
         ...WORKSPACE_CREDENTIAL_SECRET_NAMES,
         ...WORKSPACE_SERVER_ONLY_CONFIG_SECRET_NAMES,
         'channelSecretKey',
+        // The external app registry field, as a quoted key literal.
+        '[\'"`]secretHash[\'"`]',
+        ':channel:[^:]+:secret:',
       ].join('|'),
       'u'
     );
@@ -134,6 +177,9 @@ describe('workspace secret registry scan', () => {
     expect(references).toEqual(
       [...WORKSPACE_CREDENTIAL_SECRET_REFERENCES].sort()
     );
+    expect(WORKSPACE_CREDENTIAL_SECRET_REFERENCES.length).toBeLessThanOrEqual(
+      MAX_CREDENTIAL_REFERENCES
+    );
   });
 
   it('reads only config-tier names in SQL functions', () => {
@@ -143,11 +189,7 @@ describe('workspace secret registry scan', () => {
       if (!file.endsWith('.sql')) continue;
       const sql = readFileSync(join(migrationsDir, file), 'utf8');
       if (!sql.includes('workspace_secrets')) continue;
-      for (const match of sql.matchAll(
-        /\bname\s*(?:=|in\s*\()\s*'([A-Z][A-Z0-9_:]+)'/gu
-      )) {
-        if (match[1]) names.add(match[1]);
-      }
+      for (const name of extractSqlSecretNames(sql)) names.add(name);
     }
 
     expect(names.size).toBeGreaterThan(0);

@@ -419,7 +419,9 @@ they fail offline rather than queueing a value. Delete carries no value and
 still queues in the encrypted settings outbox; pending deletes are dimmed and
 dashed. Credential rows arrive masked (`value_set`, `value_masked`), show only
 whether a value is stored, and an edit left blank saves with `keepValue`.
-Ambiguous secret writes stop for manual review. Storage migration remains an online
+When the queue starts, it discards any secret create or update that an older
+build queued, with its value, unsent; a queued delete of a secret that only
+existed offline goes with it. The user re-enters such an edit online. Storage migration remains an online
 operational command and is never represented as a completed offline change.
 Documents lists and details use scoped snapshots. Document create, update, and
 delete enter the encrypted outbox when offline, and list rows expose their

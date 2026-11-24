@@ -85,13 +85,16 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await auth.sbAdmin
+  // A kept value is renamed only if the row still has the name the guard
+  // checked, so a concurrent rename cannot expose a hidden value.
+  const keepsValue = update.value === undefined;
+  let query = auth.sbAdmin
     .from('workspace_secrets')
     .update(update)
     .eq('id', secretId)
-    .eq('ws_id', wsId)
-    .select('id')
-    .maybeSingle();
+    .eq('ws_id', wsId);
+  if (keepsValue) query = query.eq('name', existingSecret.name);
+  const { data, error } = await query.select('id').maybeSingle();
 
   if (error) {
     console.error('Error updating infrastructure workspace secret:', error);
@@ -101,10 +104,15 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
   if (!data) {
-    return NextResponse.json(
-      { message: 'Workspace secret not found' },
-      { status: 404 }
-    );
+    return keepsValue
+      ? NextResponse.json(
+          { message: 'Workspace secret changed; reload and try again.' },
+          { status: 409 }
+        )
+      : NextResponse.json(
+          { message: 'Workspace secret not found' },
+          { status: 404 }
+        );
   }
 
   return NextResponse.json({ message: 'success' });

@@ -95,9 +95,39 @@ export async function PUT(req: Request, { params }: Params) {
   const db = touchesManagedCron
     ? await createManagedCronSecretAdminClient()
     : access.db;
+  if (value === undefined) {
+    // The rename guard checked `existingSecret.name`; matching it here makes a
+    // concurrent rename fail instead of moving a hidden value under a visible
+    // name.
+    const { data: kept, error } = await db
+      .from('workspace_secrets')
+      .update({ name })
+      .eq('id', secretId)
+      .eq('ws_id', access.resolvedWsId)
+      .eq('name', existingSecret.name)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error updating workspace secret', error);
+      return NextResponse.json(
+        { message: 'Error updating workspace API config' },
+        { status: 500 }
+      );
+    }
+    if (!kept) {
+      return NextResponse.json(
+        { message: 'Workspace secret changed; reload and try again.' },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json({ message: 'success' });
+  }
+
   const { error } = await db
     .from('workspace_secrets')
-    .update(value === undefined ? { name } : { name, value })
+    .update({ name, value })
     .eq('id', secretId)
     .eq('ws_id', access.resolvedWsId);
 

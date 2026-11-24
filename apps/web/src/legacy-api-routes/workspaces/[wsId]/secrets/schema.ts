@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const workspaceSecretWriteSchema = z
   .object({
-    name: z.string().min(1),
+    name: z.string().trim().min(1),
     value: z.string().min(1),
   })
   .strict();
@@ -16,7 +16,7 @@ export const workspaceSecretUpdateSchema = z.union([
   z
     .object({
       keepValue: z.literal(true),
-      name: z.string().min(1),
+      name: z.string().trim().min(1),
     })
     .strict(),
 ]);

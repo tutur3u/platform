@@ -80,6 +80,8 @@ export const WORKSPACE_SECRETS_DIRECT_READERS = [
  * storage credential names as display labels for those flags.
  */
 export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
+  'apps/admin/src/lib/app-coordination/external-apps-utils.ts',
+  'apps/admin/src/lib/app-coordination/external-apps.ts',
   'apps/admin/src/app/api/v1/infrastructure/ai-agents/discord-gateway/watcher-config/route.ts',
   'apps/admin/src/lib/ai-agents/agent-registry.ts',
   'apps/admin/src/lib/ai-agents/agent-save.ts',
@@ -102,4 +104,8 @@ export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
   'packages/storage-core/src/lib/workspace-storage-config.ts',
   'packages/storage-core/src/lib/workspace-storage-provider.ts',
   'packages/utils/src/workspace-secret-policy.ts',
+  'apps/web/src/lib/app-coordination/external-apps-utils.ts',
+  'apps/web/src/lib/app-coordination/external-apps.ts',
+  'apps/workspace/src/lib/app-coordination/external-apps-utils.ts',
+  'apps/workspace/src/lib/app-coordination/external-apps.ts',
 ];

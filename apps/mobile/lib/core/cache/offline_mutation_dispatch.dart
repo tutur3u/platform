@@ -1,6 +1,41 @@
 part of 'offline_mutation_queue.dart';
 
 extension OfflineMutationDispatch on OfflineMutationQueue {
+  /// Pending records after dropping queued workspace secret creates and
+  /// updates. They carry values, which never stay in the persistent queue, so
+  /// entries left by older builds are discarded unsent. A queued delete of a
+  /// secret that only existed offline is dropped with its create.
+  Future<List<PendingMutationRecord>> _withoutQueuedSecretWrites() async {
+    final kept = <PendingMutationRecord>[];
+    final droppedLocalIds = <String>{};
+    final records = await _store.listPendingMutations();
+    for (final record in records) {
+      if (record.feature == 'settings' &&
+          (record.method == 'WORKSPACE_SECRET_CREATE' ||
+              (record.method == 'PUT' &&
+                  _workspaceSecretPath.hasMatch(record.path)))) {
+        await _store.deletePendingMutation(record.id);
+        if (record.method == 'WORKSPACE_SECRET_CREATE' &&
+            record.entityId != null) {
+          droppedLocalIds.add(record.entityId!);
+        }
+      } else {
+        kept.add(record);
+      }
+    }
+    if (droppedLocalIds.isEmpty) return kept;
+    final remaining = <PendingMutationRecord>[];
+    for (final record in kept) {
+      if (record.feature == 'settings' &&
+          droppedLocalIds.contains(record.entityId)) {
+        await _store.deletePendingMutation(record.id);
+      } else {
+        remaining.add(record);
+      }
+    }
+    return remaining;
+  }
+
   Future<void> _dispatchHttpMutation(PendingMutationRecord record) async {
     final borrowed = _foregroundInventoryClients[record.id];
     final api =
@@ -195,39 +230,6 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
             }
           } finally {
             httpClient.close();
-          }
-        case 'WORKSPACE_SECRET_CREATE':
-          if (workspaceId == null) {
-            throw StateError('Secret create has no workspace');
-          }
-          final secretName = resolved.payload?['name'] as String?;
-          if (secretName == null || secretName.isEmpty) {
-            throw StateError('Secret create has no name');
-          }
-          await api.postJson(resolved.path, resolved.payload);
-          final secrets = await api.getJsonList(
-            WorkspaceSettingsEndpoints.secrets(workspaceId),
-          );
-          final matches = secrets
-              .whereType<Map<String, dynamic>>()
-              .where(
-                (item) => item['name'] == secretName && item['id'] is String,
-              )
-              .toList(growable: false);
-          if (matches.length != 1) {
-            throw const ApiException(
-              message: 'Secret ID needs review',
-              statusCode: 409,
-            );
-          }
-          if (userId != null && record.entityId != null) {
-            await _store.saveLocalIdMapping(
-              userId: userId,
-              workspaceId: workspaceId,
-              feature: record.feature,
-              localId: record.entityId!,
-              serverId: matches.single['id'] as String,
-            );
           }
         case 'CHAT_UPLOAD':
           if (workspaceId == null) {
@@ -435,3 +437,5 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
     }
   }
 }
+
+final _workspaceSecretPath = RegExp(r'^/api/workspaces/[^/]+/secrets/[^/]+$');

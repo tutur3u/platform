@@ -584,22 +584,28 @@ row controls, and database-client selection.
 ### Secret value visibility
 
 `@tuturuuu/utils/workspace-secret-policy` assigns every secret name a tier.
-Flags and configuration (`ENABLE_*`, `DISABLE_*`, limits, `DRIVE_STORAGE_PROVIDER`,
-registry metadata) are `config`. Keys, tokens, webhook secrets and every
-unregistered name are `credential`.
+Flags and configuration (`ENABLE_*`, `DISABLE_*`, limits, `DRIVE_STORAGE_PROVIDER`)
+are `config`. AI agent and external app registry rows are `config` only for an
+allowlist of exact field shapes (agent `meta` and `instructions`, channel
+`meta`, identity links, and the listed external app fields). Keys, tokens,
+webhook secrets, `secretHash`, any other registry field and every unregistered
+name are `credential`.
 
 | Surface | Rule |
 | --- | --- |
 | Web, workspace and admin secrets GET | Credential values, and the credential-grade `EXTERNAL_APP_MANAGED_CRON_TOKEN`, are returned as `value: null` with `value_masked: true`; `value_set` says whether one is stored. |
 | Secrets page (web and workspace) | Rows reach client components already masked. Masked rows show **Set (hidden)**. |
-| Secrets PUT | `{ name, keepValue: true }` keeps the stored value. A hidden value cannot move under a name whose values are visible without a new value (400). |
+| Secrets PUT | `{ name, keepValue: true }` keeps the stored value. A hidden value cannot move under a name whose values are visible without a new value (400). The rename applies only while the row still has the name that was checked; a concurrent rename returns 409. Names are trimmed. |
 | Mobile | Secret values are never persisted on the device; see [mobile workspace tools](/platform/features/mobile-workspace-tools). |
 
 Server code that needs a credential reads it directly through its existing
 server path (storage-core, AI agent and external-app stores, managed cron).
 The registry scan in `workspace-secret-policy.test.ts` fails on a new direct
-`workspace_secrets` reader, on a credential name referenced outside the listed
-server paths, and on a SQL function that reads a non-config name.
+`workspace_secrets` reader (quoted table names and PostgREST embeds), on a
+credential name, `secretHash` literal or channel secret key referenced
+outside the listed server paths, and on a SQL comparison (`=`, `IN`,
+`ANY (ARRAY[...])`, any case) against a non-config name. Both allowlists have
+pinned maximum sizes and may only shrink.
 Encrypting the stored values is designed separately.
 
 Regression coverage: `workspace-secret-policy.test.ts`, the web and admin

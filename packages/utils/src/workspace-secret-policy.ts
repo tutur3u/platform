@@ -67,6 +67,8 @@ const CONFIG_EXACT = new Map<string, WorkspaceSecretValueType>(
     DRIVE_R2_BUCKET: 'string',
     DRIVE_R2_ENDPOINT: 'string',
     DRIVE_STORAGE_PROVIDER: 'string',
+    EXTERNAL_PROJECT_CANONICAL_ID: 'string',
+    EXTERNAL_PROJECT_ENABLED: 'boolean',
     FINANCE_SHOW_INVOICES: 'boolean',
     MANAGED_CRON_ENABLED: 'boolean',
     MOBILE_HIDDEN_MODULES: 'json',
@@ -87,25 +89,51 @@ const CONFIG_PREFIXES: ReadonlyArray<
   ['RATE_LIMIT_', 'number'],
   ['EMAIL_RATE_LIMIT_', 'number'],
   ['INVITE_RATE_LIMIT_', 'number'],
-  ['EXTERNAL_PROJECT_', 'string'],
 ];
 
-const AI_AGENT_REGISTRY_PREFIX = 'AI_AGENT_REGISTRY:';
-const AI_AGENT_IDENTITY_PREFIX = 'AI_AGENT_IDENTITY:';
-const EXTERNAL_APP_REGISTRY_PREFIX = 'EXTERNAL_APP_REGISTRY:';
-const EXTERNAL_APP_CREDENTIAL_FIELDS = new Set(['secretHash']);
 const SESSION_TTL_PATTERN = /^TUTURUUU_[A-Z0-9_]+_SECONDS$/u;
 
-function isAiAgentChannelSecret(name: string) {
-  // AI_AGENT_REGISTRY:<agent>:channel:<channel>:secret:<field>
-  const parts = name.split(':');
-  return parts[2] === 'channel' && parts[4] === 'secret';
-}
+/**
+ * Registry rows hold one field per name. Only these exact shapes are config;
+ * every other registry name, including channel secrets, a secret hash or a
+ * field added later, is credential until it is listed here.
+ */
+const SEGMENT = '[^:]+';
+const REGISTRY_CONFIG_PATTERNS: readonly RegExp[] = [
+  // AI_AGENT_REGISTRY:<agent>:meta | :instructions | :instructions:<n>
+  new RegExp(
+    `^AI_AGENT_REGISTRY:${SEGMENT}:(?:meta|instructions(?::\\d+)?)$`,
+    'u'
+  ),
+  // AI_AGENT_REGISTRY:<agent>:channel:<channel>:meta
+  new RegExp(`^AI_AGENT_REGISTRY:${SEGMENT}:channel:${SEGMENT}:meta$`, 'u'),
+  // AI_AGENT_IDENTITY:<workspace>:zalo:<account>:<user> -> platform user id
+  new RegExp(`^AI_AGENT_IDENTITY:${SEGMENT}:zalo:${SEGMENT}:${SEGMENT}$`, 'u'),
+];
 
-function isExternalAppCredentialField(name: string) {
-  const field = name.split(':')[2];
-  return field ? EXTERNAL_APP_CREDENTIAL_FIELDS.has(field) : false;
-}
+/** Non-secret external app registry fields; `secretHash` stays credential. */
+export const EXTERNAL_APP_REGISTRY_CONFIG_FIELDS = [
+  'allowedScopes',
+  'allowedWorkspaceIds',
+  'callbackPaths',
+  'createdAt',
+  'createdBy',
+  'displayName',
+  'enabled',
+  'logoUrl',
+  'maxBearerTtlSeconds',
+  'origins',
+  'requirePkce',
+  'secretIssuedAt',
+  'secretLastFour',
+  'updatedAt',
+  'updatedBy',
+] as const;
+
+const EXTERNAL_APP_REGISTRY_CONFIG_PATTERN = new RegExp(
+  `^EXTERNAL_APP_REGISTRY:${SEGMENT}:(?:${EXTERNAL_APP_REGISTRY_CONFIG_FIELDS.join('|')})$`,
+  'u'
+);
 
 const RULES: PolicyRule[] = [
   (name) =>
@@ -119,18 +147,8 @@ const RULES: PolicyRule[] = [
       ? { clientVisible: false, tier: 'config', type: 'string' }
       : null,
   (name) =>
-    name.startsWith(AI_AGENT_REGISTRY_PREFIX) && isAiAgentChannelSecret(name)
-      ? CREDENTIAL
-      : null,
-  (name) =>
-    name.startsWith(EXTERNAL_APP_REGISTRY_PREFIX) &&
-    isExternalAppCredentialField(name)
-      ? CREDENTIAL
-      : null,
-  (name) =>
-    name.startsWith(AI_AGENT_REGISTRY_PREFIX) ||
-    name.startsWith(AI_AGENT_IDENTITY_PREFIX) ||
-    name.startsWith(EXTERNAL_APP_REGISTRY_PREFIX)
+    REGISTRY_CONFIG_PATTERNS.some((pattern) => pattern.test(name)) ||
+    EXTERNAL_APP_REGISTRY_CONFIG_PATTERN.test(name)
       ? CONFIG('string')
       : null,
   (name) => {

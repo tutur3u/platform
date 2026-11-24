@@ -26,7 +26,7 @@ const GENERATED_FILES = new Set(['packages/types/src/supabase.ts']);
 
 /** Direct access to the table: `.from('workspace_secrets')` or an embed. */
 export const WORKSPACE_SECRETS_TABLE_PATTERN =
-  /['"`]workspace_secrets['"`]|workspace_secrets!inner/u;
+  /['"`]workspace_secrets['"`]|(?<![\w.])workspace_secrets\s*(?:!\w+)?\s*\(/u;
 
 function walk(root: string, dir: string, files: string[]) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -79,4 +79,25 @@ export function filterWorkspaceSecretScanMatches(
   return sources
     .filter(({ source }) => pattern.test(source))
     .map(({ file }) => file);
+}
+
+/**
+ * Secret names a SQL migration compares `name` against: `name = 'X'`,
+ * `name IN ('X', 'Y')` and `name = ANY (ARRAY['X', 'Y'])`, any case.
+ */
+export function extractSqlSecretNames(sql: string): string[] {
+  const names: string[] = [];
+  const literal = /'([A-Za-z0-9_:]+)'/gu;
+  const lists =
+    /\bname\s*(?:=\s*any\s*\(\s*array\s*\[([^\]]*)\]|in\s*\(([^)]*)\))/giu;
+  for (const match of sql.matchAll(lists)) {
+    const body = match[1] ?? match[2] ?? '';
+    for (const item of body.matchAll(literal)) {
+      if (item[1]) names.push(item[1]);
+    }
+  }
+  for (const match of sql.matchAll(/\bname\s*=\s*'([A-Za-z0-9_:]+)'/giu)) {
+    if (match[1]) names.push(match[1]);
+  }
+  return names;
 }

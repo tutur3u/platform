@@ -198,6 +198,25 @@ describe('PUT keepValue updates', () => {
     expect(mocks.update).toHaveBeenCalledWith({ name: 'LEGACY_R2_KEY' });
   });
 
+  it('renames only a row that still has the checked name', async () => {
+    setup('DRIVE_R2_SECRET_ACCESS_KEY');
+    await put({ keepValue: true, name: 'LEGACY_R2_KEY' });
+    expect(mocks.eq).toHaveBeenCalledWith('name', 'DRIVE_R2_SECRET_ACCESS_KEY');
+  });
+
+  it('returns 409 when the row was renamed concurrently', async () => {
+    setup('DRIVE_R2_SECRET_ACCESS_KEY');
+    mocks.maybeSingle.mockReset();
+    mocks.maybeSingle
+      .mockResolvedValueOnce({
+        data: { name: 'DRIVE_R2_SECRET_ACCESS_KEY' },
+        error: null,
+      })
+      .mockResolvedValue({ data: null, error: null });
+    const response = await put({ keepValue: true, name: 'LEGACY_R2_KEY' });
+    expect(response.status).toBe(409);
+  });
+
   it('refuses to move a hidden value under a client-visible name', async () => {
     setup('DRIVE_R2_SECRET_ACCESS_KEY');
     const response = await put({ keepValue: true, name: 'ENABLE_CHAT' });

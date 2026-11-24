@@ -94,9 +94,20 @@ describe('workspace secret item route', () => {
   });
 
   describe('keepValue updates', () => {
-    function setup(existingName: string) {
-      const eqWsMock = vi.fn().mockResolvedValue({ error: null });
-      const updateMock = vi.fn(() => ({ eq: () => ({ eq: eqWsMock }) }));
+    function setup(existingName: string, kept: unknown = { id: 'secret-1' }) {
+      const updateEqMock = vi.fn();
+      const keptMaybeSingle = vi
+        .fn()
+        .mockResolvedValue({ data: kept, error: null });
+      const updateChain = {
+        eq: updateEqMock,
+        select: vi.fn(() => ({ maybeSingle: keptMaybeSingle })),
+      };
+      updateEqMock.mockReturnValue(updateChain);
+      const updateMock = Object.assign(
+        vi.fn(() => updateChain),
+        { eqMock: updateEqMock }
+      );
       getWorkspaceSecretsAccessMock.mockResolvedValue({
         allowed: true,
         db: {
@@ -147,6 +158,35 @@ describe('workspace secret item route', () => {
       const response = await put({ keepValue: true, name: 'NEW_TOKEN' });
       expect(response.status).toBe(200);
       expect(updateMock).toHaveBeenCalledWith({ name: 'NEW_TOKEN' });
+    });
+
+    it('renames only a row that still has the checked name', async () => {
+      const updateMock = setup('DRIVE_R2_SECRET_ACCESS_KEY');
+      await put({ keepValue: true, name: 'LEGACY_R2_KEY' });
+      expect(updateMock.eqMock).toHaveBeenCalledWith(
+        'name',
+        'DRIVE_R2_SECRET_ACCESS_KEY'
+      );
+    });
+
+    it('returns 409 when the row was renamed concurrently', async () => {
+      // The guard saw a hidden name, but another request renamed the row
+      // before this update; the name predicate matches no row.
+      setup('DRIVE_R2_SECRET_ACCESS_KEY', null);
+      const response = await put({ keepValue: true, name: 'LEGACY_R2_KEY' });
+      expect(response.status).toBe(409);
+    });
+
+    it('trims names before checking and writing', async () => {
+      const updateMock = setup('DRIVE_R2_SECRET_ACCESS_KEY');
+      const response = await put({
+        keepValue: true,
+        name: '  DRIVE_R2_SECRET_ACCESS_KEY  ',
+      });
+      expect(response.status).toBe(200);
+      expect(updateMock).toHaveBeenCalledWith({
+        name: 'DRIVE_R2_SECRET_ACCESS_KEY',
+      });
     });
 
     it('refuses to move a hidden value under a client-visible name', async () => {
