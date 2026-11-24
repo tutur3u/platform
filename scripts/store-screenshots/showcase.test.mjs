@@ -34,17 +34,44 @@ function webp(width, height, { alpha = true, length = 64 } = {}) {
   return buffer;
 }
 
-/** An AVIF header: `ftypavif`, an `ispe` size box and an optional alpha URN. */
-function avif(width, height, { alpha = true, length = 160 } = {}) {
-  const buffer = Buffer.alloc(length);
-  buffer.writeUInt32BE(24, 0);
-  buffer.write('ftypavif', 4, 'latin1');
-  buffer.write('ispe', 40, 'latin1');
-  buffer.writeUInt32BE(width, 48);
-  buffer.writeUInt32BE(height, 52);
-  if (alpha)
-    buffer.write('urn:mpeg:mpegB:cicp:systems:auxiliary:alpha', 80, 'latin1');
-  return buffer;
+const isoBox = (type, ...parts) => {
+  const body = Buffer.concat(parts);
+  const header = Buffer.alloc(8);
+  header.writeUInt32BE(8 + body.length, 0);
+  header.write(type, 4, 'latin1');
+  return Buffer.concat([header, body]);
+};
+
+const fullBoxHeader = Buffer.alloc(4);
+
+/**
+ * An AVIF container: `ftyp`, then meta > iprp > ipco holding the `ispe` size
+ * box and an optional `auxC` alpha URN, then an `mdat` padded to [length].
+ */
+function avif(width, height, { alpha = true, length = 160, mdat } = {}) {
+  const size = Buffer.alloc(8);
+  size.writeUInt32BE(width, 0);
+  size.writeUInt32BE(height, 4);
+  const properties = [isoBox('ispe', fullBoxHeader, size)];
+  if (alpha) {
+    properties.push(
+      isoBox(
+        'auxC',
+        fullBoxHeader,
+        Buffer.from('urn:mpeg:mpegB:cicp:systems:auxiliary:alpha\0', 'latin1')
+      )
+    );
+  }
+  const head = Buffer.concat([
+    isoBox('ftyp', Buffer.from('avif\0\0\0\0avifmif1', 'latin1')),
+    isoBox(
+      'meta',
+      fullBoxHeader,
+      isoBox('iprp', isoBox('ipco', ...properties))
+    ),
+  ]);
+  const padding = Math.max(0, length - head.length - 8);
+  return Buffer.concat([head, isoBox('mdat', mdat ?? Buffer.alloc(padding))]);
 }
 
 function item(overrides = {}) {
@@ -88,6 +115,32 @@ test('reads AVIF size and alpha from the header', () => {
     alpha: true,
   });
   assert.equal(readImageInfo(avif(10, 10, { alpha: false })).alpha, false);
+});
+
+test('reads AVIF properties only from meta > iprp > ipco', () => {
+  // Image data that spells out an `ispe` box and the alpha URN is not a header.
+  const decoy = Buffer.concat([
+    Buffer.from('ispe', 'latin1'),
+    Buffer.alloc(4),
+    Buffer.from([0, 0, 0x27, 0x10, 0, 0, 0x27, 0x10]),
+    Buffer.from('auxiliary:alpha', 'latin1'),
+  ]);
+  assert.deepEqual(
+    readImageInfo(avif(613, 1279, { alpha: false, mdat: decoy })),
+    {
+      format: 'avif',
+      width: 613,
+      height: 1279,
+      channels: 3,
+      alpha: false,
+    }
+  );
+  // Without a meta box the size is unknown, even when the bytes are present.
+  const noMeta = Buffer.concat([
+    isoBox('ftyp', Buffer.from('avif\0\0\0\0avifmif1', 'latin1')),
+    isoBox('mdat', decoy, Buffer.alloc(32)),
+  ]);
+  assert.equal(readImageInfo(noMeta), null);
 });
 
 test('showcase devices keep to their long-edge caps and the brief', () => {

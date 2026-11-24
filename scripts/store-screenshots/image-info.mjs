@@ -46,16 +46,79 @@ export function readImageInfo(buffer) {
   return null;
 }
 
-// AVIF is an ISO base media file: the `ispe` box holds the image size, and an
-// alpha auxiliary image is declared with the `auxiliary:alpha` URN.
+// AVIF is an ISO base media file. The image size is the `ispe` box and an alpha
+// auxiliary image is declared with the `auxiliary:alpha` URN in an `auxC` box;
+// both live in meta > iprp > ipco, so a stray byte match elsewhere (in the
+// image data, for one) is never read as a header.
+const AVIF_PROPERTY_PATH = [
+  { type: 'meta', skip: 4 },
+  { type: 'iprp', skip: 0 },
+  { type: 'ipco', skip: 0 },
+];
+
+function* isoBoxes(buffer, start, end) {
+  let at = start;
+  while (at + 8 <= end) {
+    let size = buffer.readUInt32BE(at);
+    let header = 8;
+    if (size === 1) {
+      if (at + 16 > end) return;
+      size = Number(buffer.readBigUInt64BE(at + 8));
+      header = 16;
+    } else if (size === 0) {
+      size = end - at;
+    }
+    if (size < header || at + size > end) return;
+    yield {
+      type: buffer.toString('latin1', at + 4, at + 8),
+      body: at + header,
+      end: at + size,
+    };
+    at += size;
+  }
+}
+
+function findAvifProperties(buffer) {
+  let range = { body: 0, end: buffer.length };
+  for (const { type, skip } of AVIF_PROPERTY_PATH) {
+    let next = null;
+    for (const box of isoBoxes(buffer, range.body, range.end)) {
+      if (box.type === type) {
+        next = { body: box.body + skip, end: box.end };
+        break;
+      }
+    }
+    if (!next) return null;
+    range = next;
+  }
+  return isoBoxes(buffer, range.body, range.end);
+}
+
 function readAvifInfo(buffer) {
-  const at = buffer.indexOf('ispe', 0, 'latin1');
-  if (at < 0 || at + 16 > buffer.length) return null;
-  const alpha = buffer.includes('auxiliary:alpha', 0, 'latin1');
+  const properties = findAvifProperties(buffer);
+  if (!properties) return null;
+  let size = null;
+  let alpha = false;
+  for (const box of properties) {
+    // `ispe` is a full box: 4 bytes of version and flags, then width and height.
+    if (box.type === 'ispe' && !size && box.end - box.body >= 12) {
+      size = {
+        width: buffer.readUInt32BE(box.body + 4),
+        height: buffer.readUInt32BE(box.body + 8),
+      };
+    } else if (
+      box.type === 'auxC' &&
+      buffer
+        .subarray(box.body, box.end)
+        .includes('auxiliary:alpha', 0, 'latin1')
+    ) {
+      alpha = true;
+    }
+  }
+  if (!size) return null;
   return {
     format: 'avif',
-    width: buffer.readUInt32BE(at + 8),
-    height: buffer.readUInt32BE(at + 12),
+    ...size,
     channels: alpha ? 4 : 3,
     alpha,
   };
