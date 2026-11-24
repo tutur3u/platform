@@ -389,7 +389,7 @@ function CallShellContent({
       />
     );
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background [html[data-stage-fullscreen]_&>header]:hidden">
       <CallHeader
         meetingId={meetingId}
         accountId={accountId}

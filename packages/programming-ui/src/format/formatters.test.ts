@@ -1,5 +1,5 @@
 import { PLAYGROUND_LANGUAGES } from '@tuturuuu/types/primitives/playgrounds';
-import { playgroundTemplates } from '../../../utils/src/playground-templates';
+import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { beforeAll, describe, expect, it } from 'vitest';

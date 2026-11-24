@@ -3120,14 +3120,22 @@ Learn uses the same workbench without the meeting-only controls.
   editor only while it has something to say.
 - **Full screen.** The pane header has Maximize and Full screen even for a lone
   pane. Maximize makes the pane fill the stage; Full screen does that and asks
-  the browser for true full screen on the whole stage. While a pane is maximized
-  the participant tiles collapse into a small overlay in the corner (the tiles
-  stay mounted, so audio and video never restart) that can be hidden and shown
-  again. Esc, the toggle or Shift+Alt+Enter leave full screen and put the layout
-  back as it was before. Shift+Alt+Enter also enters it, from anywhere in the
-  stage, the editor included. Full screen is unavailable on phones, while
-  following someone, and in browsers without the Fullscreen API; Maximize
-  remains. Coverage: `stage-fullscreen.test.tsx` and `workbench-chrome.test.tsx`.
+  the browser to take the whole page full screen (the document, not a part of
+  it). The call header and the side panel (chat, participants) are hidden by CSS,
+  never unmounted. The call dock (microphone, camera, leave and the rest) stays
+  visible, and so do menus, selects, tooltips, dialogs and toasts, because they
+  are drawn on the page body, which a full-screen subtree would have hidden.
+  While a pane is maximized the participant tiles collapse into a small overlay
+  in the corner (the tiles stay mounted, so audio and video never restart) that
+  can be hidden and shown again. Esc, the toggle or Shift+Alt+Enter leave full
+  screen and put the layout back as it was before. A tile can take full screen
+  for itself while the stage is full screen; the stage's state is restored only
+  when the page leaves full screen. Shift+Alt+Enter also enters it, from anywhere
+  in the stage, the editor included, but not on key repeat or during text
+  composition. Full screen is unavailable on phones, while following someone, and
+  in browsers without the Fullscreen API, and it ends if the layout becomes
+  one of those; Maximize remains. Coverage: `stage-fullscreen.test.tsx` and
+  `workbench-chrome.test.tsx`.
 - **Format.** The toolbar's Format button, or Shift+Alt+F inside or outside
   the editor, formats the open file with the language's own formatter. Python
   uses Ruff, JavaScript and TypeScript Prettier, C and C++ clang-format (LLVM
@@ -3149,8 +3157,15 @@ Learn uses the same workbench without the meeting-only controls.
   214 KB), `prettier-plugin-java` Apache-2.0,
   `@wasm-fmt/ruff_fmt` MIT (WASM 495 KB), `@wasm-fmt/clang-format` MIT (WASM
   1.1 MB), `@wasm-fmt/gofmt` MIT (132 KB), `@wasm-fmt/shfmt` MIT (173 KB). The
-  WebAssembly formatters need `'wasm-unsafe-eval'` in `script-src` once the
-  Content Security Policy is enforced. Coverage: `format/formatters.test.ts`, `format/browser-safety.test.ts` (bundles
+  WebAssembly formatters (all but JavaScript and TypeScript; Prettier Java
+  parses with a WebAssembly tree-sitter) need `'wasm-unsafe-eval'` in
+  `script-src`, which Meet's enforced policy carries (see
+  [one-origin security](/platform/architecture/one-origin-security)). If the
+  policy blocks the compile, or a binary cannot be fetched, the person sees
+  "Format isn't available here" or a check-your-connection message, the real
+  error is logged to the console with `console.warn`, nothing else in the room
+  breaks and Format can be tried again. A load failure is only a failed fetch or
+  chunk load; a formatter that rejects the file reports its own name. Coverage: `format/formatters.test.ts`, `format/browser-safety.test.ts` (bundles
   every formatter module for the browser and fails on a Node built-in),
   `use-workbench-format.test.tsx`, `workbench-format-button.test.tsx`.
 - **Run.** Cmd+Enter on macOS and Ctrl+Enter elsewhere runs the playground, or

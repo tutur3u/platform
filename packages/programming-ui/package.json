@@ -13,6 +13,7 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
     "@types/react": "^19.2.18",
     "esbuild": "0.28.2",
     "jsdom": "^30.1.3",

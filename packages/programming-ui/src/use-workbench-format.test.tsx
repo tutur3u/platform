@@ -111,20 +111,99 @@ it('says so when the file is already formatted and leaves it alone', async () =>
   expect(text.toString()).toBe('let  a=1');
 });
 
-it('reports a formatter failure by name, and a load failure apart', async () => {
+it('reports a formatter failure by name, a load failure and a policy block apart', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   const { hook } = setup();
-  run.format.mockRejectedValueOnce(new Error('Unexpected token'));
+  const failures: [Error, string][] = [
+    [
+      new Error('Unexpected token'),
+      t.formatFailed.replace('{name}', 'Prettier'),
+    ],
+    // A TypeError is not a load failure unless it is a failed fetch.
+    [
+      new TypeError("Cannot read properties of undefined (reading 'x')"),
+      t.formatFailed.replace('{name}', 'Prettier'),
+    ],
+    [new TypeError('Failed to fetch'), t.formatLoadFailed],
+    [
+      new Error('Failed to fetch dynamically imported module: /_next/chunk.js'),
+      t.formatLoadFailed,
+    ],
+    [
+      Object.assign(new Error('Loading chunk 42 failed'), {
+        name: 'ChunkLoadError',
+      }),
+      t.formatLoadFailed,
+    ],
+    [
+      Object.assign(
+        new Error(
+          "WebAssembly.instantiateStreaming(): Compiling or instantiating WebAssembly module violates the following Content Security policy directive because 'unsafe-eval' is not an allowed source"
+        ),
+        { name: 'CompileError' }
+      ),
+      t.formatBlocked,
+    ],
+    [
+      Object.assign(
+        new Error(
+          'Aborted(CompileError: WebAssembly.instantiate(): violates the following Content Security Policy directive)'
+        ),
+        { name: 'RuntimeError' }
+      ),
+      t.formatBlocked,
+    ],
+    [
+      Object.assign(new Error('blocked'), { name: 'SecurityError' }),
+      t.formatBlocked,
+    ],
+  ];
+  for (const [error, message] of failures) {
+    toast.error.mockClear();
+    warn.mockClear();
+    run.format.mockRejectedValueOnce(error);
+    act(() => hook.result.current.format());
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(message));
+    // The original failure is logged, not swallowed.
+    expect(warn).toHaveBeenCalledWith('Format failed', error);
+  }
+  warn.mockRestore();
+});
+
+it('can format again after a blocked or failed attempt', async () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  const { text, hook } = setup();
+  run.format.mockRejectedValueOnce(
+    Object.assign(new Error('violates the following Content Security policy'), {
+      name: 'CompileError',
+    })
+  );
   act(() => hook.result.current.format());
   await waitFor(() =>
-    expect(toast.error).toHaveBeenCalledWith(
-      t.formatFailed.replace('{name}', 'Prettier')
-    )
+    expect(toast.error).toHaveBeenCalledWith(t.formatBlocked)
   );
-  run.format.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  await waitFor(() => expect(hook.result.current.pending).toBe(false));
+  run.format.mockResolvedValue('let a = 1;');
   act(() => hook.result.current.format());
-  await waitFor(() =>
-    expect(toast.error).toHaveBeenCalledWith(t.formatLoadFailed)
+  await waitFor(() => expect(text.toString()).toBe('let a = 1;'));
+});
+
+it('writes nothing if the file was replaced in the room while the formatter ran', async () => {
+  const { doc, hook } = setup();
+  let finish: (value: string) => void = () => undefined;
+  run.format.mockReturnValue(
+    new Promise<string>((resolve) => (finish = resolve))
   );
+  act(() => hook.result.current.format());
+  await waitFor(() => expect(hook.result.current.pending).toBe(true));
+  const replacement = new Y.Text('let  a=1');
+  act(() => doc.getMap<Y.Text>('files').set('main.js', replacement));
+  finish('let a = 1;\n');
+  await waitFor(() =>
+    expect(toast.error).toHaveBeenCalledWith(t.formatChanged)
+  );
+  // The new file is untouched; the formatted text is not written into it.
+  expect(replacement.toString()).toBe('let  a=1');
 });
 
 it('does nothing for a file without a formatter or for someone who cannot edit', () => {

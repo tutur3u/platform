@@ -1257,6 +1257,7 @@
     "format": "Định dạng",
     "formatting": "Đang định dạng…",
     "formatAlready": "Đã được định dạng",
+    "formatBlocked": "Không thể định dạng ở đây",
     "formatChanged": "Tệp đã thay đổi trong lúc định dạng. Hãy thử lại.",
     "formatFailed": "{name} không thể định dạng tệp này. Hãy sửa lỗi trong tệp rồi thử lại.",
     "formatLoadFailed": "Không tải được trình định dạng. Hãy kiểm tra kết nối rồi thử lại.",

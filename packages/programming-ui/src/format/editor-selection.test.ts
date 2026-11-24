@@ -3,7 +3,7 @@ import { selectionHandle } from './editor-selection';
 
 afterEach(() => vi.useRealTimers());
 
-function fakeEditor(initial: string) {
+function fakeEditor(initial: string, backwards = false) {
   let value = initial;
   const listeners = new Set<() => void>();
   const setSelection = vi.fn();
@@ -32,9 +32,10 @@ function fakeEditor(initial: string) {
   };
   const editor = {
     getModel: () => model,
+    // Columns 4 and 6 on line 2; a backwards selection has its caret at the start.
     getSelection: () => ({
-      getStartPosition: () => ({ lineNumber: 2, column: 4 }),
-      getEndPosition: () => ({ lineNumber: 2, column: 6 }),
+      getSelectionStart: () => ({ lineNumber: 2, column: backwards ? 6 : 4 }),
+      getPosition: () => ({ lineNumber: 2, column: backwards ? 4 : 6 }),
     }),
     setSelection,
     revealPositionInCenterIfOutsideViewport: vi.fn(),
@@ -59,6 +60,21 @@ it('reads the selection as offsets into the file', () => {
   expect(selectionHandle(editor).getSelection()).toEqual({
     anchor: 6,
     head: 8,
+  });
+});
+
+it('keeps the direction of a backwards selection', () => {
+  const { editor, setSelection } = fakeEditor('ab\nfoo()\n', true);
+  const handle = selectionHandle(editor);
+  const selection = handle.getSelection();
+  expect(selection).toEqual({ anchor: 8, head: 6 });
+  handle.setSelection(selection!, 'ab\nfoo()\n');
+  // The anchor stays at the end, the caret at the start.
+  expect(setSelection).toHaveBeenCalledWith({
+    selectionStartLineNumber: 2,
+    selectionStartColumn: 6,
+    positionLineNumber: 2,
+    positionColumn: 4,
   });
 });
 

@@ -14,8 +14,10 @@ export function selectionHandle(
       const selection = editor.getSelection();
       if (!model || !selection) return null;
       return {
-        anchor: model.getOffsetAt(selection.getStartPosition()),
-        head: model.getOffsetAt(selection.getEndPosition()),
+        // The anchor is where the selection began and the head is the caret, so
+        // a selection made backwards stays backwards.
+        anchor: model.getOffsetAt(selection.getSelectionStart()),
+        head: model.getOffsetAt(selection.getPosition()),
       };
     },
     setSelection({ anchor, head }, expected) {

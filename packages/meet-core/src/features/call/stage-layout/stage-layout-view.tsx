@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -97,7 +98,6 @@ export function StageLayoutView({
     [controller.layout, drag]
   );
   const containerRef = useRef<HTMLDivElement>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
   const [peopleHidden, setPeopleHidden] = useState(false);
   const [slots, setSlots] = useState<Record<string, HTMLElement | null>>({});
   const [switcher, setSwitcher] = useState(false);
@@ -132,11 +132,17 @@ export function StageLayoutView({
   // person leaves follow mode.
   const locked = controller.locked;
   const full = useStageFullscreen({
-    root: rootRef,
     maximizedId,
     maximize: controller.maximize,
   });
   const canFullscreen = full.supported && !phone && !locked;
+  // Following someone, or moving to a phone layout, ends a fullscreen that is
+  // already on: the arrangement is no longer ours to maximize.
+  const fullscreenExit = full.exit;
+  const fullscreenOn = full.fullscreen;
+  useEffect(() => {
+    if (fullscreenOn && !canFullscreen) fullscreenExit();
+  }, [fullscreenOn, canFullscreen, fullscreenExit]);
 
   const rectOf = (paneId: string) =>
     paneId === maximizedId ? FULL : (geometry.panes[paneId] ?? FULL);
@@ -151,6 +157,8 @@ export function StageLayoutView({
   // editor included, which is why it is read in the capture phase.
   const fullscreenKey = (event: KeyboardEvent) => {
     if (
+      event.repeat ||
+      event.nativeEvent.isComposing ||
       !canFullscreen ||
       !focusedPaneId ||
       event.key !== 'Enter' ||
@@ -188,13 +196,7 @@ export function StageLayoutView({
   };
 
   return (
-    <div
-      ref={rootRef}
-      className={cn(
-        'relative flex h-full min-h-0 min-w-0 flex-col gap-2',
-        full.fullscreen && 'bg-background p-2'
-      )}
-    >
+    <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-2">
       {stage != null && (
         <div
           aria-hidden={mode === 'pill' || overlayHidden || undefined}

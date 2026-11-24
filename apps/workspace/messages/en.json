@@ -15683,6 +15683,7 @@
     "format": "Format",
     "formatting": "Formatting…",
     "formatAlready": "Already formatted",
+    "formatBlocked": "Format isn't available here",
     "formatChanged": "The file changed while formatting. Try again.",
     "formatFailed": "{name} couldn't format this file. Fix its errors and try again.",
     "formatLoadFailed": "The formatter couldn't load. Check your connection and try again.",

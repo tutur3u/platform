@@ -10,9 +10,11 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { cn } from '@tuturuuu/utils/format';
 import { useActivityPane } from '../stage-layout/activity-pane-context';
 import { PhoneSheet } from '../phone/phone-sheet';
 import { usePhoneChrome } from '../phone/use-phone-chrome';
+import { HIDE_IN_STAGE_FULLSCREEN } from '../stage-layout/use-stage-fullscreen';
 import { CallResizeHandle } from './call-resize-handle';
 
 const DEFAULT_WIDTH = 360;
@@ -114,7 +116,10 @@ function SideCallPanel({
       id={panelId}
       aria-label={label}
       style={{ '--call-panel-width': `${width}px` } as CSSProperties}
-      className="relative flex max-h-[45dvh] min-h-0 w-full shrink-0 flex-col border-l bg-background md:max-h-none md:w-(--call-panel-width) md:max-w-[60vw]"
+      className={cn(
+        'relative flex max-h-[45dvh] min-h-0 w-full shrink-0 flex-col border-l bg-background md:max-h-none md:w-(--call-panel-width) md:max-w-[60vw]',
+        HIDE_IN_STAGE_FULLSCREEN
+      )}
     >
       <CallResizeHandle
         label={t('resize_panel', { panel: label })}
