@@ -10918,6 +10918,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailUntitledTask => 'Công việc chưa đặt tên';
 
   @override
+  String get taskBoardActiveFiltersActiveOnly => 'Chỉ công việc đang làm';
+
+  @override
+  String get taskBoardViewSettingsTitle => 'Hiển thị';
+
+  @override
+  String get taskBoardViewSettingsShowCompleted => 'Hiện việc đã xong và đã đóng';
+
+  @override
+  String get taskBoardViewSettingsShowCompletedDescription => 'Bao gồm danh sách đã xong, đã đóng và công việc đã hoàn thành trong chế độ danh sách.';
+
+  @override
+  String get taskBoardViewSettingsHideEmptyLists => 'Ẩn danh sách trống';
+
+  @override
+  String get taskBoardViewSettingsHideEmptyListsDescription => 'Ẩn các cột Kanban không có công việc.';
+
+  @override
+  String get taskBoardViewSettingsCompactCards => 'Thẻ gọn';
+
+  @override
+  String get taskBoardViewSettingsCompactCardsDescription => 'Chỉ hiện tiêu đề công việc trong chế độ danh sách.';
+
+  @override
   String get taskBoardDetailYesterday => 'hôm qua';
 
   @override

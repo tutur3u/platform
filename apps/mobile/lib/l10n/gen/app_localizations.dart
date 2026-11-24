@@ -20749,6 +20749,54 @@ abstract class AppLocalizations {
   /// **'Untitled task'**
   String get taskBoardDetailUntitledTask;
 
+  /// No description provided for @taskBoardActiveFiltersActiveOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Active tasks only'**
+  String get taskBoardActiveFiltersActiveOnly;
+
+  /// No description provided for @taskBoardViewSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get taskBoardViewSettingsTitle;
+
+  /// No description provided for @taskBoardViewSettingsShowCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Show completed and closed'**
+  String get taskBoardViewSettingsShowCompleted;
+
+  /// No description provided for @taskBoardViewSettingsShowCompletedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Include done and closed lists and finished tasks in the list view.'**
+  String get taskBoardViewSettingsShowCompletedDescription;
+
+  /// No description provided for @taskBoardViewSettingsHideEmptyLists.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide empty lists'**
+  String get taskBoardViewSettingsHideEmptyLists;
+
+  /// No description provided for @taskBoardViewSettingsHideEmptyListsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Kanban columns without tasks.'**
+  String get taskBoardViewSettingsHideEmptyListsDescription;
+
+  /// No description provided for @taskBoardViewSettingsCompactCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact cards'**
+  String get taskBoardViewSettingsCompactCards;
+
+  /// No description provided for @taskBoardViewSettingsCompactCardsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show only task titles in the list view.'**
+  String get taskBoardViewSettingsCompactCardsDescription;
+
   /// No description provided for @taskBoardDetailYesterday.
   ///
   /// In en, this message translates to:

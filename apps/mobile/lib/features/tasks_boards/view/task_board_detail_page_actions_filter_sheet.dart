@@ -1,5 +1,47 @@
 part of 'task_board_detail_page.dart';
 
+extension _TaskBoardFilterSheetLaunchers on _TaskBoardDetailPageViewState {
+  Future<void> _openAdvancedFilterSheet(
+    BuildContext context,
+    TaskBoardDetailState state,
+  ) async {
+    final board = state.board;
+    if (board == null) return;
+
+    final content = _TaskBoardAdvancedFilterSheet(
+      initialFilters: state.filters,
+      lists: _sortedLists(board.lists),
+      members: board.members,
+      labels: board.labels,
+      projects: board.projects,
+      onApply: (filters) {
+        context.read<TaskBoardDetailCubit>().setFilters(filters);
+      },
+      initialSettings: _viewSettings,
+      onApplySettings: _applyViewSettings,
+    );
+
+    await showAdaptiveDrawer(context: context, builder: (_) => content);
+  }
+
+  Future<void> _openListSortSheet(BuildContext context) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      builder: (sheetContext) => _SortBottomSheet(
+        currentField: _viewSettings.sort.field,
+        ascending: _viewSettings.sort.ascending,
+        onSortSelected: (field, {required ascending}) {
+          _applyViewSettings(
+            _viewSettings.copyWith(sort: (field: field, ascending: ascending)),
+          );
+          Navigator.of(sheetContext).pop();
+        },
+      ),
+    );
+  }
+}
+
 class _TaskBoardAdvancedFilterSheet extends StatefulWidget {
   const _TaskBoardAdvancedFilterSheet({
     required this.initialFilters,
@@ -8,6 +50,8 @@ class _TaskBoardAdvancedFilterSheet extends StatefulWidget {
     required this.labels,
     required this.projects,
     required this.onApply,
+    required this.initialSettings,
+    required this.onApplySettings,
   });
 
   final TaskBoardDetailFilters initialFilters;
@@ -16,6 +60,8 @@ class _TaskBoardAdvancedFilterSheet extends StatefulWidget {
   final List<TaskLabel> labels;
   final List<TaskProjectSummary> projects;
   final void Function(TaskBoardDetailFilters filters) onApply;
+  final _TaskBoardViewSettings initialSettings;
+  final ValueChanged<_TaskBoardViewSettings> onApplySettings;
 
   @override
   State<_TaskBoardAdvancedFilterSheet> createState() =>
@@ -38,10 +84,12 @@ class _TaskBoardAdvancedFilterSheetState
   late Set<String> _labelIds;
   late Set<String> _projectIds;
   late bool _undatedOnly;
+  late _TaskBoardViewSettings _settings;
 
   @override
   void initState() {
     super.initState();
+    _settings = widget.initialSettings;
     _listIds = Set<String>.from(widget.initialFilters.listIds);
     _statuses = Set<String>.from(widget.initialFilters.statuses);
     _priorities = Set<String>.from(widget.initialFilters.priorities);
@@ -151,6 +199,11 @@ class _TaskBoardAdvancedFilterSheetState
                     onPressed: () => unawaited(_close()),
                   ),
                 ],
+              ),
+              const shad.Gap(12),
+              _TaskBoardViewSettingsSection(
+                settings: _settings,
+                onChanged: (next) => setState(() => _settings = next),
               ),
               const shad.Gap(12),
               _DefaultListModeFilterNotice(
@@ -266,6 +319,7 @@ class _TaskBoardAdvancedFilterSheetState
         undatedOnly: _undatedOnly,
       ),
     );
+    widget.onApplySettings(_settings);
 
     unawaited(_close());
   }

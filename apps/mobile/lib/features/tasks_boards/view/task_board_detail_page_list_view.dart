@@ -7,7 +7,8 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
     required this.tasks,
     required this.state,
     required this.board,
-    required this.sort,
+    required this.settings,
+    required this.onOpenFilters,
     required this.scrollController,
     required this.onTaskTap,
     required this.onTaskToggleDone,
@@ -25,7 +26,8 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
   final List<TaskBoardTask> tasks;
   final TaskBoardDetailState state;
   final TaskBoardDetail board;
-  final TaskBoardListViewSortField sort;
+  final _TaskBoardViewSettings settings;
+  final VoidCallback onOpenFilters;
   final ScrollController scrollController;
   final void Function(TaskBoardTask task) onTaskTap;
   final void Function(TaskBoardTask task, String targetStatus) onTaskToggleDone;
@@ -45,7 +47,7 @@ class _TaskBoardEnhancedListView extends StatefulWidget {
 class _TaskBoardEnhancedListViewState
     extends State<_TaskBoardEnhancedListView> {
   List<TaskBoardTask> get _sortedTasks {
-    return sortTaskBoardListViewTasks(widget.tasks, widget.sort);
+    return sortTaskBoardListViewTasks(widget.tasks, widget.settings.sort);
   }
 
   @override
@@ -113,6 +115,22 @@ class _TaskBoardEnhancedListViewState
       zone: zone,
     );
     final hasMoreTasks = _hasMoreTasks;
+    final filtersBar = _ActiveFiltersBar(
+      filters: widget.state.filters,
+      settings: widget.settings,
+      onOpenFilters: widget.onOpenFilters,
+      onClearFilters: () => context.read<TaskBoardDetailCubit>().setFilters(
+        const TaskBoardDetailFilters(),
+      ),
+    );
+    final footer = _TaskListAutoLoadFooter(
+      isLoading: widget.state.isLoadingListTasks,
+      hasError: widget.lists.any(
+        (list) => widget.state.listLoadErrorById.containsKey(list.id),
+      ),
+      progress: widget.state.board?.tasks.length ?? 0,
+      onLoadMore: widget.onLoadMore,
+    );
     final loading =
         widget.state.isLoadingListTasks &&
         sortedTasks.isEmpty &&
@@ -139,19 +157,23 @@ class _TaskBoardEnhancedListViewState
         primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          AppStateMessage.inline(
-            key: const ValueKey('task-board-list-empty'),
-            icon: LucideIcons.listTodo,
-            title: context.l10n.taskBoardListEmptyTitle,
-            message: context.l10n.taskBoardDetailNoTasksInList,
-            actionLabel: context.l10n.taskBoardDetailCreateTask,
-            onAction: widget.onQuickAdd,
-          ),
+          filtersBar,
+          if (hasMoreTasks)
+            footer
+          else
+            AppStateMessage.inline(
+              key: const ValueKey('task-board-list-empty'),
+              icon: LucideIcons.listTodo,
+              title: context.l10n.taskBoardListEmptyTitle,
+              message: context.l10n.taskBoardDetailNoTasksInList,
+              actionLabel: context.l10n.taskBoardDetailCreateTask,
+              onAction: widget.onQuickAdd,
+            ),
         ],
       );
     }
 
-    var itemCount = hasMoreTasks ? 1 : 0;
+    var itemCount = 1 + (hasMoreTasks ? 1 : 0);
     for (final section in sections) {
       itemCount += 1 + section.tasks.length;
     }
@@ -163,21 +185,12 @@ class _TaskBoardEnhancedListViewState
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (hasMoreTasks && index == itemCount - 1) {
-          return Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: Center(
-              child: widget.state.isLoadingListTasks
-                  ? const AppLoadingIndicator()
-                  : AppButton.outline(
-                      onPressed: widget.onLoadMore,
-                      child: Text(context.l10n.timerHistoryLoadMore),
-                    ),
-            ),
-          );
-        }
+        // Built lazily as it nears the viewport, so it doubles as the
+        // visibility observer that requests the next page.
+        if (hasMoreTasks && index == itemCount - 1) return footer;
+        if (index == 0) return filtersBar;
 
-        var cursor = 0;
+        var cursor = 1;
         for (
           var sectionIndex = 0;
           sectionIndex < sections.length;
@@ -235,6 +248,7 @@ class _TaskBoardEnhancedListViewState
                 isBulkSelectMode: widget.isBulkSelectMode,
                 isSelected: widget.selectedTaskIds.contains(task.id),
                 onToggleSelected: () => widget.onToggleTaskSelection(task),
+                compact: widget.settings.compactCards,
               ),
             );
           }

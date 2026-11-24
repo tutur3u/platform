@@ -58,7 +58,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   final Set<String> _initialListLoadRequested = <String>{};
   String? _initialListLoadBoardKey;
   String? _selectedTaskId;
-  TaskBoardListViewSortField _listSort = (field: 'priority', ascending: false);
+  _TaskBoardViewSettings _viewSettings = const _TaskBoardViewSettings();
+  bool _viewSettingsTouched = false;
   late int _currentKanbanPageIndex;
 
   bool _isPersonalWorkspaceForBoard(
@@ -97,6 +98,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       initialScrollOffset: _savedOffset('timeline-vertical'),
     );
     _selectedTaskId = _normalizedTaskId(widget.initialTaskId);
+    unawaited(_restoreViewSettings());
   }
 
   @override
@@ -133,6 +135,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     }
 
     if (oldWidget.boardId != widget.boardId) {
+      unawaited(_restoreViewSettings(boardChanged: true));
       final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
       if (wsId != null) {
         unawaited(
@@ -258,8 +261,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
           }
 
           final sortedLists = _sortedListsByStatusOrder(detail.lists);
+          final kanbanLists = _kanbanListsForSettings(sortedLists, state);
           final listViewLists = _sortedListsForListView(
-            _listViewVisibleLists(detail.lists, state.filters),
+            _listViewListsForSettings(detail.lists, state.filters),
           );
           final filteredByList = state.filteredTasksByListId;
           final currentBoardKey = '${state.workspaceId}:${detail.id}';
@@ -328,7 +332,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     constraints.maxHeight,
                   );
                   if (state.currentView == TaskBoardDetailView.list) {
-                    for (final list in _listViewInitialLoadLists(
+                    for (final list in _listViewLoadableLists(
                       listViewLists,
                       state,
                     )) {
@@ -356,10 +360,16 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                       TaskBoardDetailView.list => _TaskBoardEnhancedListView(
                         boardId: widget.boardId,
                         lists: listViewLists,
-                        tasks: state.filteredTasksForListView,
+                        tasks: _listViewTasksForSettings(
+                          state.filteredTasksForListView,
+                          detail.lists,
+                          listViewLists,
+                        ),
                         state: state,
                         board: detail,
-                        sort: _listSort,
+                        settings: _viewSettings,
+                        onOpenFilters: () =>
+                            unawaited(_openAdvancedFilterSheet(context, state)),
                         scrollController: _listScrollController,
                         clock: widget.clock,
                         onTaskTap: (task) =>
@@ -385,7 +395,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onLoadMore: () {
                           _loadMoreVisibleLists(
                             context,
-                            lists: _listViewLoadMoreLists(listViewLists, state),
+                            lists: _listViewLoadableLists(listViewLists, state),
                             state: state,
                             pageSizeHint: pageSizeHint,
                           );
@@ -394,7 +404,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                       TaskBoardDetailView.kanban => _TaskBoardKanbanView(
                         key: ValueKey(detail.id),
                         boardId: widget.boardId,
-                        lists: sortedLists,
+                        lists: kanbanLists,
                         tasksByList: filteredByList,
                         state: state,
                         viewportHeight: constraints.maxHeight,
@@ -719,7 +729,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   ) {
     final board = state.board;
     if (board == null || board.lists.isEmpty) return;
-    final sortedLists = _sortedListsByStatusOrder(board.lists);
+    final sortedLists = _kanbanListsForSettings(
+      _sortedListsByStatusOrder(board.lists),
+      state,
+    );
     final start = focusedIndex.clamp(0, sortedLists.length - 1);
     final endExclusive = math.min(start + 3, sortedLists.length);
     for (var index = start; index < endExclusive; index++) {
@@ -743,14 +756,15 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       return lists.first.id;
     }
 
+    final columns = _kanbanListsForSettings(lists, state);
     final visiblePage = _kanbanHorizontalPageController.hasClients
         ? _kanbanHorizontalPageController.page?.round()
         : null;
     final index = (visiblePage ?? _currentKanbanPageIndex).clamp(
       0,
-      lists.length - 1,
+      columns.length - 1,
     );
-    return lists[index].id;
+    return columns[index].id;
   }
 
   String? get _normalizedInitialTaskId {
@@ -779,23 +793,12 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     }
   }
 
-  List<TaskBoardList> _listViewInitialLoadLists(
+  List<TaskBoardList> _listViewLoadableLists(
     List<TaskBoardList> lists,
     TaskBoardDetailState state,
-  ) {
-    return lists
-        .where((list) => !_shouldDeferListViewLoad(list, state))
-        .toList(growable: false);
-  }
-
-  List<TaskBoardList> _listViewLoadMoreLists(
-    List<TaskBoardList> lists,
-    TaskBoardDetailState state,
-  ) {
-    return lists
-        .where((list) => !_shouldDeferListViewLoad(list, state))
-        .toList(growable: false);
-  }
+  ) => lists
+      .where((list) => !_shouldDeferListViewLoad(list, state))
+      .toList(growable: false);
 
   bool _shouldDeferListViewLoad(
     TaskBoardList list,
@@ -811,10 +814,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         !state.loadedListIds.contains(list.id) &&
         !state.loadingListIds.contains(list.id) &&
         !state.listLoadErrorById.containsKey(list.id);
-  }
-
-  void _setListSort(TaskBoardListViewSortField sort) {
-    setState(() => _listSort = sort);
   }
 
   void _setBoardView(BuildContext context, TaskBoardDetailView view) {

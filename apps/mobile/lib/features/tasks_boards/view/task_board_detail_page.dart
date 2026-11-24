@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -78,6 +80,7 @@ import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'task_board_detail_page_actions.dart';
 part 'task_board_recycle_bin_sheet.dart';
@@ -132,6 +135,7 @@ part 'task_board_detail_page_task_row_swipe.dart';
 part 'task_board_detail_page_timeline_loading.dart';
 part 'task_board_detail_page_utils.dart';
 part 'task_board_detail_page_view.dart';
+part 'task_board_detail_page_view_settings.dart';
 
 class TaskBoardDetailPage extends StatelessWidget {
   const TaskBoardDetailPage({

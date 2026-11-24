@@ -21,7 +21,10 @@ extension on _TaskBoardDetailPageViewState {
                     leading: const Icon(Icons.sort),
                     title: Text(context.l10n.sortBy),
                     subtitle: Text(
-                      taskBoardListViewSortFieldLabel(context, _listSort.field),
+                      taskBoardListViewSortFieldLabel(
+                        context,
+                        _viewSettings.sort.field,
+                      ),
                     ),
                     onTap: () {
                       Navigator.of(sheetContext).pop();
@@ -86,21 +89,6 @@ extension on _TaskBoardDetailPageViewState {
         unawaited(_openRecycleBinSheet(context));
         return;
     }
-  }
-
-  Future<void> _openListSortSheet(BuildContext context) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      backgroundColor: shad.Theme.of(context).colorScheme.background,
-      builder: (sheetContext) => _SortBottomSheet(
-        currentField: _listSort.field,
-        ascending: _listSort.ascending,
-        onSortSelected: (field, {required ascending}) {
-          _setListSort((field: field, ascending: ascending));
-          Navigator.of(sheetContext).pop();
-        },
-      ),
-    );
   }
 
   Future<void> _openRenameBoardDialog(BuildContext context) async {
@@ -226,27 +214,6 @@ extension on _TaskBoardDetailPageViewState {
         },
       ),
     );
-  }
-
-  Future<void> _openAdvancedFilterSheet(
-    BuildContext context,
-    TaskBoardDetailState state,
-  ) async {
-    final board = state.board;
-    if (board == null) return;
-
-    final content = _TaskBoardAdvancedFilterSheet(
-      initialFilters: state.filters,
-      lists: _sortedLists(board.lists),
-      members: board.members,
-      labels: board.labels,
-      projects: board.projects,
-      onApply: (filters) {
-        context.read<TaskBoardDetailCubit>().setFilters(filters);
-      },
-    );
-
-    await showAdaptiveDrawer(context: context, builder: (_) => content);
   }
 
   Future<void> _runBoardAction(

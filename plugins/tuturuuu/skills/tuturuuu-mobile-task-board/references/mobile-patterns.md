@@ -184,6 +184,10 @@ localization changes.
   text, and renders through `SETTINGS_RENDER_DIR`.
 - Shell actions should open overlays immediately and let overlay content fetch
   or refresh on mount instead of blocking the tap on pre-open network work.
+- Header overflow menus open a modal, and that modal re-resolves the shell's
+  actions, which can unmount the overflow button. Never gate the chosen
+  action on the button's `context.mounted`. Resolve what you need before the
+  await, then run the page's current registration for that location.
 - Loading states use `AppLoadingIndicator` (`core/ui`), never a bare
   `NovaLoadingIndicator`: `.page()` for a page, pane or full-screen gate (56dp,
   centred), the default section size (32dp) for cards and list footers, and

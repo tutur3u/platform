@@ -11057,6 +11057,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailUntitledTask => 'Untitled task';
 
   @override
+  String get taskBoardActiveFiltersActiveOnly => 'Active tasks only';
+
+  @override
+  String get taskBoardViewSettingsTitle => 'Display';
+
+  @override
+  String get taskBoardViewSettingsShowCompleted => 'Show completed and closed';
+
+  @override
+  String get taskBoardViewSettingsShowCompletedDescription => 'Include done and closed lists and finished tasks in the list view.';
+
+  @override
+  String get taskBoardViewSettingsHideEmptyLists => 'Hide empty lists';
+
+  @override
+  String get taskBoardViewSettingsHideEmptyListsDescription => 'Hide Kanban columns without tasks.';
+
+  @override
+  String get taskBoardViewSettingsCompactCards => 'Compact cards';
+
+  @override
+  String get taskBoardViewSettingsCompactCardsDescription => 'Show only task titles in the list view.';
+
+  @override
   String get taskBoardDetailYesterday => 'yesterday';
 
   @override

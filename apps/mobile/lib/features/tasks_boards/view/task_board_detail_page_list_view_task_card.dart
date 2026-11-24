@@ -13,6 +13,7 @@ class _TaskCard extends StatelessWidget {
     required this.isBulkSelectMode,
     required this.isSelected,
     required this.onToggleSelected,
+    this.compact = false,
   });
 
   final TaskBoardTask task;
@@ -24,6 +25,9 @@ class _TaskCard extends StatelessWidget {
   final void Function(String targetStatus) onToggleDone;
   final _TaskRowActionHandlers rowActions;
   final bool isBulkSelectMode;
+
+  /// Compact cards keep only the title row, for denser scanning.
+  final bool compact;
   final bool isSelected;
   final VoidCallback onToggleSelected;
 
@@ -118,14 +122,15 @@ class _TaskCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            _TaskMetadataRow(
-                              task: task,
-                              board: board,
-                              dueDay: dueDay,
-                              today: today,
-                              isOverdue: isOverdue,
-                            ),
-                            if (fleet != null)
+                            if (!compact)
+                              _TaskMetadataRow(
+                                task: task,
+                                board: board,
+                                dueDay: dueDay,
+                                today: today,
+                                isOverdue: isOverdue,
+                              ),
+                            if (fleet != null && !compact)
                               Padding(
                                 padding: const EdgeInsets.only(
                                   top: AppSpacing.xs,
@@ -136,7 +141,7 @@ class _TaskCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (task.assignees.isNotEmpty) ...[
+                    if (task.assignees.isNotEmpty && !compact) ...[
                       const SizedBox(width: AppSpacing.sm),
                       _ListViewAssigneeAvatarStack(assignees: task.assignees),
                     ],

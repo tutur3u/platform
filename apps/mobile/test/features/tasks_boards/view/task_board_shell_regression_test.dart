@@ -48,6 +48,14 @@ class _Repository extends TaskRepository {
         color: 'BLUE',
       ),
       TaskBoardList(
+        id: 'list-empty',
+        boardId: 'board-1',
+        name: 'Backlog',
+        status: 'not_started',
+        color: 'GRAY',
+        taskCount: 0,
+      ),
+      TaskBoardList(
         id: 'list-done',
         boardId: 'board-1',
         name: 'Shipped',
@@ -126,6 +134,7 @@ class _Shell extends StatelessWidget {
 Future<void> _pumpBoardInShell(
   WidgetTester tester, {
   _Repository? repository,
+  TaskBoardDetailView? initialView,
 }) async {
   SharedPreferences.setMockInitialValues(<String, Object>{});
   final workspaceCubit = _MockWorkspaceCubit();
@@ -158,6 +167,7 @@ Future<void> _pumpBoardInShell(
             builder: (_, _) => TaskBoardDetailPage(
               boardId: 'board-1',
               taskRepository: repository ?? _Repository(),
+              initialView: initialView,
             ),
           ),
         ],
@@ -236,6 +246,78 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(ErrorWidget), findsNothing);
     expect(find.text('Select task').hitTestable(), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'the list view shows active work only by default, with a toggle',
+    (tester) async {
+      await _pumpBoardInShell(tester);
+      expect(find.text('Alpha task'), findsWidgets);
+      expect(find.text('Finished task'), findsNothing);
+      expect(find.text('Shipped task'), findsNothing);
+      expect(find.text('Active tasks only'), findsOneWidget);
+      expect(find.text('Load more'), findsNothing);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('shell-actions-overflow')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Filters').last);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('task-board-setting-show-completed')),
+      );
+      await tester.pumpAndSettle();
+      final apply = find.text('Apply filters');
+      await tester.ensureVisible(apply);
+      await tester.pumpAndSettle();
+      await tester.tap(apply);
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 350));
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.text('Finished task'), findsWidgets);
+      expect(find.text('Shipped task'), findsWidgets);
+      expect(find.text('Active tasks only'), findsNothing);
+      final prefs = await SharedPreferences.getInstance();
+      expect(
+        prefs.getString('task_board_view_settings_v1_board-1'),
+        contains('"showCompleted":true'),
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('reaching the bottom loads the next page without a button', (
+    tester,
+  ) async {
+    final repository = _Repository(extraActiveTasks: 120);
+    await _pumpBoardInShell(tester, repository: repository);
+    expect(repository.requestedOffsets, [0]);
+
+    for (var i = 0; i < 12; i++) {
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -1500));
+      await tester.pumpAndSettle();
+    }
+
+    expect(repository.requestedOffsets.length, greaterThan(1));
+    expect(
+      repository.requestedOffsets.toSet().length,
+      repository.requestedOffsets.length,
+      reason: 'each page is requested once',
+    );
+    expect(find.text('Load more'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('Kanban hides lists without tasks by default', (tester) async {
+    await _pumpBoardInShell(tester, initialView: TaskBoardDetailView.kanban);
+    expect(find.text('Todo'), findsWidgets);
+    expect(find.text('Backlog'), findsNothing, reason: '${_texts()}');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

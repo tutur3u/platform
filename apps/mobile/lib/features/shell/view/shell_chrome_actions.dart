@@ -255,6 +255,7 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
               _ShellActionsOverflow(
                 actions: ordinaryActions.skip(visibleCount).toList(),
                 showNotifications: showNotifications,
+                matchedLocation: widget.matchedLocation,
               ),
               ..._groupedActionButtons(segmentActions),
             ],
@@ -370,12 +371,14 @@ class _ShellActionsOverflow extends StatelessWidget {
   const _ShellActionsOverflow({
     required this.actions,
     required this.showNotifications,
+    required this.matchedLocation,
   });
 
   static const _notificationsId = '__notifications__';
 
   final List<ShellActionSpec> actions;
   final bool showNotifications;
+  final String matchedLocation;
 
   @override
   Widget build(BuildContext context) {
@@ -391,6 +394,7 @@ class _ShellActionsOverflow extends StatelessWidget {
         // still-mounted page. Gating on `context.mounted` silently dropped
         // overflowed actions such as board Filters.
         final router = GoRouter.maybeOf(context);
+        final cubit = _lookupShellChromeActionsCubit(context);
         final id = await showAdaptiveSheet<String>(
           context: context,
           builder: (sheetContext) => AppDialogScaffold(
@@ -426,7 +430,13 @@ class _ShellActionsOverflow extends StatelessWidget {
           unawaited(router?.push(Routes.notifications));
           return;
         }
-        for (final action in actions) {
+        // Run the page's current registration, so a page that went away while
+        // the sheet was open is not called, and fresh enabled/loading state
+        // applies. The modal is retired before this await resumes.
+        final current = cubit == null
+            ? actions
+            : cubit.state.resolveForLocation(matchedLocation);
+        for (final action in current) {
           if (action.id == id && action.enabled && !action.isLoading) {
             _invokeShellAction(action);
             return;
