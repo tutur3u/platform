@@ -1,0 +1,470 @@
+---
+title: Mira Live as a room participant
+description: Design for a room-wide Mira voice participant in Meet and Parley, with Gemini Live, OpenAI Realtime or a Claude text agent, per-person consent, cost caps and a durable stop fence.
+updatedAt: "2026-11-24"
+audience: developers
+---
+
+**Status:** design, awaiting independent security review. No code ships from
+this page. Room voice stays denied on the server until every gate below
+exists and the flag is turned on.
+
+## Current state
+
+| Path | Behavior today |
+| --- | --- |
+| Private Mira | `gemini-3.1-flash-live-preview` through `MeetLiveDurableObject` in the `tuturuuu-meet` Worker; only the requester's microphone, replies play only on their device. See [Meet Live assistants](/platform/features/meet-live-assistants). |
+| Room voice, server | `roomService` in `apps/meet-realtime/src/room-service.ts` refuses `live.reserve`, `live.audio`, `live.transcript`, `live.share` and `live.share.audio` with `MIRA_ROOM_DENIED`. `connectLiveProvider` throws unless the claims are `mode: 'personal'` with `inputSource: 'private-microphone'`. |
+| Room voice, client | `deliverRoomAssistantAudio` in `packages/meet-core/src/features/live-assistant/room-audio.tsx` returns `false`; `RoomAssistantAudio` only shows the private-use indicator. |
+| Consent | Room Mira host acceptance and per-person choices from [Mira host consent](/platform/features/meet-mira-host-consent). Acceptance capabilities are `chat`, `captions`, `notes` (`MIRA_ROOM_CAPABILITIES`). |
+
+## Goals and non-goals
+
+- Mira joins a meeting as a visible, audible participant that people can talk to.
+- Only participants whose own current choice is on can ever be heard by Mira.
+- Spend has a hard per-session, per-minute and per-workspace-day ceiling, and
+  every session reaches a terminal state without operator action.
+- Non-goals for the first release: workspace tools, web search, memory,
+  recording of Mira's audio, video input, and changing Private Mira.
+
+## Provider choice
+
+| Provider | Model and interface | Audio formats | Session limits | Fit |
+| --- | --- | --- | --- | --- |
+| Google Gemini Live | `gemini-3.1-flash-live-preview` (the Meet model today) over the `@google/genai` Live WebSocket. Google lists it as a preview, legacy model and recommends Gemini 3.8 Live, which the web Live assistant already uses as `gemini-3.8-live` (`apps/web/src/lib/live/models.ts`); room voice adopts it once its Live pricing is in `private.ai_live_model_prices`. | 16-bit little-endian PCM; input 16 kHz (`audio/pcm;rate=16000`), output 24 kHz | Audio-only sessions last 15 minutes without context window compression and are unlimited with it; each connection lasts about 10 minutes, ends with `GoAway`, and resumes with a handle valid for 2 hours | Default. Billing, usage parsing, resumption and the provider drain already exist in `packages/meet-core/src/cloudflare/live`. |
+| OpenAI Realtime | `gpt-realtime-2.1` or `gpt-realtime-2.1-mini` over `wss://api.openai.com/v1/realtime?model=…` with a server-held `Authorization: Bearer` key. OpenAI documents WebSocket for server-to-server use and WebRTC for browsers. | PCM16 mono, 24 kHz only (`audio/pcm`, `rate: 24000`) | 60 minutes per session; `server_vad` or `semantic_vad` turn detection | Second adapter. Usage arrives in `response.done.response.usage` with audio, text and cached token details. GPT-Live (`gpt-live-1.1` on `/v1/live/sessions`) is a separate product and stays out of scope until reviewed. |
+| Anthropic Claude | **No realtime voice API.** The Claude API lists the Messages, Message Batches, Token Counting, Models, Files and Skills APIs, and current models take text and image input with text output. | None (text only) | Not applicable | A **Claude text agent**: see [Claude text agent](#claude-text-agent). It never hears audio and never speaks unless a separate TTS provider is reviewed. |
+
+Prices verified on 2026-11-24: Gemini rates are in
+[Meet Live assistants](/platform/features/meet-live-assistants#usage-and-costs);
+`gpt-realtime-2.1` is $32 per million audio input tokens and $64 per million
+audio output tokens (`-mini`: $10 and $20); `claude-haiku-5-5` is $0.10 input
+and $0.50 output per million tokens up to 100,000-token prompts.
+
+A provider is selected per room session from `MEET_ROOM_VOICE_PROVIDERS`
+(an allowlist on the Worker). The host picks one of the allowed providers; the
+default is the first entry. Each provider is an adapter behind one interface
+(`connect`, `sendAudio`, `endTurn`, `interrupt`, `close`, `usage`) so the
+stop fence, mixer and billing stay provider-independent.
+
+## Architecture
+
+```text
+ participants (browsers)           Cloudflare Realtime SFU             tuturuuu-meet Worker
+ ┌───────────────┐  mic track     ┌──────────────────────┐  PCM 48k   ┌─────────────────────────────┐   WebSocket  ┌──────────┐
+ │ A (Mira on)   │──────────────▶│ egress adapter (A)   │──────────▶│ MeetRoomVoiceDurableObject  │────────────▶│ provider │
+ │ B (Mira off)  │──── no adapter │                      │           │  source set · mixer · fence │◀────────────│  Live    │
+ │ C (Mira on)   │──────────────▶│ egress adapter (C)   │──────────▶│  billing · alarm            │  24k audio  └──────────┘
+ └───────┬───────┘                │ ingest adapter (Mira)│◀──────────│  resample 24k→48k           │
+         │◀──── "mira-voice" track│  published as Opus   │           └──────────────┬──────────────┘
+         │                        └──────────────────────┘                          │ voice.* commands
+         │                                                                          ▼
+         │◀──────────────── presence, consent, system lines ─────── tuturuuu-meet-realtime room DO (consent authority)
+```
+
+### Ownership
+
+- A new SQLite Durable Object class, `MeetRoomVoiceDurableObject`, in the
+  `tuturuuu-meet` Worker (Wrangler migration tag `meet-room-voice-v1`), one
+  instance per meeting: `idFromName("<workspaceId>:<meetingId>")`. It owns the
+  provider socket, the SFU adapters, the mixer, billing and the stop fence.
+- It is separate from `MeetLiveDurableObject` so Private Mira's isolation
+  (no room context, private memory, private playback) cannot regress. Shared
+  code is imported, not shared storage: the workspace gate, billing helpers,
+  usage parsing, registry heartbeat and provider drain.
+- The meeting room Durable Object in `tuturuuu-meet-realtime` stays the consent
+  authority. New commands, accepted only when the flag is on and refused
+  otherwise: `voice.reserve`, `voice.sources`, `voice.floor`,
+  `voice.heartbeat` and `voice.stop`. The existing `live.*` denials stay.
+- The provider key stays in the `tuturuuu-meet` Worker
+  (`GOOGLE_GENERATIVE_AI_API_KEY`, and `OPENAI_API_KEY` for the OpenAI adapter),
+  or comes from the workspace key store in
+  [Per-workspace BYOK](/platform/features/workspace-ai-provider-keys). No key
+  reaches the room Worker or a browser.
+
+### Room audio to the agent
+
+The input path uses the Cloudflare Realtime SFU
+[WebSocket adapter](https://developers.cloudflare.com/realtime/sfu/media-transport-adapters/websocket-adapter/),
+which is generally available. In egress (stream) mode the SFU connects to a
+`wss://` endpoint we host and sends one protobuf `Packet` per WebSocket
+message: signed 16-bit little-endian PCM, 48 kHz, stereo interleaved, at most
+32 KB per message. The SFU retries a dropped egress connection for up to 15
+seconds, may drop old frames, and sends no custom headers.
+
+1. The room returns the **source set**: for each participant whose current room
+   Mira choice is on for the current acceptance revision, their account (or
+   guest id), SFU session id, microphone track name and choice revision.
+2. For each source the Durable Object mints a **source token**: an HMAC over
+   `{wsId, meetingId, voiceSessionId, fenceEpoch, accountId, trackName,
+   choiceRevision, nonce, exp}` with a dedicated secret
+   `MEET_ROOM_VOICE_SOURCE_SECRET`, valid for 60 seconds to connect. It then
+   calls `POST /v1/apps/{appId}/adapters/websocket/new` with
+   `location: "remote"`, `outputCodec: "pcm"` and the endpoint
+   `wss://meet.tuturuuu.com/api/meet-room-voice/<wsId>/<meetingId>/in/<token>`.
+   Tokens travel in the path because the SFU sends no headers.
+3. The Worker verifies the token, checks that its `wsId` and `meetingId` equal
+   the path segments, and forwards the upgrade to the Durable Object keyed by
+   `<wsId>:<meetingId>`. The Durable Object accepts a token **once**: it
+   records the `nonce` as spent in storage before accepting the socket, binds
+   the socket to that one source, and refuses any later upgrade with the same
+   token.
+   - **Reconnects.** Because tokens are single-use, the SFU's own 15-second
+     egress retry is refused. When a source socket drops, the Durable Object
+     closes that adapter and creates a new one with a fresh token, at most
+     3 times per source per minute. After that the source stays out of the mix
+     until the next source-set update.
+   - **Log redaction.** The token path segment is never logged: the route
+     logs only the template `/api/meet-room-voice/:wsId/:meetingId/in/:token`,
+     Workers invocation logs are off for this route's Worker, and traces,
+     analytics events and error reports replace the segment with `[redacted]`.
+     A spent or expired token cannot open a socket, so a token that still
+     reaches a log is not reusable.
+4. The **mixer** runs in 20 ms frames: downmix to mono, resample to the
+   provider rate (16 kHz Gemini, 24 kHz OpenAI), apply a per-source energy VAD
+   gate, sum with a soft limiter, and keep at most 200 ms of jitter buffer per
+   source; late frames are dropped, never queued.
+5. **Listening modes.** `addressed` (first release): only the participant who
+   holds the floor (`voice.floor`, from **Ask Mira** in the call bar or a room
+   chat mention) is mixed, for at most 60 seconds per turn, and the floor needs
+   room Mira requester authority (so guests and free accounts can be heard only
+   in `listening` mode). `listening` (later, separately flagged): every source in
+   the set is mixed, and Mira is instructed to answer only when addressed by
+   name. `MEET_ROOM_VOICE_MAX_SOURCES` caps open egress adapters (default 1 in
+   `addressed`, 6 in `listening`).
+
+### Excluding participants who turned Mira off
+
+Exclusion is enforced in four places, so no single fault leaks audio:
+
+1. **No subscription.** A participant without a current on choice never gets an
+   egress adapter; the SFU never sends their track.
+2. **Per-frame check.** Every frame is admitted only if its socket's source is in
+   the in-memory source set, whose version equals the room's consent version.
+   The Durable Object processes one event at a time, so a withdrawal applied
+   before a frame is never mixed after it.
+3. **Withdrawal push.** Turning Mira off sends a new source set from the room.
+   The Durable Object first drops the source from the mixer, then closes its
+   adapter (`/adapters/websocket/close` is idempotent) and its socket.
+4. **Provider context reset.** Audio already sent cannot be recalled. On any
+   withdrawal, acceptance change or notice version change, the Durable Object
+   closes the provider session without resuming it, discards queued output and
+   the resumption handle, and opens a fresh session with only the fixed
+   instructions. Mira's room conversation memory restarts; this matches the
+   room chat rule that in-flight answers carrying a withdrawn source are
+   discarded while their usage still settles.
+
+Source tokens bind the choice revision, so a rejoin or a new choice needs a new
+token. Acoustic bleed (an off participant heard through an on participant's
+microphone) cannot be filtered; the notice already states that limit.
+
+### Agent audio as a room track
+
+Mira's output is published through a WebSocket adapter in ingest (buffer) mode,
+`location: "local"`, `inputCodec: "pcm"`: the Durable Object upsamples 24 kHz
+mono to 48 kHz stereo and sends 20 ms frames; the SFU publishes them as an Opus
+track named `mira-voice` in a dedicated SFU session. Ingest does not reconnect,
+so a dropped ingest adapter is recreated (bounded, see failure modes). The room
+adds a synthetic presence entry `{ kind: 'agent', name: 'Mira' }` with that
+track; clients subscribe through the existing subscribe path, so
+`deliverRoomAssistantAudio` stays `false` and no audio travels over the room
+WebSocket. **Mute Mira for me** and the existing Mira voice volume control mute
+that track locally. A participant whose Mira choice is off starts with
+`mira-voice` muted: the client does not subscribe to the track until that
+person unmutes it, and a choice change to off mutes it again. Turning Mira off
+withdraws a person's audio from Mira; it does not stop them hearing Mira
+unless they keep it muted. Mira is never counted in attendance and cannot present.
+
+## Claude text agent
+
+**Status: disabled in this design, pending USER decision** on the sub-processor
+notice change proposed below. Until that is decided, the Claude text agent is
+not built or flagged on.
+
+Because Claude has no audio API, a Claude room participant is a text agent:
+
+- **Input:** room chat mentions (the existing `ai.reserve` context rules) and
+  live transcript lines. Transcript lines exist only while live transcription
+  runs, which needs every admitted participant's transcript Allow; when anyone
+  is off, transcription pauses and the agent hears nothing new.
+- **Model:** `claude-haiku-5-5` through the streaming Messages API (SSE), with
+  the same dispatch leases (`mira.room.dispatch` / `mira.room.release`) as room
+  chat.
+- **Output:** a room chat message tagged as Mira. Spoken output would need a
+  separate TTS provider, which is not part of this design.
+- **No tools.** Room chat Mira today attaches `createMeetWorkspaceTools`
+  (`packages/meet-core/src/features/call/server/assistant-generation.ts`). The
+  Claude text agent gets no tools, no search and no memory writes. Its input
+  includes untrusted live transcript lines, so spoken text must never reach a
+  tool call. A test asserts that the request carries an empty tool set.
+
+It ships independently of the voice Durable Object and needs no new audio
+consent. It does add a model sub-processor (Anthropic), which changes the
+hashed notice text.
+
+### Proposed notice change (pending USER decision)
+
+The room notice names Google Gemini as the only model sub-processor. Adding
+Anthropic changes hashed consent text, so every participant must consent
+again. Nothing below is applied; the hashed keys and
+`MIRA_ROOM_NOTICE_VERSION` are unchanged until the USER decides.
+
+| Item | Current | Proposed |
+| --- | --- | --- |
+| Key | `meet.mira_consent.info_controller` in `apps/meet/messages/en.json` and `vi.json` | Same key |
+| EN | The meeting's workspace decides how Mira is used. Tuturuuu runs Mira for it, and Google Gemini processes requests, which can transfer data outside Vietnam. | The meeting's workspace decides how Mira is used. Tuturuuu runs Mira for it, and Google Gemini or Anthropic Claude, as the host chooses, processes requests, which can transfer data outside Vietnam. |
+| VI | Không gian làm việc của cuộc họp quyết định cách dùng Mira. Tuturuuu vận hành Mira cho không gian đó, và Google Gemini xử lý các yêu cầu, có thể chuyển dữ liệu ra ngoài Việt Nam. | Không gian làm việc của cuộc họp quyết định cách dùng Mira. Tuturuuu vận hành Mira cho không gian đó, và Google Gemini hoặc Anthropic Claude, tùy người chủ trì chọn, xử lý các yêu cầu, có thể chuyển dữ liệu ra ngoài Việt Nam. |
+| Notice version | `MIRA_ROOM_NOTICE_VERSION = '2026-11-24-room-v2'` (`packages/realtime/src/meet/room-mira-acceptance.ts`) | `'<ship-date>-room-v3'`, which ends every current acceptance and forces re-consent |
+| Docs | [Required notice content](/platform/features/meet-mira-host-consent#required-notice-content) names Google Gemini | Names Google Gemini or Anthropic Claude |
+
+If room voice ships in the same release, its OpenAI sub-processor and voice
+purpose join the same text and share the one `room-v3` bump, so participants
+consent again only once. If not, voice takes the next version.
+
+## Consent
+
+- **New capability.** `voice` joins `MIRA_ROOM_CAPABILITIES`. Turning voice on
+  is a capability expansion, so it ends the current acceptance and starts a new
+  revision; everyone present confirms again and counts as off until they do.
+- **Notice.** Voice adds a purpose (Mira hears people who talk to it and speaks
+  in the meeting) and, for OpenAI, a new sub-processor. Both need new notice
+  text and a new notice version (`room-v3`), which changes the hashed consent
+  text and forces re-consent. The wording goes through the legal review in
+  [Mira host consent](/platform/features/meet-mira-host-consent#required-notice-content).
+- **Everyone informed.** A system line when voice starts and ends; the Mira tile
+  with an AI label; the header Mira control showing *listening* or *speaking*;
+  a "Mira hears you" marker on each tile whose audio is mixed; and a fixed
+  spoken disclosure in the meeting locale when Mira joins.
+- **Per-person choice.** Only the source set (current on choices) is ever mixed.
+  Turning Mira off for yourself withdraws voice, chat and transcript together,
+  as today. Guests are keyed by server-issued guest id.
+
+## 18+ attestation
+
+Room voice has no exception: the meeting workspace needs the current owner's
+stored attestation in `private.workspace_mira_audience_attestations`, the
+acceptor confirms the meeting audience is 18 or older, and every Continue
+prompt keeps its 18+ line. **Report someone under 18** ends the acceptance,
+which runs the stop fence at once, and then:
+- **Lockout.** Room Mira (chat, transcript and voice) stays off for the rest of
+  that meeting. Only the workspace owner can lift it, by confirming the
+  audience again; the host and co-hosts cannot.
+- **Audit.** The room writes a `minor_reported` event with the meeting,
+  workspace, reporter id and time, and a `minor_lockout_lifted` event when the
+  owner lifts it. Reports are rate-limited per reporter, and the reporter is
+  never shown to other participants.
+
+## Host toggle and feature flag
+
+- **Host toggle.** In the Mira popover, the host or a present co-host sees
+  **Mira voice** (off by default). On runs the acceptance flow with `voice`
+  added and the provider choice. Off calls `voice.stop` and keeps the chat
+  acceptance, because removing a capability narrows processing.
+- **Flag.** `MEET_ROOM_VOICE_ENABLED` must equal exactly `true` on both
+  `tuturuuu-meet` and `tuturuuu-meet-realtime`; source configuration carries
+  `false`. All existing Meet AI gates still apply (`MEET_AI_DISABLED`, the
+  workspace gate, the account rule). A first-release allowlist,
+  `MEET_ROOM_VOICE_WORKSPACE_IDS`, narrows it further. Flag flips need the
+  release authority's acknowledgement.
+
+## Cost bounds
+
+| Bound | Setting (default) | Enforcement |
+| --- | --- | --- |
+| Max session length | `MEET_ROOM_VOICE_MAX_MINUTES` (30, ceiling 60) | `deadlineAt` persisted at start; the alarm stops the session at the deadline. OpenAI's 60-minute session limit is a provider ceiling, not ours. |
+| Per-room-minute cap | `MEET_ROOM_VOICE_MAX_CREDITS_PER_MINUTE` | Accrued usage cost per wall-clock minute; at the cap, input pauses for the rest of that minute; three capped minutes in a row stop the session (`rate_cap`). |
+| Per-workspace daily cap | `MEET_ROOM_VOICE_WORKSPACE_DAILY_CREDITS` (platform credits) and `MEET_ROOM_VOICE_WORKSPACE_DAILY_BYOK_MICRO_USD` (BYOK estimated cost) | Checked under a row lock in `begin_meeting_ai_live_session`, which every renewal calls for the next session row, against the workspace's room-voice reservations and settlements for the current ICT day. BYOK sessions settle 0 credits, so they are capped on estimated provider cost instead. A refused renewal stops the session (`daily_cap`). |
+| BYOK hold cap | `MEET_ROOM_VOICE_BYOK_HOLD_MICRO_USD` (estimated cost per nine-minute hold) | The BYOK path of `begin_meeting_ai_live_session` reserves 0 credits but records an estimated-cost hold, renewed like a credit hold; a session past its hold stops (`rate_cap`). |
+| Idle stop | 5 minutes without a floor turn or mixed speech | Stop (`idle`). |
+| Adapters | `MEET_ROOM_VOICE_MAX_SOURCES` plus one ingest | Hard cap on adapter creation. |
+
+**Renewal guard for BYOK rows.** Live billing renews when
+`remaining_reserved_credits <= 300` or after eight minutes
+(`packages/meet-core/src/cloudflare/live/billing.ts`). A BYOK row reserves 0
+credits, so the credit condition is always true and would renew on every
+20-second tick. The implementation must renew a BYOK row only on the
+eight-minute timer or when its estimated-cost hold is used up, never on the
+credit condition. A test runs a BYOK session through several ticks and asserts
+exactly one renewal per eight minutes, and one renewal when the hold cap is
+reached.
+
+Credits reuse the Live ledger: `private.begin_meeting_ai_live_session` with a
+new `kind = 'room_voice'` on `private.ai_live_sessions`, nine-minute holds
+renewed after eight minutes, `private.settle_ai_live_session` with
+sequence-checked updates, prices from `private.ai_live_model_prices` (new rows
+for the OpenAI models). The payer is the meeting workspace, or the Tuturuuu root
+workspace for staff acceptors, as for room Mira chat. Missing usage stays
+`incomplete`, never zero. With a workspace BYOK key, provider cost draws no
+credits and the BYOK platform fee ($1 per 1,000 requests, one per model
+response turn) applies instead. `begin_meeting_ai_live_session` gains an
+explicit BYOK path for this: it reserves 0 credits (the credit path refuses a
+workspace with 0 credits), checks the estimated-cost caps above, and returns
+the run-scoped proof that the keys Worker needs; each renewal rotates it (see
+[proof of use](/platform/features/workspace-ai-provider-keys#server-side-decryption-per-request)).
+
+Cloudflare cost drivers per session (estimates; re-verify against
+[Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)
+and Realtime pricing before rollout): the open outbound provider socket keeps
+the Durable Object in memory and billed for duration; inbound adapter messages
+count as requests at 20:1; each egress source is uncompressed 48 kHz stereo
+PCM, about 0.69 GB per source-hour of Realtime egress. These make `addressed`
+mode and a low source cap the cost default.
+
+## Durable stop fence
+
+The fence follows the Cloudflare billable-operations rule: bounded work and
+retries, idempotent progress, terminal-state scheduling and a tested stop.
+
+- **State.** One storage key `voice:session` holds
+  `{ id, state: starting | active | stopping | ended, fenceEpoch, deadlineAt,
+  stopReason, obligations }`. Every input path (frame, floor, reconnect,
+  renewal, tool of any kind) proceeds only when `state === 'active'` and its
+  captured `fenceEpoch` is current.
+- **Idempotent stop.** `stop(reason)` returns at once when `stopping` or
+  `ended`; otherwise, in one storage transaction and **before any I/O**, it
+  persists `stopping`, the reason and `fenceEpoch + 1`, and sets the alarm for
+  the first obligation retry. If the object crashes right after, the alarm
+  finds `stopping` and finishes the stop. It then then closes the provider without sending further input
+  (the existing provider drain), closes every adapter, settles billing, sends
+  `voice.stop` to the room and persists `ended`. Repeating it is harmless.
+- **Alarm-based terminal state.** Durable Object alarms are at-least-once,
+  one per object, and retried up to six times when the handler throws, so the
+  handler catches errors and sets one alarm at the earliest pending time
+  (next tick, `deadlineAt`, or an obligation retry). A tick past `deadlineAt`
+  stops with `max_duration`.
+- **Bounded compensation.** Each obligation (billing settlement, adapter close,
+  room release) records reserved attempts (at most 6, exponential backoff) and
+  a job deadline of 24 hours before its downstream call. At exhaustion it is
+  marked `exhausted` for operator review and nothing is rescheduled. Unknown
+  usage is never settled as zero to end retries.
+- **Room-side lease.** The room keeps `{ voiceSessionId, fenceEpoch, expiresAt }`;
+  `voice.heartbeat` renews it every 20 seconds. A lapsed lease (60 seconds),
+  an ended room or an ended acceptance refuses the next heartbeat, and the
+  Durable Object stops.
+- **Kill switch.** `MEET_ROOM_VOICE_ENABLED` set to anything but `true`, or a
+  row in a new service-only `private.meet_room_voice_controls` table (global or
+  per workspace), stops every session on its next tick, within 20 seconds and
+  without a release. Excluding a workspace through
+  `MEET_AI_DISABLED_WORKSPACE_IDS` has the same effect.
+- **Gate rechecks** run like Private Live: on every tick, provider reconnect or
+  `GoAway` resumption, floor grant and billing renewal. They cover the flag,
+  `MEET_AI_DISABLED`, the full workspace gate, the owner attestation, a current
+  acceptance that includes `voice`, the payer and the daily cap. On a BYOK
+  session they also check the key's status through the keys Worker's
+  metadata-only `keyStatus(wsId, keyId)` (no decryption): `revoked`,
+  `invalid` or `missing` stops the session (`key_unusable`), so a revoked key stops within
+  20 seconds. A closed gate
+  stops with `workspace_not_enabled` and passes the gate to the provider drain.
+- **Clock integrity.** Invalid or future timestamps fail closed, as in the
+  registry lease rules.
+
+## Abuse and safety
+
+- **Prompt injection by voice or chat.** Room voice has no tools, search or
+  memory; instructions are fixed on the server. The worst case is spoken
+  content, which the host can stop at once.
+- **Harmful output.** Provider safety settings stay on; the host stops voice for
+  everyone and each person can mute Mira locally.
+- **Impersonation.** Only preset provider voices, no voice cloning; the tile,
+  label and spoken disclosure say Mira is an AI.
+- **Wallet abuse.** Floor turns are rate-limited per account (one start every
+  10 seconds, 60 seconds each); caps above bound the rest.
+- **Minors.** The 18+ rules above; a report ends the acceptance.
+- **Retention.** Audio is never stored. Mira's output transcription is shown
+  live on the Mira tile only and is not saved.
+
+## Failure modes
+
+| Failure | Behavior |
+| --- | --- |
+| Provider connect fails | Up to 3 attempts with backoff, then stop (`provider_unavailable`). |
+| Gemini `GoAway` | Gates recheck, then resume with the handle; never resume after a withdrawal. |
+| Adapter creation returns 503 or a failed item | Up to 3 attempts per source; a failed ingest stops the session; a failed egress drops that source. |
+| Egress socket drops | The source leaves the mix at once. The SFU's retry with the spent token is refused; the Durable Object recreates the adapter with a fresh token (at most 3 per source per minute). |
+| Durable Object restart | State reloads from storage; the provider socket is lost; reconnect only when `active` and every gate passes, otherwise stop. |
+| Credit reservation fails | Stop (`credits_exhausted`). |
+| Room unreachable | Two failed heartbeats stop the session. |
+| Usage missing | Settlement marks the period `incomplete`. |
+
+## UX sketch
+
+| Surface | English | Vietnamese |
+| --- | --- | --- |
+| Host switch | Mira voice | Giọng nói Mira |
+| Confirm title | Turn on Mira voice? | Bật giọng nói Mira? |
+| Confirm body | Everyone will be asked to confirm again. | Mọi người sẽ được hỏi xác nhận lại. |
+| Call bar | Ask Mira | Hỏi Mira |
+| Floor state | Mira is listening to you | Mira đang nghe bạn |
+| Mira tile | Mira · AI | Mira · AI |
+| Speaking | Mira is speaking | Mira đang nói |
+| System line | {name} turned on Mira voice | {name} đã bật giọng nói Mira |
+| Host stop | Turn off Mira voice for everyone | Tắt giọng nói Mira cho mọi người |
+| Limit reached | Mira voice reached this meeting's limit | Giọng nói Mira đã đạt giới hạn của cuộc họp |
+
+Dialogs use the shared UI dialog components; colors use dynamic tokens.
+
+## Rollout
+
+1. This design, then an independent security and privacy review.
+2. Room reducer `voice.*` commands, the `voice` capability and the stop fence,
+   with the flag off; the ledger `kind` and `private.meet_room_voice_controls`
+   ship in migration `<VERSION-FROM-IRIS>`, stamped right before push; after the 5 December EduFest freeze.
+3. Gemini adapter, `addressed` mode, staff workspaces through
+   `MEET_ROOM_VOICE_WORKSPACE_IDS`; staging acceptance on the hosted SFU.
+4. OpenAI adapter; the Claude text agent; `listening` mode behind its own flag.
+5. Paid workspaces after measured cost and stop-fence evidence.
+
+## Test plan
+
+- **Room reducer** (`packages/realtime`): `voice.reserve` needs a current
+  acceptance with `voice` and a requester who is on; withdrawal emits a new
+  source set; heartbeat lapse, room end and minor report refuse the session.
+- **Mixer:** a frame from a withdrawn or unknown source is never mixed; a
+  token with a stale choice revision or epoch is refused; resampling and
+  limiting keep levels bounded.
+- **Stop fence:** duplicate alarms, restart in every state, stop racing start,
+  stop during provider connect, successful adapter close followed by a failed
+  progress write, kill switch during reconnect, exhausted obligations. Count
+  downstream calls and written keys.
+- **Billing:** per-minute and daily caps under concurrent sessions, renewal
+  refusal, incomplete usage, BYOK fee path.
+- **Runtime:** the real local Worker and Durable Object with Wrangler for the
+  fence and storage; the hosted SFU adapter only in staging, with synthetic
+  voices on two devices.
+
+## Security review
+
+| # | Threat | Mitigation | Residual | Severity |
+| --- | --- | --- | --- | --- |
+| 1 | An opted-off participant's audio reaches the provider | No adapter, per-frame source check, withdrawal push, provider context reset | Acoustic bleed through another microphone (stated in the notice) | High, residual Medium |
+| 2 | Forged or replayed adapter connection injects audio or hijacks the Mira track | HMAC source tokens bound to workspace, meeting, session, epoch, track, revision and nonce; path segments must match; 60-second connect window; nonce spent in storage before accept; adapters recreated rather than reconnected; token segment redacted from logs and telemetry | None known | High, residual Low |
+| 3 | Runaway spend from retries or a stuck session | Caps, deadline alarm, bounded obligations, kill switch | Duration cost while the outbound socket is open, bounded by max minutes | High, residual Low |
+| 4 | Minors hear or are heard by Mira | Owner attestation, acceptor confirmation, report ends acceptance and locks room Mira for the meeting until the owner confirms again, audited | Relies on truthful attestation | High, residual Medium |
+| 5 | Private Mira isolation regresses | Separate Durable Object class and storage | Shared helpers must keep their mode checks | High, residual Low |
+| 6 | Prompt injection by voice or transcript | Room voice and the Claude text agent have no tools, search or memory writes; fixed instructions; a test asserts the empty tool set | Spoken misinformation until stopped | Medium, residual Low |
+| 7 | New sub-processor or cross-border transfer without notice | New notice version, legal review; the Claude text agent stays disabled until the USER decides the proposed Anthropic notice change | Review outcome pending | Medium |
+| 8 | Consent race between withdrawal and a frame | Single-threaded Durable Object, ordered withdrawal handling | Frames already sent before the click | Medium, residual Low |
+| 9 | Cross-meeting leakage | Object per `workspaceId:meetingId`; tokens name the meeting | None known | Medium, residual Low |
+| 10 | Double settlement | Sequence-checked settlement | None known | Low |
+| 11 | BYOK room voice runs unbounded on the workspace's provider bill | Zero-credit BYOK path with estimated-cost hold and daily caps; key status checked every tick | Estimates differ from provider billing | Medium, residual Low |
+| 12 | A crash between `stopping` and the retry alarm stalls obligations | `stopping` and the alarm written in one storage transaction | None known | Medium, residual Low |
+
+Open risks: Gemini 3.8 Live pricing for room voice is unverified; Realtime SFU
+egress pricing for PCM needs a measured probe; the WebSocket adapter's
+acceptance of a Worker route as its endpoint is unverified until staging.
+
+## Sources
+
+- [Gemini Live session management](https://ai.google.dev/gemini-api/docs/live-session),
+  [Live capabilities](https://ai.google.dev/gemini-api/docs/live-guide),
+  [Gemini models](https://ai.google.dev/gemini-api/docs/models)
+- [OpenAI Realtime](https://developers.openai.com/api/docs/guides/realtime),
+  [Realtime WebSocket](https://developers.openai.com/api/docs/guides/realtime-websocket),
+  [Realtime VAD](https://developers.openai.com/api/docs/guides/realtime-vad),
+  [OpenAI pricing](https://developers.openai.com/api/docs/pricing)
+- [Claude API overview](https://platform.claude.com/docs/en/api/overview),
+  [Claude models](https://platform.claude.com/docs/en/about-claude/models/overview),
+  [Claude pricing](https://platform.claude.com/docs/en/about-claude/pricing)
+- [Realtime SFU WebSocket adapter](https://developers.cloudflare.com/realtime/sfu/media-transport-adapters/websocket-adapter/),
+  [Durable Object alarms](https://developers.cloudflare.com/durable-objects/api/alarms/),
+  [Durable Object WebSockets](https://developers.cloudflare.com/durable-objects/best-practices/websockets/)
