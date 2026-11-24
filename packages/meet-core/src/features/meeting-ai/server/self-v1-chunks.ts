@@ -144,14 +144,16 @@ export async function transcribeSelfChunk(
     { sessionId: fields.sessionId, meetingId, wsId },
     'upload'
   );
-  // The stream must be this account's own stream in this session. A lapsed
-  // lease is refused before the room spends a token, so the client reopens.
+  // The stream must be this account's own live stream in this session; a
+  // closed or revoked one is terminal. A lapsed lease is refused before the
+  // room spends a token, so the client reopens.
   const stream = await loadUploaderStream(db, {
     sessionId: session.id,
     streamId: fields.streamId,
     accountId: user.id,
   });
-  if (!stream) throw consentRefused();
+  if (!stream || (stream.state !== 'active' && stream.state !== 'draining'))
+    throw consentRefused();
   if (leaseLapsed(stream)) throw leaseExpired();
   const room = await selfRoom(meetingId, user.id);
   const fence = {
