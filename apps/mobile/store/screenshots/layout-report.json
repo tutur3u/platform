@@ -1,0 +1,2726 @@
+{
+  "version": 1,
+  "unit": "px",
+  "files": {
+    "android/phone/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 175,
+        "y": 140.4,
+        "width": 729.9,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 226.3,
+        "y": 140.4,
+        "width": 627.3,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 123.9,
+        "y": 140.4,
+        "width": 832.1,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 223.3,
+        "y": 140.4,
+        "width": 633.3,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 108.6,
+        "y": 140.4,
+        "width": 862.7,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/06-finance.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 90.9,
+        "y": 140.4,
+        "width": 898.1,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/07-habits.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 192.2,
+        "y": 140.4,
+        "width": 695.6,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/en/08-notes.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 65.7,
+        "y": 140.4,
+        "width": 948.5,
+        "height": 372.5
+      },
+      "headline": {
+        "fontSize": 129,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 67.4,
+        "y": 140.4,
+        "width": 945.3,
+        "height": 339.5
+      },
+      "headline": {
+        "fontSize": 114,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 151.4,
+        "y": 140.4,
+        "width": 777.1,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 71.5,
+        "y": 140.4,
+        "width": 937,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 137.5,
+        "y": 140.4,
+        "width": 804.9,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 150.7,
+        "y": 140.4,
+        "width": 778.7,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 122.3,
+        "y": 140.4,
+        "width": 835.5,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 128.8,
+        "y": 140.4,
+        "width": 822.5,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/phone/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 123.5,
+        "y": 140.4,
+        "width": 833,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 371.9,
+        "y": 129.6,
+        "width": 696.2,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 145.8,
+        "y": 129.6,
+        "width": 1148.4,
+        "height": 242.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 1
+      }
+    },
+    "android/tablet10/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 323.1,
+        "y": 129.6,
+        "width": 793.7,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 418,
+        "y": 129.6,
+        "width": 604.1,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 308.5,
+        "y": 129.6,
+        "width": 822.9,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/06-finance.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 291.6,
+        "y": 129.6,
+        "width": 856.7,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/07-habits.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 388.2,
+        "y": 129.6,
+        "width": 663.5,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/en/08-notes.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 264.1,
+        "y": 129.6,
+        "width": 911.8,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 205.9,
+        "y": 129.6,
+        "width": 1028.2,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 349.4,
+        "y": 129.6,
+        "width": 741.2,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 273.1,
+        "y": 129.6,
+        "width": 893.8,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 336.1,
+        "y": 129.6,
+        "width": 767.8,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 348.6,
+        "y": 129.6,
+        "width": 742.7,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 321.5,
+        "y": 129.6,
+        "width": 796.9,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 327.7,
+        "y": 129.6,
+        "width": 784.5,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet10/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 1440,
+        "height": 2560
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 322.7,
+        "y": 129.6,
+        "width": 794.6,
+        "height": 366.1
+      },
+      "headline": {
+        "fontSize": 124,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 175,
+        "y": 140.4,
+        "width": 729.9,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 226.3,
+        "y": 140.4,
+        "width": 627.3,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 123.9,
+        "y": 140.4,
+        "width": 832.1,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 223.3,
+        "y": 140.4,
+        "width": 633.3,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 108.6,
+        "y": 140.4,
+        "width": 862.7,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/06-finance.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 90.9,
+        "y": 140.4,
+        "width": 898.1,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/07-habits.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 192.2,
+        "y": 140.4,
+        "width": 695.6,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/en/08-notes.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 65.7,
+        "y": 140.4,
+        "width": 948.5,
+        "height": 372.5
+      },
+      "headline": {
+        "fontSize": 129,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 67.4,
+        "y": 140.4,
+        "width": 945.3,
+        "height": 339.5
+      },
+      "headline": {
+        "fontSize": 114,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 151.4,
+        "y": 140.4,
+        "width": 777.1,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 71.5,
+        "y": 140.4,
+        "width": 937,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 137.5,
+        "y": 140.4,
+        "width": 804.9,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 150.7,
+        "y": 140.4,
+        "width": 778.7,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 122.3,
+        "y": 140.4,
+        "width": 835.5,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 128.8,
+        "y": 140.4,
+        "width": 822.5,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "android/tablet7/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 123.5,
+        "y": 140.4,
+        "width": 833,
+        "height": 374.5
+      },
+      "headline": {
+        "fontSize": 130,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 532.3,
+        "y": 185.8,
+        "width": 999.4,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 207.7,
+        "y": 185.8,
+        "width": 1648.5,
+        "height": 348
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 1
+      }
+    },
+    "ios/ipad-13/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 462.3,
+        "y": 185.8,
+        "width": 1139.3,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 598.4,
+        "y": 185.8,
+        "width": 867.1,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 441.3,
+        "y": 185.8,
+        "width": 1181.3,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/06-finance.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 417.1,
+        "y": 185.8,
+        "width": 1229.7,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/07-habits.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 555.7,
+        "y": 185.8,
+        "width": 952.5,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/en/08-notes.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 377.6,
+        "y": 185.8,
+        "width": 1308.8,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 294,
+        "y": 185.8,
+        "width": 1475.9,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 500,
+        "y": 185.8,
+        "width": 1064,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 390.5,
+        "y": 185.8,
+        "width": 1283,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 480.9,
+        "y": 185.8,
+        "width": 1102.2,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 498.9,
+        "y": 185.8,
+        "width": 1066.2,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 460,
+        "y": 185.8,
+        "width": 1144,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 468.9,
+        "y": 185.8,
+        "width": 1126.1,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/ipad-13/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 2064,
+        "height": 2752
+      },
+      "layout": "tablet",
+      "caption": {
+        "x": 461.7,
+        "y": 185.8,
+        "width": 1140.6,
+        "height": 526
+      },
+      "headline": {
+        "fontSize": 178,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 195.9,
+        "y": 156.8,
+        "width": 814.1,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 253.1,
+        "y": 156.8,
+        "width": 699.7,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 138.9,
+        "y": 156.8,
+        "width": 928.1,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 249.8,
+        "y": 156.8,
+        "width": 706.4,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 121.8,
+        "y": 156.8,
+        "width": 962.3,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/06-finance.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 102.1,
+        "y": 156.8,
+        "width": 1001.8,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/07-habits.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 215,
+        "y": 156.8,
+        "width": 775.9,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/en/08-notes.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 73.6,
+        "y": 156.8,
+        "width": 1058.8,
+        "height": 416.3
+      },
+      "headline": {
+        "fontSize": 144,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 76.5,
+        "y": 156.8,
+        "width": 1053,
+        "height": 379.3
+      },
+      "headline": {
+        "fontSize": 127,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 169.6,
+        "y": 156.8,
+        "width": 866.8,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 80.4,
+        "y": 156.8,
+        "width": 1045.2,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 154.1,
+        "y": 156.8,
+        "width": 897.8,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 168.7,
+        "y": 156.8,
+        "width": 868.5,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 137,
+        "y": 156.8,
+        "width": 931.9,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 144.3,
+        "y": 156.8,
+        "width": 917.4,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.3/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 1206,
+        "height": 2622
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 138.4,
+        "y": 156.8,
+        "width": 929.2,
+        "height": 418.3
+      },
+      "headline": {
+        "fontSize": 145,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 209.7,
+        "y": 166.9,
+        "width": 864.6,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 270.4,
+        "y": 166.9,
+        "width": 743.1,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 149.1,
+        "y": 166.9,
+        "width": 985.7,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 266.9,
+        "y": 166.9,
+        "width": 750.2,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 131,
+        "y": 166.9,
+        "width": 1022,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/06-finance.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 110,
+        "y": 166.9,
+        "width": 1063.9,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/07-habits.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 230,
+        "y": 166.9,
+        "width": 824.1,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/en/08-notes.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 79.5,
+        "y": 166.9,
+        "width": 1125,
+        "height": 442.9
+      },
+      "headline": {
+        "fontSize": 153,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 78.1,
+        "y": 166.9,
+        "width": 1127.7,
+        "height": 404.9
+      },
+      "headline": {
+        "fontSize": 136,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 181.7,
+        "y": 166.9,
+        "width": 920.5,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 87,
+        "y": 166.9,
+        "width": 1110,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 165.2,
+        "y": 166.9,
+        "width": 953.5,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 180.8,
+        "y": 166.9,
+        "width": 922.4,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 147.1,
+        "y": 166.9,
+        "width": 989.7,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 154.8,
+        "y": 166.9,
+        "width": 974.3,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.5/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 1284,
+        "height": 2778
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 148.6,
+        "y": 166.9,
+        "width": 986.8,
+        "height": 444.9
+      },
+      "headline": {
+        "fontSize": 154,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 216.4,
+        "y": 171.6,
+        "width": 887.1,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 278.8,
+        "y": 171.6,
+        "width": 762.4,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 154.3,
+        "y": 171.6,
+        "width": 1011.3,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 275.1,
+        "y": 171.6,
+        "width": 769.7,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 135.7,
+        "y": 171.6,
+        "width": 1048.5,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/06-finance.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 114.2,
+        "y": 171.6,
+        "width": 1091.6,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/07-habits.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 237.3,
+        "y": 171.6,
+        "width": 845.5,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/en/08-notes.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 82.8,
+        "y": 171.6,
+        "width": 1154.4,
+        "height": 454
+      },
+      "headline": {
+        "fontSize": 157,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 79.6,
+        "y": 171.6,
+        "width": 1160.8,
+        "height": 417
+      },
+      "headline": {
+        "fontSize": 140,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 187.8,
+        "y": 171.6,
+        "width": 944.5,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 90.5,
+        "y": 171.6,
+        "width": 1138.9,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 170.8,
+        "y": 171.6,
+        "width": 978.3,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 186.8,
+        "y": 171.6,
+        "width": 946.4,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 152.3,
+        "y": 171.6,
+        "width": 1015.4,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 160.2,
+        "y": 171.6,
+        "width": 999.6,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-6.9/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 1320,
+        "height": 2868
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 153.8,
+        "y": 171.6,
+        "width": 1012.5,
+        "height": 457
+      },
+      "headline": {
+        "fontSize": 158,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 707.4,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 608,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 806.5,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 613.8,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 828.2,
+        "width": 937,
+        "height": 370.6
+      },
+      "headline": {
+        "fontSize": 113,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 753.2,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 908.2,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-inner/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 2853,
+        "height": 2007
+      },
+      "layout": "side",
+      "caption": {
+        "x": 171.2,
+        "y": 815.2,
+        "width": 780.2,
+        "height": 398.6
+      },
+      "headline": {
+        "fontSize": 126,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 227.4,
+        "y": 181.7,
+        "width": 943.2,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 293.6,
+        "y": 181.7,
+        "width": 810.7,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 161.3,
+        "y": 181.7,
+        "width": 1075.3,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 289.8,
+        "y": 181.7,
+        "width": 818.4,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 85.4,
+        "y": 181.7,
+        "width": 1227.2,
+        "height": 441.5
+      },
+      "headline": {
+        "fontSize": 148,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 196.9,
+        "y": 181.7,
+        "width": 1004.2,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 93.5,
+        "y": 181.7,
+        "width": 1211,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "ios/iphone-duo-outer/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 1398,
+        "height": 2034
+      },
+      "layout": "stack",
+      "caption": {
+        "x": 178.9,
+        "y": 181.7,
+        "width": 1040.2,
+        "height": 484.5
+      },
+      "headline": {
+        "fontSize": 168,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/01-dashboard.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 679.3,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/02-assistant.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 583.9,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/03-tasks.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 774.5,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/04-calendar.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 589.5,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 803,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/06-finance.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 648.8,
+        "width": 829,
+        "height": 379.5
+      },
+      "headline": {
+        "fontSize": 120,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/07-habits.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 647.5,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/en/08-notes.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 655.8,
+        "width": 830.9,
+        "height": 364.5
+      },
+      "headline": {
+        "fontSize": 113,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/01-dashboard.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 668.8,
+        "width": 829.2,
+        "height": 336.5
+      },
+      "headline": {
+        "fontSize": 100,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/02-assistant.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 723.3,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/03-tasks.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 653.8,
+        "width": 828.9,
+        "height": 369.5
+      },
+      "headline": {
+        "fontSize": 115,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/04-calendar.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 749.2,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/05-time-tracker.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 724.8,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/06-finance.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 777.6,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/07-habits.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 765.5,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "macos/mac/vi/08-notes.jpg": {
+      "canvas": {
+        "width": 2880,
+        "height": 1800
+      },
+      "layout": "window",
+      "caption": {
+        "x": 172.8,
+        "y": 647.8,
+        "width": 775.4,
+        "height": 382.5
+      },
+      "headline": {
+        "fontSize": 121,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/01-dashboard.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 454.8,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/02-assistant.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 390.9,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/03-tasks.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 518.5,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/04-calendar.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 394.6,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/05-time-tracker.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 537.5,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/06-finance.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 377.3,
+        "width": 552.7,
+        "height": 252.9
+      },
+      "headline": {
+        "fontSize": 80,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/07-habits.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 433.4,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/en/08-notes.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 382.3,
+        "width": 551.5,
+        "height": 241.9
+      },
+      "headline": {
+        "fontSize": 75,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/01-dashboard.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 390.3,
+        "width": 555.5,
+        "height": 224.9
+      },
+      "headline": {
+        "fontSize": 67,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/02-assistant.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 484.2,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/03-tasks.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 380.3,
+        "width": 555,
+        "height": 246.9
+      },
+      "headline": {
+        "fontSize": 77,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/04-calendar.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 501.5,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/05-time-tracker.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 485.2,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/06-finance.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 520.6,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/07-habits.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 512.5,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    },
+    "windows/desktop/vi/08-notes.png": {
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "layout": "window",
+      "caption": {
+        "x": 115.2,
+        "y": 376.3,
+        "width": 519,
+        "height": 255.9
+      },
+      "headline": {
+        "fontSize": 81,
+        "lines": 2
+      }
+    }
+  }
+}

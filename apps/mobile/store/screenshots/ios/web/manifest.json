@@ -6,42 +6,42 @@
       "file": "apps/mobile/store/screenshots/ios/web/01-dashboard.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 42878
-    },
-    {
-      "id": "tasks",
-      "file": "apps/mobile/store/screenshots/ios/web/02-tasks.webp",
-      "width": 589,
-      "height": 1280,
-      "bytes": 37694
-    },
-    {
-      "id": "calendar",
-      "file": "apps/mobile/store/screenshots/ios/web/03-calendar.webp",
-      "width": 589,
-      "height": 1280,
-      "bytes": 37646
+      "bytes": 55472
     },
     {
       "id": "assistant",
-      "file": "apps/mobile/store/screenshots/ios/web/04-assistant.webp",
+      "file": "apps/mobile/store/screenshots/ios/web/02-assistant.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 41570
+      "bytes": 45368
+    },
+    {
+      "id": "tasks",
+      "file": "apps/mobile/store/screenshots/ios/web/03-tasks.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 41614
+    },
+    {
+      "id": "calendar",
+      "file": "apps/mobile/store/screenshots/ios/web/04-calendar.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 46168
     },
     {
       "id": "time-tracker",
       "file": "apps/mobile/store/screenshots/ios/web/05-time-tracker.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 36166
+      "bytes": 32634
     },
     {
       "id": "notes",
       "file": "apps/mobile/store/screenshots/ios/web/06-notes.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 46566
+      "bytes": 47632
     }
   ]
 }

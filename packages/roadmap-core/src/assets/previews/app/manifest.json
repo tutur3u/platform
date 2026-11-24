@@ -1,101 +1,101 @@
 {
-  "generatedAt": "2026-11-24T09:13:22.154Z",
+  "generatedAt": "2026-11-24T11:08:29.767Z",
   "items": [
     {
       "screen": "tasks",
       "device": "iphone",
       "theme": "light",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-light-en.webp",
-      "avifBytes": 35362,
-      "webpBytes": 47172
+      "avifBytes": 46293,
+      "webpBytes": 65132
     },
     {
       "screen": "tasks",
       "device": "iphone",
       "theme": "light",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-light-vi.webp",
-      "avifBytes": 36536,
-      "webpBytes": 49208
+      "avifBytes": 47923,
+      "webpBytes": 68184
     },
     {
       "screen": "tasks",
       "device": "iphone",
       "theme": "dark",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-dark-en.webp",
-      "avifBytes": 35072,
-      "webpBytes": 45504
+      "avifBytes": 40815,
+      "webpBytes": 53982
     },
     {
       "screen": "tasks",
       "device": "iphone",
       "theme": "dark",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/iphone-dark-vi.webp",
-      "avifBytes": 36399,
-      "webpBytes": 47108
+      "avifBytes": 42316,
+      "webpBytes": 57024
     },
     {
       "screen": "tasks",
       "device": "ipad",
       "theme": "light",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-light-en.webp",
-      "avifBytes": 37128,
-      "webpBytes": 52834
+      "avifBytes": 66746,
+      "webpBytes": 97786
     },
     {
       "screen": "tasks",
       "device": "ipad",
       "theme": "light",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-light-vi.webp",
-      "avifBytes": 37691,
-      "webpBytes": 54134
+      "avifBytes": 68463,
+      "webpBytes": 100402
     },
     {
       "screen": "tasks",
       "device": "ipad",
       "theme": "dark",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-dark-en.webp",
-      "avifBytes": 36883,
-      "webpBytes": 49826
+      "avifBytes": 56290,
+      "webpBytes": 79896
     },
     {
       "screen": "tasks",
       "device": "ipad",
       "theme": "dark",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-dark-vi.webp",
-      "avifBytes": 37432,
-      "webpBytes": 51686
+      "avifBytes": 58216,
+      "webpBytes": 83148
     },
     {
       "screen": "tasks",
@@ -103,11 +103,11 @@
       "theme": "light",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-light-en.webp",
-      "avifBytes": 47739,
-      "webpBytes": 67666
+      "avifBytes": 85926,
+      "webpBytes": 126310
     },
     {
       "screen": "tasks",
@@ -115,11 +115,11 @@
       "theme": "light",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-light-vi.webp",
-      "avifBytes": 50449,
-      "webpBytes": 71056
+      "avifBytes": 89480,
+      "webpBytes": 130044
     },
     {
       "screen": "tasks",
@@ -127,11 +127,11 @@
       "theme": "dark",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-dark-en.webp",
-      "avifBytes": 47422,
-      "webpBytes": 63374
+      "avifBytes": 72204,
+      "webpBytes": 101336
     },
     {
       "screen": "tasks",
@@ -139,251 +139,251 @@
       "theme": "dark",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/ipad-landscape-dark-vi.webp",
-      "avifBytes": 50270,
-      "webpBytes": 66848
+      "avifBytes": 76156,
+      "webpBytes": 106384
     },
     {
       "screen": "tasks",
       "device": "mac",
       "theme": "light",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/mac-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/mac-light-en.webp",
-      "avifBytes": 43141,
-      "webpBytes": 60180
+      "avifBytes": 75560,
+      "webpBytes": 108816
     },
     {
       "screen": "tasks",
       "device": "mac",
       "theme": "light",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/mac-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/mac-light-vi.webp",
-      "avifBytes": 45557,
-      "webpBytes": 63612
+      "avifBytes": 79148,
+      "webpBytes": 114470
     },
     {
       "screen": "tasks",
       "device": "mac",
       "theme": "dark",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/mac-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/mac-dark-en.webp",
-      "avifBytes": 43238,
-      "webpBytes": 56488
+      "avifBytes": 66020,
+      "webpBytes": 90492
     },
     {
       "screen": "tasks",
       "device": "mac",
       "theme": "dark",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/mac-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/mac-dark-vi.webp",
-      "avifBytes": 45447,
-      "webpBytes": 60222
+      "avifBytes": 69692,
+      "webpBytes": 95972
     },
     {
       "screen": "tasks",
       "device": "duo-folded",
       "theme": "light",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-light-en.webp",
-      "avifBytes": 41157,
-      "webpBytes": 57562
+      "avifBytes": 51342,
+      "webpBytes": 74738
     },
     {
       "screen": "tasks",
       "device": "duo-folded",
       "theme": "light",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-light-vi.webp",
-      "avifBytes": 42467,
-      "webpBytes": 59214
+      "avifBytes": 52752,
+      "webpBytes": 77418
     },
     {
       "screen": "tasks",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-dark-en.webp",
-      "avifBytes": 40199,
-      "webpBytes": 54752
+      "avifBytes": 41253,
+      "webpBytes": 59608
     },
     {
       "screen": "tasks",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-folded-dark-vi.webp",
-      "avifBytes": 41463,
-      "webpBytes": 56666
+      "avifBytes": 42667,
+      "webpBytes": 61462
     },
     {
       "screen": "tasks",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-light-en.webp",
-      "avifBytes": 55733,
-      "webpBytes": 81028
+      "avifBytes": 74186,
+      "webpBytes": 111444
     },
     {
       "screen": "tasks",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-light-vi.webp",
-      "avifBytes": 57001,
-      "webpBytes": 82806
+      "avifBytes": 76131,
+      "webpBytes": 114462
     },
     {
       "screen": "tasks",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-dark-en.webp",
-      "avifBytes": 54633,
-      "webpBytes": 76920
+      "avifBytes": 59746,
+      "webpBytes": 89214
     },
     {
       "screen": "tasks",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/tasks/duo-unfolded-dark-vi.webp",
-      "avifBytes": 55948,
-      "webpBytes": 78346
+      "avifBytes": 62125,
+      "webpBytes": 91966
     },
     {
       "screen": "task-detail",
       "device": "iphone",
       "theme": "light",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-light-en.webp",
-      "avifBytes": 27952,
-      "webpBytes": 36422
+      "avifBytes": 32133,
+      "webpBytes": 45908
     },
     {
       "screen": "task-detail",
       "device": "iphone",
       "theme": "light",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-light-vi.webp",
-      "avifBytes": 29487,
-      "webpBytes": 38778
+      "avifBytes": 34749,
+      "webpBytes": 48060
     },
     {
       "screen": "task-detail",
       "device": "iphone",
       "theme": "dark",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-dark-en.webp",
-      "avifBytes": 28094,
-      "webpBytes": 36900
+      "avifBytes": 26755,
+      "webpBytes": 37180
     },
     {
       "screen": "task-detail",
       "device": "iphone",
       "theme": "dark",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/iphone-dark-vi.webp",
-      "avifBytes": 29836,
-      "webpBytes": 39332
+      "avifBytes": 29421,
+      "webpBytes": 39988
     },
     {
       "screen": "task-detail",
       "device": "ipad",
       "theme": "light",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-light-en.webp",
-      "avifBytes": 32913,
-      "webpBytes": 45870
+      "avifBytes": 44435,
+      "webpBytes": 71220
     },
     {
       "screen": "task-detail",
       "device": "ipad",
       "theme": "light",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-light-vi.webp",
-      "avifBytes": 36424,
-      "webpBytes": 51374
+      "avifBytes": 48292,
+      "webpBytes": 75626
     },
     {
       "screen": "task-detail",
       "device": "ipad",
       "theme": "dark",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-dark-en.webp",
-      "avifBytes": 34042,
-      "webpBytes": 46148
+      "avifBytes": 34892,
+      "webpBytes": 54940
     },
     {
       "screen": "task-detail",
       "device": "ipad",
       "theme": "dark",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-dark-vi.webp",
-      "avifBytes": 38010,
-      "webpBytes": 51322
+      "avifBytes": 39125,
+      "webpBytes": 60112
     },
     {
       "screen": "task-detail",
@@ -391,11 +391,11 @@
       "theme": "light",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-light-en.webp",
-      "avifBytes": 33985,
-      "webpBytes": 49694
+      "avifBytes": 47869,
+      "webpBytes": 76032
     },
     {
       "screen": "task-detail",
@@ -403,11 +403,11 @@
       "theme": "light",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-light-vi.webp",
-      "avifBytes": 37648,
-      "webpBytes": 54298
+      "avifBytes": 51685,
+      "webpBytes": 81288
     },
     {
       "screen": "task-detail",
@@ -415,11 +415,11 @@
       "theme": "dark",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-dark-en.webp",
-      "avifBytes": 34798,
-      "webpBytes": 48052
+      "avifBytes": 34664,
+      "webpBytes": 58150
     },
     {
       "screen": "task-detail",
@@ -427,251 +427,251 @@
       "theme": "dark",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/ipad-landscape-dark-vi.webp",
-      "avifBytes": 39104,
-      "webpBytes": 52934
+      "avifBytes": 38823,
+      "webpBytes": 62822
     },
     {
       "screen": "task-detail",
       "device": "mac",
       "theme": "light",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-light-en.webp",
-      "avifBytes": 29761,
-      "webpBytes": 42864
+      "avifBytes": 42723,
+      "webpBytes": 67374
     },
     {
       "screen": "task-detail",
       "device": "mac",
       "theme": "light",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-light-vi.webp",
-      "avifBytes": 33456,
-      "webpBytes": 48116
+      "avifBytes": 46299,
+      "webpBytes": 72140
     },
     {
       "screen": "task-detail",
       "device": "mac",
       "theme": "dark",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-dark-en.webp",
-      "avifBytes": 31352,
-      "webpBytes": 42150
+      "avifBytes": 33536,
+      "webpBytes": 53052
     },
     {
       "screen": "task-detail",
       "device": "mac",
       "theme": "dark",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/mac-dark-vi.webp",
-      "avifBytes": 35612,
-      "webpBytes": 47156
+      "avifBytes": 37614,
+      "webpBytes": 57818
     },
     {
       "screen": "task-detail",
       "device": "duo-folded",
       "theme": "light",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-light-en.webp",
-      "avifBytes": 29306,
-      "webpBytes": 40538
+      "avifBytes": 37600,
+      "webpBytes": 55812
     },
     {
       "screen": "task-detail",
       "device": "duo-folded",
       "theme": "light",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-light-vi.webp",
-      "avifBytes": 31632,
-      "webpBytes": 43912
+      "avifBytes": 38740,
+      "webpBytes": 57494
     },
     {
       "screen": "task-detail",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-dark-en.webp",
-      "avifBytes": 28768,
-      "webpBytes": 41024
+      "avifBytes": 28113,
+      "webpBytes": 43120
     },
     {
       "screen": "task-detail",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-folded-dark-vi.webp",
-      "avifBytes": 30858,
-      "webpBytes": 44400
+      "avifBytes": 29403,
+      "webpBytes": 44712
     },
     {
       "screen": "task-detail",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-light-en.webp",
-      "avifBytes": 43162,
-      "webpBytes": 61856
+      "avifBytes": 55763,
+      "webpBytes": 84802
     },
     {
       "screen": "task-detail",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-light-vi.webp",
-      "avifBytes": 47291,
-      "webpBytes": 67280
+      "avifBytes": 59393,
+      "webpBytes": 89960
     },
     {
       "screen": "task-detail",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-dark-en.webp",
-      "avifBytes": 42881,
-      "webpBytes": 60674
+      "avifBytes": 42025,
+      "webpBytes": 66432
     },
     {
       "screen": "task-detail",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/task-detail/duo-unfolded-dark-vi.webp",
-      "avifBytes": 47719,
-      "webpBytes": 66270
+      "avifBytes": 46273,
+      "webpBytes": 71740
     },
     {
       "screen": "calendar",
       "device": "iphone",
       "theme": "light",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-light-en.webp",
-      "avifBytes": 35756,
-      "webpBytes": 45338
+      "avifBytes": 53110,
+      "webpBytes": 72774
     },
     {
       "screen": "calendar",
       "device": "iphone",
       "theme": "light",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-light-vi.webp",
-      "avifBytes": 34988,
-      "webpBytes": 44022
+      "avifBytes": 53176,
+      "webpBytes": 72184
     },
     {
       "screen": "calendar",
       "device": "iphone",
       "theme": "dark",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-dark-en.webp",
-      "avifBytes": 35525,
-      "webpBytes": 46986
+      "avifBytes": 46615,
+      "webpBytes": 65538
     },
     {
       "screen": "calendar",
       "device": "iphone",
       "theme": "dark",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/iphone-dark-vi.webp",
-      "avifBytes": 34544,
-      "webpBytes": 46020
+      "avifBytes": 46355,
+      "webpBytes": 65370
     },
     {
       "screen": "calendar",
       "device": "ipad",
       "theme": "light",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-light-en.webp",
-      "avifBytes": 54682,
-      "webpBytes": 71290
+      "avifBytes": 85210,
+      "webpBytes": 117034
     },
     {
       "screen": "calendar",
       "device": "ipad",
       "theme": "light",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-light-vi.webp",
-      "avifBytes": 50880,
-      "webpBytes": 65546
+      "avifBytes": 82465,
+      "webpBytes": 114470
     },
     {
       "screen": "calendar",
       "device": "ipad",
       "theme": "dark",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-dark-en.webp",
-      "avifBytes": 54612,
-      "webpBytes": 70272
+      "avifBytes": 73815,
+      "webpBytes": 102238
     },
     {
       "screen": "calendar",
       "device": "ipad",
       "theme": "dark",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-dark-vi.webp",
-      "avifBytes": 50539,
-      "webpBytes": 65420
+      "avifBytes": 70873,
+      "webpBytes": 99722
     },
     {
       "screen": "calendar",
@@ -679,11 +679,11 @@
       "theme": "light",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-light-en.webp",
-      "avifBytes": 57705,
-      "webpBytes": 76452
+      "avifBytes": 90459,
+      "webpBytes": 126856
     },
     {
       "screen": "calendar",
@@ -691,11 +691,11 @@
       "theme": "light",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-light-vi.webp",
-      "avifBytes": 51603,
-      "webpBytes": 69524
+      "avifBytes": 85542,
+      "webpBytes": 120168
     },
     {
       "screen": "calendar",
@@ -703,11 +703,11 @@
       "theme": "dark",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-dark-en.webp",
-      "avifBytes": 56415,
-      "webpBytes": 76816
+      "avifBytes": 74973,
+      "webpBytes": 109008
     },
     {
       "screen": "calendar",
@@ -715,251 +715,251 @@
       "theme": "dark",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/ipad-landscape-dark-vi.webp",
-      "avifBytes": 50174,
-      "webpBytes": 69508
+      "avifBytes": 70065,
+      "webpBytes": 103066
     },
     {
       "screen": "calendar",
       "device": "mac",
       "theme": "light",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/mac-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/mac-light-en.webp",
-      "avifBytes": 52075,
-      "webpBytes": 67904
+      "avifBytes": 81003,
+      "webpBytes": 111988
     },
     {
       "screen": "calendar",
       "device": "mac",
       "theme": "light",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/mac-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/mac-light-vi.webp",
-      "avifBytes": 46776,
-      "webpBytes": 62028
+      "avifBytes": 76873,
+      "webpBytes": 107624
     },
     {
       "screen": "calendar",
       "device": "mac",
       "theme": "dark",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/mac-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/mac-dark-en.webp",
-      "avifBytes": 51399,
-      "webpBytes": 67946
+      "avifBytes": 69224,
+      "webpBytes": 96534
     },
     {
       "screen": "calendar",
       "device": "mac",
       "theme": "dark",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/mac-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/mac-dark-vi.webp",
-      "avifBytes": 46195,
-      "webpBytes": 62002
+      "avifBytes": 65729,
+      "webpBytes": 92154
     },
     {
       "screen": "calendar",
       "device": "duo-folded",
       "theme": "light",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-light-en.webp",
-      "avifBytes": 42401,
-      "webpBytes": 57086
+      "avifBytes": 61566,
+      "webpBytes": 85106
     },
     {
       "screen": "calendar",
       "device": "duo-folded",
       "theme": "light",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-light-vi.webp",
-      "avifBytes": 39844,
-      "webpBytes": 53576
+      "avifBytes": 59650,
+      "webpBytes": 83090
     },
     {
       "screen": "calendar",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-dark-en.webp",
-      "avifBytes": 40948,
-      "webpBytes": 58838
+      "avifBytes": 51494,
+      "webpBytes": 74098
     },
     {
       "screen": "calendar",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-folded-dark-vi.webp",
-      "avifBytes": 38363,
-      "webpBytes": 54638
+      "avifBytes": 49376,
+      "webpBytes": 72122
     },
     {
       "screen": "calendar",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-light-en.webp",
-      "avifBytes": 64729,
-      "webpBytes": 87800
+      "avifBytes": 91023,
+      "webpBytes": 125636
     },
     {
       "screen": "calendar",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-light-vi.webp",
-      "avifBytes": 61376,
-      "webpBytes": 83970
+      "avifBytes": 92153,
+      "webpBytes": 128286
     },
     {
       "screen": "calendar",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-dark-en.webp",
-      "avifBytes": 63339,
-      "webpBytes": 87304
+      "avifBytes": 76350,
+      "webpBytes": 110354
     },
     {
       "screen": "calendar",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/calendar/duo-unfolded-dark-vi.webp",
-      "avifBytes": 59696,
-      "webpBytes": 84296
+      "avifBytes": 76689,
+      "webpBytes": 112090
     },
     {
       "screen": "assistant",
       "device": "iphone",
       "theme": "light",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-light-en.webp",
-      "avifBytes": 43098,
-      "webpBytes": 57040
+      "avifBytes": 48771,
+      "webpBytes": 66066
     },
     {
       "screen": "assistant",
       "device": "iphone",
       "theme": "light",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-light-vi.webp",
-      "avifBytes": 44425,
-      "webpBytes": 58214
+      "avifBytes": 49651,
+      "webpBytes": 67560
     },
     {
       "screen": "assistant",
       "device": "iphone",
       "theme": "dark",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-dark-en.webp",
-      "avifBytes": 44656,
-      "webpBytes": 57166
+      "avifBytes": 44223,
+      "webpBytes": 57862
     },
     {
       "screen": "assistant",
       "device": "iphone",
       "theme": "dark",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/iphone-dark-vi.webp",
-      "avifBytes": 45939,
-      "webpBytes": 58444
+      "avifBytes": 45257,
+      "webpBytes": 59240
     },
     {
       "screen": "assistant",
       "device": "ipad",
       "theme": "light",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-light-en.webp",
-      "avifBytes": 36889,
-      "webpBytes": 51350
+      "avifBytes": 55463,
+      "webpBytes": 83328
     },
     {
       "screen": "assistant",
       "device": "ipad",
       "theme": "light",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-light-vi.webp",
-      "avifBytes": 37577,
-      "webpBytes": 53190
+      "avifBytes": 56296,
+      "webpBytes": 85070
     },
     {
       "screen": "assistant",
       "device": "ipad",
       "theme": "dark",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-dark-en.webp",
-      "avifBytes": 38533,
-      "webpBytes": 51668
+      "avifBytes": 47166,
+      "webpBytes": 67554
     },
     {
       "screen": "assistant",
       "device": "ipad",
       "theme": "dark",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-dark-vi.webp",
-      "avifBytes": 39572,
-      "webpBytes": 52706
+      "avifBytes": 48190,
+      "webpBytes": 69336
     },
     {
       "screen": "assistant",
@@ -967,11 +967,11 @@
       "theme": "light",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-light-en.webp",
-      "avifBytes": 40462,
-      "webpBytes": 56910
+      "avifBytes": 56876,
+      "webpBytes": 89000
     },
     {
       "screen": "assistant",
@@ -979,11 +979,11 @@
       "theme": "light",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-light-vi.webp",
-      "avifBytes": 41609,
-      "webpBytes": 58532
+      "avifBytes": 58409,
+      "webpBytes": 90712
     },
     {
       "screen": "assistant",
@@ -991,11 +991,11 @@
       "theme": "dark",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-dark-en.webp",
-      "avifBytes": 41686,
-      "webpBytes": 55526
+      "avifBytes": 44842,
+      "webpBytes": 70282
     },
     {
       "screen": "assistant",
@@ -1003,251 +1003,251 @@
       "theme": "dark",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/ipad-landscape-dark-vi.webp",
-      "avifBytes": 43121,
-      "webpBytes": 57042
+      "avifBytes": 46345,
+      "webpBytes": 72238
     },
     {
       "screen": "assistant",
       "device": "mac",
       "theme": "light",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/mac-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/mac-light-en.webp",
-      "avifBytes": 36169,
-      "webpBytes": 49852
+      "avifBytes": 46291,
+      "webpBytes": 73758
     },
     {
       "screen": "assistant",
       "device": "mac",
       "theme": "light",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/mac-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/mac-light-vi.webp",
-      "avifBytes": 37176,
-      "webpBytes": 51210
+      "avifBytes": 47190,
+      "webpBytes": 74982
     },
     {
       "screen": "assistant",
       "device": "mac",
       "theme": "dark",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/mac-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/mac-dark-en.webp",
-      "avifBytes": 37980,
-      "webpBytes": 49734
+      "avifBytes": 37955,
+      "webpBytes": 58670
     },
     {
       "screen": "assistant",
       "device": "mac",
       "theme": "dark",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/mac-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/mac-dark-vi.webp",
-      "avifBytes": 39121,
-      "webpBytes": 51384
+      "avifBytes": 39167,
+      "webpBytes": 59894
     },
     {
       "screen": "assistant",
       "device": "duo-folded",
       "theme": "light",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-light-en.webp",
-      "avifBytes": 43182,
-      "webpBytes": 57314
+      "avifBytes": 51514,
+      "webpBytes": 73650
     },
     {
       "screen": "assistant",
       "device": "duo-folded",
       "theme": "light",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-light-vi.webp",
-      "avifBytes": 43713,
-      "webpBytes": 59034
+      "avifBytes": 52074,
+      "webpBytes": 75006
     },
     {
       "screen": "assistant",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-dark-en.webp",
-      "avifBytes": 43189,
-      "webpBytes": 57516
+      "avifBytes": 42646,
+      "webpBytes": 60498
     },
     {
       "screen": "assistant",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-folded-dark-vi.webp",
-      "avifBytes": 43556,
-      "webpBytes": 58662
+      "avifBytes": 43440,
+      "webpBytes": 61638
     },
     {
       "screen": "assistant",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-light-en.webp",
-      "avifBytes": 51140,
-      "webpBytes": 72358
+      "avifBytes": 62451,
+      "webpBytes": 94700
     },
     {
       "screen": "assistant",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-light-vi.webp",
-      "avifBytes": 50261,
-      "webpBytes": 72760
+      "avifBytes": 61752,
+      "webpBytes": 93506
     },
     {
       "screen": "assistant",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-dark-en.webp",
-      "avifBytes": 51549,
-      "webpBytes": 72030
+      "avifBytes": 49511,
+      "webpBytes": 75996
     },
     {
       "screen": "assistant",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/assistant/duo-unfolded-dark-vi.webp",
-      "avifBytes": 50444,
-      "webpBytes": 71236
+      "avifBytes": 48963,
+      "webpBytes": 75592
     },
     {
       "screen": "dashboard",
       "device": "iphone",
       "theme": "light",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-light-en.webp",
-      "avifBytes": 40451,
-      "webpBytes": 54086
+      "avifBytes": 46724,
+      "webpBytes": 63016
     },
     {
       "screen": "dashboard",
       "device": "iphone",
       "theme": "light",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-light-vi.webp",
-      "avifBytes": 43113,
-      "webpBytes": 57228
+      "avifBytes": 48441,
+      "webpBytes": 66966
     },
     {
       "screen": "dashboard",
       "device": "iphone",
       "theme": "dark",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-dark-en.webp",
-      "avifBytes": 42133,
-      "webpBytes": 54564
+      "avifBytes": 42242,
+      "webpBytes": 55032
     },
     {
       "screen": "dashboard",
       "device": "iphone",
       "theme": "dark",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/iphone-dark-vi.webp",
-      "avifBytes": 44772,
-      "webpBytes": 57678
+      "avifBytes": 44304,
+      "webpBytes": 59030
     },
     {
       "screen": "dashboard",
       "device": "ipad",
       "theme": "light",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-light-en.webp",
-      "avifBytes": 40597,
-      "webpBytes": 57730
+      "avifBytes": 51807,
+      "webpBytes": 81228
     },
     {
       "screen": "dashboard",
       "device": "ipad",
       "theme": "light",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-light-vi.webp",
-      "avifBytes": 43387,
-      "webpBytes": 62198
+      "avifBytes": 54517,
+      "webpBytes": 85194
     },
     {
       "screen": "dashboard",
       "device": "ipad",
       "theme": "dark",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-dark-en.webp",
-      "avifBytes": 43120,
-      "webpBytes": 58336
+      "avifBytes": 43793,
+      "webpBytes": 66206
     },
     {
       "screen": "dashboard",
       "device": "ipad",
       "theme": "dark",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-dark-vi.webp",
-      "avifBytes": 46336,
-      "webpBytes": 62342
+      "avifBytes": 47107,
+      "webpBytes": 69900
     },
     {
       "screen": "dashboard",
@@ -1255,11 +1255,11 @@
       "theme": "light",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-light-en.webp",
-      "avifBytes": 44340,
-      "webpBytes": 62746
+      "avifBytes": 55657,
+      "webpBytes": 87928
     },
     {
       "screen": "dashboard",
@@ -1267,11 +1267,11 @@
       "theme": "light",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-light-vi.webp",
-      "avifBytes": 46485,
-      "webpBytes": 65250
+      "avifBytes": 58083,
+      "webpBytes": 91306
     },
     {
       "screen": "dashboard",
@@ -1279,11 +1279,11 @@
       "theme": "dark",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-dark-en.webp",
-      "avifBytes": 46240,
-      "webpBytes": 62442
+      "avifBytes": 43373,
+      "webpBytes": 70458
     },
     {
       "screen": "dashboard",
@@ -1291,251 +1291,251 @@
       "theme": "dark",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/ipad-landscape-dark-vi.webp",
-      "avifBytes": 48978,
-      "webpBytes": 65492
+      "avifBytes": 46101,
+      "webpBytes": 73820
     },
     {
       "screen": "dashboard",
       "device": "mac",
       "theme": "light",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-light-en.webp",
-      "avifBytes": 39527,
-      "webpBytes": 56110
+      "avifBytes": 48032,
+      "webpBytes": 77300
     },
     {
       "screen": "dashboard",
       "device": "mac",
       "theme": "light",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-light-vi.webp",
-      "avifBytes": 42225,
-      "webpBytes": 59842
+      "avifBytes": 50325,
+      "webpBytes": 80714
     },
     {
       "screen": "dashboard",
       "device": "mac",
       "theme": "dark",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-dark-en.webp",
-      "avifBytes": 42063,
-      "webpBytes": 56164
+      "avifBytes": 40118,
+      "webpBytes": 62806
     },
     {
       "screen": "dashboard",
       "device": "mac",
       "theme": "dark",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/mac-dark-vi.webp",
-      "avifBytes": 45606,
-      "webpBytes": 59986
+      "avifBytes": 42994,
+      "webpBytes": 66644
     },
     {
       "screen": "dashboard",
       "device": "duo-folded",
       "theme": "light",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-light-en.webp",
-      "avifBytes": 42619,
-      "webpBytes": 58954
+      "avifBytes": 50738,
+      "webpBytes": 74482
     },
     {
       "screen": "dashboard",
       "device": "duo-folded",
       "theme": "light",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-light-vi.webp",
-      "avifBytes": 47069,
-      "webpBytes": 64016
+      "avifBytes": 55242,
+      "webpBytes": 81546
     },
     {
       "screen": "dashboard",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-dark-en.webp",
-      "avifBytes": 42844,
-      "webpBytes": 59044
+      "avifBytes": 42253,
+      "webpBytes": 61650
     },
     {
       "screen": "dashboard",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-folded-dark-vi.webp",
-      "avifBytes": 47691,
-      "webpBytes": 64088
+      "avifBytes": 47468,
+      "webpBytes": 67512
     },
     {
       "screen": "dashboard",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-light-en.webp",
-      "avifBytes": 54429,
-      "webpBytes": 76642
+      "avifBytes": 65135,
+      "webpBytes": 99808
     },
     {
       "screen": "dashboard",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-light-vi.webp",
-      "avifBytes": 58204,
-      "webpBytes": 82646
+      "avifBytes": 68842,
+      "webpBytes": 104582
     },
     {
       "screen": "dashboard",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-dark-en.webp",
-      "avifBytes": 55079,
-      "webpBytes": 75624
+      "avifBytes": 52562,
+      "webpBytes": 81332
     },
     {
       "screen": "dashboard",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/dashboard/duo-unfolded-dark-vi.webp",
-      "avifBytes": 59153,
-      "webpBytes": 80876
+      "avifBytes": 56923,
+      "webpBytes": 86108
     },
     {
       "screen": "time-tracker",
       "device": "iphone",
       "theme": "light",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-light-en.webp",
-      "avifBytes": 31168,
-      "webpBytes": 41582
+      "avifBytes": 36272,
+      "webpBytes": 50934
     },
     {
       "screen": "time-tracker",
       "device": "iphone",
       "theme": "light",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-light-vi.webp",
-      "avifBytes": 31373,
-      "webpBytes": 41940
+      "avifBytes": 36855,
+      "webpBytes": 51392
     },
     {
       "screen": "time-tracker",
       "device": "iphone",
       "theme": "dark",
       "locale": "en",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-dark-en.webp",
-      "avifBytes": 31783,
-      "webpBytes": 41100
+      "avifBytes": 31225,
+      "webpBytes": 42310
     },
     {
       "screen": "time-tracker",
       "device": "iphone",
       "theme": "dark",
       "locale": "vi",
-      "width": 613,
+      "width": 648,
       "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/iphone-dark-vi.webp",
-      "avifBytes": 32231,
-      "webpBytes": 42056
+      "avifBytes": 31779,
+      "webpBytes": 42926
     },
     {
       "screen": "time-tracker",
       "device": "ipad",
       "theme": "light",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-light-en.webp",
-      "avifBytes": 29782,
-      "webpBytes": 42190
+      "avifBytes": 39916,
+      "webpBytes": 65008
     },
     {
       "screen": "time-tracker",
       "device": "ipad",
       "theme": "light",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-light-vi.webp",
-      "avifBytes": 30925,
-      "webpBytes": 43794
+      "avifBytes": 41299,
+      "webpBytes": 66202
     },
     {
       "screen": "time-tracker",
       "device": "ipad",
       "theme": "dark",
       "locale": "en",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-dark-en.webp",
-      "avifBytes": 30786,
-      "webpBytes": 42754
+      "avifBytes": 29894,
+      "webpBytes": 49470
     },
     {
       "screen": "time-tracker",
       "device": "ipad",
       "theme": "dark",
       "locale": "vi",
-      "width": 1213,
-      "height": 1600,
+      "width": 1242,
+      "height": 1599,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-dark-vi.webp",
-      "avifBytes": 32021,
-      "webpBytes": 43862
+      "avifBytes": 31368,
+      "webpBytes": 50968
     },
     {
       "screen": "time-tracker",
@@ -1543,11 +1543,11 @@
       "theme": "light",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-light-en.webp",
-      "avifBytes": 32457,
-      "webpBytes": 46288
+      "avifBytes": 44475,
+      "webpBytes": 72456
     },
     {
       "screen": "time-tracker",
@@ -1555,11 +1555,11 @@
       "theme": "light",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-light-vi.webp",
-      "avifBytes": 33294,
-      "webpBytes": 48002
+      "avifBytes": 45834,
+      "webpBytes": 74006
     },
     {
       "screen": "time-tracker",
@@ -1567,11 +1567,11 @@
       "theme": "dark",
       "locale": "en",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-dark-en.webp",
-      "avifBytes": 32955,
-      "webpBytes": 45800
+      "avifBytes": 30909,
+      "webpBytes": 54094
     },
     {
       "screen": "time-tracker",
@@ -1579,155 +1579,155 @@
       "theme": "dark",
       "locale": "vi",
       "width": 1599,
-      "height": 1290,
+      "height": 1254,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/ipad-landscape-dark-vi.webp",
-      "avifBytes": 34034,
-      "webpBytes": 47352
+      "avifBytes": 32235,
+      "webpBytes": 55544
     },
     {
       "screen": "time-tracker",
       "device": "mac",
       "theme": "light",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-light-en.webp",
-      "avifBytes": 27473,
-      "webpBytes": 39558
+      "avifBytes": 36700,
+      "webpBytes": 61788
     },
     {
       "screen": "time-tracker",
       "device": "mac",
       "theme": "light",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-light-vi.webp",
-      "avifBytes": 28431,
-      "webpBytes": 41350
+      "avifBytes": 37769,
+      "webpBytes": 63380
     },
     {
       "screen": "time-tracker",
       "device": "mac",
       "theme": "dark",
       "locale": "en",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-dark-en.webp",
-      "avifBytes": 28389,
-      "webpBytes": 39334
+      "avifBytes": 27308,
+      "webpBytes": 47114
     },
     {
       "screen": "time-tracker",
       "device": "mac",
       "theme": "dark",
       "locale": "vi",
-      "width": 1599,
-      "height": 1124,
+      "width": 1600,
+      "height": 1148,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/mac-dark-vi.webp",
-      "avifBytes": 29699,
-      "webpBytes": 40520
+      "avifBytes": 28768,
+      "webpBytes": 48382
     },
     {
       "screen": "time-tracker",
       "device": "duo-folded",
       "theme": "light",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-light-en.webp",
-      "avifBytes": 31683,
-      "webpBytes": 43876
+      "avifBytes": 39497,
+      "webpBytes": 58134
     },
     {
       "screen": "time-tracker",
       "device": "duo-folded",
       "theme": "light",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-light-vi.webp",
-      "avifBytes": 32364,
-      "webpBytes": 44754
+      "avifBytes": 40304,
+      "webpBytes": 59620
     },
     {
       "screen": "time-tracker",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "en",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-dark-en.webp",
-      "avifBytes": 31041,
-      "webpBytes": 43616
+      "avifBytes": 30306,
+      "webpBytes": 45446
     },
     {
       "screen": "time-tracker",
       "device": "duo-folded",
       "theme": "dark",
       "locale": "vi",
-      "width": 868,
-      "height": 1280,
+      "width": 927,
+      "height": 1279,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-folded-dark-vi.webp",
-      "avifBytes": 31818,
-      "webpBytes": 44540
+      "avifBytes": 31094,
+      "webpBytes": 46448
     },
     {
       "screen": "time-tracker",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-light-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-light-en.webp",
-      "avifBytes": 31331,
-      "webpBytes": 48070
+      "avifBytes": 41952,
+      "webpBytes": 68140
     },
     {
       "screen": "time-tracker",
       "device": "duo-unfolded",
       "theme": "light",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-light-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-light-vi.webp",
-      "avifBytes": 31411,
-      "webpBytes": 47722
+      "avifBytes": 42503,
+      "webpBytes": 69560
     },
     {
       "screen": "time-tracker",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "en",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-dark-en.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-dark-en.webp",
-      "avifBytes": 30124,
-      "webpBytes": 45924
+      "avifBytes": 27692,
+      "webpBytes": 50498
     },
     {
       "screen": "time-tracker",
       "device": "duo-unfolded",
       "theme": "dark",
       "locale": "vi",
-      "width": 1600,
-      "height": 1263,
+      "width": 1599,
+      "height": 1190,
       "avif": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-dark-vi.avif",
       "webp": "packages/roadmap-core/src/assets/previews/app/time-tracker/duo-unfolded-dark-vi.webp",
-      "avifBytes": 30224,
-      "webpBytes": 46248
+      "avifBytes": 28285,
+      "webpBytes": 51070
     }
   ]
 }

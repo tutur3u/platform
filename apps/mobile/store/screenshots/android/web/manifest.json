@@ -6,42 +6,42 @@
       "file": "apps/mobile/store/screenshots/android/web/01-dashboard.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 50228
-    },
-    {
-      "id": "tasks",
-      "file": "apps/mobile/store/screenshots/android/web/02-tasks.webp",
-      "width": 720,
-      "height": 1280,
-      "bytes": 48486
-    },
-    {
-      "id": "calendar",
-      "file": "apps/mobile/store/screenshots/android/web/03-calendar.webp",
-      "width": 720,
-      "height": 1280,
-      "bytes": 43988
+      "bytes": 64866
     },
     {
       "id": "assistant",
-      "file": "apps/mobile/store/screenshots/android/web/04-assistant.webp",
+      "file": "apps/mobile/store/screenshots/android/web/02-assistant.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 51158
+      "bytes": 53700
+    },
+    {
+      "id": "tasks",
+      "file": "apps/mobile/store/screenshots/android/web/03-tasks.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 45356
+    },
+    {
+      "id": "calendar",
+      "file": "apps/mobile/store/screenshots/android/web/04-calendar.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 48514
     },
     {
       "id": "time-tracker",
       "file": "apps/mobile/store/screenshots/android/web/05-time-tracker.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 39778
+      "bytes": 35764
     },
     {
       "id": "notes",
       "file": "apps/mobile/store/screenshots/android/web/06-notes.webp",
       "width": 720,
       "height": 1280,
-      "bytes": 49120
+      "bytes": 48012
     }
   ]
 }

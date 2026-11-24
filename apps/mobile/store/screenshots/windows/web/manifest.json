@@ -6,42 +6,42 @@
       "file": "apps/mobile/store/screenshots/windows/web/01-dashboard.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 31578
-    },
-    {
-      "id": "tasks",
-      "file": "apps/mobile/store/screenshots/windows/web/02-tasks.webp",
-      "width": 1280,
-      "height": 720,
-      "bytes": 38396
-    },
-    {
-      "id": "calendar",
-      "file": "apps/mobile/store/screenshots/windows/web/03-calendar.webp",
-      "width": 1280,
-      "height": 720,
-      "bytes": 40320
+      "bytes": 29534
     },
     {
       "id": "assistant",
-      "file": "apps/mobile/store/screenshots/windows/web/04-assistant.webp",
+      "file": "apps/mobile/store/screenshots/windows/web/02-assistant.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 29102
+      "bytes": 26256
+    },
+    {
+      "id": "tasks",
+      "file": "apps/mobile/store/screenshots/windows/web/03-tasks.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 38810
+    },
+    {
+      "id": "calendar",
+      "file": "apps/mobile/store/screenshots/windows/web/04-calendar.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 39612
     },
     {
       "id": "time-tracker",
       "file": "apps/mobile/store/screenshots/windows/web/05-time-tracker.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 24432
+      "bytes": 21838
     },
     {
       "id": "notes",
       "file": "apps/mobile/store/screenshots/windows/web/06-notes.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 43010
+      "bytes": 38418
     }
   ]
 }
