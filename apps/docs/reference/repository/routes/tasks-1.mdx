@@ -155,11 +155,16 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/task-templates/[templateKey]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/task-templates/%5BtemplateKey%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/task-templates/from-task` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/task-templates/from-task/route.ts) |
 | `/api/v1/workspaces/[wsId]/task-templates` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/task-templates/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/[taskId]/comments/[commentId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/comments/%5BcommentId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/[taskId]/comments` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/comments/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/description` | GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/description/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/embedding` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/embedding/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/estimation` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/estimation/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/[taskId]/external-ref` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/external-ref/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/history` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/history/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/labels` | DELETE, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/labels/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/[taskId]/links/[linkId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/links/%5BlinkId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/[taskId]/links` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/links/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/mentions/cleanup/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/move` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/move/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/relationships` | DELETE, GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/relationships/route.ts) |
@@ -170,9 +175,11 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/share-links` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/share-links/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/shares` | DELETE, GET, PATCH, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/shares/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/snapshot/%5BhistoryId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/[taskId]/timeline` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/%5BtaskId%5D/timeline/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/bulk` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/bulk/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/embeddings/generate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/embeddings/generate/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/history` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/history/route.ts) |
+| `/api/v1/workspaces/[wsId]/tasks/import/github` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/import/github/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/journal` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/journal/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/media` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/media/route.ts) |
 | `/api/v1/workspaces/[wsId]/tasks/recurrence` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/tasks/recurrence/route.ts) |
@@ -187,12 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/templates/[templateId]/shares` | DELETE, GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/shares/route.ts) |
 | `/api/v1/workspaces/[wsId]/templates/[templateId]/use` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/templates/%5BtemplateId%5D/use/route.ts) |
 | `/api/v1/workspaces/[wsId]/templates/background` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/templates/background/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/templates/route.ts) |
-| `/api/v1/workspaces/[wsId]/templates/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/templates/upload-url/route.ts) |
-| `/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/time-tracking/sessions/%5BsessionId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/time-tracking/sessions` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/time-tracking/sessions/route.ts) |
-| `/api/v1/workspaces/[wsId]/time-tracking/tasks` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/v1/workspaces/%5BwsId%5D/time-tracking/tasks/route.ts) |
-| `/api/workspaces/[wsId]/members` | DELETE, GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/workspaces/%5BwsId%5D/members/route.ts) |
-| `/api/workspaces/[wsId]` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/app/api/workspaces/%5BwsId%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

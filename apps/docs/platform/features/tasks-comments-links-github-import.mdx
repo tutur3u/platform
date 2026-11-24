@@ -1,0 +1,217 @@
+---
+title: Task comments, linked resources and GitHub import
+updatedAt: '2026-11-24'
+description: Comments, linked pull requests and commits, and a timeline on every task, plus an idempotent GitHub issue importer driven by the `ttr` CLI.
+audience: developers
+---
+
+## What it is for
+
+Tasks gain three things that an imported issue tracker needs: comments, linked
+resources (pull requests, commits, CI runs, documents and plain URLs), and a
+timeline that merges them with the existing task history. `ttr tasks import`
+uses them to bring GitHub issues into a board without losing their discussion,
+dates or close reasons.
+
+## Where the data lives
+
+Three tables in the `private` schema, reachable only by `service_role`:
+
+- `private.task_comments`: native comments (author is a workspace user) and
+  imported ones (`external_author`, `external_url`, original `created_at`).
+  Deleting is a soft delete.
+- `private.task_links`: one row per linked resource with `kind`, `provider`,
+  `state` and `title`. Removing is a soft remove; the same URL can be linked
+  again.
+- `private.task_external_refs`: one row per imported issue. It is the
+  idempotency key, unique on `(ws_id, 'github', external_url)`, and records the
+  repository, number, author, state, close reason, original dates, raw labels
+  and the assignee logins that matched no workspace user.
+
+Row level security is on with no policies and the client roles hold no grants,
+so the Tasks API is the only path: it checks task access first, then reads or
+writes with the admin client. Every row carries `ws_id`; a trigger rejects a
+task from another workspace (`23503`) and a change of task or workspace
+(`55000`).
+
+Comment, link and import writes append `task_history` rows (`comment_added`,
+`comment_updated`, `comment_deleted`, `link_added`, `link_removed`,
+`external_imported`, `external_event`) so the existing activity view keeps
+working. History metadata carries ids, kinds, URLs and external actors, never a
+comment body.
+
+## Permissions
+
+| Action | Requires |
+| --- | --- |
+| Read comments, links, external ref, timeline | access to the task |
+| Add a comment | task access; a view-only board guest cannot |
+| Edit a comment | its author only |
+| Delete a comment | its author, or `manage_projects` in the workspace |
+| Add or remove a link | task edit rights |
+| Import | `manage_projects` in the workspace (workspace creators, including the owner of a personal workspace, hold it implicitly) |
+
+A task id from another workspace answers 404 on every route.
+
+## API
+
+All under `/api/v1/workspaces/{wsId}/tasks`:
+
+- `GET|POST /{taskId}/comments`, `PATCH|DELETE /{taskId}/comments/{commentId}`
+- `GET|POST /{taskId}/links`, `DELETE /{taskId}/links/{linkId}`
+- `GET /{taskId}/external-ref`
+- `GET /{taskId}/timeline` (newest first, keyset cursor, at most 100 per page)
+- `POST /import/github` (batches of at most 25 issues)
+
+Lists use an opaque `cursor`; a cursor the server did not issue is a 400.
+
+### Linked resources and the legacy resources list
+
+`tasks.task_resources` (a JSON list of `{kind: "link", url, title}`) stays as it
+is, and its writers and constraints are unchanged. `GET .../links` returns the
+merged view: `task_links` rows plus the `task_resources` entries, shown as
+`{kind: "url", provider: "web", legacy: true, id: null}`. A `task_links` row wins
+when both hold the same URL. Legacy entries are edited with
+`ttr tasks update <task> --links-json`; `ttr tasks link rm` on one explains that.
+The importer writes only `task_links`.
+
+Adding a link infers its type from the URL: `github.com/.../pull/N` is a pull
+request, `/commit/SHA` a commit, `/actions/runs/N` a CI run, `/issues/N` an
+issue, and anything else a web URL.
+
+## CLI
+
+```bash
+ttr tasks comment list <task> [--all]
+ttr tasks comment add <task> "text"        # or --body / --body-file (- reads stdin)
+ttr tasks comment edit <task> <comment-id> "text"
+ttr tasks comment rm <task> <comment-id>
+ttr tasks link list <task>
+ttr tasks link add <task> <https-url> [--kind --title --state --external-id]
+ttr tasks link rm <task> <link-id|url>
+ttr tasks timeline <task> [--all]
+ttr tasks status <task> <backlog|todo|in-progress|review|done|cancelled>
+```
+
+`ttr tasks status` resolves the status to a list on the task's board, then uses
+the normal move:
+
+- `backlog`: the first `not_started` list named like a backlog, else the first
+  `not_started` list.
+- `todo`: the first `not_started` list that is not a backlog and not a parking
+  list (names with waiting, blocked, knowledge or on hold), else the first
+  remaining one.
+- `in-progress` and `review`: the first `active` and `review` list.
+- `done` and `cancelled`: the board's default done or closed list when set,
+  otherwise the first `done` or `closed` list.
+
+"First" is the lowest list position. A board with no list for a status is an
+error, not a guess.
+
+## GitHub import
+
+```bash
+ttr tasks import --from github --repo tutur3u/platform --board <board-id> \
+  [--state all|open|closed] [--since 2026-01-31] [--limit N] \
+  [--issues 1,2,3 | --only-issues 1,2,3] [--exclude-issues 4,5] \
+  [--mapping mapping.json] [--batch-size 25] [--dry-run] \
+  [--input issues.json] [--refresh]
+```
+
+The CLI reads GitHub with `gh api graphql` and the caller's own `gh` login, 25
+issues per page, caches pages on disk for an hour (`--refresh` skips the cache)
+and backs off on rate limits. It never reads, stores or sends a token: only
+issue data goes to the Tasks API, in batches of at most 25 (`--batch-size` can
+lower that). `--input` accepts a saved GraphQL export instead of calling `gh`.
+`--since` keeps open issues and issues closed on or after the date. `--issues`
+and `--exclude-issues` let one export be split across boards or workspaces.
+The summary counts created, updated, skipped and failed issues; a failure sets
+a non-zero exit code. `--dry-run` writes nothing, including the `github` label.
+
+### What an imported task looks like
+
+- **Name:** `<issue title> #<number>`. The title is cut, never the number. No
+  other suffix is added.
+- **Description:** the issue body, converted from markdown to the task
+  description format.
+- **Dates:** `created_at` is the issue's creation time. A closed issue sets the
+  completion or closure time from the issue.
+- **List:** open issues go to `status_lists.open_list_id`, issues closed as
+  completed to `completed_list_id`, closed as not planned or duplicate to
+  `not_planned_list_id`. When a mapped list is missing the board's list for
+  `todo`, `done` or `cancelled` is used, resolved as for `ttr tasks status`.
+- **Labels:** every imported task gets the `github` workspace label (created
+  when missing, listed in `always_labels`). It is attached on create and
+  reasserted on every update. Other GitHub labels map through `labels`:
+  a workspace label id, `priority:high`, `priority:critical`, or `ignore`.
+  Unmapped labels stay only in the external reference.
+- **People:** logins resolve to workspace users only through the mapping's
+  `assignees` and `authors`, and only when the user is a member. Users are never
+  created. An unmapped assignee leaves the task unassigned and is recorded on
+  the reference; an unmapped comment author keeps `external_author`. A mapped
+  author also sets the comment's author.
+- **Milestones:** `milestones` maps a title to a cycle id.
+- **Comments, links and events:** comments keep their original time and are
+  keyed by their GitHub URL. Linked pull requests and commits become
+  `task_links` rows. The source timeline becomes `external_event` rows at the
+  original times, and an `external_imported` row records the import.
+- **Sub-issues:** parent and sub-issue links become `parent_child`
+  relationships once both tasks exist; until then the result carries a
+  `relationship_pending` warning and a later batch or re-run completes it.
+
+### Rules for safe re-runs
+
+- The key is the external reference URL, never the task name. A task that
+  happens to share a name is left alone.
+- A re-run only touches tasks it imported. A task with no external reference is
+  never updated or moved.
+- A re-run updates the name, description, state, labels, links and new comments.
+  It resets the name and description to the GitHub text, so edit those in
+  GitHub, not in Tasks, for imported tasks. Labels people added in Tasks stay.
+  A task moves lists only when the issue's own state changed.
+- A task deleted in Tasks is not recreated; its result says `task_deleted`.
+- Two concurrent imports of the same issue produce one task.
+
+### Mapping file
+
+```json
+{
+  "status_lists": {
+    "open_list_id": "<list id>",
+    "completed_list_id": "<list id>",
+    "not_planned_list_id": "<list id>"
+  },
+  "labels": { "bug": "<workspace label id>", "urgent": "priority:high", "ci": "ignore" },
+  "always_labels": ["github"],
+  "assignees": { "github-login": "<workspace user id>" },
+  "authors": { "github-login": "<workspace user id>" },
+  "milestones": { "v0.12": "<cycle id>" }
+}
+```
+
+## Scope and exceptions
+
+- Only the first 50 comments and the first 100 timeline events of an issue are
+  read.
+- Import targets one board per run. Security-sensitive issues belong in a
+  separate workspace, which the `--issues` and `--exclude-issues` flags allow in
+  the same export.
+- Comments, links and the timeline have no web UI yet; the API and CLI are the
+  surface.
+
+## Regression coverage
+
+- `apps/database/supabase/tests/task-comments-links-external-refs.sql`: client
+  roles have no access, workspace mismatch (`23503`), immutability (`55000`),
+  idempotency keys, history change types and actors, removed authors.
+- `packages/tasks-api/src/server/tasks/external/*.test.ts`: permission denial,
+  cross-workspace task ids, comment and link rules, legacy resources, timeline.
+- `packages/tasks-api/src/server/tasks/external/import/*.test.ts`: list and
+  label resolution, idempotent re-runs, tasks without a reference left alone,
+  dry run, relationships, board and permission checks.
+- `packages/utils/src/task-board-status-list.test.ts`: status to list
+  resolution on a board like Fleet.
+- `packages/sdk/src/cli/github-import*.test.ts` and
+  `task-collaboration-command.test.ts`: paging, cache, rate-limit backoff, no
+  token forwarding, batches, only and exclude, summaries, comment, link,
+  timeline and status commands.

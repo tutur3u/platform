@@ -178,6 +178,12 @@ ttr tasks create --list <list-id> --name "Write release notes"
 ttr tasks done <task-id>
 ttr tasks close <task-id>
 ttr tasks update <task-id> --json-payload '{"completed":true}'
+ttr tasks comment add <task-id> "Reproduced on staging"
+ttr tasks comment list <task-id>
+ttr tasks link add <task-id> https://github.com/tutur3u/platform/pull/9
+ttr tasks timeline <task-id>
+ttr tasks status <task-id> in-progress
+ttr tasks import --from github --repo tutur3u/platform --board <board-id> --dry-run
 ttr finance wallets
 ttr finance wallets balance --all
 ttr finance transactions --page-size 10
@@ -188,6 +194,13 @@ ttr calendar events list --start 2026-06-11T00:00:00Z --end 2026-06-12T00:00:00Z
 ttr calendar events create "Focus block" --start 2026-06-11T09:00:00+07:00 --duration-minutes 90
 ttr calendar schedule preview --window-days 14 --timezone Asia/Ho_Chi_Minh
 ```
+
+`ttr tasks comment`, `link`, `timeline`, `status` and `import` work on task
+comments, linked resources, the merged timeline, board-aware status moves and
+the GitHub issue importer; see
+[task comments, linked resources and GitHub import](/platform/features/tasks-comments-links-github-import).
+The importer reads GitHub with the local `gh` login and never sends a token to
+the Tasks API.
 
 `ttr people` manages the people registry for its owner and managers. It reads
 external IDs from a hidden prompt or standard input and masks display values
