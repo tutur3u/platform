@@ -1,21 +1,9 @@
 'use client';
 import { AudioLines, Info, LockKeyhole } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
-import { liveVoiceSchema } from '../../live-assistant/contracts';
-import {
-  setLiveVoice,
-  useLiveVoice,
-} from '../../live-assistant/live-session-store';
+import { LiveVoiceSelect } from '../../live-assistant/live-voice-select';
 import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import {
   MiraPermissionsCard,
@@ -24,7 +12,6 @@ import {
 
 function VoiceSettings({ locked }: { locked: boolean }) {
   const t = useTranslations('meet.live');
-  const voice = useLiveVoice();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -38,24 +25,8 @@ function VoiceSettings({ locked }: { locked: boolean }) {
           <AudioLines aria-hidden className="size-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-60 space-y-2">
-        <Label>{t('voice')}</Label>
-        <Select
-          value={voice}
-          disabled={locked}
-          onValueChange={(value) => setLiveVoice(liveVoiceSchema.parse(value))}
-        >
-          <SelectTrigger aria-label={t('voice')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {liveVoiceSchema.options.map((name) => (
-              <SelectItem key={name} value={name}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <PopoverContent align="end" className="w-60">
+        <LiveVoiceSelect locked={locked} />
       </PopoverContent>
     </Popover>
   );

@@ -1,15 +1,12 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { Radio } from '@tuturuuu/icons';
 import { readPrivateMiraPolicy } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -26,7 +23,8 @@ import { useLiveAssistant } from './use-live-assistant';
 
 /**
  * The Mira consent choice, plus the owner of this device's personal Live
- * session. The Private Assistant tab drives that session through
+ * session. It has no control of its own: the header's Mira control and the
+ * Private Assistant tab open its dialog and drive the session through
  * `live-session-store`, so this panel keeps running while the dialog is shut.
  */
 export function MeetLivePanel({
@@ -177,17 +175,6 @@ export function MeetLivePanel({
         setOpen(next);
       }}
     >
-      <DialogTrigger asChild>
-        <Button
-          variant={active ? 'secondary' : 'outline'}
-          size="sm"
-          className="h-8 gap-1.5 rounded-full text-xs"
-        >
-          <MiraAvatar size={18} />
-          <span>{t('title')}</span>
-          {active && <Radio className="size-3.5 motion-safe:animate-pulse" />}
-        </Button>
-      </DialogTrigger>
       <DialogContent
         className="flex max-h-[85dvh] flex-col gap-4 overflow-hidden sm:max-w-md"
         onCloseAutoFocus={(event) => {

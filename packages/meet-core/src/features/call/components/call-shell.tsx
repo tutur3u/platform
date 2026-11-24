@@ -401,6 +401,7 @@ function CallShellContent({
     <div className="flex h-dvh flex-col bg-background">
       <CallHeader
         meetingId={meetingId}
+        accountId={accountId}
         title={room.state.title ?? meetingName}
         canManage={canManage}
         onRenamed={room.renameMeeting}

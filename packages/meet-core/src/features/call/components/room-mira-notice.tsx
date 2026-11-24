@@ -12,9 +12,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { useLiveSession } from '../../live-assistant/live-session-store';
 import { MiraConsentBox } from '../../live-assistant/mira-consent-box';
 import { MiraAbout } from './mira-about';
+import { MiraPrivateEntry } from './mira-private-entry';
 import { RoomMiraChip, type RoomMiraChipState } from './room-mira-chip';
 import {
   type RoomMiraAvailable,
@@ -34,9 +36,12 @@ export { roomMiraConsentKey };
  */
 export function RoomMiraNotice({
   meetingId,
+  accountId,
   privateUsers = [],
 }: {
   meetingId: string;
+  /** The signed-in account, so the control can open its Private Assistant. */
+  accountId?: string;
   /** People using Mira privately; it hears only their own microphone. */
   privateUsers?: readonly { userId: string; displayName: string }[];
 }) {
@@ -44,9 +49,23 @@ export function RoomMiraNotice({
   const tl = useTranslations('meet.live');
   const mira = useRoomMira(meetingId);
   const [open, setOpen] = useState<boolean | null>(null);
+  const session = useLiveSession(meetingId, accountId);
+  const trigger = useRef<HTMLButtonElement>(null);
   const data = mira.data;
-  // Only an acceptor sees an entry point while Mira is off.
-  if (!data || (!data.acceptance && !data.canAccept)) return null;
+  // Focus returns to the control, then the assistant's dialog opens.
+  const privateEntry = session && (
+    <MiraPrivateEntry
+      session={session}
+      onOpen={() => {
+        trigger.current?.focus();
+        setOpen(false);
+        session.controls.openConsent();
+      }}
+    />
+  );
+  // Without room Mira only an acceptor, or someone with a Private Assistant,
+  // sees the control.
+  if (!data || (!data.acceptance && !data.canAccept && !session)) return null;
   const privateList = privateUsers.length > 0 && (
     <ul className="space-y-1 text-muted-foreground text-xs">
       {privateUsers.map((person) => (
@@ -57,11 +76,31 @@ export function RoomMiraNotice({
       ))}
     </ul>
   );
+  if (!data.acceptance && !data.canAccept)
+    return (
+      <RoomMiraChip
+        state="off"
+        title={tl('title')}
+        open={open ?? false}
+        onOpenChange={setOpen}
+        triggerRef={trigger}
+      >
+        {privateEntry}
+        <MiraAbout />
+      </RoomMiraChip>
+    );
   if (!data.acceptance)
     return (
-      <RoomMiraChip state="host" title={t('host_turn_on')}>
+      <RoomMiraChip
+        state="host"
+        title={t('host_turn_on')}
+        open={open ?? false}
+        onOpenChange={setOpen}
+        triggerRef={trigger}
+      >
         <p className="font-medium">{t('host_title')}</p>
         <HostAcceptance mira={mira} />
+        {privateEntry}
         <MiraAbout />
       </RoomMiraChip>
     );
@@ -88,6 +127,7 @@ export function RoomMiraNotice({
       )}
       open={open ?? state === 'choose'}
       onOpenChange={setOpen}
+      triggerRef={trigger}
     >
       <p className="font-medium">{label}</p>
       <ParticipantChoice
@@ -97,6 +137,7 @@ export function RoomMiraNotice({
         onDone={() => setOpen(false)}
       />
       {privateList}
+      {privateEntry}
       {data.canAccept && (
         <Button
           type="button"

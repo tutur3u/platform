@@ -2,7 +2,7 @@
 
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, type Ref, useId } from 'react';
 import { MiraAvatar } from './mira-profile';
 
 export type RoomMiraChipState = 'choose' | 'on' | 'off' | 'pausing' | 'host';
@@ -27,6 +27,7 @@ export function RoomMiraChip({
   description,
   open,
   onOpenChange,
+  triggerRef,
   children,
 }: {
   state: RoomMiraChipState;
@@ -35,6 +36,8 @@ export function RoomMiraChip({
   description?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** Lets a popover item return focus to the control before it opens a dialog. */
+  triggerRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
 }) {
   const descriptionId = useId();
@@ -42,6 +45,7 @@ export function RoomMiraChip({
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           aria-label={title}
           aria-describedby={description ? descriptionId : undefined}

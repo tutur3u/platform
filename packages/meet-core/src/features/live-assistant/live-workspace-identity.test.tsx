@@ -93,9 +93,7 @@ function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
-  fireEvent.click(
-    screen.getByRole('button', { name: localizedMessages.meet.live.title })
-  );
+  fireEvent.click(screen.getByText('probe-consent'));
 }
 it('offers private own-microphone start to the tab only after a confirmed choice for a distinct account/device', async () => {
   f.read.mockResolvedValue({
@@ -145,7 +143,7 @@ it('offers private own-microphone start to the tab only after a confirmed choice
     expect(f.start).toHaveBeenCalledWith('personal', [], '', undefined, 'Aoede')
   );
 });
-it('keeps the 18+ badge off the Mira control and states the rule beside Continue', async () => {
+it('renders no Mira control of its own and states the 18+ rule beside Continue', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',
     available: true,
@@ -156,13 +154,13 @@ it('keeps the 18+ badge off the Mira control and states the rule beside Continue
     document.getElementById(element.getAttribute('aria-describedby') ?? '')
       ?.textContent;
   showPanel(syntheticRoom());
-  // The open dialog hides the control behind it; it keeps its name only.
-  const control = screen.getByRole('button', {
-    name: messages.meet.live.title,
-    hidden: true,
-  });
-  expect(control.textContent).not.toContain(adults.badge);
-  expect(control.getAttribute('aria-describedby')).toBeNull();
+  // The header's Mira control is the only entry; the panel adds no button.
+  expect(
+    screen.queryByRole('button', {
+      name: messages.meet.live.title,
+      hidden: true,
+    })
+  ).toBeNull();
   const proceed = await screen.findByRole('button', {
     name: messages.meet.live.phase_continue,
   });
@@ -246,9 +244,7 @@ it("withholds the tab's start until a fresh Continue after disconnect or a polic
     </QueryClientProvider>
   );
   const view = render(tree());
-  fireEvent.click(
-    screen.getByRole('button', { name: messages.meet.live.title })
-  );
+  fireEvent.click(screen.getByText('probe-consent'));
   f.read.mockResolvedValue(confirmed);
   await waitFor(() =>
     expect(

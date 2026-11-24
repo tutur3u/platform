@@ -14,6 +14,7 @@ import { RoomMiraNotice } from './room-mira-notice';
  */
 export function CallHeader({
   meetingId,
+  accountId,
   title,
   canManage,
   onRenamed,
@@ -26,6 +27,7 @@ export function CallHeader({
   actions,
 }: {
   meetingId: string;
+  accountId?: string;
   title: string;
   canManage: boolean;
   onRenamed: (title: string) => void;
@@ -62,7 +64,11 @@ export function CallHeader({
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
         {/* The one Mira control; it names who turned Mira on for the whole call. */}
-        <RoomMiraNotice meetingId={meetingId} privateUsers={privateMiraUsers} />
+        <RoomMiraNotice
+          meetingId={meetingId}
+          accountId={accountId}
+          privateUsers={privateMiraUsers}
+        />
         {actions}
       </div>
     </header>

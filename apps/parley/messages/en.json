@@ -5384,6 +5384,7 @@
       "approve": "Approve",
       "approved": "Approved",
       "ask_in_chat": "Ask @mira in chat",
+      "open_private": "Open private assistant",
       "assistant_unavailable": "Mira is temporarily unavailable. No assistant joined the meeting.",
       "cancel": "Cancel",
       "choice_busy": "Mira is still stopping. Try again in a moment.",
