@@ -36,6 +36,14 @@ review prove baseline equivalence. Existing migration history stays immutable.
   only statement in its file so it executes outside the transaction batch. See
   the [habit migration sequence](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#idempotent-writes)
   for the schema-preserving split and regression coverage.
+- CLI 2.121.0 applies and records each migration file in its own transaction:
+  when a later file fails, earlier files stay applied and recorded. Do not rely
+  on statements after an explicit `commit;` to escape a file's locks. Put a
+  long `VALIDATE CONSTRAINT` in its own follow-up file, after a `NOT VALID`
+  add in the first, with session-level `set lock_timeout` / `set
+  statement_timeout` (not `set local`) and a `reset` of both at the end. A
+  failed validate file rolls back alone, the `NOT VALID` check still guards new
+  writes, and a rerun is a no-op once valid.
 - A failed concurrent index build can leave an invalid index that `IF NOT EXISTS`
   silently skips. Add a following catalog guard that raises on a missing or
   invalid required index. Do not conditionally drop concurrently inside `DO`
