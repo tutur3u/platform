@@ -66,6 +66,8 @@ export type SelfCaptureSession = {
   hostAccountId: string;
   status: 'active' | 'draining' | 'ended';
   drainUntil?: number;
+  /** Matches the database capture deadline; past it the session is over. */
+  captureUntil?: number;
 };
 export type SelfCaptureState = {
   mode: SelfCaptureMode;
@@ -87,6 +89,8 @@ export type SelfCaptureState = {
   >;
   /** Alarm delivery cycle of the current non-empty outbox. */
   delivery?: SelfOutboxDelivery;
+  /** Deliveries sent on one UTC day, against the room's daily cap. */
+  deliveryDay?: { day: number; count: number };
 };
 export interface SelfCaptureRoomState {
   selfCapture?: SelfCaptureState;
@@ -97,6 +101,8 @@ type State = MeetRoomSnapshot & {
 };
 
 export const SELF_CAPTURE_DRAIN_MS = 20_000;
+/** The database's self_v1 capture deadline. */
+export const SELF_CAPTURE_DEADLINE_MS = 3 * 3_600_000;
 export const SELF_CAPTURE_MAX_ACCOUNTS = 24;
 export const SELF_CAPTURE_MAX_ALLOWS = 10;
 export const SELF_OUTBOX_MAX_ENTRIES = 512;
@@ -123,9 +129,18 @@ export function isSelfSessionLive(
 ): session is SelfCaptureSession {
   return (
     !!session &&
+    now < (session.captureUntil ?? Number.POSITIVE_INFINITY) &&
     (session.status === 'active' ||
       (session.status === 'draining' && now < (session.drainUntil ?? 0)))
   );
+}
+
+/** Opening streams: active and before the capture deadline. */
+export function isSelfSessionCapturing(
+  session: SelfCaptureSession | undefined,
+  now: number
+): session is SelfCaptureSession {
+  return isSelfSessionLive(session, now) && session.status === 'active';
 }
 
 /** Client transcription state and speaker labels are refused in self mode. */

@@ -30,6 +30,9 @@ export const SELF_OUTBOX_MAX_DELIVERIES = SELF_OUTBOX_FAST_DELIVERIES;
 export const SELF_OUTBOX_BATCH = 64;
 /** Per-account share of one delivery, so one account never fills it. */
 export const SELF_OUTBOX_ACCOUNT_BATCH = 8;
+/** Hard cap on deliveries per room per UTC day, whatever the cycles say. */
+export const SELF_OUTBOX_DAILY_DELIVERIES = 500;
+const DAY_MS = 86_400_000;
 export const SELF_OUTBOX_URL = 'https://meet.internal/api/meet-ai/self/outbox';
 
 type Fetcher = { fetch(request: Request): Promise<Response> };
@@ -57,7 +60,12 @@ export function selfOutboxDeadline(
   const capture = state.selfCapture;
   if (!outboxBinding(env) || !capture?.outbox.length) return undefined;
   // A stored outbox without a cycle (older state) starts one now.
-  return deliveryDue(capture.delivery ?? restartDelivery(undefined, 0));
+  const due = deliveryDue(capture.delivery ?? restartDelivery(undefined, 0));
+  const day = capture.deliveryDay;
+  // A spent daily cap waits for the next UTC day.
+  return due !== undefined && day && day.count >= SELF_OUTBOX_DAILY_DELIVERIES
+    ? Math.max(due, (day.day + 1) * DAY_MS)
+    : due;
 }
 
 /** The earlier of the empty-room deadline and the next outbox delivery. */
@@ -146,12 +154,17 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
   const due = selfOutboxDeadline(before, input.env);
   if (!binding || !capture || due === undefined || due > input.now) return;
   if (!input.secret || !input.roomName) return;
+  const day = Math.floor(input.now / DAY_MS);
+  const sent =
+    capture.deliveryDay?.day === day ? capture.deliveryDay.count : 0;
+  if (sent >= SELF_OUTBOX_DAILY_DELIVERIES) return;
   const delivery = capture.delivery ?? restartDelivery(undefined, input.now);
   await input.commit({
     ...before,
     selfCapture: {
       ...capture,
       delivery: scheduleNextDelivery(delivery, input.now),
+      deliveryDay: { day, count: sent + 1 },
     },
   });
   const entries = selectSelfOutboxBatch(capture);
@@ -197,4 +210,8 @@ export async function runSelfOutboxDelivery<T extends MeetRoomSnapshot>(input: {
   );
   if (next !== current.selfCapture)
     await input.commit({ ...current, selfCapture: next });
+  if (next.outbox.length && deliveryDue(next.delivery) === undefined)
+    console.error(
+      '[meet-self-outbox] retry window ended with legal entries undelivered'
+    );
 }

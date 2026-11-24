@@ -12,7 +12,10 @@ import {
   emptySelfCapture,
   endSelfCaptureSession,
   isPresent,
+  isSelfSessionCapturing,
   isSelfSessionLive,
+  SELF_CAPTURE_DEADLINE_MS,
+  SELF_CAPTURE_MAX_REVOKED,
   pendingFor,
   SELF_CAPTURE_DRAIN_MS,
   SELF_CAPTURE_MAX_ACCOUNTS,
@@ -87,9 +90,12 @@ const isManager = (token: MeetRealtimeTokenPayload) =>
 
 /** A legacy or self_v1 session is running or draining. */
 function modeLocked(state: RoomServiceState, now: number) {
+  const self = state.selfCapture?.session;
+  const legacy = state.ended ? undefined : state.transcriptConsent?.active;
   return (
-    (!state.ended && !!state.transcriptConsent?.active) ||
-    isSelfSessionLive(state.selfCapture?.session, now)
+    // A self_v1 session's indicator does not outlive the session itself.
+    (!!legacy && legacy.sessionId !== self?.sessionId) ||
+    isSelfSessionLive(self, now)
   );
 }
 
@@ -201,7 +207,10 @@ export function applySelfCapture(
   if (!buckets) return refuse(state, 'rate_limited');
   const spent = { ...state, selfCapture: { ...capture, buckets } };
   if (!enabled || capture.mode !== 'self') return refuse(spent, 'unavailable');
-  if (current?.sessionId !== message.sessionId || current.status !== 'active')
+  if (
+    current?.sessionId !== message.sessionId ||
+    !isSelfSessionCapturing(current, now)
+  )
     return refuse(spent, 'no_session');
   if (token.guest === true || token.participantKind === 'guest')
     return refuse(spent, 'guest');
@@ -212,8 +221,11 @@ export function applySelfCapture(
     return refuse(spent, 'consent');
   // The outbox never drops an entry, so new opens stop before it grows past
   // its bound.
+  // A removal must always be recordable: once the removal set is full,
+  // nobody new may open.
   if (
     capture.outbox.length >= SELF_OUTBOX_MAX_ENTRIES ||
+    Object.keys(capture.revoked ?? {}).length >= SELF_CAPTURE_MAX_REVOKED ||
     (!account &&
       Object.keys(capture.accounts).length >= SELF_CAPTURE_MAX_ACCOUNTS)
   )
@@ -225,7 +237,7 @@ export function applySelfCapture(
     !base.legalAllow &&
     notice?.noticeVersion !== MEET_TRANSCRIPT_NOTICE_VERSION
   )
-    return refuse(spent, 'consent');
+    return refuse(spent, 'notice_required');
   if (!base.legalAllow && base.allows >= SELF_CAPTURE_MAX_ALLOWS)
     return refuse(spent, 'allow_limit');
   const seq = nextSeq(capture, base);
@@ -294,7 +306,7 @@ function commit(
     begun &&
     account.epoch === message.epoch &&
     current?.sessionId === message.sessionId &&
-    current.status === 'active' &&
+    isSelfSessionCapturing(current, now) &&
     isPresent(state, accountId) &&
     selfConsentHeld(state, current.meetingId, accountId) &&
     begun.acceptanceRevision === currentAcceptanceRevision(state)
@@ -374,25 +386,32 @@ function recordSession(
       return mismatch(403, 'Forbidden');
     // One live session at a time, and an ended session never restarts, so
     // its ledger and outbox order are never reset.
-    if (!same && capture.endedSessions?.includes(message.sessionId))
+    if (
+      capture.endedSessions?.includes(message.sessionId) ||
+      (same && !isSelfSessionLive(existing, now))
+    )
       return mismatch(409, 'MEET_SELF_SESSION_ENDED');
     if (!same && isSelfSessionLive(existing, now))
       return mismatch(409, 'MEET_SELF_SESSION_LIVE');
   }
-  const result = applyMeetTranscriptConsent(state, token, legacy, now)!;
-  if (result.status) return result;
-  if (!message.active) {
-    // The legacy handler ends only the session's own host's indicator.
-    if (
-      existing?.sessionId !== message.sessionId ||
-      existing.status !== 'active' ||
-      result.state.transcriptConsent?.active?.sessionId === message.sessionId
-    )
-      return result;
+  if (
+    !message.active &&
+    existing?.sessionId === message.sessionId &&
+    existing.status === 'active'
+  ) {
+    // The session's host, or any host or co-host when the host has left,
+    // ends a self_v1 session and its indicator.
+    const accountId = token.accountId ?? token.userId;
+    if (existing.hostAccountId !== accountId && !isManager(token))
+      return applyMeetTranscriptConsent(state, token, legacy, now)!;
+    const indicator = state.transcriptConsent;
+    const cleared =
+      indicator?.active?.sessionId === message.sessionId
+        ? { ...state, transcriptConsent: { choices: indicator.choices } }
+        : state;
     return {
-      ...result,
       state: {
-        ...result.state,
+        ...cleared,
         selfCapture: {
           ...capture,
           session: {
@@ -402,8 +421,11 @@ function recordSession(
           },
         },
       },
+      body: applyMeetTranscriptConsent(cleared, token, legacy, now)!.body,
     };
   }
+  const result = applyMeetTranscriptConsent(state, token, legacy, now)!;
+  if (result.status || !message.active) return result;
   if (protocol !== 'self_v1') return result;
   const same = existing?.sessionId === message.sessionId;
   return {
@@ -424,6 +446,9 @@ function recordSession(
             ? existing.hostAccountId
             : (token.accountId ?? token.userId),
           status: same ? existing.status : 'active',
+          captureUntil:
+            (same ? existing.captureUntil : undefined) ??
+            now + SELF_CAPTURE_DEADLINE_MS,
           ...(same && existing.drainUntil
             ? { drainUntil: existing.drainUntil }
             : {}),

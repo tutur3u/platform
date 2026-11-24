@@ -273,8 +273,13 @@ test('the room refuses a second live session and never restarts an ended one', a
     ((await ended.json()) as { code: string }).code,
     'MEET_SELF_SESSION_ENDED'
   );
-  // Re-recording the ended session keeps it ended: nothing reopens.
-  assert.equal((await serviceCall(g.room, host, start(sessionId))).status, 200);
+  // Re-recording the ended session is refused too: nothing reopens.
+  const same = await serviceCall(g.room, host, start(sessionId));
+  assert.equal(same.status, 409);
+  assert.equal(
+    ((await same.json()) as { code: string }).code,
+    'MEET_SELF_SESSION_ENDED'
+  );
   assert.equal(g.snapshot().selfCapture?.session?.status, 'ended');
   const begin = await serviceCall(g.room, alice, {
     action: 'transcription.self.openBegin',

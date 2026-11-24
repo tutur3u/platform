@@ -141,7 +141,8 @@ function sessionView(
       generation: self.generation,
     };
   const active = state.ended ? undefined : state.transcriptConsent?.active;
-  return active
+  // An ended or expired self_v1 session never shows as a legacy one.
+  return active && active.sessionId !== self?.sessionId
     ? { sessionId: active.sessionId, protocol: 'legacy', generation: 0 }
     : null;
 }

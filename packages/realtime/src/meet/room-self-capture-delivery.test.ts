@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   runSelfOutboxDelivery,
+  SELF_OUTBOX_DAILY_DELIVERIES,
   SELF_OUTBOX_MAX_DELIVERIES,
   selectSelfOutboxBatch,
   selfOutboxDeadline,
@@ -32,7 +33,10 @@ function pendingRoom() {
   ) as RoomServiceState;
 }
 
-function harness(state: RoomServiceState, reply: () => Promise<Response>) {
+function harness(
+  state: RoomServiceState,
+  reply: (request: Request) => Promise<Response>
+) {
   let current = state;
   let clock = T;
   const writes: RoomServiceState[] = [];
@@ -43,7 +47,7 @@ function harness(state: RoomServiceState, reply: () => Promise<Response>) {
       purpose: 'self-outbox',
       roomId: 'room-1',
     });
-    return reply();
+    return reply(request);
   });
   const run = (
     now: number,
@@ -218,5 +222,64 @@ describe('per-speaker outbox alarm delivery', () => {
     await box.h.run(T + 10_000);
     expect(box.h.read().roomName).toBe('changed');
     expect(box.h.read().selfCapture?.outbox).toEqual([]);
+  });
+});
+
+describe('outbox delivery bounds', () => {
+  it('sends at most the daily cap per room, whatever the cycles allow', async () => {
+    const base = pendingRoom();
+    const [first] = base.selfCapture!.outbox;
+    const outbox = Array.from({ length: 2000 }, (_, i) => ({
+      ...first!,
+      seq: 100 + i,
+    }));
+    const state: RoomServiceState = {
+      ...base,
+      selfCapture: { ...base.selfCapture!, outbox },
+    };
+    // Every delivery acknowledges one entry, so each restarts the cycle.
+    const h = harness(state, async (request) => {
+      const body = (await request.json()) as {
+        entries: { sessionId: string; accountId: string; seq: number }[];
+      };
+      return Response.json({ acked: body.entries.slice(0, 1) });
+    });
+    const day = 86_400_000;
+    for (let now = T; now < day; now += 10_000) await h.run(now);
+    expect(h.fetch).toHaveBeenCalledTimes(SELF_OUTBOX_DAILY_DELIVERIES);
+    expect(h.read().selfCapture?.deliveryDay).toEqual({
+      day: 0,
+      count: SELF_OUTBOX_DAILY_DELIVERIES,
+    });
+    const env = { MEET_AI_SELF_OUTBOX: { fetch: h.fetch } };
+    expect(selfOutboxDeadline(h.read(), env)).toBe(day);
+    await h.run(day);
+    expect(h.fetch).toHaveBeenCalledTimes(SELF_OUTBOX_DAILY_DELIVERIES + 1);
+  });
+
+  it('logs an error when the retry window ends with entries left', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const base = pendingRoom();
+      const last = T + 24 * 3_600_000 - 1000;
+      const state: RoomServiceState = {
+        ...base,
+        selfCapture: {
+          ...base.selfCapture!,
+          delivery: { attempts: 20, startedAt: T, nextAt: last },
+        },
+      };
+      const h = harness(state, async () => new Response(null, { status: 503 }));
+      await h.run(last);
+      expect(h.fetch).toHaveBeenCalledTimes(1);
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(
+        selfOutboxDeadline(h.read(), { MEET_AI_SELF_OUTBOX: { fetch: h.fetch } })
+      ).toBeUndefined();
+    } finally {
+      error.mockRestore();
+      warn.mockRestore();
+    }
   });
 });

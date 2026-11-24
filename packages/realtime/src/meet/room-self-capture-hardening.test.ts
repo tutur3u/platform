@@ -292,7 +292,7 @@ describe('per-speaker notice evidence', () => {
     });
   });
 
-  it('refuses an open without stored evidence', () => {
+  it('asks for evidence when it is missing, and resending the Allow recovers', () => {
     const state = selfRoom();
     const bare: RoomServiceState = {
       ...state,
@@ -300,7 +300,13 @@ describe('per-speaker notice evidence', () => {
     };
     expect(begin(bare, alice).body).toMatchObject({
       allowed: false,
-      reason: 'consent',
+      reason: 'notice_required',
+    });
+    const resent = ok(svc(bare, alice, transcriptChoice('allow'), T + 30_000));
+    expect(begin(resent, alice, T + 30_000).body).toMatchObject({
+      allowed: true,
+      locale: notice.locale,
+      textHash: notice.textHash,
     });
   });
 });
