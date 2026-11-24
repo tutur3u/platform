@@ -38,7 +38,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "FORMS_UPLOAD_CLEANUP_MODE": "off",
@@ -142,7 +142,7 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "MEET-FORMS-ATTENDANCE-ACTIVATION-1: enable forms-upload-cleanup with FORMS_UPLOAD_CLEANUP_MODE 'off' (every 30 minutes, reports ok and makes no request until a separately approved change sets 'delete' with hosted stop and billing evidence) and the meet-attendance-retention and meet-attendance-erasure jobs, which stay no-ops until the database owner opens private.meet_attendance_retention_control, and bind MEET_ATTENDANCE_ERASURE to the tuturuuu-meet-realtime AttendanceErasure entrypoint; the previous stage is the live QA-CLEANUP-CRON-CONTROL-1 identity.",
+    "decision": "MEET-FORMS-ATTENDANCE-ACTIVATION-1 + OBSERVABILITY-COLLECTORS-1 (one R15 publish): enable forms-upload-cleanup with FORMS_UPLOAD_CLEANUP_MODE 'off' (every 30 minutes, reports ok and makes no request until a separately approved change sets 'delete' with hosted stop and billing evidence) and the meet-attendance-retention and meet-attendance-erasure jobs, which stay no-ops until the database owner opens private.meet_attendance_retention_control, and bind MEET_ATTENDANCE_ERASURE to the tuturuuu-meet-realtime AttendanceErasure entrypoint; also enable observability-retention (*/10), observability-slo-burn (*/15) and observability-cloudflare (*/15), whose collector stays a no-op until its private.observability_source_control row leaves 'off'. CLOUDFLARE_ANALYTICS_API_TOKEN is an optional operator-installed secret; observability-github-actions stays disabled pending a bot credential. The previous stage is the live QA-CLEANUP-CRON-CONTROL-1 identity.",
     "fields": ["services", "vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."

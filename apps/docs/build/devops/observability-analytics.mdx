@@ -1,7 +1,7 @@
 ---
 title: Observability and product analytics
 description: What Tuturuuu measures for every app and service, the gaps, and the Cloudflare ingestion, Admin views and SLO alerts that close them.
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-24"
 audience: developers
 ---
 
@@ -214,11 +214,19 @@ Product analytics follows the
 
 **Purpose and basis.** `product_analytics_daily` serves one purpose:
 aggregate product health for platform operators with `view_infrastructure`.
-The intended basis is legitimate interest. It holds no subject-level rows, so
-a subject export has nothing to return from it, and an erasure does not
-recompute closed days, whose counts cannot be traced to a person. The
-`observability-product-analytics` job stays out of `CRON_CONTROL_ENABLED_JOBS`
-until the legal owner confirms this record.
+Its inputs are filtered by the stored Analytics choice from the cookie banner
+(migration `20261124095000_product_analytics_consent.sql`). Under the default
+`consent` basis a signed-in person is counted only after an affirmative choice
+that includes Analytics; a withdrawal, no decision, a guest and a deleted
+account are not counted. The legal owner can switch
+`private.product_analytics_consent_control.basis` to `opt_out` (everyone
+except withdrawals) by a reviewed update if a non-consent lawful basis is
+recorded. The decision and its legal review are in the
+[data protection standard](/platform/data-protection-standard#product-analytics-consent).
+The table holds no subject-level rows, so a subject export has nothing to
+return from it, and an erasure does not recompute closed days, whose counts
+cannot be traced to a person. A withdrawal drops the person from today's and
+yesterday's cells at the next 30-minute slot.
 
 **Per-app activity.** No store records which app a person used. The planned
 writer marks activity once per person, app and UTC day from the satellite
@@ -317,5 +325,16 @@ pass. The Perf Factory detector covers gateway mounts until then.
   collector checks that fence before every provider request and before the
   write. Setting the control row to `off` also stops it: a running collector
   finishes its in-flight read, and the write is refused.
+- Enabled jobs (decision 2026-11-24): `observability-retention`,
+  `observability-slo-burn` and `observability-cloudflare` are in
+  `CRON_CONTROL_ENABLED_JOBS`. The Cloudflare collector stays a no-op until
+  its control row leaves `off`. `CLOUDFLARE_ANALYTICS_API_TOKEN` is an
+  account-owned token with Account Analytics Read only.
+- Pending: `observability-github-actions` stays out of the enabled list until
+  a `GITHUB_ACTIONS_READ_TOKEN` owned by a bot account (not a person) is
+  provisioned. Its intended scope is a fine-grained token with
+  public-repository read access only, so its rate limit never draws on a
+  person's pool. `observability-product-analytics` is enabled only after
+  production applies `20261124095000_product_analytics_consent.sql`.
 - Investigate a missing series: read `observability_ingest_runs` for the source
   (`budget_exhausted`, `failed`, `unknown`) before reading provider dashboards.
