@@ -14,7 +14,9 @@ describe('AI locale layout', () => {
     expect(source).toContain(
       "import { NuqsAdapter } from 'nuqs/adapters/next/app'"
     );
-    expect(source).toContain('<Providers appName="AI Studio" currentApp="ai">');
+    expect(source).toMatch(
+      /<Providers\s+appName="AI Studio"\s+currentApp="ai"\s+nonce=\{requestNonce\(\)\}\s*>/
+    );
     expect(source).toContain('<NuqsAdapter>');
   });
 });
