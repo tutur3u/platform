@@ -50,11 +50,23 @@ suites=(
   meet-ai-self-v1-capture-path
   meet-ai-self-v1-pilot-followup
 )
+# The consent-proof store (main's erase and sweep migrations) sits between the
+# capture path and the follow-up in production order. It is installed once and
+# is not part of the self_v1 rollback, so a second forward leaves it alone.
+proof=(
+  20261124191000_erase_meet_mira_evidence
+  20261124191500_sweep_meet_consent_proof_accounts
+)
 forward() {
-  local m
+  local m p
   for m in "${self_v1[@]}"; do
     case $m in
       2026111112020[2-5]_*) run "supabase/migrations/$m.sql" ;; # CONCURRENTLY: no transaction
+      20261125999901_*)
+        if [[ $($PSQL -X -At -c "select to_regclass('private.meet_consent_proofs') is null") == t ]]; then
+          for p in "${proof[@]}"; do run "supabase/migrations/$p.sql" tx; done
+        fi
+        run "supabase/migrations/$m.sql" tx ;;
       *) run "supabase/migrations/$m.sql" tx ;;
     esac
   done
@@ -68,8 +80,9 @@ suites_pass() {
     fail=$(grep -cE '^not ok ' <<<"$out" || true)
     printf 'SUITE %s pass=%s fail=%s plan=%s\n' "$suite" "$pass" "$fail" \
       "$(grep -E '^1\.\.[0-9]+' <<<"$out" | tail -1)"
+    # A skipped test is not a pass: every installed store this lineage names must run.
     if [[ $fail != 0 || $pass == 0 ]] || ! grep -qE '^1\.\.[0-9]+' <<<"$out" \
-       || grep -qE 'ERROR|Looks like' <<<"$out"; then
+       || grep -qE 'ERROR|Looks like|# SKIP' <<<"$out"; then
       grep -E '^not ok|^#|ERROR' <<<"$out" | head -40
       status=1
     fi
