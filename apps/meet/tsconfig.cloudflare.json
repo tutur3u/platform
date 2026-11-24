@@ -52,6 +52,7 @@
     "cloudflare/live/session.ts",
     "cloudflare/one-origin.ts",
     "cloudflare/security-profile.ts",
+    "cloudflare/security-profile.test.ts",
     "cloudflare/provider.ts",
     "cloudflare/worker.ts",
     "cloudflare/worker-entrypoint.test.ts",

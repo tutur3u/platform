@@ -3,7 +3,13 @@ import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { describe, expect, it, vi } from 'vitest';
 import { appBaseHeadScript } from '../start/base-path';
 import { createBridgeHandler } from '../start/handler';
-import { createNonce, defaultContentSecurityPolicy, requestNonce } from './csp';
+import {
+  contentSecurityPolicy,
+  createNonce,
+  defaultContentSecurityPolicy,
+  requestNonce,
+  WASM_COMPILE_SOURCE,
+} from './csp';
 
 const ctx = { waitUntil: vi.fn() };
 
@@ -69,5 +75,66 @@ describe('per-response CSP nonce', () => {
     const response = await plain(new Request('https://x.test/'), {}, ctx);
     expect(response.headers.get('content-security-policy')).toBeNull();
     expect(await response.text()).toBe('undefined');
+  });
+});
+
+describe('enforced script policy and WebAssembly', () => {
+  const scriptTokens = (policy: string) =>
+    (policy.split('; ').find((part) => part.startsWith('script-src ')) ?? '')
+      .split(' ')
+      .slice(1);
+
+  it('leaves the default policy byte-identical for every app', () => {
+    expect(defaultContentSecurityPolicy('N')).toBe(
+      "script-src 'nonce-N' 'strict-dynamic'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    );
+    expect(contentSecurityPolicy('N')).toBe(defaultContentSecurityPolicy('N'));
+    expect(contentSecurityPolicy('N', { extraScriptSources: [] })).toBe(
+      defaultContentSecurityPolicy('N')
+    );
+  });
+
+  it("adds exactly 'wasm-unsafe-eval' to script-src and changes nothing else", () => {
+    const wasm = contentSecurityPolicy('N', {
+      extraScriptSources: [WASM_COMPILE_SOURCE],
+    });
+    expect(wasm).toBe(
+      "script-src 'nonce-N' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    );
+    expect(scriptTokens(wasm)).toEqual([
+      "'nonce-N'",
+      "'strict-dynamic'",
+      "'wasm-unsafe-eval'",
+    ]);
+    // No host, no JavaScript eval.
+    expect(wasm).not.toMatch(/https?:|\*/u);
+    expect(wasm.match(/'unsafe-eval'/gu)).toBeNull();
+    // Stating it twice still names it once.
+    expect(
+      contentSecurityPolicy('N', {
+        extraScriptSources: [WASM_COMPILE_SOURCE, WASM_COMPILE_SOURCE],
+      })
+    ).toBe(wasm);
+  });
+
+  it.each([
+    "'unsafe-eval'",
+    "'unsafe-inline'",
+    "'unsafe-hashes'",
+    "'inline-speculation-rules'",
+    'wasm-unsafe-eval',
+    'https://cdn.example',
+    "'self'",
+    '*',
+    "'nonce-evil'",
+    "'wasm-unsafe-eval' 'unsafe-eval'",
+  ])('refuses %s as an extra script source', (source) => {
+    expect(() =>
+      contentSecurityPolicy('N', { extraScriptSources: [source] })
+    ).toThrow(/may not add/u);
+  });
+
+  it('keeps the bridge default an app config can pass as a one-argument callback', () => {
+    expect(defaultContentSecurityPolicy.length).toBe(1);
   });
 });

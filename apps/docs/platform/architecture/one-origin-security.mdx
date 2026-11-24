@@ -35,32 +35,60 @@ behavior. Drive's `src/start-candidate/apex-worker.test.ts` additionally covers
 production bindings on the apex. Emitted Worker and deployed acceptance remain
 required before routing production traffic.
 
-## WebAssembly in Meet and Parley
+## WebAssembly in Meet
 
-The in-browser code formatters (Ruff, clang-format, gofmt and shfmt) are
-WebAssembly modules, and compiling WebAssembly needs `'wasm-unsafe-eval'` in
-`script-src`. Meet's report-only profile (`apps/meet/cloudflare/security-profile.ts`)
-adds exactly that source, through `WASM_COMPILE_SOURCE` in
-`packages/utils/src/security-headers.ts`. Parley uses the same exception when it
-gets a document CSP profile; it has none today.
+The in-browser code formatters are WebAssembly modules: Ruff (Python),
+clang-format (C and C++), gofmt (Go), shfmt (shell) and the tree-sitter parser
+behind Prettier Java. Compiling WebAssembly needs `'wasm-unsafe-eval'` in
+`script-src`. Prettier for JavaScript and TypeScript is plain JavaScript and
+needs nothing.
 
-- **Scope.** Only the `/meet` and `/parley` profiles. `buildReportOnlyCsp` throws
-  for any `unsafe-*` script source other than `'wasm-unsafe-eval'` on those two
-  mounts, so `'unsafe-eval'`, `'unsafe-inline'` and the wasm source on any other app
-  fail the build of the header.
+Meet has two policies, and this change adds the keyword to both:
+
+- **Enforced today.** On mounted `/meet` HTML, `apps/meet/src/runtime/handler.ts`
+  already sends a `Content-Security-Policy` built by the Start bridge: a nonce and
+  `'strict-dynamic'` in `script-src`, plus `object-src 'none'`, `base-uri 'self'`
+  and `frame-ancestors 'none'`. Meet now builds it with
+  `contentSecurityPolicy(nonce, { extraScriptSources: [WASM_COMPILE_SOURCE] })`
+  from `packages/start-bridge/src/core/csp.ts`, so its `script-src` is exactly
+  `'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'`. Policies intersect, so without
+  the keyword the enforced policy blocks the formatters whatever the
+  report-only policy says.
+- **Report-only.** The profile in `apps/meet/cloudflare/security-profile.ts` adds
+  the same source through `WASM_COMPILE_SOURCE` in
+  `packages/utils/src/security-headers.ts`.
+
+Scope and limits:
+
+- **Meet only.** `defaultContentSecurityPolicy(nonce)`, which every other app
+  uses, is byte-identical to before. `contentSecurityPolicy` accepts exactly
+  `'wasm-unsafe-eval'` as an extra script source and throws on anything else,
+  every other `unsafe-*` keyword and every host included. The report-only builder
+  throws for the same sources, and for the wasm source on any mount other than
+  `/meet`. Both throw when the header is built, which is at request time for a
+  document, not at build time; header unit tests
+  (`packages/start-bridge/src/core/csp.test.ts`,
+  `packages/utils/src/__tests__/security-headers.test.ts`,
+  `apps/meet/cloudflare/security-profile.test.ts` and
+  `apps/meet/src/runtime/handler-server-timing.test.ts`) pin the exact strings.
+  Parley has no CSP profile of its own; it becomes a Meet activity and inherits
+  Meet's.
 - **What it does not allow.** `'wasm-unsafe-eval'` lets the page compile
   WebAssembly. It does not enable JavaScript `eval`, `new Function` or string
-  timers, and Trusted Types still guards DOM-injection sinks.
-- **What loads.** The formatters are lazily loaded, first-party packages at fixed
-  versions under permissive licenses (MIT or Apache-2.0). They are bundled with
-  the app and fetched from its own origin; the page fetches no formatter code from
-  a third-party host, and `script-src` gains no host.
+  timers, and adds no host to `script-src`. `connect-src` is unchanged because
+  the formatter binaries are fetched from Meet's own origin.
+- **What loads.** The formatters are lazily loaded first-party packages at exact
+  versions under permissive licenses (MIT or Apache-2.0), bundled with the app.
+  The page fetches no formatter code from a third-party host.
 
-This change must merge before any Meet or Parley CSP is switched from report-only
-to enforce, or the formatters fail to compile under enforcement. Header unit tests
-(`packages/utils/src/__tests__/security-headers.test.ts` and
-`apps/meet/cloudflare/security-profile.test.ts`) name the exception and assert that
-`'unsafe-eval'` never appears in any directive.
+What was verified in a browser: a loopback page in Chromium (Playwright) was
+served with the exact header Meet sends, a nonced module script, and the
+formatter bundle with its `.wasm` files next to it. With `'wasm-unsafe-eval'`,
+JavaScript, Java, Python, C++, Go and shell formatted; with the previous header
+(no keyword), the five WebAssembly formatters failed with a `CompileError` that
+names the Content Security Policy, and JavaScript still formatted. This proves the
+CSP semantics for these modules. It does not exercise the built Worker handler,
+which a preview or staging smoke has to confirm.
 
 ## Mounted app Trusted Types rollout
 

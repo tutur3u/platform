@@ -116,33 +116,25 @@ function selfSources(
 
 /**
  * Lets the page compile WebAssembly without allowing JavaScript `eval`. The
- * in-browser code formatters (Ruff, clang-format, gofmt, shfmt) are WebAssembly
- * modules, so Meet and Parley need it; no other app does.
+ * in-browser code formatters (Ruff, clang-format, gofmt, shfmt, and Prettier
+ * Java's tree-sitter parser) are WebAssembly modules, so Meet needs it; no
+ * other app does.
  */
 export const WASM_COMPILE_SOURCE = "'wasm-unsafe-eval'";
 
-/**
- * The only mounts whose script-src may carry {@link WASM_COMPILE_SOURCE}.
- *
- * `/parley` is listed ahead of time: under the Parley-to-Meet plan, Parley
- * becomes a Meet activity and inherits Meet's profile, so it needs no separate
- * policy of its own. Parley has no document CSP profile today.
- */
-const WASM_COMPILE_BASE_PATHS: ReadonlySet<string> = new Set([
-  '/meet',
-  '/parley',
-]);
+/** The only mount whose script-src may carry {@link WASM_COMPILE_SOURCE}. */
+const WASM_COMPILE_BASE_PATH = '/meet';
 
 /**
  * Script sources may never name an `unsafe-*` keyword, with one named
- * exception: `'wasm-unsafe-eval'` on the Meet and Parley mounts.
+ * exception: `'wasm-unsafe-eval'` on the Meet mount.
  */
 function assertScriptSources(profile: AppSecurityProfile) {
   for (const source of profile.script ?? []) {
     if (!/unsafe/iu.test(source)) continue;
     if (
       source === WASM_COMPILE_SOURCE &&
-      WASM_COMPILE_BASE_PATHS.has(profile.basePath)
+      profile.basePath === WASM_COMPILE_BASE_PATH
     )
       continue;
     throw new Error(
@@ -153,7 +145,7 @@ function assertScriptSources(profile: AppSecurityProfile) {
 
 /**
  * Report-only policy: no `'unsafe-inline'`/`'unsafe-eval'` for scripts (the one
- * exception is `'wasm-unsafe-eval'` on Meet and Parley), plus Trusted Types, so
+ * exception is `'wasm-unsafe-eval'` on Meet), plus Trusted Types, so
  * inline scripts, eval and DOM-injection sinks surface as violations before
  * enforcement.
  */

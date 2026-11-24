@@ -245,9 +245,19 @@ it('passes the public document URL and the compiled server function URL to Start
   expect(await page.text()).toBe(
     'https://tuturuuu.com/meet/vi/personal/meetings|'
   );
-  expect(page.headers.get('content-security-policy')).toContain(
-    "'strict-dynamic'"
-  );
+  // Meet's enforced policy: the strict nonce policy plus 'wasm-unsafe-eval' for
+  // the WebAssembly formatters, and no other script source.
+  const policy = page.headers.get('content-security-policy') ?? '';
+  const script = policy
+    .split('; ')
+    .find((part) => part.startsWith('script-src'));
+  expect(script?.split(' ').slice(1)).toEqual([
+    expect.stringMatching(/^'nonce-[A-Za-z0-9+/]{22}=='$/u),
+    "'strict-dynamic'",
+    "'wasm-unsafe-eval'",
+  ]);
+  expect(policy).toContain("object-src 'none'");
+  expect(policy.match(/'unsafe-eval'/gu)).toBeNull();
 
   const result = await handleMeetRequest(
     new Request('https://tuturuuu.com/meet/_meet/functions/example?x=1', {

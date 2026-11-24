@@ -1,7 +1,8 @@
 import { forwardToCentralApi } from '@tuturuuu/start-bridge/api-forward';
 import {
-  defaultContentSecurityPolicy,
+  contentSecurityPolicy,
   createNonce,
+  WASM_COMPILE_SOURCE,
 } from '@tuturuuu/start-bridge/csp';
 import {
   admitMountedMutation,
@@ -161,9 +162,10 @@ async function dispatchMeetRequest(
   )
     return mounted;
   const secured = new Response(mounted.body, mounted);
+  // Meet alone adds 'wasm-unsafe-eval', for its WebAssembly code formatters.
   secured.headers.set(
     'content-security-policy',
-    defaultContentSecurityPolicy(nonce)
+    contentSecurityPolicy(nonce, { extraScriptSources: [WASM_COMPILE_SOURCE] })
   );
   return secured;
 }

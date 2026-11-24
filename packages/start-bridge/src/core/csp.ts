@@ -24,14 +24,45 @@ export function requestNonce(): string | undefined {
   return store?.getStore()?.nonce;
 }
 
-/** A strict script policy for bridged apps; extend per app as needed. */
-export function defaultContentSecurityPolicy(nonce: string): string {
+/**
+ * Lets a page compile WebAssembly without allowing JavaScript `eval`. The
+ * in-browser code formatters are WebAssembly modules, so Meet needs it; no
+ * other app does.
+ */
+export const WASM_COMPILE_SOURCE = "'wasm-unsafe-eval'";
+
+/** Script sources an app may add to the strict policy; nothing else is accepted. */
+const ALLOWED_EXTRA_SCRIPT_SOURCES: ReadonlySet<string> = new Set([
+  WASM_COMPILE_SOURCE,
+]);
+
+/**
+ * The strict script policy for bridged apps with the extra script sources the
+ * caller names. Only {@link WASM_COMPILE_SOURCE} is accepted: any other source,
+ * every other `unsafe-*` keyword and every host included, throws, so no app can
+ * widen the policy through this builder.
+ */
+export function contentSecurityPolicy(
+  nonce: string,
+  options: { extraScriptSources?: readonly string[] } = {}
+): string {
+  const extra = options.extraScriptSources ?? [];
+  for (const source of extra)
+    if (!ALLOWED_EXTRA_SCRIPT_SOURCES.has(source))
+      throw new Error(`script-src may not add ${source}`);
   return [
-    `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+    [`script-src 'nonce-${nonce}' 'strict-dynamic'`, ...new Set(extra)].join(
+      ' '
+    ),
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
   ].join('; ');
+}
+
+/** A strict script policy for bridged apps; extend per app as needed. */
+export function defaultContentSecurityPolicy(nonce: string): string {
+  return contentSecurityPolicy(nonce);
 }
 
 /**
