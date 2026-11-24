@@ -101,6 +101,14 @@ function healthy(live) {
           type: 'durable_object_namespace',
           class_name: object.className,
         })),
+        ...Object.entries(live.services ?? {}).map(
+          ([name, { service, entrypoint }]) => ({
+            name,
+            type: 'service',
+            service,
+            entrypoint,
+          })
+        ),
       ],
     }),
     subdomain: ok({
