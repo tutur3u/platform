@@ -250,8 +250,14 @@ select is(
   '{"acceptances": 0, "choices": 3, "consents": 1}'::jsonb,
   'evidence erased after the deletion is still moved'
 );
-select is((select count(*)::int from private.meet_consent_proofs where participant_ref in (select ref from account_refs) or user_id = pg_temp.cid(6)), 0, 'and its proof keeps neither the account id nor a pseudonym');
-select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(42) and kind = 'self_v1_decision' and user_id is null and participant_ref is null and choice = 'allow'), 1, 'a per-speaker decision of the deleted account keeps only the decision');
+select is((select count(*)::int from private.meet_consent_proofs where user_id = pg_temp.cid(6)), 0, 'and its proof does not name the account');
+select is((select count(*)::int from private.meet_consent_proofs where kind = 'mira_choice' and participant_ref in (select ref from account_refs)), 0, 'its Mira choice proof keeps no pseudonym');
+-- A per-speaker decision's pseudonym is per session, and the account id was
+-- cleared from every row carrying it, so it no longer links to the account.
+select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(42) and kind = 'self_v1_decision' and user_id is null and choice = 'allow'), 1, 'a per-speaker decision of the deleted account keeps the decision without the account id');
+select is((select count(*)::int from private.meet_consent_proofs where participant_ref in (select ref from account_refs) and user_id is not null), 0, 'no proof row ties a pseudonym of the deleted account to any account');
+select is((select count(*)::int from private.meet_ai_consents where participant_ref in (select ref from account_refs) and user_id is not null), 0, 'nor does any live per-speaker decision');
+select is((select tgname::text from pg_trigger where tgrelid = 'auth.users'::regclass and tgname in ('anonymize_linked_meet_evidence', 'anonymize_meet_ai_consents') order by tgname collate "C" limit 1), 'anonymize_linked_meet_evidence', 'the pseudonym collector fires before per-speaker decisions lose their account id');
 select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(42) and participant_ref = pg_temp.cid(7)), 1, 'a guest in the same meeting keeps its guest id');
 select ok((select count(*) from private.meet_consent_proofs where user_id = pg_temp.cid(1) and participant_ref is not null) > 0, 'another account keeps its pseudonyms');
 
@@ -295,7 +301,7 @@ insert into private.meet_mira_participant_choices(meeting_id, ws_id, user_id, ch
 insert into public.erase_mira_blocker(meeting_id) values (pg_temp.cid(23));
 select throws_ok($$select private.delete_meeting_erasing_mira(pg_temp.cid(12), pg_temp.cid(23))$$, '23503', null, 'a meeting blocked for another reason is not deleted');
 select is((select count(*)::int from private.meet_mira_participant_choices where meeting_id = pg_temp.cid(23)), 1, 'its evidence is kept when the delete fails');
-select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(23)), 0, 'no proof is written for it');
+select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(23)), 1, 'no proof is written for it beyond the one its workspace erase kept');
 select is((select count(*)::int from private.meet_mira_evidence_erasures where meeting_id = pg_temp.cid(23)), 0, 'and no receipt');
 delete from public.erase_mira_blocker;
 
@@ -338,7 +344,8 @@ select ok(coalesce((select 'statement_timeout=60s' = any(proconfig) from pg_proc
 select ok(coalesce((select 'search_path=pg_catalog, pg_temp' = any(proconfig) from pg_proc where oid = 'public.delete_owned_workspace(uuid, uuid, text)'::regprocedure), false), 'owner deletion keeps its pinned search_path');
 select ok(not has_function_privilege('authenticated', 'public.delete_owned_workspace(uuid,uuid,text)', 'EXECUTE'), 'owner deletion is still closed to authenticated sessions');
 select ok(has_function_privilege('service_role', 'private.delete_meeting_with_attendance_intent(uuid,uuid,jsonb)', 'EXECUTE'), 'the attendance-aware meeting delete is still open to the service role');
-select ok(not has_function_privilege('authenticated', 'private.anonymize_meet_mira_evidence()', 'EXECUTE'), 'the anonymization trigger function stays closed to clients');
+select ok(not has_function_privilege('authenticated', 'private.anonymize_linked_meet_evidence()', 'EXECUTE'), 'the proof anonymization trigger function stays closed to clients');
+select ok(not has_function_privilege('anon', 'private.anonymize_linked_meet_evidence()', 'EXECUTE'), 'and closed to anon');
 
 select * from finish();
 rollback;

@@ -128,10 +128,14 @@ create trigger protect_meet_consent_proof_delete
   for each row execute function private.protect_meet_consent_proof_delete();
 
 -- Account deletion clears the account id, and every pseudonym that links a
--- row back to the account, from proof rows too: the rows naming the account
--- and any row carrying one of its pseudonyms (from its proof, its live Mira
--- choices or its per-speaker decisions). A guest id stays.
-create or replace function private.anonymize_meet_mira_evidence()
+-- row back to the account, from proof rows: the rows naming the account and
+-- any row carrying one of its pseudonyms (from its proof, its live Mira
+-- choices or its per-speaker decisions). A guest id stays. Triggers for the
+-- same event fire in name order, so this one runs before
+-- anonymize_meet_ai_consents clears the per-speaker decisions' account id and
+-- can still collect their pseudonyms; anonymize_meet_mira_evidence clears the
+-- live Mira rows afterwards.
+create function private.anonymize_linked_meet_evidence()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp
 as $$
@@ -151,8 +155,6 @@ begin
   perform pg_catalog.set_config(
     'private.meet_consent_erased_account', old.id::text, true
   );
-  update private.meet_mira_host_acceptances set user_id = null where user_id = old.id;
-  update private.meet_mira_participant_choices set user_id = null where user_id = old.id;
   update private.meet_consent_proofs
     set user_id = null, participant_ref = null
     where user_id = old.id
@@ -161,10 +163,12 @@ begin
   return old;
 end;
 $$;
-revoke all on function private.anonymize_meet_mira_evidence()
+revoke all on function private.anonymize_linked_meet_evidence()
   from public, anon, authenticated;
--- tuturuuu: reviewed(function-grant): private.anonymize_meet_mira_evidence() is a trigger function on auth.users and is restricted to the service role.
-grant execute on function private.anonymize_meet_mira_evidence() to service_role;
+-- tuturuuu: reviewed(function-grant): private.anonymize_linked_meet_evidence() is a trigger function on auth.users and is restricted to the service role.
+grant execute on function private.anonymize_linked_meet_evidence() to service_role;
+create trigger anonymize_linked_meet_evidence after delete on auth.users
+  for each row execute function private.anonymize_linked_meet_evidence();
 
 -- A receipt per erase: the scope, the erased ids and the counts, no person.
 create table private.meet_mira_evidence_erasures (
@@ -214,10 +218,12 @@ begin
     raise exception 'Exactly one Mira evidence erase scope is required'
       using errcode = '22023';
   end if;
-  if p_reason is distinct from case
+  -- PL/pgSQL ends an IF condition at its first THEN, so the CASE is
+  -- parenthesized.
+  if p_reason is distinct from (case
     when p_meeting_id is not null then 'meeting_deleted'
     else 'workspace_deleted'
-  end then
+  end) then
     raise exception 'Mira evidence erase reason does not match its scope'
       using errcode = '22023';
   end if;
@@ -263,7 +269,10 @@ begin
   select 'self_v1_decision', s.meeting_id, m.ws_id,
     case when exists (select 1 from auth.users u where u.id = c.user_id)
       then c.user_id end,
-    -- A decision of a deleted account keeps neither its id nor its pseudonym.
+    -- A decision still naming a deleted account keeps neither its id nor its
+    -- pseudonym. Account deletion clears the id from live decisions; their
+    -- per-session pseudonym then links to no account and stays, since it
+    -- cannot be told apart from a guest's.
     case when c.user_id is null
       or exists (select 1 from auth.users u where u.id = c.user_id)
       then c.participant_ref end,
