@@ -203,12 +203,21 @@ export async function DELETE(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const permissions = await getPermissions({ user, wsId: resolvedWsId });
-  if (
-    !permissions ||
-    permissions.withoutPermission('manage_workspace_members')
-  ) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  // Any member may leave a workspace. The guarded function confirms the
+  // membership and keeps the creator and last-manager protections.
+  const isSelfLeave =
+    userId !== null &&
+    userId === user.id.toLowerCase() &&
+    normalizedUserEmail === null;
+
+  if (!isSelfLeave) {
+    const permissions = await getPermissions({ user, wsId: resolvedWsId });
+    if (
+      !permissions ||
+      permissions.withoutPermission('manage_workspace_members')
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
   }
 
   // Authorization is complete above. Use the admin client for the scoped

@@ -416,6 +416,11 @@ function getTopLevelNavigation({
           title: t('infrastructure-tabs.workspaces'),
         },
         {
+          href: href(wsId, '/workspaces/without-managers'),
+          icon: icon(ShieldCheck),
+          title: t('infrastructure-tabs.workspaces_without_managers'),
+        },
+        {
           href: href(wsId, '/entity-creation-limits'),
           icon: icon(Settings),
           title: t('infrastructure-tabs.entity_creation_limits'),

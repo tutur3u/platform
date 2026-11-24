@@ -9319,7 +9319,8 @@
     "workspaces": "Workspaces",
     "deployments": "Deployments",
     "monitoring_health": "Health",
-    "mira_channels": "Mira channels"
+    "mira_channels": "Mira channels",
+    "workspaces_without_managers": "Without managers"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
@@ -24787,5 +24788,19 @@
     "upskii_disconnect_title": "Disconnect Upskii?",
     "upskii_disconnected": "Upskii disconnected",
     "upskii_linked_as": "Linked to {email}"
+  },
+  "workspace-manager-gaps": {
+    "title": "Workspaces without managers",
+    "description": "Workspaces with full members but nobody who can manage members.",
+    "col_name": "Name",
+    "col_id": "Workspace ID",
+    "col_creator_id": "Creator ID",
+    "col_full_members": "Full members",
+    "col_created_at": "Created",
+    "empty": "Every workspace with members has a manager.",
+    "load_failed": "Could not load workspaces. Try again later.",
+    "invalid_cursor": "This page link is invalid. Return to the first page.",
+    "first_page": "First page",
+    "next_page": "Next page"
   }
 }

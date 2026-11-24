@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   calls: [] as Array<{ table: string; op: string; args: unknown[] }>,
   canManageCreatorGrantRole: vi.fn(),
+  privateRpc: vi.fn(),
   resolveWorkspaceRouteAccess: vi.fn(),
   rpc: vi.fn(),
+  schema: vi.fn(),
   permissionError: null as unknown,
   roleLookup: { data: null as unknown, error: null as unknown },
   workspaceLookup: { data: null as unknown, error: null as unknown },
@@ -49,6 +51,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
     from: vi.fn((table: string) => createQuery(table)),
     rpc: mocks.rpc,
+    schema: mocks.schema.mockImplementation(() => ({ rpc: mocks.privateRpc })),
   })),
 }));
 
@@ -78,167 +81,123 @@ describe('workspace role update route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.calls.length = 0;
-    mocks.permissionError = null;
     mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
       ok: true,
       permissions: { wsId: 'caller-workspace-id' },
       user: { id: 'admin-user' },
     });
-    mocks.roleLookup = {
-      data: { id: 'own-role-id', name: 'Role' },
-      error: null,
-    };
-    mocks.workspaceLookup = { data: { creator_id: 'owner-user' }, error: null };
-    mocks.canManageCreatorGrantRole.mockResolvedValue(true);
+    mocks.privateRpc.mockResolvedValue({ data: 'updated', error: null });
   });
 
-  it('does not write permissions for a role outside the workspace', async () => {
-    mocks.roleLookup = { data: null, error: null };
-
-    const response = await putRole('foreign-role-id');
-
-    expect(response.status).toBe(404);
+  function expectNoDirectWrites() {
     expect(
-      mocks.calls.some(
-        (call) =>
-          call.table === 'workspace_role_permissions' &&
-          (call.op === 'upsert' || call.op === 'update')
+      mocks.calls.some((call) =>
+        ['delete', 'update', 'upsert'].includes(call.op)
       )
     ).toBe(false);
-  });
+  }
 
-  it('leaves the role name unchanged when the permission save fails', async () => {
-    mocks.permissionError = { code: '42501', message: 'Grant rejected' };
-
-    const response = await putRole('own-role-id');
-
-    expect(response.status).toBe(500);
-    expect(mocks.calls.some((call) => call.op === 'upsert')).toBe(true);
-    expect(
-      mocks.calls.some(
-        (call) => call.table === 'workspace_roles' && call.op === 'update'
-      )
-    ).toBe(false);
-  });
-
-  it('updates permissions for a role in the resolved workspace', async () => {
-    const response = await putRole('own-role-id');
-
-    expect(response.status).toBe(200);
-    expect(mocks.calls).toContainEqual({
-      args: ['ws_id', 'caller-workspace-id'],
-      op: 'eq',
-      table: 'workspace_roles',
+  it('rejects a caller without manage_workspace_roles before the edit', async () => {
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     });
-    expect(mocks.calls).toContainEqual({
-      args: [
-        [
-          {
-            enabled: true,
-            permission: 'admin',
-            role_id: 'own-role-id',
-            ws_id: 'caller-workspace-id',
-          },
-        ],
-      ],
-      op: 'upsert',
-      table: 'workspace_role_permissions',
-    });
-  });
-
-  it('refuses a non-creator rename of a creator-granted role', async () => {
-    mocks.roleLookup = {
-      data: { id: 'own-role-id', name: 'Billing' },
-      error: null,
-    };
-    mocks.canManageCreatorGrantRole.mockResolvedValue(false);
 
     const response = await putRole('own-role-id');
 
     expect(response.status).toBe(403);
-    expect(mocks.canManageCreatorGrantRole).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+      expect.any(Request),
+      'personal',
+      ['manage_workspace_roles']
+    );
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+    expectNoDirectWrites();
+  });
+
+  it('edits the role through the guarded function as the session actor', async () => {
+    const response = await putRole('own-role-id', [
+      { enabled: true, id: 'manage_workspace_members' },
+      { enabled: false, id: 'manage_subscription' },
+    ]);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ message: 'success' });
+    expect(mocks.schema).toHaveBeenCalledWith('private');
+    expect(mocks.privateRpc).toHaveBeenCalledExactlyOnceWith(
+      'update_workspace_role_guarded',
       {
-        roleId: 'own-role-id',
-        userId: 'admin-user',
-        wsId: 'caller-workspace-id',
+        p_actor_id: 'admin-user',
+        p_mode: 'workspace',
+        p_name: 'Role',
+        p_permissions: [
+          { enabled: true, id: 'manage_workspace_members' },
+          { enabled: false, id: 'manage_subscription' },
+        ],
+        p_role_id: 'own-role-id',
+        p_ws_id: 'caller-workspace-id',
       }
     );
-    expect(mocks.calls.some((call) => call.op === 'update')).toBe(false);
+    expectNoDirectWrites();
   });
 
-  it('drops manage_subscription from a non-creator admin payload', async () => {
+  it('refuses switching off the last member manager with 409', async () => {
+    mocks.privateRpc.mockResolvedValue({ data: 'last_manager', error: null });
+
     const response = await putRole('own-role-id', [
-      { enabled: true, id: 'manage_subscription' },
-      { enabled: true, id: 'manage_workspace_members' },
+      { enabled: false, id: 'manage_workspace_members' },
     ]);
 
-    expect(response.status).toBe(200);
-    expect(mocks.calls).toContainEqual({
-      args: [
-        [
-          {
-            enabled: true,
-            permission: 'manage_workspace_members',
-            role_id: 'own-role-id',
-            ws_id: 'caller-workspace-id',
-          },
-        ],
-      ],
-      op: 'upsert',
-      table: 'workspace_role_permissions',
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      code: 'WORKSPACE_LAST_MANAGER',
+      message: 'At least one member must be able to manage members',
     });
+    expectNoDirectWrites();
   });
 
-  it('keeps manage_subscription when the workspace creator saves', async () => {
-    mocks.workspaceLookup = { data: { creator_id: 'admin-user' }, error: null };
+  it.each([
+    ['not_found', 404, 'Role not found'],
+    ['forbidden', 403, 'Workspace permission denied'],
+    [
+      'creator_protected',
+      403,
+      'Only the workspace creator can rename this role',
+    ],
+    ['role_protected', 403, 'This role cannot be renamed'],
+    ['unexpected', 500, 'Error updating workspace role'],
+  ])('maps the guarded answer %s', async (data, status, message) => {
+    mocks.privateRpc.mockResolvedValue({ data, error: null });
 
-    const response = await putRole('own-role-id', [
-      { enabled: true, id: 'manage_subscription' },
-    ]);
+    const response = await putRole('own-role-id');
 
-    expect(response.status).toBe(200);
-    expect(mocks.calls).toContainEqual({
-      args: [
-        [
-          {
-            enabled: true,
-            permission: 'manage_subscription',
-            role_id: 'own-role-id',
-            ws_id: 'caller-workspace-id',
-          },
-        ],
-      ],
-      op: 'upsert',
-      table: 'workspace_role_permissions',
-    });
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ message });
   });
 
-  it('strips manage_mastermind even when the workspace creator saves', async () => {
-    mocks.workspaceLookup = { data: { creator_id: 'admin-user' }, error: null };
-
-    const response = await putRole('own-role-id', [
-      { enabled: true, id: 'manage_mastermind' },
-      { enabled: false, id: 'manage_mastermind' },
-      { enabled: true, id: 'manage_workspace_members' },
-    ]);
-
-    expect(response.status).toBe(200);
-    expect(mocks.calls).toContainEqual({
-      args: [
-        [
-          {
-            enabled: true,
-            permission: 'manage_workspace_members',
-            role_id: 'own-role-id',
-            ws_id: 'caller-workspace-id',
-          },
-        ],
-      ],
-      op: 'upsert',
-      table: 'workspace_role_permissions',
+  it('fails closed when the guarded function errors', async () => {
+    mocks.privateRpc.mockResolvedValue({
+      data: 'updated',
+      error: { code: '55P03', message: 'lock timeout' },
     });
-    expect(JSON.stringify(mocks.calls)).not.toContain('manage_mastermind');
+
+    const response = await putRole('own-role-id');
+
+    expect(response.status).toBe(500);
+    expectNoDirectWrites();
+  });
+
+  it('rejects a body without permissions before the edit', async () => {
+    const response = await PUT(
+      new Request('http://localhost/roles', {
+        body: JSON.stringify({ name: 'Role' }),
+        method: 'PUT',
+      }),
+      { params: Promise.resolve({ roleId: 'own-role-id', wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
   });
 });
 

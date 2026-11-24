@@ -9,6 +9,14 @@ import {
   ShieldAlert,
   Trash2,
 } from '@tuturuuu/icons/lucide';
+import {
+  type AccountDeletionLastManagerWorkspace,
+  type AccountDeletePrecheckResponse,
+  deleteCurrentUserAccount,
+  getCurrentUserAccountDeletePrecheck,
+  InternalApiError,
+  isAccountDeletionLastManagerError,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -22,20 +30,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
-type PreCheckResponse = {
-  canDelete: boolean;
-  blockingWorkspaces: {
-    wsId: string;
-    wsName: string;
-    tier: string;
-    memberCount: number;
-  }[];
-  cleanupSummary: {
-    workspacesToDelete: number;
-    seatsToRevoke: number;
-  };
-};
+import { LastManagerNotice } from './last-manager-notice';
 
 export default function DeleteAccountPage() {
   const t = useTranslations('settings-account');
@@ -43,6 +38,8 @@ export default function DeleteAccountPage() {
   const supabase = createClient();
 
   const [email, setEmail] = useState('');
+  const [refusedLastManagerWorkspaces, setRefusedLastManagerWorkspaces] =
+    useState<AccountDeletionLastManagerWorkspace[] | null>(null);
 
   // Auth check via TanStack Query
   const { data: authUser, isLoading: authLoading } = useQuery({
@@ -66,38 +63,16 @@ export default function DeleteAccountPage() {
     data: preCheck,
     isLoading: preCheckLoading,
     isError: preCheckError,
-  } = useQuery<PreCheckResponse>({
+  } = useQuery<AccountDeletePrecheckResponse>({
     queryKey: ['account-delete-precheck'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/users/me/delete');
-      if (!res.ok) throw new Error('Pre-check failed');
-      return res.json();
-    },
+    queryFn: () => getCurrentUserAccountDeletePrecheck(),
     enabled: authenticated,
   });
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: async (confirmEmail: string) => {
-      const res = await fetch('/api/v1/users/me/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: confirmEmail }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        if (res.status === 409) {
-          throw new Error('BLOCKED_BY_SUBSCRIPTIONS');
-        }
-        if (res.status === 400 && data.message?.includes('does not match')) {
-          throw new Error('EMAIL_MISMATCH');
-        }
-        throw new Error(data.message || 'DELETE_FAILED');
-      }
-
-      return res.json();
-    },
+    mutationFn: (confirmEmail: string) =>
+      deleteCurrentUserAccount({ email: confirmEmail }),
     onSuccess: async () => {
       toast.success(t('delete-account-success'));
       await supabase.auth.signOut({ scope: 'local' });
@@ -105,9 +80,17 @@ export default function DeleteAccountPage() {
       router.refresh();
     },
     onError: (error: Error) => {
-      if (error.message === 'BLOCKED_BY_SUBSCRIPTIONS') {
+      if (isAccountDeletionLastManagerError(error)) {
+        setRefusedLastManagerWorkspaces(error.workspaces);
+        toast.error(t('delete-account-last-manager'));
+      } else if (!(error instanceof InternalApiError)) {
+        toast.error(t('delete-account-error'));
+      } else if (error.status === 409) {
         toast.error(t('delete-account-blocked-by-subscriptions'));
-      } else if (error.message === 'EMAIL_MISMATCH') {
+      } else if (
+        error.status === 400 &&
+        error.message.includes('does not match')
+      ) {
         toast.error(t('delete-account-email-mismatch'));
       } else {
         toast.error(t('delete-account-error'));
@@ -133,7 +116,12 @@ export default function DeleteAccountPage() {
     );
   }
 
-  const isBlocked = preCheck?.canDelete === false;
+  const lastManagerWorkspaces =
+    refusedLastManagerWorkspaces ?? preCheck?.lastManagerWorkspaces ?? [];
+  const isBlocked =
+    preCheck?.canDelete === false || lastManagerWorkspaces.length > 0;
+  const hasBlockingSubscriptions =
+    preCheck?.canDelete === false && preCheck.blockingWorkspaces.length > 0;
   const hasCleanupWork =
     preCheck &&
     (preCheck.cleanupSummary.workspacesToDelete > 0 ||
@@ -181,8 +169,12 @@ export default function DeleteAccountPage() {
                 </div>
               )}
 
+              {lastManagerWorkspaces.length > 0 && (
+                <LastManagerNotice workspaces={lastManagerWorkspaces} />
+              )}
+
               {/* Blocking subscriptions warning */}
-              {isBlocked && preCheck.blockingWorkspaces.length > 0 && (
+              {hasBlockingSubscriptions && (
                 <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-3">
                   <div className="flex flex-col gap-3">
                     <div className="flex gap-2">
@@ -198,7 +190,7 @@ export default function DeleteAccountPage() {
                     </div>
 
                     <div className="space-y-2">
-                      {preCheck.blockingWorkspaces.map((ws) => (
+                      {preCheck?.blockingWorkspaces.map((ws) => (
                         <div
                           key={ws.wsId}
                           className="flex items-center justify-between rounded-md bg-dynamic-orange/10 px-3 py-2"

@@ -17905,6 +17905,8 @@
     "delete-account-email-mismatch": "Địa chỉ email không khớp với tài khoản của bạn.",
     "delete-account-error": "Không thể xóa tài khoản. Vui lòng thử lại.",
     "delete-account-go-to-billing": "Đi đến Cài đặt thanh toán",
+    "delete-account-last-manager": "Hãy cấp quyền quản lý thành viên cho một thành viên khác, hoặc xóa không gian làm việc trước",
+    "delete-account-last-manager-workspaces": "Các không gian làm việc cần một người quản lý thành viên khác",
     "delete-account-message": "Tài khoản của bạn sẽ bị xóa vĩnh viễn và không thể phục hồi. Nhập địa chỉ email của bạn để xác nhận xoá tài khoản.",
     "delete-account-page-title": "Xóa tài khoản của bạn",
     "delete-account-subscription-check-failed": "Không thể kiểm tra trạng thái đăng ký. Vui lòng thử lại sau.",

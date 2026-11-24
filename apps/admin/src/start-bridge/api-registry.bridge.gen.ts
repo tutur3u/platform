@@ -246,6 +246,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/infrastructure/wallet-transactions", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/wallet-transactions/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/wallets", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/wallets/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/warehouses", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/warehouses/route'), ["GET"]) },
+  { pattern: "/api/v1/infrastructure/workspaces-without-managers", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/workspaces-without-managers/route'), ["GET"]) },
   { pattern: "/api/v1/internal/holidays/[holidayId]", module: lazyRouteModule(() => import('../app/api/v1/internal/holidays/[holidayId]/route'), ["PUT","DELETE"]) },
   { pattern: "/api/v1/internal/holidays/bulk", module: lazyRouteModule(() => import('../app/api/v1/internal/holidays/bulk/route'), ["POST"]) },
   { pattern: "/api/v1/internal/holidays", module: lazyRouteModule(() => import('../app/api/v1/internal/holidays/route'), ["GET","POST"]) },

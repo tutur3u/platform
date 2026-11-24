@@ -1,8 +1,8 @@
 import { lastManagerResponse } from '@tuturuuu/apis/members/guarded-removal';
 import type {
   Database,
+  Json,
   TablesInsert,
-  TablesUpdate,
   WorkspaceDefaultPermissionMemberType,
   WorkspaceDefaultPermissionsRole,
 } from '@tuturuuu/types';
@@ -38,10 +38,25 @@ type WorkspaceExternalProjectAccess = Extract<
   Awaited<ReturnType<typeof requireWorkspaceExternalProjectAccess>>,
   { ok: true }
 >;
+const CREATOR_ROLE_RENAME_MESSAGE =
+  'Only the workspace creator can rename this role';
+const MASTERMIND_ROLE_RENAME_MESSAGE =
+  'Mastermind manages this access level, so it cannot be renamed';
 const DEFAULT_MEMBER_TYPES: WorkspaceDefaultPermissionMemberType[] = [
   'MEMBER',
   'GUEST',
 ];
+
+/**
+ * Permission edits in the shape the guarded update functions read. The
+ * functions take the workspace lock, authorize the actor and refuse an edit
+ * that would leave full members without a member manager.
+ */
+function guardedPermissionEdits(
+  permissions: WorkspaceRolePayload['permissions']
+): Json {
+  return permissions.map(({ enabled, id }) => ({ enabled, id }));
+}
 
 export type ExternalProjectTeamAccess = WorkspaceExternalProjectAccess & {
   canManageMembers: boolean;
@@ -312,7 +327,7 @@ export async function updateExternalProjectTeamRole({
     }))
   ) {
     return NextResponse.json(
-      { message: 'Only the workspace creator can rename this role' },
+      { message: CREATOR_ROLE_RENAME_MESSAGE },
       { status: 403 }
     );
   }
@@ -321,35 +336,47 @@ export async function updateExternalProjectTeamRole({
     access,
     payload.permissions
   );
-  const roleQuery = access.admin
-    .from('workspace_roles')
-    .update({ name: payload.name } satisfies TablesUpdate<'workspace_roles'>)
-    .eq('id', roleId)
-    .eq('ws_id', access.normalizedWorkspaceId);
+  try {
+    const { data, error } = await access.admin
+      .schema('private')
+      .rpc('update_workspace_role_guarded', {
+        p_actor_id: access.user.id,
+        p_mode: 'cms',
+        p_name: payload.name,
+        p_permissions: guardedPermissionEdits(permissions),
+        p_role_id: roleId,
+        p_ws_id: access.normalizedWorkspaceId,
+      });
+    if (error) throw error;
 
-  const permissionsQuery = access.admin
-    .from('workspace_role_permissions')
-    .upsert(
-      permissions.map(
-        (permission): TablesInsert<'workspace_role_permissions'> => ({
-          enabled: permission.enabled,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          role_id: roleId,
-          ws_id: access.normalizedWorkspaceId,
-        })
-      ),
-      { onConflict: 'ws_id,role_id,permission' }
-    );
-
-  const [roleResult, permissionsResult] = await Promise.all([
-    roleQuery,
-    permissionsQuery,
-  ]);
-
-  if (roleResult.error || permissionsResult.error) {
+    switch (data) {
+      case 'updated':
+        return NextResponse.json({ message: 'success' });
+      case 'forbidden':
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      case 'not_found':
+        return NextResponse.json(
+          { message: 'Access level not found' },
+          { status: 404 }
+        );
+      case 'role_protected':
+        return NextResponse.json(
+          { message: MASTERMIND_ROLE_RENAME_MESSAGE },
+          { status: 403 }
+        );
+      case 'creator_protected':
+        return NextResponse.json(
+          { message: CREATOR_ROLE_RENAME_MESSAGE },
+          { status: 403 }
+        );
+      case 'last_manager':
+        return lastManagerResponse();
+      default:
+        throw new Error('Unexpected guarded CMS access-level update response');
+    }
+  } catch (error) {
     console.error('Error updating CMS team role', {
-      permissionsError: permissionsResult.error,
-      roleError: roleResult.error,
+      error,
       roleId,
       wsId: access.normalizedWorkspaceId,
     });
@@ -358,8 +385,6 @@ export async function updateExternalProjectTeamRole({
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ message: 'success' });
 }
 
 export async function deleteExternalProjectTeamRole({
@@ -463,21 +488,36 @@ export async function updateExternalProjectTeamDefaultPermissions({
     access,
     payload.permissions
   );
-  const { error } = await access.admin
-    .from('workspace_default_permissions')
-    .upsert(
-      permissions.map(
-        (permission): TablesInsert<'workspace_default_permissions'> => ({
-          enabled: permission.enabled,
-          member_type: memberType,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          ws_id: access.normalizedWorkspaceId,
-        })
-      ),
-      { onConflict: 'ws_id,permission,member_type' }
-    );
+  try {
+    const { data, error } = await access.admin
+      .schema('private')
+      .rpc('update_workspace_default_permissions_guarded', {
+        p_actor_id: access.user.id,
+        p_member_type: memberType,
+        p_mode: 'cms',
+        p_permissions: guardedPermissionEdits(permissions),
+        p_ws_id: access.normalizedWorkspaceId,
+      });
+    if (error) throw error;
 
-  if (error) {
+    switch (data) {
+      case 'updated':
+        return NextResponse.json({ message: 'success' });
+      case 'forbidden':
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      case 'not_found':
+        return NextResponse.json(
+          { message: 'Workspace not found' },
+          { status: 404 }
+        );
+      case 'last_manager':
+        return lastManagerResponse();
+      default:
+        throw new Error(
+          'Unexpected guarded CMS default access update response'
+        );
+    }
+  } catch (error) {
     console.error('Error updating CMS team default permissions', {
       error,
       memberType,
@@ -488,8 +528,6 @@ export async function updateExternalProjectTeamDefaultPermissions({
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ message: 'success' });
 }
 
 export async function parseExternalProjectTeamMemberType(request: Request) {

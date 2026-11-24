@@ -27,6 +27,7 @@ import type {
   WorkspaceAccessRoleEditorState,
 } from './types';
 import { WorkspaceAccessPermissionChecklist } from './workspace-access-permission-checklist';
+import { describeWorkspaceAccessRoleSaveError } from './workspace-access-removal-error';
 import { getWorkspaceAccessRoleEditorLabels } from './workspace-access-role-editor-labels';
 
 type Props = {
@@ -110,7 +111,12 @@ export function WorkspaceAccessRoleEditorDialog({
       return adapter.createRole(workspaceId, payload);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t('common.error'));
+      toast.error(
+        describeWorkspaceAccessRoleSaveError(error, {
+          fallback: t('common.error'),
+          lastManager: t('ws-members.last_manager_removal_refused'),
+        })
+      );
     },
     onSuccess: async () => {
       await Promise.all([

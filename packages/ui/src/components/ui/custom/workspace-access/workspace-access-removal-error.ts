@@ -53,3 +53,16 @@ export function describeWorkspaceAccessRemovalError(
     (error instanceof Error ? error.message : text.fallback)
   );
 }
+
+/**
+ * The translated sentence for a failed access-level or default-access save.
+ * A save that would leave full members without a member manager answers
+ * `WORKSPACE_LAST_MANAGER`, the same refusal a removal gives.
+ */
+export function describeWorkspaceAccessRoleSaveError(
+  error: unknown,
+  text: Pick<WorkspaceAccessRemovalErrorText, 'fallback' | 'lastManager'>
+) {
+  if (errorCode(error) === 'WORKSPACE_LAST_MANAGER') return text.lastManager;
+  return error instanceof Error ? error.message : text.fallback;
+}

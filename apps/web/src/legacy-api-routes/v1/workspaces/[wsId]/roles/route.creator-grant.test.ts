@@ -36,7 +36,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   })),
 }));
 
-import { PUT } from './default/route';
 import { POST } from './route';
 
 const permissions = [
@@ -51,7 +50,7 @@ const writtenPermissions = (table: string) =>
     .map((row) => row.permission);
 
 function request(
-  method: 'POST' | 'PUT',
+  method: 'POST',
   body: Array<{ enabled: boolean; id: string }> = permissions
 ) {
   return new Request('http://localhost/roles', {
@@ -94,28 +93,8 @@ describe('workspace role writes with creator-grant permissions', () => {
     ]);
   });
 
-  it('drops manage_subscription when a non-creator saves default permissions', async () => {
-    const response = await PUT(request('PUT'), params);
-
-    expect(response.status).toBe(200);
-    expect(writtenPermissions('workspace_default_permissions')).toEqual([
-      'manage_finance',
-    ]);
-  });
-
-  it('keeps manage_subscription when the creator saves default permissions', async () => {
-    mocks.creatorId = 'admin-user';
-    const response = await PUT(request('PUT'), params);
-
-    expect(response.status).toBe(200);
-    expect(writtenPermissions('workspace_default_permissions')).toEqual([
-      'manage_subscription',
-      'manage_finance',
-    ]);
-  });
-
-  // Explicit grants come only from the audited root procedure, so these writes
-  // strip manage_mastermind even for the creator, enabled or not.
+  // Explicit grants come only from the audited root procedure, so role creation
+  // strips manage_mastermind even for the creator, enabled or not.
   const explicitGrantPayload = [
     { enabled: true, id: 'manage_mastermind' },
     { enabled: false, id: 'manage_mastermind' },
@@ -132,23 +111,11 @@ describe('workspace role writes with creator-grant permissions', () => {
     ]);
   });
 
-  it('strips manage_mastermind when the creator saves default permissions', async () => {
-    mocks.creatorId = 'admin-user';
-    const response = await PUT(request('PUT', explicitGrantPayload), params);
-
-    expect(response.status).toBe(200);
-    expect(writtenPermissions('workspace_default_permissions')).toEqual([
-      'manage_finance',
-    ]);
-  });
-
   it('writes no rows when manage_mastermind is the only permission', async () => {
     mocks.creatorId = 'admin-user';
     const only = [{ enabled: true, id: 'manage_mastermind' }];
     await POST(request('POST', only), params);
-    await PUT(request('PUT', only), params);
 
     expect(writtenPermissions('workspace_role_permissions')).toEqual([]);
-    expect(writtenPermissions('workspace_default_permissions')).toEqual([]);
   });
 });

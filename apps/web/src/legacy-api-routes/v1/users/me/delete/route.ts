@@ -7,6 +7,10 @@ import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  getAccountDeletionBlockingWorkspaces,
+  refuseAccountDeletionForLastManager,
+} from '@/lib/account-deletion-guard';
 import { withSessionAuth } from '@/lib/api-auth';
 import { deleteWorkspaceWithAttendanceIntent } from '@/lib/meet/workspace-attendance-intent';
 
@@ -88,12 +92,13 @@ async function getUserWorkspaceSubscriptionInfo(
 export const GET = withSessionAuth(async (_req, { user }) => {
   try {
     const sbAdmin = await createAdminClient();
-    const categorized = await getUserWorkspaceSubscriptionInfo(
-      sbAdmin,
-      user.id
-    );
+    const [categorized, lastManagerWorkspaces] = await Promise.all([
+      getUserWorkspaceSubscriptionInfo(sbAdmin, user.id),
+      getAccountDeletionBlockingWorkspaces(sbAdmin, user.id),
+    ]);
 
-    const canDelete = categorized.blocking.length === 0;
+    const canDelete =
+      categorized.blocking.length === 0 && lastManagerWorkspaces.length === 0;
 
     return NextResponse.json({
       canDelete,
@@ -103,6 +108,7 @@ export const GET = withSessionAuth(async (_req, { user }) => {
         tier: ws.tier,
         memberCount: ws.memberCount,
       })),
+      lastManagerWorkspaces,
       cleanupSummary: {
         workspacesToDelete: categorized.singleMemberFree.length,
         seatsToRevoke: categorized.multiMember.length,
@@ -149,6 +155,12 @@ export const POST = withSessionAuth(
       }
 
       const sbAdmin = await createAdminClient();
+
+      const managerRefusal = await refuseAccountDeletionForLastManager(
+        sbAdmin,
+        user.id
+      );
+      if (managerRefusal) return managerRefusal;
 
       // Re-validate subscription status (guards against race conditions)
       const categorized = await getUserWorkspaceSubscriptionInfo(
@@ -253,6 +265,14 @@ export const POST = withSessionAuth(
           { status: 502 }
         );
       }
+
+      // Membership can change during cleanup; re-check right before the
+      // Auth deletion, which cannot share a transaction with the snapshot.
+      const lateManagerRefusal = await refuseAccountDeletionForLastManager(
+        sbAdmin,
+        user.id
+      );
+      if (lateManagerRefusal) return lateManagerRefusal;
 
       if (!meetClassAttendanceEnabled()) {
         const { error: deleteError } = await sbAdmin.auth.admin.deleteUser(

@@ -89,6 +89,7 @@ describe('Infrastructure navigation', () => {
         '/internal/auth-recovery',
         '/internal/users',
         '/internal/workspaces',
+        '/internal/workspaces/without-managers',
         '/internal/external-apps',
         '/internal/deployments',
         '/internal/mobile-deployment',

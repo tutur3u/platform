@@ -1,6 +1,9 @@
 import { InternalApiError } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
-import { describeWorkspaceAccessRemovalError } from './workspace-access-removal-error';
+import {
+  describeWorkspaceAccessRemovalError,
+  describeWorkspaceAccessRoleSaveError,
+} from './workspace-access-removal-error';
 
 const text = {
   creator: 't:ws-members.creator_removal_refused',
@@ -50,6 +53,42 @@ describe('describeWorkspaceAccessRemovalError', () => {
       'Broken'
     );
     expect(describeWorkspaceAccessRemovalError('oops', text)).toBe(
+      't:common.error'
+    );
+  });
+});
+
+describe('describeWorkspaceAccessRoleSaveError', () => {
+  it('translates the last-manager refusal of an access-level save', () => {
+    const error = new InternalApiError(
+      'At least one member must be able to manage members',
+      409,
+      'WORKSPACE_LAST_MANAGER'
+    );
+
+    expect(describeWorkspaceAccessRoleSaveError(error, text)).toBe(
+      't:ws-members.last_manager_removal_refused'
+    );
+  });
+
+  it('keeps the server text or fallback for other failures', () => {
+    expect(
+      describeWorkspaceAccessRoleSaveError(
+        new InternalApiError(
+          'The workspace creator cannot be removed',
+          403,
+          'WORKSPACE_CREATOR_PROTECTED'
+        ),
+        text
+      )
+    ).toBe('The workspace creator cannot be removed');
+    expect(
+      describeWorkspaceAccessRoleSaveError(
+        new InternalApiError('Forbidden', 403),
+        text
+      )
+    ).toBe('Forbidden');
+    expect(describeWorkspaceAccessRoleSaveError('oops', text)).toBe(
       't:common.error'
     );
   });

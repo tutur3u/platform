@@ -16,6 +16,7 @@ import type {
 } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
+import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -198,7 +199,10 @@ export function RoleForm({
       toast({
         title: t('ws-roles.save_failed'),
         description:
-          error instanceof Error ? error.message : t('common.500-msg'),
+          getWorkspaceAccessRemovalRefusalMessage(error, {
+            creator: t('ws-members.creator_removal_refused'),
+            lastManager: t('ws-members.last_manager_removal_refused'),
+          }) ?? (error instanceof Error ? error.message : t('common.500-msg')),
       });
     },
   });

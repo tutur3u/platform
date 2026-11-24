@@ -127,7 +127,11 @@ beforeEach(() => {
     error: { status: 404, message: 'not found' },
   });
   f.deleteWorkspace.mockResolvedValue({ error: null });
-  f.privateRpc.mockResolvedValue({ data: 'deleted', error: null });
+  f.privateRpc.mockImplementation(async (name: string) =>
+    name === 'account_deletion_blocking_workspaces'
+      ? { data: [], error: null }
+      : { data: 'deleted', error: null }
+  );
   f.revoke.mockResolvedValue({});
   f.revokeSeat.mockResolvedValue(undefined);
   erasure.withWorkspace.mockImplementation(

@@ -17898,6 +17898,8 @@
     "delete-account-email-mismatch": "The email address does not match your account.",
     "delete-account-error": "Failed to delete account. Please try again.",
     "delete-account-go-to-billing": "Go to Billing Settings",
+    "delete-account-last-manager": "Give another member member-management access, or delete the workspace first",
+    "delete-account-last-manager-workspaces": "Workspaces that need another member manager",
     "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion.",
     "delete-account-page-title": "Delete Your Account",
     "delete-account-subscription-check-failed": "Unable to check subscription status. Please try again later.",

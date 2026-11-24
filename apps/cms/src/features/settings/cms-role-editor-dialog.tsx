@@ -11,6 +11,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceDefaultPermissionMemberType } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { describeWorkspaceAccessRoleSaveError } from '@tuturuuu/ui/custom/workspace-access';
 import {
   Dialog,
   DialogContent,
@@ -107,7 +108,12 @@ export function CmsRoleEditorDialog({
       return createWorkspaceExternalProjectRole(workspaceId, payload);
     },
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
+      toast.error(
+        describeWorkspaceAccessRoleSaveError(error, {
+          fallback: t('common.error'),
+          lastManager: t('ws-members.last_manager_removal_refused'),
+        })
+      ),
     onSuccess: () => {
       toast.success(
         mode === 'create' ? t('common.created') : t('common.saved')

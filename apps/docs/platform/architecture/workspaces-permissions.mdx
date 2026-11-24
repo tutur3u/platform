@@ -272,13 +272,67 @@ English.
 
 The floor does not block a departure that would leave zero full members.
 Existing cleanup applies when the workspace has no membership rows. Creator
-protection and the existing member-management permission gate still apply.
-CMS removals already apply their manager floor to self-removal. The external-app
-members API refuses self-removal with HTTP 403.
+protection still applies. CMS removals apply their manager floor to
+self-removal. The external-app members API refuses self-removal with HTTP 403.
 
 Regression coverage lives in the
 [standard members API tests](https://github.com/tutur3u/platform/blob/main/packages/apis/src/members/route.remove-authorization.test.ts)
 and [database removal tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-removal-modes.sql).
+
+## Members can leave a workspace
+
+**Product default, 22 Nov 2026.** Any member, full member or guest, can leave a
+workspace without `manage_workspace_members`. This is the standard expectation;
+the workspace product owner can override it.
+
+> ordinary members must be able to leave a workspace themselves, without the
+> manage-members permission
+>
+> — Platform orchestrator (Iris), product default
+
+- **Scope:** the standard members API (`DELETE /api/v1/workspaces/:wsId/members?id=<self>`)
+  in Web, Workspace and Tasks. A request names the caller's own id and no
+  invitation email. Removing anyone else, or revoking an invitation by email,
+  still needs `manage_workspace_members`.
+- **Enforcement:** `public.remove_workspace_member_guarded_in_mode` in
+  `workspace` mode admits the caller's own removal when they hold a membership
+  row, and answers `forbidden` for a non-member. The creator protection and the
+  last member-manager floor above still apply.
+- **Exceptions:** CMS mode is unchanged. External apps still cannot remove
+  themselves.
+
+Regression coverage: the `self-leave without manage_workspace_members` cases in
+[the standard members API tests](https://github.com/tutur3u/platform/blob/main/packages/apis/src/members/route.remove-authorization.test.ts).
+
+## Permission edits keep a member manager
+
+**Product decision, 22 Nov 2026.**
+
+> Permission edits: refuse switching off manage_workspace_members on a role or
+> on the defaults when it would leave no manager. Return 409
+> WORKSPACE_LAST_MANAGER with the same EN/VI message.
+>
+> — Workspace product owner ("Both as recommended")
+
+- **Scope:** role edits and default-permission edits in the standard settings
+  (`PUT /api/v1/workspaces/:wsId/roles/:roleId`,
+  `PUT /api/v1/workspaces/:wsId/roles/default`) and in the CMS team settings.
+- **Enforcement:** `private.update_workspace_role_guarded` and
+  `private.update_workspace_default_permissions_guarded` take the workspace
+  removal lock, recheck the actor, apply the whole edit, and roll it back with
+  `last_manager` when a workspace that had a member manager would have none
+  while a full member remains. The route answers HTTP 409 with
+  `WORKSPACE_LAST_MANAGER`. Edits that do not reduce the floor behave as before.
+  The functions also drop `manage_mastermind` and `operate_mira_channels`, and
+  `manage_subscription` unless the actor is the creator; a rename of the
+  Mastermind role or of a creator-grant role by a non-owner is refused with
+  HTTP 403.
+- **Surfaces:** the Web and Workspace role editors show the same localized
+  sentence as a refused removal.
+
+Regression coverage: the role and default-permission route tests in
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/` and
+`apps/database/supabase/tests/guarded-workspace-manager-reducers.sql`.
 
 ## `workspace_members.role` Is Not The Current Permission Source
 
@@ -351,26 +405,72 @@ cover refusal, repair, self-departure, and the legacy CMS rule.
 
 ## Account deletion and workspaces without a member manager
 
-On 22 Nov 2026, Iris decided that self-service account deletion checks for
-workspaces that depend on the account as their only member manager. The rule
-calls for a check before billing changes and a second check immediately before
-calling Auth. A personal workspace or a workspace with no other full member
-does not block deletion. Platform operators can still remove an account through the admin path.
+**Product decision, 2026-11-22.** Self-service account deletion is blocked while
+the account is the last member manager of any workspace that still has other
+members.
 
-This is a best-effort preflight. Each check reads a snapshot, and the Auth
-service removes the account in a separate transaction. If two managers delete
-their accounts at the same time, both can pass the final check before either
-account is removed. A concurrent leave or permission edit can also change who
-manages the workspace before Auth completes.
+> Account deletion: BLOCK deleting your own account while you're the last member-manager of any workspace that still has other members. Show a clear message: 'Give another member member-management access, or delete the workspace first'.
+>
+> — Workspace product owner, 22 Nov 2026
+
+**Scope.** The rule applies to the self-service flow at `/account/delete` in
+Web, served by `GET` and `POST /api/v1/users/me/delete`. Settings in Web and
+Workspace link to that page. The route resolves the actor from the verified
+session and ignores any identity in the request body. It calls the service-role
+function `private.account_deletion_blocking_workspaces(p_actor_id)` through the
+admin client.
+
+**Default.** Deletion is refused whenever the function returns a row. `POST`
+checks before any billing, seat or workspace cleanup and again after
+cleanup, immediately before the Auth deletion and the Meet attendance erasure
+intent. A refusal returns HTTP 409:
+
+```json
+{
+  "code": "ACCOUNT_DELETION_LAST_MANAGER",
+  "message": "Give another member member-management access, or delete the workspace first",
+  "workspaces": [{ "id": "<workspace id>", "name": "<workspace name>" }]
+}
+```
+
+A failed lookup refuses with HTTP 500 and deletes nothing. The `GET` pre-check
+returns the same workspaces as `lastManagerWorkspaces` and sets `canDelete` to
+false. `deleteCurrentUserAccount` in `@tuturuuu/internal-api` raises
+`AccountDeletionLastManagerError`, which carries the workspace list. The page
+shows the localized sentence with the blocking workspace names and hides the
+confirmation form. The Vietnamese text reads “Hãy cấp quyền quản lý thành viên
+cho một thành viên khác, hoặc xóa không gian làm việc trước”.
+
+**Exceptions.** A personal workspace never blocks deletion. A workspace with no
+other full member never blocks deletion; the existing cleanup removes it.
+Operator deletion paths, such as QA test-user cleanup and direct Auth
+administration by platform operators, do not run this check.
+
+**Residual race.** Each check reads a snapshot, and the Auth service removes the
+account in a separate transaction. The second check narrows the window to the
+Auth call itself. If two managers delete their accounts at the same time, both
+can pass the final check before either account is removed. A concurrent leave
+or permission edit can also change who manages the workspace before Auth
+completes. The Admin orphaned-workspace report and the repair steps under
+[Member manager postcondition](#member-manager-postcondition) cover that case.
 
 The detector supports a read-only orphaned-workspace report for Admin. The
 report checks current data when opened. It lists shared workspaces that have
 full members and lack a member manager, with no automatic repairs.
 
-Database regression coverage includes the
-[account-deletion snapshot](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-manager-reducers.sql)
-and the
-[orphaned-workspace detector](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/workspaces-without-member-manager.sql).
+Regression coverage:
+
+- [Route guard tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/legacy-api-routes/v1/users/me/delete/route.manager-guard.test.ts)
+  cover the refusal before side effects, the second check, the session actor,
+  deletion with no blocking workspace, fail-closed lookups and the pre-check.
+- [Client tests](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/account-delete.test.ts)
+  cover the typed 409 error.
+- [Notice tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/%5Blocale%5D/(marketing)/account/delete/last-manager-notice.test.tsx)
+  cover the message and workspace names.
+- [Account-deletion snapshot](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/guarded-workspace-manager-reducers.sql)
+  and the
+  [orphaned-workspace detector](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/workspaces-without-member-manager.sql)
+  cover the database functions.
 
 ## Permission Catalog
 

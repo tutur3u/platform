@@ -264,16 +264,88 @@ describe('member removal target identity', () => {
     expect(writes).toEqual(['workspace_invites', 'workspaces']);
   });
 
-  it('preserves the existing permission gate on self-removal', async () => {
-    mocks.permissions.mockResolvedValue({ withoutPermission: () => true });
+  describe('self-leave without manage_workspace_members', () => {
+    beforeEach(() => {
+      mocks.permissions.mockResolvedValue({ withoutPermission: () => true });
+    });
 
-    const response = await call(member, undefined, member);
+    it('lets an ordinary member leave through the guarded function', async () => {
+      personalWorkspace = false;
+      workspaceMembers = [member, otherFullMember];
 
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ message: 'Forbidden' });
-    expect(mocks.admin).not.toHaveBeenCalled();
-    expect(admin.rpc).not.toHaveBeenCalled();
-    expect(mocks.polar).not.toHaveBeenCalled();
+      const response = await call(member.toUpperCase(), undefined, member);
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        message: 'success',
+        workspace_deleted: false,
+      });
+      expect(mocks.permissions).not.toHaveBeenCalled();
+      expect(admin.rpc).toHaveBeenCalledExactlyOnceWith(
+        'remove_workspace_member_guarded_in_mode',
+        {
+          p_actor_id: member,
+          p_guard_self: GUARD_WORKSPACE_SELF_REMOVAL,
+          p_mode: 'workspace',
+          p_user_id: member,
+          p_ws_id: 'ws-a',
+        }
+      );
+      expect(filters).toContainEqual(['workspace_invites', 'user_id', member]);
+    });
+
+    it.each([
+      ['last_manager', 409, 'WORKSPACE_LAST_MANAGER'],
+      ['creator_protected', 409, 'WORKSPACE_CREATOR_PROTECTED'],
+    ])(
+      'keeps the database refusal %s for a leaving member',
+      async (data, status, code) => {
+        admin.rpc.mockResolvedValue({ data, error: null });
+
+        const response = await call(member, undefined, member);
+
+        expect(response.status).toBe(status);
+        expect(await response.json()).toMatchObject({ code });
+        expect(admin.from).not.toHaveBeenCalled();
+        expect(writes).toEqual([]);
+      }
+    );
+
+    it('refuses a non-member who tries to leave', async () => {
+      admin.rpc.mockResolvedValue({ data: 'forbidden', error: null });
+
+      const response = await call(member, undefined, member);
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ message: 'Forbidden' });
+      expect(admin.from).not.toHaveBeenCalled();
+      expect(writes).toEqual([]);
+    });
+
+    it('still requires the permission to remove another member', async () => {
+      const response = await call(otherFullMember, undefined, member);
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ message: 'Forbidden' });
+      expect(mocks.permissions).toHaveBeenCalledOnce();
+      expect(mocks.admin).not.toHaveBeenCalled();
+      expect(admin.rpc).not.toHaveBeenCalled();
+    });
+
+    it('still requires the permission when an invitation email is named', async () => {
+      const response = await call(member, 'someone@example.invalid', member);
+
+      expect(response.status).toBe(403);
+      expect(mocks.admin).not.toHaveBeenCalled();
+      expect(admin.rpc).not.toHaveBeenCalled();
+    });
+
+    it('still requires the permission to revoke an invitation by email only', async () => {
+      const response = await call(null, 'someone@example.invalid', member);
+
+      expect(response.status).toBe(403);
+      expect(mocks.admin).not.toHaveBeenCalled();
+    });
   });
 
   it('halts on an RPC error even if a success result is present', async () => {

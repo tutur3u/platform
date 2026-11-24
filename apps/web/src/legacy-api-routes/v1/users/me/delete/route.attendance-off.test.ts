@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const probe = vi.hoisted(() => ({ imports: 0 }));
 const f = vi.hoisted(() => ({
   rpc: vi.fn(),
+  guardRpc: vi.fn(),
   deleteUser: vi.fn(),
   deleteWorkspace: vi.fn(),
   revoke: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     rpc: f.rpc,
     auth: { admin: { deleteUser: f.deleteUser } },
+    schema: () => ({ rpc: f.guardRpc }),
     from: () => ({
       delete: () => ({ eq: f.deleteWorkspace }),
     }),
@@ -71,6 +73,7 @@ const row = {
 beforeEach(() => {
   vi.clearAllMocks();
   f.rpc.mockResolvedValue({ data: [row], error: null });
+  f.guardRpc.mockResolvedValue({ data: [], error: null });
   f.deleteUser.mockResolvedValue({ error: null });
   f.deleteWorkspace.mockResolvedValue({ error: null });
   f.revoke.mockResolvedValue({});

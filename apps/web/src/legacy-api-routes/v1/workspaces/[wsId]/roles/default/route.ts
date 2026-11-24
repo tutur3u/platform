@@ -1,14 +1,11 @@
+import { lastManagerResponse } from '@tuturuuu/apis/members/guarded-removal';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
-  Database,
-  TablesInsert,
   WorkspaceDefaultPermissionMemberType,
   WorkspaceDefaultPermissionsRole,
   WorkspaceRole,
 } from '@tuturuuu/types';
-import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
-import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -16,9 +13,6 @@ interface Params {
     wsId: string;
   }>;
 }
-
-type WorkspaceRolePermissionValue =
-  Database['public']['Enums']['workspace_role_permission'];
 
 const DEFAULT_MEMBER_TYPES: WorkspaceDefaultPermissionMemberType[] = [
   'MEMBER',
@@ -139,35 +133,49 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const permissions = await filterCreatorGrantPermissions(supabase, {
-    permissions: data.permissions,
-    userId: authorization.userId,
-    wsId: resolvedWsId,
-  });
-
-  const { error } = await supabase.from('workspace_default_permissions').upsert(
-    permissions
-      .filter((permission) => !isExplicitGrantPermission(permission.id))
-      .map((permission): TablesInsert<'workspace_default_permissions'> => ({
-        ws_id: resolvedWsId,
-        permission: permission.id as WorkspaceRolePermissionValue,
-        member_type: bodyMemberType,
+  // The guarded function rechecks the actor under the workspace removal lock,
+  // drops permissions the actor cannot grant, and rolls the whole edit back
+  // when it would leave full members without a member manager.
+  const { data: result, error } = await supabase
+    .schema('private')
+    .rpc('update_workspace_default_permissions_guarded', {
+      p_actor_id: authorization.userId,
+      p_member_type: bodyMemberType,
+      p_mode: 'workspace',
+      p_permissions: data.permissions.map((permission) => ({
         enabled: permission.enabled,
+        id: permission.id,
       })),
-    { onConflict: 'ws_id,permission,member_type' }
-  );
-
-  if (error) {
-    console.error('Error updating default workspace permissions', {
-      error,
-      memberType: bodyMemberType,
-      wsId: resolvedWsId,
+      p_ws_id: resolvedWsId,
     });
-    return NextResponse.json(
-      { message: 'Error updating default workspace permissions' },
-      { status: 500 }
-    );
+
+  if (!error) {
+    switch (result) {
+      case 'updated':
+        return NextResponse.json({ message: 'success' });
+      case 'not_found':
+        return NextResponse.json(
+          { message: 'Workspace not found' },
+          { status: 404 }
+        );
+      case 'forbidden':
+        return NextResponse.json(
+          { message: 'Workspace permission denied' },
+          { status: 403 }
+        );
+      case 'last_manager':
+        return lastManagerResponse();
+    }
   }
 
-  return NextResponse.json({ message: 'success' });
+  console.error('Error updating default workspace permissions', {
+    error,
+    memberType: bodyMemberType,
+    result,
+    wsId: resolvedWsId,
+  });
+  return NextResponse.json(
+    { message: 'Error updating default workspace permissions' },
+    { status: 500 }
+  );
 }

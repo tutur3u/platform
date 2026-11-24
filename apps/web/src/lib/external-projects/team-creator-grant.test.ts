@@ -121,6 +121,9 @@ function createAccess({
         if (name === 'get_workspace_invitation_role_ids') {
           return { data: pendingRoleIds, error: null };
         }
+        if (name.startsWith('update_workspace_')) {
+          return { data: 'updated', error: null };
+        }
         return { data: null, error: null };
       },
     }),
@@ -134,6 +137,14 @@ function createAccess({
       normalizedWorkspaceId: 'workspace-1',
       user: { id: actorId },
     } as never,
+    guardedPermissions: (name: string) =>
+      rpcs
+        .filter((rpc) => rpc.name === name)
+        .flatMap(
+          (rpc) =>
+            (rpc.args as { p_permissions: Array<{ id: string }> }).p_permissions
+        )
+        .map((edit) => edit.id),
     rpcs,
     writtenPermissions: (table: string) =>
       writes
@@ -192,6 +203,7 @@ describe('external project team creator-grant permissions', () => {
         (write) => write.table === 'workspace_roles' && write.op === 'update'
       )
     ).toBe(false);
+    expect(team.rpcs).toEqual([]);
   });
 
   it.each([
@@ -206,9 +218,10 @@ describe('external project team creator-grant permissions', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(team.writtenPermissions('workspace_role_permissions')).toEqual(
+    expect(team.guardedPermissions('update_workspace_role_guarded')).toEqual(
       expected
     );
+    expect(team.writtenPermissions('workspace_role_permissions')).toEqual([]);
   });
 
   it.each([
@@ -223,8 +236,11 @@ describe('external project team creator-grant permissions', () => {
     });
 
     expect(response.status).toBe(200);
+    expect(
+      team.guardedPermissions('update_workspace_default_permissions_guarded')
+    ).toEqual(expected);
     expect(team.writtenPermissions('workspace_default_permissions')).toEqual(
-      expected
+      []
     );
   });
 

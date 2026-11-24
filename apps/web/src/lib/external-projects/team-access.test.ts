@@ -29,13 +29,20 @@ type QueryResult<T> = {
 };
 
 function createAccess({
+  privateRpcResult = { data: 'updated', error: null },
   roleExists,
   rpcResult = { data: 'removed', error: null },
 }: {
+  privateRpcResult?: { data: unknown; error: unknown };
   roleExists: boolean;
   rpcResult?: { data: unknown; error: unknown };
 }) {
   const calls = {
+    privateRpcCalls: [] as Array<{
+      args: Record<string, unknown>;
+      fn: string;
+      schema: string;
+    }>,
     deletedRoleMemberFilters: [] as Array<[string, string]>,
     insertedRoleMembers: null as unknown,
     roleFilters: [] as Array<[string, string]>,
@@ -75,6 +82,14 @@ function createAccess({
     async rpc(fn: string, args: Record<string, unknown>) {
       calls.rpcCalls.push({ args, fn });
       return rpcResult;
+    },
+    schema(schema: string) {
+      return {
+        async rpc(fn: string, args: Record<string, unknown>) {
+          calls.privateRpcCalls.push({ args, fn, schema });
+          return privateRpcResult;
+        },
+      };
     },
     from(table: string) {
       if (table === 'workspace_roles') {
@@ -185,6 +200,19 @@ function createAccess({
     },
     calls,
   };
+}
+
+function writtenPermissionIds(calls: ReturnType<typeof createAccess>['calls']) {
+  const inserted = (calls.upsertedRolePermissions ?? []) as Array<{
+    permission: string;
+  }>;
+  const guarded = calls.privateRpcCalls.flatMap(
+    (call) => call.args.p_permissions as Array<{ id: string }>
+  );
+  return [
+    ...inserted.map((row) => row.permission),
+    ...guarded.map((edit) => edit.id),
+  ];
 }
 
 describe('external project role workspace binding', () => {
@@ -359,6 +387,7 @@ describe('external project role workspace binding', () => {
     ]);
     expect(calls.roleUpdates).toEqual([]);
     expect(calls.upsertedRolePermissions).toBeNull();
+    expect(calls.privateRpcCalls).toEqual([]);
   });
 
   it('adds members after binding the role to the authorized workspace', async () => {
@@ -402,21 +431,27 @@ describe('external project role workspace binding', () => {
     });
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ message: 'success' });
     expect(calls.roleFilters).toEqual([
       ['id', 'role-1'],
       ['ws_id', 'workspace-1'],
-      ['id', 'role-1'],
-      ['ws_id', 'workspace-1'],
     ]);
-    expect(calls.roleUpdates).toEqual([{ name: 'Publisher' }]);
-    expect(calls.upsertedRolePermissions).toEqual([
+    expect(calls.privateRpcCalls).toEqual([
       {
-        enabled: true,
-        permission: 'manage_workspace_roles',
-        role_id: 'role-1',
-        ws_id: 'workspace-1',
+        args: {
+          p_actor_id: 'actor-1',
+          p_mode: 'cms',
+          p_name: 'Publisher',
+          p_permissions: [{ enabled: true, id: 'manage_workspace_roles' }],
+          p_role_id: 'role-1',
+          p_ws_id: 'workspace-1',
+        },
+        fn: 'update_workspace_role_guarded',
+        schema: 'private',
       },
     ]);
+    expect(calls.roleUpdates).toEqual([]);
+    expect(calls.upsertedRolePermissions).toBeNull();
   });
 });
 
@@ -516,9 +551,7 @@ describe('CMS explicit grant writes', () => {
         const { access, calls } = createAccess({ roleExists: true });
         const response = await write(access);
         expect(response.status).toBe(200);
-        expect(calls.upsertedRolePermissions).toEqual([
-          expect.objectContaining({ permission: 'admin', enabled: true }),
-        ]);
+        expect(writtenPermissionIds(calls)).toEqual(['admin']);
       }
     }
   );
@@ -534,7 +567,9 @@ describe('CMS explicit grant writes', () => {
       roleId: 'role-1',
     });
     expect(response.status).toBe(200);
-    expect(calls.upsertedRolePermissions).toEqual([]);
+    expect(calls.privateRpcCalls).toHaveLength(1);
+    expect(calls.privateRpcCalls[0]?.args.p_permissions).toEqual([]);
+    expect(calls.upsertedRolePermissions).toBeNull();
   });
 });
 

@@ -240,6 +240,7 @@ export const appApiPatterns = [
   "/api/v1/infrastructure/wallet-transactions",
   "/api/v1/infrastructure/wallets",
   "/api/v1/infrastructure/warehouses",
+  "/api/v1/infrastructure/workspaces-without-managers",
   "/api/v1/internal/holidays",
   "/api/v1/internal/holidays/[holidayId]",
   "/api/v1/internal/holidays/bulk",

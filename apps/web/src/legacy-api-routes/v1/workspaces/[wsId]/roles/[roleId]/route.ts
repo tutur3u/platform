@@ -1,17 +1,7 @@
 import { lastManagerResponse } from '@tuturuuu/apis/members/guarded-removal';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type {
-  Database,
-  TablesInsert,
-  TablesUpdate,
-  WorkspaceRole,
-} from '@tuturuuu/types';
-import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
+import type { WorkspaceRole } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
-import {
-  canManageCreatorGrantRole,
-  filterCreatorGrantPermissions,
-} from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -20,9 +10,6 @@ interface Params {
     roleId: string;
   }>;
 }
-
-type WorkspaceRolePermissionValue =
-  Database['public']['Enums']['workspace_role_permission'];
 
 async function authorizeRoleRequest(req: Request, wsId: string) {
   const access = await resolveWorkspaceRouteAccess(req, wsId, [
@@ -90,117 +77,62 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 400 }
     );
 
-  const { permissions } = data;
-  const coreData: TablesUpdate<'workspace_roles'> = {
-    name: data.name,
-  };
-
-  const existingRole = await supabase
-    .from('workspace_roles')
-    .select('name')
-    .eq('id', id)
-    .eq('ws_id', resolvedWsId)
-    .maybeSingle();
-
-  if (existingRole.error) {
-    return NextResponse.json(
-      { message: 'Error fetching workspace role' },
-      { status: 500 }
-    );
-  }
-
-  if (!existingRole.data) {
-    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
-  }
-
-  if (
-    data.name !== existingRole.data.name &&
-    !(await canManageCreatorGrantRole(supabase, {
-      roleId: id,
-      userId: authorization.userId,
-      wsId: resolvedWsId,
-    }))
-  ) {
-    return NextResponse.json(
-      { message: 'Only the workspace creator can rename this role' },
-      { status: 403 }
-    );
-  }
-
-  // Update the role first so permission rows are only written for a role that
-  // belongs to the authorized workspace.
-  const roleRes = await supabase
-    .from('workspace_roles')
-    .select('id')
-    .eq('id', id)
-    .eq('ws_id', resolvedWsId)
-    .maybeSingle();
-
-  if (roleRes.error) {
-    console.error('Error updating workspace role', {
-      roleError: roleRes.error,
-      roleId: id,
-      wsId: resolvedWsId,
+  // The guarded function rechecks the actor under the workspace removal lock,
+  // drops permissions the actor cannot grant, and rolls the whole edit back
+  // when it would leave full members without a member manager.
+  const { data: result, error } = await supabase
+    .schema('private')
+    .rpc('update_workspace_role_guarded', {
+      p_actor_id: authorization.userId,
+      p_mode: 'workspace',
+      p_name: data.name ?? undefined,
+      p_permissions: data.permissions.map((permission) => ({
+        enabled: permission.enabled,
+        id: permission.id,
+      })),
+      p_role_id: id,
+      p_ws_id: resolvedWsId,
     });
-    return NextResponse.json(
-      { message: 'Error updating workspace role' },
-      { status: 500 }
-    );
+
+  if (!error) {
+    switch (result) {
+      case 'updated':
+        return NextResponse.json({ message: 'success' });
+      case 'not_found':
+        return NextResponse.json(
+          { message: 'Role not found' },
+          { status: 404 }
+        );
+      case 'forbidden':
+        return NextResponse.json(
+          { message: 'Workspace permission denied' },
+          { status: 403 }
+        );
+      case 'creator_protected':
+        return NextResponse.json(
+          { message: 'Only the workspace creator can rename this role' },
+          { status: 403 }
+        );
+      case 'role_protected':
+        return NextResponse.json(
+          { message: 'This role cannot be renamed' },
+          { status: 403 }
+        );
+      case 'last_manager':
+        return lastManagerResponse();
+    }
   }
 
-  if (!roleRes.data) {
-    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
-  }
-
-  const updatedRoleId = roleRes.data.id;
-
-  const writablePermissions = await filterCreatorGrantPermissions(supabase, {
-    permissions,
-    userId: authorization.userId,
+  console.error('Error updating workspace role', {
+    error,
+    result,
+    roleId: id,
     wsId: resolvedWsId,
   });
-
-  const permissionsRes = await supabase
-    .from('workspace_role_permissions')
-    .upsert(
-      writablePermissions
-        .filter((permission) => !isExplicitGrantPermission(permission.id))
-        .map((permission): TablesInsert<'workspace_role_permissions'> => ({
-          ws_id: resolvedWsId,
-          role_id: updatedRoleId,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          enabled: permission.enabled,
-        }))
-    );
-
-  if (permissionsRes.error) {
-    console.error('Error updating workspace role permissions', {
-      permissionsError: permissionsRes.error,
-      roleId: id,
-      wsId: resolvedWsId,
-    });
-    return NextResponse.json(
-      { message: 'Error updating workspace role' },
-      { status: 500 }
-    );
-  }
-
-  // A rejected permission save must leave the role name untouched.
-  const updateRes = await supabase
-    .from('workspace_roles')
-    .update(coreData)
-    .eq('id', updatedRoleId)
-    .eq('ws_id', resolvedWsId);
-
-  if (updateRes.error) {
-    console.error('Error updating workspace role', updateRes.error);
-    return NextResponse.json(
-      { message: 'Error updating workspace role' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json(
+    { message: 'Error updating workspace role' },
+    { status: 500 }
+  );
 }
 
 export async function DELETE(req: Request, { params }: Params) {
