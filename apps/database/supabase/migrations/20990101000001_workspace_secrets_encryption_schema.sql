@@ -9,6 +9,9 @@
 -- is set, which only the migration owner can do, after the secrets Worker and
 -- the app release that writes credentials through it are live.
 
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
 -- 1. Value revisions --------------------------------------------------------
 
 ALTER TABLE public.workspace_secrets

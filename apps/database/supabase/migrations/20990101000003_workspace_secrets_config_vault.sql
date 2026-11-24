@@ -11,10 +11,37 @@
 -- in one transaction. Reads honor private.workspace_secrets_migration_state
 -- .read_mode.
 
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
+-- GRANT ... WITH INHERIT FALSE, SET TRUE below needs PostgreSQL 16 or later.
 DO $$
 BEGIN
+  IF current_setting('server_version_num')::integer < 160000 THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '0A000',
+      MESSAGE = 'workspace_secrets_requires_postgres_16';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'workspace_secrets_definer') THEN
     CREATE ROLE workspace_secrets_definer NOLOGIN NOINHERIT;
+  END IF;
+END;
+$$;
+
+-- Reasserted unconditionally, in case the role already existed. SUPERUSER
+-- and REPLICATION can be changed only by roles that hold them, so they are
+-- checked instead of set.
+ALTER ROLE workspace_secrets_definer
+  NOLOGIN NOINHERIT NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_roles
+    WHERE rolname = 'workspace_secrets_definer' AND (rolsuper OR rolreplication)
+  ) THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '42501',
+      MESSAGE = 'workspace_secrets_definer_has_superuser_or_replication';
   END IF;
 END;
 $$;
@@ -257,8 +284,10 @@ ALTER FUNCTION public.put_workspace_secret_config(uuid, text, text) OWNER TO wor
 ALTER FUNCTION private.workspace_secret_payloads_delete_vault() OWNER TO workspace_secrets_definer;
 REVOKE CREATE ON SCHEMA private, public FROM workspace_secrets_definer;
 
--- Changing the owner resets each function's ACL to the owner alone, so the
--- privileges are set afterwards, as the owner.
+-- ALTER ... OWNER keeps each function's existing ACL, default-privilege
+-- grants included, with the new owner as their grantor, so only the new owner
+-- can revoke them. The privileges are therefore set here, as the owner. The
+-- check at the end of this file fails the migration if they did not apply.
 SET LOCAL ROLE workspace_secrets_definer;
 REVOKE ALL ON FUNCTION private.workspace_secret_config_row_value(uuid)
   FROM PUBLIC, anon, authenticated, service_role;
@@ -287,3 +316,49 @@ GRANT EXECUTE ON FUNCTION private.workspace_secret_enabled(uuid, text) TO SESSIO
 GRANT EXECUTE ON FUNCTION public.list_workspace_secret_config(uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.put_workspace_secret_config(uuid, text, text) TO service_role;
 RESET ROLE;
+
+-- The grants above must hold however the runner executes this file: SET
+-- LOCAL ROLE outside a transaction would leave the revokes unapplied.
+DO $$
+DECLARE
+  v_fn text;
+  v_role text;
+BEGIN
+  FOREACH v_fn IN ARRAY ARRAY[
+    'public.put_workspace_secret_config(uuid,text,text)',
+    'public.list_workspace_secret_config(uuid)',
+    'private.workspace_secret_config_row_value(uuid)',
+    'private.workspace_secret_config_value(uuid,text)',
+    'private.workspace_secret_enabled(uuid,text)',
+    'private.workspace_secret_payloads_delete_vault()'
+  ] LOOP
+    FOREACH v_role IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+      IF has_function_privilege(v_role, v_fn, 'EXECUTE') THEN
+        RAISE EXCEPTION USING
+          ERRCODE = '42501',
+          MESSAGE = format('workspace_secrets_grant_check_failed: %s for %s', v_fn, v_role);
+      END IF;
+    END LOOP;
+  END LOOP;
+  FOREACH v_fn IN ARRAY ARRAY[
+    'private.workspace_secret_config_row_value(uuid)',
+    'private.workspace_secret_config_value(uuid,text)',
+    'private.workspace_secret_enabled(uuid,text)',
+    'private.workspace_secret_payloads_delete_vault()'
+  ] LOOP
+    IF has_function_privilege('service_role', v_fn, 'EXECUTE') THEN
+      RAISE EXCEPTION USING
+        ERRCODE = '42501',
+        MESSAGE = format('workspace_secrets_grant_check_failed: %s for service_role', v_fn);
+    END IF;
+  END LOOP;
+  IF pg_has_role('service_role', 'workspace_secrets_definer', 'MEMBER')
+     OR pg_has_role('authenticator', 'workspace_secrets_definer', 'MEMBER')
+     OR pg_has_role('authenticated', 'workspace_secrets_definer', 'MEMBER')
+     OR pg_has_role('anon', 'workspace_secrets_definer', 'MEMBER') THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '42501',
+      MESSAGE = 'workspace_secrets_grant_check_failed: API role holds the definer role';
+  END IF;
+END;
+$$;

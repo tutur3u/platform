@@ -8,6 +8,9 @@
 -- them. Legacy plaintext rows written before step 1 are returned only so
 -- reveal can serve them until backfill encrypts them.
 
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
+
 -- A put retried with the same request id after it succeeded is a replay, not
 -- a conflict.
 ALTER TABLE private.workspace_secret_payloads
@@ -67,6 +70,13 @@ BEGIN
 
   IF FOUND AND v_row.ws_id <> p_ws_id THEN
     RETURN QUERY SELECT 'not_found'::text, p_secret_id, NULL::bigint;
+    RETURN;
+  END IF;
+
+  -- A config row is never taken over by id: its Vault secret would be
+  -- orphaned and its value moved across tiers.
+  IF FOUND AND private.workspace_secret_name_tier(v_row.name) <> 'credential' THEN
+    RETURN QUERY SELECT 'not_credential'::text, p_secret_id, NULL::bigint;
     RETURN;
   END IF;
 
@@ -265,3 +275,31 @@ GRANT EXECUTE ON FUNCTION public.get_workspace_secret_credential(uuid, text)
   TO service_role;
 GRANT EXECUTE ON FUNCTION public.workspace_secret_credential_status(uuid, uuid)
   TO service_role;
+
+-- The grants above must hold however the runner executes this file.
+DO $$
+DECLARE
+  v_fn text;
+  v_role text;
+BEGIN
+  FOREACH v_fn IN ARRAY ARRAY[
+    'public.put_workspace_secret_credential(uuid,uuid,text,bigint,uuid,smallint,bytea,bytea,text)',
+    'public.get_workspace_secret_credential(uuid,text)',
+    'public.workspace_secret_credential_status(uuid,uuid)',
+    'private.workspace_secrets_guard_payload_rename()'
+  ] LOOP
+    FOREACH v_role IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+      IF has_function_privilege(v_role, v_fn, 'EXECUTE') THEN
+        RAISE EXCEPTION USING
+          ERRCODE = '42501',
+          MESSAGE = format('workspace_secrets_grant_check_failed: %s for %s', v_fn, v_role);
+      END IF;
+    END LOOP;
+  END LOOP;
+  IF has_function_privilege('service_role', 'private.workspace_secrets_guard_payload_rename()', 'EXECUTE') THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '42501',
+      MESSAGE = 'workspace_secrets_grant_check_failed: guard function for service_role';
+  END IF;
+END;
+$$;

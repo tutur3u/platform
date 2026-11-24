@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(24);
+select plan(26);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
 values ('39130000-0000-4000-8000-000000000002', 'wsc-creator@example.com', now(), '{}'::jsonb, '{}'::jsonb)
@@ -15,7 +15,8 @@ insert into public.workspaces (id, name, personal, creator_id) values
   ('39130000-0000-4000-8000-0000000000a1', 'WSC target', false, '39130000-0000-4000-8000-000000000002'),
   ('39130000-0000-4000-8000-0000000000a2', 'WSC other', false, '39130000-0000-4000-8000-000000000002');
 insert into public.workspace_secrets (id, ws_id, name, value) values
-  ('39130000-0000-4000-8000-0000000000c9', '39130000-0000-4000-8000-0000000000a1', 'DRIVE_R2_ACCESS_KEY_ID', 'legacy-synthetic');
+  ('39130000-0000-4000-8000-0000000000c9', '39130000-0000-4000-8000-0000000000a1', 'DRIVE_R2_ACCESS_KEY_ID', 'legacy-synthetic'),
+  ('39130000-0000-4000-8000-0000000000ca', '39130000-0000-4000-8000-0000000000a1', 'ENABLE_WSC', 'true');
 
 -- Runs one statement under a role; returns 'ok' or the SQLSTATE it raised.
 create function pg_temp.as_role(p_sql text, p_role text) returns text language plpgsql as $$
@@ -100,6 +101,12 @@ select is((select pg_temp.as_role($q$select * from public.put_workspace_secret_c
   '39130000-0000-4000-8000-0000000000a1', '39130000-0000-4000-8000-0000000000c1', 'X_TOKEN', -1,
   '39130000-0000-4000-8000-0000000000e7', 1::smallint, '\x01'::bytea, '\x02'::bytea, null)$q$, 'service_role')),
   '22023', 'invalid arguments are refused');
+
+select is(pg_temp.put('39130000-0000-4000-8000-0000000000a1', '39130000-0000-4000-8000-0000000000ca',
+  'WSC_TAKEOVER_TOKEN', 0, '39130000-0000-4000-8000-0000000000e9'), 'not_credential',
+  'a config row cannot be taken over by id under a credential name');
+select is((select row(name, value)::text from public.workspace_secrets where id = '39130000-0000-4000-8000-0000000000ca'),
+  row('ENABLE_WSC', 'true')::text, 'the config row is unchanged');
 
 -- Rename guard ------------------------------------------------------------------
 

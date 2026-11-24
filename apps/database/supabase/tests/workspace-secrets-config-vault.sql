@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(19);
+select plan(21);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
 values ('39140000-0000-4000-8000-000000000002', 'wcv-creator@example.com', now(), '{}'::jsonb, '{}'::jsonb)
@@ -55,6 +55,19 @@ select ok(has_table_privilege('workspace_secrets_definer', 'vault.decrypted_secr
 select ok(not exists (
   select 1 from pg_roles where rolname = 'workspace_secrets_definer' and (rolcanlogin or rolbypassrls or rolsuper)
 ), 'the definer role cannot log in or bypass RLS');
+select ok(not exists (
+  select 1
+  from unnest(array['anon', 'authenticated', 'service_role', 'authenticator']) as r(role)
+  where pg_has_role(r.role, 'workspace_secrets_definer', 'MEMBER')
+     or pg_has_role(r.role, 'workspace_secrets_definer', 'SET')
+     or pg_has_role(r.role, 'workspace_secrets_definer', 'USAGE')
+), 'no API-reachable role is a member of, can SET ROLE to, or inherits the definer role');
+select ok(not exists (
+  select 1 from pg_roles where rolname = 'workspace_secrets_definer' and rolinherit
+) and not exists (
+  select 1 from pg_auth_members
+  where roleid = 'workspace_secrets_definer'::regrole and inherit_option
+), 'the definer role is NOINHERIT and no member inherits its privileges');
 select ok(not has_schema_privilege('workspace_secrets_definer', 'private', 'CREATE')
   and not has_schema_privilege('workspace_secrets_definer', 'public', 'CREATE'),
   'the definer role cannot create objects');
