@@ -126,7 +126,6 @@ class _TaskDetailMetaChips extends StatelessWidget {
     return SingleChildScrollView(
       key: const ValueKey('task-detail-property-chips'),
       scrollDirection: Axis.horizontal,
-      clipBehavior: Clip.none,
       child: Row(
         spacing: AppSpacing.sm,
         children: [

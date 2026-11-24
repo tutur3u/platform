@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
+import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_render_cache.dart';
+import 'package:mobile/features/tasks_boards/utils/tiptap_quill_colors.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_builders.dart';
 
 /// Payloads longer than this convert after the first frame when they are
@@ -114,7 +116,9 @@ class _TaskDescriptionViewerState extends State<TaskDescriptionViewer> {
 
 /// Quill styles from the app tokens, sized like the web description:
 /// body text, a heading scale that steps down to body size at h6, tinted
-/// code, ruled quotes and underlined links.
+/// code, ruled quotes and underlined links. The palette resolves the web's
+/// swatch colours (`var(--red)`, `var(--calendar-bg-red)`) in the current
+/// theme.
 DefaultStyles _taskDescriptionStyles(BuildContext context) {
   final tokens = AppTokens.of(context);
   final c = tokens.colorScheme;
@@ -148,6 +152,7 @@ DefaultStyles _taskDescriptionStyles(BuildContext context) {
   );
 
   return DefaultStyles(
+    palette: taskDescriptionThemePalette(context.dynamicColors),
     h1: heading(26, AppSpacing.lg),
     h2: heading(22, AppSpacing.lg),
     h3: heading(19, AppSpacing.md),

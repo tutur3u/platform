@@ -2258,9 +2258,12 @@ The description renders the web editor's content: headings 1 to 6, bullet,
 numbered and task lists, toggle blocks (shown open, summary first), code
 blocks and inline code, quotes, links, mentions, tables, images, videos,
 horizontal rules, highlights and text colours. Links open through the app's
-link launcher, so only web, mail, phone and SMS links open. A colour the
-app cannot paint, such as a theme variable, is dropped and the text keeps the
-theme colour. An image with a stored size reserves its box before it loads
+link launcher, so only web, mail, phone and SMS links open. The web's colour
+swatches (`var(--red)` text, `var(--calendar-bg-red)` highlights) render in
+the hue for the current theme; editors show the light theme's pair with
+readable text. A colour the app cannot paint falls back to the default
+highlight with readable text. Saving keeps every run's original colour
+values, theme variables included, unless that run was recoloured. An image with a stored size reserves its box before it loads
 and is decoded at its displayed width. Parsed descriptions are cached per
 stored payload, so reopening a task or a board change does not parse it
 again, and a long description that is not cached yet renders one frame after
@@ -2288,8 +2291,9 @@ start-date clear, rollback with an error toast, the timezone setting),
 the folded property rows, a chip per property, the priority and due-date chips
 opening their pickers, the rows unfolding and folding),
 `tiptap_to_quill_web_parity_test.dart` (toggle blocks, unknown containers,
-horizontal rules, text colours and unpaintable colours, the description
-cache), `task_board_task_detail_test.dart` (the dirty create form's confirmation,
+horizontal rules, the description cache), `tiptap_quill_colors_test.dart`
+(each swatch hue in light and dark, readable fallbacks, verbatim colour
+round-trips and recolouring), `task_board_task_detail_test.dart` (the dirty create form's confirmation,
 the tablet two-column screen, the relationships illustration with and
 without reduced motion, phone sheet and tablet screen renders),
 `task_board_task_create_more_test.dart` (Create more),

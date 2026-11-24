@@ -55,10 +55,15 @@ ParsedTipTapDescription? parseTipTapTaskDescriptionCached(
 }
 
 /// The read-only viewer's Quill delta for [payload], with horizontal rules
-/// as divider embeds. Callers must treat the delta as immutable.
+/// as divider embeds and theme colours as palette keys. Callers must treat
+/// the delta as immutable.
 Delta taskDescriptionViewerDelta(String payload) => _viewerDeltas.putIfAbsent(
   payload,
-  () => tipTapJsonToQuillDelta(payload, dividerEmbeds: true),
+  () => tipTapJsonToQuillDelta(
+    payload,
+    dividerEmbeds: true,
+    themeColorKeys: true,
+  ),
 );
 
 /// Whether [payload] already has a converted viewer delta.

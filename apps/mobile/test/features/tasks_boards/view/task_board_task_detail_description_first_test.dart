@@ -108,6 +108,27 @@ void main() {
       expect(repository.sent, isEmpty);
     });
 
+    testWidgets('a chip shows the value its picker saved', (tester) async {
+      await openSheet(tester);
+      final chip = quickActionTile('task-detail-priority-chip');
+      expect(
+        find.descendant(of: chip, matching: find.text('High')),
+        findsOneWidget,
+      );
+
+      await tester.tap(chip);
+      await tester.pumpAndSettle();
+      await tester.tap(quickActionTile('task-quick-priority-low'));
+      await settleQuickActionMutation(tester);
+
+      expect(repository.sent.single.priority, 'low');
+      expect(
+        find.descendant(of: chip, matching: find.text('Low')),
+        findsOneWidget,
+      );
+      await drainToasts(tester);
+    });
+
     testWidgets('the due date chip opens the date picker', (tester) async {
       await openSheet(tester);
 

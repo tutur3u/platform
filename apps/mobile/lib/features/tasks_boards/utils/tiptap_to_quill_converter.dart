@@ -18,27 +18,40 @@ const Set<String> _inlineNodeTypes = {
   'youtube',
 };
 
-/// Whether the conversion in progress renders horizontal rules as divider
-/// embeds. Conversion is synchronous, so one flag serves each call.
+/// The options of the conversion in progress. Conversion is synchronous,
+/// so one value serves each call.
 bool _dividerEmbeds = false;
+bool _themeColorKeys = false;
 
 /// A TipTap description as an editable Quill document.
 ///
 /// [dividerEmbeds] renders horizontal rules as a
 /// [taskDescriptionDividerEmbedType] embed; only surfaces that register a
 /// divider embed builder may pass it. Otherwise a rule reads as `---`.
+///
+/// [themeColorKeys] keeps theme colours (`var(--red)`) as Quill colour
+/// values; only surfaces that resolve them through
+/// `taskDescriptionThemePalette` in `DefaultStyles.palette` may pass it.
+/// Otherwise they render as the light theme's colours.
 Document tipTapJsonToQuillDocument(
   String? rawDescription, {
   bool dividerEmbeds = false,
+  bool themeColorKeys = false,
 }) => Document.fromDelta(
-  tipTapJsonToQuillDelta(rawDescription, dividerEmbeds: dividerEmbeds),
+  tipTapJsonToQuillDelta(
+    rawDescription,
+    dividerEmbeds: dividerEmbeds,
+    themeColorKeys: themeColorKeys,
+  ),
 );
 
 /// A TipTap description as a Quill delta: TipTap JSON when it parses,
 /// otherwise the raw text. Always ends with a newline, as Quill requires.
+/// See [tipTapJsonToQuillDocument] for the options.
 Delta tipTapJsonToQuillDelta(
   String? rawDescription, {
   bool dividerEmbeds = false,
+  bool themeColorKeys = false,
 }) {
   final decoded = decodeTipTapDescription(rawDescription);
   if (decoded.isEmpty) {
@@ -50,12 +63,15 @@ Delta tipTapJsonToQuillDelta(
     return Delta()..insert('${decoded.trimmed}\n');
   }
 
-  final previous = _dividerEmbeds;
+  final previousDividerEmbeds = _dividerEmbeds;
+  final previousThemeColorKeys = _themeColorKeys;
   _dividerEmbeds = dividerEmbeds;
+  _themeColorKeys = themeColorKeys;
   try {
     return _tipTapDocToDelta(doc);
   } finally {
-    _dividerEmbeds = previous;
+    _dividerEmbeds = previousDividerEmbeds;
+    _themeColorKeys = previousThemeColorKeys;
   }
 }
 
@@ -318,7 +334,10 @@ void _appendInlineContentToDelta(
       }
       final attrs = {
         ...extraAttrs,
-        ...quillAttrsFromTipTapMarks(child['marks']),
+        ...quillAttrsFromTipTapMarks(
+          child['marks'],
+          themeColorKeys: _themeColorKeys,
+        ),
       };
       if (attrs.isEmpty) {
         delta.insert(text);

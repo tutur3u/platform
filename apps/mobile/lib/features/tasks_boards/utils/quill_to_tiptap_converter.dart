@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:mobile/features/tasks_boards/utils/tiptap_quill_marks.dart';
+import 'package:mobile/features/tasks_boards/utils/tiptap_quill_colors.dart';
 import 'package:mobile/features/tasks_boards/utils/tiptap_quill_models.dart';
 
 String? quillDocumentToTipTapJson(Document document) {
@@ -313,20 +313,7 @@ List<Map<String, dynamic>> _marksFromQuillAttrs(Map<String, dynamic> attrs) {
     marks.add({'type': 'superscript'});
   }
 
-  final background = attrs['background'];
-  if (background is String && background.trim().isNotEmpty) {
-    marks.add({
-      'type': 'highlight',
-      'attrs': {'color': background.trim()},
-    });
-  }
-
-  if (quillColorOrNull(attrs['color']) case final color?) {
-    marks.add({
-      'type': 'textStyle',
-      'attrs': {'color': color},
-    });
-  }
+  marks.addAll(tipTapColorMarksFromQuillAttrs(attrs));
 
   final link = attrs['link'];
   if (link is String && link.trim().isNotEmpty) {

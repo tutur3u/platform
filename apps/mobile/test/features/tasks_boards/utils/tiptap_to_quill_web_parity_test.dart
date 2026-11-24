@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_render_cache.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
@@ -143,75 +142,6 @@ void main() {
         for (final node in back['content'] as List) (node as Map)['type'],
       ];
       expect(types, ['paragraph', 'horizontalRule', 'paragraph']);
-    });
-
-    test('text colour marks render and round-trip', () {
-      final json = _doc([
-        _paragraph([
-          _text('red', [
-            {
-              'type': 'textStyle',
-              'attrs': {'color': '#EF4444'},
-            },
-          ]),
-          _text('tinted', [
-            {
-              'type': 'textStyle',
-              'attrs': {'backgroundColor': 'rgb(34, 197, 94)'},
-            },
-          ]),
-        ]),
-      ]);
-
-      final ops = _ops(json);
-      expect(ops.firstWhere((op) => op['insert'] == 'red')['attributes'], {
-        'color': '#ef4444',
-      });
-      expect(ops.firstWhere((op) => op['insert'] == 'tinted')['attributes'], {
-        'background': '#22c55e',
-      });
-
-      final document = Document.fromDelta(tipTapJsonToQuillDelta(json));
-      final back = jsonDecode(quillDocumentToTipTapJson(document)!) as Map;
-      final runs = ((back['content'] as List).first as Map)['content'] as List;
-      expect((runs.first as Map)['marks'], [
-        {
-          'type': 'textStyle',
-          'attrs': {'color': '#ef4444'},
-        },
-      ]);
-    });
-
-    test('colours Quill cannot paint are dropped, not thrown', () {
-      final json = _doc([
-        _paragraph([
-          _text('themed', [
-            {
-              'type': 'highlight',
-              'attrs': {'color': 'var(--highlight-yellow)'},
-            },
-            {
-              'type': 'textStyle',
-              'attrs': {'color': 'currentColor'},
-            },
-          ]),
-        ]),
-      ]);
-
-      final attrs = _ops(
-        json,
-      ).firstWhere((op) => op['insert'] == 'themed')['attributes'];
-      expect(attrs, {'background': tipTapDefaultHighlightColor});
-    });
-
-    test('colour parsing accepts hex and rgb only', () {
-      expect(quillColorOrNull('#abc'), '#aabbcc');
-      expect(quillColorOrNull('#AABBCCDD'), '#aabbcc');
-      expect(quillColorOrNull('rgba(255, 0, 0, 0.5)'), '#ff0000');
-      expect(quillColorOrNull('rgba(255, 0, 0, 0.1)'), isNull);
-      expect(quillColorOrNull('hsl(0 100% 50%)'), isNull);
-      expect(quillColorOrNull('red'), isNull);
-      expect(quillColorOrNull(42), isNull);
     });
 
     test('links keep a trimmed href', () {
