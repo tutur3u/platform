@@ -43,3 +43,8 @@ export function usePrejoin() {
 export function usePrejoinInfo() {
   return useContext(PrejoinContext)?.info ?? null;
 }
+
+/** True when the redesigned Meet flow is on; the provider only mounts with it. */
+export function useMeetUxV2() {
+  return useContext(PrejoinContext) !== null;
+}

@@ -85,7 +85,7 @@ export function SidePanel({
       : t('participants', { count: participants.length });
 
   return (
-    <ResizableCallPanel label={title}>
+    <ResizableCallPanel label={title} onClose={onClose}>
       <CallPanelHeader
         icon={panel === 'chat' ? MessageSquare : Users}
         title={title}

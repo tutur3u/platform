@@ -29,9 +29,17 @@ import type { MeetRoomController } from '../lib/room-controller';
 import { CallResizeHandle } from './call-resize-handle';
 import { MiraParticipant } from './mira-participant';
 import { ParticipantTile } from './participant-tile';
+import { usePhoneChrome } from '../phone/use-phone-chrome';
+import {
+  PHONE_GRID_MAX,
+  PHONE_TILE_ASPECT,
+  PhoneFilmstrip,
+  pickPhoneSpeaker,
+} from '../phone/phone-stage';
 import { fitTileGrid, useElementSize } from './stage-grid-fit';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
 const FIXED_STRIP_TILE = 'aspect-video w-40 shrink-0 lg:w-full';
+const FILM_TILE = 'h-full w-24 shrink-0 snap-start';
 const densities = ['auto', 'large', 'compact'] as const;
 type GridDensity = (typeof densities)[number];
 
@@ -42,13 +50,14 @@ type Tile = {
   kind: 'camera' | 'screen';
   stream: MediaStream | null;
 };
-function columns(count: number) {
-  if (count < 2) return 'grid-cols-1';
-  if (count <= 4) return 'grid-cols-1 sm:grid-cols-2';
-  return count <= 9
-    ? 'grid-cols-2 lg:grid-cols-3'
-    : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-}
+const columns = (count: number) =>
+  count < 2
+    ? 'grid-cols-1'
+    : count <= 4
+      ? 'grid-cols-1 sm:grid-cols-2'
+      : count <= 9
+        ? 'grid-cols-2 lg:grid-cols-3'
+        : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
 export function CallStage({
   room,
   outputDeviceId,
@@ -80,6 +89,7 @@ export function CallStage({
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
   const mobile = useCompactStage();
+  const phone = usePhoneChrome();
   const stageId = useId();
   const gridRef = useRef<HTMLDivElement>(null);
   const stageSize = useElementSize(gridRef);
@@ -288,7 +298,21 @@ export function CallStage({
   const sidebar = split && layout === 'sidebar' && !mobile;
   const horizontalStrip = split && !!share && !sidebar;
   const featuredHeight = share ? shareHeight : spotlightHeight;
-  const fitted = compact || (!spotlight && density === 'auto');
+  // Phones show up to four people in a portrait grid and more as speaker + strip.
+  const phoneFilm =
+    phone && !compact && !spotlight && !share && count > PHONE_GRID_MAX;
+  const filmHero = phoneFilm
+    ? pickPhoneSpeaker(
+        visible,
+        [
+          ...(room.state.stage.activeSpeakerIds ?? []),
+          ...(room.state.recentSpeakerIds ?? []),
+        ],
+        room.state.selfUserId
+      )
+    : undefined;
+  const fitted =
+    compact || (!spotlight && !phoneFilm && (phone || density === 'auto'));
   const fit =
     fitted && stageSize
       ? fitTileGrid({
@@ -297,6 +321,7 @@ export function CallStage({
           height: stageSize.height,
           gap: compact ? 8 : 12,
           minWidth: compact ? 112 : 160,
+          aspect: phone && !compact ? PHONE_TILE_ASPECT : undefined,
         })
       : null;
   const tileClass = (key: string) => {
@@ -321,7 +346,7 @@ export function CallStage({
       )}
     >
       <IncomingVideoStatus status={room.receiveStatus} />
-      {!compact && !spotlight && count > 1 && (
+      {!compact && !spotlight && !phone && count > 1 && (
         <div className="flex shrink-0 justify-end p-1">
           <Select
             value={density}
@@ -436,7 +461,9 @@ export function CallStage({
                 compact ? 'gap-2' : 'gap-3',
                 fit.scroll ? 'content-start' : 'content-center'
               )
-            : cn('grid gap-3', compact && 'flex gap-2 lg:flex-col'),
+            : phoneFilm
+              ? 'flex flex-col gap-2'
+              : cn('grid gap-3', compact && 'flex gap-2 lg:flex-col'),
           !compact &&
             spotlight &&
             (sidebar
@@ -484,8 +511,24 @@ export function CallStage({
             )}
           />
         )}
-        {visible.map((tile) => render(tile, tileClass(tile.key)))}
-        {renderMira(tileClass('mira'), compact)}
+        {phoneFilm ? (
+          <PhoneFilmstrip
+            hero={filmHero && render(filmHero, 'min-h-0 w-full flex-1')}
+            strip={
+              <>
+                {visible
+                  .filter((tile) => tile !== filmHero)
+                  .map((tile) => render(tile, FILM_TILE))}
+                {renderMira(FILM_TILE, true)}
+              </>
+            }
+          />
+        ) : (
+          <>
+            {visible.map((tile) => render(tile, tileClass(tile.key)))}
+            {renderMira(tileClass('mira'), compact)}
+          </>
+        )}
       </div>
     </div>
   );

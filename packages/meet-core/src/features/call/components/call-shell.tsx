@@ -1,6 +1,5 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { privateMiraUsers } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
 import { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
@@ -12,7 +11,6 @@ import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { canTranscribeMeet } from '../../meeting-ai/eligibility';
 import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
-import { TranscriptControls } from '../../meeting-ai/transcript-controls';
 import { useMeetingAiSettings } from '../../meeting-ai/use-meeting-ai-settings';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useCallMediaActions } from '../hooks/call-media-actions';
@@ -36,8 +34,6 @@ import { ActivitiesRequestProvider } from '../stage-layout/activities-request';
 import { PresenceStage } from '../stage-layout/presence-stage';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
-import { roomActivitySettings } from './call-activity-settings';
-import { CallSettings } from './call-settings';
 import { CallSettingsLinkProvider } from './call-settings-link';
 import { type CallLayout, CallStage } from './call-stage';
 import type { CallPanel } from './control-bar';
@@ -49,16 +45,11 @@ import {
 import { JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { CallWaitingBanner } from './call-waiting-banner';
-import {
-  PlaybackVolumeControl,
-  PlaybackVolumeProvider,
-} from './playback-volume';
+import { PlaybackVolumeProvider } from './playback-volume';
 import { ReactionOverlay } from './reaction-overlay';
 import { CallPanelOwnerContext } from './resizable-call-panel';
-import { CallClock } from './call-clock';
+import { CallHeaderControls } from './call-header-controls';
 import { ScreenAudioStatus } from './screen-audio-status';
-import { SharedAudioControl } from './shared-audio-control';
-import { ShareMeetingButton } from './share-meeting';
 import { SidePanel } from './side-panel';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { findMeetTool, meetTools } from '../tools/registry';
@@ -412,72 +403,29 @@ function CallShellContent({
         onRetry={retryConnection}
         privateMiraUsers={privateMiraUsers(room.state.participants)}
         actions={
-          <>
-            <TranscriptControls
-              room={room}
-              meetingId={meetingId}
-              wsId={wsId}
-              guest={requiresAccount}
-            />
-            {!presenceOnly && (
-              <>
-                <MeetLivePanel
-                  wsId={wsId}
-                  accountId={accountId}
-                  key="live-assistant"
-                  onLeave={leaveNow}
-                  room={room}
-                  meetingId={meetingId}
-                  outputDeviceId={outputDeviceId}
-                  canManage={canManage}
-                  audioSuppressed={sharedAudio.microphonePaused}
-                />
-                <PlaybackVolumeControl
-                  participants={participants}
-                  selfUserId={state.selfUserId}
-                />
-                <SharedAudioControl
-                  audio={sharedAudio}
-                  busy={!!busyDevices.microphone}
-                  onShare={() =>
-                    void runMediaAction(sharedAudio.share, 'microphone')
-                  }
-                  onUseMicrophone={() =>
-                    void runMediaAction(
-                      sharedAudio.useOwnMicrophone,
-                      'microphone'
-                    )
-                  }
-                />
-              </>
-            )}
-            <CallSettings
-              meetingId={meetingId}
-              wsId={wsId}
-              room={room}
-              telemetry={telemetry.data}
-              ai={ai}
-              canManage={canManage}
-              sound={notifications.sound}
-              onSound={notifications.toggleSound}
-              outputDeviceId={outputDeviceId}
-              onOutput={setOutputDeviceId}
-              activities={
-                roomTools.canConfigure ? roomActivitySettings(room) : undefined
-              }
-            />
-            <CallClock meetingId={meetingId} state={state} />
-            <ShareMeetingButton
-              mail={{
-                workspaceId: wsId,
-                actorId: accountId,
-                canReadWorkspace,
-                canManage,
-              }}
-              meetingId={meetingId}
-              meetingName={room.state.title ?? meetingName}
-            />
-          </>
+          <CallHeaderControls
+            accountId={accountId}
+            ai={ai}
+            busyDevices={busyDevices}
+            canManage={canManage}
+            canReadWorkspace={canReadWorkspace}
+            guest={requiresAccount}
+            meetingId={meetingId}
+            meetingName={meetingName}
+            notifications={notifications}
+            onLeave={leaveNow}
+            onOutput={setOutputDeviceId}
+            outputDeviceId={outputDeviceId}
+            participants={participants}
+            presenceOnly={presenceOnly}
+            room={room}
+            roomTools={roomTools}
+            runMediaAction={runMediaAction}
+            sharedAudio={sharedAudio}
+            state={state}
+            telemetry={telemetry.data}
+            wsId={wsId}
+          />
         }
       />
       {canManage && (

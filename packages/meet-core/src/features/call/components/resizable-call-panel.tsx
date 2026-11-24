@@ -11,6 +11,8 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { useActivityPane } from '../stage-layout/activity-pane-context';
+import { PhoneSheet } from '../phone/phone-sheet';
+import { usePhoneChrome } from '../phone/use-phone-chrome';
 import { CallResizeHandle } from './call-resize-handle';
 
 const DEFAULT_WIDTH = 360;
@@ -52,6 +54,8 @@ export function ResizableCallPanel(props: {
   children: ReactNode;
   label: string;
   ownerId?: string;
+  /** Closes the panel; the phone sheet uses it for drag and scrim dismissal. */
+  onClose?: () => void;
 }) {
   const pane = useActivityPane();
   return pane ? (
@@ -70,12 +74,15 @@ function SideCallPanel({
   children,
   label,
   ownerId,
+  onClose,
 }: {
   children: ReactNode;
   label: string;
   ownerId?: string;
+  onClose?: () => void;
 }) {
   const t = useTranslations('meet.call');
+  const phone = usePhoneChrome();
   const account = useContext(CallPanelOwnerContext);
   const key = `meet:call-panel-width:${ownerId ?? account ?? 'guest'}`;
   const [draft, setDraft] = useState<{ key: string; width: number } | null>(
@@ -96,6 +103,12 @@ function SideCallPanel({
     draft?.key === key ? draft.width : storedWidth,
     maximum
   );
+  if (phone && onClose)
+    return (
+      <PhoneSheet label={label} onDismiss={onClose}>
+        {children}
+      </PhoneSheet>
+    );
   return (
     <aside
       id={panelId}

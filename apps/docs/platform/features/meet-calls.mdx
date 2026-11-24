@@ -717,6 +717,26 @@ Regression coverage: `prejoin-stage.test.tsx`, `connected-prejoin.test.tsx`,
 `guest-prejoin.test.tsx`, `device-session-gate.test.tsx` and
 `apps/meet/src/runtime/room-view.test.tsx`.
 
+### Phone in-room layout (`MEET_UX_V2`)
+
+With `MEET_UX_V2` on, viewports narrower than 640 px get a phone in-room layout.
+It is local presentation only: nothing here enters the synced stage layout, so a
+follower keeps mirroring the leader's layout and the lock on local rearranging.
+
+| Surface | Phone behavior |
+| --- | --- |
+| Top bar | One row: the title truncates first, then the timers, the Mira control and Share, and **More**. Room audio, playback volume, audio options and meeting settings move into More as labelled rows. Wide screens keep the original order. |
+| Tile size menu | Hidden; phones use the automatic fit only. |
+| Tiles | Up to four people fill a portrait 2×2 grid. More people show the active or most recent remote speaker large with a swipeable strip of everyone else; the paging limit is unchanged. |
+| Tile actions | The mute-for-me, pin and focus buttons appear after a tap, hide again after five seconds, stay reachable by keyboard focus, and have 44 px targets. They call the existing handlers, so they work while a follower is locked and never go through the layout reducer. |
+| Chat and participants | A full-height sheet that follows the visual viewport so the composer stays above the keyboard, with a drag handle (a drag of 96 px or more dismisses), a scrim and Escape. |
+| Bottom bar | Unchanged: seven 44 px controls (mic, camera, activities, more, leave, chat, people) with safe-area bottom padding. |
+
+The earlier `MeetPhoneCallLayout` mockup component is not a production path.
+
+Regression coverage: `phone-stage.test.tsx`, `participant-tile-phone.test.tsx`,
+`call-header-actions.test.tsx` and `phone-sheet.test.tsx`.
+
 ## Live activities and the pen board
 
 Admitted participants share the active Meet room's assessment, flashcards,

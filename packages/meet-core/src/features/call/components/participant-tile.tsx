@@ -1,15 +1,5 @@
 'use client';
-import {
-  Expand,
-  Hand,
-  Maximize,
-  MicOff,
-  Minimize,
-  MonitorUp,
-  Pin,
-  Volume2,
-  VolumeX,
-} from '@tuturuuu/icons';
+import { Hand, MicOff, MonitorUp } from '@tuturuuu/icons';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -20,8 +10,10 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
 import { observeVideoPresentation } from '../lib/video-presentation';
 import { meetParticipantName } from '../lib/participant-identity';
+import { usePhoneChrome } from '../phone/use-phone-chrome';
 import { LiveAvatar } from './live-avatar';
 import { ParticipantIdentityBadge } from './participant-identity-badge';
+import { ParticipantTileActions } from './participant-tile-actions';
 import {
   MediaReceivingStatus,
   useStreamReadiness,
@@ -84,6 +76,15 @@ function ParticipantTileImpl({
   const displayName = meetParticipantName(participant.displayName, participant);
   const [expanded, setExpanded] = useState(false);
   const [localSilence, setLocalSilence] = useState(false);
+  const phone = usePhoneChrome();
+  // Phones show the tile's actions after a tap and hide them again.
+  const [tapped, setTapped] = useState(false);
+  const actionsShown = phone && tapped;
+  useEffect(() => {
+    if (!actionsShown) return;
+    const timer = window.setTimeout(() => setTapped(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [actionsShown]);
   const silenced = controlledSilence ?? localSilence;
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
@@ -198,6 +199,11 @@ function ParticipantTileImpl({
   return (
     <div
       ref={tileRef}
+      onClick={(event) => {
+        if (!phone || expanded || floating) return;
+        if ((event.target as HTMLElement).closest('button, a')) return;
+        setTapped((value) => !value);
+      }}
       data-testid={`participant-${participant.userId}-${kind}`}
       data-focus-view={expanded || undefined}
       className={cn(
@@ -365,111 +371,27 @@ function ParticipantTileImpl({
           )}
       </div>
       {!floating && (
-        <div
-          className={cn(
-            'absolute top-2 right-2 flex gap-1 rounded-lg @max-[12rem]:top-1 @max-[12rem]:right-1 @max-[12rem]:gap-0.5 @max-[12rem]:p-0.5 bg-background/80 p-1 opacity-100 backdrop-blur motion-safe:transition-opacity',
-            expanded
-              ? controlsHidden && 'pointer-events-none opacity-0'
-              : 'sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100'
-          )}
-        >
-          {!isSelf && audioTrack && (
-            <Button
-              size="icon"
-              variant={silenced ? 'secondary' : 'ghost'}
-              className="size-8 @max-[12rem]:size-6"
-              aria-label={t(
-                silenced ? 'audio_unmute_for_me' : 'audio_mute_for_me',
-                { name: displayName }
-              )}
-              aria-pressed={silenced}
-              onClick={() =>
-                onSilence
-                  ? onSilence(focusKey ?? `${participant.userId}:${kind}`)
-                  : setLocalSilence((value) => !value)
-              }
-            >
-              {silenced ? (
-                <VolumeX className="size-4" />
-              ) : (
-                <Volume2 className="size-4" />
-              )}
-            </Button>
-          )}
-          {onFocus && !expanded && (
-            <Button
-              size="icon"
-              variant={focused ? 'secondary' : 'ghost'}
-              className="size-8 @max-[12rem]:size-6"
-              aria-label={focused ? t('unfocus_feed') : t('focus_feed')}
-              aria-pressed={focused}
-              onClick={() =>
-                onFocus(
-                  focused ? null : (focusKey ?? `${participant.userId}:${kind}`)
-                )
-              }
-            >
-              <Pin className="size-4" />
-            </Button>
-          )}
-          {expanded && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 gap-1.5"
-              aria-label={t(
-                fullscreen ? 'exit_browser_fullscreen' : 'browser_fullscreen'
-              )}
-              title={t(
-                fullscreen ? 'exit_browser_fullscreen' : 'browser_fullscreen'
-              )}
-              aria-pressed={fullscreen}
-              onClick={() => {
-                if (fullscreen) {
-                  void document.exitFullscreen().catch(() => undefined);
-                  return;
-                }
-                const tile = tileRef.current;
-                if (!tile?.requestFullscreen) return;
-                // A rejected request leaves the in-app focus view in place.
-                void Promise.resolve(tile.requestFullscreen()).catch(
-                  () => undefined
-                );
-              }}
-            >
-              <Expand className="size-4" />
-              <span className="@max-[20rem]:sr-only">
-                {t(
-                  fullscreen ? 'exit_browser_fullscreen' : 'browser_fullscreen'
-                )}
-              </span>
-            </Button>
-          )}
-          {!(expanded && fullscreen) && (
-            <Button
-              ref={expanded ? exitFocusRef : maximizeRef}
-              size={expanded ? 'sm' : 'icon'}
-              variant="ghost"
-              className={cn(
-                expanded ? 'h-8 gap-1.5' : 'size-8 @max-[12rem]:size-6'
-              )}
-              aria-label={t(expanded ? 'exit_focus_view' : 'focus_view')}
-              title={t(expanded ? 'exit_focus_view' : 'focus_view')}
-              onClick={() => setExpanded((value) => !value)}
-            >
-              {expanded ? (
-                <>
-                  <Minimize className="size-4" />
-                  <span className="@max-[20rem]:sr-only">
-                    {t('exit_focus_view')}
-                  </span>
-                </>
-              ) : (
-                <Maximize className="size-4" />
-              )}
-            </Button>
-          )}
-        </div>
+        <ParticipantTileActions
+          audio={!isSelf && !!audioTrack}
+          controlsHidden={controlsHidden}
+          displayName={participant.displayName}
+          exitFocusRef={exitFocusRef}
+          expanded={expanded}
+          focusKey={focusKey ?? `${participant.userId}:${kind}`}
+          focused={focused}
+          fullscreen={fullscreen}
+          maximizeRef={maximizeRef}
+          onExpandedChange={setExpanded}
+          onFocus={onFocus}
+          onSilence={() =>
+            onSilence
+              ? onSilence(focusKey ?? `${participant.userId}:${kind}`)
+              : setLocalSilence((value) => !value)
+          }
+          shown={actionsShown}
+          silenced={silenced}
+          tileRef={tileRef}
+        />
       )}
     </div>
   );
