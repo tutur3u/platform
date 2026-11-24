@@ -73,21 +73,29 @@ grant select on private.meet_consent_proofs to service_role;
 
 -- Immutable, except that deleting an account clears the account id together
 -- with the pseudonym that could link the row back to it (a guest id is not an
--- account and stays). Every other column must be unchanged.
+-- account and stays). Every other column must be unchanged. Only the account
+-- deletion trigger may do it: it names the deleted account in a
+-- transaction-local setting, and that account must be gone. A row without an
+-- account id may lose only its pseudonym that way.
 -- tuturuuu: no-grant (trigger)
 create function private.protect_meet_consent_proof_update()
 returns trigger language plpgsql
 set search_path = pg_catalog, pg_temp
 as $$
+declare
+  erased_account uuid := nullif(
+    current_setting('private.meet_consent_erased_account', true), ''
+  )::uuid;
 begin
   if current_setting('role', true) not in ('anon', 'authenticated')
     and pg_trigger_depth() > 1
-    and old.user_id is not null and new.user_id is null
-    and new.participant_ref is null
+    and erased_account is not null
+    and not exists (select 1 from auth.users where id = erased_account)
+    and new.user_id is null and new.participant_ref is null
+    and (old.user_id = erased_account
+      or (old.user_id is null and old.participant_ref is not null))
     and (to_jsonb(new) - 'user_id' - 'participant_ref')
-      = (to_jsonb(old) - 'user_id' - 'participant_ref')
-    and (not exists (select 1 from public.users where id = old.user_id)
-      or not exists (select 1 from auth.users where id = old.user_id)) then
+      = (to_jsonb(old) - 'user_id' - 'participant_ref') then
     return new;
   end if;
   raise exception 'Mira consent evidence is immutable' using errcode = '55000';
@@ -119,17 +127,37 @@ create trigger protect_meet_consent_proof_delete
   before delete on private.meet_consent_proofs
   for each row execute function private.protect_meet_consent_proof_delete();
 
--- Account deletion clears the account id, and the pseudonym that could link a
--- row back to it, from every proof row too. A guest id stays.
+-- Account deletion clears the account id, and every pseudonym that links a
+-- row back to the account, from proof rows too: the rows naming the account
+-- and any row carrying one of its pseudonyms (from its proof, its live Mira
+-- choices or its per-speaker decisions). A guest id stays.
 create or replace function private.anonymize_meet_mira_evidence()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp
 as $$
+declare
+  refs uuid[];
 begin
+  select coalesce(array_agg(distinct r.ref), '{}') into refs from (
+    select p.participant_ref as ref from private.meet_consent_proofs p
+      where p.user_id = old.id and p.participant_ref is not null
+    union all
+    select c.participant_ref from private.meet_mira_participant_choices c
+      where c.user_id = old.id and not c.guest
+    union all
+    select c.participant_ref from private.meet_ai_consents c
+      where c.user_id = old.id
+  ) r;
+  perform pg_catalog.set_config(
+    'private.meet_consent_erased_account', old.id::text, true
+  );
   update private.meet_mira_host_acceptances set user_id = null where user_id = old.id;
   update private.meet_mira_participant_choices set user_id = null where user_id = old.id;
   update private.meet_consent_proofs
-    set user_id = null, participant_ref = null where user_id = old.id;
+    set user_id = null, participant_ref = null
+    where user_id = old.id
+      or (user_id is null and participant_ref = any(refs));
+  perform pg_catalog.set_config('private.meet_consent_erased_account', '', true);
   return old;
 end;
 $$;
@@ -198,7 +226,10 @@ begin
     kind, meeting_id, ws_id, user_id, participant_ref, choice, revision,
     notice_version, text_hash, capabilities, decided_at, erase_reason
   )
-  select 'mira_acceptance', a.meeting_id, a.ws_id, a.user_id, null, a.event,
+  select 'mira_acceptance', a.meeting_id, a.ws_id,
+    case when exists (select 1 from auth.users u where u.id = a.user_id)
+      then a.user_id end,
+    null, a.event,
     a.revision, a.notice_version, null,
     case when a.event = 'accept' then a.capabilities end,
     a.created_at, p_reason
@@ -212,7 +243,9 @@ begin
     kind, meeting_id, ws_id, user_id, participant_ref, choice, revision,
     notice_version, text_hash, decided_at, erase_reason
   )
-  select 'mira_choice', c.meeting_id, c.ws_id, c.user_id, c.participant_ref,
+  select 'mira_choice', c.meeting_id, c.ws_id, c.user_id,
+    -- An account choice whose account was deleted keeps no pseudonym.
+    case when c.guest or c.user_id is not null then c.participant_ref end,
     c.choice, c.acceptance_revision, c.notice_version, c.text_hash,
     c.created_at, p_reason
   from private.meet_mira_participant_choices c
@@ -227,8 +260,14 @@ begin
     kind, meeting_id, ws_id, user_id, participant_ref, choice, revision,
     notice_version, room_seq, decided_at, erase_reason
   )
-  select 'self_v1_decision', s.meeting_id, m.ws_id, c.user_id,
-    c.participant_ref, c.decision,
+  select 'self_v1_decision', s.meeting_id, m.ws_id,
+    case when exists (select 1 from auth.users u where u.id = c.user_id)
+      then c.user_id end,
+    -- A decision of a deleted account keeps neither its id nor its pseudonym.
+    case when c.user_id is null
+      or exists (select 1 from auth.users u where u.id = c.user_id)
+      then c.participant_ref end,
+    c.decision,
     pg_catalog.row_number() over (
       partition by c.session_id, c.participant_ref
       order by c.created_at, c.id

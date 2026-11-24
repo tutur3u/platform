@@ -205,6 +205,56 @@ select is((select count(*)::int from private.meet_consent_proofs where meeting_i
 select ok((select count(*) from private.meet_consent_proofs where user_id = pg_temp.cid(1) and participant_ref is not null) > 0, 'another account keeps its proof untouched');
 select throws_ok($$update private.meet_consent_proofs set participant_ref = null where meeting_id = pg_temp.cid(21) and participant_ref = pg_temp.cid(5)$$, '55000', 'Mira consent evidence is immutable', 'a guest id cannot be cleared outside account deletion');
 
+-- Account deletion also clears a pseudonym that links to the account when the
+-- row does not name it, and evidence erased after the deletion keeps neither.
+insert into auth.users(id) values (pg_temp.cid(6));
+insert into public.users(id) values (pg_temp.cid(6)) on conflict do nothing;
+insert into public.workspaces(id, name, personal, creator_id) values
+  (pg_temp.cid(17), 'Erase pseudonym', false, pg_temp.cid(1));
+insert into public.workspace_meetings(id, ws_id, creator_id, name, time) values
+  (pg_temp.cid(41), pg_temp.cid(17), pg_temp.cid(1), 'Meeting P', now()),
+  (pg_temp.cid(42), pg_temp.cid(17), pg_temp.cid(1), 'Meeting Q', now());
+insert into private.meet_mira_participant_choices(meeting_id, ws_id, user_id, choice, source, acceptance_revision, notice_version, text_hash, locale) values
+  (pg_temp.cid(41), pg_temp.cid(17), pg_temp.cid(6), 'off', 'join', 0, 'v1', repeat('a', 64), 'en'),
+  (pg_temp.cid(42), pg_temp.cid(17), pg_temp.cid(6), 'off', 'join', 0, 'v1', repeat('a', 64), 'en'),
+  (pg_temp.cid(42), pg_temp.cid(17), pg_temp.cid(6), 'on', 'toggle', 0, 'v1', repeat('a', 64), 'en');
+insert into private.meet_mira_participant_choices(meeting_id, ws_id, guest, participant_ref, choice, source, acceptance_revision, notice_version, text_hash, locale) values
+  (pg_temp.cid(42), pg_temp.cid(17), true, pg_temp.cid(7), 'off', 'join', 0, 'v1', repeat('c', 64), 'en');
+insert into public.meet_ai_sessions(id, meeting_id, user_id) values
+  (pg_temp.cid(33), pg_temp.cid(42), pg_temp.cid(1));
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version) values
+  (pg_temp.cid(33), pg_temp.cid(6), 'allow', 'v1');
+create temporary table account_refs as
+  select participant_ref as ref from private.meet_mira_participant_choices
+    where user_id = pg_temp.cid(6)
+  union
+  select participant_ref from private.meet_ai_consents where user_id = pg_temp.cid(6);
+select is((select count(*)::int from account_refs), 3, 'the account has a pseudonym per meeting and per session');
+select is((private.erase_meet_mira_evidence(pg_temp.cid(41), null, 'meeting_deleted')->>'choices')::int, 1, 'one meeting is erased while the account exists');
+-- A proof row that carries the account's live pseudonym without its id.
+insert into private.meet_consent_proofs(kind, meeting_id, ws_id, participant_ref, choice, revision, notice_version, decided_at, erase_reason)
+  select 'mira_choice', pg_temp.cid(42), pg_temp.cid(17), c.participant_ref, 'off', 0, 'v1', now(), 'meeting_deleted'
+  from private.meet_mira_participant_choices c
+  where c.meeting_id = pg_temp.cid(42) and c.user_id = pg_temp.cid(6) limit 1;
+select throws_ok($$update private.meet_consent_proofs set participant_ref = null where meeting_id = pg_temp.cid(42)$$, '55000', 'Mira consent evidence is immutable', 'a linked pseudonym cannot be cleared outside account deletion');
+select set_config('private.meet_consent_erased_account', pg_temp.cid(2)::text, true);
+select throws_ok($$update private.meet_consent_proofs set participant_ref = null where meeting_id = pg_temp.cid(42)$$, '55000', 'Mira consent evidence is immutable', 'naming a live account does not unlock proof rows');
+select set_config('private.meet_consent_erased_account', '', true);
+select lives_ok($$delete from auth.users where id = pg_temp.cid(6)$$, 'the account deletes');
+select is(current_setting('private.meet_consent_erased_account', true), '', 'the deletion marker does not outlive the trigger');
+select is((select count(*)::int from private.meet_consent_proofs where participant_ref in (select ref from account_refs)), 0, 'no proof row keeps a pseudonym of the deleted account');
+select is((select count(*)::int from private.meet_consent_proofs where meeting_id in (pg_temp.cid(41), pg_temp.cid(42)) and user_id is null and participant_ref is null), 2, 'the proof erased before and the unnamed linked row are both cleared');
+select is((select count(*)::int from private.meet_mira_participant_choices where meeting_id = pg_temp.cid(42) and not guest and user_id is not null), 0, 'live choices no longer name the account');
+select is(
+  private.erase_meet_mira_evidence(pg_temp.cid(42), null, 'meeting_deleted'),
+  '{"acceptances": 0, "choices": 3, "consents": 1}'::jsonb,
+  'evidence erased after the deletion is still moved'
+);
+select is((select count(*)::int from private.meet_consent_proofs where participant_ref in (select ref from account_refs) or user_id = pg_temp.cid(6)), 0, 'and its proof keeps neither the account id nor a pseudonym');
+select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(42) and kind = 'self_v1_decision' and user_id is null and participant_ref is null and choice = 'allow'), 1, 'a per-speaker decision of the deleted account keeps only the decision');
+select is((select count(*)::int from private.meet_consent_proofs where meeting_id = pg_temp.cid(42) and participant_ref = pg_temp.cid(7)), 1, 'a guest in the same meeting keeps its guest id');
+select ok((select count(*) from private.meet_consent_proofs where user_id = pg_temp.cid(1) and participant_ref is not null) > 0, 'another account keeps its pseudonyms');
+
 -- Erase by workspace.
 select is(
   private.erase_meet_mira_evidence(null, pg_temp.cid(12), 'workspace_deleted'),
