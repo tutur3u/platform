@@ -33530,6 +33530,10 @@ export type Database = {
           revision: number;
         }[];
       };
+      meet_ai_self_v1_release_undispatched: {
+        Args: { p_session_id: string };
+        Returns: undefined;
+      };
       meet_ai_self_v1_renew_stream: {
         Args: { p_account_id: string; p_stream_id: string };
         Returns: string;
@@ -33610,7 +33614,11 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      meet_ai_usage_has_text: { Args: { p_usage: Json }; Returns: boolean };
+      meet_ai_self_v1_upload_fenced: {
+        Args: { p_account_id: string; p_session_id: string };
+        Returns: boolean;
+      };
+      meet_ai_usage_is_text_free: { Args: { p_usage: Json }; Returns: boolean };
       meet_attendance_claim_keys: { Args: { p_plan: Json }; Returns: string[] };
       meet_attendance_confirm_plan: {
         Args: { p_plan: Json; p_rooms: Json; p_sql: Json };
