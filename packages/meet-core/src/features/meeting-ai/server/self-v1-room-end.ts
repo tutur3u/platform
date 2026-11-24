@@ -12,7 +12,10 @@ export async function closeSessionEndedByRoom(
   session: { id: string; user_id: string | null; capture_state: string | null }
 ) {
   if (!session.user_id) return false;
-  if (session.capture_state !== 'active' && session.capture_state !== 'draining') {
+  if (
+    session.capture_state !== 'active' &&
+    session.capture_state !== 'draining'
+  ) {
     // Already stopped: make sure it is also closed once drained.
     if (session.capture_state !== 'closed')
       await selfRpc.closeDrained(db, session.id).catch(() => undefined);

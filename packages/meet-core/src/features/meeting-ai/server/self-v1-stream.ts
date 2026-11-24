@@ -150,10 +150,7 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
 
 /** Renews the caller's own live stream lease; a stream id alone grants nothing. */
 export async function renewSelfStream(request: Request, params: MeetAiParams) {
-  const { db, user, wsId, meetingId } = await meetSelfAccess(
-    request,
-    params
-  );
+  const { db, user, wsId, meetingId } = await meetSelfAccess(request, params);
   const { sessionId, streamId } = await readJson(
     request,
     z.object({ sessionId: z.uuid(), streamId: z.uuid() }).strict()

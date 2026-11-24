@@ -579,7 +579,11 @@ describe('per-speaker outbox delivery admission', () => {
       roomId: 'ws:meeting',
       exp: now() + 60,
     });
-  const deliver = (token: string | null, path = '/api/meet-ai/self/outbox', method = 'POST') =>
+  const deliver = (
+    token: string | null,
+    path = '/api/meet-ai/self/outbox',
+    method = 'POST'
+  ) =>
     proxy(
       new NextRequest(`https://meet.tuturuuu.com${path}`, {
         method,

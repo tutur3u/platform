@@ -369,9 +369,7 @@ describe('room end through the outbox', () => {
     const acked = await ackedOf(
       body([entry(a, 5, 'close'), entry(host, 6, 'end')])
     );
-    expect(acked).toEqual(
-      expect.arrayContaining([ack(a, 5), ack(host, 6)])
-    );
+    expect(acked).toEqual(expect.arrayContaining([ack(a, 5), ack(host, 6)]));
     expect(mocks.rpc.stopSession).toHaveBeenCalledWith(expect.anything(), {
       sessionId,
       hostId: host,
@@ -400,9 +398,9 @@ describe('room end through the outbox', () => {
   });
 
   it('acknowledges an end for a session that is gone', async () => {
-    expect(
-      await ackedOf(body([entry(host, 1, 'end', goneSession)]))
-    ).toEqual([ack(host, 1, goneSession)]);
+    expect(await ackedOf(body([entry(host, 1, 'end', goneSession)]))).toEqual([
+      ack(host, 1, goneSession),
+    ]);
   });
 
   it('withholds the end acknowledgement when the stop fails', async () => {

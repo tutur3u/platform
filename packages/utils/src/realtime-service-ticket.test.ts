@@ -323,7 +323,11 @@ describe('Meet per-speaker outbox credential', () => {
       exp: seconds + 60,
       ...claims,
     });
-  const request = (token: string | null, method = 'POST', path = MEET_SELF_OUTBOX_PATH) =>
+  const request = (
+    token: string | null,
+    method = 'POST',
+    path = MEET_SELF_OUTBOX_PATH
+  ) =>
     isTrustedMeetSelfOutboxRequest(
       path,
       new Headers(token ? { authorization: `Bearer ${token}` } : {}),

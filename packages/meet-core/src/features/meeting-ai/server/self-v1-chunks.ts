@@ -227,7 +227,11 @@ export async function transcribeSelfChunk(
       { audio: audio.wav, hints: { language } },
       // Each request is its own central run, so a retry after a lost request
       // never collides with it; mark_dispatch still allows one dispatch.
-      { userId: hostId, meetingId, attemptId: `${chunk.id}:${crypto.randomUUID()}` },
+      {
+        userId: hostId,
+        meetingId,
+        attemptId: `${chunk.id}:${crypto.randomUUID()}`,
+      },
       admission,
       {
         beforeProvider: async () => {
