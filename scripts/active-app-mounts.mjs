@@ -34,6 +34,16 @@ export const SESSIONLESS_MOUNTS = new Set([
   '/apps',
 ]);
 
+/**
+ * Mounts the gateway routes before Web links to them. Web's switcher and
+ * logins keep the app's subdomain until the mount passes signed-in
+ * acceptance; the app's next change removes it here so Web lists it. A web
+ * family can publish before the gateway in a production round, so listing a
+ * mount in the same change as its gateway write could send Web links to a
+ * path that is not live yet.
+ */
+export const PENDING_WEB_MOUNTS = new Set(['/tasks']);
+
 /** Parses JSONC: line and block comments and trailing commas. */
 export function parseJsonc(text) {
   let out = '';
@@ -79,7 +89,7 @@ export function resolveActiveMounts(bases, registry) {
   const apps = new Set();
   const unresolved = [];
   for (const base of bases) {
-    if (SESSIONLESS_MOUNTS.has(base)) continue;
+    if (SESSIONLESS_MOUNTS.has(base) || PENDING_WEB_MOUNTS.has(base)) continue;
     const app = byBase.get(base);
     if (app) apps.add(app);
     else unresolved.push(base);
@@ -112,8 +122,13 @@ export function missingLivePaths(config, version) {
     .filter((path) => path && !live.has(path));
 }
 
+/** The committed gateway config, parsed. */
+export function readCommittedConfig() {
+  return parseJsonc(readFileSync(CONFIG, 'utf8'));
+}
+
 async function main(argv) {
-  const config = parseJsonc(readFileSync(CONFIG, 'utf8'));
+  const config = readCommittedConfig();
   const liveIndex = argv.indexOf('--live');
   if (liveIndex !== -1) {
     const file = argv[liveIndex + 1];

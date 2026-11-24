@@ -1,7 +1,7 @@
 ---
 title: "Gateway Worker"
 description: "Cloudflare Worker in front of tuturuuu.com: route manifest, Marketing page cache, web family dispatch, rollback and smoke checks."
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-24"
 audience: developers
 ---
 
@@ -369,7 +369,14 @@ node scripts/active-app-mounts.mjs --live <version.json>  # also require every p
 The script maps each mount base to its app through the shared-origin registry
 (`packages/utils/src/app-mounts.ts`, aliases included), skips the session-less
 `/roadmap` and `/lms`, and exits non-zero on an unregistered mount or an empty
-list. Web returns a login to `/<app>/verify-token` only for listed apps, so commit
+list. It also skips the bases in `PENDING_WEB_MOUNTS` (currently `/tasks`): the
+gateway routes them, but Web keeps linking to and returning logins on the app's
+subdomain. In a production round the Web families can publish before the
+gateway, so a mount whose gateway write and Web listing land in one change can
+send Web links to a path that is not live yet. Land the gateway mount first,
+smoke it signed in, then remove the base from `PENDING_WEB_MOUNTS` in a separate
+change (covered by `scripts/active-app-mounts.test.mjs`).
+Web returns a login to `/<app>/verify-token` only for listed apps, so commit
 a mount only after, or in the same change as, the gateway write that makes it
 live, and run the `--live` check against the captured version after that write.
 

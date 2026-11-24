@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url';
 import {
   committedMountBases,
   missingLivePaths,
+  PENDING_WEB_MOUNTS,
   parseJsonc,
+  readCommittedConfig,
   resolveActiveMounts,
 } from './active-app-mounts.mjs';
 
@@ -50,6 +52,33 @@ test('never lists a mount without a verify-token route', () => {
       registry
     ),
     ['infra']
+  );
+});
+
+test('commits the Tasks mount with its subtree and service binding', () => {
+  const committed = readCommittedConfig();
+  const paths = committed.vars.GATEWAY_MOUNTED_PATHS.split(',');
+  assert.ok(paths.includes('/tasks') && paths.includes('/tasks/*'));
+  assert.ok(
+    committed.services.some(
+      (entry) =>
+        entry.binding === 'MOUNT_TASKS' && entry.service === 'tuturuuu-tasks'
+    )
+  );
+});
+
+test('keeps a gateway-routed mount off Web until it is released', () => {
+  assert.ok(PENDING_WEB_MOUNTS.has('/tasks'));
+  assert.deepEqual(
+    resolveActiveMounts(
+      committedMountBases(config('/admin,/admin/*,/tasks,/tasks/*')),
+      registry
+    ),
+    ['infra']
+  );
+  assert.throws(
+    () => resolveActiveMounts(['/tasks'], registry),
+    /No committed/u
   );
 });
 

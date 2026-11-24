@@ -999,10 +999,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
-        "reason": "The gateway config keeps global_fetch_strictly_public and adds Finance to the mount inventory through MOUNT_FINANCE. The filename remains the only Wrangler use."
+        "decision": "https://github.com/tutur3u/platform/commit/1d98485c1c0d0ba0396d040cf4a3cf1345746529",
+        "reason": "The gateway config adds the Tasks mount (/tasks, /tasks/*) and its MOUNT_TASKS service binding. The filename remains the only Wrangler use."
       },
-      "digest": "0314cbe81004cd0913195332f51b8892aca4bcb3243327662ef830b8880b6801"
+      "digest": "50d891446bf7a3fa09a9f19b155237b058a8cdf99c3978461ccfb2c91ef31fc6"
     },
     "apps/gateway/wrangler.subdomain-redirect.jsonc": {
       "lines": 1,
