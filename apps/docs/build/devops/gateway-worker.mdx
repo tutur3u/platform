@@ -270,7 +270,16 @@ unchanged. Client-supplied forwarding and framework-internal headers
 (`x-forwarded-*`, `Forwarded`, `x-real-ip`, `x-original-*`, `x-rewrite-url`,
 `x-middleware-*`, `x-nextjs-*`, `x-next-intl-*`, `x-tuturuuu-*`, `x-gateway-*`)
 are stripped and none are synthesized, so a mounted app takes its public origin
-from its own configuration. Responses carry `x-gateway-cache: MOUNT` and are
+from its own configuration. Exceptions: the redemption proof
+`x-tuturuuu-app-redeem-proof` and the client action-intent headers
+(`x-tuturuuu-account-action`, `x-tuturuuu-desktop-deployment-action`,
+`x-tuturuuu-feature-flag-action`, `x-tuturuuu-github-bot-action`,
+`x-tuturuuu-mobile-deployment-action`) pass through. They are same-origin CSRF
+signals that assert no identity, and each route still verifies the session,
+permission and Origin; stripping them refused every Admin vault upload with
+`mobile_deployment_csrf_required`. Add a new action header to
+`CLIENT_ACTION_HEADERS` in `apps/gateway/src/forwarding-headers.ts` (covered by
+`client-action-headers.test.ts`) or the mount silently drops it. Responses carry `x-gateway-cache: MOUNT` and are
 never cached by the gateway. Nested paths without a `/<app>/*` entry,
 lookalikes (`/learning`) and unlisted or unbound paths go to the web families. Regression coverage lives in
 `apps/gateway/src/worker-mount.test.ts`.
