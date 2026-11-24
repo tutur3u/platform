@@ -113,6 +113,60 @@ const python = (source) => ({
   files: [{ path: 'main.py', content: source }],
 });
 
+// Confinement as root, outside the launcher's error mapping, so a failure
+// prints its traceback instead of a bare stage name.
+const confinement = spawnSync(
+  'docker',
+  [
+    'run',
+    '--rm',
+    '--pull=never',
+    '--platform=linux/amd64',
+    '--network=none',
+    '--cap-drop=ALL',
+    '--cap-add=SYS_ADMIN',
+    '--cap-add=SETUID',
+    '--cap-add=SETGID',
+    '--cap-add=SETPCAP',
+    '--cap-add=CHOWN',
+    '--cap-add=FOWNER',
+    '--cap-add=DAC_OVERRIDE',
+    '--cap-add=KILL',
+    `--security-opt=seccomp=${noLandlock}`,
+    '--security-opt=apparmor=unconfined',
+    '--user=0:0',
+    '--entrypoint=/usr/bin/unshare',
+    image,
+    '--mount',
+    '--propagation',
+    'private',
+    '/usr/bin/python3',
+    '-I',
+    '-S',
+    '-B',
+    '-c',
+    [
+      'import sys, traceback',
+      'sys.path.insert(0, "/usr/local/lib/playground")',
+      'import run',
+      'try:',
+      '    run.stage_files([])',
+      '    run.minimal_dev(run.ctypes.CDLL(None, use_errno=True))',
+      '    run.confine_writes()',
+      '    print("confined", run.landlock_supported())',
+      'except Exception:',
+      '    traceback.print_exc(file=sys.stdout)',
+      '    print(open("/proc/self/mountinfo").read())',
+    ].join('\n'),
+  ],
+  { encoding: 'utf8', timeout: 60_000 }
+);
+expect(
+  'the launcher confines writes without Landlock',
+  confinement.status === 0 && confinement.stdout.trim() === 'confined False',
+  { stdout: confinement.stdout, stderr: confinement.stderr }
+);
+
 for (const language of PLAYGROUND_LANGUAGES) {
   const { path, content, command } = playgroundTemplates[language];
   const result = launch({ command, files: [{ path, content }] });

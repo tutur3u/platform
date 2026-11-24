@@ -44,7 +44,7 @@ MOUNT_FLAGS = {
 LANDLOCK_MIN_ABI = 3
 # The only devices the sandbox sees; Landlock-equivalent except that zero,
 # full and the random devices also accept harmless writes.
-DEVICES = {"null": (1, 3), "zero": (1, 5), "full": (1, 7), "random": (1, 8), "urandom": (1, 9)}
+DEVICES = ("null", "zero", "full", "random", "urandom")
 # The workspace tmpfs stays writable; the sandbox mounts a fresh /proc.
 WRITABLE_MOUNTS = ("/tmp", "/proc")
 MAX_CHECK_FILES = 20
@@ -239,28 +239,45 @@ def mounts():
     return reachable
 
 
+def writable_mount(point):
+    return any(point == root or point.startswith(root + "/") for root in WRITABLE_MOUNTS)
+
+
 def minimal_dev(libc):
-    """Replace /dev with a tmpfs holding only the devices programs need."""
-    flags = MS_NOSUID | MS_NOEXEC
-    if libc.mount(b"tmpfs", b"/dev", b"tmpfs", ctypes.c_ulong(flags), b"size=64k,mode=0755") != 0:
-        raise OSError(ctypes.get_errno(), "dev mount failed")
-    for name, (major, minor) in DEVICES.items():
-        os.mknod("/dev/" + name, stat.S_IFCHR | 0o666, os.makedev(major, minor))
-        os.chmod("/dev/" + name, 0o666)
+    """Replace /dev with a tmpfs holding only the devices programs need.
+
+    The devices are bind mounts of the existing nodes, staged on the workspace
+    tmpfs while the old /dev is still reachable, so no node is created.
+    """
+    staged = []
+    for name in DEVICES:
+        stage = "/tmp/.dev-" + name
+        open(stage, "x").close()
+        mount(libc, "/dev/" + name, stage, MS_BIND)
+        staged.append((name, stage))
+    mount(libc, "tmpfs", "/dev", MS_NOSUID | MS_NOEXEC, "tmpfs", b"size=64k,mode=0755")
+    for name, stage in staged:
+        open("/dev/" + name, "x").close()
+        mount(libc, stage, "/dev/" + name, MS_BIND)
+        if libc.umount2(stage.encode(), 0) != 0:
+            raise OSError(ctypes.get_errno(), "device staging unmount failed")
+        os.unlink(stage)
     for name, target in (("fd", "/proc/self/fd"), ("stdin", "/proc/self/fd/0"),
                          ("stdout", "/proc/self/fd/1"), ("stderr", "/proc/self/fd/2")):
         os.symlink(target, "/dev/" + name)
 
 
-def writable_mount(point):
-    return any(point == root or point.startswith(root + "/") for root in WRITABLE_MOUNTS)
+def mount(libc, source, target, flags, fstype=None, data=None):
+    if libc.mount(source.encode(), target.encode(), fstype and fstype.encode(),
+                  ctypes.c_ulong(flags), data) != 0:
+        raise OSError(ctypes.get_errno(), "mount failed: " + target)
 
 
 def confine_writes():
     """Make every mount but the workspace tmpfs read-only in this namespace.
 
-    /dev is first replaced with a tmpfs of fixed devices, so the program can
-    write to no device node beyond those, and none it creates.
+    minimal_dev runs first, so the program can write to no device node beyond
+    the fixed ones, and creates none.
 
     The bind remounts keep each mount's own nosuid, nodev, noexec and atime
     flags. The sandboxed program has no capabilities and no new privileges, so
@@ -268,7 +285,6 @@ def confine_writes():
     Landlock and backs Landlock up where it exists.
     """
     libc = ctypes.CDLL(None, use_errno=True)
-    minimal_dev(libc)
     for point, options in mounts().items():
         if writable_mount(point) or "ro" in options:
             continue
@@ -411,6 +427,8 @@ def main():
         checking = job.get("mode") == "check"
         stage = "workspace"
         stage_files(job["files"])
+        stage = "devices"
+        minimal_dev(ctypes.CDLL(None, use_errno=True))
         stage = "confinement"
         confine_writes()
         stage = "landlock"

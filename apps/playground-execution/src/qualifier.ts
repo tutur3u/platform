@@ -30,6 +30,7 @@ sys.path.insert(0, "/usr/local/lib/playground")
 try:
     import run
     run.stage_files([])
+    run.minimal_dev(run.ctypes.CDLL(None, use_errno=True))
     run.confine_writes()
     landlock = run.landlock_supported()
     p = subprocess.run(run.sandboxed("/bin/true", landlock=landlock), cwd=run.WORKSPACE, env=run.GUEST_ENV, preexec_fn=run.set_limits, capture_output=True, timeout=5)
