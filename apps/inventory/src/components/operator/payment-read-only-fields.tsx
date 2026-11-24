@@ -17,7 +17,7 @@ export function CompactEditButton({
   return (
     <Button
       aria-label={label}
-      className="size-8 shrink-0 rounded-md"
+      className="size-8 shrink-0"
       onClick={onClick}
       size="icon"
       title={label}

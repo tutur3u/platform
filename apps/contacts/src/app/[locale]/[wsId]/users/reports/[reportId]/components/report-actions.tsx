@@ -295,11 +295,7 @@ export function ReportActions({
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-2 rounded-xl"
-                  >
+                  <Button size="sm" variant="outline" className="gap-2">
                     <Palette className="h-4 w-4" />
                     {t('common.theme')}
                   </Button>
@@ -334,7 +330,7 @@ export function ReportActions({
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" className="gap-2 rounded-xl">
+            <Button size="sm" variant="outline" className="gap-2">
               <Settings2 className="h-4 w-4" />
               {t('common.settings')}
             </Button>

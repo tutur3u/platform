@@ -233,10 +233,7 @@ function ProjectTile({
     >
       <div className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant={connected ? 'default' : 'outline'}
-            className="rounded-md"
-          >
+          <Badge variant={connected ? 'default' : 'outline'}>
             {connected ? (
               <Link className="mr-1 h-3.5 w-3.5" />
             ) : (
@@ -245,9 +242,7 @@ function ProjectTile({
             {connected ? strings.connectedStatus : strings.unconnectedStatus}
           </Badge>
           {project.personal ? (
-            <Badge variant="secondary" className="rounded-md">
-              {strings.personalLabel}
-            </Badge>
+            <Badge variant="secondary">{strings.personalLabel}</Badge>
           ) : null}
         </div>
 

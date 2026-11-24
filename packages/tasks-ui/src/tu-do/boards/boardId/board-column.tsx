@@ -977,7 +977,7 @@ export function BoardColumn({
                 ? onAddTask(column)
                 : createTask(boardId, column.id, [column], filters)
             }
-            className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
+            className="w-full justify-start border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
           >
             + {t('add_task')}
           </Button>

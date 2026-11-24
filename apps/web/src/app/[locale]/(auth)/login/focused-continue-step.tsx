@@ -121,7 +121,7 @@ export function FocusedContinueStep({
           <StatusLine label={t('login.signing_you_in_to', { app: appName })} />
         ) : (
           <Button
-            className="h-12 w-full rounded-2xl px-6 font-bold"
+            className="h-12 w-full px-6 font-bold"
             disabled={!canContinue || busy}
             onClick={onContinue}
             ref={(element) => {

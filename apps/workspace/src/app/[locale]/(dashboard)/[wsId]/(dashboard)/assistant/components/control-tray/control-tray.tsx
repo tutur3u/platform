@@ -96,7 +96,7 @@ function MediaStreamButton({
       size="icon"
       className={cn(
         'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
-        compact && 'size-9 rounded-xl',
+        compact && 'size-9',
         active && 'bg-primary/10 text-primary'
       )}
       disabled={disabled}
@@ -312,7 +312,7 @@ function ControlTray({
                 size="icon"
                 className={cn(
                   'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
-                  compact && 'size-9 rounded-xl',
+                  compact && 'size-9',
                   muted && 'bg-destructive/10 text-dynamic-red'
                 )}
                 onClick={() => {
@@ -377,7 +377,7 @@ function ControlTray({
               size="icon"
               className={cn(
                 'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
-                compact && 'size-9 rounded-xl',
+                compact && 'size-9',
                 textChatOpen && 'bg-primary/10 text-primary'
               )}
               onClick={onToggleChat}
@@ -399,7 +399,7 @@ function ControlTray({
             }
             variant={connected ? 'destructive' : 'default'}
             size="icon"
-            className={cn('size-11 rounded-xl shadow-sm', compact && 'size-9')}
+            className={cn('size-11 shadow-sm', compact && 'size-9')}
             aria-busy={sessionActionPending}
             onClick={async () => {
               setSessionActionPending(true);

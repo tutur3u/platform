@@ -107,7 +107,7 @@ export function CmsProductsClient({ workspaceId }: { workspaceId: string }) {
                 </div>
                 <Badge
                   variant={product.stock > 0 ? 'secondary' : 'outline'}
-                  className="shrink-0 rounded-md"
+                  className="shrink-0"
                 >
                   {product.stock > 0
                     ? `${numberFormatter.format(product.stock)} ${t('epm.products_stock_label')}`

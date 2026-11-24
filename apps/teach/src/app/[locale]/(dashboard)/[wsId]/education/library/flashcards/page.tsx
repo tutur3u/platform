@@ -54,7 +54,7 @@ export default async function WorkspaceLibraryFlashcardsPage({
           </div>
         }
         secondaryAction={
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link href={`/${routeWsId}/education/library/quiz-sets`}>
               {t('workspace-education-tabs.library_quiz_sets')}
             </Link>
@@ -66,7 +66,7 @@ export default async function WorkspaceLibraryFlashcardsPage({
             createDescription={t('ws-flashcards.create_description')}
             form={<FlashcardForm wsId={resolvedWsId} />}
             trigger={
-              <Button className="h-11 rounded-2xl bg-foreground px-5 text-background">
+              <Button className="h-11 bg-foreground px-5 text-background">
                 <Plus className="h-4 w-4" />
                 {t('ws-flashcards.create')}
               </Button>

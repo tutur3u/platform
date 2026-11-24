@@ -53,7 +53,7 @@ export function TaskRelationshipActionButtons({
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="h-11 w-full justify-between rounded-2xl border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
+              className="h-11 w-full justify-between border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
               disabled={isSaving || disabled}
             >
               <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export function TaskRelationshipActionButtons({
     return (
       <Button
         variant="outline"
-        className="h-11 w-full justify-start gap-3 rounded-2xl border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
+        className="h-11 w-full justify-start gap-3 border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
         onClick={onCreateNew}
         disabled={isSaving || disabled}
       >
@@ -141,7 +141,7 @@ export function TaskRelationshipActionButtons({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-11 w-full justify-start gap-3 rounded-2xl border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
+            className="h-11 w-full justify-start gap-3 border-border/70 border-dashed bg-muted/10 px-3 text-muted-foreground hover:border-border hover:bg-muted/20 hover:text-foreground"
             disabled={isSaving || disabled}
           >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-green/10 text-dynamic-green">

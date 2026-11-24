@@ -107,7 +107,7 @@ export function InternalAppAccountConfirmation({
 
       <div className="flex flex-col gap-2.5">
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           disabled={controlsDisabled}
           onClick={onContinue}
         >
@@ -123,7 +123,7 @@ export function InternalAppAccountConfirmation({
           )}
         </Button>
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           disabled={controlsDisabled}
           onClick={onUseAnotherAccount}
           type="button"

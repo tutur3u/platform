@@ -135,15 +135,13 @@ export function CmsStorefrontClient({ workspaceId }: { workspaceId: string }) {
               {t('epm.storefront_description')}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="rounded-md capitalize">
+              <Badge variant="secondary" className="capitalize">
                 {storefront.status}
               </Badge>
-              <Badge variant="outline" className="rounded-md capitalize">
+              <Badge variant="outline" className="capitalize">
                 {storefront.visibility}
               </Badge>
-              <Badge variant="outline" className="rounded-md">
-                {storefront.currency}
-              </Badge>
+              <Badge variant="outline">{storefront.currency}</Badge>
             </div>
           </div>
           <Button asChild variant="outline">
@@ -183,7 +181,7 @@ export function CmsStorefrontClient({ workspaceId }: { workspaceId: string }) {
                   <span className="text-muted-foreground text-sm tabular-nums">
                     {numberFormatter.format(listing.price)}
                   </span>
-                  <Badge variant="secondary" className="rounded-md capitalize">
+                  <Badge variant="secondary" className="capitalize">
                     {listing.status}
                   </Badge>
                 </span>

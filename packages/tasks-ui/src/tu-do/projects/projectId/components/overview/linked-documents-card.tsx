@@ -60,9 +60,7 @@ export function OverviewLinkedDocuments() {
                 {document.priority ? (
                   <PriorityBadge priority={document.priority} />
                 ) : (
-                  <Badge variant="outline" className="rounded-md">
-                    {t('document')}
-                  </Badge>
+                  <Badge variant="outline">{t('document')}</Badge>
                 )}
               </div>
             ))}

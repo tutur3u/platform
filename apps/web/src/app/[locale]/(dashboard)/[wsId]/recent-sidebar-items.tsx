@@ -516,7 +516,7 @@ export function RecentSidebarItems({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 rounded-md px-2 text-muted-foreground text-xs hover:text-foreground"
+            className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
             onClick={clearAll}
           >
             {t('common.clear_all')}
@@ -572,7 +572,7 @@ export function RecentSidebarItems({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 rounded-md bg-background/90 text-muted-foreground opacity-0 shadow-sm transition hover:text-foreground focus-visible:opacity-100 group-hover/item:opacity-100"
+                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 bg-background/90 text-muted-foreground opacity-0 shadow-sm transition hover:text-foreground focus-visible:opacity-100 group-hover/item:opacity-100"
                 onClick={(event: MouseEvent<HTMLButtonElement>) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -589,7 +589,7 @@ export function RecentSidebarItems({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-full justify-start gap-1.5 rounded-lg px-2 text-muted-foreground text-xs hover:text-foreground"
+              className="h-7 w-full justify-start gap-1.5 px-2 text-muted-foreground text-xs hover:text-foreground"
               onClick={() => setShowAll((value) => !value)}
             >
               {showAll ? (

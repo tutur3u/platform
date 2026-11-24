@@ -41,7 +41,7 @@ export function AssignmentRow({
             {assignment.title ?? t('assignments.untitled')}
           </h3>
           {assignment.is_completed ? (
-            <Badge className="rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
+            <Badge className="border border-border bg-primary text-primary-foreground hover:bg-primary">
               {completedLabel}
             </Badge>
           ) : null}

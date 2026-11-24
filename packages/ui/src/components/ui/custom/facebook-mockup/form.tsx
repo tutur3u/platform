@@ -72,7 +72,7 @@ function ToolbarIconButton({
           aria-pressed={active}
           disabled={disabled}
           className={cn(
-            'size-9 rounded-lg border border-transparent',
+            'size-9 border border-transparent',
             active
               ? 'border-dynamic-blue/20 bg-background text-dynamic-blue shadow-sm hover:bg-background'
               : 'text-muted-foreground hover:bg-background/80 hover:text-foreground'
@@ -243,7 +243,7 @@ function ReactionVisibilityToggle({
           variant="ghost"
           size="icon"
           aria-label={moveUpLabel}
-          className="size-8 rounded-lg"
+          className="size-8"
           disabled={!canMoveUp}
           onClick={onMoveUp}
         >
@@ -256,7 +256,7 @@ function ReactionVisibilityToggle({
           variant="ghost"
           size="icon"
           aria-label={moveDownLabel}
-          className="size-8 rounded-lg"
+          className="size-8"
           disabled={!canMoveDown}
           onClick={onMoveDown}
         >

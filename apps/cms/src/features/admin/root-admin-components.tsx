@@ -112,7 +112,6 @@ export function WorkspaceStatusBadge({ enabled }: { enabled: boolean }) {
     <Badge
       variant="outline"
       className={cn(
-        'rounded-md',
         enabled
           ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
           : 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
@@ -156,7 +155,7 @@ export function WorkspaceSummaryButton({
             {workspace.personal ? (
               <Badge
                 variant="secondary"
-                className="rounded-md bg-background/80 text-foreground"
+                className="bg-background/80 text-foreground"
               >
                 {t('common.personal_account')}
               </Badge>
@@ -219,13 +218,10 @@ export function ProjectRegistryCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="rounded-md">
+            <Badge variant="secondary">
               {formatCanonicalToken(project.adapter)}
             </Badge>
-            <Badge
-              variant={isActive ? 'default' : 'outline'}
-              className="rounded-md"
-            >
+            <Badge variant={isActive ? 'default' : 'outline'}>
               {isActive ? tRoot('active_label') : tRoot('inactive_label')}
             </Badge>
           </div>
@@ -299,11 +295,7 @@ export function ProjectRegistryCard({
             </div>
             <div className="flex flex-wrap gap-2">
               {project.allowed_collections.map((collection) => (
-                <Badge
-                  key={collection}
-                  variant="secondary"
-                  className="rounded-md"
-                >
+                <Badge key={collection} variant="secondary">
                   {formatCanonicalToken(collection)}
                 </Badge>
               ))}

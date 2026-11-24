@@ -175,7 +175,6 @@ export function ResponsesPanel({
               size="sm"
               disabled={isRefreshing}
               onClick={onRefresh}
-              className="rounded-xl"
             >
               <RefreshCcw
                 className={cn('mr-2 h-4 w-4', isRefreshing && 'animate-spin')}
@@ -187,20 +186,19 @@ export function ResponsesPanel({
               variant="outline"
               size="sm"
               onClick={() => setAllExpanded(!allExpanded)}
-              className="rounded-xl"
             >
               {allExpanded
                 ? t('responses.collapse_all')
                 : t('responses.expand_all')}
             </Button>
-            <Button asChild variant="outline" size="sm" className="rounded-xl">
+            <Button asChild variant="outline" size="sm">
               <a
                 href={`/api/v1/workspaces/${wsId}/forms/${formId}/responses/export`}
               >
                 {t('responses.export_csv')}
               </a>
             </Button>
-            <Button asChild variant="outline" size="sm" className="rounded-xl">
+            <Button asChild variant="outline" size="sm">
               <a
                 href={`/api/v1/workspaces/${wsId}/forms/${formId}/responses/export?format=xlsx`}
               >
@@ -226,7 +224,7 @@ export function ResponsesPanel({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="rounded-xl text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive"
                 >
                   <Trash className="mr-2 h-4 w-4" />
                   {t('responses.clear_all')}
@@ -298,7 +296,6 @@ export function ResponsesPanel({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="rounded-xl"
                   onClick={() => setShowAllQuestionAnalytics(true)}
                 >
                   {t('responses.show_more_questions', {
@@ -310,7 +307,6 @@ export function ResponsesPanel({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="rounded-xl"
                   onClick={() => setShowAllQuestionAnalytics(false)}
                 >
                   {t('responses.show_less_questions')}
@@ -362,7 +358,6 @@ export function ResponsesPanel({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-xl"
                 onClick={() => setShowAllQuestionAnalytics(false)}
               >
                 {t('responses.show_less_questions')}

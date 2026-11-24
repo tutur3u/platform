@@ -64,10 +64,7 @@ function SuggestionChip({
   icon: React.ReactNode;
 }) {
   return (
-    <Badge
-      variant="secondary"
-      className="h-6 gap-1 rounded-md px-1.5 font-normal text-xs"
-    >
+    <Badge variant="secondary" className="h-6 gap-1 px-1.5 font-normal text-xs">
       {icon}
       <span className="max-w-28 truncate">{children}</span>
     </Badge>

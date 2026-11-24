@@ -63,7 +63,7 @@ export function InvalidReturnUrlWarning({
       </div>
 
       <Button
-        className="h-12 w-full rounded-2xl font-bold"
+        className="h-12 w-full font-bold"
         onClick={linkIsInvalid ? onClear : () => window.location.reload()}
         type="button"
       >

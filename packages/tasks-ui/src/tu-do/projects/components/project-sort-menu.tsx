@@ -42,7 +42,7 @@ export function ProjectSortMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 rounded-md">
+        <Button variant="outline" size="sm" className="gap-2">
           <ChevronDown className="h-4 w-4" />
           {t('sort')}
         </Button>

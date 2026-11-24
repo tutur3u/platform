@@ -118,7 +118,7 @@ function VideoPreview({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 rounded-lg"
+          className="size-8 shrink-0"
           aria-label={stopLabel}
           title={stopLabel}
           onClick={onClose}

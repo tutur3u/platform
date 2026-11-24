@@ -58,7 +58,7 @@ export function ChatBox({ onSubmit, disabled, connected }: ChatBoxProps) {
           type="submit"
           variant="secondary"
           size="icon"
-          className="shrink-0 rounded-xl"
+          className="shrink-0"
           disabled={isDisabled || !input.trim()}
           aria-label={t('send')}
         >

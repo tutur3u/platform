@@ -73,7 +73,6 @@ export function PublishChecklist({
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
-                  className="rounded-xl"
                   disabled={duplicateMutation.isPending}
                   onClick={() =>
                     duplicateMutation.mutate({
@@ -92,7 +91,6 @@ export function PublishChecklist({
                 </Button>
                 <Button
                   variant="destructive"
-                  className="rounded-xl"
                   disabled={deleteModuleMutation.isPending}
                   onClick={() =>
                     deleteModuleMutation.mutate({

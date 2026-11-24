@@ -88,7 +88,7 @@ export function Reauthenticate({
               </p>
             )}
             <Button
-              className="h-12 w-full rounded-2xl font-bold"
+              className="h-12 w-full font-bold"
               disabled={verify.isPending || !/^\d{6}$/.test(code)}
               type="submit"
             >
@@ -102,7 +102,7 @@ export function Reauthenticate({
       </RequiredMfaEnrollment>
       {/* Outside the enrolment surface, as before: always available. */}
       <Button
-        className="h-12 w-full rounded-2xl font-bold"
+        className="h-12 w-full font-bold"
         onClick={() => void signInAgain()}
         variant="ghost"
       >

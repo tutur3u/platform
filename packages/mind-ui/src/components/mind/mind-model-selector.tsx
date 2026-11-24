@@ -70,7 +70,7 @@ export function MindModelSelector({ model, onModelChange }: Props) {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          className="h-8 w-full min-w-0 justify-start gap-2 rounded-md px-3 font-mono text-muted-foreground text-sm"
+          className="h-8 w-full min-w-0 justify-start gap-2 px-3 font-mono text-muted-foreground text-sm"
           size="sm"
           type="button"
           variant="ghost"

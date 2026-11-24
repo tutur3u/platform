@@ -34,7 +34,7 @@ export function CmsEntryActionsMenu({
         <Button
           size="icon"
           variant="ghost"
-          className="h-8 w-8 rounded-md"
+          className="h-8 w-8"
           aria-label={`${entry.title} ${strings.manageCollectionAction}`}
         >
           <Ellipsis className="h-4 w-4" />

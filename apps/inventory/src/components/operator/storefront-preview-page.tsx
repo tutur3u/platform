@@ -138,7 +138,7 @@ export function StorefrontPreviewPage({
             return (
               <Button
                 className={cn(
-                  'inline-flex h-9 items-center gap-2 rounded-sm px-3 font-medium text-sm transition',
+                  'inline-flex h-9 items-center gap-2 px-3 font-medium text-sm transition',
                   device === value
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-muted'

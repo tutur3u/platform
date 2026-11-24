@@ -527,7 +527,7 @@ export function LearnerQuizzes({
                 aria-busy={isSubmitting}
                 onClick={handleSubmit}
                 disabled={!canSubmit || isSubmitting || isDeadlinePassed}
-                className="h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="h-12 border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />

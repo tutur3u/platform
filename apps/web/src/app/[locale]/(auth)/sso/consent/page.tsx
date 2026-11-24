@@ -72,7 +72,7 @@ export default async function ConsentPage({
             title={t('title')}
             titleAs="h1"
           >
-            <Button asChild className="h-12 w-full rounded-2xl font-bold">
+            <Button asChild className="h-12 w-full font-bold">
               <a href={loginPath}>{t('sign_in')}</a>
             </Button>
           </AuthStateCard>
@@ -121,7 +121,7 @@ export default async function ConsentPage({
           <input type="hidden" name="locale" value={locale} />
           <Button
             type="submit"
-            className="h-12 rounded-2xl font-bold"
+            className="h-12 font-bold"
             name="decision"
             value="deny"
             variant="outline"
@@ -130,7 +130,7 @@ export default async function ConsentPage({
           </Button>
           <Button
             type="submit"
-            className="h-12 rounded-2xl font-bold"
+            className="h-12 font-bold"
             name="decision"
             value="approve"
           >

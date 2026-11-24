@@ -176,7 +176,7 @@ export function StructuredQuizPreview({
                     size="icon"
                     disabled={index === 0}
                     onClick={() => moveItem(index, 'up')}
-                    className="h-8 w-8 rounded-lg border border-border p-0 hover:bg-muted/10"
+                    className="h-8 w-8 border border-border p-0 hover:bg-muted/10"
                   >
                     <ChevronUp className="h-4 w-4" />
                   </Button>
@@ -186,7 +186,7 @@ export function StructuredQuizPreview({
                     size="icon"
                     disabled={index === items.length - 1}
                     onClick={() => moveItem(index, 'down')}
-                    className="h-8 w-8 rounded-lg border border-border p-0 hover:bg-muted/10"
+                    className="h-8 w-8 border border-border p-0 hover:bg-muted/10"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>

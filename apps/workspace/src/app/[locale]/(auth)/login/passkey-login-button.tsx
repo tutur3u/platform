@@ -112,7 +112,7 @@ export function PasskeyLoginButton({
       <Button
         type="button"
         variant="outline"
-        className="h-12 w-full rounded-2xl font-medium"
+        className="h-12 w-full font-medium"
         disabled={disabled || isAuthenticating || isTurnstileBlocked}
         onClick={handlePasskeyLogin}
         aria-describedby={turnstileBlockReason ? turnstileErrorId : undefined}

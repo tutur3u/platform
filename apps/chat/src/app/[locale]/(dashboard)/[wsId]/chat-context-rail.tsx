@@ -263,7 +263,7 @@ function RailButton({
       aria-busy={srLabel ? true : undefined}
       aria-label={srLabel ?? label}
       className={cn(
-        'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 transition-colors',
+        'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 p-0 transition-colors',
         active
           ? 'bg-foreground text-background hover:bg-foreground/90'
           : 'bg-background hover:bg-accent',

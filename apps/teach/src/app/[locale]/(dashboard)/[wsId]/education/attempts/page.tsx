@@ -257,7 +257,7 @@ export default async function QuizAttemptsPage({
 
           <input type="hidden" name="pageSize" value={String(pageSize)} />
           <div className="flex items-end md:col-span-6">
-            <Button type="submit" className="rounded-xl">
+            <Button type="submit">
               <Filter className="h-4 w-4" />
               {t('common.apply_filters')}
             </Button>

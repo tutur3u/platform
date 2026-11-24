@@ -76,10 +76,7 @@ export function WelcomeScreen({
 
         <div className="flex flex-wrap items-center gap-4">
           <Button
-            className={cn(
-              'rounded-2xl px-6',
-              toneClasses.primaryButtonClassName
-            )}
+            className={cn('px-6', toneClasses.primaryButtonClassName)}
             onClick={onStart}
             size="lg"
             type="button"

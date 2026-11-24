@@ -116,7 +116,7 @@ export function ProfileLoadingState({
       <div className="space-y-3">
         <Skeleton aria-hidden className="h-12 w-full rounded-2xl" />
         <Button
-          className="h-11 w-full rounded-2xl"
+          className="h-11 w-full"
           disabled={disabled}
           onClick={onUseAnotherAccount}
           type="button"
@@ -158,7 +158,7 @@ export function ProfileUnavailableState({
 
       <div className="space-y-3">
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           disabled={disabled}
           onClick={onRetryProfile}
           type="button"
@@ -167,7 +167,7 @@ export function ProfileUnavailableState({
           {t('login.retry_profile_load')}
         </Button>
         <Button
-          className="h-11 w-full rounded-2xl"
+          className="h-11 w-full"
           disabled={disabled}
           onClick={onUseAnotherAccount}
           type="button"

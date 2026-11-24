@@ -631,7 +631,7 @@ export function MindCanvasInner({
         {nodes.length === 0 ? (
           <div className="pointer-events-none absolute inset-x-4 top-[32%] z-20 flex justify-center">
             <Button
-              className="pointer-events-auto gap-2 rounded-md"
+              className="pointer-events-auto gap-2"
               disabled={disabled}
               onClick={addNode}
               size="sm"

@@ -148,7 +148,7 @@ export function renderQuestionEditorChoiceOptions({
               type="button"
               variant="ghost"
               size="icon"
-              className="mt-7 rounded-xl"
+              className="mt-7"
               onClick={() => optionsArray.remove(optionIndex)}
             >
               <Trash className="h-4 w-4" />
@@ -190,10 +190,7 @@ export function renderQuestionEditorChoiceOptions({
       <Button
         type="button"
         variant="outline"
-        className={cn(
-          'w-full rounded-xl',
-          toneClasses.secondaryButtonClassName
-        )}
+        className={cn('w-full', toneClasses.secondaryButtonClassName)}
         onClick={addOption}
       >
         <Plus className="mr-2 h-4 w-4" />

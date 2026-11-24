@@ -256,7 +256,7 @@ export function Filter({
                   <>
                     <Badge
                       variant="secondary"
-                      className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80 lg:hidden"
+                      className="bg-background/80 px-1 font-normal text-foreground hover:bg-background/80 lg:hidden"
                     >
                       {selectedSize}
                     </Badge>
@@ -264,7 +264,7 @@ export function Filter({
                       {selectedSize > 2 || alwaysShowNumber ? (
                         <Badge
                           variant="secondary"
-                          className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
+                          className="bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
                         >
                           {selectedSize} selected
                         </Badge>
@@ -276,7 +276,7 @@ export function Filter({
                             <Badge
                               variant="secondary"
                               key={option.value}
-                              className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
+                              className="bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
                             >
                               {option.label}
                             </Badge>

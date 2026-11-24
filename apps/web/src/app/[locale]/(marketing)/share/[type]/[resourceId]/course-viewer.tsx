@@ -161,7 +161,7 @@ export function CourseViewer({
                             <Badge
                               aria-label={t('share-course.quiz_label')}
                               variant="outline"
-                              className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
+                              className="h-5 border-foreground/10 px-1.5 text-[10px] text-foreground/60"
                             >
                               {t('share-course.quiz_short')} {module.quizzes}
                             </Badge>
@@ -170,7 +170,7 @@ export function CourseViewer({
                             <Badge
                               aria-label={t('share-course.quiz_set_label')}
                               variant="outline"
-                              className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
+                              className="h-5 border-foreground/10 px-1.5 text-[10px] text-foreground/60"
                             >
                               {t('share-course.quiz_set_short')}{' '}
                               {module.quizSets}
@@ -180,7 +180,7 @@ export function CourseViewer({
                             <Badge
                               aria-label={t('share-course.flashcard_label')}
                               variant="outline"
-                              className="h-5 rounded-sm border-foreground/10 px-1.5 text-[10px] text-foreground/60"
+                              className="h-5 border-foreground/10 px-1.5 text-[10px] text-foreground/60"
                             >
                               {t('share-course.flashcard_short')}{' '}
                               {module.flashcards}

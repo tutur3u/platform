@@ -75,7 +75,7 @@ export function HiveNoServerState({
 
         {isAdmin ? (
           <Button
-            className="mt-3 h-8 w-full gap-2 rounded-md"
+            className="mt-3 h-8 w-full gap-2"
             onClick={onCreateServer}
             size="sm"
             type="button"

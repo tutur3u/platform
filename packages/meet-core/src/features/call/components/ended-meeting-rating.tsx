@@ -81,7 +81,7 @@ export function EndedMeetingRating({
               disabled={save.isPending}
               onClick={() => save.mutate(value)}
               className={cn(
-                'size-11 rounded-xl text-muted-foreground',
+                'size-11 text-muted-foreground',
                 filled && 'text-foreground'
               )}
             >

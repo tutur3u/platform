@@ -46,11 +46,11 @@ export function AuthRecoveryView({
         title={t('link_expired_title')}
         titleAs="h1"
       >
-        <Button asChild className="h-12 w-full rounded-2xl font-bold">
+        <Button asChild className="h-12 w-full font-bold">
           <a href={loginHref}>{t('back_to_sign_in')}</a>
         </Button>
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           onClick={() => setEnterCode(true)}
           type="button"
           variant="outline"

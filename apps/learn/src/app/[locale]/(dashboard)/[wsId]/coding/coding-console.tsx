@@ -247,7 +247,7 @@ export function CodingConsole({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                      className="border px-2 py-1 text-xs hover:bg-accent"
                       onClick={() => onRestore(execution)}
                       type="button"
                     >
@@ -279,7 +279,7 @@ export function CodingConsole({
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+                className="border px-3 py-1.5 text-sm hover:bg-accent"
                 disabled={historyLoading}
                 onClick={onLoadMore}
                 type="button"

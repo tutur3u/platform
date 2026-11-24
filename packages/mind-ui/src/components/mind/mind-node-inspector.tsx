@@ -304,7 +304,7 @@ function NodeSmartActions({
           const Icon = action.icon;
           return (
             <Button
-              className="h-9 min-w-0 justify-start gap-1.5 rounded-md bg-background/70 px-2 text-xs hover:bg-muted"
+              className="h-9 min-w-0 justify-start gap-1.5 bg-background/70 px-2 text-xs hover:bg-muted"
               key={action.label}
               onClick={() => onSmartPrompt(action.prompt)}
               size="sm"
@@ -317,7 +317,7 @@ function NodeSmartActions({
           );
         })}
         <Button
-          className="col-span-2 h-9 justify-start gap-1.5 rounded-md border border-dynamic-blue/35 bg-dynamic-blue/10 px-2 text-dynamic-blue text-xs hover:bg-dynamic-blue/15"
+          className="col-span-2 h-9 justify-start gap-1.5 border border-dynamic-blue/35 bg-dynamic-blue/10 px-2 text-dynamic-blue text-xs hover:bg-dynamic-blue/15"
           onClick={() =>
             onSmartPrompt(
               t('smartPrompts.expandSystem', {

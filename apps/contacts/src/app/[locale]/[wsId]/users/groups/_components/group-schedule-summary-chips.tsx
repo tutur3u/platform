@@ -36,7 +36,7 @@ export function GroupScheduleSummaryChips({
       {visiblePatterns.length > 0 ? (
         visiblePatterns.map((pattern) => (
           <Badge
-            className="max-w-full rounded-sm px-1.5 py-0 font-normal text-xs"
+            className="max-w-full px-1.5 py-0 font-normal text-xs"
             key={`${pattern.startTime}-${pattern.endTime}-${pattern.daysOfWeek.join('-')}`}
             variant="secondary"
           >
@@ -46,20 +46,14 @@ export function GroupScheduleSummaryChips({
           </Badge>
         ))
       ) : (
-        <Badge
-          className="rounded-sm px-1.5 py-0 font-normal text-xs"
-          variant="outline"
-        >
+        <Badge className="px-1.5 py-0 font-normal text-xs" variant="outline">
           {summary.upcomingCount > 0
             ? t('schedule_upcoming_count', { count: summary.upcomingCount })
             : t('schedule_no_upcoming')}
         </Badge>
       )}
       {summary.exceptionCount > 0 && (
-        <Badge
-          className="rounded-sm px-1.5 py-0 font-normal text-xs"
-          variant="outline"
-        >
+        <Badge className="px-1.5 py-0 font-normal text-xs" variant="outline">
           {t('schedule_exception_count', { count: summary.exceptionCount })}
         </Badge>
       )}

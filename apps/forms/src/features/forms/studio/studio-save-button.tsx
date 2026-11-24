@@ -66,7 +66,7 @@ export function StudioSaveButton({
 
   return (
     <Button
-      className={cn('rounded-2xl px-5', className)}
+      className={cn('px-5', className)}
       disabled={disabled}
       onClick={onClick}
       ref={buttonRef}

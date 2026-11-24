@@ -200,10 +200,7 @@ function ItemAction({ label }: { label: string }) {
 
 function StatusBadge({ label }: { label: string }) {
   return (
-    <Badge
-      className="h-5 rounded-md px-1.5 text-[10px] uppercase"
-      variant="outline"
-    >
+    <Badge className="h-5 px-1.5 text-[10px] uppercase" variant="outline">
       {label}
     </Badge>
   );

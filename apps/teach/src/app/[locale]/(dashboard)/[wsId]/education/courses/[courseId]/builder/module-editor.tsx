@@ -68,7 +68,7 @@ export function ModuleEditor({
             submitLabel={t('common.upload')}
             path={`${resolvedWsId}/courses/${courseId}/modules/${activeModule.id}/resources/`}
           />
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link
               href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/resources`}
             >
@@ -88,7 +88,7 @@ export function ModuleEditor({
 
         <TabsContent value="quiz-sets" className="space-y-3">
           <QuizSetForm wsId={resolvedWsId} moduleId={activeModule.id} />
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link
               href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/quiz-sets`}
             >
@@ -100,7 +100,7 @@ export function ModuleEditor({
 
         <TabsContent value="quizzes" className="space-y-3">
           <QuizForm wsId={resolvedWsId} moduleId={activeModule.id} />
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link
               href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/quizzes`}
             >
@@ -112,7 +112,7 @@ export function ModuleEditor({
 
         <TabsContent value="flashcards" className="space-y-3">
           <FlashcardForm wsId={resolvedWsId} moduleId={activeModule.id} />
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link
               href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/flashcards`}
             >
@@ -123,7 +123,7 @@ export function ModuleEditor({
         </TabsContent>
 
         <TabsContent value="extra" className="space-y-3">
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link
               href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/extra-content`}
             >

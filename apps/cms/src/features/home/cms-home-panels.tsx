@@ -26,7 +26,7 @@ export function QueuePanel({
           <span className="text-muted-foreground">{icon}</span>
           <h2 className="truncate font-medium text-sm">{title}</h2>
         </div>
-        <Badge variant="outline" className="shrink-0 rounded-md tabular-nums">
+        <Badge variant="outline" className="shrink-0 tabular-nums">
           {items.length}
         </Badge>
       </div>
@@ -51,7 +51,7 @@ export function QueuePanel({
                     {item.collectionTitle} / {urlPathLabel}: {item.slug}
                   </div>
                 </div>
-                <Badge variant="secondary" className="shrink-0 rounded-md">
+                <Badge variant="secondary" className="shrink-0">
                   {item.status}
                 </Badge>
               </div>

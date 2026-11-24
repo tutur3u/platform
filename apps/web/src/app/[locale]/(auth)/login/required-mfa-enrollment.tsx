@@ -95,7 +95,7 @@ export function RequiredMfaEnrollment({
         title={t('required_mfa_recovery_title')}
       >
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           onClick={() => void signInAgain()}
         >
           {t('required_mfa_sign_in_again')}
@@ -141,7 +141,7 @@ export function RequiredMfaEnrollment({
       ) : null}
       {factors.isError ? (
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           onClick={() => factors.refetch()}
         >
           {t('required_mfa_retry')}
@@ -176,7 +176,7 @@ export function RequiredMfaEnrollment({
             />
           </div>
           <Button
-            className="h-12 w-full rounded-2xl font-bold"
+            className="h-12 w-full font-bold"
             disabled={code.length !== 6 || verify.isPending}
             type="submit"
           >
@@ -186,7 +186,7 @@ export function RequiredMfaEnrollment({
         </form>
       ) : (
         <Button
-          className="h-12 w-full rounded-2xl font-bold"
+          className="h-12 w-full font-bold"
           disabled={enroll.isPending}
           onClick={() => enroll.mutate()}
         >

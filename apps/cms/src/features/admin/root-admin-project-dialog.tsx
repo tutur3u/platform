@@ -116,10 +116,7 @@ export function RootAdminProjectDialog({
               </DialogDescription>
             </div>
             {workspace ? (
-              <Badge
-                variant={isConnected ? 'default' : 'outline'}
-                className="rounded-md"
-              >
+              <Badge variant={isConnected ? 'default' : 'outline'}>
                 {isConnected ? (
                   <Link className="mr-1 h-3.5 w-3.5" />
                 ) : (

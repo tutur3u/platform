@@ -54,13 +54,10 @@ export function TemplateEditorCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="rounded-md">
+            <Badge variant="secondary">
               {formatAdminToken(template.adapter)}
             </Badge>
-            <Badge
-              variant={isActive ? 'default' : 'outline'}
-              className="rounded-md"
-            >
+            <Badge variant={isActive ? 'default' : 'outline'}>
               {isActive ? strings.activeLabel : strings.inactiveLabel}
             </Badge>
           </div>
@@ -196,7 +193,7 @@ export function SectionBadges({ sections }: { sections: string[] }) {
   return (
     <div className="flex flex-wrap gap-2">
       {sections.map((section) => (
-        <Badge key={section} variant="secondary" className="rounded-md">
+        <Badge key={section} variant="secondary">
           {formatAdminToken(section)}
         </Badge>
       ))}

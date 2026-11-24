@@ -140,7 +140,7 @@ export function InternalAppAccountConfirmation({
 
       <div className="space-y-3">
         <Button
-          className="group h-12 w-full rounded-2xl font-medium shadow-lg"
+          className="group h-12 w-full font-medium shadow-lg"
           aria-busy={confirming}
           disabled={controlsDisabled}
           onClick={onContinue}
@@ -154,7 +154,7 @@ export function InternalAppAccountConfirmation({
           )}
         </Button>
         <Button
-          className="h-11 w-full rounded-2xl"
+          className="h-11 w-full"
           disabled={controlsDisabled}
           onClick={onUseAnotherAccount}
           type="button"

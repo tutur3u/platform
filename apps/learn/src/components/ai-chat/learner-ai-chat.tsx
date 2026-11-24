@@ -104,7 +104,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
             </p>
           </div>
           <Button
-            className="rounded-lg border border-border font-semibold"
+            className="border border-border font-semibold"
             onClick={() => {
               if (isBusy) stop();
               setChatId(generateRandomUUID());
@@ -152,7 +152,7 @@ export function LearnerAiChat({ wsId }: { wsId: string }) {
               value={input}
             />
             <Button
-              className="h-11 rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary"
+              className="h-11 border border-border bg-primary text-primary-foreground hover:bg-primary"
               disabled={!input.trim() || isBusy}
               size="icon"
               type="submit"

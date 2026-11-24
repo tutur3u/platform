@@ -65,7 +65,7 @@ export function InvalidReturnUrlWarning({
       </p>
 
       <Button
-        className="group h-12 w-full rounded-2xl font-medium shadow-lg"
+        className="group h-12 w-full font-medium shadow-lg"
         onClick={onClear}
         type="button"
       >

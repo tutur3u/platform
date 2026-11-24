@@ -159,25 +159,19 @@ function MemberMultiFilter({
           {selectedSet.size > 0 && (
             <>
               <Separator className="mx-2 h-4" orientation="vertical" />
-              <Badge
-                className="rounded-sm px-1 font-normal lg:hidden"
-                variant="secondary"
-              >
+              <Badge className="px-1 font-normal lg:hidden" variant="secondary">
                 {selectedSet.size}
               </Badge>
               <div className="hidden max-w-64 gap-1 lg:flex">
                 {selectedOptions.length > 2 ||
                 selectedOptions.length !== selectedSet.size ? (
-                  <Badge
-                    className="rounded-sm px-1 font-normal"
-                    variant="secondary"
-                  >
+                  <Badge className="px-1 font-normal" variant="secondary">
                     {t('selected_count', { count: selectedSet.size })}
                   </Badge>
                 ) : (
                   selectedOptions.map((option) => (
                     <Badge
-                      className="max-w-32 truncate rounded-sm px-1 font-normal"
+                      className="max-w-32 truncate px-1 font-normal"
                       key={option.value}
                       variant="secondary"
                     >

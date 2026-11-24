@@ -273,7 +273,7 @@ export function AuditLogInsights({
                 <Button
                   type="button"
                   variant={selectedPeriod === 'monthly' ? 'default' : 'ghost'}
-                  className="h-10 rounded-xl"
+                  className="h-10"
                   disabled={isPending}
                   onClick={() => handlePeriodChange('monthly')}
                 >
@@ -282,7 +282,7 @@ export function AuditLogInsights({
                 <Button
                   type="button"
                   variant={selectedPeriod === 'yearly' ? 'default' : 'ghost'}
-                  className="h-10 rounded-xl"
+                  className="h-10"
                   disabled={isPending}
                   onClick={() => handlePeriodChange('yearly')}
                 >
@@ -321,7 +321,7 @@ export function AuditLogInsights({
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-11 flex-1 justify-between rounded-xl border-dashed"
+                      className="h-11 flex-1 justify-between border-dashed"
                     >
                       <span className="flex items-center gap-2">
                         <Upload className="h-4 w-4" />
@@ -355,7 +355,7 @@ export function AuditLogInsights({
               {canRepairStatusHistory ? (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="h-11 rounded-xl">
+                    <Button variant="outline" className="h-11">
                       <RefreshCcw className="h-4 w-4" />
                       {t('repair_button')}
                     </Button>

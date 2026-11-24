@@ -38,7 +38,7 @@ export function CmsHomeHeader({
     <section className="overflow-hidden rounded-xl border border-border/70 bg-card/80">
       <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="min-w-0">
-          <Badge variant="secondary" className="gap-1.5 rounded-md">
+          <Badge variant="secondary" className="gap-1.5">
             {needsReview ? (
               <AlertCircle className="size-3.5 text-dynamic-orange" />
             ) : (

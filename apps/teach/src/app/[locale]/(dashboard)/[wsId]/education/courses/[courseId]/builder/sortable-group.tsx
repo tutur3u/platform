@@ -167,7 +167,7 @@ export function SortableGroup({
                 variant="ghost"
                 size="icon"
                 aria-label={t('create')}
-                className="h-7 w-7 rounded-lg"
+                className="h-7 w-7"
                 title={t('create')}
               >
                 <Plus className="h-4 w-4" />
@@ -176,11 +176,7 @@ export function SortableGroup({
           />
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-lg"
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7">
                 <Ellipsis className="h-4 w-4" />
                 <span className="sr-only">{tc('actions')}</span>
               </Button>

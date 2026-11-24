@@ -109,7 +109,7 @@ export function OutlinePane({
           type="button"
           variant="ghost"
           size="sm"
-          className="justify-start rounded-xl text-xs"
+          className="justify-start text-xs"
           onClick={onAddSection}
         >
           <Plus className="h-3.5 w-3.5" />

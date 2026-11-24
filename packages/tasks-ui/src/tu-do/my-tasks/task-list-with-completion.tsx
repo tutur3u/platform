@@ -807,7 +807,7 @@ export default function TaskListWithCompletion({
             variant="outline"
             size="default"
             onClick={() => setShowAll(!showAll)}
-            className="group h-11 gap-2.5 rounded-xl border-2 px-8 font-semibold shadow-sm transition-all duration-200 hover:scale-105 hover:border-primary hover:bg-primary/5 hover:shadow-lg"
+            className="group h-11 gap-2.5 border-2 px-8 font-semibold shadow-sm transition-all duration-200 hover:scale-105 hover:border-primary hover:bg-primary/5 hover:shadow-lg"
           >
             {showAll ? (
               <>

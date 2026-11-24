@@ -64,7 +64,7 @@ export function BulkActionsIsland({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 gap-1 rounded-lg px-2"
+              className="h-8 gap-1 px-2"
               disabled={bulkWorking}
               aria-label={t('common.bulk_actions')}
             >
@@ -81,7 +81,7 @@ export function BulkActionsIsland({
           variant="ghost"
           size="sm"
           onClick={onOpenBoardSelector}
-          className="h-8 gap-1 rounded-lg px-2"
+          className="h-8 gap-1 px-2"
           disabled={bulkWorking}
           aria-label={t('common.move')}
         >
@@ -93,7 +93,7 @@ export function BulkActionsIsland({
           variant="ghost"
           size="sm"
           onClick={onClearSelection}
-          className="h-8 gap-1 rounded-lg px-2"
+          className="h-8 gap-1 px-2"
           disabled={bulkWorking}
           aria-label={t('common.clear')}
         >

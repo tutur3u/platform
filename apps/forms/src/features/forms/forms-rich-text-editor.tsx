@@ -52,7 +52,7 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'h-8 w-8 rounded-xl border border-transparent',
+        'h-8 w-8 border border-transparent',
         active
           ? toneClasses.selectedOptionClassName
           : 'text-muted-foreground hover:border-border/60 hover:bg-background/70 hover:text-foreground'
@@ -263,7 +263,7 @@ export function FormsRichTextEditor({
               size="icon"
               variant="ghost"
               className={cn(
-                'h-8 w-8 rounded-xl border border-transparent',
+                'h-8 w-8 border border-transparent',
                 editor?.isActive('link')
                   ? toneClasses.selectedOptionClassName
                   : 'text-muted-foreground hover:border-border/60 hover:bg-background/70 hover:text-foreground'

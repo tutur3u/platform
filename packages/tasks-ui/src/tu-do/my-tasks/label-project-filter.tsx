@@ -142,7 +142,7 @@ export function LabelProjectFilter({
                     <Button
                       key={label.id}
                       onClick={() => handleLabelSelect(label.id)}
-                      className="flex h-auto w-full items-start justify-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      className="flex h-auto w-full items-start justify-start gap-2 px-2 py-2 text-sm hover:bg-muted"
                       variant="ghost"
                     >
                       <Checkbox checked={selectedLabelIds.includes(label.id)} />
@@ -178,7 +178,7 @@ export function LabelProjectFilter({
                     <Button
                       key={project.id}
                       onClick={() => handleProjectSelect(project.id)}
-                      className="flex h-auto w-full items-start justify-start gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
+                      className="flex h-auto w-full items-start justify-start gap-2 px-2 py-2 text-sm hover:bg-muted"
                       variant="ghost"
                     >
                       <Checkbox

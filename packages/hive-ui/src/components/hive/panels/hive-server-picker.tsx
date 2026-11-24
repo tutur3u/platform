@@ -75,7 +75,7 @@ export function HiveServerPicker({
             <PopoverTrigger asChild>
               <Button
                 aria-label={t('info')}
-                className="h-9 w-9 rounded-md border-border/60 bg-background/70 transition-transform duration-200 ease-out hover:-translate-y-0.5"
+                className="h-9 w-9 border-border/60 bg-background/70 transition-transform duration-200 ease-out hover:-translate-y-0.5"
                 size="icon"
                 type="button"
                 variant="outline"

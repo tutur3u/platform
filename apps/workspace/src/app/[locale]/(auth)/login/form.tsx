@@ -1821,7 +1821,7 @@ export default function LoginForm({
                   <Button
                     aria-busy={loading}
                     type="submit"
-                    className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                    className="h-12 w-full font-medium shadow-lg"
                     disabled={loading || totpForm.watch('totp').length !== 6}
                   >
                     {loading ? <LoadingIndicator className="h-4 w-4" /> : null}
@@ -1865,7 +1865,7 @@ export default function LoginForm({
                             <Button
                               type="button"
                               variant="secondary"
-                              className="h-10 rounded-xl"
+                              className="h-10"
                               disabled={
                                 createMobileMfaChallengeMutation.isPending ||
                                 loading
@@ -1891,7 +1891,7 @@ export default function LoginForm({
                           aria-busy={createMobileMfaChallengeMutation.isPending}
                           type="button"
                           variant="secondary"
-                          className="h-10 rounded-xl"
+                          className="h-10"
                           disabled={
                             createMobileMfaChallengeMutation.isPending ||
                             loading
@@ -2029,7 +2029,7 @@ export default function LoginForm({
                     <Button
                       aria-busy={loading || isResolvingOtpEnablement}
                       type="submit"
-                      className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                      className="h-12 w-full font-medium shadow-lg"
                       disabled={
                         isResolvingOtpEnablement ||
                         loading ||
@@ -2051,7 +2051,7 @@ export default function LoginForm({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-11 w-full rounded-2xl"
+                        className="h-11 w-full"
                         onClick={() => void advanceToPasswordStage()}
                         disabled={loading || isResolvingOtpEnablement}
                       >
@@ -2147,7 +2147,7 @@ export default function LoginForm({
                     <Button
                       aria-busy={loading}
                       type="submit"
-                      className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                      className="h-12 w-full font-medium shadow-lg"
                       disabled={loading || otpValue.length !== 6}
                     >
                       {loading ? (
@@ -2183,7 +2183,7 @@ export default function LoginForm({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-11 rounded-2xl"
+                        className="h-11"
                         onClick={() => void sendEmailOtp()}
                         disabled={
                           loading ||
@@ -2201,7 +2201,7 @@ export default function LoginForm({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-11 rounded-2xl"
+                        className="h-11"
                         onClick={() => void advanceToPasswordStage()}
                         disabled={loading}
                       >
@@ -2321,7 +2321,7 @@ export default function LoginForm({
                     <Button
                       aria-busy={loading}
                       type="submit"
-                      className="h-12 w-full rounded-2xl font-medium shadow-lg"
+                      className="h-12 w-full font-medium shadow-lg"
                       disabled={
                         loading ||
                         !passwordCredentialsAreValid ||
@@ -2341,7 +2341,7 @@ export default function LoginForm({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="h-11 w-full rounded-2xl"
+                        className="h-11 w-full"
                         onClick={() => void sendEmailOtp(true)}
                         disabled={loading}
                       >

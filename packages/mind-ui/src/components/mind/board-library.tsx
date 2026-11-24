@@ -53,7 +53,7 @@ export function BoardLibrary({
             trigger={
               <Button
                 aria-label={t('actions.createBoard')}
-                className="h-8 min-w-0 flex-1 justify-center gap-2 rounded-sm px-2"
+                className="h-8 min-w-0 flex-1 justify-center gap-2 px-2"
                 size="sm"
                 type="button"
               >
@@ -80,7 +80,7 @@ export function BoardLibrary({
           <div className="flex items-center justify-between gap-2 rounded-md border border-border/70 bg-muted/40 px-2 py-1 text-muted-foreground text-xs">
             <span className="min-w-0 truncate">{query}</span>
             <Button
-              className="h-6 rounded-sm px-2"
+              className="h-6 px-2"
               onClick={() => setQuery('')}
               size="sm"
               type="button"
@@ -115,7 +115,7 @@ export function BoardLibrary({
               </div>
               {onRetry ? (
                 <Button
-                  className="h-7 gap-2 rounded-sm"
+                  className="h-7 gap-2"
                   onClick={onRetry}
                   size="sm"
                   type="button"

@@ -123,9 +123,7 @@ export function CmsEntryIndexCard({
         onClick={() => onOpenEntry(entry.id)}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            className={cn('rounded-md border-0', statusTone(entry.status))}
-          >
+          <Badge className={cn('border-0', statusTone(entry.status))}>
             {formatStatus(entry.status, strings)}
           </Badge>
           <span className="truncate text-muted-foreground text-xs">
@@ -146,23 +144,18 @@ export function CmsEntryIndexCard({
         {taxonomyAvailable ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {category ? (
-              <Badge
-                variant="outline"
-                className="max-w-full truncate rounded-md"
-              >
+              <Badge variant="outline" className="max-w-full truncate">
                 <ListOrdered className="mr-1 h-3 w-3" />
                 {category}
               </Badge>
             ) : null}
             {tags.slice(0, 3).map((tag) => (
-              <Badge key={tag} variant="secondary" className="rounded-md">
+              <Badge key={tag} variant="secondary">
                 #{tag}
               </Badge>
             ))}
             {tags.length > 3 ? (
-              <Badge variant="secondary" className="rounded-md">
-                +{tags.length - 3}
-              </Badge>
+              <Badge variant="secondary">+{tags.length - 3}</Badge>
             ) : null}
             {!category && tags.length === 0 ? (
               <span className="text-muted-foreground text-xs">
@@ -180,7 +173,7 @@ export function CmsEntryIndexCard({
             size="sm"
             variant="outline"
             disabled={quickTaxonomyPending}
-            className="h-8 rounded-md"
+            className="h-8"
             onClick={() => onOpenQuickTaxonomy(entry.id)}
           >
             <Tags className="mr-2 h-3.5 w-3.5" />

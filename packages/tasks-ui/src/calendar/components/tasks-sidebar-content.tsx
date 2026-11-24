@@ -72,7 +72,7 @@ export default function TasksSidebarContent({
           size="icon"
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand sidebar"
-          className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
+          className="group relative overflow-hidden transition-all duration-200 hover:scale-105 hover:bg-accent/60"
         >
           <PanelLeftClose className="h-5 w-5 text-foreground transition-transform duration-200" />
           <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-blue/20 to-dynamic-purple/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
@@ -95,7 +95,7 @@ export default function TasksSidebarContent({
               size="icon"
               onClick={() => setIsCollapsed(true)}
               aria-label="Collapse sidebar"
-              className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
+              className="group relative overflow-hidden transition-all duration-200 hover:scale-105 hover:bg-accent/60"
             >
               <PanelRightClose className="h-5 w-5 text-foreground transition-transform duration-200" />
               <div className="absolute inset-0 -z-10 bg-linear-to-r from-dynamic-red/20 to-dynamic-orange/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />

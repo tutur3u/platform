@@ -83,26 +83,20 @@ function SessionBadges({ session }: { session: WorkspaceUserGroupSession }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
       {session.seriesId && (
-        <Badge
-          className="gap-1 rounded-sm px-1.5 py-0 text-xs"
-          variant="secondary"
-        >
+        <Badge className="gap-1 px-1.5 py-0 text-xs" variant="secondary">
           <Repeat className="h-3 w-3" />
           {t('recurring_badge')}
         </Badge>
       )}
       {session.files.length > 0 && (
-        <Badge
-          className="gap-1 rounded-sm px-1.5 py-0 text-xs"
-          variant="secondary"
-        >
+        <Badge className="gap-1 px-1.5 py-0 text-xs" variant="secondary">
           <Files className="h-3 w-3" />
           {t('files_attached_count', { count: session.files.length })}
         </Badge>
       )}
       {visibleTags.map((tag) => (
         <Badge
-          className="max-w-40 gap-1 rounded-sm px-1.5 py-0 text-xs"
+          className="max-w-40 gap-1 px-1.5 py-0 text-xs"
           key={tag.id}
           variant="outline"
         >

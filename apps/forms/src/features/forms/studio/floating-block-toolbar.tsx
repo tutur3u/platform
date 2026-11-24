@@ -53,7 +53,7 @@ export function FloatingBlockToolbar({
                 size="icon"
                 variant="ghost"
                 className={cn(
-                  'h-11 w-11 rounded-2xl',
+                  'h-11 w-11',
                   toneClasses.secondaryButtonClassName
                 )}
                 onClick={() =>

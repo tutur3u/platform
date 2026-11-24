@@ -143,7 +143,7 @@ export function PasswordStep({
           />
           <StepTurnstile turnstile={turnstile} />
           <Button
-            className="h-12 w-full rounded-2xl font-bold"
+            className="h-12 w-full font-bold"
             disabled={submitDisabled}
             type="submit"
             aria-busy={loading}

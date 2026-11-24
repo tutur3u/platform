@@ -391,7 +391,7 @@ export default function TransactionDefaultsSettings({
 
             <Button
               type="button"
-              className="w-full rounded-xl"
+              className="w-full"
               disabled={
                 isLoading ||
                 canChangeFinanceWallets === false ||
@@ -457,7 +457,7 @@ export default function TransactionDefaultsSettings({
 
             <Button
               type="button"
-              className="w-full rounded-xl"
+              className="w-full"
               disabled={
                 isLoading ||
                 updateCategoryMutation.isPending ||
@@ -526,7 +526,7 @@ export default function TransactionDefaultsSettings({
 
             <Button
               type="button"
-              className="w-full rounded-xl"
+              className="w-full"
               disabled={
                 isLoading ||
                 updateReconciliationCategoryMutation.isPending ||

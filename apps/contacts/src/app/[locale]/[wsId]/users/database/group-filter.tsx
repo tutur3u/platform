@@ -233,7 +233,7 @@ export function GroupFilter({
           <Button
             variant={hasActiveFilters ? 'secondary' : 'outline'}
             size="sm"
-            className="h-9 gap-2 rounded-xl px-3"
+            className="h-9 gap-2 px-3"
           >
             {filterType === 'excluded' ? (
               <MinusCircle className="h-3 w-3" />

@@ -172,7 +172,7 @@ export function CmsLibraryCommandCenter({
               <h2 className="font-semibold text-xl tracking-tight">
                 {strings.libraryCommandCenterTitle}
               </h2>
-              <Badge variant="secondary" className="rounded-md font-normal">
+              <Badge variant="secondary" className="font-normal">
                 {counts.collections} {strings.collectionsLabel}
               </Badge>
             </div>

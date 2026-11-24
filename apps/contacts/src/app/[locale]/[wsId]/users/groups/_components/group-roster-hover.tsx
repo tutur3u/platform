@@ -74,10 +74,7 @@ function RosterMemberRow({
         </div>
       </div>
       {member.role === 'TEACHER' && (
-        <Badge
-          className="rounded-sm px-1.5 py-0 text-[10px]"
-          variant="secondary"
-        >
+        <Badge className="px-1.5 py-0 text-[10px]" variant="secondary">
           {t('manager_role')}
         </Badge>
       )}
@@ -138,7 +135,7 @@ export function GroupRosterHover({
     <HoverCard openDelay={120} onOpenChange={setOpen}>
       <HoverCardTrigger asChild>
         <Button
-          className="h-7 min-w-0 gap-1.5 rounded-sm px-2 text-xs"
+          className="h-7 min-w-0 gap-1.5 px-2 text-xs"
           size="sm"
           type="button"
           variant="outline"

@@ -180,7 +180,7 @@ export function TimelineGrid({
                   <Badge
                     variant="outline"
                     className={cn(
-                      'max-w-[220px] truncate rounded-md',
+                      'max-w-[220px] truncate',
                       getListStatusBadgeClasses(groupList?.status)
                     )}
                   >

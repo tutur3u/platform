@@ -56,7 +56,7 @@ export default async function WorkspaceLibraryQuizzesPage({
           </div>
         }
         secondaryAction={
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link href={`/${routeWsId}/education/courses`}>
               {t('workspace-education-tabs.courses')}
             </Link>
@@ -68,7 +68,7 @@ export default async function WorkspaceLibraryQuizzesPage({
             createDescription={t('ws-quizzes.create_description')}
             form={<QuizForm wsId={resolvedWsId} />}
             trigger={
-              <Button className="h-11 rounded-2xl bg-foreground px-5 text-background">
+              <Button className="h-11 bg-foreground px-5 text-background">
                 <Plus className="h-4 w-4" />
                 {t('ws-quizzes.create')}
               </Button>

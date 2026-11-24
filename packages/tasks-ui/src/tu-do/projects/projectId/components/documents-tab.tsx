@@ -48,7 +48,7 @@ export function DocumentsTab({
             {t('description', { count: documents.length })}
           </p>
         </div>
-        <Badge variant="outline" className="w-fit rounded-md">
+        <Badge variant="outline" className="w-fit">
           {documents.length} {t('documents')}
         </Badge>
       </div>

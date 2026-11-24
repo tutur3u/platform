@@ -59,14 +59,14 @@ export function ProjectFilterMenu({
           variant="outline"
           size="sm"
           className={cn(
-            'gap-2 rounded-md',
+            'gap-2',
             hasActiveFilters && 'border-dynamic-blue/40 bg-dynamic-blue/10'
           )}
         >
           <Filter className="h-4 w-4" />
           {t('toolbar.filters')}
           {hasActiveFilters ? (
-            <Badge variant="secondary" className="h-5 rounded-sm px-1.5">
+            <Badge variant="secondary" className="h-5 px-1.5">
               {filterCount}
             </Badge>
           ) : null}

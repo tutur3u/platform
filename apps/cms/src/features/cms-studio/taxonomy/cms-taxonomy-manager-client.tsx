@@ -66,7 +66,7 @@ function TermColumn({
           <span className="text-muted-foreground">{icon}</span>
           <h2 className="font-semibold">{title}</h2>
         </div>
-        <Badge variant="outline" className="rounded-md tabular-nums">
+        <Badge variant="outline" className="tabular-nums">
           {terms.length}
         </Badge>
       </div>

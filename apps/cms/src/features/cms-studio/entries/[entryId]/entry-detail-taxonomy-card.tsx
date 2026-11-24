@@ -163,7 +163,7 @@ export function EntryDetailTaxonomyCard({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
-              <Badge variant="outline" className="size-6 rounded-md p-0">
+              <Badge variant="outline" className="size-6 p-0">
                 <ListOrdered className="m-auto h-3.5 w-3.5" />
               </Badge>
               {isTaxonomyConfigEditor
@@ -293,7 +293,7 @@ export function EntryDetailTaxonomyCard({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="space-y-0.5">
               <Label className="flex items-center gap-2">
-                <Badge variant="outline" className="size-6 rounded-md p-0">
+                <Badge variant="outline" className="size-6 p-0">
                   <Tags className="m-auto h-3.5 w-3.5" />
                 </Badge>
                 {isTaxonomyConfigEditor

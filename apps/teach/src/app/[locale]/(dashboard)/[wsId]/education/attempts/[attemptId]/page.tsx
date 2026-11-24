@@ -138,7 +138,7 @@ export default async function AttemptDetailsPage({ params }: Props) {
         title={`${t('workspace-education-tabs.attempt')} #${attempt.attempt_number}`}
         description={joinedSet?.name || t('common.unknown')}
         primaryAction={
-          <Button asChild variant="outline" className="rounded-xl">
+          <Button asChild variant="outline">
             <Link href={`/${routeWsId}/education/attempts`}>
               <ArrowLeft className="h-4 w-4" />
               {t('common.back')}

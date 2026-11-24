@@ -168,7 +168,7 @@ function ViewButton({
       type="button"
       variant="ghost"
       size="icon"
-      className={cn('h-8 w-8 rounded-sm', active && 'bg-background/60')}
+      className={cn('h-8 w-8', active && 'bg-background/60')}
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}

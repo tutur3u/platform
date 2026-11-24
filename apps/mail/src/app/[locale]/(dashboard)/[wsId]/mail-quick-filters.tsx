@@ -37,7 +37,7 @@ export function MailQuickFilters({
       />
       <Button
         aria-pressed={tokens.includes('is:unread')}
-        className="h-7 gap-1.5 rounded-md px-2 text-xs"
+        className="h-7 gap-1.5 px-2 text-xs"
         onClick={() => toggle('is:unread')}
         size="sm"
         variant={tokens.includes('is:unread') ? 'secondary' : 'ghost'}
@@ -47,7 +47,7 @@ export function MailQuickFilters({
       </Button>
       <Button
         aria-pressed={tokens.includes('has:attachment')}
-        className="h-7 gap-1.5 rounded-md px-2 text-xs"
+        className="h-7 gap-1.5 px-2 text-xs"
         onClick={() => toggle('has:attachment')}
         size="sm"
         variant={tokens.includes('has:attachment') ? 'secondary' : 'ghost'}

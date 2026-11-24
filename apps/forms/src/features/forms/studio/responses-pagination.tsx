@@ -40,7 +40,6 @@ export function ResponsesPagination({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-xl"
             disabled={isRefreshing || currentPage <= 1}
             onClick={() => onPageChange(currentPage - 1)}
           >
@@ -53,7 +52,6 @@ export function ResponsesPagination({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-xl"
             disabled={isRefreshing || currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
           >

@@ -54,7 +54,7 @@ export function SavedAccountChooser({
       />
 
       <Button
-        className="h-12 w-full rounded-2xl font-bold"
+        className="h-12 w-full font-bold"
         disabled={disabled}
         onClick={onUseAnotherAccount}
         type="button"

@@ -147,7 +147,7 @@ export function AnalyticsPanel({
                   disabled={isRefreshing}
                   onClick={onRefresh}
                   size="sm"
-                  className={cn('w-full rounded-xl sm:w-auto')}
+                  className={cn('w-full sm:w-auto')}
                 >
                   <RefreshCcw
                     className={cn(
@@ -176,7 +176,7 @@ export function AnalyticsPanel({
                       variant="outline"
                       size="sm"
                       disabled={clearMutation.isPending}
-                      className="w-full rounded-xl text-destructive hover:text-destructive sm:w-auto"
+                      className="w-full text-destructive hover:text-destructive sm:w-auto"
                     >
                       <Trash className="mr-2 h-4 w-4" />
                       {t('analytics.clear_all')}

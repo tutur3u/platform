@@ -492,7 +492,7 @@ export function StorageRolloutPanel({
                   type="button"
                   size="lg"
                   variant="outline"
-                  className="justify-between rounded-2xl"
+                  className="justify-between"
                   onClick={() =>
                     migrationMutation.mutate({
                       sourceProvider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
@@ -518,7 +518,7 @@ export function StorageRolloutPanel({
                   type="button"
                   size="lg"
                   variant="outline"
-                  className="justify-between rounded-2xl"
+                  className="justify-between"
                   onClick={() =>
                     migrationMutation.mutate({
                       sourceProvider: WORKSPACE_STORAGE_PROVIDER_R2,

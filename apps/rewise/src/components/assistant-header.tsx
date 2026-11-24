@@ -159,7 +159,7 @@ export function AssistantHeader({
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7 rounded-md border border-transparent text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 border border-transparent text-muted-foreground hover:text-foreground"
                 aria-label={t('my_tasks')}
                 onClick={() =>
                   openWorkspaceApp('tasks', `/${workspaceSlug}/tasks`)
@@ -176,7 +176,7 @@ export function AssistantHeader({
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="h-7 w-7 rounded-md border border-transparent text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 border border-transparent text-muted-foreground hover:text-foreground"
                 aria-label={t('upcoming_events')}
                 onClick={() =>
                   openWorkspaceApp('calendar', `/${workspaceSlug}`)

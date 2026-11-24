@@ -91,7 +91,7 @@ export function AddAccountContent(): JSX.Element {
             {errorMessage}
           </p>
           <Button
-            className="h-12 w-full rounded-2xl font-bold"
+            className="h-12 w-full font-bold"
             onClick={() => {
               setStatus('loading');
               setErrorMessage('');
@@ -102,7 +102,7 @@ export function AddAccountContent(): JSX.Element {
             {t('account_switcher.retry')}
           </Button>
           <Button
-            className="h-12 w-full rounded-2xl font-bold"
+            className="h-12 w-full font-bold"
             onClick={() => router.push('/')}
             type="button"
             variant="outline"

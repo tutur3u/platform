@@ -135,7 +135,7 @@ export function MiraChatBottomBar({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="size-9 shrink-0 rounded-xl"
+                      className="size-9 shrink-0"
                       aria-label={voiceT('live_mode')}
                       onClick={onVoiceToggle}
                     >

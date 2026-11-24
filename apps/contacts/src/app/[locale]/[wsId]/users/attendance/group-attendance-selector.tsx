@@ -288,7 +288,7 @@ export default function GroupAttendanceSelector({
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
-                className="h-11 w-full justify-between rounded-xl bg-background/80"
+                className="h-11 w-full justify-between bg-background/80"
               >
                 <span className="truncate">
                   {selectedGroup

@@ -28,7 +28,7 @@ export function EntryDetailFeaturedEntryCard({
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
           <Label className="flex items-center gap-2">
-            <Badge variant="outline" className="size-6 rounded-md p-0">
+            <Badge variant="outline" className="size-6 p-0">
               <Sparkles className="m-auto h-3.5 w-3.5" />
             </Badge>
             {config.title}

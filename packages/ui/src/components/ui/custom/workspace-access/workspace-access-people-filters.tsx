@@ -97,10 +97,7 @@ export function WorkspaceAccessPeopleFilters({
               {filters.roleIds.length > 0 ? (
                 <>
                   <Separator className="mx-1 h-4" orientation="vertical" />
-                  <Badge
-                    className="rounded-sm px-1 font-normal"
-                    variant="secondary"
-                  >
+                  <Badge className="px-1 font-normal" variant="secondary">
                     {filters.roleIds.length}
                   </Badge>
                 </>
@@ -152,10 +149,7 @@ export function WorkspaceAccessPeopleFilters({
               {filters.permissionIds.length > 0 ? (
                 <>
                   <Separator className="mx-1 h-4" orientation="vertical" />
-                  <Badge
-                    className="rounded-sm px-1 font-normal"
-                    variant="secondary"
-                  >
+                  <Badge className="px-1 font-normal" variant="secondary">
                     {filters.permissionIds.length}
                   </Badge>
                 </>

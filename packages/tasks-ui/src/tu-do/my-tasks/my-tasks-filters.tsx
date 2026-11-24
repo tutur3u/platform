@@ -239,7 +239,7 @@ function FilterChip({
   const chip = (
     <Badge
       variant="secondary"
-      className="group/chip flex items-center gap-x-1.5 rounded-md bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-sm"
+      className="group/chip flex items-center gap-x-1.5 bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-sm"
     >
       {icon}
       <span>{children}</span>

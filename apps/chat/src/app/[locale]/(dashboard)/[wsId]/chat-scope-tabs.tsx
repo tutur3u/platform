@@ -85,7 +85,7 @@ export function ChatScopeTabs({
             aria-pressed={active}
             aria-label={`${t(scope.titleKey)} (${t(scope.subtitleKey)})`}
             className={cn(
-              'h-9 min-w-0 rounded-sm px-2 text-sm transition-[background-color,color,flex-basis,width]',
+              'h-9 min-w-0 px-2 text-sm transition-[background-color,color,flex-basis,width]',
               active ? 'flex-1 justify-start gap-2' : 'w-9 flex-none px-0',
               active
                 ? 'bg-background text-foreground shadow-xs'

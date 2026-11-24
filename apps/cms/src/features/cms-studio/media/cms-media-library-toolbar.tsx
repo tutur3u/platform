@@ -53,7 +53,7 @@ export function CmsMediaLibraryToolbar({
       <section className="overflow-hidden rounded-xl border border-border/70 bg-card/75 shadow-xs">
         <div className="grid gap-5 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div>
-            <Badge variant="secondary" className="mb-3 rounded-md">
+            <Badge variant="secondary" className="mb-3">
               {t('epm.media_library_files_label')}
             </Badge>
             <h1 className="font-semibold text-2xl tracking-tight sm:text-3xl">

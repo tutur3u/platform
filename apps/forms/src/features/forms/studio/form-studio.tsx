@@ -392,7 +392,7 @@ export function FormStudio({
                       variant="outline"
                       size="icon"
                       className={cn(
-                        'h-9 w-9 shrink-0 rounded-2xl',
+                        'h-9 w-9 shrink-0',
                         studioToneClasses.secondaryButtonClassName
                       )}
                     >

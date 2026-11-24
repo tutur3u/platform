@@ -114,7 +114,7 @@ export function OtpStep({
             )}
           />
           <Button
-            className="h-12 w-full rounded-2xl font-bold"
+            className="h-12 w-full font-bold"
             disabled={loading || code.length !== 6}
             type="submit"
             aria-busy={loading}

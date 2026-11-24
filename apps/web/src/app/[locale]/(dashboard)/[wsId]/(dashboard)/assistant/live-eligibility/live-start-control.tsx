@@ -24,7 +24,7 @@ export function LiveStartControl({
     return (
       <Button
         variant="ghost"
-        className="h-9 shrink-0 gap-1.5 rounded-xl px-2.5 text-muted-foreground text-xs"
+        className="h-9 shrink-0 gap-1.5 px-2.5 text-muted-foreground text-xs"
         aria-haspopup="dialog"
         aria-label={t('live_blocked.locked_label', { reason })}
         data-live-entry="blocked"
@@ -43,7 +43,7 @@ export function LiveStartControl({
         <Button
           size="icon"
           variant="ghost"
-          className="size-9 shrink-0 rounded-xl"
+          className="size-9 shrink-0"
           aria-busy={checking || undefined}
           aria-label={label}
           data-live-entry={entry?.status ?? 'eligible'}

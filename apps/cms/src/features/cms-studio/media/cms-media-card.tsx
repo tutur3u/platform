@@ -67,7 +67,7 @@ export function CmsMediaCard({
             <MediaPreview asset={asset} />
             <Badge
               variant="secondary"
-              className="absolute top-2 left-2 rounded-md bg-background/90 capitalize backdrop-blur"
+              className="absolute top-2 left-2 bg-background/90 capitalize backdrop-blur"
             >
               {type === 'other'
                 ? asset.asset_type

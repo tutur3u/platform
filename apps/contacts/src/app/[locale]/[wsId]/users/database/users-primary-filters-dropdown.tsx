@@ -187,7 +187,7 @@ export function UsersPrimaryFiltersDropdown({
         <Button
           variant={activeCount > 0 ? 'secondary' : 'outline'}
           size="sm"
-          className="h-9 gap-2 rounded-md px-3"
+          className="h-9 gap-2 px-3"
         >
           <Settings2 className="h-4 w-4" />
           <span>{t('filters_button')}</span>

@@ -199,7 +199,7 @@ export function TaskSection({
             <Badge
               variant="secondary"
               className={cn(
-                'rounded-lg px-2.5 py-0.5 font-semibold text-sm',
+                'px-2.5 py-0.5 font-semibold text-sm',
                 colors.badge
               )}
             >

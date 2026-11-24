@@ -237,7 +237,7 @@ export function CmsLibrarySection({
                 <Button
                   size="icon"
                   variant="outline"
-                  className="size-8 rounded-md"
+                  className="size-8"
                   onClick={onCreateCollection}
                 >
                   <Layers2 className="h-4 w-4" />
@@ -361,7 +361,7 @@ export function CmsLibrarySection({
               <Button
                 size="icon"
                 variant="outline"
-                className="size-8 rounded-md"
+                className="size-8"
                 onClick={onCreateCollection}
               >
                 <Layers2 className="h-4 w-4" />

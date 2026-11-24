@@ -411,7 +411,7 @@ export function CommandBar({
                         size="sm"
                         disabled={isLoading}
                         className={cn(
-                          'h-8 w-8 rounded-lg border border-border p-0 transition-colors hover:bg-muted md:h-9 md:w-9',
+                          'h-8 w-8 border border-border p-0 transition-colors hover:bg-muted md:h-9 md:w-9',
                           !hasDestination && 'cursor-not-allowed opacity-50'
                         )}
                       >
@@ -1273,7 +1273,7 @@ export function CommandBar({
                     onClick={() => setAiEnabled(!aiEnabled)}
                     disabled={isLoading || aiCreditsExhausted}
                     className={cn(
-                      'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                      'h-8 gap-1.5 border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
                       effectiveAiEnabled
                         ? 'border-dynamic-blue/20 bg-dynamic-blue/5 text-dynamic-blue shadow-lg hover:bg-dynamic-blue/10 hover:shadow-xl'
                         : 'border-border',
@@ -1304,7 +1304,7 @@ export function CommandBar({
               onClick={() => onAutoAssignToMeChange?.(!autoAssignToMe)}
               disabled={isLoading}
               className={cn(
-                'h-8 gap-1.5 rounded-lg border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
+                'h-8 gap-1.5 border px-2.5 transition-all md:h-9 md:gap-2 md:px-3',
                 autoAssignToMe
                   ? 'border-dynamic-purple/20 bg-dynamic-purple/5 text-dynamic-purple shadow-lg hover:bg-dynamic-purple/10 hover:shadow-xl'
                   : 'border-border'
@@ -1324,7 +1324,7 @@ export function CommandBar({
               onClick={handleAction}
               disabled={!canExecute || isLoading}
               size="sm"
-              className="h-8 shrink-0 gap-1.5 rounded-lg bg-linear-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
+              className="h-8 shrink-0 gap-1.5 bg-linear-to-r from-primary to-primary/90 px-3 font-semibold text-xs shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-4 md:h-9 md:text-sm"
             >
               {isLoading ? (
                 <>

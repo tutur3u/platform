@@ -78,7 +78,7 @@ export function renderQuestionEditorHeader({
         type="button"
         size="icon"
         variant="ghost"
-        className="mt-0.5 shrink-0 cursor-grab rounded-xl text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        className="mt-0.5 shrink-0 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
         aria-label={t('studio.reorder_questions')}
         {...attributes}
         {...listeners}
@@ -164,7 +164,6 @@ export function renderQuestionEditorHeader({
               type="button"
               size="icon"
               variant="ghost"
-              className="rounded-xl"
               aria-label={t('studio.more')}
             >
               <MoreHorizontal className="h-4 w-4" />

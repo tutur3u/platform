@@ -67,12 +67,12 @@ function ReportCard({ report }: { report: TulearnReportSummary }) {
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-2">
           {report.course ? (
-            <Badge className="rounded-lg border border-border bg-background text-foreground hover:bg-background">
+            <Badge className="border border-border bg-background text-foreground hover:bg-background">
               {report.course.name}
             </Badge>
           ) : null}
           {report.score != null ? (
-            <Badge className="rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
+            <Badge className="border border-border bg-primary text-primary-foreground hover:bg-primary">
               {report.score}
             </Badge>
           ) : null}

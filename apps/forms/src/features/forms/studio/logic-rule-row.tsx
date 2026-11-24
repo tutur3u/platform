@@ -173,7 +173,6 @@ export function renderLogicRuleRow({
             type="button"
             size="icon"
             variant="ghost"
-            className="rounded-xl"
             onClick={() => rulesArray.remove(index)}
           >
             <Trash className="h-4 w-4" />
