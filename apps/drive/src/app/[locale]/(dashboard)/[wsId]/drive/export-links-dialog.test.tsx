@@ -61,7 +61,7 @@ const exportPayload: WorkspaceStorageExportLinksResponse = {
   folderPath: 'Logos',
   generatedAt: '2026-11-24T00:00:00.000Z',
   indexFile: {
-    name: 'index.html',
+    path: 'Logos/index.html',
     relativePath: 'index.html',
     url: 'https://cdn.example.test/index.html',
     size: 512,
@@ -69,14 +69,14 @@ const exportPayload: WorkspaceStorageExportLinksResponse = {
   },
   files: [
     {
-      name: 'index.html',
+      path: 'Logos/index.html',
       relativePath: 'index.html',
       url: 'https://cdn.example.test/index.html',
       size: 512,
       contentType: 'text/html',
     },
     {
-      name: 'logo.svg',
+      path: 'Logos/assets/logo.svg',
       relativePath: 'assets/logo.svg',
       url: 'https://cdn.example.test/assets/logo.svg',
       size: 1024,
