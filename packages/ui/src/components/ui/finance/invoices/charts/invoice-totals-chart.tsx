@@ -483,7 +483,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={formatPeriodLabel}
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                 interval="preserveStartEnd"
               />
               <YAxis
@@ -492,7 +492,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                 tickFormatter={(value: number) =>
                   typeof value === 'number' ? formatCompactValue(value) : value
                 }
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                 width={55}
               />
               <Tooltip

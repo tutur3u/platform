@@ -230,7 +230,7 @@ export function DailyTotalChartClient({
               tickFormatter={(value) =>
                 typeof value === 'number' ? formatCompactValue(value) : value
               }
-              tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+              tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               width={60}
             />
             <ChartTooltip
@@ -256,7 +256,7 @@ export function DailyTotalChartClient({
                   name,
                 ];
               }}
-              cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.05 }}
+              cursor={{ fill: 'var(--foreground)', opacity: 0.05 }}
             />
             {(viewMode === 'all' || viewMode === 'income') && (
               <Bar
@@ -279,13 +279,13 @@ export function DailyTotalChartClient({
             {openingBalance !== undefined && !shouldHideAmounts && (
               <ReferenceLine
                 y={openingBalance}
-                stroke="hsl(var(--primary))"
+                stroke="var(--primary)"
                 strokeDasharray="5 5"
                 strokeWidth={2}
                 label={{
                   value: t('opening_balance'),
                   position: 'insideTopLeft',
-                  fill: 'hsl(var(--primary))',
+                  fill: 'var(--primary)',
                   fontSize: 12,
                 }}
               />
@@ -293,13 +293,13 @@ export function DailyTotalChartClient({
             {closingBalance !== undefined && !shouldHideAmounts && (
               <ReferenceLine
                 y={closingBalance}
-                stroke="hsl(var(--muted-foreground))"
+                stroke="var(--muted-foreground)"
                 strokeDasharray="5 5"
                 strokeWidth={2}
                 label={{
                   value: t('closing_balance'),
                   position: 'insideBottomLeft',
-                  fill: 'hsl(var(--muted-foreground))',
+                  fill: 'var(--muted-foreground)',
                   fontSize: 12,
                 }}
               />

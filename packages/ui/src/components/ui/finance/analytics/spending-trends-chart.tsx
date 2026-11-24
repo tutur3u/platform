@@ -100,7 +100,7 @@ export function SpendingTrendsChart({
                       month: 'short',
                     })
                   }
-                  tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+                  tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
                 />
                 <YAxis
                   tickFormatter={(value) =>
@@ -111,7 +111,7 @@ export function SpendingTrendsChart({
                           notation: 'compact',
                         }).format(value)
                   }
-                  tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+                  tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
                 />
                 <ChartTooltip
                   content={

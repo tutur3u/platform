@@ -324,7 +324,7 @@ export default function AttendanceExportCard({ wsId }: { wsId: string }) {
                     className={cn(
                       'rounded-full',
                       selectedRangeKey === preset.key &&
-                        'shadow-[0_10px_24px_-18px_hsl(var(--primary))]'
+                        'shadow-[0_10px_24px_-18px_var(--primary)]'
                     )}
                     onClick={() => setPresetRange(preset.key)}
                   >

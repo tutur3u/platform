@@ -44,7 +44,7 @@ export function renderFoundationLayoutPreview(
           className="overflow-hidden rounded-lg border bg-muted"
           ratio={16 / 9}
         >
-          <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.18),transparent_35%),linear-gradient(135deg,hsl(var(--muted)),hsl(var(--background)))]">
+          <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.18),transparent_35%),linear-gradient(135deg,var(--muted),var(--background))]">
             <div className="rounded-md border bg-background/80 px-3 py-2 font-medium text-sm">
               16:9
             </div>

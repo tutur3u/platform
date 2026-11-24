@@ -223,7 +223,7 @@ function ProjectionChart({
               })
               .join(' ')}
             fill="none"
-            stroke="hsl(var(--primary))"
+            stroke="var(--primary)"
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
           />
@@ -243,7 +243,7 @@ function ProjectionChart({
               L 100 100
               Z
             `}
-            fill="hsl(var(--primary))"
+            fill="var(--primary)"
             fillOpacity="0.1"
           />
         </svg>

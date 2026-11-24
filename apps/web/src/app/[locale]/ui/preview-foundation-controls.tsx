@@ -31,7 +31,7 @@ export function ChartPreview() {
   return (
     <ChartContainer
       className="h-40 w-full"
-      config={{ value: { color: 'hsl(var(--primary))', label: 'Value' } }}
+      config={{ value: { color: 'var(--primary)', label: 'Value' } }}
     >
       <BarChart
         data={[

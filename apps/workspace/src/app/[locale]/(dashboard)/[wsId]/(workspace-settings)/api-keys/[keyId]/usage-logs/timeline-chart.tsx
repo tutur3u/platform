@@ -254,17 +254,17 @@ export function TimelineChart({ data }: TimelineChartProps) {
                 angle={-45}
                 textAnchor="end"
                 height={60}
-                tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+                tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+                tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               />
               <ChartTooltip
                 content={<ChartTooltipContent indicator="dot" />}
-                cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.05 }}
+                cursor={{ fill: 'var(--foreground)', opacity: 0.05 }}
               />
               {Object.keys(chartConfig).map((key) => (
                 <Area
@@ -293,17 +293,17 @@ export function TimelineChart({ data }: TimelineChartProps) {
                 angle={-45}
                 textAnchor="end"
                 height={60}
-                tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+                tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+                tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               />
               <ChartTooltip
                 content={<ChartTooltipContent indicator="dot" />}
-                cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.05 }}
+                cursor={{ fill: 'var(--foreground)', opacity: 0.05 }}
               />
               {Object.keys(chartConfig).map((key, index, array) => (
                 <Bar

@@ -15,14 +15,14 @@ interface DistributionChartProps {
 }
 
 const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-  'hsl(var(--chart-6))',
-  'hsl(var(--chart-7))',
-  'hsl(var(--chart-8))',
+  'var(--chart-1)',
+  'var(--chart-2)',
+  'var(--chart-3)',
+  'var(--chart-4)',
+  'var(--chart-5)',
+  'var(--chart-6)',
+  'var(--chart-7)',
+  'var(--chart-8)',
 ];
 
 export function DistributionChart({
@@ -88,7 +88,7 @@ export function DistributionChart({
             cy="50"
             r="40"
             fill="none"
-            stroke="hsl(var(--muted))"
+            stroke="var(--muted)"
             strokeWidth="12"
           />
           {donutSegments.map((segment, index) => (

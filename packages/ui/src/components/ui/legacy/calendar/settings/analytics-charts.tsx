@@ -85,11 +85,11 @@ export function AnalyticsCharts({
                     config={{
                       syncs: {
                         label: 'Total Syncs',
-                        color: 'hsl(var(--chart-1))',
+                        color: 'var(--chart-1)',
                       },
                       success: {
                         label: 'Successful',
-                        color: 'hsl(var(--chart-2))',
+                        color: 'var(--chart-2)',
                       },
                     }}
                     className="h-75 w-full"
@@ -137,15 +137,15 @@ export function AnalyticsCharts({
                     config={{
                       added: {
                         label: 'Added',
-                        color: 'hsl(var(--chart-1))',
+                        color: 'var(--chart-1)',
                       },
                       updated: {
                         label: 'Updated',
-                        color: 'hsl(var(--chart-2))',
+                        color: 'var(--chart-2)',
                       },
                       deleted: {
                         label: 'Deleted',
-                        color: 'hsl(var(--chart-3))',
+                        color: 'var(--chart-3)',
                       },
                     }}
                     className="h-75 w-full"
@@ -196,7 +196,7 @@ export function AnalyticsCharts({
                     config={{
                       duration: {
                         label: 'Duration (ms)',
-                        color: 'hsl(var(--chart-4))',
+                        color: 'var(--chart-4)',
                       },
                     }}
                     className="h-75 w-full"
@@ -236,11 +236,11 @@ export function AnalyticsCharts({
                     config={{
                       success: {
                         label: 'Success Rate',
-                        color: 'hsl(var(--chart-2))',
+                        color: 'var(--chart-2)',
                       },
                       failed: {
                         label: 'Failed',
-                        color: 'hsl(var(--chart-5))',
+                        color: 'var(--chart-5)',
                       },
                     }}
                     className="h-75 w-full"
@@ -290,11 +290,11 @@ export function AnalyticsCharts({
                   config={{
                     syncs: {
                       label: 'Syncs',
-                      color: 'hsl(var(--chart-1))',
+                      color: 'var(--chart-1)',
                     },
                     events: {
                       label: 'Events',
-                      color: 'hsl(var(--chart-2))',
+                      color: 'var(--chart-2)',
                     },
                   }}
                   className="h-100 w-full"

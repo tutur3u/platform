@@ -247,7 +247,7 @@ export function ActivityDistributionChart({
               dataKey="shortLabel"
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+              tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
               interval={viewMode === 'daily' ? 3 : 0}
               height={16}
             />
@@ -273,7 +273,7 @@ export function ActivityDistributionChart({
                   }}
                 />
               }
-              cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.05 }}
+              cursor={{ fill: 'var(--foreground)', opacity: 0.05 }}
             />
             <Bar
               dataKey="income"

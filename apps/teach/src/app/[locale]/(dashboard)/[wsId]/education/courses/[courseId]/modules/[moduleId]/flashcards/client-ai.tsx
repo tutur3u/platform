@@ -73,9 +73,9 @@ export function AIFlashcards({
     back: fc?.back || '...',
     width: '100%',
     frontCardStyle: {
-      color: 'hsl(var(--green))',
+      color: 'var(--green)',
       backgroundColor: 'hsl(var(--green) / 0.05)',
-      borderColor: 'hsl(var(--green))',
+      borderColor: 'var(--green)',
     },
     frontHTML: (
       <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
@@ -83,9 +83,9 @@ export function AIFlashcards({
       </div>
     ),
     backCardStyle: {
-      color: 'hsl(var(--purple))',
+      color: 'var(--purple)',
       backgroundColor: 'hsl(var(--purple) / 0.05)',
-      borderColor: 'hsl(var(--purple))',
+      borderColor: 'var(--purple)',
     },
     backHTML: (
       <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">

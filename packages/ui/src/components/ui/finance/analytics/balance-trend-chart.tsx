@@ -223,7 +223,7 @@ export function BalanceTrendChart({
                   return value;
                 }
               }}
-              tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+              tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
             />
             <YAxis
               tickLine={false}
@@ -231,7 +231,7 @@ export function BalanceTrendChart({
               tickFormatter={(value) =>
                 typeof value === 'number' ? formatCompactValue(value) : value
               }
-              tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+              tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               width={60}
             />
             <ChartTooltip
@@ -266,7 +266,7 @@ export function BalanceTrendChart({
                 ];
               }}
               cursor={{
-                stroke: 'hsl(var(--muted-foreground))',
+                stroke: 'var(--muted-foreground)',
                 strokeWidth: 1,
               }}
             />

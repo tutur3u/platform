@@ -373,7 +373,7 @@ export function BlueGreenMonitoringRequestsClient() {
           className="absolute inset-0 opacity-20 mix-blend-luminosity contrast-125 grayscale"
           style={{
             backgroundImage:
-              "linear-gradient(90deg, hsl(var(--background)) 0%, transparent 42%, hsl(var(--background)) 100%), url('https://picsum.photos/seed/server-console-observability/1920/1080')",
+              "linear-gradient(90deg, var(--background) 0%, transparent 42%, var(--background) 100%), url('https://picsum.photos/seed/server-console-observability/1920/1080')",
             backgroundPosition: 'center',
             backgroundSize: 'cover',
           }}

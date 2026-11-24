@@ -56,7 +56,7 @@ export function HourlyTotalChart({
                 hour12: false,
               }).format(new Date(String(value)));
             }}
-            tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+            tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
           />
           <YAxis
             tickFormatter={(value) => {
@@ -67,15 +67,15 @@ export function HourlyTotalChart({
                   }).format(value)
                 : value;
             }}
-            tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+            tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
           />
           <Legend />
           <Tooltip
             labelClassName="text-foreground font-semibold"
-            itemStyle={{ color: 'hsl(var(--foreground))' }}
+            itemStyle={{ color: 'var(--foreground)' }}
             contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              borderColor: 'hsl(var(--foreground))',
+              backgroundColor: 'var(--background)',
+              borderColor: 'var(--foreground)',
               borderRadius: '0.5rem',
             }}
             separator=": "
@@ -103,16 +103,16 @@ export function HourlyTotalChart({
                 </span>
               );
             }}
-            cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.1 }}
+            cursor={{ fill: 'var(--foreground)', opacity: 0.1 }}
           />
           <Bar
             dataKey="total_prompt_tokens"
-            fill="hsl(var(--orange))"
+            fill="var(--orange)"
             name={t('prompt_tokens')}
           />
           <Bar
             dataKey="total_completion_tokens"
-            fill="hsl(var(--purple))"
+            fill="var(--purple)"
             name={t('completion_tokens')}
           />
         </BarChart>
@@ -163,7 +163,7 @@ export function DailyTotalChart({
                 month: locale === 'vi' ? 'numeric' : 'short',
               }).format(new Date(String(value)));
             }}
-            tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+            tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
           />
           <YAxis
             tickFormatter={(value) => {
@@ -174,15 +174,15 @@ export function DailyTotalChart({
                   }).format(value)
                 : value;
             }}
-            tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+            tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
           />
           <Legend />
           <Tooltip
             labelClassName="text-foreground font-semibold"
-            itemStyle={{ color: 'hsl(var(--foreground))' }}
+            itemStyle={{ color: 'var(--foreground)' }}
             contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              borderColor: 'hsl(var(--foreground))',
+              backgroundColor: 'var(--background)',
+              borderColor: 'var(--foreground)',
               borderRadius: '0.5rem',
             }}
             separator=": "
@@ -211,16 +211,16 @@ export function DailyTotalChart({
                 </span>
               );
             }}
-            cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.1 }}
+            cursor={{ fill: 'var(--foreground)', opacity: 0.1 }}
           />
           <Bar
             dataKey="total_prompt_tokens"
-            fill="hsl(var(--orange))"
+            fill="var(--orange)"
             name={t('prompt_tokens')}
           />
           <Bar
             dataKey="total_completion_tokens"
-            fill="hsl(var(--purple))"
+            fill="var(--purple)"
             name={t('completion_tokens')}
           />
         </BarChart>
@@ -271,7 +271,7 @@ export function MonthlyTotalChart({
                 year: 'numeric',
               }).format(new Date(String(value)));
             }}
-            tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+            tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
           />
           <YAxis
             tickFormatter={(value) => {
@@ -282,15 +282,15 @@ export function MonthlyTotalChart({
                   }).format(value)
                 : value;
             }}
-            tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+            tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
           />
           <Legend />
           <Tooltip
             labelClassName="text-foreground font-semibold"
-            itemStyle={{ color: 'hsl(var(--foreground))' }}
+            itemStyle={{ color: 'var(--foreground)' }}
             contentStyle={{
-              backgroundColor: 'hsl(var(--background))',
-              borderColor: 'hsl(var(--foreground))',
+              backgroundColor: 'var(--background)',
+              borderColor: 'var(--foreground)',
               borderRadius: '0.5rem',
             }}
             separator=": "
@@ -317,16 +317,16 @@ export function MonthlyTotalChart({
                 </span>
               );
             }}
-            cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.1 }}
+            cursor={{ fill: 'var(--foreground)', opacity: 0.1 }}
           />
           <Bar
             dataKey="total_prompt_tokens"
-            fill="hsl(var(--orange))"
+            fill="var(--orange)"
             name={t('prompt_tokens')}
           />
           <Bar
             dataKey="total_completion_tokens"
-            fill="hsl(var(--purple))"
+            fill="var(--purple)"
             name={t('completion_tokens')}
           />
         </BarChart>

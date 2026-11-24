@@ -61,7 +61,7 @@ export function DatasetCharts({
                 <Line
                   type="monotone"
                   dataKey="rows"
-                  stroke="hsl(var(--primary))"
+                  stroke="var(--primary)"
                   name="Rows"
                 />
               </LineChart>
@@ -85,7 +85,7 @@ export function DatasetCharts({
                 <Tooltip />
                 <Bar
                   dataKey="count"
-                  fill="hsl(var(--primary))"
+                  fill="var(--primary)"
                   name="Columns"
                 />
               </BarChart>

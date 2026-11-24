@@ -256,7 +256,7 @@ export function ImageCropper({
                   objectFit: 'contain',
                 },
                 cropAreaStyle: {
-                  border: '2px solid hsl(var(--primary))',
+                  border: '2px solid var(--primary)',
                   boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)',
                 },
               }}

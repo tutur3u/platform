@@ -183,7 +183,7 @@ export function IncomeExpenseChart({
               tickFormatter={(value) =>
                 typeof value === 'number' ? formatCompactValue(value) : value
               }
-              tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
+              tick={{ fill: 'var(--foreground)', opacity: 0.7 }}
               width={60}
             />
             <Legend
@@ -214,7 +214,7 @@ export function IncomeExpenseChart({
                   name,
                 ];
               }}
-              cursor={{ fill: 'hsl(var(--foreground))', opacity: 0.05 }}
+              cursor={{ fill: 'var(--foreground)', opacity: 0.05 }}
             />
             {(viewMode === 'all' || viewMode === 'income') && (
               <Bar

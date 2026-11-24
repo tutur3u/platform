@@ -179,7 +179,7 @@ export const foundationComponentEntries: ComponentEntry[] = [
     usage: usage(
       '@tuturuuu/ui/chart',
       ['ChartContainer', 'ChartTooltip', 'ChartTooltipContent'],
-      `<ChartContainer config={{ work: { label: 'Work', color: 'hsl(var(--primary))' } }}>\n  <BarChart data={data}>\n    <ChartTooltip content={<ChartTooltipContent />} />\n  </BarChart>\n</ChartContainer>`
+      `<ChartContainer config={{ work: { label: 'Work', color: 'var(--primary)' } }}>\n  <BarChart data={data}>\n    <ChartTooltip content={<ChartTooltipContent />} />\n  </BarChart>\n</ChartContainer>`
     ),
   },
   {
