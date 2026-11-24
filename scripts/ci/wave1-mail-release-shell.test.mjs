@@ -19,8 +19,11 @@ import { fileURLToPath } from 'node:url';
 import { publicInputsDigest } from './wave1-native-artifact.mjs';
 import { profileFor } from './wave1-native-profile.mjs';
 import {
+  assertMainReleaseAdmission,
+  assertReleaseCandidateOnMain,
   FIXTURE_PUBLIC_INPUTS_SHA256,
   MAIL_PRODUCTION_HOST,
+  releaseCandidateRef,
   stampReleaseSeal,
 } from './wave1-release-inputs.mjs';
 
@@ -271,6 +274,18 @@ test('release-artifact shells seal a fixture receipt and refuse fixture inputs',
   );
   assert.notEqual(refusedRef.status, 0);
   assert.match(refusedRef.stderr, /only on refs\/heads\/main/);
+  const refusedCandidate = runReleaseStep(
+    releaseScript('assertMainReleaseAdmission'),
+    {
+      ...admitted,
+      GITHUB_REF: `refs/heads/release-candidate/${'e'.repeat(40)}`,
+    }
+  );
+  assert.notEqual(refusedCandidate.status, 0);
+  assert.match(
+    refusedCandidate.stderr,
+    /release-candidate ref of its own commit/
+  );
   assert.equal(refusedRef.stderr.includes(mailKey), false);
   assert.equal(refusedRef.stderr.includes(mailUrl), false);
 
@@ -358,4 +373,77 @@ test('release-artifact shells seal a fixture receipt and refuse fixture inputs',
   assert.notEqual(restoredFixture.status, 0);
   assert.match(restoredFixture.stderr, /Fixture publicInputsSha256 is refused/);
   assert.equal(restoredFixture.stderr.includes(mailUrl), false);
+});
+
+test('a release-candidate ref is admitted only for its own commit while it is on main', async () => {
+  const sha = 'f'.repeat(40);
+  const env = {
+    APP: 'mail',
+    RELEASE_ARTIFACT: 'true',
+    REQUESTED_SHA: sha,
+    INPUT_ENVIRONMENT: 'wave1-mail-production',
+    GITHUB_REF: releaseCandidateRef(sha),
+    GITHUB_SHA: sha,
+    GITHUB_REPOSITORY: 'tutur3u/platform',
+    GH_TOKEN: 'fixture-token',
+  };
+  const calls = [];
+  const compare =
+    (body, ok = true, status = 200) =>
+    async (url, options) => {
+      calls.push({ url, auth: options.headers.Authorization });
+      return { ok, status, json: async () => body };
+    };
+  assert.deepEqual(
+    await assertReleaseCandidateOnMain(
+      env,
+      compare({ status: 'ahead', merge_base_commit: { sha } })
+    ),
+    { sourceSha: sha, inputEnvironment: 'wave1-mail-production' }
+  );
+  assert.equal(
+    calls[0].url,
+    `https://api.github.com/repos/tutur3u/platform/compare/${sha}...main`
+  );
+  assert.equal(calls[0].auth, 'Bearer fixture-token');
+  await assertReleaseCandidateOnMain(
+    env,
+    compare({ status: 'identical', merge_base_commit: { sha } })
+  );
+  for (const body of [
+    { status: 'diverged', merge_base_commit: { sha: 'a'.repeat(40) } },
+    { status: 'behind', merge_base_commit: { sha } },
+    { status: 'ahead', merge_base_commit: { sha: 'a'.repeat(40) } },
+  ])
+    await assert.rejects(
+      assertReleaseCandidateOnMain(env, compare(body)),
+      /not on main/
+    );
+  await assert.rejects(
+    assertReleaseCandidateOnMain(env, compare({}, false, 404)),
+    /ancestry check failed \(404\)/
+  );
+  await assert.rejects(
+    assertReleaseCandidateOnMain({ ...env, GH_TOKEN: '' }, compare({})),
+    /not configured/
+  );
+  assert.throws(
+    () => assertMainReleaseAdmission({ ...env, REQUESTED_SHA: 'a'.repeat(40) }),
+    /does not match/
+  );
+  assert.throws(
+    () =>
+      assertMainReleaseAdmission({
+        ...env,
+        GITHUB_REF: 'refs/heads/release-candidate/other',
+      }),
+    /release-candidate ref of its own commit/
+  );
+  // Main needs no ancestry lookup.
+  const before = calls.length;
+  await assertReleaseCandidateOnMain(
+    { ...env, GITHUB_REF: 'refs/heads/main' },
+    compare({})
+  );
+  assert.equal(calls.length, before);
 });

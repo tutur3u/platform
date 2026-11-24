@@ -35,10 +35,23 @@ export function assertReleaseInputs(env) {
   return digest;
 }
 
+/** The release-candidate ref of one main commit; its name binds the SHA. */
+export function releaseCandidateRef(sha) {
+  return `refs/heads/release-candidate/${sha}`;
+}
+
 export function assertMainReleaseAdmission(env) {
   if (env.RELEASE_ARTIFACT !== 'true') return null;
-  if (env.GITHUB_REF !== 'refs/heads/main') {
-    throw new Error('release-artifact runs only on refs/heads/main');
+  if (
+    env.GITHUB_REF !== 'refs/heads/main' &&
+    !(
+      /^[0-9a-f]{40}$/.test(env.GITHUB_SHA || '') &&
+      env.GITHUB_REF === releaseCandidateRef(env.GITHUB_SHA)
+    )
+  ) {
+    throw new Error(
+      'release-artifact runs only on refs/heads/main or the release-candidate ref of its own commit'
+    );
   }
   const sourceSha = env.GITHUB_SHA || '';
   const requestedSha = env.REQUESTED_SHA || '';
@@ -54,6 +67,40 @@ export function assertMainReleaseAdmission(env) {
     );
   }
   return { sourceSha, inputEnvironment };
+}
+
+/**
+ * A release-candidate ref is admitted only while its commit is on main:
+ * GitHub's compare of the commit against main must report main ahead of it
+ * or identical. Main itself needs no lookup.
+ */
+export async function assertReleaseCandidateOnMain(env, fetcher = fetch) {
+  const admission = assertMainReleaseAdmission(env);
+  if (!admission || env.GITHUB_REF === 'refs/heads/main') return admission;
+  if (!/^[\w.-]+\/[\w.-]+$/.test(env.GITHUB_REPOSITORY || '') || !env.GH_TOKEN)
+    throw new Error('release-candidate ancestry check is not configured');
+  const response = await fetcher(
+    `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/compare/${admission.sourceSha}...main`,
+    {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${env.GH_TOKEN}`,
+      },
+      redirect: 'error',
+      signal: AbortSignal.timeout(15000),
+    }
+  );
+  if (!response.ok)
+    throw new Error(
+      `release-candidate ancestry check failed (${response.status})`
+    );
+  const { status, merge_base_commit: base } = await response.json();
+  if (
+    !['ahead', 'identical'].includes(status) ||
+    base?.sha !== admission.sourceSha
+  )
+    throw new Error('release-candidate commit is not on main');
+  return admission;
 }
 
 export function stampReleaseSeal(receipt, env) {

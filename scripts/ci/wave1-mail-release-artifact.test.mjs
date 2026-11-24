@@ -29,7 +29,10 @@ function evaluate(expression, scope) {
   const source = expression
     .replace(/^\s*\$\{\{\s*|\s*\}\}\s*$/g, '')
     .replace(/needs\.([\w-]+)/g, 'needs["$1"]');
-  return vm.runInNewContext(source, scope, { timeout: 100 });
+  // GitHub's startsWith is case-insensitive.
+  const startsWith = (value, prefix) =>
+    String(value).toLowerCase().startsWith(String(prefix).toLowerCase());
+  return vm.runInNewContext(source, { startsWith, ...scope }, { timeout: 100 });
 }
 
 function jobIf(name) {
@@ -153,7 +156,7 @@ test('restored follows qualify and publish keeps its production gate', () => {
   const policyIf =
     "${{ github.ref == 'refs/heads/production' && inputs['release-artifact'] != true }}";
   const qualifyIf =
-    "${{ !cancelled() && ((inputs['release-artifact'] == true && github.ref == 'refs/heads/main' && needs.release-admission.result == 'success') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}";
+    "${{ !cancelled() && ((inputs['release-artifact'] == true && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-candidate/')) && needs.release-admission.result == 'success') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}";
   const restoredIf = "${{ !cancelled() && needs.qualify.result == 'success' }}";
   assert.equal(jobIf('production-policy'), policyIf);
   assert.equal(jobIf('qualify'), qualifyIf);
@@ -208,6 +211,71 @@ test('restored follows qualify and publish keeps its production gate', () => {
   assert.match(
     release.line,
     /policyIf=skip policyResult=skipped qualifyIf=run qualifyResult=success restored=run publish=skip/
+  );
+
+  const candidate = row(
+    'a2 release-candidate qualify-success',
+    scope({ github: { ref: `refs/heads/release-candidate/${sha}`, sha } })
+  );
+  assert.equal(candidate.restored, true);
+  assert.equal(candidate.publish, false);
+  assert.match(
+    candidate.line,
+    /policyIf=skip policyResult=skipped qualifyIf=run qualifyResult=success restored=run publish=skip/
+  );
+  // Publish never runs on a candidate ref, even if every upstream job passed.
+  for (const releaseArtifact of [true, false])
+    assert.equal(
+      evaluate(
+        jobIf('publish'),
+        scope({
+          inputs: {
+            app: 'mail',
+            'release-artifact': releaseArtifact,
+            'source-sha': sha,
+          },
+          github: { ref: `refs/heads/release-candidate/${sha}`, sha },
+          needs: {
+            'production-policy': {
+              result: 'success',
+              outputs: { allowed: 'true' },
+            },
+            'release-admission': { result: 'success' },
+            qualify: { result: 'success' },
+            restored: { result: 'success' },
+          },
+        })
+      ),
+      false
+    );
+  assert.equal(
+    evaluate(
+      jobIf('production-policy'),
+      scope({
+        inputs: { app: 'mail', 'release-artifact': false, 'source-sha': '' },
+        github: { ref: `refs/heads/release-candidate/${sha}`, sha },
+      })
+    ),
+    false
+  );
+  const environment = jobField('qualify', 'environment');
+  for (const [ref, expected] of [
+    [`refs/heads/release-candidate/${sha}`, 'wave1-mail-artifact'],
+    ['refs/heads/main', 'wave1-mail-production'],
+    ['refs/heads/production', 'wave1-mail-production'],
+  ])
+    assert.equal(
+      evaluate(
+        environment,
+        scope({ github: { ref, sha }, format: (f, a) => f.replace('{0}', a) })
+      ),
+      expected
+    );
+  assert.equal(
+    jobSlice('publish').includes(
+      '\n    environment: wave1-${{ inputs.app }}-production\n'
+    ),
+    true
   );
 
   const failed = row(
