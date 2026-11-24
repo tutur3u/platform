@@ -122,7 +122,8 @@ it('does not treat a meeting lookup error as a missing meeting', async () => {
 it.each([
   ['a live transcript capture', '55000'],
   ['a row outside the erase', '23503'],
-])('answers 409 when %s still holds the meeting', async (_, code) => {
+  ['evidence that changed during the erase', '40001'],
+])('answers a retryable 409 for %s', async (_, code) => {
   deleteMock.mockResolvedValue({ data: null, error: { code } });
   const response = await call();
   expect(response.status).toBe(409);
