@@ -559,7 +559,7 @@ export function CategoryBreakdownDialog({
                     onClick={resetHiddenCategories}
                     className="mt-2"
                   >
-                    <RotateCcw className="mr-1 h-3 w-3" />
+                    <RotateCcw className="h-3 w-3" />
                     {t('show-all')}
                   </Button>
                 )}

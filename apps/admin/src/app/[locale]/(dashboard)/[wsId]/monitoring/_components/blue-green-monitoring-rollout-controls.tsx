@@ -313,7 +313,7 @@ export function BlueGreenMonitoringRolloutControls({
               onClick={() => mutation.mutate()}
             >
               <SyncButtonIcon
-                className={`mr-2 h-4 w-4 ${isSyncLocked ? 'animate-spin' : ''}`}
+                className={`h-4 w-4 ${isSyncLocked ? 'animate-spin' : ''}`}
               />
               {syncButtonLabel}
             </Button>
@@ -450,12 +450,12 @@ export function BlueGreenMonitoringRolloutControls({
                 >
                   {pinMutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       {t('controls.pin_pending')}
                     </>
                   ) : (
                     <>
-                      <Pin className="mr-2 h-4 w-4" />
+                      <Pin className="h-4 w-4" />
                       {deploymentPin
                         ? t('controls.pin_update_action')
                         : t('controls.pin_action')}
@@ -474,12 +474,12 @@ export function BlueGreenMonitoringRolloutControls({
                 >
                   {clearPinMutation.isPending ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       {t('controls.clear_pin_pending')}
                     </>
                   ) : (
                     <>
-                      <PinOff className="mr-2 h-4 w-4" />
+                      <PinOff className="h-4 w-4" />
                       {t('controls.clear_pin_action')}
                     </>
                   )}

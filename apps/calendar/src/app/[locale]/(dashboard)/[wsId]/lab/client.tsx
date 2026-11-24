@@ -507,9 +507,9 @@ export default function CalendarLabClientPage({
                   className="w-full py-6 shadow-md"
                 >
                   {isSimulating ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <Play className="mr-2 h-5 w-5 fill-current" />
+                    <Play className="h-5 w-5 fill-current" />
                   )}
                   {t('run_algorithm')}
                 </Button>

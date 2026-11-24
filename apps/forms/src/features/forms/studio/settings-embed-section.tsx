@@ -52,9 +52,9 @@ function SnippetBlock({
           variant="outline"
         >
           {copied ? (
-            <Check className="mr-1.5 h-3.5 w-3.5 text-dynamic-green" />
+            <Check className="h-3.5 w-3.5 text-dynamic-green" />
           ) : (
-            <Copy className="mr-1.5 h-3.5 w-3.5" />
+            <Copy className="h-3.5 w-3.5" />
           )}
           {copied ? tCommon('copied') : tCommon('copy')}
         </Button>

@@ -178,7 +178,7 @@ export function AiCreditBillingCard({ wsId, packs }: AiCreditBillingCardProps) {
             onClick={() => creditsQuery.refetch()}
           >
             <RefreshCw
-              className={`mr-2 h-4 w-4 ${creditsQuery.isFetching ? 'animate-spin' : ''}`}
+              className={`h-4 w-4 ${creditsQuery.isFetching ? 'animate-spin' : ''}`}
             />
             {t('retry')}
           </Button>

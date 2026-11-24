@@ -78,9 +78,9 @@ export function EntryDetailFeaturedPlacementCard({
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
               <Button type="button" disabled={processing} onClick={onToggle}>
                 {processing ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4" />
                 )}
                 {featuredPlacementActive
                   ? strings.featuredPlacementRemoveAction
@@ -124,9 +124,9 @@ export function EntryDetailFeaturedPlacementCard({
               onClick={onCreateConfig}
             >
               {processing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <CheckCircle2 className="mr-2 h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" />
               )}
               {strings.featuredPlacementCreateAction}
             </Button>

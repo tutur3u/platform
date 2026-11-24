@@ -267,12 +267,12 @@ export default function MigrationDashboard({ wsId }: MigrationDashboardProps) {
               {Object.values(migrationData ?? {}).filter((v) => v?.externalData)
                 .length ? (
                 <>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  <RefreshCcw className="h-4 w-4" />
                   Re-run All
                 </>
               ) : (
                 <>
-                  <Play className="mr-2 h-4 w-4" />
+                  <Play className="h-4 w-4" />
                   Start All
                 </>
               )}

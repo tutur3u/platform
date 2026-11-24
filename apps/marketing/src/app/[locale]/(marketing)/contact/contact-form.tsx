@@ -362,7 +362,7 @@ export function ContactForm() {
               t('form.button.sending')
             ) : (
               <>
-                <Send className="mr-2 h-4 w-4" />
+                <Send className="h-4 w-4" />
                 {t('form.button.send')}
               </>
             )}

@@ -252,7 +252,7 @@ export function CalendarConnectionsSettingsContent({
                       }
                     >
                       {createCalendarMutation.isPending && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       )}
                       {t('create')}
                     </Button>
@@ -551,9 +551,9 @@ export function CalendarConnectionsSettingsContent({
                       disabled={disconnectingId === account.id}
                     >
                       {disconnectingId === account.id ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       )}
                       {t('disconnect')}
                     </Button>

@@ -339,9 +339,9 @@ export function TaskSchedulerPanel({
             onClick={handleScheduleAll}
           >
             {isSchedulingAll ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="mr-1.5 h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
             )}
             Schedule All ({unscheduledTasks})
           </Button>

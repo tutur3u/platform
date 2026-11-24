@@ -171,12 +171,12 @@ export function WorkspaceSelectDialog({
             >
               {isMoving ? (
                 <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" />
                   {t('actions.moving')}
                 </>
               ) : (
                 <>
-                  <Move className="mr-2 h-4 w-4" />
+                  <Move className="h-4 w-4" />
                   {t('actions.moveSession')}
                 </>
               )}

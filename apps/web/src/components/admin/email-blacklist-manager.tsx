@@ -238,7 +238,7 @@ export function EmailBlacklistManager() {
               </Button>
               <Button onClick={handleAddEntry} disabled={addMutation.isPending}>
                 {addMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 )}
                 Add to Blacklist
               </Button>

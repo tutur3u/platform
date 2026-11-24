@@ -343,7 +343,7 @@ export function PeriodicHeldActionDialog({
             onClick={() => void confirm()}
           >
             {pending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+              <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : null}
             {t(action === 'send' ? 'held_send_confirm' : 'held_skip_confirm', {
               count: count ?? 0,

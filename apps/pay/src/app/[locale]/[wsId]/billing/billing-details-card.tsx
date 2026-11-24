@@ -377,7 +377,7 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
             >
               {updateMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('processing')}
                 </>
               ) : (
@@ -393,12 +393,12 @@ export default function BillingDetailsCard({ wsId }: BillingDetailsCardProps) {
             >
               {portalMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('processing')}
                 </>
               ) : (
                 <>
-                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                   {t('open-customer-portal')}
                 </>
               )}

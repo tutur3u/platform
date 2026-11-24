@@ -370,12 +370,12 @@ export function BillingClient({
                   >
                     {currentPlan.cancelAtPeriodEnd ? (
                       <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                         {t('continue-subscription')}
                       </>
                     ) : (
                       <>
-                        <X className="mr-2 h-4 w-4" />
+                        <X className="h-4 w-4" />
                         {t('cancel-subscription')}
                       </>
                     )}

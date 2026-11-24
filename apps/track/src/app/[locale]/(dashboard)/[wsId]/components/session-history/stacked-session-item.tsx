@@ -372,12 +372,12 @@ export function StackedSessionItem({
               >
                 {isExpanded ? (
                   <>
-                    <ChevronUp className="mr-1.5 h-4 w-4" />
+                    <ChevronUp className="h-4 w-4" />
                     {t('hide_details')}
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="mr-1.5 h-4 w-4" />
+                    <ChevronDown className="h-4 w-4" />
                     {t('show_sessions', {
                       count: stackedSession?.sessions.length,
                     })}
@@ -501,7 +501,7 @@ export function StackedSessionItem({
                     >
                       {showAllSessions ? (
                         <>
-                          <ChevronUp className="mr-1 h-3 w-3" />
+                          <ChevronUp className="h-3 w-3" />
                           {t('show_less', {
                             shown: INITIAL_SESSION_LIMIT,
                             total: stackedSession?.sessions.length,
@@ -509,7 +509,7 @@ export function StackedSessionItem({
                         </>
                       ) : (
                         <>
-                          <ChevronDown className="mr-1 h-3 w-3" />
+                          <ChevronDown className="h-3 w-3" />
                           {t('show_more_sessions', {
                             count:
                               stackedSession?.sessions.length -

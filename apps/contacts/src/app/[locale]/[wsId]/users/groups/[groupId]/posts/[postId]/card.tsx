@@ -367,9 +367,9 @@ function UserCardEditor({
             disabled={isSavingStatus || isClearing}
           >
             {isSavingStatus ? (
-              <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+              <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
-              <Check className="mr-1 h-4 w-4" />
+              <Check className="h-4 w-4" />
             )}
             {t('common.completed')}
           </Button>
@@ -380,9 +380,9 @@ function UserCardEditor({
             disabled={isSavingStatus || isClearing}
           >
             {isSavingStatus ? (
-              <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+              <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
-              <X className="mr-1 h-4 w-4" />
+              <X className="h-4 w-4" />
             )}
             {t('common.incomplete')}
           </Button>
@@ -395,9 +395,9 @@ function UserCardEditor({
               title={t('ws_post_details.reset_check_description')}
             >
               {isClearing ? (
-                <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+                <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
-                <RotateCcw className="mr-1 h-4 w-4" />
+                <RotateCcw className="h-4 w-4" />
               )}
               {t('ws_post_details.reset_check')}
             </Button>
@@ -411,9 +411,9 @@ function UserCardEditor({
               disabled={isSavingStatus || isClearing}
             >
               {isSavingStatus ? (
-                <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+                <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
-                <Save className="mr-1 h-4 w-4" />
+                <Save className="h-4 w-4" />
               )}
               {t('common.save')}
             </Button>

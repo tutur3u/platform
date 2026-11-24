@@ -1144,12 +1144,12 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
             >
               {isPreviewing ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
+                  <Loader2 className="h-4 w-4 animate-spin text-dynamic-blue" />
                   {t('generate_pending')}
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   {t('generate_button')}
                 </>
               )}
@@ -1514,12 +1514,12 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
             >
               {isCreating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
+                  <Loader2 className="h-4 w-4 animate-spin text-dynamic-blue" />
                   {t('confirm_pending')}
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   {t('confirm_button')}
                 </>
               )}

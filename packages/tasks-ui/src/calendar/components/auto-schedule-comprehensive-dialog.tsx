@@ -207,9 +207,9 @@ export default function AutoScheduleComprehensiveDialog({
             className="w-full"
           >
             {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
             )}
             {isLoading ? 'Optimizing...' : 'Run Auto-Schedule'}
           </Button>

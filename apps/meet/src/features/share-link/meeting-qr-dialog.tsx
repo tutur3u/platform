@@ -87,7 +87,7 @@ export function MeetingQrDialog({
             <QrSurface url={url} large={false} />
           </div>
           <Button size="lg" onClick={present}>
-            <Maximize2 className="mr-2 h-5 w-5" />
+            <Maximize2 className="h-5 w-5" />
             {t('present')}
           </Button>
         </DialogContent>
@@ -106,7 +106,7 @@ export function MeetingQrDialog({
             >
               <QrSurface url={url} large />
               <Button variant="outline" size="lg" autoFocus onClick={exit}>
-                <Minimize2 className="mr-2 h-5 w-5" />
+                <Minimize2 className="h-5 w-5" />
                 {t('exit_present')}
               </Button>
             </div>,

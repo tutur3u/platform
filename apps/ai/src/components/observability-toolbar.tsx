@@ -184,7 +184,7 @@ export function ObservabilityToolbar({
           variant="outline"
         >
           <RefreshCw
-            className={`mr-1.5 size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
           />
           {t('refresh')}
         </Button>

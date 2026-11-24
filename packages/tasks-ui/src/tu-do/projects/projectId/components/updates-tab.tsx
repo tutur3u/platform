@@ -72,12 +72,12 @@ export function UpdatesTab({
               >
                 {isPostingUpdate ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     {t('posting')}
                   </>
                 ) : (
                   <>
-                    <Send className="mr-2 h-4 w-4" />
+                    <Send className="h-4 w-4" />
                     {t('post_update')}
                   </>
                 )}

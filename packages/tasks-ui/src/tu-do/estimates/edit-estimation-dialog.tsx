@@ -356,12 +356,12 @@ export function EditEstimationDialog({
             >
               {isPending ? (
                 <>
-                  <Calculator className="mr-2 h-4 w-4 animate-spin" />
+                  <Calculator className="h-4 w-4 animate-spin" />
                   {t('dialog.updating')}
                 </>
               ) : (
                 <>
-                  <CheckSquare className="mr-2 h-4 w-4" />
+                  <CheckSquare className="h-4 w-4" />
                   {t('dialog.update_estimation')}
                 </>
               )}

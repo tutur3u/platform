@@ -83,9 +83,9 @@ export default function GroupShareButton({ groupId }: Props) {
                 disabled={!shareUrl || copiedLink}
               >
                 {copiedLink ? (
-                  <CheckCheck className="mr-2 h-4 w-4" />
+                  <CheckCheck className="h-4 w-4" />
                 ) : (
-                  <LinkIcon className="mr-2 h-4 w-4" />
+                  <LinkIcon className="h-4 w-4" />
                 )}
                 {copiedLink ? t('link_copied') : t('copy_link')}
               </Button>

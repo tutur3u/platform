@@ -333,7 +333,7 @@ export function TaskForm({
                   )}
                   onClick={() => setPriority(value as TaskPriority)}
                 >
-                  {Icon && <Icon className="mr-1 h-3 w-3" />}
+                  {Icon && <Icon className="h-3 w-3" />}
                   {label}
                 </Button>
               ))}
@@ -468,17 +468,17 @@ export function TaskForm({
             >
               {isSubmitting ? (
                 <>
-                  <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   {draftModeEnabled ? 'Saving...' : 'Creating...'}
                 </>
               ) : draftModeEnabled ? (
                 <>
-                  <FileEdit className="mr-2 h-3 w-3" />
+                  <FileEdit className="h-3 w-3" />
                   Save as Draft
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-3 w-3" />
+                  <Plus className="h-3 w-3" />
                   Create Task
                 </>
               )}

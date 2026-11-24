@@ -141,9 +141,9 @@ export function PostApprovalActions({
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
-              <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+              <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
-              <Check className="mr-1 h-4 w-4" />
+              <Check className="h-4 w-4" />
             )}
             {t('actions.approve')}
           </Button>
@@ -206,9 +206,9 @@ export function PostApprovalActions({
               disabled={mutation.isPending || !reason.trim()}
             >
               {mutation.isPending ? (
-                <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+                <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
-                <X className="mr-1 h-4 w-4" />
+                <X className="h-4 w-4" />
               )}
               {t('actions.reject')}
             </Button>

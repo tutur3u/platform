@@ -137,7 +137,7 @@ export default function ResetPasswordForm({
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? (
             <>
-              <LoadingIndicator className="mr-2 h-4 w-4" />
+              <LoadingIndicator className="h-4 w-4" />
               {t('reset-password.resetting')}
             </>
           ) : (

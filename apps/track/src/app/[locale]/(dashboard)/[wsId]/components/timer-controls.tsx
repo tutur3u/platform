@@ -4823,12 +4823,12 @@ export function TimerControls({
               >
                 {isCreatingTask ? (
                   <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
+                    <CheckCircle className="h-4 w-4" />
                     Create & Start Timer
                   </>
                 )}

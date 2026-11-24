@@ -1577,12 +1577,12 @@ export function TaskPreviewDialog({
             >
               {isCreating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
+                  <Loader2 className="h-4 w-4 animate-spin text-dynamic-blue" />
                   {t('ws-tasks.saving')}
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="h-4 w-4" />
                   {t('ws-tasks.save_n_tasks', {
                     count: visiblePreviewTasks.length,
                   })}

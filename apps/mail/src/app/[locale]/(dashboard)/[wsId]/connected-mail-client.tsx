@@ -240,7 +240,7 @@ export function ConnectedMailClient({
                   {messages.isFetchingNextPage ? (
                     <Loader2
                       aria-hidden="true"
-                      className="mr-2 size-4 animate-spin motion-reduce:animate-none"
+                      className="size-4 animate-spin motion-reduce:animate-none"
                     />
                   ) : null}
                   {t('connected_load_more')}

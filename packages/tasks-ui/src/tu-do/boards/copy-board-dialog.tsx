@@ -149,7 +149,7 @@ export function CopyBoardDialog({
             onClick={handleCopyBoard}
             disabled={isLoading || !newBoardName.trim()}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('ws-task-boards.duplicate_dialog.confirm')}
           </Button>
         </DialogFooter>

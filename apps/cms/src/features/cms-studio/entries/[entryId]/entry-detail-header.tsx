@@ -166,9 +166,9 @@ export function EntryDetailHeader({
             onClick={onSave}
           >
             {saveProcessing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Pencil className="mr-2 h-4 w-4" />
+              <Pencil className="h-4 w-4" />
             )}
             {strings.saveAction}
           </Button>
@@ -178,11 +178,11 @@ export function EntryDetailHeader({
             onClick={onPublishToggle}
           >
             {publishPending || saveProcessing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : published ? (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4" />
             ) : (
-              <Send className="mr-2 h-4 w-4" />
+              <Send className="h-4 w-4" />
             )}
             {published ? strings.unpublishAction : strings.publishAction}
           </Button>

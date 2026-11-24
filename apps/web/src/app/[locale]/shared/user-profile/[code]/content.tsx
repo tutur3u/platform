@@ -232,9 +232,9 @@ export default function ProfileFillContent({
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {avatarUploading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Upload className="mr-2 h-4 w-4" />
+                    <Upload className="h-4 w-4" />
                   )}
                   {t('field_avatar_upload')}
                 </Button>
@@ -374,7 +374,7 @@ export default function ProfileFillContent({
             disabled={submitMutation.isPending || avatarUploading}
           >
             {submitMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : null}
             {t('public_submit')}
           </Button>

@@ -490,9 +490,9 @@ export function ObservabilityDeploymentsPanel({
                   variant="outline"
                 >
                   {clearPinMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <PinOff className="mr-2 h-4 w-4" />
+                    <PinOff className="h-4 w-4" />
                   )}
                   {clearPinMutation.isPending
                     ? rootT('controls.clear_pin_pending')
@@ -555,9 +555,9 @@ export function ObservabilityDeploymentsPanel({
               variant="outline"
             >
               {revertMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <RotateCcw className="mr-2 h-4 w-4" />
+                <RotateCcw className="h-4 w-4" />
               )}
               {selectedCachedRollback
                 ? rootT('controls.deployment_revert_instant_action')
@@ -867,7 +867,7 @@ export function ObservabilityDeploymentsPanel({
               type="button"
             >
               {revertMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : null}
               {rootT('controls.deployment_revert_confirm_action')}
             </Button>

@@ -297,12 +297,12 @@ export default function AdminTaskEmbeddings() {
           >
             {isGenerating ? (
               <>
-                <Activity className="mr-2 h-4 w-4 animate-spin" />
+                <Activity className="h-4 w-4 animate-spin" />
                 Generating... ({progress?.current || 0}/{progress?.total || 0})
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className="h-4 w-4" />
                 Generate Embeddings
               </>
             )}

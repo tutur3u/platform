@@ -189,9 +189,9 @@ export function InquiryDetailModal({
                     className="transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5"
                   >
                     {isUpdatingInquiry ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <ClockIcon className="mr-2 h-4 w-4" />
+                      <ClockIcon className="h-4 w-4" />
                     )}
                     Reopen
                   </Button>
@@ -203,9 +203,9 @@ export function InquiryDetailModal({
                     disabled={isUpdatingInquiry}
                   >
                     {isUpdatingInquiry ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <CheckCircleIcon className="mr-2 h-4 w-4" />
+                      <CheckCircleIcon className="h-4 w-4" />
                     )}
                     Mark as Resolved
                   </Button>

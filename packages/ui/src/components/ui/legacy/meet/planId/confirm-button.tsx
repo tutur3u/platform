@@ -34,17 +34,17 @@ export function ConfirmButton({
     >
       {isLoading ? (
         <>
-          <Loader2 className="mr-1 h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" />
           Updating...
         </>
       ) : !isConfirmed ? (
         <>
-          <Check className="mr-1 h-5 w-5" />
+          <Check className="h-5 w-5" />
           Confirm
         </>
       ) : (
         <>
-          <Edit className="mr-1 h-5 w-5" />
+          <Edit className="h-5 w-5" />
           Re-Edit
         </>
       )}

@@ -110,7 +110,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           size="lg"
           onClick={() => setShareDialogOpen(true)}
         >
-          <Share2 className="mr-2 h-5 w-5" />
+          <Share2 className="h-5 w-5" />
           {tShare('title')}
         </Button>
       </div>

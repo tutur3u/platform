@@ -89,11 +89,11 @@ export function MeetingTranscriptTab({
           />
         </div>
         <Button disabled={!hasText} variant="outline" onClick={copy}>
-          <Copy className="mr-2 h-4 w-4" />
+          <Copy className="h-4 w-4" />
           {t('copy')}
         </Button>
         <Button disabled={!hasText} variant="outline" onClick={exportMarkdown}>
-          <Download className="mr-2 h-4 w-4" />
+          <Download className="h-4 w-4" />
           {t('export')}
         </Button>
       </div>

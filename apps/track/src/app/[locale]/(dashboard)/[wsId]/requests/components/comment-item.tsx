@@ -183,7 +183,7 @@ export function CommentItem({
                 disabled={updateMutation.isPending || !editContent.trim()}
               >
                 {updateMutation.isPending && (
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 )}
                 {t('comments.saveComment')}
               </Button>
@@ -217,7 +217,7 @@ export function CommentItem({
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               )}
               {t('comments.deleteComment')}
             </Button>

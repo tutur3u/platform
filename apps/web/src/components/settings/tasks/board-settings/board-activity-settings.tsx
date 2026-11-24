@@ -900,7 +900,7 @@ export function BoardActivitySettings({
                 variant="ghost"
               >
                 {isFetchingNextPage ? (
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : null}
                 {t('common.load_more')}
               </Button>

@@ -246,7 +246,7 @@ export default function TeamDetailsClient({
                       disabled={!newTeamName.trim() || isUpdatingName}
                     >
                       {isUpdatingName ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : null}
                       {t('common.save')}
                     </Button>
@@ -343,9 +343,9 @@ export default function TeamDetailsClient({
                     disabled={isInviteLoading || !emailForm.formState.isValid}
                   >
                     {isInviteLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Mail className="mr-2 h-4 w-4" />
+                      <Mail className="h-4 w-4" />
                     )}
                     {t('teams.send_invitation')}
                   </Button>

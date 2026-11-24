@@ -376,7 +376,7 @@ export function SaveAsTemplateDialog({
             onClick={handleSaveTemplate}
             disabled={isLoading || !templateName.trim()}
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('ws-board-templates.save_dialog.confirm')}
           </Button>
         </DialogFooter>

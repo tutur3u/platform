@@ -711,7 +711,7 @@ export default function CalendarConnections({
           size="sm"
           onClick={() => setIsManageOpen(true)}
         >
-          <Calendar className="mr-2 h-4 w-4" />
+          <Calendar className="h-4 w-4" />
           {t('calendars')}
         </Button>
       )}
@@ -829,7 +829,7 @@ export default function CalendarConnections({
                         onClick={() => handleAddCalendar(calendar)}
                         disabled={isAddingCalendar}
                       >
-                        <Plus className="mr-2 h-4 w-4" />
+                        <Plus className="h-4 w-4" />
                         {t('add')}
                       </Button>
                     </div>

@@ -241,12 +241,12 @@ export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
           >
             {addPaymentMethodMutation.isPending ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {t('processing')}
               </>
             ) : (
               <>
-                <CreditCard className="mr-2 h-4 w-4" />
+                <CreditCard className="h-4 w-4" />
                 {t('add-payment-method')}
               </>
             )}
@@ -313,12 +313,12 @@ export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
             >
               {addPaymentMethodMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('processing')}
                 </>
               ) : (
                 <>
-                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <ExternalLink className="h-4 w-4" />
                   {t('add-payment-method')}
                 </>
               )}
@@ -357,12 +357,12 @@ export default function PaymentMethodsCard({ wsId }: PaymentMethodsCardProps) {
             >
               {deletePaymentMethodMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('deleting')}...
                 </>
               ) : (
                 <>
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                   {t('delete')}
                 </>
               )}

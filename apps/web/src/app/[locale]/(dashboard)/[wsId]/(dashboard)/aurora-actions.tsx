@@ -101,7 +101,7 @@ export default function AuroraActions() {
       >
         {isHealthLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             Checking Health...
           </>
         ) : (
@@ -116,7 +116,7 @@ export default function AuroraActions() {
       >
         {isForecastLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             Updating Forecast...
           </>
         ) : (
@@ -131,7 +131,7 @@ export default function AuroraActions() {
       >
         {isMetricsLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             Updating Metrics...
           </>
         ) : (

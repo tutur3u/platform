@@ -128,9 +128,9 @@ export function SatelliteWorkspaceInvitationCard({
             type="button"
           >
             {acceptMutation.isPending || isLeaving ? (
-              <Check className="mr-2 h-4 w-4" />
+              <Check className="h-4 w-4" />
             ) : (
-              <ArrowRight className="mr-2 h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             )}
             {acceptMutation.isPending || isLeaving
               ? t('accepting')

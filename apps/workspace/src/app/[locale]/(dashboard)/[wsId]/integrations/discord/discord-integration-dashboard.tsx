@@ -851,12 +851,12 @@ export default function DiscordIntegrationDashboard({
             >
               {isAddingMember ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Adding...
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Member
                 </>
               )}

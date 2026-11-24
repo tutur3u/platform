@@ -150,7 +150,7 @@ export function InternalAppAccountConfirmation({
           {confirming ? (
             <span className="sr-only">{t('common.loading')}</span>
           ) : (
-            <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           )}
         </Button>
         <Button

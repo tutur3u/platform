@@ -598,7 +598,7 @@ export default function ChallengeForm({
                                       count={field.value?.length ?? 0}
                                       loading={isLoadingAdmins}
                                     />
-                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>

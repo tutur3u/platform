@@ -540,9 +540,9 @@ export function PushTestForm({
 
           <Button type="submit" disabled={!canSend || mutation.isPending}>
             {mutation.isPending ? (
-              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="mr-2 h-4 w-4" />
+              <Send className="h-4 w-4" />
             )}
             {t('form.send')}
           </Button>

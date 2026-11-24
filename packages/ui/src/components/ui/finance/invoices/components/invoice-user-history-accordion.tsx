@@ -238,7 +238,7 @@ export function InvoiceUserHistoryAccordion({
                         aria-busy={isFetchingNextPage}
                       >
                         {isFetchingNextPage ? (
-                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />
                         ) : null}
                         {t('ws-invoices.load_more')}
                         {isFetchingNextPage ? (

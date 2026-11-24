@@ -30,7 +30,7 @@ export function SubscriptionCreateAction({
       >
         {creating ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             {t('ws-invoices.creating_subscription_invoice')}
           </>
         ) : (

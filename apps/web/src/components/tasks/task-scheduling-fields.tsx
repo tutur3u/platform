@@ -378,12 +378,12 @@ export function TaskSchedulingFields({
             >
               {isScheduling ? (
                 <>
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Scheduling...
                 </>
               ) : (
                 <>
-                  <CalendarClock className="mr-1.5 h-4 w-4" />
+                  <CalendarClock className="h-4 w-4" />
                   {hasScheduledEvents ? 'Reschedule' : 'Schedule Now'}
                 </>
               )}

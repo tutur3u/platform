@@ -66,7 +66,7 @@ export function RecordingSessionActions({
       <div className="flex gap-2">
         {session.transcript ? (
           <Button variant="outline" size="sm" onClick={handleViewTranscript}>
-            <EyeIcon className="mr-1 h-3 w-3" />
+            <EyeIcon className="h-3 w-3" />
             View Transcript
           </Button>
         ) : null}
@@ -78,9 +78,9 @@ export function RecordingSessionActions({
           disabled={isLoadingChunks}
         >
           {isLoadingChunks ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin motion-reduce:animate-none" />
+            <Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" />
           ) : (
-            <Headphones className="mr-1 h-3 w-3" />
+            <Headphones className="h-3 w-3" />
           )}
           Play
           {isLoadingChunks ? (

@@ -296,7 +296,7 @@ export default function SyncDebugPanel() {
           onClick={validateEvents}
           className="flex-1"
         >
-          <CheckCircle2 className="mr-1 h-3 w-3" />
+          <CheckCircle2 className="h-3 w-3" />
           Validate
         </Button>
         <Button
@@ -305,7 +305,7 @@ export default function SyncDebugPanel() {
           onClick={copyDebugInfo}
           className="flex-1"
         >
-          <Copy className="mr-1 h-3 w-3" />
+          <Copy className="h-3 w-3" />
           Copy Info
         </Button>
         <Button
@@ -316,9 +316,9 @@ export default function SyncDebugPanel() {
           className="flex-1"
         >
           {isSyncing ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <PlayCircle className="mr-1 h-3 w-3" />
+            <PlayCircle className="h-3 w-3" />
           )}
           Test Sync
         </Button>

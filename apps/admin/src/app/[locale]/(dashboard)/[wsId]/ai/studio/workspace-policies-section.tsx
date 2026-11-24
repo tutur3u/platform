@@ -174,7 +174,7 @@ export function WorkspaceAiStudioPoliciesSection({
             variant="outline"
           >
             {policiesQuery.isFetchingNextPage ? null : (
-              <RefreshCw className="mr-2 size-4" />
+              <RefreshCw className="size-4" />
             )}
             <LoadMoreLabel
               isFetching={policiesQuery.isFetchingNextPage}

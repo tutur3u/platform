@@ -105,7 +105,7 @@ export function LeaderboardFilters({
           <Filter className="h-3.5 w-3.5" />
           {t('filters')}
           {showAdvancedFilters && (
-            <Sparkles className="ml-1 h-3 w-3 text-blue-600 dark:text-blue-400" />
+            <Sparkles className="h-3 w-3 text-blue-600 dark:text-blue-400" />
           )}
         </Button>
       </div>

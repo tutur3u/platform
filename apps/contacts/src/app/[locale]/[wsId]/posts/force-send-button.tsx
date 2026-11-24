@@ -57,9 +57,9 @@ export function ForceSendPostButton({
       disabled={disabled || mutation.isPending}
     >
       {mutation.isPending ? (
-        <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+        <LoaderCircle className="h-4 w-4 animate-spin" />
       ) : (
-        <Send className="mr-1 h-4 w-4" />
+        <Send className="h-4 w-4" />
       )}
       {t('force_send')}
     </Button>

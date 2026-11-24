@@ -285,9 +285,9 @@ export function ModelPolicyPanel({
             type="button"
           >
             {mutation.isPending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Save className="mr-2 size-4" />
+              <Save className="size-4" />
             )}
             {t('save')}
           </Button>

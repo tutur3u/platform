@@ -314,9 +314,7 @@ export default function AdjustSeatsDialog({
               newSeatCount > effectiveMaxSeats
             }
           >
-            {mutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('confirm-seat-change')}
           </Button>
         </DialogFooter>

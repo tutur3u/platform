@@ -102,9 +102,9 @@ export function EntryDetailWebglPanel({
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={uploadWebglPending} onClick={onUploadWebglClick}>
               {uploadWebglPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <UploadCloud className="mr-2 h-4 w-4" />
+                <UploadCloud className="h-4 w-4" />
               )}
               {uploadWebglPending
                 ? strings.mediaProcessingLabel

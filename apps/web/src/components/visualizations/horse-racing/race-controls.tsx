@@ -99,11 +99,7 @@ export function RaceControls({
           variant={isRunning && isAnimating ? 'outline' : undefined}
           onClick={isRunning ? togglePlayPause : startVisualization}
         >
-          {isRunning && isAnimating ? (
-            <Pause size={16} className="mr-2" />
-          ) : (
-            <Play size={16} className="mr-2" />
-          )}
+          {isRunning && isAnimating ? <Pause size={16} /> : <Play size={16} />}
           {isRunning && isAnimating ? 'Pause' : 'Play'}
         </Button>
 

@@ -147,9 +147,7 @@ export function WorkspaceSelectTrigger({
           </div>
         )}
         {invitations}
-        {!compact && (
-          <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-        )}
+        {!compact && <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />}
       </Button>
     );
   }

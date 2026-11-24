@@ -38,9 +38,9 @@ export default function CopyLinkButton({
       }}
     >
       {copied ? (
-        <Check className="mr-2 h-4 w-4" />
+        <Check className="h-4 w-4" />
       ) : (
-        <LinkIcon className="mr-2 h-4 w-4" />
+        <LinkIcon className="h-4 w-4" />
       )}
       {copied ? t('copied') : t('copy_link')}
     </Button>

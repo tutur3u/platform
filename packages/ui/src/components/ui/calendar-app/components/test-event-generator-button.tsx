@@ -84,9 +84,9 @@ export default function TestEventGeneratorButton({
       className="w-full md:w-fit"
     >
       {isLoading ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <FlaskConical className="mr-2 h-4 w-4" />
+        <FlaskConical className="h-4 w-4" />
       )}
       <span>{isLoading ? 'Generating...' : 'Generate Test Data'}</span>
     </Button>

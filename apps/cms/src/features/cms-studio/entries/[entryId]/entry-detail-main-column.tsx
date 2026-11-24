@@ -255,9 +255,9 @@ export function EntryDetailMainColumn({
                       onClick={onCoverInputClick}
                     >
                       {uploadCoverPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <ImagePlus className="mr-2 h-4 w-4" />
+                        <ImagePlus className="h-4 w-4" />
                       )}
                       {uploadCoverPending
                         ? strings.mediaProcessingLabel
@@ -411,11 +411,11 @@ export function EntryDetailMainColumn({
                   onClick={onUploadMediaClick}
                 >
                   {uploadMediaPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : supportsOnlyAudio ? (
-                    <Music className="mr-2 h-4 w-4" />
+                    <Music className="h-4 w-4" />
                   ) : (
-                    <ImagePlus className="mr-2 h-4 w-4" />
+                    <ImagePlus className="h-4 w-4" />
                   )}
                   {uploadMediaPending
                     ? strings.mediaProcessingLabel
@@ -442,9 +442,9 @@ export function EntryDetailMainColumn({
                   onClick={onDeleteSelectedMedia}
                 >
                   {deleteAssetsPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   )}
                   {deleteAssetsPending
                     ? strings.mediaProcessingLabel
@@ -638,7 +638,7 @@ export function EntryDetailMainColumn({
                               }}
                             >
                               {setAsCoverPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
                               ) : null}
                               {setAsCoverPending
                                 ? strings.mediaProcessingLabel
@@ -690,9 +690,9 @@ export function EntryDetailMainColumn({
                             onClick={() => onSaveAssetCaption(asset.id)}
                           >
                             {saveAssetCaptionPending ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              <Pencil className="mr-2 h-4 w-4" />
+                              <Pencil className="h-4 w-4" />
                             )}
                             {saveAssetCaptionPending
                               ? strings.mediaProcessingLabel

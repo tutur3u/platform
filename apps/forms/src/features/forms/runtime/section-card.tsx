@@ -452,7 +452,7 @@ export function renderFormSectionCard({
                 >
                   {isLastStep && advanceTarget.type === 'submit' ? (
                     <>
-                      <Check className="mr-2 h-4 w-4" />
+                      <Check className="h-4 w-4" />
                       {mode === 'preview'
                         ? t('runtime.finish_preview')
                         : t('runtime.submit_response')}
@@ -460,7 +460,7 @@ export function renderFormSectionCard({
                   ) : (
                     <>
                       {t('runtime.continue')}
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </Button>

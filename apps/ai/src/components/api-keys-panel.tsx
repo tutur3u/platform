@@ -136,7 +136,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
                 <Button size="sm" type="button" variant="outline">
                   {t('configure')}
                   <ChevronDownIcon
-                    className={`ml-2 size-3.5 transition-transform ${
+                    className={`size-3.5 transition-transform ${
                       createOpen ? 'rotate-180' : ''
                     }`}
                   />

@@ -282,7 +282,7 @@ export function PeriodicResendDialog({
           </Button>
           <Button disabled={!canConfirm} onClick={() => void confirm()}>
             {pending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+              <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : null}
             {t('resend_confirm', { count: count ?? 0 })}
           </Button>

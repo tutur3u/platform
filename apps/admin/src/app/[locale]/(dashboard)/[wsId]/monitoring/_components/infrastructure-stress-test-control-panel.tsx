@@ -185,9 +185,9 @@ export function InfrastructureStressTestControlPanel({
             onClick={queueRun}
           >
             {queueMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Play className="mr-2 h-4 w-4" />
+              <Play className="h-4 w-4" />
             )}
             {t('actions.start')}
           </Button>
@@ -197,9 +197,9 @@ export function InfrastructureStressTestControlPanel({
             variant="outline"
           >
             {abortMutation.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Square className="mr-2 h-4 w-4" />
+              <Square className="h-4 w-4" />
             )}
             {t('actions.abort')}
           </Button>

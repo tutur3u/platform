@@ -339,9 +339,9 @@ export function CategoryColorsSettings({
                   disabled={!newCategoryName.trim() || isCreating}
                 >
                   {isCreating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <PlusIcon className="mr-2 h-4 w-4" />
+                    <PlusIcon className="h-4 w-4" />
                   )}
                   {t('categories.add')}
                 </Button>
@@ -365,7 +365,7 @@ export function CategoryColorsSettings({
                 }
               >
                 {isMutating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : null}
                 {t('categories.add_all_missing')}
               </Button>

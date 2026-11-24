@@ -177,7 +177,7 @@ export function ResponsesPanel({
               onClick={onRefresh}
             >
               <RefreshCcw
-                className={cn('mr-2 h-4 w-4', isRefreshing && 'animate-spin')}
+                className={cn('h-4 w-4', isRefreshing && 'animate-spin')}
               />
               {tCommon('refresh')}
             </Button>

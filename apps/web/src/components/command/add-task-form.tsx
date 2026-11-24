@@ -1133,12 +1133,12 @@ export function AddTaskForm({
               >
                 {createTaskMutation.isPending ? (
                   <>
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader className="h-4 w-4 animate-spin" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Create Task
                   </>
                 )}

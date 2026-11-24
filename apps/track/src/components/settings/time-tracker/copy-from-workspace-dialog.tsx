@@ -464,12 +464,12 @@ export function CopyFromWorkspaceDialog({
           >
             {isCopying ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 {t('copy_dialog.copying')}
               </>
             ) : (
               <>
-                <Copy className="mr-2 h-4 w-4" />
+                <Copy className="h-4 w-4" />
                 {t('copy_dialog.copy_button')}
               </>
             )}

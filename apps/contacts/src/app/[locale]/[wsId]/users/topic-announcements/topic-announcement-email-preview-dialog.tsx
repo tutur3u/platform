@@ -182,7 +182,7 @@ export function TopicAnnouncementEmailPreviewDialog({
             </Button>
             <Button disabled={!canConfirm} onClick={onConfirm} type="button">
               {isConfirming ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : null}
               {confirmLabel ?? t('send_now')}
             </Button>

@@ -599,9 +599,9 @@ Share this log with engineers for debugging assistance.
               disabled={isApplying || previewQuery.isFetching}
             >
               {isApplying ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <CheckCircle className="mr-2 h-4 w-4" />
+                <CheckCircle className="h-4 w-4" />
               )}
               Apply Schedule
             </Button>

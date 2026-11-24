@@ -4,6 +4,7 @@ import {
   ExternalLink,
   Globe,
   LinkIcon,
+  Loader2,
   Lock,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -65,11 +66,11 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
               disabled={isPublic}
             >
               {isPublic ? (
-                <Check className="mr-2 h-4 w-4" />
+                <Check className="h-4 w-4" />
               ) : updating ? (
-                <span className="mr-2 h-4 w-4 animate-spin">⏳</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Globe className="mr-2 h-4 w-4" />
+                <Globe className="h-4 w-4" />
               )}
               <div className="line-clamp-1">Public</div>
             </Button>
@@ -81,11 +82,11 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
               disabled={!isPublic}
             >
               {!isPublic ? (
-                <Check className="mr-2 h-4 w-4" />
+                <Check className="h-4 w-4" />
               ) : updating ? (
-                <span className="mr-2 h-4 w-4 animate-spin">⏳</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Lock className="mr-2 h-4 w-4" />
+                <Lock className="h-4 w-4" />
               )}
               <div className="line-clamp-1">Only me</div>
             </Button>
@@ -120,9 +121,9 @@ const DocumentShareDialog: React.FC<DocumentShareDialogProps> = ({
               disabled={!isPublic || copiedLink}
             >
               {copiedLink ? (
-                <CheckCheck className="mr-2 h-4 w-4" />
+                <CheckCheck className="h-4 w-4" />
               ) : (
-                <LinkIcon className="mr-2 h-4 w-4" />
+                <LinkIcon className="h-4 w-4" />
               )}
               Copy public link
             </Button>

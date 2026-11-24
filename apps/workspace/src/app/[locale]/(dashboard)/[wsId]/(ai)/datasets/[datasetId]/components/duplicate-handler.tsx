@@ -246,12 +246,12 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Detecting...
                 </>
               ) : (
                 <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="h-4 w-4" />
                   Detect Duplicates
                 </>
               )}
@@ -266,12 +266,12 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
               >
                 {isRemoving ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Removing...
                   </>
                 ) : (
                   <>
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                     Remove {duplicateCount} Duplicates
                   </>
                 )}

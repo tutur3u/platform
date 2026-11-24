@@ -363,7 +363,7 @@ export function MessageList({
                     variant="outline"
                   >
                     {isLoadingMoreMessages ? (
-                      <LoaderCircle className="mr-2 size-3.5 animate-spin motion-reduce:animate-none" />
+                      <LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />
                     ) : null}
                     {t('load_older_messages')}
                     {isLoadingMoreMessages ? (

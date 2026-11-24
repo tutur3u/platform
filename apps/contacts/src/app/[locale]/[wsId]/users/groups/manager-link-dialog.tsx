@@ -195,7 +195,7 @@ export function ManagerLinkDialog({
                     onClick={() => setCandidateToConfirm(candidate)}
                   >
                     {linkMutation.isPending ? (
-                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : null}
                     {usesExistingProfile
                       ? t('manager_link_consolidate')

@@ -72,9 +72,9 @@ export function PlaygroundWorkbench({
           type="button"
         >
           {isPending ? (
-            <Loader2 className="mr-2 size-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Rocket className="mr-2 size-4" />
+            <Rocket className="size-4" />
           )}
           {isPending ? t('running') : t('run')}
         </Button>

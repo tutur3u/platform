@@ -142,9 +142,9 @@ export function GitHubBotClientsList({
             variant="outline"
           >
             {client.revokedAt ? (
-              <XCircle className="mr-2 h-4 w-4" />
+              <XCircle className="h-4 w-4" />
             ) : (
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             )}
             {client.revokedAt ? labels.revoked : labels.revoke}
           </Button>

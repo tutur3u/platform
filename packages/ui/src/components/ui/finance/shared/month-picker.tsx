@@ -93,7 +93,7 @@ export function MonthPicker({
             className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <CalendarIcon className="h-4 w-4" />
           {defaultValue ? (
             format(defaultValue, 'MMMM yyyy', { locale: dateLocale })
           ) : (

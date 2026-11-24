@@ -474,12 +474,12 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
             >
               {isCreating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('creating_note')}
                 </>
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   {t('create_note_button')}
                 </>
               )}
@@ -777,12 +777,12 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
             >
               {isConverting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('conversion_dialog.converting')}
                 </>
               ) : (
                 <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                   {t('conversion_dialog.confirm')}
                 </>
               )}
@@ -842,7 +842,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
             <Button onClick={handleUpdateNote} disabled={isUpdating}>
               {isUpdating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('edit_dialog.updating')}
                 </>
               ) : (

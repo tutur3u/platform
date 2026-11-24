@@ -379,11 +379,11 @@ export function ChatPanel({
                   disabled={!id || chat?.is_public}
                 >
                   {chat?.is_public ? (
-                    <Check className="mr-2 h-4 w-4" />
+                    <Check className="h-4 w-4" />
                   ) : updating ? (
-                    <LoadingIndicator className="mr-2 h-4 w-4" />
+                    <LoadingIndicator className="h-4 w-4" />
                   ) : (
-                    <Globe className="mr-2 h-4 w-4" />
+                    <Globe className="h-4 w-4" />
                   )}
                   <div className="line-clamp-1">{t('public')}</div>
                 </Button>
@@ -400,11 +400,11 @@ export function ChatPanel({
                   disabled={!id || !chat?.is_public}
                 >
                   {!chat?.is_public ? (
-                    <Check className="mr-2 h-4 w-4" />
+                    <Check className="h-4 w-4" />
                   ) : updating ? (
-                    <LoadingIndicator className="mr-2 h-4 w-4" />
+                    <LoadingIndicator className="h-4 w-4" />
                   ) : (
-                    <Lock className="mr-2 h-4 w-4" />
+                    <Lock className="h-4 w-4" />
                   )}
                   <div className="line-clamp-1">{t('only_me')}</div>
                 </Button>
@@ -440,9 +440,9 @@ export function ChatPanel({
                   disabled={disablePublicLink || copiedLink}
                 >
                   {copiedLink ? (
-                    <CheckCheck className="mr-2 h-4 w-4" />
+                    <CheckCheck className="h-4 w-4" />
                   ) : (
-                    <LinkIcon className="mr-2 h-4 w-4" />
+                    <LinkIcon className="h-4 w-4" />
                   )}
                   {t('copy_public_link')}
                 </Button>

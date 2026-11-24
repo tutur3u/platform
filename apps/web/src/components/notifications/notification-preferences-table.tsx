@@ -501,7 +501,7 @@ export default function NotificationPreferencesTable({
                   aria-label={`Enable all notifications in ${tGroups(group.labelKey as any)}`}
                 >
                   {bulkLoadingStates.get(group.id) === 'enable_all' && (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   )}
                   {t('enable-all')}
                 </Button>
@@ -516,7 +516,7 @@ export default function NotificationPreferencesTable({
                   aria-label={`Disable all notifications in ${tGroups(group.labelKey as any)}`}
                 >
                   {bulkLoadingStates.get(group.id) === 'disable_all' && (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   )}
                   {t('disable-all')}
                 </Button>

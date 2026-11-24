@@ -974,12 +974,12 @@ export function InfiniteTransactionsList({
                   >
                     {isExpanded ? (
                       <>
-                        <ChevronUp className="mr-2 h-4 w-4" />
+                        <ChevronUp className="h-4 w-4" />
                         {t('common.show-less')}
                       </>
                     ) : (
                       <>
-                        <ChevronDown className="mr-2 h-4 w-4" />
+                        <ChevronDown className="h-4 w-4" />
                         {t('common.show-more')} (
                         {group.transactions.length - displayCount}{' '}
                         {t('date_groups.more')})

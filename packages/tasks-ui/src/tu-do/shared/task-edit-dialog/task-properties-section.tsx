@@ -2166,7 +2166,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                               ) : (
                                 <>
-                                  <Save className="mr-1.5 h-3.5 w-3.5" />
+                                  <Save className="h-3.5 w-3.5" />
                                   {t('common.save')}
                                 </>
                               )}

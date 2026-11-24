@@ -350,7 +350,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                   <Button type="submit" disabled={addRoleMutation.isPending}>
                     {addRoleMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         {t('common.processing')}
                       </>
                     ) : (

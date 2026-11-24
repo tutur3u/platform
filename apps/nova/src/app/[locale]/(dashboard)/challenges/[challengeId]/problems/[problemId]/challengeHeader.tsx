@@ -206,7 +206,7 @@ export default function ChallengeHeader({
                 <Badge variant="secondary" className="px-2.5">
                   {currentProblemIndex}/{challenge.problems.length}
                 </Badge>
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent

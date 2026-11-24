@@ -230,7 +230,7 @@ export function NativeEventGuests({
           disabled={notify.isPending}
           onClick={() => notify.mutate()}
         >
-          <Send className="mr-2 size-4" />
+          <Send className="size-4" />
           {t('send_update')}
         </Button>
       )}

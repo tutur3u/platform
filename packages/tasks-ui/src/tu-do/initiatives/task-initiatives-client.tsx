@@ -664,7 +664,7 @@ export function TaskInitiativesClient({
             <Button onClick={handleCreateInitiative} disabled={isCreating}>
               {isCreating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
@@ -752,7 +752,7 @@ export function TaskInitiativesClient({
             <Button onClick={handleUpdateInitiative} disabled={isUpdating}>
               {isUpdating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Updating...
                 </>
               ) : (
@@ -875,7 +875,7 @@ export function TaskInitiativesClient({
             >
               {isLinking ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Linking...
                 </>
               ) : (
