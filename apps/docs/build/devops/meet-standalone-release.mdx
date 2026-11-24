@@ -93,6 +93,16 @@ no-op with `MEET_RELEASE_SUPERSEDED`; it performs no deployment or success-marke
 write. Divergent sources stop with `MEET_RELEASE_DIVERGENT`. A stale standalone
 dispatch stops rather than replacing a newer live release.
 
+## Per-speaker transcription flag
+
+A Meet release ships `MEET_AI_PER_SPEAKER` off. Turning it on is a separate
+change with its own release-authority ACK, never part of a deploy. It is a hard
+gate: before flag-on, the updated EN and VI consent text and its notice-version
+bump must already be live (this asks every participant again), together with
+the other pilot gates in
+[Per-speaker transcription](/platform/features/meet-per-speaker-transcription#release-gates).
+Turning the flag off is always allowed and acts as a hard stop.
+
 ## Artifacts and rollback
 
 The validate job builds and seals the frontend and realtime output. Realtime's

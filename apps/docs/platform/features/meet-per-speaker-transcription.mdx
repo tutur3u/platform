@@ -343,6 +343,12 @@ everyone" message. Room-capture meetings keep today's wording. All other
 required notice items stay, in English and Vietnamese. The notice version
 bumps, so every choice is asked again.
 
+The dark release keeps today's Mira info panel and notice text unchanged,
+because changing the hashed notice text asks every participant again. The
+per-speaker wording ships only with the pilot: before the flag is turned on, the
+updated EN and VI text and its notice-version bump land together under a
+release-authority ACK (see Release gates).
+
 ## Release gates
 
 | Gate | Before |
@@ -352,6 +358,7 @@ bumps, so every choice is asked again.
 | Migration exact-SQL ACK and isolated reset with pgTAP | the migration |
 | Production deploy with the flag off, exact-hash ACK | dark release |
 | Account-deletion fence hook; measured operation counts; tested stop fence | flag on for the pilot workspace |
+| Updated EN and VI consent text plus a notice-version bump (asks everyone again), with its own release-authority ACK | flag on for the pilot workspace |
 | Purge coverage for the `self_v1` stores; legal review of the notice | flag on for any other workspace |
 | Dedicated provider Worker with single-use dispatch permits | general availability |
 | Guest upload, mobile capture, per-person erase | their own reviews |
