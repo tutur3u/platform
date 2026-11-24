@@ -317,7 +317,7 @@ const storageAclReviewedLater = [
       'Creates the NOLOGIN memory roles and schemas. It never names workspace_storage, grants authenticated or service_role, or runs dynamic SQL; its execute literals are PostgREST paths and privilege-check arguments.',
   },
   {
-    file: 'apps/database/supabase/migrations/20261124065200_protect_teacher_contact_merges.sql',
+    file: 'apps/database/supabase/migrations/20261124133300_protect_teacher_contact_merges.sql',
     sourceDigest:
       'c67ba55471ee8fb5e17222c354a00c497e12e47398744cc02293e77a94118739',
     reason:

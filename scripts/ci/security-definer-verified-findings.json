@@ -251,7 +251,7 @@
     "reason": "Recreates the 20261030113002 definition verbatim with one added branch that answers operate_mira_channels only from an enabled root role grant the user holds; creator, admin and default permissions never imply it. Preserves the existing PUBLIC EXECUTE contract required by PUBLIC-targeted RLS policy dependencies; end-user JWT calls bind targets to auth.uid() outside triggers, and the same-file REVOKE precedes the explicit reviewed grant. has-workspace-permission-caller-scope and mira-channel-operator-and-usage pgTAP cover positive and negative controls."
   },
   {
-    "file": "apps/database/supabase/migrations/20261124064900_lms_course_manager_permission.sql",
+    "file": "apps/database/supabase/migrations/20261124133000_lms_course_manager_permission.sql",
     "signature": "public.has_workspace_permission(uuid,uuid,text)",
     "rule": "public-execute",
     "line": 27,

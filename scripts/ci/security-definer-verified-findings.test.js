@@ -253,7 +253,7 @@ const expectedVerifiedIdentities = [
     'public-execute',
   ],
   [
-    'apps/database/supabase/migrations/20261124064900_lms_course_manager_permission.sql',
+    'apps/database/supabase/migrations/20261124133000_lms_course_manager_permission.sql',
     'public.has_workspace_permission(uuid,uuid,text)',
     'public-execute',
   ],
