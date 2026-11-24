@@ -532,7 +532,7 @@ select is((select reservation_state from public.meet_ai_chunks where id = pg_tem
 select is((pg_temp.settle(89483, 'unknown')).reservation_state, 'unknown',
   'a dispatched chunk lost at stop is settled as unknown');
 select is(pg_temp.costs(), '0.00/1.00/0.00', 'only the dispatched chunk counts after stop');
-select throws_ok($$select pg_temp.reserve(89482, current_setting('test.sf')::uuid, 89408, 1, 1, 1)$$,
+select throws_ok($$select pg_temp.reserve(89482, current_setting('test.sf')::uuid, 89408, 2, 1, 1)$$,
   '55000', null, 'a closed session admits no chunks');
 select * from finish();
 rollback;
