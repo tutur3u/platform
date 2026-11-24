@@ -11,6 +11,11 @@ const alertVariants = cva(
           'border-[color:var(--alert-border,var(--border))] bg-[var(--alert-bg,var(--background))] text-foreground',
         destructive:
           'border-[color:var(--alert-border,var(--alert-destructive-edge))] bg-[var(--alert-bg,transparent)] text-destructive [&>svg]:text-destructive',
+        success:
+          'border-[color:var(--alert-border,color-mix(in_oklab,var(--success)_35%,transparent))] bg-[var(--alert-bg,color-mix(in_oklab,var(--success)_8%,transparent))] text-foreground [&>svg]:text-success',
+        warning:
+          'border-[color:var(--alert-border,color-mix(in_oklab,var(--warning)_35%,transparent))] bg-[var(--alert-bg,color-mix(in_oklab,var(--warning)_8%,transparent))] text-foreground [&>svg]:text-warning',
+        info: 'border-[color:var(--alert-border,color-mix(in_oklab,var(--info)_35%,transparent))] bg-[var(--alert-bg,color-mix(in_oklab,var(--info)_8%,transparent))] text-foreground [&>svg]:text-info',
       },
     },
     defaultVariants: {

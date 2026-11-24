@@ -59,6 +59,11 @@
   --teal: #17675e;
   --gray: #5a535c;
 
+  /* Status roles follow the Sorbet inks (contrast-tested with the hues). */
+  --success: var(--green);
+  --warning: var(--yellow);
+  --info: var(--blue);
+
   /*
     The remaining web hues get Sorbet inks too, and every --light-<hue> (text,
     rings and borders on calendar pastels) follows its ink, so no hue falls

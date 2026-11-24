@@ -19,9 +19,9 @@ const badgeVariants = cva(
         outline:
           'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
         success:
-          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20',
+          'border-success/20 bg-success/10 text-success hover:bg-success/20',
         warning:
-          'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20',
+          'border-warning/20 bg-warning/10 text-warning hover:bg-warning/20',
         error:
           'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20',
       },

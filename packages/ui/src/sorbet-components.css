@@ -256,6 +256,21 @@
     --alert-border: color-mix(in oklab, var(--destructive) 35%, transparent);
     --alert-bg: color-mix(in oklab, var(--destructive) 8%, var(--card));
   }
+
+  :root[data-ui="sorbet"] :where([data-slot="alert"][data-variant="success"]) {
+    --alert-border: color-mix(in oklab, var(--success) 35%, transparent);
+    --alert-bg: color-mix(in oklab, var(--success) 8%, var(--card));
+  }
+
+  :root[data-ui="sorbet"] :where([data-slot="alert"][data-variant="warning"]) {
+    --alert-border: color-mix(in oklab, var(--warning) 35%, transparent);
+    --alert-bg: color-mix(in oklab, var(--warning) 8%, var(--card));
+  }
+
+  :root[data-ui="sorbet"] :where([data-slot="alert"][data-variant="info"]) {
+    --alert-border: color-mix(in oklab, var(--info) 35%, transparent);
+    --alert-bg: color-mix(in oklab, var(--info) 8%, var(--card));
+  }
 }
 
 /*

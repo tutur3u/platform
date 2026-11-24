@@ -231,6 +231,10 @@
 
   --destructive: hsl(0 84.2% 60.2%);
   --destructive-foreground: hsl(0 0% 98%);
+  /* Status text and icons: 4.5:1 or better on the page and on their 8% tint. */
+  --success: hsl(142 72% 27%);
+  --warning: hsl(32 85% 32%);
+  --info: hsl(217 80% 42%);
 
   --border: hsl(0 0% 89.8%);
   --input: hsl(0 0% 89.8%);
@@ -430,6 +434,9 @@
 
   --destructive: hsl(0 62.8% 30.6%);
   --destructive-foreground: hsl(0 0% 98%);
+  --success: hsl(142 60% 62%);
+  --warning: hsl(40 90% 62%);
+  --info: hsl(217 90% 72%);
 
   --border: hsl(0 0% 14.9%);
   --input: hsl(0 0% 14.9%);
@@ -550,6 +557,9 @@
 
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
 
   --color-border: var(--border);
   --color-input: var(--input);

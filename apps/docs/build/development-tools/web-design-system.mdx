@@ -70,8 +70,12 @@ last reachable action rather than relying on a desktop screenshot alone.
 
 Use `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`,
 `border-border`, `border-input`, and `bg-accent` for their semantic roles. Use
-`destructive` for destructive actions and existing `dynamic-*` state colors only
-for meaningful status. Pair color with text or an icon and an accessible name.
+`destructive` for destructive actions, and `success`, `warning` and `info` for
+status (`text-success`, `bg-warning/10`, Badge `success` and `warning`, Alert
+`success`, `warning` and `info`). Keep `dynamic-*` hues for colours a person
+chooses, such as tags and calendars. Pair color with text or an icon and an
+accessible name. One Alert per section: link to docs for detail instead of
+stacking notices.
 Avoid raw hex, RGB, HSL, OKLCH, arbitrary color utilities, and decorative hue classes
 in application components. Token definitions remain in the shared stylesheet.
 
