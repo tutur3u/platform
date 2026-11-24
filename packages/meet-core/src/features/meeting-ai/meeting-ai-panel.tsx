@@ -3,12 +3,14 @@
 import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { CaptureModePicker } from './capture-mode-picker';
 import { showMeetingAiFailure } from './failure-toast';
 import { MeetingAiStatusBar } from './meeting-ai-status-bar';
 import { meetingAiStatus } from './meeting-ai-status';
 import { MeetingLiveNotes } from './meeting-live-notes';
 import { MeetingSessionNotes } from './meeting-session-notes';
 import { MeetingTranscript } from './meeting-transcript';
+import { readSelfRoom } from './self-room';
 import type { useMeetingAi } from './use-meeting-ai';
 import { useTranscriptConsent } from './use-transcript-consent';
 
@@ -27,8 +29,13 @@ export function MeetingAiPanel({
   const t = useTranslations('meet.ai');
   const { consent, choose, ensureAllowed } = useTranscriptConsent(
     ai.meetingId,
-    inCall
+    inCall,
+    ai.wsId
   );
+  const room = readSelfRoom(consent);
+  // One opt-out never pauses the others in a per-speaker meeting, so the
+  // room-wide fence does not describe it.
+  const perSpeaker = inCall && room.mode === 'self';
   const run = (work: () => Promise<unknown>) =>
     void work().catch((error: unknown) => showMeetingAiFailure(t, error));
   const data = ai.data;
@@ -37,9 +44,9 @@ export function MeetingAiPanel({
     error: ai.error,
     data,
     phase: ai.phase,
-    capturing: ai.capturing,
+    capturing: ai.capturing || (perSpeaker && !!room.session),
     creditFailure: ai.creditFailure,
-    consent: inCall ? consent : undefined,
+    consent: inCall && !perSpeaker ? consent : undefined,
   });
   const canManage = !!data?.canManage;
   const active = data?.sessions.find(
@@ -65,6 +72,13 @@ export function MeetingAiPanel({
         onReload={() => void ai.refetch()}
         reloading={ai.isFetching}
       />
+      {inCall && (
+        <CaptureModePicker
+          wsId={ai.wsId}
+          meetingId={ai.meetingId}
+          room={room}
+        />
+      )}
       {ai.recovering ? (
         <p role="status" className="rounded-lg bg-muted p-3 text-sm">
           {t('recovering', { count: ai.pendingChunks })}
@@ -121,7 +135,10 @@ export function MeetingAiPanel({
         </Tabs>
       ) : null}
       {inCall && status.kind !== 'blocked' && status.kind !== 'loading' ? (
-        <p className="text-muted-foreground text-xs">{t('notice')}</p>
+        <div className="space-y-1 text-muted-foreground text-xs">
+          {perSpeaker && <p>{t('self_body')}</p>}
+          <p>{t(perSpeaker ? 'self_notice' : 'notice')}</p>
+        </div>
       ) : null}
     </section>
   );

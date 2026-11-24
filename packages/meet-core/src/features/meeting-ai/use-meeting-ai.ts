@@ -47,6 +47,11 @@ export function useMeetingAi(
     title?: string;
     /** False while someone present has not allowed the transcript. */
     consentReady?: boolean;
+    /**
+     * `self`: each participant's own device captures its own voice, so this
+     * device never captures the room. Defaults to room capture.
+     */
+    captureMode?: 'room' | 'self';
   } = {}
 ) {
   const actor = useWorkspaceActor();
@@ -371,6 +376,17 @@ export function useMeetingAi(
     });
     runtime.preparing.current = recorder;
     try {
+      if (hints.current.captureMode === 'self') {
+        // The session is created on the server; no room audio is captured.
+        const result = await startSession(epoch);
+        if (!current() || !runtime.mounted.current) return;
+        runtime.session.current = result.sessionId;
+        setOwnsSession(true);
+        runtime.sequence.current = 0;
+        setCapturing(true);
+        if (current()) await query.refetch();
+        return;
+      }
       // Establish browser support before allocating the server session.
       await recorder.start();
       if (!current() || !runtime.mounted.current) {
@@ -461,7 +477,8 @@ export function useMeetingAi(
             action: 'finish',
             sessionId: target,
             expectedChunks:
-              target === runtime.session.current
+              target === runtime.session.current &&
+              hints.current.captureMode !== 'self'
                 ? runtime.sequence.current
                 : undefined,
             captureIncomplete:

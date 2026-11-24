@@ -8,6 +8,10 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RoomMiraSelfChoice } from '../call/components/room-mira-notice';
 import { useRoomMiraConsent } from '../call/components/use-room-mira';
+import { SelfCaptureStatus } from './self-capture-status';
+import { SelfCoverage } from './self-coverage';
+import type { SelfCaptureState } from './self-lifecycle';
+import { readSelfRoom } from './self-room';
 import { useTranscriptConsent } from './use-transcript-consent';
 
 /**
@@ -15,9 +19,21 @@ import { useTranscriptConsent } from './use-transcript-consent';
  * guests included. It appears while the host's transcript runs and opens on
  * its own until this person chooses.
  */
-export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
+export function TranscriptConsentNotice({
+  meetingId,
+  wsId,
+  capture,
+  names = {},
+}: {
+  meetingId: string;
+  wsId?: string;
+  /** This participant's own per-speaker capture state. */
+  capture?: SelfCaptureState;
+  /** Display names by account id, for the host's coverage list. */
+  names?: Record<string, string>;
+}) {
   const t = useTranslations('meet.ai');
-  const { consent, choose } = useTranscriptConsent(meetingId);
+  const { consent, choose } = useTranscriptConsent(meetingId, true, wsId);
   const [open, setOpen] = useState<boolean | null>(null);
   // An Allow needs the caller's own Mira choice on, so the Mira box comes
   // first. While Mira's state loads, Allow waits; on an error or where room
@@ -30,7 +46,12 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
   const miraPending = mira.isPending;
   if (!consent?.available || !consent.active) return null;
   const needsChoice = consent.choice === null;
+  const room = readSelfRoom(consent);
+  // One person's opt-out never pauses the others, so the room fence does not
+  // describe a per-speaker meeting.
+  const solo = room.mode === 'self';
   const { fence } = consent;
+  const live = solo ? capture?.kind === 'capturing' : fence.ready;
   const pick = (choice: 'allow' | 'decline') =>
     choose.mutate(choice, {
       onSuccess: () => setOpen(false),
@@ -49,13 +70,13 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
           <span
             aria-hidden
             className={`size-2 rounded-full ${
-              fence.ready
+              live
                 ? 'bg-dynamic-red motion-safe:animate-pulse'
                 : 'bg-dynamic-yellow'
             }`}
           />
           <span className="max-sm:sr-only">
-            {fence.ready ? t('indicator_live') : t('indicator_paused')}
+            {live ? t('indicator_live') : t('indicator_paused')}
           </span>
         </Button>
       </PopoverTrigger>
@@ -65,28 +86,38 @@ export function TranscriptConsentNotice({ meetingId }: { meetingId: string }) {
       >
         <div className="space-y-1">
           <h2 className="font-medium">{t('consent_title')}</h2>
-          <p className="text-muted-foreground">{t('consent_body')}</p>
+          <p className="text-muted-foreground">
+            {t(solo ? 'self_body' : 'consent_body')}
+          </p>
+          {solo && <p className="text-muted-foreground">{t('self_notice')}</p>}
           <p className="text-muted-foreground text-xs">
-            {t('consent_readers')}
+            {t(solo ? 'self_readers' : 'consent_readers')}
           </p>
         </div>
-        <p role="status" className="flex items-center gap-1.5 text-xs">
-          <Users aria-hidden className="size-3.5 text-muted-foreground" />
-          {fence.ready
-            ? t('consent_everyone')
-            : t('consent_waiting', { count: fence.pending })}
-          <span className="text-muted-foreground">
-            {t('consent_count', {
-              allowed: fence.admitted - fence.pending,
-              total: fence.admitted,
-            })}
-          </span>
-        </p>
+        {solo ? (
+          capture && <SelfCaptureStatus state={capture} />
+        ) : (
+          <p role="status" className="flex items-center gap-1.5 text-xs">
+            <Users aria-hidden className="size-3.5 text-muted-foreground" />
+            {fence.ready
+              ? t('consent_everyone')
+              : t('consent_waiting', { count: fence.pending })}
+            <span className="text-muted-foreground">
+              {t('consent_count', {
+                allowed: fence.admitted - fence.pending,
+                total: fence.admitted,
+              })}
+            </span>
+          </p>
+        )}
+        {solo && room.canManageMode && (
+          <SelfCoverage coverage={room.coverage} names={names} />
+        )}
         {consent.choice && (
           <p className="text-muted-foreground text-xs">
             {consent.choice === 'allow'
               ? t('consent_you_allowed')
-              : t('consent_you_declined')}
+              : t(solo ? 'self_untick' : 'consent_you_declined')}
           </p>
         )}
         {miraOff && consent.choice !== 'allow' && (
