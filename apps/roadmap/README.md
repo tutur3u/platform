@@ -116,6 +116,9 @@ from a local fixture stack; see `apps/docs/build/devops/mobile-store-screenshots
 Each capture is framed on a transparent background and shipped as AVIF with a
 WebP fallback in one `<picture>`; only the selected device, theme and language
 load, lazily, and nothing loads while the Releases panel is hidden.
+The section is its own chunk and mounts after hydration only
+(`components/feature-previews-slot.tsx`), so the server never renders a lazy
+boundary and the pre-seal doctor's no-suspense rule holds.
 `content/feature-previews.ts` holds the EN and VI copy per screen. A captured
 screen without copy is left out, and a missing device, theme or language
 falls back to another capture rather than an empty frame

@@ -67,6 +67,16 @@ export function FeaturePreviews({ features, lang, t }: Props) {
     image.width > image.height
       ? 'w-full max-w-2xl'
       : 'max-h-[34rem] w-auto max-w-full';
+  // The placeholder takes the image's box: full width for a landscape
+  // capture, and for a portrait one the width the 34rem height cap allows,
+  // never wider than the column. An empty box with only an aspect ratio and
+  // no width would collapse.
+  const ratio = image.width / image.height;
+  const skeletonWidth = image.width > image.height ? 'w-full max-w-2xl' : '';
+  const skeletonStyle =
+    image.width > image.height
+      ? { aspectRatio: ratio }
+      : { aspectRatio: ratio, width: `min(100%, ${34 * ratio}rem)` };
 
   return (
     <section
@@ -146,8 +156,8 @@ export function FeaturePreviews({ features, lang, t }: Props) {
             <span
               aria-hidden
               data-slot="skeleton"
-              className={`block h-auto animate-pulse rounded-3xl bg-muted ${size}`}
-              style={{ aspectRatio: image.width / image.height }}
+              className={`block h-auto animate-pulse rounded-3xl bg-muted motion-reduce:animate-none ${skeletonWidth}`}
+              style={skeletonStyle}
             />
           )}
         </div>
