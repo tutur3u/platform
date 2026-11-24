@@ -93,3 +93,13 @@ it('keeps a default title under the API limit even for a long emoji name', async
   expect(result.length).toBeLessThanOrEqual(200);
   expect(`${result}'s meeting`.length).toBeLessThanOrEqual(255);
 });
+
+it('falls through when the saved name is only variation selectors or marks', async () => {
+  expect(
+    await readMeetingHostName(
+      admin({ data: { display_name: String.fromCodePoint(0xfe0f, 0x301) } }),
+      'a',
+      { display_name: 'Thu Trang' }
+    )
+  ).toBe('Thu Trang');
+});
