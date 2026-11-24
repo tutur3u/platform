@@ -29,11 +29,12 @@ set local role service_role;
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89331), pg_temp.cid(n), 1)
  from generate_series(89303, 89307) n;
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89332), pg_temp.cid(89303), 1);
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version) values
- (pg_temp.cid(89331), pg_temp.cid(89303), 'allow', 'v1'),
- (pg_temp.cid(89331), pg_temp.cid(89304), 'deny', 'v1'),
- (pg_temp.cid(89331), pg_temp.cid(89306), 'allow', 'v1'),
- (pg_temp.cid(89331), pg_temp.cid(89307), 'allow', 'v1');
+-- Every self_v1 allow carries a room sequence number.
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq) values
+ (pg_temp.cid(89331), pg_temp.cid(89303), 'allow', 'v1', 1),
+ (pg_temp.cid(89331), pg_temp.cid(89304), 'deny', 'v1', null),
+ (pg_temp.cid(89331), pg_temp.cid(89306), 'allow', 'v1', 1),
+ (pg_temp.cid(89331), pg_temp.cid(89307), 'allow', 'v1', 1);
 reset role;
 create function pg_temp.open_stream(stream integer, account integer, epoch integer)
 returns void language sql as $$
@@ -45,18 +46,20 @@ create function pg_temp.chunk(chunk integer, stream integer, account integer, se
 returns void language sql as $$
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
-    capture_consent_revision, erase_generation, transcript_revision)
+    capture_consent_revision, erase_generation, transcript_revision,
+    reserved_cost_usd, reservation_state)
   values (pg_temp.cid(chunk), pg_temp.cid(89331), seq, seq * 10, 10, 'processing', pg_temp.cid(stream),
     pg_temp.cid(account), 'microphone', sha256(chunk::text::bytea), seq * 10000, seq * 10000 + 10000, 100,
-    seq * 160000, revision, 0, 0);
+    seq * 160000, revision, 0, 0, 1, 'reserved');
 $$;
 create function pg_temp.revision_of(account integer) returns integer language sql as $$
   select p.consent_revision from private.meet_ai_session_participants p
   where p.session_id = pg_temp.cid(89331) and p.account_id = pg_temp.cid(account);
 $$;
 create function pg_temp.decide(account integer, decision text) returns void language sql as $$
-  insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
-  values (pg_temp.cid(89331), pg_temp.cid(account), decision, 'v1');
+  insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq)
+  values (pg_temp.cid(89331), pg_temp.cid(account), decision, 'v1',
+    case when decision = 'allow' then (extract(epoch from clock_timestamp()) * 1000000)::bigint end);
 $$;
 
 -- No decision and deny are refused before any audio exists.
@@ -157,9 +160,9 @@ reset role;
 
 -- Client clock skew must never prevent a later withdrawal.
 set local role service_role;
-select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, created_at)
-  values (pg_temp.cid(89331), pg_temp.cid(89305), 'allow', 'v1', clock_timestamp() + interval '10 minutes')$$,
-  'a future-dated allow is accepted with server time');
+select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, created_at,
+  room_seq) values (pg_temp.cid(89331), pg_temp.cid(89305), 'allow', 'v1', clock_timestamp() + interval '10 minutes',
+  1)$$, 'a future-dated allow is accepted with server time');
 select ok((select created_at <= clock_timestamp() from private.meet_ai_consents
   where session_id = pg_temp.cid(89331) and user_id = pg_temp.cid(89305)),
   'the client future timestamp is ignored');

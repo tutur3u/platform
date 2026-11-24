@@ -1,47 +1,12 @@
--- Meet AI per-speaker transcription: self_v1 cost and dispatch RPCs.
+-- Meet AI per-speaker transcription: self_v1 cost, dispatch and stop RPCs.
 -- Design: apps/docs/platform/features/meet-per-speaker-transcription.mdx
 -- (Upload contract, In-flight fence, Billing). Builds on the capture path in
--- 20261124100000 (session lock helper, capture predicate, chunk state guard).
--- Session cost counters are the spend ceiling: each chunk stores its own
--- reservation so settlement moves the counters exactly once. Every RPC locks
--- the session row first (session -> admission -> stream -> chunk).
+-- 20261124100000 (session lock, capture predicate, live-upload fence, chunk
+-- state guard). Session cost counters are the spend ceiling: each chunk stores
+-- its own reservation so settlement moves the counters exactly once. Every RPC
+-- takes the session row lock first, which serializes the session's writers.
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
-
--- Upload fence shared by reservation and dispatch: the admission row and the
--- stream are locked (after the session, in the shared order) and must still
--- allow capture: an unrevoked upload grant, a live stream and an unexpired
--- lease. A close, revoke or lease expiry therefore stops every later
--- reservation and dispatch of that stream.
-create function private.meet_ai_self_v1_lock_live_upload(
-  p_session_id uuid, p_account_id uuid, p_stream_id uuid
-) returns void language plpgsql set search_path = pg_catalog, pg_temp
-as $$
-declare
-  revoked_at timestamptz;
-  stream private.meet_ai_capture_streams;
-begin
-  select p.upload_revoked_at into revoked_at from private.meet_ai_session_participants p
-    where p.session_id = p_session_id and p.account_id = p_account_id for share;
-  if not found then
-    raise exception 'Uploader is not admitted to this session' using errcode = '55000';
-  end if;
-  if revoked_at is not null then
-    raise exception 'Upload was revoked for this session' using errcode = '55000';
-  end if;
-  select * into stream from private.meet_ai_capture_streams c
-    where c.id = p_stream_id and c.session_id = p_session_id and c.account_id = p_account_id
-    for share;
-  if not found then raise exception 'Capture stream not found' using errcode = 'P0002'; end if;
-  if stream.state not in ('active', 'draining') or stream.lease_expires_at <= now() then
-    raise exception 'Capture stream is not live' using errcode = '55000';
-  end if;
-end;
-$$;
-revoke all on function private.meet_ai_self_v1_lock_live_upload(uuid, uuid, uuid)
-  from public, anon, authenticated;
-grant execute on function private.meet_ai_self_v1_lock_live_upload(uuid, uuid, uuid)
-  to service_role;
 
 -- Admission of one uploaded chunk: cost reservation against the session cap,
 -- per-account budgets, the chunk row and the stream lease, in one transaction.
@@ -85,6 +50,13 @@ begin
   end if;
   if not private.meet_ai_self_v1_capturing(s) then
     raise exception 'Session is not capturing' using errcode = '55000';
+  end if;
+  -- start_ms/end_ms are session time (ms since the session started). While
+  -- draining, only speech captured before the stop cutoff (2 s tolerance) is
+  -- admitted.
+  if s.capture_state = 'draining' and p_end_ms
+       > extract(epoch from (s.cutoff_at - s.created_at)) * 1000 + 2000 then
+    raise exception 'Chunk was captured after the stop cutoff' using errcode = '55000';
   end if;
   if s.cost_reserved_usd + s.cost_unknown_usd + s.cost_settled_usd + p_max_cost_usd
        > s.cost_cap_usd then
@@ -220,8 +192,10 @@ begin
   if p_outcome in ('released', 'unknown') and (p_transcript is not null or p_usage is not null) then
     raise exception 'Failed chunks keep no text' using errcode = '23514';
   end if;
-  if p_outcome in ('completed', 'discarded') and (p_cost_usd is null or p_cost_usd < 0) then
-    raise exception 'Settled chunks need a measured cost' using errcode = '23514';
+  if p_outcome in ('completed', 'discarded') and (p_cost_usd is null or p_cost_usd < 0
+      or p_cost_usd > chunk.reserved_cost_usd) then
+    raise exception 'Settled chunks need a measured cost within the reservation'
+      using errcode = '23514';
   end if;
   update public.meet_ai_chunks c set
     status = target_status,
@@ -270,5 +244,102 @@ end;
 $$;
 revoke all on function private.meet_ai_self_v1_note_attempt(uuid) from public, anon, authenticated;
 grant execute on function private.meet_ai_self_v1_note_attempt(uuid) to service_role;
+
+-- Ending capture frees every reservation that was never dispatched; a
+-- dispatched chunk still in flight keeps its reservation until it settles.
+create function private.meet_ai_self_v1_release_undispatched(p_session_id uuid)
+returns void language plpgsql set search_path = pg_catalog, pg_temp
+as $$
+declare
+  freed numeric;
+begin
+  with released as (
+    update public.meet_ai_chunks c set status = 'failed', reservation_state = 'released'
+      where c.session_id = p_session_id and c.stream_id is not null
+        and c.reservation_state = 'reserved' and c.dispatch_consent_revision is null
+      returning c.reserved_cost_usd
+  )
+  select coalesce(sum(r.reserved_cost_usd), 0) into freed from released r;
+  update public.meet_ai_sessions x set cost_reserved_usd = x.cost_reserved_usd - freed
+    where x.id = p_session_id and freed > 0;
+end;
+$$;
+revoke all on function private.meet_ai_self_v1_release_undispatched(uuid)
+  from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_release_undispatched(uuid) to service_role;
+
+-- Soft stop drains chunks for at most 20 seconds; hard stop (kill switch,
+-- flag off, cap) closes at once and releases undispatched reservations. Both
+-- advance stop_generation once.
+create function private.meet_ai_self_v1_stop_session(
+  p_session_id uuid, p_host_id uuid, p_hard boolean
+) returns public.meet_ai_sessions
+language plpgsql security definer set search_path = pg_catalog, pg_temp
+as $$
+declare
+  s public.meet_ai_sessions;
+begin
+  if num_nulls(p_session_id, p_host_id, p_hard) > 0 then
+    raise exception 'Missing argument' using errcode = '22023'; end if;
+  s := private.meet_ai_self_v1_lock_session(p_session_id);
+  if s.user_id is distinct from p_host_id then
+    raise exception 'Only the session host can stop capture' using errcode = '42501';
+  end if;
+  if s.capture_state in ('closed', 'deleted')
+     or (s.capture_state = 'draining' and not p_hard) then
+    return s;
+  end if;
+  if p_hard then
+    update public.meet_ai_sessions x set capture_state = 'closed',
+      cutoff_at = coalesce(x.cutoff_at, now()), ended_at = coalesce(x.ended_at, now()),
+      stop_generation = x.stop_generation + 1
+      where x.id = p_session_id;
+    update private.meet_ai_capture_streams c set state = 'closed', closed_at = now()
+      where c.session_id = p_session_id and c.state in ('active', 'draining');
+    perform private.meet_ai_self_v1_release_undispatched(p_session_id);
+    select * into s from public.meet_ai_sessions x where x.id = p_session_id;
+  else
+    update public.meet_ai_sessions x set capture_state = 'draining', cutoff_at = now(),
+      drain_deadline_at = now() + interval '20 seconds',
+      stop_generation = x.stop_generation + 1
+      where x.id = p_session_id returning * into s;
+    update private.meet_ai_capture_streams c set state = 'draining'
+      where c.session_id = p_session_id and c.state = 'active';
+  end if;
+  return s;
+end;
+$$;
+revoke all on function private.meet_ai_self_v1_stop_session(uuid, uuid, boolean)
+  from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_stop_session(uuid, uuid, boolean) to service_role;
+
+-- Closes a session whose drain deadline or capture deadline has passed;
+-- otherwise returns it unchanged.
+create function private.meet_ai_self_v1_close_drained(p_session_id uuid)
+returns public.meet_ai_sessions
+language plpgsql security definer set search_path = pg_catalog, pg_temp
+as $$
+declare
+  s public.meet_ai_sessions;
+begin
+  if num_nulls(p_session_id) > 0 then
+    raise exception 'Missing argument' using errcode = '22023'; end if;
+  s := private.meet_ai_self_v1_lock_session(p_session_id);
+  if (s.capture_state = 'draining' and s.drain_deadline_at <= now())
+     or (s.capture_state = 'active' and s.capture_deadline_at <= now()) then
+    update public.meet_ai_sessions x set capture_state = 'closed',
+      cutoff_at = coalesce(x.cutoff_at, x.capture_deadline_at),
+      ended_at = coalesce(x.ended_at, now())
+      where x.id = p_session_id;
+    update private.meet_ai_capture_streams c set state = 'closed', closed_at = now()
+      where c.session_id = p_session_id and c.state in ('active', 'draining');
+    perform private.meet_ai_self_v1_release_undispatched(p_session_id);
+    select * into s from public.meet_ai_sessions x where x.id = p_session_id;
+  end if;
+  return s;
+end;
+$$;
+revoke all on function private.meet_ai_self_v1_close_drained(uuid) from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_close_drained(uuid) to service_role;
 
 notify pgrst, 'reload schema';

@@ -35,9 +35,9 @@ select private.record_meet_ai_self_v1_admission(pg_temp.cid(89231), pg_temp.cid(
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89233), pg_temp.cid(n), 1)
  from unnest(array[89203, 89204, 89205]) n;
 -- Capture needs each uploader's current allow decision (revision 1).
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
- select pg_temp.cid(89231), pg_temp.cid(n), 'allow', 'v1' from generate_series(89203, 89206) n
- union all select pg_temp.cid(89233), pg_temp.cid(n), 'allow', 'v1' from generate_series(89204, 89205) n;
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq)
+ select pg_temp.cid(89231), pg_temp.cid(n), 'allow', 'v1', 1 from generate_series(89203, 89206) n
+ union all select pg_temp.cid(89233), pg_temp.cid(n), 'allow', 'v1', 1 from generate_series(89204, 89205) n;
 reset role;
 insert into private.meet_ai_capture_streams(id, session_id, account_id, device_epoch, input_processing, lease_expires_at)
  select pg_temp.cid(n + 38), pg_temp.cid(89231), pg_temp.cid(n), 1, 'processed_aec', now() + interval '30 seconds'
@@ -49,10 +49,11 @@ create function pg_temp.chunk(session integer, stream integer, account integer, 
 returns void language sql as $$
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
-    capture_consent_revision, erase_generation, transcript_revision)
+    capture_consent_revision, erase_generation, transcript_revision,
+    reserved_cost_usd, reservation_state)
   values (gen_random_uuid(), pg_temp.cid(session), seq, start_ms / 1000.0, 10, 'processing', null,
     pg_temp.cid(stream), pg_temp.cid(account), 'microphone', sha256((stream || ':' || seq)::bytea), start_ms,
-    start_ms + 10000, 100, start_ms * 16, 1, 0, 0);
+    start_ms + 10000, 100, start_ms * 16, 1, 0, 0, 1, 'reserved');
   -- Inserts are processing only; text is stored after dispatch at revision 1.
   update public.meet_ai_chunks set dispatch_consent_revision = 1, status = 'completed',
     transcript = 'speech of ' || account

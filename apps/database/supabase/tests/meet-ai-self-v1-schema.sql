@@ -53,8 +53,10 @@ select is((select string_agg(confdeltype::text, '' order by conname) from pg_con
   'chunk account and stream references cascade');
 select is((select confdeltype::text from pg_constraint where conname = 'meet_ai_consents_session_id_fkey'), 'r',
   '#7264 consent RESTRICT FK is preserved, not silently changed');
+-- The capture path's chunk checks bind new rows and are validated later.
 select ok(not exists (select 1 from pg_constraint where conrelid = 'public.meet_ai_sessions'::regclass and not convalidated)
-  and not exists (select 1 from pg_constraint where conrelid = 'public.meet_ai_chunks'::regclass and not convalidated),
+  and not exists (select 1 from pg_constraint where conrelid = 'public.meet_ai_chunks'::regclass and not convalidated
+    and conname not in ('meet_ai_chunks_status_check', 'meet_ai_chunks_reservation_check')),
   'all self_v1 constraints are validated');
 select ok(not exists (select 1 from pg_constraint where conname = 'meet_ai_chunks_session_id_sequence_key'),
   'global chunk sequence key replaced by legacy and per-stream keys');
@@ -145,8 +147,8 @@ select throws_ok($$insert into private.meet_ai_session_participants(session_id, 
 set local role service_role;
 select lives_ok($$select private.record_meet_ai_self_v1_admission(pg_temp.cid(89032), pg_temp.cid(n), 1)
   from generate_series(89002, 89004) n$$, 'room authority records actual admissions');
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version) values
- (pg_temp.cid(89032), pg_temp.cid(89003), 'allow', 'v1'), (pg_temp.cid(89032), pg_temp.cid(89004), 'allow', 'v1');
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, room_seq) values
+ (pg_temp.cid(89032), pg_temp.cid(89003), 'allow', 'v1', 1), (pg_temp.cid(89032), pg_temp.cid(89004), 'allow', 'v1', 1);
 reset role;
 select throws_ok($$insert into private.meet_ai_capture_streams(session_id, account_id, device_epoch, input_processing, lease_expires_at)
   values (pg_temp.cid(89032), pg_temp.cid(89005), 1, 'processed_aec', now() + interval '30 seconds')$$,
@@ -172,10 +174,11 @@ create function pg_temp.self_chunk(chunk integer, stream integer, account intege
 returns void language sql as $$
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript,
     stream_id, account_id, source_kind, content_digest, start_ms, end_ms, timing_uncertainty_ms, start_sample,
-    capture_consent_revision, erase_generation, transcript_revision)
+    capture_consent_revision, erase_generation, transcript_revision,
+    reserved_cost_usd, reservation_state)
   values (pg_temp.cid(chunk), pg_temp.cid(89032), seq, start_ms / 1000.0, 10, 'processing', null,
     pg_temp.cid(stream), pg_temp.cid(account), 'microphone', sha256(chunk::text::bytea), start_ms, start_ms + 10000,
-    100, start_ms * 16, 1, 0, 0);
+    100, start_ms * 16, 1, 0, 0, 1, 'reserved');
   -- Inserts are processing only; text is stored after dispatch at revision 1.
   update public.meet_ai_chunks set dispatch_consent_revision = 1, status = 'completed',
     transcript = 'text ' || chunk where id = pg_temp.cid(chunk);

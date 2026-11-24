@@ -2,6 +2,11 @@
 -- 20261124100000 rollback. Session counters and chunk rows are kept.
 -- Refuses while any self_v1 session can capture or any self_v1 chunk is in
 -- flight, so no reservation is stranded without its settlement RPC.
+-- Closing a session (hard stop or close_drained) releases every reservation
+-- that was never dispatched. A chunk dispatched but never settled (a lost
+-- provider reply) still blocks the rollback: the operator settles it as unknown
+-- cost with private.meet_ai_self_v1_settle_chunk(<chunk id>, 'unknown', null,
+-- null, null), which keeps its full reservation counted against the cap.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
@@ -22,11 +27,13 @@ begin
   end if;
 end;
 $$;
+drop function if exists private.meet_ai_self_v1_close_drained(uuid);
+drop function if exists private.meet_ai_self_v1_stop_session(uuid, uuid, boolean);
+drop function if exists private.meet_ai_self_v1_release_undispatched(uuid);
 drop function if exists private.meet_ai_self_v1_reserve_chunk(uuid, uuid, uuid, uuid, integer,
   bigint, bigint, bigint, bytea, integer, numeric, numeric);
 drop function if exists private.meet_ai_self_v1_mark_dispatch(uuid, uuid, integer);
 drop function if exists private.meet_ai_self_v1_settle_chunk(uuid, text, text, jsonb, numeric);
 drop function if exists private.meet_ai_self_v1_note_attempt(uuid);
-drop function if exists private.meet_ai_self_v1_lock_live_upload(uuid, uuid, uuid);
 notify pgrst, 'reload schema';
 commit;
