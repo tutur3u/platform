@@ -2530,6 +2530,18 @@ admission controls attachment access; a signed URL is short-lived. Mention
 messages. Uploaded file contents
 are not automatically read by Mira. The mention author's personal AI allowance is
 checked and reported tokens are deducted from that author's quota. Mira uses the plan-default Google language model for checks, generation, and deduction. It has current-time, admitted-participant, and Google Search tools; web replies include source links. The browser supplies the requester timezone, and participant counts distinguish people from multiple devices. All generation steps and reported search queries count toward the requester quota. Search cost estimates use paid list rates before project-wide free allowances; missing provider usage or grounding coverage stays incomplete. Cost estimates use its catalog prices and reported cached input; missing cache prices or tiered pricing remain incomplete.
+Room Mira replies in one language for the whole answer, the same for the
+Summarize, Decisions and Action items quick actions and for typed questions. That
+language is the one people's recent chat messages use (English or Vietnamese, a 60%
+share of the messages whose language is clear). Mira's own entries, including Mira
+Live transcript lines, and messages that mention Mira don't count, because quick
+actions are worded in the requester's UI language; spoken audio doesn't count
+either. With no clear conversation language, Mira follows the question's language,
+then the requester's UI locale from the locale cookie, and otherwise leaves the
+choice to the model. The rule applies only to room Mira: personal Mira, Quiz Arena,
+form and poll drafts keep their own language instructions. Regression coverage:
+`packages/ai/src/meetings/chat-language.test.ts`, `chat.test.ts`, and the room
+assistant `route.test.ts`.
 Requests are deduplicated by chat message ID. The internal server-service token
 scope is never included in browser join tokens.
 

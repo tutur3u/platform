@@ -12,6 +12,7 @@ import {
   answerMeetChat,
   type MeetAssistantMessage,
 } from '@tuturuuu/ai/meetings/chat';
+import { meetReplyLanguage } from '@tuturuuu/ai/meetings/chat-language';
 import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -64,6 +65,7 @@ export async function generateMeetAssistant(
   input: {
     messageId: string;
     timezone: string;
+    locale?: string;
     workspaceId?: string;
     resume?: { revision: number; approved: boolean };
   }
@@ -207,6 +209,13 @@ export async function generateMeetAssistant(
           },
           {
             messages,
+            // A resumed review keeps its saved chat and question, so the
+            // rule matches the replyLanguage already in its saved messages.
+            replyLanguage: meetReplyLanguage(
+              context.chat,
+              context.prompt,
+              input.locale
+            ),
             allowSearch,
             provider: { apiKey: room.apiKey, fetch: provider.fetch },
             scenarioInstructions,

@@ -401,3 +401,57 @@ it('settles an answer without measurable usage once as unpriced in both receipts
     expect.objectContaining({ body: expect.anything() })
   );
 });
+
+it.each([
+  ['theme=dark; NEXT_LOCALE=vi', 'Vietnamese'],
+  ['NEXT_LOCALE=en', 'English'],
+  ['NEXT_LOCALE=fr', undefined],
+  [undefined, undefined],
+])(
+  'falls back to the locale cookie %s for the room Mira reply language',
+  async (cookie, language) => {
+    // The fixture chat and question have no clear language of their own.
+    mocks.authority.mockResolvedValue(room('account'));
+    await POST(
+      new Request('https://meet.test/api/meet-call/room/assistant', {
+        method: 'POST',
+        headers: cookie ? { cookie } : {},
+        body: JSON.stringify({ messageId: 'message' }),
+      }),
+      { params: Promise.resolve({ meetingId: 'room' }) }
+    );
+    expect(mocks.answer.mock.calls[0]?.at(-1)?.replyLanguage).toBe(language);
+  }
+);
+
+it('sets the reply language from the room conversation over the UI locale', async () => {
+  mocks.authority.mockResolvedValue(room('account'));
+  const service = mocks.service.getMockImplementation()!;
+  mocks.service.mockImplementation(async (access, command) =>
+    command.action === 'ai.reserve'
+      ? {
+          ...context,
+          chat: [
+            {
+              body: 'We agreed to move the launch to Friday',
+              displayName: 'An',
+            },
+            {
+              body: '@mira Tóm tắt cuộc họp đến thời điểm này.',
+              displayName: 'Binh',
+            },
+          ],
+          prompt: 'Tóm tắt cuộc họp đến thời điểm này.',
+        }
+      : service(access, command)
+  );
+  await POST(
+    new Request('https://meet.test/api/meet-call/room/assistant', {
+      method: 'POST',
+      headers: { cookie: 'NEXT_LOCALE=vi' },
+      body: JSON.stringify({ messageId: 'message' }),
+    }),
+    { params: Promise.resolve({ meetingId: 'room' }) }
+  );
+  expect(mocks.answer.mock.calls[0]?.at(-1)?.replyLanguage).toBe('English');
+});

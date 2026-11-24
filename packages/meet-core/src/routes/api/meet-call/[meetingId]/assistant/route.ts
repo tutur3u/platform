@@ -15,6 +15,22 @@ const timezone = z
   });
 
 /**
+ * The locale cookie (`LOCALE_COOKIE_NAME` in `@tuturuuu/satellite/constants`).
+ * Named here so this handler stays free of the i18n routing that module loads.
+ */
+const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
+
+/** The requester's UI locale from the locale cookie, when it is one Meet ships. */
+function requesterLocale(request: Request) {
+  for (const part of (request.headers.get('cookie') ?? '').split(';')) {
+    const [name, value] = part.trim().split('=');
+    if (name === LOCALE_COOKIE_NAME && (value === 'en' || value === 'vi'))
+      return value;
+  }
+  return undefined;
+}
+
+/**
  * Room chat @mira. Generation requires room Mira authority (eligible account,
  * attested meeting workspace) and the all-participant Continue fence.
  */
@@ -35,6 +51,9 @@ export async function POST(
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid message');
     const { generateMeetAssistant } =
       await import('@tuturuuu/meet-core/features/call/server/assistant-generation');
-    return generateMeetAssistant(access, input.data);
+    return generateMeetAssistant(access, {
+      ...input.data,
+      locale: requesterLocale(request),
+    });
   });
 }

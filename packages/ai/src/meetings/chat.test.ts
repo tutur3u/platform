@@ -285,3 +285,28 @@ it.each([
   if ('scenarioInstructions' in options)
     expect(input.system).toContain(options.scenarioInstructions);
 });
+
+it('states the room reply language only when the room caller sets one', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate.mockResolvedValue(result());
+  await answerMeetChat([], 900, 'Tóm tắt cuộc họp.', model, context, {
+    replyLanguage: 'English',
+  });
+  const room = mocks.generate.mock.calls[0]![0];
+  expect(JSON.parse(room.messages[0].content).replyLanguage).toBe('English');
+  expect(room.system).toContain('Write the whole reply in replyLanguage');
+
+  // Quiz, form and personal callers word their own language rules.
+  await answerMeetChat(
+    [],
+    900,
+    'Write a quiz in English about <topic>Lịch sử</topic>',
+    model,
+    context
+  );
+  const other = mocks.generate.mock.calls[1]![0];
+  expect(JSON.parse(other.messages[0].content)).not.toHaveProperty(
+    'replyLanguage'
+  );
+  expect(other.system).not.toContain('replyLanguage');
+});

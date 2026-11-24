@@ -2,6 +2,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { Effect, Either } from '@tuturuuu/utils/effect';
 import { generateText, type ModelMessage, stepCountIs, type ToolSet } from 'ai';
 import { measureMeetGeneration } from './chat-generation-usage';
+import type { MeetReplyLanguage } from './chat-language';
 import { formatMeetSourceAnswer } from './chat-source-footer';
 import { type MeetAssistantContext, meetAssistantTools } from './chat-tools';
 import type { MeetChatModel } from './chat-usage';
@@ -24,6 +25,8 @@ export async function answerMeetChat(
     messages?: ModelMessage[];
     audience?: 'private';
     beforeSearch?: () => Promise<void>;
+    /** Room Mira's reply language; other callers word their own language rules. */
+    replyLanguage?: MeetReplyLanguage;
   } = {}
 ) {
   const response = await Effect.runPromise(
@@ -46,6 +49,9 @@ export async function answerMeetChat(
                   }))
                   .map((item) => ({ ...item, text: item.text.slice(0, 1250) })),
                 question,
+                ...(options.replyLanguage
+                  ? { replyLanguage: options.replyLanguage }
+                  : {}),
                 requesterTimezone: context.timezone,
                 currentUtc: new Date().toISOString(),
               }),
@@ -141,6 +147,9 @@ export async function answerMeetChat(
               options.audience === 'private'
                 ? 'This is a private conversation with the requester. Never publish to room chat. No live meeting participant information is available in this personal context.'
                 : 'Replies are shared with all room participants.',
+              options.replyLanguage
+                ? ' Write the whole reply in replyLanguage, even when the question is worded in another language; keep names and quoted text as written.'
+                : '',
               ' Workspace tools require the requester to review and approve the exact action before execution. Do not claim an action succeeded while approval is pending. Workspace results are private drafts until the requester explicitly shares them. If approval is denied, do not retry the denied action. When select_workspace_tools is available, use it first to enable relevant tools for task, calendar, finance and time-tracking requests; private files and unrelated platform controls are unavailable here. Never invent meeting decisions or facts.',
             ].join(' '),
             messages: initialMessages,
