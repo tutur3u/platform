@@ -481,6 +481,15 @@
       position: absolute;
       inset: min(0px, calc((100% - var(--sorbet-touch-target)) / 2));
     }
+
+    /*
+      Joined toggle items sit a hairline apart, so their hit areas grow
+      vertically only; a sideways overlap would let a tap on one item's edge
+      select its neighbour.
+    */
+    :root[data-ui="sorbet"] :where([data-slot="toggle-group-item"])::after {
+      inset: min(0px, calc((100% - var(--sorbet-touch-target)) / 2)) 0;
+    }
   }
 }
 

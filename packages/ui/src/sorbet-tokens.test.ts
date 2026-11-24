@@ -369,6 +369,9 @@ describe('Sorbet token contract', () => {
     ]) {
       expect(coarse).toContain(`[data-slot="${slot}"]`);
     }
+    expect(coarse).toMatch(
+      /\[data-slot="toggle-group-item"\]\)::after \{\s*inset: min\(0px, [^;]+\) 0;/u
+    );
 
     const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion'));
     for (const name of ['fast', 'base', 'slow', 'sheet']) {
