@@ -5,6 +5,7 @@ import {
   createWorkspaceExternalProjectFieldDefinition,
   deleteWorkspaceExternalProjectFieldDefinition,
   diffWorkspaceExternalProjectSyncManifest,
+  getWorkspaceExternalProjectDelivery,
   getWorkspaceExternalProjectSyncSnapshot,
   listWorkspaceExternalProjectFieldDefinitions,
   listWorkspaceExternalProjectMedia,
@@ -465,5 +466,40 @@ describe('external project sync helpers', () => {
         expect(headers.get('content-type')).toBe('application/json');
       }
     }
+  });
+});
+
+describe('external project delivery reads', () => {
+  const deliveryPayload = { collections: [], workspaceId: 'ws-1' };
+
+  it('leaves the cache mode to the HTTP layer for public delivery', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse(deliveryPayload));
+
+    await getWorkspaceExternalProjectDelivery('ws-1', false, {
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      '/api/v1/workspaces/ws-1/external-projects/delivery'
+    );
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain('preview');
+    expect(fetchMock.mock.calls[0]?.[1]?.cache).toBeUndefined();
+  });
+
+  it('keeps preview delivery on no-store', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse(deliveryPayload));
+
+    await getWorkspaceExternalProjectDelivery('ws-1', true, {
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('?preview=true');
+    expect(fetchMock.mock.calls[0]?.[1]?.cache).toBe('no-store');
   });
 });

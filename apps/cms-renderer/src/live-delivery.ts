@@ -1,5 +1,12 @@
 import { parseCmsPageVersion } from '@tuturuuu/cms-blocks/schema';
 import { z } from 'zod';
+import {
+  deliveryMemoKey,
+  forgetDeliveryMemo,
+  readDeliveryMemo,
+  readDeliveryVersion,
+  writeDeliveryMemo,
+} from './delivery-memo';
 import { readJson } from './http-json';
 
 const versionFields = {
@@ -38,9 +45,12 @@ const payloadSchema = z.object({
   ),
 });
 
+type Payload = z.infer<typeof payloadSchema>;
 type Result =
   | {
       kind: 'page';
+      /** Workspace delivery version, when the API reports one. */
+      deliveryVersion?: string;
       versionId: string;
       page: NonNullable<ReturnType<typeof parseCmsPageVersion>>;
       title: string;
@@ -73,16 +83,32 @@ export async function loadPublishedPage({
       `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/external-projects/delivery`,
       apiOrigin
     );
+    const memoKey = deliveryMemoKey(apiOrigin.origin, workspaceId);
+    const memo = readDeliveryMemo<Payload>(memoKey);
     const response = await fetcher(endpoint, {
       signal: AbortSignal.timeout(5000),
       redirect: 'error',
+      ...(memo ? { headers: { 'If-None-Match': memo.etag } } : {}),
     });
     if (response.status === 409) return { kind: 'unbound' };
     if (response.status === 404) return { kind: 'missing' };
-    if (!response.ok) return { kind: 'unavailable' };
-    const payload = payloadSchema.parse(
-      await readJson(response, 4 * 1024 * 1024)
-    );
+    let payload: Payload;
+    let deliveryVersion = readDeliveryVersion(response);
+    if (response.status === 304 && memo) {
+      payload = memo.payload;
+      deliveryVersion ??= memo.version;
+    } else {
+      if (!response.ok) return { kind: 'unavailable' };
+      payload = payloadSchema.parse(await readJson(response, 4 * 1024 * 1024));
+      const etag = response.headers.get('etag');
+      if (etag && payload.workspaceId === workspaceId)
+        writeDeliveryMemo(memoKey, {
+          etag,
+          payload,
+          version: deliveryVersion,
+        });
+      else forgetDeliveryMemo(memoKey);
+    }
     if (payload.workspaceId !== workspaceId) return { kind: 'unavailable' };
     const slug = path === '/' ? 'home' : path.slice(1);
     const entries = payload.collections
@@ -106,6 +132,7 @@ export async function loadPublishedPage({
     if (!page) return { kind: 'unavailable' };
     return {
       kind: 'page',
+      deliveryVersion,
       page,
       versionId: snapshot.id,
       title: entry.title,

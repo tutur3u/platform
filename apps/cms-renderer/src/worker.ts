@@ -110,7 +110,8 @@ export async function serve(
     if (delivered.kind === 'unbound') return fail(409);
     if (delivered.kind === 'missing') return fail(404);
     if (delivered.kind !== 'page') return fail(503);
-    const { page, versionId, title, description, ogImage } = delivered;
+    const { page, versionId, title, description, ogImage, deliveryVersion } =
+      delivered;
     const locale = /^\/en(?:\/|$)/.test(path) ? 'en' : site.defaultLocale;
     const key = cacheRequest({
       origin: url.origin,
@@ -120,6 +121,7 @@ export async function serve(
       version: versionId,
       workspaceId: site.workspaceId,
       epoch,
+      deliveryVersion,
     });
     const hit = await deps.cache.match(key);
     if (hit) return request.method === 'HEAD' ? new Response(null, hit) : hit;

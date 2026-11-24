@@ -1386,8 +1386,8 @@ export async function getWorkspaceExternalProjectDelivery(
   const previewQuery = preview ? '?preview=true' : '';
   return client.json<ExternalProjectDeliveryPayload>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/delivery${previewQuery}`,
-    {
-      cache: 'no-store',
-    }
+    // Public delivery is edge-cached and revalidated by ETag; only preview
+    // (drafts) must bypass every cache layer.
+    preview ? { cache: 'no-store' } : {}
   );
 }

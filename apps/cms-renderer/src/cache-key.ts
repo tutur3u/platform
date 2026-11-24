@@ -6,6 +6,7 @@ export function cacheRequest({
   version,
   workspaceId,
   epoch,
+  deliveryVersion,
 }: {
   origin: string;
   site: string;
@@ -14,6 +15,8 @@ export function cacheRequest({
   version: string;
   workspaceId: string;
   epoch: string;
+  /** Workspace delivery version; any publish changes it and misses the key. */
+  deliveryVersion?: string;
 }) {
   const key = new URL('/__cms/cache', origin);
   key.search = new URLSearchParams({
@@ -23,6 +26,7 @@ export function cacheRequest({
     path,
     locale,
     version,
+    ...(deliveryVersion ? { deliveryVersion } : {}),
   }).toString();
   return new Request(key);
 }
