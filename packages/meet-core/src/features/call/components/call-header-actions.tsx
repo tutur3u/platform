@@ -77,8 +77,13 @@ export function CallHeaderActions({
               .filter((row) => !!row.node)
               .map((row, index) => (
                 <li
-                  className="flex min-h-11 items-center gap-3 px-1"
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-1 hover:bg-accent [&_button]:size-11 [&_button]:shrink-0"
                   key={row.label ?? index}
+                  onClick={(event) => {
+                    // The whole row is the target: a tap on the label opens the control.
+                    if ((event.target as HTMLElement).closest('button')) return;
+                    event.currentTarget.querySelector('button')?.click();
+                  }}
                 >
                   {row.node}
                   {row.label && (

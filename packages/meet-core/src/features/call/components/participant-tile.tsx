@@ -33,6 +33,7 @@ function ParticipantTileImpl({
   resumePlaybackLabel,
   handRaised,
   floating = false,
+  condensed = false,
   presenceOnly = false,
   isSelf,
   isSpeaking,
@@ -56,6 +57,11 @@ function ParticipantTileImpl({
   handRaised?: boolean;
   /** Compact chrome for the floating self-preview: no per-tile controls. */
   floating?: boolean;
+  /**
+   * A narrow filmstrip tile: no resume-playback chip (the large tile keeps one),
+   * and the local tile reads just "You" instead of a clipped name and suffix.
+   */
+  condensed?: boolean;
   /** Presence-only rooms have no media, so mute and receive badges stay hidden. */
   presenceOnly?: boolean;
   isSelf?: boolean;
@@ -269,7 +275,7 @@ function ParticipantTileImpl({
           )}
         </div>
       )}
-      {playbackBlocked && !isSelf && (
+      {playbackBlocked && !isSelf && !condensed && (
         <Button
           variant="secondary"
           className="absolute bottom-16 left-3 z-20"
@@ -315,15 +321,15 @@ function ParticipantTileImpl({
           )}
           title={floating ? undefined : displayName}
         >
-          {floating ? t('you') : displayName}
+          {floating || (condensed && isSelf) ? t('you') : displayName}
         </span>
-        {!floating && (
+        {!floating && !(condensed && isSelf) && (
           <ParticipantIdentityBadge
             className="backdrop-blur-sm"
             participant={participant}
           />
         )}
-        {isSelf && !floating && (
+        {isSelf && !floating && !condensed && (
           <span className="shrink-0 font-medium text-sm leading-tight">
             · {t('you')}
           </span>
@@ -415,6 +421,7 @@ export const ParticipantTile = memo(
     a.handRaised === b.handRaised &&
     a.isSelf === b.isSelf &&
     a.floating === b.floating &&
+    a.condensed === b.condensed &&
     a.presenceOnly === b.presenceOnly &&
     a.isSpeaking === b.isSpeaking &&
     a.stream === b.stream &&

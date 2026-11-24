@@ -258,8 +258,9 @@ export function CallStage({
     },
     [onFocus, paged]
   );
-  const render = (tile: Tile, className: string) => (
+  const render = (tile: Tile, className: string, condensed = false) => (
     <ParticipantTile
+      condensed={condensed}
       miraActive={!!mira}
       outputDeviceId={outputDeviceId}
       audioSuppressed={audioSuppressed || paged}
@@ -518,7 +519,7 @@ export function CallStage({
               <>
                 {visible
                   .filter((tile) => tile !== filmHero)
-                  .map((tile) => render(tile, FILM_TILE))}
+                  .map((tile) => render(tile, FILM_TILE, true))}
                 {renderMira(FILM_TILE, true)}
               </>
             }

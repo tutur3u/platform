@@ -89,3 +89,34 @@ it('omits rows for controls a presence-only room does not have', () => {
   expect(screen.getByRole('button', { name: 'settings' })).toBeTruthy();
   expect(screen.queryByText(call.playback_volume)).toBeNull();
 });
+
+it('makes each More row a 44 px target that a label tap activates', () => {
+  phone.on = true;
+  const opened = vi.fn();
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <CallHeaderActions
+        clock={null}
+        notice={null}
+        roomAudio={null}
+        settings={
+          <button onClick={opened} type="button">
+            settings
+          </button>
+        }
+        share={null}
+      />
+    </NextIntlClientProvider>
+  );
+  fireEvent.click(screen.getByRole('button', { name: call.more_actions }));
+  const row = screen
+    .getByText(call.settings_title)
+    .closest('li') as HTMLElement;
+  expect(row.className).toContain('min-h-11');
+  expect(row.className).toContain('[&_button]:size-11');
+  fireEvent.click(screen.getByText(call.settings_title));
+  expect(opened).toHaveBeenCalledTimes(1);
+  // A tap on the control itself is not doubled by the row.
+  fireEvent.click(screen.getByRole('button', { name: 'settings' }));
+  expect(opened).toHaveBeenCalledTimes(2);
+});
