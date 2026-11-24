@@ -148,9 +148,14 @@ it('never shows it outside a meeting', async () => {
 it('a Retry restarts the clock after its own slow save', async () => {
   let release: (() => void) | undefined;
   let saves = 0;
+  let runs = 0;
   const { result } = mount({
     run: async () => {
-      throw new Error('boom');
+      runs += 1;
+      // The first attempt fails; the Retry's run hangs, so the clock is the
+      // only thing that can raise the note.
+      if (runs === 1) throw new Error('boom');
+      return new Promise<{ runId: string }>(() => undefined);
     },
     checkpoint: () =>
       new Promise((resolve) => {
@@ -169,4 +174,6 @@ it('a Retry restarts the clock after its own slow save', async () => {
   await act(async () => release?.());
   await advance(SLOW_START_MS - 200);
   expect(result.current.slowStart).toBe(false);
+  await advance(600);
+  expect(result.current.slowStart).toBe(true);
 });
