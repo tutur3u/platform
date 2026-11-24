@@ -113,9 +113,10 @@ export function useTranscriptConsent(
         : { since: selfHoldEpoch(meetingId) },
     onSuccess: ({ next, perSpeaker }, choice, context) => {
       queryClient.setQueryData(transcriptConsentKey(meetingId), next);
-      if (choice !== 'allow') return;
-      releaseSelfCapture(meetingId, context?.since);
+      // Any recorded per-speaker choice answers the notice; only an Allow
+      // lifts a hold.
       if (perSpeaker) confirmSelfNotice(meetingId);
+      if (choice === 'allow') releaseSelfCapture(meetingId, context?.since);
     },
     onError: (error) => {
       // Someone the server will not let contribute here stops being asked.
@@ -126,18 +127,15 @@ export function useTranscriptConsent(
     },
   });
   /**
-   * Records the caller's Allow on the current notice, reading it first when
-   * it has not loaded, so a host who starts at once is never left pending.
-   * A per-speaker meeting asks each person, the host included, in the
-   * notice instead.
+   * Records the caller's Allow on the current notice, so a host who starts
+   * at once is never left pending. It always reads the room itself, never a
+   * cached or in-flight read that may predate a mode change: a per-speaker
+   * meeting asks each person, the host included, in the notice instead, and
+   * nothing is released for it.
    */
   const ensureAllowed = async () => {
-    const current: MeetTranscriptConsent | undefined =
-      consent ??
-      (await queryClient.fetchQuery<MeetTranscriptConsent>({
-        queryKey: transcriptConsentKey(meetingId),
-        queryFn: () => readMeetTranscriptConsent(meetingId),
-      }));
+    const current = await readMeetTranscriptConsent(meetingId);
+    queryClient.setQueryData(transcriptConsentKey(meetingId), current);
     if (!current?.available || current.choice === 'allow') return;
     if (readSelfRoom(current).mode === 'self') return;
     const since = selfHoldEpoch(meetingId);

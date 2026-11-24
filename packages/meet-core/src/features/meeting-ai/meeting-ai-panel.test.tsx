@@ -19,6 +19,11 @@ vi.mock('@tuturuuu/internal-api', () => ({
 vi.mock('./meeting-session-notes', () => ({ MeetingSessionNotes: () => null }));
 
 import { MeetingAiPanel } from './meeting-ai-panel';
+import {
+  holdSelfCapture,
+  isSelfCaptureHeld,
+  resetSelfCaptureFlags,
+} from './self-hold';
 
 const ai = messages.meet.ai;
 const session = (over: Partial<MeetAiSession> = {}): MeetAiSession => ({
@@ -187,4 +192,28 @@ it('reads the room again after the host starts or stops a session', async () => 
   await vi.waitFor(() =>
     expect(f.read.mock.calls.length).toBeGreaterThan(before)
   );
+});
+
+it('never allows on the host’s behalf when a fresh read says per-speaker', async () => {
+  resetSelfCaptureFlags('room');
+  // The cached view says room capture; the room has moved to per-speaker.
+  f.read
+    .mockResolvedValueOnce({ ...consent(true, null), mode: 'room' })
+    .mockResolvedValue({
+      ...consent(true, null),
+      mode: 'self',
+      session: null,
+    });
+  holdSelfCapture('room');
+  const value = hook();
+  show(value as never);
+  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  fireEvent.click(screen.getByRole('button', { name: ai.start }));
+  await vi.waitFor(() =>
+    expect((value as { start: () => void }).start).toHaveBeenCalled()
+  );
+  expect(f.read.mock.calls.length).toBeGreaterThan(1);
+  expect(f.choose).not.toHaveBeenCalled();
+  expect(isSelfCaptureHeld('room')).toBe(true);
+  resetSelfCaptureFlags('room');
 });

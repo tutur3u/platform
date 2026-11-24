@@ -40,7 +40,11 @@ vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
 
 import { useRoomMira } from '../call/components/use-room-mira';
 import { hashMiraConsentText } from '../live-assistant/mira-consent-box';
-import { isSelfCaptureHeld, resetSelfCaptureFlags } from './self-hold';
+import {
+  isSelfCaptureHeld,
+  resetSelfCaptureFlags,
+  selfCaptureFlags,
+} from './self-hold';
 import { SELF_NOTICE_KEYS } from './self-notice-text';
 import { TranscriptControls } from './transcript-controls';
 
@@ -288,6 +292,30 @@ describe('server notice and eligibility answers', () => {
     expect(JSON.parse(choices()[0]![1].body).choice).toBe('allow');
     await vi.waitFor(() => expect(opens()).toBe(2));
     await vi.waitFor(() => expect(f.engine).toHaveBeenCalledTimes(1));
+  });
+
+  it('a decline answers the per-speaker notice without lifting the hold', async () => {
+    f.json.mockImplementation((path: string) => {
+      if (path.endsWith('/self/open'))
+        return Promise.reject(conflict('MEET_SELF_NOTICE_REQUIRED'));
+      if (path.endsWith('/self/choice'))
+        return Promise.resolve(view({ choice: 'decline' }));
+      return Promise.resolve({ leaseExpiresAt: grant().leaseExpiresAt });
+    });
+    show();
+    const decline = await screen.findByRole('button', {
+      name: ai.consent_decline,
+    });
+    fireEvent.click(decline);
+    await vi.waitFor(() => expect(choices()).toHaveLength(1));
+    await vi.waitFor(() =>
+      expect(selfCaptureFlags('m').noticeRequired).toBe(false)
+    );
+    // The person reads as declined, not as undecided, and stays held.
+    fireEvent.click(screen.getByRole('button', { name: ai.consent_title }));
+    expect(await screen.findByText(ai.self_untick)).toBeTruthy();
+    expect(isSelfCaptureHeld('m')).toBe(true);
+    expect(opens()).toBe(1);
   });
 
   it('stops asking a signed-in non-member who cannot contribute', async () => {

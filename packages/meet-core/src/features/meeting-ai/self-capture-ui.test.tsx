@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,7 +37,11 @@ import { CaptureModePicker } from './capture-mode-picker';
 import { SelfCaptureStatus } from './self-capture-status';
 import { SelfCoverage } from './self-coverage';
 import type { SelfCaptureState } from './self-lifecycle';
-import { holdSelfCapture, resetSelfCaptureFlags } from './self-hold';
+import {
+  holdSelfCapture,
+  requireSelfNotice,
+  resetSelfCaptureFlags,
+} from './self-hold';
 import { ROOM_ONLY, type SelfRoomView } from './self-room';
 import { TranscriptConsentNotice } from './transcript-consent-notice';
 
@@ -334,6 +344,29 @@ describe('per-speaker header', () => {
     expect(
       await screen.findByRole('button', { name: ai.consent_decline })
     ).toBeTruthy();
+  });
+
+  it('opens again when a new question comes up after it was closed', async () => {
+    f.read.mockResolvedValue(view());
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'off' }}
+      />
+    );
+    const trigger = await screen.findByRole('button', {
+      name: ai.consent_title,
+    });
+    fireEvent.click(trigger);
+    await screen.findByText(ai.self_notice);
+    fireEvent.click(trigger);
+    await vi.waitFor(() =>
+      expect(screen.queryByText(ai.self_notice)).toBeNull()
+    );
+    act(() => requireSelfNotice('m'));
+    expect(await screen.findByText(ai.self_notice)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ai.consent_allow })).toBeTruthy();
   });
 
   it('reads as declined and offers Allow while a local decline is held', async () => {

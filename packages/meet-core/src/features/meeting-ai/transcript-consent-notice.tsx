@@ -55,8 +55,8 @@ export function TranscriptConsentNotice({
   // Without a host acceptance nobody can turn Mira on for themselves.
   const miraNotOn = !!mira.data?.available && !mira.data.acceptance;
   const miraPending = mira.isPending;
-  if (!consent?.available || !consent.active) return null;
-  const room = readSelfRoom(consent);
+  const view = consent?.available && consent.active ? consent : undefined;
+  const room = readSelfRoom(view);
   // One person's opt-out never pauses the others, so the room fence does not
   // describe a per-speaker meeting.
   const solo = room.mode === 'self';
@@ -65,17 +65,25 @@ export function TranscriptConsentNotice({
   // the reason.
   const selfGuest =
     solo && (guest || flags.ineligible || capture?.kind === 'guest');
-  // A decline or Mira off that has not been confirmed reads as declined; a
-  // notice the server wants confirmed asks again.
+  // A decline or Mira off that has not been confirmed reads as declined; an
+  // Allow the server wants confirmed under the per-speaker notice asks again.
+  const serverChoice = view?.choice ?? null;
   const choice = !solo
-    ? consent.choice
-    : flags.held && consent.choice === 'allow'
+    ? serverChoice
+    : flags.held && serverChoice === 'allow'
       ? 'decline'
-      : flags.noticeRequired
+      : flags.noticeRequired && serverChoice === 'allow'
         ? null
-        : consent.choice;
-  const needsChoice = choice === null && !selfGuest;
-  const live = solo ? !!room.session : consent.fence.ready;
+        : serverChoice;
+  const needsChoice = !!view && choice === null && !selfGuest;
+  // A new question opens the notice again, even after it was closed.
+  const [askedBefore, setAskedBefore] = useState(needsChoice);
+  if (askedBefore !== needsChoice) {
+    setAskedBefore(needsChoice);
+    if (needsChoice) setOpen(null);
+  }
+  if (!view) return null;
+  const live = solo ? !!room.session : view.fence.ready;
   const pick = (next: 'allow' | 'decline') =>
     choose.mutate(next, {
       onSuccess: () => setOpen(false),
@@ -114,7 +122,7 @@ export function TranscriptConsentNotice({
       >
         <TranscriptConsentDetails
           room={room}
-          fence={consent.fence}
+          fence={view.fence}
           capture={selfGuest ? { kind: 'guest' } : capture}
           names={names}
           meetingId={meetingId}
@@ -152,7 +160,7 @@ export function TranscriptConsentNotice({
             </Button>
           )}
           {/* A failed decline stays retryable until the server has it. */}
-          {consent.choice !== 'decline' && !selfGuest && (
+          {view.choice !== 'decline' && !selfGuest && (
             <Button
               type="button"
               size="sm"
