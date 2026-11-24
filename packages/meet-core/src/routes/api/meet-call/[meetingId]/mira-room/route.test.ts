@@ -285,7 +285,10 @@ it('requires the stored mode for an on in a per-speaker room', async () => {
 
 it.each([
   ['the column is missing', () => f.canStore.mockResolvedValue(false)],
-  ['the storage check fails', () => f.canStore.mockRejectedValue(new Error('x'))],
+  [
+    'the storage check fails',
+    () => f.canStore.mockRejectedValue(new Error('x')),
+  ],
 ])(
   'refuses a per-speaker on before the room changes when %s',
   async (_label, arrange) => {

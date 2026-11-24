@@ -107,7 +107,9 @@ export async function canStoreMiraNoticeMode() {
   // The column is not in the generated types until its migration lands.
   const table = db.from('meet_mira_participant_choices') as unknown as {
     select: (columns: string) => {
-      limit: (count: number) => PromiseLike<{ error: { code?: string } | null }>;
+      limit: (
+        count: number
+      ) => PromiseLike<{ error: { code?: string } | null }>;
     };
   };
   const { error } = await table.select('notice_mode').limit(0);
