@@ -170,6 +170,7 @@ interface SetupOptions {
   roots: string[];
   shell: string;
   workers?: number;
+  turbo?: number;
   lanes?: ValidationLanes;
   maxLanes?: number;
   dryRun?: boolean;
@@ -239,6 +240,15 @@ async function prepareResources(
       throw new Error('--workers must be an integer from 1 to 64.');
     config.vitestWorkers = options.workers;
     config.buildJobs = options.workers;
+  }
+  if (options.turbo !== undefined) {
+    if (
+      !Number.isInteger(options.turbo) ||
+      options.turbo < 1 ||
+      options.turbo > 64
+    )
+      throw new Error('--turbo must be an integer from 1 to 64.');
+    config.turboConcurrency = options.turbo;
   }
   config.validationLanes = options.lanes ?? resourceLanes(config);
   config.maxValidationLanes =

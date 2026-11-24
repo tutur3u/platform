@@ -20,6 +20,7 @@ import {
   defaultResourceConfig,
   effectiveResourceLanes,
   laneResourceConfig,
+  nestedResourceSettings,
   type ResourceConfig,
   readResourceConfig,
   resourceLanes,
@@ -206,12 +207,10 @@ async function runNested(
       }
     : {};
   const config = (await readResourceConfig(home)) || defaultResourceConfig();
-  const caps = parent.limits
-    ? { ...config, turboConcurrency: 1 }
-    : laneResourceConfig(config);
+  const caps = parent.limits ? config : laneResourceConfig(config);
   return spawnResourceCommand(
     command,
-    limitCommand(command, args, { ...caps, ...parent.limits }),
+    limitCommand(command, args, nestedResourceSettings(caps, parent)),
     { ...env, ...inherited, [admittedMarker]: parent.token },
     false,
     onSpawn
@@ -437,11 +436,13 @@ export async function queuedResourceCommand(
           }
           if (cancelled) return undefined;
           // Under a budget the declared tokens are the job's worker caps (its
-          // whole fan-out); otherwise lanes split the configured totals.
+          // whole fan-out, so Turbo stays at one task); otherwise lanes split
+          // the configured totals.
           const caps =
             config.budget && owner.demand
               ? {
                   ...laneResourceConfig(config),
+                  turboConcurrency: 1,
                   vitestWorkers: owner.demand.tokens,
                   buildJobs: owner.demand.tokens,
                 }

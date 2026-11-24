@@ -14,7 +14,9 @@ import {
   atomicJson,
   defaultResourceConfig,
   laneResourceConfig,
+  nestedResourceSettings,
   readResourceConfig,
+  resourcePolicyKey,
 } from './resources-config';
 import { resourceQueueStatus } from './resources-queue';
 import { setupResources } from './resources-setup';
@@ -63,6 +65,29 @@ describe('lane policy', { timeout: crossProcessTimeout }, () => {
         defaultResourceConfig()
       )
     ).toEqual(bunRunSeparatorExpected);
+  });
+  it('splits an explicit Turbo total across lanes, at least one each', () => {
+    const config = {
+      ...defaultResourceConfig(),
+      validationLanes: 2 as const,
+      turboConcurrency: 4,
+    };
+    expect(laneResourceConfig(config).turboConcurrency).toBe(2);
+    expect(
+      laneResourceConfig({ ...config, turboConcurrency: 1 }).turboConcurrency
+    ).toBe(1);
+    expect(resourcePolicyKey(config)).not.toBe(
+      resourcePolicyKey({ ...config, turboConcurrency: 1 })
+    );
+    // Commands inside an admitted job keep one Turbo task and the job's caps.
+    const caps = laneResourceConfig(config);
+    expect(nestedResourceSettings(caps)).toBe(caps);
+    expect(
+      nestedResourceSettings(caps, {
+        limits: { vitestWorkers: 3, buildJobs: 2 },
+      })
+    ).toMatchObject({ turboConcurrency: 1, vitestWorkers: 3, buildJobs: 2 });
+    expect(nestedResourceSettings(caps, {}).turboConcurrency).toBe(1);
   });
   it('splits the aggregate worker budget and clamps explicit tool flags', () => {
     const config = {
@@ -165,8 +190,20 @@ describe('lane policy', { timeout: crossProcessTimeout }, () => {
     expect(plan?.config.vitestWorkers).toBe(2);
     expect(await readFile(join(path, 'config.json'), 'utf8')).toBe(before);
     expect(await readdir(path)).toEqual(names);
+    const turbo = await setupResources({
+      home: path,
+      roots: [path],
+      shell: 'none',
+      turbo: 4,
+      dryRun: true,
+    });
+    expect(turbo?.config.turboConcurrency).toBe(4);
+    await expect(
+      setupResources({ home: path, roots: [path], shell: 'none', turbo: 65 })
+    ).rejects.toThrow('--turbo must be an integer from 1 to 64.');
     for (const args of [
       ['setup', '--lanes', '17'],
+      ['setup', '--turbo', '0'],
       ['run', '--surprise', '--', 'node', '-e', '0'],
       ['status', '--surprise'],
     ])

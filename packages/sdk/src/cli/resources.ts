@@ -17,6 +17,7 @@ import {
   hostLaneCeiling,
   laneResourceConfig,
   maxResourceLanes,
+  nestedResourceSettings,
   readResourceConfig,
   resourceEnvironment,
   resourceHome,
@@ -73,6 +74,7 @@ Setup options:
   --lanes <1..${maxResourceLanes}>         base lanes; default 1, change only when idle
   --max-lanes <1..${maxResourceLanes}>     burst ceiling; default base, change only when idle
   --workers <1..64>       Vitest/Cargo workers; default adapts to RAM and CPUs
+  --turbo <1..64>         Turbo task concurrency, split across lanes; default 1
   --force                permit cross-install replacement only after draining
   --dry-run              inspect the setup plan without writing files
   --json                 machine-readable setup/status output
@@ -109,7 +111,7 @@ with a warning; an unreadable config makes shims run commands unmanaged.
 Commands inside an admitted job (TTR_RESOURCES_ADMITTED, or a process-tree
 ancestor holding a lane) run immediately instead of queueing again.
 Only read-only system tools (cat, echo...) skip the queue; ls, git and runtimes queue.
-Turbo runs one task; Vitest and Cargo get bounded worker counts. Commands
+Turbo, Vitest and Cargo get bounded concurrency (Turbo 1 unless --turbo). Commands
 outside those projects are unchanged. Running processes are never interrupted.
 macOS/Linux supported. Shell hooks cover new shells, not existing processes.
 Use TTR_RESOURCES_BYPASS=1 for a deliberate one-command opt-out.
@@ -232,7 +234,7 @@ export async function runResourcesCommand(argv: string[]) {
       );
     if (dryRun && parent)
       throw new Error('Run placement dry-run outside an admitted job.');
-    const settings = parent?.limits ? { ...caps, ...parent.limits } : caps;
+    const settings = nestedResourceSettings(caps, parent);
     const args = enabled
       ? limitCommand(basename(name), command, settings)
       : command;
@@ -410,21 +412,19 @@ export async function runResourcesCommand(argv: string[]) {
     const roots: string[] = [];
     let shell = basename(process.env.SHELL || 'none');
     let workers: number | undefined;
+    let turbo: number | undefined;
     let lanes: ValidationLanes | undefined;
     let maxLanes: number | undefined;
     for (let i = 1; i < options.length; i++) {
       const arg = options[i]!;
-      if (
-        ['--root', '--shell', '--workers', '--lanes', '--max-lanes'].includes(
-          arg
-        )
-      ) {
+      if (/^--(?:root|shell|workers|turbo|lanes|max-lanes)$/u.test(arg)) {
         const value = options[++i];
         if (!value || value.startsWith('--'))
           throw new Error(`Missing value for ${arg}.`);
         if (arg === '--root') roots.push(value);
         if (arg === '--shell') shell = value;
         if (arg === '--workers') workers = Number(value);
+        if (arg === '--turbo') turbo = Number(value);
         if (arg === '--max-lanes') maxLanes = Number(value);
         if (arg === '--lanes') {
           // The same bound setup enforces: maxResourceLanes, not a literal.
@@ -444,6 +444,7 @@ export async function runResourcesCommand(argv: string[]) {
       roots,
       shell,
       workers,
+      turbo,
       lanes,
       maxLanes,
       dryRun: options.includes('--dry-run'),
@@ -458,7 +459,7 @@ export async function runResourcesCommand(argv: string[]) {
     process.stdout.write(
       options.includes('--json')
         ? `${JSON.stringify(plan, null, 2)}\n`
-        : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: ${resourceLanes(plan.config)} base lane(s), up to ${resourceMaxLanes(plan.config)} lane(s), ${plan.config.vitestWorkers} total Vitest workers.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
+        : `${options.includes('--dry-run') ? 'Planned' : 'Installed'} resource control: ${resourceLanes(plan.config)} base lane(s), up to ${resourceMaxLanes(plan.config)} lane(s), ${plan.config.vitestWorkers} total Vitest workers, Turbo ${plan.config.turboConcurrency}.\nProjects: ${plan.config.roots.join(', ')}\nShell hooks: ${plan.shellFiles.join(', ') || 'none'}\nOpen a new shell; existing jobs keep their current settings.\n`
     );
     return;
   }

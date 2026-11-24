@@ -146,7 +146,7 @@ export function resourcePolicyKey(config: ResourceConfig) {
     resourceMaxLanes(config),
     config.vitestWorkers,
     config.buildJobs,
-    1,
+    config.turboConcurrency ?? 1,
     config.budget ?? null,
   ]);
 }
@@ -192,12 +192,25 @@ export function laneResourceConfig(config: ResourceConfig): ResourceConfig {
     buildJobs = Math.min(buildJobs, budget);
   }
   const divisor = effectiveResourceLanes(config);
+  // Turbo tasks share the same split: the setup total, at least one per lane.
   return {
     ...config,
-    turboConcurrency: 1,
+    turboConcurrency: Math.max(
+      1,
+      Math.floor((config.turboConcurrency ?? 1) / divisor)
+    ),
     vitestWorkers: Math.max(1, Math.floor(vitestWorkers / divisor)),
     buildJobs: Math.max(1, Math.floor(buildJobs / divisor)),
   };
+}
+
+// A command inside an admitted job inherits that job's worker caps and runs
+// Turbo as one task, whether or not it queues itself.
+export function nestedResourceSettings(
+  caps: ResourceConfig,
+  parent?: { limits?: { vitestWorkers: number; buildJobs: number } }
+): ResourceConfig {
+  return parent ? { ...caps, turboConcurrency: 1, ...parent.limits } : caps;
 }
 
 export function resourceHome() {
