@@ -45,6 +45,9 @@ export interface CallChatMessage {
   body: string;
   createdAt: string;
   displayName: string;
+  /** Author identity markers set by the room. Labelling only. */
+  guest?: true;
+  external?: true;
   id: string;
   userId: string;
 }
@@ -303,6 +306,8 @@ export function reduceCallState(
               body: message.body,
               createdAt: message.createdAt,
               displayName: message.displayName,
+              ...(message.guest ? { guest: true as const } : {}),
+              ...(message.external ? { external: true as const } : {}),
               id: message.id,
               userId: message.userId,
               retained: message.retained,

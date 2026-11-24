@@ -932,6 +932,44 @@ Every non-host notes read checks the signed room policy on the Durable Object;
 removing permission blocks subsequent reads. Existing downloaded information
 cannot be recalled. Transcription mutations remain host-only.
 
+### Participant identity markers
+
+Meet shows who is signed in with a compact icon next to a participant's name,
+never with name text. The marker is labelling only; it does not grant or
+remove any permission.
+
+| Participant | Server flag | Marker | Tooltip (EN / VI) |
+| --- | --- | --- | --- |
+| Workspace member (and the host) | none | none | none |
+| Signed-in account outside the workspace (joins through the lobby) | `external` | globe icon | "From outside this workspace" / "Ngoài không gian làm việc này" |
+| Anonymous guest without an account | `guest` | mask icon | "Guest, not signed in" / "Khách, chưa đăng nhập" |
+
+- The Durable Object sets `guest` or `external` on the waiting entry from the
+  signed token (`guest` for anonymous tokens; `external` for lobby tokens with
+  no `guest` flag that are not the host) and carries it into presence on
+  admission, direct entry and reconnect. Admission never makes anyone a guest:
+  an admitted outside account keeps the outside marker, and an admitted
+  anonymous guest keeps the guest marker because they are still not signed in.
+- The flags are also stored on the host's approved list and on each room chat
+  message, so the marker stays on an author's messages after they leave.
+- Display names never contain a guest suffix. A name a person chooses in the
+  lobby cannot forge or hide the marker because the marker comes only from the
+  server flag. When the Durable Object restores a room stored with names ending
+  in ` (guest)`, it moves that marker into the flags (`guest` where the entry is
+  an anonymous guest, `external` otherwise) and removes the suffix. Clients
+  remove the suffix only when a flag carries the marker, so a room that has not
+  set the flags keeps showing the suffix.
+- The marker appears in the waiting list, the in-call People list, the host's
+  approved list, participant tiles and room chat. Transcript speaker labels and
+  attendance use the clean name. The trigger is a button with the tooltip text as its accessible name,
+  and the tooltip opens on hover, keyboard focus and tap.
+- An anonymous guest who has not passed verification also shows the
+  **Unverified** badge in the waiting list.
+- Regression coverage: `packages/realtime/src/meet/room-display-name.test.ts`,
+  `room-controls.test.ts` and `room.test.ts` for the server flags, and
+  `packages/meet-core/src/features/call/components/participant-identity-badge.test.tsx`
+  for the classification, rendering, tooltip and both locales.
+
 ### Guests without an account
 
 **Allow guests without an account** is off by default and only the host can turn
@@ -949,7 +987,8 @@ next token.
   `MEET_REALTIME_TOKEN_SECRET`; it is bound to one meeting and lasts 12 hours.
 - Guests who could not verify need host approval even when **Admit everyone
   automatically** is on.
-  Media locks apply to guests, and hosts see a Guest badge.
+  Media locks apply to guests, and everyone sees the guest marker described
+  under Participant identity markers.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.

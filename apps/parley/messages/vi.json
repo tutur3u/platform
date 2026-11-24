@@ -4316,6 +4316,10 @@
       "bandwidth_hint": "Video thích ứng với mạng. Giọng nói được ưu tiên và tạm dừng gửi khi bạn ở một mình.",
       "bandwidth_quality": "Chất lượng cao hơn",
       "bandwidth_saver": "Tiết kiệm dữ liệu",
+      "participant_identity": {
+        "external": "Ngoài không gian làm việc này",
+        "guest": "Khách, chưa đăng nhập"
+      },
       "presence_only": "Chỉ hiện diện",
       "thumbnail_mode": "Chế độ ảnh thu nhỏ",
       "room_media_health": "Tình trạng media của phòng",

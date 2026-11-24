@@ -283,6 +283,8 @@ export function rememberAdmission(
       displayName: person.displayName,
       avatarUrl: person.avatarUrl,
       ...(classMediaRole ? { classMediaRole } : {}),
+      ...(person.guest ? { guest: true as const } : {}),
+      ...(person.external ? { external: true as const } : {}),
     },
   };
 }

@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { meetParticipantName } from '../lib/participant-identity';
+import { ParticipantIdentityBadge } from './participant-identity-badge';
 /**
  * Host-only list of people admitted before, who skip the lobby next time.
  * Who may read the transcript and notes lives in Meet settings.
@@ -51,14 +53,17 @@ export function RoomHostControls({
                         {person.displayName.slice(0, 1)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      {person.displayName}
+                    <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
+                      <span className="truncate">
+                        {meetParticipantName(person.displayName, person)}
+                      </span>
+                      <ParticipantIdentityBadge participant={person} />
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="size-8 shrink-0 pointer-coarse:size-11"
-                      aria-label={`${t('forget_approval')}: ${person.displayName}`}
+                      aria-label={`${t('forget_approval')}: ${meetParticipantName(person.displayName, person)}`}
                       title={t('forget_approval')}
                       onClick={() => onForget(person.userId)}
                     >

@@ -4316,6 +4316,10 @@
       "bandwidth_hint": "Video adapts to network conditions. Speech stays prioritized, and sending pauses when you are alone.",
       "bandwidth_quality": "Higher quality",
       "bandwidth_saver": "Data saver",
+      "participant_identity": {
+        "external": "From outside this workspace",
+        "guest": "Guest, not signed in"
+      },
       "presence_only": "Presence only",
       "thumbnail_mode": "Thumbnail mode",
       "room_media_health": "Room media health",

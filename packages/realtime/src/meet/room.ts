@@ -1,3 +1,4 @@
+import { isMeetExternalParticipant } from './room-display-name';
 import {
   type AttendanceInterval,
   closeAttendanceInterval,
@@ -139,6 +140,8 @@ export function getMeetDisplayName(token: MeetRealtimeTokenPayload) {
   return token.displayName || (token.role === 'host' ? 'Host' : 'Participant');
 }
 
+export { isMeetExternalParticipant };
+
 export function createMeetPresence(
   token: MeetRealtimeTokenPayload,
   now: string,
@@ -149,6 +152,7 @@ export function createMeetPresence(
       ? { canManageParticipants: true }
       : {}),
     ...(token.guest ? { guest: true as const } : {}),
+    ...(isMeetExternalParticipant(token) ? { external: true as const } : {}),
     accountId: token.accountId,
     avatarUrl: token.avatarUrl,
     displayName: getMeetDisplayName(token),

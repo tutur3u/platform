@@ -6,6 +6,7 @@ import type {
 import { hasMeetRealtimeScope, MEET_REALTIME_SCOPES } from './permissions';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
+import { isMeetExternalParticipant } from './room-display-name';
 import { denied, outcome } from './room-outcome';
 
 export { retainRoomChat } from './chat-retention';
@@ -54,6 +55,8 @@ export function applyChatMessage(
       (token.displayName || (token.role === 'host' ? 'Host' : 'Participant')),
     avatarUrl: token.avatarUrl,
     accountId: token.accountId,
+    ...(token.guest ? { guest: true as const } : {}),
+    ...(isMeetExternalParticipant(token) ? { external: true as const } : {}),
     id: crypto.randomUUID(),
     userId,
     attachmentIds: message.attachmentIds,

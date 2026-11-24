@@ -27,6 +27,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { isMeetAssistant } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
+import type { MeetParticipantIdentityFlags } from '../lib/participant-identity';
 import {
   matchMiraSlashCommands,
   type MiraSlashCommand,
@@ -44,6 +45,7 @@ import {
   useAssistantWorkspaceSelection,
 } from './assistant-workspace-picker';
 import { ChatMessageBody } from './chat-message-body';
+import { ChatAuthor } from './chat-author';
 import {
   MiraPermissionsCard,
   type MiraPermissionsProps,
@@ -150,6 +152,7 @@ export function ChatPanel({
   wsId,
   mira,
   qaLive = false,
+  participants,
 }: {
   mentionRequest?: number;
   onMentionHandled?: () => void;
@@ -164,6 +167,8 @@ export function ChatPanel({
   mira?: RoomMira;
   /** The Q&A is open on this person's stage, so questions belong there. */
   qaLive?: boolean;
+  /** In-call people; chat authors show the same identity badge as the roster. */
+  participants?: (MeetParticipantIdentityFlags & { userId: string })[];
 }) {
   const t = useTranslations('meet.call');
   const tm = useTranslations('meet.call.miraEverywhere');
@@ -341,11 +346,12 @@ export function ChatPanel({
                       />
                     </span>
                   ) : (
-                    <span className="truncate font-medium text-xs">
-                      {message.userId === selfUserId
-                        ? t('you')
-                        : message.displayName}
-                    </span>
+                    <ChatAuthor
+                      message={message}
+                      participants={participants}
+                      self={message.userId === selfUserId}
+                      youLabel={t('you')}
+                    />
                   )}
                   <time className="shrink-0 text-[0.65rem] text-muted-foreground">
                     {new Date(message.createdAt).toLocaleTimeString(undefined, {

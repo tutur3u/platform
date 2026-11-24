@@ -81,6 +81,10 @@ export type MeetApprovedParticipant = {
   displayName: string;
   avatarUrl?: string;
   classMediaRole?: 'viewer' | 'speaker' | 'promoted';
+  /** Anonymous guest without a Tuturuuu account. Labelling only. */
+  guest?: true;
+  /** Signed-in account outside the workspace. Labelling only. */
+  external?: true;
 };
 
 export function parseMeetRoomSettingsPatch(

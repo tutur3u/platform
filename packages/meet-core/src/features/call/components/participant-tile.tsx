@@ -19,7 +19,9 @@ import { useTranslations } from 'next-intl';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
 import { observeVideoPresentation } from '../lib/video-presentation';
+import { meetParticipantName } from '../lib/participant-identity';
 import { LiveAvatar } from './live-avatar';
+import { ParticipantIdentityBadge } from './participant-identity-badge';
 import {
   MediaReceivingStatus,
   useStreamReadiness,
@@ -79,6 +81,7 @@ function ParticipantTileImpl({
   onRenderedHeight?: (userId: string, devicePx: number | null) => void;
 }) {
   const t = useTranslations('meet.call');
+  const displayName = meetParticipantName(participant.displayName, participant);
   const [expanded, setExpanded] = useState(false);
   const [localSilence, setLocalSilence] = useState(false);
   const silenced = controlledSilence ?? localSilence;
@@ -242,7 +245,7 @@ function ParticipantTileImpl({
             >
               <AvatarImage src={participant.avatarUrl} alt="" />
               <AvatarFallback>
-                {participant.displayName
+                {displayName
                   .split(/\s+/u)
                   .slice(0, 2)
                   .map((name) => name[0]?.toUpperCase())
@@ -298,10 +301,16 @@ function ParticipantTileImpl({
               ? 'truncate text-xs'
               : 'line-clamp-2 break-words text-sm @max-[12rem]:line-clamp-1'
           )}
-          title={floating ? undefined : participant.displayName}
+          title={floating ? undefined : displayName}
         >
-          {floating ? t('you') : participant.displayName}
+          {floating ? t('you') : displayName}
         </span>
+        {!floating && (
+          <ParticipantIdentityBadge
+            className="backdrop-blur-sm"
+            participant={participant}
+          />
+        )}
         {isSelf && !floating && (
           <span className="shrink-0 font-medium text-sm leading-tight">
             · {t('you')}
@@ -341,7 +350,7 @@ function ParticipantTileImpl({
                   : 'bg-foreground/10 text-foreground hover:bg-foreground/20'
               )}
               aria-label={t('mute_participant', {
-                name: participant.displayName,
+                name: displayName,
               })}
               onClick={() => onMute(participant.userId)}
             >
@@ -365,7 +374,7 @@ function ParticipantTileImpl({
               className="size-8 @max-[12rem]:size-6"
               aria-label={t(
                 silenced ? 'audio_unmute_for_me' : 'audio_mute_for_me',
-                { name: participant.displayName }
+                { name: displayName }
               )}
               aria-pressed={silenced}
               onClick={() =>
@@ -469,6 +478,8 @@ export const ParticipantTile = memo(
       b.participant.assistantAudio?.speakerEnabled &&
     a.participant.userId === b.participant.userId &&
     a.participant.displayName === b.participant.displayName &&
+    a.participant.guest === b.participant.guest &&
+    a.participant.external === b.participant.external &&
     a.participant.avatarUrl === b.participant.avatarUrl &&
     a.participant.media.audioEnabled === b.participant.media.audioEnabled &&
     a.participant.media.videoEnabled === b.participant.media.videoEnabled &&

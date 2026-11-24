@@ -5094,6 +5094,10 @@
       "open_in_calendar": "Mở trong Lịch",
       "open_meeting": "Mở cuộc họp",
       "output_unsupported": "Chọn loa trong cài đặt hệ thống với trình duyệt này.",
+      "participant_identity": {
+        "external": "Ngoài không gian làm việc này",
+        "guest": "Khách, chưa đăng nhập"
+      },
       "participant_limit_reached": "Phòng đã đạt giới hạn người tham gia. Vui lòng thử lại khi có người rời phòng.",
       "participant_minutes": "Số phút người tham gia được máy chủ ghi nhận: {minutes}. Đây là mức dùng, không phải hóa đơn cuối cùng.",
       "participant_volume": "Âm lượng của {name}",

@@ -27,6 +27,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
+import { meetParticipantName } from '../lib/participant-identity';
 
 type Override = NonNullable<MeetRoomSettings['mediaOverrides']>[string];
 
@@ -66,7 +67,7 @@ export function ParticipantActions({
           <Button
             ref={trigger}
             aria-label={t('room_tools.member_actions', {
-              name: person.displayName,
+              name: meetParticipantName(person.displayName, person),
             })}
             className="size-8 shrink-0 pointer-coarse:size-11"
             size="icon"
@@ -95,7 +96,9 @@ export function ParticipantActions({
               }}
             >
               <MicOff />
-              {t('mute_participant', { name: person.displayName })}
+              {t('mute_participant', {
+                name: meetParticipantName(person.displayName, person),
+              })}
             </DropdownMenuItem>
           )}
           {canOverride && (
@@ -137,7 +140,9 @@ export function ParticipantActions({
           <AlertDialogHeader>
             <AlertDialogTitle>{t('remove_participant')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('room_tools.confirm_remove', { name: person.displayName })}
+              {t('room_tools.confirm_remove', {
+                name: meetParticipantName(person.displayName, person),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

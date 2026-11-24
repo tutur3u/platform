@@ -129,7 +129,8 @@ describe('persistent room controls', () => {
   it('remembers an admitted identity across leaving and permits host revocation', () => {
     const state = admitted();
     expect(state.approved?.[guestId]).toMatchObject({
-      displayName: 'speaker (guest)',
+      displayName: 'speaker',
+      external: true,
       avatarUrl: guest.avatarUrl,
     });
     const left = releaseParticipant(
@@ -379,16 +380,14 @@ it('lets a waiting guest update their lobby display name before host admission',
     { type: 'presence.join', displayName: 'Alex Guest' },
     guest
   );
-  expect(renamed.state.waiting[guestId]?.displayName).toBe(
-    'Alex Guest (guest)'
-  );
+  expect(renamed.state.waiting[guestId]?.displayName).toBe('Alex Guest');
   expect(renamed.toManagers).toEqual([
     {
       type: 'admission.pending',
       participants: [
         expect.objectContaining({
           userId: guestId,
-          displayName: 'Alex Guest (guest)',
+          displayName: 'Alex Guest',
         }),
       ],
     },
@@ -398,9 +397,12 @@ it('lets a waiting guest update their lobby display name before host admission',
     userId: guestId,
     admit: true,
   });
-  expect(approved.state.presence[guestId]?.displayName).toBe(
-    'Alex Guest (guest)'
-  );
+  // Admission keeps the outside-account flag and never adds a guest label.
+  expect(approved.state.presence[guestId]).toMatchObject({
+    displayName: 'Alex Guest',
+    external: true,
+  });
+  expect(approved.state.presence[guestId]?.guest).toBeUndefined();
 });
 
 it('binds lobby renaming to the authenticated sender, ignoring a supplied target', () => {
@@ -416,8 +418,8 @@ it('binds lobby renaming to the authenticated sender, ignoring a supplied target
     displayName: 'Mine',
   });
   const renamed = run(held, message, guest).state;
-  expect(renamed.waiting[guestId]?.displayName).toBe('Mine (guest)');
-  expect(renamed.waiting[other.userId]?.displayName).toBe('speaker (guest)');
+  expect(renamed.waiting[guestId]?.displayName).toBe('Mine');
+  expect(renamed.waiting[other.userId]?.displayName).toBe('speaker');
 });
 
 it('sanitizes lobby names and rejects empty or oversized input', () => {
@@ -427,7 +429,7 @@ it('sanitizes lobby names and rejects empty or oversized input', () => {
     displayName: '  A\u0000\u202elex\u2069  ',
   });
   expect(run(held, message, guest).state.waiting[guestId]?.displayName).toBe(
-    'Alex (guest)'
+    'Alex'
   );
   for (const displayName of ['x'.repeat(121), ' \u0000\u202e ']) {
     expect(
@@ -465,7 +467,7 @@ it('freezes a lobby name after admission, including presence replay', () => {
   expect(
     run(approved, { type: 'presence.join', displayName: 'Changed' }, guest)
       .state.presence[guestId]?.displayName
-  ).toBe('Alex (guest)');
+  ).toBe('Alex');
   const left = releaseParticipant(approved, guestId, 'test').state;
   expect(
     run(
@@ -473,11 +475,11 @@ it('freezes a lobby name after admission, including presence replay', () => {
       { type: 'presence.join', displayName: 'Changed' },
       guest
     ).state.presence[guestId]?.displayName
-  ).toBe('Alex (guest)');
+  ).toBe('Alex');
 });
 
 it.each(['host', 'Member Name'])(
-  'marks an impersonating guest as guest: %s',
+  'flags an outside account that borrows a member name: %s',
   (displayName) => {
     const member = {
       ...guest,
@@ -496,18 +498,18 @@ it.each(['host', 'Member Name'])(
       now
     ).state;
     const renamed = run(held, { type: 'presence.join', displayName }, guest);
-    expect(renamed.state.waiting[guestId]?.displayName).toBe(
-      `${displayName} (guest)`
-    );
+    expect(renamed.state.waiting[guestId]).toMatchObject({
+      displayName,
+      external: true,
+    });
+    expect(renamed.state.waiting[guestId]?.guest).toBeUndefined();
     expect(renamed.toManagers[0]).toMatchObject({
-      participants: [
-        expect.objectContaining({ displayName: `${displayName} (guest)` }),
-      ],
+      participants: [expect.objectContaining({ displayName, external: true })],
     });
   }
 );
 
-it('marks first-party lobby tokens with an accountId as guests', () => {
+it('flags first-party lobby tokens with an accountId as outside accounts', () => {
   const visitor = {
     ...guest,
     accountId: guestId,
@@ -518,13 +520,16 @@ it('marks first-party lobby tokens with an accountId as guests', () => {
     visitor,
     now
   );
-  expect(held.state.waiting[guestId]?.displayName).toBe('host (guest)');
+  expect(held.state.waiting[guestId]).toMatchObject({
+    displayName: 'host',
+    external: true,
+  });
   const renamed = run(
     held.state,
     { type: 'presence.join', displayName: 'host' },
     visitor
   );
-  expect(renamed.state.waiting[guestId]?.displayName).toBe('host (guest)');
+  expect(renamed.state.waiting[guestId]?.displayName).toBe('host');
   // An unchanged name does not re-notify managers.
   expect(renamed.toManagers).toHaveLength(0);
   const changed = run(
@@ -532,12 +537,8 @@ it('marks first-party lobby tokens with an accountId as guests', () => {
     { type: 'presence.join', displayName: 'host\u3000\u3000again' },
     visitor
   );
-  expect(changed.state.waiting[guestId]?.displayName).toBe(
-    'host again (guest)'
-  );
+  expect(changed.state.waiting[guestId]?.displayName).toBe('host again');
   expect(changed.toManagers[0]).toMatchObject({
-    participants: [
-      expect.objectContaining({ displayName: 'host again (guest)' }),
-    ],
+    participants: [expect.objectContaining({ displayName: 'host again' })],
   });
 });

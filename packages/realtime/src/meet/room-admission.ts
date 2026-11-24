@@ -29,6 +29,7 @@ import type {
 import {
   createMeetPresence,
   getMeetDisplayName,
+  isMeetExternalParticipant,
   type MeetRoomOutcome,
   type MeetRoomSnapshot,
   meetAdmissionPendingMessage,
@@ -46,7 +47,7 @@ import {
   rememberAdmission,
   roomSettingsMessage,
 } from './room-controls';
-import { lobbyDisplayName } from './room-display-name';
+import { lobbyDisplayName, stripLegacyGuestSuffix } from './room-display-name';
 import {
   hasMeetMediaContextConflict,
   resolveMeetRoomMediaRole,
@@ -125,6 +126,9 @@ export function admitOrHold(
             ? { canManageParticipants: true }
             : {}),
           ...(token.guest ? { guest: true as const } : {}),
+          ...(isMeetExternalParticipant(token)
+            ? { external: true as const }
+            : {}),
           // Asked to join without passing Turnstile; the host decides.
           ...(token.guest && !token.guestTurnstileVerified
             ? { unverified: true as const }
@@ -166,10 +170,11 @@ export function admitOrHold(
   if (previous) person.joinedAt = previous.joinedAt;
   person.media = clampMeetMedia(state.settings, person, person.media);
   if (token.admission === 'lobby') {
-    person.displayName =
+    person.displayName = stripLegacyGuestSuffix(
       previous?.displayName ??
-      state.approved?.[token.accountId ?? token.userId]?.displayName ??
-      person.displayName;
+        state.approved?.[token.accountId ?? token.userId]?.displayName ??
+        person.displayName
+    );
   }
   const waiting = { ...state.waiting };
   delete waiting[token.userId];
@@ -324,9 +329,10 @@ function decideParticipant(
   const person: MeetRealtimePresence = {
     ...(pending.canManageParticipants ? { canManageParticipants: true } : {}),
     ...(pending.guest ? { guest: true as const } : {}),
+    ...(pending.external ? { external: true as const } : {}),
     accountId: pending.accountId,
     avatarUrl: pending.avatarUrl,
-    displayName: pending.displayName,
+    displayName: stripLegacyGuestSuffix(pending.displayName),
     joinedAt: now,
     lastSeenAt: now,
     media: { audioEnabled: false, screenEnabled: false, videoEnabled: false },
@@ -338,7 +344,7 @@ function decideParticipant(
     ? openAttendanceInterval(state.attendance, {
         deviceUserId: targetId,
         kind: admittedKind,
-        displayName: pending.displayName,
+        displayName: stripLegacyGuestSuffix(pending.displayName),
         joinedAt: now,
         ...(admittedKind === 'member'
           ? { userId: admittedId }

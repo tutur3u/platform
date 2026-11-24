@@ -413,6 +413,9 @@ export type MeetRealtimeServerMessage =
       body: string;
       createdAt: string;
       displayName: string;
+      /** Author identity markers copied from presence. Labelling only. */
+      guest?: true;
+      external?: true;
       id: string;
       /** A room Mira system line; clients show it in their own locale. */
       notice?: { kind: 'mira.on' | 'mira.off'; by?: string };

@@ -31,7 +31,7 @@ import {
 } from './room-budget';
 import { applyChatMessage } from './room-chat';
 import { applyRoomControl, approvedParticipantsMessage } from './room-controls';
-import { lobbyDisplayName } from './room-display-name';
+import { lobbyDisplayName, stripLegacyGuestSuffix } from './room-display-name';
 import { applyRoomNavigation } from './room-navigation';
 import {
   hasMeetMediaContextConflict,
@@ -198,9 +198,12 @@ function dispatchMeetRoomCommand(
           ...token,
           displayName:
             token.admission === 'lobby'
-              ? (prior?.displayName ??
-                state.approved?.[token.accountId ?? userId]?.displayName ??
-                token.displayName)
+              ? stripLegacyGuestSuffix(
+                  prior?.displayName ??
+                    state.approved?.[token.accountId ?? userId]?.displayName ??
+                    token.displayName ??
+                    ''
+                ) || undefined
               : message.displayName || token.displayName,
         },
         now,

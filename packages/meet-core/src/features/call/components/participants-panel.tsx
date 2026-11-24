@@ -24,7 +24,9 @@ import { useState } from 'react';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { MiraAudioStatus } from './mira-audio-status';
 import { MiraAvatar } from './mira-profile';
+import { meetParticipantName } from '../lib/participant-identity';
 import { ParticipantActions } from './participant-actions';
+import { ParticipantIdentityBadge } from './participant-identity-badge';
 import { RoomHostControls } from './room-host-controls';
 export function ParticipantsPanel({
   approved,
@@ -134,21 +136,19 @@ export function ParticipantsPanel({
                         {entry.displayName.slice(0, 1)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      {entry.displayName}
-                      {entry.guest ? (
-                        <Badge variant="outline" className="ml-1.5">
-                          {t('guest_join.badge')}
-                        </Badge>
-                      ) : null}
+                    <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
+                      <span className="truncate">
+                        {meetParticipantName(entry.displayName, entry)}
+                      </span>
+                      <ParticipantIdentityBadge participant={entry} />
                       {entry.unverified ? (
-                        <Badge variant="destructive" className="ml-1.5">
+                        <Badge variant="destructive" className="shrink-0">
                           {t('guest_join.unverified_badge')}
                         </Badge>
                       ) : null}
                     </span>
                     <Button
-                      aria-label={`${t('admit')}: ${entry.displayName}`}
+                      aria-label={`${t('admit')}: ${meetParticipantName(entry.displayName, entry)}`}
                       className="size-8 shrink-0 pointer-coarse:size-11"
                       onClick={() => onDecideAdmission(entry.userId, true)}
                       size="icon"
@@ -157,7 +157,7 @@ export function ParticipantsPanel({
                       <Check className="size-4" />
                     </Button>
                     <Button
-                      aria-label={`${t('deny')}: ${entry.displayName}`}
+                      aria-label={`${t('deny')}: ${meetParticipantName(entry.displayName, entry)}`}
                       className="size-8 shrink-0 pointer-coarse:size-11"
                       onClick={() => onDecideAdmission(entry.userId, false)}
                       size="icon"
@@ -212,20 +212,18 @@ export function ParticipantsPanel({
                     {participant.displayName.slice(0, 1)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="min-w-0 flex-1 truncate text-sm">
-                  {participant.displayName}
+                <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
+                  <span className="truncate">
+                    {meetParticipantName(participant.displayName, participant)}
+                  </span>
+                  <ParticipantIdentityBadge participant={participant} />
                   {participant.role === 'viewer' && (
-                    <Badge variant="outline" className="ml-1.5">
+                    <Badge variant="outline" className="shrink-0">
                       {t('viewer_role')}
                     </Badge>
                   )}
-                  {participant.guest ? (
-                    <Badge variant="outline" className="ml-1.5">
-                      {t('guest_join.badge')}
-                    </Badge>
-                  ) : null}
                   {isSelf ? (
-                    <span className="ml-1 text-muted-foreground">
+                    <span className="shrink-0 text-muted-foreground">
                       ({t('you')})
                     </span>
                   ) : null}

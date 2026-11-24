@@ -5094,6 +5094,10 @@
       "open_in_calendar": "Open in Calendar",
       "open_meeting": "Open meeting",
       "output_unsupported": "Choose your speakers in system settings on this browser.",
+      "participant_identity": {
+        "external": "From outside this workspace",
+        "guest": "Guest, not signed in"
+      },
       "participant_limit_reached": "This room has reached its participant limit. Try again after someone leaves.",
       "participant_minutes": "Server-accounted participant minutes: {minutes}. This is usage, not a final invoice.",
       "participant_volume": "{name} volume",

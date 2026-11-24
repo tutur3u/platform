@@ -53,7 +53,10 @@ describe('meet room admission', () => {
     );
 
     expect(result.state.presence[GUEST_ID]).toBeUndefined();
-    expect(result.state.waiting[GUEST_ID]?.displayName).toBe('Guest (guest)');
+    expect(result.state.waiting[GUEST_ID]).toMatchObject({
+      displayName: 'Guest',
+      external: true,
+    });
     expect(result.reply[0]).toMatchObject({
       admission: 'waiting',
       type: 'ready',
@@ -103,7 +106,11 @@ describe('meet room admission', () => {
     );
 
     expect(result.state.waiting[GUEST_ID]).toBeUndefined();
-    expect(result.state.presence[GUEST_ID]?.displayName).toBe('Guest (guest)');
+    expect(result.state.presence[GUEST_ID]).toMatchObject({
+      displayName: 'Guest',
+      external: true,
+    });
+    expect(result.state.presence[GUEST_ID]?.guest).toBeUndefined();
     expect(
       result.direct.filter((entry) => entry.message.type === 'admission.result')
     ).toEqual([

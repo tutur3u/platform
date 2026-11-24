@@ -99,6 +99,7 @@ export function SidePanel({
           mentionRequest={mentionRequest}
           onMentionHandled={onMentionHandled}
           solo={participants.length === 1}
+          participants={participants}
           qaLive={qaLive}
           meetingId={meetingId}
           chat={chat}

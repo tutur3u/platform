@@ -281,7 +281,7 @@ describe('attendance ledger', () => {
         expect.objectContaining({
           kind: 'guest',
           guestId: GUEST_ID,
-          displayName: 'Lan (guest)',
+          displayName: 'Lan',
           joinedAt: NOW,
         }),
       ])

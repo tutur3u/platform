@@ -3,6 +3,7 @@ import {
   type MeetRealtimeTokenPayload,
   type MeetRealtimeServerMessage,
 } from '../../../packages/realtime/src/meet';
+import { upgradeLegacyGuestMarkers } from '../../../packages/realtime/src/meet/room-display-name';
 import { recoverMeetMediaRoles } from '../../../packages/realtime/src/meet/room-media-role';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { meetTrackKey } from '../../../packages/realtime/src/meet/room-tracks';
@@ -17,10 +18,11 @@ export function restoreRoomSnapshot(
   migrated: boolean;
   closedPublications: MeetRealtimeServerMessage[];
 } {
-  const normalized = normalizeTranscriptionConsent({
+  const consented = normalizeTranscriptionConsent({
     ...createMeetRoomSnapshot(),
     ...stored,
   });
+  const normalized = upgradeLegacyGuestMarkers(consented);
   const snapshot = recoverMeetMediaRoles(
     normalized,
     sockets.flatMap((socket) => {
@@ -29,6 +31,7 @@ export function restoreRoomSnapshot(
     })
   );
   let migrated =
+    consented !== normalized ||
     normalized !== snapshot ||
     stored.transcriptionConsents !== snapshot.transcriptionConsents;
   for (const request of Object.values(snapshot.aiRequests ?? {})) {

@@ -215,6 +215,7 @@ export {
   createMeetRoomSnapshot,
   createMeetRoomSocketDelivery,
   getMeetDisplayName,
+  isMeetExternalParticipant,
   MEET_CONNECTED_PRESENCE_TTL_MS,
   MEET_PRESENCE_TTL_MS,
   meetAdmissionPendingMessage,
@@ -325,6 +326,7 @@ export {
   recordMeetSubscriptionOperation,
 } from './room-sfu';
 
+export { stripLegacyGuestSuffix } from './room-display-name';
 export {
   DISPLAY_NAME_LOCKED,
   MEET_RENAMES_PER_MINUTE,
