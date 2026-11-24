@@ -28,6 +28,12 @@ export default defineConfig({
         find: '@tuturuuu/supabase/next/server',
         replacement: resolve(__dirname, '../supabase/src/next/server.ts'),
       },
+      // The source server client imports its secret reader by its
+      // package-internal name.
+      {
+        find: '#secret-env',
+        replacement: resolve(__dirname, '../supabase/src/next/secret-env.ts'),
+      },
       {
         find: '@tuturuuu/supabase/types',
         replacement: resolve(__dirname, '../supabase/src/types.ts'),
