@@ -53,6 +53,9 @@ const hasContent = (node: JSONContent): boolean => {
 };
 
 function syncEditorContent(editor: Editor, nextContent: JSONContent | null) {
+  // An editor torn down between scheduling and running a sync (unmount, or a
+  // replaced instance) has no view or commands left to write into.
+  if (editor.isDestroyed) return;
   const migratedContent = migrateInlineImagesToBlock(nextContent);
   const currentContent = editor.getJSON();
   const contentChanged =
@@ -381,7 +384,13 @@ export function RichTextEditor({
   );
 
   useEffect(() => {
-    if (!editor || !allowCollaboration || !yjsProvider || !collaborationUser) {
+    if (
+      !editor ||
+      editor.isDestroyed ||
+      !allowCollaboration ||
+      !yjsProvider ||
+      !collaborationUser
+    ) {
       return;
     }
 
@@ -396,7 +405,7 @@ export function RichTextEditor({
   // useEditor keeps options from creation when its dependency array is stable.
   // Sync the DOM classes too: setEditable alone leaves sync-time pointer blockers.
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || editor.isDestroyed) return;
     editor.setOptions({
       editorProps: {
         ...editor.options.editorProps,
@@ -408,7 +417,7 @@ export function RichTextEditor({
 
   // Update editor content when the content prop changes externally
   useEffect(() => {
-    if (!editor || allowCollaboration) return;
+    if (!editor || editor.isDestroyed || allowCollaboration) return;
 
     // Skip sync if we're in a programmatic update (e.g., after converting text to task)
     // This prevents the effect from reverting editor content before state update propagates
@@ -441,7 +450,7 @@ export function RichTextEditor({
     if (!editor || allowCollaboration) return;
 
     const syncDeferredContent = () => {
-      if (!hasDeferredExternalContentRef.current) return;
+      if (editor.isDestroyed || !hasDeferredExternalContentRef.current) return;
 
       hasDeferredExternalContentRef.current = false;
       const deferredContent = deferredExternalContentRef.current;
@@ -475,6 +484,7 @@ export function RichTextEditor({
     ) {
       // Use requestAnimationFrame to ensure editor is fully ready
       requestAnimationFrame(() => {
+        if (editor.isDestroyed) return;
         try {
           const doc = editor.state.doc;
           const firstNode = doc.firstChild;
@@ -587,6 +597,7 @@ export function RichTextEditor({
         if (event.target !== event.currentTarget) return;
 
         event.preventDefault();
+        if (editor.isDestroyed) return;
         editor.commands.focus();
       }}
     >
