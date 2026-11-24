@@ -271,8 +271,9 @@ alter table public.task_history
       'external_event'
     )
   ) not valid;
-alter table public.task_history
-  validate constraint task_history_change_type_check;
+-- The constraint is enforced for new and updated rows from here on. Existing
+-- rows are validated after the commit, below, so the table scan does not run
+-- under this transaction's ACCESS EXCLUSIVE lock.
 
 create function private.record_task_comment_history()
 returns trigger
@@ -368,3 +369,12 @@ revoke all on function private.record_task_comment_history() from public, anon, 
 revoke all on function private.record_task_link_history() from public, anon, authenticated, service_role;
 
 commit;
+
+-- Validate the constraint outside the transaction: VALIDATE CONSTRAINT then
+-- takes only SHARE UPDATE EXCLUSIVE, so task edits keep running during the scan.
+set statement_timeout = '10min';
+set lock_timeout = '5s';
+alter table public.task_history
+  validate constraint task_history_change_type_check;
+reset statement_timeout;
+reset lock_timeout;

@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(101);
+select plan(102);
 
 insert into auth.users (id) values
   ('7c110000-0000-4000-8000-000000000001'),
@@ -408,6 +408,10 @@ select is((select external_assignees from private.task_external_refs
 reset role;
 
 -- History change types ------------------------------------------------------
+select ok((select convalidated from pg_constraint
+  where conrelid = 'public.task_history'::regclass
+    and conname = 'task_history_change_type_check'),
+  'the history change type constraint is validated for existing rows');
 select lives_ok($$insert into public.task_history (task_id, change_type)
   select '7c110000-0000-4000-8000-000000000802', t
   from unnest(array['task_created', 'field_updated', 'assignee_added', 'assignee_removed',
