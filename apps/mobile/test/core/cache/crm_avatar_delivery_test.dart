@@ -58,6 +58,29 @@ void main() {
     },
   );
 
+  test('CRM avatar delivery refuses a non-http upload URL', () async {
+    final api = _MockApiClient();
+    when(() => api.postJson(CrmEndpoints.avatar('ws-1'), any())).thenAnswer(
+      (_) async => {
+        'uploadUrl': 'file:///private/avatar.png',
+        'path': 'ws-1/users/item.webp',
+      },
+    );
+    final client = MockClient((_) async => fail('must not upload'));
+    await expectLater(
+      deliverCrmAvatar(
+        api: api,
+        httpClient: client,
+        workspaceId: 'ws-1',
+        fileName: 'item.png',
+        contentType: 'image/png',
+        bytes: Uint8List.fromList([1]),
+      ),
+      throwsA(isA<ApiException>()),
+    );
+    client.close();
+  });
+
   test('CRM avatar delivery refuses a ticket without an upload URL', () async {
     final api = _MockApiClient();
     when(

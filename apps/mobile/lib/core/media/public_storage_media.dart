@@ -21,8 +21,11 @@ class PublicStorageObject {
 
 /// Parses [url] as a public storage object URL, or returns null.
 ///
-/// Rejects URLs with credentials, queries, fragments, or `..` segments, since
-/// those are signed, private, or ambiguous rather than public objects.
+/// Rejects URLs with credentials, queries, fragments, or empty segments,
+/// since those are signed, private, or ambiguous rather than public objects.
+/// `Uri.parse` resolves dot-segments (including `%2e%2e`) first, so the
+/// bucket and key are classified on the same resolved path the image loader
+/// fetches.
 PublicStorageObject? parsePublicStorageObject(String url) {
   final uri = Uri.tryParse(url.trim());
   if (uri == null ||
@@ -34,7 +37,7 @@ PublicStorageObject? parsePublicStorageObject(String url) {
     return null;
   }
   final segments = uri.pathSegments;
-  if (segments.any((segment) => segment.isEmpty || segment == '..')) {
+  if (segments.any((segment) => segment.isEmpty)) {
     return null;
   }
   if (segments.length > _gatewayPrefix.length + 1 &&

@@ -48,6 +48,21 @@ void main() {
     expect(profileMediaCacheKey(cdn, 'actor'), 'profile:banners:actor/b.jpg');
   });
 
+  test(
+    'dot-segments resolve before the actor check, so they cannot escape',
+    () {
+      const escape = 'https://cdn.tuturuuu.com/avatars/actor/../other/x.png';
+      const encoded =
+          'https://cdn.tuturuuu.com/avatars/actor/%2e%2e/other/x.png';
+      expect(cacheableProfileMedia(escape, 'actor'), isFalse);
+      expect(cacheableProfileMedia(encoded, 'actor'), isFalse);
+      expect(
+        profileMediaCacheKey(escape, 'other'),
+        'profile:avatars:other/x.png',
+      );
+    },
+  );
+
   test('public storage media is recognised on any host', () {
     expect(isPublicStorageMediaUrl(gateway), isTrue);
     expect(isPublicStorageMediaUrl(cdn), isTrue);
