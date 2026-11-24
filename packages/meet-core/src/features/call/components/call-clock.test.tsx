@@ -62,7 +62,7 @@ function running(role: CallState['classRole']): CallState {
   };
 }
 
-it('shows everyone a read-only synced timer chip in the top bar', () => {
+it('shows everyone a read-only synced timer chip in the header placement', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
   for (const role of ['host', 'participant'] as const) {
@@ -142,4 +142,16 @@ it('hides the timer and attendance while the server switches are off', () => {
   expect(screen.queryByTitle('05:00 left')).toBeNull();
   expect(screen.getByRole('status').textContent).toBe('');
   expect(screen.queryByRole('button', { name: 'Attendance' })).toBeNull();
+});
+
+it('hides the header timers from lg up, where the call bar shows them', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(NOW));
+  renderClock(running('participant'));
+  const chip = screen.getByTitle('05:00 left');
+  // The header placement is display:none from lg up; the polite status
+  // lives inside it, so only the bar's copy is exposed there.
+  const placement = chip.closest('.lg\\:hidden');
+  expect(placement).not.toBeNull();
+  expect(placement?.querySelector('[role=status]')).not.toBeNull();
 });

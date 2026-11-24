@@ -18,7 +18,13 @@ export function countdownState(deadline: number, started: number, now: number) {
 }
 
 /** Hover/focus for a tooltip; tap/click for the same details on touch devices. */
-export function RoomCountdown({ expiresAt }: { expiresAt?: string }) {
+export function RoomCountdown({
+  expiresAt,
+  align = 'end',
+}: {
+  expiresAt?: string;
+  align?: 'start' | 'end';
+}) {
   const t = useTranslations('meet.call');
   const format = useFormatter();
   const timeZone = useMeetingTimeZone();
@@ -122,7 +128,7 @@ export function RoomCountdown({ expiresAt }: { expiresAt?: string }) {
         </TooltipTrigger>
         <TooltipContent>{details}</TooltipContent>
       </Tooltip>
-      <PopoverContent align="end" className="w-auto max-w-xs text-sm">
+      <PopoverContent align={align} className="w-auto max-w-xs text-sm">
         {details}
       </PopoverContent>
     </Popover>

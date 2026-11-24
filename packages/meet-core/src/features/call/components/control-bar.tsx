@@ -86,6 +86,7 @@ export function ControlBar({
   reactions,
   navigation,
   context,
+  leading,
   mediaLocks,
   extraControls,
   liveActivity,
@@ -127,6 +128,8 @@ export function ControlBar({
   onOpenSettings?: () => void;
   /** Quiet label of the surface this person is on, left of the controls. */
   context?: ReactNode;
+  /** Items at the bar's leading edge from `lg` up, such as the clocks. */
+  leading?: ReactNode;
   mediaLocks?: { audio: boolean; video: boolean; screen: boolean };
   extraControls?: ReactNode;
   liveActivity?: ReactNode;
@@ -206,7 +209,8 @@ export function ControlBar({
       aria-label={t('control_bar')}
       className="flex flex-nowrap items-center gap-1 border-t bg-background/95 px-2 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur sm:gap-2.5 sm:px-4"
     >
-      <div className="hidden min-w-0 flex-1 items-center text-muted-foreground text-sm lg:flex">
+      <div className="hidden min-w-0 flex-1 items-center gap-3 text-muted-foreground text-sm lg:flex">
+        {leading}
         {context}
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">

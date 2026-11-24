@@ -11,6 +11,7 @@ import { type MeetToolDefinition, meetTools } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
 import type { ActivityEntry } from './call-activities';
 import { useCallActivityPages } from './call-activity-pages';
+import { CallTimers } from './call-clock';
 import {
   CallExtras,
   CallExtrasDialogs,
@@ -168,6 +169,7 @@ export function CallControlDock({
           settingsLinked ? () => settingsDialog.setOpen(true) : undefined
         }
         context={<SurfaceContext nav={nav} />}
+        leading={<CallTimers state={state} align="start" />}
         liveActivity={activities.liveControl}
         // Without tool access, More is the only place that lists every live
         // poll and Quiz Arena shortcut; the bar shows just one of them. The
