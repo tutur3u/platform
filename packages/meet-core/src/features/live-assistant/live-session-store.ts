@@ -55,8 +55,9 @@ export function publishLiveSession(next: LiveSessionSnapshot) {
   emit();
 }
 
-export function clearLiveSession() {
-  if (!snapshot) return;
+/** Clears the session only for the panel that published it, never for a newer one. */
+export function clearLiveSession(controls: LiveSessionControls) {
+  if (snapshot?.controls !== controls) return;
   snapshot = null;
   emit();
 }
@@ -71,14 +72,16 @@ export function setLiveVoice(next: MeetLiveVoice) {
   emit();
 }
 
-/** The published session, only while it belongs to this meeting. */
-export function useLiveSession(meetingId: string) {
+/** The published session, only while it belongs to this meeting and account. */
+export function useLiveSession(meetingId: string, accountId?: string) {
   const current = useSyncExternalStore(
     subscribe,
     () => snapshot,
     () => null
   );
-  return current?.meetingId === meetingId ? current : null;
+  return current?.meetingId === meetingId && current.accountId === accountId
+    ? current
+    : null;
 }
 
 export function useLiveVoice() {

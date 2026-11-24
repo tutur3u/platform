@@ -64,6 +64,9 @@ gate periodically.
 Meet and Parley show the 18+ notice at Mira entry points, including room chat
 **@mira**, Private Mira, document assistance, polls, Quiz Arena, and Forms. Every **Continue** prompt
 says to proceed only if you are 18 or older and requires an explicit choice.
+No Mira control carries an 18+ badge; the 18+ sentence stays at every Continue
+prompt and in the Private Assistant info popover, and the attestation is
+unchanged.
 
 In **Meeting settings → Mira**, the workspace owner can confirm or withdraw
 **Everyone in this workspace is 18 or older** with one switch. The owner is
@@ -105,7 +108,9 @@ available policy enables the personal assistant. Choice records remain in that r
 state until that state is erased; there is no automatic expiry promise.
 
 The Mira dialog holds only this choice (plus its info button and the 18+
-sentence beside Continue). Talking and typing happen in the **Private Assistant**
+sentence beside Continue). There is no 18+ badge on any Mira control; the
+sentence appears at every Continue prompt and in the Private Assistant info
+popover, and the audience attestation is unchanged. Talking and typing happen in the **Private Assistant**
 chat tab: an empty state with **Talk**, a composer (mic, Ask privately, send),
 and one inline Listening, Pause and Stop row while live. **Talk** starts Mira
 only after a server-confirmed Continue on this device; before that it opens the
@@ -138,7 +143,7 @@ joins on those denials. The shared Live error mapper retains specific device
 feedback and the existing fallback for other failures. This feedback does not
 enable Live or bypass its authorization, audio consent, or limits. Synthetic
 regression coverage: `invite-unavailable.test.tsx`, `live-errors.test.ts` and
-`live-workspace-identity.test.tsx`.
+`personal-chat-assistant.test.tsx`.
 
 ## Room Mira host acceptance and per-person consent
 

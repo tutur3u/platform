@@ -32,7 +32,7 @@ function VoiceSettings({ locked }: { locked: boolean }) {
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 rounded-full text-muted-foreground"
+          className="size-8 rounded-full pointer-coarse:size-11 text-muted-foreground"
           aria-label={t('voice')}
         >
           <AudioLines aria-hidden className="size-4" />
@@ -76,7 +76,7 @@ function AssistantInfo({
           type="button"
           variant="ghost"
           size="icon"
-          className="size-8 rounded-full text-muted-foreground"
+          className="size-8 rounded-full pointer-coarse:size-11 text-muted-foreground"
           aria-label={ta('info')}
         >
           <Info aria-hidden className="size-4" />

@@ -430,7 +430,6 @@ function CallShellContent({
                   wsId={wsId}
                   accountId={accountId}
                   key="live-assistant"
-                  onOpenChat={askMira}
                   onLeave={leaveNow}
                   room={room}
                   meetingId={meetingId}

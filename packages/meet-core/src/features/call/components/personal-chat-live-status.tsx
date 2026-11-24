@@ -42,7 +42,7 @@ export function PersonalChatLiveStatus({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 gap-1.5 rounded-full px-2.5 text-xs"
+        className="h-7 gap-1.5 rounded-full px-2.5 pointer-coarse:h-11 text-xs"
         aria-label={t(paused ? 'resume' : 'pause')}
         disabled={pauseLocked}
         onClick={() =>
@@ -60,7 +60,7 @@ export function PersonalChatLiveStatus({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-7 gap-1.5 rounded-full px-2.5 text-destructive text-xs hover:text-destructive"
+        className="h-7 gap-1.5 rounded-full px-2.5 pointer-coarse:h-11 text-destructive text-xs hover:text-destructive"
         aria-label={t('stop')}
         onClick={() => void session.controls.stop()}
       >

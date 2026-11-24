@@ -44,7 +44,7 @@ export function PersonalChatComposer({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-9 shrink-0 rounded-full text-muted-foreground"
+            className="size-9 shrink-0 rounded-full pointer-coarse:size-11 text-muted-foreground"
             aria-label={ta('talk')}
             disabled={locked}
             onClick={onTalk}
@@ -75,7 +75,7 @@ export function PersonalChatComposer({
         <Button
           type="submit"
           size="icon"
-          className="size-9 shrink-0 rounded-full"
+          className="size-9 shrink-0 rounded-full pointer-coarse:size-11"
           aria-label={retrying ? liveT('retry') : t('send')}
           disabled={!draft.trim() || busy}
         >

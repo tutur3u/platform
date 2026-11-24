@@ -38,12 +38,15 @@ import { useLiveSession } from './live-session-store';
 
 /** Reads what the Private Assistant tab sees: the gate and the start action. */
 function TabProbe() {
-  const session = useLiveSession('synthetic-meeting');
+  const session = useLiveSession('synthetic-meeting', 'synthetic-account');
   return (
     <>
       <output aria-label="accepted">{String(session?.accepted)}</output>
       <button type="button" onClick={() => void session?.controls.start()}>
         probe-talk
+      </button>
+      <button type="button" onClick={() => session?.controls.openConsent()}>
+        probe-consent
       </button>
     </>
   );
@@ -84,7 +87,6 @@ function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
           meetingId="synthetic-meeting"
           outputDeviceId=""
           canManage
-          onOpenChat={vi.fn()}
           onLeave={onLeave}
         />
         <TabProbe />
@@ -237,7 +239,6 @@ it("withholds the tab's start until a fresh Continue after disconnect or a polic
           meetingId="synthetic-meeting"
           outputDeviceId=""
           canManage
-          onOpenChat={vi.fn()}
           onLeave={vi.fn()}
         />
         <TabProbe />
@@ -285,4 +286,37 @@ it("withholds the tab's start until a fresh Continue after disconnect or a polic
   });
   await waitFor(() => expect(accepted()).toBe('false'));
   expect(f.start).not.toHaveBeenCalled();
+});
+
+it('returns focus to the tab control that opened the consent dialog', async () => {
+  f.read.mockResolvedValue({
+    version: 'synthetic-v1',
+    available: true,
+    choice: null,
+  });
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <MeetLivePanel
+          accountId="synthetic-account"
+          room={syntheticRoom()}
+          meetingId="synthetic-meeting"
+          outputDeviceId=""
+          canManage
+          onLeave={vi.fn()}
+        />
+        <TabProbe />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  const opener = screen.getByText('probe-consent');
+  opener.focus();
+  fireEvent.click(opener);
+  await screen.findByRole('button', {
+    name: messages.meet.live.phase_continue,
+  });
+  fireEvent.keyDown(document.activeElement ?? document.body, {
+    key: 'Escape',
+  });
+  await waitFor(() => expect(document.activeElement).toBe(opener));
 });

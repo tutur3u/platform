@@ -45,7 +45,6 @@ export function MeetLivePanel({
   outputDeviceId: string;
   canManage: boolean;
   audioSuppressed?: boolean;
-  onOpenChat?: () => void;
   /** Ends the call for this device through the shell, so it shows the left screen. */
   onLeave: () => void;
 }) {
@@ -62,6 +61,8 @@ export function MeetLivePanel({
     room.getSelectedDevices().audio
   );
   const [open, setOpen] = useState(false);
+  // The control that opened the dialog from the tab, so focus can return to it.
+  const opener = useRef<HTMLElement | null>(null);
   const [choiceAccepted, setChoiceAccepted] = useState(false);
   const roomAdmitted =
     room.connectionStatus === 'open' && room.state.admission === 'admitted';
@@ -130,7 +131,13 @@ export function MeetLivePanel({
       stop: () => latest.current.live.stop(),
       decide: (review, approved, text) =>
         latest.current.live.decide(review, approved, text),
-      openConsent: () => setOpen(true),
+      openConsent: () => {
+        opener.current =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        setOpen(true);
+      },
     }),
     []
   );
@@ -161,9 +168,15 @@ export function MeetLivePanel({
     room.media.audioEnabled,
     controls,
   ]);
-  useEffect(() => clearLiveSession, []);
+  useEffect(() => () => clearLiveSession(controls), [controls]);
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) opener.current = null;
+        setOpen(next);
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           variant={active ? 'secondary' : 'outline'}
@@ -175,7 +188,16 @@ export function MeetLivePanel({
           {active && <Radio className="size-3.5 motion-safe:animate-pulse" />}
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex max-h-[85dvh] flex-col gap-4 overflow-hidden sm:max-w-md">
+      <DialogContent
+        className="flex max-h-[85dvh] flex-col gap-4 overflow-hidden sm:max-w-md"
+        onCloseAutoFocus={(event) => {
+          const target = opener.current;
+          opener.current = null;
+          if (!target?.isConnected) return;
+          event.preventDefault();
+          target.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MiraAvatar />

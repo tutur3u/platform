@@ -13,6 +13,7 @@ import messages from '../../../../../../apps/meet/messages/en.json';
 import vietnamese from '../../../../../../apps/meet/messages/vi.json';
 import {
   clearLiveSession,
+  type LiveSessionControls,
   type LiveSessionSnapshot,
   publishLiveSession,
 } from '../../live-assistant/live-session-store';
@@ -42,9 +43,15 @@ const permissions = messages.meet.call.miraEverywhere.permissions;
 const live = messages.meet.live;
 const adults = messages.meet.mira_adults;
 
+let published: LiveSessionControls | undefined;
+
 afterEach(() => {
   cleanup();
-  act(() => clearLiveSession());
+  if (published) {
+    const controls = published;
+    act(() => clearLiveSession(controls));
+  }
+  published = undefined;
   vi.clearAllMocks();
 });
 
@@ -70,6 +77,7 @@ function session(overrides: Partial<LiveSessionSnapshot> = {}) {
     controls,
     ...overrides,
   };
+  published = controls;
   act(() => publishLiveSession(snapshot));
   return controls;
 }

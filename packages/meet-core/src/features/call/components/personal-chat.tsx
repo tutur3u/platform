@@ -65,7 +65,7 @@ export function PersonalChat({
 }) {
   const t = useTranslations('meet.call');
   const liveT = useTranslations('meet.live');
-  const session = useLiveSession(meetingId);
+  const session = useLiveSession(meetingId, accountId);
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [confirmEnable, setConfirmEnable] = useState(false);
