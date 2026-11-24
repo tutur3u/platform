@@ -26,7 +26,7 @@ export function EmptyCard({
       )}
       {...props}
     >
-      <div className="mr-4 shrink-0 rounded-full border border-dashed p-4">
+      <div className="shrink-0 rounded-full border border-dashed p-4">
         <Icon className="size-8 text-muted-foreground" aria-hidden="true" />
       </div>
       <div className="flex flex-col items-center gap-1.5 text-center">

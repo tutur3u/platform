@@ -38,6 +38,7 @@ row default. They are not exports guaranteed by an earlier stack layer.
 | Free-form content | `SettingsSectionBlock`, same section module | Align custom content with row padding. |
 | Save actions | `SettingsSectionFooter`, same section module | Keep actions in the relevant card. Preserve existing save semantics. |
 | Empty, loading, or error message | `SettingsSectionMessage`, same section module | Include an actionable recovery when available. `tone="error"` supplies an alert role. |
+| Empty list, table, board or panel | `Empty`, `@tuturuuu/ui/empty` | One icon or illustration, a short title, one line of description and at most one action. `compact` for panels, `dashed` for drop zones, `announce` when it appears after loading. |
 | Validated field | `FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`, `FormMessage` from `@tuturuuu/ui/form` | Keep the existing schema and field error association. A row title alone is not an input label. |
 | Basic controls | `@tuturuuu/ui/input`, `/select`, `/switch`, `/button` | Reuse focus, disabled, and error behavior. Do not restyle individual controls. |
 | Contrast | `.settings-surface` in `packages/ui/src/globals.css` | Apply at the settings shell. Do not copy its CSS values into apps. |
