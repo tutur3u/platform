@@ -213,11 +213,21 @@ export function parseKeyRecords(text) {
   return keys;
 }
 
+// Keys the export copies to `K<COLLISION_SUFFIX>`: the sized colliding keys.
+export function collisionCopyKeys(expected, excluded) {
+  return new Set(
+    findCollisionKeys(expected, excluded)
+      .filter(({ copyTo }) => copyTo !== '')
+      .map(({ bucket, name }) => keyOf(bucket, name))
+  );
+}
+
 // Every file under <root>/<bucket>/, keyed by its path inside the bucket. A
-// file named `K<COLLISION_SUFFIX>` is the object stored at key K, unless a
-// plain file already holds K: then it keeps its literal name and fails
-// parity as an unexpected key instead of replacing K's size.
-export function listDownloads(root, buckets) {
+// file named `K<COLLISION_SUFFIX>` is the object stored at key K only when K
+// is in `copied` (see collisionCopyKeys) and no plain file holds K. Any other
+// file ending in the suffix keeps its literal name and fails parity as an
+// unexpected key.
+export function listDownloads(root, buckets, copied = new Set()) {
   const files = new Map();
   for (const bucket of buckets) {
     const base = join(root, bucket);
@@ -243,10 +253,9 @@ export function listDownloads(root, buckets) {
       }
     }
     for (const [name, size] of reserved) {
-      const stem = name.slice(0, -COLLISION_SUFFIX.length);
-      const mapped =
-        stem !== '' && !stem.endsWith('/') && !files.has(keyOf(bucket, stem));
-      files.set(keyOf(bucket, mapped ? stem : name), size);
+      const stem = keyOf(bucket, name.slice(0, -COLLISION_SUFFIX.length));
+      const mapped = copied.has(stem) && !files.has(stem);
+      files.set(mapped ? stem : keyOf(bucket, name), size);
     }
   }
   return files;

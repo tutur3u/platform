@@ -13,6 +13,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
   COLLISION_SUFFIX,
+  collisionCopyKeys,
   compareStorageKeys,
   findCollisionKeys,
   findUnsafeBuckets,
@@ -40,6 +41,9 @@ function tree(files) {
   }
   return root;
 }
+
+const downloads = (root, buckets, expected, excluded = noExcluded()) =>
+  listDownloads(root, buckets, collisionCopyKeys(expected, excluded));
 
 test('a key next to its own children is a collision key', () => {
   const records = findCollisionKeys(
@@ -135,15 +139,16 @@ test('parity maps the reserved file name back to its key and stays exact', () =>
     [`workspaces/ws/a/b${COLLISION_SUFFIX}`]: 'z',
   });
   try {
+    const expected = sized([
+      'workspaces,ws/a,3',
+      'workspaces,ws/a/child.png,5',
+      'workspaces,ws/a/b,1',
+      'workspaces,ws/a/b/c.txt,2',
+    ]);
     const report = compareStorageKeys(
-      sized([
-        'workspaces,ws/a,3',
-        'workspaces,ws/a/child.png,5',
-        'workspaces,ws/a/b,1',
-        'workspaces,ws/a/b/c.txt,2',
-      ]),
+      expected,
       noExcluded(),
-      listDownloads(root, ['workspaces'])
+      downloads(root, ['workspaces'], expected)
     );
     assert.equal(report.ok, true);
     assert.equal(report.counts.missing, 0);
@@ -165,7 +170,7 @@ test('a colliding key that was not copied still fails parity as missing, and a w
     const missing = compareStorageKeys(
       expected,
       noExcluded(),
-      listDownloads(root, ['workspaces'])
+      downloads(root, ['workspaces'], expected)
     );
     assert.equal(missing.ok, false);
     assert.deepEqual(missing.missing, ['workspaces/ws/a']);
@@ -174,7 +179,7 @@ test('a colliding key that was not copied still fails parity as missing, and a w
     const wrongSize = compareStorageKeys(
       expected,
       noExcluded(),
-      listDownloads(root, ['workspaces'])
+      downloads(root, ['workspaces'], expected)
     );
     assert.equal(wrongSize.ok, false);
     assert.deepEqual(wrongSize.sizeMismatch, ['workspaces/ws/a']);
@@ -299,19 +304,41 @@ test('a plain file keeps its key when a reserved file name maps to the same key,
     [`b/${COLLISION_SUFFIX}`]: 'bare',
   });
   try {
-    const downloaded = listDownloads(root, ['b']);
+    const expected = sized(['b,x,3', 'b,x/c,1']);
+    const downloaded = downloads(root, ['b'], expected);
     assert.equal(downloaded.get('b\u0000x'), 3);
     assert.equal(downloaded.get(`b\u0000x${COLLISION_SUFFIX}`), 6);
     assert.equal(downloaded.get(`b\u0000${COLLISION_SUFFIX}`), 4);
-    const report = compareStorageKeys(
-      sized(['b,x,3']),
-      noExcluded(),
-      downloaded
-    );
+    const report = compareStorageKeys(expected, noExcluded(), downloaded);
     assert.equal(report.ok, false);
     assert.deepEqual(report.unexpected, [
       `b/${COLLISION_SUFFIX}`,
       `b/x${COLLISION_SUFFIX}`,
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a reserved file name is mapped only for a sized colliding key, never for an excluded or unrelated key', () => {
+  const root = tree({
+    [`b/pending${COLLISION_SUFFIX}`]: 'stray',
+    [`b/a/stray${COLLISION_SUFFIX}`]: 'stray2',
+    [`b/dir/..${COLLISION_SUFFIX}`]: 'dots',
+    'b/real': 'ok',
+  });
+  try {
+    const expected = sized(['b,real,2']);
+    const excluded = parseExcludedKeys('bucket,name\nb,pending\n');
+    const downloaded = downloads(root, ['b'], expected, excluded);
+    assert.equal(downloaded.has('b\u0000pending'), false);
+    assert.equal(downloaded.has('b\u0000a/stray'), false);
+    const report = compareStorageKeys(expected, excluded, downloaded);
+    assert.equal(report.ok, false);
+    assert.deepEqual(report.unexpected, [
+      `b/a/stray${COLLISION_SUFFIX}`,
+      `b/dir/..${COLLISION_SUFFIX}`,
+      `b/pending${COLLISION_SUFFIX}`,
     ]);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -353,7 +380,7 @@ test('live listing explains colliding keys like any other key', () => {
     const report = compareStorageKeys(
       expected,
       noExcluded(),
-      listDownloads(root, ['b']),
+      downloads(root, ['b'], expected),
       live
     );
     assert.deepEqual(report.deletedSinceSnapshot, ['b/gone']);
@@ -361,7 +388,7 @@ test('live listing explains colliding keys like any other key', () => {
     const probed = compareStorageKeys(
       expected,
       noExcluded(),
-      listDownloads(root, ['b']),
+      downloads(root, ['b'], expected),
       live,
       parseKeyRecords('b\u0000a\u0000')
     );

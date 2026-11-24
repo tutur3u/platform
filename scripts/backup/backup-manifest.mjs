@@ -11,6 +11,7 @@ import { basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   COLLISION_SUFFIX,
+  collisionCopyKeys,
   compareStorageKeys,
   exportDiskBytes,
   findCollisionKeys,
@@ -223,10 +224,12 @@ async function main(argv) {
               ),
             }
           : undefined;
+      const expected = parseExpectedKeys(readFileSync(expectedPath, 'utf8'));
+      const excluded = parseExcludedKeys(readFileSync(excludedPath, 'utf8'));
       return compareStorageKeys(
-        parseExpectedKeys(readFileSync(expectedPath, 'utf8')),
-        parseExcludedKeys(readFileSync(excludedPath, 'utf8')),
-        listDownloads(root, buckets),
+        expected,
+        excluded,
+        listDownloads(root, buckets, collisionCopyKeys(expected, excluded)),
         live,
         sourceMissingPath
           ? parseKeyRecords(readFileSync(sourceMissingPath, 'utf8'))

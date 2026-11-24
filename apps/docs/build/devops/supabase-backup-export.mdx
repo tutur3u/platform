@@ -91,9 +91,9 @@ the locked, private backup bucket.
     escaped) and its object is fetched with `GetObject`, 3 attempts, to
     `K.__tuturuuu_object__` next to the directory `K/`. Parity maps that file
     name back to `K`, so size checking stays exact and nothing is excluded
-    from the comparison. A plain file that already holds `K` is never
-    replaced by a reserved file name; the stray file fails parity as
-    `unexpected`. A copy that fails goes through the same retry and
+    from the comparison. Only a sized colliding key maps that way. Any other
+    file ending in the suffix, and a reserved file next to a plain file at
+    `K`, keeps its own name and fails parity as `unexpected`. A copy that fails goes through the same retry and
     `HeadObject` probe as any other missing key, so an orphan row is counted
     as `sourceMissing`. A colliding key whose reserved file name would exceed
     the 255-byte file name limit counts as unsafe. More than 500 such keys, or
