@@ -160,10 +160,18 @@ export function RootAdminProjects({
               }
               className="rounded-md border border-border/70 bg-background p-1"
             >
-              <ToggleGroupItem value="grid" aria-label={strings.gridView}>
+              <ToggleGroupItem
+                aria-label={strings.gridView}
+                className="pointer-coarse:min-w-11"
+                value="grid"
+              >
                 <LayoutGrid className="h-4 w-4" />
               </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label={strings.listView}>
+              <ToggleGroupItem
+                aria-label={strings.listView}
+                className="pointer-coarse:min-w-11"
+                value="list"
+              >
                 <List className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>

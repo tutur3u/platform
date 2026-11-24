@@ -83,7 +83,7 @@ export function ViewModeToggle({
                 <ToggleGroupItem
                   value={mode}
                   aria-label={getLabel(mode)}
-                  className="h-8 gap-1.5 px-2.5 text-xs"
+                  className="h-8 gap-1.5 px-2.5 text-xs pointer-coarse:min-w-11"
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span className="hidden lg:inline">{getLabel(mode)}</span>

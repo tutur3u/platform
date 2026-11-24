@@ -29,7 +29,7 @@ export default function ViewToggle({
     >
       <ToggleGroupItem
         aria-label={t('grid_view')}
-        className="gap-2 px-3"
+        className="gap-2 px-3 pointer-coarse:min-w-11"
         value="grid"
       >
         <Grid3x3 aria-hidden className="size-4" />
@@ -37,7 +37,7 @@ export default function ViewToggle({
       </ToggleGroupItem>
       <ToggleGroupItem
         aria-label={t('list_view')}
-        className="gap-2 px-3"
+        className="gap-2 px-3 pointer-coarse:min-w-11"
         value="list"
       >
         <Rows3 aria-hidden className="size-4" />
