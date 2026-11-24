@@ -431,3 +431,11 @@ it('still checks a local edit when room edits land after the idle window and kee
     'int local; int r1; int r2;'
   );
 });
+
+it('never exposes the sandbox slow-start note, however long a check takes', async () => {
+  const { result } = mount(() => new Promise(() => undefined));
+  await idle(10_000);
+  // Checks keep their own warming and pause states; the Run note is not theirs.
+  expect(result.current).not.toHaveProperty('slowStart');
+  expect(JSON.stringify(result.current)).not.toMatch(/sandbox|slowStart/iu);
+});

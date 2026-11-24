@@ -152,3 +152,52 @@ it('renders real public test failures and jumps to the linked editor line', () =
   });
   expect(selectTab).toHaveBeenCalledWith('console');
 });
+
+const note = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll('output')).find((node) =>
+    node.className.includes('block text-muted-foreground')
+  );
+
+it('keeps one live region for the sandbox note: absent outside a meeting, empty, then filled', () => {
+  const { container, rerender, props } = mount({
+    view: { text: '', exitCode: null, running: true },
+  });
+  expect(note(container)).toBeUndefined();
+  const render = (slowStart: boolean) =>
+    rerender(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <WorkbenchOutput
+          {...props}
+          view={{ text: '', exitCode: null, running: true, slowStart }}
+        />
+      </NextIntlClientProvider>
+    );
+  render(false);
+  const region = note(container);
+  expect(region).toBeTruthy();
+  expect(region?.textContent).toBe('');
+  render(true);
+  // The same node receives the text; it is not re-inserted.
+  expect(note(container)).toBe(region);
+  expect(region?.textContent).toBe(t.sandboxSlowStart);
+});
+
+it('silences the runner status line only while the sandbox note is showing', () => {
+  const { container, rerender, props } = mount({
+    view: { text: '', exitCode: null, running: true, slowStart: false },
+  });
+  const status = () =>
+    Array.from(container.querySelectorAll('output')).find((node) =>
+      node.className.includes('truncate')
+    );
+  expect(status()?.getAttribute('aria-live')).toBeNull();
+  rerender(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <WorkbenchOutput
+        {...props}
+        view={{ text: '', exitCode: null, running: true, slowStart: true }}
+      />
+    </NextIntlClientProvider>
+  );
+  expect(status()?.getAttribute('aria-live')).toBe('off');
+});

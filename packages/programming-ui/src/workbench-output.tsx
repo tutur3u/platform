@@ -265,7 +265,7 @@ export function WorkbenchOutput({
           {view.slowStart !== undefined && (
             // One live region that exists empty and then receives the text, so the
             // note is announced once as it appears.
-            <output className="block min-h-4 text-muted-foreground text-xs">
+            <output className="block text-muted-foreground text-xs">
               {view.slowStart ? t('sandboxSlowStart') : ''}
             </output>
           )}

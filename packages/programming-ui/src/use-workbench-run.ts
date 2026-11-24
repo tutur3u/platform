@@ -153,6 +153,9 @@ export function useWorkbenchRun({
       // A conflicting Retry is shown, never re-sent under a new ID: the first
       // attempt may already be running, and sending again would run twice.
       let conflictRetried = sentBefore !== undefined;
+      // A Run and its Retry (which re-runs the mutation) both restart the slow-start
+      // clock after their own save, so it never runs during a save.
+      if (operation === 'run') setDispatched(false);
       if (operation === 'run' && owner)
         await checkpointRoom().catch((error: unknown) => {
           throw new WorkbenchStepError('save', error);
@@ -223,7 +226,6 @@ export function useWorkbenchRun({
   // Each new Run or Stop gets its own request ID; a retry reuses the last one.
   const runOperation = (operation: 'run' | 'stop') => {
     setStopped(operation === 'stop');
-    if (operation === 'run') setDispatched(false);
     // Stop while waiting for a free runner cancels the wait; there is no run to stop yet.
     if (operation === 'stop' && waiting) return wake.current?.();
     run.mutate({

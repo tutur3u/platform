@@ -226,6 +226,8 @@ export function ProgrammingWorkbench({
     view: {
       ...outputView(!!problem, testOutput, result.data),
       phase,
+      // Undefined outside a meeting (Learn); false or true once a meeting console
+      // owns the live region.
       slowStart: meeting ? slowStart : undefined,
     },
     save: selectedSave,

@@ -144,3 +144,29 @@ it('never shows it outside a meeting', async () => {
   await advance(SLOW_START_MS + 500);
   expect(result.current.slowStart).toBe(false);
 });
+
+it('a Retry restarts the clock after its own slow save', async () => {
+  let release: (() => void) | undefined;
+  let saves = 0;
+  const { result } = mount({
+    run: async () => {
+      throw new Error('boom');
+    },
+    checkpoint: () =>
+      new Promise((resolve) => {
+        saves += 1;
+        if (saves === 1) resolve(undefined);
+        else release = () => resolve(undefined);
+      }),
+  });
+  act(() => result.current.runOperation('run'));
+  await advance(100);
+  expect(result.current.run.isError).toBe(true);
+  // Retry re-runs the same mutation input, as the workbench's Retry does.
+  act(() => result.current.run.mutate(result.current.run.variables as never));
+  await advance(SLOW_START_MS + 2000);
+  expect(result.current.slowStart).toBe(false);
+  await act(async () => release?.());
+  await advance(SLOW_START_MS - 200);
+  expect(result.current.slowStart).toBe(false);
+});
