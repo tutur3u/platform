@@ -91,6 +91,25 @@ describe('self_v1 legal outbox drain', () => {
     expect(mocks.ack.mock.calls[0]?.[2]).toHaveLength(2);
   });
 
+  it('acknowledges no-op writes for a deleted or fenced account', async () => {
+    mocks.rpc.recordDecision.mockResolvedValue({
+      revision: 1,
+      recorded: false,
+    });
+    mocks.rpc.revokeUpload.mockResolvedValue(false);
+    mocks.rpc.closeStream.mockResolvedValue(false);
+    await drainSelfOutbox({} as never, room, sessionId, [
+      entry(a, 5, 'withdraw'),
+      entry(a, 6, 'revoke'),
+      entry(a, 7, 'close'),
+    ]);
+    expect(mocks.ack.mock.calls[0]?.[2]).toEqual([
+      { accountId: a, seq: 5 },
+      { accountId: a, seq: 6 },
+      { accountId: a, seq: 7 },
+    ]);
+  });
+
   it('keeps later entries of an account pending after a failure', async () => {
     mocks.rpc.recordDecision.mockRejectedValue(
       new MeetSelfRpcError(503, 'down', '')
