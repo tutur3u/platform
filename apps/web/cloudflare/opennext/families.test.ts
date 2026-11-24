@@ -59,6 +59,7 @@ const API_IDENTITY_ROUTES = [
   'api/v1/user/onboarding-progress/route.ts',
   'api/v1/user/profile/route.ts',
   'api/v1/users/calendar-settings/route.ts',
+  'api/v1/users/me/analytics-consent/route.ts',
   'api/v1/users/me/avatar/route.ts',
   'api/v1/users/me/avatar/upload-url/route.ts',
   'api/v1/users/me/banner/route.ts',

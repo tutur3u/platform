@@ -1552,6 +1552,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/users/me/analytics-consent"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/users/me/avatar"
     },
     {
