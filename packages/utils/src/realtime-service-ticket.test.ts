@@ -1,8 +1,11 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
+  isTrustedMeetSelfOutboxRequest,
   isTrustedRealtimeServiceRequest,
+  MEET_SELF_OUTBOX_PATH,
   REALTIME_SERVICE_TICKET_ROUTES,
+  verifyMeetSelfOutboxTicket,
   verifyRealtimeServiceTicket,
 } from './realtime-service-ticket';
 
@@ -306,4 +309,83 @@ it('authenticates exact Playground callbacks with a bounded lifetime', () => {
     secret
   );
   expect(trusted(SOURCE, weak, 'POST')).toBe(false);
+});
+
+describe('Meet per-speaker outbox credential', () => {
+  const now = Date.now();
+  const seconds = Math.floor(now / 1000);
+  const outbox = (claims: Record<string, unknown>) =>
+    sign({
+      aud: 'meet-service',
+      purpose: 'self-outbox',
+      roomId: 'ws:meeting',
+      exp: seconds + 60,
+      ...claims,
+    });
+  const request = (token: string | null, method = 'POST', path = MEET_SELF_OUTBOX_PATH) =>
+    isTrustedMeetSelfOutboxRequest(
+      path,
+      new Headers(token ? { authorization: `Bearer ${token}` } : {}),
+      method,
+      secret,
+      now
+    );
+
+  it('trusts only a POST to the outbox path with a valid credential', () => {
+    expect(verifyMeetSelfOutboxTicket(outbox({}), secret, now)).toEqual({
+      roomId: 'ws:meeting',
+      exp: seconds + 60,
+    });
+    expect(request(outbox({}))).toBe(true);
+  });
+
+  it.each([
+    ['missing', null],
+    ['wrong secret', outbox({}).replace(/\.[^.]+$/, '.AAAA')],
+    ['wrong audience', outbox({ aud: 'tuturuuu.channels' })],
+    ['wrong purpose', outbox({ purpose: 'attendance-ledger' })],
+    ['empty room', outbox({ roomId: '' })],
+    ['expired', outbox({ exp: seconds - 1 })],
+    ['too long-lived', outbox({ exp: seconds + 91 })],
+    ['a document ticket', documentTicket],
+  ])('refuses a %s credential', (_label, token) => {
+    expect(request(token)).toBe(false);
+  });
+
+  it('refuses another method or path', () => {
+    for (const method of ['GET', 'PUT', undefined])
+      expect(request(outbox({}), method as string)).toBe(false);
+    for (const path of [
+      '/api/meet-ai/self/outbox/',
+      '/api/meet-ai/self/outbox/x',
+      '/api/meet-ai/SELF/outbox',
+      DOCUMENT,
+    ])
+      expect(request(outbox({}), 'POST', path)).toBe(false);
+  });
+
+  it('is part of the default proxy bypass rules', async () => {
+    const { DEFAULT_TRUSTED_BYPASS_RULES } = await import(
+      './api-proxy-bypass-rules'
+    );
+    process.env.MEET_REALTIME_TOKEN_SECRET = secret;
+    const headers = new Headers({
+      authorization: `Bearer ${sign({
+        aud: 'meet-service',
+        purpose: 'self-outbox',
+        roomId: 'ws:meeting',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      })}`,
+    });
+    expect(
+      DEFAULT_TRUSTED_BYPASS_RULES.some((rule) =>
+        rule.matches(MEET_SELF_OUTBOX_PATH, headers, 'POST')
+      )
+    ).toBe(true);
+    expect(
+      DEFAULT_TRUSTED_BYPASS_RULES.some((rule) =>
+        rule.matches(MEET_SELF_OUTBOX_PATH, headers, 'GET')
+      )
+    ).toBe(false);
+  });
 });

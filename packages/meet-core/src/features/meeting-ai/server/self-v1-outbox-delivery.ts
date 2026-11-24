@@ -1,5 +1,5 @@
 import 'server-only';
-import * as serviceCredential from '@tuturuuu/realtime/meet/service-credential';
+import { verifyMeetSelfOutboxCredential } from '@tuturuuu/realtime/meet/service-credential';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
 import { getMeetRealtimeTokenSecret } from '../../call/lib/call-session';
@@ -8,20 +8,11 @@ import {
   selfOutboxEntrySchema,
   writeSelfOutboxEntries,
 } from './self-v1-outbox';
-import { settleRoomEnds } from './self-v1-room-end';
 
 /** The room sends at most 64 entries per delivery. */
 export const MEET_SELF_OUTBOX_MAX_ENTRIES = 64;
 /** 64 entries of the documented shape fit well inside this many bytes. */
 export const MEET_SELF_OUTBOX_MAX_BYTES = 32 * 1024;
-
-type OutboxClaims = {
-  aud: 'meet-service';
-  purpose: string;
-  roomId: string;
-  exp: number;
-};
-type OutboxVerifier = (token: string, secret?: string) => OutboxClaims | null;
 
 const bodySchema = z
   .object({
@@ -37,27 +28,21 @@ const unauthorized = () => new MeetAiError(401, 'Unauthorized');
 
 /**
  * Only the realtime room's own outbox credential is accepted, never a user
- * session. Verification fails closed when the shared verifier is missing.
+ * session; the shared verifier also bounds the credential lifetime.
  */
 function verifyCredential(request: Request) {
   const header = request.headers.get('authorization') ?? '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   if (!token) throw unauthorized();
-  const verify = (
-    serviceCredential as unknown as {
-      verifyMeetSelfOutboxCredential?: OutboxVerifier;
-    }
-  ).verifyMeetSelfOutboxCredential;
-  if (typeof verify !== 'function') throw unauthorized();
   let secret: string;
   try {
     secret = getMeetRealtimeTokenSecret();
   } catch {
     throw new MeetAiError(503, 'Meeting room is unavailable');
   }
-  let claims: OutboxClaims | null;
+  let claims: ReturnType<typeof verifyMeetSelfOutboxCredential>;
   try {
-    claims = verify(token, secret);
+    claims = verifyMeetSelfOutboxCredential(token, secret);
   } catch {
     claims = null;
   }
@@ -140,7 +125,7 @@ export async function deliverSelfOutbox(request: Request) {
   const written = await writeSelfOutboxEntries(db, entries);
   if (written.failed)
     console.warn('[meet-ai] self_v1 outbox delivery partly pending');
-  const settled = await settleRoomEnds(db, written.settled);
+  const settled = written.settled;
   return {
     acked: [...gone, ...settled].map(({ sessionId, accountId, seq }) => ({
       sessionId,

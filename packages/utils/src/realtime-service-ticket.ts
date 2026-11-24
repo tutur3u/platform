@@ -119,3 +119,50 @@ export function isTrustedRealtimeServiceRequest(
       : process.env.MEET_REALTIME_TOKEN_SECRET);
   return verifyRealtimeServiceTicket(pathname, token, routeSecret) !== null;
 }
+
+/** The Meet room's outbox delivery route, inside the Meet Worker. */
+export const MEET_SELF_OUTBOX_PATH = '/api/meet-ai/self/outbox';
+/** Outbox credentials live 60 s plus 30 s of clock skew at most. */
+const MEET_SELF_OUTBOX_MAX_LIFETIME_MS = 90_000;
+
+/**
+ * The realtime room's per-delivery outbox credential: HMAC-signed with the
+ * shared realtime secret, audience `meet-service`, purpose `self-outbox`, a
+ * room id, and an unexpired `exp` at most 90 s ahead. The route verifies the
+ * same credential again and binds the body to its room.
+ */
+export function verifyMeetSelfOutboxTicket(
+  token: string | null | undefined,
+  secret: string | undefined,
+  now = Date.now()
+): { roomId: string; exp: number } | null {
+  if (!token || !secret?.trim()) return null;
+  const payload = decodeSignedPayload(token, secret.trim());
+  if (!payload) return null;
+  const { aud, purpose, roomId, exp } = payload;
+  if (
+    aud !== 'meet-service' ||
+    purpose !== 'self-outbox' ||
+    typeof roomId !== 'string' ||
+    !roomId ||
+    typeof exp !== 'number' ||
+    !Number.isFinite(exp) ||
+    exp * 1000 <= now ||
+    exp * 1000 > now + MEET_SELF_OUTBOX_MAX_LIFETIME_MS
+  )
+    return null;
+  return { roomId, exp };
+}
+
+/** Only a POST to the exact outbox path with a valid outbox credential. */
+export function isTrustedMeetSelfOutboxRequest(
+  pathname: string,
+  headers: Headers,
+  method: string | undefined,
+  secret = process.env.MEET_REALTIME_TOKEN_SECRET,
+  now = Date.now()
+) {
+  if (method !== 'POST' || pathname !== MEET_SELF_OUTBOX_PATH) return false;
+  const token = headers.get('authorization')?.match(/^Bearer (\S+)$/)?.[1];
+  return verifyMeetSelfOutboxTicket(token, secret, now) !== null;
+}

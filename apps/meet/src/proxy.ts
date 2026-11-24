@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/start-bridge/proxy-bridge';
 import { MEET_CANONICAL_ORIGIN } from '@tuturuuu/utils/meet-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { isTrustedMeetSelfOutboxRequest } from '@tuturuuu/utils/realtime-service-ticket';
 import Negotiator from 'negotiator';
 import { type NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -249,9 +250,16 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     // Build identity is public metadata; all other API admission is unchanged.
     const isPublicBuildInfo =
       req.method === 'GET' && req.nextUrl.pathname === '/api/build-info';
+    // The room's outbox delivery is a signed service call with no session.
+    const isSelfOutboxDelivery = isTrustedMeetSelfOutboxRequest(
+      req.nextUrl.pathname,
+      req.headers,
+      req.method
+    );
     const appSessionRefresh =
       isLocalAuthApi ||
       isPublicBuildInfo ||
+      isSelfOutboxDelivery ||
       (mounted && !hasSupportedSupabaseAuthCookie(req))
         ? null
         : await refreshAppSessionForRequest(req, {

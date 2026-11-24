@@ -57,6 +57,7 @@ afterEach(() => {
 
 it('reads self_v1 sessions only through the read contracts for this reader', async () => {
   const chunkIn = vi.fn();
+  const unknownCount = vi.fn();
   const sessions = {
     select: () => sessions,
     eq: () => sessions,
@@ -94,6 +95,11 @@ it('reads self_v1 sessions only through the read contracts for this reader', asy
     },
     order: () => chunks,
     range: async () => ({ data: [], error: null }),
+    // Unknown-cost self_v1 chunks are counted, never read.
+    eq: async (column: string, value: string) => {
+      unknownCount(column, value);
+      return { count: 2, error: null };
+    },
   };
   const users = {
     select: () => users,
@@ -189,4 +195,5 @@ it('reads self_v1 sessions only through the read contracts for this reader', asy
     }),
   ]);
   expect(JSON.stringify(body)).not.toContain('raw notes must not leak');
+  expect(unknownCount).toHaveBeenCalledWith('reservation_state', 'unknown');
 });

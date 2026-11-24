@@ -16,6 +16,11 @@ const notEligible = () =>
 
 /** Database refusals on the open path collapse to the client's fixed codes. */
 function openError(error: unknown) {
+  if (
+    error instanceof MeetSelfRpcError &&
+    error.code === 'MEET_SELF_NOTICE_REQUIRED'
+  )
+    return new MeetAiError(409, error.message, error.code);
   if (error instanceof MeetSelfRpcError)
     return error.status === 503
       ? new MeetAiError(
@@ -70,7 +75,10 @@ async function readJson<T extends z.ZodType>(request: Request, schema: T) {
  * withdraw at once, which closes the stream.
  */
 export async function openSelfStream(request: Request, params: MeetAiParams) {
-  const { db, user, wsId, meetingId } = await meetSelfAccess(request, params);
+  const { db, user, actor, wsId, meetingId } = await meetSelfAccess(
+    request,
+    params
+  );
   const { sessionId } = await readJson(
     request,
     z.object({ sessionId: z.uuid() }).strict()
@@ -80,7 +88,7 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
     { sessionId, meetingId, wsId },
     'open'
   );
-  const room = await selfRoom(meetingId, user.id);
+  const room = await selfRoom(meetingId, user.id, actor);
   const begin = await selfRoomCommands.openBegin(room, session.id);
   if (!begin.allowed) {
     // A refusal still carries legal entries; they are written before the
@@ -107,6 +115,8 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
               // The room names the notice the participant accepted.
               noticeVersion: begin.noticeVersion,
               evidence: begin.evidence,
+              // The open path runs only with per-speaker capture on.
+              requireEvidence: true,
               roomSeq: begin.allowSeq,
             })
           ).revision;
@@ -140,7 +150,10 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
 
 /** Renews the caller's own live stream lease; a stream id alone grants nothing. */
 export async function renewSelfStream(request: Request, params: MeetAiParams) {
-  const { db, user, wsId, meetingId } = await meetSelfAccess(request, params);
+  const { db, user, actor, wsId, meetingId } = await meetSelfAccess(
+    request,
+    params
+  );
   const { sessionId, streamId } = await readJson(
     request,
     z.object({ sessionId: z.uuid(), streamId: z.uuid() }).strict()

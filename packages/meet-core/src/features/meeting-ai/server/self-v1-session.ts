@@ -52,6 +52,9 @@ export async function roomCaptureProtocol(
   }
 }
 
+/** How long a new session may take to appear in the room. */
+export const SELF_SESSION_SETTLE_MS = 30_000;
+
 const alreadyRunning = () =>
   new MeetAiError(409, 'A transcription session is already running');
 
@@ -78,12 +81,16 @@ async function startFresh(
   }
   const { data: open, error } = await db
     .from('meet_ai_sessions')
-    .select('id, user_id, capture_state, protocol')
+    .select('id, user_id, capture_state, protocol, created_at')
     .eq('meeting_id', input.meetingId)
     .is('ended_at', null)
     .maybeSingle();
   if (error) throw new MeetAiError(500, 'Session lookup failed');
   if (!open || open.protocol !== 'self_v1') throw alreadyRunning();
+  // A session this young may still be on its way into the room; never close
+  // it as stale. The host retries after the room has recorded it.
+  if (Date.now() - Date.parse(open.created_at) < SELF_SESSION_SETTLE_MS)
+    throw alreadyRunning();
   let roomSession: unknown;
   try {
     roomSession = (

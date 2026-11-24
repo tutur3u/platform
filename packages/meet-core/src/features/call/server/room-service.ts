@@ -42,6 +42,21 @@ export async function resolveMeetCallRouteAccess(
 
 const ROOM_READ_RETRY_MS = 250;
 
+/** Room refusal codes a Meet Worker caller may see; anything else is dropped. */
+export const ROOM_REFUSAL_CODES: ReadonlySet<string> = new Set([
+  'MEET_SELF_MODE_LOCKED',
+  'MEET_SELF_NOTICE_REQUIRED',
+  'MEET_SELF_NOTICE_STALE',
+  'MEET_SELF_PROTOCOL_MISMATCH',
+  'MEET_SELF_RATE_LIMITED',
+  'MEET_SELF_SESSION_ENDED',
+  'MEET_SELF_SESSION_LIVE',
+  'MEET_SELF_UNAVAILABLE',
+  'MIRA_ROOM_CONSENT_REQUIRED',
+  'MIRA_ROOM_JOIN_OVER_OFF',
+  'MIRA_ROOM_STALE',
+]);
+
 export async function callRoomService<T>(
   access: MeetCallRouteAccess,
   command: unknown,
@@ -112,13 +127,14 @@ export async function callRoomService<T>(
     await new Promise((resolve) => setTimeout(resolve, ROOM_READ_RETRY_MS));
   }
   if (!response?.ok) {
-    // A room refusal may name a fixed code; its message never passes through.
+    // Only an allowlisted room refusal code passes through, never its message.
     const code =
       response && response.status < 500
         ? await response
             .json()
             .then((body: { code?: unknown }) =>
-              typeof body?.code === 'string' && /^[A-Z_]{3,64}$/.test(body.code)
+              typeof body?.code === 'string' &&
+              ROOM_REFUSAL_CODES.has(body.code)
                 ? body.code
                 : undefined
             )

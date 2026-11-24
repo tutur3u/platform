@@ -14,9 +14,53 @@ import { meetPerSpeakerEnabled } from './per-speaker-flag';
 import type { MeetAiSessionRow } from './self-v1-rpc';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
 
+type SessionUser = NonNullable<
+  Awaited<ReturnType<typeof getSatelliteAppSessionUser>>
+>;
+
+/** A workspace route segment: a uuid or a workspace slug such as `personal`. */
+const WORKSPACE_SEGMENT = /^[a-z0-9][a-z0-9_-]{0,62}$/i;
+
+/**
+ * Resolves the route workspace for the signed-in actor. A malformed segment
+ * is 400 and an unknown or inaccessible one 403 or 404; a lookup can never
+ * surface as a database type error.
+ */
+export async function resolveSelfWorkspace(
+  db: TypedSupabaseClient,
+  user: { id: string; email?: string | null },
+  rawWsId: string
+) {
+  if (!WORKSPACE_SEGMENT.test(rawWsId))
+    throw new MeetAiError(400, 'Invalid workspace');
+  try {
+    return await resolveWorkspaceIdForPrincipal({
+      authorizationClient: db,
+      principal: { id: user.id, email: user.email ?? null },
+      wsId: rawWsId,
+    });
+  } catch (error) {
+    const name = error instanceof Error ? error.name : '';
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined;
+    throw new MeetAiError(
+      name === 'WorkspaceAuthError'
+        ? 403
+        : name === 'WorkspaceNotFoundError' || code === '22P02'
+          ? 404
+          : 500,
+      'Workspace resolution failed'
+    );
+  }
+}
+
 export type MeetSelfAccess = {
   db: TypedSupabaseClient;
   user: { id: string };
+  /** The authenticated Meet session user, reused for the room channel. */
+  actor: SessionUser;
   wsId: string;
   meetingId: string;
   isHost: boolean;
@@ -51,24 +95,7 @@ export async function meetSelfAccess(
   if (!z.uuid().safeParse(meetingId).success)
     throw new MeetAiError(400, 'Invalid meeting');
   const db = await createAdminClient();
-  let resolvedWsId: string;
-  try {
-    resolvedWsId = await resolveWorkspaceIdForPrincipal({
-      authorizationClient: db,
-      principal: { id: user.id, email: user.email ?? null },
-      wsId: rawWsId,
-    });
-  } catch (error) {
-    const name = error instanceof Error ? error.name : '';
-    throw new MeetAiError(
-      name === 'WorkspaceAuthError'
-        ? 403
-        : name === 'WorkspaceNotFoundError'
-          ? 404
-          : 500,
-      'Workspace resolution failed'
-    );
-  }
+  const resolvedWsId = await resolveSelfWorkspace(db, user, rawWsId);
   const { data: meeting, error } = await db
     .from('workspace_meetings')
     .select('id, creator_id, ws_id')
@@ -105,6 +132,7 @@ export async function meetSelfAccess(
   return {
     db,
     user: { id: user.id },
+    actor: user,
     wsId,
     meetingId: meeting.id,
     isHost: meeting.creator_id === user.id,

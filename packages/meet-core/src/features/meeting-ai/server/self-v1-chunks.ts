@@ -137,7 +137,10 @@ export async function transcribeSelfChunk(
   params: MeetAiParams,
   form: FormData
 ) {
-  const { db, user, wsId, meetingId } = await meetSelfAccess(request, params);
+  const { db, user, actor, wsId, meetingId } = await meetSelfAccess(
+    request,
+    params
+  );
   const fields = readSelfChunkFields(request, form);
   const session = await loadSelfSession(
     db,
@@ -155,7 +158,7 @@ export async function transcribeSelfChunk(
   if (!stream || (stream.state !== 'active' && stream.state !== 'draining'))
     throw consentRefused();
   if (leaseLapsed(stream)) throw leaseExpired();
-  const room = await selfRoom(meetingId, user.id);
+  const room = await selfRoom(meetingId, user.id, actor);
   const fence = {
     sessionId: session.id,
     streamId: fields.streamId,
@@ -216,18 +219,18 @@ export async function transcribeSelfChunk(
   const language = LANGUAGES.has(session.language_hint ?? '')
     ? (session.language_hint as 'auto' | 'vi' | 'en' | 'vi+en')
     : 'auto';
-  let hookEntered = false;
   let marked = false;
   let dispatched = false;
   let result: Awaited<ReturnType<typeof generateBilledMeetArtifact>>;
   try {
     result = await generateBilledMeetArtifact(
       { audio: audio.wav, hints: { language } },
-      { userId: hostId, meetingId, attemptId: chunk.id },
+      // Each request is its own central run, so a retry after a lost request
+      // never collides with it; mark_dispatch still allows one dispatch.
+      { userId: hostId, meetingId, attemptId: `${chunk.id}:${crypto.randomUUID()}` },
       admission,
       {
         beforeProvider: async () => {
-          hookEntered = true;
           if (!(await meetPerSpeakerEnabled(wsId)))
             throw new MeetAiError(
               403,
@@ -258,7 +261,9 @@ export async function transcribeSelfChunk(
         outcome: 'discarded',
         costUsd: 0,
       });
-    else if (hookEntered)
+    else
+      // Any failure before dispatch frees the reservation. The database
+      // refuses the release once another attempt has dispatched the chunk.
       await settleQuietly(db, { chunkId: chunk.id, outcome: 'released' });
     throw error;
   }

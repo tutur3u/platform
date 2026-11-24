@@ -39,6 +39,23 @@ vi.mock('../app/api/meet-call/[meetingId]/quiz-arena/route', () => {
   };
 });
 
+const selfPosts = vi.hoisted(() => ({
+  outbox: vi.fn(async () => Response.json({ route: 'outbox' })),
+  meeting: vi.fn(
+    async (
+      _request: Request,
+      { params }: { params: Promise<{ wsId: string; meetingId: string }> }
+    ) => Response.json(await params)
+  ),
+}));
+vi.mock('../app/api/meet-ai/self/outbox/route', () => ({
+  POST: selfPosts.outbox,
+}));
+for (const name of ['choice', 'mode', 'open', 'renew'])
+  vi.doMock(`../app/api/meet-ai/[wsId]/[meetingId]/self/${name}/route`, () => ({
+    POST: selfPosts.meeting,
+  }));
+
 import { dispatchMeetEndpoint } from './api-registry';
 
 const loadedAtImport = { ...loads };
@@ -189,4 +206,27 @@ it('dispatches /api/meet-call/[meetingId]/transcript-consent for GET and POST on
     (await dispatchMeetEndpoint(new NextRequest(url, { method: 'DELETE' })))
       ?.status
   ).toBe(405);
+});
+
+it('dispatches the per-speaker POST routes inside the Meet worker', async () => {
+  const id = '7f2a528e-3bff-40ee-bfda-5b944ad03ed8';
+  const outbox = await dispatchMeetEndpoint(
+    new NextRequest('https://meet.test/api/meet-ai/self/outbox', {
+      method: 'POST',
+    })
+  );
+  // The static outbox route wins over /api/meet-ai/[wsId]/[meetingId].
+  expect(await outbox?.json()).toEqual({ route: 'outbox' });
+  for (const name of ['choice', 'mode', 'open', 'renew']) {
+    const url = `https://meet.test/api/meet-ai/personal/${id}/self/${name}`;
+    const response = await dispatchMeetEndpoint(
+      new NextRequest(url, { method: 'POST' })
+    );
+    expect(await response?.json()).toEqual({ wsId: 'personal', meetingId: id });
+    expect(
+      (await dispatchMeetEndpoint(new NextRequest(url, { method: 'GET' })))
+        ?.status
+    ).toBe(405);
+  }
+  expect(selfPosts.meeting).toHaveBeenCalledTimes(4);
 });

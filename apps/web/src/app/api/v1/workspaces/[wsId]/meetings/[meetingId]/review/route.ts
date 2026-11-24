@@ -183,6 +183,7 @@ export async function GET(request: Request, { params }: Params) {
         0
       ) + selfView.notesCostUsd;
     const unpricedRequests =
+      selfView.unpricedRequests +
       chunks.reduce((sum, chunk) => sum + (chunk.unpriced_attempts ?? 0), 0) +
       sessions.reduce(
         (sum, session) => sum + session.notes_unpriced_attempts,

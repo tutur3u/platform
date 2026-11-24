@@ -366,6 +366,27 @@ describe('self_v1 in-flight fence', () => {
     );
   });
 
+  it('releases the reservation when billing setup fails before dispatch', async () => {
+    mocks.generate.mockRejectedValue(new MeetAiError(503, 'pricing'));
+    expect((await run()).status).toBe(503);
+    expect(mocks.rpc.markDispatch).not.toHaveBeenCalled();
+    expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(db, {
+      chunkId,
+      outcome: 'released',
+    });
+  });
+
+  it('gives every attempt its own central run id', async () => {
+    await run();
+    await run();
+    const [first, second] = mocks.generate.mock.calls.map(
+      (call) => call[1].attemptId as string
+    );
+    expect(first).toMatch(new RegExp(`^${chunkId}:`));
+    expect(second).toMatch(new RegExp(`^${chunkId}:`));
+    expect(first).not.toBe(second);
+  });
+
   it('settles a dispatch-marked chunk at zero when the room recheck refuses', async () => {
     let providerCalled = false;
     mocks.authorize

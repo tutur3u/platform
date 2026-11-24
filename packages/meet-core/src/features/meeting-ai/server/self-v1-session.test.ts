@@ -111,6 +111,7 @@ describe('self_v1 session start over a room-ended session', () => {
     user_id: 'host',
     capture_state: 'active',
     protocol: 'self_v1',
+    created_at: new Date(Date.now() - 120_000).toISOString(),
   };
   const db = (row: unknown) => {
     const query: Record<string, unknown> = {
@@ -157,6 +158,19 @@ describe('self_v1 session start over a room-ended session', () => {
     ).rejects.toMatchObject({ status: 409 });
     expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
     expect(mocks.record).not.toHaveBeenCalled();
+  });
+
+  it('never closes a session younger than the settle window as stale', async () => {
+    roomSays(null);
+    mocks.rpc.startSession.mockRejectedValue(running());
+    await expect(
+      startSelfSession({
+        ...input,
+        db: db({ ...open, created_at: new Date().toISOString() }),
+      })
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.rpc.stopSession).not.toHaveBeenCalled();
+    expect(mocks.rpc.startSession).toHaveBeenCalledTimes(1);
   });
 
   it('leaves a running legacy session alone', async () => {

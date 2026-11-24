@@ -1,5 +1,6 @@
 import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { NextRequest, NextResponse } from 'next/server';
+import { createHmac } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBuildInfoHandler } from '../../../packages/utils/src/build-info-route';
 import { isLegacyMeetAiApi } from './lib/legacy-meet-ai-api';
@@ -562,4 +563,92 @@ describe('Meet AI default-off: legacy web Meet AI routes', () => {
       expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
     }
   );
+});
+
+describe('per-speaker outbox delivery admission', () => {
+  const secret = 'disposable-outbox-test-secret';
+  const sign = (payload: Record<string, unknown>) => {
+    const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    return `${encoded}.${createHmac('sha256', secret).update(encoded).digest('base64url')}`;
+  };
+  const now = () => Math.floor(Date.now() / 1000);
+  const valid = () =>
+    sign({
+      aud: 'meet-service',
+      purpose: 'self-outbox',
+      roomId: 'ws:meeting',
+      exp: now() + 60,
+    });
+  const deliver = (token: string | null, path = '/api/meet-ai/self/outbox', method = 'POST') =>
+    proxy(
+      new NextRequest(`https://meet.tuturuuu.com${path}`, {
+        method,
+        headers: token ? { authorization: `Bearer ${token}` } : undefined,
+      })
+    );
+
+  beforeEach(() => {
+    process.env.MEET_REALTIME_TOKEN_SECRET = secret;
+    mocks.refreshAppSessionForRequest.mockReset();
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: false,
+      error: 'Invalid app session',
+    });
+    mocks.guardApiProxyRequest.mockReset();
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+  });
+
+  it('skips the session refresh only for a valid outbox credential', async () => {
+    const response = await deliver(valid());
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['a missing credential', () => null, undefined, undefined],
+    [
+      'a wrong purpose',
+      () =>
+        sign({
+          aud: 'meet-service',
+          purpose: 'attendance-ledger',
+          roomId: 'ws:meeting',
+          exp: now() + 60,
+        }),
+      undefined,
+      undefined,
+    ],
+    [
+      'an expired credential',
+      () =>
+        sign({
+          aud: 'meet-service',
+          purpose: 'self-outbox',
+          roomId: 'ws:meeting',
+          exp: now() - 1,
+        }),
+      undefined,
+      undefined,
+    ],
+    [
+      'a credential living too long',
+      () =>
+        sign({
+          aud: 'meet-service',
+          purpose: 'self-outbox',
+          roomId: 'ws:meeting',
+          exp: now() + 3600,
+        }),
+      undefined,
+      undefined,
+    ],
+    ['another path', valid, '/api/meet-ai/self/outbox/x', undefined],
+    ['another method', valid, undefined, 'PUT'],
+  ])('keeps session admission for %s', async (_label, token, path, method) => {
+    const response = await deliver(token(), path, method);
+    expect(response.status).toBe(401);
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledOnce();
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
 });

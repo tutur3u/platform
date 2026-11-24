@@ -1,5 +1,8 @@
 import 'server-only';
-import { getMeetCallAccess } from '../../call/lib/call-access';
+import {
+  getMeetCallAccess,
+  getMeetCallAccessForUser,
+} from '../../call/lib/call-access';
 import {
   callRoomService,
   type MeetCallRouteAccess,
@@ -11,7 +14,7 @@ export type MeetSelfOutboxEntry = {
   sessionId: string;
   accountId: string;
   seq: number;
-  kind: 'withdraw' | 'revoke' | 'close';
+  kind: 'withdraw' | 'revoke' | 'close' | 'end';
   noticeVersion?: string;
 };
 
@@ -72,11 +75,15 @@ export function selfRoomError(error: unknown) {
  */
 export async function selfRoom(
   meetingId: string,
-  actorId: string
+  actorId: string,
+  /** The already authenticated session user; avoids reading it again. */
+  actor?: Parameters<typeof getMeetCallAccessForUser>[2]
 ): Promise<MeetSelfRoom> {
   let access: MeetCallRouteAccess;
   try {
-    access = await getMeetCallAccess(meetingId, 'Participant');
+    access = actor
+      ? await getMeetCallAccessForUser(meetingId, 'Participant', actor)
+      : await getMeetCallAccess(meetingId, 'Participant');
   } catch (error) {
     throw selfRoomError(error);
   }

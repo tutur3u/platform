@@ -24,8 +24,24 @@ export async function sha256Hex(text: string) {
 
 /** The hash of the exact per-speaker notice text shown in one locale. */
 export async function expectedSelfNoticeHash(locale: string) {
-  const t = await getTranslations({ locale, namespace: 'meet.ai' });
-  return sha256Hex(SELF_NOTICE_KEYS.map((key) => t(key)).join('\n'));
+  let texts: string[];
+  try {
+    const t = await getTranslations({ locale, namespace: 'meet.ai' });
+    texts = SELF_NOTICE_KEYS.map((key) => {
+      const text = t(key);
+      // A missing message falls back to its key path; never hash that.
+      if (!text?.trim() || text === `meet.ai.${key}` || text === key)
+        throw new Error('missing notice text');
+      return text;
+    });
+  } catch {
+    throw new MeetAiError(
+      409,
+      'Transcription of your voice is not available',
+      'MEET_SELF_UNAVAILABLE'
+    );
+  }
+  return sha256Hex(texts.join('\n'));
 }
 
 /**

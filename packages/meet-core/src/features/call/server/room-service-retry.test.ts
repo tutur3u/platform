@@ -127,13 +127,13 @@ it('keeps a fixed refusal code from the room, never its message', async () => {
   });
 });
 
-it('ignores a malformed or missing refusal code', async () => {
+it('drops a refusal code outside the allowlist or a missing one', async () => {
   vi.stubGlobal(
     'fetch',
     vi
       .fn()
       .mockResolvedValueOnce(
-        Response.json({ code: 'not a code!' }, { status: 403 })
+        Response.json({ code: 'SOME_INTERNAL_CODE' }, { status: 403 })
       )
       .mockResolvedValueOnce(new Response('plain', { status: 400 }))
   );

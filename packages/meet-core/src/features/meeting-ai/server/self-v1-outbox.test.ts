@@ -16,7 +16,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
 vi.mock('./self-v1-room', () => ({ selfRoomCommands: { ack: mocks.ack } }));
 vi.mock('./self-v1-room-end', () => ({
-  settleRoomEnds: (...args: unknown[]) => mocks.roomEnd(...args),
+  endSessionForRoom: (...args: unknown[]) => mocks.roomEnd(...args),
 }));
 vi.mock('./self-v1-rpc', async (original) => ({
   ...(await original<object>()),
@@ -140,14 +140,26 @@ describe('self_v1 legal outbox drain', () => {
     expect(mocks.ack).not.toHaveBeenCalled();
   });
 
-  it('holds a close back while its room-ended session stop is pending', async () => {
-    mocks.roomEnd.mockImplementation(async (_db, settled) =>
-      settled.filter((item: { kind: string }) => item.kind !== 'close')
-    );
+  it('never ends the session for a participant close', async () => {
+    await drainSelfOutbox({} as never, room, sessionId, [entry(b, 1, 'close')]);
+    expect(mocks.rpc.closeStream).toHaveBeenCalledOnce();
+    expect(mocks.roomEnd).not.toHaveBeenCalled();
+    expect(mocks.ack.mock.calls[0]?.[2]).toEqual([{ accountId: b, seq: 1 }]);
+  });
+
+  it('ends the session on the room end entry and acknowledges it', async () => {
+    mocks.roomEnd.mockResolvedValue(true);
+    await drainSelfOutbox({} as never, room, sessionId, [entry(a, 9, 'end')]);
+    expect(mocks.roomEnd).toHaveBeenCalledWith({}, sessionId);
+    expect(mocks.ack.mock.calls[0]?.[2]).toEqual([{ accountId: a, seq: 9 }]);
+  });
+
+  it('keeps an end entry pending while the stop fails', async () => {
+    mocks.roomEnd.mockRejectedValue(new Error('db down'));
     await expect(
       drainSelfOutbox({} as never, room, sessionId, [
         entry(a, 5, 'withdraw'),
-        entry(b, 1, 'close'),
+        entry(b, 2, 'end'),
       ])
     ).rejects.toMatchObject({ status: 503 });
     expect(mocks.ack.mock.calls[0]?.[2]).toEqual([{ accountId: a, seq: 5 }]);

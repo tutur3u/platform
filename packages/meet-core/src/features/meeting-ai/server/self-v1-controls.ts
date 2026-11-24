@@ -14,7 +14,7 @@ import {
 } from '../../call/server/room-service';
 import { MeetAiError, type MeetAiParams, meetAiResponse } from './access';
 import { meetPerSpeakerEnabled } from './per-speaker-flag';
-import { meetSelfAccess } from './self-v1-access';
+import { meetSelfAccess, resolveSelfWorkspace } from './self-v1-access';
 import { drainSelfOutbox } from './self-v1-outbox';
 import { listSelfCoverage } from './self-v1-reads';
 import {
@@ -27,6 +27,12 @@ import { readMeetTranscriptionAvailability } from './transcription-availability'
 import { requireShownSelfNotice } from './self-v1-notice';
 import { withoutPending } from './self-v1-view';
 
+/**
+ * The caller's own room channel for a self control, checked in order before
+ * any body is read: Meet only, same origin, a valid meeting id and
+ * workspace segment, the Meet session, the route workspace resolved for the
+ * caller, and the meeting belonging to that workspace.
+ */
 async function roomFor(request: Request, params: MeetAiParams) {
   if (MEETING_APP !== 'meet')
     throw new MeetAiError(
@@ -36,12 +42,20 @@ async function roomFor(request: Request, params: MeetAiParams) {
     );
   if (request.headers.get('origin') !== new URL(request.url).origin)
     throw new MeetAiError(403, 'Invalid origin');
-  const { meetingId } = await params.params;
+  const { wsId: rawWsId, meetingId } = await params.params;
   if (!z.uuid().safeParse(meetingId).success)
     throw new MeetAiError(400, 'Invalid meeting');
   const user = await getSatelliteAppSessionUser(MEETING_APP);
   if (!user) throw new MeetAiError(401, 'Unauthorized');
-  return selfRoom(meetingId, user.id);
+  const wsId = await resolveSelfWorkspace(
+    await createAdminClient({ noCookie: true }),
+    user,
+    rawWsId
+  );
+  const room = await selfRoom(meetingId, user.id, user);
+  if (room.access.meeting.ws_id !== wsId)
+    throw new MeetAiError(404, 'Meeting not found');
+  return room;
 }
 
 /** Whether per-speaker capture can run in this meeting's workspace now. */
@@ -134,8 +148,9 @@ export const selfChoiceSchema = z.discriminatedUnion('choice', [
 /**
  * The participant's own transcript choice in a per-speaker meeting. Declining
  * always records, for anyone in the call. Allowing needs the current notice
- * evidence, whose hash must match the notice text shown in its locale, and
- * the per-speaker uploader check. The room fences a decline at
+ * uploader check (flag, allowlist, pilot membership), then the notice
+ * evidence, whose hash must match the text shown in its locale. Access and
+ * workspace checks run before the body is read. The room fences a decline at
  * once; its legal entries are then written for this meeting's per-speaker
  * sessions only.
  */
@@ -143,15 +158,17 @@ export async function chooseSelfTranscript(
   request: Request,
   params: MeetAiParams
 ) {
+  // Origin, session, workspace and meeting first; only then the body.
+  const room = await roomFor(request, params);
   const parsed = selfChoiceSchema.safeParse(
     await request.json().catch(() => null)
   );
   if (!parsed.success) throw new MeetAiError(400, 'Invalid choice');
   if (parsed.data.choice === 'allow') {
-    await requireShownSelfNotice(parsed.data);
+    // The flag, allowlist and pilot membership before the notice evidence.
     await meetSelfAccess(request, params);
+    await requireShownSelfNotice(parsed.data);
   }
-  const room = await roomFor(request, params);
   return recordSelfChoice(
     room,
     parsed.data.choice,

@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { formsEndpoints } from './forms-registry';
+import { meetAiSelfEndpoints } from './meet-ai-self-registry';
 import { meetRecordEndpoints } from './meet-record-registry';
 import {
   matchRoute,
@@ -76,6 +77,7 @@ export interface Endpoint {
 export const meetEndpoints: Endpoint[] = [
   ...formsEndpoints,
   ...meetRecordEndpoints,
+  ...meetAiSelfEndpoints,
   {
     pattern: '/api/auth/logout',
     methods: {

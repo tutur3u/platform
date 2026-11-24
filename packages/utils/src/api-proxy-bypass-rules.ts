@@ -1,5 +1,8 @@
 import { DEV_MODE } from './constants';
-import { isTrustedRealtimeServiceRequest } from './realtime-service-ticket';
+import {
+  isTrustedMeetSelfOutboxRequest,
+  isTrustedRealtimeServiceRequest,
+} from './realtime-service-ticket';
 
 export type TrustedProxyBypassRule = {
   /** `method` is the request method when the caller knows it; rules that need it must fail closed without it. */
@@ -66,5 +69,11 @@ export const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
   {
     matches: (pathname, headers, method) =>
       isTrustedRealtimeServiceRequest(pathname, headers, method),
+  },
+  // The Meet room's per-speaker outbox delivery carries its own signed
+  // credential; the route verifies it again and binds the body to the room.
+  {
+    matches: (pathname, headers, method) =>
+      isTrustedMeetSelfOutboxRequest(pathname, headers, method),
   },
 ];

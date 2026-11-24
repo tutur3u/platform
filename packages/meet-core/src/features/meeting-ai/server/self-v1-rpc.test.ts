@@ -82,3 +82,49 @@ describe('record_decision notice evidence feature check', () => {
     expect(rpc.mock.calls[0]?.[1]).not.toHaveProperty('p_locale');
   });
 });
+
+describe('record_decision evidence under per-speaker capture', () => {
+  it('refuses an allow without evidence', async () => {
+    const { selfRpc } = await import('./self-v1-rpc');
+    const rpc = vi.fn();
+    await expect(
+      selfRpc.recordDecision(client(rpc), {
+        ...input,
+        evidence: undefined,
+        requireEvidence: true,
+      })
+    ).rejects.toMatchObject({ status: 409, code: 'MEET_SELF_NOTICE_REQUIRED' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('fails closed instead of recording without evidence', async () => {
+    const { selfRpc } = await import('./self-v1-rpc');
+    const rpc = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { code: 'PGRST202' } });
+    await expect(
+      selfRpc.recordDecision(client(rpc), { ...input, requireEvidence: true })
+    ).rejects.toMatchObject({ status: 503, code: 'MEET_SELF_UNAVAILABLE' });
+    expect(rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('probes the evidence parameters again after the retry window', async () => {
+    vi.useFakeTimers();
+    try {
+      const { selfRpc, EVIDENCE_PROBE_TTL_MS } = await import('./self-v1-rpc');
+      const rpc = vi
+        .fn()
+        .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202' } })
+        .mockResolvedValue({
+          data: [{ revision: 1, recorded: true }],
+          error: null,
+        });
+      await selfRpc.recordDecision(client(rpc), input);
+      vi.advanceTimersByTime(EVIDENCE_PROBE_TTL_MS + 1);
+      await selfRpc.recordDecision(client(rpc), input);
+      expect(rpc.mock.calls.at(-1)?.[1]).toHaveProperty('p_locale', 'en');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

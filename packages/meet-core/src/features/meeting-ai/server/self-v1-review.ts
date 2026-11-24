@@ -2,6 +2,7 @@ import 'server-only';
 import { meetNotesSchema } from '@tuturuuu/ai/meetings/gemini';
 import { resolveTranscriptActionOwners } from '@tuturuuu/ai/meetings/transcript';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { MeetAiError } from './access';
 import {
   listSelfCoverage,
   listSelfSegments,
@@ -86,7 +87,23 @@ export async function readSelfReview(
       };
     })
   );
+  // Chunks whose provider cost stayed unknown after dispatch; counted like
+  // room-capture unpriced attempts. Metadata only, never transcript content.
+  let unpricedRequests = 0;
+  if (sessions.length) {
+    const { count, error } = await db
+      .from('meet_ai_chunks')
+      .select('id', { count: 'exact', head: true })
+      .in(
+        'session_id',
+        sessions.map((session) => session.id)
+      )
+      .eq('reservation_state', 'unknown');
+    if (error) throw new MeetAiError(503, 'Transcript lookup failed');
+    unpricedRequests = count ?? 0;
+  }
   return {
+    unpricedRequests,
     sessions: results.map((result) => result.session),
     chunks: results.flatMap((result) => result.chunks),
     transcriptionCostUsd: results.reduce(

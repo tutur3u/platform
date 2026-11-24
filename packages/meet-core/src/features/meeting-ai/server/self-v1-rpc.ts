@@ -90,8 +90,16 @@ async function call<F extends Fn>(
   return result.data as PrivateFunctions[F]['Returns'];
 }
 
-/** Whether `record_decision` takes notice evidence; unknown until tried. */
-let evidenceParams: boolean | undefined;
+/**
+ * When `record_decision` last answered without the evidence parameters.
+ * Detection is retried after a short while, never latched for good.
+ */
+let evidenceMissingAt: number | undefined;
+export const EVIDENCE_PROBE_TTL_MS = 60_000;
+
+const evidenceMissing = () =>
+  evidenceMissingAt !== undefined &&
+  Date.now() - evidenceMissingAt < EVIDENCE_PROBE_TTL_MS;
 
 const first = <T>(rows: T | T[] | null | undefined): T | undefined =>
   Array.isArray(rows) ? rows[0] : (rows ?? undefined);
@@ -132,8 +140,21 @@ export const selfRpc = {
       roomSeq: number;
       /** Notice evidence for an allow, stored once the database accepts it. */
       evidence?: { locale: string; textHash: string };
+      /**
+       * Per-speaker capture is on: an allow is never recorded without its
+       * notice evidence, and a database that cannot store it refuses.
+       */
+      requireEvidence?: boolean;
     }
   ) => {
+    const strict = input.decision === 'allow' && !!input.requireEvidence;
+    if (strict && !input.evidence)
+      throw new MeetSelfRpcError(
+        409,
+        'Allow transcription of your voice from its notice',
+        '',
+        'MEET_SELF_NOTICE_REQUIRED'
+      );
     const args = {
       p_session_id: input.sessionId,
       p_account_id: input.accountId,
@@ -153,21 +174,30 @@ export const selfRpc = {
             }
           : args) as PrivateFunctions['meet_ai_self_v1_record_decision']['Args']
       );
+    const unsupported = () =>
+      new MeetSelfRpcError(
+        503,
+        'Transcription consent storage is not ready',
+        'PGRST202',
+        'MEET_SELF_UNAVAILABLE'
+      );
     let rows: Awaited<ReturnType<typeof send>>;
-    const tryEvidence = !!input.evidence && evidenceParams !== false;
+    const tryEvidence = !!input.evidence && (strict || !evidenceMissing());
+    if (strict && evidenceMissing()) throw unsupported();
     try {
       rows = await send(tryEvidence);
-      if (tryEvidence) evidenceParams = true;
+      if (tryEvidence) evidenceMissingAt = undefined;
     } catch (error) {
       // Feature check: a database without the evidence parameters answers
-      // PGRST202 (no matching function); record the decision without them.
+      // PGRST202 (no matching function).
       if (
         !tryEvidence ||
         !(error instanceof MeetSelfRpcError) ||
         error.pgCode !== 'PGRST202'
       )
         throw error;
-      evidenceParams = false;
+      evidenceMissingAt = Date.now();
+      if (strict) throw unsupported();
       rows = await send(false);
     }
     const row = first(rows);

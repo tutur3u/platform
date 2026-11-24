@@ -3,7 +3,7 @@ import { MEET_TRANSCRIPT_NOTICE_VERSION } from '@tuturuuu/realtime/meet';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { z } from 'zod';
 import { MeetAiError } from './access';
-import { settleRoomEnds } from './self-v1-room-end';
+import { endSessionForRoom } from './self-v1-room-end';
 import { MeetSelfRpcError, selfRpc } from './self-v1-rpc';
 import {
   type MeetSelfOutboxEntry,
@@ -15,7 +15,7 @@ export const selfOutboxEntrySchema = z.object({
   sessionId: z.uuid(),
   accountId: z.uuid(),
   seq: z.number().int().positive(),
-  kind: z.enum(['withdraw', 'revoke', 'close']),
+  kind: z.enum(['withdraw', 'revoke', 'close', 'end']),
   noticeVersion: z.string().min(1).max(100).optional(),
 });
 
@@ -39,7 +39,9 @@ async function writeEntry(db: TypedSupabaseClient, entry: MeetSelfOutboxEntry) {
         noticeVersion: entry.noticeVersion ?? MEET_TRANSCRIPT_NOTICE_VERSION,
       });
     else if (entry.kind === 'revoke') await selfRpc.revokeUpload(db, input);
-    else await selfRpc.closeStream(db, input);
+    else if (entry.kind === 'close') await selfRpc.closeStream(db, input);
+    // The room ended the session: stop the database session too.
+    else await endSessionForRoom(db, entry.sessionId);
   } catch (error) {
     if (!(error instanceof MeetSelfRpcError)) throw error;
     if (error.pgCode === '40001' && entry.kind !== 'revoke') {
@@ -110,8 +112,8 @@ export async function drainSelfOutbox(
   );
   if (!entries.length) return;
   const written = await writeSelfOutboxEntries(db, entries);
-  const settled = await settleRoomEnds(db, written.settled);
-  const failed = written.failed || settled.length < written.settled.length;
+  const settled = written.settled;
+  const failed = written.failed;
   try {
     await selfRoomCommands.ack(
       room,
