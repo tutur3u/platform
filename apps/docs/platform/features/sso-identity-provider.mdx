@@ -354,10 +354,29 @@ design-system lead before the UI slices.
 Add every flag to `config/feature-flag-catalog.json`. The per-client `enabled`
 column is a second independent gate.
 
-Rollout: staging with a local SP and RP, then production with one named tester
-on a separate Claude test organization (if available), then the whole internal
-Claude organization with Require SSO still **off** for one week. Only then
-consider turning Require SSO on.
+Rollout: staging with a local SP and RP first. No separate Claude test
+organization exists, so the pilot runs on the production Tuturuuu Claude
+organization (Enterprise, with SCIM). That makes these pilot rules binding:
+
+1. **Require SSO stays off for the entire pilot.** SSO is optional. Require SSO
+   can be considered only after at least two Claude admins have signed in
+   through SSO, and email-link login has been confirmed to work as break-glass.
+2. **Break-glass owner.** A documented Claude Owner account that is not bound
+   to SSO, signs in by email link, and is never assigned to the Tuturuuu SSO
+   application. Record its existence (not its credentials) in the pilot packet.
+3. **Named pilot users first.** Assign only one or two named `@tuturuuu.com`
+   pilot users. Widen to the rest of the organization only after their logins,
+   denials and revocations behave as specified. SCIM starts in dry-run (compute
+   and audit the operations without sending them), then runs against those
+   pilot users only.
+4. **Rotation before expiry risk.** Rehearse dual-publish rotation (publish the
+   pending key, update WorkOS, promote, retire) on the live connection while
+   Require SSO is off, long before the first certificate nears expiry.
+5. **Domain verification.** The Claude Owner starts verification of
+   `tuturuuu.com` in Claude to obtain the exact TXT value. The release
+   authority then adds the record in Cloudflare DNS. The pilot packet records
+   the exact record (name `tuturuuu.com`, type `TXT`, the full
+   `anthropic-domain-verification-…` value, and TTL) before it is created.
 
 The kill switch (flag off plus client disable) is a safe rollback **only while
 Require SSO is off**. Users then sign in to Claude by email link. With Require
@@ -410,8 +429,9 @@ receipt and an exact-SQL ACK.
 ## Connecting claude.ai (USER, as Claude organization Owner)
 
 1. In Claude, open **Organization settings → Organization and access → Add or
-   edit domains**. Add `tuturuuu.com` and create the `anthropic-domain-verification-…`
-   TXT record at the apex domain. Wait for **Verified**.
+   edit domains** and add `tuturuuu.com`. Copy the `anthropic-domain-verification-…`
+   value into the pilot packet. The release authority creates that TXT record at
+   the apex domain in Cloudflare DNS. Wait for **Verified**.
 2. In Tuturuuu, open the internal workspace's **Single sign-on** page, then
    **Add SSO application → Claude**. Leave it disabled for now.
 3. In Claude, go to **Authentication → Setup SSO**, choose **Custom SAML**, and
@@ -419,12 +439,13 @@ receipt and an exact-SQL ACK.
    application. Note the WorkOS NameID and attribute requirements.
 4. Copy the Tuturuuu **metadata URL** (or the IdP entity ID, SSO URL and public
    certificate) into WorkOS. Map `email`, `firstName`, `lastName` and `id`.
-5. In Tuturuuu, assign yourself only. After Iris ACKs the exact configuration,
-   enable the application and run **Test SSO** in WorkOS.
-6. Keep **Require SSO for Claude off** and **JIT off** (members stay invited).
-   Assign the rest of the team and wait one week. Turn Require SSO on only after
-   an Owner SSO bypass is verified and recorded (see rollout).
-7. On Enterprise, connect SCIM after S6 ships. Register the WorkOS
+5. In Tuturuuu, assign only the one or two named pilot users. After the release
+   authority approves the exact configuration, enable the application and run
+   **Test SSO** in WorkOS.
+6. Keep **Require SSO for Claude off** and **JIT off** (members stay invited)
+   for the whole pilot. Confirm the break-glass Owner still signs in by email
+   link. Widen assignments only under the pilot rules above.
+7. Connect SCIM after S6 ships, in dry-run first. Register the WorkOS
    directory-sync endpoint host in the Tuturuuu SCIM connection. The release
    authority stores the WorkOS bearer token as a Worker secret. The token is
    never pasted into the Tuturuuu UI.
@@ -446,5 +467,7 @@ receipt and an exact-SQL ACK.
 - **D8 Internal workspace** (default): the root workspace owns the internal
   applications.
 
-Still open: whether a separate Claude test organization exists for the pilot,
-and Claude domain verification of `tuturuuu.com`.
+No separate Claude test organization exists, so the pilot runs on the
+production organization under the pilot rules in
+[Feature flags and rollout](#feature-flags-and-rollout). Claude domain
+verification of `tuturuuu.com` is still open.
