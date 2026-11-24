@@ -156,74 +156,74 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/01-dashboard.png"
         },
         "caption": {
-          "en": "See today’s tasks, events and workspace activity in one place.",
-          "vi": "Xem công việc, sự kiện và hoạt động của không gian làm việc hôm nay tại một nơi."
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/02-tasks.png",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/02-tasks.png"
-        },
-        "caption": {
-          "en": "Organize work on boards and switch between Kanban, list and timeline views.",
-          "vi": "Sắp xếp công việc trên bảng và chuyển nhanh giữa chế độ Kanban, danh sách và dòng thời gian."
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/03-calendar.png",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/03-calendar.png"
-        },
-        "caption": {
-          "en": "Review your schedule in day, 3-day, week, month or agenda view.",
-          "vi": "Xem lịch theo ngày, 3 ngày, tuần, tháng hoặc lịch trình."
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/04-assistant.png",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/04-assistant.png"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/02-assistant.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/02-assistant.png"
         },
         "caption": {
-          "en": "Ask Mira to summarize your calendar, surface urgent tasks or draft a team update.",
-          "vi": "Nhờ Mira tóm tắt lịch, chỉ ra việc gấp hoặc soạn bản cập nhật gửi nhóm."
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
         }
       },
       {
-        "id": "finance",
+        "id": "tasks",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/05-finance.png",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/05-finance.png"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/03-tasks.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/03-tasks.png"
         },
         "caption": {
-          "en": "Record income and expenses across wallets, categories and tags.",
-          "vi": "Ghi lại thu chi theo ví, danh mục và thẻ."
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
         }
       },
       {
-        "id": "habits",
+        "id": "calendar",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/06-habits.png",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/06-habits.png"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/04-calendar.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/04-calendar.png"
         },
         "caption": {
-          "en": "Follow shared habit trackers and keep your streak going.",
-          "vi": "Cùng nhóm theo dõi thói quen và giữ chuỗi ngày không gián đoạn."
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       },
       {
         "id": "time-tracker",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/07-time-tracker.png",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/07-time-tracker.png"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/05-time-tracker.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/05-time-tracker.png"
         },
         "caption": {
-          "en": "Time work sessions or Pomodoro cycles and review personal and workspace stats.",
-          "vi": "Bấm giờ phiên làm việc hoặc chu kỳ Pomodoro, xem thống kê cá nhân và cả nhóm."
+          "en": "See where your time goes",
+          "vi": "Biết thời gian đi về đâu"
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/06-finance.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/06-finance.png"
+        },
+        "caption": {
+          "en": "Spending, clear and simple",
+          "vi": "Chi tiêu rõ ràng, đơn giản"
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/07-habits.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/07-habits.png"
+        },
+        "caption": {
+          "en": "Build habits that stick",
+          "vi": "Thói quen tốt, giữ thật lâu"
         }
       },
       {
@@ -233,8 +233,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/08-notes.png"
         },
         "caption": {
-          "en": "Write notes, link them to your work and convert them into tasks when you are ready.",
-          "vi": "Viết ghi chú, liên kết với công việc và chuyển thành việc cần làm khi sẵn sàng."
+          "en": "Catch ideas before they fade",
+          "vi": "Ghi ý tưởng trước khi quên"
         }
       }
     ]
@@ -250,7 +250,16 @@
       }
     },
     {
-      "file": "apps/mobile/store/screenshots/windows/web/02-tasks.webp",
+      "file": "apps/mobile/store/screenshots/windows/web/02-assistant.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Conversation with Mira, the AI assistant",
+        "vi": "Cuộc trò chuyện với trợ lý AI Mira"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/03-tasks.webp",
       "width": 1280,
       "height": 720,
       "alt": {
@@ -259,21 +268,12 @@
       }
     },
     {
-      "file": "apps/mobile/store/screenshots/windows/web/03-calendar.webp",
+      "file": "apps/mobile/store/screenshots/windows/web/04-calendar.webp",
       "width": 1280,
       "height": 720,
       "alt": {
         "en": "Calendar in week view with scheduled events",
         "vi": "Lịch ở chế độ xem tuần với các sự kiện đã lên lịch"
-      }
-    },
-    {
-      "file": "apps/mobile/store/screenshots/windows/web/04-assistant.webp",
-      "width": 1280,
-      "height": 720,
-      "alt": {
-        "en": "Conversation with Mira, the AI assistant",
-        "vi": "Cuộc trò chuyện với trợ lý AI Mira"
       }
     },
     {

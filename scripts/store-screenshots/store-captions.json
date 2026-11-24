@@ -1,0 +1,73 @@
+{
+  "$comment": "Image captions for the store screenshots, keyed by screen id: the headline in each locale, the short product label (overline) above it and, for the assistant, the chip that repeats the state its capture shows. compose.mjs reads these; apps/mobile/store/metadata/*.json carries the same headline text for stores that list captions.",
+  "screens": {
+    "dashboard": {
+      "en": "Your whole day, one app",
+      "vi": "Cả ngày gọn trong một ứng dụng",
+      "overline": {
+        "en": "Tuturuuu",
+        "vi": "Tuturuuu"
+      }
+    },
+    "assistant": {
+      "en": "Ask Mira, get it done",
+      "vi": "Hỏi Mira, việc xong ngay",
+      "overline": {
+        "en": "Mira",
+        "vi": "Mira"
+      },
+      "chip": {
+        "en": "Calendar updated",
+        "vi": "Đã cập nhật lịch"
+      }
+    },
+    "tasks": {
+      "en": "Plan the week in minutes",
+      "vi": "Lên kế hoạch tuần thật nhanh",
+      "overline": {
+        "en": "Tasks",
+        "vi": "Công việc"
+      }
+    },
+    "calendar": {
+      "en": "Your week at a glance",
+      "vi": "Cả tuần trong một cái nhìn",
+      "overline": {
+        "en": "Calendar",
+        "vi": "Lịch"
+      }
+    },
+    "time-tracker": {
+      "en": "See where your time goes",
+      "vi": "Biết thời gian đi về đâu",
+      "overline": {
+        "en": "Time tracker",
+        "vi": "Theo dõi thời gian"
+      }
+    },
+    "finance": {
+      "en": "Spending, clear and simple",
+      "vi": "Chi tiêu rõ ràng, đơn giản",
+      "overline": {
+        "en": "Finance",
+        "vi": "Tài chính"
+      }
+    },
+    "habits": {
+      "en": "Build habits that stick",
+      "vi": "Thói quen tốt, giữ thật lâu",
+      "overline": {
+        "en": "Habits",
+        "vi": "Thói quen"
+      }
+    },
+    "notes": {
+      "en": "Catch ideas before they fade",
+      "vi": "Ghi ý tưởng trước khi quên",
+      "overline": {
+        "en": "Notes",
+        "vi": "Ghi chú"
+      }
+    }
+  }
+}

@@ -1,13 +1,14 @@
-// Maps store metadata screenshot entries to image headlines and output paths.
+// Maps store metadata screenshot entries to image captions and output paths.
+// Captions (headline and overline label) live in store-captions.json, keyed
+// by screen id; the metadata files carry the same headline text for stores
+// that list captions, and validate.test.mjs keeps the two in step.
 import fs from 'node:fs';
 import path from 'node:path';
 import { screenshotPath, SCREEN_IDS } from './specs.mjs';
 
-/** Captions longer than this read as sentences; the short fallback is used. */
-export const HEADLINE_MAX_CHARS = 48;
-
-const FALLBACK = JSON.parse(
-  fs.readFileSync(new URL('./captions.json', import.meta.url), 'utf8')
+/** @type {{ screens: Record<string, { en: string, vi: string, overline: { en: string, vi: string }, chip?: { en: string, vi: string } }> }} */
+export const STORE_CAPTIONS = JSON.parse(
+  fs.readFileSync(new URL('./store-captions.json', import.meta.url), 'utf8')
 );
 
 /** Reads `<metadataDir>/<store>.json`, or null when the listing is absent. */
@@ -18,9 +19,22 @@ export function loadMetadata(metadataDir, store) {
 }
 
 /**
+ * The headline, overline label and optional chip text of screen [id] in
+ * [locale].
+ * @returns {{ headline: string, overline: string, chip: string | null }}
+ */
+export function captionFor(locale, id) {
+  const entry = STORE_CAPTIONS.screens[id];
+  const headline = entry?.[locale];
+  const overline = entry?.overline?.[locale];
+  if (!headline || !overline) throw new Error(`No caption for ${locale}/${id}`);
+  return { headline, overline, chip: entry.chip?.[locale] ?? null };
+}
+
+/**
  * The screens to render for one target and locale: metadata order and file
- * paths when the listing names them, otherwise every screen in default order.
- * @returns {Array<{ id: string, file: string, headline: string }>}
+ * paths when the listing names them, otherwise every screen in story order.
+ * @returns {Array<{ id: string, file: string, headline: string, overline: string, chip: string | null }>}
  */
 export function planScreens(metadata, target, locale) {
   const entries = metadata?.screenshots?.[target.device];
@@ -30,24 +44,14 @@ export function planScreens(metadata, target, locale) {
           id: entry.id,
           file:
             entry.files?.[locale] ?? screenshotPath(target, locale, entry.id),
-          caption: entry.caption?.[locale],
         }))
       : SCREEN_IDS.map((id) => ({
           id,
           file: screenshotPath(target, locale, id),
-          caption: null,
         }));
-  return list.map(({ id, file, caption }) => ({
+  return list.map(({ id, file }) => ({
     id,
     file,
-    headline: headlineFor(caption, locale, id),
+    ...captionFor(locale, id),
   }));
-}
-
-export function headlineFor(caption, locale, id) {
-  const text = typeof caption === 'string' ? caption.trim() : '';
-  if (text && [...text].length <= HEADLINE_MAX_CHARS) return text;
-  const fallback = FALLBACK[locale]?.[id];
-  if (!fallback) throw new Error(`No headline for ${locale}/${id}`);
-  return fallback;
 }

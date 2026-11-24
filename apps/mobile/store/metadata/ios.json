@@ -84,74 +84,74 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/02-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
         }
       },
       {
-        "id": "finance",
+        "id": "tasks",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/05-finance.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/05-finance.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/03-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Track spending across wallets",
-          "vi": "Nắm rõ thu chi trên từng ví"
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
         }
       },
       {
-        "id": "habits",
+        "id": "calendar",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/06-habits.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/06-habits.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/04-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Build habits and keep your streak",
-          "vi": "Xây thói quen, giữ chuỗi ngày liên tục"
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       },
       {
         "id": "time-tracker",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/07-time-tracker.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/07-time-tracker.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/05-time-tracker.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "Time work sessions or use Pomodoro",
-          "vi": "Bấm giờ làm việc hoặc chạy Pomodoro"
+          "en": "See where your time goes",
+          "vi": "Biết thời gian đi về đâu"
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/06-finance.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/06-finance.jpg"
+        },
+        "caption": {
+          "en": "Spending, clear and simple",
+          "vi": "Chi tiêu rõ ràng, đơn giản"
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.9/en/07-habits.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/07-habits.jpg"
+        },
+        "caption": {
+          "en": "Build habits that stick",
+          "vi": "Thói quen tốt, giữ thật lâu"
         }
       },
       {
@@ -161,8 +161,8 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-6.9/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Capture ideas and turn them into tasks",
-          "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+          "en": "Catch ideas before they fade",
+          "vi": "Ghi ý tưởng trước khi quên"
         }
       }
     ],
@@ -174,74 +174,74 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/02-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
         }
       },
       {
-        "id": "finance",
+        "id": "tasks",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/05-finance.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/05-finance.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/03-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Track spending across wallets",
-          "vi": "Nắm rõ thu chi trên từng ví"
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
         }
       },
       {
-        "id": "habits",
+        "id": "calendar",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/06-habits.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/06-habits.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/04-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Build habits and keep your streak",
-          "vi": "Xây thói quen, giữ chuỗi ngày liên tục"
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       },
       {
         "id": "time-tracker",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/07-time-tracker.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/07-time-tracker.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/05-time-tracker.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "Time work sessions or use Pomodoro",
-          "vi": "Bấm giờ làm việc hoặc chạy Pomodoro"
+          "en": "See where your time goes",
+          "vi": "Biết thời gian đi về đâu"
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/06-finance.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/06-finance.jpg"
+        },
+        "caption": {
+          "en": "Spending, clear and simple",
+          "vi": "Chi tiêu rõ ràng, đơn giản"
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.5/en/07-habits.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/07-habits.jpg"
+        },
+        "caption": {
+          "en": "Build habits that stick",
+          "vi": "Thói quen tốt, giữ thật lâu"
         }
       },
       {
@@ -251,8 +251,8 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-6.5/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Capture ideas and turn them into tasks",
-          "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+          "en": "Catch ideas before they fade",
+          "vi": "Ghi ý tưởng trước khi quên"
         }
       }
     ],
@@ -264,74 +264,74 @@
           "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/02-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
         }
       },
       {
-        "id": "finance",
+        "id": "tasks",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/05-finance.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/05-finance.jpg"
+          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/03-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Track spending across wallets",
-          "vi": "Nắm rõ thu chi trên từng ví"
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
         }
       },
       {
-        "id": "habits",
+        "id": "calendar",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/06-habits.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/06-habits.jpg"
+          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/04-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Build habits and keep your streak",
-          "vi": "Xây thói quen, giữ chuỗi ngày liên tục"
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       },
       {
         "id": "time-tracker",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/07-time-tracker.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/07-time-tracker.jpg"
+          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/05-time-tracker.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "Time work sessions or use Pomodoro",
-          "vi": "Bấm giờ làm việc hoặc chạy Pomodoro"
+          "en": "See where your time goes",
+          "vi": "Biết thời gian đi về đâu"
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/06-finance.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/06-finance.jpg"
+        },
+        "caption": {
+          "en": "Spending, clear and simple",
+          "vi": "Chi tiêu rõ ràng, đơn giản"
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/ipad-13/en/07-habits.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/07-habits.jpg"
+        },
+        "caption": {
+          "en": "Build habits that stick",
+          "vi": "Thói quen tốt, giữ thật lâu"
         }
       },
       {
@@ -341,8 +341,8 @@
           "vi": "apps/mobile/store/screenshots/ios/ipad-13/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Capture ideas and turn them into tasks",
-          "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+          "en": "Catch ideas before they fade",
+          "vi": "Ghi ý tưởng trước khi quên"
         }
       }
     ],
@@ -354,74 +354,74 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/02-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
         }
       },
       {
-        "id": "finance",
+        "id": "tasks",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/05-finance.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/05-finance.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/03-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Track spending across wallets",
-          "vi": "Nắm rõ thu chi trên từng ví"
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
         }
       },
       {
-        "id": "habits",
+        "id": "calendar",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/06-habits.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/06-habits.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/04-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Build habits and keep your streak",
-          "vi": "Xây thói quen, giữ chuỗi ngày liên tục"
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       },
       {
         "id": "time-tracker",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/07-time-tracker.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/07-time-tracker.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/05-time-tracker.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "Time work sessions or use Pomodoro",
-          "vi": "Bấm giờ làm việc hoặc chạy Pomodoro"
+          "en": "See where your time goes",
+          "vi": "Biết thời gian đi về đâu"
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/06-finance.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/06-finance.jpg"
+        },
+        "caption": {
+          "en": "Spending, clear and simple",
+          "vi": "Chi tiêu rõ ràng, đơn giản"
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-6.3/en/07-habits.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/07-habits.jpg"
+        },
+        "caption": {
+          "en": "Build habits that stick",
+          "vi": "Thói quen tốt, giữ thật lâu"
         }
       },
       {
@@ -431,8 +431,8 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-6.3/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Capture ideas and turn them into tasks",
-          "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+          "en": "Catch ideas before they fade",
+          "vi": "Ghi ý tưởng trước khi quên"
         }
       }
     ],
@@ -444,41 +444,41 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/02-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
+        }
+      },
+      {
+        "id": "tasks",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/03-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/03-tasks.jpg"
+        },
+        "caption": {
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
+        }
+      },
+      {
+        "id": "calendar",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/04-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/04-calendar.jpg"
+        },
+        "caption": {
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       }
     ],
@@ -490,41 +490,41 @@
           "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
+          "en": "Your whole day, one app",
+          "vi": "Cả ngày gọn trong một ứng dụng"
         }
       },
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/02-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+          "en": "Ask Mira, get it done",
+          "vi": "Hỏi Mira, việc xong ngay"
+        }
+      },
+      {
+        "id": "tasks",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/03-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/03-tasks.jpg"
+        },
+        "caption": {
+          "en": "Plan the week in minutes",
+          "vi": "Lên kế hoạch tuần thật nhanh"
+        }
+      },
+      {
+        "id": "calendar",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/04-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/04-calendar.jpg"
+        },
+        "caption": {
+          "en": "Your week at a glance",
+          "vi": "Cả tuần trong một cái nhìn"
         }
       }
     ]
@@ -540,7 +540,16 @@
       }
     },
     {
-      "file": "apps/mobile/store/screenshots/ios/web/02-tasks.webp",
+      "file": "apps/mobile/store/screenshots/ios/web/02-assistant.webp",
+      "width": 589,
+      "height": 1280,
+      "alt": {
+        "en": "Conversation with Mira, the AI assistant",
+        "vi": "Cuộc trò chuyện với trợ lý AI Mira"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/ios/web/03-tasks.webp",
       "width": 589,
       "height": 1280,
       "alt": {
@@ -549,21 +558,12 @@
       }
     },
     {
-      "file": "apps/mobile/store/screenshots/ios/web/03-calendar.webp",
+      "file": "apps/mobile/store/screenshots/ios/web/04-calendar.webp",
       "width": 589,
       "height": 1280,
       "alt": {
         "en": "Calendar in week view with scheduled events",
         "vi": "Lịch ở chế độ xem tuần với các sự kiện đã lên lịch"
-      }
-    },
-    {
-      "file": "apps/mobile/store/screenshots/ios/web/04-assistant.webp",
-      "width": 589,
-      "height": 1280,
-      "alt": {
-        "en": "Conversation with Mira, the AI assistant",
-        "vi": "Cuộc trò chuyện với trợ lý AI Mira"
       }
     },
     {

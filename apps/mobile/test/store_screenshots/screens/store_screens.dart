@@ -8,15 +8,16 @@ import 'notes_screen.dart';
 import 'tasks_screen.dart';
 import 'time_tracker_screen.dart';
 
-/// The listing order, matching `apps/mobile/store/metadata/*.json`.
+/// The story order, matching `SCREEN_IDS` in
+/// `scripts/store-screenshots/specs.mjs` and `apps/mobile/store/metadata`.
 final List<StoreScreen> storeScreens = [
   dashboardStoreScreen,
+  assistantStoreScreen,
   tasksStoreScreen,
   calendarStoreScreen,
-  assistantStoreScreen,
+  timeTrackerStoreScreen,
   financeStoreScreen,
   habitsStoreScreen,
-  timeTrackerStoreScreen,
   notesStoreScreen,
 ];
 
