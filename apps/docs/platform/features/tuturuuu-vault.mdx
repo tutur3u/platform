@@ -1,0 +1,672 @@
+---
+title: "Tuturuuu Vault"
+description: "Draft design for the personal encrypted vault: per-user notes and files behind Tuturuuu Auth, envelope and end-to-end encryption, passkey step-up on every read and write, audit, recovery, deletion fences, threat model and delivery slices."
+audience: developers
+updatedAt: "2026-11-24"
+---
+
+Status: **Draft design, pending independent security review.** Nothing here is
+built. Every rule is **Planned** until its slice lands with the regression
+coverage listed under [Delivery](#delivery). Implementation starts only after
+the review approves.
+
+Tuturuuu Vault is a personal vault. Each user stores encrypted notes and files
+that only they can open, behind Tuturuuu Auth, with a passkey ceremony on every
+read and write. Its first use is keeping the two backup `age` identities (the
+owner key and the escrow key) that decrypt production backups.
+
+## Scope and default
+
+| Surface | Behaviour |
+| --- | --- |
+| `vault.tuturuuu.com` | The only origin that shows, creates, reveals or downloads vault items |
+| Web account settings | A Vault card with status and a link to the vault origin; it never shows item content |
+| Mobile, CLI, CI, API keys, satellites | **No access.** They cannot read, write, list or export vault items |
+
+- **Default:** off. A user enables the vault by enrolling a vault passkey and a
+  recovery key. Nothing is created for users who never open it.
+- **Owner:** one user per vault. There is no sharing, delegation or workspace
+  ownership in version 1.
+- **Not in scope:** workspace secrets and environment variables, which belong to
+  the [Secrets vault](/platform/architecture/secrets-vault);
+  `public.workspace_secrets`; the server-held deployment vaults.
+
+## Relationship to the secrets vault
+
+The personal vault is a separate product built on the reviewed secrets vault
+foundations. It reuses them and does not fork them.
+
+| Reused as is | Source |
+| --- | --- |
+| Primitives, canonical CBOR, context binding, one-time HKDF subkeys, HPKE, Ed25519, recovery key encoding | `packages/vault-crypto` (slice 1a) |
+| Strong identity, `vault_user_id`, vault passkey (WebAuthn PRF at `rpId` `vault.tuturuuu.com`), recovery key | [Unlock methods](/platform/architecture/secrets-vault#unlock-methods) |
+| Per-user keyring and its witness authority | `KeyringWitness` in `apps/vault-witness` |
+| Isolated origin, host-only child session, CSP and Trusted Types | [Web delivery hardening](/platform/architecture/secrets-vault#web-delivery-hardening), slice 3a |
+| `ttr+stepup` proof, `paramsHash`, `StepUpConsumePort`, session liveness | [Step-up proof](/platform/architecture/tuturuuu-session-step-up-proof) |
+| `private` schema behind a reviewed definer role, append-only tables | `20261121163000_secrets_vault_storage.sql` |
+
+A user who later joins a workspace secrets vault keeps the same strong
+identity, passkeys and recovery key. The PIN unlock tier is never available for
+personal items.
+
+New here: item formats, the **Keeper** Worker that holds the master key, the
+per-operation authorization, deletion fences, and the personal audit trail.
+
+## Protection classes
+
+Every item has a class, fixed at creation. Changing it creates a new item and
+deletes the old one through the normal [deletion](#deletion-and-fences) path.
+
+| Class | Data key wrapped by | Server can decrypt | Account recovery restores it | Use |
+| --- | --- | --- | --- | --- |
+| **Sealed** (default) | The user's strong identity (inner), then the Keeper (outer) | No | No | Private keys, recovery codes, anything whose loss beats its exposure |
+| **Protected** | The Keeper only | Only with the Keeper and the database together, and only after a valid user ceremony | Yes, after a cooldown | Notes the user wants back after losing every passkey |
+
+Items can also be marked **critical**. Critical items must be Sealed, need two
+enrolled vault passkeys on different providers plus a confirmed recovery key
+before creation, have a delayed delete, and notify the user on every reveal.
+The backup `age` identities are Sealed and critical.
+
+## Envelope encryption
+
+### Data keys
+
+Each item version has a fresh 256-bit data key (DEK). Content is encrypted with
+`vault-crypto`'s symmetric envelope: AES-256-GCM under a one-time subkey
+`HKDF(DEK, salt = enc_id, info = "tuturuuu/vault/personal-item/v1" ‖ ctx)`,
+where `ctx` is the canonical CBOR of
+`{deployment, vault_user_id, item_id, version, kind, class, enc_id}`.
+
+- **Notes** are UTF-8 text up to 64 KiB, encrypted as one message and stored in
+  Postgres.
+- **Files** up to 25 MiB are split into 64 KiB chunks. Chunk `i` uses
+  `enc_id ‖ i` in its subkey salt and `{…ctx, chunk: i, last: bool}` in its
+  `aad`, so reordering, truncation and extension fail. Files of at most 64 KiB
+  are stored in Postgres; larger ones in a dedicated private R2 bucket.
+- The title, file name, MIME type and any note on a file are encrypted inside
+  the item payload. Only `kind`, `class`, `critical`, a size bucket and
+  timestamps are plaintext.
+
+### Wraps
+
+```text
+Sealed:    DEK ─HPKE(strong identity X25519, info = wrap ctx)─▶ inner
+           inner ─Keeper AEAD(user KEK, aad = wrap ctx)─▶ outer   (stored)
+Protected: DEK ─Keeper AEAD(user KEK, aad = wrap ctx)─▶ outer     (stored)
+```
+
+- The inner wrap is created on the client, so the Sealed DEK never exists
+  outside the user's browser.
+- The outer wrap gives every class one server-side gate (no unwrap without a
+  consumed ceremony), per-user rate limits, and crypto-shredding: destroying a
+  Keeper wrap makes a database copy useless even to someone holding the user's
+  recovery key.
+- Wrap contexts reuse the `wrap` purpose with `key_kind: personal-dek` and
+  `scope_id: item_id ‖ version`.
+
+### The Keeper
+
+The Keeper is the master-key service. It is a Cloudflare Worker,
+`apps/vault-keeper`, with one SQLite Durable Object per `vault_user_id`. It
+deploys from the same dedicated Cloudflare account as the witness, with its own
+deploy credentials. Neither the Web API nor Vercel holds its key.
+
+- **Master key.** `KEEPER_ROOT_KEY_<generation>` Worker secrets. The per-user
+  KEK is `HKDF(root, salt = vault_user_id, info = "tuturuuu/vault/keeper/kek/v1" ‖ generation)`.
+  The KEK is derived per request and never stored.
+- **Wrap.** Takes a DEK (Protected) or an inner wrap (Sealed) with its context,
+  returns the outer wrap and a `wrap_id`. Wrapping a new version needs a
+  consumed write authorization.
+- **Unwrap.** Needs a consumed read authorization for exactly that
+  `(item_id, version)`. The result is HPKE-sealed to an ephemeral key that the
+  client generated for this request and bound into the authorization, so the
+  Web API relays only ciphertext. For a Sealed item the result is still the
+  inner wrap, which only the user's strong identity opens.
+- **Destroyed keys.** Purge adds the `wrap_id` to a destroyed set in the
+  Durable Object. The Keeper refuses to unwrap a destroyed `wrap_id` even if a
+  restored database presents it. Keeper state is never restored from Postgres.
+- **Restore fence.** Every destruction increments a per-user destruction
+  epoch, and the Keeper commits a signed destruction receipt
+  `{vault_user_id, wrap_id, epoch}` to the user's `KeyringWitness` before it
+  confirms the purge. Before every unwrap the Keeper compares its own epoch with
+  the witness-attested epoch and fails closed if it is behind, which catches a
+  Durable Object point-in-time restore. Clients also refuse any item whose
+  latest record in the item map is a tombstone or purge.
+- **Root rotation** adds a generation, re-wraps outer wraps in bounded,
+  resumable batches, and retires the old generation only after every live wrap
+  has moved.
+- **Escrow.** Each root generation is escrowed through a dispatch-only
+  workflow, as for the [interim server keys](/platform/architecture/secrets-vault-delivery#interim-server-keys-before-workload-principals),
+  to `age` recipients held **offline** by the owners. A recipient whose
+  identity is stored inside the vault is refused: escrow must never depend on
+  the vault it protects.
+- **Metering.** Bounded request size, per-user and global operation caps, at
+  most 3 retries with backoff, idempotent `wrap_id` and request keys, and a
+  durable `KEEPER_STOPPED` flag that fails every call closed, with restart
+  tests and recorded cost evidence (gate VG-12).
+
+## Authorization on every read and write
+
+Listing item metadata needs the vault child session at `aal2`. Every other
+operation needs a fresh **operation authorization**, used once:
+
+| Operation | Act | Bound parameters |
+| --- | --- | --- |
+| Reveal or download | `vault.item-read` | `item_id`, `version`, client ephemeral key |
+| Create or update | `vault.item-write` | `item_id`, `version`, `class`, `ciphertext_hash`, record hash |
+| Delete, restore, cancel delete | `vault.item-delete` | `item_id`, target state |
+| Add or remove a passkey, rotate the recovery key, unfreeze | `vault.method-manage` | method ID, change kind |
+
+1. The client asks the Keeper, through the vault API, for a challenge. The
+   Keeper stores `{challenge_id, nonce, act, paramsHash(act, params), exp}`;
+   the challenge lives 120 seconds.
+2. The user completes one passkey ceremony, either:
+   - **Vault passkey assertion** (required for Sealed items): a WebAuthn
+     assertion at `rpId` `vault.tuturuuu.com` with `userVerification:
+     "required"` whose challenge is `SHA-256(nonce ‖ paramsHash)`. The same
+     ceremony returns the PRF output that unlocks the strong identity, so a
+     Sealed read costs one prompt. The Keeper verifies it against the
+     [credential log](#credential-log), never against a database row.
+   - **`ttr+stepup` proof** (Protected items only): `aud:
+     stepup:vault-keeper`, the act above, `amr` containing `passkey`, proof
+     delivery by one-time code as the secrets vault specifies. TOTP is
+     accepted only if the user turns on "Allow authenticator codes" for
+     Protected items, which is off by default and needs `vault.method-manage`.
+3. The Keeper consumes the nonce and `jti` (or assertion counter) in one
+   transaction, then checks central session liveness (`sid`, `gen`). Only then
+   does it charge the rate limit and perform the operation, in a later
+   transaction.
+
+### Ceremony record
+
+Each challenge is one durable record in the Keeper Durable Object, keyed by
+`challenge_id`, with a client-chosen `operation_id` bound into the parameters
+hash. Its state only moves forward:
+`issued → consumed → authorized → completed | failed | expired`.
+
+- `consumed` stores the nonce, `jti` or assertion, in the same transaction
+  that rejects any earlier use.
+- `authorized` is written only after a `live` liveness answer; anything else
+  ends in `failed` with no charge.
+- Liveness is a remote call, so it cannot share a transaction with consume.
+  A record left in `consumed` for more than 60 seconds, for example after a
+  crash, moves to `expired` with no charge and no effect, and the user repeats
+  the ceremony.
+- From `authorized`, the rate-limit charge, the effect (wrap, unwrap, destroy,
+  credential change, all computed inside the Durable Object) and the move to
+  `completed` with its stored result happen in **one** storage transaction. A
+  crash leaves either nothing applied or everything applied.
+- A retry with the same `operation_id` returns the stored result, never a
+  second effect. A new operation needs a new ceremony. Database writes that
+  follow (records, ciphertext) are made by the API idempotently by
+  `operation_id` through staged publication, and readers trust only what the
+  witness committed.
+- Single Durable Object threading per `vault_user_id` serialises all of this,
+  so concurrent Workers cannot double-spend a ceremony.
+
+### WebAuthn verification
+
+The Keeper verifies a vault passkey assertion with `@simplewebauthn/server`
+and these exact rules, rejecting anything else:
+
+- The client sends only `id`, `rawId`, `type`, `clientDataJSON`,
+  `authenticatorData`, `signature` and `userHandle`. Extension results,
+  including PRF output, never leave the browser.
+- `clientDataJSON.type` is `webauthn.get`, `origin` is exactly
+  `https://vault.tuturuuu.com`, `crossOrigin` is absent or false, no
+  `topOrigin` is present, and `challenge` equals the stored
+  `SHA-256(nonce ‖ paramsHash)`.
+- `rpIdHash` is `SHA-256("vault.tuturuuu.com")`; the UP and UV flags are set.
+- The credential ID and COSE public key (ES256 or EdDSA only) come from the
+  credential log, and its state there is `active`.
+- Sign counter: if the stored floor or the new value is non-zero, the new value
+  must exceed the floor; a regression freezes the vault and notifies the user.
+  The Keeper commits each non-zero floor to the `KeyringWitness` as a
+  Keeper-signed entry inside the same ceremony, before releasing the result,
+  and compares its local floor with the witnessed floor on every use, so a
+  Durable Object restore cannot reset it. Synced passkeys that always report 0
+  are accepted, so the counter is a clone signal, not a guarantee.
+- The client derives the unlock KEK only from the PRF result of the same
+  `navigator.credentials.get` call whose assertion the Keeper accepted. A Sealed
+  read proceeds only when both the Keeper result and the local unlock succeed.
+
+### Credential log
+
+Vault passkey public keys live in a public, signed credential log witnessed by
+`KeyringWitness`, beside the encrypted keyring. Each entry is signed by the
+strong identity's Ed25519 key:
+`{vault_user_id, seq, prev_hash, credential_id, cose_public_key, aaguid,
+provider_label, state (active | removed), issued_at}`.
+
+- Registration and removal each append one entry under `vault.method-manage`.
+  The first entry is signed at enrolment, which is also when the strong
+  identity public key is pinned in the witness.
+- The Keeper accepts a credential only from a witness attestation of the log at
+  most 10 minutes old. A database or API compromise cannot add a key, revive a
+  removed one, or swap a public key.
+- `private.vault_passkeys` remains a cache for listing; it is never an
+  authority.
+
+There is no unlocked window. Opening three items takes three ceremonies.
+Plaintext is kept only in component memory and is dropped on navigation, tab
+close, two minutes of inactivity, or lock.
+
+The four acts are added to `STEP_UP_ACTS` together with an independent review
+of `packages/session`. Until then only vault passkey assertions are accepted,
+which means only Sealed items ship first.
+
+## Integrity and freshness
+
+- Every item version has an **item record** signed by the strong identity's
+  Ed25519 key: `{deployment, vault_user_id, item_id, version, kind, class,
+  critical, state, enc_id, ciphertext_hash, outer_wrap_hash, prev_record_hash,
+  written_at}`. Deletes and restores are records too.
+- The user's keyring holds an **item map**: `item_id → latest record hash`.
+  Every write is a keyring head update through `KeyringWitness`, which accepts
+  only the next counter signed by the strong identity. A client accepts an item
+  only if its record verifies and is the latest entry in a keyring head the
+  witness attested at most 10 minutes ago.
+- So the server cannot swap ciphertexts between items, roll an item back to an
+  older version, revive a deleted item, or hide a newer version from a client
+  that checks the witness.
+- Protected items are also signed by the strong identity. A user who lost every
+  strong method and restored Protected items through account recovery enrols a
+  new strong identity; the recovery flow re-signs the surviving items under it
+  in a witnessed rotation.
+
+## No CI or export path
+
+- Vault routes accept only the `__Host-` vault child session. They reject
+  `Authorization` headers, API keys, personal access tokens, `ttr` device
+  sessions, app coordination tokens and satellite handoffs.
+- No machine grant, workload, CI credential or sync target exists for personal
+  items. The Keeper has no unattended unwrap route.
+- No bulk export, archive, backup download or "download all". Each reveal and
+  download is one item, one ceremony.
+- Account data export (privacy requests) lists vault item metadata and states
+  that content is encrypted and must be downloaded by the user from the vault.
+- A repository validator fails CI if a route under the personal vault API
+  accepts a bearer credential, if any workflow calls the Keeper unwrap route, or
+  if the Keeper gains a route outside the reviewed list.
+- **Critical items have no copy or print.** Their content is masked until the
+  user holds a reveal control, is never written to the clipboard, and is
+  dropped from memory 60 seconds after the ceremony. A critical file leaves the
+  vault only by download: one ceremony, one file, written through a `Blob` URL
+  that is revoked immediately, audited and notified. Standard items allow
+  copy, and the vault clears the clipboard after 30 seconds where the browser
+  allows it.
+- The only other way out is the [disaster recovery kit](#disaster-recovery-kit),
+  which holds ciphertext only.
+- **Intentional exceptions.** Critical file download and the kit both put data
+  outside the vault on purpose: an `age` identity is useless unless it can be
+  used during a restore. Both are user-initiated, one item per ceremony,
+  audited and notified, and neither exists for CI, machines or API keys.
+- Screenshots, screen recording and a compromised device cannot be prevented.
+  Export prevention covers server paths and the vault's own UI, not the user's
+  screen.
+
+## Rate limits
+
+Limits are enforced in the Keeper Durable Object. Upstash-backed abuse limits
+fail open, so they are a first line only.
+
+| Counter | Limit | On exceed |
+| --- | --- | --- |
+| Challenges issued | 30 per 10 minutes | 429 until the window ends |
+| Failed ceremonies | 5 per 15 minutes, 20 per day | Vault reads and writes lock for the window; the user is notified |
+| Reveals and downloads | 30 per hour, 200 per day | 429; the user is notified |
+| Writes | 20 per hour | 429 |
+| Destructive or method changes | 5 per day | 429 |
+
+Charges happen only after a consumed, live authorization, so a dead session
+never spends quota. A user can always freeze their vault (below) regardless of
+limits.
+
+## Recovery
+
+| User has lost | Sealed items | Protected items |
+| --- | --- | --- |
+| One vault passkey | Another passkey or the recovery key unlocks; remove the lost one | Same |
+| Every passkey, has the recovery key | Recovery key unlocks; enrol new passkeys; rotate the recovery key | Same |
+| Every passkey and the recovery key | **Lost.** Delete them or leave them | Account recovery, below |
+| The Tuturuuu account (email reset) | Unaffected if a strong method remains | Unaffected |
+
+- **Account recovery for Protected items.** After an account recovery event
+  (password reset, MFA reset, or the first passkey added from a new device),
+  the vault enters a **72-hour cooldown**: no reads or writes, the user is
+  notified by email and on every signed-in device. Only a pre-existing strong
+  method (a vault passkey from the credential log or the recovery key) can
+  cancel, because a session could belong to whoever ran the recovery. Any
+  session can still freeze. The cooldown start, cancel and end are entries in
+  the witnessed credential log, so the server cannot shorten or hide them.
+  After the cooldown the user enrols a new strong identity and Protected
+  items are re-signed under it. Sealed items stay sealed to the old identity.
+- **Support and admins cannot recover anything.** There is no admin read or
+  unwrap path. Support can only freeze a vault on the user's verified request.
+- **Freeze.** "Lock my vault" works from any signed-in session with no
+  ceremony and blocks every read and write. Unfreezing needs
+  `vault.method-manage` with a vault passkey and waits 24 hours, unless the
+  user also presents the recovery key.
+- **Enrolment rules.** Enrolment needs one vault passkey that returns PRF, a
+  recovery key the user re-types one group of, and the vault child session at
+  `aal2`. Critical items need a second passkey from a different provider. The
+  UI recommends printing the recovery key and storing it offline, apart from
+  the devices that hold the passkeys.
+- **Disaster recovery.** The vault runs on the same production platform whose
+  backups the first-use keys decrypt. See
+  [Disaster recovery kit](#disaster-recovery-kit).
+- **Restore drill.** The vault shows "last verified" per critical item. The
+  drill is to reveal the item on a machine with no local state, once with a
+  passkey and once with the recovery key only, and record the date.
+
+## Disaster recovery kit
+
+Items needed to restore the platform cannot depend only on the platform. If
+production Postgres, R2, the Keeper or the vault origin is lost, the vault is
+gone with it, and so would be the backup `age` identities stored in it. So
+critical items need one copy that works with no Tuturuuu service.
+
+The **disaster recovery kit** is a per-item file the user downloads with a
+`vault.item-read` ceremony:
+
+- It can be made only for an item whose latest record in a fresh witness
+  attestation is live, not tombstoned or purged.
+- It is a canonical CBOR file with a **manifest**
+  `{v, suite, deployment, vault_user_id, item_id, version, class, kind,
+  recovery_epoch, kit_id, kit_salt, created_at}`, the item record, the item
+  ciphertext, and the DEK sealed with AES-256-GCM under
+  `HKDF(recovery, salt = kit_salt, info = "tuturuuu/vault/dr-kit/v1" ‖ CBOR(manifest))`,
+  with the canonical manifest as the `aad`. `kit_salt` is 32 random bytes per
+  kit. Changing any manifest field, or moving the sealed DEK into another
+  kit, fails decryption.
+- The manifest and the item record are signed by the strong identity's Ed25519
+  key, and the kit carries that public key. The **recovery sheet** printed at
+  enrolment shows the recovery key and the strong identity fingerprint. The
+  decoder requires that fingerprint as an input, checks both signatures
+  against it, and checks that the record's `item_id`, version, class,
+  `enc_id` and `ciphertext_hash` match the manifest and the ciphertext. A kit
+  signed by any other key is rejected, so a forged kit cannot pass even if it
+  decrypts.
+- It has no Keeper outer wrap and no plaintext.
+- An open-source offline decoder in `packages/vault-crypto` (a single command
+  that runs without network access) opens it with the recovery key.
+- Each kit release is recorded with its `kit_id` and `recovery_epoch` in the
+  item record chain, so the vault lists outstanding kits per item.
+- The user stores the kit and the printed recovery key in separate offline
+  places. Kit downloads are audited and notified like reveals.
+- A critical item shows "kit verified" only after the user opens a kit with the
+  offline decoder on a machine with no vault session and confirms the restored
+  content hash.
+- **A kit cannot be revoked, and the design does not pretend otherwise.**
+  It is offline ciphertext sealed to the recovery key in force at
+  `recovery_epoch`; anyone holding both can open it with their own decoder, so
+  an epoch check in the official decoder would protect nothing. Rotating the
+  recovery key increments `recovery_epoch` and lists every outstanding kit
+  from older epochs. The user either destroys those kits together with the old
+  recovery sheet, or, if the old sheet may be exposed, treats the item's
+  secret as exposed and rotates it at its source (for an `age` identity: a new
+  identity and re-encrypted backups).
+- **Purge does not reach kits.** Deleting or purging an item lists its
+  outstanding kits and warns that they still open with the recovery key of
+  their epoch. As in the secrets vault, removal cannot unsee.
+
+**First-use gate.** The backup `age` identities go into the vault only when
+both of these hold, so that no private identity is recoverable *only* from the
+vault:
+
+1. Each identity has a verified disaster recovery kit, or an independent
+   offline copy chosen by its owner, and
+2. no Keeper root escrow recipient is one of those identities. The escrow
+   workflow checks this against the public recipients and refuses otherwise.
+
+## Deletion and fences
+
+| Step | Trigger | Effect |
+| --- | --- | --- |
+| Delete | `vault.item-delete` | Signed tombstone record; hidden from the list; restorable |
+| Fence | Automatic | Standard items: purge after 30 days. Critical items: delete takes effect after a **7-day delay** during which the item still works and the user can cancel; then the 30-day window starts |
+| Purge | Cloudflare Cron Worker after the fence | Keeper destroys the outer wraps, then the ciphertext rows and R2 objects are removed; the record and audit remain |
+| Account deletion | Account deletion request | Freezes the vault, notifies the user, and purges every item 30 days after the account deletion fence, after the Keeper destroys the user KEK generation for that `vault_user_id` |
+
+- **Order is fixed:** destroy the Keeper wrap first, confirm, then delete the
+  ciphertext. If ciphertext deletion fails, the item is already unreadable and
+  the purge retries. Ciphertext is never deleted while its wrap is live.
+- **Replacing a version** writes and verifies the new version (record
+  accepted by the witness, ciphertext read back and hash checked) before the
+  old version enters its fence. A failed or partial write never deletes the
+  original. The newest 10 versions are kept, older ones are fenced like
+  deletes.
+- **Database backups** keep ciphertext and outer wraps after purge. They are
+  unreadable because the Keeper refuses destroyed `wrap_id` values and its
+  state is not restored from Postgres.
+- The purge Worker is bounded (at most 200 items per run), idempotent per
+  `wrap_id`, records a terminal state per item, and stops on `KEEPER_STOPPED`
+  or its own durable stop flag.
+
+## Audit
+
+`private.personal_vault_audit_events` is append-only: the definer role has no
+`update` or `delete`. Each row holds `vault_user_id`, event, `item_id`,
+version, class, result, authorization kind, truncated IP prefix, user-agent
+family and a hash-chain link. It never holds titles, content, keys, wraps,
+PRF output, challenges or tokens.
+
+- Events: enrolment, method changes, list, reveal, download, create, update,
+  delete, restore, cancel, purge, freeze, unfreeze, failed ceremony, rate
+  limit, cooldown start and cancel.
+- The chain head is written into each keyring head, so the witness timestamps
+  it and rewriting earlier history is detectable.
+- The user sees their own activity on the vault origin. Reveals and downloads
+  of critical items, method changes, freezes and cooldowns also send an email
+  and a push notification.
+- Events are kept for 400 days, and survive item purge.
+- Audit is server-trusted between keyring heads, as in the secrets vault.
+
+## Threat model
+
+| ID | Threat | Mitigation | Residual |
+| --- | --- | --- | --- |
+| PV1 | Database dump | Ciphertext, outer wraps, signed records only; Keeper holds the KEK | Metadata: counts, kinds, sizes, timestamps |
+| PV2 | Leaked Supabase service role | Tables revoked from `service_role`; only the definer role reads them; even with full rows, unwrap needs the Keeper and a ceremony | Metadata; denial of service by deleting rows (witness detects missing items) |
+| PV3 | Compromised Tuturuuu admin or platform root | No admin route, no admin unwrap, Keeper in a separate Cloudflare account, support can only freeze | Deploying malicious vault-origin code (PV6) |
+| PV4 | Database plus Keeper root key or account | Sealed items still need the strong identity | **Protected items are readable.** This is why Sealed is the default and required for critical items |
+| PV5 | Compromised Web API | Relays only ciphertext and HPKE-sealed Keeper results; cannot mint ceremonies; signed records and the witness detect swaps and rollbacks | Denial of service; metadata |
+| PV6 | XSS or malicious script on `vault.tuturuuu.com` | Dedicated origin serving only the vault, nonce CSP, Trusted Types, no third-party scripts, plaintext only in memory | Inherent to web E2EE: script on an open item page reads that item and can prompt for more ceremonies, each one visible to the user and rate limited |
+| PV7 | XSS on `tuturuuu.com` or a satellite | Vault passkeys are bound to `vault.tuturuuu.com`; login passkeys and sessions cannot unlock or authorize | — |
+| PV8 | Stolen session cookie or token | Lists metadata only; every read and write needs a fresh passkey ceremony; freeze and notifications | Metadata listing |
+| PV9 | Stolen password plus TOTP | Sealed needs the vault passkey; Protected needs a passkey unless the user opted into codes | Opted-in Protected items |
+| PV10 | Account takeover through email recovery | 72-hour cooldown with notifications and cancel; Sealed items never restored | A user who ignores notifications for 72 hours loses Protected items |
+| PV11 | Phished or coerced ceremony | Ceremony bound to one operation; reveal notifications; rate limits | A user who approves a prompt they did not start |
+| PV11a | Clipboard or print leak of a critical key | No copy or print for critical items; download only, burn timer | Screenshots, compromised device |
+| PV11b | Takeover session cancelling the recovery cooldown | Cancel needs a pre-existing strong method; witnessed cooldown entries | — |
+| PV12 | Server rollback, swap or revival of items | Signed item records, item map in the witnessed keyring, 10-minute attestation | Witness and API compromised together: stale view for a stateless client |
+| PV13 | Restored database or Keeper Durable Object after purge | Keeper destroyed-wrap set, destruction receipts and epoch in the witness, client tombstone check | Keeper and witness both rolled back by one Cloudflare account holder |
+| PV14 | Keeper root lost | Offline escrow to recipients not stored in the vault; restore drill | Loss of every escrow recipient |
+| PV14a | Production platform lost (the backups the vault's keys decrypt) | Disaster recovery kit opened offline with the recovery key; first-use gate | Losing both the kit and the recovery key |
+| PV14c | Forged or altered kit | Manifest as AEAD `aad`, strong-identity signatures checked against the fingerprint on the recovery sheet | — |
+| PV14d | Kit plus an old recovery sheet after rotation or purge | Outstanding-kit list per epoch, destroy-or-rotate-at-source guidance | Inherent to offline copies |
+| PV14b | Credential key swap or counter reset | Signed, witnessed credential log; Keeper counter floor | Synced passkeys report no counter |
+| PV15 | Lost every strong method | Recovery key, second passkey, restore drill, critical-item enrolment rules | Sealed items are lost by design |
+| PV16 | CI, agents or API keys reaching items | No bearer route, no grant model, validator in CI | — |
+| PV17 | Leaks through logs, caches, analytics | No plaintext in TanStack Query, Web Storage, IndexedDB, logs or analytics; vault origin loads no analytics | Browser memory on a compromised device |
+
+**Escrow separation.** Keeping the owner and escrow `age` identities behind
+one Tuturuuu identity means one compromised strong method exposes both. That
+is an explicit owner decision for the first use. The stronger option is a
+second vault identity (a separate account with its own passkeys, held by the
+escrow holder) for the escrow key.
+
+## Data model
+
+All tables are in `private`, revoked from `public`, `anon`, `authenticated` and
+`service_role`, and reached only through `vault_definer` functions called by
+server routes. Passkeys, unlock wraps and keyrings reuse
+`private.vault_passkeys`, `private.vault_unlock_wraps` and
+`private.vault_keyrings`.
+
+```sql
+-- Sketch only. Final names and types come with slice V3's exact-SQL review.
+create table private.personal_vaults (
+  vault_user_id uuid primary key,
+  user_id uuid not null unique references auth.users (id) on delete restrict,
+  state text not null check (state in ('active', 'frozen', 'cooldown', 'deleting')),
+  cooldown_until timestamptz,
+  allow_codes_for_protected boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table private.personal_vault_items (
+  id uuid primary key,
+  vault_user_id uuid not null references private.personal_vaults on delete restrict,
+  kind text not null check (kind in ('note', 'file')),
+  class text not null check (class in ('sealed', 'protected')),
+  critical boolean not null default false,
+  state text not null check (state in ('active', 'delete_pending', 'deleted', 'purged')),
+  current_version integer not null,
+  size_bucket smallint not null,
+  delete_effective_at timestamptz,
+  purge_after timestamptz,
+  created_at timestamptz not null default now(),
+  check (not critical or class = 'sealed')
+);
+
+create table private.personal_vault_item_versions (  -- append-only
+  item_id uuid not null references private.personal_vault_items on delete restrict,
+  version integer not null,
+  record bytea not null,              -- signed canonical CBOR item record
+  record_hash bytea not null,
+  outer_wrap bytea,                   -- null after purge
+  wrap_id uuid not null,
+  keeper_generation integer not null,
+  ciphertext bytea,                   -- notes and files <= 64 KiB; null after purge
+  r2_key text,                        -- larger files; null after purge
+  ciphertext_hash bytea not null,
+  created_at timestamptz not null default now(),
+  primary key (item_id, version)
+);
+
+create table private.personal_vault_audit_events (  -- append-only
+  id bigint generated always as identity primary key,
+  vault_user_id uuid not null,
+  event text not null,
+  item_id uuid,
+  version integer,
+  result text not null,
+  auth_kind text,
+  ip_prefix cidr,
+  ua_family text,
+  prev_hash bytea not null,
+  hash bytea not null,
+  created_at timestamptz not null default now()
+);
+```
+
+- Only the purge function may null `outer_wrap`, `ciphertext` and `r2_key`, and
+  only after the Keeper confirms destruction of that `wrap_id`.
+- `on delete restrict` stops an `auth.users` delete from cascading past the
+  deletion fence; account deletion calls the vault purge first.
+- pgTAP covers: no grants to client roles or `service_role`, append-only
+  versions and audit, the critical-implies-sealed check, purge ordering, and
+  rejection of a purge without a Keeper confirmation.
+
+## API routes
+
+Routes live under `apps/web/src/app/api/v1/vault/personal/**`, are served only
+on `vault.tuturuuu.com` (the proxy returns 404 on every other host), and use
+data access in `packages/internal-api/src/vault/personal/*`.
+
+| Route | Purpose | Authorization |
+| --- | --- | --- |
+| `GET /status` | Enrolment, methods, state, cooldown | Child session, `aal2` |
+| `POST /enrol` | Create the vault, keyring and first methods | Child session, `aal2`, vault passkey registration |
+| `POST /challenges` | Keeper challenge for one act and its parameters | Child session, `aal2` |
+| `GET /items` | Metadata list | Child session, `aal2` |
+| `POST /items` | Create (staged ciphertext, record, inner wrap) | `vault.item-write` |
+| `PUT /items/{id}` | New version | `vault.item-write` |
+| `POST /items/{id}/open` | Ciphertext, record, sealed Keeper result | `vault.item-read` |
+| `GET /items/{id}/chunks` | R2 ciphertext URLs after `open` | A chunk grant (below) |
+| `POST /items/{id}/kit` | Disaster recovery kit | `vault.item-read` |
+| `DELETE /items/{id}` | Delete or start the critical delay | `vault.item-delete` |
+| `POST /items/{id}/restore` | Restore or cancel a delete | `vault.item-delete` |
+| `GET /activity` | The user's audit events | Child session, `aal2` |
+| `POST /methods`, `DELETE /methods/{id}` | Passkeys, recovery key rotation, code opt-in | `vault.method-manage` |
+| `POST /freeze` | Freeze | Any live session for this user |
+| `POST /unfreeze` | Unfreeze after the wait | `vault.method-manage` |
+
+**Chunk grants.** A successful `open` of a large file returns one grant signed
+by the Keeper naming `item_id`, version, the exact R2 object keys, byte
+ranges, chunk count, a nonce and a 60-second expiry. The chunk route redeems
+it once and presigns only those keys. The client checks the chunk count, the
+`last` flag on exactly the final chunk and the item context, and rejects any
+missing, duplicate, reordered, extra or oversized chunk.
+
+Every route uses `await connection()`, returns `Cache-Control: no-store`, and
+never logs request or response bodies.
+
+## UI surfaces
+
+Built on the vault origin with `@tuturuuu/ui`, no native dialogs, no
+`useEffect` data fetching, and every string in English and Vietnamese.
+
+| Surface | Contents |
+| --- | --- |
+| Onboarding | What the vault is, passkey enrolment, recovery key display and re-entry, second passkey for critical items |
+| Items | Metadata list with kind, class, critical badge and last opened; no titles until opened |
+| Item view | Ceremony prompt, then title and content; hold-to-reveal, download, kit; copy only for standard items; 60-second burn timer |
+| New note, new file | Class picker (Sealed default), critical toggle, size limits |
+| Delete | Confirmation dialog stating the fence; critical delay countdown with cancel |
+| Activity | Audit events with filters |
+| Security | Passkeys, recovery key, code opt-in for Protected, freeze, restore drill status |
+| Web account settings | Vault card: enabled or not, frozen state, link out |
+
+| Key | English | Vietnamese |
+| --- | --- | --- |
+| `vault.title` | Vault | Kho bảo mật |
+| `vault.class.sealed` | Sealed | Niêm phong |
+| `vault.class.protected` | Protected | Được bảo vệ |
+| `vault.critical` | Critical | Quan trọng |
+| `vault.verify_to_open` | Verify with your passkey to open | Xác minh bằng passkey để mở |
+| `vault.recovery_key` | Recovery key | Khóa khôi phục |
+| `vault.freeze` | Lock my vault | Khóa kho của tôi |
+| `vault.delete_delay` | This item stays usable for 7 days. You can cancel until then. | Mục này vẫn dùng được trong 7 ngày. Bạn có thể hủy trước thời hạn đó. |
+| `vault.sealed_loss_warning` | If you lose every passkey and your recovery key, Sealed items cannot be recovered by anyone. | Nếu bạn mất tất cả passkey và khóa khôi phục, không ai có thể khôi phục các mục Niêm phong. |
+
+## Delivery
+
+Each slice gets an independent security review. Migrations need an exact-SQL
+review, a full local reset with pgTAP, and the gated production workflow.
+Workers need release-authority approval for their first publication.
+
+| Slice | Content | Depends on |
+| --- | --- | --- |
+| V1 | This design and its review | — |
+| V2 | `vault-crypto`: personal item record, chunked file envelope, item map in the keyring, `personal-dek` wrap context; vectors and negative tests | Secrets vault 1a, 1b |
+| V3 | Migration and `internal-api` access layer; pgTAP | V2 |
+| V4 | `apps/vault-keeper`: challenges, vault passkey assertion verification, consume and liveness, wrap, unwrap sealed to the client key, destroyed-wrap set, quotas, stop flag, restart tests, root escrow workflow | V2, VG-12 |
+| V5 | Vault origin: enrolment, Sealed notes and small files (64 KiB), item view, delete and restore, activity, freeze; EN and VI | V3, V4, secrets vault 3 and 3a |
+| V5a | Disaster recovery kit and offline decoder | V5 |
+| V6 | First use: the owner stores the backup `age` identities after the first-use gate, verifies their kits offline, and completes the restore drill against a canary `age` file | V5a deployed and reviewed |
+| V7 | Purge Cron Worker, critical delete delay, account deletion hook, notifications | V5 |
+| V8 | Large files in R2 | V5 |
+| V9 | Protected class, `ttr+stepup` acts, code opt-in, account recovery cooldown | V5, session review of the new acts |
+
+Slices V2 to V6, with V5a, are the shortest path to the first use. Protected items, large
+files and TOTP never block it.
+
+### Regression coverage
+
+| Rule | Coverage |
+| --- | --- |
+| Every read and write needs a consumed ceremony | Keeper tests: missing, replayed, expired, wrong-act and wrong-parameter authorizations; dead session charges nothing |
+| Sealed DEK never leaves the client | `vault-crypto` and route tests: request and response schemas carry only ciphertext and wraps |
+| No bearer or CI path | Route tests and the repository validator |
+| Swap, rollback and revival detected | Client verification tests against witness attestations |
+| Purge ordering and destroyed wraps | Keeper and pgTAP tests, including a restored-database replay |
+| Critical delete delay and cancel | Route and Worker tests |
+| Rate limits fail closed | Keeper Durable Object tests with Upstash unavailable |
+| Ceremony state machine | Crash between each state, duplicate `operation_id`, concurrent redemption |
+| Credential log and counter | Swapped key, revived removed credential, stale attestation, counter regression, Durable Object counter rollback |
+| Keeper restore fence | Durable Object rolled back behind the witnessed destruction epoch |
+| Chunk grants | Reused grant, extra key, reordered, truncated and duplicated chunks |
+| Disaster recovery kit | Offline decode with the recovery key and fingerprint only; altered manifest, swapped DEK, foreign signer and tombstoned item rejected |
+| No copy for critical items | UI tests: no clipboard write, burn timer clears content |
