@@ -9,6 +9,7 @@ import { SidebarWorkspaceSelectSection } from '@tuturuuu/ui/custom/satellite-wor
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { SidebarNavSlide } from '@tuturuuu/ui/custom/sidebar-nav-slide';
 import { restsCollapsed } from '@tuturuuu/ui/custom/sidebar-behavior';
+import { useResponsiveSidebarCollapse } from '@tuturuuu/ui/custom/use-responsive-sidebar-collapse';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
@@ -49,6 +50,10 @@ import {
   serializeSidebarNavigationLayoutConfig,
 } from './sidebar-navigation-preferences';
 import { flattenToolsSection } from './sidebar-tools-section';
+import {
+  hasMultipleNavigationChildren,
+  insertArchivedNavigationLink,
+} from './structure-navigation-utils';
 import type { NavigationState, StructureProps } from './structure-types';
 import { WorkspaceSelectorVisibilityProvider } from './workspace-selector-visibility-context';
 
@@ -92,45 +97,6 @@ function getNavigationStateSignature(state: {
     state.titleHistory.join('>'),
     state.direction,
   ].join('::');
-}
-
-function cleanNavigationSeparators(
-  items: (NavLink | null | undefined)[]
-): (NavLink | null)[] {
-  const result: (NavLink | null)[] = [];
-
-  for (const item of items) {
-    if (item === undefined) continue;
-    if (!item && (result.length === 0 || result.at(-1) === null)) continue;
-
-    result.push(item);
-  }
-
-  while (result.at(-1) === null) {
-    result.pop();
-  }
-
-  return result;
-}
-
-function getNavigationChildCount(link: NavLink | null | undefined) {
-  return link?.children?.filter(Boolean).length ?? 0;
-}
-
-function hasMultipleNavigationChildren(link: NavLink | null | undefined) {
-  return getNavigationChildCount(link) > 1;
-}
-
-function insertArchivedNavigationLink({
-  archivedNavigationLink,
-  children,
-}: {
-  archivedNavigationLink: NavLink;
-  children: (NavLink | null)[];
-}): (NavLink | null)[] {
-  if (!children.some(Boolean)) return [archivedNavigationLink];
-
-  return cleanNavigationSeparators([...children, null, archivedNavigationLink]);
 }
 
 function hydrateDashboardNavigationLink(
@@ -254,7 +220,14 @@ export function StructureImpl({
 
   const { behavior, handleBehaviorChange } = useSidebar();
   const [initialized, setInitialized] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const {
+    isCollapsed,
+    isMobile,
+    mobileSidebarOpen,
+    setDesktopCollapsed,
+    setIsCollapsed,
+    toggleMobileSidebar,
+  } = useResponsiveSidebarCollapse(defaultCollapsed);
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
   const SidebarActiveTimer = useSidebarActiveTimerComponent();
   const hydratedLinks = useMemo(
@@ -558,8 +531,8 @@ export function StructureImpl({
   );
 
   useEffect(() => {
-    setIsCollapsed(restsCollapsed(behavior));
-  }, [behavior]);
+    setDesktopCollapsed(restsCollapsed(behavior));
+  }, [behavior, setDesktopCollapsed]);
 
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
@@ -721,6 +694,7 @@ export function StructureImpl({
   }, [pathname, preferredLinks, findActiveNavigation]);
 
   const handleToggle = () => {
+    if (isMobile) return toggleMobileSidebar();
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     setCookie(
@@ -764,8 +738,12 @@ export function StructureImpl({
 
   const isHoverMode = behavior === 'hover' || behavior === 'minimal';
 
-  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
-  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
+  const onMouseEnter = isHoverMode
+    ? () => setDesktopCollapsed(false)
+    : undefined;
+  const onMouseLeave = isHoverMode
+    ? () => setDesktopCollapsed(true)
+    : undefined;
 
   const backButton: NavLink = {
     title: t('common.back'),
@@ -924,6 +902,7 @@ export function StructureImpl({
       <WorkspaceSelectorVisibilityProvider visible>
         <BaseStructure
           isCollapsed={isCollapsed}
+          mobileSidebarOpen={mobileSidebarOpen}
           setIsCollapsed={handleToggle}
           header={header}
           mobileHeader={mobileHeader}

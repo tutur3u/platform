@@ -14,18 +14,14 @@ import {
   type SidebarBehavior,
 } from './sidebar-behavior';
 import {
+  getIsMobileViewport,
+  getServerIsMobileViewport,
+  subscribeMobileViewport,
+} from './use-responsive-sidebar-collapse';
+import {
   findActiveNavigation,
   type NavigationState,
 } from './satellite-shell-utils';
-
-const mobileQuery = '(max-width: 767px)';
-const subscribeMobile = (notify: () => void) => {
-  const query = window.matchMedia(mobileQuery);
-  query.addEventListener('change', notify);
-  return () => query.removeEventListener('change', notify);
-};
-const getIsMobile = () => window.matchMedia(mobileQuery).matches;
-const getServerIsMobile = () => false;
 
 function collapsedForBehavior(
   behavior: SidebarBehavior | undefined,
@@ -54,9 +50,9 @@ export function useSatelliteShell({
   backLabel: string;
 }) {
   const isMobile = useSyncExternalStore(
-    subscribeMobile,
-    getIsMobile,
-    getServerIsMobile
+    subscribeMobileViewport,
+    getIsMobileViewport,
+    getServerIsMobileViewport
   );
   const [behavior, setBehavior] = useState(configuredBehavior);
   const [desktopCollapsed, setDesktopCollapsed] = useState(() =>
