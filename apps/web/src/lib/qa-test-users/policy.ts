@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 import { z } from 'zod';
 
 // Reserved addresses: staff hosts on the staff domain, participants on the routed QA domain.
@@ -51,9 +51,28 @@ export const mintQaSessionSchema = z
   .object({ origin: z.url().max(512).optional() })
   .strict();
 
-/** 32 random bytes as base64url: never logged, returned once at creation. */
+/**
+ * Character classes Supabase Auth requires when the project enforces
+ * lowercase, uppercase, digits and symbols. `-` and `_` count as symbols there.
+ */
+const QA_PASSWORD_CLASSES = [
+  'abcdefghijklmnopqrstuvwxyz',
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  '0123456789',
+  '-_',
+] as const;
+
+/**
+ * 256 random bits as base64url, plus one random character from every class
+ * Auth requires. base64url alone omits a symbol in about a quarter of draws
+ * ((62/64)^43), which Auth rejects with `weak_password`. Never logged;
+ * returned once at creation.
+ */
 export function generateQaPassword() {
-  return randomBytes(32).toString('base64url');
+  const required = QA_PASSWORD_CLASSES.map(
+    (chars) => chars[randomInt(chars.length)]
+  ).join('');
+  return `${randomBytes(32).toString('base64url')}${required}`;
 }
 
 /** Service-owned marker. The database refuses any later change to `qa_*` keys. */
