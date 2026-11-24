@@ -76,6 +76,12 @@ does not authorize promotion.
    Run `bun git-sync` only with production authorization, after main is fully
    green and the exact promotion range is authorized. If main advanced with unrelated commits, obtain broader
    authorization or use the supported pinned-SHA sync path.
+   To get a pinned SHA fully green while main keeps moving, nominate it as a
+   release candidate (`gh workflow run release-candidate.yaml -f sha=<sha>`,
+   then `-f mode=status`) instead of freezing main; see
+   `apps/docs/build/devops/release-candidates.mdx`. Candidate runs count only
+   as `push` on `main` or `workflow_dispatch` on `release-candidate/<sha>`;
+   artifact provenance gates still require the main push producer.
 10. For authorized production delivery only, verify remote production contains
     the approved SHA. Report local refs
     separately if another checkout owns them or main has advanced.

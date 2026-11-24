@@ -24486,6 +24486,25 @@
   },
   "deployments": {
     "title": "Triển khai",
+    "release_candidates": {
+      "title": "Bản phát hành ứng viên",
+      "empty": "Chưa có bản phát hành ứng viên nào. Chỉ định một commit trên main bằng lệnh:",
+      "unavailable": "Không thể đọc danh sách bản phát hành ứng viên từ GitHub.",
+      "counts": "{success} đạt, {failed} lỗi, {cancelled} đã hủy, {pending} đang chờ",
+      "not_green": "{count, plural, other {# quy trình chưa đạt}}",
+      "verdicts": {
+        "green": "Đạt",
+        "red": "Lỗi",
+        "pending": "Đang chờ",
+        "unknown": "Chưa rõ"
+      },
+      "statuses": {
+        "success": "Đạt",
+        "failed": "Lỗi",
+        "cancelled": "Đã hủy",
+        "pending": "Đang chờ"
+      }
+    },
     "project": "Dự án",
     "refresh": "Làm mới",
     "retry": "Thử lại",

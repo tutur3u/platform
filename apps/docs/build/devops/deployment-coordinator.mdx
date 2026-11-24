@@ -338,6 +338,12 @@ the root-workspace operator permission (`manage_workspace_roles`, via
 Without `DEPLOY_COORDINATOR_ORIGIN` and `DEPLOY_COORDINATOR_OPERATOR_TOKEN` the
 page shows an unconfigured state and the routes make no outbound call.
 
+Below the coordinator view, a read-only **Release candidates** panel shows up
+to three pinned main commits and their required CI verdicts. It reads public
+GitHub metadata only, with at most six calls and a 5 s timeout each, and shows
+an unavailable state on any failure. See
+[Release candidates](/build/devops/release-candidates).
+
 | Route | Permission | Coordinator calls |
 | ----- | ---------- | ----------------- |
 | `GET /api/v1/infrastructure/deployments` | viewer | `GET /v1/projects` |

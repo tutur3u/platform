@@ -1,0 +1,129 @@
+---
+title: 'Release candidates'
+description: 'Pin a main commit as a release candidate so its full required CI set finishes while main keeps moving, without a main merge freeze.'
+updatedAt: '2026-11-24'
+audience: developers
+---
+
+A production release needs one main commit with its whole required CI set
+green. Main moves every few minutes, and several always-on workflows coalesce
+main pushes into one shared pending run, so a newer push supersedes the pending
+run of the previous commit. Before release candidates, a release round needed
+a main merge freeze to get one green commit. A release candidate removes the
+freeze: the production owner pins a commit, and its runs live on their own ref
+where no main push can cancel them.
+
+## What gets pinned
+
+`scripts/ci/release-candidate-core.mjs` owns the set:
+
+| Group | Workflows | Why |
+| --- | --- | --- |
+| Dispatched on the candidate ref | Codex Plugin, Docs/SEO, i18n, MFA contract, Security Checks | Main pushes share one `latest` concurrency group, so a later push drops the pending run. |
+| Dispatched on the candidate ref | Cron Control producer | It is path-filtered, so most commits have no producer run. Dispatch ignores path filters. |
+| Observed from the main push | Oxc, Test, Type Check | Each main SHA already has its own non-cancelling group. |
+
+`scripts/ci/release-candidate.test.mjs` fails when a new always-on main
+workflow uses a shared main group but is missing from the dispatched list, or
+when an observed workflow loses its per-SHA group.
+
+A dispatched Security Checks run uses its `workflow_dispatch` mode, so it also
+runs CodeQL and the findings register. The register fails while confirmed
+critical or high findings are open, which is a release blocker anyway.
+
+## Procedure (production owner)
+
+1. Pick a commit on main and nominate it:
+
+   ```bash
+   gh workflow run release-candidate.yaml -R tutur3u/platform -f sha=<40-hex sha>
+   ```
+
+   The job checks that the SHA is in main. It then creates
+   `release-candidate/<sha>` and dispatches each dispatched workflow that has
+   no candidate run yet. Nominating the same SHA again only fills gaps.
+2. Watch the result in **Admin → Deployments → Release candidates**, in
+   `gh run list -R tutur3u/platform --commit <sha>`, or with a status pass:
+
+   ```bash
+   gh workflow run release-candidate.yaml -R tutur3u/platform -f sha=<sha> -f mode=status
+   ```
+
+   A status pass writes the required-set table to the job summary. It reruns
+   each cancelled run once. A rerun takes a unique concurrency group, so it
+   cannot be superseded. It also dispatches any dispatched workflow that is
+   missing and has no candidate run. It fails only when a required workflow is
+   red. Pending is not an error.
+3. When the verdict is green, promote with the pinned-SHA `bun git-sync` path
+   as usual. A release candidate never deploys. Who may deploy, the production
+   workflows and their gates stay unchanged.
+
+Keep merging to main throughout; nothing waits for the candidate.
+
+## Evidence rule
+
+A run counts for the candidate SHA only when it ran in `tutur3u/platform` at
+exactly that SHA and is one of these:
+
+- a `push` on `main`;
+- a `workflow_dispatch` on `release-candidate/<that sha>`.
+
+A green run of a workflow outranks newer cancelled or red runs of the same
+workflow. The verdict is green only when every required workflow is green; a
+required workflow with no evidence counts as pending. The Admin panel applies
+the same rule and the same list, and
+`scripts/ci/release-candidate.test.mjs` keeps the two lists equal. The panel
+scans at most five candidate refs (six GitHub calls) and shows the newest three
+by run time.
+
+<Warning>
+Artifact provenance gates are unchanged. The Cron Control `already serving`
+verifier and the production owner's local Cron driver still accept only a
+producer run with `event == push` on `head_branch == main`. A candidate Cron
+producer is build evidence for the SHA. It is not an approved artifact source
+until a reviewed change accepts `workflow_dispatch` on
+`release-candidate/<sha>` with a main-ancestry check.
+</Warning>
+
+## Bounds and cost
+
+- Only the release-candidate workflow on `main` acts. It uses a five-minute job
+  with `actions: write` and `contents: write`. GitHub cannot scope these
+  permissions to one ref, so the job keeps its attack surface small instead:
+  - it checks out only the two scripts at `github.workflow_sha`;
+  - it uses SHA-pinned first-party actions and no installed dependencies;
+  - it passes the inputs through the environment, never into a shell
+    expression;
+  - it validates the SHA before any call;
+  - it writes only `refs/heads/release-candidate/<40-hex sha>`, dispatches
+    only the fixed workflow list, and reruns only runs of the required set.
+- At most two other candidates may have runs in progress when a nomination
+  starts; otherwise it is refused (`CANDIDATE_LIMIT`).
+- A pass inspects at most eight candidate refs. More than that means refs were
+  created by hand, and the pass refuses before any per-candidate call
+  (`CANDIDATE_REF_LIMIT`). Delete the stray refs, then nominate again.
+- Each nomination prunes candidate refs beyond the newest three, and any ref
+  older than seven days. Refs that do not match `release-candidate/<own sha>`
+  are never touched.
+- One nomination costs about six workflow runs. Ordinary main pushes cost
+  nothing extra.
+
+## Why not a merge queue or concurrency changes
+
+- **Merge queue.** A merge queue needs pull requests and a `merge_group`
+  trigger on every required workflow. It also serializes every lane, which
+  conflicts with the direct-to-main flow.
+- **Per-SHA groups on every main push.** These would drop the coalescing that
+  keeps queue pressure under the Free plan's concurrent-job cap.
+- **Pin-aware concurrency keys.** The pin is chosen after the push, so a key
+  computed at push time cannot know about it.
+
+## Failure handling
+
+- `CANDIDATE_NOT_IN_MAIN`: the SHA is not an ancestor of main. Pick a main commit.
+- `CANDIDATE_LIMIT`: wait for an active candidate to finish, or let pruning remove old ones.
+- `CANDIDATE_GITHUB … POST /git/refs -> 403/422`: a ruleset blocked the token
+  from creating the ref. Create `release-candidate/<sha>` with your own
+  credentials, then nominate again. The job keeps an existing ref.
+- A red required workflow: fix forward on main and nominate the new commit, or
+  rerun a flaky job by hand.

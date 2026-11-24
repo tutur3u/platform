@@ -24486,6 +24486,25 @@
   },
   "deployments": {
     "title": "Deployments",
+    "release_candidates": {
+      "title": "Release candidates",
+      "empty": "No release candidates yet. Nominate a main commit with:",
+      "unavailable": "Release candidates could not be read from GitHub.",
+      "counts": "{success} passed, {failed} failed, {cancelled} cancelled, {pending} pending",
+      "not_green": "{count, plural, one {# workflow is not green} other {# workflows are not green}}",
+      "verdicts": {
+        "green": "Green",
+        "red": "Red",
+        "pending": "Pending",
+        "unknown": "Unknown"
+      },
+      "statuses": {
+        "success": "Passed",
+        "failed": "Failed",
+        "cancelled": "Cancelled",
+        "pending": "Pending"
+      }
+    },
     "project": "Project",
     "refresh": "Refresh",
     "retry": "Retry",

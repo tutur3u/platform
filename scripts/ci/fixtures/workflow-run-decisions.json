@@ -106,6 +106,7 @@
   "release-ai-package.yaml": ["path-filters"],
   "release-apis-package.yaml": ["path-filters"],
   "release-bot-signoff.yaml": ["always"],
+  "release-candidate.yaml": ["always"],
   "release-cloudflare-package.yaml": ["path-filters"],
   "release-devbox-package.yaml": ["path-filters"],
   "release-editor-package.yaml": ["path-filters"],

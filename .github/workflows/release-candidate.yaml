@@ -1,0 +1,61 @@
+name: Release Candidate
+
+# The production owner nominates a main commit so its required CI set can
+# finish while main keeps moving. `nominate` creates release-candidate/<sha>
+# and dispatches the workflows a later main push would otherwise supersede
+# (plus the path-filtered Cron Control producer); `status` reports the
+# required set and reruns a cancelled run once. Nothing here deploys.
+# Runbook: apps/docs/build/devops/release-candidates.mdx.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full 40-character main commit SHA to pin
+        required: true
+        type: string
+      mode:
+        description: nominate (pin and dispatch) or status (report and recover)
+        required: true
+        default: nominate
+        type: choice
+        options:
+          - nominate
+          - status
+
+permissions:
+  contents: read
+
+# One nomination or status pass per SHA at a time; passes queue, never cancel.
+concurrency:
+  group: release-candidate-${{ inputs.sha }}
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: write
+    steps:
+      - name: Checkout trusted workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/release-candidate.mjs
+            scripts/ci/release-candidate-core.mjs
+          sparse-checkout-cone-mode: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.3'
+          package-manager-cache: false
+      - name: Run the release candidate pass
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_SHA: ${{ inputs.sha }}
+          CANDIDATE_MODE: ${{ inputs.mode }}
+        run: node scripts/ci/release-candidate.mjs "$CANDIDATE_MODE"
