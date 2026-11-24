@@ -11,6 +11,7 @@ import {
   processorDeadlineMs,
 } from './jobs';
 import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
+import { generateKeyPairSync } from 'node:crypto';
 import { HARD_REQUEST_CAP } from './processors/observability/collector';
 
 const CF = 'observability-cloudflare';
@@ -135,6 +136,7 @@ function harness(cron = '*/15 * * * *', enabled = CF) {
   const provider: { url: string; auth: string | null }[] = [];
   const fail: { status?: number; graphqlErrors?: boolean } = {};
   const githubTotal = { value: 2 };
+  const exchange: { status?: number } = {};
   let clock = T0;
   const env = { ...baseEnv, CRON_CONTROL_ENABLED_JOBS: enabled };
   const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
@@ -168,6 +170,20 @@ function harness(cron = '*/15 * * * *', enabled = CF) {
           },
         },
       });
+    }
+    if (
+      url.hostname === 'api.github.com' &&
+      url.pathname.endsWith('/access_tokens')
+    ) {
+      if (exchange.status)
+        return new Response('nope', { status: exchange.status });
+      return Response.json(
+        {
+          expires_at: new Date(clock + 3_600_000).toISOString(),
+          token: APP_TOKEN,
+        },
+        { status: 201 }
+      );
     }
     if (url.hostname === 'api.github.com') {
       const created = url.searchParams.get('created')!.split('..')[0]!;
@@ -221,6 +237,7 @@ function harness(cron = '*/15 * * * *', enabled = CF) {
     core,
     db,
     env,
+    exchange,
     fail,
     provider,
     run,
@@ -231,6 +248,20 @@ function harness(cron = '*/15 * * * *', enabled = CF) {
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+// Disposable key; each test uses its own installation id so the isolate-wide
+// token cache never carries over between tests.
+const APP_KEY = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+}).privateKey.export({ format: 'pem', type: 'pkcs1' }) as string;
+const APP_TOKEN = `ghs_${'c'.repeat(36)}`;
+function useApp(env: Record<string, string>, installationId: string) {
+  Object.assign(env, {
+    GITHUB_APP_ID: '424242',
+    GITHUB_APP_INSTALLATION_ID: installationId,
+    GITHUB_APP_PRIVATE_KEY: APP_KEY,
+  });
+}
 
 it('registers the collectors as native jobs on existing triggers', () => {
   for (const [id, cron] of [
@@ -417,4 +448,55 @@ it('keeps an oversized first GitHub bucket as a sample and moves on', async () =
   expect(h.db.controls.get('github-actions')?.watermark).toBe(
     '2026-11-20T19:30:00.000Z'
   );
+});
+
+it('authenticates as the GitHub App within the request budget and reuses its token', async () => {
+  const h = harness('*/30 * * * *', GH);
+  useApp(h.env, '1001');
+  h.db.set('github-actions', { mode: 'on' });
+  expect(await h.run()).toMatchObject([
+    { id: GH, outcome: 'ok', detail: { budgetExhausted: 1, requests: 4 } },
+  ]);
+  // One mint plus three listing pages: the budget still bounds every request.
+  expect(h.provider).toHaveLength(4);
+  expect(h.provider[0]!.url).toBe(
+    'https://api.github.com/app/installations/1001/access_tokens'
+  );
+  expect(h.provider[0]!.auth).toMatch(/^Bearer ey/);
+  expect(
+    h.provider.slice(1).every((p) => p.auth === `Bearer ${APP_TOKEN}`)
+  ).toBe(true);
+  expect(JSON.stringify(h.provider)).not.toContain(
+    baseEnv.GITHUB_ACTIONS_READ_TOKEN
+  );
+  expect(JSON.stringify(h.db.runs)).not.toContain(APP_TOKEN);
+  h.advance(30 * 60_000);
+  await h.run();
+  // The cached token serves the next run: four listing pages, no mint.
+  expect(h.provider.slice(4)).toHaveLength(4);
+  expect(
+    h.provider.slice(4).every((p) => p.auth === `Bearer ${APP_TOKEN}`)
+  ).toBe(true);
+});
+
+it('fails closed when the GitHub App token exchange is refused', async () => {
+  const h = harness('*/30 * * * *', GH);
+  useApp(h.env, '1002');
+  h.db.set('github-actions', { mode: 'on' });
+  h.exchange.status = 401;
+  expect(await h.run()).toMatchObject([{ id: GH, outcome: 'failed' }]);
+  expect(h.provider).toHaveLength(1);
+  expect(h.db.rollups.size).toBe(0);
+  expect(h.db.controls.get('github-actions')?.watermark).toBeNull();
+});
+
+it('treats a partial GitHub App configuration as unconfigured, without fallback', async () => {
+  const h = harness('*/30 * * * *', GH);
+  useApp(h.env, '1003');
+  delete (h.env as Record<string, string | undefined>).GITHUB_APP_PRIVATE_KEY;
+  h.db.set('github-actions', { mode: 'on' });
+  expect(await h.run()).toMatchObject([
+    { id: GH, outcome: 'failed', detail: { unconfigured: 1 } },
+  ]);
+  expect(h.provider).toHaveLength(0);
 });

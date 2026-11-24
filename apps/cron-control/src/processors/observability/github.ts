@@ -10,12 +10,15 @@ import {
   type RollupRow,
   type SourceCollector,
 } from './collector';
+import type { GithubAppTokenSource } from './github-app-auth';
 import { fetchProviderJson, type ProviderFetchDeps } from './provider-fetch';
 
 // GitHub Actions collector: run counts, failures, duration and queue time per
 // workflow in 15-minute buckets, and successful production deploy runs on
-// main as deploy markers. Read-only fine-grained token (Actions read) for one
-// repository. Each bucket is read whole before the watermark passes it; a
+// main as deploy markers. Authenticates as the org-owned GitHub App
+// installation (Actions read, one repository), or with a read-only
+// fine-grained token when no app is configured. Minting an installation token
+// is a provider request and counts against the run's request budget. Each bucket is read whole before the watermark passes it; a
 // bucket larger than one run's request budget (or the listing's 1,000-result
 // cap) is stored as a sample, with `runs` from total_count and
 // `sampled_runs` from what was read, so progress never stalls.
@@ -198,12 +201,26 @@ export function bucketRollups(
   return rows;
 }
 
+export type GithubAuth =
+  | { kind: 'app'; source: GithubAppTokenSource }
+  | { kind: 'token'; token: string };
+
 export interface GithubCollectorDeps extends ProviderFetchDeps {
-  token: string;
+  auth: GithubAuth;
 }
 
 export function githubCollector(deps: GithubCollectorDeps): SourceCollector {
-  async function page(window: CollectWindow, number: number) {
+  /** Bearer credential; an app token mint spends one budgeted request. */
+  async function credential(call: ProviderCall) {
+    const { auth } = deps;
+    if (auth.kind === 'token') return auth.token;
+    return (
+      auth.source.cached(deps.now()) ??
+      (await call(() => auth.source.mint(deps)))
+    );
+  }
+
+  async function page(window: CollectWindow, number: number, token: string) {
     const url = new URL(
       `https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs`
     );
@@ -218,7 +235,7 @@ export function githubCollector(deps: GithubCollectorDeps): SourceCollector {
       method: 'GET',
       headers: {
         Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${deps.token}`,
+        Authorization: `Bearer ${token}`,
         'User-Agent': 'Tuturuuu-Cron-Control/1.0',
         'X-GitHub-Api-Version': '2022-11-28',
       },
@@ -247,9 +264,14 @@ export function githubCollector(deps: GithubCollectorDeps): SourceCollector {
     for (let number = 1; number <= GITHUB_MAX_PAGES; number++) {
       let result: { runs: Run[]; total: number };
       try {
-        result = await call(() => page(window, number));
+        const token = await credential(call);
+        result = await call(() => page(window, number, token));
       } catch (error) {
-        if (!(error instanceof BudgetExhausted)) throw error;
+        if (!(error instanceof BudgetExhausted)) {
+          // A rejected app token is never reused by a later run.
+          if (deps.auth.kind === 'app') deps.auth.source.invalidate();
+          throw error;
+        }
         exhausted = true;
         break;
       }

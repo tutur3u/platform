@@ -3,7 +3,12 @@ import { callMaintenanceRpc, postPrivateRpc } from '../maintenance-rpc';
 import type { ProcessorContext, ProcessorResult } from '../types';
 import { cloudflareCollector } from './cloudflare';
 import { runCollector, type SourceCollector } from './collector';
-import { githubCollector } from './github';
+import { githubCollector, type GithubAuth } from './github';
+import {
+  githubAppTokenSource,
+  hasAnyGithubAppVariable,
+  parseGithubAppCredentials,
+} from './github-app-auth';
 
 // Cron Control adapters for the observability collectors. Credentials are
 // read from the Worker environment by name and passed only to the provider
@@ -37,14 +42,32 @@ export function collectCloudflareObservability(
   );
 }
 
+/**
+ * The GitHub App when all three app variables are valid; the read-only token
+ * only when no app variable is set at all. A partial or malformed app
+ * configuration is unconfigured, so it never silently falls back.
+ */
+export function resolveGithubAuth(
+  env: ProcessorContext['env']
+): GithubAuth | null {
+  const app = parseGithubAppCredentials(env);
+  if (app) return { kind: 'app', source: githubAppTokenSource(app) };
+  if (hasAnyGithubAppVariable(env)) return null;
+  const token = env.GITHUB_ACTIONS_READ_TOKEN?.trim() ?? '';
+  return token.length >= 20 ? { kind: 'token', token } : null;
+}
+
 export function collectGithubObservability(
   context: ProcessorContext
 ): Promise<ProcessorResult> {
-  const token = context.env.GITHUB_ACTIONS_READ_TOKEN?.trim() ?? '';
+  const auth = resolveGithubAuth(context.env);
   return run(
     context,
-    githubCollector({ ...context, token }),
-    token.length >= 20
+    githubCollector({
+      ...context,
+      auth: auth ?? { kind: 'token', token: '' },
+    }),
+    auth !== null
   );
 }
 

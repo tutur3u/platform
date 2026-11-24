@@ -15,8 +15,13 @@ export interface ProcessorEnv {
   CLOUDFLARE_ANALYTICS_API_TOKEN?: string;
   /** Exactly 'delete' runs Forms upload cleanup; any other value is off. */
   FORMS_UPLOAD_CLEANUP_MODE?: string;
-  /** Read-only Actions token for the GitHub Actions collector. */
+  /** Read-only Actions token; used only when no GitHub App variable is set. */
   GITHUB_ACTIONS_READ_TOKEN?: string;
+  /** tutur3u-owned GitHub App for the GitHub Actions collector (secrets). */
+  GITHUB_APP_ID?: string;
+  GITHUB_APP_INSTALLATION_ID?: string;
+  /** PEM private key (PKCS#1 or PKCS#8); literal "\n" escapes are accepted. */
+  GITHUB_APP_PRIVATE_KEY?: string;
   /** Service binding to the Meet realtime `AttendanceErasure` entrypoint. */
   MEET_ATTENDANCE_ERASURE?: MeetAttendanceErasureBinding;
   MOBILE_CRASHLYTICS_BIGQUERY?: string;
