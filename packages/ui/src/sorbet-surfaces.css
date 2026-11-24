@@ -225,6 +225,41 @@
   outline-offset: 2px;
 }
 
+/*
+  Tabs thumb and control motion, as primitive variables (classic defaults:
+  globals.css). In @layer components, so a caller's own bg, shadow,
+  transition or duration utility on the element still wins. Buttons, tabs
+  triggers and switches read the control motion; badges keep the classic
+  transition, and the sidebar menu button keeps its own width and padding
+  transition.
+*/
+@layer components {
+  :root[data-ui="sorbet"] {
+    --tabs-thumb-shadow: var(--sorbet-shadow-sm);
+    --control-transition: background-color, border-color, color, box-shadow;
+    --control-duration: var(--sorbet-duration-fast);
+    --control-ease: var(--sorbet-ease-standard);
+  }
+
+  /* The active thumb is a raised card. */
+  :root[data-ui="sorbet"] :where([data-slot="tabs-trigger"]) {
+    --tabs-thumb-bg: var(--card);
+  }
+
+  /* Dark cards sit below the track, so the dark thumb lifts toward the ink. */
+  :root[data-ui="sorbet"].dark :where([data-slot="tabs-trigger"]) {
+    --tabs-thumb-bg: color-mix(in oklab, var(--foreground) 12%, var(--card));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    :root[data-ui="sorbet"] {
+      --control-duration: 0ms;
+    }
+  }
+}
+
 /* Motion: short colour and elevation changes; none when motion is reduced. */
 :root[data-ui="sorbet"]
   :where(

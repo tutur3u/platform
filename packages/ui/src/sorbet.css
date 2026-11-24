@@ -239,6 +239,104 @@
 }
 
 /*
+  Primitive variables (classic defaults: globals.css). Sorbet sets them in
+  @layer components, above the classic base values and below utilities, so a
+  caller's rounded-r-none, border or shadow utility on the element still wins.
+*/
+@layer components {
+  /*
+    Pill buttons and badges; cards float on a soft shadow. sorbet-surfaces.css
+    sets the tabs thumb and control motion.
+  */
+  :root[data-ui="sorbet"] {
+    --button-radius: var(--sorbet-control-radius);
+    --badge-radius: var(--sorbet-control-radius);
+    --card-shadow: var(--sorbet-shadow-md);
+  }
+
+  /*
+    Fields take the md corner (--radius), which the Corners option scales with
+    the rest of the theme. Dialogs and alert dialogs take the card corner
+    (full-screen and docked dialogs keep their own rounded-none). Set on each
+    slot, so a subtree's own --radius still reaches it.
+  */
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="input"],
+      [data-slot="textarea"],
+      [data-slot="select-trigger"]
+    ) {
+    --field-radius: var(--radius);
+  }
+
+  :root[data-ui="sorbet"]
+    :where([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+    --dialog-radius: var(--radius-xl);
+  }
+
+  /*
+    A button opts out of the pill with data-sorbet-shape: "keep" unsets the
+    variable, so the button falls back to its classic radius; "field" takes
+    the field corner; a combobox trigger is a field.
+  */
+  :root[data-ui="sorbet"]
+    :where([data-slot="button"][data-sorbet-shape="keep"]) {
+    --button-radius: initial;
+  }
+
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="button"][data-sorbet-shape="field"],
+      [data-slot="button"][role="combobox"]
+    ) {
+    --button-radius: var(--radius);
+  }
+
+  /*
+    Field stroke role: text fields, select and combobox triggers, OTP slots
+    and unchecked checkboxes and radios draw their edge with --field-stroke,
+    so an empty control reads against white (the --input hairline is only
+    1.6:1). Focus, invalid, active and checked states keep the classic value
+    and their own state utilities.
+  */
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="input"],
+      [data-slot="textarea"],
+      [data-slot="select-trigger"],
+      [data-slot="button"][role="combobox"],
+      [data-slot="input-otp-slot"],
+      [data-slot="checkbox"],
+      [data-slot="radio-group-item"]
+    ):not(
+      :focus-visible,
+      [aria-invalid="true"],
+      [data-active="true"],
+      [data-state="checked"],
+      [data-state="indeterminate"]
+    ) {
+    --field-stroke: var(--sorbet-field-stroke);
+  }
+
+  /* Outline buttons stroke with the field edge; the hairline is too faint. */
+  :root[data-ui="sorbet"]
+    :where([data-slot="button"][data-variant="outline"]) {
+    --field-stroke: var(--sorbet-field-stroke);
+  }
+
+  /* An unchecked switch track is a control edge too: fill it with the stroke. */
+  :root[data-ui="sorbet"]
+    :where([data-slot="switch"][data-state="unchecked"]) {
+    --field-stroke: var(--sorbet-field-stroke);
+  }
+
+  /* Surfaces float on soft shadows; borders recede. */
+  :root[data-ui="sorbet"] :where([data-slot="card"]) {
+    --card-border: color-mix(in oklab, var(--border) 70%, transparent);
+  }
+}
+
+/*
   Pill buttons and badges. :where keeps the selectors light so local overrides
   still win. A button opts out with data-sorbet-shape ("keep" holds its own
   radius, "field" takes the field radius below); a combobox trigger is a field.

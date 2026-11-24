@@ -36,6 +36,23 @@ const buttonVariants = cva(
   }
 );
 
+type ButtonVariant = NonNullable<
+  VariantProps<typeof buttonVariants>['variant']
+>;
+
+/*
+  Classes a data-slot="button" element adds over buttonVariants(): radius,
+  motion and the outline stroke read the design variables (classic defaults
+  in globals.css; Sorbet sets them). Unset, each falls back to the classic
+  value. Elements styled with buttonVariants() alone keep the classic look.
+*/
+function buttonSlotClassName(variant?: ButtonVariant | null) {
+  return cn(
+    'rounded-[var(--button-radius,calc(var(--radius)_-_2px))] transition-(--control-transition) duration-(--control-duration) ease-(--control-ease)',
+    variant === 'outline' && 'border-(--field-stroke)'
+  );
+}
+
 function Button({
   className,
   variant,
@@ -46,7 +63,11 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
-  const classNames = cn(buttonVariants({ variant, size, className }));
+  const classNames = cn(
+    buttonVariants({ variant, size }),
+    buttonSlotClassName(variant),
+    className
+  );
 
   if (asChild) {
     return (
@@ -74,4 +95,4 @@ function Button({
 type ButtonProps = React.ComponentProps<typeof Button>;
 
 export type { ButtonProps };
-export { Button, buttonVariants };
+export { Button, buttonSlotClassName, buttonVariants };

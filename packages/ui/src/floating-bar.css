@@ -67,6 +67,27 @@
 }
 
 /*
+  Sorbet gives buttons, inputs and select triggers its own radius variables
+  (sorbet.css). Inside a bar they take the concentric inner radius instead,
+  inherited from the bar; FloatingBar's own utility already rounds buttons
+  and sized tooltip triggers. Same specificity as the sorbet.css slot rules
+  and later, so this wins; in @layer components, so a caller's utility on a
+  control still wins.
+*/
+@layer components {
+  :root[data-ui="sorbet"]
+    :where([data-slot="floating-bar"])
+    :where(
+      [data-slot="button"],
+      [data-slot="input"],
+      [data-slot="select-trigger"]
+    ) {
+    --button-radius: var(--radius-bar-inner);
+    --field-radius: var(--radius-bar-inner);
+  }
+}
+
+/*
   Sorbet makes buttons, inputs and select triggers pills with an unlayered
   rule (sorbet.css), which outranks the bar's utilities. Same specificity,
   later in the cascade, so controls inside a bar keep the concentric radius.

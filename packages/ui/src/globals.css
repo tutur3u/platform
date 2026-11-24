@@ -56,6 +56,60 @@
 }
 
 /*
+  Primitive shape, stroke and motion. Buttons, badges, fields, cards, tabs and
+  dialogs read these variables instead of fixed utilities. A design such as
+  Sorbet only sets the variables (in @layer components), so the primitive
+  changes while a caller's own utility on the element still wins. These are
+  the classic values and render exactly as the utilities they replace
+  (border-input, shadow-sm, bg-background, the default transition).
+
+  --button-radius, --badge-radius, --field-radius and --dialog-radius stay
+  unset in classic: the primitives fall back to calc(var(--radius) - 2px) or
+  var(--radius) on the element itself, so a subtree that sets its own --radius
+  (Lettin's .notebook-theme) still reaches them.
+*/
+@layer base {
+  :root {
+    --field-stroke: var(--input);
+    --card-border: var(--border);
+    --card-shadow:
+      0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --tabs-thumb-bg: var(--background);
+    --tabs-thumb-shadow:
+      0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --control-transition: color, box-shadow;
+    --control-duration: 150ms;
+    --control-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /*
+    A custom property that uses var() resolves where it is declared, so the
+    colour roles are redeclared on each slot: a subtree palette such as
+    .settings-surface (its own --input and --border) still reaches the field.
+  */
+  :where(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="select-trigger"],
+    [data-slot="button"],
+    [data-slot="input-otp-slot"],
+    [data-slot="checkbox"],
+    [data-slot="radio-group-item"],
+    [data-slot="switch"]
+  ) {
+    --field-stroke: var(--input);
+  }
+
+  :where([data-slot="card"]) {
+    --card-border: var(--border);
+  }
+
+  :where([data-slot="tabs-trigger"]) {
+    --tabs-thumb-bg: var(--background);
+  }
+}
+
+/*
  * iOS Safari zooms the viewport when a focused editable control computes below
  * 16px. Protect touch forms across every app that consumes the shared UI styles
  * without disabling the user's normal pinch-to-zoom controls.

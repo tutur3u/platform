@@ -44,7 +44,12 @@ function Badge({
   return (
     <Comp
       data-slot="badge"
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(
+        badgeVariants({ variant }),
+        // Unset (classic), the radius falls back to rounded-md; Sorbet sets it.
+        'rounded-[var(--badge-radius,calc(var(--radius)_-_2px))]',
+        className
+      )}
       {...props}
     />
   );

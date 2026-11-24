@@ -24,7 +24,7 @@ describe('DialogContent presentation', () => {
     expect(className).toContain('data-[state=open]:animate-in');
     expect(className).toContain('data-[state=open]:fade-in-0');
     expect(className).toContain('data-[state=open]:zoom-in-95');
-    expect(dialog).toHaveClass('rounded-lg');
+    expect(dialog).toHaveClass('rounded-[var(--dialog-radius,var(--radius))]');
     // Tall content scrolls inside a phone viewport instead of overflowing it.
     expect(dialog).toHaveClass('max-h-[calc(100dvh-2rem)]', 'overflow-y-auto');
   });
