@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   canLink: vi.fn(async () => true),
+  linkAccess: vi.fn(),
   linkUpskiiAccount: vi.fn(),
   requireLiveExternalApp: vi.fn(async () => ({ ok: true })),
 }));
@@ -24,6 +25,7 @@ vi.mock('@/lib/app-coordination/external-app-bearer', () => ({
 vi.mock('@/lib/integrations/upskii/access', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   canUserLinkUpskii: mocks.canLink,
+  getUpskiiLinkAccess: mocks.linkAccess,
 }));
 vi.mock('@/lib/integrations/upskii/link-store', () => ({
   createExternalAccountLinkStore: () => ({}),
@@ -66,6 +68,7 @@ describe('POST /api/v1/integrations/upskii/link', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.canLink.mockResolvedValue(true);
+    mocks.linkAccess.mockResolvedValue({ allowed: true, reason: 'staff' });
     mocks.requireLiveExternalApp.mockResolvedValue({ ok: true });
     mocks.linkUpskiiAccount.mockResolvedValue({
       created: true,
@@ -114,13 +117,38 @@ describe('POST /api/v1/integrations/upskii/link', () => {
   });
 
   it('keeps linking to verified staff during early access', async () => {
-    mocks.canLink.mockResolvedValue(false);
+    mocks.linkAccess.mockResolvedValue({
+      allowed: false,
+      reason: 'early_access',
+    });
     const response = await POST(
       request(bearer('upskii', ['upskii-link:write']))
     );
     expect(response.status).toBe(403);
     expect(await response.json()).toMatchObject({ code: 'EARLY_ACCESS_ONLY' });
     expect(mocks.linkUpskiiAccount).not.toHaveBeenCalled();
+  });
+
+  it('decides access on the Upskii email the link will store', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.linkAccess.mockResolvedValue({
+      allowed: false,
+      reason: 'qa_identity',
+    });
+    const response = await POST(
+      request(bearer('upskii', ['upskii-link:write']))
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.linkAccess).toHaveBeenCalledWith(expect.anything(), USER_ID, {
+      upskiiEmail: 'learner@upskii.test',
+    });
+    expect(mocks.linkUpskiiAccount).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      '[upskii-link]',
+      expect.objectContaining({ reason: 'qa_identity' })
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('learner@upskii');
+    warn.mockRestore();
   });
 
   it('answers a cross-account conflict with the side that is taken', async () => {

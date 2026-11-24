@@ -60,7 +60,12 @@ const params = (id: string) => ({ params: Promise.resolve({ userId: id }) });
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.access.mockResolvedValue({ ok: true, admin: {}, operator });
+  mocks.access.mockResolvedValue({
+    ok: true,
+    admin: {},
+    operator,
+    principal: { kind: 'staff' },
+  });
 });
 
 describe('QA test user admin routes', () => {

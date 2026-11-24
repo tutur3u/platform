@@ -27,7 +27,30 @@ side stores the other side's user tokens.
 | Data shared | Read-only: the user's Upskii classes, lessons and assessments, as scopes `upskii:classes:read`, `upskii:lessons:read` and `upskii:assessments:read`. Upskii receives only the Tuturuuu account id and email for its link row. |
 | Surfaces | Upskii settings (connect, status, disconnect). The Tuturuuu sign-in confirmation. Tuturuuu settings → Account → Integrations on apps/web and every satellite (status, disconnect, connect hands off to Upskii). The catalog card. Meet reads content server-side. |
 | Revocation | Either side can disconnect at any time. Data flows only while both sides hold an active link. |
-| Exceptions | Workspace-level sharing and write access are out of scope. Platform admins cannot create or read another user's link. |
+| Exceptions | Workspace-level sharing and write access are out of scope. Platform admins cannot create or read another user's link. QA test accounts never count as staff; see [QA accounts](#qa-accounts). |
+
+### QA accounts
+
+The Upskii production E2E suite links [QA test accounts](/build/development-tools/qa-test-users)
+through a narrow exception, modeled on the Meet hosting one. A QA account may
+link, and reads its link status as `canLink`, only when all three hold:
+
+1. Its QA run is live: the immutable marker is unexpired, the account is
+   confirmed and not banned (deletion bans first), and the ledger row is
+   `active` (not `deleting` or `deleted`) and unexpired.
+2. Its QA purpose is `upskii-e2e`, in both the marker and the ledger.
+3. The Upskii identity being linked (`upskiiEmail` in
+   `POST /api/v1/integrations/upskii/link`) matches
+   `^qa-fleet\+[a-z0-9-]{1,40}@tuturuuu\.com$`. Read tokens check the same
+   pattern against the stored link's email; the settings status (`canLink`)
+   checks only the run.
+
+These rules apply whether or not the catalog lists Upskii as `available`, and
+an account lookup that fails or finds no account denies even when it is. A QA
+account that fails any of them gets `403 EARLY_ACCESS_ONLY`, and the refusal is
+logged with reason `qa_run` or `qa_identity`. When the run is cleaned up the
+account is deleted, and its links go with it through the
+`external_account_links.user_id` cascade.
 
 ## Link ceremony
 
@@ -231,7 +254,10 @@ reason }`, with no emails or tokens. Revoked rows keep the history.
   invalid class.
 - `apps/web/src/lib/integrations/upskii/access.test.ts`: the staff gate (missing
   catalog entry, unconfirmed email, lookalike domain, QA account, another Azure
-  tenant, failed lookup, explicit `available`) and Basic credential parsing.
+  tenant, failed lookup, explicit `available`, a missing account while open), the QA exception (expired,
+  banned, deleting or deleted runs, another purpose, a non-fleet or missing
+  Upskii email, an unavailable ledger, the open catalog, and the admitted
+  case) and Basic credential parsing.
 - `apps/web/src/app/api/v1/integrations/upskii/link/route.test.ts`,
   `unlink/route.test.ts` and `introspect/route.test.ts`: bearer and secret
   checks, credentials in the body ignored, `429`, write scopes, the staff gate,

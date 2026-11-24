@@ -32,7 +32,12 @@ export async function mintUpskiiReadTokenForUser({
 }): Promise<MintUpskiiReadTokenResult> {
   const link = await store.findActiveByUser(userId);
   if (!link) return { code: 'NOT_LINKED', ok: false };
-  if (!(await canUserLinkUpskii(admin, userId))) {
+  // A QA account's stored link must still name a QA fleet identity.
+  if (
+    !(await canUserLinkUpskii(admin, userId, {
+      upskiiEmail: link.external_email,
+    }))
+  ) {
     return { code: 'EARLY_ACCESS_ONLY', ok: false };
   }
   if (!link.scopes.includes(scope)) {

@@ -28,6 +28,18 @@ function store(link: ExternalAccountLinkRow | null) {
 }
 
 describe('mintUpskiiReadTokenForUser', () => {
+  it('re-checks the gate against the stored Upskii identity', async () => {
+    await mintUpskiiReadTokenForUser({
+      admin: {} as never,
+      scope: 'upskii:classes:read',
+      store: store({ ...LINK, external_email: 'qa-fleet+a@tuturuuu.com' }),
+      userId: 'user-1',
+    });
+    expect(mocks.canLink).toHaveBeenCalledWith({}, 'user-1', {
+      upskiiEmail: 'qa-fleet+a@tuturuuu.com',
+    });
+  });
+
   beforeEach(() => {
     mocks.canLink.mockResolvedValue(true);
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');

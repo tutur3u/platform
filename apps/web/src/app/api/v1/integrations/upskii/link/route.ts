@@ -12,6 +12,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { requireLiveExternalApp } from '@/lib/app-coordination/external-app-bearer';
 import {
   canUserLinkUpskii,
+  getUpskiiLinkAccess,
   jsonNoStore,
 } from '@/lib/integrations/upskii/access';
 import {
@@ -81,8 +82,12 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = verified.claims.sub;
-  if (!(await canUserLinkUpskii(admin, userId))) {
-    auditLinkEvent('link_refused', { reason: 'early_access', userId });
+  const upskiiEmail = parsed.data.upskiiEmail ?? null;
+  // A QA account may link only a QA fleet Upskii identity, checked here on
+  // the email that the link will store.
+  const access = await getUpskiiLinkAccess(admin, userId, { upskiiEmail });
+  if (!access.allowed) {
+    auditLinkEvent('link_refused', { reason: access.reason, userId });
     return jsonNoStore(
       { code: 'EARLY_ACCESS_ONLY', error: 'Linking is in early access' },
       { status: 403 }
@@ -94,7 +99,7 @@ export async function POST(request: NextRequest) {
     {
       bearerJti: verified.claims.jti,
       scopes: parsed.data.scopes,
-      upskiiEmail: parsed.data.upskiiEmail ?? null,
+      upskiiEmail,
       upskiiUserId: parsed.data.upskiiUserId,
       userId,
     }

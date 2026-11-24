@@ -4,10 +4,12 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getCatalogIntegrationStatus } from '@tuturuuu/utils/integrations-catalog';
+import { isQaTestAccount } from '@tuturuuu/utils/qa-test-account';
 import { type NextRequest, NextResponse } from 'next/server';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { paceExternalAppExchangeFailure } from '@/lib/external-apps/exchange-rate-limit';
 import { UPSKII_APP_ID } from './constants';
+import { checkUpskiiQaAccess, type UpskiiQaRefusal } from './qa-access';
 import {
   type AccountLinkRoute,
   admitAccountLinkRequest,
@@ -23,27 +25,59 @@ export function isUpskiiLinkingOpen() {
   return getCatalogIntegrationStatus(UPSKII_APP_ID) === 'available';
 }
 
+export type UpskiiLinkAccess =
+  | { allowed: true; reason: 'open' | 'staff' | 'qa' }
+  | { allowed: false; reason: 'early_access' | UpskiiQaRefusal };
+
 /**
  * Whether this user may hold an Upskii link. Staff verification uses the
  * catalog's verified-staff policy (confirmed exact-domain email, no QA
  * identity, the configured Azure directory), and any lookup failure denies.
+ * A missing or failed lookup denies even when the catalog is open.
+ * A QA test account is admitted only through the `upskii-e2e` exception in
+ * `./qa-access`, open catalog or not. Pass `link.upskiiEmail` when deciding a
+ * link write, so a QA account can only link a QA fleet Upskii identity.
  */
-export async function canUserLinkUpskii(
+export async function getUpskiiLinkAccess(
   admin: TypedSupabaseClient,
-  userId: string
-) {
-  if (isUpskiiLinkingOpen()) return true;
+  userId: string,
+  link?: { upskiiEmail: string | null }
+): Promise<UpskiiLinkAccess> {
+  const open = isUpskiiLinkingOpen();
+  let identity: Awaited<ReturnType<typeof getVerifiedAuthUser>>;
   try {
-    return isVerifiedTuturuuuStaffSession(
-      await getVerifiedAuthUser(admin, userId)
-    );
+    identity = await getVerifiedAuthUser(admin, userId);
   } catch (error) {
     console.warn('[upskii-link] staff check failed', {
       error: error instanceof Error ? error.message : String(error),
       userId,
     });
-    return false;
+    identity = null;
   }
+  // Fail closed: an unknown identity could be a QA account, open catalog or not.
+  if (!identity) return { allowed: false, reason: 'early_access' };
+  if (isQaTestAccount(identity)) {
+    const refusal = await checkUpskiiQaAccess(
+      admin,
+      identity,
+      link ? link.upskiiEmail : undefined
+    );
+    return refusal
+      ? { allowed: false, reason: refusal }
+      : { allowed: true, reason: 'qa' };
+  }
+  if (open) return { allowed: true, reason: 'open' };
+  return isVerifiedTuturuuuStaffSession(identity)
+    ? { allowed: true, reason: 'staff' }
+    : { allowed: false, reason: 'early_access' };
+}
+
+export async function canUserLinkUpskii(
+  admin: TypedSupabaseClient,
+  userId: string,
+  link?: { upskiiEmail: string | null }
+) {
+  return (await getUpskiiLinkAccess(admin, userId, link)).allowed;
 }
 
 export function jsonNoStore(body: unknown, init?: ResponseInit) {

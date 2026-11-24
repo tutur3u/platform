@@ -70,6 +70,77 @@ hold `manage_qa_test_users` in the root workspace. Root administrators hold it
 implicitly; grant it to a dedicated QA-operator role for anyone else. The CLI
 uses the `ttr login` session.
 
+### CI operator (GitHub Actions OIDC)
+
+The Upskii production E2E workflow operates without a staff session. It sends
+`Authorization: Bearer <GitHub Actions OIDC token>` with
+`X-Tuturuuu-QA-Operator: github-oidc` and acts as the staff account named by
+`QA_CI_OPERATOR_USER_ID`. That account must pass the same checks as any
+operator: `manage_qa_test_users`, a verified staff identity, not a QA account,
+not banned. Without the header the request takes the staff session path.
+
+The token is verified against GitHub's key set
+(`https://token.actions.githubusercontent.com/.well-known/jwks`, cached in
+memory, 3-second fetch timeout, RS256 only). Every claim is pinned in
+`apps/web/src/lib/qa-test-users/github-oidc.ts`; no environment variable can
+change them:
+
+| Claim | Required value |
+| --- | --- |
+| `iss` | `https://token.actions.githubusercontent.com` |
+| `aud` | `https://tuturuuu.com/qa-operator` (exactly one audience) |
+| `iat`, `nbf`, `exp` | present and valid, 60-second skew, at most 1 hour old |
+| `repository`, `repository_id`, `repository_owner_id` | `tutur3u/platform`, `536896722`, `107694301` |
+| `job_workflow_ref` | `tutur3u/platform/.github/workflows/upskii-production-e2e.yaml@refs/heads/main` |
+| `ref` | `refs/heads/main` |
+| `environment` | `upskii-production-e2e` |
+| `event_name` | `workflow_dispatch`, `workflow_run`, `repository_dispatch` or `schedule` |
+
+A bad signature, wrong issuer or audience, or an expired token gets `401`; a
+mismatched workflow claim gets `403`. An unset or invalid
+`QA_CI_OPERATOR_USER_ID` gets `503`.
+
+Caps for this principal, enforced in
+`apps/web/src/lib/qa-test-users/ci-policy.ts` on top of the ledger's limits:
+
+- Purpose exactly `upskii-e2e`, `ttlSeconds` at most 7200, tier `free` or
+  `pro`. `workspace: true` is allowed.
+- At most 4 accounts per run and 1 `--staff` host per run, counting every
+  account the run ever held. `staff: true` applies to the whole request, so a
+  staff request creates one account. Appending to a run is refused when that
+  run expires more than 2 hours from now (for example one the same operator
+  made through a staff session).
+- At most 12 new runs per rolling 24 hours, counted from the ledger, deleted
+  runs included. When the ledger's newest-500 listing does not reach back 24
+  hours the request is refused with `429` instead of under-counted.
+- List, session, delete and cleanup act only on accounts whose purpose is
+  `upskii-e2e` and whose operator is `QA_CI_OPERATOR_USER_ID`. Session and
+  delete read the immutable account marker; cleanup and list read the ledger.
+  Listing without `run` returns only this principal's runs, so an orphan sweep
+  finds its own undeleted accounts.
+- Cleanup takes only `{ "runId": ... }` for its own run; `{ "expired": true }`
+  is refused with `403`.
+- Session mints still refuse browser requests (`Origin` or Fetch Metadata).
+
+The caps are checked before the ledger call rather than inside one
+transaction, so two concurrent requests can both pass a count check. The
+ledger's own run and fleet caps still bound the result; run the workflow under
+one concurrency group.
+
+Audit: the ledger records every mutation in `private.qa_test_user_events` under
+the operator account. Every call also logs `[qa-ci-operator] call` with
+`console.info` (or `console.warn` for refusals and errors) carrying
+`operation`, `outcome`, `repository`, `githubRunId`, `runAttempt`, `sha`,
+`eventName` and `actor`, plus the QA run and account IDs. Refused tokens log
+`[qa-ci-operator] refused` with a fixed reason. Requests refused before a
+ledger call (policy refusals, invalid input) appear only in these logs. The token, passwords and minted
+sessions are never logged.
+
+Kill switch: unset `QA_CI_OPERATOR_USER_ID` (every CI call gets `503`), or
+remove `manage_qa_test_users` from, or ban, that account (`403`). Disabling
+`provisioning_enabled` in `private.qa_test_user_control` stops creates for
+every operator.
+
 ## Commands
 
 ```bash
@@ -174,7 +245,11 @@ only.
   `auth/v1/admin/users` create, activate, magic-link verify, ban (refresh
   refused), workspace and account delete, settle.
 - `apps/web/src/lib/qa-test-users/*.test.ts` and the route tests under
-  `apps/web/src/app/api/v1/admin/qa/test-users/`.
+  `apps/web/src/app/api/v1/admin/qa/test-users/`. The CI operator is covered by
+  `github-oidc.test.ts` (each pinned claim, signature, expiry, skew, algorithm),
+  `authorization-ci.test.ts` (unset operator, operator checks, no token in
+  logs), `ci-policy.test.ts` (every cap) and `ci-route.test.ts` (foreign
+  delete, session and cleanup, global cleanup, filtered list, audit lines).
 - `apps/cron-control/src/processors/qa-test-user-cleanup.test.ts`: fences,
   request order, leased unknown outcomes, key headers. The processor was also
   run once against the local Supabase and Auth stack.
