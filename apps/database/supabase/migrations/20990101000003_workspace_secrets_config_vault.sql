@@ -352,6 +352,16 @@ BEGIN
         MESSAGE = format('workspace_secrets_grant_check_failed: %s for service_role', v_fn);
     END IF;
   END LOOP;
+  FOREACH v_fn IN ARRAY ARRAY[
+    'public.put_workspace_secret_config(uuid,text,text)',
+    'public.list_workspace_secret_config(uuid)'
+  ] LOOP
+    IF NOT has_function_privilege('service_role', v_fn, 'EXECUTE') THEN
+      RAISE EXCEPTION USING
+        ERRCODE = '42501',
+        MESSAGE = format('workspace_secrets_grant_check_failed: %s missing for service_role', v_fn);
+    END IF;
+  END LOOP;
   IF pg_has_role('service_role', 'workspace_secrets_definer', 'MEMBER')
      OR pg_has_role('authenticator', 'workspace_secrets_definer', 'MEMBER')
      OR pg_has_role('authenticated', 'workspace_secrets_definer', 'MEMBER')

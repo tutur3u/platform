@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(24);
+select plan(29);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
 values ('39140000-0000-4000-8000-000000000002', 'wcv-creator@example.com', now(), '{}'::jsonb, '{}'::jsonb)
@@ -119,6 +119,35 @@ select is(
   (select count(*)::int from public.workspace_secrets where ws_id = '39140000-0000-4000-8000-0000000000a1' and name = 'ENABLE_WCV'),
   1, 'the put reuses the row instead of adding one');
 select is(pg_temp.put_config('WCV_OTHER_TOKEN', 'x'), 'not_config', 'credential names are refused');
+
+-- Tier changes of rows with a payload ------------------------------------------
+
+select is(pg_temp.put_config('ENABLE_WCV_TIER', 'true'), 'ok', 'fixture: a config value with a Vault payload');
+create temp table wcv_tier as
+  select s.id, (select count(*) from vault.secrets) as vault_count
+  from public.workspace_secrets s
+  where s.ws_id = '39140000-0000-4000-8000-0000000000a1' and s.name = 'ENABLE_WCV_TIER';
+grant select on wcv_tier to service_role;
+select is(pg_temp.as_role($q$update public.workspace_secrets set name = 'WCV_TIER_TOKEN'
+  where id = (select id from wcv_tier)$q$, 'service_role'), '42501',
+  'a config row with a Vault payload cannot be renamed to a credential name');
+set local role service_role;
+select is(
+  (select status from public.put_workspace_secret_credential(
+    '39140000-0000-4000-8000-0000000000a1', (select id from wcv_tier), 'WCV_TIER_TOKEN', 0,
+    '39140000-0000-4000-8000-0000000000e1', 1::smallint, '\x01'::bytea, '\x02'::bytea, null)),
+  'not_credential', 'the credential put refuses a row that has a config payload');
+reset role;
+select ok(
+  (select count(*) from vault.secrets) = (select vault_count from wcv_tier)
+  and exists (
+    select 1 from private.workspace_secret_payloads p
+    where p.secret_id = (select id from wcv_tier) and p.tier = 'config' and p.vault_secret_id is not null
+  ), 'no Vault secret is orphaned and the config payload keeps its Vault link');
+select is(pg_temp.as_role($q$update public.workspace_secrets set name = 'ENABLE_WCV_TIER_RENAMED'
+  where id = (select id from wcv_tier)$q$, 'service_role'), 'ok',
+  'a rename within the config tier still works');
+delete from public.workspace_secrets where id = (select id from wcv_tier);
 
 -- Reads ------------------------------------------------------------------------
 

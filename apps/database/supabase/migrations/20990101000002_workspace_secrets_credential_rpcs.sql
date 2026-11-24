@@ -74,8 +74,15 @@ BEGIN
   END IF;
 
   -- A config row is never taken over by id: its Vault secret would be
-  -- orphaned and its value moved across tiers.
-  IF FOUND AND private.workspace_secret_name_tier(v_row.name) <> 'credential' THEN
+  -- orphaned and its value moved across tiers. A config payload marks the
+  -- row as config even if its name was changed.
+  IF FOUND AND (
+    private.workspace_secret_name_tier(v_row.name) <> 'credential'
+    OR EXISTS (
+      SELECT 1 FROM private.workspace_secret_payloads AS payload
+      WHERE payload.secret_id = p_secret_id AND payload.tier = 'config'
+    )
+  ) THEN
     RETURN QUERY SELECT 'not_credential'::text, p_secret_id, NULL::bigint;
     RETURN;
   END IF;
@@ -169,8 +176,11 @@ SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
-  IF NEW.name IS DISTINCT FROM OLD.name
-     AND coalesce(current_setting('tuturuuu.workspace_secret_credential_put', true), '') <> 'on'
+  IF NEW.name IS NOT DISTINCT FROM OLD.name THEN
+    RETURN NEW;
+  END IF;
+
+  IF coalesce(current_setting('tuturuuu.workspace_secret_credential_put', true), '') <> 'on'
      AND EXISTS (
        SELECT 1 FROM private.workspace_secret_payloads AS payload
        WHERE payload.secret_id = OLD.id AND payload.tier = 'credential'
@@ -178,6 +188,18 @@ BEGIN
     RAISE EXCEPTION USING
       ERRCODE = '42501',
       MESSAGE = 'workspace_secrets_credential_rename_requires_put';
+  END IF;
+
+  -- A row with any payload keeps its tier: moving it would orphan a Vault
+  -- secret or a ciphertext bound to the other tier.
+  IF private.workspace_secret_name_tier(OLD.name) <> private.workspace_secret_name_tier(NEW.name)
+     AND EXISTS (
+       SELECT 1 FROM private.workspace_secret_payloads AS payload
+       WHERE payload.secret_id = OLD.id
+     ) THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '42501',
+      MESSAGE = 'workspace_secrets_payload_tier_change';
   END IF;
   RETURN NEW;
 END;
@@ -295,6 +317,17 @@ BEGIN
           MESSAGE = format('workspace_secrets_grant_check_failed: %s for %s', v_fn, v_role);
       END IF;
     END LOOP;
+  END LOOP;
+  FOREACH v_fn IN ARRAY ARRAY[
+    'public.put_workspace_secret_credential(uuid,uuid,text,bigint,uuid,smallint,bytea,bytea,text)',
+    'public.get_workspace_secret_credential(uuid,text)',
+    'public.workspace_secret_credential_status(uuid,uuid)'
+  ] LOOP
+    IF NOT has_function_privilege('service_role', v_fn, 'EXECUTE') THEN
+      RAISE EXCEPTION USING
+        ERRCODE = '42501',
+        MESSAGE = format('workspace_secrets_grant_check_failed: %s missing for service_role', v_fn);
+    END IF;
   END LOOP;
   IF has_function_privilege('service_role', 'private.workspace_secrets_guard_payload_rename()', 'EXECUTE') THEN
     RAISE EXCEPTION USING
