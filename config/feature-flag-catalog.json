@@ -643,7 +643,7 @@
       "appsComplete": false,
       "sources": [
         "packages/utils/src/feature-flags/data.ts",
-        "apps/web/src/app/api/workspaces/[wsId]/deletion-status/route.ts",
+        "apps/web/src/lib/workspaces/workspace-deletion-billing.ts",
         "apps/database/supabase/migrations/20261119155010_owner_only_workspace_deletion.sql"
       ],
       "defaults": {
