@@ -229,19 +229,26 @@ function ParticipantTileImpl({
       {!showVideo && (
         <div
           className={cn(
-            'absolute inset-x-0 top-0 grid place-items-center bg-muted/40',
+            'absolute inset-x-0 top-0 grid place-items-center',
             // Stops above the one-line name row; the avatar sizes to what is left.
             floating ? 'bottom-0 pb-7' : 'bottom-9 [container-type:size]'
           )}
         >
           {MEETING_APP === 'parley' && participant.assistantAudio ? (
-            <LiveAvatar size={floating ? 48 : 120} />
+            <LiveAvatar
+              className={
+                floating
+                  ? undefined
+                  : 'size-[clamp(1.5rem,calc(100cqh-0.5rem),7.5rem)]'
+              }
+              size={floating ? 48 : 120}
+            />
           ) : (
             <Avatar
               className={
                 floating
                   ? 'size-[clamp(1.75rem,calc((100cqh-1.75rem)*0.75),5rem)] text-[clamp(0.75rem,16cqh,1.25rem)]'
-                  : 'size-[clamp(2rem,calc(100cqh-0.5rem),5rem)] text-[clamp(0.75rem,25cqh,1.25rem)]'
+                  : 'size-[clamp(min(2rem,100cqh),calc(100cqh-0.5rem),5rem)] text-[clamp(0.75rem,25cqh,1.25rem)]'
               }
             >
               <AvatarImage src={participant.avatarUrl} alt="" />

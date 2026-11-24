@@ -141,5 +141,9 @@ it('keeps the avatar above the name row so a long name cannot overlap it', () =>
     resumePlaybackLabel: 'Play audio',
   });
   expect(html).toContain('bottom-9');
+  expect(html).toContain('[container-type:size]');
+  expect(html).toContain('clamp(min(2rem,100cqh),calc(100cqh-0.5rem),5rem)');
+  // The tile already carries the muted layer; a second one draws a seam.
+  expect(html).not.toContain('top-0 grid place-items-center bg-muted/40');
   expect(html).not.toContain('absolute inset-0 grid size-full');
 });

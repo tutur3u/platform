@@ -1,4 +1,5 @@
 'use client';
+import { cn } from '@tuturuuu/utils/format';
 import { useSyncExternalStore } from 'react';
 import {
   playbackSnapshot,
@@ -7,7 +8,13 @@ import {
 } from '../../live-assistant/playback-meter';
 
 /** Lightweight audio-driven avatar; no model files, camera capture, or face tracking. */
-export function LiveAvatar({ size = 80 }: { size?: number }) {
+export function LiveAvatar({
+  size = 80,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   const level = useSyncExternalStore(
     subscribePlaybackMeter,
     playbackSnapshot,
@@ -19,7 +26,7 @@ export function LiveAvatar({ size = 80 }: { size?: number }) {
       height={size}
       viewBox="0 0 100 100"
       aria-hidden="true"
-      className="shrink-0 text-primary"
+      className={cn('shrink-0 text-primary', className)}
     >
       <circle cx="50" cy="50" r="47" fill="currentColor" opacity="0.08" />
       <path
