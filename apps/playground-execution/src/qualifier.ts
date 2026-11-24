@@ -11,6 +11,31 @@ import type { Env } from './environment';
 // input, through the same exec, launcher and sandbox as production Runs and
 // checks, in one fresh guest that is destroyed at the end.
 const READY_TIMEOUT_MS = 90_000;
+// Each sandbox layer on its own, as root, with its own error, so a hosted
+// runtime that refuses one layer is named instead of failing every case.
+const LAYER_PROBE = String.raw`
+probe() {
+  name=$1; shift
+  out=$("$@" 2>&1); code=$?
+  printf '%s: exit %s %s\n' "$name" "$code" "$(printf '%s' "$out" | tail -c 400)"
+}
+probe lsm /usr/bin/unshare --mount --propagation private /bin/sh -c '/usr/bin/mount -t securityfs none /sys/kernel/security && /bin/cat /sys/kernel/security/lsm'
+probe tmpfs /usr/bin/unshare --mount --propagation private /usr/bin/mount -t tmpfs -o size=1m,nosuid,nodev,mode=1777 tmpfs /tmp
+probe namespaces /usr/bin/unshare --net --pid --ipc --uts --fork --kill-child --mount-proc /bin/true
+probe identity /usr/bin/setpriv --reuid 65534 --regid 65534 --clear-groups --pdeathsig KILL --bounding-set=-all --inh-caps=-all --ambient-caps=-all --no-new-privs /bin/true
+probe landlock /usr/bin/setpriv --landlock-access fs:write-file,truncate,remove-dir,remove-file,make-char,make-dir,make-reg,make-sock,make-fifo,make-block,make-sym,refer --landlock-rule path-beneath:write-file:/dev/null /bin/true
+probe chain /usr/bin/unshare --mount --propagation private /usr/bin/python3 -I -S -B -c '
+import subprocess, sys, traceback
+sys.path.insert(0, "/usr/local/lib/playground")
+try:
+    import run
+    run.stage_files([])
+    p = subprocess.run(run.sandboxed("/bin/true"), cwd=run.WORKSPACE, env=run.GUEST_ENV, preexec_fn=run.set_limits, capture_output=True, timeout=5)
+    print(p.returncode, p.stderr.decode(errors="replace"))
+except Exception:
+    traceback.print_exc()
+'
+`;
 const CASE_TIMEOUT_MS = 45_000;
 
 type Job = Record<string, unknown>;
@@ -229,12 +254,12 @@ export class PlaygroundQualifier extends DurableObject<Env> {
     for (;;) {
       try {
         // The guest's own view, as root and before any sandbox: identity,
-        // capabilities and the kernel's security modules.
+        // capabilities, the kernel, then each sandbox layer on its own.
         guest = (
           await this.exec([
             '/bin/sh',
             '-c',
-            'id; grep -E "^(Cap(Eff|Bnd)|NoNewPrivs)" /proc/self/status; cat /sys/kernel/security/lsm; uname -r',
+            `id; grep -E "^(Cap(Eff|Bnd)|NoNewPrivs)" /proc/self/status; uname -r\n${LAYER_PROBE}`,
           ])
         ).output;
         break;
@@ -275,7 +300,7 @@ export class PlaygroundQualifier extends DurableObject<Env> {
     return {
       passed: results.every(({ passed }) => passed),
       coldStartMs,
-      guest: guest.slice(0, 2000),
+      guest: guest.slice(0, 6000),
       cases: results,
       stopped: !container.running,
     };

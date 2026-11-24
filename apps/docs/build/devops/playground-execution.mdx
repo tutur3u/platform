@@ -83,9 +83,13 @@ launcher and sandbox. The cases are every stock template, standard input, the
 dropped identity and capability sets, denied egress to public, metadata and
 private addresses and DNS, workspace write bounds, the command timeout, the
 output and process limits, and a compile-only check per language. It also
-records the guest's own view as root (identity, capabilities, the kernel's
-security modules and version) and the cold start time, then destroys the
-guest. The job uploads the report as `playground-execution-qualification-<sha>`
+records the guest's own view as root (identity, capabilities, kernel version)
+and tries each sandbox layer on its own: the security modules, the `/tmp`
+tmpfs mount, the namespaces, the identity drop, Landlock, and the launcher's
+full preflight chain. Each line reports its exit code and error, so a runtime
+that refuses one layer is named rather than failing every case with
+`sandbox_failed`. The report also has the cold start time; the guest is then
+destroyed. The job uploads the report as `playground-execution-qualification-<sha>`
 and fails unless every case passed and the guest stopped. Check cases need an
 image built from a commit that includes check mode.
 
