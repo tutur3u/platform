@@ -247,11 +247,23 @@ export function usePrejoinCapture() {
     videoEnabled,
   ]);
 
-  /** A failed join takes the devices back from the room, so the preview restarts. */
+  /**
+   * A failed join takes the devices back from the room, so the preview restarts
+   * with fresh streams. It deliberately does not stop the handed-off stream: the
+   * room may still hold it, and some browsers (iOS Safari) end an older track
+   * when a new one is requested, so the new capture replaces it instead.
+   */
   const reset = useCallback(() => {
     transferred.current = null;
     setHandedOff(false);
   }, []);
+
+  /**
+   * Ends the preview for good when the pre-join stage goes away, however it
+   * ended. Streams the room adopted stay with the room; anything the preview
+   * still holds is stopped, so no track outlives the stage.
+   */
+  const finish = useCallback(() => setHandedOff(true), []);
 
   /** Leaving releases both local streams. */
   const release = useCallback(() => {
@@ -285,6 +297,7 @@ export function usePrejoinCapture() {
     handOff,
     release,
     reset,
+    finish,
   };
 }
 

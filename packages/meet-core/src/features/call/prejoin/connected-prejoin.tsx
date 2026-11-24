@@ -79,11 +79,14 @@ export function ConnectedPrejoin({
       ? t('join_error_hint')
       : null;
   const meetingId = usePrejoinInfo()?.meetingId ?? miraMeetingId;
-  const { handedOff, reset } = capture;
-  // A failed join leaves the devices with the room; take them back for the retry.
+  const { handedOff, reset, finish } = capture;
+  // A dropped connection leaves the devices with the room; take them back for the
+  // retry. A resource refusal can clear and admit the person, so it does not.
   useEffect(() => {
-    if (connectionError && handedOff) reset();
-  }, [connectionError, handedOff, reset]);
+    if (connectionError && !resourceKey && handedOff) reset();
+  }, [connectionError, resourceKey, handedOff, reset]);
+  // Admission, leaving or an error screen ends the stage: nothing may stay live.
+  useEffect(() => finish, [finish]);
   const waiting = room.state.admission === 'waiting';
   const connecting = room.state.admission === 'connecting';
   const trimmed = prepareParticipantName(displayName);

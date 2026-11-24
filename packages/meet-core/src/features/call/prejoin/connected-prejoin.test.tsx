@@ -60,6 +60,7 @@ function capture() {
     handOff: vi.fn(() => media),
     release: vi.fn(),
     reset: vi.fn(),
+    finish: vi.fn(),
   } as unknown as PrejoinCapture;
 }
 
@@ -124,7 +125,7 @@ function show(
         </PrejoinProvider>
       )
     : ({ children }: { children: React.ReactNode }) => <>{children}</>;
-  render(
+  const view = render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <Wrap>
         <ConnectedPrejoin
@@ -147,7 +148,7 @@ function show(
       </Wrap>
     </NextIntlClientProvider>
   );
-  return { cap, controller, onJoined, onLeave };
+  return { cap, controller, onJoined, onLeave, unmount: view.unmount };
 }
 
 afterEach(() => {
@@ -261,4 +262,16 @@ it('takes the devices back for a retry after a failed join', () => {
 it('leaves a fresh preview alone when nothing failed', () => {
   const { cap } = show({});
   expect(cap.reset).not.toHaveBeenCalled();
+});
+
+it('keeps the preview when a resource refusal may still clear', () => {
+  const { cap } = show({ error: 'admission_closed', handedOff: true });
+  expect(cap.reset).not.toHaveBeenCalled();
+});
+
+it('ends the preview when the stage goes away', () => {
+  const { cap, unmount } = show({});
+  expect(cap.finish).not.toHaveBeenCalled();
+  unmount();
+  expect(cap.finish).toHaveBeenCalledTimes(1);
 });

@@ -79,7 +79,9 @@ export function PhoneSheet({
         )}
         side="bottom"
         style={{
-          ...(height ? { top: (offsetTop ?? 0) + TOP_GAP, height } : null),
+          ...(height
+            ? { top: (offsetTop ?? 0) + TOP_GAP, height: height - TOP_GAP }
+            : null),
           transform: drag ? `translateY(${drag}px)` : undefined,
         }}
       >

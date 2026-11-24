@@ -61,7 +61,10 @@ it('sizes to the visual viewport so the composer clears the keyboard', () => {
   });
   show();
   const dialog = screen.getByRole('dialog');
-  expect(dialog.style.height).toBe('420px');
+  // The sheet's bottom edge is the viewport's bottom edge, above the keyboard.
+  expect(
+    Number.parseInt(dialog.style.top) + Number.parseInt(dialog.style.height)
+  ).toBe(420);
   Object.defineProperty(window, 'visualViewport', {
     configurable: true,
     value: undefined,
