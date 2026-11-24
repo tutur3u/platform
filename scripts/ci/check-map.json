@@ -110,7 +110,7 @@
     "mobile-shadcn-ratchet": "^(apps/mobile/(lib|test)/|apps/mobile/tool/shadcn_import_allowlist\\.txt$|scripts/(check-mobile-shadcn-imports|dart-directive-uris)\\.js$)",
     "mobile-api-mappings": "^(apps/mobile/lib|apps/web/src/app/api)/",
     "api-registry": "^apps/(api/|web/src/app/api/)",
-    "web-route-manifest": "^(apps/web/(src/app/|cloudflare/|vercel\\.json$|next\\.config\\.ts$|src/proxy\\.ts$|src/lib/satellite-api-rewrites\\.ts$|start-route-manifest\\.json$)|packages/utils/src/next-config\\.ts$|\\.oxfmtrc\\.json$|bun\\.lock$)",
+    "web-route-manifest": "^(apps/web/(src/app/|cloudflare/|vercel\\.json$|next\\.config\\.ts$|src/proxy\\.ts$|src/lib/satellite-api-rewrites\\.ts$|start-route-manifest\\.json$)|packages/utils/src/(next-config|web-workspace-api-paths)\\.ts$|\\.oxfmtrc\\.json$|bun\\.lock$)",
     "gateway-routes": "^apps/(web/(src/app/|cloudflare/)|gateway/src/web-routes\\.generated\\.json$)"
   }
 }

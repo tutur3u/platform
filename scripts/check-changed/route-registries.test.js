@@ -53,6 +53,7 @@ test('each registry is checked for the sources that feed it, and only those', ()
     ['apps/web/src/proxy.ts', ['web-route-manifest']],
     ['apps/web/src/lib/satellite-api-rewrites.ts', ['web-route-manifest']],
     ['packages/utils/src/next-config.ts', ['web-route-manifest']],
+    ['packages/utils/src/web-workspace-api-paths.ts', ['web-route-manifest']],
     // The manifest is written through the formatter, so its configuration
     // and its installed version decide the bytes.
     ['.oxfmtrc.json', ['web-route-manifest']],
