@@ -37,7 +37,11 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _request: Request,
     _id: string,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run(guestAccess)),
+  ) => {
+    // Like the real route wrapper, a returned Response passes through.
+    const result = await run(guestAccess);
+    return result instanceof Response ? result : Response.json(result);
+  },
 }));
 
 import { MEET_TRANSCRIPT_NOTICE_VERSION as version } from '@tuturuuu/realtime/meet';
