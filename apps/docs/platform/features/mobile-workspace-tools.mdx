@@ -2187,16 +2187,28 @@ not establish gesture feel on devices.
 
 Tapping a task on a board (List, Kanban or Timeline) opens the task detail
 sheet. It opens at its middle detent and drags up to full height; on tablets
-it opens as a dialog. The long-press menu is unchanged. The sheet and the
-task detail screen are built from the same blocks, in this order:
+it opens as a dialog. The long-press menu is unchanged. Opening a task
+reads its description first: the middle detent shows the title, one line of
+property chips and the description. The sheet and the task detail screen are
+built from the same blocks, in this order:
 
 - **Header**: the task reference (for example `TASK-12`), an expand button
   that opens the task detail screen, a More menu (Start focus, then Delete
   task) and Close. Under it, the title edits in place: a tap turns it into a
-  field, and Done, a tap outside or closing the sheet saves it. Status and
-  priority chips open the same editors as their rows.
-- **Properties**: grouped rows with an icon, a label, the current value and a
-  chevron. Each row opens its editor:
+  field, and Done, a tap outside or closing the sheet saves it.
+- **Property chips**: one line under the title that scrolls sideways when it
+  does not fit: list and status, priority, due date, start date, assignees,
+  labels, projects and estimation. Each chip shows the value (the first
+  assignee, label or project plus how many more, and dates as Today,
+  Tomorrow or in N days) and opens the same picker as its row. An unset
+  property shows its name, muted. A late due date reads in the destructive
+  tone unless the task is done.
+- **Description**: the rendered rich text. Edit (or the empty row) swaps in
+  the rich editor, which autosaves as the user types.
+- **All properties**: one row, folded by default, that unfolds the grouped
+  property rows below. On the task detail screen from a 720dp body width the
+  rows stay unfolded in the side column. Each row has an icon, a label, the
+  current value and a chevron, and opens its editor:
   - **List** shows the list and its status. Its picker lists every list with
     its status, so one choice sets both. The sheet stays open on the new
     value.
@@ -2220,8 +2232,6 @@ task detail screen are built from the same blocks, in this order:
   - **Labels** (boards with labels) shows tinted label chips.
   - **Projects** (boards with projects) and **Estimation** (the board's
     estimation scale, or No estimate).
-- **Description**: the rendered rich text. Edit (or the empty row) swaps in
-  the rich editor, which autosaves as the user types.
 - **Relationships**: parent task, subtasks, blocked by, blocking and related
   tasks as grouped rows. A linked task opens on tap and has a remove button;
   each group ends with an Add row. With no links, an illustration plays a few
@@ -2244,6 +2254,19 @@ which edits in place, and the floating dock's Back closes it. From a 720dp
 body width it splits into a main column (title, chips, description,
 relationships) and a properties column with Delete task at its end.
 
+The description renders the web editor's content: headings 1 to 6, bullet,
+numbered and task lists, toggle blocks (shown open, summary first), code
+blocks and inline code, quotes, links, mentions, tables, images, videos,
+horizontal rules, highlights and text colours. Links open through the app's
+link launcher, so only web, mail, phone and SMS links open. A colour the
+app cannot paint, such as a theme variable, is dropped and the text keeps the
+theme colour. An image with a stored size reserves its box before it loads
+and is decoded at its displayed width. Parsed descriptions are cached per
+stored payload, so reopening a task or a board change does not parse it
+again, and a long description that is not cached yet renders one frame after
+the sheet opens, behind a placeholder. Mobile editing still saves a
+horizontal rule as a `---` line.
+
 The **create task form** opens above the shell, full height, with Cancel,
 Create and a **Create more** switch pinned at the bottom above the keyboard.
 Create more clears the title and description after each create and keeps the
@@ -2253,15 +2276,20 @@ dragging.
 
 Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
 colours, English and Vietnamese labels including None),
-`task_board_quick_actions_test.dart` (grouped rows in order with their
-values, each row opening its editor, the priority picker's icons and order,
+`task_board_quick_actions_test.dart` (grouped rows, once unfolded, in order
+with their values, each row opening its editor, the priority picker's icons and order,
 None clears, a list choice moving the task with the sheet open, estimation,
 in-place title edit, Delete set apart and confirmed, a dropped concurrent edit
 with every control disabled, due-date clear, 320dp at 2x text,
 light/dark/blob renders), `task_board_quick_actions_dates_test.dart` (both
 dates or None, a picked start or due day, the range pull, an unchanged day,
 start-date clear, rollback with an error toast, the timezone setting),
-`task_board_task_detail_test.dart` (the dirty create form's confirmation,
+`task_board_task_detail_description_first_test.dart` (the description above
+the folded property rows, a chip per property, the priority and due-date chips
+opening their pickers, the rows unfolding and folding),
+`tiptap_to_quill_web_parity_test.dart` (toggle blocks, unknown containers,
+horizontal rules, text colours and unpaintable colours, the description
+cache), `task_board_task_detail_test.dart` (the dirty create form's confirmation,
 the tablet two-column screen, the relationships illustration with and
 without reduced motion, phone sheet and tablet screen renders),
 `task_board_task_create_more_test.dart` (Create more),

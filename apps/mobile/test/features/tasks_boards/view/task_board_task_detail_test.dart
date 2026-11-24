@@ -240,6 +240,7 @@ void main() {
         DesignRender.setSize(tester, DesignRender.sizes['phone']!);
         await pumpBoard(tester, settings, brightness);
         await expandTaskSheet(tester);
+        await showTaskProperties(tester);
 
         expect(_key('task-quick-list'), findsOneWidget);
         expect(tester.takeException(), isNull);

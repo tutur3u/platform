@@ -447,8 +447,10 @@ _TaskPriorityStyle _taskPriorityStyle(BuildContext context, String? priority) {
   );
 }
 
+/// The parsed description, remembered per payload: board cards and the
+/// detail sheet ask on every rebuild.
 ParsedTipTapDescription? _taskDescriptionParsed(String? rawDescription) {
-  return parseTipTapTaskDescription(rawDescription);
+  return parseTipTapTaskDescriptionCached(rawDescription);
 }
 
 String? _taskDescriptionPreview(String? rawDescription) {

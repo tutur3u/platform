@@ -1,5 +1,8 @@
 import 'package:mobile/core/utils/tiptap_document_codec.dart';
 
+/// The Quill embed type for a TipTap horizontal rule.
+const String taskDescriptionDividerEmbedType = 'divider';
+
 class QuillLine {
   const QuillLine({
     this.segments = const [],
@@ -20,7 +23,7 @@ class QuillLine {
   }
 }
 
-enum QuillSegmentKind { text, image, video, mention, table }
+enum QuillSegmentKind { text, image, video, mention, table, divider }
 
 class QuillSegment {
   const QuillSegment._({
@@ -46,6 +49,9 @@ class QuillSegment {
 
   const QuillSegment.table({required String data})
     : this._(kind: QuillSegmentKind.table, src: data);
+
+  /// A horizontal rule.
+  const QuillSegment.divider() : this._(kind: QuillSegmentKind.divider);
 
   final QuillSegmentKind kind;
   final String? text;

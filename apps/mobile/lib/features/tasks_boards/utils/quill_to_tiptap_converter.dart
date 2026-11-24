@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:mobile/features/tasks_boards/utils/tiptap_quill_marks.dart';
 import 'package:mobile/features/tasks_boards/utils/tiptap_quill_models.dart';
 
 String? quillDocumentToTipTapJson(Document document) {
@@ -91,6 +92,13 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
             ...current.segments,
             QuillSegment.table(data: table),
           ],
+        );
+        continue;
+      }
+
+      if (insert.containsKey(taskDescriptionDividerEmbedType)) {
+        current = current.copyWith(
+          segments: [...current.segments, const QuillSegment.divider()],
         );
         continue;
       }
@@ -211,6 +219,12 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
 
   if (inlineNodes.isEmpty &&
       line.segments.length == 1 &&
+      line.segments.first.kind == QuillSegmentKind.divider) {
+    return {'type': 'horizontalRule'};
+  }
+
+  if (inlineNodes.isEmpty &&
+      line.segments.length == 1 &&
       line.segments.first.kind == QuillSegmentKind.table) {
     final data = line.segments.first.src ?? '';
     if (data.isNotEmpty) {
@@ -304,6 +318,13 @@ List<Map<String, dynamic>> _marksFromQuillAttrs(Map<String, dynamic> attrs) {
     marks.add({
       'type': 'highlight',
       'attrs': {'color': background.trim()},
+    });
+  }
+
+  if (quillColorOrNull(attrs['color']) case final color?) {
+    marks.add({
+      'type': 'textStyle',
+      'attrs': {'color': color},
     });
   }
 

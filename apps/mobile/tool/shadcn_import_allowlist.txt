@@ -85,7 +85,6 @@ lib/features/tasks_boards/widgets/task_description_image_embed_builder.dart
 lib/features/tasks_boards/widgets/task_description_mention_embed_builder.dart
 lib/features/tasks_boards/widgets/task_description_table_embed_builder.dart
 lib/features/tasks_boards/widgets/task_description_video_embed_builder.dart
-lib/features/tasks_boards/widgets/task_description_viewer.dart
 lib/features/tasks_estimates/view/task_estimates_view.dart
 lib/features/tasks_estimates/widgets/task_estimate_boards_section.dart
 lib/features/tasks_estimates/widgets/task_estimate_dialog.dart

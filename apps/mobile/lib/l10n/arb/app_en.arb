@@ -5313,6 +5313,8 @@
   "taskBoardsUnarchive": "Unarchive board",
   "taskBoardsUnarchived": "Board unarchived.",
   "taskBoardsUpdated": "Board updated.",
+  "taskDescriptionImageUnavailable": "Image unavailable",
+  "taskDetailAllProperties": "All properties",
   "taskDetailCreateMore": "Create more",
   "taskDetailDiscardAction": "Discard",
   "taskDetailDiscardDescription": "Your changes to this task have not been saved.",

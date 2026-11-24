@@ -107,8 +107,12 @@ void main() {
       );
       await tester.tap(find.text('Review launch checklist'));
       await tester.pumpAndSettle();
-      // Properties are grouped rows; the priority row opens its editor.
-      expect(find.byKey(const ValueKey('task-quick-priority')), findsOneWidget);
+      // Properties lead as one line of chips; the full rows fold below
+      // the description.
+      expect(
+        find.byKey(const ValueKey('task-detail-priority-chip')),
+        findsOneWidget,
+      );
       final sheetScroll = find.byType(Scrollable).last;
       final description = find.byKey(
         const ValueKey('kanban-detail-edit-description'),

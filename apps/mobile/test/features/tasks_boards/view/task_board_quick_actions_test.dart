@@ -249,6 +249,9 @@ void main() {
     testWidgets('the title edits in place and saves on Done', (tester) async {
       await openSheet(tester);
 
+      // Unfolding the property rows can scroll the title out of view.
+      await tester.ensureVisible(quickActionTile('task-detail-title'));
+      await tester.pumpAndSettle();
       await tester.tap(quickActionTile('task-detail-title'));
       await tester.pumpAndSettle();
       await tester.enterText(
@@ -368,7 +371,8 @@ void main() {
         await tester.tap(find.text('Alpha task').first);
         await tester.pumpAndSettle();
 
-        expect(quickActionTile('task-quick-priority'), findsOneWidget);
+        // The middle detent leads with the chips and the description.
+        expect(quickActionTile('task-detail-priority-chip'), findsOneWidget);
         await DesignRender.capture(tester, 'task-quick-actions-phone-$name');
       });
     }

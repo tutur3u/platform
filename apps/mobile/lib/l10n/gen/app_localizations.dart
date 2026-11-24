@@ -21085,6 +21085,18 @@ abstract class AppLocalizations {
   /// **'Board updated.'**
   String get taskBoardsUpdated;
 
+  /// No description provided for @taskDescriptionImageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Image unavailable'**
+  String get taskDescriptionImageUnavailable;
+
+  /// No description provided for @taskDetailAllProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'All properties'**
+  String get taskDetailAllProperties;
+
   /// No description provided for @taskDetailCreateMore.
   ///
   /// In en, this message translates to:

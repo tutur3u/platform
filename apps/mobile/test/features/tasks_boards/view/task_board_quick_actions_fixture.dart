@@ -147,7 +147,8 @@ class QuickActionsRepository extends RowActionsRepository {
 Finder quickActionTile(String key) => find.byKey(ValueKey(key));
 
 /// Pumps the board, lets its first loads finish and taps [taskName]. The
-/// sheet opens at its middle detent; [expand] drags it to full height so
+/// sheet opens at its middle detent; [expand] drags it to full height and
+/// [showProperties] unfolds the property rows under the description, so
 /// every property row is on screen.
 Future<void> openQuickActionsSheet(
   WidgetTester tester, {
@@ -156,6 +157,7 @@ Future<void> openQuickActionsSheet(
   String taskName = 'Alpha task',
   TimezoneSettingsCubit? timezone,
   bool expand = true,
+  bool showProperties = true,
 }) async {
   await pumpRowActionsBoard(
     tester,
@@ -166,15 +168,29 @@ Future<void> openQuickActionsSheet(
   await tester.tap(find.text(taskName).first);
   await tester.pumpAndSettle();
   if (expand) await expandTaskSheet(tester);
+  if (showProperties) await showTaskProperties(tester);
 }
 
 /// Drags the task sheet from its middle detent to full height.
 Future<void> expandTaskSheet(WidgetTester tester) async {
   await tester.drag(
-    quickActionTile('task-quick-list'),
+    quickActionTile('task-detail-title'),
     const Offset(0, -600),
     warnIfMissed: false,
   );
+  await tester.pumpAndSettle();
+}
+
+/// Unfolds the property rows, which the detail surface folds under the
+/// description by default.
+Future<void> showTaskProperties(WidgetTester tester) async {
+  final toggle = quickActionTile('task-detail-properties-toggle');
+  await tester.ensureVisible(toggle);
+  await tester.pumpAndSettle();
+  await tester.tap(toggle);
+  await tester.pumpAndSettle();
+  // Bring the first property row back into view for the caller.
+  await tester.ensureVisible(quickActionTile('task-quick-list'));
   await tester.pumpAndSettle();
 }
 

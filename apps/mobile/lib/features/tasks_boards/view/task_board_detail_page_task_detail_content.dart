@@ -4,14 +4,16 @@ part of 'task_board_detail_page.dart';
 /// and a properties column.
 const double _taskDetailSplitWidth = 720;
 
-/// The task detail building blocks in reading order: title, status and
-/// priority, properties, description, relationships, then the destructive
-/// actions apart at the end.
+/// The task detail building blocks in reading order: the title, one line
+/// of property chips, the description, every property as rows (folded by
+/// default), relationships, then the destructive actions apart at the end.
+/// Opening a task reads its description first; the chips change a
+/// property in one tap without unfolding the full list.
 ///
 /// The phone sheet and the detail screen both render this. From
-/// [_taskDetailSplitWidth] the screen puts the properties and destructive
-/// actions in a side column next to the title, description and
-/// relationships.
+/// [_taskDetailSplitWidth] the screen puts the properties, unfolded, and
+/// the destructive actions in a side column next to the title,
+/// description and relationships.
 class _TaskDetailContent extends StatelessWidget {
   const _TaskDetailContent({
     required this.task,
@@ -56,6 +58,7 @@ class _TaskDetailContent extends StatelessWidget {
       ],
       _TaskDetailMetaChips(
         task: task,
+        board: board,
         list: list,
         enabled: enabled,
         actions: actions,
@@ -64,56 +67,64 @@ class _TaskDetailContent extends StatelessWidget {
     ];
     // Fleet tasks lead with their status, owner, ETA and freshness.
     final fleet = fleetMetaOrNull(task, listStatus: list?.status);
-    final properties = <Widget>[
-      if (fleet != null) ...[
-        FleetTaskDetailCard(meta: fleet),
-        const SizedBox(height: AppLayout.itemGap),
-      ],
-      _TaskDetailPropertiesCard(
-        task: task,
-        board: board,
-        list: list,
-        enabled: enabled,
-        actions: actions,
-      ),
-    ];
-    final narrative = board == null
-        ? const <Widget>[]
-        : <Widget>[
-            _TaskDetailDescriptionSection(
-              task: task,
-              board: board,
-              lists: lists,
-              isPersonalWorkspace: isPersonalWorkspace,
-              editorHeight: inSheet ? 300 : 420,
-              onNavigateRelatedTask: actions.onNavigateRelatedTask,
-            ),
-            const SizedBox(height: AppLayout.sectionGap),
-            _TaskDetailRelationshipsSection(
-              task: task,
-              board: board,
-              lists: lists,
-              isPersonalWorkspace: isPersonalWorkspace,
-              collapsible: inSheet,
-              onNavigateRelatedTask: actions.onNavigateRelatedTask,
-            ),
-          ];
+    final fleetCard = fleet == null ? null : FleetTaskDetailCard(meta: fleet);
+    final propertiesCard = _TaskDetailPropertiesCard(
+      task: task,
+      board: board,
+      list: list,
+      enabled: enabled,
+      actions: actions,
+    );
+    final description = board == null
+        ? null
+        : _TaskDetailDescriptionSection(
+            task: task,
+            board: board,
+            lists: lists,
+            isPersonalWorkspace: isPersonalWorkspace,
+            editorHeight: inSheet ? 300 : 420,
+            onNavigateRelatedTask: actions.onNavigateRelatedTask,
+          );
+    final relationships = board == null
+        ? null
+        : _TaskDetailRelationshipsSection(
+            task: task,
+            board: board,
+            lists: lists,
+            isPersonalWorkspace: isPersonalWorkspace,
+            collapsible: inSheet,
+            onNavigateRelatedTask: actions.onNavigateRelatedTask,
+          );
     final danger = _TaskDetailDangerZone(
       task: task,
       enabled: enabled,
       actions: actions,
     );
 
+    // Fleet tasks lead with their status card, so it stays above the
+    // description on one column.
     Widget singleColumn() => Column(
       key: const ValueKey('task-detail-single-column'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ...header,
-        const SizedBox(height: AppLayout.sectionGap),
-        ...properties,
-        if (narrative.isNotEmpty) ...[
+        if (fleetCard != null) ...[
+          const SizedBox(height: AppLayout.itemGap),
+          fleetCard,
+        ],
+        if (description != null) ...[
           const SizedBox(height: AppLayout.sectionGap),
-          ...narrative,
+          description,
+        ],
+        const SizedBox(height: AppLayout.sectionGap),
+        // Keyed so the unfolded state survives sections appearing above it.
+        _TaskDetailPropertiesDisclosure(
+          key: const ValueKey('task-detail-properties'),
+          properties: propertiesCard,
+        ),
+        if (relationships != null) ...[
+          const SizedBox(height: AppLayout.sectionGap),
+          relationships,
         ],
         const SizedBox(height: AppLayout.sectionGap * 2),
         danger,
@@ -133,8 +144,14 @@ class _TaskDetailContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...header,
-                  const SizedBox(height: AppLayout.sectionGap),
-                  ...narrative,
+                  if (description != null) ...[
+                    const SizedBox(height: AppLayout.sectionGap),
+                    description,
+                  ],
+                  if (relationships != null) ...[
+                    const SizedBox(height: AppLayout.sectionGap),
+                    relationships,
+                  ],
                 ],
               ),
             ),
@@ -145,7 +162,11 @@ class _TaskDetailContent extends StatelessWidget {
                 key: const ValueKey('task-detail-side-column'),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ...properties,
+                  if (fleetCard != null) ...[
+                    fleetCard,
+                    const SizedBox(height: AppLayout.itemGap),
+                  ],
+                  propertiesCard,
                   const SizedBox(height: AppLayout.sectionGap * 2),
                   danger,
                 ],

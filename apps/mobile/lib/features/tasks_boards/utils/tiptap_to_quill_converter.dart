@@ -3,20 +3,60 @@ import 'dart:convert';
 import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/utils/tiptap_document_codec.dart';
+import 'package:mobile/features/tasks_boards/utils/tiptap_quill_marks.dart';
+import 'package:mobile/features/tasks_boards/utils/tiptap_quill_models.dart'
+    show taskDescriptionDividerEmbedType;
 
-Document tipTapJsonToQuillDocument(String? rawDescription) {
+/// TipTap node types that sit inside a text block.
+const Set<String> _inlineNodeTypes = {
+  'text',
+  'hardBreak',
+  'image',
+  'imageResize',
+  'mention',
+  'video',
+  'youtube',
+};
+
+/// Whether the conversion in progress renders horizontal rules as divider
+/// embeds. Conversion is synchronous, so one flag serves each call.
+bool _dividerEmbeds = false;
+
+/// A TipTap description as an editable Quill document.
+///
+/// [dividerEmbeds] renders horizontal rules as a
+/// [taskDescriptionDividerEmbedType] embed; only surfaces that register a
+/// divider embed builder may pass it. Otherwise a rule reads as `---`.
+Document tipTapJsonToQuillDocument(
+  String? rawDescription, {
+  bool dividerEmbeds = false,
+}) => Document.fromDelta(
+  tipTapJsonToQuillDelta(rawDescription, dividerEmbeds: dividerEmbeds),
+);
+
+/// A TipTap description as a Quill delta: TipTap JSON when it parses,
+/// otherwise the raw text. Always ends with a newline, as Quill requires.
+Delta tipTapJsonToQuillDelta(
+  String? rawDescription, {
+  bool dividerEmbeds = false,
+}) {
   final decoded = decodeTipTapDescription(rawDescription);
   if (decoded.isEmpty) {
-    return Document();
+    return Delta()..insert('\n');
   }
 
   final doc = decoded.document;
-  if (doc != null) {
-    final delta = _tipTapDocToDelta(doc);
-    return Document.fromDelta(delta);
+  if (doc == null) {
+    return Delta()..insert('${decoded.trimmed}\n');
   }
 
-  return Document()..insert(0, decoded.trimmed);
+  final previous = _dividerEmbeds;
+  _dividerEmbeds = dividerEmbeds;
+  try {
+    return _tipTapDocToDelta(doc);
+  } finally {
+    _dividerEmbeds = previous;
+  }
 }
 
 Delta _tipTapDocToDelta(Map<String, dynamic> doc) {
@@ -195,8 +235,62 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
 
   if (type == 'horizontalRule') {
     delta
-      ..insert('---')
+      ..insert(_dividerEmbeds ? {taskDescriptionDividerEmbedType: 'hr'} : '---')
       ..insert('\n');
+    return;
+  }
+
+  // A toggle block (details) shows its summary, then its content, open:
+  // Quill has no collapsible block, and hiding the content would hide
+  // text the web shows one tap away.
+  if (type == 'details' || type == 'detailsContent') {
+    for (final child in _objectList(node['content'])) {
+      _appendBlockNodeToDelta(child, delta, indent: indent);
+    }
+    return;
+  }
+
+  if (type == 'detailsSummary') {
+    final level = switch (attrs?['level']) {
+      final num value when value >= 1 => value.toInt().clamp(1, 6),
+      _ => null,
+    };
+    _appendInlineContentToDelta(
+      node['content'],
+      delta,
+      extraAttrs: level == null ? const {'bold': true} : const {},
+    );
+    delta.insert('\n', level == null ? null : {'header': level});
+    return;
+  }
+
+  // Unknown containers keep their nested blocks instead of dropping them.
+  final children = _objectList(node['content']);
+  final hasBlockChildren = children.any(
+    (child) =>
+        child is Map<String, dynamic> &&
+        !_inlineNodeTypes.contains(child['type']),
+  );
+  if (hasBlockChildren) {
+    // Loose inline runs between the blocks read as their own lines.
+    final inlineRun = <Object?>[];
+    void flushInlineRun() {
+      if (inlineRun.isEmpty) return;
+      _appendInlineContentToDelta(List<Object?>.of(inlineRun), delta);
+      delta.insert('\n');
+      inlineRun.clear();
+    }
+
+    for (final child in children) {
+      if (child is Map<String, dynamic> &&
+          _inlineNodeTypes.contains(child['type'])) {
+        inlineRun.add(child);
+      } else {
+        flushInlineRun();
+        _appendBlockNodeToDelta(child, delta, indent: indent);
+      }
+    }
+    flushInlineRun();
     return;
   }
 
@@ -205,7 +299,11 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   delta.insert('\n', lineAttrs.isEmpty ? null : lineAttrs);
 }
 
-void _appendInlineContentToDelta(Object? content, Delta delta) {
+void _appendInlineContentToDelta(
+  Object? content,
+  Delta delta, {
+  Map<String, dynamic> extraAttrs = const {},
+}) {
   final nodes = _objectList(content);
   for (final child in nodes) {
     if (child is! Map<String, dynamic>) {
@@ -218,7 +316,10 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
       if (text == null || text.isEmpty) {
         continue;
       }
-      final attrs = _quillAttrsFromTipTapMarks(child['marks']);
+      final attrs = {
+        ...extraAttrs,
+        ...quillAttrsFromTipTapMarks(child['marks']),
+      };
       if (attrs.isEmpty) {
         delta.insert(text);
       } else {
@@ -268,44 +369,6 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
       continue;
     }
   }
-}
-
-Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
-  final marks = _objectList(marksValue);
-  final attrs = <String, dynamic>{};
-
-  for (final mark in marks) {
-    if (mark is! Map<String, dynamic>) {
-      continue;
-    }
-
-    final type = mark['type'];
-    if (type == 'bold') {
-      attrs['bold'] = true;
-    } else if (type == 'italic') {
-      attrs['italic'] = true;
-    } else if (type == 'strike') {
-      attrs['strike'] = true;
-    } else if (type == 'underline') {
-      attrs['underline'] = true;
-    } else if (type == 'code') {
-      attrs['code'] = true;
-    } else if (type == 'subscript') {
-      attrs['script'] = 'sub';
-    } else if (type == 'superscript') {
-      attrs['script'] = 'super';
-    } else if (type == 'highlight') {
-      attrs['background'] =
-          _stringOrNull(_objectMap(mark['attrs'])?['color']) ?? '#FFF59D';
-    } else if (type == 'link') {
-      final href = _objectMap(mark['attrs'])?['href'];
-      if (href is String && href.trim().isNotEmpty) {
-        attrs['link'] = href;
-      }
-    }
-  }
-
-  return attrs;
 }
 
 Map<String, dynamic> _lineAttrsWithTextAlign(

@@ -11245,6 +11245,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardsUpdated => 'Board updated.';
 
   @override
+  String get taskDescriptionImageUnavailable => 'Image unavailable';
+
+  @override
+  String get taskDetailAllProperties => 'All properties';
+
+  @override
   String get taskDetailCreateMore => 'Create more';
 
   @override

@@ -11106,6 +11106,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardsUpdated => 'Đã cập nhật bảng.';
 
   @override
+  String get taskDescriptionImageUnavailable => 'Không tải được hình ảnh';
+
+  @override
+  String get taskDetailAllProperties => 'Tất cả thuộc tính';
+
+  @override
   String get taskDetailCreateMore => 'Tạo thêm';
 
   @override

@@ -4982,6 +4982,8 @@
   "taskBoardsUnarchive": "Bỏ lưu trữ bảng",
   "taskBoardsUnarchived": "Đã bỏ lưu trữ bảng.",
   "taskBoardsUpdated": "Đã cập nhật bảng.",
+  "taskDescriptionImageUnavailable": "Không tải được hình ảnh",
+  "taskDetailAllProperties": "Tất cả thuộc tính",
   "taskDetailCreateMore": "Tạo thêm",
   "taskDetailDiscardAction": "Bỏ thay đổi",
   "taskDetailDiscardDescription": "Các thay đổi của bạn cho tác vụ này chưa được lưu.",
