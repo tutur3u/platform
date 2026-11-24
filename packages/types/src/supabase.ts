@@ -66032,6 +66032,10 @@ export type Database = {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
       };
+      sso_metadata_certificates: {
+        Args: { p_client_id: string };
+        Returns: Json;
+      };
       sso_read_own_disclosures: {
         Args: { p_ws_id: string };
         Returns: Database['private']['Tables']['sso_disclosure_grants']['Row'][];

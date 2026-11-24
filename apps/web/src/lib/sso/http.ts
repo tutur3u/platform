@@ -21,7 +21,12 @@ import {
 import { configuration, enabled, hash, privateHeaders } from './config';
 import { bindSession, browserSession, principal } from './identity';
 import { postResponse } from './post-response';
-import { adminClient, requireRpc, snapshot } from './store';
+import {
+  adminClient,
+  requireRpc,
+  rolloverCertificates,
+  snapshot,
+} from './store';
 
 export async function rateLimit(key: string, maxRequests: number) {
   const result = await checkRateLimitRedis(
@@ -52,13 +57,24 @@ export async function metadata(request: NextRequest, clientId: string) {
       `metadata:${clientId}:${extractIPFromRequest(request.headers)}`,
       20
     );
-    const current = await snapshot(await adminClient(), config);
+    const admin = await adminClient();
+    const current = await snapshot(admin, config);
     createNodeSigner({
       privateKey: config.privateKey,
       certificate: current.idp.signingCertificate,
     });
+    const rollover = await rolloverCertificates(admin, config, {
+      certificate: current.idp.signingCertificate,
+      revision: current.policy.keyRevision,
+    });
     return new Response(
-      createIdpMetadata(current.idp, () => new Date()),
+      createIdpMetadata(
+        {
+          ...current.idp,
+          ...(rollover.length ? { rolloverCertificates: rollover } : {}),
+        },
+        () => new Date()
+      ),
       {
         headers: {
           ...privateHeaders,

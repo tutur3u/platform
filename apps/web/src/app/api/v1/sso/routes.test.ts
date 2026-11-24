@@ -81,6 +81,7 @@ let events: string[];
 let mfaTime: number;
 let factor: string | null;
 let starterBinding: string | null;
+let metadataKeys: unknown[] | undefined;
 let currentSnapshot: ReturnType<typeof row>;
 function row() {
   return {
@@ -121,6 +122,7 @@ beforeEach(() => {
   events = [];
   factor = 'factor';
   starterBinding = null;
+  metadataKeys = undefined;
   transactionId = randomUUID();
   mfaTime = Math.floor(Date.now() / 1000);
   vi.stubEnv('SSO_SAML_ENABLED', 'true');
@@ -159,6 +161,8 @@ beforeEach(() => {
     if (name === failRpc) return { error: { code: 'unavailable' }, data: null };
     if (name === 'sso_issuance_snapshot')
       return { data: { ...currentSnapshot, member, assigned }, error: null };
+    if (name === 'sso_metadata_certificates')
+      return { data: metadataKeys ?? [currentSnapshot.key], error: null };
     if (name === 'account_mfa_verified_factor')
       return { data: factor, error: null };
     if (name === 'sso_create_transaction') {
@@ -281,6 +285,27 @@ describe('admission and metadata', () => {
     expect(response.status).toBe(200);
     expect(await response.text()).not.toContain('PRIVATE KEY');
     expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+  it('publishes a pending rollover certificate after the signing one', async () => {
+    const next = fixture().certificate;
+    const pending = {
+      kid: 'next',
+      status: 'pending',
+      public_certificate: next,
+    };
+    metadataKeys = [
+      currentSnapshot.key,
+      { ...currentSnapshot.key, ...pending },
+    ];
+    const res = await metadata(new NextRequest(`${base}/metadata`), context);
+    const body = await res.text();
+    const at = (pem: string) =>
+      body.indexOf(pem.replace(/-----[^-]+-----|\s/g, ''));
+    expect([
+      res.status,
+      at(f.certificate) > -1,
+      at(next) > at(f.certificate),
+    ]).toEqual([200, true, true]);
   });
   it('rejects an unknown route client', async () => {
     expect(

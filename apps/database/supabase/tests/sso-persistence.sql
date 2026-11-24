@@ -249,6 +249,39 @@ INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,stat
 SELECT throws_ok($$INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,activated_at,not_before,not_after)
  SELECT f.ws,c.id,'key-two',E'-----BEGIN CERTIFICATE-----\nBBBB\n-----END CERTIFICATE-----','active',now(),now(),now()+interval '1 day' FROM fixture f,clients c$$,
  '23505',NULL,'at most one active signing key per client');
+-- Metadata rollover projection: active first, then pending, then retiring for one day.
+SAVEPOINT metadata_rollover;
+INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,not_before,not_after)
+ SELECT f.ws,c.id,'key-next',E'-----BEGIN CERTIFICATE-----\nCCCC\n-----END CERTIFICATE-----','pending',now(),now()+interval '1 day' FROM fixture f,clients c;
+INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,activated_at,retired_at,not_before,not_after)
+ SELECT f.ws,c.id,'key-recent',E'-----BEGIN CERTIFICATE-----\nDDDD\n-----END CERTIFICATE-----','retiring',now()-interval '2 days',clock_timestamp()-interval '1 hour',now()-interval '3 days',now()+interval '1 day' FROM fixture f,clients c;
+INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,activated_at,retired_at,not_before,not_after)
+ SELECT f.ws,c.id,'key-old',E'-----BEGIN CERTIFICATE-----\nEEEE\n-----END CERTIFICATE-----','retiring',now()-interval '5 days',clock_timestamp()-interval '2 days',now()-interval '6 days',now()+interval '1 day' FROM fixture f,clients c;
+INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,revoked_at,not_before,not_after)
+ SELECT f.ws,c.id,'key-revoked',E'-----BEGIN CERTIFICATE-----\nFFFF\n-----END CERTIFICATE-----','revoked',now(),now(),now()+interval '1 day' FROM fixture f,clients c;
+INSERT INTO private.sso_signing_keys(ws_id,client_id,kid,public_certificate,status,not_before,not_after)
+ SELECT f.ws,c.id,'key-future',E'-----BEGIN CERTIFICATE-----\nGGGG\n-----END CERTIFICATE-----','pending',now()+interval '1 day',now()+interval '2 days' FROM fixture f,clients c;
+SELECT is((SELECT array_agg(e->>'kid' ORDER BY o) FROM jsonb_array_elements(public.sso_metadata_certificates(c.id)) WITH ORDINALITY x(e,o)),
+ ARRAY['key-one','key-next','key-recent'],'metadata publishes active, pending, then recently retiring keys only') FROM clients c;
+SELECT is((SELECT count(*)::integer FROM jsonb_array_elements(public.sso_metadata_certificates(c.id)) e WHERE e ? 'private_key'),
+ 0,'metadata projection carries public certificates only') FROM clients c;
+UPDATE private.sso_signing_keys SET status='retiring',retired_at=clock_timestamp() WHERE kid='key-one' AND client_id=(SELECT id FROM clients);
+SELECT is(public.sso_metadata_certificates(c.id),NULL::jsonb,'metadata fails closed without a current active key') FROM clients c;
+ROLLBACK TO SAVEPOINT metadata_rollover;
+SAVEPOINT metadata_gates;
+UPDATE private.sso_signing_keys SET not_before=now()-interval '2 days',not_after=now()-interval '1 day' WHERE kid='key-one' AND client_id=(SELECT id FROM clients);
+SELECT is(public.sso_metadata_certificates(c.id),NULL::jsonb,'metadata fails closed when the active key has expired') FROM clients c;
+ROLLBACK TO SAVEPOINT metadata_gates;
+SAVEPOINT metadata_gates;
+UPDATE private.sso_clients SET enabled=false WHERE id=(SELECT id FROM clients);
+SELECT is(public.sso_metadata_certificates(c.id),NULL::jsonb,'disabled client publishes no metadata certificates') FROM clients c;
+ROLLBACK TO SAVEPOINT metadata_gates;
+SAVEPOINT metadata_gates;
+UPDATE public.workspaces SET deleted=true WHERE id=(SELECT ws FROM fixture);
+SELECT is(public.sso_metadata_certificates(c.id),NULL::jsonb,'deleted workspace publishes no metadata certificates') FROM clients c;
+ROLLBACK TO SAVEPOINT metadata_gates;
+SELECT is(public.sso_metadata_certificates('00000000-0000-4000-8000-000000000000'),NULL::jsonb,
+ 'unknown client has no metadata certificates');
 -- Phase-3 projections and post-signing authorization fences.
 SELECT ok(public.sso_issuance_snapshot(c.id,f.actor)->>'member' = 'true',
  'snapshot requires current member projection') FROM fixture f,clients c;

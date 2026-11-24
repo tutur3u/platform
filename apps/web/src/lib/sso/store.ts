@@ -95,6 +95,46 @@ export async function snapshot(
     }),
   };
 }
+const metadataCertificatesSchema = z
+  .array(
+    z.object({
+      kid: z.string(),
+      status: z.enum(['active', 'pending', 'retiring']),
+      revision: z.number().int().positive(),
+      public_certificate: certificateSchema,
+    })
+  )
+  // At most two rollover keys: more fails closed rather than publishing a
+  // truncated set.
+  .min(1)
+  .max(3);
+/**
+ * Rollover certificates published beside the active signing certificate.
+ * The projection must lead with the same active key the snapshot signs with;
+ * anything else fails closed.
+ */
+export async function rolloverCertificates(
+  admin: SsoAdmin,
+  config: SsoConfiguration,
+  active: { certificate: string; revision: number }
+) {
+  const result = await admin.rpc('sso_metadata_certificates', {
+    p_client_id: config.clientId,
+  });
+  if (result.error) throw new SsoError({ code: 'unavailable' });
+  const parsed = metadataCertificatesSchema.safeParse(result.data);
+  if (!parsed.success) throw new SsoError({ code: 'unavailable' });
+  const [first, ...rest] = parsed.data;
+  if (
+    first?.status !== 'active' ||
+    first.kid !== config.signingKid ||
+    first.revision !== active.revision ||
+    first.public_certificate !== active.certificate ||
+    rest.some((key) => key.status === 'active')
+  )
+    throw new SsoError({ code: 'forbidden' });
+  return rest.map((key) => key.public_certificate);
+}
 export function requireRpc(result: { error: unknown }) {
   if (result.error) throw new SsoError({ code: 'unavailable' });
 }

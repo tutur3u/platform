@@ -516,6 +516,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.sso_manage_client(uuid,uuid,uuid,bigint,text,text[],text,text[],boolean)', false, true),
   ('public.sso_management_detail(uuid,uuid,uuid)', false, true),
   ('public.sso_management_overview(uuid,uuid)', false, true),
+  ('public.sso_metadata_certificates(uuid)', false, true),
   ('public.sso_read_own_disclosures(uuid)', true, false),
   ('public.sso_record_consent(uuid,uuid,uuid,uuid,text,text,bigint,boolean)', false, true),
   ('public.sso_reject_transaction(uuid,uuid,uuid,text,uuid,bigint)', false, true),
