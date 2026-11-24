@@ -21405,6 +21405,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_analytics_consent_control: {
+        Row: {
+          basis: string;
+          id: boolean;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          basis?: string;
+          id?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          basis?: string;
+          id?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       product_analytics_daily: {
         Row: {
           app: string;
@@ -25844,6 +25863,95 @@ export type Database = {
           },
         ];
       };
+      user_product_analytics_consent: {
+        Row: {
+          granted: boolean;
+          granted_at: string | null;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          user_id: string;
+          withdrawn_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          granted?: boolean;
+          granted_at?: string | null;
+          policy_version: string;
+          source: string;
+          updated_at?: string;
+          user_id: string;
+          withdrawn_at?: string | null;
+        };
+        Update: {
+          granted?: boolean;
+          granted_at?: string | null;
+          policy_version?: string;
+          source?: string;
+          updated_at?: string;
+          user_id?: string;
+          withdrawn_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_product_analytics_consent_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_analytics_consent_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      user_product_analytics_consent_events: {
+        Row: {
+          created_at: string;
+          granted: boolean;
+          id: number;
+          policy_version: string;
+          source: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          granted: boolean;
+          id?: never;
+          policy_version: string;
+          source: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          granted?: boolean;
+          id?: never;
+          policy_version?: string;
+          source?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_product_analytics_consent_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'user_product_analytics_consent_events_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       user_product_email_consent: {
         Row: {
           granted: boolean;
@@ -29338,6 +29446,10 @@ export type Database = {
           p_lease_token: string;
           p_request_id: string;
         };
+        Returns: boolean;
+      };
+      ai_internal_payer_allows_model: {
+        Args: { p_feature: string; p_model_id: string; p_ws_id: string };
         Returns: boolean;
       };
       ai_studio_metadata_cutoff: {
@@ -35107,6 +35219,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      product_analytics_counted: {
+        Args: { p_opt_out: boolean; p_user_id: string };
+        Returns: boolean;
       };
       product_analytics_hidden: {
         Args: { p_events: number; p_people: number };
