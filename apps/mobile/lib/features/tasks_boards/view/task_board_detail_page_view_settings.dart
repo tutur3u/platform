@@ -127,9 +127,17 @@ List<TaskBoardTask> _listViewTasksUnder(
   List<TaskBoardTask> tasks,
   List<TaskBoardList> allLists,
   List<TaskBoardList> visibleLists,
+  TaskBoardDetailFilters filters,
   _TaskBoardViewSettings settings,
 ) {
-  if (settings.showCompleted) return tasks;
+  // An explicit list or status filter reveals terminal lists, and every task
+  // in a done or closed list carries completed_at/closed_at, so it shows
+  // finished work too.
+  if (settings.showCompleted ||
+      filters.listIds.isNotEmpty ||
+      filters.statuses.isNotEmpty) {
+    return tasks;
+  }
   // The list view groups by date, not by list, so tasks in hidden (done or
   // closed) lists are dropped here; tasks in lists the board does not know
   // about stay visible.
@@ -146,18 +154,14 @@ List<TaskBoardTask> _listViewTasksUnder(
 
 /// Whether [list] is known to have no visible tasks: the server count is zero,
 /// or every page has loaded and nothing passed the current filters.
+/// Whether [list] is known to have no visible tasks. Only the server task
+/// count decides, so columns do not disappear mid-session while pages load or
+/// tasks move, which would shift the Kanban page onto another list.
 bool _taskBoardListIsKnownEmpty(
   TaskBoardList list,
   TaskBoardDetailState state,
   List<TaskBoardTask> visibleTasks,
-) {
-  if (visibleTasks.isNotEmpty) return false;
-  if (list.taskCount == 0) return true;
-  return state.loadedListIds.contains(list.id) &&
-      state.listHasMoreById[list.id] == false &&
-      !state.loadingListIds.contains(list.id) &&
-      !state.listLoadErrorById.containsKey(list.id);
-}
+) => visibleTasks.isEmpty && list.taskCount == 0;
 
 /// Kanban columns under [settings]: empty lists are hidden by default.
 List<TaskBoardList> _kanbanListsUnder(
@@ -190,29 +194,18 @@ extension _TaskBoardViewSettingsState on _TaskBoardDetailPageViewState {
     List<TaskBoardTask> tasks,
     List<TaskBoardList> allLists,
     List<TaskBoardList> visibleLists,
-  ) => _listViewTasksUnder(tasks, allLists, visibleLists, _viewSettings);
+  ) => _listViewTasksUnder(
+    tasks,
+    allLists,
+    visibleLists,
+    context.read<TaskBoardDetailCubit>().state.filters,
+    _viewSettings,
+  );
 
   List<TaskBoardList> _kanbanListsForSettings(
     List<TaskBoardList> sortedLists,
     TaskBoardDetailState state,
   ) => _kanbanListsUnder(sortedLists, state, _viewSettings);
-
-  /// Loads this board's stored settings. A change the viewer made before the
-  /// stored value arrived wins, unless the page switched boards.
-  Future<void> _restoreViewSettings({bool boardChanged = false}) async {
-    final boardId = widget.boardId;
-    if (boardChanged) _viewSettingsTouched = false;
-    final settings = await _loadTaskBoardViewSettings(boardId);
-    if (!mounted || widget.boardId != boardId || _viewSettingsTouched) return;
-    setState(() => _viewSettings = settings);
-  }
-
-  void _applyViewSettings(_TaskBoardViewSettings settings) {
-    _viewSettingsTouched = true;
-    if (settings == _viewSettings) return;
-    setState(() => _viewSettings = settings);
-    unawaited(_saveTaskBoardViewSettings(widget.boardId, settings));
-  }
 }
 
 /// Display settings section shown at the top of the filter sheet.

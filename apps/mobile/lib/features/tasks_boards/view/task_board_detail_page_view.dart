@@ -53,8 +53,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   late final ScrollController _kanbanVerticalScrollController;
   late final PageController _kanbanHorizontalPageController;
   late final ScrollController _timelineVerticalScrollController;
-  final Set<String> _collapsedListIds = <String>{};
-  final Set<String> _listCollapsePreferenceTouchedIds = <String>{};
   final Set<String> _initialListLoadRequested = <String>{};
   String? _initialListLoadBoardKey;
   String? _selectedTaskId;
@@ -271,14 +269,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             _initialListLoadBoardKey = currentBoardKey;
             _initialListLoadRequested.clear();
           }
-          final listIds = sortedLists.map((list) => list.id).toSet();
-          _collapsedListIds.removeWhere((id) => !listIds.contains(id));
-          _listCollapsePreferenceTouchedIds.removeWhere(
-            (id) => !listIds.contains(id),
-          );
-          if (state.currentView == TaskBoardDetailView.list) {
-            _syncListModeDefaultCollapsedLists(listViewLists);
-          }
           if (_searchController.text != state.searchQuery) {
             _searchController.value = TextEditingValue(
               text: state.searchQuery,
@@ -332,10 +322,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     constraints.maxHeight,
                   );
                   if (state.currentView == TaskBoardDetailView.list) {
-                    for (final list in _listViewLoadableLists(
-                      listViewLists,
-                      state,
-                    )) {
+                    for (final list in listViewLists) {
                       _requestInitialListLoadOnce(list.id, pageSizeHint, state);
                     }
                   } else if (state.currentView ==
@@ -395,7 +382,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onLoadMore: () {
                           _loadMoreVisibleLists(
                             context,
-                            lists: _listViewLoadableLists(listViewLists, state),
+                            lists: listViewLists,
                             state: state,
                             pageSizeHint: pageSizeHint,
                           );
@@ -783,37 +770,21 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     return null;
   }
 
-  void _syncListModeDefaultCollapsedLists(List<TaskBoardList> lists) {
-    for (final list in lists) {
-      if (!_taskBoardListIsTerminalInListView(list) ||
-          _listCollapsePreferenceTouchedIds.contains(list.id)) {
-        continue;
-      }
-      _collapsedListIds.add(list.id);
-    }
+  /// Loads this board's stored settings. A change the viewer made before the
+  /// stored value arrived wins, unless the page switched boards.
+  Future<void> _restoreViewSettings({bool boardChanged = false}) async {
+    final boardId = widget.boardId;
+    if (boardChanged) _viewSettingsTouched = false;
+    final settings = await _loadTaskBoardViewSettings(boardId);
+    if (!mounted || widget.boardId != boardId || _viewSettingsTouched) return;
+    setState(() => _viewSettings = settings);
   }
 
-  List<TaskBoardList> _listViewLoadableLists(
-    List<TaskBoardList> lists,
-    TaskBoardDetailState state,
-  ) => lists
-      .where((list) => !_shouldDeferListViewLoad(list, state))
-      .toList(growable: false);
-
-  bool _shouldDeferListViewLoad(
-    TaskBoardList list,
-    TaskBoardDetailState state,
-  ) {
-    if (!_taskBoardListIsTerminalInListView(list)) {
-      return false;
-    }
-    if (!_collapsedListIds.contains(list.id)) {
-      return false;
-    }
-    return !state.listTasksByListId.containsKey(list.id) &&
-        !state.loadedListIds.contains(list.id) &&
-        !state.loadingListIds.contains(list.id) &&
-        !state.listLoadErrorById.containsKey(list.id);
+  void _applyViewSettings(_TaskBoardViewSettings settings) {
+    _viewSettingsTouched = true;
+    if (settings == _viewSettings) return;
+    setState(() => _viewSettings = settings);
+    unawaited(_saveTaskBoardViewSettings(widget.boardId, settings));
   }
 
   void _setBoardView(BuildContext context, TaskBoardDetailView view) {

@@ -56,6 +56,22 @@ class _Repository extends TaskRepository {
         taskCount: 0,
       ),
       TaskBoardList(
+        id: 'list-review',
+        boardId: 'board-1',
+        name: 'Review',
+        status: 'active',
+        color: 'PURPLE',
+      ),
+      TaskBoardList(
+        id: 'list-qa',
+        boardId: 'board-1',
+        name: 'QA',
+        status: 'active',
+        color: 'ORANGE',
+      ),
+      // Past the cubit's three-list prefetch window, so showing completed
+      // work must load it on demand.
+      TaskBoardList(
         id: 'list-done',
         boardId: 'board-1',
         name: 'Shipped',
@@ -73,6 +89,8 @@ class _Repository extends TaskRepository {
         completed: true,
       ),
       TaskBoardTask(id: 'task-4', listId: 'list-done', name: 'Shipped task'),
+      TaskBoardTask(id: 'task-5', listId: 'list-review', name: 'Review task'),
+      TaskBoardTask(id: 'task-6', listId: 'list-qa', name: 'QA task'),
     ],
   );
 
@@ -316,7 +334,7 @@ void main() {
 
   testWidgets('Kanban hides lists without tasks by default', (tester) async {
     await _pumpBoardInShell(tester, initialView: TaskBoardDetailView.kanban);
-    expect(find.text('Todo'), findsWidgets);
+    expect(find.text('QA'), findsWidgets, reason: '${_texts()}');
     expect(find.text('Backlog'), findsNothing, reason: '${_texts()}');
     await tester.pumpWidget(const SizedBox.shrink());
   });
