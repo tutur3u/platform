@@ -28,6 +28,27 @@ const RESTRICTED_TIME_ZONES = new Set([
   'GB',
   'Iceland',
   'Eire',
+  // EU outermost regions and Ceuta/Melilla, where GDPR applies as EU
+  // territory.
+  'Africa/Ceuta',
+  'America/Cayenne',
+  'America/Guadeloupe',
+  'America/Marigot',
+  'America/Martinique',
+  'Indian/Mayotte',
+  'Indian/Reunion',
+  // Privacy-hardened browsers report UTC, which cannot rule out a
+  // restricted visitor.
+  'UTC',
+  'Etc/UTC',
+  'Etc/UCT',
+  'Etc/GMT',
+  'Etc/Universal',
+  'Etc/Zulu',
+  'GMT',
+  'UCT',
+  'Universal',
+  'Zulu',
 ]);
 
 function restrictedTimeZone(timeZone: string): boolean {

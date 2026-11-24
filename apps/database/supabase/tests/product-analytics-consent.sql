@@ -13,11 +13,13 @@ select no_plan();
 insert into auth.users(id, created_at) values
   ('00000000-0000-4000-8000-000000009a01', now()),
   ('00000000-0000-4000-8000-000000009a02', now()),
-  ('00000000-0000-4000-8000-000000009a03', now());
+  ('00000000-0000-4000-8000-000000009a03', now()),
+  ('00000000-0000-4000-8000-000000009a04', now());
 insert into public.users(id) values
   ('00000000-0000-4000-8000-000000009a01'),
   ('00000000-0000-4000-8000-000000009a02'),
-  ('00000000-0000-4000-8000-000000009a03')
+  ('00000000-0000-4000-8000-000000009a03'),
+  ('00000000-0000-4000-8000-000000009a04')
 on conflict do nothing;
 
 -- Structure and privileges.
@@ -44,6 +46,20 @@ select ok(not has_function_privilege('anon',
   and not has_function_privilege('anon', 'public.get_product_analytics_consent()', 'EXECUTE')
   and not has_function_privilege('public', 'public.set_product_analytics_consent(boolean,text,text)', 'EXECUTE'),
   'anon and PUBLIC cannot execute the RPCs');
+select ok(not has_function_privilege('public', 'public.get_product_analytics_consent()', 'EXECUTE')
+  and not has_function_privilege('service_role', 'public.set_product_analytics_consent(boolean,text,text)', 'EXECUTE'),
+  'PUBLIC cannot read and the service role cannot use the caller-bound write');
+select ok(has_function_privilege('service_role',
+    'private.record_product_analytics_consent(uuid,boolean,text,text)', 'EXECUTE')
+  and not has_function_privilege('authenticated',
+    'private.record_product_analytics_consent(uuid,boolean,text,text)', 'EXECUTE')
+  and not has_function_privilege('anon',
+    'private.record_product_analytics_consent(uuid,boolean,text,text)', 'EXECUTE'),
+  'only the service role records a decision for a verified user id');
+select ok((select p.prosecdef and p.proconfig @> array['search_path=pg_catalog, pg_temp']
+  from pg_proc p
+  where p.oid = 'private.record_product_analytics_consent(uuid,boolean,text,text)'::regprocedure),
+  'the service write is SECURITY DEFINER with an explicit search_path');
 select ok(has_function_privilege('authenticated',
     'public.set_product_analytics_consent(boolean,text,text)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.get_product_analytics_consent()', 'EXECUTE'),
@@ -109,6 +125,19 @@ select throws_ok($$update private.user_product_analytics_consent_events set gran
   '55000', null, 'evidence cannot be rewritten');
 select throws_ok($$delete from private.user_product_analytics_consent_events$$,
   '55000', null, 'evidence cannot be deleted directly');
+select throws_ok($$truncate private.user_product_analytics_consent_events$$,
+  '55000', null, 'evidence cannot be truncated');
+
+-- The service path (Web API route, including satellite app sessions) writes
+-- for the verified user id and shares the validation and audit.
+select is((select granted from private.record_product_analytics_consent(
+    '00000000-0000-4000-8000-000000009a03', false, 'workspace_banner', '2026-11-24')),
+  false, 'the service path records a withdrawal for a user with no prior decision');
+select throws_ok($$select * from private.record_product_analytics_consent(null, true, 'web_banner', '2026-11-24')$$,
+  '22023', null, 'the service path requires a user id');
+select throws_ok($$select * from private.record_product_analytics_consent(
+    '00000000-0000-4000-8000-000000009a03', true, 'elsewhere', '2026-11-24')$$,
+  '22023', null, 'the service path validates the source');
 
 select ok(private.product_analytics_counted('00000000-0000-4000-8000-000000009a01', false)
   and not private.product_analytics_counted('00000000-0000-4000-8000-000000009a02', false)
@@ -116,8 +145,9 @@ select ok(private.product_analytics_counted('00000000-0000-4000-8000-000000009a0
   'consent basis: only the granted user counts');
 select ok(private.product_analytics_counted('00000000-0000-4000-8000-000000009a01', true)
   and not private.product_analytics_counted('00000000-0000-4000-8000-000000009a02', true)
-  and private.product_analytics_counted('00000000-0000-4000-8000-000000009a03', true),
-  'opt_out basis: everyone except the withdrawn user counts');
+  and not private.product_analytics_counted('00000000-0000-4000-8000-000000009a03', true)
+  and private.product_analytics_counted('00000000-0000-4000-8000-000000009a04', true),
+  'opt_out basis: everyone except withdrawn users counts');
 
 -- The rollup applies the filter. Signups are a count of accounts created
 -- today; 10 granted accounts keep the cell above the suppression threshold.

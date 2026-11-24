@@ -226,7 +226,9 @@ recorded. The decision and its legal review are in the
 The table holds no subject-level rows, so a subject export has nothing to
 return from it, and an erasure does not recompute closed days, whose counts
 cannot be traced to a person. A withdrawal drops the person from today's and
-yesterday's cells at the next 30-minute slot.
+yesterday's event-derived cells (signups, workspaces, Meet, AI) at the next
+30-minute slot; today's `dau` and `wau` keep the day's highest value, so the
+change shows from the next UTC day.
 
 **Per-app activity.** No store records which app a person used. The planned
 writer marks activity once per person, app and UTC day from the satellite

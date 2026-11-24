@@ -40,6 +40,23 @@ describe('resolvePrivacyRegion', () => {
     expect(resolve('Asia/Singapore', ['vie'])).toBe('default-on');
   });
 
+  it('starts off for EU outermost regions and UTC-reporting browsers', () => {
+    for (const zone of [
+      'America/Guadeloupe',
+      'America/Martinique',
+      'America/Cayenne',
+      'Indian/Reunion',
+      'Indian/Mayotte',
+      'Africa/Ceuta',
+      'UTC',
+      'Etc/UTC',
+      'Etc/GMT',
+      'GMT',
+    ]) {
+      expect(resolve(zone)).toBe('restricted');
+    }
+  });
+
   it('fails closed when the time zone is unknown', () => {
     expect(resolve(null)).toBe('restricted');
     expect(resolve('')).toBe('restricted');

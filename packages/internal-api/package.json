@@ -111,6 +111,11 @@
       "import": "./dist/auth.js",
       "require": "./dist/auth.js"
     },
+    "./privacy-consent": {
+      "types": "./dist/privacy-consent.d.ts",
+      "import": "./dist/privacy-consent.js",
+      "require": "./dist/privacy-consent.js"
+    },
     "./fleet": {
       "types": "./dist/fleet.d.ts",
       "import": "./dist/fleet.js",

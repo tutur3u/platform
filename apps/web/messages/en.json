@@ -14788,6 +14788,7 @@
     "settings": "Privacy settings",
     "settings_description": "Choose optional uses of browser storage. You can return here at any time to change or withdraw your choice.",
     "storage_unavailable": "Browser storage is unavailable. Optional collection stays off. Enable browser storage if you want your choice to be remembered.",
+    "sync_failed": "Your choice is saved in this browser, but we could not update your account yet. We will try again on your next visit, or you can save it again from Privacy settings.",
     "title": "Your privacy choices"
   },
   "product-data-table": {

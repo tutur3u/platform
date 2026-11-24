@@ -4764,6 +4764,7 @@
     "settings": "Cài đặt quyền riêng tư",
     "settings_description": "Chọn các mục đích sử dụng bộ nhớ trình duyệt tùy chọn. Bạn có thể quay lại đây bất cứ lúc nào để thay đổi hoặc rút lại lựa chọn.",
     "storage_unavailable": "Bộ nhớ trình duyệt không khả dụng. Việc thu thập tùy chọn vẫn tắt. Hãy bật bộ nhớ trình duyệt nếu bạn muốn lưu lựa chọn.",
+    "sync_failed": "Lựa chọn của bạn đã được lưu trong trình duyệt này, nhưng chúng tôi chưa cập nhật được vào tài khoản. Chúng tôi sẽ thử lại vào lần truy cập tiếp theo, hoặc bạn có thể lưu lại trong Cài đặt quyền riêng tư.",
     "title": "Lựa chọn quyền riêng tư"
   },
   "products": {

@@ -18,6 +18,8 @@
 --   * private.user_product_analytics_consent_events append-only audit
 --   * private.product_analytics_consent_control     singleton basis switch
 --   * private.product_analytics_counted(uuid, bool)  the rollup's filter
+--   * private.record_product_analytics_consent      write, service_role only,
+--                                                   for the Web API route
 --   * public.set_product_analytics_consent          write RPC, auth.uid() only
 --   * public.get_product_analytics_consent          read own decision
 --   * private.rollup_product_analytics_daily        redefined: every person-
@@ -177,7 +179,8 @@ revoke all on function private.product_analytics_counted(uuid, boolean)
 grant execute on function private.product_analytics_counted(uuid, boolean)
   to service_role;
 
-create function public.set_product_analytics_consent(
+create function private.record_product_analytics_consent(
+  p_user_id uuid,
   p_granted boolean,
   p_source text,
   p_policy_version text
@@ -196,12 +199,12 @@ set search_path = pg_catalog, pg_temp
 as $$
 #variable_conflict use_column
 declare
-  v_uid uuid := auth.uid();
+  v_uid uuid := p_user_id;
   v_old_granted boolean;
   v_old_version text;
 begin
   if v_uid is null then
-    raise exception 'authentication required' using errcode = '42501';
+    raise exception 'user is required' using errcode = '22023';
   end if;
   if p_granted is null then
     raise exception 'consent decision is required' using errcode = '22023';
@@ -257,6 +260,44 @@ begin
       c.withdrawn_at, c.updated_at
     from private.user_product_analytics_consent c
     where c.user_id = v_uid;
+end;
+$$;
+
+-- The trusted Web route calls this with the verified session user's id
+-- (browser session or satellite app session); clients never reach it.
+revoke all on function private.record_product_analytics_consent(uuid, boolean, text, text)
+  from public, anon, authenticated, service_role;
+grant execute on function private.record_product_analytics_consent(uuid, boolean, text, text)
+  to service_role;
+
+create function public.set_product_analytics_consent(
+  p_granted boolean,
+  p_source text,
+  p_policy_version text
+)
+returns table (
+  granted boolean,
+  source text,
+  policy_version text,
+  granted_at timestamptz,
+  withdrawn_at timestamptz,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+  return query
+    select r.granted, r.source, r.policy_version, r.granted_at,
+      r.withdrawn_at, r.updated_at
+    from private.record_product_analytics_consent(
+      v_uid, p_granted, p_source, p_policy_version) r;
 end;
 $$;
 

@@ -31,7 +31,11 @@ import {
   type PrivacyConsentState,
   transitionPrivacyConsentState,
 } from '@/lib/privacy-consent-state';
-import { syncAnalyticsConsent } from '@/lib/privacy-consent-sync';
+import {
+  reconcileAnalyticsWithdrawal,
+  recordAnalyticsChoiceSync,
+  syncAnalyticsConsent,
+} from '@/lib/privacy-consent-sync';
 
 const enabled = evaluateFlags(
   [cookieConsentBanner],
@@ -50,6 +54,14 @@ function browserStorage(): PrivacyConsentStorage | null {
   }
 }
 
+function sessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function PrivacyConsent() {
   const t = useTranslations('privacy-consent');
   const locale = useLocale();
@@ -62,6 +74,7 @@ export function PrivacyConsent() {
   // Restricted until detected, so nothing is pre-selected by accident.
   const [region, setRegion] = useState<PrivacyRegion>('restricted');
   const defaultOn = optionalDefaultOn(region);
+  const [syncFailed, setSyncFailed] = useState(false);
   const hasMarketing = PRIVACY_PROVIDERS.some(
     ({ purpose }) => purpose === 'marketing'
   );
@@ -69,6 +82,12 @@ export function PrivacyConsent() {
   useEffect(() => {
     if (!enabled) return;
     setRegion(detectPrivacyRegion(locale));
+    // A withdrawal stored here reaches the account after sign-in or a failed
+    // sync; grants are never replayed.
+    const initial = loadPrivacyConsentState({ storage: browserStorage() });
+    if (initial.kind === 'saved' && !initial.choice.analytics) {
+      void reconcileAnalyticsWithdrawal({ store: sessionStore() });
+    }
     const restore = () => {
       dispatch({
         kind: 'restore',
@@ -104,8 +123,14 @@ export function PrivacyConsent() {
     });
     setAnalytics(allowAnalytics);
     setMarketing(hasMarketing && allowMarketing);
-    // A withdrawal is synced even when this browser cannot store it.
-    if (result.ok || !allowAnalytics) void syncAnalyticsConsent(allowAnalytics);
+    // A withdrawal is synced even when this browser cannot store it, and a
+    // failed withdrawal sync is shown instead of silently dropped.
+    if (result.ok || !allowAnalytics) {
+      void syncAnalyticsConsent(allowAnalytics).then((sync) => {
+        recordAnalyticsChoiceSync(sessionStore(), allowAnalytics, sync);
+        setSyncFailed(!allowAnalytics && sync === 'failed');
+      });
+    }
     if (result.ok) {
       dispatch({ kind: 'save-succeeded', choice: result.choice });
       setOpen(false);
@@ -116,6 +141,7 @@ export function PrivacyConsent() {
 
   const settings = (nextOpen: boolean) => {
     if (nextOpen) {
+      setSyncFailed(false);
       const restored = loadPrivacyConsentState({ storage: browserStorage() });
       dispatch({ kind: 'restore', state: restored });
       if (state.kind !== 'save-error') {
@@ -204,6 +230,14 @@ export function PrivacyConsent() {
   return (
     <Dialog open={open} onOpenChange={settings}>
       {banner}
+      {syncFailed && (
+        <p
+          className="fixed bottom-14 left-4 z-40 max-w-xs rounded-lg border bg-background p-3 text-destructive text-sm shadow-sm"
+          role="alert"
+        >
+          {t('sync_failed')}
+        </p>
+      )}
       <DialogTrigger asChild>
         <Button
           className="fixed bottom-4 left-4 z-40 shadow-sm"

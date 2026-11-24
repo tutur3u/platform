@@ -34759,6 +34759,22 @@ export type Database = {
         };
         Returns: Json;
       };
+      record_product_analytics_consent: {
+        Args: {
+          p_granted: boolean;
+          p_policy_version: string;
+          p_source: string;
+          p_user_id: string;
+        };
+        Returns: {
+          granted: boolean;
+          granted_at: string;
+          policy_version: string;
+          source: string;
+          updated_at: string;
+          withdrawn_at: string;
+        }[];
+      };
       record_provider_cost_day: {
         Args: {
           p_account_id: string;
