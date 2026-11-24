@@ -49,6 +49,12 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+const membersTabState = vi.hoisted(() => ({ value: null as string | null }));
+vi.mock('nuqs', () => ({
+  parseAsString: {},
+  useQueryState: () => [membersTabState.value, vi.fn()],
+}));
+
 vi.mock(
   '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting',
   () => ({
@@ -83,6 +89,31 @@ describe('WorkspaceMembersSettingsPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     queryState.disableInvite = false;
+    membersTabState.value = null;
+  });
+
+  it('opens on the settingsMembersTab view and ignores unknown views', () => {
+    membersTabState.value = 'roles';
+    const props = {
+      canManageWorkspaceMembers: true,
+      canManageWorkspaceRoles: true,
+      currentUserEmail: 'ada@example.com',
+      currentUserId: 'ada-id',
+      isLoadingWorkspace: false,
+      workspace,
+      workspaceError: null,
+    };
+    const { unmount } = render(<WorkspaceMembersSettingsPanel {...props} />);
+    expect(standardWorkspaceAccessMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ initialTab: 'roles' })
+    );
+    unmount();
+
+    membersTabState.value = 'everything';
+    render(<WorkspaceMembersSettingsPanel {...props} />);
+    expect(standardWorkspaceAccessMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ initialTab: 'people' })
+    );
   });
 
   it('renders StandardWorkspaceAccessPage with role management when allowed', () => {
