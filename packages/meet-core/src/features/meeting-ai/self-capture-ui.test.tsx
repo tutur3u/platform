@@ -18,6 +18,9 @@ const f = vi.hoisted(() => ({
   mira: vi.fn(),
   json: vi.fn(),
 }));
+vi.mock('@tuturuuu/internal-api/client', () => ({
+  getInternalApiClient: () => ({ json: f.json }),
+}));
 vi.mock('@tuturuuu/internal-api', () => ({
   readMeetTranscriptConsent: f.read,
   setMeetTranscriptChoice: f.choose,

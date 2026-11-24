@@ -24,6 +24,9 @@ const f = vi.hoisted(() => ({
   frame: null as null | ((frame: Float32Array) => void),
   engine: vi.fn(),
 }));
+vi.mock('@tuturuuu/internal-api/client', () => ({
+  getInternalApiClient: () => ({ json: f.json }),
+}));
 vi.mock('@tuturuuu/internal-api', () => ({
   readMeetTranscriptConsent: f.read,
   setMeetTranscriptChoice: f.legacyChoice,

@@ -11,6 +11,9 @@ const { FakeInternalApiError } = vi.hoisted(() => ({
     }
   },
 }));
+vi.mock('@tuturuuu/internal-api/client', () => ({
+  getInternalApiClient: vi.fn(),
+}));
 vi.mock('@tuturuuu/internal-api', () => ({
   getInternalApiClient: vi.fn(),
   uploadMeetAiChunk: vi.fn(),
