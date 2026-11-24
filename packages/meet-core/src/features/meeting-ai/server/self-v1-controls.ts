@@ -214,9 +214,7 @@ export async function readSelfConsentExtras(
     MEETING_APP === 'meet'
       ? meetPerSpeakerEnabled(access.meeting.ws_id)
       : Promise.resolve(false),
-    guest
-      ? Promise.resolve({ coHost: false })
-      : resolveMeetClassRole(signedIn),
+    guest ? Promise.resolve({ coHost: false }) : resolveMeetClassRole(signedIn),
   ]);
   const session = sessionSchema.safeParse(consent.session);
   const canManageMode = !guest && (signedIn.isHost || role.coHost);

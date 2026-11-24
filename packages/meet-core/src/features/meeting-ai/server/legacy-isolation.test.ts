@@ -109,7 +109,10 @@ describe('room-capture paths read only legacy sessions', () => {
         sessionId: self,
         meetingStartedAt: new Date().toISOString(),
       })
-    ).rejects.toMatchObject({ status: 409, code: 'MEET_SELF_PROTOCOL_MISMATCH' });
+    ).rejects.toMatchObject({
+      status: 409,
+      code: 'MEET_SELF_PROTOCOL_MISMATCH',
+    });
     expect(from).toHaveBeenCalledTimes(1);
     expect(mocks.generate).not.toHaveBeenCalled();
   });

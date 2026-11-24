@@ -259,10 +259,7 @@ describe('transcript-consent extras', () => {
 
   it('defaults to room mode and never lets a guest manage it', async () => {
     expect(
-      await readSelfConsentExtras(
-        { ...mocks.access, guest: true } as never,
-        {}
-      )
+      await readSelfConsentExtras({ ...mocks.access, guest: true } as never, {})
     ).toEqual({
       mode: 'room',
       perSpeakerAvailable: true,

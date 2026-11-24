@@ -85,11 +85,9 @@ export async function openSelfStream(request: Request, params: MeetAiParams) {
       streamId: stream.stream_id,
     });
     if (!commit.committed) {
-      await drainSelfOutbox(db, room, session.id, commit.pending).catch(
-        () => {
-          console.warn('[meet-ai] self_v1 open compensation pending');
-        }
-      );
+      await drainSelfOutbox(db, room, session.id, commit.pending).catch(() => {
+        console.warn('[meet-ai] self_v1 open compensation pending');
+      });
       throw notEligible();
     }
     return {

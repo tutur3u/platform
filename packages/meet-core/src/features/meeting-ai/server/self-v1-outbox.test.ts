@@ -27,7 +27,12 @@ const otherSession = '00000000-0000-4000-8000-0000000000c2';
 const a = '00000000-0000-4000-8000-0000000000a1';
 const b = '00000000-0000-4000-8000-0000000000a2';
 const room = { access: {}, accountId: a } as never;
-const entry = (accountId: string, seq: number, kind: string, sid = sessionId) => ({
+const entry = (
+  accountId: string,
+  seq: number,
+  kind: string,
+  sid = sessionId
+) => ({
   sessionId: sid,
   accountId,
   seq,
@@ -72,7 +77,10 @@ describe('self_v1 legal outbox drain', () => {
   });
 
   it('treats duplicates and superseded entries as recorded', async () => {
-    mocks.rpc.recordDecision.mockResolvedValue({ revision: 3, recorded: false });
+    mocks.rpc.recordDecision.mockResolvedValue({
+      revision: 3,
+      recorded: false,
+    });
     mocks.rpc.closeStream.mockRejectedValue(
       new MeetSelfRpcError(409, 'stale', '40001')
     );

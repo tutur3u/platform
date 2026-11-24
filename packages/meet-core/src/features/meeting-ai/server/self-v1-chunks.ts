@@ -11,11 +11,7 @@ import { loadSelfSession, meetSelfAccess } from './self-v1-access';
 import { readSelfChunkAudio, readSelfChunkFields } from './self-v1-audio';
 import { drainSelfOutbox } from './self-v1-outbox';
 import { type MeetSelfRoom, selfRoom, selfRoomCommands } from './self-v1-room';
-import {
-  type MeetAiChunkRow,
-  MeetSelfRpcError,
-  selfRpc,
-} from './self-v1-rpc';
+import { type MeetAiChunkRow, MeetSelfRpcError, selfRpc } from './self-v1-rpc';
 import { requireMeetTranscriptPayer } from './transcript-authority';
 import { enforceMeetAiUsage } from './usage-limit';
 
@@ -28,7 +24,8 @@ const LANGUAGES = new Set(['auto', 'vi', 'en', 'vi+en']);
 export function maxSelfChunkCostUsd(audioSeconds: number) {
   const input = Math.ceil(audioSeconds * 100) + 2048;
   return (
-    (input * MEET_AI_PRICING.audio + MAX_OUTPUT_TOKENS * MEET_AI_PRICING.output) /
+    (input * MEET_AI_PRICING.audio +
+      MAX_OUTPUT_TOKENS * MEET_AI_PRICING.output) /
     1_000_000
   );
 }
@@ -280,7 +277,10 @@ async function persistSelfChunk(
   }
 ) {
   const { result, fence } = input;
-  const costUsd = clampToReservation(result.costUsd ?? 0, input.reservedCostUsd);
+  const costUsd = clampToReservation(
+    result.costUsd ?? 0,
+    input.reservedCostUsd
+  );
   const usage = {
     model: result.usage.model,
     inputTokens: result.usage.inputTokens ?? null,

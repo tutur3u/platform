@@ -51,8 +51,7 @@ export function readSelfChunkFields(
       throw new MeetAiError(400, 'Invalid audio fields');
     seen.add(key);
     if (key === 'audio') {
-      if (!(value instanceof File))
-        throw new MeetAiError(400, 'Invalid audio');
+      if (!(value instanceof File)) throw new MeetAiError(400, 'Invalid audio');
       continue;
     }
     if (typeof value !== 'string')

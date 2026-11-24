@@ -32,7 +32,11 @@ function refusal(pgCode: string | undefined, fallback: string) {
     case '23514':
       return new MeetSelfRpcError(400, 'Invalid capture request', pgCode);
     case '42501':
-      return new MeetSelfRpcError(403, 'Only the meeting host can stop', pgCode);
+      return new MeetSelfRpcError(
+        403,
+        'Only the meeting host can stop',
+        pgCode
+      );
     case '40001':
       return new MeetSelfRpcError(
         409,

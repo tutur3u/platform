@@ -76,9 +76,7 @@ export async function generateSelfNotes(input: {
       listSelfSegments(db, session.id, hostId),
       listSelfCoverage(db, session.id, hostId),
     ]);
-    const incomplete = coverage.some(
-      (row) => row.coverage !== 'contributing'
-    );
+    const incomplete = coverage.some((row) => row.coverage !== 'contributing');
     const spoken = segments.filter((segment) => segment.transcript.trim());
     const transcript =
       (incomplete
@@ -106,7 +104,11 @@ export async function generateSelfNotes(input: {
           meetingStartedAt: input.meetingStartedAt,
           timezone: input.timezone,
         },
-        { userId: hostId, meetingId, attemptId: `${session.id}:notes:${attempt}` },
+        {
+          userId: hostId,
+          meetingId,
+          attemptId: `${session.id}:notes:${attempt}`,
+        },
         admission
       );
     }

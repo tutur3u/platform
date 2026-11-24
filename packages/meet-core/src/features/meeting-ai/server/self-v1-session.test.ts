@@ -52,7 +52,10 @@ beforeEach(() => {
   mocks.rpc.startSession.mockResolvedValue(session);
   mocks.record.mockResolvedValue({ pending: [] });
   mocks.drain.mockResolvedValue(undefined);
-  mocks.rpc.stopSession.mockResolvedValue({ ...session, capture_state: 'closed' });
+  mocks.rpc.stopSession.mockResolvedValue({
+    ...session,
+    capture_state: 'closed',
+  });
 });
 
 describe('self_v1 session start', () => {

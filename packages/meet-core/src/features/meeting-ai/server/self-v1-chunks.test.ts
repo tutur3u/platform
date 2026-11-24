@@ -211,9 +211,7 @@ describe('self_v1 chunk admission', () => {
   it('writes pending legal entries even for a refused admission', async () => {
     mocks.authorize.mockResolvedValue({
       allowed: false,
-      pending: [
-        { sessionId, accountId: uploader, seq: 4, kind: 'withdraw' },
-      ],
+      pending: [{ sessionId, accountId: uploader, seq: 4, kind: 'withdraw' }],
     });
     mocks.rpc.recordDecision.mockResolvedValue({ revision: 3, recorded: true });
     expect((await run()).status).toBe(409);
@@ -345,10 +343,10 @@ describe('self_v1 in-flight fence', () => {
       throw new MeetAiError(502, 'provider failed');
     });
     expect((await run()).status).toBe(502);
-    expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(
-      db,
-      { chunkId, outcome: 'unknown' }
-    );
+    expect(mocks.rpc.settleChunk).toHaveBeenCalledWith(db, {
+      chunkId,
+      outcome: 'unknown',
+    });
   });
 
   it.each([

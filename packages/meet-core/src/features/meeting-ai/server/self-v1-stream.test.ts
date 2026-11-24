@@ -64,7 +64,10 @@ describe('self_v1 stream open', () => {
     });
     mocks.loadSession.mockResolvedValue({ id: sessionId, generation: 4 });
     mocks.begin.mockResolvedValue({ epoch: 9, allowSeq: 12, pending: [] });
-    mocks.rpc.consentState.mockResolvedValue({ decision: 'withdraw', revision: 2 });
+    mocks.rpc.consentState.mockResolvedValue({
+      decision: 'withdraw',
+      revision: 2,
+    });
     mocks.rpc.recordDecision.mockResolvedValue({ revision: 3, recorded: true });
     mocks.rpc.openStream.mockResolvedValue({
       stream_id: streamId,
@@ -108,7 +111,10 @@ describe('self_v1 stream open', () => {
   });
 
   it('reuses a current allow instead of appending another', async () => {
-    mocks.rpc.consentState.mockResolvedValue({ decision: 'allow', revision: 5 });
+    mocks.rpc.consentState.mockResolvedValue({
+      decision: 'allow',
+      revision: 5,
+    });
     await openSelfStream(post({ sessionId }), params);
     expect(mocks.rpc.recordDecision).not.toHaveBeenCalled();
     expect(mocks.rpc.openStream.mock.calls[0]?.[1]).toMatchObject({

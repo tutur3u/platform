@@ -69,7 +69,8 @@ describe('per-speaker uploader access', () => {
     mocks.app.value = 'meet';
     mocks.user.mockResolvedValue({ id: 'uploader' });
     mocks.admin.mockResolvedValue({
-      from: () => chain({ data: { id: meetingId, creator_id: host, ws_id: ws } }),
+      from: () =>
+        chain({ data: { id: meetingId, creator_id: host, ws_id: ws } }),
     });
     mocks.resolve.mockResolvedValue(ws);
     mocks.availability.mockResolvedValue({ available: true });
@@ -99,7 +100,11 @@ describe('per-speaker uploader access', () => {
         }),
       403,
     ],
-    ['flag off or allowlist miss', () => mocks.flag.mockResolvedValue(false), 403],
+    [
+      'flag off or allowlist miss',
+      () => mocks.flag.mockResolvedValue(false),
+      403,
+    ],
     ['a Parley session', () => mocks.parley.mockResolvedValue(true), 403],
     [
       'a pilot non-member',

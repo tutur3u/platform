@@ -105,19 +105,17 @@ describe('chunk upload protocol branch', () => {
   });
 
   it('refuses room-mix audio for a per-speaker session before any work', async () => {
-    const from = vi
-      .fn()
-      .mockReturnValueOnce(
-        chain({
-          data: {
-            id,
-            protocol: 'self_v1',
-            created_at: new Date().toISOString(),
-            ended_at: null,
-          },
-          error: null,
-        })
-      );
+    const from = vi.fn().mockReturnValueOnce(
+      chain({
+        data: {
+          id,
+          protocol: 'self_v1',
+          created_at: new Date().toISOString(),
+          ended_at: null,
+        },
+        error: null,
+      })
+    );
     mocks.access.mockResolvedValue({
       db: { from, rpc: vi.fn() },
       meetingId: id,

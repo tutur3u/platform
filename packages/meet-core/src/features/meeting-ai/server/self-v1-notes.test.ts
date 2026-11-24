@@ -70,7 +70,9 @@ beforeEach(() => {
   mocks.segments.mockResolvedValue([
     { account_id: 'a', start_ms: 1000, transcript: 'hello' },
   ]);
-  mocks.coverage.mockResolvedValue([{ account_id: 'a', coverage: 'contributing' }]);
+  mocks.coverage.mockResolvedValue([
+    { account_id: 'a', coverage: 'contributing' },
+  ]);
   mocks.payer.mockImplementation(async () => {
     order.push('payer');
     return { billingWorkspaceId: 'root' };

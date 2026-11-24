@@ -97,7 +97,11 @@ export function readSelfRoster(
     [...new Set(segments.map((segment) => segment.account_id))].map(
       (accountId) => ({
         usage: {
-          speaker: { accountId, displayName: 'Participant', kind: 'microphone' },
+          speaker: {
+            accountId,
+            displayName: 'Participant',
+            kind: 'microphone',
+          },
         },
       })
     )
