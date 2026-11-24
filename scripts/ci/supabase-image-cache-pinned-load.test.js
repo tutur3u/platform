@@ -193,6 +193,56 @@ test('a pull by the pinned amd64 manifest digest is accepted under the container
   }
 });
 
+test('amd64-bound content is refused for a wrong platform, reference or pin format', () => {
+  const image = images[0];
+  const pin = catalogPin(catalog, image);
+  const reference = digestReference(image, pin);
+  const zero = `sha256:${'0'.repeat(64)}`;
+  const inspect = (patch) => () =>
+    containerdInspect(image, {
+      Id: pin.amd64,
+      RepoDigests: [reference],
+      ...patch,
+    });
+  for (const patch of [
+    { Os: 'windows' },
+    { Architecture: 'arm64' },
+    { RepoDigests: [] },
+    { RepoDigests: [`${reference.split('@')[0]}@${zero}`] },
+    { RepoDigests: [`other/repository@${pin.amd64}`] },
+  ])
+    assert.throws(
+      () =>
+        verifyPinned(reference, pin, {
+          deadline: 100,
+          now: () => 0,
+          spawn: inspect(patch),
+        }),
+      /digest mismatch/
+    );
+  assert.throws(
+    () =>
+      verifyPinnedContent(
+        image,
+        { ...pin, amd64: 'sha256:short' },
+        { deadline: 100, now: () => 0, spawn: inspect({}) }
+      ),
+    /Invalid seed content pin/
+  );
+  // Archive restore and post-tag checks see the same containerd Id.
+  assert.doesNotThrow(() =>
+    verifyLoadedImages(images, catalog, {
+      deadline: 100,
+      now: () => 0,
+      spawn: (_command, args) => {
+        const loaded = args.at(-1);
+        const loadedPin = catalogPin(catalog, loaded);
+        return containerdInspect(loaded, { Id: loadedPin.amd64 });
+      },
+    })
+  );
+});
+
 test('index-bound content is refused for a wrong id, index, platform or reference', () => {
   const image = images[0];
   const pin = catalogPin(catalog, image);

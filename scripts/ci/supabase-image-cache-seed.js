@@ -48,6 +48,8 @@ function verifyPinnedContent(
     throw new Error('Invalid seed content pin');
   if (pin.index !== undefined && !DIGEST.test(pin.index || ''))
     throw new Error('Invalid seed content pin');
+  if (pin.amd64 !== undefined && !DIGEST.test(pin.amd64 || ''))
+    throw new Error('Invalid seed content pin');
   const remaining = deadline - now();
   if (remaining <= 0) throw new Error('Seed deadline exhausted');
   const result = spawn('docker', ['image', 'inspect', image], {
