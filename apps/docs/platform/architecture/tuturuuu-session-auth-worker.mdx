@@ -2,7 +2,7 @@
 title: "Tuturuuu session auth Worker"
 description: "Slice 4 of the first-party Tuturuuu session: the auth Worker, its Durable Objects, bindings and entry points, and how it hosts the pure token signer, step-up proof and device state modules."
 audience: developers
-updatedAt: "2026-11-22"
+updatedAt: "2026-11-24"
 ---
 
 **Status: design, pending independent security review.** Slice 4 hosts
@@ -26,6 +26,53 @@ and staging acceptance:
 | 4b Session objects | `BrowserDevice`, `UserSessions`, every device port, the outbox drain, the epoch store and fan-out, the device index | None. Deployment held |
 | 4c Issuer contract | The AI temporary token store and `private.cross_app_tokens` on the session-bound issuer contract | None. The existing session path keeps today's behavior |
 | 4d First adapter | The gateway's `AUTH` binding and the first runtime adapter, with every reader at `supabase` | None until the release authority changes a reader flag |
+
+### Implementation status
+
+The first cut of 4a is in `apps/auth` (package `@tuturuuu/auth-worker`). It
+is dark: no route, custom domain, `workers.dev` or preview URL, no CI
+workflow that publishes it, no secret provisioned, and `TTR_SESSION_ENV` set
+to `local`. It contains:
+
+- `SessionControl`: the fence record, its version, the background switch,
+  budget parks and the fence log capped at 1,000 events, written in one
+  storage transaction (`src/fence-store.ts`). A fence that was never written
+  reads as `stopped` with `background: parked` at version 0, so a new
+  environment issues nothing until an operator's first
+  `setFence('running')`. Security cleanup still runs under `stopped`.
+- `SessionBudget`: per-category UTC-day totals; one durable park and one
+  durable clear per category per day, delivered to `SessionControl` with a
+  pending clear always delivered before any new-day park, and at most 5
+  alarm retries of a failed clear before it waits for the next flush or
+  midnight (`src/budget-store.ts`, `src/control-object.ts`).
+- `ControlEntry` with `readFence`, `setFence`, `parkBackground` and
+  `resumeBackground`. The caller key is checked at the entry, before any
+  Durable Object call, and again inside `SessionControl` for every operator
+  write, because another Worker could bind the class directly
+  (`src/control-entry.ts`).
+- The isolate fence reader (one `SessionControl` read per 10 seconds,
+  shared in flight, failed reads also wait out the interval) and the isolate
+  operation counter (one `SessionBudget` flush per 60 seconds, dropped on
+  failure) in `src/fence-reader.ts` and `src/op-counter.ts`.
+
+Caller-key secrets hold either one base64url key (32 bytes, 43 characters,
+canonical encoding) as the current value, or JSON text
+`{"current":"<key>","previous":"<key>"}` during a rotation. Any other value,
+including an absent secret, refuses every call.
+
+Residual in this cut, which blocks any deployment: `SessionControl.snapshot`,
+`addBudgetPark` and `clearBudgetParks`, and `SessionBudget.flush`, take no
+caller key. Once deployed, a foreign Worker that bound either class could read
+the fence, add or clear budget parks (background work only, never issuance),
+inflate counts, or churn the fence version to push operator events out of the
+1,000-event log. An internal key for these methods must land before
+`auth-cloudflare.yaml` or any deployment.
+
+Still open for 4a: the other entry points and their keys, `KeyObservations`
+and the census collector, `ParkedWork` and the resume alarm, the key guard,
+operator Worker and observer, the audit alert, the binding inventory, public
+JWKS, `SESSION_OPS` accounting points, and
+`auth-cloudflare.yaml` with its production hold.
 
 Browser sessions are in scope. Mobile, CLI, external-app, realtime and QR
 families use the same objects and land with their own family slices.
