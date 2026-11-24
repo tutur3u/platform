@@ -15537,6 +15537,7 @@ export type Database = {
           id: string;
           notice_version: string;
           participant_ref: string;
+          room_seq: number | null;
           session_id: string;
           user_id: string | null;
         };
@@ -15548,6 +15549,7 @@ export type Database = {
           id?: string;
           notice_version: string;
           participant_ref: string;
+          room_seq?: number | null;
           session_id: string;
           user_id?: string | null;
         };
@@ -15558,6 +15560,7 @@ export type Database = {
           id?: string;
           notice_version?: string;
           participant_ref?: string;
+          room_seq?: number | null;
           session_id?: string;
           user_id?: string | null;
         };
@@ -15645,6 +15648,46 @@ export type Database = {
           {
             foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
             columns: ['subject_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_self_v1_room_ops: {
+        Row: {
+          account_id: string;
+          kind: string;
+          recorded_at: string;
+          room_seq: number;
+          session_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          kind: string;
+          recorded_at?: string;
+          room_seq: number;
+          session_id: string;
+        };
+        Update: {
+          account_id?: string;
+          kind?: string;
+          recorded_at?: string;
+          room_seq?: number;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_self_v1_room_ops_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_self_v1_room_ops_account_id_fkey';
+            columns: ['account_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -33358,10 +33401,37 @@ export type Database = {
         Args: { p_series_id: string; p_until?: string };
         Returns: number;
       };
+      meet_ai_self_v1_capturing: {
+        Args: {
+          p_session: Omit<
+            Database['public']['Tables']['meet_ai_sessions']['Row'],
+            Database['public']['Tables']['meet_ai_sessions']['ComputedFields']
+          >;
+        };
+        Returns: boolean;
+      };
       meet_ai_self_v1_chunk_hidden: {
         Args: {
           p_account_id: string;
           p_created_at: string;
+          p_session_id: string;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_close_drained: {
+        Args: { p_session_id: string };
+        Returns: Database['public']['Tables']['meet_ai_sessions']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_self_v1_close_stream: {
+        Args: {
+          p_account_id: string;
+          p_room_seq: number;
           p_session_id: string;
         };
         Returns: boolean;
@@ -33373,9 +33443,58 @@ export type Database = {
           revision: number;
         }[];
       };
+      meet_ai_self_v1_end_upload: {
+        Args: {
+          p_account_id: string;
+          p_kind: string;
+          p_room_seq: number;
+          p_session_id: string;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_lock_session: {
+        Args: { p_session_id: string };
+        Returns: Database['public']['Tables']['meet_ai_sessions']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_self_v1_mark_dispatch: {
+        Args: {
+          p_account_id: string;
+          p_chunk_id: string;
+          p_consent_revision: number;
+        };
+        Returns: Database['public']['Tables']['meet_ai_chunks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_chunks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_self_v1_note_attempt: {
+        Args: { p_session_id: string };
+        Returns: number;
+      };
       meet_ai_self_v1_notes_redacted: {
         Args: { p_session_id: string };
         Returns: boolean;
+      };
+      meet_ai_self_v1_open_stream: {
+        Args: {
+          p_account_id: string;
+          p_consent_revision: number;
+          p_generation: number;
+          p_session_id: string;
+        };
+        Returns: {
+          lease_expires_at: string;
+          stream_id: string;
+        }[];
       };
       meet_ai_self_v1_post_call: {
         Args: {
@@ -33390,6 +33509,100 @@ export type Database = {
         Args: { p_reader_id: string; p_session_id: string };
         Returns: string;
       };
+      meet_ai_self_v1_record_decision: {
+        Args: {
+          p_account_id: string;
+          p_decision: string;
+          p_notice_version: string;
+          p_room_seq: number;
+          p_session_id: string;
+        };
+        Returns: {
+          recorded: boolean;
+          revision: number;
+        }[];
+      };
+      meet_ai_self_v1_renew_stream: {
+        Args: { p_account_id: string; p_stream_id: string };
+        Returns: string;
+      };
+      meet_ai_self_v1_reserve_chunk: {
+        Args: {
+          p_account_id: string;
+          p_audio_seconds: number;
+          p_consent_revision: number;
+          p_content_digest: string;
+          p_end_ms: number;
+          p_id: string;
+          p_max_cost_usd: number;
+          p_sequence: number;
+          p_session_id: string;
+          p_start_ms: number;
+          p_start_sample: number;
+          p_stream_id: string;
+        };
+        Returns: Database['public']['Tables']['meet_ai_chunks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_chunks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_self_v1_revoke_upload: {
+        Args: {
+          p_account_id: string;
+          p_room_seq: number;
+          p_session_id: string;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_room_seq_state: {
+        Args: {
+          p_account_id: string;
+          p_kind: string;
+          p_room_seq: number;
+          p_session_id: string;
+        };
+        Returns: string;
+      };
+      meet_ai_self_v1_settle_chunk: {
+        Args: {
+          p_chunk_id: string;
+          p_cost_usd: number;
+          p_outcome: string;
+          p_transcript: string;
+          p_usage: Json;
+        };
+        Returns: Database['public']['Tables']['meet_ai_chunks']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_chunks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_self_v1_start_session: {
+        Args: { p_host_id: string; p_meeting_id: string; p_ws_id: string };
+        Returns: Database['public']['Tables']['meet_ai_sessions']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_self_v1_stop_session: {
+        Args: { p_hard: boolean; p_host_id: string; p_session_id: string };
+        Returns: Database['public']['Tables']['meet_ai_sessions']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_sessions';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      meet_ai_usage_has_text: { Args: { p_usage: Json }; Returns: boolean };
       meet_attendance_claim_keys: { Args: { p_plan: Json }; Returns: string[] };
       meet_attendance_confirm_plan: {
         Args: { p_plan: Json; p_rooms: Json; p_sql: Json };
@@ -42148,6 +42361,8 @@ export type Database = {
           erase_generation: number | null;
           id: string;
           prior_cost_usd: number;
+          reservation_state: string | null;
+          reserved_cost_usd: number | null;
           sequence: number;
           session_id: string;
           source_kind: string | null;
@@ -42178,6 +42393,8 @@ export type Database = {
           erase_generation?: number | null;
           id: string;
           prior_cost_usd?: number;
+          reservation_state?: string | null;
+          reserved_cost_usd?: number | null;
           sequence: number;
           session_id: string;
           source_kind?: string | null;
@@ -42207,6 +42424,8 @@ export type Database = {
           erase_generation?: number | null;
           id?: string;
           prior_cost_usd?: number;
+          reservation_state?: string | null;
+          reserved_cost_usd?: number | null;
           sequence?: number;
           session_id?: string;
           source_kind?: string | null;
@@ -64789,6 +65008,8 @@ export type Database = {
           erase_generation: number | null;
           id: string;
           prior_cost_usd: number;
+          reservation_state: string | null;
+          reserved_cost_usd: number | null;
           sequence: number;
           session_id: string;
           source_kind: string | null;
