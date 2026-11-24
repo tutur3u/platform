@@ -6,14 +6,13 @@ import { useStreamReadiness } from './media-receiving-status';
 
 export function ScreenAudioStatus({ stream }: { stream: MediaStream }) {
   const t = useTranslations('meet.call');
-  const { audio } = useStreamReadiness(stream);
-  // Re-read on every audio readiness change, so an ended audio track updates
-  // the explanation as well as the badge.
+  // Subscribes to track mute and end events; the classification is re-read
+  // on each of them.
+  useStreamReadiness(stream);
   const { reason } = describeScreenAudio(stream);
-  const sharing = audio && reason === 'sharing';
-  // A present but silent track has no specific cause to name.
-  const explanation = reason === 'sharing' ? 'unknown' : reason;
-  const Icon = sharing ? Volume2 : VolumeX;
+  // A muted track may start delivering, so nothing is claimed until it does.
+  if (reason === 'pending') return null;
+  const Icon = reason === 'sharing' ? Volume2 : VolumeX;
   return (
     <div
       className="flex max-w-xs items-start gap-2 rounded-lg border bg-background/95 px-3 py-2 text-xs"
@@ -22,10 +21,12 @@ export function ScreenAudioStatus({ stream }: { stream: MediaStream }) {
     >
       <Icon className="mt-px size-4 shrink-0" />
       <span className="flex flex-col gap-0.5">
-        <span>{t(sharing ? 'screen_audio_on' : 'screen_audio_off')}</span>
-        {!sharing && (
+        <span>
+          {t(reason === 'sharing' ? 'screen_audio_on' : 'screen_audio_off')}
+        </span>
+        {reason !== 'sharing' && (
           <span className="text-muted-foreground">
-            {t(`screen_audio_reason_${explanation}`)}
+            {t(`screen_audio_reason_${reason}`)}
           </span>
         )}
       </span>

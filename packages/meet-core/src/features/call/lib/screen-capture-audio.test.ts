@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  browserAcceptsSystemAudio,
-  describeScreenAudio,
-  SCREEN_CAPTURE_OPTIONS,
-} from './screen-capture';
+import { describeScreenAudio, SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
 function stream(
   displaySurface: string | undefined,
-  audio: Array<{ readyState: 'ended' | 'live' }> = []
+  audio: Array<{ muted?: boolean; readyState: 'ended' | 'live' }> = []
 ) {
   return {
     getAudioTracks: () => audio,
@@ -43,47 +39,38 @@ describe('screen capture options', () => {
 
 describe('describeScreenAudio', () => {
   it.each(['browser', 'monitor', 'window', undefined])(
-    'reports sharing whenever a live audio track exists (%s)',
+    'reports sharing whenever a live, unmuted audio track exists (%s)',
     (surface) => {
       expect(
-        describeScreenAudio(stream(surface, [{ readyState: 'live' }]), false)
+        describeScreenAudio(stream(surface, [{ readyState: 'live' }]))
       ).toMatchObject({ hasAudio: true, reason: 'sharing' });
     }
   );
 
   it.each([
-    ['browser', true, 'tab_audio_off'],
-    ['window', true, 'window_audio_unavailable'],
-    ['monitor', true, 'system_audio_off'],
-    ['monitor', false, 'system_audio_unsupported'],
-    [undefined, true, 'unknown'],
-    ['application', true, 'unknown'],
-  ] as const)(
-    'explains a %s share without audio (system audio accepted: %s) as %s',
-    (surface, accepts, reason) => {
-      expect(describeScreenAudio(stream(surface), accepts)).toMatchObject({
-        hasAudio: false,
-        reason,
-      });
-    }
-  );
+    ['browser', 'tab_audio_off'],
+    ['window', 'window_audio_unavailable'],
+    ['monitor', 'system_audio_off'],
+    [undefined, 'unknown'],
+    ['application', 'unknown'],
+  ] as const)('explains a %s share without audio as %s', (surface, reason) => {
+    expect(describeScreenAudio(stream(surface))).toMatchObject({
+      hasAudio: false,
+      reason,
+    });
+  });
 
   it('treats an ended audio track as no audio', () => {
     expect(
-      describeScreenAudio(stream('monitor', [{ readyState: 'ended' }]), true)
+      describeScreenAudio(stream('monitor', [{ readyState: 'ended' }]))
     ).toMatchObject({ hasAudio: false, reason: 'system_audio_off' });
   });
-});
 
-describe('browserAcceptsSystemAudio', () => {
-  it('reads supported constraints, not the user agent', () => {
-    expect(browserAcceptsSystemAudio({ restrictOwnAudio: true })).toBe(true);
-    // Only restrictOwnAudio marks the system-audio option; local playback
-    // suppression is a tab feature.
+  it('claims nothing about a live track that is still muted', () => {
     expect(
-      browserAcceptsSystemAudio({ suppressLocalAudioPlayback: true })
-    ).toBe(false);
-    expect(browserAcceptsSystemAudio({ echoCancellation: true })).toBe(false);
-    expect(browserAcceptsSystemAudio(undefined)).toBe(false);
+      describeScreenAudio(
+        stream('monitor', [{ muted: true, readyState: 'live' }])
+      )
+    ).toMatchObject({ hasAudio: true, reason: 'pending' });
   });
 });

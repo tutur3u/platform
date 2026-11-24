@@ -4,7 +4,11 @@
  * - a browser tab's audio, a window's audio where the browser offers it, and
  *   whole-system audio when the user shares an entire screen;
  * - `restrictOwnAudio` removes the audio this page plays (remote participants
- *   and Mira) from a system or tab capture, so nobody hears themselves back.
+ *   and Mira) from a system or tab capture, so nobody hears themselves back,
+ *   in browsers that implement it.
+ *
+ * `systemAudio: 'include'` is always requested; a browser that does not offer
+ * system audio ignores it.
  *
  * `suppressLocalAudioPlayback` is deliberately not requested: it applies to a
  * tab capture and would silence the shared tab on the sharer's own speakers.
@@ -28,19 +32,19 @@ export type ScreenCaptureSurface = 'browser' | 'monitor' | 'unknown' | 'window';
 
 /**
  * Why a share has or lacks audio, for the screen-audio notice:
- * - `sharing`: the capture carries audio;
+ * - `sharing`: the capture carries live audio;
+ * - `pending`: an audio track exists but is not delivering yet (muted), so
+ *   nothing is claimed either way;
  * - `tab_audio_off`: a tab was shared without its audio;
  * - `window_audio_unavailable`: this browser offers no audio for a window;
- * - `system_audio_off`: a screen was shared without system audio, although
- *   the browser accepts the request (the option was off, or the operating
- *   system did not offer it);
- * - `system_audio_unsupported`: this browser cannot share system audio;
+ * - `system_audio_off`: a screen was shared without audio, because the option
+ *   was off or this browser cannot share system audio (the text covers both);
  * - `unknown`: the browser does not report what was shared.
  */
 export type ScreenAudioReason =
+  | 'pending'
   | 'sharing'
   | 'system_audio_off'
-  | 'system_audio_unsupported'
   | 'tab_audio_off'
   | 'unknown'
   | 'window_audio_unavailable';
@@ -50,8 +54,6 @@ export interface ScreenAudioState {
   hasAudio: boolean;
   reason: ScreenAudioReason;
 }
-
-type SupportedConstraints = Partial<Record<string, boolean>>;
 
 function surfaceOf(stream: MediaStream): ScreenCaptureSurface {
   const settings = stream.getVideoTracks()[0]?.getSettings?.() as
@@ -63,45 +65,24 @@ function surfaceOf(stream: MediaStream): ScreenCaptureSurface {
     : 'unknown';
 }
 
-/**
- * Whether this browser understands the system-audio request. Browsers that
- * implement `restrictOwnAudio` are the ones that also offer the system-audio
- * option for an entire screen; others ignore `systemAudio`. This reads
- * capabilities, never the user agent.
- */
-export function browserAcceptsSystemAudio(
-  supported:
-    | SupportedConstraints
-    | undefined = globalThis.navigator?.mediaDevices?.getSupportedConstraints?.() as
-    | SupportedConstraints
-    | undefined
-) {
-  return Boolean(supported?.restrictOwnAudio);
-}
-
 /** Classifies a captured screen stream for the notice. */
-export function describeScreenAudio(
-  stream: MediaStream,
-  acceptsSystemAudio = browserAcceptsSystemAudio()
-): ScreenAudioState {
+export function describeScreenAudio(stream: MediaStream): ScreenAudioState {
   const surface = surfaceOf(stream);
-  const hasAudio = stream
+  const tracks = stream
     .getAudioTracks()
-    .some((track) => track.readyState !== 'ended');
-  if (hasAudio) return { hasAudio, reason: 'sharing', surface };
+    .filter((track) => track.readyState !== 'ended');
+  if (tracks.some((track) => !track.muted))
+    return { hasAudio: true, reason: 'sharing', surface };
+  // A track that exists but is muted may still start delivering.
+  if (tracks.length) return { hasAudio: true, reason: 'pending', surface };
+  const hasAudio = false;
   switch (surface) {
     case 'browser':
       return { hasAudio, reason: 'tab_audio_off', surface };
     case 'window':
       return { hasAudio, reason: 'window_audio_unavailable', surface };
     case 'monitor':
-      return {
-        hasAudio,
-        reason: acceptsSystemAudio
-          ? 'system_audio_off'
-          : 'system_audio_unsupported',
-        surface,
-      };
+      return { hasAudio, reason: 'system_audio_off', surface };
     default:
       return { hasAudio, reason: 'unknown', surface };
   }

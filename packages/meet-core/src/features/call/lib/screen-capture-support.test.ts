@@ -1,7 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { CameraEffects } from './camera-effects';
 import { createLocalMediaControls } from './local-media-controls';
-import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
 function controls() {
   return createLocalMediaControls({
@@ -42,18 +41,18 @@ it('calls the picker synchronously from the click and surfaces denial instead of
 });
 
 it('requests system audio with the echo flags on every share', async () => {
-  const getDisplayMedia = vi.fn(() =>
+  const getDisplayMedia = vi.fn((_options: Record<string, unknown>) =>
     Promise.reject(new DOMException('Denied', 'NotAllowedError'))
   );
   vi.stubGlobal('navigator', { mediaDevices: { getDisplayMedia } });
   await controls()
     .toggleScreenShare()
     .catch(() => undefined);
-  expect(getDisplayMedia).toHaveBeenCalledWith(SCREEN_CAPTURE_OPTIONS);
-  expect(SCREEN_CAPTURE_OPTIONS.audio).toMatchObject({
-    restrictOwnAudio: true,
+  const options = getDisplayMedia.mock.calls[0]![0];
+  expect(options).toMatchObject({
+    audio: { restrictOwnAudio: true },
+    systemAudio: 'include',
   });
-  expect(SCREEN_CAPTURE_OPTIONS.audio).not.toHaveProperty(
-    'suppressLocalAudioPlayback'
-  );
+  expect(options).not.toHaveProperty('suppressLocalAudioPlayback');
+  expect(options.audio).not.toHaveProperty('suppressLocalAudioPlayback');
 });

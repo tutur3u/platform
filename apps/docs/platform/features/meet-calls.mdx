@@ -2370,58 +2370,71 @@ picker and operating system stay authoritative; Meet only says what it accepts:
 | Window | The window's audio (`windowAudio: 'window'`) | Only where the browser offers it; usually not |
 | Entire screen | System audio (`systemAudio: 'include'`) | Chrome and Edge on Windows and ChromeOS; macOS needs recent browser and macOS versions |
 
-Every share sets `restrictOwnAudio`, which removes the audio Meet itself plays
-(remote participants and Mira) from a tab or system capture, so nobody hears
-themselves back. Meet does not request `suppressLocalAudioPlayback`: it applies
-to tab capture and would silence the shared tab on the sharer's own speakers.
-Shared audio is sent unprocessed (no echo cancellation, noise suppression or gain
-control) to keep music and video faithful, while the microphone keeps its own
-echo cancellation, noise suppression and gain control. Meet tells whether the
-browser offers the system-audio option by `getSupportedConstraints()` reporting
-`restrictOwnAudio`.
+Every share requests `systemAudio: 'include'`; a browser that does not offer
+system audio ignores it, and the share goes ahead without it. Every share also
+sets `restrictOwnAudio`, which removes the audio Meet itself plays (remote
+participants and Mira) from a tab or system capture where the browser supports
+it (Chrome and Edge on Windows). Behavior on macOS and ChromeOS is pending the
+manual QA below, so Meet does not promise that its own sound is excluded there.
+Meet does not request `suppressLocalAudioPlayback`: it applies to tab capture
+and would silence the shared tab on the sharer’s own speakers. Shared audio is
+sent unprocessed (no echo cancellation, noise suppression or gain control) to
+keep music and video faithful, while the microphone keeps its own echo
+cancellation, noise suppression and gain control.
 
 The in-call badge reports whether captured audio is available, and a
 video-only capture still works. Without audio, the badge explains why for the
-shared surface: tab audio was left off, this browser offers no window audio,
-system audio was left off or not offered by the system, or this browser cannot
-share system audio at all. Meet tells the last two apart by capability
-(`getSupportedConstraints()` reporting `restrictOwnAudio`) and the track's `displaySurface` setting, never
-by the user agent. Remote screen tiles play shared audio, and muting the
-microphone does not mute shared audio. Stopping screen sharing stops both its
-audio and video tracks. The host's shared audio is included in the existing
-consent-controlled transcription mixer.
+shared surface, from the track’s `displaySurface` setting and never the user
+agent:
+
+- Tab: “Share again and turn on ‘Also share tab audio’.”
+- Window: this browser can’t share a window’s audio.
+- Entire screen: one text for every cause. No sound is being shared; share the
+  whole screen again with “Also share system audio” turned on, or share a tab
+  where the browser can’t share system sound.
+- Surface not reported: no audio is being shared.
+
+A live audio track that is still muted shows no badge until it delivers, so
+Meet never claims “no audio” for a track that is about to start. Remote screen
+tiles play shared audio, and muting the microphone does not mute shared audio.
+Stopping screen sharing stops both its audio and video tracks. The host’s
+shared audio is included in the existing consent-controlled transcription
+mixer.
 
 ### Screen audio: echo regression plan
 
 Headless browsers cannot capture system audio, so these run by hand on real
 devices with speakers (not headphones) and two participants, A sharing and B
-listening:
+listening. None has been run yet; Meet’s own sound is excluded only where
+the browser supports `restrictOwnAudio`, so run them on each platform before
+claiming it there:
 
 1. A shares the entire screen with system audio while B talks. B must not hear
-   their own voice back from A's share.
+   their own voice back from A’s share.
 2. A shares the entire screen with system audio and plays a video in another
-   tab. B hears the video once, with no doubled copy from A's microphone.
+   tab. B hears the video once, with no doubled copy from A’s microphone.
 3. A shares a tab with its audio and keeps hearing it locally. B hears it
-   once; A's microphone, which keeps its own echo cancellation, must not add a
+   once; A’s microphone, which keeps its own echo cancellation, must not add a
    second copy.
 4. Mira speaks while A shares system audio. B hears Mira only from the room,
-   not again through A's share.
+   not again through A’s share.
 5. A turns the microphone off and on during the share. Shared audio continues
    and does not echo.
 
 Unit coverage: `screen-capture-audio.test.ts` (options and per-surface
-classification), `screen-audio-status.test.tsx` (the notice in EN and VI) and
-`screen-capture-support.test.ts` (the options passed on every share).
+classification), `screen-audio-status.test.tsx` (the notice in EN and VI, and
+the muted-track case) and `screen-capture-support.test.ts` (the arguments
+passed to `getDisplayMedia` on every share).
 
 ### Screen audio: manual QA checklist
 
-| Platform | Check |
-| --- | --- |
-| Windows, Chrome | Entire screen offers **Also share system audio**; with it on the badge reads *Sharing screen audio*; with it off the badge explains the option. Echo plan steps 1–5 pass. |
-| Windows, Edge | Same as Chrome. |
-| ChromeOS, Chrome | Same as Windows. |
-| macOS, Chrome | On versions that offer system audio, as on Windows. Otherwise the badge explains that system audio is not available and suggests sharing a tab. Tab audio still works. |
-| Any | Sharing a window shows the window-audio explanation unless the browser offered window audio. |
+| Platform | Check | Status | Date | Device | Owner |
+| --- | --- | --- | --- | --- | --- |
+| Windows, Chrome | Entire screen offers **Also share system audio**; with it on the badge reads *Sharing screen audio*; with it off the badge explains the option. Echo plan steps 1–5 pass. | Not yet run | | | |
+| Windows, Edge | Same as Chrome. | Not yet run | | | |
+| ChromeOS, Chrome | Same as Windows; confirm whether Meet’s own sound is excluded. | Not yet run | | | |
+| macOS, Chrome | On versions that offer system audio, as on Windows; confirm whether Meet’s own sound is excluded. Otherwise the badge reads *Screen shared without audio* with “No sound is being shared…” and suggests sharing a tab. Tab audio still works. | Not yet run | | | |
+| Any | Sharing a window shows the window-audio explanation unless the browser offered window audio. | Not yet run | | | |
 
 The host can click the meeting title to rename it in a dialog, without changing
 the meeting time or calendar linkage, and hover or keyboard-focus a participant's
