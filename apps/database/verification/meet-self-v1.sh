@@ -88,6 +88,34 @@ forward
 echo '== forward'
 suites_pass
 
+# The capture path rollbacks refuse while a self_v1 session can still capture.
+guard_ids="u := '00000000-0000-4000-8000-000000089901'::uuid; ws := '00000000-0000-4000-8000-000000089902'::uuid;
+  m := '00000000-0000-4000-8000-000000089903'::uuid;"
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "do \$\$ declare u uuid; ws uuid; m uuid; begin $guard_ids
+  insert into auth.users(id) values (u);
+  insert into public.users(id) values (u) on conflict do nothing;
+  insert into public.workspaces(id, name, personal, creator_id) values (ws, 'Rollback guard', false, u);
+  insert into public.workspace_meetings(id, ws_id, creator_id, name) values (m, ws, u, 'Rollback guard');
+  perform private.meet_ai_self_v1_start_session(m, u, ws); end \$\$"
+for m in 20261124100100_meet_ai_self_v1_cost_rpcs 20261124100000_meet_ai_self_v1_capture_path; do
+  if out=$(run "rollbacks/$m.rollback.sql" 2>&1); then
+    echo "== rollback guard MISSING for $m"; status=1
+  elif grep -q 'before rolling back' <<<"$out"; then
+    echo "== rollback $m refused while a self_v1 session is live"
+  else
+    echo "$out"; status=1
+  fi
+done
+kept=$($PSQL -X -At -v ON_ERROR_STOP=1 -c "select count(*) from pg_proc
+  where proname in ('meet_ai_self_v1_reserve_chunk', 'meet_ai_self_v1_record_decision')")
+if [[ $kept != 2 ]]; then echo "== refused rollback dropped functions"; status=1; fi
+$PSQL -X -q -v ON_ERROR_STOP=1 -c "do \$\$ declare u uuid; ws uuid; m uuid; begin $guard_ids
+  delete from public.meet_ai_sessions where meeting_id = m;
+  delete from public.workspace_meetings where id = m;
+  delete from public.workspaces where id = ws;
+  delete from public.users where id = u;
+  delete from auth.users where id = u; end \$\$"
+
 # Rollback round trip, in the documented order, then forward again.
 for m in 20261124100100_meet_ai_self_v1_cost_rpcs \
   20261124100000_meet_ai_self_v1_capture_path \

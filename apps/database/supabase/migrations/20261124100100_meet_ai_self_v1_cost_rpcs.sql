@@ -8,6 +8,41 @@
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 
+-- Upload fence shared by reservation and dispatch: the admission row and the
+-- stream are locked (after the session, in the shared order) and must still
+-- allow capture: an unrevoked upload grant, a live stream and an unexpired
+-- lease. A close, revoke or lease expiry therefore stops every later
+-- reservation and dispatch of that stream.
+create function private.meet_ai_self_v1_lock_live_upload(
+  p_session_id uuid, p_account_id uuid, p_stream_id uuid
+) returns void language plpgsql set search_path = pg_catalog, pg_temp
+as $$
+declare
+  revoked_at timestamptz;
+  stream private.meet_ai_capture_streams;
+begin
+  select p.upload_revoked_at into revoked_at from private.meet_ai_session_participants p
+    where p.session_id = p_session_id and p.account_id = p_account_id for share;
+  if not found then
+    raise exception 'Uploader is not admitted to this session' using errcode = '55000';
+  end if;
+  if revoked_at is not null then
+    raise exception 'Upload was revoked for this session' using errcode = '55000';
+  end if;
+  select * into stream from private.meet_ai_capture_streams c
+    where c.id = p_stream_id and c.session_id = p_session_id and c.account_id = p_account_id
+    for share;
+  if not found then raise exception 'Capture stream not found' using errcode = 'P0002'; end if;
+  if stream.state not in ('active', 'draining') or stream.lease_expires_at <= now() then
+    raise exception 'Capture stream is not live' using errcode = '55000';
+  end if;
+end;
+$$;
+revoke all on function private.meet_ai_self_v1_lock_live_upload(uuid, uuid, uuid)
+  from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_lock_live_upload(uuid, uuid, uuid)
+  to service_role;
+
 -- Admission of one uploaded chunk: cost reservation against the session cap,
 -- per-account budgets, the chunk row and the stream lease, in one transaction.
 create function private.meet_ai_self_v1_reserve_chunk(
@@ -55,11 +90,9 @@ begin
        > s.cost_cap_usd then
     raise exception 'Session cost cap reached' using errcode = '54000';
   end if;
+  perform private.meet_ai_self_v1_lock_live_upload(p_session_id, p_account_id, p_stream_id);
   select * into admitted from private.meet_ai_session_participants p
     where p.session_id = p_session_id and p.account_id = p_account_id for update;
-  if not found then
-    raise exception 'Uploader is not admitted to this session' using errcode = '55000';
-  end if;
   if admitted.chunk_count + 1 > 1080 or admitted.audio_seconds + p_audio_seconds > 10800 then
     raise exception 'Per-account capture budget reached' using errcode = '54000';
   end if;
@@ -67,7 +100,6 @@ begin
     where c.id = p_stream_id and c.session_id = p_session_id
       and c.account_id = p_account_id
     for update;
-  if not found then raise exception 'Capture stream not found' using errcode = 'P0002'; end if;
   insert into public.meet_ai_chunks (id, session_id, sequence, start_seconds,
     duration_seconds, status, stream_id, account_id, source_kind, content_digest,
     start_ms, end_ms, timing_uncertainty_ms, start_sample, capture_consent_revision,
@@ -106,15 +138,18 @@ language plpgsql security definer set search_path = pg_catalog, pg_temp
 as $$
 declare
   owner_session uuid;
+  owner_stream uuid;
   s public.meet_ai_sessions;
   chunk public.meet_ai_chunks;
 begin
   if num_nulls(p_chunk_id, p_account_id, p_consent_revision) > 0 then
     raise exception 'Missing argument' using errcode = '22023'; end if;
-  select c.session_id into owner_session from public.meet_ai_chunks c
+  select c.session_id, c.stream_id into owner_session, owner_stream from public.meet_ai_chunks c
     where c.id = p_chunk_id and c.account_id = p_account_id and c.stream_id is not null;
   if not found then raise exception 'Chunk not found' using errcode = 'P0002'; end if;
   s := private.meet_ai_self_v1_lock_session(owner_session);
+  -- A refused chunk stays reserved; the caller settles it as `released`.
+  perform private.meet_ai_self_v1_lock_live_upload(owner_session, p_account_id, owner_stream);
   select * into chunk from public.meet_ai_chunks c where c.id = p_chunk_id for update;
   if chunk.status <> 'processing' or chunk.reservation_state is distinct from 'reserved'
      or chunk.dispatch_consent_revision is not null then

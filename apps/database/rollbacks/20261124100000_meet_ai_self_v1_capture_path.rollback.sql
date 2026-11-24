@@ -3,11 +3,34 @@
 -- key and ordering trigger are removed. Discarded chunks hold no text and
 -- become `failed` so the original status check can return. Per-chunk
 -- reservations and the room-entry log are dropped; session cost counters stay.
+-- Refuses while any self_v1 session is active or draining, or any self_v1
+-- chunk is processing or reserved. Reapplying the migration starts the room
+-- sequence watermark empty, so an older room entry could land again: end every
+-- self_v1 session (stop, then close_drained) before rolling back, and start new
+-- sessions only after the reapply.
 -- Run with psql -X -v ON_ERROR_STOP=1 -f, without -1.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '120s';
+lock table public.meet_ai_sessions, public.meet_ai_chunks in share row exclusive mode;
+-- Fixed checks only (no EXECUTE, no interpolation); they can only raise.
+-- tuturuuu: reviewed(dynamic-sql-review): no EXECUTE or interpolated SQL
+do $$
+begin
+  if exists (select 1 from public.meet_ai_sessions
+      where protocol = 'self_v1' and capture_state in ('active', 'draining')) then
+    raise exception 'End every self_v1 session (stop and close_drained) before rolling back'
+      using errcode = '55000';
+  end if;
+  if exists (select 1 from public.meet_ai_chunks where stream_id is not null
+      and (status = 'processing' or reservation_state = 'reserved')) then
+    raise exception 'Settle every in-flight self_v1 chunk before rolling back'
+      using errcode = '55000';
+  end if;
+end;
+$$;
 drop function if exists private.meet_ai_self_v1_note_attempt(uuid);
+drop function if exists private.meet_ai_self_v1_lock_live_upload(uuid, uuid, uuid);
 drop function if exists private.meet_ai_self_v1_settle_chunk(uuid, text, text, jsonb, numeric);
 drop function if exists private.meet_ai_self_v1_mark_dispatch(uuid, uuid, integer);
 drop function if exists private.meet_ai_self_v1_reserve_chunk(uuid, uuid, uuid, uuid, integer,

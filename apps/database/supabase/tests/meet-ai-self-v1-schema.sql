@@ -40,8 +40,8 @@ select ok((select bool_and(has_function_privilege('service_role', p.oid, 'EXECUT
   where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'),
   'self_v1 functions are service-executable with an explicit pg_temp-last path');
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 30,
-  'thirty self_v1 functions exist (contracts plus the capture path)');
+  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 31,
+  'thirty-one self_v1 functions exist (contracts plus the capture path)');
 
 -- N2 FK actions are explicit.
 select is((select confdeltype::text from pg_constraint where conname = 'meet_ai_sessions_user_id_fkey'), 'n',

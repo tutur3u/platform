@@ -13,9 +13,10 @@ create function pg_temp.cid(n integer) returns uuid language sql as $$
   select ('00000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid;
 $$;
 -- 89401 creator, 89402 host, 89403 A, 89404 B, 89405 C (never admitted),
--- 89406 D (allow cap), 89407 E (drain), 89408 F (hard stop).
-insert into auth.users(id) select pg_temp.cid(n) from generate_series(89401, 89408) n;
-insert into public.users(id) select pg_temp.cid(n) from generate_series(89401, 89408) n
+-- 89406 D (allow cap), 89407 E (drain), 89408 F (hard stop),
+-- 89409 G (lease and close fence), 89410 H (revoke fence).
+insert into auth.users(id) select pg_temp.cid(n) from generate_series(89401, 89410) n;
+insert into public.users(id) select pg_temp.cid(n) from generate_series(89401, 89410) n
   on conflict do nothing;
 insert into public.workspaces(id, name, personal, creator_id) values
   (pg_temp.cid(89411), 'Per speaker', false, pg_temp.cid(89401)),
@@ -321,6 +322,52 @@ select throws_ok($$select public.reserve_meet_ai_chunk(pg_temp.cid(89462), pg_te
 select throws_ok($$select private.meet_ai_self_v1_reserve_chunk(pg_temp.cid(89463), pg_temp.cid(89433),
   current_setting('test.s3')::uuid, pg_temp.cid(89404), 0, 0, 0, 5000, sha256('l'::bytea), 1, 5, 1)$$,
   'P0002', null, 'the capture path refuses legacy sessions');
+
+-- Lease expiry, close and revoke fence dispatch of chunks reserved earlier.
+-- A fenced chunk stays reserved until it is released; a duplicate never re-arms it.
+select is(pg_temp.decide(89409, 'allow', 1), '1/true', 'G allows');
+select set_config('test.sg', pg_temp.open(89409, 1)::text, true);
+select pg_temp.reserve(89491, current_setting('test.sg')::uuid, 89409, 0, 1, 1.00);
+select pg_temp.reserve(89492, current_setting('test.sg')::uuid, 89409, 1, 1, 1.00);
+select is(pg_temp.costs(), '2.00/2.00/0.90', 'G reserves two chunks');
+update private.meet_ai_capture_streams set lease_expires_at = now() - interval '1 second'
+  where id = current_setting('test.sg')::uuid;
+select throws_ok($$select private.meet_ai_self_v1_mark_dispatch(pg_temp.cid(89491), pg_temp.cid(89409), 1)$$,
+  '55000', null, 'lease expiry before dispatch refuses dispatch');
+update private.meet_ai_capture_streams set lease_expires_at = now() + interval '60 seconds'
+  where id = current_setting('test.sg')::uuid;
+select ok(private.meet_ai_self_v1_close_stream(pg_temp.sid(), pg_temp.cid(89409), 2), 'G leaves');
+select throws_ok($$select private.meet_ai_self_v1_mark_dispatch(pg_temp.cid(89491), pg_temp.cid(89409), 1)$$,
+  '55000', null, 'close before dispatch refuses dispatch');
+select ok((select reservation_state = 'reserved' and status = 'processing' and attempts = 1
+    and dispatch_consent_revision is null
+  from pg_temp.reserve(89491, current_setting('test.sg')::uuid, 89409, 0, 1, 1.00)),
+  'an exact duplicate after close returns the chunk unchanged');
+select throws_ok($$select private.meet_ai_self_v1_mark_dispatch(pg_temp.cid(89491), pg_temp.cid(89409), 1)$$,
+  '55000', null, 'a duplicate after close does not re-arm dispatch');
+select throws_ok($$select pg_temp.reserve(89493, current_setting('test.sg')::uuid, 89409, 2, 1, 1.00)$$,
+  '55000', null, 'a closed stream takes no new reservation');
+select is((pg_temp.settle(89491, 'released')).reservation_state, 'released',
+  'a chunk fenced by close is released');
+select is((pg_temp.settle(89492, 'released')).reservation_state, 'released',
+  'a second fenced chunk is released');
+select is(pg_temp.costs(), '0.00/2.00/0.90', 'releasing fenced chunks frees their reservations');
+select is(pg_temp.decide(89410, 'allow', 1), '1/true', 'H allows');
+select set_config('test.sh', pg_temp.open(89410, 1)::text, true);
+select pg_temp.reserve(89494, current_setting('test.sh')::uuid, 89410, 0, 1, 1.00);
+select ok(private.meet_ai_self_v1_revoke_upload(pg_temp.sid(), pg_temp.cid(89410), 2), 'H is removed');
+select throws_ok($$select private.meet_ai_self_v1_mark_dispatch(pg_temp.cid(89494), pg_temp.cid(89410), 1)$$,
+  '55000', null, 'revoke before dispatch refuses dispatch');
+select ok((select reservation_state = 'reserved' and dispatch_consent_revision is null
+  from pg_temp.reserve(89494, current_setting('test.sh')::uuid, 89410, 0, 1, 1.00)),
+  'an exact duplicate after revoke returns the chunk unchanged');
+select throws_ok($$select private.meet_ai_self_v1_mark_dispatch(pg_temp.cid(89494), pg_temp.cid(89410), 1)$$,
+  '55000', null, 'a duplicate after revoke does not re-arm dispatch');
+select throws_ok($$select pg_temp.reserve(89495, current_setting('test.sh')::uuid, 89410, 1, 1, 1.00)$$,
+  '55000', null, 'a revoked account takes no new reservation');
+select is((pg_temp.settle(89494, 'released')).reservation_state, 'released',
+  'a chunk fenced by revoke is released');
+select is(pg_temp.costs(), '0.00/2.00/0.90', 'every fenced reservation is freed exactly once');
 
 -- Notes attempts: at most 3 per session.
 select is(private.meet_ai_self_v1_note_attempt(pg_temp.sid()), 1, 'first notes attempt');
