@@ -55,6 +55,7 @@ jobs:
             and .exports.ChatConversationRoom.storage == "sqlite"
             and .env.CHAT_REALTIME_TOKEN_SECRET.type == "secret"
             and (.env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET // null) == null
+            and (.env.CHAT_REALTIME_TOKEN_ROTATION // null) == null
             and .env.CHAT_REALTIME_STOPPED.type == "secret"' \
             workers/default/worker.config.json
           ! grep -rqF '"tuturuuu-chat-realtime"' workers/default/worker.config.json
@@ -128,7 +129,8 @@ jobs:
           CHAT_REALTIME_TOKEN_SECRET: ${{ secrets.CHAT_REALTIME_STAGING_TOKEN_SECRET }}
         run: |
           set -euo pipefail
-          test "${#CHAT_REALTIME_TOKEN_SECRET}" -ge 32
+          trimmed="$(printf '%s' "$CHAT_REALTIME_TOKEN_SECRET" | tr -d '[:space:]')"
+          test "${#trimmed}" -ge 32
           secrets="$RUNNER_TEMP/chat-realtime-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           umask 077

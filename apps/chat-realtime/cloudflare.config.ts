@@ -34,7 +34,10 @@ export default defineConfig({
       // valid until a default build replaces it. Signers always use the
       // current secret.
       ...(rotating
-        ? { CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: bindings.secret() }
+        ? {
+            CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: bindings.secret(),
+            CHAT_REALTIME_TOKEN_ROTATION: bindings.text('overlap'),
+          }
         : {}),
       INBOX: bindings.durableObject({
         worker,

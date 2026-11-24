@@ -10,6 +10,7 @@ import {
   isInboxEvent,
   isStopped,
   json,
+  ticketSecrets,
   LIMITS,
   parseTicketProtocol,
   ROOM_TICKET_HEADER,
@@ -27,10 +28,7 @@ function room(namespace: DurableObjectNamespace, name: string) {
 
 async function verify(token: string | null, env: Env) {
   if (!token) return null;
-  return verifyChatRealtimeTicket(token, [
-    env.CHAT_REALTIME_TOKEN_SECRET,
-    env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET,
-  ]);
+  return verifyChatRealtimeTicket(token, ticketSecrets(env));
 }
 
 async function connect(request: Request, env: Env, url: URL) {

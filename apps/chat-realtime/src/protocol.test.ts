@@ -9,6 +9,7 @@ import {
   parseTicketProtocol,
   readBounded,
   type SocketAttachment,
+  ticketSecrets,
 } from './protocol';
 
 const attachment = (): SocketAttachment => ({
@@ -68,6 +69,21 @@ describe('chat realtime protocol', () => {
     expect(isStopped({ CHAT_REALTIME_STOPPED: '1' })).toBe(true);
     expect(isStopped({ CHAT_REALTIME_STOPPED: 'false' })).toBe(false);
     expect(isStopped({})).toBe(false);
+  });
+
+  it('accepts the previous ticket secret only on a rotation build', () => {
+    const secrets = {
+      CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: 'p'.repeat(32),
+      CHAT_REALTIME_TOKEN_SECRET: 'c'.repeat(32),
+    };
+    // A previous secret left bound after a rotation is ignored.
+    expect(ticketSecrets(secrets)).toEqual(['c'.repeat(32)]);
+    expect(
+      ticketSecrets({ ...secrets, CHAT_REALTIME_TOKEN_ROTATION: 'other' })
+    ).toEqual(['c'.repeat(32)]);
+    expect(
+      ticketSecrets({ ...secrets, CHAT_REALTIME_TOKEN_ROTATION: 'overlap' })
+    ).toEqual(['c'.repeat(32), 'p'.repeat(32)]);
   });
 
   it('parses only bounded non-negative sequence numbers', () => {

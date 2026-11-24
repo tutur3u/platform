@@ -73,8 +73,16 @@ describe('chat-realtime Cloudflare config', () => {
     }
     const { worker } = await config({ CHAT_REALTIME_TOKEN_ROTATION: 'overlap' });
     expect(declared(worker.env)).toEqual(
-      [...DEFAULT_ENV, 'CHAT_REALTIME_TOKEN_PREVIOUS_SECRET'].sort()
+      [
+        ...DEFAULT_ENV,
+        'CHAT_REALTIME_TOKEN_PREVIOUS_SECRET',
+        'CHAT_REALTIME_TOKEN_ROTATION',
+      ].sort()
     );
+    expect(worker.env.CHAT_REALTIME_TOKEN_ROTATION).toMatchObject({
+      type: 'text',
+      value: 'overlap',
+    });
     expect(worker.env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET).toMatchObject({
       type: 'secret',
     });

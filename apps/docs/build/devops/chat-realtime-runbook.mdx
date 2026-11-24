@@ -153,20 +153,25 @@ rotation build also accepts tickets signed with
 `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`, which must be at least 32 characters.
 `cf deploy` refuses to publish while any declared secret is unset, so
 `cloudflare.config.ts` declares the previous secret only when
-`CHAT_REALTIME_TOKEN_ROTATION=overlap` is set at build time. The artifact
-workflow and the staging deploy build without it, and the build steps assert
-that it is absent.
+`CHAT_REALTIME_TOKEN_ROTATION=overlap` is set at build time. That build also
+carries a `CHAT_REALTIME_TOKEN_ROTATION=overlap` text binding, and the Worker
+reads the previous secret only while it is present. `cf deploy` keeps existing
+secret bindings, so a default build ignores a previous secret that is still
+bound instead of accepting it. The artifact workflow and the staging deploy
+build without either binding, and the build steps assert that both are absent.
 
 1. Build with `CHAT_REALTIME_TOKEN_ROTATION=overlap` and publish it with a
    secrets file that sets `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET` to the current
    secret and `CHAT_REALTIME_TOKEN_SECRET` to the new one.
 2. Update `CHAT_REALTIME_TOKEN_SECRET` on `apps/web` and Cron Control.
 3. After 15 minutes (the longest ticket lifetime), publish the default build,
-   which drops the previous secret. Do not publish a default build during the
-   overlap; doing so ends it early.
+   which stops accepting the previous secret. Then remove the leftover binding
+   with `cf workers secrets delete` for `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`,
+   and confirm with `cf workers secrets list` that it is gone. Publishing a
+   default build during the overlap ends it early.
 
-For a suspected leak, skip the overlap: replace the secret everywhere and
-leave the previous secret unset. Clients re-ticket and reconnect.
+For a suspected leak, skip the overlap: replace the secret everywhere with a
+default build, delete any bound previous secret, and leave it unset. Clients re-ticket and reconnect.
 
 The retained Bun sidecar and the Admin and Web development token paths accept
 only `CHAT_REALTIME_TOKEN_SECRET`. They never fall back to a Supabase service

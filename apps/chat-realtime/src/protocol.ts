@@ -74,6 +74,22 @@ export function isStopped(env: { CHAT_REALTIME_STOPPED?: string }) {
 }
 
 /**
+ * Verification keys for a ticket. `cf deploy` keeps existing secret bindings,
+ * so a previous secret left on the Worker survives a default build; only a
+ * rotation build, which carries `CHAT_REALTIME_TOKEN_ROTATION=overlap` as a
+ * text binding, accepts it.
+ */
+export function ticketSecrets(env: {
+  CHAT_REALTIME_TOKEN_PREVIOUS_SECRET?: string;
+  CHAT_REALTIME_TOKEN_ROTATION?: string;
+  CHAT_REALTIME_TOKEN_SECRET?: string;
+}): (string | undefined)[] {
+  return env.CHAT_REALTIME_TOKEN_ROTATION === 'overlap'
+    ? [env.CHAT_REALTIME_TOKEN_SECRET, env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET]
+    : [env.CHAT_REALTIME_TOKEN_SECRET];
+}
+
+/**
  * Reads the ticket from `Sec-WebSocket-Protocol: tuturuuu.chat.v1, ticket.<t>`.
  * Browsers cannot set WebSocket headers, and keeping the ticket out of the URL
  * keeps it out of request logs.
