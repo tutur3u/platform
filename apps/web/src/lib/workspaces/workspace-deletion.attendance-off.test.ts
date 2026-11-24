@@ -12,6 +12,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => false,
 }));
+vi.mock('./workspace-deletion-billing', () => ({
+  readWorkspaceDeletionEligibility: async () => 'ready',
+  revokeWorkspaceSubscriptionsForDeletion: async () => 'revoked',
+}));
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => {
   imports.count += 1;
   throw new Error('missing migration');
@@ -57,7 +61,7 @@ it('deletes the workspace while attendance storage is unavailable', async () => 
   expect(imports.count).toBe(0);
 });
 
-it('reports a database failure while attendance storage is unavailable', async () => {
+it('reports a statement timeout as a rolled-back deletion', async () => {
   rpcMock.mockResolvedValue({
     data: null,
     error: { code: '57014', message: 'statement timeout' },
@@ -67,8 +71,8 @@ it('reports a database failure while attendance storage is unavailable', async (
     { actorId: ACTOR, workspaceId: WORKSPACE, supabase: supabase as never },
     'Class'
   );
-  expect(failed.status).toBe(500);
-  expect(failed.body.code).toBe('failed');
+  expect(failed.status).toBe(503);
+  expect(failed.body.code).toBe('timed_out');
   expect(imports.count).toBe(0);
   log.mockRestore();
 });

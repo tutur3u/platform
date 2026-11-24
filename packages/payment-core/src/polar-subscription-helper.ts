@@ -140,6 +140,18 @@ async function upsertSubscription(
     });
 
   if (dbError) {
+    // A deleted workspace removes its subscription rows by cascade. Later
+    // provider events for it have nothing to project, so they are not errors.
+    if (dbError.code === '23503') {
+      const { data: workspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('id', subscriptionData.ws_id)
+        .maybeSingle();
+      if (!workspaceError && !workspace) {
+        return { subscriptionData: null, isSeatBased };
+      }
+    }
     throw new Error(`Subscription upsert error: ${dbError.message}`);
   }
 

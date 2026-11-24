@@ -16,3 +16,21 @@ export const PROPOSED_WORKSPACE_CATALOG = {
     pro: { monthly: 1900, annual: 19000 },
   },
 } as const;
+
+/**
+ * Cancellation comment set when workspace deletion revokes a subscription. The
+ * revocation webhook skips free-plan re-provisioning for it, because the
+ * workspace is being deleted. The comment is not a trust boundary: a customer
+ * who sets it on their own subscription only skips this webhook step, and a
+ * surviving workspace still gets a free plan on its next dashboard visit.
+ */
+export const WORKSPACE_DELETION_REVOKE_COMMENT = 'tuturuuu:workspace-deleted';
+
+export function isWorkspaceDeletionRevocation(subscription: {
+  customerCancellationComment?: string | null;
+}) {
+  return (
+    subscription.customerCancellationComment ===
+    WORKSPACE_DELETION_REVOKE_COMMENT
+  );
+}

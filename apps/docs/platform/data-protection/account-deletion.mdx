@@ -2,14 +2,27 @@
 title: "Account and workspace deletion"
 description: "Deletion behavior, billing cleanup and privacy-request limits."
 audience: developers
-updatedAt: "2026-11-01"
+updatedAt: "2026-11-24"
 ---
 
 ## Billing cleanup before deletion
 
 Web account deletion and manual workspace deletion complete billing cleanup before deleting workspace or account records. A missing billing customer, a revoked or missing seat, and a missing or already canceled subscription count as completed cleanup.
 
-Other provider failures, including network errors, timeouts and service failures, stop database deletion and return a temporary failure. Multiple active subscriptions block manual workspace deletion until the conflict is resolved. Existing permission, personal workspace and paid sole-member restrictions still apply.
+Other provider failures, including network errors, timeouts and service failures, stop database deletion and return a temporary failure. Existing permission, personal workspace and paid sole-member restrictions still apply.
+
+## Workspace deletion from Settings
+
+Scope: the owner-only Danger Zone in workspace Settings (`apps/web` and `apps/workspace`), served by `DELETE /api/workspaces/[wsId]`.
+
+- **Paid billing blocks deletion.** A paid, unverified or unrecognized subscription, or a live domain add-on, returns `subscription_active`. The owner cancels it in Billing first. Deletion never ends a paid period and never issues a refund.
+- **Remaining subscriptions are revoked first.** Once the guard passes, the server revokes every remaining Polar subscription of the workspace immediately and without a refund, before it deletes anything. It first confirms that each one is free in both the product catalog and Polar (amount exactly 0), and reads Polar again just before revoking each one; a paid, malformed or unrecognized plan stops deletion with `subscription_active`. Polar offers no conditional revocation, so a plan change landing between that last read and the revocation is the remaining window. An already ended or missing subscription counts as revoked, so a retry is safe.
+- **No replacement plan.** The revocation carries the cancellation comment `tuturuuu:workspace-deleted`, so the Pay webhook does not provision a new free plan. The comment is not a trust boundary: a customer who sets it on their own cancellation only skips that webhook step, and the dashboard still provisions a free plan for a surviving workspace. Provider events that arrive after the workspace is gone are acknowledged without a database write.
+- **A Polar failure stops deletion.** The workspace is kept and the owner sees `billing_cancel_failed`. Revoked rows are marked `canceled` locally, so if the database step fails afterwards, the surviving workspace gets a new free plan on its next dashboard visit.
+- **Audit.** Each revocation writes a structured `[audit] workspace.billing.revoke` log with the actor, workspace, subscription id and outcome. Each deletion attempt writes `[audit] workspace.delete`, and a completed deletion also writes a `private.workspace_deletion_audit` receipt.
+- **Time limit.** The deletion runs as one cascading transaction with a 60-second statement timeout, set on the deletion functions because the API role's 8-second limit is too short for large workspaces. A timeout rolls back everything, and the owner sees `timed_out` instead of a generic failure. Deletion requests are limited to five per minute per caller.
+
+Coverage: `apps/web/src/lib/workspaces/workspace-deletion-billing.test.ts`, `apps/web/src/app/api/workspaces/[wsId]/route.test.ts`, the settings component test `workspace-deletion-settings.test.tsx`, `apps/database/supabase/tests/workspace-deletion-statement-timeout.sql`, and the Pay webhook and subscription-sync tests.
 
 ## Privacy requests and completion
 

@@ -68,6 +68,25 @@ function getDeletionStatusMessage(
   }
 }
 
+// Literal keys keep every rendered message visible to the i18n coverage scan.
+function getDeletionFailureMessage(
+  code: unknown,
+  t: ReturnType<typeof useTranslations<'ws-settings'>>
+) {
+  switch (code) {
+    case 'subscription_active':
+      return t('delete_subscription_active');
+    case 'confirmation_mismatch':
+      return t('delete_confirmation_mismatch');
+    case 'billing_cancel_failed':
+      return t('delete_billing_cancel_failed');
+    case 'timed_out':
+      return t('delete_timed_out');
+    default:
+      return t('delete_failed_description');
+  }
+}
+
 function DangerZone({ workspace }: { workspace: DeletionWorkspace }) {
   const t = useTranslations('ws-settings');
   const tCommon = useTranslations('common');
@@ -99,12 +118,7 @@ function DangerZone({ workspace }: { workspace: DeletionWorkspace }) {
         void eligibility.refetch();
       }
       toast.error(t('delete_failed'), {
-        description:
-          code === 'subscription_active'
-            ? t('delete_subscription_active')
-            : code === 'confirmation_mismatch'
-              ? t('delete_confirmation_mismatch')
-              : t('delete_failed_description'),
+        description: getDeletionFailureMessage(code, t),
       });
     },
   });

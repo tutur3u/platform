@@ -13,6 +13,9 @@ const mocks = vi.hoisted(() => ({
   adminFrom: vi.fn(),
   billingCheck: vi.fn(),
   rpc: vi.fn(),
+  revoke: vi.fn(),
+  polarGet: vi.fn(),
+  liveSubscriptions: vi.fn(),
   withSessionAuth: vi.fn(
     (
       handler: (
@@ -48,6 +51,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@/lib/api-auth', () => ({ withSessionAuth: mocks.withSessionAuth }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
+}));
+vi.mock('@tuturuuu/payment/polar/server', () => ({
+  createPolarClient: () => ({
+    subscriptions: { get: mocks.polarGet, update: mocks.revoke },
+  }),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => false,
@@ -95,10 +103,36 @@ beforeEach(() => {
     })),
   });
   mocks.rpc.mockResolvedValue({ data: 'deleted', error: null });
+  mocks.revoke.mockResolvedValue({});
+  mocks.polarGet.mockResolvedValue({ amount: 0, status: 'active' });
+  mocks.liveSubscriptions.mockResolvedValue({ data: [], error: null });
+  mocks.billingCheck.mockResolvedValue({ data: false, error: null });
+  mocks.adminFrom.mockImplementation((table: string) => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() =>
+        table === 'workspace_subscriptions'
+          ? { neq: mocks.liveSubscriptions }
+          : { eq: vi.fn().mockResolvedValue({ data: [], error: null }) }
+      ),
+    })),
+    update: vi.fn(() => ({
+      eq: vi.fn(() => ({ in: vi.fn().mockResolvedValue({ error: null }) })),
+    })),
+  }));
   mocks.createAdminClient.mockResolvedValue({
     rpc: mocks.rpc,
     from: mocks.adminFrom,
-    schema: vi.fn(() => ({ rpc: mocks.billingCheck })),
+    schema: vi.fn(() => ({
+      rpc: mocks.billingCheck,
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          in: vi.fn().mockResolvedValue({
+            data: [{ id: 'prod_free', pricing_model: 'free', price: null }],
+            error: null,
+          }),
+        })),
+      })),
+    })),
   });
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -165,6 +199,79 @@ describe('workspace deletion', () => {
       '[audit] workspace.delete',
       expect.objectContaining({ outcome: 'denied' })
     );
+  });
+
+  it('revokes the remaining Polar subscription before deleting', async () => {
+    mocks.liveSubscriptions.mockResolvedValue({
+      data: [{ polar_subscription_id: 'sub_free', product_id: 'prod_free' }],
+      error: null,
+    });
+    const response = await callDelete({ confirmation: 'Acme' });
+    expect(response.status).toBe(200);
+    expect(mocks.revoke).toHaveBeenCalledExactlyOnceWith({
+      id: 'sub_free',
+      subscriptionUpdate: {
+        revoke: true,
+        customerCancellationComment: 'tuturuuu:workspace-deleted',
+      },
+    });
+    expect(mocks.revoke.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.rpc.mock.invocationCallOrder[0] ?? 0
+    );
+  });
+
+  it('keeps the workspace when Polar cancellation fails', async () => {
+    mocks.liveSubscriptions.mockResolvedValue({
+      data: [{ polar_subscription_id: 'sub_free', product_id: 'prod_free' }],
+      error: null,
+    });
+    mocks.revoke.mockRejectedValue(new Error('polar down'));
+    const response = await callDelete({ confirmation: 'Acme' });
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'billing_cancel_failed',
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('never cancels a paid subscription; the billing guard refuses first', async () => {
+    mocks.billingCheck.mockResolvedValue({ data: true, error: null });
+    const response = await callDelete({ confirmation: 'Acme' });
+    expect(response.status).toBe(409);
+    expect(mocks.liveSubscriptions).not.toHaveBeenCalled();
+    expect(mocks.revoke).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a mismatched name', { confirmation: 'Other' }, 400],
+    ['a non-owner', { confirmation: 'Acme' }, 403],
+  ])('never touches billing for %s', async (label, body, status) => {
+    mocks.liveSubscriptions.mockResolvedValue({
+      data: [{ polar_subscription_id: 'sub_free', product_id: 'prod_free' }],
+      error: null,
+    });
+    if (label === 'a non-owner') {
+      mocks.workspaceRow.mockResolvedValue({
+        data: { ...ownedWorkspace, creator_id: 'another-user' },
+        error: null,
+      });
+    }
+    expect((await callDelete(body)).status).toBe(status);
+    expect(mocks.polarGet).not.toHaveBeenCalled();
+    expect(mocks.revoke).not.toHaveBeenCalled();
+  });
+
+  it('reports a statement timeout as a rolled-back deletion', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: '57014', message: 'canceling statement' },
+    });
+    const response = await callDelete({ confirmation: 'Acme' });
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'timed_out',
+    });
   });
 
   it('reports lookup failures without attempting deletion', async () => {

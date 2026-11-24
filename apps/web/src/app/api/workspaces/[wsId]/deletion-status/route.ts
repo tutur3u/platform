@@ -8,6 +8,7 @@ import {
   readWorkspaceDeletionOwner,
   workspaceDeletionResponse,
 } from '@/lib/workspaces/workspace-deletion';
+import { readWorkspaceDeletionEligibility } from '@/lib/workspaces/workspace-deletion-billing';
 
 export const GET = withSessionAuth<{ wsId: string }>(
   async (_request, { supabase, user }, { wsId: id }) => {
@@ -24,33 +25,14 @@ export const GET = withSessionAuth<{ wsId: string }>(
     }
 
     const admin = await createAdminClient({ noCookie: true });
-    const [secrets, billing] = await Promise.all([
-      admin
-        .from('workspace_secrets')
-        .select('value')
-        .eq('ws_id', workspaceId)
-        .eq('name', 'PREVENT_WORKSPACE_DELETION'),
-      admin.schema('private').rpc('workspace_has_blocking_subscription', {
-        p_ws_id: workspaceId,
-      }),
-    ]);
-    if (secrets.error || billing.error || billing.data === null) {
-      console.error('Workspace deletion status lookup failed', {
-        code: secrets.error?.code ?? billing.error?.code,
-      });
-      const { body, status } = workspaceDeletionResponse('failed');
-      return NextResponse.json(body, { status });
+    const status = await readWorkspaceDeletionEligibility(admin, workspaceId);
+    if (status === 'failed') {
+      const { body, status: code } = workspaceDeletionResponse('failed');
+      return NextResponse.json(body, { status: code });
     }
-
-    const protectedWorkspace = secrets.data.some(
-      (secret) => secret.value?.trim().toLowerCase() === 'true'
-    );
-    const status: WorkspaceDeletionStatus = protectedWorkspace
-      ? 'protected'
-      : billing.data
-        ? 'subscription_active'
-        : 'ready';
-    return NextResponse.json({ status });
+    return NextResponse.json({
+      status: status satisfies WorkspaceDeletionStatus,
+    });
   },
   { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
 );

@@ -16,6 +16,7 @@ import { syncOrderToDatabase } from '@tuturuuu/payment-core/polar-order-helper';
 import { syncProductToDatabase } from '@tuturuuu/payment-core/polar-product-helper';
 import { assignSeatsToAllMembers } from '@tuturuuu/payment-core/polar-seat-helper';
 import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
+import { isWorkspaceDeletionRevocation } from '@tuturuuu/payment-core/subscription-constants';
 import {
   createFreeSubscription,
   hasActiveSubscription,
@@ -222,7 +223,10 @@ const webhookHandlers: Omit<Parameters<typeof Webhooks>[0], 'webhookSecret'> = {
       }
 
       // If subscription is fully canceled, check if workspace needs a free subscription
-      if (payload.data.status === 'canceled') {
+      if (
+        payload.data.status === 'canceled' &&
+        !isWorkspaceDeletionRevocation(payload.data)
+      ) {
         console.log(
           `Webhook: Subscription ${payload.data.id} is fully canceled, checking if workspace ${subscriptionData.ws_id} needs a free subscription`
         );
@@ -296,6 +300,8 @@ const webhookHandlers: Omit<Parameters<typeof Webhooks>[0], 'webhookSecret'> = {
       console.log(`Webhook: Subscription revoked: ${payload.data.id}`);
 
       if (!subscriptionData) return;
+      // Workspace deletion revoked it; the workspace needs no replacement plan.
+      if (isWorkspaceDeletionRevocation(payload.data)) return;
 
       // Check if workspace needs a free subscription (same logic as canceled)
       const polar = createPolarClient();

@@ -103,6 +103,22 @@ describe('Workspace deletion failure UI', () => {
       'delete_failed_description',
     ],
     [
+      new InternalApiError(
+        'The workspace subscription could not be canceled, so nothing was deleted.',
+        502,
+        'billing_cancel_failed'
+      ),
+      'delete_billing_cancel_failed',
+    ],
+    [
+      new InternalApiError(
+        'Deletion took too long and was rolled back. Nothing was deleted.',
+        503,
+        'timed_out'
+      ),
+      'delete_timed_out',
+    ],
+    [
       new InternalApiError('Error deleting workspace', 500),
       'delete_failed_description',
     ],

@@ -76,6 +76,7 @@ const mockUpsert = vi.fn<MockSubscriptionUpsert>();
 const mockProjection = vi.fn();
 const mockVersionFilter = vi.fn();
 const mockProjectionResult = vi.fn();
+const mockWorkspaceLookup = vi.fn();
 
 const mockCreditPackMaybeSingle = vi.fn<MockCreditPackLookup>(() =>
   Promise.resolve({ data: null, error: null })
@@ -102,6 +103,13 @@ const mockSupabase = {
       return {
         upsert: mockUpsert,
         update: mockProjection,
+      };
+    }
+    if (table === 'workspaces') {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({ maybeSingle: mockWorkspaceLookup }),
+        }),
       };
     }
     if (table === 'workspace_credit_pack_purchases') {
@@ -247,6 +255,32 @@ describe('syncSubscriptionToDatabase', () => {
       ignoreDuplicates: true,
     });
   });
+  it('acknowledges events for a deleted workspace without a projection', async () => {
+    mockUpsert.mockResolvedValue({
+      error: { code: '23503', message: 'fk' },
+    } as never);
+    mockWorkspaceLookup.mockResolvedValue({ data: null, error: null });
+    const result = await syncSubscriptionToDatabase(
+      mockSupabase,
+      mockSubscription
+    );
+    expect(result.subscriptionData).toBeNull();
+    expect(mockProjection).not.toHaveBeenCalled();
+  });
+
+  it('still fails a foreign-key error while the workspace exists', async () => {
+    mockUpsert.mockResolvedValue({
+      error: { code: '23503', message: 'fk' },
+    } as never);
+    mockWorkspaceLookup.mockResolvedValue({
+      data: { id: 'ws' },
+      error: null,
+    });
+    await expect(
+      syncSubscriptionToDatabase(mockSupabase, mockSubscription)
+    ).rejects.toThrow('Subscription upsert error');
+  });
+
   it('uses creation time when an event has no modification timestamp', async () => {
     await syncSubscriptionToDatabase(mockSupabase, {
       ...mockSubscription,

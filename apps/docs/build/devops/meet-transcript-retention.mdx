@@ -71,10 +71,11 @@ or change the fence.
 | `private.purge_meet_transcripts_batch(run_id, limit <= 500)` | Re-checks the fence under a row lock, then deletes at most `limit` rows, oldest due sessions first in `meet_ai_sessions_transcript_retention_idx` order, with `SKIP LOCKED`. Ends the run at its 20th batch |
 | `private.finish_meet_transcript_purge_run(run_id, status)` | Records a Worker-side terminal status; terminal runs are unchanged |
 
-The functions declare a 20-second statement timeout, but a function-level
-`statement_timeout` does not apply to calls over the API: the API role's own
-timeout applies. Measure batch timing in the production dry run before
-approving deletion.
+The functions declare a 20-second statement timeout. PostgREST applies a
+called function's `statement_timeout` to the API request transaction in place
+of the API role's 8-second limit; functions it calls internally do not change
+the limit. Measure batch timing in the production dry run before approving
+deletion.
 
 Progress is the remaining data, so a retry or the next run after a crash
 continues safely. `private.meet_transcript_purge_runs` keeps mode, terminal status,

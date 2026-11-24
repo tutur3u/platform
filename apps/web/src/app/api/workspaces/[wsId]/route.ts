@@ -157,5 +157,9 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
 
     return NextResponse.json(result.body, { status: result.status });
   },
-  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+  {
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    // Each attempt can hold workspace locks for up to the deletion timeout.
+    rateLimit: { windowMs: 60000, maxRequests: 5 },
+  }
 );

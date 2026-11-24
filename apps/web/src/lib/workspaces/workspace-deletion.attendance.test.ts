@@ -29,6 +29,10 @@ vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => flags.attendance,
 }));
+vi.mock('./workspace-deletion-billing', () => ({
+  readWorkspaceDeletionEligibility: async () => 'ready',
+  revokeWorkspaceSubscriptionsForDeletion: async () => 'revoked',
+}));
 
 import { deleteWorkspaceForActor } from './workspace-deletion';
 

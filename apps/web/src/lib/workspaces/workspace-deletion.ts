@@ -5,6 +5,10 @@ import {
   isWorkspaceDeletionConfirmed,
   isWorkspaceDeletionOwner,
 } from '@tuturuuu/utils/workspace-deletion';
+import {
+  readWorkspaceDeletionEligibility,
+  revokeWorkspaceSubscriptionsForDeletion,
+} from './workspace-deletion-billing';
 
 const RESPONSES = {
   deleted: { status: 200, message: 'success' },
@@ -19,8 +23,26 @@ const RESPONSES = {
     message:
       'Resolve paid or unverified billing before deleting the workspace.',
   },
+  billing_cancel_failed: {
+    status: 502,
+    message:
+      'The workspace subscription could not be canceled, so nothing was deleted.',
+  },
+  timed_out: {
+    status: 503,
+    message: 'Deletion took too long and was rolled back. Nothing was deleted.',
+  },
   failed: { status: 500, message: 'The workspace could not be deleted.' },
 } as const;
+
+// Postgres query_canceled: the deletion transaction exceeded its statement
+// timeout and rolled back.
+const STATEMENT_TIMEOUT = '57014';
+
+function rpcFailure(error: { code?: string }): DeletionCode {
+  console.error('Workspace deletion failed', { code: error.code });
+  return error.code === STATEMENT_TIMEOUT ? 'timed_out' : 'failed';
+}
 
 type DeletionCode = keyof typeof RESPONSES;
 
@@ -78,7 +100,9 @@ export async function deleteWorkspaceForActor(
       outcome:
         code === 'deleted'
           ? 'deleted'
-          : code === 'failed'
+          : code === 'failed' ||
+              code === 'timed_out' ||
+              code === 'billing_cancel_failed'
             ? 'failed'
             : 'denied',
       ...(code === 'deleted' ? {} : { reason: code }),
@@ -95,18 +119,29 @@ export async function deleteWorkspaceForActor(
     return audit('confirmation_mismatch');
   }
 
+  const admin = await createAdminClient({ noCookie: true });
+  const eligibility = await readWorkspaceDeletionEligibility(
+    admin,
+    workspaceId
+  );
+  if (eligibility !== 'ready') {
+    return audit(eligibility === 'protected' ? 'forbidden' : eligibility);
+  }
+  const billing = await revokeWorkspaceSubscriptionsForDeletion({
+    admin,
+    actorId,
+    workspaceId,
+  });
+  if (billing !== 'revoked') return audit(billing);
+
   const args = {
     p_ws_id: workspaceId,
     p_actor_id: actorId,
     p_confirmation: confirmation.trim(),
   };
   if (!meetClassAttendanceEnabled()) {
-    const admin = await createAdminClient({ noCookie: true });
     const { data, error } = await admin.rpc('delete_owned_workspace', args);
-    if (error) {
-      console.error('Workspace deletion failed', { code: error.code });
-      return audit('failed');
-    }
+    if (error) return audit(rpcFailure(error));
     const result: unknown = data;
     switch (result) {
       case 'deleted':
@@ -134,7 +169,6 @@ export async function deleteWorkspaceForActor(
       throw error;
     });
 
-  const admin = await createAdminClient({ noCookie: true });
   const { data, error } = await (
     admin as unknown as {
       schema(name: 'private'): {
@@ -155,10 +189,7 @@ export async function deleteWorkspaceForActor(
       ...args,
       p_plan: plan,
     });
-  if (error) {
-    console.error('Workspace deletion failed', { code: error.code });
-    return audit('failed');
-  }
+  if (error) return audit(rpcFailure(error));
 
   const result: unknown = data;
   if (result === 'deleted') {
