@@ -88,7 +88,8 @@ describe('signer permit wire form', () => {
     expect(
       new TextDecoder().decode(
         permitMessage({
-          v: 1,
+          v: 2,
+          aud: 'production',
           id: 'p',
           kid: 'k',
           iat: 1,
@@ -96,6 +97,6 @@ describe('signer permit wire form', () => {
           fields: 'f',
         })
       )
-    ).toBe('ttr-sso-permit-v1\n[1,"p","k",1,2,"f"]');
+    ).toBe('ttr-sso-permit-v2\n[2,"production","p","k",1,2,"f"]');
   });
 });

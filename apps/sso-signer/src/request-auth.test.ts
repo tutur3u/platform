@@ -19,6 +19,7 @@ async function headersFor(
   return new Headers(
     await signRequestHeaders({
       key: key.raw,
+      audience: 'production',
       method: 'POST',
       path: '/v1/saml/sign',
       body,
@@ -33,6 +34,7 @@ const verify = (
   over: Partial<Parameters<typeof verifyRequestAuth>[0]> = {}
 ) =>
   verifyRequestAuth({
+    audience: 'production',
     method: 'POST',
     path: '/v1/saml/sign',
     headers,
@@ -54,6 +56,7 @@ describe('request HMAC', () => {
     ['a changed body', { body: new TextEncoder().encode('{"input":{}}') }],
     ['a changed method', { method: 'PUT' }],
     ['a changed path', { path: '/v1/saml/sign2' }],
+    ['another environment', { audience: 'local' }],
   ])('refuses a bad signature: %s', async (_label, over) => {
     expect(await verify(await headersFor(), over)).toEqual({
       ok: false,
@@ -75,7 +78,7 @@ describe('request HMAC', () => {
     expect((await verify(renonced)).ok).toBe(false);
   });
 
-  it.each([60_001, -60_001, 3_600_000])(
+  it.each([60_001, -60_001, 61_000, -61_000, 3_600_000])(
     'refuses a timestamp %i ms from the Worker clock',
     async (offset) => {
       const headers = await headersFor({ nowMs: NOW + offset });
@@ -123,6 +126,10 @@ describe('request HMAC', () => {
       true
     );
     expect(await verify(await headersFor(), { keys: null })).toEqual({
+      ok: false,
+      error: 'misconfigured',
+    });
+    expect(await verify(await headersFor(), { audience: null })).toEqual({
       ok: false,
       error: 'misconfigured',
     });

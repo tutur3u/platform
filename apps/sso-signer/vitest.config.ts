@@ -7,7 +7,7 @@ import { PRODUCTION_DEFINES } from './src/build-defines';
 export default defineConfig({
   define: { ...PRODUCTION_DEFINES },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'],
     pool: 'threads',
     maxWorkers: 2,
     testTimeout: 60_000,

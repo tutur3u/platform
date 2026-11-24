@@ -1,4 +1,5 @@
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { createServer, type Server, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { type Fixture, fixture, serviceProvider } from '@tuturuuu/sso/testing';
@@ -45,6 +46,11 @@ const requestKey = randomKey();
 const controlKey = randomKey();
 let permitKeys: Awaited<ReturnType<typeof permitKeyPair>>;
 const runtimes: Miniflare[] = [];
+// Accepts Postgres connections and never answers: the confirmation must
+// refuse at its deadline.
+let silentDb: Server;
+let silentDbPort = 0;
+const silentSockets = new Set<Socket>();
 
 beforeAll(async () => {
   workDir = await mkdtemp(join(tmpdir(), 'sso-signer-runtime-'));
@@ -57,14 +63,33 @@ beforeAll(async () => {
   );
   f = fixture();
   permitKeys = await permitKeyPair();
+  silentDb = createServer((socket) => {
+    silentSockets.add(socket);
+    socket.on('close', () => silentSockets.delete(socket));
+  });
+  silentDbPort = await new Promise<number>((resolve) => {
+    silentDb.listen(0, '127.0.0.1', () => {
+      const address = silentDb.address();
+      resolve(typeof address === 'object' && address ? address.port : 0);
+    });
+  });
 }, 120_000);
 
 afterAll(async () => {
   await Promise.all(runtimes.map((runtime) => runtime.dispose()));
+  for (const socket of silentSockets) socket.destroy();
+  await new Promise((resolve) => silentDb.close(resolve));
   await rm(workDir, { recursive: true, force: true });
 });
 
-function runtime(scriptPath: string, dailyBudget: string) {
+function runtime(
+  scriptPath: string,
+  dailyBudget: string,
+  extra: {
+    bindings?: Record<string, string>;
+    hyperdrives?: Record<string, string>;
+  } = {}
+) {
   const mf = new Miniflare({
     workers: [
       {
@@ -100,7 +125,9 @@ function runtime(scriptPath: string, dailyBudget: string) {
           SSO_SIGNER_REQUEST_KEY: requestKey.text,
           SSO_SIGNER_CONTROL_KEY: controlKey.text,
           SSO_SIGNING_KEY_SAML_TEST_1: f.privateKey,
+          ...extra.bindings,
         },
+        hyperdrives: extra.hyperdrives,
       },
     ],
   });
@@ -123,9 +150,10 @@ function runtime(scriptPath: string, dailyBudget: string) {
 
 type Sent = Readonly<{ headers: Record<string, string>; body: string }>;
 
-async function sign(input = signInput(f)) {
+async function sign(input = signInput(f), audience = 'local') {
   const permit = await issuePermit({
     privateKey: permitKeys.privateKey,
+    audience,
     fields: input,
     id: encodeBase64Url(crypto.getRandomValues(new Uint8Array(16))),
     nowMs: Date.now(),
@@ -133,6 +161,7 @@ async function sign(input = signInput(f)) {
   const signed = await signedRequest({
     requestKey: requestKey.raw,
     body: { input, permit },
+    audience,
   });
   const request: Sent = {
     headers: Object.fromEntries(signed.headers),
@@ -172,14 +201,24 @@ describe('signer Worker in workerd (runtime test build)', () => {
     expect(profile.attributes).toMatchObject({ email: f.identity.email });
     expect(result.expiresAt).toBe(first.input.notOnOrAfter);
 
-    // Same nonce and permit: refused by the replay object (unit 2).
+    // Same nonce and permit: refused by the replay object, before the
+    // budget, so it spends no unit.
     expect((await dispatch(first.request)).status).toBe(409);
-    // Two concurrent copies of one request: exactly one signs (units 3, 4).
+    // Two concurrent copies of one request: exactly one signs (unit 2).
     const twin = await sign();
     const statuses = (
       await Promise.all([dispatch(twin.request), dispatch(twin.request)])
     ).map((response) => response.status);
     expect(statuses.sort()).toEqual([200, 409]);
+    // Two fresh permits and nonces for one transaction: exactly one signs
+    // (unit 3).
+    const transaction = signInput(f);
+    const pair = await Promise.all([sign(transaction), sign(transaction)]);
+    const transactionStatuses = (
+      await Promise.all(pair.map((copy) => dispatch(copy.request)))
+    ).map((response) => response.status);
+    expect(transactionStatuses.sort()).toEqual([200, 409]);
+    expect((await dispatch((await sign()).request)).status).toBe(200);
     expect((await dispatch((await sign()).request)).status).toBe(200);
     // Budget 5 is spent.
     expect((await dispatch((await sign()).request)).status).toBe(429);
@@ -216,6 +255,67 @@ describe('signer Worker production build', () => {
       await control('setFence', controlKey.text, 'running', 'production build')
     ).toMatchObject({ ok: true });
     const response = await dispatch((await sign()).request);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      error: 'confirmation_unavailable',
+    });
+  });
+});
+
+describe('signer Worker environment binding', () => {
+  it('refuses a request and permit minted for another environment', async () => {
+    const { control, dispatch } = runtime(testScript, '5');
+    await control('setFence', controlKey.text, 'running', 'environment');
+    const response = await dispatch(
+      (await sign(signInput(f), 'production')).request
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ error: 'unauthenticated' });
+  });
+
+  it('answers coded misconfigured errors without SSO_SIGNER_ENV', async () => {
+    const { control, dispatch } = runtime(productionScript, '5', {
+      bindings: { SSO_SIGNER_ENV: '' },
+    });
+    expect(await control('readFence', controlKey.text)).toEqual({
+      ok: false,
+      error: 'misconfigured',
+    });
+    expect(
+      await control('setFence', controlKey.text, 'running', 'no environment')
+    ).toEqual({ ok: false, error: 'misconfigured' });
+    const response = await dispatch((await sign()).request);
+    expect(response.status).toBe(503);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(Object.keys(body).sort()).toEqual(['correlationId', 'error']);
+    expect(body.error).toBe('misconfigured');
+  });
+});
+
+describe('signer Worker production build with the database check', () => {
+  it('refuses without a Hyperdrive binding', async () => {
+    const { control, dispatch } = runtime(productionScript, '5', {
+      bindings: { SSO_SIGNER_TRANSACTION_CHECK: 'database' },
+    });
+    await control('setFence', controlKey.text, 'running', 'database check');
+    const response = await dispatch((await sign()).request);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      error: 'confirmation_unavailable',
+    });
+  });
+
+  it('refuses at the deadline when the database never answers', async () => {
+    const { control, dispatch } = runtime(productionScript, '5', {
+      bindings: { SSO_SIGNER_TRANSACTION_CHECK: 'database' },
+      hyperdrives: {
+        SSO_SIGNER_DB: `postgres://sso_signer:unused@127.0.0.1:${silentDbPort}/postgres`,
+      },
+    });
+    await control('setFence', controlKey.text, 'running', 'database check');
+    const started = Date.now();
+    const response = await dispatch((await sign()).request);
+    expect(Date.now() - started).toBeLessThan(10_000);
     expect(response.status).toBe(503);
     expect(await response.json()).toMatchObject({
       error: 'confirmation_unavailable',

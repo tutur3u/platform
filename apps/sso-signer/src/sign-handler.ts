@@ -4,26 +4,39 @@
  * Durable Object before the request HMAC, the body, the permit and the kid
  * binding have passed:
  *
- *   floor → HMAC + skew → body → permit → kid binding → fence (DO)
- *   → daily budget (DO) → nonce + permit claim (DO) → transaction
- *   confirmation → fence again (DO) → build and sign.
+ *   config + floor + environment → HMAC + skew (audience) → body → permit
+ *   (audience) → kid binding → fence (DO) → nonce + permit + transaction
+ *   claim (DO) → daily budget (DO) → transaction confirmation → fence
+ *   again (DO) → permit expiry and HMAC skew again → build and sign.
+ *
+ * The replay claim comes before the budget, so a replayed request is
+ * refused without spending budget; an exhaustion the isolate remembers
+ * refuses before the claim, so a flood against an exhausted budget costs no
+ * object call. The transaction claim makes signing single-use per
+ * transaction even for a caller that can mint fresh permits and nonces; a
+ * request refused after its claim (budget, confirmation, fence, freshness)
+ * leaves its transaction spent, and the user starts a new sign-in.
  *
  * Replay rows outlive acceptance: a nonce is kept until twice the clock
- * skew past its timestamp and a permit until one skew past its expiry, so a
- * row never expires while its request could still be accepted.
+ * skew past its timestamp, a permit until one skew past its expiry and a
+ * transaction for `TRANSACTION_CLAIM_TTL_MS`, so a row never expires while
+ * its request could still be accepted.
  *
  * Every response and log line carries a correlation ID and an error code
- * only: no subject, email, names, assertion or key material.
+ * only: no subject, email, names, assertion, header or key material. An
+ * unexpected throw anywhere answers the coded `misconfigured`.
  */
 import type { SamlSigner } from '@tuturuuu/sso';
 import { buildSignedResponse, type SignerFactory } from './build-response';
-import type { BudgetPort, ControlPort, ReplayPort } from './ports';
+import type { SignerEnvironment } from './environment';
 import type { FenceMode } from './fence-store';
 import { type SignInput, signInputSchema } from './input';
 import type { KeyMap } from './key-binding';
 import { resolveSigningKey } from './key-binding';
 import type { Bytes, KeySet } from './key-set';
 import { verifyPermit } from './permit';
+import type { BudgetPort, ControlPort, ReplayPort } from './ports';
+import { TRANSACTION_CLAIM_TTL_MS } from './replay-store';
 import { MAX_CLOCK_SKEW_MS, verifyRequestAuth } from './request-auth';
 import type { TransactionConfirmation } from './transaction-confirmation';
 
@@ -34,6 +47,7 @@ export type SignHandlerDeps = Readonly<{
   now: () => number;
   correlationId: () => string;
   config: () => Readonly<{
+    environment: SignerEnvironment | null;
     fenceFloor: FenceMode;
     requestKeys: KeySet | null;
     permitKeys: KeySet | null;
@@ -75,6 +89,16 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+/** A coded refusal: the error code and the correlation ID, nothing else. */
+export function refusal(
+  error: string,
+  correlationId: string,
+  extra: Record<string, unknown> = {}
+): Response {
+  console.warn('[sso-signer] refused', correlationId, error);
+  return json(STATUS[error] ?? 500, { error, correlationId, ...extra });
+}
+
 async function readBody(request: Request): Promise<Bytes | null> {
   const declared = Number(request.headers.get('content-length') ?? '0');
   if (!Number.isFinite(declared) || declared > MAX_BODY_BYTES) return null;
@@ -101,16 +125,44 @@ async function readBody(request: Request): Promise<Bytes | null> {
   return body;
 }
 
+/** A lone UTF-16 surrogate: a string with no canonical form. */
+const LONE_SURROGATE = /\p{Cs}/u;
+
+/**
+ * Refuses, at any depth while parsing, a `__proto__` member and any key or
+ * string with a lone surrogate (`"\ud800"` is valid JSON but ill-formed
+ * Unicode, which the permit's canonical hash cannot encode).
+ */
+function strictMember(key: string, value: unknown) {
+  if (key === '__proto__') throw new SyntaxError('member not allowed');
+  if (
+    LONE_SURROGATE.test(key) ||
+    (typeof value === 'string' && LONE_SURROGATE.test(value))
+  ) {
+    throw new SyntaxError('ill-formed string');
+  }
+  return value;
+}
+
+/**
+ * The body must be exactly `JSON.stringify` of `{ input, permit }`: compact,
+ * no duplicate keys at any depth (a duplicate re-serializes shorter), no
+ * `__proto__` member and no ill-formed string, so the bytes the HMAC covers
+ * and the value checked are one and the same.
+ */
 function parseBody(body: Bytes): { input: SignInput; permit: unknown } | null {
+  let text: string;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
+    text = new TextDecoder('utf-8', { fatal: true }).decode(body);
+    parsed = JSON.parse(text, strictMember);
   } catch {
     return null;
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     return null;
   }
+  if (JSON.stringify(parsed) !== text) return null;
   const keys = Object.keys(parsed);
   if (
     keys.length !== 2 ||
@@ -131,13 +183,11 @@ function protocolReason(error: unknown): string | null {
 }
 
 export function createSignHandler(deps: SignHandlerDeps) {
-  return async function handle(request: Request): Promise<Response> {
-    const correlationId = deps.correlationId();
-    const refuse = (error: string, extra: Record<string, unknown> = {}) => {
-      console.warn('[sso-signer] refused', correlationId, error);
-      return json(STATUS[error] ?? 500, { error, correlationId, ...extra });
-    };
-
+  async function handle(
+    request: Request,
+    refuse: (error: string, extra?: Record<string, unknown>) => Response,
+    correlationId: string
+  ): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname !== SIGN_PATH || url.search !== '') {
       return refuse('not_found');
@@ -145,10 +195,14 @@ export function createSignHandler(deps: SignHandlerDeps) {
     if (request.method !== 'POST') return refuse('method_not_allowed');
     const config = deps.config();
     if (config.fenceFloor === 'stopped') return refuse('stopped');
+    // No environment: no audience to check and no Durable Object to name.
+    const audience = config.environment;
+    if (!audience) return refuse('misconfigured');
 
     const body = await readBody(request);
     if (!body) return refuse('payload_too_large');
     const auth = await verifyRequestAuth({
+      audience,
       method: request.method,
       path: url.pathname,
       headers: request.headers,
@@ -165,6 +219,7 @@ export function createSignHandler(deps: SignHandlerDeps) {
       permit: parsed.permit,
       fields: input,
       keys: config.permitKeys,
+      audience,
       nowMs: deps.now(),
     });
     if (!permit.ok) return refuse(permit.error);
@@ -174,6 +229,8 @@ export function createSignHandler(deps: SignHandlerDeps) {
       kid: input.kid,
       client: input.client,
       protocol: input.protocol,
+      entityId: input.profile.entityId,
+      acsUrl: input.profile.acsUrl,
       secret: config.secret,
     });
     if (!key.ok) return refuse(key.error);
@@ -182,10 +239,12 @@ export function createSignHandler(deps: SignHandlerDeps) {
       if ((await deps.control.fenceMode()) !== 'running') {
         return refuse('stopped');
       }
-      const reserved = await deps.budget.reserve(deps.now());
-      if (!reserved.ok) {
-        return refuse(reserved.error, { retryAtMs: reserved.retryAtMs });
+      // A remembered exhaustion refuses without a claim or an object call.
+      const exhausted = deps.budget.peek?.(deps.now());
+      if (exhausted && !exhausted.ok) {
+        return refuse(exhausted.error, { retryAtMs: exhausted.retryAtMs });
       }
+      const nowMs = deps.now();
       const claimed = await deps.replay.claim(
         [
           {
@@ -198,17 +257,28 @@ export function createSignHandler(deps: SignHandlerDeps) {
             token: permit.permit.id,
             expiresAtMs: permit.permit.exp + MAX_CLOCK_SKEW_MS,
           },
+          {
+            kind: 'transaction',
+            token: input.transactionId.toLowerCase(),
+            expiresAtMs: nowMs + TRANSACTION_CLAIM_TTL_MS,
+          },
         ],
-        deps.now()
+        nowMs
       );
       if (!claimed.ok) return refuse(claimed.error);
+      const reserved = await deps.budget.reserve(deps.now());
+      if (!reserved.ok) {
+        return refuse(reserved.error, { retryAtMs: reserved.retryAtMs });
+      }
     } catch {
       return refuse('unavailable');
     }
 
     let confirmed: Awaited<ReturnType<TransactionConfirmation['confirm']>>;
     try {
-      confirmed = await deps.confirmation.confirm(input);
+      confirmed = await deps.confirmation.confirm(input, {
+        fields: permit.permit.fields,
+      });
     } catch {
       return refuse('confirmation_unavailable');
     }
@@ -221,6 +291,15 @@ export function createSignHandler(deps: SignHandlerDeps) {
       }
     } catch {
       return refuse('unavailable');
+    }
+
+    // Freshness again, after every await above: the permit and the request
+    // HMAC must still be inside their windows when the key is used, however
+    // long the objects and the confirmation took.
+    const signAtMs = deps.now();
+    if (signAtMs >= permit.permit.exp) return refuse('permit_expired');
+    if (Math.abs(signAtMs - auth.timestampMs) > MAX_CLOCK_SKEW_MS) {
+      return refuse('unauthenticated');
     }
 
     // The private key is parsed only after every check has passed.
@@ -254,6 +333,18 @@ export function createSignHandler(deps: SignHandlerDeps) {
     } catch (error) {
       const reason = protocolReason(error);
       return reason ? refuse('protocol', { reason }) : refuse('signing_failed');
+    }
+  }
+
+  return async function signHandler(request: Request): Promise<Response> {
+    const correlationId = deps.correlationId();
+    const refuse = (error: string, extra: Record<string, unknown> = {}) =>
+      refusal(error, correlationId, extra);
+    try {
+      return await handle(request, refuse, correlationId);
+    } catch {
+      // Never a raw message: configuration and binding faults are coded.
+      return refuse('misconfigured');
     }
   };
 }

@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   confirmationFor,
+  DATABASE_MODE,
+  databaseConfirmationFor,
   refuseAllConfirmation,
   selectConfirmation,
+  type TransactionConfirmation,
   uncheckedLocalConfirmation,
 } from './transaction-confirmation';
 
 const MODES: unknown[] = [
   'unchecked-local',
   'UNCHECKED-LOCAL',
+  'database',
+  'DATABASE',
   'unchecked',
   '',
   undefined,
@@ -46,16 +51,41 @@ describe('transaction confirmation selection', () => {
     }
   });
 
-  it('refuses every pair in the production-defined build', () => {
+  it('refuses every pair in the production-defined build without a database', () => {
     for (const pair of pairs) {
-      expect(selectConfirmation(pair), JSON.stringify(pair)).toBe(
-        refuseAllConfirmation
-      );
+      expect(
+        selectConfirmation({ ...pair, database: null }),
+        JSON.stringify(pair)
+      ).toBe(refuseAllConfirmation);
+    }
+  });
+
+  it('chooses the database check only for mode database with a database bound', () => {
+    const database: TransactionConfirmation = {
+      confirm: async () => ({ ok: true }),
+    };
+    for (const pair of pairs) {
+      const expected =
+        pair.mode === DATABASE_MODE ? database : refuseAllConfirmation;
+      expect(
+        selectConfirmation({ ...pair, database: () => database }),
+        JSON.stringify(pair)
+      ).toBe(expected);
+      expect(
+        databaseConfirmationFor({ ...pair, database: () => database }),
+        JSON.stringify(pair)
+      ).toBe(expected);
+      expect(
+        databaseConfirmationFor({ ...pair, database: null }),
+        JSON.stringify(pair)
+      ).toBe(refuseAllConfirmation);
     }
   });
 
   it('refuses with confirmation_unavailable', async () => {
-    expect(await refuseAllConfirmation.confirm({} as never)).toEqual({
+    expect(
+      await refuseAllConfirmation.confirm({} as never, { fields: '' })
+    ).toEqual({
       ok: false,
       error: 'confirmation_unavailable',
     });

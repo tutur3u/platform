@@ -2,10 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { type Fixture, fixture } from '@tuturuuu/sso/testing';
 import { createNodeSigner } from '@tuturuuu/sso/node-signer';
 import { createBudgetStore } from '../budget-store';
+import type { SignerEnvironment } from '../environment';
 import type { SignInput } from '../input';
 import { parseKeyMap } from '../key-binding';
 import { type Bytes, encodeBase64Url, parseKeySet } from '../key-set';
-import { issuePermit, type Permit } from '../permit';
+import { type IssuedPermit, issuePermit } from '../permit';
 import { createReplayStore } from '../replay-store';
 import { signRequestHeaders } from '../request-auth';
 import {
@@ -22,6 +23,8 @@ import { memorySql } from './sqlite';
 export const KID = 'saml-test-1';
 export const CLIENT = '00000000-0000-4000-8000-00000000c11e';
 export const ORIGIN = 'https://sso-signer.internal';
+/** The harness signer's `SSO_SIGNER_ENV`. */
+export const AUDIENCE = 'local';
 
 export async function permitKeyPair() {
   const pair = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, [
@@ -76,6 +79,8 @@ export function keyMapText(f: Fixture, binding: Record<string, unknown> = {}) {
       client: CLIENT,
       protocol: 'saml',
       certificate: f.certificate,
+      entityId: f.profile.entityId,
+      acsOrigins: [new URL(f.profile.acsUrl).origin],
       ...binding,
     },
   });
@@ -84,18 +89,27 @@ export function keyMapText(f: Fixture, binding: Record<string, unknown> = {}) {
 export async function signedRequest(input: {
   requestKey: Bytes;
   body: unknown;
+  /** Raw body text instead of `JSON.stringify(body)`. */
+  rawBody?: string;
+  audience?: string;
   nowMs?: number;
   nonce?: string;
   method?: string;
   path?: string;
+  /** Sign for this method and path but send to `method` and `path`. */
+  signedMethod?: string;
+  signedPath?: string;
 }) {
-  const body = new TextEncoder().encode(JSON.stringify(input.body));
+  const body = new TextEncoder().encode(
+    input.rawBody ?? JSON.stringify(input.body)
+  );
   const method = input.method ?? 'POST';
   const path = input.path ?? SIGN_PATH;
   const headers = await signRequestHeaders({
     key: input.requestKey,
-    method,
-    path,
+    audience: input.audience ?? AUDIENCE,
+    method: input.signedMethod ?? method,
+    path: input.signedPath ?? path,
     body,
     nowMs: input.nowMs ?? Date.now(),
     nonce: input.nonce,
@@ -115,6 +129,7 @@ export async function signerHarness(
     confirmation?: TransactionConfirmation;
     keyMap?: string;
     fenceFloor?: 'running' | 'stopped';
+    environment?: SignerEnvironment | null;
   } = {}
 ) {
   const f = fixture();
@@ -124,7 +139,11 @@ export async function signerHarness(
   const budgetDb = memorySql();
   const replay = createReplayStore(replayDb.sql, replayDb.transaction);
   const budget = createBudgetStore(budgetDb.sql, budgetDb.transaction);
-  const state = { fence: options.fence ?? 'running', fenceReads: 0 };
+  const state = {
+    fence: options.fence ?? 'running',
+    fenceReads: 0,
+    budgetReserves: 0,
+  };
   const secrets: Record<string, string> = {
     SSO_SIGNING_KEY_SAML_TEST_1: f.privateKey,
   };
@@ -132,6 +151,8 @@ export async function signerHarness(
     now: () => Date.now(),
     correlationId: () => randomUUID(),
     config: () => ({
+      environment:
+        options.environment === undefined ? AUDIENCE : options.environment,
       fenceFloor: options.fenceFloor ?? 'running',
       requestKeys: parseKeySet(requestKey.text),
       permitKeys: parseKeySet(permitKeys.publicKey),
@@ -145,7 +166,10 @@ export async function signerHarness(
       },
     },
     budget: {
-      reserve: async (nowMs) => budget.reserve(nowMs, options.budget ?? 100),
+      reserve: async (nowMs) => {
+        state.budgetReserves += 1;
+        return budget.reserve(nowMs, options.budget ?? 100);
+      },
     },
     replay: { claim: async (tokens, nowMs) => replay.claim(tokens, nowMs) },
     confirmation: options.confirmation ?? uncheckedLocalConfirmation,
@@ -154,10 +178,16 @@ export async function signerHarness(
   const handle = createSignHandler(deps);
   const permitFor = (
     fields: SignInput,
-    over: { id?: string; nowMs?: number; lifetimeMs?: number } = {}
-  ): Promise<Permit> =>
+    over: {
+      id?: string;
+      nowMs?: number;
+      lifetimeMs?: number;
+      audience?: string;
+    } = {}
+  ): Promise<IssuedPermit> =>
     issuePermit({
       privateKey: permitKeys.privateKey,
+      audience: over.audience ?? AUDIENCE,
       fields,
       id: over.id ?? randomToken(),
       nowMs: over.nowMs ?? Date.now(),

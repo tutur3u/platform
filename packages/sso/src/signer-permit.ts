@@ -10,14 +10,19 @@
  */
 
 export const PERMIT_FIELDS_DOMAIN = 'ttr-sso-permit-fields-v1';
-export const PERMIT_DOMAIN = 'ttr-sso-permit-v1';
+export const PERMIT_DOMAIN = 'ttr-sso-permit-v2';
 
 const KEY = /^[A-Za-z][A-Za-z0-9]{0,63}$/u;
 const LONE_SURROGATE = /\p{Cs}/u;
 const encoder = new TextEncoder();
 
+/**
+ * `aud` names the signer environment the permit is for (`SSO_SIGNER_ENV`),
+ * so a permit minted for one environment is refused by every other.
+ */
 export type PermitClaims = Readonly<{
-  v: 1;
+  v: 2;
+  aud: string;
   id: string;
   kid: string;
   iat: number;
@@ -72,6 +77,6 @@ export async function fieldsHash(fields: unknown): Promise<string> {
 /** The bytes the Ed25519 permit signature covers. */
 export function permitMessage(claims: PermitClaims): Uint8Array<ArrayBuffer> {
   return encoder.encode(
-    `${PERMIT_DOMAIN}\n${JSON.stringify([claims.v, claims.id, claims.kid, claims.iat, claims.exp, claims.fields])}`
+    `${PERMIT_DOMAIN}\n${JSON.stringify([claims.v, claims.aud, claims.id, claims.kid, claims.iat, claims.exp, claims.fields])}`
   );
 }

@@ -5,6 +5,7 @@ import {
   parseDailyBudget,
 } from './budget-store';
 import { createControlHandlers } from './control';
+import { parseSignerEnvironment } from './environment';
 import { type ClaimToken, createReplayStore } from './replay-store';
 import type { Transaction } from './sql';
 import type { Env } from './worker';
@@ -62,7 +63,7 @@ export class SignerBudget extends DurableObject<Env> {
   }
 }
 
-/** `replay:<env>`: single-use request nonces and permit IDs. */
+/** `replay:<env>`: single-use request nonces, permit IDs and transactions. */
 export class SignerReplay extends DurableObject<Env> {
   private readonly store;
 
@@ -76,20 +77,21 @@ export class SignerReplay extends DurableObject<Env> {
   }
 }
 
-export function signerEnvironmentName(env: Env): string | null {
-  const value = env.SSO_SIGNER_ENV;
-  return value === 'production' || value === 'staging' || value === 'local'
-    ? value
-    : null;
+class SignerMisconfigured extends Error {
+  constructor() {
+    super('misconfigured');
+    this.name = 'SignerMisconfigured';
+  }
 }
 
+/** Throws the coded `SignerMisconfigured` when `SSO_SIGNER_ENV` is unknown. */
 function named<T extends Rpc.DurableObjectBranded | undefined>(
   env: Env,
   namespace: DurableObjectNamespace<T>,
   prefix: string
 ) {
-  const name = signerEnvironmentName(env);
-  if (!name) throw new Error('SSO_SIGNER_ENV is not set');
+  const name = parseSignerEnvironment(env.SSO_SIGNER_ENV);
+  if (!name) throw new SignerMisconfigured();
   return namespace.get(namespace.idFromName(`${prefix}:${name}`));
 }
 

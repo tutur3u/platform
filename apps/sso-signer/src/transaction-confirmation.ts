@@ -1,10 +1,10 @@
 /**
  * The independent transaction check. Holding the request HMAC key and the
  * permit key is not enough to mint an assertion: the Worker also confirms,
- * through a dedicated Worker-only database role, that an approved,
+ * through the Worker-only database role `sso_signer`, that an approved,
  * consumed, not-yet-signed transaction exists with exactly these bound
- * fields. That role and its read path arrive with a later migration; until
- * then every deployed build refuses to sign.
+ * fields (`database-confirmation.ts`). Without a configured database every
+ * build refuses to sign.
  */
 import type { SignInput } from './input';
 
@@ -22,13 +22,20 @@ export type ConfirmationResult =
       error: 'transaction_unconfirmed' | 'confirmation_unavailable';
     }>;
 
+/** The verified permit's field hash: the request the issuer approved. */
+export type ConfirmedPermit = Readonly<{ fields: string }>;
+
 export interface TransactionConfirmation {
   /**
    * Resolves `ok` only when the consumed transaction `input.transactionId`
-   * matches the client, protocol, subject, attributes, profile, request and
-   * expiry in `input`. Must fail closed on any error.
+   * still binds exactly the client, kid, subject, attributes, profile and
+   * request ID in `input`, and those fields hash to `permit.fields`. Must
+   * fail closed on any error.
    */
-  confirm(input: SignInput): Promise<ConfirmationResult>;
+  confirm(
+    input: SignInput,
+    permit: ConfirmedPermit
+  ): Promise<ConfirmationResult>;
 }
 
 /** No confirmation source is configured: refuse everything. */
@@ -42,12 +49,15 @@ export const uncheckedLocalConfirmation: TransactionConfirmation = {
   confirm: async () => ({ ok: true }) as const,
 };
 
+/** `SSO_SIGNER_TRANSACTION_CHECK` value that selects the database check. */
+export const DATABASE_MODE = 'database';
+
 type Selection = Readonly<{ mode: unknown; environment: unknown }>;
 
 /**
- * The pure selection rule: unchecked only in an unchecked build, with
- * `SSO_SIGNER_TRANSACTION_CHECK` set to `unchecked-local` and
- * `SSO_SIGNER_ENV` set to `local`.
+ * The pure selection rule for the unchecked path: unchecked only in an
+ * unchecked build, with `SSO_SIGNER_TRANSACTION_CHECK` set to
+ * `unchecked-local` and `SSO_SIGNER_ENV` set to `local`.
  */
 export function confirmationFor(
   input: Selection,
@@ -60,10 +70,25 @@ export function confirmationFor(
     : refuseAllConfirmation;
 }
 
-export function selectConfirmation(input: Selection): TransactionConfirmation {
-  // With the production define this folds to `refuseAllConfirmation`, and
-  // the unchecked branch is removed from the bundle.
-  return __SSO_SIGNER_UNCHECKED__ === true
-    ? confirmationFor(input, true)
+/**
+ * The database check when `SSO_SIGNER_TRANSACTION_CHECK` is `database` and
+ * a database is bound; otherwise refuse.
+ */
+export function databaseConfirmationFor(
+  input: Selection & { database: (() => TransactionConfirmation) | null }
+): TransactionConfirmation {
+  return input.mode === DATABASE_MODE && input.database
+    ? input.database()
     : refuseAllConfirmation;
+}
+
+export function selectConfirmation(
+  input: Selection & { database: (() => TransactionConfirmation) | null }
+): TransactionConfirmation {
+  // With the production define the first branch is removed from the bundle.
+  if (__SSO_SIGNER_UNCHECKED__ === true) {
+    const unchecked = confirmationFor(input, true);
+    if (unchecked !== refuseAllConfirmation) return unchecked;
+  }
+  return databaseConfirmationFor(input);
 }

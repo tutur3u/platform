@@ -2,8 +2,9 @@
  * Finalization permits. The service-only finalization path signs one permit
  * per transaction with a dedicated Ed25519 key held outside Postgres; this
  * Worker holds only the public key. A permit binds a SHA-256 of the
- * canonical JSON of every structured field (the kid included) plus the kid
- * itself, lives 60 seconds or less and is claimed once in `SignerReplay`.
+ * canonical JSON of every structured field (the kid included), the kid
+ * itself and its audience (the signer environment, `SSO_SIGNER_ENV`), lives
+ * 60 seconds or less and is claimed once in `SignerReplay`.
  * The wire form lives in `@tuturuuu/sso/signer-permit`, which the issuer
  * imports too.
  */
@@ -13,6 +14,7 @@ import {
   permitMessage,
 } from '@tuturuuu/sso/signer-permit';
 import { z } from 'zod';
+import { SIGNER_ENVIRONMENTS } from './environment';
 import { kidSchema } from './input';
 import {
   type Bytes,
@@ -33,7 +35,8 @@ const instantMs = z
   .max(9_999_999_999_999);
 export const permitSchema = z
   .object({
-    v: z.literal(1),
+    v: z.literal(2),
+    aud: z.enum(SIGNER_ENVIRONMENTS),
     id: z.string().regex(/^[A-Za-z0-9_-]{22,43}$/u),
     kid: kidSchema,
     iat: instantMs,
@@ -43,6 +46,8 @@ export const permitSchema = z
   })
   .strict();
 export type Permit = z.infer<typeof permitSchema>;
+/** What the issuer produces; `aud` is checked only when verified. */
+export type IssuedPermit = Omit<Permit, 'aud'> & { aud: string };
 
 export type PermitResult =
   | Readonly<{ ok: true; permit: Permit }>
@@ -62,13 +67,15 @@ function ed25519Key(raw: Bytes) {
 /** Finalization-side helper: one permit over the structured input. */
 export async function issuePermit(input: {
   privateKey: CryptoKey;
+  audience: string;
   fields: { kid: string } & Record<string, unknown>;
   id: string;
   nowMs: number;
   lifetimeMs?: number;
-}): Promise<Permit> {
+}): Promise<IssuedPermit> {
   const claims = {
-    v: 1 as const,
+    v: 2 as const,
+    aud: input.audience,
     id: input.id,
     kid: input.fields.kid,
     iat: input.nowMs,
@@ -84,16 +91,20 @@ export async function issuePermit(input: {
 }
 
 /**
- * Checks the signature first, then the kid, lifetime and field hash. The
- * caller still has to claim `permit.id` once before acting on it.
+ * Checks the signature first, then the audience, kid, lifetime and field
+ * hash. The caller still has to claim `permit.id` once before acting on it.
  */
 export async function verifyPermit(input: {
   permit: unknown;
   fields: { kid: string } & Record<string, unknown>;
   keys: KeySet | null;
+  /** This deployment's `SSO_SIGNER_ENV`; null refuses as misconfigured. */
+  audience: string | null;
   nowMs: number;
 }): Promise<PermitResult> {
-  if (!input.keys) return { ok: false, error: 'misconfigured' };
+  if (!input.keys || !input.audience) {
+    return { ok: false, error: 'misconfigured' };
+  }
   const parsed = permitSchema.safeParse(input.permit);
   if (!parsed.success) return { ok: false, error: 'permit_invalid' };
   const permit = parsed.data;
@@ -110,9 +121,18 @@ export async function verifyPermit(input: {
     );
   }
   if (!signed) return { ok: false, error: 'permit_invalid' };
+  // Fields with no canonical form (an ill-formed string, an unsupported
+  // value) cannot match any permit.
+  let expected: string;
+  try {
+    expected = await fieldsHash(input.fields);
+  } catch {
+    return { ok: false, error: 'permit_invalid' };
+  }
   if (
+    permit.aud !== input.audience ||
     permit.kid !== input.fields.kid ||
-    permit.fields !== (await fieldsHash(input.fields))
+    permit.fields !== expected
   ) {
     return { ok: false, error: 'permit_invalid' };
   }

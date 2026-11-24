@@ -1,7 +1,9 @@
 /**
- * Request authentication for the sign entry: HMAC-SHA256 over the method,
- * path, timestamp, a single-use nonce and the SHA-256 of the body, never a
- * static bearer. The timestamp may differ from the Worker clock by at most
+ * Request authentication for the sign entry: HMAC-SHA256 over the
+ * audience (the signer environment, `SSO_SIGNER_ENV`), the method, path,
+ * timestamp, a single-use nonce and the SHA-256 of the body, never a static
+ * bearer. A request signed for another environment never verifies, even
+ * if an operator reused a key across environments. The timestamp may differ from the Worker clock by at most
  * 60 seconds; the nonce is then claimed once in `SignerReplay`, so a replay
  * to another isolate or region is still refused.
  */
@@ -17,7 +19,7 @@ export const MAX_CLOCK_SKEW_MS = 60_000;
 export const HEADER_TIMESTAMP = 'x-ttr-sso-timestamp';
 export const HEADER_NONCE = 'x-ttr-sso-nonce';
 export const HEADER_SIGNATURE = 'x-ttr-sso-signature';
-const DOMAIN = 'ttr-sso-signer-request-v1';
+const DOMAIN = 'ttr-sso-signer-request-v2';
 const NONCE_TEXT = /^[A-Za-z0-9_-]{22,43}$/u;
 const TIMESTAMP_TEXT = /^[1-9][0-9]{12}$/u;
 
@@ -32,6 +34,7 @@ export async function sha256(bytes: Bytes): Promise<Bytes> {
 }
 
 export async function canonicalRequest(input: {
+  audience: string;
   method: string;
   path: string;
   timestamp: string;
@@ -42,6 +45,7 @@ export async function canonicalRequest(input: {
   return encoder.encode(
     [
       DOMAIN,
+      input.audience,
       input.method,
       input.path,
       input.timestamp,
@@ -64,6 +68,7 @@ function hmacKey(raw: Bytes, usage: 'sign' | 'verify') {
 /** Caller-side helper: the three request headers for one body. */
 export async function signRequestHeaders(input: {
   key: Bytes;
+  audience: string;
   method: string;
   path: string;
   body: Bytes;
@@ -87,6 +92,8 @@ export async function signRequestHeaders(input: {
 
 /** Verifies the headers in constant time (WebCrypto `verify`). */
 export async function verifyRequestAuth(input: {
+  /** This deployment's `SSO_SIGNER_ENV`; null refuses as misconfigured. */
+  audience: string | null;
   method: string;
   path: string;
   headers: Headers;
@@ -94,7 +101,8 @@ export async function verifyRequestAuth(input: {
   keys: KeySet | null;
   nowMs: number;
 }): Promise<RequestAuthResult> {
-  if (!input.keys) return { ok: false, error: 'misconfigured' };
+  const audience = input.audience;
+  if (!input.keys || !audience) return { ok: false, error: 'misconfigured' };
   const timestamp = input.headers.get(HEADER_TIMESTAMP) ?? '';
   const nonce = input.headers.get(HEADER_NONCE) ?? '';
   const signature = decodeBase64Url(input.headers.get(HEADER_SIGNATURE), 32);
@@ -109,7 +117,12 @@ export async function verifyRequestAuth(input: {
   if (Math.abs(input.nowMs - timestampMs) > MAX_CLOCK_SKEW_MS) {
     return { ok: false, error: 'unauthenticated' };
   }
-  const message = await canonicalRequest({ ...input, timestamp, nonce });
+  const message = await canonicalRequest({
+    ...input,
+    audience,
+    timestamp,
+    nonce,
+  });
   let matched = false;
   for (const key of keysOf(input.keys)) {
     const valid = await crypto.subtle.verify(

@@ -1984,6 +1984,7 @@
       "name": "@tuturuuu/sso-signer-worker",
       "dependencies": {
         "@tuturuuu/sso": "workspace:*",
+        "postgres": "3.4.9",
         "zod": "4.6.7",
       },
       "devDependencies": {

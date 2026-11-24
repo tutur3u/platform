@@ -14,9 +14,11 @@ import {
   createReplayStore,
   MAX_LIVE_TOKENS,
   SWEEP_LIMIT,
+  TRANSACTION_CLAIM_TTL_MS,
 } from './replay-store';
 
 const NOW = 1_800_000_000_000;
+const TRANSACTION = '0b5a3c1e-7d2f-4a6b-9c8d-1e2f3a4b5c6d';
 
 function replayStore() {
   const { db, sql, transaction } = memorySql();
@@ -68,6 +70,35 @@ describe('replay store', () => {
     expect(results.filter((result) => result.ok)).toHaveLength(1);
     expect(results.filter((result) => !result.ok)).toHaveLength(7);
     expect(store.liveCount()).toBe(2);
+  });
+
+  it('claims a transaction once across fresh nonces and permits, all or nothing', () => {
+    const { store } = replayStore();
+    const claim = (transaction: string) =>
+      store.claim(
+        [
+          { kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 120_000 },
+          { kind: 'permit', token: randomToken(), expiresAtMs: NOW + 60_000 },
+          {
+            kind: 'transaction',
+            token: transaction,
+            expiresAtMs: NOW + TRANSACTION_CLAIM_TTL_MS,
+          },
+        ],
+        NOW
+      );
+    expect(claim(TRANSACTION)).toEqual({ ok: true });
+    expect(claim(TRANSACTION)).toEqual({ ok: false, error: 'replayed' });
+    // The refused claims recorded neither their nonce nor their permit.
+    expect(store.liveCount()).toBe(3);
+    // Still held just before the claim lifetime ends.
+    const late = NOW + TRANSACTION_CLAIM_TTL_MS - 1;
+    expect(
+      store.claim(
+        [{ kind: 'transaction', token: TRANSACTION, expiresAtMs: late + 1 }],
+        late
+      )
+    ).toEqual({ ok: false, error: 'replayed' });
   });
 
   it('keeps nonce and permit namespaces apart', () => {
@@ -137,7 +168,32 @@ describe('replay store', () => {
     [[{ kind: 'nonce', token: 'short', expiresAtMs: NOW + 1 }]],
     [[{ kind: 'other', token: randomToken(), expiresAtMs: NOW + 1 }]],
     [[{ kind: 'nonce', token: randomToken(), expiresAtMs: NOW }]],
-    [[{ kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 300_001 }]],
+    [[{ kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 660_001 }]],
+    [
+      [
+        {
+          kind: 'transaction',
+          token: TRANSACTION.toUpperCase(),
+          expiresAtMs: NOW + 1,
+        },
+      ],
+    ],
+    [[{ kind: 'transaction', token: randomToken(), expiresAtMs: NOW + 1 }]],
+    [[{ kind: 'toString', token: randomToken(), expiresAtMs: NOW + 1 }]],
+    [
+      [
+        { kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 1 },
+        { kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 1 },
+      ],
+    ],
+    [
+      [
+        { kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 1 },
+        { kind: 'permit', token: randomToken(), expiresAtMs: NOW + 1 },
+        { kind: 'transaction', token: TRANSACTION, expiresAtMs: NOW + 1 },
+        { kind: 'nonce', token: randomToken(), expiresAtMs: NOW + 1 },
+      ],
+    ],
   ])('refuses a malformed claim %#', (tokens) => {
     expect(() => replayStore().store.claim(tokens as never, NOW)).toThrow(
       TypeError
@@ -275,9 +331,16 @@ describe('isolate guards', () => {
       },
       now: () => NOW,
     });
+    expect(guards.budget.peek?.(NOW)).toBeNull();
     await guards.budget.reserve(NOW);
+    expect(guards.budget.peek?.(NOW + 999)).toEqual({
+      ok: false,
+      error: 'budget_exhausted',
+      retryAtMs,
+    });
     expect(await guards.budget.reserve(NOW + 999)).toMatchObject({ ok: false });
     expect(calls).toBe(1);
+    expect(guards.budget.peek?.(retryAtMs)).toBeNull();
     await guards.budget.reserve(retryAtMs);
     expect(calls).toBe(2);
   });

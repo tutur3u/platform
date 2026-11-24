@@ -2,8 +2,9 @@
  * The Durable Object calls the sign handler makes, and the isolate guards
  * around them. A `stopped` fence is remembered for `STOPPED_HOLD_MS` and an
  * exhausted budget until its retry time, so a flood against a stopped or
- * exhausted signer costs no Durable Object calls. `running` is never
- * cached: a stop takes effect on the next request.
+ * exhausted signer costs no Durable Object calls: the handler peeks at the
+ * remembered exhaustion before its replay claim. `running` is never cached:
+ * a stop takes effect on the next request.
  */
 import type { ReserveResult } from './budget-store';
 import type { FenceMode } from './fence-store';
@@ -16,6 +17,8 @@ export interface ControlPort {
 }
 export interface BudgetPort {
   reserve(nowMs: number): Promise<ReserveResult>;
+  /** A remembered exhaustion, without any object call; null otherwise. */
+  peek?(nowMs: number): ReserveResult | null;
 }
 export interface ReplayPort {
   claim(tokens: readonly ClaimToken[], nowMs: number): Promise<ClaimResult>;
@@ -38,6 +41,15 @@ export function guardPorts(input: {
       },
     },
     budget: {
+      peek(nowMs) {
+        return nowMs < exhaustedUntilMs
+          ? {
+              ok: false,
+              error: 'budget_exhausted',
+              retryAtMs: exhaustedUntilMs,
+            }
+          : null;
+      },
       async reserve(nowMs) {
         if (nowMs < exhaustedUntilMs) {
           return {

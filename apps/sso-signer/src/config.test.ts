@@ -38,6 +38,13 @@ describe('signer Worker config', () => {
     }
   });
 
+  it('binds only a placeholder Hyperdrive configuration and no credential', () => {
+    expect(code).toMatch(
+      /SSO_SIGNER_DB:\s*bindings\.hyperdrive\(\{\s*id:\s*'0{32}',?\s*\}\)/u
+    );
+    expect(code).not.toMatch(/connectionString|postgres(?:ql)?:\/\//u);
+  });
+
   it('builds the deployed Worker with the unchecked path compiled out', () => {
     const vite = readFileSync(
       new URL('../vite.config.ts', import.meta.url),
@@ -50,6 +57,12 @@ describe('signer Worker config', () => {
   it('provisions no signing key secret and runs under nodejs_compat', () => {
     expect(code).not.toMatch(/SSO_SIGNING_KEY_/u);
     expect(code).toMatch(/compatibilityFlags:\s*\['nodejs_compat'\]/u);
+  });
+
+  it('keeps invocation logs off, so no request header is recorded', () => {
+    expect(code).toMatch(/invocationLogs:\s*false/u);
+    expect(code).not.toMatch(/invocationLogs:\s*true/u);
+    expect(code).not.toMatch(/logpush|tail_consumers|tailConsumers/iu);
   });
 
   it('keeps every Durable Object on SQLite storage', () => {

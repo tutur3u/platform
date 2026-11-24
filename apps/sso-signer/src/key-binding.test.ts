@@ -12,6 +12,8 @@ const resolve = (over: Partial<Parameters<typeof resolveSigningKey>[0]> = {}) =>
     kid: KID,
     client: CLIENT,
     protocol: 'saml',
+    entityId: f.profile.entityId,
+    acsUrl: f.profile.acsUrl,
     secret: (name) => secrets[name],
     ...over,
   });
@@ -36,6 +38,17 @@ describe('kid binding', () => {
     ['another client', { client: '00000000-0000-4000-8000-000000000bad' }],
     ['another protocol', { protocol: 'oidc' }],
     ['an inherited property name', { kid: 'constructor' }],
+    ['another SP entity ID', { entityId: 'urn:example:other:sp' }],
+    [
+      'an ACS URL on another origin',
+      { acsUrl: 'https://attacker.example.test/acs' },
+    ],
+    [
+      'an ACS URL on another port',
+      { acsUrl: 'https://sp.example.test:8443/acs' },
+    ],
+    ['an ACS URL over http', { acsUrl: 'http://sp.example.test/acs' }],
+    ['an unparseable ACS URL', { acsUrl: 'not a url' }],
   ])('refuses %s', (_label, over) => {
     expect(resolve(over)).toEqual({ ok: false, error: 'key_binding' });
   });
@@ -70,6 +83,15 @@ describe('kid binding', () => {
       JSON.stringify({ [KID]: { ...entry, extra: true } }),
       JSON.stringify({ [KID]: { ...entry, certificate: 'not a cert' } }),
       JSON.stringify({ [KID]: { ...entry, protocol: 'ws-fed' } }),
+      JSON.stringify({ [KID]: { ...entry, acsOrigins: [] } }),
+      JSON.stringify({
+        [KID]: { ...entry, acsOrigins: ['https://sp.example.test/'] },
+      }),
+      JSON.stringify({
+        [KID]: { ...entry, acsOrigins: ['http://sp.example.test'] },
+      }),
+      JSON.stringify({ [KID]: { ...entry, entityId: 'not a uri' } }),
+      JSON.stringify({ [KID]: { ...entry, entityId: undefined } }),
       JSON.stringify(many),
     ]) {
       expect(parseKeyMap(raw), raw.slice(0, 40)).toBeNull();
