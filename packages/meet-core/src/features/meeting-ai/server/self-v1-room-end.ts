@@ -1,6 +1,5 @@
 import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { MeetSelfOutboxEntry } from './self-v1-room';
 import { selfRpc } from './self-v1-rpc';
 
 /**

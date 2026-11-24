@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_TRUSTED_BYPASS_RULES } from './api-proxy-bypass-rules';
 import {
   isTrustedMeetSelfOutboxRequest,
   isTrustedRealtimeServiceRequest,
@@ -353,8 +354,17 @@ describe('Meet per-speaker outbox credential', () => {
   });
 
   it('refuses another method or path', () => {
-    for (const method of ['GET', 'PUT', undefined])
-      expect(request(outbox({}), method as string)).toBe(false);
+    for (const method of ['GET', 'PUT'])
+      expect(request(outbox({}), method)).toBe(false);
+    expect(
+      isTrustedMeetSelfOutboxRequest(
+        MEET_SELF_OUTBOX_PATH,
+        new Headers({ authorization: `Bearer ${outbox({})}` }),
+        undefined,
+        secret,
+        now
+      )
+    ).toBe(false);
     for (const path of [
       '/api/meet-ai/self/outbox/',
       '/api/meet-ai/self/outbox/x',
@@ -364,10 +374,7 @@ describe('Meet per-speaker outbox credential', () => {
       expect(request(outbox({}), 'POST', path)).toBe(false);
   });
 
-  it('is part of the default proxy bypass rules', async () => {
-    const { DEFAULT_TRUSTED_BYPASS_RULES } = await import(
-      './api-proxy-bypass-rules'
-    );
+  it('is part of the default proxy bypass rules', () => {
     process.env.MEET_REALTIME_TOKEN_SECRET = secret;
     const headers = new Headers({
       authorization: `Bearer ${sign({
