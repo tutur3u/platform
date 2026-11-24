@@ -3,7 +3,6 @@
 import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
-import { CaptureModePicker } from './capture-mode-picker';
 import { showMeetingAiFailure } from './failure-toast';
 import { MeetingAiStatusBar } from './meeting-ai-status-bar';
 import { meetingAiStatus } from './meeting-ai-status';
@@ -29,8 +28,7 @@ export function MeetingAiPanel({
   const t = useTranslations('meet.ai');
   const { consent, choose, ensureAllowed } = useTranscriptConsent(
     ai.meetingId,
-    inCall,
-    ai.wsId
+    inCall
   );
   const room = readSelfRoom(consent);
   // One opt-out never pauses the others in a per-speaker meeting, so the
@@ -72,13 +70,6 @@ export function MeetingAiPanel({
         onReload={() => void ai.refetch()}
         reloading={ai.isFetching}
       />
-      {inCall && (
-        <CaptureModePicker
-          wsId={ai.wsId}
-          meetingId={ai.meetingId}
-          room={room}
-        />
-      )}
       {ai.recovering ? (
         <p role="status" className="rounded-lg bg-muted p-3 text-sm">
           {t('recovering', { count: ai.pendingChunks })}

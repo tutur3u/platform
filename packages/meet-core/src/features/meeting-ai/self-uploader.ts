@@ -3,12 +3,15 @@ import {
   classifySelfFailure,
   type SelfCaptureApi,
   type SelfFailure,
+  selfRetryDelay,
 } from './self-api';
 import { SELF_SAMPLE_RATE, type SelfChunk } from './self-chunker';
 
 /** At most this much audio waits on a device, including the chunk in flight. */
 export const SELF_PENDING_MAX_SAMPLES = 60 * SELF_SAMPLE_RATE;
 const MAX_ATTEMPTS = 3;
+/** The room's chunk bucket refills one token every 10 seconds. */
+const RATE_LIMIT_MIN_MS = 10_000;
 
 type Queued = {
   id: string;
@@ -20,8 +23,13 @@ type Queued = {
 };
 
 export type SelfUploaderHooks = {
-  /** A refusal or ineligibility: capture must stop and everything is dropped. */
+  /**
+   * A refusal, ineligibility or lapsed lease: this stream's uploads stop and
+   * everything queued is dropped.
+   */
   onFailure: (failure: Exclude<SelfFailure, 'retry'>) => void;
+  /** The server accepted a chunk. */
+  onSent?: () => void;
 };
 
 /**
@@ -101,6 +109,7 @@ export class SelfUploader {
         this.abort.signal
       );
       this.finish(chunk);
+      if (!this.stopped) this.hooks.onSent?.();
     } catch (error) {
       if (this.stopped) return;
       const failure = classifySelfFailure(error);
@@ -110,7 +119,10 @@ export class SelfUploader {
         return;
       }
       if (chunk.attempts >= MAX_ATTEMPTS) this.finish(chunk);
-      else this.retryLater(chunk.attempts * 1000);
+      else
+        this.retryLater(
+          selfRetryDelay(error, chunk.attempts * 1000, RATE_LIMIT_MIN_MS)
+        );
     } finally {
       this.busy = false;
     }

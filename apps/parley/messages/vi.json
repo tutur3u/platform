@@ -4209,6 +4209,7 @@
       "self_body": "Chủ trì muốn phiên âm cuộc gọi này. Âm thanh của bạn được gửi tới Gemini để viết bản phiên âm và ghi chú, chỉ khi bạn cho phép. Âm thanh không được lưu.",
       "self_coverage_no": "Không đóng góp",
       "self_coverage_title": "Ai đang đóng góp",
+      "self_coverage_unnamed": "Người tham gia",
       "self_coverage_yes": "Đang đóng góp",
       "self_mode_failed": "Chưa đổi được chế độ ghi. Hãy thử lại.",
       "self_mode_locked": "Có thể đổi chế độ sau khi bản phiên âm đang chạy dừng lại.",

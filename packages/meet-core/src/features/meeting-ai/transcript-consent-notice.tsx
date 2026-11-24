@@ -1,17 +1,18 @@
 'use client';
 
-import { Check, Loader2, Pause, Users } from '@tuturuuu/icons';
+import { Check, Loader2, Pause } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RoomMiraSelfChoice } from '../call/components/room-mira-notice';
 import { useRoomMiraConsent } from '../call/components/use-room-mira';
-import { SelfCaptureStatus } from './self-capture-status';
-import { SelfCoverage } from './self-coverage';
+import { useSelfCaptureHold } from './self-hold';
 import type { SelfCaptureState } from './self-lifecycle';
+import { useSelfNoticeText } from './self-notice-text';
 import { readSelfRoom } from './self-room';
+import { TranscriptConsentDetails } from './transcript-consent-details';
 import { useTranscriptConsent } from './use-transcript-consent';
 
 /**
@@ -24,6 +25,7 @@ export function TranscriptConsentNotice({
   wsId,
   capture,
   names = {},
+  guest = false,
 }: {
   meetingId: string;
   wsId?: string;
@@ -31,9 +33,17 @@ export function TranscriptConsentNotice({
   capture?: SelfCaptureState;
   /** Display names by account id, for the host's coverage list. */
   names?: Record<string, string>;
+  guest?: boolean;
 }) {
   const t = useTranslations('meet.ai');
-  const { consent, choose } = useTranscriptConsent(meetingId, true, wsId);
+  const locale = useLocale();
+  const noticeText = useSelfNoticeText();
+  const { consent, choose } = useTranscriptConsent(
+    meetingId,
+    true,
+    wsId ? { wsId, noticeText, locale } : undefined
+  );
+  const held = useSelfCaptureHold(meetingId);
   const [open, setOpen] = useState<boolean | null>(null);
   // An Allow needs the caller's own Mira choice on, so the Mira box comes
   // first. While Mira's state loads, Allow waits; on an error or where room
@@ -45,15 +55,20 @@ export function TranscriptConsentNotice({
   const miraNotOn = !!mira.data?.available && !mira.data.acceptance;
   const miraPending = mira.isPending;
   if (!consent?.available || !consent.active) return null;
-  const needsChoice = consent.choice === null;
   const room = readSelfRoom(consent);
   // One person's opt-out never pauses the others, so the room fence does not
   // describe a per-speaker meeting.
   const solo = room.mode === 'self';
-  const { fence } = consent;
-  const live = solo ? capture?.kind === 'capturing' : fence.ready;
-  const pick = (choice: 'allow' | 'decline') =>
-    choose.mutate(choice, {
+  // Guests never contribute in a per-speaker meeting; there is nothing to
+  // allow, only the reason.
+  const selfGuest = solo && (guest || capture?.kind === 'guest');
+  // A decline or Mira off that has not been confirmed reads as declined.
+  const choice =
+    solo && held && consent.choice === 'allow' ? 'decline' : consent.choice;
+  const needsChoice = choice === null && !selfGuest;
+  const live = solo ? !!room.session : consent.fence.ready;
+  const pick = (next: 'allow' | 'decline') =>
+    choose.mutate(next, {
       onSuccess: () => setOpen(false),
       onError: () => toast.error(t('consent_failed')),
     });
@@ -84,43 +99,22 @@ export function TranscriptConsentNotice({
         align="end"
         className="w-[min(22rem,calc(100vw-2rem))] space-y-3 text-sm"
       >
-        <div className="space-y-1">
-          <h2 className="font-medium">{t('consent_title')}</h2>
-          <p className="text-muted-foreground">
-            {t(solo ? 'self_body' : 'consent_body')}
-          </p>
-          {solo && <p className="text-muted-foreground">{t('self_notice')}</p>}
+        <TranscriptConsentDetails
+          room={room}
+          fence={consent.fence}
+          capture={selfGuest ? { kind: 'guest' } : capture}
+          names={names}
+          meetingId={meetingId}
+          wsId={wsId}
+        />
+        {choice && !selfGuest && (
           <p className="text-muted-foreground text-xs">
-            {t(solo ? 'self_readers' : 'consent_readers')}
-          </p>
-        </div>
-        {solo ? (
-          capture && <SelfCaptureStatus state={capture} />
-        ) : (
-          <p role="status" className="flex items-center gap-1.5 text-xs">
-            <Users aria-hidden className="size-3.5 text-muted-foreground" />
-            {fence.ready
-              ? t('consent_everyone')
-              : t('consent_waiting', { count: fence.pending })}
-            <span className="text-muted-foreground">
-              {t('consent_count', {
-                allowed: fence.admitted - fence.pending,
-                total: fence.admitted,
-              })}
-            </span>
-          </p>
-        )}
-        {solo && room.canManageMode && (
-          <SelfCoverage coverage={room.coverage} names={names} />
-        )}
-        {consent.choice && (
-          <p className="text-muted-foreground text-xs">
-            {consent.choice === 'allow'
+            {choice === 'allow'
               ? t('consent_you_allowed')
               : t(solo ? 'self_untick' : 'consent_you_declined')}
           </p>
         )}
-        {miraOff && consent.choice !== 'allow' && (
+        {miraOff && choice !== 'allow' && !selfGuest && (
           <div className="space-y-2">
             <p role="status" className="text-xs">
               {miraNotOn ? t('consent_mira_not_on') : t('consent_mira_off')}
@@ -129,7 +123,7 @@ export function TranscriptConsentNotice({
           </div>
         )}
         <div className="flex flex-wrap gap-2">
-          {consent.choice !== 'allow' && !miraOff && (
+          {choice !== 'allow' && !miraOff && !selfGuest && (
             <Button
               type="button"
               size="sm"
@@ -144,7 +138,7 @@ export function TranscriptConsentNotice({
               {t('consent_allow')}
             </Button>
           )}
-          {consent.choice !== 'decline' && (
+          {choice !== 'decline' && (
             <Button
               type="button"
               size="sm"

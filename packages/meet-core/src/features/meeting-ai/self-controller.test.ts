@@ -302,3 +302,163 @@ describe('per-speaker capture controller', () => {
     expect(controller.getState()).toEqual({ kind: 'off' });
   });
 });
+
+describe('per-speaker capture controller, consent and lease fences', () => {
+  it('tells a guest they cannot contribute before anything else', async () => {
+    const { api, controller } = setup();
+    controller.update(
+      eligibleInputs(fakeTrack(), { guest: true, allow: false, miraOn: false })
+    );
+    await settle();
+    expect(controller.getState()).toEqual({ kind: 'guest' });
+    expect(api.open).not.toHaveBeenCalled();
+  });
+
+  it('never opens while a local decline is held, and stops at once on one', async () => {
+    const { api, controller, engine } = setup();
+    const track = fakeTrack();
+    controller.update(eligibleInputs(track, { held: true }));
+    await settle();
+    expect(api.open).not.toHaveBeenCalled();
+    controller.update(eligibleInputs(track));
+    await settle();
+    expect(api.open).toHaveBeenCalledTimes(1);
+    controller.update(eligibleInputs(track, { held: true }));
+    expect(engine.dispose).toHaveBeenCalledTimes(1);
+    expect(controller.getState()).toEqual({ kind: 'off' });
+  });
+
+  it('does not claim capture when the track ends while the stream opens', async () => {
+    let finish!: (value: SelfStreamGrant) => void;
+    const api = fakeApi({
+      open: vi.fn(
+        () =>
+          new Promise<SelfStreamGrant>((resolve) => {
+            finish = resolve;
+          })
+      ),
+    });
+    const { controller, factory } = setup(api);
+    const track = fakeTrack();
+    controller.update(eligibleInputs(track));
+    track.end();
+    finish({
+      streamId: 's',
+      consentRevision: 1,
+      leaseExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+    await settle();
+    expect(factory).not.toHaveBeenCalled();
+    expect(controller.getState()).toEqual({ kind: 'off' });
+  });
+
+  it('says unsupported when echo cancellation is lost while the stream opens', async () => {
+    let finish!: (value: SelfStreamGrant) => void;
+    const api = fakeApi({
+      open: vi.fn(
+        () =>
+          new Promise<SelfStreamGrant>((resolve) => {
+            finish = resolve;
+          })
+      ),
+    });
+    const { controller, factory } = setup(api);
+    const track = fakeTrack();
+    controller.update(eligibleInputs(track));
+    track.setEcho(false);
+    finish({
+      streamId: 's',
+      consentRevision: 1,
+      leaseExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+    await settle();
+    expect(factory).not.toHaveBeenCalled();
+    expect(controller.getState()).toEqual({ kind: 'unsupported' });
+  });
+
+  it('opens a new stream when a chunk reports a lapsed lease', async () => {
+    const upload = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new FakeInternalApiError('lease', 409, 'MEET_SELF_LEASE_EXPIRED')
+      )
+      .mockResolvedValue({});
+    const { api, controller, frames, engine } = setup(fakeApi({ upload }));
+    controller.update(eligibleInputs(fakeTrack()));
+    await settle();
+    speak(frames.push);
+    await settle();
+    expect(api.open).toHaveBeenCalledTimes(2);
+    expect(engine.dispose).toHaveBeenCalledTimes(1);
+    expect(controller.getState()).toEqual({ kind: 'capturing' });
+  });
+
+  it('stops after repeated lapsed leases without an accepted chunk', async () => {
+    const upload = vi.fn(async () => {
+      throw new FakeInternalApiError('lease', 409, 'MEET_SELF_LEASE_EXPIRED');
+    });
+    const { api, controller, frames } = setup(fakeApi({ upload }));
+    controller.update(eligibleInputs(fakeTrack()));
+    for (let round = 0; round < 6; round++) {
+      await settle();
+      speak(frames.push);
+      await settle();
+    }
+    expect(api.open).toHaveBeenCalledTimes(4);
+    expect(controller.getState()).toEqual({ kind: 'stopped' });
+  });
+
+  it('reopens when a renewal reports a lapsed lease', async () => {
+    const renew = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new FakeInternalApiError('lease', 409, 'MEET_SELF_LEASE_EXPIRED')
+      );
+    const { api, controller } = setup(fakeApi({ renew }));
+    controller.update(eligibleInputs(fakeTrack()));
+    await settle();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(api.open).toHaveBeenCalledTimes(2);
+  });
+
+  it('treats any other chunk 409 as final', async () => {
+    const upload = vi.fn(async () => {
+      throw new FakeInternalApiError('no', 409, 'MEET_SELF_STREAM_CLOSED');
+    });
+    const { api, controller, frames } = setup(fakeApi({ upload }));
+    controller.update(eligibleInputs(fakeTrack()));
+    await settle();
+    speak(frames.push);
+    await settle();
+    expect(api.open).toHaveBeenCalledTimes(1);
+    expect(controller.getState()).toEqual({ kind: 'stopped' });
+  });
+
+  it('accepts the newer echo cancellation modes', async () => {
+    for (const mode of ['all', 'remote-only']) {
+      const { controller } = setup();
+      controller.update(eligibleInputs(fakeTrack(mode)));
+      await settle();
+      expect(controller.getState()).toEqual({ kind: 'capturing' });
+    }
+  });
+
+  it('keeps capturing in a background tab and stops for good on pagehide', async () => {
+    const api = fakeApi({ upload: vi.fn(() => new Promise(() => undefined)) });
+    const { controller, engine, frames } = setup(api);
+    const page = new EventTarget();
+    const detach = controller.attachUnload(page);
+    controller.update(eligibleInputs(fakeTrack()));
+    await settle();
+    page.dispatchEvent(new Event('visibilitychange'));
+    expect(controller.getState()).toEqual({ kind: 'capturing' });
+    speak(frames.push);
+    await settle();
+    const signal = api.upload.mock.calls[0]![1];
+    page.dispatchEvent(new Event('pagehide'));
+    expect(signal.aborted).toBe(true);
+    expect(engine.dispose).toHaveBeenCalledTimes(1);
+    expect(controller.getState()).toEqual({ kind: 'off' });
+    detach();
+  });
+});

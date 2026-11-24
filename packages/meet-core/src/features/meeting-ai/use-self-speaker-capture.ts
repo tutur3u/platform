@@ -1,9 +1,24 @@
 'use client';
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { useRoomMiraConsent } from '../call/components/use-room-mira';
 import { createSelfCaptureApi } from './self-api';
-import { SelfCaptureController } from './self-controller';
+import {
+  SELF_IDLE_INPUTS,
+  SelfCaptureController,
+  type SelfCaptureInputs,
+} from './self-controller';
+import {
+  isSelfCaptureHeld,
+  onSelfCaptureHold,
+  useSelfCaptureHold,
+} from './self-hold';
 import type { SelfCaptureState } from './self-lifecycle';
 import { readSelfRoom, type SelfRoomView } from './self-room';
 import { useTranscriptConsent } from './use-transcript-consent';
@@ -29,12 +44,18 @@ export function useSelfSpeakerCapture({
   connected: boolean;
   guest: boolean;
   inCall: boolean;
-}): { state: SelfCaptureState; room: SelfRoomView } {
+}): {
+  state: SelfCaptureState;
+  room: SelfRoomView;
+  /** A transcript session is running in this room. */
+  active: boolean;
+} {
   const { consent } = useTranscriptConsent(meetingId, inCall);
   const mira = useRoomMiraConsent(meetingId);
   const room = useMemo(() => readSelfRoom(consent), [consent]);
   const allow = !!consent?.available && consent.choice === 'allow';
   const miraOn = !!mira.data?.available && mira.data.choice === 'on';
+  const held = useSelfCaptureHold(meetingId);
   // A reconnect is a rejoin: a stream refused before it may open again.
   const [epoch, setEpoch] = useState(0);
   const [wasConnected, setWasConnected] = useState(connected);
@@ -47,10 +68,13 @@ export function useSelfSpeakerCapture({
       new SelfCaptureController({ api: createSelfCaptureApi(wsId, meetingId) }),
     [wsId, meetingId]
   );
+  const latest = useRef<SelfCaptureInputs>(SELF_IDLE_INPUTS);
   const sessionId = room.session?.sessionId;
   const protocol = room.session?.protocol;
+  // Syncs the capture controller (an external audio resource) with the
+  // server's room state; it fetches nothing itself.
   useEffect(() => {
-    controller.update({
+    latest.current = {
       mode: room.mode,
       session: sessionId && protocol ? { sessionId, protocol } : null,
       allow,
@@ -59,7 +83,9 @@ export function useSelfSpeakerCapture({
       guest,
       stream,
       joinEpoch: epoch,
-    });
+      held,
+    };
+    controller.update(latest.current);
   }, [
     controller,
     room.mode,
@@ -72,12 +98,30 @@ export function useSelfSpeakerCapture({
     guest,
     stream,
     epoch,
+    held,
   ]);
+  // A decline or Mira off halts capture in the same task, before React
+  // re-renders and before its request leaves the device.
+  useEffect(
+    () =>
+      onSelfCaptureHold(meetingId, () =>
+        controller.update({
+          ...latest.current,
+          held: isSelfCaptureHeld(meetingId),
+        })
+      ),
+    [controller, meetingId]
+  );
+  useEffect(() => controller.attachUnload(window), [controller]);
   useEffect(() => () => controller.dispose(), [controller]);
   const state = useSyncExternalStore(
     controller.subscribe,
     controller.getState,
     () => OFF
   );
-  return { state, room };
+  return {
+    state,
+    room,
+    active: !!consent?.available && consent.active,
+  };
 }

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   acceptRoomMira,
   type RoomMiraConsent,
+  readMeetTranscriptConsent,
   readRoomMiraConsent,
   reportRoomMiraMinor,
   setMeetTranscriptChoice,
@@ -28,6 +29,8 @@ import {
   prefersMiraOff,
   rememberMiraPreference,
 } from '../../live-assistant/mira-join-choice';
+import { holdSelfCapture } from '../../meeting-ai/self-hold';
+import { readSelfRoom } from '../../meeting-ai/self-room';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
 
 export const roomMiraConsentKey = (meetingId: string) => [
@@ -70,6 +73,20 @@ export function useRoomMiraJoinSeed(meetingId: string | undefined) {
     () => (ticked === undefined ? undefined : { ticked, revision }),
     [ticked, revision]
   );
+}
+
+/**
+ * True only when a fresh read says the room uses room capture. An unreadable
+ * state never records an Allow.
+ */
+async function roomCaptureMode(meetingId: string) {
+  try {
+    return (
+      readSelfRoom(await readMeetTranscriptConsent(meetingId)).mode === 'room'
+    );
+  } catch {
+    return false;
+  }
 }
 
 export type RoomMiraAvailable = Extract<RoomMiraConsent, { available: true }>;
@@ -119,16 +136,24 @@ export function useRoomMira(meetingId: string) {
         textHash: input.textHash ?? (await hashMiraConsentText(text)),
         locale: input.locale ?? locale,
       }),
+    // Off stops this device's own per-speaker capture before the request is
+    // sent, and keeps it stopped until the person allows the transcript again.
+    onMutate: (input) => {
+      if (input.choice === 'off') holdSelfCapture(meetingId);
+    },
     onSuccess: async (next, input) => {
       save(next);
       rememberMiraPreference(meetingId, input.choice === 'on');
       // Off declines the transcript in the room itself; on also allows it
-      // while the box covers the live transcript.
+      // while the box covers the live transcript. A per-speaker meeting
+      // never takes that Allow from the box: each person allows their own
+      // voice in the transcript notice.
       if (
         input.choice === 'on' &&
         MIRA_BOX_RECORDS_TRANSCRIPT &&
         next.available &&
-        next.choice === 'on'
+        next.choice === 'on' &&
+        (await roomCaptureMode(meetingId))
       )
         await setMeetTranscriptChoice(
           meetingId,
@@ -150,6 +175,10 @@ export function useRoomMira(meetingId: string) {
         : action === 'turn_off'
           ? turnOffRoomMira(meetingId)
           : reportRoomMiraMinor(meetingId),
+    // Turning Mira off for everyone stops this device's capture at once.
+    onMutate: (action) => {
+      if (action !== 'accept') holdSelfCapture(meetingId);
+    },
     onSuccess: (next) => {
       save(next);
       refreshTranscript();

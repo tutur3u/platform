@@ -78,24 +78,60 @@ export function setMeetCaptureMode(
   });
 }
 
+/**
+ * A per-speaker transcript choice, with the notice the person saw: its
+ * version, their locale and a SHA-256 of the exact text shown.
+ */
+export type SelfChoiceInput = {
+  choice: 'allow' | 'decline';
+  noticeVersion: string;
+  locale: string;
+  textHash: string;
+};
+
 export function setSelfTranscriptChoice(
   wsId: string,
   meetingId: string,
-  choice: 'allow' | 'decline'
+  input: SelfChoiceInput
 ) {
-  return post<unknown>(`${base(wsId, meetingId)}/choice`, { choice });
+  return post<unknown>(`${base(wsId, meetingId)}/choice`, input);
 }
 
-export type SelfFailure = 'refused' | 'not_eligible' | 'unavailable' | 'retry';
+export type SelfFailure =
+  | 'refused'
+  | 'not_eligible'
+  | 'unavailable'
+  /** The stream's lease lapsed; a new stream may be opened. */
+  | 'lease_expired'
+  | 'retry';
+
+const fieldOf = (error: unknown, key: 'status' | 'code' | 'retryAfter') => {
+  const record = typeof error === 'object' && error !== null ? error : {};
+  return key in record ? (record as Record<string, unknown>)[key] : undefined;
+};
+
 /** How a failed open, renew or upload should be handled. */
 export function classifySelfFailure(error: unknown): SelfFailure {
-  const record = typeof error === 'object' && error !== null ? error : {};
-  const status = 'status' in record ? record.status : undefined;
-  const code = 'code' in record ? record.code : undefined;
+  const status = fieldOf(error, 'status');
+  const code = fieldOf(error, 'code');
   if (code === 'MEET_SELF_NOT_ELIGIBLE') return 'not_eligible';
   if (code === 'MEET_SELF_UNAVAILABLE') return 'unavailable';
+  if (code === 'MEET_SELF_LEASE_EXPIRED') return 'lease_expired';
   if (code === 'MEET_SELF_RATE_LIMITED' || status === 429) return 'retry';
   if (typeof status === 'number' && [401, 402, 403, 409, 423].includes(status))
     return 'refused';
   return 'retry';
+}
+
+/** A rate limit, and how long the server asked us to wait, at least `min`. */
+export function selfRetryDelay(error: unknown, fallback: number, min = 0) {
+  const status = fieldOf(error, 'status');
+  const code = fieldOf(error, 'code');
+  if (status !== 429 && code !== 'MEET_SELF_RATE_LIMITED') return fallback;
+  const retryAfter = fieldOf(error, 'retryAfter');
+  const asked =
+    typeof retryAfter === 'number' && Number.isFinite(retryAfter)
+      ? Math.min(retryAfter, 300) * 1000
+      : 0;
+  return Math.max(min, asked);
 }

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   upload: vi.fn(),
   start: vi.fn(),
+  dispose: vi.fn(),
   refetch: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
@@ -30,7 +31,7 @@ vi.mock('./audio', () => ({
   MeetAudioCapture: class {
     start = mocks.start;
     update() {}
-    dispose() {}
+    dispose = mocks.dispose;
     stop = vi.fn();
   },
 }));
@@ -70,6 +71,36 @@ it('captures the room in room mode', async () => {
     () =>
       useMeetingAi('workspace', 'meeting', [], true, true, undefined, {
         captureMode: 'room',
+      }),
+    { wrapper }
+  );
+  await act(() => hook.result.current.start());
+  expect(mocks.start).toHaveBeenCalledTimes(1);
+});
+
+it('follows the protocol the server started, not the polled mode', async () => {
+  mocks.update.mockResolvedValue({ sessionId: 'session', protocol: 'self_v1' });
+  const hook = renderHook(
+    () =>
+      useMeetingAi('workspace', 'meeting', [], true, true, undefined, {
+        captureMode: 'room',
+      }),
+    { wrapper }
+  );
+  await act(() => hook.result.current.start());
+  // The prepared room recorder is released and never captures.
+  expect(mocks.dispose).toHaveBeenCalled();
+  expect(hook.result.current.ownsSession).toBe(true);
+  await act(() => hook.result.current.finish());
+  expect(mocks.update.mock.calls.at(-1)![2].expectedChunks).toBeUndefined();
+});
+
+it('captures the room when the server started a room-capture session', async () => {
+  mocks.update.mockResolvedValue({ sessionId: 'session', protocol: 'legacy' });
+  const hook = renderHook(
+    () =>
+      useMeetingAi('workspace', 'meeting', [], true, true, undefined, {
+        captureMode: 'self',
       }),
     { wrapper }
   );

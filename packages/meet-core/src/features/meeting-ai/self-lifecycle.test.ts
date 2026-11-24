@@ -104,3 +104,23 @@ describe('stream lifecycle', () => {
     expect(run([opened])).toEqual({ kind: 'idle' });
   });
 });
+
+describe('stream lifecycle lease expiry', () => {
+  it('reopens on a lapsed lease from a chunk or a renewal', () => {
+    const open = run([{ type: 'eligible', key: 'a:0' }, opened]);
+    expect(nextSelfLifecycle(open, { type: 'lease_expired' })).toEqual({
+      kind: 'opening',
+      key: 'a:0',
+    });
+    expect(
+      nextSelfLifecycle(open, {
+        type: 'renew_failed',
+        failure: 'lease_expired',
+        now: 0,
+      })
+    ).toEqual({ kind: 'opening', key: 'a:0' });
+    expect(
+      nextSelfLifecycle({ kind: 'idle' }, { type: 'lease_expired' })
+    ).toEqual({ kind: 'idle' });
+  });
+});

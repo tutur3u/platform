@@ -26,7 +26,9 @@ export function SelfCoverage({
             className="flex justify-between gap-2"
             data-contributing={entry.contributing}
           >
-            <span className="truncate">{names[entry.accountId] ?? ''}</span>
+            <span className="truncate">
+              {names[entry.accountId] || t('self_coverage_unnamed')}
+            </span>
             <span className="shrink-0 text-muted-foreground">
               {entry.contributing
                 ? t('self_coverage_yes')

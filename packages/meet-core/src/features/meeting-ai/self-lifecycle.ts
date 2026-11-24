@@ -4,7 +4,7 @@ export const SELF_RENEW_MS = 30_000;
 export const SELF_RETRY_MS = 5_000;
 export const SELF_RATE_LIMIT_MS = 30_000;
 
-type Terminal = Exclude<SelfFailure, 'retry'>;
+type Terminal = Exclude<SelfFailure, 'retry' | 'lease_expired'>;
 
 /**
  * Stream lifecycle for one participant. A refusal is terminal for the join
@@ -39,6 +39,8 @@ export type SelfLifecycleEvent =
   | { type: 'backoff_elapsed' }
   | { type: 'renewed'; leaseExpiresAt: number }
   | { type: 'renew_failed'; failure: SelfFailure; now: number }
+  /** The server says the stream's lease lapsed; open a new stream. */
+  | { type: 'lease_expired' }
   | { type: 'refused'; failure: Terminal };
 
 const isTerminal = (
@@ -72,7 +74,7 @@ export function nextSelfLifecycle(
         : state;
     case 'open_failed':
       if (state.kind !== 'opening') return state;
-      return event.failure === 'retry'
+      return event.failure === 'retry' || event.failure === 'lease_expired'
         ? {
             kind: 'backoff',
             key: state.key,
@@ -89,12 +91,18 @@ export function nextSelfLifecycle(
         : state;
     case 'renew_failed':
       if (state.kind !== 'open') return state;
+      if (event.failure === 'lease_expired')
+        return { kind: 'opening', key: state.key };
       if (event.failure !== 'retry')
         return { kind: event.failure, key: state.key };
       // A lease that lapsed cannot admit chunks; start over with a new stream.
       return event.now >= state.leaseExpiresAt
         ? { kind: 'opening', key: state.key }
         : { ...state, degraded: true };
+    case 'lease_expired':
+      return state.kind === 'open'
+        ? { kind: 'opening', key: state.key }
+        : state;
     case 'refused':
       return state.kind === 'idle' || isTerminal(state)
         ? state
@@ -123,6 +131,10 @@ export function selfCaptureViewOf(lifecycle: SelfLifecycle): SelfCaptureState {
       return lifecycle.degraded ? { kind: 'paused' } : { kind: 'capturing' };
     case 'not_eligible':
       return { kind: 'guest' };
+    case 'lease_expired':
+      return state.kind === 'open'
+        ? { kind: 'opening', key: state.key }
+        : state;
     case 'refused':
     case 'unavailable':
       return { kind: 'stopped' };

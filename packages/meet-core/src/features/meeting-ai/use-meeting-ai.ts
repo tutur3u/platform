@@ -30,6 +30,15 @@ import {
   meetingAiCreditReason,
 } from './request-failure';
 
+/** The protocol of a session the server started, when it says. */
+function sessionProtocol(result: unknown): 'self_v1' | 'legacy' | null {
+  const protocol =
+    typeof result === 'object' && result !== null && 'protocol' in result
+      ? result.protocol
+      : null;
+  return protocol === 'self_v1' || protocol === 'legacy' ? protocol : null;
+}
+
 /** When a 16 kHz mono PCM16 WAV clip that just arrived began. */
 function capturedSince(audio: Blob, now = Date.now()) {
   return now - Math.max(0, audio.size - 44) / 32;
@@ -61,6 +70,8 @@ export function useMeetingAi(
       ? 'vi'
       : 'en';
   const hints = useRef(settings);
+  // The running session is per-speaker, as the server reported at start.
+  const selfSession = useRef(false);
   // When the consent fence last became ready; null while it is not.
   const consentReadySince = useRef<number | null>(
     settings.consentReady === false ? null : Date.now()
@@ -376,19 +387,11 @@ export function useMeetingAi(
     });
     runtime.preparing.current = recorder;
     try {
-      if (hints.current.captureMode === 'self') {
-        // The session is created on the server; no room audio is captured.
-        const result = await startSession(epoch);
-        if (!current() || !runtime.mounted.current) return;
-        runtime.session.current = result.sessionId;
-        setOwnsSession(true);
-        runtime.sequence.current = 0;
-        setCapturing(true);
-        if (current()) await query.refetch();
-        return;
-      }
+      // A room reported as per-speaker skips the browser check: this device
+      // is not expected to capture it.
+      const expectSelf = hints.current.captureMode === 'self';
       // Establish browser support before allocating the server session.
-      await recorder.start();
+      if (!expectSelf) await recorder.start();
       if (!current() || !runtime.mounted.current) {
         recorder.dispose();
         return;
@@ -398,6 +401,29 @@ export function useMeetingAi(
         recorder.dispose();
         return;
       }
+      // The session the server created decides; an answer without a
+      // protocol keeps the mode the room reported.
+      const protocol = sessionProtocol(result);
+      if (protocol === 'self_v1' || (protocol === null && expectSelf)) {
+        // Each participant captures their own voice; this device never
+        // captures the room.
+        recorder.dispose();
+        batcher.dispose();
+        runtime.preparing.current = null;
+        selfSession.current = true;
+        runtime.session.current = result.sessionId;
+        setOwnsSession(true);
+        runtime.sequence.current = 0;
+        setCapturing(true);
+        if (current()) await query.refetch();
+        return;
+      }
+      if (expectSelf) await recorder.start();
+      if (!current() || !runtime.mounted.current) {
+        recorder.dispose();
+        return;
+      }
+      selfSession.current = false;
       runtime.preparing.current = null;
       runtime.session.current = result.sessionId;
       setOwnsSession(true);
@@ -477,8 +503,7 @@ export function useMeetingAi(
             action: 'finish',
             sessionId: target,
             expectedChunks:
-              target === runtime.session.current &&
-              hints.current.captureMode !== 'self'
+              target === runtime.session.current && !selfSession.current
                 ? runtime.sequence.current
                 : undefined,
             captureIncomplete:

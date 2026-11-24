@@ -26,10 +26,12 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
 
+import { CaptureModeMenu } from './capture-mode-menu';
 import { CaptureModePicker } from './capture-mode-picker';
 import { SelfCaptureStatus } from './self-capture-status';
 import { SelfCoverage } from './self-coverage';
 import type { SelfCaptureState } from './self-lifecycle';
+import { holdSelfCapture, releaseSelfCapture } from './self-hold';
 import { ROOM_ONLY, type SelfRoomView } from './self-room';
 import { TranscriptConsentNotice } from './transcript-consent-notice';
 
@@ -56,6 +58,7 @@ const room = (over: Partial<SelfRoomView> = {}): SelfRoomView => ({
 beforeEach(() => {
   vi.resetAllMocks();
   f.mira.mockResolvedValue({ available: false });
+  releaseSelfCapture('m');
 });
 afterEach(cleanup);
 
@@ -237,5 +240,147 @@ describe('per-speaker consent notice', () => {
     );
     expect(await screen.findByText(ai.self_coverage_no)).toBeTruthy();
     expect(screen.getByText('Minh')).toBeTruthy();
+  });
+});
+
+describe('per-speaker header', () => {
+  const view = (over: object = {}) => ({
+    available: true,
+    version: 'v1',
+    choice: 'allow',
+    fence: { ready: false, pending: 2, declined: 1, admitted: 3 },
+    active: true,
+    activeSince: 1,
+    mode: 'self',
+    perSpeakerAvailable: true,
+    canManageMode: false,
+    session: { sessionId: 's', protocol: 'self_v1' },
+    ...over,
+  });
+  const indicator = async () =>
+    (await screen.findByRole('button', { name: ai.consent_title })).textContent;
+
+  it('shows the indicator live while the session runs, whatever my own state', async () => {
+    f.read.mockResolvedValue(view());
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'unsupported' }}
+      />
+    );
+    expect(await indicator()).toBe(ai.indicator_live);
+  });
+
+  it('shows a guest only that they cannot contribute', async () => {
+    f.read.mockResolvedValue(view({ choice: null }));
+    f.mira.mockResolvedValue({
+      available: true,
+      version: 'v',
+      acceptance: {
+        revision: 1,
+        acceptorName: 'Lan',
+        capabilities: ['chat'],
+        acceptedAt: 0,
+      },
+      choice: null,
+      lastChoice: null,
+      pausing: false,
+      ready: false,
+      canAccept: false,
+      status: { active: true, included: 1, admitted: 2 },
+      boxTickedByDefault: true,
+    });
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        guest
+        capture={{ kind: 'off' }}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_title })
+    );
+    expect(await screen.findByText(ai.self_state_guest)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: ai.consent_allow })).toBeNull();
+    expect(screen.queryByText(ai.consent_mira_off)).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('reads as declined and offers Allow while a local decline is held', async () => {
+    f.read.mockResolvedValue(view());
+    holdSelfCapture('m');
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'off' }}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_title })
+    );
+    expect(await screen.findByText(ai.self_untick)).toBeTruthy();
+    expect(screen.getByRole('button', { name: ai.consent_allow })).toBeTruthy();
+  });
+
+  it('gives managers the locked capture mode in the notice', async () => {
+    f.read.mockResolvedValue(view({ canManageMode: true }));
+    wrap(
+      <TranscriptConsentNotice
+        meetingId="m"
+        wsId="w"
+        capture={{ kind: 'off' }}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: ai.consent_title })
+    );
+    const radio = await screen.findByRole('radio', { name: ai.self_mode_self });
+    expect((radio as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('gives every manager a header entry to the mode before a session', async () => {
+    f.json.mockResolvedValue({ mode: 'self' });
+    wrap(
+      <CaptureModeMenu
+        wsId="w"
+        meetingId="m"
+        room={room({ mode: 'room', session: null })}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: ai.self_mode_title }));
+    fireEvent.click(
+      await screen.findByRole('radio', { name: ai.self_mode_self })
+    );
+    await vi.waitFor(() =>
+      expect(f.json.mock.calls[0]![0]).toBe('/api/meet-ai/w/m/self/mode')
+    );
+  });
+
+  it('has no header entry for people who cannot manage the mode', () => {
+    wrap(
+      <CaptureModeMenu
+        wsId="w"
+        meetingId="m"
+        room={room({ canManageMode: false })}
+      />
+    );
+    expect(
+      screen.queryByRole('button', { name: ai.self_mode_title })
+    ).toBeNull();
+  });
+
+  it('labels a contributor without a known name generically', () => {
+    wrap(
+      <SelfCoverage
+        coverage={[{ accountId: 'x', contributing: true }]}
+        names={{}}
+      />
+    );
+    expect(screen.getByRole('listitem').textContent).toBe(
+      `${ai.self_coverage_unnamed}${ai.self_coverage_yes}`
+    );
   });
 });

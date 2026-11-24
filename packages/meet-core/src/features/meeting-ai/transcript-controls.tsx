@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { CaptureModeMenu } from './capture-mode-menu';
 import { useSelfSpeakerCapture } from './use-self-speaker-capture';
 import { TranscriptConsentNotice } from './transcript-consent-notice';
 
@@ -30,7 +31,11 @@ export function TranscriptControls({
   guest: boolean;
 }) {
   const participants = room.state.participants;
-  const { state } = useSelfSpeakerCapture({
+  const {
+    state,
+    room: selfRoom,
+    active,
+  } = useSelfSpeakerCapture({
     wsId,
     meetingId,
     stream: room.localStream,
@@ -49,12 +54,18 @@ export function TranscriptControls({
       ),
     [participants]
   );
+  // While a session runs the notice carries the (locked) mode for managers.
+  if (!active)
+    return (
+      <CaptureModeMenu wsId={wsId} meetingId={meetingId} room={selfRoom} />
+    );
   return (
     <TranscriptConsentNotice
       meetingId={meetingId}
       wsId={wsId}
       capture={state}
       names={names}
+      guest={guest}
     />
   );
 }

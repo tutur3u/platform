@@ -165,3 +165,73 @@ describe('self uploader', () => {
     expect(SELF_FRAME_SAMPLES / 16).toBe(20);
   });
 });
+
+describe('self uploader rate limits and leases', () => {
+  it('waits at least 10 seconds after a 429', async () => {
+    const upload = vi
+      .fn()
+      .mockRejectedValueOnce(new FakeInternalApiError('slow', 429))
+      .mockResolvedValue({});
+    const api = fakeApi({ upload });
+    const uploader = new SelfUploader(
+      api,
+      grant,
+      { onFailure: vi.fn() },
+      ids()
+    );
+    uploader.enqueue(chunk(0));
+    await vi.advanceTimersByTimeAsync(9_000);
+    expect(upload).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(upload).toHaveBeenCalledTimes(2);
+  });
+
+  it('honours a longer Retry-After', async () => {
+    const limited = Object.assign(new FakeInternalApiError('slow', 429), {
+      retryAfter: 25,
+    });
+    const upload = vi.fn().mockRejectedValueOnce(limited).mockResolvedValue({});
+    const uploader = new SelfUploader(
+      fakeApi({ upload }),
+      grant,
+      { onFailure: vi.fn() },
+      ids()
+    );
+    uploader.enqueue(chunk(0));
+    await vi.advanceTimersByTimeAsync(24_000);
+    expect(upload).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(upload).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports a lapsed lease separately and drops the queue', async () => {
+    const onFailure = vi.fn();
+    const upload = vi.fn(async () => {
+      throw new FakeInternalApiError('lease', 409, 'MEET_SELF_LEASE_EXPIRED');
+    });
+    const uploader = new SelfUploader(
+      fakeApi({ upload }),
+      grant,
+      { onFailure },
+      ids()
+    );
+    uploader.enqueue(chunk(0));
+    uploader.enqueue(chunk(32_000));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onFailure).toHaveBeenCalledWith('lease_expired');
+    expect(uploader.pendingSamples).toBe(0);
+  });
+
+  it('reports each accepted chunk', async () => {
+    const onSent = vi.fn();
+    const uploader = new SelfUploader(
+      fakeApi(),
+      grant,
+      { onFailure: vi.fn(), onSent },
+      ids()
+    );
+    uploader.enqueue(chunk(0));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onSent).toHaveBeenCalledTimes(1);
+  });
+});

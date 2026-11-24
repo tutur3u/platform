@@ -3,16 +3,20 @@ import type { SelfCaptureApi } from './self-api';
 import type { SelfCaptureInputs } from './self-controller';
 import type { SelfEngineFactory } from './self-engine';
 
-export function fakeTrack(echoCancellation: boolean | null = true) {
-  const settings: MediaTrackSettings = {
-    echoCancellation: echoCancellation ?? undefined,
+/** A local microphone track; `echo` is what `getSettings()` reports. */
+export function fakeTrack(echo: boolean | string | null = true) {
+  const settings: Record<string, unknown> = {
+    echoCancellation: echo ?? undefined,
   };
   const track = {
-    readyState: 'live',
+    readyState: 'live' as MediaStreamTrackState,
     stop: vi.fn(),
-    getSettings: () => settings,
-    setEcho: (value: boolean) => {
+    getSettings: () => settings as MediaTrackSettings,
+    setEcho: (value: boolean | string) => {
       settings.echoCancellation = value;
+    },
+    end: () => {
+      track.readyState = 'ended';
     },
   };
   return track as typeof track & MediaStreamTrack;
@@ -64,6 +68,7 @@ export function eligibleInputs(
     guest: false,
     stream: streamOf(track),
     joinEpoch: 1,
+    held: false,
     ...over,
   };
 }

@@ -1,4 +1,9 @@
-import { classifySelfFailure, type SelfCaptureApi } from './self-api';
+import {
+  classifySelfFailure,
+  type SelfCaptureApi,
+  type SelfFailure,
+  selfRetryDelay,
+} from './self-api';
 import { SELF_FRAME_SAMPLES, SelfChunker } from './self-chunker';
 import {
   createSelfEngine,
@@ -31,6 +36,8 @@ export type SelfCaptureInputs = {
   stream: MediaStream | null;
   /** Changes on every rejoin so a refused participant can open again. */
   joinEpoch: number;
+  /** A local decline or Mira off is pending or failed; never capture. */
+  held: boolean;
 };
 
 export const SELF_IDLE_INPUTS: SelfCaptureInputs = {
@@ -42,6 +49,7 @@ export const SELF_IDLE_INPUTS: SelfCaptureInputs = {
   guest: false,
   stream: null,
   joinEpoch: 0,
+  held: false,
 };
 
 type Deps = {
@@ -52,6 +60,8 @@ type Deps = {
 };
 
 const AEC_CHECK_FRAMES = 25;
+/** Lapsed-lease reopens in a row, without an accepted chunk, before stopping. */
+const MAX_LEASE_REOPENS = 3;
 
 /**
  * Per-speaker capture for the local microphone. It opens a stream only while
@@ -94,13 +104,15 @@ export class SelfCaptureController {
   update(inputs: SelfCaptureInputs) {
     this.inputs = inputs;
     const own = ownMicrophoneTrack(inputs.stream);
-    const eligible =
-      inputs.mode === 'self' &&
-      inputs.session?.protocol === 'self_v1' &&
-      inputs.allow &&
-      inputs.miraOn;
-    if (!eligible || !inputs.session) return this.halt({ kind: 'off' });
+    const session =
+      inputs.mode === 'self' && inputs.session?.protocol === 'self_v1'
+        ? inputs.session
+        : null;
+    if (!session) return this.halt({ kind: 'off' });
+    // A guest never captures, whatever their choices say.
     if (inputs.guest) return this.halt({ kind: 'guest' });
+    if (inputs.held || !inputs.allow || !inputs.miraOn)
+      return this.halt({ kind: 'off' });
     if (!own) return this.halt({ kind: 'off' });
     if (!hasConfirmedEchoCancellation(own))
       return this.halt({ kind: 'unsupported' });
@@ -112,8 +124,20 @@ export class SelfCaptureController {
     }
     this.dispatch({
       type: 'eligible',
-      key: `${inputs.session.sessionId}:${inputs.joinEpoch}`,
+      key: `${session.sessionId}:${inputs.joinEpoch}`,
     });
+  }
+
+  /**
+   * Stops and drops everything when the page is hidden for good, so nothing
+   * captured is left behind or persisted. A background tab keeps capturing.
+   */
+  attachUnload(
+    target: Pick<EventTarget, 'addEventListener' | 'removeEventListener'>
+  ) {
+    const stop = () => this.dispose();
+    target.addEventListener('pagehide', stop);
+    return () => target.removeEventListener('pagehide', stop);
   }
 
   /** Stop and drop everything; the controller can be updated again after. */
@@ -125,6 +149,7 @@ export class SelfCaptureController {
   private halt(state: SelfCaptureState) {
     this.override = state;
     this.openAttempts = 0;
+    this.leaseReopens = 0;
     this.lifecycle = nextSelfLifecycle(this.lifecycle, { type: 'ineligible' });
     this.stopCapture();
     this.publish();
@@ -164,6 +189,7 @@ export class SelfCaptureController {
 
   private openAttempts = 0;
   private openDelay = SELF_RETRY_MS;
+  private leaseReopens = 0;
 
   private async open() {
     const session = this.inputs.session;
@@ -192,9 +218,11 @@ export class SelfCaptureController {
   private failedOpen(error: unknown) {
     const failure = classifySelfFailure(error);
     const attempt = this.openAttempts++;
-    this.openDelay = isRateLimit(error)
-      ? SELF_RATE_LIMIT_MS
-      : Math.min(SELF_RETRY_MS * (attempt + 1), SELF_RATE_LIMIT_MS);
+    this.openDelay = selfRetryDelay(
+      error,
+      Math.min(SELF_RETRY_MS * (attempt + 1), SELF_RATE_LIMIT_MS),
+      SELF_RATE_LIMIT_MS
+    );
     this.dispatch({ type: 'open_failed', failure, attempt });
   }
 
@@ -215,9 +243,13 @@ export class SelfCaptureController {
   /** Taps the microphone only now, after the server accepted the stream. */
   private async startCapture(sessionId: string, token: number) {
     const lifecycle = this.lifecycle;
+    if (lifecycle.kind !== 'open') return;
     const own = ownMicrophoneTrack(this.inputs.stream);
-    if (lifecycle.kind !== 'open' || !own || !hasConfirmedEchoCancellation(own))
-      return;
+    // The track ended or lost echo cancellation while the stream opened:
+    // never report capture without a tap.
+    if (!own) return this.halt({ kind: 'off' });
+    if (!hasConfirmedEchoCancellation(own))
+      return this.halt({ kind: 'unsupported' });
     this.track = own;
     this.uploader = new SelfUploader(
       this.api,
@@ -227,7 +259,10 @@ export class SelfCaptureController {
         consentRevision: lifecycle.consentRevision,
       },
       {
-        onFailure: (failure) => this.dispatch({ type: 'refused', failure }),
+        onFailure: (failure) => this.uploadFailed(failure),
+        onSent: () => {
+          this.leaseReopens = 0;
+        },
       },
       this.newId
     );
@@ -241,6 +276,15 @@ export class SelfCaptureController {
     } catch {
       if (token === this.token) this.halt({ kind: 'unsupported' });
     }
+  }
+
+  private uploadFailed(failure: Exclude<SelfFailure, 'retry'>) {
+    if (failure !== 'lease_expired')
+      return this.dispatch({ type: 'refused', failure });
+    // A new stream is opened for a lapsed lease, a bounded number of times.
+    if (++this.leaseReopens > MAX_LEASE_REOPENS)
+      return this.dispatch({ type: 'refused', failure: 'refused' });
+    this.dispatch({ type: 'lease_expired' });
   }
 
   private onFrame(frame: Float32Array) {
@@ -274,19 +318,11 @@ export class SelfCaptureController {
       });
     } catch (error) {
       if (token !== this.token) return;
-      this.dispatch({
-        type: 'renew_failed',
-        failure: classifySelfFailure(error),
-        now: this.now(),
-      });
+      const failure = classifySelfFailure(error);
+      if (failure === 'lease_expired') this.uploadFailed(failure);
+      else this.dispatch({ type: 'renew_failed', failure, now: this.now() });
     }
     if (token === this.token && this.lifecycle.kind === 'open')
       this.scheduleRenew(token);
   }
 }
-
-const isRateLimit = (error: unknown) =>
-  typeof error === 'object' &&
-  error !== null &&
-  (('code' in error && error.code === 'MEET_SELF_RATE_LIMITED') ||
-    ('status' in error && error.status === 429));

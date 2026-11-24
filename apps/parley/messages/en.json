@@ -4209,6 +4209,7 @@
       "self_body": "The host wants to transcribe this call. Your audio is sent to Gemini to write a transcript and notes, only while you allow it. Audio is not stored.",
       "self_coverage_no": "Not contributing",
       "self_coverage_title": "Who is contributing",
+      "self_coverage_unnamed": "Participant",
       "self_coverage_yes": "Contributing",
       "self_mode_failed": "Capture mode was not changed. Try again.",
       "self_mode_locked": "The mode can change once the running transcript stops.",

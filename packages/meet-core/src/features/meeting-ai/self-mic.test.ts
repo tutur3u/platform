@@ -27,6 +27,24 @@ describe('own microphone gate', () => {
     expect(hasConfirmedEchoCancellation(null)).toBe(false);
   });
 
+  it('accepts the newer modes that also cancel remote playback', () => {
+    for (const mode of ['all', 'remote-only'])
+      expect(
+        hasConfirmedEchoCancellation(
+          track(
+            () => ({ echoCancellation: mode }) as unknown as MediaTrackSettings
+          )
+        )
+      ).toBe(true);
+    expect(
+      hasConfirmedEchoCancellation(
+        track(
+          () => ({ echoCancellation: 'off' }) as unknown as MediaTrackSettings
+        )
+      )
+    ).toBe(false);
+  });
+
   it('refuses an ended track even if it once reported echo cancellation', () => {
     expect(
       hasConfirmedEchoCancellation(
