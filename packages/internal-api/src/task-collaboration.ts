@@ -160,6 +160,8 @@ export interface GithubImportIssue {
 export interface GithubImportPayload {
   board_id: string;
   dry_run: boolean;
+  /** Overwrite the name and description of already imported tasks. */
+  refresh_content?: boolean;
   mapping: GithubImportMapping;
   issues: GithubImportIssue[];
 }

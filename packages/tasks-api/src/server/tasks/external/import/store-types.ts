@@ -133,6 +133,8 @@ export interface ImportStore {
     rows: LinkInsert[]
   ): Promise<void>;
   insertHistory(rows: HistoryInsert[]): Promise<void>;
+  /** Keys (externalEventKey) of the external_event rows a task already has. */
+  externalEventKeys(taskId: string): Promise<Set<string>>;
   addToCycle(taskId: string, cycleId: string): Promise<void>;
   taskIdsByRefUrl(wsId: string, urls: string[]): Promise<Map<string, string>>;
   linkParentChild(

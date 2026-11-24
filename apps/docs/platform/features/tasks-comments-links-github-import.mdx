@@ -115,7 +115,7 @@ ttr tasks import --from github --repo tutur3u/platform --board <board-id> \
   [--state all|open|closed] [--since 2026-01-31] [--limit N] \
   [--issues 1,2,3 | --only-issues 1,2,3] [--exclude-issues 4,5] \
   [--mapping mapping.json] [--batch-size 25] [--dry-run] \
-  [--input issues.json] [--refresh]
+  [--input issues.json] [--refresh] [--refresh-content]
 ```
 
 The CLI reads GitHub with `gh api graphql` and the caller's own `gh` login, 25
@@ -165,10 +165,17 @@ a non-zero exit code. `--dry-run` writes nothing, including the `github` label.
   happens to share a name is left alone.
 - A re-run only touches tasks it imported. A task with no external reference is
   never updated or moved.
-- A re-run updates the name, description, state, labels, links and new comments.
-  It resets the name and description to the GitHub text, so edit those in
-  GitHub, not in Tasks, for imported tasks. Labels people added in Tasks stay.
-  A task moves lists only when the issue's own state changed.
+- By default a re-run leaves the name, description, list, priority and assignees
+  of an imported task as people left them. It still reasserts the `github`
+  label, adds labels the mapping says to add (never removes any), refreshes the
+  external reference (state, close reason, close time, labels, unmapped
+  assignees), adds new comments and links, appends timeline events it has not
+  recorded, and completes relationships.
+- A task moves lists only when the issue's open or closed state changed since
+  the reference was last stored, using the same list resolution as a first
+  import. An unchanged state never moves it.
+- `--refresh-content` (API `refresh_content: true`) opts in to overwriting the
+  name and description with the GitHub text.
 - A task deleted in Tasks is not recreated; its result says `task_deleted`.
 - Two concurrent imports of the same issue produce one task.
 
@@ -208,7 +215,8 @@ a non-zero exit code. `--dry-run` writes nothing, including the `github` label.
   cross-workspace task ids, comment and link rules, legacy resources, timeline.
 - `packages/tasks-api/src/server/tasks/external/import/*.test.ts`: list and
   label resolution, idempotent re-runs, tasks without a reference left alone,
-  dry run, relationships, board and permission checks.
+  dry run, relationships, edited content kept unless refreshed, board and
+  permission checks.
 - `packages/utils/src/task-board-status-list.test.ts`: status to list
   resolution on a board like Fleet.
 - `packages/sdk/src/cli/github-import*.test.ts` and

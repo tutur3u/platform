@@ -72,6 +72,7 @@ export async function handleGithubImportPOST(
       actorId: auth.user.id,
       board: loaded.board,
       dryRun: input.dry_run,
+      refreshContent: input.refresh_content,
       issues: input.issues,
       lists: loaded.lists,
       mapping: input.mapping,

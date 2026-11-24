@@ -1,6 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { resolveCreateTaskSortKey } from '../../create-sort-key';
 import { insertWorkspaceTask } from '../../insert-workspace-task';
+import { externalEventKey } from './plan';
 import type { ExistingRef, ImportStore } from './store-types';
 
 export type * from './store-types';
@@ -289,6 +290,25 @@ export function createSupabaseImportStore(
         }))
       );
       if (error) fail('record history', error);
+    },
+
+    async externalEventKeys(taskId) {
+      const { data, error } = await db
+        .from('task_history')
+        .select('changed_at, metadata')
+        .eq('task_id', taskId)
+        .eq('change_type', 'external_event')
+        .is('deleted_at', null)
+        .limit(1000);
+      if (error) fail('load external events', error);
+      return new Set(
+        (data ?? []).map((row) =>
+          externalEventKey({
+            changed_at: row.changed_at,
+            metadata: (row.metadata ?? null) as Record<string, unknown> | null,
+          })
+        )
+      );
     },
 
     async addToCycle(taskId, cycleId) {

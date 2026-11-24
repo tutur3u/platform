@@ -1,5 +1,6 @@
 import type { NormalizedIssue } from '../schemas';
 import {
+  externalEventKey,
   importTaskName,
   issueTaskState,
   planLabels,
@@ -165,16 +166,20 @@ async function importOne(
     return result('skip', ref.task_id);
   }
 
-  const stateChanged =
-    ref.external_state !== issue.state ||
+  // Only a change of the issue's open/closed state moves the task. Name,
+  // description, list, priority and assignees stay as people left them unless
+  // the caller opts into refreshing content.
+  const stateChanged = ref.external_state !== issue.state;
+  const reasonChanged =
     (ref.external_state_reason ?? null) !== refStateReason(issue);
   const patch: TaskPatch = {};
-  if (task.name !== name) patch.name = name;
-  if ((task.description ?? null) !== description.description) {
-    patch.description = description.description;
-    patch.description_yjs_state = description.yjs;
+  if (ctx.refreshContent) {
+    if (task.name !== name) patch.name = name;
+    if ((task.description ?? null) !== description.description) {
+      patch.description = description.description;
+      patch.description_yjs_state = description.yjs;
+    }
   }
-  if (labelPlan.priority && !task.priority) patch.priority = labelPlan.priority;
   if (stateChanged) {
     const list = resolveIssueList(
       state,
@@ -194,8 +199,26 @@ async function importOne(
   const missingLabels = labelIds.filter((id) => !existingLabels.includes(id));
   const comments = await syncComments(ctx, task.id, issue);
   const links = await pendingLinks(ctx, task.id, issue);
+  const known = await store.externalEventKeys(task.id);
+  const sourceEvents = timelineEventRows(
+    task.id,
+    issue,
+    ctx.mapping.authors,
+    ctx.memberIds
+  ).filter((event) => !known.has(externalEventKey(event)));
+  const newEvents =
+    sourceEvents.length || !stateChanged || issue.events.length
+      ? sourceEvents
+      : [
+          eventRow(
+            task.id,
+            issue,
+            issue.state === 'closed' ? 'closed' : 'open'
+          ),
+        ];
   const refChanged =
     stateChanged ||
+    reasonChanged ||
     !sameInstant(ref.external_closed_at, values.external_closed_at) ||
     !sameSet(ref.external_labels, values.external_labels) ||
     !sameSet(ref.external_assignees, values.external_assignees);
@@ -205,6 +228,7 @@ async function importOne(
     missingLabels.length > 0 ||
     comments.length > 0 ||
     links.length > 0 ||
+    newEvents.length > 0 ||
     refChanged;
   if (!changed) return result('skip', task.id);
   if (ctx.dryRun) return result('update', task.id);
@@ -217,11 +241,7 @@ async function importOne(
     });
   }
   if (refChanged) await store.updateRef(wsId, issue.url, values);
-  if (stateChanged) {
-    await store.insertHistory([
-      eventRow(task.id, issue, issue.state === 'closed' ? 'closed' : 'open'),
-    ]);
-  }
+  await store.insertHistory(newEvents);
   await store.insertComments(wsId, task.id, comments);
   await store.insertLinks(wsId, task.id, actorId, links);
   if (cycleOk) await store.addToCycle(task.id, cycleOk);

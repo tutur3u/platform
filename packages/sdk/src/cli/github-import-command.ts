@@ -31,6 +31,7 @@ export interface GithubImportOptions {
   inputPath: string | null;
   batchSize: number;
   refresh: boolean;
+  refreshContent: boolean;
 }
 
 export interface GithubImportDeps {
@@ -109,6 +110,7 @@ export function parseGithubImportFlags(
     inputPath,
     batchSize,
     refresh: flags.refresh === true,
+    refreshContent: flags['refresh-content'] === true,
   };
 }
 
@@ -303,6 +305,7 @@ export async function runGithubImport(
         const response = await api.importGithub(workspaceId, {
           board_id: options.board,
           dry_run: options.dryRun,
+          refresh_content: options.refreshContent,
           mapping,
           issues: batch,
         });

@@ -190,3 +190,15 @@ export function refStateReason(issue: NormalizedIssue) {
     ? reason
     : null;
 }
+
+/** Identity of a timeline event, so a re-run appends only events it has not recorded. */
+export function externalEventKey(row: {
+  changed_at: string;
+  metadata: Record<string, unknown> | null;
+}) {
+  const meta = row.metadata ?? {};
+  const at = timestampOrNull(row.changed_at) ?? row.changed_at;
+  return [at, meta.event, meta.label, meta.milestone, meta.assignee]
+    .map((part) => (typeof part === 'string' ? part : ''))
+    .join('|');
+}

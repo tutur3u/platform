@@ -142,6 +142,8 @@ export const MAX_IMPORT_BATCH = 25;
 export const importRequestSchema = z.object({
   board_id: z.guid(),
   dry_run: z.boolean().default(false),
+  /** Overwrite the name and description of already imported tasks. */
+  refresh_content: z.boolean().default(false),
   mapping: importMappingSchema,
   issues: z.array(normalizedIssueSchema).min(1).max(MAX_IMPORT_BATCH),
 });

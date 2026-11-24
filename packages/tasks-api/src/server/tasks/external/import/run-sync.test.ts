@@ -18,6 +18,7 @@ const run = (
     actorId: ACTOR,
     board: store.board,
     dryRun: false,
+    refreshContent: false,
     lists: store.lists,
     wsId: WS,
     issues,
@@ -70,7 +71,7 @@ describe('idempotency', () => {
     expect([...store.comments.values()].flat()).toHaveLength(1);
   });
 
-  it('updates title, description, state and new comments without duplicating', async () => {
+  it('updates state and new comments without duplicating or touching content', async () => {
     const [created] = await run(batch());
     const changed = batch();
     changed[0] = issue({
@@ -103,11 +104,11 @@ describe('idempotency', () => {
     });
     const task = store.tasks.get(created!.task_id!)!;
     expect(task).toMatchObject({
-      name: 'Renamed #1',
+      name: 'Issue 1 #1',
       list_id: 'l-done',
       completed: true,
     });
-    expect(task.description).toContain('new body');
+    expect(task.description).toContain('markdown');
     expect(store.comments.get(created!.task_id!)).toHaveLength(2);
     expect(store.tasks.size).toBe(2);
     const events = store.history.filter(
@@ -207,6 +208,127 @@ describe('idempotency', () => {
   });
 });
 
+describe('human edits to imported tasks', () => {
+  const edited = () =>
+    issue({
+      number: 1,
+      labels: ['bug'],
+      title: 'Renamed upstream',
+      body: 'new upstream body',
+    });
+
+  async function importAndEdit() {
+    store.members.add(VHPX);
+    const [created] = await run([issue({ number: 1, labels: ['bug'] })]);
+    const task = store.tasks.get(created!.task_id!)!;
+    Object.assign(task, {
+      name: 'My own name',
+      description: '{"edited":true}',
+      priority: 'low',
+      list_id: 'l-live',
+    });
+    store.taskAssignees.set(task.id, [VHPX]);
+    return task;
+  }
+
+  it('keeps an edited name, description, list, priority and assignees by default', async () => {
+    const task = await importAndEdit();
+    const results = await run([edited()]);
+    expect(results[0]?.action).toBe('skip');
+    expect(task).toMatchObject({
+      name: 'My own name',
+      description: '{"edited":true}',
+      priority: 'low',
+      list_id: 'l-live',
+    });
+    expect(store.taskAssignees.get(task.id)).toEqual([VHPX]);
+  });
+
+  it('overwrites name and description only with refresh content', async () => {
+    const task = await importAndEdit();
+    const [result] = await run([edited()], { refreshContent: true });
+    expect(result?.action).toBe('update');
+    expect(task.name).toBe('Renamed upstream #1');
+    expect(task.description).toContain('new upstream body');
+    expect(task).toMatchObject({ priority: 'low', list_id: 'l-live' });
+  });
+
+  it('still refreshes the ref, labels, comments, links and events', async () => {
+    const task = await importAndEdit();
+    const next = issue({
+      number: 1,
+      labels: ['bug', 'nova'],
+      assignees: ['ghost'],
+      comments: [
+        {
+          url: 'https://github.com/t/p/issues/1#c9',
+          author: 'a',
+          body: 'new',
+          created_at: '2024-01-02T00:00:00Z',
+        },
+      ],
+      linked_prs: [{ url: 'https://github.com/o/r/pull/9' }],
+      events: [
+        {
+          event: 'labeled',
+          at: '2024-01-01T00:00:00Z',
+          actor: 'a',
+          label: 'nova',
+        },
+      ],
+    });
+    const [result] = await run([next], {
+      mapping: { status_lists: {}, labels: { nova: 'label-nova' } },
+    });
+    expect(result?.action).toBe('update');
+    const ref = store.refs.get(next.url)!;
+    expect(ref.values).toMatchObject({
+      external_labels: ['bug', 'nova'],
+      external_assignees: ['ghost'],
+    });
+    expect(store.comments.get(task.id)).toHaveLength(1);
+    expect(store.links.get(task.id)).toHaveLength(1);
+    expect(
+      store.history.filter((h) => h.metadata.event === 'labeled')
+    ).toHaveLength(1);
+    // The same data again appends nothing.
+    const writes = store.writes;
+    expect(
+      (
+        await run([next], {
+          mapping: { status_lists: {}, labels: { nova: 'label-nova' } },
+        })
+      )[0]?.action
+    ).toBe('skip');
+    expect(store.writes).toBe(writes);
+    expect(
+      store.history.filter((h) => h.metadata.event === 'labeled')
+    ).toHaveLength(1);
+  });
+
+  it('moves the task when the issue state changed, and not otherwise', async () => {
+    const task = await importAndEdit();
+    await run([issue({ number: 1, labels: ['bug'], comments: [] })]);
+    expect(task.list_id).toBe('l-live');
+    const closed = issue({
+      number: 1,
+      labels: ['bug'],
+      state: 'closed',
+      state_reason: 'completed',
+      closed_at: '2024-01-01T00:00:00Z',
+    });
+    await run([closed]);
+    expect(task).toMatchObject({
+      list_id: 'l-done',
+      completed: true,
+      name: 'My own name',
+    });
+    task.list_id = 'l-review';
+    await run([closed]);
+    expect(task.list_id).toBe('l-review');
+  });
+});
+
 describe('dry run', () => {
   it('reports the plan and writes nothing, not even the github label', async () => {
     const results = await run([issue({ number: 1 }), issue({ number: 2 })], {
@@ -225,7 +347,7 @@ describe('dry run', () => {
     await run([issue({ number: 1 }), issue({ number: 2 })]);
     const writes = store.writes;
     const results = await run(
-      [issue({ number: 1 }), issue({ number: 2, title: 'new' })],
+      [issue({ number: 1 }), issue({ number: 2, labels: ['new-label'] })],
       { dryRun: true }
     );
     expect(results.map((r) => r.action)).toEqual(['skip', 'update']);

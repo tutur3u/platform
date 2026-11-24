@@ -20,6 +20,7 @@ const run = (
     actorId: ACTOR,
     board: store.board,
     dryRun: false,
+    refreshContent: false,
     lists: store.lists,
     wsId: WS,
     issues,

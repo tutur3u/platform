@@ -30,5 +30,6 @@ export const taskCollaborationHelp = {
     '--batch-size <n>             issues per request, at most 25',
     '--dry-run                    report create/update/skip without writing',
     '--refresh                    ignore the on-disk GitHub page cache',
+    '--refresh-content            overwrite the name and description of tasks imported earlier',
   ],
 };

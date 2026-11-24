@@ -187,6 +187,27 @@ describe('runGithubImport', () => {
     expect(out()).toBe('60 created, 0 updated, 0 skipped, 0 failed\n');
   });
 
+  it('leaves content alone on re-runs unless --refresh-content is given', async () => {
+    const { importGithub, client } = fakeClient();
+    capture();
+    await runImport(client, 'ws-1', flags, false, {
+      fetchIssues: fetchIssues(1),
+    });
+    await runImport(
+      client,
+      'ws-1',
+      { ...flags, 'refresh-content': true },
+      false,
+      { fetchIssues: fetchIssues(1) }
+    );
+    expect(
+      importGithub.mock.calls.map(
+        ([, payload]) =>
+          (payload as { refresh_content: boolean }).refresh_content
+      )
+    ).toEqual([false, true]);
+  });
+
   it('honors --batch-size and --dry-run', async () => {
     const { importGithub, client } = fakeClient();
     const out = capture();

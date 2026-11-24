@@ -26,6 +26,7 @@ export type ImportInput = {
   actorId: string;
   board: ImportBoard;
   dryRun: boolean;
+  refreshContent: boolean;
   issues: NormalizedIssue[];
   lists: StatusListCandidate[];
   mapping: ImportMapping;

@@ -118,6 +118,17 @@ describe('POST tasks/import/github', () => {
     expect(json.results).toHaveLength(25);
   });
 
+  it('keeps edited content on re-runs unless refresh_content is set', async () => {
+    await post(body());
+    const task = [...store.tasks.values()][0]!;
+    task.name = 'My own name';
+    const changed = [issue({ number: 1, title: 'Upstream title' })];
+    await post(body({ issues: changed }));
+    expect(task.name).toBe('My own name');
+    await post(body({ issues: changed, refresh_content: true }));
+    expect(task.name).toBe('Upstream title #1');
+  });
+
   it('honors dry_run', async () => {
     const json = await (await post(body({ dry_run: true }))).json();
     expect(json.results[0]).toMatchObject({ action: 'create', task_id: null });

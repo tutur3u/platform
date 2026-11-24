@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { StatusListCandidate } from '@tuturuuu/utils/task-board-status-list';
+import { externalEventKey } from './plan';
 import type {
   CommentInsert,
   ExistingRef,
@@ -230,6 +231,15 @@ export class FakeImportStore implements ImportStore {
   async insertHistory(rows: HistoryInsert[]) {
     if (rows.length) this.writes++;
     this.history.push(...rows);
+  }
+  async externalEventKeys(taskId: string) {
+    return new Set(
+      this.history
+        .filter(
+          (h) => h.task_id === taskId && h.change_type === 'external_event'
+        )
+        .map((h) => externalEventKey(h))
+    );
   }
   async addToCycle(taskId: string, cycleId: string) {
     if (!this.cycleTasks.some(([t, c]) => t === taskId && c === cycleId))
