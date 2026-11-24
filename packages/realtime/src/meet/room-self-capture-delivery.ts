@@ -1,4 +1,5 @@
 import type { MeetRoomSnapshot } from './room';
+import { releasableEntries } from './room-self-capture-order';
 import {
   deliveryDue,
   restartDelivery,
@@ -68,6 +69,25 @@ export function selfOutboxDeadline(
     : due;
 }
 
+/**
+ * With the outbox binding, the room also wakes when its live session stops
+ * being live (capture deadline, or the end of a stop's drain), so the
+ * session's `end` entry is queued and delivered without other activity.
+ */
+export function selfSessionWake(
+  state: { selfCapture?: SelfCaptureState },
+  env: object | null | undefined
+) {
+  const session = state.selfCapture?.session;
+  if (!outboxBinding(env) || !session || session.status === 'ended')
+    return undefined;
+  const until =
+    session.status === 'draining'
+      ? Math.min(session.drainUntil ?? 0, session.captureUntil ?? Infinity)
+      : session.captureUntil;
+  return until === undefined || until === Infinity ? undefined : until;
+}
+
 /** The earlier of the empty-room deadline and the next outbox delivery. */
 export function earliestDeadline(...deadlines: Array<number | undefined>) {
   const set = deadlines.filter((d): d is number => d !== undefined);
@@ -86,10 +106,19 @@ export function selectSelfOutboxBatch(capture: SelfCaptureState) {
     byAccount.set(entry.accountId, list);
   }
   const failures = capture.delivery?.failures ?? {};
-  return [...byAccount.entries()]
-    .sort(([a], [b]) => (failures[a] ?? 0) - (failures[b] ?? 0))
-    .flatMap(([, list]) => list)
-    .slice(0, SELF_OUTBOX_BATCH);
+  const chosen = releasableEntries(
+    capture.outbox,
+    [...byAccount.entries()]
+      .sort(([a], [b]) => (failures[a] ?? 0) - (failures[b] ?? 0))
+      .flatMap(([, list]) => list)
+      .slice(0, SELF_OUTBOX_BATCH)
+  );
+  // A session's `end` entry is sent only with every earlier entry of its
+  // session, and after all of them.
+  return [
+    ...chosen.filter((entry) => entry.kind !== 'end'),
+    ...chosen.filter((entry) => entry.kind === 'end'),
+  ];
 }
 
 type Acked = { sessionId: string; accountId: string; seq: number };

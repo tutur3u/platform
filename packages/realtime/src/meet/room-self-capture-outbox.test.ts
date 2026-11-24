@@ -153,6 +153,7 @@ describe('room-side endings reach the legal outbox', () => {
     expect(outbox(state)).toEqual([
       { accountId: alice, seq: 3, kind: 'close' },
       { accountId: bob, seq: 4, kind: 'close' },
+      { accountId: host, seq: 5, kind: 'end' },
     ]);
     expect(state.selfCapture?.session?.status).toBe('ended');
     expect(settleSelfCapture(state, T)).toBe(state);

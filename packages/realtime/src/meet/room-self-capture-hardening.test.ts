@@ -66,10 +66,15 @@ describe('self_v1 session recording', () => {
     state = ok(svc(state, host, stop(sessionId), T));
     state = ok(svc(state, host, start(otherSession), T + 21_000));
     expect(state.selfCapture?.endedSessions).toEqual([sessionId]);
-    // The old session's withdraw is still queued.
+    // The old session's withdraw is still queued, followed by its end.
     expect(state.selfCapture?.outbox.map((e) => [e.sessionId, e.kind])).toEqual(
-      [[sessionId, 'withdraw']]
+      [
+        [sessionId, 'withdraw'],
+        [sessionId, 'end'],
+      ]
     );
+    const end = state.selfCapture!.outbox[1]!;
+    expect(end.seq).toBe(counter + 1);
     const back = svc(state, host, start(sessionId), T + 22_000);
     expect(back.status).toBe(409);
     expect(back.body).toMatchObject({ code: 'MEET_SELF_SESSION_ENDED' });
@@ -83,7 +88,7 @@ describe('self_v1 session recording', () => {
     );
     expect(reopened.body).toMatchObject({
       allowed: true,
-      allowSeq: counter + 1,
+      allowSeq: end.seq + 1,
     });
   });
 

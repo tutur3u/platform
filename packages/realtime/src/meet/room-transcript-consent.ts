@@ -2,7 +2,10 @@ import { z } from 'zod';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import { MEET_CLASS_COHOST_SCOPE } from './class-timer';
 import type { RoomServiceState } from './room-service';
-import { isSelfSessionLive } from './room-self-capture-state';
+import {
+  isSelfSessionCapturing,
+  isSelfSessionLive,
+} from './room-self-capture-state';
 
 /**
  * All-participant fence for the meeting's live transcript. The host's browser
@@ -159,7 +162,14 @@ function view(
   now = Date.now()
 ): MeetTranscriptConsentView {
   const own = state.transcriptConsent?.choices[accountId];
-  const active = state.ended ? undefined : state.transcriptConsent?.active;
+  const indicator = state.ended ? undefined : state.transcriptConsent?.active;
+  const self = state.selfCapture?.session;
+  // A self_v1 session shows as running only while it is live and active.
+  const active =
+    indicator?.sessionId === self?.sessionId &&
+    !isSelfSessionCapturing(self, now)
+      ? undefined
+      : indicator;
   return {
     mode: state.selfCapture?.mode ?? 'room',
     session: sessionView(state, now),
@@ -178,6 +188,21 @@ function view(
     active: !!active,
     activeSince: active?.since ?? null,
   };
+}
+
+/** The transcript consent view of the token's own account. */
+export function meetTranscriptConsentView(
+  state: RoomServiceState,
+  token: MeetRealtimeTokenPayload,
+  now = Date.now()
+) {
+  return view(
+    state,
+    token.meetingId,
+    token.accountId ?? token.userId,
+    token,
+    now
+  );
 }
 
 /**

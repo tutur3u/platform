@@ -3,6 +3,7 @@ import {
   earliestDeadline,
   runSelfOutboxDelivery,
   selfOutboxDeadline,
+  selfSessionWake,
 } from '../../../packages/realtime/src/meet/room-self-capture-delivery';
 import { settleSelfCapture } from '../../../packages/realtime/src/meet/room-self-capture-state';
 import type { MeetRoomEnv } from './room-env';
@@ -12,23 +13,33 @@ import type { RoomServiceState } from './room-service';
 export const selfOutbox = {
   /** Applies room-side endings to the legal outbox before every write. */
   settle: (snapshot: RoomServiceState) => settleSelfCapture(snapshot),
-  /** The room's next wake: empty-room expiry or the next outbox delivery. */
+  /**
+   * The room's next wake: empty-room expiry, the next outbox delivery, or
+   * the moment its per-speaker session stops being live.
+   */
   wakeAt: (snapshot: RoomServiceState, env: MeetRoomEnv) =>
     earliestDeadline(
       emptyRoomDeadline(snapshot),
-      selfOutboxDeadline(snapshot, env)
+      selfOutboxDeadline(snapshot, env),
+      selfSessionWake(snapshot, env)
     ),
-  deliver: (input: {
+  deliver: async (input: {
     env: MeetRoomEnv;
     roomName: string | undefined;
     now: number;
     read: () => RoomServiceState;
     commit: (snapshot: RoomServiceState) => Promise<void>;
-  }) =>
-    runSelfOutboxDelivery({
+  }) => {
+    // An alarm with no other change still ends a session that is no longer
+    // live, so its close and `end` entries are stored before the delivery.
+    const current = input.read();
+    const settled = settleSelfCapture(current, input.now);
+    if (settled !== current) await input.commit(settled);
+    await runSelfOutboxDelivery({
       ...input,
       // A cold alarm knows the room only from its stored snapshot.
       roomName: input.roomName ?? input.read().roomName,
       secret: input.env.MEET_REALTIME_TOKEN_SECRET,
-    }),
+    });
+  },
 };

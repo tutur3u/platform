@@ -8,6 +8,7 @@ import {
   restartDelivery,
   type SelfOutboxDelivery,
 } from './room-self-capture-cycle';
+import { releasableEntries } from './room-self-capture-order';
 import {
   MEET_TRANSCRIPT_NOTICE_VERSION,
   type MeetTranscriptState,
@@ -24,7 +25,13 @@ import {
  */
 export type SelfCaptureMode = 'room' | 'self';
 export type SelfCaptureProtocol = 'legacy' | 'self_v1';
-export type SelfOutboxKind = 'withdraw' | 'revoke' | 'close';
+/**
+ * `end` marks the end of a whole self_v1 session in the room (room end,
+ * restore, capture deadline, a stop once its drain is over, replacement). It
+ * is keyed to the session's host account and follows the session's other
+ * entries.
+ */
+export type SelfOutboxKind = 'withdraw' | 'revoke' | 'close' | 'end';
 export type SelfOutboxEntry = {
   sessionId: string;
   accountId: string;
@@ -250,11 +257,12 @@ export function enqueue(
 ): SelfCaptureState {
   const session = capture.session;
   const account = capture.accounts[accountId];
-  if (!session || !account) return capture;
+  // An ended session's `end` entry is its last one.
+  if (!session || !account || session.status === 'ended') return capture;
   const sameStream = (entry: SelfOutboxEntry) =>
     entry.sessionId === session.sessionId &&
     entry.accountId === accountId &&
-    entry.kind !== 'withdraw';
+    (entry.kind === 'close' || entry.kind === 'revoke');
   let outbox = capture.outbox;
   if (kind !== 'withdraw') {
     if (outbox.some((e) => sameStream(e) && e.kind === 'revoke'))
@@ -373,7 +381,11 @@ export function endStream(
   };
 }
 
-/** Ends the room's self_v1 session; stream holders get a close entry. */
+/**
+ * Ends the room's self_v1 session exactly once: stream holders get a close
+ * entry, then the session gets its `end` entry. The `end` entry is never
+ * coalesced and is queued even when the outbox is at its open cap.
+ */
 export function endSelfCaptureSession(
   capture: SelfCaptureState | undefined,
   now: number
@@ -382,8 +394,16 @@ export function endSelfCaptureSession(
   let next = capture;
   for (const accountId of Object.keys(capture.accounts))
     next = endStream(next, accountId, 'close', now);
+  const { sessionId, hostAccountId } = capture.session;
+  const seq = nextSeq(next, next.accounts[hostAccountId]);
   return {
     ...next,
+    seqCounter: seq,
+    outbox: [
+      ...next.outbox,
+      { sessionId, accountId: hostAccountId, seq, kind: 'end' },
+    ],
+    delivery: restartDelivery(next.delivery, now),
     session: { ...next.session!, status: 'ended' },
     endedSessions: [
       ...(next.endedSessions ?? []).filter(
@@ -408,9 +428,10 @@ export function settleSelfCapture<T extends State & SelfCaptureRoomState>(
   const capture = state.selfCapture;
   const session = capture?.session;
   if (!capture || !session || session.status === 'ended') return state;
-  if (state.ended)
-    return { ...state, selfCapture: endSelfCaptureSession(capture, now) };
-  if (!isSelfSessionLive(session, now)) return state;
+  // Room end, the capture deadline and the end of a drain all end the
+  // session, so its stream holders get their close entries at once.
+  if (state.ended || !isSelfSessionLive(session, now))
+    return endSessionIn(state, capture, now);
   let next = capture;
   for (const [accountId, account] of Object.entries(capture.accounts)) {
     if (
@@ -427,10 +448,28 @@ export function settleSelfCapture<T extends State & SelfCaptureRoomState>(
   return next === capture ? state : { ...state, selfCapture: next };
 }
 
+/** Ends the session and clears its indicator, which never outlives it. */
+function endSessionIn<T extends State & SelfCaptureRoomState>(
+  state: T,
+  capture: SelfCaptureState,
+  now: number
+): T {
+  const indicator = state.transcriptConsent;
+  const sessionId = capture.session?.sessionId;
+  return {
+    ...state,
+    ...(indicator?.active && indicator.active.sessionId === sessionId
+      ? { transcriptConsent: { choices: indicator.choices } }
+      : {}),
+    selfCapture: endSelfCaptureSession(capture, now),
+  };
+}
+
 /**
- * A host or co-host removed the account during a live session: its upload
- * grant is revoked and it can never open again in this meeting. Only an
- * account with a ledger entry needs a legal revoke entry.
+ * A host or co-host removed the account in per-speaker mode or during a live
+ * session: it can never open again in this meeting, also in a later session.
+ * Only an account with a ledger entry in the live session needs a legal
+ * revoke entry.
  */
 export function revokeSelfCapture<T extends SelfCaptureRoomState>(
   state: T,
@@ -438,15 +477,17 @@ export function revokeSelfCapture<T extends SelfCaptureRoomState>(
   now = Date.now()
 ): T {
   const capture = state.selfCapture;
-  if (!capture || !isSelfSessionLive(capture.session, now)) return state;
+  const live = isSelfSessionLive(capture?.session, now);
+  if (!capture || (capture.mode !== 'self' && !live)) return state;
   const revoked =
     capture.revoked?.[accountId] ||
     Object.keys(capture.revoked ?? {}).length >= SELF_CAPTURE_MAX_REVOKED
       ? capture.revoked
       : { ...capture.revoked, [accountId]: true as const };
-  const next = capture.accounts[accountId]
-    ? endStream(capture, accountId, 'revoke', now)
-    : capture;
+  const next =
+    live && capture.accounts[accountId]
+      ? endStream(capture, accountId, 'revoke', now)
+      : capture;
   if (next === capture && revoked === capture.revoked) return state;
   return { ...state, selfCapture: { ...next, revoked } };
 }
@@ -484,19 +525,27 @@ export function ackSelfOutbox(
   };
 }
 
-/** The caller's own entries, then up to `others` entries of other accounts. */
+/**
+ * The caller's own entries, then up to `others` entries of other accounts, in
+ * queue order. A session's `end` entry comes only with every earlier entry
+ * of that session.
+ */
 export function pendingFor(
   capture: SelfCaptureState | undefined,
   accountId: string,
   others = 32
 ): SelfOutboxEntry[] {
   let budget = others;
-  return (capture?.outbox ?? []).filter((entry) => {
-    if (entry.accountId === accountId) return true;
-    if (budget <= 0) return false;
-    budget--;
-    return true;
-  });
+  const outbox = capture?.outbox ?? [];
+  return releasableEntries(
+    outbox,
+    outbox.filter((entry) => {
+      if (entry.accountId === accountId) return true;
+      if (budget <= 0) return false;
+      budget--;
+      return true;
+    })
+  );
 }
 
 export function currentAcceptanceRevision(state: State) {

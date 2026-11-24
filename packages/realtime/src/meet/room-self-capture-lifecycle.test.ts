@@ -94,7 +94,10 @@ describe('the room-side capture deadline', () => {
     ).toEqual({ mode: 'room' });
     const next = ok(svc(state, host, session(otherSession, true), late));
     expect(next.selfCapture?.session?.sessionId).toBe(otherSession);
-    expect(next.selfCapture?.outbox.map((e) => e.kind)).toEqual(['close']);
+    expect(next.selfCapture?.outbox.map((e) => e.kind)).toEqual([
+      'close',
+      'end',
+    ]);
   });
 });
 

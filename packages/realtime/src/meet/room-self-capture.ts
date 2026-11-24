@@ -32,6 +32,7 @@ import type { RoomServiceState } from './room-service';
 import {
   applyMeetTranscriptConsent,
   MEET_TRANSCRIPT_NOTICE_VERSION,
+  meetTranscriptConsentView,
 } from './room-transcript-consent';
 
 type Result = { state: RoomServiceState; body: unknown; status?: number };
@@ -124,8 +125,13 @@ export function applySelfCapture(
     body: { error, code },
     status,
   });
+  const accountId = token.accountId ?? token.userId;
   if (message.action === 'transcript.mode.set') {
-    if (!isManager(token)) return fail(403, 'Forbidden');
+    // A removed manager, or anyone once the room has ended, cannot change it.
+    if (!isManager(token) || isRevoked(capture, accountId))
+      return fail(403, 'Forbidden');
+    if (state.ended)
+      return fail(403, 'MEET_ROOM_ENDED', 'Join an active meeting first');
     if (capture.mode === message.mode)
       return { state, body: { mode: capture.mode } };
     if (modeLocked(state, now)) return fail(409, 'MEET_SELF_MODE_LOCKED');
@@ -138,7 +144,6 @@ export function applySelfCapture(
   }
   if (message.action === 'transcript.session')
     return recordSession(state, capture, token, message, enabled, now);
-  const accountId = token.accountId ?? token.userId;
   if (message.action === 'transcription.self.ack') {
     const acked = ackSelfOutbox(
       capture,
@@ -378,8 +383,11 @@ function recordSession(
       return mismatch(409, 'MEET_SELF_PROTOCOL_MISMATCH');
   }
   const existing = capture.session;
+  const accountId = token.accountId ?? token.userId;
+  // A removed account never ends a session or clears its indicator.
+  if (!message.active && isRevoked(capture, accountId))
+    return mismatch(403, 'Forbidden');
   if (message.active && protocol === 'self_v1') {
-    const accountId = token.accountId ?? token.userId;
     const same = existing?.sessionId === message.sessionId;
     // Re-recording belongs to the session's host; starting one to a manager.
     if (same ? existing.hostAccountId !== accountId : !isManager(token))
@@ -393,6 +401,21 @@ function recordSession(
       return mismatch(409, 'MEET_SELF_SESSION_ENDED');
     if (!same && isSelfSessionLive(existing, now))
       return mismatch(409, 'MEET_SELF_SESSION_LIVE');
+    // A draining session is stopped: a re-record keeps it draining and never
+    // shows its indicator again.
+    if (same && existing.status !== 'active') {
+      const next = {
+        ...state,
+        selfCapture: {
+          ...capture,
+          session: {
+            ...existing,
+            generation: Math.max(generation, existing.generation),
+          },
+        },
+      };
+      return { state: next, body: meetTranscriptConsentView(next, token, now) };
+    }
   }
   if (
     !message.active &&
@@ -401,7 +424,6 @@ function recordSession(
   ) {
     // The session's host, or any host or co-host when the host has left,
     // ends a self_v1 session and its indicator.
-    const accountId = token.accountId ?? token.userId;
     if (existing.hostAccountId !== accountId && !isManager(token))
       return applyMeetTranscriptConsent(state, token, legacy, now)!;
     const indicator = state.transcriptConsent;

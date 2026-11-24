@@ -199,7 +199,14 @@ test('room.restore keeps undrained entries, epochs and sequences', async () => {
     new Date(T).toISOString()
   ) as RoomServiceState;
   const before = structuredClone(seed.selfCapture!);
-  assert.equal(before.outbox.length, 1);
+  // Room end queued the close and the session end; restore adds no second end.
+  assert.deepEqual(
+    before.outbox.map(({ accountId, kind }) => ({ accountId, kind })),
+    [
+      { accountId: alice, kind: 'close' },
+      { accountId: host, kind: 'end' },
+    ]
+  );
   const f = fixture(seed);
   const response = await serviceCall(f.room, host, {
     action: 'room.restore',
@@ -405,4 +412,92 @@ test('an Allow given in room mode needs per-speaker evidence before an open', as
   assert.equal(opened.allowed, true);
   assert.equal(opened.locale, notice.locale);
   assert.equal(opened.textHash, notice.textHash);
+});
+
+const kinds = (snapshot: RoomServiceState) =>
+  (snapshot.selfCapture?.outbox ?? []).map(
+    ({ sessionId: id, accountId, kind }) => ({
+      id,
+      accountId,
+      kind,
+    })
+  );
+const endsOf = (snapshot: RoomServiceState) =>
+  (snapshot.selfCapture?.outbox ?? []).filter((entry) => entry.kind === 'end');
+const closeThenEnd = [
+  { id: sessionId, accountId: alice, kind: 'close' },
+  { id: sessionId, accountId: host, kind: 'end' },
+];
+const bound = { MEET_AI_SELF_OUTBOX: outboxFetch } as Partial<MeetRoomEnv>;
+
+test('a host ending the room queues the session end once, after its closes', async () => {
+  const f = fixture(liveRoom());
+  await f.room.webSocketMessage(
+    f.sockets[0] as unknown as WebSocket,
+    JSON.stringify({ type: 'room.end' })
+  );
+  const stored = f.snapshot();
+  assert.equal(stored.ended, true);
+  assert.deepEqual(kinds(stored), closeThenEnd);
+  const [close, end] = stored.selfCapture!.outbox;
+  assert.ok(end!.seq > close!.seq);
+  assert.equal(end!.noticeVersion, undefined);
+  // Hibernation keeps exactly one end, and a later write adds none.
+  const g = fixture(structuredClone(stored));
+  await g.alarm();
+  await g.room.prepareForRestart();
+  assert.deepEqual(kinds(g.snapshot()), closeThenEnd);
+});
+
+test('the capture deadline queues the session end from the alarm', async () => {
+  const seed = liveRoom();
+  seed.selfCapture!.session!.captureUntil = Date.now() - 1;
+  const f = fixture(seed, bound);
+  await f.alarm();
+  assert.equal(f.snapshot().selfCapture?.session?.status, 'ended');
+  assert.deepEqual(kinds(f.snapshot()), closeThenEnd);
+  assert.equal(f.snapshot().transcriptConsent?.active, undefined);
+  // The end is delivered on the next wake.
+  assert.ok(f.deadline() !== null);
+});
+
+test('a stop queues the session end once its drain is over', async () => {
+  const f = fixture(liveRoom(), bound);
+  const stop = await serviceCall(f.room, host, {
+    action: 'transcript.session',
+    sessionId,
+    active: false,
+    protocol: 'self_v1',
+    generation: 2,
+  });
+  assert.equal(stop.status, 200);
+  const drainUntil = f.snapshot().selfCapture!.session!.drainUntil!;
+  assert.equal(f.snapshot().selfCapture?.session?.status, 'draining');
+  assert.deepEqual(endsOf(f.snapshot()), []);
+  // The room wakes when the drain is over.
+  assert.ok((f.deadline() ?? Infinity) <= drainUntil);
+  const stored = structuredClone(f.snapshot());
+  stored.selfCapture!.session!.drainUntil = Date.now() - 1;
+  const g = fixture(stored, bound);
+  await g.alarm();
+  assert.deepEqual(kinds(g.snapshot()), closeThenEnd);
+});
+
+test('a replaced session gets its end before the next session starts', async () => {
+  const seed = liveRoom();
+  seed.selfCapture!.session!.captureUntil = Date.now() - 1;
+  const f = fixture(seed);
+  const started = await serviceCall(f.room, host, {
+    action: 'transcript.session',
+    sessionId: otherSession,
+    active: true,
+    protocol: 'self_v1',
+    generation: 3,
+  });
+  assert.equal(started.status, 200);
+  assert.equal(f.snapshot().selfCapture?.session?.sessionId, otherSession);
+  assert.deepEqual(kinds(f.snapshot()), closeThenEnd);
+  // New entries keep counting from the room-wide sequence.
+  const end = endsOf(f.snapshot())[0]!;
+  assert.ok((f.snapshot().selfCapture?.seqCounter ?? 0) >= end.seq);
 });
