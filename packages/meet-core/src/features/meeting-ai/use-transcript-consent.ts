@@ -36,6 +36,11 @@ export type SelfChoiceContext = {
   locale?: string;
 };
 
+/** Delays between reads of a room that could not be read; then it stops. */
+export const CONSENT_READ_BACKOFF_MS = [
+  2000, 4000, 8000, 16_000, 30_000, 30_000,
+];
+
 const isConsentView = (value: unknown): value is MeetTranscriptConsent =>
   typeof value === 'object' &&
   value !== null &&
@@ -58,6 +63,12 @@ export function useTranscriptConsent(
     enabled,
     refetchInterval: (current) => {
       const data = current.state.data;
+      // A room that could not be read is unknown, never room capture; read
+      // it again a bounded number of times.
+      if (!data && current.state.status === 'error')
+        return (
+          CONSENT_READ_BACKOFF_MS[current.state.errorUpdateCount - 1] ?? false
+        );
       if (!data?.available) return false;
       return data.active || data.choice === null ? 5000 : 20_000;
     },

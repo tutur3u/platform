@@ -137,6 +137,19 @@ export function selfRetryDelay(error: unknown, fallback: number, min = 0) {
   return Math.max(min, asked);
 }
 
-/** The choice was made under a notice the server no longer offers. */
-export const isStaleSelfNotice = (error: unknown) =>
-  fieldOf(error, 'code') === 'MEET_SELF_NOTICE_STALE';
+/**
+ * The choice was made under a notice the server no longer offers, or not
+ * the one it expects now (a stale version, other text, or the other mode).
+ * The person is asked again under the current notice; nothing is retried
+ * on their behalf.
+ */
+export function isStaleSelfNotice(error: unknown) {
+  const code = fieldOf(error, 'code');
+  return (
+    code === 'MEET_SELF_NOTICE_STALE' ||
+    code === 'MEET_SELF_NOTICE_MISMATCH' ||
+    (fieldOf(error, 'status') === 409 &&
+      typeof code === 'string' &&
+      /^MEET_(SELF|MIRA)_[A-Z_]*NOTICE[A-Z_]*MISMATCH$/.test(code))
+  );
+}

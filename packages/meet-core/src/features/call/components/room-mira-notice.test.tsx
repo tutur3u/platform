@@ -88,6 +88,9 @@ beforeEach(() => {
   sessionStorage.clear();
   forgetMiraJoinChoice('room');
   f.transcript.mockResolvedValue({});
+  // The meeting's notice is known once the room is read; a room without a
+  // live transcript uses the room-capture notice.
+  f.transcriptRead.mockResolvedValue({ available: false });
 });
 afterEach(cleanup);
 

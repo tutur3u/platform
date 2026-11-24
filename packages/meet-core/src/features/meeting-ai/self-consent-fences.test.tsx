@@ -41,6 +41,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 vi.mock('./self-engine', () => ({ createSelfEngine: f.engine }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
 
+import { RoomMiraSelfChoice } from '../call/components/room-mira-notice';
 import { useRoomMira } from '../call/components/use-room-mira';
 import {
   hashMiraConsentText,
@@ -479,6 +480,107 @@ describe('Mira and the per-speaker transcript', () => {
     );
   });
 
+  it('treats an unreadable room as unknown and keeps the join state pending', async () => {
+    rememberMiraJoinChoice('m', {
+      ticked: true,
+      textHash: 'a'.repeat(64),
+      locale: 'en',
+      seenRevision: 1,
+      noticeMode: 'room',
+    });
+    f.read.mockRejectedValueOnce(new Error('offline'));
+    f.read.mockResolvedValue(view({ mode: 'room', session: null }));
+    f.mira.mockResolvedValue({ ...miraOn, choice: null, lastChoice: null });
+    f.miraChoose.mockResolvedValue(miraOn);
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.data).toBeTruthy());
+    await vi.waitFor(() => expect(f.read).toHaveBeenCalledTimes(1));
+    expect(hook.result.current.noticeKnown).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(f.miraChoose).not.toHaveBeenCalled();
+    // The read is retried; once it succeeds the join state applies.
+    await vi.waitFor(
+      () =>
+        expect(f.miraChoose).toHaveBeenCalledWith(
+          'm',
+          expect.objectContaining({ source: 'join' })
+        ),
+      { timeout: 5000 }
+    );
+    expect(hook.result.current.noticeKnown).toBe(true);
+  });
+
+  it('never turns Mira on under an unknown notice, but always lets it off', async () => {
+    f.read.mockRejectedValue(new Error('offline'));
+    f.miraChoose.mockResolvedValue({ ...miraOn, choice: 'off' });
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.data).toBeTruthy());
+    await act(async () => {
+      await expect(
+        hook.result.current.choose.mutateAsync({
+          choice: 'on',
+          source: 'toggle',
+        })
+      ).rejects.toThrow();
+    });
+    expect(f.miraChoose).not.toHaveBeenCalled();
+    await act(() =>
+      hook.result.current.choose.mutateAsync({
+        choice: 'off',
+        source: 'toggle',
+      })
+    );
+    expect(f.miraChoose).toHaveBeenCalledTimes(1);
+    expect('noticeMode' in f.miraChoose.mock.calls[0]![1]).toBe(false);
+  });
+
+  it('asks again after the server expects another notice, without resending', async () => {
+    f.miraChoose.mockRejectedValue(conflict('MEET_MIRA_NOTICE_MODE_MISMATCH'));
+    const hook = mira();
+    await vi.waitFor(() => expect(hook.result.current.noticeKnown).toBe(true));
+    const reads = f.read.mock.calls.length;
+    const miraReads = f.mira.mock.calls.length;
+    await act(async () => {
+      await expect(
+        hook.result.current.choose.mutateAsync({
+          choice: 'on',
+          source: 'toggle',
+        })
+      ).rejects.toBeTruthy();
+    });
+    await vi.waitFor(() => {
+      expect(f.read.mock.calls.length).toBeGreaterThan(reads);
+      expect(f.mira.mock.calls.length).toBeGreaterThan(miraReads);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(f.miraChoose).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds the confirm box until the meeting notice is known', async () => {
+    let settle!: (value: unknown) => void;
+    f.read.mockReturnValue(new Promise((resolve) => (settle = resolve)));
+    f.mira.mockResolvedValue({ ...miraOn, choice: null, lastChoice: null });
+    render(
+      <Providers>
+        <RoomMiraSelfChoice meetingId="m" />
+      </Providers>
+    );
+    const confirm = await screen.findByRole('button', { name: mc.confirm });
+    expect((confirm as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      screen
+        .getByRole('checkbox', { name: mc.box_label })
+        .hasAttribute('disabled')
+    ).toBe(true);
+    settle(view());
+    await vi.waitFor(() =>
+      expect((confirm as HTMLButtonElement).disabled).toBe(false)
+    );
+    // The meeting is per-speaker, so the box now carries that notice.
+    fireEvent.click(screen.getByRole('button', { name: mc.info_button }));
+    expect(await screen.findByText(mc.info_off_self)).toBeTruthy();
+  });
+
   it('Mira on still allows the room-capture transcript', async () => {
     f.read.mockResolvedValue(view({ mode: 'room', session: null }));
     f.miraChoose.mockResolvedValue(miraOn);
@@ -500,9 +602,36 @@ describe('Mira and the per-speaker transcript', () => {
     f.miraChoose.mockResolvedValue(miraOn);
     const hook = mira();
     await vi.waitFor(() => expect(hook.result.current.data).toBeTruthy());
-    await act(() =>
-      hook.result.current.choose.mutateAsync({ choice: 'on', source: 'toggle' })
-    );
+    // Mira itself is not turned on under an unknown notice.
+    await act(async () => {
+      await expect(
+        hook.result.current.choose.mutateAsync({
+          choice: 'on',
+          source: 'toggle',
+        })
+      ).rejects.toThrow();
+    });
+    expect(f.miraChoose).not.toHaveBeenCalled();
     expect(f.legacyChoice).not.toHaveBeenCalled();
+  });
+
+  it('applies a join untick even while the meeting notice is unknown', async () => {
+    rememberMiraJoinChoice('m', {
+      ticked: false,
+      textHash: 'a'.repeat(64),
+      locale: 'en',
+      seenRevision: 1,
+      noticeMode: 'room',
+    });
+    f.read.mockRejectedValue(new Error('offline'));
+    f.mira.mockResolvedValue({ ...miraOn, choice: null, lastChoice: null });
+    f.miraChoose.mockResolvedValue({ ...miraOn, choice: 'off' });
+    mira();
+    await vi.waitFor(() =>
+      expect(f.miraChoose).toHaveBeenCalledWith(
+        'm',
+        expect.objectContaining({ choice: 'off', source: 'join' })
+      )
+    );
   });
 });

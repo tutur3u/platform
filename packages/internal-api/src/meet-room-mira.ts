@@ -55,10 +55,10 @@ export type RoomMiraChoiceInput = {
   textHash: string;
   locale: string;
   /**
-   * Sent only for the per-speaker notice; a room-capture choice omits it so
-   * its payload stays the same.
+   * The notice the choice was made under. A room-capture choice omits it so
+   * its payload stays the same as before per-speaker meetings.
    */
-  noticeMode?: 'self';
+  noticeMode?: 'room' | 'self';
 };
 
 const roomMiraPath = (meetingId: string) =>

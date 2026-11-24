@@ -268,18 +268,21 @@ function ParticipantChoice({
         id={`mira-confirm-${id}`}
         checked={ticked}
         onCheckedChange={setTicked}
-        disabled={busy}
+        disabled={busy || !mira.noticeKnown}
         mode={mira.noticeMode}
       />
+      {/* The confirm waits until the meeting's notice is known, so the box
+          shows and hashes the right text. */}
       <Button
         type="button"
         size="sm"
-        disabled={busy}
+        disabled={busy || !mira.noticeKnown}
+        aria-busy={!mira.noticeKnown || undefined}
         onClick={() =>
           pick(ticked ? 'on' : 'off', data.choice ? 'toggle' : 'confirm')
         }
       >
-        {busy ? (
+        {busy || !mira.noticeKnown ? (
           <Loader2 aria-hidden className="size-4 animate-spin" />
         ) : (
           <Check aria-hidden className="size-4" />

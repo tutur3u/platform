@@ -29,6 +29,7 @@ import {
   prefersMiraOff,
   rememberMiraPreference,
 } from '../../live-assistant/mira-join-choice';
+import { isStaleSelfNotice } from '../../meeting-ai/self-api';
 import { holdSelfCapture } from '../../meeting-ai/self-hold';
 import { readSelfRoom } from '../../meeting-ai/self-room';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
@@ -151,6 +152,10 @@ export function useRoomMira(meetingId: string) {
     }) => {
       // A Join state carries the hash of the room-capture notice it showed.
       const mode = input.textHash ? 'room' : notice.mode;
+      // Mira is turned on only under a notice known to be this meeting's.
+      // Turning it off is never held back.
+      if (input.choice === 'on' && !input.textHash && !notice.known)
+        throw new Error('The meeting notice is not known yet');
       return setRoomMiraChoice(meetingId, {
         choice: input.choice,
         version: MIRA_ROOM_NOTICE_VERSION,
@@ -189,9 +194,15 @@ export function useRoomMira(meetingId: string) {
     },
     // A Join state is retried quietly on the next read. A refused choice
     // may follow a mode change, so the meeting's notice is read again.
-    onError: (_error, input) => {
+    onError: (error, input) => {
       if (input.source !== 'join') toast.error(t('save_failed'));
       refreshTranscript();
+      // The server expects another notice: show the current one and let the
+      // person choose again. Nothing is resent under a different notice.
+      if (isStaleSelfNotice(error))
+        void queryClient.invalidateQueries({
+          queryKey: roomMiraConsentKey(meetingId),
+        });
     },
   });
 
@@ -224,10 +235,14 @@ export function useRoomMira(meetingId: string) {
   const noticeKnown = notice.known;
   useEffect(() => {
     if (!data?.acceptance || data.choice !== null || !pendingJoin) return;
-    // The join screen showed the room-capture notice. It applies only once
-    // the meeting's notice is known to be that one; a per-speaker meeting
-    // asks the person to confirm under its own notice instead.
-    if (!noticeKnown || (pendingJoin.noticeMode ?? 'room') !== noticeMode)
+    // The join screen showed the room-capture notice. A ticked box applies
+    // only once the meeting's notice is known to be that one; a per-speaker
+    // meeting asks the person to confirm under its own notice instead. An
+    // untick keeps Mira off whatever the notice, so it always applies.
+    if (
+      pendingJoin.ticked &&
+      (!noticeKnown || (pendingJoin.noticeMode ?? 'room') !== noticeMode)
+    )
       return;
     const acceptance = data.acceptance;
     const flight = `${meetingId}:${acceptance.revision}`;
@@ -323,6 +338,8 @@ export function useRoomMira(meetingId: string) {
   return {
     /** The notice the box must show; the choice is hashed over it. */
     noticeMode,
+    /** False until the meeting's notice is known; nothing turns Mira on. */
+    noticeKnown,
     loading: query.isLoading,
     available: query.data?.available === true,
     data,
