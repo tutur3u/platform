@@ -1,7 +1,5 @@
-import {
-  getInternalApiClient,
-  uploadMeetAiChunk,
-} from '@tuturuuu/internal-api';
+import { uploadMeetAiChunk } from '@tuturuuu/internal-api';
+import { getInternalApiClient } from '@tuturuuu/internal-api/client';
 
 export type SelfStreamGrant = {
   streamId: string;
