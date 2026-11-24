@@ -57,6 +57,12 @@ import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
 } from './constants';
+import {
+  deliveredDefinitionRows,
+  deliveryRevisionFingerprint,
+  projectDeliveryRelationDefinitions,
+  projectEntryRelations,
+} from './delivery-relations';
 import { externalProjectAdapterFixtures } from './fixtures';
 import {
   assertExternalProjectStoragePath,
@@ -975,24 +981,11 @@ export async function getWorkspaceExternalProjectStudioData(
               assetRevision: getExternalProjectAssetRevision(asset.updated_at),
             })),
           blocks: blocks.filter((block) => block.entry_id === entry.id),
-          relations: relationData.relations
-            .filter((relation) => relation.from_entry_id === entry.id)
-            .flatMap((relation) => {
-              const definition = relationData.definitions.find(
-                (item) => item.id === relation.relation_definition_id
-              );
-              return definition && relation.relation_definition_id
-                ? [
-                    {
-                      definitionId: relation.relation_definition_id,
-                      id: relation.id,
-                      key: definition.key,
-                      metadata: relation.metadata,
-                      to_entry_id: relation.to_entry_id,
-                    },
-                  ]
-                : [];
-            }),
+          relations: projectEntryRelations(
+            entry.id,
+            relationData.relations,
+            relationData.definitions
+          ),
         })),
     }));
 
@@ -2977,24 +2970,11 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
             assetRevision: getExternalProjectAssetRevision(asset.updated_at),
           })),
         blocks: blocks.filter((block) => block.entry_id === entry.id),
-        relations: publicRelations
-          .filter((relation) => relation.from_entry_id === entry.id)
-          .flatMap((relation) => {
-            const definition = relationData.definitions.find(
-              (item) => item.id === relation.relation_definition_id
-            );
-            return definition && relation.relation_definition_id
-              ? [
-                  {
-                    definitionId: relation.relation_definition_id,
-                    id: relation.id,
-                    key: definition.key,
-                    metadata: relation.metadata,
-                    to_entry_id: relation.to_entry_id,
-                  },
-                ]
-              : [];
-          }),
+        relations: projectEntryRelations(
+          entry.id,
+          publicRelations,
+          relationData.definitions
+        ),
       })),
   }));
   const loadingData = buildExternalProjectLoadingData(
@@ -3005,14 +2985,19 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     readV1Template(
       asJsonObject(asJsonObject(binding.settings).cmsSite).template
     ) ?? readV1Template(profileData.template);
+  const relationDefinitions = projectDeliveryRelationDefinitions(
+    relationData.definitions,
+    relationData.targets,
+    deliveryCollectionIds
+  );
   const deliveryRevision = getExternalProjectDeliveryRevision(
     deliveryCollections,
     deliveryEntries,
     blocks,
     assets,
     publicRelations,
-    relationData.definitions,
-    template
+    deliveredDefinitionRows(relationData.definitions, relationDefinitions),
+    deliveryRevisionFingerprint(template, relationDefinitions)
   );
 
   return {
@@ -3022,6 +3007,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     generatedAt: deliveryRevision.generatedAt,
     loadingData,
     profileData,
+    ...(relationDefinitions ? { relationDefinitions } : {}),
     template,
     revision: deliveryRevision.revision,
     workspaceId,
