@@ -133,6 +133,14 @@ select is(pg_temp.delta($$insert into public.workspace_secrets (ws_id, name, val
 select is(pg_temp.delta($$update public.workspace_secrets set value = 'false' where ws_id = pg_temp.u('a') and name = 'EXTERNAL_PROJECT_ENABLED'$$), '1,0', 'secrets: updating the enabled flag bumps');
 select is(pg_temp.delta($$delete from public.workspace_secrets where ws_id = pg_temp.u('a') and name = 'EXTERNAL_PROJECT_ENABLED'$$), '1,0', 'secrets: deleting the enabled flag bumps');
 select is(pg_temp.delta($$insert into public.workspace_secrets (ws_id, name, value) values (pg_temp.u('a'), 'UNRELATED_SECRET', 'x')$$), '0,0', 'secrets: an unrelated secret does not bump');
+select is(pg_temp.delta($$update public.workspace_secrets set value = 'y' where ws_id = pg_temp.u('a') and name = 'UNRELATED_SECRET'$$), '0,0', 'secrets: updating an unrelated secret does not bump');
+select is(pg_temp.delta($$update public.workspace_secrets set name = 'OTHER_UNRELATED' where ws_id = pg_temp.u('a') and name = 'UNRELATED_SECRET'$$), '0,0', 'secrets: renaming between unrelated names does not bump');
+select is(pg_temp.delta($$delete from public.workspace_secrets where ws_id = pg_temp.u('a') and name = 'OTHER_UNRELATED'$$), '0,0', 'secrets: deleting an unrelated secret does not bump');
+select is(
+  (select array_agg(column_name::text order by column_name) from information_schema.columns
+    where table_schema = 'private' and table_name = 'workspace_external_project_delivery_versions'),
+  array['updated_at', 'version', 'ws_id'],
+  'the version table holds only ws_id, version and updated_at, so no secret value can be copied into it');
 select is(pg_temp.delta($$update public.canonical_external_projects set delivery_profile = '{"template":"y"}' where id = 'versions-a'$$), '1,0', 'canonical project update bumps only the workspaces bound to it');
 
 -- Statement semantics.

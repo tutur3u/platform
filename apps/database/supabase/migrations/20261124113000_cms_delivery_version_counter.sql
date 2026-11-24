@@ -1,5 +1,6 @@
 begin;
 set local lock_timeout = '5s';
+set local statement_timeout = '120s';
 
 -- Per-workspace CMS delivery version. Every write to a table that feeds the
 -- published delivery payload, the binding, or the site template bumps the
