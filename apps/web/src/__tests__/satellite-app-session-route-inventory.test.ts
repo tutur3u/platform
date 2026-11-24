@@ -166,6 +166,16 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/chunks/route.ts',
   // Reviewed note follow-ups use the Meet session and recheck destination permissions.
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/followups/route.ts',
+  // Per-speaker transcription controls authorize the Meet session actor, act
+  // only on the caller's own stream and choice, and resolve the workspace and
+  // meeting server-side; mode changes need the host or a co-host.
+  'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/self/choice/route.ts',
+  'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/self/mode/route.ts',
+  'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/self/open/route.ts',
+  'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/self/renew/route.ts',
+  // The room outbox delivery accepts only the realtime room's signed
+  // self-outbox service credential, never a user session.
+  'apps/meet/src/app/api/meet-ai/self/outbox/route.ts',
   // Live provider sessions are owned by the Meet Worker; private memory is owner-scoped.
   'apps/meet/src/app/api/meet-live/[meetingId]/route.ts',
   'apps/meet/src/app/api/meet-live/[meetingId]/review/route.ts',
