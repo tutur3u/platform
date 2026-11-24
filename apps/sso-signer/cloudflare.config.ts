@@ -22,7 +22,9 @@ export default defineConfig({
       logs: { enabled: true, headSamplingRate: 1, invocationLogs: true },
     },
     env: {
-      SSO_SIGNER_ENV: bindings.text('local'),
+      // Set per environment (`staging`, `production`) by the release
+      // authority; empty names no Durable Object, so every call fails closed.
+      SSO_SIGNER_ENV: bindings.text(''),
       // Break-glass minimum fence mode; empty is `running`, any other value
       // but `running` is `stopped`.
       SSO_SIGNER_FENCE_FLOOR: bindings.text(''),

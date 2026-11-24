@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./node-signer": "./src/saml/node-signer.ts",
+    "./signer-permit": "./src/signer-permit.ts",
     "./testing": "./src/__tests__/fixture.ts"
   },
   "license": "MIT",

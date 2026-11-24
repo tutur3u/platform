@@ -4,7 +4,14 @@
  * Worker holds only the public key. A permit binds a SHA-256 of the
  * canonical JSON of every structured field (the kid included) plus the kid
  * itself, lives 60 seconds or less and is claimed once in `SignerReplay`.
+ * The wire form lives in `@tuturuuu/sso/signer-permit`, which the issuer
+ * imports too.
  */
+import {
+  canonicalJson,
+  fieldsHash,
+  permitMessage,
+} from '@tuturuuu/sso/signer-permit';
 import { z } from 'zod';
 import { kidSchema } from './input';
 import {
@@ -14,13 +21,10 @@ import {
   type KeySet,
   keysOf,
 } from './key-set';
-import { sha256 } from './request-auth';
 
 export const MAX_PERMIT_LIFETIME_MS = 60_000;
 /** Allowed lead of a permit's issue time over the Worker clock. */
 export const PERMIT_ISSUE_SKEW_MS = 5_000;
-const FIELDS_DOMAIN = 'ttr-sso-permit-fields-v1';
-const PERMIT_DOMAIN = 'ttr-sso-permit-v1';
 
 const instantMs = z
   .number()
@@ -47,40 +51,7 @@ export type PermitResult =
       error: 'misconfigured' | 'permit_invalid' | 'permit_expired';
     }>;
 
-const encoder = new TextEncoder();
-
-/** Sorted-key JSON over plain objects, strings, booleans and integers. */
-export function canonicalJson(value: unknown): string {
-  if (typeof value === 'string' || typeof value === 'boolean') {
-    return JSON.stringify(value);
-  }
-  if (typeof value === 'number' && Number.isSafeInteger(value)) {
-    return JSON.stringify(value);
-  }
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    const entries = Object.keys(value)
-      .filter((key) => (value as Record<string, unknown>)[key] !== undefined)
-      .sort()
-      .map(
-        (key) =>
-          `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`
-      );
-    return `{${entries.join(',')}}`;
-  }
-  throw new TypeError('canonicalJson: unsupported value');
-}
-
-export async function fieldsHash(input: unknown): Promise<string> {
-  return encodeBase64Url(
-    await sha256(encoder.encode(`${FIELDS_DOMAIN}\n${canonicalJson(input)}`))
-  );
-}
-
-function permitMessage(permit: Omit<Permit, 'sig'>): Bytes {
-  return encoder.encode(
-    `${PERMIT_DOMAIN}\n${JSON.stringify([permit.v, permit.id, permit.kid, permit.iat, permit.exp, permit.fields])}`
-  );
-}
+export { canonicalJson, fieldsHash };
 
 function ed25519Key(raw: Bytes) {
   return crypto.subtle.importKey('raw', raw, { name: 'Ed25519' }, false, [

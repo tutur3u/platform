@@ -48,6 +48,28 @@ describe('replay store', () => {
     expect(store.liveCount()).toBe(3);
   });
 
+  it('gives exactly one success to concurrent claims of one token', async () => {
+    const { store } = replayStore();
+    const tokens = [
+      {
+        kind: 'nonce' as const,
+        token: randomToken(),
+        expiresAtMs: NOW + 60_000,
+      },
+      {
+        kind: 'permit' as const,
+        token: randomToken(),
+        expiresAtMs: NOW + 60_000,
+      },
+    ];
+    const results = await Promise.all(
+      Array.from({ length: 8 }, async () => store.claim(tokens, NOW))
+    );
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results.filter((result) => !result.ok)).toHaveLength(7);
+    expect(store.liveCount()).toBe(2);
+  });
+
   it('keeps nonce and permit namespaces apart', () => {
     const { store } = replayStore();
     const token = randomToken();

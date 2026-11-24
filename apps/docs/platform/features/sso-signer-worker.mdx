@@ -62,11 +62,12 @@ the kid binding pass, and the private key is parsed only after every check.
    skew. No bearer form exists.
 3. **Body** against a strict schema.
 4. **Permit.** `{ v: 1, id, kid, iat, exp, fields, sig }`: `fields` is the
-   base64url SHA-256 of `ttr-sso-permit-fields-v1` plus the sorted-key JSON of
-   the whole `input` (so every field, the kid included, is bound), and `sig` is
-   Ed25519 over `ttr-sso-permit-v1` plus `[v, id, kid, iat, exp, fields]`. The
-   Worker holds only `SSO_SIGNER_PERMIT_PUBLIC_KEY`. Lifetime is at most 60
-   seconds; `iat` may lead the Worker clock by at most 5 seconds.
+   base64url SHA-256 of `ttr-sso-permit-fields-v1`, a newline and the
+   canonical JSON of the whole `input` (so every field, the kid included, is
+   bound), and `sig` is Ed25519 over `ttr-sso-permit-v1`, a newline and
+   `[v, id, kid, iat, exp, fields]`. The Worker holds only
+   `SSO_SIGNER_PERMIT_PUBLIC_KEY`. Lifetime is at most 60 seconds; `iat` may
+   lead the Worker clock by at most 5 seconds.
 5. **Kid binding.** `SSO_SIGNER_KEYS` maps each kid (lowercase letters, digits
    and hyphens) to exactly one `client`, one `protocol` and its certificate,
    for at most eight kids. A mismatch is refused. The private key is the
@@ -77,7 +78,19 @@ the kid binding pass, and the private key is parsed only after every check.
    included, `SSO_SIGNER_DAILY_BUDGET` (default 5,000) per UTC day.
 8. **Replay claim** (`SignerReplay`): the nonce and the permit ID together,
    all or nothing.
-9. **Transaction confirmation**, then build and sign.
+9. **Transaction confirmation.**
+10. **Stop fence again**, so a stop during the checks above also applies to
+    this request; then build and sign.
+
+### Permit wire form
+
+`@tuturuuu/sso/signer-permit` holds the one implementation of
+`canonicalJson`, `fieldsHash` and the signed message, and the issuer imports
+it as the Worker does. Canonical JSON is RFC 8785 (JCS) restricted to objects
+with ASCII identifier keys, well-formed strings, booleans and safe integers,
+with absent members omitted, so an absent `relayState` and an empty one hash
+differently. Known-answer vectors, including non-ASCII names and key order,
+are pinned in `packages/sso/src/__tests__/signer-permit.test.ts`.
 
 ## Durable Objects and cost bounds
 
@@ -86,16 +99,17 @@ set no alarms.
 
 - `SignerReplay` deletes at most 32 expired rows per claim, inserts at most
   two, keeps its live count in a meta row instead of scanning, and refuses new
-  claims at 50,000 live rows (fail closed). Nonce rows live 60 seconds past
-  their timestamp; permit rows until the permit expires.
+  claims at 50,000 live rows (fail closed). Rows outlive acceptance: a nonce
+  row is kept 120 seconds (twice the skew) past its timestamp and a permit
+  row 60 seconds past its expiry.
 - `SignerBudget` keeps only the current UTC day's row.
 - An isolate remembers a `stopped` fence for 10 seconds and an exhausted budget
   until its UTC midnight, so a flood against a stopped or exhausted signer costs
   no object calls. `running` is never cached, so a stop applies to the next
   request.
 
-An admitted request costs three object calls; a request refused before step 6
-costs none.
+An admitted request costs four object calls (the fence is read twice); a
+request refused before step 6 costs none.
 
 ## Transaction confirmation (later slice)
 
@@ -103,17 +117,24 @@ costs none.
 resolve `ok` only when the consumed transaction `transactionId` matches the
 bound fields, failing closed on any error. It will be backed by a Worker-only
 database role that can read only an approved, consumed, not-yet-signed
-transaction; that role needs a migration and lands separately. Until then the
-only implementations are `refuseAllConfirmation` (every deployed config) and
-`uncheckedLocalConfirmation`, selected only when
+transaction; that role needs a migration and lands separately. Until then
+every deployed build uses `refuseAllConfirmation`.
+
+`uncheckedLocalConfirmation` exists only for the workerd runtime test. It is
+behind the build-time constant `__SSO_SIGNER_UNCHECKED__`
+(`src/build-defines.ts`): the Vite build and unit tests define it `false`, so
+the bundler removes the unchecked branch, and only the runtime test bundle
+defines it `true`. Even there it is selected only when
 `SSO_SIGNER_TRANSACTION_CHECK` is `unchecked-local` and `SSO_SIGNER_ENV` is
-`local`, for the workerd runtime test.
+`local`. A test bundles the Worker with the production define and checks that
+the unchecked path and every test fixture (`child_process`, Node-SAML) are
+absent and that it refuses to sign in workerd with the unchecked bindings set.
 
 ## Configuration
 
 | Binding | Kind | Shipped value |
 | --- | --- | --- |
-| `SSO_SIGNER_ENV` | text | `local` |
+| `SSO_SIGNER_ENV` | text | empty: names no object, every call fails closed; set `staging` or `production` per environment |
 | `SSO_SIGNER_FENCE_FLOOR` | text | empty (`running`) |
 | `SSO_SIGNER_DAILY_BUDGET` | text | empty (default) |
 | `SSO_SIGNER_KEYS` | text | empty (refuses) |
@@ -138,8 +159,10 @@ Key sets (`SSO_SIGNER_REQUEST_KEY`, `SSO_SIGNER_PERMIT_PUBLIC_KEY`,
   the input's leaf paths) and rotation; a replayed permit under a fresh nonce;
 - kid binding: unknown kid, another client or protocol, missing secret,
   malformed maps;
-- replay store bounds, budget cap and day rollover, fence default and control
-  keys, and the isolate guards;
+- replay store bounds, retention past the acceptance edge and concurrent
+  claims of one token, budget cap and day rollover, fence default and control
+  keys, the fence re-read before signing, and the isolate guards;
+- the confirmation selection over every mode and environment pair;
 - the handler end to end through Node-SAML, including log redaction;
 - `worker-runtime.test.ts`: the esbuild bundle in workerd (Miniflare 4,
   `nodejs_compat`), through both named entry points. Miniflare 4's workerd
@@ -156,8 +179,8 @@ Deployment is held. Each step needs the release authority:
    `apps/web` will reach it through a service binding to `SignerEntry`; adding
    any public route or domain is a separate reviewed change.
 2. **Staging first.** Publish to staging only after the transaction
-   confirmation slice is merged. The release authority writes the staging
-   secrets and kid map, sets the fence to `running` through `ControlEntry`, and
+   confirmation slice is merged. The release authority sets `SSO_SIGNER_ENV`
+   to `staging`, writes the staging secrets and kid map, sets the fence to `running` through `ControlEntry`, and
    runs acceptance against the local Node-SAML SP before any real SP.
 3. **Rollback.** Stop signing at once by setting the fence to `stopped` (or
    deploying `SSO_SIGNER_FENCE_FLOOR: 'stopped'`); `apps/web` keeps its Node

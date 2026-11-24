@@ -33,10 +33,20 @@ const nodeBuiltins: Plugin = {
   },
 };
 
-/** Bundles src/worker.ts for Miniflare; returns the script path. */
-export async function bundleWorker(outDir: string): Promise<string> {
+/**
+ * Bundles src/worker.ts for Miniflare with the given build defines and
+ * returns the script path. `PRODUCTION_DEFINES` with tree-shaking mirrors the
+ * deployed build's dead-code removal.
+ */
+export async function bundleWorker(
+  outDir: string,
+  define: Readonly<Record<string, string>>
+): Promise<string> {
   const scriptPath = join(outDir, 'worker.mjs');
   await build({
+    define: { ...define },
+    treeShaking: true,
+    minifySyntax: true,
     entryPoints: [resolve(import.meta.dirname, '../worker.ts')],
     outfile: scriptPath,
     bundle: true,

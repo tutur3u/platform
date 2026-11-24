@@ -9,7 +9,10 @@ import {
   signerHarness,
   signInput,
 } from './__tests__/harness';
-import { refuseAllConfirmation } from './transaction-confirmation';
+import {
+  refuseAllConfirmation,
+  type TransactionConfirmation,
+} from './transaction-confirmation';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -103,6 +106,62 @@ describe('sign handler refusals', () => {
     expect(replayed.status).toBe(409);
     expect((await body(replayed)).error).toBe('replayed');
     expect((await h.handle(await send())).status).toBe(409);
+  });
+
+  it('keeps replay rows past the edge of acceptance', async () => {
+    const h = await signerHarness();
+    const input = signInput(h.f);
+    const permit = await h.permitFor(input);
+    const nonce = randomToken();
+    const sentAt = Date.now();
+    const response = await h.handle(
+      await signedRequest({
+        requestKey: h.requestKey.raw,
+        body: { input, permit },
+        nonce,
+        nowMs: sentAt,
+      })
+    );
+    expect(response.status).toBe(200);
+    // Just past each acceptance window the rows are still there.
+    const afterNonce = sentAt + 60_001;
+    expect(
+      h.replay.claim(
+        [{ kind: 'nonce', token: nonce, expiresAtMs: afterNonce + 1_000 }],
+        afterNonce
+      )
+    ).toEqual({ ok: false, error: 'replayed' });
+    const afterPermit = permit.exp + 1;
+    expect(
+      h.replay.claim(
+        [
+          {
+            kind: 'permit',
+            token: permit.id,
+            expiresAtMs: afterPermit + 1_000,
+          },
+        ],
+        afterPermit
+      )
+    ).toEqual({ ok: false, error: 'replayed' });
+  });
+
+  it('re-reads the fence before signing', async () => {
+    const confirmation: TransactionConfirmation = {
+      confirm: async () => ({ ok: true }),
+    };
+    const h = await signerHarness({ confirmation });
+    // An operator stops the signer while the request is being checked.
+    confirmation.confirm = async () => {
+      h.state.fence = 'stopped';
+      return { ok: true };
+    };
+    const signer = vi.spyOn(h.deps, 'createSigner');
+    const response = await h.handle(await h.validRequest());
+    expect(response.status).toBe(503);
+    expect((await body(response)).error).toBe('stopped');
+    expect(h.state.fenceReads).toBe(2);
+    expect(signer).not.toHaveBeenCalled();
   });
 
   it('refuses a permit for other fields before any Durable Object call', async () => {

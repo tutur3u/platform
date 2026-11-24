@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vite-plus/test';
+import { PRODUCTION_DEFINES } from './build-defines';
 
 // The signer has no public ingress: every caller arrives through a service
 // binding to a named entry point, and the shipped config signs nothing.
@@ -22,9 +23,10 @@ describe('signer Worker config', () => {
     expect(code).not.toMatch(/\broutes?\b|customDomains?|\bdomains?\s*:/u);
   });
 
-  it('ships local, with no kid map, permit key or transaction check', () => {
-    expect(code).toMatch(/SSO_SIGNER_ENV:\s*bindings\.text\('local'\)/u);
+  it('ships no environment name, kid map, permit key or transaction check', () => {
+    expect(code).not.toMatch(/'local'/u);
     for (const name of [
+      'SSO_SIGNER_ENV',
       'SSO_SIGNER_KEYS',
       'SSO_SIGNER_PERMIT_PUBLIC_KEY',
       'SSO_SIGNER_TRANSACTION_CHECK',
@@ -34,6 +36,15 @@ describe('signer Worker config', () => {
         new RegExp(`${name}:\\s*bindings\\.text\\(''\\)`, 'u')
       );
     }
+  });
+
+  it('builds the deployed Worker with the unchecked path compiled out', () => {
+    const vite = readFileSync(
+      new URL('../vite.config.ts', import.meta.url),
+      'utf8'
+    );
+    expect(vite).toMatch(/define:\s*\{\s*\.\.\.PRODUCTION_DEFINES\s*\}/u);
+    expect(PRODUCTION_DEFINES).toEqual({ __SSO_SIGNER_UNCHECKED__: 'false' });
   });
 
   it('provisions no signing key secret and runs under nodejs_compat', () => {

@@ -6,7 +6,11 @@
  *
  *   floor → HMAC + skew → body → permit → kid binding → fence (DO)
  *   → daily budget (DO) → nonce + permit claim (DO) → transaction
- *   confirmation → build and sign.
+ *   confirmation → fence again (DO) → build and sign.
+ *
+ * Replay rows outlive acceptance: a nonce is kept until twice the clock
+ * skew past its timestamp and a permit until one skew past its expiry, so a
+ * row never expires while its request could still be accepted.
  *
  * Every response and log line carries a correlation ID and an error code
  * only: no subject, email, names, assertion or key material.
@@ -187,12 +191,12 @@ export function createSignHandler(deps: SignHandlerDeps) {
           {
             kind: 'nonce',
             token: auth.nonce,
-            expiresAtMs: auth.timestampMs + MAX_CLOCK_SKEW_MS + 1,
+            expiresAtMs: auth.timestampMs + 2 * MAX_CLOCK_SKEW_MS,
           },
           {
             kind: 'permit',
             token: permit.permit.id,
-            expiresAtMs: permit.permit.exp,
+            expiresAtMs: permit.permit.exp + MAX_CLOCK_SKEW_MS,
           },
         ],
         deps.now()
@@ -209,6 +213,15 @@ export function createSignHandler(deps: SignHandlerDeps) {
       return refuse('confirmation_unavailable');
     }
     if (!confirmed.ok) return refuse(confirmed.error);
+
+    // A stop during the checks above applies to this request too.
+    try {
+      if ((await deps.control.fenceMode()) !== 'running') {
+        return refuse('stopped');
+      }
+    } catch {
+      return refuse('unavailable');
+    }
 
     // The private key is parsed only after every check has passed.
     let signer: SamlSigner;
