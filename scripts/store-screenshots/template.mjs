@@ -21,11 +21,24 @@ function attr(value) {
   return escapeHtml(JSON.stringify(value));
 }
 
-/** A card holding the raw capture; a window card adds a plain title strip. */
+/** Neutral line glyphs for a Windows title strip: minimise, maximise, close. */
+const WINDOWS_CONTROLS = ['min', 'max', 'close']
+  .map((kind) => `<b class="${kind}"></b>`)
+  .join('');
+
+/** The plain title strip of a window card: grey dots, or Windows controls. */
+function stripHtml(kind) {
+  if (kind === 'windows')
+    return `<div class="strip win">${WINDOWS_CONTROLS}</div>`;
+  return '<div class="strip"><i></i><i></i><i></i></div>';
+}
+
+/**
+ * A card holding the raw capture; a window card adds a plain title strip, with
+ * [windowStrip] naming the style (`windows` for Microsoft Store targets).
+ */
 function card(url, data, { windowStrip = false, kind = '' } = {}) {
-  const strip = windowStrip
-    ? '<div class="strip"><i></i><i></i><i></i></div>'
-    : '';
+  const strip = windowStrip ? stripHtml(windowStrip) : '';
   return `<div class="card ${kind}" data-card="${attr(data)}">${strip}<img class="raw" src="${url}" alt=""></div>`;
 }
 
@@ -56,7 +69,8 @@ export function screenshotSpec(target, options) {
 /**
  * One listing screenshot. [index] is the frame's position in its locale's set
  * (it varies the wave crest); [fanUrls] turns the frame into the fanned hook
- * of three cards; [chip] is `{ text, anchor }` with the anchor in fractions
+ * of cards behind the dashboard (the layout decides how many); [crop] is the
+ * share of the capture's height to show, from its `content` anchor; [chip] is `{ text, anchor }` with the anchor in fractions
  * of the raw capture: `{ done, details }`, the rectangles of the card's "Done"
  * pill and its Details button.
  */
@@ -67,13 +81,19 @@ export function screenshotHtml({
   overline,
   rawUrl,
   fanUrls = null,
+  crop = null,
   chip = null,
   fontCss = FONT_CSS_URL,
 }) {
-  const spec = screenshotSpec(target, { index, fan: Boolean(fanUrls) });
+  const spec = screenshotSpec(target, {
+    index,
+    fan: Boolean(fanUrls),
+    crop: crop != null,
+  });
   const kind = target.layout === 'window' ? '' : target.frame;
-  const windowStrip = target.layout === 'window';
-  const main = { ...spec.card, main: true, z: 2 };
+  const windowStrip =
+    target.layout === 'window' && (target.store === 'windows' ? 'windows' : 'mac');
+  const main = { ...spec.card, main: true, z: 2, crop };
   let cards;
   if (spec.fan) {
     const urls = { left: fanUrls.left, right: fanUrls.right, center: rawUrl };
@@ -87,6 +107,7 @@ export function screenshotHtml({
           dy,
           main: role === 'center',
           z: role === 'center' ? 3 : 1,
+          crop: role === 'center' ? crop : null,
         };
         return card(urls[role], data);
       })
@@ -145,7 +166,7 @@ ${card(front, bottomCard(800, 190, 18, 0.02))}`;
 export function heroHtml({ desktopUrl, phoneUrl, fontCss = FONT_CSS_URL }) {
   const spec = graphicSpec(HERO, { mode: 'bottom', value: 20, offset: 0 });
   const body = `${waveHtml(spec.wave)}
-${card(desktopUrl, bottomCard(200, 1280, 20), { windowStrip: true })}
+${card(desktopUrl, bottomCard(200, 1280, 20), { windowStrip: 'windows' })}
 ${card(phoneUrl, { ...bottomCard(1370, 380, 28), z: 2 })}`;
   return { html: page(body, HERO.width, HERO.height, fontCss), spec };
 }

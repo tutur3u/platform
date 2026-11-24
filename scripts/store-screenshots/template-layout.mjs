@@ -7,7 +7,8 @@
 //   stack   caption centred above the UI card (phones, Play phone, 7" tablet,
 //           iPhone Duo outer)
 //   tablet  caption above a wide UI card (iPad 13", Play 10" tablet)
-//   side    caption left, UI card right (iPhone Duo inner, landscape)
+//   side    caption left, UI card right, both centred on the height (iPhone
+//           Duo inner, landscape)
 //   window  caption left, a plain window card right (Mac, Windows)
 
 export const LAYOUTS = ['stack', 'tablet', 'side', 'window'];
@@ -29,6 +30,9 @@ export const MAX_HEADLINE_LINES = 2;
 /** Smallest headline as a share of the canvas width, per frame class. */
 export const MIN_HEADLINE_RATIO = { phone: 0.042, large: 0.026 };
 
+/** Smallest chip text as a share of the canvas width, per frame class. */
+export const MIN_CHIP_RATIO = { phone: 0.026, large: 0.016 };
+
 /** The class a target's headline minimum belongs to. */
 export function headlineClass(target) {
   return target.frame === 'phone' ? 'phone' : 'large';
@@ -49,10 +53,21 @@ const STACK = {
   wave: { mode: 'height', value: 120 },
 };
 
+// A tablet page that ends before its screen does is cropped to its content
+// (`cropped`), which leaves the room to show it on a wider card. The hook
+// frame puts one calendar card behind a large dashboard card (`fan.side`).
 const TABLET = {
   caption: { x: 8, w: 84, y: 9, align: 'center', headline: 8.6, overline: 2.6 },
   card: { x: 8, w: 84, yMode: 'capBottom', gap: 5, radius: 5 },
-  fan: { cardW: 58, radius: 4, rotate: 7, sideDrop: 18, centerDrop: 8 },
+  cropped: { x: 6, w: 88 },
+  fan: {
+    cardW: 74,
+    radius: 4.4,
+    rotate: 6,
+    sideDrop: 7,
+    centerDrop: 0,
+    side: { dx: 15 },
+  },
   wave: { mode: 'card', value: 26 },
 };
 
@@ -65,7 +80,7 @@ const SIDE = {
     headline: 4.4,
     overline: 1.7,
   },
-  card: { x: 43, w: 59, yMode: 'bottom', bleed: 0.07, radius: 3.2 },
+  card: { x: 43, w: 59, yMode: 'center', radius: 3.2 },
   wave: { mode: 'bottom', value: 0.3, relativeTo: 'height' },
 };
 
@@ -95,12 +110,18 @@ export function layoutDefinition(layout) {
  * The spec the page script receives for [target]: pixel numbers for the
  * caption, the main card, the optional fan and the wave.
  * @param {{ width: number, height: number, layout: string, frame: string }} target
- * @param {{ index?: number, fan?: boolean }} [options]
+ * @param {{ index?: number, fan?: boolean, crop?: boolean }} [options]
+ *   `crop`: the card shows only the page's content, so a layout that has a
+ *   `cropped` card box uses it.
  */
-export function screenshotLayout(target, { index = 0, fan = false } = {}) {
+export function screenshotLayout(
+  target,
+  { index = 0, fan = false, crop = false } = {}
+) {
   const cq = target.width / 100;
   const def = layoutDefinition(target.layout);
-  const { caption, card } = def;
+  const { caption } = def;
+  const card = crop && def.cropped ? { ...def.card, ...def.cropped } : def.card;
   const spec = {
     layout: target.layout,
     width: target.width,
@@ -143,12 +164,25 @@ export function screenshotLayout(target, { index = 0, fan = false } = {}) {
 }
 
 /**
- * Three cards fanned over the main card's box: the dashboard in front, the
- * calendar and the assistant tilted behind it. Offsets come from the 88 cq
- * stack layout and scale with the card width.
+ * Cards fanned behind the dashboard card. The stack layout tilts the calendar
+ * and the assistant behind it, with offsets from its 88 cq box that scale with
+ * the card width; a layout with `fan.side` tilts one card out of the right
+ * edge instead.
  */
 function fanCards(spec, fan) {
   const { cq } = spec;
+  if (fan.side) {
+    const w = fan.cardW * cq;
+    const x = spec.card.x + spec.card.w / 2 - w / 2;
+    const base = { w, radius: fan.radius * cq };
+    return {
+      drop: { center: fan.centerDrop * cq, side: fan.sideDrop * cq },
+      cards: [
+        { role: 'right', ...base, x: x + fan.side.dx * cq, rotate: fan.rotate },
+        { role: 'center', ...base, x, rotate: 0 },
+      ],
+    };
+  }
   const s = spec.card.w / (88 * cq);
   const cx = spec.card.x + spec.card.w / 2;
   const w = fan.cardW * cq * s;

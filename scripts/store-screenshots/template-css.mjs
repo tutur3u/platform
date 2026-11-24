@@ -16,6 +16,12 @@ body{position:relative;font-family:Nunito,ui-rounded,system-ui,sans-serif;color:
 .card{position:absolute;overflow:hidden;background:${COLORS.white}}
 .card .raw{display:block;width:100%;height:auto}
 .strip{display:flex;align-items:center;background:${COLORS.white}}
+.strip.win{justify-content:flex-end;color:#8f8996}
+.strip.win b{display:block;position:relative;width:.4em;height:.4em;margin-right:1.1em}
+.strip.win b.min{height:0;align-self:center;border-top:.045em solid currentColor}
+.strip.win b.max{border:.045em solid currentColor;border-radius:.04em}
+.strip.win b.close::before,.strip.win b.close::after{content:'';position:absolute;left:50%;top:50%;width:.56em;border-top:.045em solid currentColor;transform:translate(-50%,-50%) rotate(45deg)}
+.strip.win b.close::after{transform:translate(-50%,-50%) rotate(-45deg)}
 .strip i{display:block;border-radius:50%;background:${COLORS.windowDot}}
 .card.foldable::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1.2%;transform:translateX(-50%);background:linear-gradient(90deg,rgba(38,33,43,0),rgba(38,33,43,.14) 50%,rgba(38,33,43,0));pointer-events:none}
 .chip{position:absolute;z-index:5;display:flex;align-items:center;white-space:nowrap;font-weight:800;color:${COLORS.wave};background:${COLORS.ink};border-radius:999px;box-shadow:0 .5em 1.2em rgba(38,33,43,.22)}

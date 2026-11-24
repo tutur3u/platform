@@ -5,14 +5,12 @@
 import {
   headlineClass,
   MAX_HEADLINE_LINES,
+  MIN_CHIP_RATIO,
   MIN_HEADLINE_RATIO,
 } from './template-layout.mjs';
 
 /** Captions keep this share of each dimension clear on every edge. */
 export const SAFE_INSET = 0.05;
-
-/** Nothing sits in the top or bottom share of the height. */
-export const SAFE_BAND = 0.04;
 
 /** Report path under the screenshot root. */
 export const LAYOUT_REPORT_FILE = 'layout-report.json';
@@ -43,9 +41,7 @@ export function checkCaptionLayout(file, entry, target) {
     ['bottom', bottom, canvas.height],
   ];
   for (const [name, gap, extent] of edges) {
-    const need =
-      Math.max(SAFE_INSET, ['top', 'bottom'].includes(name) ? SAFE_BAND : 0) *
-      extent;
+    const need = SAFE_INSET * extent;
     if (gap + TOLERANCE < need) {
       problems.push(
         `${file}: caption is ${gap.toFixed(0)} px from the ${name} edge, needs at least ${need.toFixed(0)} px (${SAFE_INSET * 100}%)`
@@ -67,11 +63,55 @@ export function checkCaptionLayout(file, entry, target) {
   return problems;
 }
 
+/** Whether two `{ x, y, width, height }` boxes share any area. */
+function overlaps(a, b) {
+  return (
+    a.x + TOLERANCE < b.x + b.width &&
+    b.x + TOLERANCE < a.x + a.width &&
+    a.y + TOLERANCE < b.y + b.height &&
+    b.y + TOLERANCE < a.y + a.height
+  );
+}
+
+/**
+ * Problems with the measured card and chip boxes of one report entry: the
+ * caption stays clear of the card, and the chip sits inside the card at a
+ * readable size.
+ * @param {string} file
+ * @param {object} entry
+ * @param {{ frame: string }} target
+ */
+export function checkCardLayout(file, entry, target) {
+  const { canvas, caption, card, chip } = entry ?? {};
+  if (!card) return [`${file}: layout report entry has no card box`];
+  const problems = [];
+  if (caption && overlaps(caption, card)) {
+    problems.push(`${file}: the caption overlaps the card`);
+  }
+  if (chip) {
+    const inside =
+      chip.x + TOLERANCE >= card.x &&
+      chip.y + TOLERANCE >= card.y &&
+      chip.x + chip.width <= card.x + card.width + TOLERANCE &&
+      chip.y + chip.height <= card.y + card.height + TOLERANCE;
+    if (!inside) problems.push(`${file}: the chip leaves the card's bounds`);
+    const min = MIN_CHIP_RATIO[headlineClass(target)] * canvas.width;
+    if (chip.fontSize + TOLERANCE < min) {
+      problems.push(
+        `${file}: chip text is ${chip.fontSize.toFixed(0)} px, needs at least ${min.toFixed(0)} px`
+      );
+    }
+  }
+  return problems;
+}
+
 /**
  * Checks a whole report: every screenshot has an entry sized like its image
  * and every entry names a screenshot that exists.
  * @param {Record<string, object>} entries report `files`
- * @param {Map<string, { width: number, height: number, target: object }>} screenshots
+ * @param {Map<string, { width: number, height: number, target: object,
+ *   sha256?: string }>} screenshots `sha256` is the hash of the image file;
+ *   an entry whose recorded hash differs is stale
  */
 export function checkLayoutReport(entries, screenshots) {
   const problems = [];
@@ -89,7 +129,13 @@ export function checkLayoutReport(entries, screenshots) {
         `${file}: ${LAYOUT_REPORT_FILE} says ${entry.canvas?.width}x${entry.canvas?.height}, image is ${shot.width}x${shot.height}`
       );
     }
+    if (shot.sha256 !== undefined && entry.sha256 !== shot.sha256) {
+      problems.push(
+        `${file}: ${LAYOUT_REPORT_FILE} was measured on a different image (sha256 differs); rerun compose.mjs`
+      );
+    }
     problems.push(...checkCaptionLayout(file, entry, shot.target));
+    problems.push(...checkCardLayout(file, entry, shot.target));
   }
   for (const file of Object.keys(entries)) {
     if (!screenshots.has(file))

@@ -9,6 +9,7 @@
 // large enough.
 //
 //   node scripts/store-screenshots/validate.mjs [--root <repo>]
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -232,7 +233,10 @@ export function validateStoreImages(root) {
       (t) => t.store === store && t.device === device
     );
     const info = target && readImageInfo(buffer);
-    if (info) measured.set(relative, { ...info, target });
+    if (info) {
+      const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+      measured.set(relative, { ...info, target, sha256 });
+    }
   }
   if (measured.size > 0) {
     problems.push(...checkLayoutReport(readLayoutReport(root), measured));

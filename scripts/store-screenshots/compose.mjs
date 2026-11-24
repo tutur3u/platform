@@ -24,6 +24,7 @@
 // It also writes the /roadmap web gallery: up to six EN shots per platform as
 // `<platform>/web/NN-<id>.webp` (at most 1280 px on the long edge and 150 KB
 // each) with a `manifest.json` that gives each file's width and height.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,6 +69,17 @@ function readAnchors(rawFile) {
   const file = rawFile.replace(/\.png$/, '.json');
   if (!fs.existsSync(file)) return null;
   return JSON.parse(fs.readFileSync(file, 'utf8')).anchors ?? null;
+}
+
+/**
+ * The cards fanned behind the dashboard: the calendar and the assistant, or,
+ * on the tablet layout, the calendar alone.
+ */
+function fanUrls(target, fan) {
+  if (!fan?.left || !fan.right) return null;
+  return target.layout === 'tablet'
+    ? { right: dataUrl(fan.left) }
+    : { left: dataUrl(fan.left), right: dataUrl(fan.right) };
 }
 
 /** Renders [html] and runs the page layout pass; returns what it measured. */
@@ -135,6 +147,12 @@ async function main() {
                 }
               : null;
           const anchors = readAnchors(raw);
+          // A tablet page that ends before its screen does carries a
+          // `content` anchor; the card shows only that share of the capture.
+          const crop =
+            target.layout === 'tablet' && anchors?.content
+              ? Math.min(1, anchors.content.y + anchors.content.h)
+              : null;
           const anchor =
             anchors?.done && anchors.details
               ? { done: anchors.done, details: anchors.details }
@@ -145,10 +163,8 @@ async function main() {
             headline: screen.headline,
             overline: screen.overline,
             rawUrl: dataUrl(raw),
-            fanUrls:
-              fan?.left && fan.right
-                ? { left: dataUrl(fan.left), right: dataUrl(fan.right) }
-                : null,
+            fanUrls: fanUrls(target, fan),
+            crop,
             chip: screen.chip && anchor ? { text: screen.chip, anchor } : null,
           });
           const measured = await render(page, composed);
@@ -166,8 +182,12 @@ async function main() {
               quality: JPEG_QUALITY,
             });
           }
+          const sha256 = crypto
+            .createHash('sha256')
+            .update(fs.readFileSync(out))
+            .digest('hex');
           report[path.relative(path.join(values.out, SCREENSHOT_ROOT), out)] =
-            reportEntry(composed.spec, measured);
+            reportEntry(composed.spec, measured, sha256);
           written += 1;
         }
       }

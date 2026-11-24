@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -200,7 +201,7 @@ test('reads headlines and overlines from store-captions.json', () => {
   });
   assert.deepEqual(captionFor('vi', 'time-tracker'), {
     headline: 'Biết thời gian đi về đâu',
-    overline: 'Theo dõi thời gian',
+    overline: 'Bấm giờ',
     chip: null,
   });
   assert.throws(() => captionFor('en', 'nope'), /No caption for en\/nope/);
@@ -212,7 +213,7 @@ test('reads headlines and overlines from store-captions.json', () => {
     planned[4].file,
     'apps/mobile/store/screenshots/windows/desktop/vi/05-time-tracker.png'
   );
-  assert.equal(planned[1].headline, 'Hỏi Mira, việc xong ngay');
+  assert.equal(planned[1].headline, 'Cứ hỏi Mira, để Mira lo');
   const metadata = {
     screenshots: {
       desktop: [
@@ -281,14 +282,24 @@ test('store metadata lists the story order with the image captions', () => {
   }
 });
 
+/** The hash `compose.mjs` records for the stand-in 1080x1920 JPEG. */
+function standInSha() {
+  return crypto
+    .createHash('sha256')
+    .update(jpegHeader(1080, 1920))
+    .digest('hex');
+}
+
 /** A measured caption that passes every layout check on a 1080x1920 frame. */
 function goodEntry() {
   return reportEntry(
     { width: 1080, height: 1920, layout: 'stack' },
     {
       caption: { x: 100, y: 250, width: 880, height: 400 },
+      card: { x: 60, y: 760, width: 960, height: 1400 },
       headline: { fontSize: 120, lines: 2 },
-    }
+    },
+    standInSha()
   );
 }
 
@@ -315,8 +326,10 @@ test('holds captions to the layout report', () => {
       { width: 1080, height: 1920, layout: 'stack' },
       {
         caption: { x: 20, y: 250, width: 1050, height: 400 },
+        card: { x: 60, y: 760, width: 960, height: 1400 },
         headline: { fontSize: 30, lines: 3 },
-      }
+      },
+      standInSha()
     );
     writeLayoutReport(root, {
       'android/phone/en/01-dashboard.jpg': goodEntry(),

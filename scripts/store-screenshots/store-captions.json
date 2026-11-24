@@ -11,7 +11,7 @@
     },
     "assistant": {
       "en": "Ask Mira, get it done",
-      "vi": "Hỏi Mira, việc xong ngay",
+      "vi": "Cứ hỏi Mira, để Mira lo",
       "overline": {
         "en": "Mira",
         "vi": "Mira"
@@ -31,10 +31,10 @@
     },
     "calendar": {
       "en": "Your week at a glance",
-      "vi": "Cả tuần trong một cái nhìn",
+      "vi": "Xem cả tuần trong nháy mắt",
       "overline": {
         "en": "Calendar",
-        "vi": "Lịch"
+        "vi": "Lịch trình"
       }
     },
     "time-tracker": {
@@ -42,7 +42,7 @@
       "vi": "Biết thời gian đi về đâu",
       "overline": {
         "en": "Time tracker",
-        "vi": "Theo dõi thời gian"
+        "vi": "Bấm giờ"
       }
     },
     "finance": {

@@ -21,7 +21,7 @@ window.__layout = async (spec) => {
     document.fonts.check('600 20px "JetBrains Mono"', over.textContent)
   );
 
-  const result = { fontsLoaded, caption: null, headline: null, card: null };
+  const result = { fontsLoaded, caption: null, headline: null, card: null, chip: null };
   let capBottom = 0;
   if (cap) {
     const c = spec.caption;
@@ -59,8 +59,8 @@ window.__layout = async (spec) => {
     await img.decode();
     const strip = el.querySelector('.strip');
     const stripH = strip ? c.w * 0.034 : 0;
-    const h = (img.naturalHeight / img.naturalWidth) * c.w + stripH;
-    let y = c.yMode === 'capBottom' ? capBottom + c.gap : c.yMode === 'bottom' ? H - h * (1 - c.bleed) : c.y;
+    const h = (img.naturalHeight / img.naturalWidth) * c.w * (c.crop || 1) + stripH;
+    let y = c.yMode === 'capBottom' ? capBottom + c.gap : c.yMode === 'bottom' ? H - h * (1 - c.bleed) : c.yMode === 'center' ? (H - h) / 2 : c.y;
     y += c.dy || 0;
     Object.assign(el.style, {
       left: c.x + 'px', top: y + 'px', width: c.w + 'px', height: h + 'px',
@@ -69,9 +69,15 @@ window.__layout = async (spec) => {
     });
     if (strip) {
       strip.style.height = stripH + 'px';
-      strip.style.paddingLeft = stripH * 0.6 + 'px';
-      strip.style.gap = stripH * 0.3 + 'px';
-      for (const dot of strip.children) dot.style.width = dot.style.height = stripH * 0.36 + 'px';
+      if (strip.classList.contains('win')) {
+        strip.style.fontSize = stripH + 'px';
+        // A card that bleeds off the canvas edge keeps its controls in view.
+        strip.style.paddingRight = Math.max(0, c.x + c.w - W) + 'px';
+      } else {
+        strip.style.paddingLeft = stripH * 0.6 + 'px';
+        strip.style.gap = stripH * 0.3 + 'px';
+        for (const dot of strip.children) dot.style.width = dot.style.height = stripH * 0.36 + 'px';
+      }
     }
     if (c.main) {
       mainY = y;
@@ -117,7 +123,14 @@ window.__layout = async (spec) => {
     chip.style.left = right - box.width + 'px';
     // The chip's bottom meets the label's pill, so it never reaches the next row.
     const pillBottom = card.imageTop + (a.done.y + a.done.h / 2) * card.imageHeight + labelHeight * 0.95;
-    chip.style.top = pillBottom - box.height + 'px';
+    // ...and it stays inside the card, whatever the label's position.
+    const top = Math.min(
+      Math.max(pillBottom - box.height, card.y + cq),
+      card.y + card.height - box.height - cq
+    );
+    chip.style.top = top + 'px';
+    const placed = chip.getBoundingClientRect();
+    result.chip = { x: placed.left, y: placed.top, width: placed.width, height: placed.height, fontSize: size };
   }
   return result;
 };`;

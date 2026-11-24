@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import {
   checkCaptionLayout,
+  checkCardLayout,
   checkLayoutReport,
   LAYOUT_REPORT_FILE,
 } from './layout-checks.mjs';
@@ -25,7 +26,9 @@ function entry(overrides = {}) {
   return {
     canvas: { width: 1000, height: 2000 },
     caption: { x: 100, y: 200, width: 800, height: 400 },
+    card: { x: 60, y: 700, width: 880, height: 1400 },
     headline: { fontSize: 120, lines: 2 },
+    sha256: 'aa',
     ...overrides,
   };
 }
@@ -81,9 +84,9 @@ test('rejects an incomplete entry', () => {
 
 test('checks the whole report against the screenshots', () => {
   const shots = new Map([
-    ['a.jpg', { width: 1000, height: 2000, target: PHONE }],
-    ['b.jpg', { width: 1000, height: 2000, target: PHONE }],
-    ['c.jpg', { width: 1000, height: 2000, target: PHONE }],
+    ['a.jpg', { width: 1000, height: 2000, target: PHONE, sha256: 'aa' }],
+    ['b.jpg', { width: 1000, height: 2000, target: PHONE, sha256: 'aa' }],
+    ['c.jpg', { width: 1000, height: 2000, target: PHONE, sha256: 'aa' }],
   ]);
   const problems = checkLayoutReport(
     {
@@ -103,6 +106,78 @@ test('checks the whole report against the screenshots', () => {
   ]);
 });
 
+test('flags a report that was measured on a different image', () => {
+  const shots = new Map([
+    ['a.jpg', { width: 1000, height: 2000, target: PHONE, sha256: 'bb' }],
+  ]);
+  const problems = checkLayoutReport({ 'a.jpg': entry() }, shots);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /a\.jpg: .*sha256 differs/);
+  assert.deepEqual(
+    checkLayoutReport(
+      { 'a.jpg': entry({ sha256: 'bb' }) },
+      new Map([['a.jpg', { ...shots.get('a.jpg') }]])
+    ),
+    []
+  );
+});
+
+test('records the card, chip and hash of a measured image', () => {
+  const target = { width: 1000, height: 2000, layout: 'stack' };
+  const measured = {
+    caption: { x: 100, y: 200, width: 800, height: 400 },
+    card: { x: 60.04, y: 700, width: 880, height: 1400 },
+    chip: { x: 500, y: 900, width: 300, height: 80, fontSize: 30.06 },
+    headline: { fontSize: 120, lines: 2 },
+  };
+  const entryWithChip = reportEntry(target, measured, 'abc');
+  assert.equal(entryWithChip.sha256, 'abc');
+  assert.deepEqual(entryWithChip.card, {
+    x: 60,
+    y: 700,
+    width: 880,
+    height: 1400,
+  });
+  assert.equal(entryWithChip.chip.fontSize, 30.1);
+  assert.equal('chip' in reportEntry(target, { ...measured, chip: null }, 'a'), false);
+});
+
+test('keeps the caption clear of the card', () => {
+  assert.deepEqual(checkCardLayout('a.jpg', entry(), PHONE), []);
+  const overlapping = entry({
+    card: { x: 60, y: 500, width: 880, height: 1400 },
+  });
+  assert.match(
+    checkCardLayout('a.jpg', overlapping, PHONE)[0],
+    /caption overlaps the card/
+  );
+  assert.match(
+    checkCardLayout('a.jpg', { ...entry(), card: undefined }, PHONE)[0],
+    /no card box/
+  );
+});
+
+test('keeps the chip inside the card at a readable size', () => {
+  const chip = { x: 500, y: 900, width: 300, height: 80, fontSize: 30 };
+  assert.deepEqual(checkCardLayout('a.jpg', entry({ chip }), PHONE), []);
+  const above = { ...chip, y: 690 };
+  assert.match(
+    checkCardLayout('a.jpg', entry({ chip: above }), PHONE)[0],
+    /chip leaves the card/
+  );
+  const right = { ...chip, x: 700 };
+  assert.match(
+    checkCardLayout('a.jpg', entry({ chip: right }), PHONE)[0],
+    /chip leaves the card/
+  );
+  const small = { ...chip, fontSize: 25 };
+  assert.match(
+    checkCardLayout('a.jpg', entry({ chip: small }), PHONE)[0],
+    /chip text is 25 px, needs at least 26 px/
+  );
+  assert.deepEqual(checkCardLayout('a.jpg', entry({ chip: small }), TABLET), []);
+});
+
 test('merges measured entries into layout-report.json', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'layout-report-'));
   try {
@@ -112,6 +187,7 @@ test('merges measured entries into layout-report.json', () => {
     fs.writeFileSync(path.join(shots, '02-b.jpg'), '');
     const measured = {
       caption: { x: 100.04, y: 200, width: 800, height: 400 },
+      card: { x: 60, y: 700, width: 880, height: 1400 },
       headline: { fontSize: 120.3, lines: 2 },
     };
     const target = { width: 1000, height: 2000, layout: 'stack' };
@@ -197,19 +273,52 @@ test('draws no status bar', () => {
   }
 });
 
-test('fans three cards on the stack and tablet frames only', () => {
-  const urls = { left: 'data:l', right: 'data:r' };
+test('fans three cards on the stack frames and two on the tablet frames', () => {
+  const urls = {
+    stack: { left: 'data:l', right: 'data:r' },
+    tablet: { right: 'data:r' },
+  };
+  const expected = { stack: 3, tablet: 2 };
   for (const target of SCREENSHOT_TARGETS) {
     const { html, spec } = screenshotHtml({
       target,
       headline: 'H',
       overline: 'O',
       rawUrl: 'data:c',
-      fanUrls: urls,
+      fanUrls: urls[target.layout] ?? urls.stack,
     });
     const cards = html.match(/class="card/g).length;
-    const fanned = target.layout === 'stack' || target.layout === 'tablet';
-    assert.equal(cards, fanned ? 3 : 1, `${target.device}`);
+    const fanned = target.layout in expected;
+    assert.equal(cards, fanned ? expected[target.layout] : 1, target.device);
     assert.equal(Boolean(spec.fan), fanned);
+  }
+});
+
+test('a cropped tablet card is wider and carries its crop', () => {
+  const target = SCREENSHOT_TARGETS.find((t) => t.layout === 'tablet');
+  const full = screenshotSpec(target, {});
+  const cropped = screenshotSpec(target, { crop: true });
+  assert.ok(cropped.card.w > full.card.w);
+  assert.equal(
+    Math.round((cropped.card.x * 2 + cropped.card.w) * 10),
+    Math.round(target.width * 10)
+  );
+  const { html } = screenshotHtml({
+    target,
+    headline: 'H',
+    overline: 'O',
+    rawUrl: 'data:c',
+    crop: 0.62,
+  });
+  assert.match(html, /&quot;crop&quot;:0\.62/);
+});
+
+test('a layout without a cropped box ignores the crop', () => {
+  for (const target of SCREENSHOT_TARGETS.filter((t) => t.layout !== 'tablet')) {
+    assert.deepEqual(
+      screenshotSpec(target, { crop: true }).card,
+      screenshotSpec(target, {}).card,
+      target.device
+    );
   }
 });

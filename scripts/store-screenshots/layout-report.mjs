@@ -12,19 +12,26 @@ export function layoutReportPath(root) {
 
 const round = (value) => Math.round(value * 10) / 10;
 
-/** The report entry for a page-script result on a [width]x[height] canvas. */
-export function reportEntry({ width, height, layout }, measured) {
-  const { caption, headline } = measured;
+/** Rounds a measured `{ x, y, width, height }` box. */
+function box({ x, y, width, height }) {
+  return { x: round(x), y: round(y), width: round(width), height: round(height) };
+}
+
+/**
+ * The report entry for a page-script result on a [width]x[height] canvas.
+ * [sha256] is the hash of the written image, so a report that was measured on
+ * another image is caught.
+ */
+export function reportEntry({ width, height, layout }, measured, sha256) {
+  const { caption, headline, card, chip } = measured;
   return {
     canvas: { width, height },
     layout,
-    caption: {
-      x: round(caption.x),
-      y: round(caption.y),
-      width: round(caption.width),
-      height: round(caption.height),
-    },
+    caption: box(caption),
+    card: box(card),
+    ...(chip ? { chip: { ...box(chip), fontSize: round(chip.fontSize) } } : {}),
     headline: { fontSize: round(headline.fontSize), lines: headline.lines },
+    sha256,
   };
 }
 
