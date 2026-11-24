@@ -1,9 +1,7 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/icons';
+import { ArrowLeft, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import type { FormEvent, ReactNode } from 'react';
 import { AdmissionNotice } from '../components/admission-notice';
@@ -52,11 +50,12 @@ function JoinButton({ phase }: { phase: PrejoinPhase }) {
  */
 export function PrejoinStage({
   title,
+  titleEditor,
   capture,
   phase,
   avatarUrl,
   name,
-  eyebrow,
+  back,
   summary,
   notice,
   fields,
@@ -68,12 +67,15 @@ export function PrejoinStage({
   onPresenceChange,
 }: {
   title: string;
+  /** Replaces the heading when the viewer may rename the meeting. */
+  titleEditor?: ReactNode;
   capture: PrejoinCapture;
   phase: PrejoinPhase;
   avatarUrl?: string;
   /** Initial for the camera-off avatar. */
   name: string;
-  eyebrow?: string;
+  /** Leaves before joining; a quiet action at the top left, never beside Join. */
+  back?: { label: string; onClick: () => void };
   /** Who is already inside. */
   summary?: ReactNode;
   /** Reserved above the fields for the room's consent and transcription notices. */
@@ -82,56 +84,56 @@ export function PrejoinStage({
   fields?: ReactNode;
   /** The Mira consent box, rendered as given. */
   consent?: ReactNode;
-  /** Leave, cancel and fallback actions; they scroll with the form. */
+  /** Fallback actions such as asking the host; they scroll with the form. */
   secondary?: ReactNode;
   onSubmit: () => void;
   viewer?: boolean;
   presenceOnly?: boolean;
   onPresenceChange?: (enabled: boolean) => void;
 }) {
-  const t = useTranslations('meet.call');
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (phase.kind === 'ready' && !phase.disabled) onSubmit();
     else if (phase.kind === 'error') onSubmit();
   };
   return (
-    <main className="min-h-dvh bg-background">
-      <div className="mx-auto grid w-full max-w-5xl gap-6 px-4 pt-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(20rem,1fr)] lg:items-center lg:gap-10 lg:px-8 lg:py-10">
-        <div className="min-w-0 space-y-3">
-          {onPresenceChange && (
-            <Label className="flex items-center gap-2 text-sm">
-              <Switch
-                checked={!!presenceOnly}
-                onCheckedChange={onPresenceChange}
-              />
-              {t('presence_only')}
-            </Label>
-          )}
-          <PrejoinPreview
-            avatarUrl={avatarUrl}
-            capture={capture}
-            name={name}
-            presenceOnly={presenceOnly}
-            viewer={viewer}
-          />
+    <main className="flex min-h-dvh flex-col bg-background">
+      {back && (
+        <div className="px-2 pt-3 lg:px-6">
+          <Button
+            className="gap-1.5 text-muted-foreground"
+            onClick={back.onClick}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            {back.label}
+          </Button>
         </div>
+      )}
+      <div className="mx-auto grid w-full max-w-5xl flex-1 content-center gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(20rem,1fr)] lg:items-center lg:gap-10 lg:px-8 lg:py-10">
+        <PrejoinPreview
+          avatarUrl={avatarUrl}
+          capture={capture}
+          name={name}
+          onPresenceChange={onPresenceChange}
+          presenceOnly={presenceOnly}
+          viewer={viewer}
+        />
         <form
           aria-labelledby="prejoin-title"
           className="flex min-w-0 flex-col gap-4"
           onSubmit={submit}
         >
-          <div className="space-y-1">
-            {eyebrow && (
-              <p className="text-muted-foreground text-xs">{eyebrow}</p>
-            )}
+          {titleEditor ?? (
             <h1
               className="text-balance font-semibold text-xl tracking-tight"
               id="prejoin-title"
             >
               {title}
             </h1>
-          </div>
+          )}
           {summary}
           {notice}
           {phase.kind === 'waiting' && (

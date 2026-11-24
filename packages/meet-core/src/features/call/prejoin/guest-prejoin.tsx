@@ -96,7 +96,6 @@ export function GuestPrejoin({
             onCheckedChange={onMiraChange}
           />
         }
-        eyebrow={t('badge')}
         fields={
           <>
             <PrejoinNameField

@@ -1,7 +1,6 @@
 'use client';
 
 import { toast } from '@tuturuuu/ui/sonner';
-import { Button } from '@tuturuuu/ui/button';
 import { useRememberMiraJoin } from '../../live-assistant/mira-join-box';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -12,8 +11,9 @@ import {
   LobbyMiraBox,
   type ConnectedLobbyProps,
 } from '../components/call-lobby';
-import { LobbyParticipantSummary } from '../components/lobby-controls';
 import { PrejoinNameField } from './prejoin-name-field';
+import { PrejoinParticipants } from './prejoin-participants';
+import { PrejoinTitle } from './prejoin-title';
 import { PrejoinStage, type PrejoinPhase } from './prejoin-stage';
 import type { PrejoinCapture } from './use-prejoin-capture';
 
@@ -29,6 +29,7 @@ export function ConnectedPrejoin({
   defaultAvatarUrl,
   defaultDisplayName,
   canReadWorkspace,
+  joined,
   meetingName,
   transcriptionNotice,
   onOutputDeviceChange,
@@ -88,7 +89,7 @@ export function ConnectedPrejoin({
       }
     : waiting
       ? { kind: 'waiting', label: t('waiting_for_host') }
-      : connecting
+      : connecting || joined
         ? { kind: 'connecting', label: t('join_now') }
         : { kind: 'ready', label: t('join_now'), disabled: !trimmed };
 
@@ -145,12 +146,11 @@ export function ConnectedPrejoin({
           />
         ) : undefined
       }
-      eyebrow={t('ready_to_join')}
       fields={
         guest ? (
           <PrejoinNameField
             disabled={connecting}
-            hint={`${t('lobby_guest_name_hint')} ${t('preview_private')}`}
+            hint={t('lobby_guest_name_hint')}
             id="prejoin-display-name"
             label={t('your_name')}
             onBlur={() => {
@@ -187,27 +187,30 @@ export function ConnectedPrejoin({
               room.updateSettings({ transport: enabled ? 'presence' : 'media' })
           : undefined
       }
+      back={{
+        label: t(waiting ? 'join_cancel_request' : 'prejoin.back'),
+        onClick: leave,
+      }}
       onSubmit={join}
       phase={phase}
       presenceOnly={presenceOnly}
-      secondary={
-        <Button
-          className="w-full"
-          onClick={leave}
-          type="button"
-          variant="ghost"
-        >
-          {t(waiting ? 'join_cancel_request' : 'leave')}
-        </Button>
-      }
       summary={
-        <LobbyParticipantSummary
+        <PrejoinParticipants
           connected={connectionStatus === 'open'}
           participants={participants}
           waiting={waiting}
         />
       }
       title={room.state.title ?? meetingName}
+      titleEditor={
+        room.state.role === 'host' && miraMeetingId ? (
+          <PrejoinTitle
+            meetingId={miraMeetingId}
+            onSaved={room.renameMeeting}
+            title={room.state.title ?? meetingName}
+          />
+        ) : undefined
+      }
       viewer={viewer}
     />
   );

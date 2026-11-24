@@ -19,6 +19,10 @@ vi.mock('../components/guest-lobby-upgrade', () => ({
   GuestLobbyUpgrade: () => <div data-testid="guest-upgrade" />,
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
+const rename = vi.hoisted(() =>
+  vi.fn(async (_id: string, name: string) => ({ name }))
+);
+vi.mock('@tuturuuu/internal-api', () => ({ updateMeetCallTitle: rename }));
 
 import { ConnectedPrejoin } from './connected-prejoin';
 
@@ -57,10 +61,14 @@ function capture() {
   } as unknown as PrejoinCapture;
 }
 
-function room(admission: string, overrides: Record<string, unknown> = {}) {
+function room(
+  admission: string,
+  overrides: Record<string, unknown> = {},
+  role = 'participant'
+) {
   return {
     state: {
-      role: 'participant',
+      role,
       settings: { transport: 'media' },
       error: null,
       admission,
@@ -74,20 +82,23 @@ function room(admission: string, overrides: Record<string, unknown> = {}) {
     toggleMicrophone: vi.fn(async () => {}),
     toggleCamera: vi.fn(async () => {}),
     updateSettings: vi.fn(),
+    renameMeeting: vi.fn(),
     ...overrides,
   } as unknown as MeetRoomController & Record<string, ReturnType<typeof vi.fn>>;
 }
 
 function show(
   options: {
+    joined?: boolean;
     admission?: string;
     canReadWorkspace?: boolean;
     name?: string;
     miraMeetingId?: string;
+    role?: string;
   } = {}
 ) {
   const cap = capture();
-  const controller = room(options.admission ?? 'idle');
+  const controller = room(options.admission ?? 'idle', {}, options.role);
   const onJoined = vi.fn();
   const onLeave = vi.fn();
   render(
@@ -96,7 +107,7 @@ function show(
         canReadWorkspace={options.canReadWorkspace ?? true}
         capture={cap}
         defaultDisplayName={options.name ?? 'Linh Tran'}
-        joined={false}
+        joined={options.joined ?? false}
         meetingName="Weekly sync"
         miraMeetingId={options.miraMeetingId}
         onJoined={onJoined}
@@ -123,6 +134,11 @@ it('is ready with no name field when the profile has a name, and joins on press'
   const { cap, controller, onJoined } = show({ miraMeetingId: 'm-1' });
   expect(screen.queryByRole('textbox')).toBeNull();
   expect(screen.getByText('Linh Tran')).toBeTruthy();
+  // A plain muted line, not a bordered pill.
+  const nobody = screen.getByText(call.lobby_nobody_here);
+  expect(nobody.className).not.toMatch(/border|rounded|bg-/);
+  expect(screen.queryByText(call.ready_to_join)).toBeNull();
+  expect(screen.queryByText(call.leave)).toBeNull();
   expect(screen.getByTestId('mira-box').textContent).toBe('m-1');
   expect(
     screen.queryByText(messages.meet.call.guest_join.ask_to_join)
@@ -147,6 +163,13 @@ it('asks a guest for a name and holds Join until one is entered', () => {
   expect(controller.setDisplayName).toHaveBeenCalledWith('Minh', {});
 });
 
+it('shows the spinner the moment Join is pressed, before the room answers', () => {
+  show({ joined: true });
+  const join = screen.getByRole('button', { name: new RegExp(call.join_now) });
+  expect(join).toHaveProperty('disabled', true);
+  expect(join.querySelector('svg.animate-spin')).toBeTruthy();
+});
+
 it('shows the connecting spinner while the room opens', () => {
   show({ admission: 'connecting' });
   const join = screen.getByRole('button', { name: new RegExp(call.join_now) });
@@ -165,4 +188,25 @@ it('waits for the host with the cancel action and the guest upgrade slot', () =>
   );
   expect(cap.release).toHaveBeenCalledTimes(1);
   expect(onLeave).toHaveBeenCalledTimes(1);
+});
+
+it('lets the host rename the meeting inline and saves on blur', async () => {
+  const { controller } = show({ role: 'host', miraMeetingId: 'm-1' });
+  const field = screen.getByRole('textbox', { name: call.meeting_title });
+  fireEvent.change(field, { target: { value: 'Planning' } });
+  fireEvent.blur(field);
+  await vi.waitFor(() =>
+    expect(rename).toHaveBeenCalledWith('m-1', 'Planning')
+  );
+  await vi.waitFor(() =>
+    expect(controller.renameMeeting).toHaveBeenCalledWith('Planning')
+  );
+});
+
+it('shows the title as a plain heading to everyone else', () => {
+  show({ miraMeetingId: 'm-1' });
+  expect(screen.getByRole('heading', { name: 'Weekly sync' })).toBeTruthy();
+  expect(
+    screen.queryByRole('textbox', { name: call.meeting_title })
+  ).toBeNull();
 });

@@ -4371,6 +4371,7 @@
         "guest": "Guest, not signed in"
       },
       "prejoin": {
+        "back": "Back",
         "devices": "Devices",
         "preview": "Camera preview"
       },

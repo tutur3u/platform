@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
@@ -49,12 +48,10 @@ export function NameSetupPrejoin({
     <PrejoinStage
       avatarUrl={info.avatarUrl}
       capture={capture}
-      eyebrow={t('name_setup_title')}
       fields={
         <>
           <PrejoinNameField
             disabled={saving}
-            hint={t('name_setup_hint')}
             id="prejoin-profile-name"
             label={t('your_name')}
             onChange={setName}
@@ -85,28 +82,25 @@ export function NameSetupPrejoin({
           ) : null}
         </>
       }
+      back={
+        saving
+          ? undefined
+          : {
+              label: t('prejoin.back'),
+              onClick: () => {
+                // Leaving ends a pending check, so its late result saves nothing.
+                nameSave.reset();
+                capture.release();
+                router.push(info.leaveHref);
+              },
+            }
+      }
       name={name}
       onSubmit={() => {
         if (!trimmed || saving) return;
         void save(trimmed);
       }}
       phase={phase}
-      secondary={
-        <Button
-          className="w-full"
-          disabled={saving}
-          onClick={() => {
-            // Leaving ends a pending check, so its late result saves nothing.
-            nameSave.reset();
-            capture.release();
-            router.push(info.leaveHref);
-          }}
-          type="button"
-          variant="ghost"
-        >
-          {t('leave')}
-        </Button>
-      }
       title={info.meetingName}
     />
   );

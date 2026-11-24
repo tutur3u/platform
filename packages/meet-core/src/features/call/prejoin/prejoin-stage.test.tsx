@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
-import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import vietnamese from '../../../../../../apps/meet/messages/vi.json';
@@ -10,10 +9,8 @@ import { PrejoinProvider } from './prejoin-context';
 import { PrejoinStage, type PrejoinPhase } from './prejoin-stage';
 import type { PrejoinCapture } from './use-prejoin-capture';
 
-vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
-  ),
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
 const call = messages.meet.call;
@@ -177,7 +174,30 @@ it('shows the connecting stage from the provider before the room is ready', () =
   expect(
     screen.getByRole('button', { name: new RegExp(call.join_now) })
   ).toHaveProperty('disabled', true);
+  expect(screen.getByRole('button', { name: call.prejoin.back })).toBeTruthy();
+});
+
+it('puts Back at the top left, before the layout and never beside Join', () => {
+  const onBack = vi.fn();
+  show(
+    { kind: 'ready', label: call.join_now },
+    { back: { label: call.prejoin.back, onClick: onBack } }
+  );
+  const back = screen.getByRole('button', { name: call.prejoin.back });
+  const join = screen.getByRole('button', { name: call.join_now });
   expect(
-    screen.getByRole('link', { name: call.leave }).getAttribute('href')
-  ).toBe('/home');
+    back.compareDocumentPosition(join) & Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy();
+  expect(back.closest('form')).toBeNull();
+  fireEvent.click(back);
+  expect(onBack).toHaveBeenCalledTimes(1);
+  expect(screen.queryByText(call.leave)).toBeNull();
+});
+
+it('centres the block vertically without a fixed height', () => {
+  show({ kind: 'ready', label: call.join_now });
+  const main = screen.getByRole('main');
+  expect(main.className).toContain('min-h-dvh');
+  expect(main.firstElementChild?.className).toContain('content-center');
+  expect(main.innerHTML).not.toMatch(/\bh-\[?\d+(vh|dvh)/);
 });

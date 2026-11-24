@@ -3,7 +3,9 @@
 import { Mic, MicOff, Settings2, Video, VideoOff } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -37,6 +39,7 @@ export function PrejoinPreview({
   name,
   viewer = false,
   presenceOnly = false,
+  onPresenceChange,
   className,
 }: {
   capture: PrejoinCapture;
@@ -44,6 +47,8 @@ export function PrejoinPreview({
   name: string;
   viewer?: boolean;
   presenceOnly?: boolean;
+  /** Set for the host, who can switch the room between media and presence only. */
+  onPresenceChange?: (enabled: boolean) => void;
   className?: string;
 }) {
   const t = useTranslations('meet.call');
@@ -75,19 +80,21 @@ export function PrejoinPreview({
             <div className="grid justify-items-center gap-3">
               <Avatar className="size-16 sm:size-20">
                 <AvatarImage alt="" src={avatarUrl} />
-                <AvatarFallback className="font-medium text-xl">
+                <AvatarFallback className="bg-background font-medium text-xl">
                   {initial}
                 </AvatarFallback>
               </Avatar>
-              {!presenceOnly && (
-                <p>{capture.previewError ?? t('camera_is_off')}</p>
-              )}
+              <p>
+                {presenceOnly
+                  ? t('presence_only')
+                  : (capture.previewError ?? t('camera_is_off'))}
+              </p>
             </div>
           </div>
         )}
-        {!presenceOnly && (
+        {(!presenceOnly || onPresenceChange) && (
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-linear-to-t from-background/70 via-background/20 to-transparent p-3">
-            {handedOff ? (
+            {handedOff || presenceOnly ? (
               <div aria-hidden="true" className="h-9" />
             ) : (
               <LiveMicMeter
@@ -96,54 +103,58 @@ export function PrejoinPreview({
               />
             )}
             <div className="flex items-center gap-2">
-              <Button
-                aria-label={
-                  viewer
-                    ? t('viewer_mic_unavailable')
-                    : t(capture.audioEnabled ? 'mute' : 'unmute')
-                }
-                aria-pressed={!capture.audioEnabled}
-                className={cn(
-                  'size-10 rounded-full pointer-coarse:size-11',
-                  !capture.audioEnabled &&
-                    'bg-dynamic-red text-white hover:bg-dynamic-red/90'
-                )}
-                disabled={locked}
-                onClick={capture.toggleAudio}
-                size="icon"
-                type="button"
-                variant={capture.audioEnabled ? 'secondary' : 'default'}
-              >
-                {capture.audioEnabled ? (
-                  <Mic aria-hidden="true" className="size-5" />
-                ) : (
-                  <MicOff aria-hidden="true" className="size-5" />
-                )}
-              </Button>
-              <Button
-                aria-label={
-                  viewer
-                    ? t('viewer_camera_unavailable')
-                    : t(capture.videoEnabled ? 'camera_off' : 'camera_on')
-                }
-                aria-pressed={!capture.videoEnabled}
-                className={cn(
-                  'size-10 rounded-full pointer-coarse:size-11',
-                  !capture.videoEnabled &&
-                    'bg-dynamic-red text-white hover:bg-dynamic-red/90'
-                )}
-                disabled={locked}
-                onClick={capture.toggleVideo}
-                size="icon"
-                type="button"
-                variant={capture.videoEnabled ? 'secondary' : 'default'}
-              >
-                {capture.videoEnabled ? (
-                  <Video aria-hidden="true" className="size-5" />
-                ) : (
-                  <VideoOff aria-hidden="true" className="size-5" />
-                )}
-              </Button>
+              {!presenceOnly && (
+                <>
+                  <Button
+                    aria-label={
+                      viewer
+                        ? t('viewer_mic_unavailable')
+                        : t(capture.audioEnabled ? 'mute' : 'unmute')
+                    }
+                    aria-pressed={!capture.audioEnabled}
+                    className={cn(
+                      'size-10 rounded-full pointer-coarse:size-11',
+                      !capture.audioEnabled &&
+                        'bg-dynamic-red text-white hover:bg-dynamic-red/90'
+                    )}
+                    disabled={locked}
+                    onClick={capture.toggleAudio}
+                    size="icon"
+                    type="button"
+                    variant={capture.audioEnabled ? 'secondary' : 'default'}
+                  >
+                    {capture.audioEnabled ? (
+                      <Mic aria-hidden="true" className="size-5" />
+                    ) : (
+                      <MicOff aria-hidden="true" className="size-5" />
+                    )}
+                  </Button>
+                  <Button
+                    aria-label={
+                      viewer
+                        ? t('viewer_camera_unavailable')
+                        : t(capture.videoEnabled ? 'camera_off' : 'camera_on')
+                    }
+                    aria-pressed={!capture.videoEnabled}
+                    className={cn(
+                      'size-10 rounded-full pointer-coarse:size-11',
+                      !capture.videoEnabled &&
+                        'bg-dynamic-red text-white hover:bg-dynamic-red/90'
+                    )}
+                    disabled={locked}
+                    onClick={capture.toggleVideo}
+                    size="icon"
+                    type="button"
+                    variant={capture.videoEnabled ? 'secondary' : 'default'}
+                  >
+                    {capture.videoEnabled ? (
+                      <Video aria-hidden="true" className="size-5" />
+                    ) : (
+                      <VideoOff aria-hidden="true" className="size-5" />
+                    )}
+                  </Button>
+                </>
+              )}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -161,15 +172,27 @@ export function PrejoinPreview({
                   align="end"
                   className="w-[min(20rem,calc(100vw-2rem))] space-y-3"
                 >
-                  <LobbyDevicePickers
-                    audioDeviceId={capture.audioDeviceId}
-                    devices={capture.devices}
-                    onAudioDeviceChange={capture.setAudioDeviceId}
-                    onOutputDeviceChange={capture.setOutputDeviceId}
-                    onVideoDeviceChange={capture.setVideoDeviceId}
-                    outputDeviceId={capture.outputDeviceId}
-                    videoDeviceId={capture.videoDeviceId}
-                  />
+                  {onPresenceChange && (
+                    <Label className="flex items-center justify-between gap-3 text-sm">
+                      {t('presence_only')}
+                      <Switch
+                        checked={presenceOnly}
+                        disabled={handedOff}
+                        onCheckedChange={onPresenceChange}
+                      />
+                    </Label>
+                  )}
+                  {!presenceOnly && (
+                    <LobbyDevicePickers
+                      audioDeviceId={capture.audioDeviceId}
+                      devices={capture.devices}
+                      onAudioDeviceChange={capture.setAudioDeviceId}
+                      onOutputDeviceChange={capture.setOutputDeviceId}
+                      onVideoDeviceChange={capture.setVideoDeviceId}
+                      outputDeviceId={capture.outputDeviceId}
+                      videoDeviceId={capture.videoDeviceId}
+                    />
+                  )}
                 </PopoverContent>
               </Popover>
             </div>

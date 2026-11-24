@@ -1,7 +1,6 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { usePrejoin, usePrejoinInfo } from './prejoin-context';
 import { PrejoinStage } from './prejoin-stage';
@@ -13,6 +12,7 @@ import { PrejoinStage } from './prejoin-stage';
  */
 export function PrejoinConnecting() {
   const t = useTranslations('meet.call');
+  const router = useRouter();
   const capture = usePrejoin();
   const info = usePrejoinInfo();
   if (!capture || !info) return null;
@@ -20,21 +20,22 @@ export function PrejoinConnecting() {
     <PrejoinStage
       avatarUrl={info.avatarUrl}
       capture={capture}
-      eyebrow={t('ready_to_join')}
       fields={
         <p className="text-sm">
           <span className="text-muted-foreground">{t('joining_as')} </span>
           <span className="break-words font-medium">{info.displayName}</span>
         </p>
       }
+      back={{
+        label: t('prejoin.back'),
+        onClick: () => {
+          capture.release();
+          router.push(info.leaveHref);
+        },
+      }}
       name={info.displayName}
       onSubmit={() => undefined}
       phase={{ kind: 'connecting', label: t('join_now') }}
-      secondary={
-        <Button asChild className="w-full" variant="ghost">
-          <Link href={info.leaveHref}>{t('leave')}</Link>
-        </Button>
-      }
       title={info.meetingName}
     />
   );
