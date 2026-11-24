@@ -82,6 +82,13 @@ const advanced: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
   },
   {
+    id: 'authWorker',
+    app: 'auth',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'vaultWitness',
     app: 'vault-witness',
     category: 'internal',

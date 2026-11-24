@@ -61,6 +61,12 @@ const STAGING_ONLY = new Map([
     // apps/playground-execution/src/qualification.test.mjs checks prod.
     'workers_dev is staging',
   ],
+  [
+    'apps/chat-realtime/cloudflare.config.ts',
+    // The fenced staging Worker is reached only on workers.dev;
+    // apps/chat-realtime/src/cloudflare-config.test.ts keeps prod off it.
+    'workers_dev is staging',
+  ],
 ]);
 
 const FLAGS = [

@@ -88,6 +88,7 @@ export async function loadWorker(app, result) {
         specifier.startsWith('@tuturuuu/utils/') &&
         [
           'framable-paths',
+          'log-safety',
           'seo-robots',
           'staging-cookie-policy',
           'staging-hosts',

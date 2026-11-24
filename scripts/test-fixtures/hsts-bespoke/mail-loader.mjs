@@ -78,6 +78,7 @@ export async function loadMail(result) {
         specifier.startsWith('@tuturuuu/utils/') &&
         [
           'framable-paths',
+          'log-safety',
           'seo-robots',
           'signed-in-loader-timing',
           'staging-cookie-policy',

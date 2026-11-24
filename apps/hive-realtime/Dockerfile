@@ -11,6 +11,7 @@ COPY patches ./patches
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY apps/ai/package.json ./apps/ai/package.json
 COPY apps/apps/package.json ./apps/apps/package.json
+COPY apps/auth/package.json ./apps/auth/package.json
 COPY apps/calendar/package.json ./apps/calendar/package.json
 COPY apps/chat/package.json ./apps/chat/package.json
 COPY apps/chat-realtime/package.json ./apps/chat-realtime/package.json
