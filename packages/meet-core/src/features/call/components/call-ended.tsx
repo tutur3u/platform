@@ -31,6 +31,7 @@ export function CallEnded({
   canManage,
   canReadNotes,
   canStartMeeting = false,
+  hostName,
   shareNotesAfterMeeting,
   wsId,
   meetingId,
@@ -48,6 +49,8 @@ export function CallEnded({
   canReadNotes: boolean;
   /** Workspace members outside Parley may start another meeting from here. */
   canStartMeeting?: boolean;
+  /** The host's display name, for the default title of the next meeting. */
+  hostName?: string;
   shareNotesAfterMeeting?: boolean;
   wsId: string;
   meetingId: string;
@@ -102,6 +105,7 @@ export function CallEnded({
   ) : showNewMeeting ? (
     <NewMeetingButton
       wsId={wsId}
+      hostName={hostName}
       disabled={saving}
       variant="outline"
       size="lg"

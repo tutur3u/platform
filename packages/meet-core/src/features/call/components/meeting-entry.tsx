@@ -150,6 +150,7 @@ export function MeetingEntry({
   return (
     <div className="flex shrink-0 items-center gap-2">
       <Button
+        aria-busy={busy}
         disabled={!canCreate || busy}
         onClick={() => void startMeeting()}
         size="sm"
@@ -162,6 +163,7 @@ export function MeetingEntry({
         {t('create')}
       </Button>
       <Button
+        aria-busy={busy}
         disabled={!canCreate || busy}
         onClick={() => setScheduleOpen(true)}
         size="sm"

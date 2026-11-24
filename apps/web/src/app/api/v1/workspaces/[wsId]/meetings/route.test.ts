@@ -154,6 +154,31 @@ describe('meeting creation authorization', () => {
     );
   });
 
+  it('stores a name with hidden characters stripped and spaces collapsed', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+    const response = await POST(
+      request({
+        name: ' Weekly\u200B\u202E\n  sync ',
+        time: '2026-09-06T10:00:00Z',
+      }),
+      params
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Weekly sync' })
+    );
+  });
+
+  it('rejects a name that is only hidden characters', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+    const response = await POST(
+      request({ name: '\u200B\u200D\n', time: '2026-09-06T10:00:00Z' }),
+      params
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
   it('still requires workspace membership for company accounts', async () => {
     mocks.auth.mockResolvedValue(authenticatedContext());
     mocks.membership.mockResolvedValue({ ok: false });

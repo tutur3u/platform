@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
+import { sanitizeMeetingName } from '@tuturuuu/utils/meeting-name';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -20,7 +21,10 @@ const ScheduleSchema = z.object({
 });
 
 const CreateMeetingSchema = z.object({
-  name: z.string().trim().min(1).max(255),
+  name: z
+    .string()
+    .transform(sanitizeMeetingName)
+    .pipe(z.string().min(1).max(255)),
   time: z.iso.datetime({ offset: true }),
   schedule: ScheduleSchema.optional(),
 });

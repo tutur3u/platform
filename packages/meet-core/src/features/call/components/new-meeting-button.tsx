@@ -54,6 +54,7 @@ export function NewMeetingButton({
       variant={variant}
       size={size}
       className={className}
+      aria-busy={busy}
       disabled={disabled || busy}
       onClick={() => void start()}
     >

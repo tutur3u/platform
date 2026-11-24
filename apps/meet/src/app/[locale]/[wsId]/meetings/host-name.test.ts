@@ -1,4 +1,7 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+
 import { readMeetingHostName } from './host-name';
 
 function admin(result: unknown) {
@@ -52,4 +55,21 @@ it('caps a very long name', async () => {
       )
     ).length
   ).toBe(80);
+});
+
+it('cuts by grapheme so an emoji at the limit is not split', async () => {
+  const name = `${'a'.repeat(79)}👩‍👩‍👧‍👦tail`;
+  expect(
+    await readMeetingHostName(admin({ data: { display_name: name } }), 'a')
+  ).toBe(`${'a'.repeat(79)}👩‍👩‍👧‍👦`);
+});
+
+it('composes a decomposed Vietnamese name and strips hidden characters', async () => {
+  const decomposed = 'Tra\u0302\u0300n\u200B Minh'.normalize('NFD');
+  expect(
+    await readMeetingHostName(
+      admin({ data: { display_name: decomposed } }),
+      'a'
+    )
+  ).toBe('Tra\u0302\u0300n Minh'.normalize('NFC'));
 });

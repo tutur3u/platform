@@ -592,8 +592,11 @@ as the meeting name like any other, so calendar events, notes and transcripts sh
 it unchanged, and no code compares a name against the untitled literal: the
 untitled label is only the display fallback for a meeting with no name. The host
 can rename it inline on the pre-join stage or from the in-call title. The ended
-screen's New meeting button does not know the host's name, so it keeps the
-untitled default.
+screen's New meeting button gets the saved name too. The meeting name is
+stripped of control and format characters and whitespace-collapsed both when the
+host name is read and in the create API, since a client can send any name. The Mira
+meeting form in web and workspace keeps its own pending label and its two-field
+form.
 
 Regression coverage: `meeting-entry.test.tsx` and `host-name.test.ts`.
 

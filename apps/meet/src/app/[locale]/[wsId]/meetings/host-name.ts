@@ -1,4 +1,9 @@
+import 'server-only';
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  sanitizeMeetingName,
+  truncateGraphemes,
+} from '@tuturuuu/utils/meeting-name';
 
 type Admin = Awaited<ReturnType<typeof createAdminClient>>;
 
@@ -22,5 +27,7 @@ export async function readMeetingHostName(
   const name = [saved, metadata?.display_name, metadata?.full_name].find(
     (value): value is string => typeof value === 'string' && !!value.trim()
   );
-  return name?.trim().slice(0, MAX_HOST_NAME_LENGTH) ?? '';
+  return name
+    ? truncateGraphemes(sanitizeMeetingName(name), MAX_HOST_NAME_LENGTH)
+    : '';
 }

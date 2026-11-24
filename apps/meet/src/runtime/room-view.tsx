@@ -60,6 +60,7 @@ export function RoomView({
           canManage={isHost}
           canReadNotes={policy.canReadNotes}
           canStartMeeting={canReadWorkspace}
+          hostName={access.suggestedDisplayName}
           shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
           meetingId={meeting.id}
           wsId={meeting.ws_id}
