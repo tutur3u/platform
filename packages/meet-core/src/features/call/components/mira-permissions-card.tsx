@@ -1,7 +1,6 @@
 'use client';
 
-import { Ban, Check, ShieldCheck, TriangleAlert } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+import { Ban, Check, TriangleAlert } from '@tuturuuu/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -41,11 +40,10 @@ export function MiraPermissionsCard({
   return (
     <section
       aria-label={t('title')}
-      className={cn('rounded-xl border bg-muted/25 p-3', className)}
+      className={cn('rounded-xl border p-3', className)}
     >
-      <header className="mb-2 flex flex-wrap items-center gap-2">
-        <ShieldCheck aria-hidden className="size-4 text-dynamic-purple" />
-        <h3 className="font-semibold text-sm">{t('title')}</h3>
+      <header className="mb-2 flex items-baseline gap-2">
+        <h3 className="font-medium text-sm">{t('title')}</h3>
         <span className="ms-auto text-muted-foreground text-xs">
           {t('host')}
         </span>
@@ -93,14 +91,12 @@ export function MiraPermissionsCard({
           );
         })}
         <li className="flex items-center gap-2">
+          <Ban
+            aria-hidden
+            className="size-3.5 shrink-0 text-muted-foreground"
+          />
           <span className="flex-1">{t('readPrivate')}</span>
-          <Badge
-            variant="outline"
-            className="gap-1 rounded-full border-destructive/30 bg-calendar-bg-red text-destructive"
-          >
-            <Ban aria-hidden className="size-3.5 shrink-0" />
-            {t('blocked')}
-          </Badge>
+          <span className="text-muted-foreground">{t('blocked')}</span>
         </li>
       </ul>
       {phase === 'error' && (

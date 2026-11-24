@@ -195,7 +195,7 @@ it('tells a member to ask the workspace owner when the workspace has not declare
   expect(setChoice).not.toHaveBeenCalled();
 });
 
-it('states the 18+ rule at the private composer and again beside Continue', async () => {
+it('keeps the 18+ rule out of the composer and states it beside Continue', async () => {
   ask.mockRejectedValueOnce(
     new InternalApiError('Consent required', 403, 'MIRA_CONSENT_REQUIRED')
   );
@@ -208,7 +208,7 @@ it('states the 18+ rule at the private composer and again beside Continue', asyn
     document.getElementById(element.getAttribute('aria-describedby') ?? '')
       ?.textContent;
   const composer = screen.getByRole('textbox', { name: 'personal_chat' });
-  expect(described(composer)).toBe('notice');
+  expect(composer.getAttribute('aria-describedby')).toBeNull();
   fireEvent.change(composer, { target: { value: 'Hello' } });
   fireEvent.click(screen.getByRole('button', { name: 'send' }));
   fireEvent.click(
@@ -238,14 +238,13 @@ it('opens a supplied slide and sends only the confirmed excerpt through the room
     </QueryClientProvider>
   );
 
-  expect(screen.getByText('privacy')).toBeTruthy();
+  expect(screen.getByText('empty')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'openSlide' })).toBeNull();
   fireEvent.change(screen.getByRole('textbox', { name: 'personal_chat' }), {
     target: { value: 'Explain recursion' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'send' }));
   await screen.findByText('Private answer with an example');
-  expect(screen.getByText('privateTag')).toBeTruthy();
   expect(referenceForAnswer).toHaveBeenCalledWith(
     expect.objectContaining({
       question: 'Explain recursion',

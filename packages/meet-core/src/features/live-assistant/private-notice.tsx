@@ -24,7 +24,7 @@ const CHOICE_DEADLINE_MS = 20000;
 const LEAVE_RECORD_DEADLINE_MS = 4000;
 
 /** Personal input is admitted only for a live Continue bound to this meeting and account. */
-function privateContinueAdmits(
+export function privateContinueAdmits(
   policy:
     | {
         available?: boolean;

@@ -10,7 +10,6 @@ import {
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../apps/meet/messages/en.json';
-import vietnamese from '../../../../../apps/meet/messages/vi.json';
 import type { MeetRoomController } from '../call/lib/room-controller';
 const f = vi.hoisted(() => ({
   start: vi.fn(),
@@ -35,6 +34,21 @@ vi.mock('./use-live-assistant', () => ({
 vi.mock('../call/components/mira-profile', () => ({ MiraAvatar: () => null }));
 vi.mock('./live-review-card', () => ({ LiveReviewCard: () => null }));
 import { MeetLivePanel } from './live-panel';
+import { useLiveSession } from './live-session-store';
+
+/** Reads what the Private Assistant tab sees: the gate and the start action. */
+function TabProbe() {
+  const session = useLiveSession('synthetic-meeting');
+  return (
+    <>
+      <output aria-label="accepted">{String(session?.accepted)}</output>
+      <button type="button" onClick={() => void session?.controls.start()}>
+        probe-talk
+      </button>
+    </>
+  );
+}
+const accepted = () => screen.getByLabelText('accepted').textContent;
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -55,19 +69,15 @@ function syntheticRoom() {
     toggleMicrophone: vi.fn(),
   } as unknown as MeetRoomController & { leave: ReturnType<typeof vi.fn> };
 }
-function showPanel(
-  room: MeetRoomController,
-  onLeave = vi.fn(),
-  locale: 'en' | 'vi' = 'en'
-) {
-  const localizedMessages = locale === 'en' ? messages : vietnamese;
+function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
+  const localizedMessages = messages;
   render(
     <QueryClientProvider
       client={
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <NextIntlClientProvider locale={locale} messages={localizedMessages}>
+      <NextIntlClientProvider locale="en" messages={localizedMessages}>
         <MeetLivePanel
           accountId="synthetic-account"
           room={room}
@@ -77,6 +87,7 @@ function showPanel(
           onOpenChat={vi.fn()}
           onLeave={onLeave}
         />
+        <TabProbe />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
@@ -84,7 +95,7 @@ function showPanel(
     screen.getByRole('button', { name: localizedMessages.meet.live.title })
   );
 }
-it('offers only private own-microphone start after a confirmed choice for a distinct account/device', async () => {
+it('offers private own-microphone start to the tab only after a confirmed choice for a distinct account/device', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',
     available: true,
@@ -92,11 +103,16 @@ it('offers only private own-microphone start after a confirmed choice for a dist
   });
   f.choice.mockResolvedValue({});
   showPanel(syntheticRoom());
-  const personal = await screen.findByRole('button', {
-    name: /Personal assistant/,
+  await screen.findByRole('button', {
+    name: messages.meet.live.phase_continue,
   });
-  expect((personal as HTMLButtonElement).disabled).toBe(true);
-  expect(screen.queryByRole('combobox', { name: 'Workspace' })).toBeNull();
+  expect(accepted()).toBe('false');
+  // The dialog only holds the choice; voice and controls live in the tab.
+  expect(screen.queryByRole('combobox')).toBeNull();
+  expect(screen.queryByText(/Personal assistant/)).toBeNull();
+  expect(screen.queryByText(messages.meet.live.pause)).toBeNull();
+  fireEvent.click(screen.getByText('probe-talk'));
+  expect(f.start).not.toHaveBeenCalled();
   f.read.mockResolvedValue({
     version: 'synthetic-v1',
     available: true,
@@ -121,15 +137,13 @@ it('offers only private own-microphone start after a confirmed choice for a dist
   fireEvent.click(
     screen.getByRole('button', { name: messages.meet.live.phase_continue })
   );
-  await waitFor(() =>
-    expect((personal as HTMLButtonElement).disabled).toBe(false)
-  );
-  fireEvent.click(personal);
+  await waitFor(() => expect(accepted()).toBe('true'));
+  fireEvent.click(screen.getByText('probe-talk'));
   await waitFor(() =>
     expect(f.start).toHaveBeenCalledWith('personal', [], '', undefined, 'Aoede')
   );
 });
-it('marks the Mira control as 18+ and states the rule beside Continue', async () => {
+it('keeps the 18+ badge off the Mira control and states the rule beside Continue', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',
     available: true,
@@ -140,13 +154,13 @@ it('marks the Mira control as 18+ and states the rule beside Continue', async ()
     document.getElementById(element.getAttribute('aria-describedby') ?? '')
       ?.textContent;
   showPanel(syntheticRoom());
-  // The open dialog hides the control behind it; it keeps its name and badge.
+  // The open dialog hides the control behind it; it keeps its name only.
   const control = screen.getByRole('button', {
     name: messages.meet.live.title,
     hidden: true,
   });
-  expect(control.textContent).toContain(adults.badge);
-  expect(described(control)).toBe(adults.notice);
+  expect(control.textContent).not.toContain(adults.badge);
+  expect(control.getAttribute('aria-describedby')).toBeNull();
   const proceed = await screen.findByRole('button', {
     name: messages.meet.live.phase_continue,
   });
@@ -191,7 +205,7 @@ it('blocks the consent choice with a reason while the room socket is not admitte
   ).toBe(true);
   expect(f.read).not.toHaveBeenCalled();
 });
-it('disables personal start until a fresh Continue after disconnect or a policy that no longer confirms it', async () => {
+it("withholds the tab's start until a fresh Continue after disconnect or a policy that no longer confirms it", async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -226,6 +240,7 @@ it('disables personal start until a fresh Continue after disconnect or a policy 
           onOpenChat={vi.fn()}
           onLeave={vi.fn()}
         />
+        <TabProbe />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
@@ -233,10 +248,6 @@ it('disables personal start until a fresh Continue after disconnect or a policy 
   fireEvent.click(
     screen.getByRole('button', { name: messages.meet.live.title })
   );
-  const personal = () =>
-    screen.getByRole('button', {
-      name: /Personal assistant/,
-    }) as HTMLButtonElement;
   f.read.mockResolvedValue(confirmed);
   await waitFor(() =>
     expect(
@@ -250,21 +261,21 @@ it('disables personal start until a fresh Continue after disconnect or a policy 
   fireEvent.click(
     screen.getByRole('button', { name: messages.meet.live.phase_continue })
   );
-  await waitFor(() => expect(personal().disabled).toBe(false));
+  await waitFor(() => expect(accepted()).toBe('true'));
   room.connectionStatus = 'closed';
   view.rerender(tree());
-  await waitFor(() => expect(personal().disabled).toBe(true));
+  await waitFor(() => expect(accepted()).toBe('false'));
   room.connectionStatus = 'open';
   room.state.admission = 'waiting';
   view.rerender(tree());
-  await waitFor(() => expect(personal().disabled).toBe(true));
+  await waitFor(() => expect(accepted()).toBe('false'));
   room.state.admission = 'admitted';
   view.rerender(tree());
-  await waitFor(() => expect(personal().disabled).toBe(true));
+  await waitFor(() => expect(accepted()).toBe('false'));
   fireEvent.click(
     screen.getByRole('button', { name: messages.meet.live.phase_continue })
   );
-  await waitFor(() => expect(personal().disabled).toBe(false));
+  await waitFor(() => expect(accepted()).toBe('true'));
   f.read.mockResolvedValue({
     ...confirmed,
     choice: { ...confirmed.choice, choice: 'mute', revision: 2 },
@@ -272,24 +283,6 @@ it('disables personal start until a fresh Continue after disconnect or a policy 
   await client.refetchQueries({
     queryKey: ['mira-private-choice', 'synthetic-meeting'],
   });
-  await waitFor(() => expect(personal().disabled).toBe(true));
+  await waitFor(() => expect(accepted()).toBe('false'));
   expect(f.start).not.toHaveBeenCalled();
 });
-
-for (const locale of ['en', 'vi'] as const) {
-  it(`shows localized unavailable feedback through the shared mapper in ${locale}`, async () => {
-    f.error = 'service_unavailable';
-    f.read.mockResolvedValue({
-      version: 'synthetic-v1',
-      available: true,
-      choice: null,
-    });
-    showPanel(syntheticRoom(), vi.fn(), locale);
-    expect((await screen.findByRole('alert')).textContent).toBe(
-      locale === 'en'
-        ? 'Mira is temporarily unavailable. No assistant joined the meeting.'
-        : 'Mira tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.'
-    );
-    expect(f.start).not.toHaveBeenCalled();
-  });
-}

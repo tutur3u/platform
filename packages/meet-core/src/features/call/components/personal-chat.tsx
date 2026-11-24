@@ -1,44 +1,30 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
-import {
-  BookOpen,
-  LockKeyhole,
-  RefreshCw,
-  Send,
-  Share2,
-} from '@tuturuuu/icons';
+import { LockKeyhole } from '@tuturuuu/icons';
 import {
   askPersonalMeetAssistant,
   readPrivateMiraPolicy,
   setPrivateMiraChoice,
 } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
-import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
+import { useRef, useState } from 'react';
+import { liveErrorMessageKey } from '../../live-assistant/live-errors';
+import { useLiveSession } from '../../live-assistant/live-session-store';
 import { MiraWorkspaceOff } from '../../live-assistant/mira-workspace-off';
 import { confirmPrivateChoice } from '../../live-assistant/private-choice';
-import { ChatMessageBody } from './chat-message-body';
+import type { MiraPermissionsProps } from './mira-permissions-card';
+import { EnableMiraDialog, ShareSnippetDialog } from './personal-chat-dialogs';
+import { PersonalChatComposer } from './personal-chat-composer';
+import { PersonalChatLiveStatus } from './personal-chat-live-status';
 import {
-  MiraPermissionsCard,
-  type MiraPermissionsProps,
-} from './mira-permissions-card';
-import { MiraAvatar, MiraProfile } from './mira-profile';
+  type MiraTutorReference,
+  PersonalChatMessages,
+  type Turn,
+} from './personal-chat-messages';
+import { PersonalChatToolbar } from './personal-chat-toolbar';
 
-export type MiraTutorReference = {
-  title: string;
-  onOpenSlide: () => void;
-};
+export type { MiraTutorReference };
 
 const privateFailureKeys = {
   MIRA_ACCOUNT_UNAVAILABLE: 'personal_account_unavailable',
@@ -59,10 +45,6 @@ function personalFailureKey(error: unknown) {
     : 'assistant_failed';
 }
 
-type Turn = { id: string; body: string } & (
-  | { assistant: true; question: string }
-  | { assistant: false }
-);
 export function PersonalChat({
   meetingId,
   accountId,
@@ -83,8 +65,7 @@ export function PersonalChat({
 }) {
   const t = useTranslations('meet.call');
   const liveT = useTranslations('meet.live');
-  const tm = useTranslations('meet.call.miraEverywhere.tutor');
-  const adultNoticeId = useId();
+  const session = useLiveSession(meetingId);
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [confirmEnable, setConfirmEnable] = useState(false);
@@ -163,239 +144,112 @@ export function PersonalChat({
         ask.mutate(draft.trim());
     },
   });
-  const retryingDraft = ask.isError && ask.variables === draft.trim();
   const publish = useMutation({
     mutationFn: async (text: string) => {
       await onShare(text);
       setShare(null);
     },
   });
+  const live =
+    !!session && !['idle', 'error', 'ended'].includes(session.status);
+  const liveReady =
+    live &&
+    session.mode === 'personal' &&
+    ['listening', 'paused'].includes(session.status);
+  const canTalk = !!session && !!session.accountId;
+  const talk = () => {
+    if (!session) return;
+    if (session.accepted) void session.controls.start();
+    else session.controls.openConsent();
+  };
+  const submit = () => {
+    const text = draft.trim();
+    if (!text) return;
+    if (session && liveReady) {
+      session.controls.send({ type: 'text', text });
+      setDraft('');
+      return;
+    }
+    if (!ask.isPending) ask.mutate(text);
+  };
+  const failure = ask.isError ? personalFailureKey(ask.error) : null;
   return (
     <>
-      <ScrollArea className="min-h-0 flex-1 px-4 py-3">
-        <div className="mb-4 flex gap-2 rounded-xl border bg-muted/35 p-3 text-muted-foreground text-xs">
-          <LockKeyhole
-            aria-hidden
-            className="size-4 shrink-0 text-dynamic-purple"
-          />
-          <p>
-            <strong className="text-foreground">{tm('privacy')}</strong>{' '}
-            {tm('privacyDetail')}
-          </p>
-        </div>
-        <ol className="space-y-5" aria-live="polite">
-          {history.map((turn) => {
-            const reference = turn.assistant
-              ? referenceForAnswer?.({
-                  question: turn.question,
-                  body: turn.body,
-                })
-              : undefined;
-            const shareButton = turn.assistant && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-auto min-h-7 whitespace-normal motion-reduce:transition-none"
-                onClick={() => {
-                  publish.reset();
-                  setShare(turn.body.slice(0, 2000));
-                }}
-              >
-                <Share2 aria-hidden className="size-3.5" />
-                {tm('shareSnippet')}
-              </Button>
-            );
-            return (
-              <li key={turn.id} className="flex min-w-0 gap-2 text-sm">
-                {turn.assistant && (
-                  <div className="shrink-0">
-                    <MiraProfile>
-                      <MiraAvatar size={28} />
-                    </MiraProfile>
-                  </div>
-                )}
-                <div className="wrap-break-word min-w-0 flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2 font-semibold text-xs">
-                    {turn.assistant ? (
-                      <>
-                        <span className="text-dynamic-purple">
-                          {tm('title')}
-                        </span>
-                        <Badge variant="outline" className="gap-1">
-                          <LockKeyhole aria-hidden className="size-3" />
-                          {tm('privateTag')}
-                        </Badge>
-                      </>
-                    ) : (
-                      t('you')
-                    )}
-                  </div>
-                  <ChatMessageBody
-                    body={turn.body}
-                    assistant={turn.assistant}
-                  />
-                  {reference ? (
-                    <section
-                      aria-label={reference.title}
-                      className="overflow-hidden rounded-xl border border-dynamic-purple/25 bg-card"
-                    >
-                      <h4 className="flex items-center gap-2 border-b bg-dynamic-purple/5 p-2.5 font-semibold text-xs">
-                        <BookOpen
-                          aria-hidden
-                          className="size-4 shrink-0 text-dynamic-purple"
-                        />
-                        {reference.title}
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5 p-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 motion-reduce:transition-none"
-                          onClick={reference.onOpenSlide}
-                        >
-                          {tm('openSlide')}
-                        </Button>
-                        {shareButton}
-                      </div>
-                    </section>
-                  ) : (
-                    shareButton
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-        {!history.length && (
-          <p className="py-8 text-center text-muted-foreground text-sm">
-            {t('personal_chat_empty')}
+      <PersonalChatToolbar
+        voice={canTalk}
+        voiceLocked={live}
+        permissions={permissions}
+      />
+      <PersonalChatMessages
+        history={history}
+        session={session}
+        pending={ask.isPending}
+        referenceForAnswer={referenceForAnswer}
+        onShare={(body) => {
+          publish.reset();
+          setShare(body);
+        }}
+        onTalk={canTalk && !live ? talk : undefined}
+      />
+      <PersonalChatComposer
+        draft={draft}
+        onDraft={setDraft}
+        onSubmit={submit}
+        onTalk={canTalk && !live ? talk : undefined}
+        busy={ask.isPending}
+        locked={ask.isPending || enable.isPending || confirmEnable}
+        retrying={ask.isError && ask.variables === draft.trim()}
+      >
+        {failure === 'personal_workspace_unavailable' ? (
+          <div
+            role="alert"
+            className="rounded-xl border bg-muted/35 p-3 text-sm"
+          >
+            <MiraWorkspaceOff wsId={wsId} />
+          </div>
+        ) : (
+          failure && (
+            <p role="alert" className="text-destructive text-sm">
+              {t(failure)}
+            </p>
+          )
+        )}
+        {session?.error && (
+          <p role="alert" className="text-destructive text-sm">
+            {liveT(liveErrorMessageKey(session.error))}
           </p>
         )}
-        <div className="mt-3">
-          <MiraPermissionsCard {...permissions} />
-        </div>
-      </ScrollArea>
-      <form
-        className="space-y-2 border-t p-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (draft.trim() && !ask.isPending) ask.mutate(draft.trim());
-        }}
-      >
-        {ask.isError &&
-          (personalFailureKey(ask.error) ===
-          'personal_workspace_unavailable' ? (
-            <div
-              role="alert"
-              className="rounded-xl border bg-muted/35 p-3 text-sm"
-            >
-              <MiraWorkspaceOff wsId={wsId} />
-            </div>
-          ) : (
-            <div role="alert" className="text-destructive text-sm">
-              <p>{t(personalFailureKey(ask.error))}</p>
-            </div>
-          ))}
-        {accountId &&
-          personalFailureKey(ask.error) === 'personal_consent_required' && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                enable.reset();
-                setConfirmEnable(true);
-              }}
-            >
-              <LockKeyhole className="size-4" />
-              {t('personal_enable')}
-            </Button>
-          )}
-        <MiraAdultNotice id={adultNoticeId} />
-        <Textarea
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          maxLength={2000}
-          disabled={ask.isPending || enable.isPending || confirmEnable}
-          aria-label={t('personal_chat')}
-          aria-describedby={adultNoticeId}
-          placeholder={t('personal_chat_empty')}
-        />
-        <Button
-          type="submit"
-          disabled={!draft.trim() || ask.isPending}
-          className="w-full"
-        >
-          {retryingDraft ? (
-            <RefreshCw className="size-4" />
-          ) : (
-            <Send className="size-4" />
-          )}
-          {ask.isPending
-            ? t('mira_thinking')
-            : retryingDraft
-              ? liveT('retry')
-              : t('send')}
-        </Button>
-      </form>
-      <Dialog
-        open={confirmEnable}
-        onOpenChange={(open) => {
-          if (!enable.isPending) setConfirmEnable(open);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('personal_enable')}</DialogTitle>
-            <DialogDescription>{liveT('phase_notice')}</DialogDescription>
-          </DialogHeader>
-          {enable.isError && <p role="alert">{liveT('choice_failed')}</p>}
-          <MiraAdultNotice consent id={`${adultNoticeId}-consent`} />
+        {accountId && failure === 'personal_consent_required' && (
           <Button
             type="button"
-            disabled={enable.isPending}
-            aria-describedby={`${adultNoticeId}-consent`}
-            onClick={() => enable.mutate()}
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              enable.reset();
+              setConfirmEnable(true);
+            }}
           >
-            {liveT('phase_continue')}
+            <LockKeyhole className="size-4" />
+            {t('personal_enable')}
           </Button>
-        </DialogContent>
-      </Dialog>
-      <Dialog
-        open={share !== null}
-        onOpenChange={(open) => {
-          if (!open && !publish.isPending) setShare(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('personal_share')}</DialogTitle>
-            <DialogDescription>{t('personal_share_hint')}</DialogDescription>
-          </DialogHeader>
-          <Textarea
-            value={share ?? ''}
-            onChange={(event) => setShare(event.target.value)}
-            maxLength={2000}
-            disabled={publish.isPending}
-            className="min-h-48"
-            aria-label={t('personal_share')}
-          />
-          {publish.isError && (
-            <p role="alert" className="text-destructive text-sm">
-              {t('chat_send_failed')}
-            </p>
-          )}
-          <Button
-            disabled={!share?.trim() || publish.isPending}
-            onClick={() => share && publish.mutate(share)}
-          >
-            <Share2 className="size-4" />
-            {t('personal_share_confirm')}
-          </Button>
-        </DialogContent>
-      </Dialog>
+        )}
+        {live && session && <PersonalChatLiveStatus session={session} />}
+      </PersonalChatComposer>
+      <EnableMiraDialog
+        open={confirmEnable}
+        onOpenChange={setConfirmEnable}
+        pending={enable.isPending}
+        failed={enable.isError}
+        onContinue={() => enable.mutate()}
+      />
+      <ShareSnippetDialog
+        text={share}
+        onText={setShare}
+        onClose={() => setShare(null)}
+        pending={publish.isPending}
+        failed={publish.isError}
+        onConfirm={(text) => publish.mutate(text)}
+      />
     </>
   );
 }

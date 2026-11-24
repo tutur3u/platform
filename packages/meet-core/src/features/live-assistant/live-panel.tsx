@@ -1,18 +1,7 @@
 'use client';
-import {
-  Brain,
-  Headphones,
-  LockKeyhole,
-  Mic,
-  Pause,
-  Play,
-  Radio,
-  ShieldCheck,
-  Square,
-  Users,
-} from '@tuturuuu/icons';
-import type { MeetLiveVoice } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { Radio } from '@tuturuuu/icons';
+import { readPrivateMiraPolicy } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -22,26 +11,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
-import { liveVoiceSchema } from './contracts';
-import { liveErrorMessageKey } from './live-errors';
-import { LiveReviewCard } from './live-review-card';
-import { MiraAdultNotice } from './mira-adult-notice';
+import {
+  clearLiveSession,
+  type LiveSessionControls,
+  publishLiveSession,
+  readLiveVoice,
+} from './live-session-store';
+import { privateContinueAdmits, PrivateMiraNotice } from './private-notice';
 import { useLiveAssistant } from './use-live-assistant';
-import { PrivateMiraNotice } from './private-notice';
 
+/**
+ * The Mira consent choice, plus the owner of this device's personal Live
+ * session. The Private Assistant tab drives that session through
+ * `live-session-store`, so this panel keeps running while the dialog is shut.
+ */
 export function MeetLivePanel({
   room,
   accountId,
@@ -49,7 +36,6 @@ export function MeetLivePanel({
   wsId,
   outputDeviceId,
   audioSuppressed = false,
-  onOpenChat,
   onLeave,
 }: {
   room: MeetRoomController;
@@ -59,7 +45,7 @@ export function MeetLivePanel({
   outputDeviceId: string;
   canManage: boolean;
   audioSuppressed?: boolean;
-  onOpenChat: () => void;
+  onOpenChat?: () => void;
   /** Ends the call for this device through the shell, so it shows the left screen. */
   onLeave: () => void;
 }) {
@@ -75,14 +61,26 @@ export function MeetLivePanel({
     },
     room.getSelectedDevices().audio
   );
-  const openingChat = useRef(false);
-  const adultNoticeId = useId();
   const [open, setOpen] = useState(false);
   const [choiceAccepted, setChoiceAccepted] = useState(false);
-  const [draft, setDraft] = useState('');
-  const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
   const roomAdmitted =
     room.connectionStatus === 'open' && room.state.admission === 'admitted';
+  // The dialog may be shut while the tab starts Mira, so the server's record
+  // is observed here too. It shares the notice's query, never a second fetch.
+  const policy = useQuery({
+    queryKey: ['mira-private-choice', meetingId],
+    queryFn: () => readPrivateMiraPolicy(meetingId),
+    enabled: roomAdmitted,
+    retry: false,
+  });
+  const confirmed =
+    roomAdmitted &&
+    policy.isSuccess &&
+    privateContinueAdmits(policy.data, {
+      connected: roomAdmitted,
+      meetingId,
+      accountId,
+    });
   // The card follows the open, admitted room. A disconnect or a new meeting
   // or account clears it until the notice records a new Continue.
   useEffect(() => {
@@ -91,33 +89,79 @@ export function MeetLivePanel({
   useEffect(() => {
     setChoiceAccepted(false);
   }, [meetingId, accountId]);
+  // A latest read that is no longer a Continue drops this device's acceptance.
+  useEffect(() => {
+    if (policy.isSuccess && !confirmed) setChoiceAccepted(false);
+  }, [confirmed, policy.isSuccess]);
   const active = !['idle', 'error', 'ended'].includes(live.status);
-  const ready = ['listening', 'paused'].includes(live.status);
   // If the user unmutes the meeting, stop personal capture before any further audio is sent.
   useEffect(() => {
     if (active && live.mode === 'personal' && room.media.audioEnabled)
       live.send({ type: 'pause', paused: true });
   }, [active, live.mode, room.media.audioEnabled, live.send]);
-  const start = async () => {
-    if (!choiceAccepted || audioSuppressed || !accountId) return;
-    const restoreMicrophone = room.media.audioEnabled;
-    const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
-    if (restoreMicrophone) await room.toggleMicrophone();
-    const started = await live.start(
-      'personal',
-      [],
-      room.getSelectedDevices().audio,
-      undefined,
-      voice
-    );
-    if (
-      !started &&
-      restoreMicrophone &&
-      !room.media.audioEnabled &&
-      room.getSelectedDevices().microphoneRevision === muteRevision
-    )
-      await room.toggleMicrophone();
-  };
+  const accepted = choiceAccepted && confirmed;
+  const latest = useRef({ live, room, accepted, audioSuppressed, accountId });
+  latest.current = { live, room, accepted, audioSuppressed, accountId };
+  const controls = useMemo<LiveSessionControls>(
+    () => ({
+      start: async () => {
+        const { live, room, accepted, audioSuppressed, accountId } =
+          latest.current;
+        if (!accepted || audioSuppressed || !accountId) return;
+        const restoreMicrophone = room.media.audioEnabled;
+        const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
+        if (restoreMicrophone) await room.toggleMicrophone();
+        const started = await live.start(
+          'personal',
+          [],
+          room.getSelectedDevices().audio,
+          undefined,
+          readLiveVoice()
+        );
+        if (
+          !started &&
+          restoreMicrophone &&
+          !room.media.audioEnabled &&
+          room.getSelectedDevices().microphoneRevision === muteRevision
+        )
+          await room.toggleMicrophone();
+      },
+      send: (message) => latest.current.live.send(message),
+      stop: () => latest.current.live.stop(),
+      decide: (review, approved, text) =>
+        latest.current.live.decide(review, approved, text),
+      openConsent: () => setOpen(true),
+    }),
+    []
+  );
+  useEffect(() => {
+    publishLiveSession({
+      meetingId,
+      accountId,
+      status: live.status,
+      mode: live.mode,
+      transcript: live.transcript,
+      reviews: live.reviews,
+      error: live.error,
+      accepted,
+      audioSuppressed,
+      meetingMicOn: room.media.audioEnabled,
+      controls,
+    });
+  }, [
+    meetingId,
+    accountId,
+    live.status,
+    live.mode,
+    live.transcript,
+    live.reviews,
+    live.error,
+    accepted,
+    audioSuppressed,
+    room.media.audioEnabled,
+    controls,
+  ]);
+  useEffect(() => clearLiveSession, []);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -125,32 +169,21 @@ export function MeetLivePanel({
           variant={active ? 'secondary' : 'outline'}
           size="sm"
           className="h-8 gap-1.5 rounded-full text-xs"
-          aria-describedby={adultNoticeId}
         >
           <MiraAvatar size={18} />
           <span>{t('title')}</span>
-          <MiraAdultNotice variant="compact" id={adultNoticeId} />
           {active && <Radio className="size-3.5 motion-safe:animate-pulse" />}
         </Button>
       </DialogTrigger>
-      <DialogContent
-        className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-xl"
-        onCloseAutoFocus={(event) => {
-          if (!openingChat.current) return;
-          event.preventDefault();
-          openingChat.current = false;
-          onOpenChat();
-        }}
-      >
+      <DialogContent className="flex max-h-[85dvh] flex-col gap-4 overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MiraAvatar />
             {t('title')}
-            <ShieldCheck className="size-4 text-muted-foreground" />
           </DialogTitle>
-          <DialogDescription>{t('hint')}</DialogDescription>
+          <DialogDescription>{t('consent_hint')}</DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 space-y-4 overflow-y-auto">
+        <div className="min-h-0 overflow-y-auto">
           <PrivateMiraNotice
             wsId={wsId}
             meetingId={meetingId}
@@ -163,165 +196,6 @@ export function MeetLivePanel({
             }}
             onAccepted={setChoiceAccepted}
           />
-          {!active && (
-            <div className="space-y-2">
-              <Label>{t('voice')}</Label>
-              <Select
-                value={voice}
-                onValueChange={(value) =>
-                  setVoice(liveVoiceSchema.parse(value))
-                }
-              >
-                <SelectTrigger aria-label={t('voice')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {liveVoiceSchema.options.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {!active ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                disabled={!choiceAccepted || audioSuppressed || !accountId}
-                onClick={() => void start()}
-              >
-                <Headphones className="size-6" />
-                <strong className="block">{t('personal')}</strong>
-                <span className="block text-muted-foreground text-sm">
-                  {t('personal_hint')}
-                </span>
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" className="gap-1">
-                  {live.mode === 'personal' ? (
-                    <LockKeyhole className="size-3" />
-                  ) : (
-                    <Users className="size-3" />
-                  )}
-                  {t(live.mode === 'personal' ? 'only_you' : 'everyone')}
-                </Badge>
-                <Badge variant="outline">
-                  {t(
-                    `state_${live.status as 'connecting' | 'listening' | 'paused' | 'recovering'}`
-                  )}
-                </Badge>
-                {live.organized && (
-                  <Badge variant="outline" className="gap-1">
-                    <Brain className="size-3" />
-                    {t('organized')}
-                  </Badge>
-                )}
-              </div>
-              <p className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-xs">
-                {t(
-                  live.mode === 'personal'
-                    ? 'private_mic_hint'
-                    : 'room_consent_hint'
-                )}
-              </p>
-              {live.mode === 'personal' && (
-                <div className="space-y-3" aria-live="polite">
-                  {live.transcript.map((turn, index) => (
-                    <div
-                      key={`${index}-${turn.role}`}
-                      className="rounded-lg bg-muted/30 p-3"
-                    >
-                      <span className="font-medium text-xs">
-                        {turn.role === 'assistant' ? 'Mira' : t('you')}
-                      </span>
-                      <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
-                        {turn.text}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {live.reviews.map((review) => (
-                <LiveReviewCard
-                  key={review.id}
-                  review={review}
-                  ready={ready}
-                  decide={live.decide}
-                />
-              ))}
-              {live.mode === 'room' ? (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    openingChat.current = true;
-                    setOpen(false);
-                  }}
-                >
-                  {t('open_room_chat')}
-                </Button>
-              ) : (
-                <div className="flex items-end gap-2">
-                  <Textarea
-                    aria-label={t('message')}
-                    placeholder={t('message')}
-                    value={draft}
-                    maxLength={4000}
-                    onChange={(event) => setDraft(event.target.value)}
-                  />
-                  <Button
-                    disabled={!draft.trim() || !ready}
-                    onClick={() => {
-                      live.send({ type: 'text', text: draft });
-                      setDraft('');
-                    }}
-                  >
-                    <Play className="size-4" />
-                    {t('send')}
-                  </Button>
-                </div>
-              )}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-                <Button
-                  variant="outline"
-                  disabled={
-                    audioSuppressed ||
-                    (live.mode === 'personal' && room.media.audioEnabled)
-                  }
-                  onClick={() =>
-                    live.send({
-                      type: 'pause',
-                      paused: live.status !== 'paused',
-                    })
-                  }
-                >
-                  {live.status === 'paused' ? (
-                    <Mic className="size-4" />
-                  ) : (
-                    <Pause className="size-4" />
-                  )}
-                  {t(live.status === 'paused' ? 'resume' : 'pause')}
-                </Button>
-                <Button variant="destructive" onClick={() => void live.stop()}>
-                  <Square className="size-4" />
-                  {t('stop')}
-                </Button>
-              </div>
-            </>
-          )}
-          {live.error && (
-            <p
-              role="alert"
-              className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
-            >
-              {t(liveErrorMessageKey(live.error))}
-            </p>
-          )}
         </div>
       </DialogContent>
     </Dialog>

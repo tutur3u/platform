@@ -104,6 +104,17 @@ reason with Retry where retrying can help. Only a server-confirmed Continue on a
 available policy enables the personal assistant. Choice records remain in that room's stored
 state until that state is erased; there is no automatic expiry promise.
 
+The Mira dialog holds only this choice (plus its info button and the 18+
+sentence beside Continue). Talking and typing happen in the **Private Assistant**
+chat tab: an empty state with **Talk**, a composer (mic, Ask privately, send),
+and one inline Listening, Pause and Stop row while live. **Talk** starts Mira
+only after a server-confirmed Continue on this device; before that it opens the
+choice dialog. The voice picker sits in a small settings popover in the tab. The
+info button in the tab holds the capability list ("Mira can", set by the host),
+the privacy paragraph and the 18+ line. The tab drives the same personal session
+as before, so the microphone rules below are unchanged. Regression coverage:
+`personal-chat-assistant.test.tsx`, `live-workspace-identity.test.tsx`.
+
 Private Mira receives only the requester's microphone and private typed input.
 It receives no room chat history, room roster or selected-workspace context.
 The microphone uses echo cancellation and noise suppression. Use headphones to
