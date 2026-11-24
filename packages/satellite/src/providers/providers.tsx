@@ -16,12 +16,19 @@ export function Providers({
   children,
   currentApp,
   loadingFallback = null,
+  nonce,
   themeProvider: ThemeProvider = DefaultThemeProvider,
 }: {
   appName?: string;
   children: ReactNode;
   currentApp?: LaunchableAppSlug;
   loadingFallback?: ReactNode;
+  /**
+   * The response's CSP script nonce. Apps served under a strict script policy
+   * (the Start bridge) pass it so the theme and Sorbet pre-paint scripts run
+   * before hydration instead of being blocked.
+   */
+  nonce?: string;
   themeProvider?: typeof DefaultThemeProvider;
 }) {
   const launchableApp =
@@ -41,10 +48,11 @@ export function Providers({
       // Individual scripts can be ignored by adding the data-cfasync="false"
       // attribute to the script tag:
       scriptProps={{ 'data-cfasync': 'false' }}
+      nonce={nonce}
       // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
       // for more details
     >
-      <SorbetPrePaintScript />
+      <SorbetPrePaintScript nonce={nonce} />
       {/*
         ThemeProvider stays ABOVE the Suspense boundary on purpose. next-themes
         injects a no-flash <script>; when that script lives inside a Suspense

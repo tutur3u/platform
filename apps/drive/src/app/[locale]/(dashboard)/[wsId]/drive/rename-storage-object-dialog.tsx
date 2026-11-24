@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -95,21 +95,16 @@ export function RenameStorageObjectDialog({
 
     try {
       await renameMutation.mutateAsync(trimmedName);
-      toast({
-        title: t('common.success'),
-        description: isFolder
+      toast.success(
+        isFolder
           ? t('ws-storage-objects.folder_renamed')
-          : t('ws-storage-objects.file_renamed'),
-      });
+          : t('ws-storage-objects.file_renamed')
+      );
 
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : t('common.error'),
-        variant: 'destructive',
-      });
+      toast.error(error instanceof Error ? error.message : t('common.error'));
     }
   };
 

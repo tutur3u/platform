@@ -1,8 +1,8 @@
 'use client';
 
 import { CloudUpload, TriangleAlert } from '@tuturuuu/icons';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { DriveAccess } from './drive-browser-state';
 import { DriveBottomStack } from './drive-bottom-stack';
@@ -69,20 +69,17 @@ export default function DriveExplorerClient({
         </p>
       ) : null}
       {quotaTone === 'normal' || !drive.canManage ? null : (
-        <div
-          className={cn(
-            'flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm',
-            quotaTone === 'critical'
-              ? 'border-destructive/30 bg-destructive/10 text-destructive'
-              : 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
-          )}
+        <Alert
           role="status"
+          variant={quotaTone === 'critical' ? 'destructive' : 'warning'}
         >
-          <TriangleAlert aria-hidden className="size-4 shrink-0" />
-          {quotaTone === 'critical'
-            ? t('storage.full_banner')
-            : t('storage.almost_full_banner')}
-        </div>
+          <TriangleAlert aria-hidden className="size-4" />
+          <AlertDescription>
+            {quotaTone === 'critical'
+              ? t('storage.full_banner')
+              : t('storage.almost_full_banner')}
+          </AlertDescription>
+        </Alert>
       )}
       <DriveBrowserView
         actions={drive.actions}

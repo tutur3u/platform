@@ -64,6 +64,19 @@ describe('satellite providers', () => {
     expect(scriptIndex).toBeLessThan(suspenseIndex);
   });
 
+  it('stamps the CSP nonce on the theme and Sorbet pre-paint scripts', () => {
+    const theme = Providers({
+      children: 'content',
+      currentApp: 'tasks',
+      nonce: 'nonce-1',
+    });
+    const script = Children.toArray(theme.props.children).find(
+      (child) => isValidElement(child) && child.type === SorbetPrePaintScript
+    ) as ReactElement<{ nonce?: string }>;
+    expect((theme.props as { nonce?: string }).nonce).toBe('nonce-1');
+    expect(script.props.nonce).toBe('nonce-1');
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.connection.mockResolvedValue(undefined);

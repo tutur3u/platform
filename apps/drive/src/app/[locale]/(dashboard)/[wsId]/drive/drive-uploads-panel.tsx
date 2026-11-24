@@ -68,7 +68,7 @@ function UploadRow({
             {item.name}
           </strong>
           {status.kind === 'done' ? (
-            <CircleCheck aria-hidden className="size-4 text-dynamic-green" />
+            <CircleCheck aria-hidden className="size-4 text-success" />
           ) : status.kind === 'failed' ? (
             <CircleAlert aria-hidden className="size-4 text-destructive" />
           ) : null}

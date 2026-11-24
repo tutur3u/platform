@@ -74,9 +74,7 @@ function QuotaBody({
             <p
               className={cn(
                 'flex items-center gap-1.5 font-semibold text-xs',
-                state.tone === 'critical'
-                  ? 'text-destructive'
-                  : 'text-dynamic-orange'
+                state.tone === 'critical' ? 'text-destructive' : 'text-warning'
               )}
             >
               <TriangleAlert aria-hidden className="size-3.5" />

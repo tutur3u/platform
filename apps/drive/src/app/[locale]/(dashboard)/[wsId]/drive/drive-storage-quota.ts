@@ -38,6 +38,6 @@ export function resolveDriveQuotaState(query: {
 
 export const driveQuotaIndicator: Record<DriveQuotaTone, string> = {
   normal: 'bg-primary',
-  warning: 'bg-dynamic-orange',
+  warning: 'bg-warning',
   critical: 'bg-destructive',
 };
