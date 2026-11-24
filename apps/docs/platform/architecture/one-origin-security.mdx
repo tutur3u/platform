@@ -51,9 +51,8 @@ Meet has two policies, and this change adds the keyword to both:
   and `frame-ancestors 'none'`. Meet now builds it with
   `contentSecurityPolicy(nonce, { extraScriptSources: [WASM_COMPILE_SOURCE] })`
   from `packages/start-bridge/src/core/csp.ts`, so its `script-src` is exactly
-  `'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'`. Policies intersect, so without
-  the keyword the enforced policy blocks the formatters whatever the
-  report-only policy says.
+  `'nonce-…' 'strict-dynamic' 'wasm-unsafe-eval'`. The enforced policy alone
+  decides blocking; report-only never blocks.
 - **Report-only.** The profile in `apps/meet/cloudflare/security-profile.ts` adds
   the same source through `WASM_COMPILE_SOURCE` in
   `packages/utils/src/security-headers.ts`.
@@ -64,15 +63,15 @@ Scope and limits:
   uses, is byte-identical to before. `contentSecurityPolicy` accepts exactly
   `'wasm-unsafe-eval'` as an extra script source and throws on anything else,
   every other `unsafe-*` keyword and every host included. The report-only builder
-  throws for the same sources, and for the wasm source on any mount other than
-  `/meet`. Both throw when the header is built, which is at request time for a
+  throws for any `unsafe-*` script source other than `'wasm-unsafe-eval'`, and
+  for that keyword off `/meet`. Both throw when the header is built, which is at request time for a
   document, not at build time; header unit tests
   (`packages/start-bridge/src/core/csp.test.ts`,
   `packages/utils/src/__tests__/security-headers.test.ts`,
   `apps/meet/cloudflare/security-profile.test.ts` and
   `apps/meet/src/runtime/handler-server-timing.test.ts`) pin the exact strings.
-  Parley has no CSP profile of its own; it becomes a Meet activity and inherits
-  Meet's.
+  Parley has no CSP profile of its own. Planned, not current: it becomes a
+  Meet activity and inherits Meet's.
 - **What it does not allow.** `'wasm-unsafe-eval'` lets the page compile
   WebAssembly. It does not enable JavaScript `eval`, `new Function` or string
   timers, and adds no host to `script-src`. `connect-src` is unchanged because
