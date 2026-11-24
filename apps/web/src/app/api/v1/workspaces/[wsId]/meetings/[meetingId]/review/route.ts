@@ -160,7 +160,7 @@ export async function GET(request: Request, { params }: Params) {
         if (page.data.length < 1000) break;
       }
     }
-    const sessionOrder = new Map(
+    const sessionOrder = new Map<string, number>(
       sessions.map((session, index) => [session.id, index])
     );
     chunks.sort(

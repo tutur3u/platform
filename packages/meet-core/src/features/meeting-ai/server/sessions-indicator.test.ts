@@ -88,6 +88,7 @@ it('shows everyone the indicator when the host starts', async () => {
   dbWith([result({ id })]);
   expect(await changeMeetAi(request({ action: 'start' }), params)).toEqual({
     sessionId: id,
+    protocol: 'legacy',
   });
   expect(mocks.indicator).toHaveBeenCalledWith({
     meetingId: id,

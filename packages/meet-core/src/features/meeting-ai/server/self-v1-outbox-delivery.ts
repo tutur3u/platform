@@ -129,7 +129,11 @@ export async function deliverSelfOutbox(request: Request) {
     console.warn('[meet-ai] self_v1 outbox delivery for missing sessions');
   const entries = body.entries.filter((entry) => {
     const session = found.get(entry.sessionId);
-    return session?.meeting_id === meetingId && session.protocol === 'self_v1';
+    return (
+      session !== undefined &&
+      session.meeting_id === meetingId &&
+      session.protocol === 'self_v1'
+    );
   });
   if (entries.length + gone.length < body.entries.length)
     console.warn('[meet-ai] self_v1 outbox delivery skipped foreign entries');
