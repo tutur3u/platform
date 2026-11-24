@@ -460,7 +460,7 @@ bearer, manage access, quota (413), type (415) and duplicate (409) checks.
 
 Scope: the public delivery read (`GET /api/v1/workspaces/{wsId}/external-projects/delivery`),
 published asset and image-variant reads, the version endpoint, and the CMS editor
-shell. Affected surfaces: `apps/web` (delivery and asset routes), `packages/sdk`,
+shell. Affected surfaces: `apps/web` (delivery and asset routes),
 `packages/internal-api`, `apps/cms-renderer`, and `apps/cms`.
 
 Defaults:
@@ -490,10 +490,9 @@ Defaults:
 
 Client behavior:
 
-- `EpmClient.getDelivery()` in `@tuturuuu/sdk` remembers the last `ETag` and body per
-  base URL and workspace, sends `If-None-Match`, and returns the remembered body on a
-  `304`. Preview reads never use the memo. `EpmClient.getDeliveryVersion()` reads the
-  version endpoint.
+- `@tuturuuu/sdk` (`EpmClient.getDelivery()`) still reads delivery without
+  `If-None-Match`; it benefits from the edge cache, and SDK-side revalidation is a
+  follow-up.
 - Public reads through `@tuturuuu/internal-api` leave the cache mode to the HTTP layer;
   only preview forces `no-store`.
 - `apps/cms-renderer` revalidates delivery with `If-None-Match` from an in-isolate memo
@@ -510,11 +509,11 @@ page streams the studio payload from the server with the editor's own session an
 back to the client fetch if that read fails.
 
 Intentional exceptions: draft edits also bump the version (over-invalidation is safe
-because drafts are never cached), and a hard delete that leaves the delivery `ETag`
-unchanged still moves the version, so keyed consumers pick it up on their next read.
+because drafts are never cached), and the public delivery `ETag` is
+`W/"{revision}-v{version}"`, so a hard delete that leaves the content revision
+unchanged still changes the tag and is never answered with a stale `304`.
 
-Regression coverage: `packages/sdk/src/epm-delivery.test.ts`,
-`packages/internal-api/src/external-projects.test.ts`,
+Regression coverage: `packages/internal-api/src/external-projects.test.ts`,
 `apps/cms-renderer/src/delivery-cache.test.ts`,
 `apps/cms/src/app/[locale]/(dashboard)/[wsId]/layout.test.tsx`,
 `apps/cms/src/lib/external-projects/initial-studio.test.ts`, plus the delivery

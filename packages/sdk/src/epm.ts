@@ -5,11 +5,6 @@ import {
   NetworkError,
   ValidationError,
 } from './errors';
-import {
-  getDeliveryMemoKey,
-  readDeliveryMemo,
-  writeDeliveryMemo,
-} from './epm-delivery-memo';
 import { bindGlobalFetch } from './fetch-receiver';
 import type {
   EpmAssetPayload,
@@ -520,7 +515,6 @@ export class EpmClient {
     options: {
       body?: BodyInit;
       headers?: HeadersInit;
-      memoKey?: string;
       method?: string;
       requiresAuth?: boolean;
     } = {}
@@ -528,11 +522,9 @@ export class EpmClient {
     const {
       body,
       headers: headerOverrides,
-      memoKey,
       method = 'GET',
       requiresAuth,
     } = options;
-    const memoized = memoKey ? readDeliveryMemo(memoKey) : undefined;
 
     if (requiresAuth) {
       this.requireApiKey();
@@ -545,10 +537,6 @@ export class EpmClient {
 
     if (this.apiKey) {
       headers.set('Authorization', `Bearer ${this.apiKey}`);
-    }
-
-    if (memoized) {
-      headers.set('If-None-Match', memoized.etag);
     }
 
     if (headerOverrides) {
@@ -574,10 +562,6 @@ export class EpmClient {
 
       clearTimeout(timeoutId);
 
-      if (response.status === 304 && memoized) {
-        return memoized.body as T;
-      }
-
       if (!response.ok) {
         const contentType = response.headers.get('content-type');
         if (contentType?.toLowerCase().includes('application/json')) {
@@ -597,13 +581,7 @@ export class EpmClient {
         return undefined as T;
       }
 
-      const json = (await response.json()) as T;
-      const etag = memoKey ? response.headers.get('etag') : null;
-      if (memoKey && etag) {
-        writeDeliveryMemo(memoKey, { body: json, etag });
-      }
-
-      return json;
+      return (await response.json()) as T;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         throw new NetworkError(`Request timeout after ${this.timeout}ms`);
@@ -1015,25 +993,11 @@ export class EpmClient {
     const payload = await this.request<ExternalProjectDeliveryPayload>(
       `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/delivery${suffix}`,
       {
-        memoKey: validatedOptions.preview
-          ? undefined
-          : getDeliveryMemoKey(this.baseUrl, workspaceId),
         requiresAuth: validatedOptions.preview === true,
       }
     );
 
     return normalizeDeliveryPayloadUrls(payload, this.baseUrl);
-  }
-
-  /** Cheap per-workspace delivery revision, for keying an external cache. */
-  async getDeliveryVersion(workspaceId: string): Promise<{ version: number }> {
-    if (!workspaceId.trim()) {
-      throw new ValidationError('Workspace ID is required');
-    }
-
-    return this.request<{ version: number }>(
-      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/delivery/version`
-    );
   }
 
   async load(

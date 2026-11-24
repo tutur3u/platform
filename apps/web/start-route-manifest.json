@@ -4854,6 +4854,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/workspaces/[wsId]/external-projects/delivery/version",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/delivery/version/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/workspaces/[wsId]/external-projects/email-policy",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/email-policy/route.ts",
       "category": "api",

@@ -2167,6 +2167,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/external-projects/delivery/version"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/external-projects/email-policy"
     },
     {

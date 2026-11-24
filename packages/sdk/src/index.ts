@@ -22,7 +22,6 @@ export {
   isExocorpseExternalProjectLoadingData,
   isYoolaExternalProjectLoadingData,
 } from './epm';
-export { clearEpmDeliveryMemo } from './epm-delivery-memo';
 // Errors
 export {
   AuthenticationError,
