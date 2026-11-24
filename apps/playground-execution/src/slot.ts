@@ -6,6 +6,7 @@ import {
   type GuestResult,
   runInFreshContainer,
 } from './container-run';
+import { fixtureJob, isFixtureTicket } from './fixture-source';
 import { coordinator, type Env } from './environment';
 import {
   bytes,
@@ -159,7 +160,12 @@ export class PlaygroundSlot extends DurableObject<Env> {
         stop.signal,
         () => coordinator(this.env).mayExecute(claim)
       );
-      if (result.outcome === 'exited' && result.files !== undefined) {
+      // A fixture template has no saved project to write back to.
+      if (
+        result.outcome === 'exited' &&
+        result.files !== undefined &&
+        !input.fixture
+      ) {
         savedRevision = await this.saveFiles(
           assigned,
           input,
@@ -264,6 +270,21 @@ export class PlaygroundSlot extends DurableObject<Env> {
     const { identity, revision, claim, sourceTicket } = assignment;
     const origin = this.env.PLAYGROUND_SOURCE_ORIGIN;
     const secret = this.env.PLAYGROUND_INGRESS_SECRET;
+    if (
+      this.env.PLAYGROUND_QUALIFY === 'enabled' &&
+      secret &&
+      isFixtureTicket(sourceTicket)
+    ) {
+      const job = await fixtureJob(secret, sourceTicket, {
+        projectId: identity.projectId,
+        revision,
+      });
+      return {
+        ...job,
+        stdin: await this.sealedInput(secret, claim.run_id),
+        fixture: true,
+      };
+    }
     if (!origin || !secret || secret.length < 32) {
       throw new Error('Playground source service unavailable');
     }
@@ -291,22 +312,20 @@ export class PlaygroundSlot extends DurableObject<Env> {
     ) {
       throw new Error('Playground source changed');
     }
+    const stdin = await this.sealedInput(secret, claim.run_id);
+    return { command: job.command, files: job.files, stdin, fixture: false };
+  }
+
+  private async sealedInput(secret: string, runId: string) {
     const sealed = await this.ctx.storage.get<SealedInput>(SEALED_INPUT);
-    let stdin: string | undefined;
-    if (sealed) {
-      const key = await inputKey(secret);
-      const raw = await crypto.subtle.decrypt(
-        {
-          name: 'AES-GCM',
-          iv: sealed.nonce,
-          additionalData: bytes(claim.run_id),
-        },
-        key,
-        sealed.ciphertext
-      );
-      stdin = new TextDecoder('utf-8', { fatal: true }).decode(raw);
-      await this.ctx.storage.delete(SEALED_INPUT);
-    }
-    return { command: job.command, files: job.files, stdin };
+    if (!sealed) return undefined;
+    const key = await inputKey(secret);
+    const raw = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: sealed.nonce, additionalData: bytes(runId) },
+      key,
+      sealed.ciphertext
+    );
+    await this.ctx.storage.delete(SEALED_INPUT);
+    return new TextDecoder('utf-8', { fatal: true }).decode(raw);
   }
 }

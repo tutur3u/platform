@@ -93,6 +93,27 @@ destroyed. The job uploads the report as `playground-execution-qualification-<sh
 and fails unless every case passed and the guest stopped. Check cases need an
 image built from a commit that includes check mode.
 
+## Two-participant acceptance on staging
+
+Dispatch `Playground execution staging acceptance`
+(`playground-execution-staging-acceptance.yaml`) after a staging deploy. In the
+`playground-staging` environment it opens staging admission, then for every
+language one participant Runs the stock template through `/run` and
+`/result`, the other reads that Run, and they swap. Admission is paused again
+whatever the outcome (a final step pauses it even when the run is cancelled), and the report (`playground-execution-staging-acceptance-<run>`)
+records each Run's status, output and duration.
+
+Staging has no Web project to load source from, so the Runs carry a signed
+fixture source ticket (`src/fixture-source.ts`): HMAC-SHA-256 over the
+project, revision, language and an expiry of at most 15 minutes, keyed by a
+key derived from the ingress secret for fixture tickets only. The slot accepts it only where `PLAYGROUND_QUALIFY` is
+enabled, which production never sets, serves only the named stock template
+and skips the writeback. Everything else is the production path: ingress
+authentication, admission and per-person limits, slot assignment, a fresh
+guest, results and stop. The Web source hop is covered by the production
+Meet-room test, under a short admission window, before Meet turns the cloud
+Run adapter on by default.
+
 ## Deploy to production
 
 Dispatch `Playground execution production deploy`

@@ -4,6 +4,7 @@ import test from 'node:test';
 import './worker-test-runtime.mjs';
 
 const { PlaygroundSlot } = await import('./slot.ts');
+const { fixtureTicket } = await import('./fixture-source.ts');
 
 const PROJECT = '7d0f9e5c-3f4b-4c1e-9a55-0f1d2e3c4b5a';
 const OWNER = '1b2c3d4e-5f60-4718-8a9b-0c1d2e3f4a5b';
@@ -329,4 +330,47 @@ test('a launcher that cannot build its sandbox reports a service failure', async
   assert.equal(completion.state, 'failed');
   assert.equal(completion.result.sandboxFailed, true);
   assert.equal(completion.result.exitCode, 126);
+});
+
+test('staging serves a signed fixture template without fetching source or saving', async (t) => {
+  const fx = setup(t);
+  fx.env.PLAYGROUND_QUALIFY = 'enabled';
+  delete fx.env.PLAYGROUND_SOURCE_ORIGIN;
+  const source = await fixtureTicket(fx.env.PLAYGROUND_INGRESS_SECRET, {
+    projectId: PROJECT,
+    revision: 3,
+    language: 'python',
+    expiresAt: Date.now() + 60_000,
+  });
+  const slot = fx.slot();
+  assert.equal(
+    await slot.assign(claim(), identity, 3, source, tickets[1]),
+    true
+  );
+  await slot.alarm();
+  assert.deepEqual(fx.fetches, []);
+  assert.deepEqual(fx.guest.calls, { start: 1, exec: 1, destroy: 1 });
+  assert.deepEqual(
+    fx.coordinator.calls.complete.map(({ state }) => state),
+    ['succeeded']
+  );
+});
+
+test('without staging qualification a fixture ticket is sent to Web like any ticket', async (t) => {
+  const fx = setup(t);
+  const source = await fixtureTicket(fx.env.PLAYGROUND_INGRESS_SECRET, {
+    projectId: PROJECT,
+    revision: 3,
+    language: 'python',
+    expiresAt: Date.now() + 60_000,
+  });
+  const slot = fx.slot();
+  assert.equal(
+    await slot.assign(claim(), identity, 3, source, tickets[1]),
+    true
+  );
+  await slot.alarm();
+  assert.deepEqual(fx.fetches, [
+    '/api/v1/internal/playground-execution/source',
+  ]);
 });

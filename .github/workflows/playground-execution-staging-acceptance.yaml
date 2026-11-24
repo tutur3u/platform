@@ -1,0 +1,97 @@
+name: Playground execution staging acceptance
+
+# Manual two-participant acceptance of the deployed staging execution Worker.
+# It opens staging admission only for the run, Runs every language's stock
+# template as two participants of one room through the production /run and
+# /result contract, and pauses admission again whatever the outcome. It runs
+# behind the reviewer-gated `playground-staging` environment and never touches
+# production.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playground-execution-staging
+  cancel-in-progress: false
+
+jobs:
+  accept:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    environment: playground-staging
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Resolve the account-owned staging origin
+        id: origin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.PLAYGROUND_STAGING_CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[a-f0-9]{32}$ ]]
+          subdomain="$(curl --proto '=https' --max-redirs 0 --fail --silent --show-error \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+            | jq -er 'select(.success == true) | .result.subdomain // empty')"
+          # Never send the operator secret to a host the account does not own.
+          [[ "$subdomain" =~ ^[a-z0-9-]+$ ]]
+          echo "origin=https://tuturuuu-playground-execution-staging.$subdomain.workers.dev" >> "$GITHUB_OUTPUT"
+      - name: Run two participants per language against staging
+        env:
+          PLAYGROUND_ORIGIN: ${{ steps.origin.outputs.origin }}
+          PLAYGROUND_INGRESS_SECRET: ${{ secrets.PLAYGROUND_STAGING_INGRESS_SECRET }}
+          PLAYGROUND_OPERATOR_SECRET: ${{ secrets.PLAYGROUND_STAGING_OPERATOR_SECRET }}
+        run: node apps/playground-execution/staging-acceptance.mjs "$PLAYGROUND_ORIGIN" "$RUNNER_TEMP/acceptance.json"
+      # Also on failure or cancellation: staging admission never stays open.
+      - if: always() && steps.origin.outputs.origin != ''
+        name: Pause staging admission
+        env:
+          PLAYGROUND_ORIGIN: ${{ steps.origin.outputs.origin }}
+          PLAYGROUND_OPERATOR_SECRET: ${{ secrets.PLAYGROUND_STAGING_OPERATOR_SECRET }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            control="$(curl --proto '=https' --max-redirs 0 --silent --max-time 30 -X POST \
+              -H "Authorization: Bearer $PLAYGROUND_OPERATOR_SECRET" \
+              -H 'Content-Type: application/json' \
+              --data '{"enabled":false}' "$PLAYGROUND_ORIGIN/control" || true)"
+            if [[ "$(jq -r .enabled <<<"$control" 2>/dev/null)" == false ]]; then
+              echo "$control"
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          echo 'Staging admission could not be confirmed paused' >&2
+          exit 1
+      - if: always()
+        name: Summarize the report
+        run: |
+          {
+            echo '### Playground staging acceptance'
+            echo '```json'
+            jq '{passed, failure, opened, closed, cases: [.cases[] | {language, passed, runs: [.runs[] | {status, ms, seenByOther}]}]}' \
+              "$RUNNER_TEMP/acceptance.json" || echo '{"report": "missing"}'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playground-execution-staging-acceptance-${{ github.run_id }}
+          path: ${{ runner.temp }}/acceptance.json
+          retention-days: 90
+          if-no-files-found: ignore
