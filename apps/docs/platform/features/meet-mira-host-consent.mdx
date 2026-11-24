@@ -220,6 +220,23 @@ coverage:
 17. A rejoin in a new acceptance starts the box unticked when the caller's own durable last choice in the meeting was off, and an unknown lookup starts it unticked.
 18. A Mira on has no effect until the server confirms it after storing its evidence; a confirm for another room, account or notice, or one that expired or was superseded, changes nothing; an off cancels a pending on; and a pending on is dropped when it expires, when the room restarts and when it is restored (`apps/meet-realtime/src/room-do-mira-pending.test.ts`).
 
+## Rollout fence for the two-phase Mira on
+
+The Meet Worker accepts a room that still answers a Mira on immediately
+(no `pendingId`) so the Worker and the realtime room can deploy separately.
+For such an old room the Worker keeps the compensating off (`system_fallback`
+choice row and an alert) when the evidence cannot be stored.
+
+- Deploy the Meet Worker before or together with the realtime room, never
+  after: a new room with an old Worker never receives a confirm, so a Mira on
+  stays unconfirmed, expires after 20 seconds and the person stays off.
+- Remove the fence when the realtime room with two-phase on runs everywhere:
+  delete `room-mira-legacy-on.ts`, the compensating off and its alert, and
+  stop writing `system_fallback`. The value stays valid for historical rows.
+- Owner: the Meet per-speaker lane. A transient room failure on a re-ask can
+  still trigger the compensating off for an old room, which is another reason
+  not to keep the fence longer than the rollout.
+
 ## Production E2E
 
 The `meet-flow` suite of the

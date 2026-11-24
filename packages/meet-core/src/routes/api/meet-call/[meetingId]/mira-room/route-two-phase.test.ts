@@ -147,6 +147,11 @@ describe('two-phase on', () => {
       action: 'mira.room.confirm',
       pendingId: PENDING,
     });
+    // The id never reaches the client: only the view comes back.
+    const body = JSON.stringify(await response.json());
+    expect(body).not.toContain(PENDING);
+    expect(body).not.toContain('pendingId');
+    expect(body).not.toContain('pendingUntil');
   });
 
   const oldRoom = () =>

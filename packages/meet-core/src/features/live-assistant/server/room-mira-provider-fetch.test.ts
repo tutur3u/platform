@@ -110,10 +110,10 @@ beforeEach(() => {
     audienceAdultConfirmed: true,
   }).state;
   for (const id of [alice, bob]) {
-    const body = apply(id, choice('on')) as { pendingId?: string } | null;
+    const body = apply(id, choice('on')) as { pendingId?: unknown } | null;
     // The room stages an on until the Meet Worker confirms its evidence.
-    if (body?.pendingId)
-      apply(id, { action: 'mira.room.confirm', pendingId: body.pendingId });
+    expect(typeof body?.pendingId).toBe('string');
+    apply(id, { action: 'mira.room.confirm', pendingId: body?.pendingId });
   }
   room = {
     ...room,
