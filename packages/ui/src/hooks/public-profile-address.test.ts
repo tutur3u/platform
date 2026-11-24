@@ -11,6 +11,14 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('public profile address', () => {
+  it('generates no random values while the module loads', async () => {
+    const uuid = vi.spyOn(crypto, 'randomUUID');
+    const random = vi.spyOn(Math, 'random');
+    await loadAddress();
+    expect(uuid).not.toHaveBeenCalled();
+    expect(random).not.toHaveBeenCalled();
+  });
+
   it('shows /u/<name> on the same origin and restores the replaced address', async () => {
     const address = await loadAddress();
     const listener = vi.fn();

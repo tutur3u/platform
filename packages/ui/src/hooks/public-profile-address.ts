@@ -35,14 +35,21 @@ function createNonce() {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-const PAGE_SESSION = createNonce();
+// Workers refuse random values in module scope, so the id is minted on first
+// use and then stays fixed for the rest of the page load.
+let pageSession: string | undefined;
+
+function getPageSession() {
+  pageSession ??= createNonce();
+  return pageSession;
+}
 
 /** The current entry's tag when it was written by this page load. */
 function currentTag(): AddressTag | null {
   if (typeof window === 'undefined') return null;
   const tag = historyState()[STATE_KEY] as Partial<AddressTag> | undefined;
   if (!tag || typeof tag !== 'object') return null;
-  if (tag.session !== PAGE_SESSION || typeof tag.returnTo !== 'string') {
+  if (tag.session !== getPageSession() || typeof tag.returnTo !== 'string') {
     return null;
   }
   return tag as AddressTag;
@@ -80,7 +87,7 @@ export function enterPublicProfileAddress(profileUrl: string): boolean {
   const { pathname, search, hash } = window.location;
   const tag: AddressTag = {
     returnTo: `${pathname}${search}${hash}`,
-    session: PAGE_SESSION,
+    session: getPageSession(),
   };
   window.history.replaceState(
     { ...historyState(), [STATE_KEY]: tag },
