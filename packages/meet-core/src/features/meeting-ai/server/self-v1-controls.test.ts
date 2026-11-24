@@ -148,7 +148,9 @@ describe('per-speaker transcript choice', () => {
 
   it('answers a limited allow with 409 MEET_SELF_RATE_LIMITED', async () => {
     mocks.selfAccess.mockResolvedValue({ user: { id: 'u' } });
-    mocks.room.mockRejectedValue(Object.assign(new Error('x'), { status: 429 }));
+    mocks.room.mockRejectedValue(
+      Object.assign(new Error('x'), { status: 429 })
+    );
     const response = await meetAiResponse(() =>
       chooseSelfTranscript(post({ choice: 'allow' }), params)
     );

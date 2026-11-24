@@ -207,7 +207,11 @@ describe('self_v1 outbox delivery writes', () => {
     const response = await deliver({
       roomId,
       meetingId,
-      entries: [entry(a, 2, 'close'), entry(a, 1, 'withdraw'), entry(b, 1, 'revoke')],
+      entries: [
+        entry(a, 2, 'close'),
+        entry(a, 1, 'withdraw'),
+        entry(b, 1, 'revoke'),
+      ],
     });
     expect(response.status).toBe(200);
     const { acked } = await response.json();
@@ -232,7 +236,10 @@ describe('self_v1 outbox delivery writes', () => {
     const body = { roomId, meetingId, entries: [entry(a, 1, 'withdraw')] };
     const first = await (await deliver(body)).json();
     // The database treats the same room sequence and kind as a no-op.
-    mocks.rpc.recordDecision.mockResolvedValue({ revision: 2, recorded: false });
+    mocks.rpc.recordDecision.mockResolvedValue({
+      revision: 2,
+      recorded: false,
+    });
     const replay = await (await deliver(body)).json();
     expect(replay).toEqual(first);
     expect(replay.acked).toEqual([{ sessionId, accountId: a, seq: 1 }]);
@@ -267,7 +274,11 @@ describe('self_v1 outbox delivery writes', () => {
     const response = await deliver({
       roomId,
       meetingId,
-      entries: [entry(a, 1, 'withdraw'), entry(a, 2, 'close'), entry(b, 1, 'close')],
+      entries: [
+        entry(a, 1, 'withdraw'),
+        entry(a, 2, 'close'),
+        entry(b, 1, 'close'),
+      ],
     });
     expect(response.status).toBe(200);
     expect((await response.json()).acked).toEqual([

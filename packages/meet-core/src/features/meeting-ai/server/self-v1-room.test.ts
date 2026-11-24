@@ -21,7 +21,11 @@ beforeEach(() => {
 
 describe('self_v1 room replies', () => {
   it('passes an open refusal through with its pending entries', async () => {
-    mocks.room.mockResolvedValue({ allowed: false, reason: 'revoked', pending });
+    mocks.room.mockResolvedValue({
+      allowed: false,
+      reason: 'revoked',
+      pending,
+    });
     expect(await selfRoomCommands.openBegin(room, sessionId)).toEqual({
       allowed: false,
       reason: 'revoked',
