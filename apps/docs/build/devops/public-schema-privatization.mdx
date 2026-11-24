@@ -419,6 +419,36 @@ Tables: `workspaces`, `workspace_members`, `workspace_members_and_invites`,
   watch of 4xx/5xx rates on the affected routes. A skipped or failed workflow
   is a blocker.
 
+## Extension-owned schemas: pg_net
+
+pg_net keeps outbound requests in `net.http_request_queue` and their results in
+`net._http_response`. Queued rows hold request headers in plain text, including
+the Vault bearer that `public.trigger_immediate_notification_send` attaches, and
+inserting a row makes the database send an HTTP request. The pg_net install
+script grants these tables to PUBLIC, `anon` and `authenticated`, and
+`supabase_admin` owns them, so a migration (which runs as `postgres`) cannot
+revoke those grants: `revoke … from public, anon, authenticated` applies without
+error and changes nothing. Fixing the grants needs Supabase (a support request or
+an extension release), not a migration.
+
+Until then the exposure stays latent, and these rules keep it that way:
+
+- `net` is never added to the API schemas or `extra_search_path` in
+  `apps/database/supabase/config.toml`, so PostgREST and pg_graphql cannot
+  address the tables.
+- No migration grants anything on schema `net` or its tables to PUBLIC, `anon`
+  or `authenticated`, and no migration adds a `net` table to a Realtime
+  publication.
+- Callers of `net.http_*` are SECURITY DEFINER functions or pg_cron jobs; no
+  function in an exposed schema runs caller-supplied SQL that could reach `net`.
+
+`scripts/ci/pg-net-exposure.test.js` checks the first two rules against the
+local `config.toml` and the migration files: direct and default-privilege grants,
+named `net` tables and FOR ALL TABLES publications. It does not see dynamic SQL
+or grants through an intermediate role, and it cannot see the hosted project's
+settings. The hosted project's actual grants are confirmed with an operator
+`\dp net.*` check.
+
 ## Guard: no new public relations
 
 Two layers share the allowlist `apps/database/public-schema-allowlist.json`:
