@@ -43,6 +43,7 @@ import {
   StorageQuotaError,
 } from './media-utils';
 import { ToolbarButton, ToolbarSeparator } from './toolbar-controls';
+import { insertUploadedMedia } from './toolbar-media-insert';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
 
@@ -333,30 +334,11 @@ export function ToolBar({
       try {
         setIsUploadingImage(true);
         const url = await onImageUpload(file);
-
-        // Insert image at current cursor position
-        // Use direct node insertion for ImageResize extension
-        const { state } = editor.view;
-        const { from } = state.selection;
-        const imageNode = state.schema.nodes.imageResize;
-
-        if (imageNode) {
-          // Get container width for default size (60%)
-          const editorElement = editor.view.dom as HTMLElement;
-          const containerWidth =
-            editorElement.querySelector('.ProseMirror')?.clientWidth ||
-            editorElement.clientWidth ||
-            800;
-          const defaultWidth = (60 / 100) * containerWidth; // md = 60%
-
-          const transaction = state.tr.insert(
-            from,
-            imageNode.create({ src: url, width: defaultWidth })
-          );
-          editor.view.dispatch(transaction);
+        const result = insertUploadedMedia(editor, 'image', url);
+        if (result === 'inserted') {
           toast.success('Image uploaded successfully');
-        } else {
-          console.error('Available nodes:', Object.keys(state.schema.nodes));
+        } else if (result === 'missing-node') {
+          console.error('Available nodes:', Object.keys(editor.schema.nodes));
           toast.error('Image node not found');
         }
       } catch (error) {
@@ -407,21 +389,11 @@ export function ToolBar({
         setIsUploadingVideo(true);
         // Reuse the same upload handler for videos
         const url = await onImageUpload(file);
-
-        // Insert video at current cursor position
-        const { state } = editor.view;
-        const { from } = state.selection;
-        const videoNode = state.schema.nodes.video;
-
-        if (videoNode) {
-          const transaction = state.tr.insert(
-            from,
-            videoNode.create({ src: url })
-          );
-          editor.view.dispatch(transaction);
+        const result = insertUploadedMedia(editor, 'video', url);
+        if (result === 'inserted') {
           toast.success('Video uploaded successfully');
-        } else {
-          console.error('Available nodes:', Object.keys(state.schema.nodes));
+        } else if (result === 'missing-node') {
+          console.error('Available nodes:', Object.keys(editor.schema.nodes));
           toast.error('Video node not found');
         }
       } catch (error) {
@@ -1015,21 +987,7 @@ export function FixedToolbar({
       try {
         setIsUploadingImage(true);
         const url = await onImageUpload(file);
-        const { state } = editor.view;
-        const { from } = state.selection;
-        const imageNode = state.schema.nodes.imageResize;
-        if (imageNode) {
-          const editorElement = editor.view.dom as HTMLElement;
-          const containerWidth =
-            editorElement.querySelector('.ProseMirror')?.clientWidth ||
-            editorElement.clientWidth ||
-            800;
-          const defaultWidth = (60 / 100) * containerWidth;
-          const transaction = state.tr.insert(
-            from,
-            imageNode.create({ src: url, width: defaultWidth })
-          );
-          editor.view.dispatch(transaction);
+        if (insertUploadedMedia(editor, 'image', url) === 'inserted') {
           toast.success('Image uploaded successfully');
         }
       } catch (error) {
@@ -1059,15 +1017,7 @@ export function FixedToolbar({
       try {
         setIsUploadingVideo(true);
         const url = await onImageUpload(file);
-        const { state } = editor.view;
-        const { from } = state.selection;
-        const videoNode = state.schema.nodes.video;
-        if (videoNode) {
-          const transaction = state.tr.insert(
-            from,
-            videoNode.create({ src: url })
-          );
-          editor.view.dispatch(transaction);
+        if (insertUploadedMedia(editor, 'video', url) === 'inserted') {
           toast.success('Video uploaded successfully');
         }
       } catch (error) {
