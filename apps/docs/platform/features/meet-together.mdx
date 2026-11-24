@@ -14,6 +14,8 @@ To use [Tuturuuu Meet](https://tuturuuu.com/meet), sign in with a [Tuturuuu Acco
 
 This will require you to select the `dates` and `times` that you are available to meet, and optionally change the plan `original timezone` as needed.
 
+The time zone picker lists offset groups such as "(UTC+07:00) Bangkok, Hanoi, Jakarta". A plan saves one IANA zone for the picked group: the browser's own zone when it belongs to the group, otherwise a zone at the group's offset (in either half of the year), preferring the city named in the label. Plan details show the group label, with the saved IANA zone in its tooltip; a zone listed in several groups shows the group naming its city. Regression coverage: `packages/ui/src/components/ui/legacy/meet/lib/plan-timezone.test.ts` and the create and edit dialog timezone tests next to the dialogs.
+
 <Info>
   Once you have done this, a link will be **automatically generated** for you so
   that you can share with your friends and/or colleagues.

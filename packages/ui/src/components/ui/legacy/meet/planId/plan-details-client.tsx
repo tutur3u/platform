@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useState } from 'react';
+import { planTimezoneLabel } from '../lib/plan-timezone';
 import AgendaDetails from './agenda-details';
 import { GuestPasswordReset } from './guest-password-reset';
 import { MeetInsightsPanel } from './meet-insights-panel';
@@ -98,9 +99,18 @@ export default function PlanDetailsClient({
                   <Badge variant="outline" className="tabular-nums">
                     {t('minutes_short', { count: plan.duration_minutes ?? 60 })}
                   </Badge>
-                  <Badge variant="outline">
-                    {plan.timezone || t('legacy_fixed_offset')}
-                  </Badge>
+                  {plan.timezone ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline">
+                          {planTimezoneLabel(plan.timezone)}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>{plan.timezone}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Badge variant="outline">{t('legacy_fixed_offset')}</Badge>
+                  )}
                   <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
                     <span
                       className={

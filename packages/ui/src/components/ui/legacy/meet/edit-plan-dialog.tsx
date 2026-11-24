@@ -51,6 +51,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import DateSelector from './date-selector';
+import { planTimezoneFor, timezoneGroup } from './lib/plan-timezone';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 
@@ -166,7 +167,7 @@ export default function EditPlanDialog({
     ? plan.dates.map((dateStr: string) => new Date(dateStr))
     : [];
   const parsedTimezone = plan.timezone
-    ? timezones.find((tz) => tz.utc.includes(plan.timezone!))
+    ? timezoneGroup(plan.timezone)
     : plan.start_time
       ? (() => {
           const offset = parseTimezoneFromTimetz(plan.start_time);
@@ -187,7 +188,7 @@ export default function EditPlanDialog({
         .sort((a: Date, b: Date) => a.getTime() - b.getTime())
         .map((date: Date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
-      timezone: plan.timezone ?? parsedTimezone?.utc[0],
+      timezone: plan.timezone ?? planTimezoneFor(parsedTimezone),
       duration_minutes: plan.duration_minutes ?? 60,
     },
   });
@@ -215,7 +216,7 @@ export default function EditPlanDialog({
       ? watchedDates.map((dateStr: string) => new Date(dateStr))
       : parsedDates;
   const currentTimezone = watchedStartTime
-    ? (timezones.find((tz) => tz.utc.includes(watchedTimezone ?? '')) ??
+    ? (timezoneGroup(watchedTimezone) ??
       (() => {
         const offset = parseTimezoneFromTimetz(watchedStartTime);
         return offset !== undefined
@@ -474,7 +475,7 @@ export default function EditPlanDialog({
                   <TimezoneSelector
                     value={currentTimezone}
                     onValueChange={(newTimezone) => {
-                      form.setValue('timezone', newTimezone?.utc[0]);
+                      form.setValue('timezone', planTimezoneFor(newTimezone));
                       // Update both start and end times with new timezone
                       form.setValue(
                         'start_time',

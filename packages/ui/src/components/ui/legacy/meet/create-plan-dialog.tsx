@@ -39,6 +39,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { lazy, Suspense, useState } from 'react';
 import * as z from 'zod';
+import { planTimezoneFor } from './lib/plan-timezone';
 
 const RichTextEditor = lazy(async () => {
   const module = await import('@tuturuuu/ui/text-editor/editor');
@@ -118,7 +119,7 @@ export default function CreatePlanDialog({
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
-      timezone: plan.timezone?.utc[0],
+      timezone: planTimezoneFor(plan.timezone),
       duration_minutes: plan.durationMinutes,
       ws_id: plan.wsId,
       agenda_enabled: false, // <-- Default value for agenda toggle
