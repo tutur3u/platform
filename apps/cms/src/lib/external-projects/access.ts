@@ -20,6 +20,7 @@ import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
 } from './constants';
+import { getCmsRootPermissions } from './root-permissions';
 
 type AdminDb = TypedSupabaseClient;
 
@@ -129,7 +130,7 @@ export function hasCmsConnectedChatReadPermission(
   return hasAnyPermission(permissions, ['view_chat']);
 }
 
-export async function resolveWorkspaceExternalProjectBinding(
+async function readWorkspaceExternalProjectBinding(
   workspaceId: string,
   db?: AdminDb
 ): Promise<WorkspaceExternalProjectBinding> {
@@ -210,6 +211,24 @@ export async function resolveWorkspaceExternalProjectBinding(
   };
 }
 
+const readWorkspaceExternalProjectBindingOncePerRequest = cache(
+  (workspaceId: string) => readWorkspaceExternalProjectBinding(workspaceId)
+);
+
+/**
+ * Reads the workspace binding. Calls without an explicit client share one read
+ * per request (layout, nav and pages); calls with a client always hit the
+ * database so admin writes are never read back stale.
+ */
+export function resolveWorkspaceExternalProjectBinding(
+  workspaceId: string,
+  db?: AdminDb
+): Promise<WorkspaceExternalProjectBinding> {
+  return db
+    ? readWorkspaceExternalProjectBinding(workspaceId, db)
+    : readWorkspaceExternalProjectBindingOncePerRequest(workspaceId);
+}
+
 /**
  * Resolve a raw workspace path segment to a concrete workspace id.
  *
@@ -265,7 +284,7 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
     user
       ? getPermissions({ user, wsId: normalizedWorkspaceId })
       : Promise.resolve(null),
-    user ? getPermissions({ user, wsId: ROOT_WORKSPACE_ID }) : null,
+    user ? getCmsRootPermissions(user.id, user.email ?? null) : null,
   ]);
 
   const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   adminMaybeSingle: vi.fn(),
   cookieGet: vi.fn(),
   createAdminClient: vi.fn(),
+  getCmsWorkspaceAccess: vi.fn(),
   getNavigationLinks: vi.fn(),
   getPendingWorkspaceInvitation: vi.fn(),
   getPermissions: vi.fn(),
@@ -92,6 +93,9 @@ vi.mock('@/context/sidebar-context', () => ({
 }));
 
 vi.mock('@/lib/external-projects/access', () => ({
+  getCmsWorkspaceAccess: (
+    ...args: Parameters<typeof mocks.getCmsWorkspaceAccess>
+  ) => mocks.getCmsWorkspaceAccess(...args),
   hasRootExternalProjectsAdminPermission: (
     ...args: Parameters<typeof mocks.hasRootExternalProjectsAdminPermission>
   ) => mocks.hasRootExternalProjectsAdminPermission(...args),
@@ -121,6 +125,7 @@ describe('CMS dashboard layout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getNavigationLinks.mockResolvedValue([]);
+    mocks.getCmsWorkspaceAccess.mockResolvedValue({});
     mocks.redirect.mockImplementation((path: string) => {
       throw new Error(`redirect:${path}`);
     });
@@ -175,6 +180,7 @@ describe('CMS dashboard layout', () => {
     expect(mocks.hasRootExternalProjectsAdminPermission).toHaveBeenCalled();
     expect(mocks.getPendingWorkspaceInvitation).not.toHaveBeenCalled();
     expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
+      accessWorkspaceId: 'internal',
       personalOrWsId: 'internal',
       workspaceId: ROOT_WORKSPACE_ID,
     });
@@ -247,6 +253,7 @@ describe('CMS dashboard layout', () => {
     });
     expect(mocks.getPendingWorkspaceInvitation).not.toHaveBeenCalled();
     expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
+      accessWorkspaceId: workspaceId,
       personalOrWsId: workspaceId,
       workspaceId,
     });
@@ -272,5 +279,94 @@ describe('CMS dashboard layout', () => {
       workspaceId
     );
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('starts the workspace, root permission and binding reads together', async () => {
+    const workspaceId = 'bea7429c-28e2-4159-b1b0-9212f803dcdf';
+    let releaseWorkspace: (value: unknown) => void = () => {};
+    mocks.getWorkspace.mockReturnValue(
+      new Promise((resolve) => {
+        releaseWorkspace = resolve;
+      })
+    );
+
+    const rendering = Layout({
+      children: createElement('main'),
+      params: Promise.resolve({ wsId: workspaceId }),
+    });
+    await vi.waitFor(() => {
+      expect(mocks.getWorkspace).toHaveBeenCalled();
+      expect(mocks.getPermissions).toHaveBeenCalled();
+      expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
+        workspaceId
+      );
+      expect(mocks.getCmsWorkspaceAccess).toHaveBeenCalledWith(workspaceId);
+    });
+    releaseWorkspace({
+      id: workspaceId,
+      joined: true,
+      personal: false,
+      tier: 'FREE',
+    });
+    await rendering;
+
+    expect(mocks.hasRootExternalProjectsAdminPermission).not.toHaveBeenCalled();
+    expect(mocks.getPendingWorkspaceInvitation).not.toHaveBeenCalled();
+  });
+
+  it('ignores a failed speculative read for a member of the workspace', async () => {
+    const workspaceId = 'bea7429c-28e2-4159-b1b0-9212f803dcdf';
+    mocks.getWorkspace.mockResolvedValue({
+      id: workspaceId,
+      joined: true,
+      personal: false,
+      tier: 'FREE',
+    });
+    mocks.getPermissions.mockRejectedValue(new Error('permissions down'));
+    mocks.resolveWorkspaceExternalProjectBinding.mockRejectedValue(
+      new Error('binding down')
+    );
+    mocks.getCmsWorkspaceAccess.mockRejectedValue(new Error('access down'));
+
+    await expect(
+      Layout({
+        children: createElement('main'),
+        params: Promise.resolve({ wsId: workspaceId }),
+      })
+    ).resolves.toBeDefined();
+  });
+
+  it('still surfaces a failed root permission read when it decides access', async () => {
+    mocks.getPermissions.mockRejectedValue(new Error('permissions down'));
+
+    await expect(
+      Layout({
+        children: createElement('main'),
+        params: Promise.resolve({ wsId: 'internal' }),
+      })
+    ).rejects.toThrow('permissions down');
+  });
+
+  it('reads the binding on demand for handle routes', async () => {
+    mocks.getWorkspace.mockResolvedValue({
+      id: 'bea7429c-28e2-4159-b1b0-9212f803dcdf',
+      joined: false,
+      personal: false,
+      tier: 'FREE',
+    });
+
+    await expect(
+      Layout({
+        children: createElement('main'),
+        params: Promise.resolve({ wsId: 'some-handle' }),
+      })
+    ).rejects.toThrow('redirect:/');
+
+    expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledTimes(
+      1
+    );
+    expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
+      'some-handle'
+    );
   });
 });

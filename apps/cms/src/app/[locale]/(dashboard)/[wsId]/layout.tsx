@@ -18,7 +18,6 @@ import {
   toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
 import {
-  getPermissions,
   getWorkspace,
   getWorkspaceTier,
 } from '@tuturuuu/utils/workspace-helper';
@@ -28,9 +27,11 @@ import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
 import {
+  getCmsWorkspaceAccess,
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
+import { getCmsRootPermissions } from '@/lib/external-projects/root-permissions';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -42,6 +43,10 @@ interface LayoutProps {
   }>;
   children: ReactNode;
 }
+
+const ignoreRejection = () => {};
+const WORKSPACE_UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type CmsWorkspace = NonNullable<Awaited<ReturnType<typeof getWorkspace>>>;
 
@@ -73,38 +78,53 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const isInternalWorkspace = resolvedWorkspaceId === ROOT_WORKSPACE_ID;
-  let workspace: CmsWorkspace | null = isInternalWorkspace
-    ? ({
+
+  // The reads below do not depend on each other, so they start together. Each
+  // result is only consulted behind the same checks as a sequential flow, and
+  // a rejection surfaces only where it is awaited.
+  const workspacePromise: Promise<CmsWorkspace | null> = isInternalWorkspace
+    ? Promise.resolve({
         id: ROOT_WORKSPACE_ID,
         joined: true,
         personal: false,
         tier: null,
       } as CmsWorkspace)
-    : await getWorkspace(resolvedWorkspaceId, {
+    : getWorkspace(resolvedWorkspaceId, {
         useAdmin: true,
         user,
       });
+  const rootPermissionsPromise = getCmsRootPermissions(
+    user.id,
+    user.email ?? null
+  );
+  // The binding is keyed by workspace id, so only a literal UUID can be read
+  // ahead of the workspace lookup; handles and aliases read it on demand.
+  const bindingPromise =
+    !isInternalWorkspace && WORKSPACE_UUID_PATTERN.test(resolvedWorkspaceId)
+      ? resolveWorkspaceExternalProjectBinding(resolvedWorkspaceId)
+      : null;
+  rootPermissionsPromise.catch(ignoreRejection);
+  bindingPromise?.catch(ignoreRejection);
+  if (!isInternalWorkspace) {
+    // Warms the per-request access cache that navigation and pages read.
+    getCmsWorkspaceAccess(id).catch(ignoreRejection);
+  }
 
+  let workspace = await workspacePromise;
   let canManageBoundWorkspace = false;
 
   if (isInternalWorkspace) {
-    const rootPermissions = await getPermissions({
-      user,
-      wsId: ROOT_WORKSPACE_ID,
-    });
+    const rootPermissions = await rootPermissionsPromise;
 
     if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
       redirect('/no-access');
     }
   } else if (!workspace?.joined) {
-    const rootPermissions = await getPermissions({
-      user,
-      wsId: ROOT_WORKSPACE_ID,
-    });
+    const rootPermissions = await rootPermissionsPromise;
 
     if (hasRootExternalProjectsAdminPermission(rootPermissions)) {
-      const binding =
-        await resolveWorkspaceExternalProjectBinding(resolvedWorkspaceId);
+      const binding = await (bindingPromise ??
+        resolveWorkspaceExternalProjectBinding(resolvedWorkspaceId));
 
       canManageBoundWorkspace =
         binding.enabled && Boolean(binding.canonical_project);
@@ -160,6 +180,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           workspace={workspace}
           defaultCollapsed={defaultCollapsed}
           links={await getNavigationLinks({
+            accessWorkspaceId: id,
             personalOrWsId: workspaceSlug,
             workspaceId: wsId,
           })}

@@ -22,9 +22,12 @@ import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
 export async function getNavigationLinks({
+  accessWorkspaceId,
   personalOrWsId,
   workspaceId,
 }: {
+  /** Raw route segment; shares the per-request access cache with pages. */
+  accessWorkspaceId?: string;
   personalOrWsId: string;
   workspaceId: string;
 }): Promise<(NavLink | null)[]> {
@@ -34,7 +37,7 @@ export async function getNavigationLinks({
     ? [false, null]
     : await Promise.all([
         getCmsGamesEnabled(workspaceId),
-        getCmsWorkspaceAccess(workspaceId),
+        getCmsWorkspaceAccess(accessWorkspaceId ?? workspaceId),
       ]);
   const connectedChatCanManage = Boolean(
     access?.canAccessWorkspace &&
