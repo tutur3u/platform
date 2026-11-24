@@ -97,10 +97,10 @@ export function getSettingsDialogAvailability({
       !isRootWorkspace &&
       (Boolean(workspace?.personal) || canManageWorkspaceSettings),
     canAccessApiKeys,
-    canAccessDomains: isSettingsEntryAvailable(
-      workspacePermissions,
-      'workspace_domains'
-    ),
+    // The retired pages also refused deleted workspaces.
+    canAccessDomains:
+      !workspace?.deleted &&
+      isSettingsEntryAvailable(workspacePermissions, 'workspace_domains'),
     canAccessInquiries: isSettingsEntryAvailable(
       workspacePermissions,
       'inquiries'
@@ -110,6 +110,7 @@ export function getSettingsDialogAvailability({
     canAccessSecrets,
     canAccessSso:
       !workspace?.personal &&
+      !workspace?.deleted &&
       isSettingsEntryAvailable(workspacePermissions, 'workspace_sso'),
     canAccessUsage,
     canManageWorkspaceMembers,
