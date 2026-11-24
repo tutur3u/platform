@@ -1,6 +1,6 @@
 import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
 import { createAppBaseResolver } from '@tuturuuu/start-bridge/start/app-base';
-import { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS } from '@tuturuuu/utils/next-config';
+import { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS } from '@tuturuuu/utils/web-workspace-api-paths';
 import { appApiPatterns } from './api-patterns.bridge.gen';
 
 /**

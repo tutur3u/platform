@@ -287,7 +287,7 @@ export default defineBridgeAppConfig({
 export function centralFirstModule({ app, workspaceApiCentralFirst }) {
   return workspaceApiCentralFirst
     ? `${header(app)}// next.config rewrites these to Web \`beforeFiles\`; the bridge does too.
-export { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS as centralFirst } from '@tuturuuu/utils/next-config';
+export { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS as centralFirst } from '@tuturuuu/utils/web-workspace-api-paths';
 `
     : `${header(app)}// next.config has no \`beforeFiles\` Web rewrites for this app.
 export const centralFirst: readonly string[] = [];

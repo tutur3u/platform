@@ -7,6 +7,7 @@ import { getLocalInternalAppUrl } from './internal-domains';
 import { resolveLocalPlatformBuildEnv } from './platform-build-env';
 import { getTuturuuuPortlessAllowedDevOrigins } from './portless';
 import { createSeoHeaders, type SeoApp } from './seo';
+import { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS } from './web-workspace-api-paths';
 
 type Environment = Record<string, string | undefined>;
 
@@ -18,11 +19,7 @@ export const TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS = [
   'lucide-react',
 ] as const;
 
-export const TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS = [
-  '/api/workspaces/invitations',
-  '/api/v1/workspaces/:wsId/settings/permissions',
-  '/api/v1/workspaces/:wsId/users/feedbacks',
-] as const;
+export { TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS };
 
 type NextImageConfig = NonNullable<NextConfig['images']>;
 type NextImageRemotePattern = NonNullable<
