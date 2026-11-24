@@ -129,13 +129,18 @@ const failedAt = new Map<string, number>();
 export function useRoomMira(meetingId: string) {
   const t = useTranslations('meet.mira_consent');
   const queryClient = useQueryClient();
-  // The box and its hash use the same notice: the per-speaker one in a
-  // per-speaker meeting, never both.
-  const notice = useMiraNoticeMode(meetingId);
-  const text = useMiraConsentText(notice.mode);
-  const locale = useLocale();
   const query = useRoomMiraConsent(meetingId);
   const data = query.data?.available ? query.data : undefined;
+  // The box and its hash use the same notice: the per-speaker one in a
+  // per-speaker meeting, never both. The room's own Mira view names the
+  // notice an `on` must be given under; the transcript read stands in for
+  // rooms that do not say.
+  const transcriptNotice = useMiraNoticeMode(meetingId);
+  const notice = data?.noticeMode
+    ? { mode: data.noticeMode, known: true }
+    : transcriptNotice;
+  const text = useMiraConsentText(notice.mode);
+  const locale = useLocale();
   const save = (next: RoomMiraConsent) =>
     queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
   const refreshTranscript = () =>
@@ -340,6 +345,11 @@ export function useRoomMira(meetingId: string) {
     noticeMode,
     /** False until the meeting's notice is known; nothing turns Mira on. */
     noticeKnown,
+    /**
+     * The person's `on` was given under the other notice: the box asks them
+     * to confirm under the current one. Nothing confirms on their behalf.
+     */
+    noticeStale: !!data?.noticeStale,
     loading: query.isLoading,
     available: query.data?.available === true,
     data,

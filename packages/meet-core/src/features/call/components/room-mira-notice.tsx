@@ -52,15 +52,26 @@ export function RoomMiraNotice({
   // The popover's own open state belongs to one acceptance revision, so a new
   // revision opens it again for a choice the person has not made.
   const revision = data?.acceptance?.revision ?? 0;
+  // A choice is asked for when none is made, or when the person's on was
+  // given under the other notice; a new question opens the popover again,
+  // even after it was closed.
+  const asking =
+    !!data?.acceptance &&
+    !data.pausing &&
+    (data.choice === null || (data.choice === 'on' && mira.noticeStale));
   const [openState, setOpenState] = useState<{
     revision: number;
+    asking: boolean;
     open: boolean | null;
-  }>({ revision, open: null });
-  const open = openState.revision === revision ? openState.open : null;
+  }>({ revision, asking, open: null });
+  const open =
+    openState.revision === revision && openState.asking === asking
+      ? openState.open
+      : null;
   const restoreFocus = useRef(true);
   const setOpen = (next: boolean) => {
     if (next) restoreFocus.current = true;
-    setOpenState({ revision, open: next });
+    setOpenState({ revision, asking, open: next });
   };
   const session = useLiveSession(meetingId, accountId);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -164,14 +175,14 @@ export function RoomMiraNotice({
       ]
         .filter(Boolean)
         .join(' ')}
-      open={open ?? state === 'choose'}
+      open={open ?? asking}
       onOpenChange={setOpen}
       triggerRef={trigger}
       onCloseAutoFocus={closeFocus}
     >
       <p className="font-medium">{label}</p>
       <ParticipantChoice
-        key={`${data.acceptance.revision}:${data.choice}`}
+        key={`${data.acceptance.revision}:${data.choice}:${mira.noticeStale}`}
         data={data}
         mira={mira}
         onDone={() => setOpen(false)}
@@ -209,7 +220,7 @@ export function RoomMiraSelfChoice({ meetingId }: { meetingId: string }) {
   if (!mira.data?.acceptance) return null;
   return (
     <ParticipantChoice
-      key={`${mira.data.acceptance.revision}:${mira.data.choice}`}
+      key={`${mira.data.acceptance.revision}:${mira.data.choice}:${mira.noticeStale}`}
       data={mira.data}
       mira={mira}
       onDone={() => undefined}
@@ -242,7 +253,8 @@ function ParticipantChoice({
         {t('pausing')}
       </p>
     );
-  if (data.choice === 'on')
+  // An `on` under the other notice is confirmed again below, by the person.
+  if (data.choice === 'on' && !mira.noticeStale)
     return (
       <div className="space-y-2">
         <p role="status">{t('you_on')}</p>
@@ -264,6 +276,14 @@ function ParticipantChoice({
       <p role="status" className="text-muted-foreground">
         {data.choice === 'off' ? t('you_off') : t('you_choose')}
       </p>
+      {/* Why this is asked again; explanatory, so never part of the hash. */}
+      {mira.noticeStale && (
+        <p className="text-pretty text-muted-foreground text-xs">
+          {t('mode_changed_reason', {
+            mode: mira.noticeMode === 'self' ? 'per_speaker' : 'room',
+          })}
+        </p>
+      )}
       <MiraConsentBox
         id={`mira-confirm-${id}`}
         checked={ticked}
@@ -279,7 +299,10 @@ function ParticipantChoice({
         disabled={busy || !mira.noticeKnown}
         aria-busy={!mira.noticeKnown || undefined}
         onClick={() =>
-          pick(ticked ? 'on' : 'off', data.choice ? 'toggle' : 'confirm')
+          pick(
+            ticked ? 'on' : 'off',
+            data.choice && !mira.noticeStale ? 'toggle' : 'confirm'
+          )
         }
       >
         {busy || !mira.noticeKnown ? (

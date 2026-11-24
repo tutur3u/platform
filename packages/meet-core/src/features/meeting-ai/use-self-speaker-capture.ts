@@ -55,7 +55,11 @@ export function useSelfSpeakerCapture({
   const mira = useRoomMiraConsent(meetingId);
   const room = useMemo(() => readSelfRoom(consent), [consent]);
   const allow = !!consent?.available && consent.choice === 'allow';
-  const miraOn = !!mira.data?.available && mira.data.choice === 'on';
+  // An `on` given under the other notice does not cover capture here.
+  const miraOn =
+    !!mira.data?.available &&
+    mira.data.choice === 'on' &&
+    !mira.data.noticeStale;
   // Re-renders on any local fence change; the effects read them fresh.
   const flags = useSelfCaptureFlags(meetingId);
   // A reconnect is a rejoin: a stream refused before it may open again.

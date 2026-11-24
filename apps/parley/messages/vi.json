@@ -5558,6 +5558,7 @@
       "link_privacy": "Chính sách quyền riêng tư",
       "link_terms": "Điều khoản dịch vụ",
       "lobby_notice": "Mira đang bật trong cuộc họp này.",
+      "mode_changed_reason": "{mode, select, per_speaker {Chủ trì đã chuyển sang để thiết bị của mỗi người chép lời giọng nói của chính họ, nên chúng tôi cần bạn chọn lại.} other {Chủ trì đã chuyển sang một phần chép lời chung cho cả phòng, nên chúng tôi cần bạn chọn lại.}}",
       "pausing": "Đang tắt Mira cho bạn…",
       "report_minor": "Báo có người dưới 18 tuổi",
       "report_minor_confirm": "Xác nhận báo cáo",

@@ -44,6 +44,10 @@ export type RoomMiraConsent =
       status: { active: boolean; included: number; admitted: number };
       /** Workspace default for the consent tick box. */
       boxTickedByDefault: boolean;
+      /** The notice an `on` must be given under now; absent on older rooms. */
+      noticeMode?: 'room' | 'self';
+      /** The caller's current `on` was given under the other notice. */
+      noticeStale?: boolean;
     };
 
 export type RoomMiraChoiceInput = {

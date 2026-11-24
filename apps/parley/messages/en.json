@@ -5558,6 +5558,7 @@
       "link_privacy": "Privacy Policy",
       "link_terms": "Terms of Service",
       "lobby_notice": "Mira is on in this meeting.",
+      "mode_changed_reason": "{mode, select, per_speaker {The host switched to each person's device transcribing their own voice, so we need your choice again.} other {The host switched to one shared transcript of the whole room, so we need your choice again.}}",
       "pausing": "Turning Mira off for you…",
       "report_minor": "Report someone under 18",
       "report_minor_confirm": "Confirm report",

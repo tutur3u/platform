@@ -148,6 +148,7 @@ export function isStaleSelfNotice(error: unknown) {
   return (
     code === 'MEET_SELF_NOTICE_STALE' ||
     code === 'MEET_SELF_NOTICE_MISMATCH' ||
+    code === 'MIRA_ROOM_NOTICE_MODE_STALE' ||
     (fieldOf(error, 'status') === 409 &&
       typeof code === 'string' &&
       /^MEET_(SELF|MIRA)_[A-Z_]*NOTICE[A-Z_]*MISMATCH$/.test(code))

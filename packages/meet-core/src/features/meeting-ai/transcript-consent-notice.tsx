@@ -51,7 +51,11 @@ export function TranscriptConsentNotice({
   // Mira is unavailable the plain Allow shows (the room still refuses an
   // Allow from anyone who is off).
   const mira = useRoomMiraConsent(meetingId);
-  const miraOff = !!mira.data?.available && mira.data.choice !== 'on';
+  // An `on` given under the other notice counts as off here until the
+  // person confirms it under the current one.
+  const miraOff =
+    !!mira.data?.available &&
+    (mira.data.choice !== 'on' || !!mira.data.noticeStale);
   // Without a host acceptance nobody can turn Mira on for themselves.
   const miraNotOn = !!mira.data?.available && !mira.data.acceptance;
   const miraPending = mira.isPending;
