@@ -116,12 +116,15 @@ export function sessionFileName(
 const MAX_CREDENTIALS_BYTES = 1024 * 1024;
 
 /**
- * Opens the credentials file once without following a symlink, checks the
+ * Opens a private JSON file once without following a symlink, checks the
  * type, owner and size on that descriptor, and parses only the bytes read
  * from it, so a path swapped after the check is never read. O_NONBLOCK makes
- * a FIFO fail the type check instead of blocking for a writer.
+ * a FIFO fail the type check instead of blocking for a writer. A missing file
+ * reads as undefined.
  */
-async function readCredentials(path: string): Promise<QaCredential[]> {
+export async function readPrivateJsonFile(
+  path: string
+): Promise<unknown | undefined> {
   let handle: Awaited<ReturnType<typeof open>>;
   try {
     handle = await open(
@@ -129,7 +132,7 @@ async function readCredentials(path: string): Promise<QaCredential[]> {
       constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
     );
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
     throw new Error('Refusing to read credentials through a non-file path.');
   }
   try {
@@ -143,17 +146,20 @@ async function readCredentials(path: string): Promise<QaCredential[]> {
     const buffer = Buffer.alloc(MAX_CREDENTIALS_BYTES + 1);
     const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
     if (bytesRead > MAX_CREDENTIALS_BYTES)
-      throw new Error('QA credentials file is unreadable.');
-    let parsed: unknown;
+      throw new Error('Credentials file is unreadable.');
     try {
-      parsed = JSON.parse(buffer.subarray(0, bytesRead).toString('utf8'));
+      return JSON.parse(buffer.subarray(0, bytesRead).toString('utf8'));
     } catch {
-      throw new Error('QA credentials file is unreadable.');
+      throw new Error('Credentials file is unreadable.');
     }
-    return Array.isArray(parsed) ? (parsed as QaCredential[]) : [];
   } finally {
     await handle.close();
   }
+}
+
+async function readCredentials(path: string): Promise<QaCredential[]> {
+  const parsed = await readPrivateJsonFile(path);
+  return Array.isArray(parsed) ? (parsed as QaCredential[]) : [];
 }
 
 export interface QaSecretStore {

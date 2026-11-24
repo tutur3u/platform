@@ -7,8 +7,13 @@ import {
   resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
+import { EmployeesAdminClient } from '../platform-employees';
+import { WorkspaceRolesAdminClient } from '../platform-workspace-roles';
 import { runAccountsCommand } from './accounts';
+import { defaultEmployeesDeps, runEmployeesCommand } from './employees';
+import { createEmployeeSecretStore } from './employees-secrets';
 import { runQaCommand } from './qa-users';
+import { runWorkspaceRolesCommand } from './workspace-roles';
 
 export function getClient(config: CliConfig) {
   if (!config.session?.accessToken || !config.session.refreshToken) {
@@ -69,6 +74,33 @@ export async function runAccountGroup(
         AccountsClient.forRunner(
           process.env.TUTURUUU_DEVBOX_RUNNER_TOKEN ?? ''
         ),
+    });
+    return true;
+  }
+  if (group === 'employees') {
+    await runEmployeesCommand(
+      {
+        client: () =>
+          new EmployeesAdminClient(getClient(config).getClientOptions()),
+        flags,
+        json,
+        positionals: positionals.slice(1),
+      },
+      defaultEmployeesDeps(createEmployeeSecretStore())
+    );
+    return true;
+  }
+  if (
+    group === 'workspaces' &&
+    (action === 'roles' ||
+      (action === 'members' && positionals[2] === 'invite'))
+  ) {
+    await runWorkspaceRolesCommand({
+      client: () =>
+        new WorkspaceRolesAdminClient(getClient(config).getClientOptions()),
+      flags,
+      json,
+      positionals: positionals.slice(1),
     });
     return true;
   }

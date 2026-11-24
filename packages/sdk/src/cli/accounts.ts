@@ -5,7 +5,19 @@ import {
   accountCommandSchema,
 } from '../accounts';
 import { type FlagValue, getFlag } from './args';
+import { employeesHelp } from './employees';
 import { qaHelp } from './qa-users';
+import { workspaceRolesHelp } from './workspace-roles';
+
+/** Help topics owned by the account commands (kept out of help.ts). */
+export function isAccountsHelp(group?: string, action?: string) {
+  return (
+    group === 'accounts' ||
+    group === 'qa' ||
+    group === 'employees' ||
+    (group === 'workspaces' && (action === 'roles' || action === 'members'))
+  );
+}
 
 export function accountsHelp(
   group = 'accounts',
@@ -13,6 +25,8 @@ export function accountsHelp(
   subaction?: string
 ) {
   if (group === 'qa') return qaHelp(action === 'users' ? subaction : undefined);
+  if (group === 'employees') return employeesHelp();
+  if (group === 'workspaces') return workspaceRolesHelp();
   return [
     'ttr accounts invite <staff-email>',
     'ttr accounts list [--limit <count>] [--cursor <uuid>]',

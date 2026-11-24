@@ -43,6 +43,17 @@ export function getFlag(flags: Record<string, FlagValue>, key: string) {
   return typeof value === 'string' ? value : undefined;
 }
 
+/**
+ * A present --dry-run always means a dry run. A value captured after it (for
+ * example `--dry-run <address>`) is refused instead of read as "not a dry run".
+ */
+export function isDryRun(flags: Record<string, FlagValue>) {
+  if (!Object.hasOwn(flags, 'dry-run')) return false;
+  const value = flags['dry-run'];
+  if (value === true || value === 'true') return true;
+  throw new Error('Pass --dry-run without a value (or as --dry-run=true).');
+}
+
 export function getDefaultAction(group?: string) {
   return group &&
     [

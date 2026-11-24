@@ -694,8 +694,14 @@ original administrator when browser recovery is unavailable. This exception
 accepts only a verified platform CLI access bearer with CLI origin and current
 required-MFA proof. It freshly checks the corporate domain, persisted root MEMBER
 membership, `manage_internal_accounts`, and confirmed, unbanned current Auth
-identity. It grants no CLI access to ordinary employee creation, availability,
-management, RESTORE or address migration routes and issues no new credentials.
+identity. It grants no CLI access to management, RESTORE or address migration
+routes and issues no new credentials. Ordinary employee creation (`POST
+employees`) and its availability GET admit a CLI credential only through
+checks equivalent to this one, plus an always-required bound MFA proof, the
+`EMPLOYEE_CREATION_CLI_ENABLED=true` server flag (off by default), a 5 per hour
+per-operator limit and an audit line, for
+[`ttr employees create`](/platform/features/account-management#create-a-staff-mailbox-account);
+every other credential keeps the infra session path.
 
 Every request binds the path to `Idempotency-Key`. GET inspects only an owned
 original operation; missing, foreign and fenced operations cannot be resumed.

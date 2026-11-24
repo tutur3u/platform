@@ -49,3 +49,74 @@ the retention job after applying both migrations. The
 `security-definer-search-paths.sql` pgTAP suites cover the database boundaries.
 The Accounts retention processor and its test cover the slot budget, durable
 stop fence, and unknown-write behavior.
+
+## Create a staff mailbox account
+
+`ttr employees create <address@tuturuuu.com> --name <display name>` runs the
+admin app's **Create employee** flow from the operator's `ttr login` session.
+It creates a confirmed Auth user, the employee record and an active personal
+mailbox, so inbound mail to the address resolves to that mailbox.
+
+Rule: CLI employee creation is allowed only through checks equivalent to
+`authorizeEmployeeCliRecovery`. Rationale: staff mailbox accounts, such as the
+CI QA operator, need to be created from the CLI without the admin app. Scope
+and defaults:
+
+- Off by default. The web server admits CLI tokens on the employees route only
+  when `EMPLOYEE_CREATION_CLI_ENABLED` is exactly `true`; otherwise a CLI token
+  gets the same refusal as any non-infra credential.
+- The `ttr login` token must always carry an MFA proof, bound to a factor the
+  account verified, whatever the operator's required-MFA policy says. Log in
+  to the CLI from an MFA-verified web session. A token without it gets 403.
+- Then the CLI recovery checks: verified `@tuturuuu.com` staff identity
+  matching the token, persisted root `MEMBER`, `manage_internal_accounts`, and
+  the required-MFA policy when the account has one.
+- At most 5 CLI creates (POSTs) per hour per operator, failing closed (429, or
+  503 when the limit store is unavailable). The read-only availability GET is
+  not counted.
+- Every CLI create attempt logs one structured `employee_creation_cli` line:
+  operator user ID, token ID (`jti`), target address, operation ID, HTTP
+  status and result. Never the token or the password.
+- The admin app and other credentials keep the unchanged infra session path.
+
+Regression coverage: `employee-creation-request-authorization.test.ts`,
+`employee-creation-cli-guard.test.ts` and the employees `route.test.ts`.
+
+The CLI generates the password locally and never accepts it from flags. It
+stores the password first, in the macOS Keychain (service `tuturuuu-employee`,
+account = address) or an owner-only file under `~/.tuturuuu/employees`
+(`--password-store file`), and sends it only in the request body. Output shows
+the user ID, address, mailbox state and credential location, never the
+password. Before generating anything it checks admission and availability with
+a read-only GET. A local operation file, created exclusively, makes the command
+idempotent: a rerun replays a pending operation with the same password and
+Idempotency-Key, and an already-created account is reported without touching
+its stored password. The command refuses to replace a stored credential that
+has no local operation, and refuses a Keychain item that already exists. An
+invalid-input rejection discards a fresh attempt; other uncertain replies keep
+it for a replay. `--dry-run` makes the read-only GET and writes no credential
+or operation state (a session refresh may still update the CLI config).
+
+Employee creation does not add root workspace membership. To grant a root
+permission such as `manage_qa_test_users`:
+
+1. `ttr workspaces roles create --workspace 00000000-0000-0000-0000-000000000000 --name "QA operator" --permission manage_qa_test_users`
+   takes the complete permission list (no default set) and prints the stored
+   set. An existing role with the same name is reported, never modified.
+2. `ttr workspaces members invite --workspace <root> --email <address> --role <role-id> --confirm <role-id>`.
+   The employee signs in once and accepts the invitation; the role applies on
+   acceptance. `ttr workspaces roles assign --role <id> --user <id> --confirm <id>`
+   grants a role to an existing full member instead.
+
+These use the existing workspace role and invitation routes
+(`manage_workspace_roles`, `manage_workspace_members`). Every command takes
+`--dry-run` (read-only GETs) and `--json`; `list` and `show` only read.
+
+Rollback:
+
+- Roles: `ttr workspaces roles unassign` and `ttr workspaces roles delete`
+  (both need the exact UUID in `--confirm`).
+- Employee: **Disable access** in the admin app's internal accounts page is the
+  current path. It bans sign-in and leaves the mailbox in place.
+- Mailbox retirement: pending. No route or CLI retires an employee's mailbox
+  yet.

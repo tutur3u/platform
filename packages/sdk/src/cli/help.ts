@@ -15,7 +15,7 @@ import { upgradeHelp } from './help-upgrade';
 import { resourcesHelp } from './resources';
 
 import { adminHelp, isAdminHelp } from './admin-groups';
-import { accountsHelp } from './accounts';
+import { accountsHelp, isAccountsHelp } from './accounts';
 
 export { getGlobalHelp } from './help-global';
 const helpTopics: Record<string, HelpTopic> = {
@@ -730,7 +730,7 @@ export function getHelpOutput(
   subaction?: string
 ) {
   if (group === 'resources') return resourcesHelp();
-  if (group === 'accounts' || group === 'qa')
+  if (isAccountsHelp(group, action))
     return accountsHelp(group, action, subaction);
   if (isAdminHelp(group, action)) return adminHelp(group);
   if (!group) {
