@@ -215,7 +215,7 @@ Product analytics follows the
 **Purpose and basis.** `product_analytics_daily` serves one purpose:
 aggregate product health for platform operators with `view_infrastructure`.
 Its inputs are filtered by the stored Analytics choice from the cookie banner
-(migration `20261124095000_product_analytics_consent.sql`). Under the default
+(migration `20261124114000_product_analytics_consent.sql`). Under the default
 `consent` basis a signed-in person is counted only after an affirmative choice
 that includes Analytics; a withdrawal, no decision, a guest and a deleted
 account are not counted. The legal owner can switch
@@ -337,6 +337,6 @@ pass. The Perf Factory detector covers gateway mounts until then.
   provisioned. Its intended scope is a fine-grained token with
   public-repository read access only, so its rate limit never draws on a
   person's pool. `observability-product-analytics` is enabled only after
-  production applies `20261124095000_product_analytics_consent.sql`.
+  production applies `20261124114000_product_analytics_consent.sql`.
 - Investigate a missing series: read `observability_ingest_runs` for the source
   (`budget_exhausted`, `failed`, `unknown`) before reading provider dashboards.

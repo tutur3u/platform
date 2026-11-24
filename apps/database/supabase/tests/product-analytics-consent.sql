@@ -1,4 +1,4 @@
--- Regression coverage for 20261124095000_product_analytics_consent.sql.
+-- Regression coverage for 20261124114000_product_analytics_consent.sql.
 -- The cookie banner's Analytics choice is stored per user through caller-bound
 -- RPCs, and the daily product analytics rollup counts a person only under the
 -- active basis: 'consent' (default, affirmative grants only) or 'opt_out'
