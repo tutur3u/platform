@@ -33,25 +33,35 @@ vi.mock('@tuturuuu/internal-api', () => ({
   updateCurrentUserProfile: mocks.update,
 }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
-vi.mock('@marsidev/react-turnstile', () => ({
-  DEFAULT_SCRIPT_ID: 'cf-turnstile-script',
-  Turnstile: ({
-    onSuccess,
-    onError,
-  }: {
-    onSuccess: (token: string) => void;
-    onError: () => void;
-  }) => (
-    <div>
-      <button type="button" onClick={() => onSuccess('one-use')}>
-        pass check
-      </button>
-      <button type="button" onClick={onError}>
-        fail check
-      </button>
-    </div>
-  ),
-}));
+// Like the real widget, the mock can answer only after it has mounted: its
+// buttons appear in the render after the mount effects, by which time the
+// check component's own mount effect has armed its callbacks.
+vi.mock('@marsidev/react-turnstile', async () => {
+  const { useEffect, useState } = await import('react');
+  return {
+    DEFAULT_SCRIPT_ID: 'cf-turnstile-script',
+    Turnstile: ({
+      onSuccess,
+      onError,
+    }: {
+      onSuccess: (token: string) => void;
+      onError: () => void;
+    }) => {
+      const [loaded, setLoaded] = useState(false);
+      useEffect(() => setLoaded(true), []);
+      return loaded ? (
+        <div>
+          <button type="button" onClick={() => onSuccess('one-use')}>
+            pass check
+          </button>
+          <button type="button" onClick={onError}>
+            fail check
+          </button>
+        </div>
+      ) : null;
+    },
+  };
+});
 
 const challenge = () =>
   new mocks.InternalApiError('Forbidden', 403, 'ABUSE_CHALLENGE_REQUIRED');
