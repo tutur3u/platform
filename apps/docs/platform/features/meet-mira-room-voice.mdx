@@ -177,9 +177,8 @@ unless they keep it muted. Mira is never counted in attendance and cannot presen
 
 ## Claude text agent
 
-**Status: disabled in this design, pending USER decision** on the sub-processor
-notice change proposed below. Until that is decided, the Claude text agent is
-not built or flagged on.
+**Status: disabled.** The Claude text agent is not built or flagged on until
+the [combined notice change](#combined-notice-change) ships with room voice.
 
 Because Claude has no audio API, a Claude room participant is a text agent:
 
@@ -202,12 +201,24 @@ It ships independently of the voice Durable Object and needs no new audio
 consent. It does add a model sub-processor (Anthropic), which changes the
 hashed notice text.
 
-### Proposed notice change (pending USER decision)
+### Combined notice change
 
-The room notice names Google Gemini as the only model sub-processor. Adding
-Anthropic changes hashed consent text, so every participant must consent
-again. Nothing below is applied; the hashed keys and
-`MIRA_ROOM_NOTICE_VERSION` are unchanged until the USER decides.
+The room notice names Google Gemini as the only model sub-processor. Naming
+Anthropic Claude and OpenAI as model sub-processors, and adding the voice
+purpose, ship as **one** notice change together with room voice, under a single
+`room-v3` bump, so every participant consents again only once.
+
+- **Until room voice ships**, the hashed keys and `MIRA_ROOM_NOTICE_VERSION`
+  stay unchanged. The Anthropic or OpenAI wording never ships alone.
+- **Before any hashed-text change**, the complete combined EN and VI text, the
+  new notice version and the updated
+  [required notice content](/platform/features/meet-mira-host-consent#required-notice-content)
+  go to the release authority as one reviewable draft. The text changes only
+  after that draft is approved.
+
+The table shows the Anthropic part of the combined text. The OpenAI
+sub-processor and voice purpose wording is drafted with room voice and joins
+the same keys.
 
 | Item | Current | Proposed |
 | --- | --- | --- |
@@ -217,10 +228,6 @@ again. Nothing below is applied; the hashed keys and
 | Notice version | `MIRA_ROOM_NOTICE_VERSION = '2026-11-24-room-v2'` (`packages/realtime/src/meet/room-mira-acceptance.ts`) | `'<ship-date>-room-v3'`, which ends every current acceptance and forces re-consent |
 | Docs | [Required notice content](/platform/features/meet-mira-host-consent#required-notice-content) names Google Gemini | Names Google Gemini or Anthropic Claude |
 
-If room voice ships in the same release, its OpenAI sub-processor and voice
-purpose join the same text and share the one `room-v3` bump, so participants
-consent again only once. If not, voice takes the next version.
-
 ## Consent
 
 - **New capability.** `voice` joins `MIRA_ROOM_CAPABILITIES`. Turning voice on
@@ -229,7 +236,8 @@ consent again only once. If not, voice takes the next version.
 - **Notice.** Voice adds a purpose (Mira hears people who talk to it and speaks
   in the meeting) and, for OpenAI, a new sub-processor. Both need new notice
   text and a new notice version (`room-v3`), which changes the hashed consent
-  text and forces re-consent. The wording goes through the legal review in
+  text and forces re-consent. This is the same single bump as the
+  [combined notice change](#combined-notice-change). The wording goes through the legal review in
   [Mira host consent](/platform/features/meet-mira-host-consent#required-notice-content).
 - **Everyone informed.** A system line when voice starts and ends; the Mira tile
   with an AI label; the header Mira control showing *listening* or *speaking*;
@@ -442,7 +450,7 @@ Dialogs use the shared UI dialog components; colors use dynamic tokens.
 | 4 | Minors hear or are heard by Mira | Owner attestation, acceptor confirmation, report ends acceptance and locks room Mira for the meeting until the owner confirms again, audited | Relies on truthful attestation | High, residual Medium |
 | 5 | Private Mira isolation regresses | Separate Durable Object class and storage | Shared helpers must keep their mode checks | High, residual Low |
 | 6 | Prompt injection by voice or transcript | Room voice and the Claude text agent have no tools, search or memory writes; fixed instructions; a test asserts the empty tool set | Spoken misinformation until stopped | Medium, residual Low |
-| 7 | New sub-processor or cross-border transfer without notice | New notice version, legal review; the Claude text agent stays disabled until the USER decides the proposed Anthropic notice change | Review outcome pending | Medium |
+| 7 | New sub-processor or cross-border transfer without notice | New notice version, legal review; one combined Anthropic, OpenAI and voice notice change under a single bump, approved as a draft before any hashed-text change; the Claude text agent stays disabled until it ships | Review outcome pending | Medium |
 | 8 | Consent race between withdrawal and a frame | Single-threaded Durable Object, ordered withdrawal handling | Frames already sent before the click | Medium, residual Low |
 | 9 | Cross-meeting leakage | Object per `workspaceId:meetingId`; tokens name the meeting | None known | Medium, residual Low |
 | 10 | Double settlement | Sequence-checked settlement | None known | Low |
