@@ -178,7 +178,7 @@ That lets a workspace approve a domain it controls, not one it only typed.
   authorization response carries `iss` (RFC 9207) to stop mix-up attacks.
 - **Token** `POST {issuer}/token`: `client_secret_basic` or `private_key_jwt`.
   A `private_key_jwt` assertion must use the pinned algorithm (never `none` or
-  `HS*`). Its `aud` is the issuer or token endpoint, `exp` is at most 5 minutes
+  `HS*`). Its `aud` must be exactly the issuer, `exp` is at most 5 minutes
   out, and `jti` is single use (cached until expiry).
   Codes are 256-bit random, stored hashed, single use, valid for 60 seconds and
   bound to client, redirect URI, PKCE challenge, nonce, account, session and
@@ -186,8 +186,9 @@ That lets a workspace approve a domain it controls, not one it only typed.
   it.
 - **Tokens**: the id_token is RS256-signed, valid 5 minutes, with claims `iss`,
   `sub` (pairwise per client), `aud`, `azp`, `exp`, `iat`, `auth_time`, `nonce`,
-  `acr` (`urn:tuturuuu:aal2`), `amr` (the methods actually used, such as `pwd`,
-  `otp` or `hwk`, never a fixed value), and with consent `email`,
+  `acr` (`urn:tuturuuu:aal2`), `amr` (the methods actually used, such as `pwd`
+  or `otp`, never a fixed value; other factors count only once a later decision
+  qualifies them for the MFA rule), and with consent `email`,
   `email_verified`, `given_name`, `family_name`. The access token is opaque,
   hashed at rest, valid 10 minutes, and grants only `userinfo`. **There are no
   refresh tokens** in the first OIDC release.
@@ -209,7 +210,7 @@ That lets a workspace approve a domain it controls, not one it only typed.
 | Session fixation or account switch | The transaction is bound to the starting account and session hash. An account switch burns it |
 | Stale privilege | Membership, assignment, role, domain and MFA age are rechecked at consume and after signing. Revocation applies to the next login |
 | Phishing-style consent | The consent page names the app, its registered domain and the exact claims, and is never framed (`frame-ancestors 'none'`) |
-| Brute force or abuse | Existing fail-closed Redis limits. OIDC adds limits for token (60/min per client), authorize (20/min per IP), userinfo (60/min per token) and failed client authentication (10/min per client, then a lockout) |
+| Brute force or abuse | Existing fail-closed Redis limits. OIDC adds limits for token (60/min per client), authorize (20/min per IP), userinfo (60/min per token) and failed client authentication (10/min per client plus IP, then exponential backoff, never a hard per-client lockout, since `client_id` is public) |
 | Insider misconfiguration | `manage_sso_clients` permission, an MFA proof under 10 minutes for every trust write, revisioned updates, and creation disabled |
 | Audit tampering | Append-only `sso_audit_events` with no email, assertion or token material, only event codes and UUID correlation |
 
@@ -225,9 +226,15 @@ That lets a workspace approve a domain it controls, not one it only typed.
   - `apps/web` sends structured input: client, transaction, subject, audience
     or ACS, `NotOnOrAfter` or `exp`, and nonce or `InResponseTo`.
   - The Worker builds and canonicalizes the assertion or JWS itself.
-  - It accepts a request only with a short-lived finalization permit signed by
-    the database at `sso_finalize_issuance`, bound to that transaction and
-    `kid`.
+  - It accepts a request only with a finalization permit issued at
+    `sso_finalize_issuance`, bound to that transaction and `kid`. The permit
+    lives 60 seconds or less and is single use (the Worker records its ID until
+    expiry).
+  - The permit is signed with a dedicated Ed25519 key. The service-only
+    finalization path signs it with a secret held outside Postgres (a server
+    secret, never a database column or setting). The Worker holds only the
+    public key and checks it. That key rotates on the same dual-publish
+    schedule as signing keys.
   - It checks the `kid`-to-client and `kid`-to-protocol binding.
   - Requests are authenticated by an HMAC over the body plus a timestamp and a
     single-use nonce, never a static bearer.
@@ -253,10 +260,11 @@ That lets a workspace approve a domain it controls, not one it only typed.
   Claude Owners, with any lifetime, until the SP stops trusting it. Turning off
   issuance on the Tuturuuu side does not help. The runbook, rehearsed before
   the pilot:
-  1. Replace or remove the certificate in WorkOS.
-  2. Set the key to `revoked` and disable issuance.
-  3. Rotate the key.
-  4. Re-establish trust.
+  1. Turn Require SSO off, or confirm the verified Owner bypass works.
+  2. Replace or remove the certificate in WorkOS.
+  3. Set the key to `revoked` and disable issuance.
+  4. Rotate the key.
+  5. Re-establish trust.
 
   The exposure window lasts until SP trust changes.
 - **Availability**: monitor the signer Worker and the Redis limiter. Both fail
