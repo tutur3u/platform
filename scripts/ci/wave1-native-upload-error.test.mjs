@@ -176,3 +176,64 @@ test('credential-free dry-run reports a missing executable when stderr is empty'
   const error = new NativeUploadError({ code: 'ENOENT' }, [], { dryRun: true });
   assert.equal(error.uploadFailure.headline, 'cf subprocess error: ENOENT');
 });
+
+test('a refusal names its authored assertion but never a generated one', () => {
+  const secret = ['cf_secr', 'et_fixt', 'ure_refusal'].join('');
+  const authored = (() => {
+    try {
+      assert.deepEqual(
+        [{ id: secret }],
+        [],
+        'Worker already has a route; use the release owner'
+      );
+    } catch (error) {
+      return error;
+    }
+  })();
+  assert.equal(
+    productionFailureMessage(authored).endsWith(
+      '; refusal="Worker already has a route; use the release owner"'
+    ),
+    true
+  );
+  assert.equal(productionFailureMessage(authored).includes(secret), false);
+
+  const generated = (() => {
+    try {
+      assert.equal(secret, 'expected');
+    } catch (error) {
+      return error;
+    }
+  })();
+  assert.equal(generated.generatedMessage, true);
+  assert.equal(productionFailureMessage(generated).includes(secret), false);
+  assert.equal(productionFailureMessage(generated).includes('refusal='), false);
+
+  const multiline = Object.assign(new Error(`first line\n${secret}`), {
+    code: 'ERR_ASSERTION',
+    generatedMessage: false,
+  });
+  assert.equal(productionFailureMessage(multiline).includes(secret), false);
+  assert.equal(
+    productionFailureMessage(new Error(secret)).includes(secret),
+    false
+  );
+
+  const observation = Object.assign(
+    new Error(
+      'Required control-plane observation failed (403): GET api.github.com/repos/o/r/actions/runs/1/jobs'
+    ),
+    { code: 'ERR_ASSERTION', generatedMessage: false }
+  );
+  assert.equal(
+    productionFailureMessage(observation).endsWith(
+      '; refusal="Required control-plane observation failed (403)"'
+    ),
+    true
+  );
+  const withPath = Object.assign(new Error('Unexpected host example.com/x'), {
+    code: 'ERR_ASSERTION',
+    generatedMessage: false,
+  });
+  assert.equal(productionFailureMessage(withPath).includes('refusal='), false);
+});

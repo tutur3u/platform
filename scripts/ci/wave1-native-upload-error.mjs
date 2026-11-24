@@ -194,10 +194,34 @@ export class NativeUploadError extends Error {
   }
 }
 
+/**
+ * Name the refusing check only when it is one of the script's own authored
+ * assertion messages. A generated assertion message can quote provider
+ * values, so it is never printed.
+ */
+function authoredRefusal(error) {
+  if (
+    error?.code !== 'ERR_ASSERTION' ||
+    error.generatedMessage !== false ||
+    typeof error.message !== 'string'
+  )
+    return undefined;
+  const line = stripVTControlCharacters(error.message).split(/\r?\n/u)[0];
+  // The observation failure carries a redacted request path; keep only its
+  // static prefix and HTTP status.
+  const observation =
+    /^Required control-plane observation failed \((\d{3})\)/u.exec(line);
+  if (observation)
+    return `Required control-plane observation failed (${observation[1]})`;
+  // No slash or at sign, so no host, path, URL or address survives.
+  return /^[\w .,:;'()=<>+-]{1,200}$/u.test(line) ? line : undefined;
+}
+
 export function productionFailureMessage(error) {
   const message =
     'Production upload refused or uncertain; inspect the retained receipt and provider versions before another attempt';
-  return error instanceof NativeUploadError
-    ? `${message}; uploadFailure=${JSON.stringify(error.uploadFailure)}`
-    : message;
+  if (error instanceof NativeUploadError)
+    return `${message}; uploadFailure=${JSON.stringify(error.uploadFailure)}`;
+  const refusal = authoredRefusal(error);
+  return refusal ? `${message}; refusal=${JSON.stringify(refusal)}` : message;
 }
