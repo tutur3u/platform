@@ -243,6 +243,168 @@ for (const [name, mutate] of Object.entries(mutations))
     mutate(x);
     assert.equal((await decision(x)).allowed, false);
   });
+const step = (name, conclusion) => ({ name, status: 'completed', conclusion });
+const CRON_VERIFY = 'Verify the prebuilt artifact is already serving';
+function cronJobs(base, failedStep = CRON_VERIFY, validate = 'success') {
+  return [
+    {
+      ...base,
+      id: 90,
+      name: 'deploy-cron-control-cloudflare / validate',
+      conclusion: validate,
+      steps: [step('Validate', validate)],
+    },
+    {
+      ...base,
+      id: 91,
+      name: 'deploy-cron-control-cloudflare / deploy',
+      conclusion: 'failure',
+      steps: [
+        step('Capture and verify settings before publication', 'success'),
+        step(failedStep, 'failure'),
+        step('Publish the exact artifact with its secrets', 'skipped'),
+        step('Record successful Cloudflare deployment', 'skipped'),
+      ],
+    },
+  ];
+}
+function withCronDeploy(failedStep, validate) {
+  const x = fixture();
+  const page = x.jobPages[0];
+  page.jobs.push(...cronJobs(page.jobs[0], failedStep, validate));
+  page.total_count = page.jobs.length;
+  return x;
+}
+// Only Cron Control failed; Lettin and Parley were skipped as unaffected callers.
+function cronOnly(failedStep, validate) {
+  const x = fixture();
+  const page = x.jobPages[0];
+  const base = page.jobs[0];
+  page.jobs = page.jobs.filter(
+    ({ name }) => !/deploy-(lettin|meet|parley)-cloudflare/.test(name)
+  );
+  page.jobs.push(
+    {
+      ...base,
+      id: 80,
+      name: 'deploy-lettin-cloudflare',
+      conclusion: 'skipped',
+      steps: [],
+    },
+    {
+      ...base,
+      id: 81,
+      name: 'deploy-parley-cloudflare',
+      conclusion: 'skipped',
+      steps: [],
+    },
+    ...cronJobs(base, failedStep, validate)
+  );
+  page.total_count = page.jobs.length;
+  return x;
+}
+const reason = async (x) => (await decision(x)).reason;
+test('Cron Control serving-proof verification failure is a canonical verification failure', async () => {
+  assert.deepEqual(await decision(withCronDeploy()), {
+    allowed: true,
+    reason: 'only_canonical_cloudflare_verification_failed',
+  });
+});
+test('a Cron-only verification failure recovers while Lettin and Parley are skipped', async () => {
+  assert.deepEqual(await decision(cronOnly()), {
+    allowed: true,
+    reason: 'only_canonical_cloudflare_verification_failed',
+  });
+});
+test('Cron Control is tolerated only at its serving-proof step with a passing validation', async () => {
+  assert.equal(
+    await reason(withCronDeploy('Publish the exact artifact with its secrets')),
+    'failure_outside_canonical_verification'
+  );
+  assert.equal(
+    await reason(
+      withCronDeploy('Capture and verify settings before publication')
+    ),
+    'failure_outside_canonical_verification'
+  );
+  assert.equal(
+    await reason(withCronDeploy(undefined, 'failure')),
+    'failure_outside_canonical_verification'
+  );
+  assert.equal(
+    await reason(cronOnly(undefined, 'skipped')),
+    'all_cloudflare_validations_required'
+  );
+  const missingValidate = cronOnly();
+  missingValidate.jobPages[0].jobs = missingValidate.jobPages[0].jobs.filter(
+    ({ name }) => name !== 'deploy-cron-control-cloudflare / validate'
+  );
+  missingValidate.jobPages[0].total_count =
+    missingValidate.jobPages[0].jobs.length;
+  assert.equal(
+    await reason(missingValidate),
+    'all_cloudflare_validations_required'
+  );
+  const twoFailures = cronOnly();
+  twoFailures.jobPages[0].jobs.find(
+    ({ name }) => name === 'deploy-cron-control-cloudflare / deploy'
+  ).steps[3].conclusion = 'failure';
+  assert.equal(
+    await reason(twoFailures),
+    'failure_outside_canonical_verification'
+  );
+});
+test('a Lettin and Parley recovery ignores a skipped or successful Cron Control', async () => {
+  assert.deepEqual(await decision(fixture()), {
+    allowed: true,
+    reason: 'only_canonical_cloudflare_verification_failed',
+  });
+  const skipped = fixture();
+  skipped.jobPages[0].jobs.push({
+    ...skipped.jobPages[0].jobs[0],
+    id: 95,
+    name: 'deploy-cron-control-cloudflare',
+    conclusion: 'skipped',
+    steps: [],
+  });
+  skipped.jobPages[0].total_count = skipped.jobPages[0].jobs.length;
+  assert.equal((await decision(skipped)).allowed, true);
+  const succeeded = fixture();
+  succeeded.jobPages[0].jobs.push(
+    {
+      ...succeeded.jobPages[0].jobs[0],
+      id: 96,
+      name: 'deploy-cron-control-cloudflare / validate',
+      conclusion: 'success',
+      steps: [step('Validate', 'success')],
+    },
+    {
+      ...succeeded.jobPages[0].jobs[0],
+      id: 97,
+      name: 'deploy-cron-control-cloudflare / deploy',
+      conclusion: 'success',
+      steps: [step(CRON_VERIFY, 'success')],
+    }
+  );
+  succeeded.jobPages[0].total_count = succeeded.jobPages[0].jobs.length;
+  assert.equal((await decision(succeeded)).allowed, true);
+});
+test('a failed Lettin deploy still requires its own validation', async () => {
+  const x = fixture();
+  x.jobPages[0].jobs[0].conclusion = 'skipped';
+  assert.equal(await reason(x), 'all_cloudflare_validations_required');
+});
+test('tolerated failed jobs are reported by name', async () => {
+  const { toleratedFailedJobs } = await helper;
+  assert.deepEqual(toleratedFailedJobs(cronOnly().jobPages), [
+    'deploy-cron-control-cloudflare / deploy',
+  ]);
+  assert.deepEqual(toleratedFailedJobs(fixture().jobPages), [
+    'deploy-lettin-cloudflare / deploy',
+    'deploy-parley-cloudflare / deploy',
+  ]);
+  assert.deepEqual(toleratedFailedJobs(null), []);
+});
 test('complete multi-page job inventory accepts, inconsistent totals reject', async () => {
   const x = fixture(),
     all = x.jobPages[0];

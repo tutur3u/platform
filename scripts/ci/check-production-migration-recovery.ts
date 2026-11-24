@@ -2,9 +2,14 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { plannerCaller } from './production-planner-job-classes.mjs';
 
+const CRON_DEPLOY_JOB = 'deploy-cron-control-cloudflare / deploy';
 const verificationFailures = new Map([
   ['deploy-lettin-cloudflare / deploy', 'Verify deployed storage and version'],
   ['deploy-parley-cloudflare / deploy', 'Verify rendered canonical route'],
+  // The Cron Control serving-proof check runs before its publish step and fails
+  // closed, with the publish skipped, on any approval, lease or Worker readback
+  // error, such as a recorded proof from a Cron publication at another SHA.
+  [CRON_DEPLOY_JOB, 'Verify the prebuilt artifact is already serving'],
 ]);
 // Meet ships from its own pinned dispatch. No job of this planner caller
 // gates a production database migration. Meet's own admission is unchanged.
@@ -133,6 +138,10 @@ export function checkProductionMigrationRecovery(input: {
     return result(false, 'verification_failure_required');
   if (blockingFailures.length > 0) {
     for (const name of verificationFailures.keys()) {
+      // The planner path-filters these apps, so an unaffected app has no
+      // validation job. A validation is required for each app whose deploy job
+      // is the tolerated failure.
+      if (names.get(name)?.conclusion !== 'failure') continue;
       if (
         names.get(name.replace(' / deploy', ' / validate'))?.conclusion !==
         'success'
@@ -154,6 +163,22 @@ export function checkProductionMigrationRecovery(input: {
   );
 }
 
+export function toleratedFailedJobs(jobPages: unknown) {
+  if (!Array.isArray(jobPages)) return [];
+  const failed = new Set<string>();
+  for (const page of jobPages)
+    if (record(page) && Array.isArray(page.jobs))
+      for (const job of page.jobs)
+        if (
+          record(job) &&
+          job.conclusion === 'failure' &&
+          typeof job.name === 'string' &&
+          verificationFailures.has(job.name)
+        )
+          failed.add(job.name);
+  return [...failed].sort();
+}
+
 function main() {
   const env = process.env;
   const jobPages = JSON.parse(
@@ -169,6 +194,16 @@ function main() {
     jobPages,
   });
   console.log(`Migration recovery: ${decision.reason}`);
+  if (decision.allowed) {
+    const tolerated = toleratedFailedJobs(jobPages);
+    console.log(
+      `Tolerated failed planner jobs: ${tolerated.join(', ') || 'none'}`
+    );
+    if (tolerated.includes(CRON_DEPLOY_JOB))
+      console.log(
+        '::warning::Cron Control keeps serving its earlier published version, not this planner SHA.'
+      );
+  }
   if (!env.GITHUB_OUTPUT) throw new Error('GITHUB_OUTPUT is required');
   appendFileSync(env.GITHUB_OUTPUT, `recovery_allowed=${decision.allowed}\n`);
 }
