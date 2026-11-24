@@ -1,4 +1,4 @@
-// Reads format, pixel size and channel layout from PNG, JPEG and WebP headers, so
+// Reads format, pixel size and channel layout from PNG, JPEG, WebP and AVIF headers, so
 // store assets can be checked without an image library.
 
 const PNG_SIGNATURE = Buffer.from([
@@ -40,7 +40,25 @@ export function readImageInfo(buffer) {
   ) {
     return readWebpInfo(buffer);
   }
+  if (buffer.length >= 32 && buffer.toString('latin1', 4, 12) === 'ftypavif') {
+    return readAvifInfo(buffer);
+  }
   return null;
+}
+
+// AVIF is an ISO base media file: the `ispe` box holds the image size, and an
+// alpha auxiliary image is declared with the `auxiliary:alpha` URN.
+function readAvifInfo(buffer) {
+  const at = buffer.indexOf('ispe', 0, 'latin1');
+  if (at < 0 || at + 16 > buffer.length) return null;
+  const alpha = buffer.includes('auxiliary:alpha', 0, 'latin1');
+  return {
+    format: 'avif',
+    width: buffer.readUInt32BE(at + 8),
+    height: buffer.readUInt32BE(at + 12),
+    channels: alpha ? 4 : 3,
+    alpha,
+  };
 }
 
 function readWebpInfo(buffer) {

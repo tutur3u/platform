@@ -1,7 +1,7 @@
 ---
 title: "Mobile Store Screenshots"
-description: "How the App Store, Google Play and Microsoft Store screenshots and graphics are captured from the real Flutter UI and composed into store images."
-updatedAt: "2026-11-16"
+description: "How the App Store, Google Play and Microsoft Store screenshots, graphics and the roadmap feature previews are captured from the real Flutter UI and composed into images."
+updatedAt: "2026-11-24"
 audience: developers
 ---
 
@@ -15,8 +15,9 @@ the app shell or to a listed screen.
 `apps/mobile/test/store_screenshots/store_screenshots_test.dart` pumps eight real
 feature pages (dashboard, tasks, calendar, assistant, finance, habits, time
 tracker, notes) inside `StoreScreenshotApp`, which is the app's own root frame
-in the default light Sorbet theme. It renders each page in English and
-Vietnamese at every store device size in `storeDevices`.
+in the default Sorbet theme (`SorbetTheme()`), light for the store listings.
+It renders each page in English and Vietnamese at every store device size in
+`storeDevices`.
 
 - Each page reads fixture data from `screens/<id>_screen.dart` and
   `fixtures/`: one fictional design team ("Sorbet Studio") with dates relative to
@@ -31,6 +32,9 @@ Vietnamese at every store device size in `storeDevices`.
   the other locale. `StoreLocale.pick` records each EN/VI pair, so a new
   fixture string is covered automatically. Fix a failure in the fixture. Never
   crop around it.
+- The design render harness loads Nunito, Noto Sans and JetBrains Mono. Sorbet's
+  overline and numeric roles use JetBrains Mono, and without it those runs draw
+  as solid blocks.
 - Root tabs (Home, Assistant) are built by `ShellPage` itself and ignore the
   shell's `child`. Pass their fixture page through `storeShellFrame`'s
   `homePageBuilder` or `assistantPageBuilder`.
@@ -54,7 +58,7 @@ DESIGN_RENDER_DIR=$PWD/build/store_raw \
 PNGs land in `build/store_raw/<store>/<device>/<locale>/NN-<id>.png` at the
 store pixel size (logical size × pixel ratio). Filter a run with
 comma-separated `STORE_SCREENS`, `STORE_DEVICES` (`ios/iphone-6.9`) or
-`STORE_LOCALES`. Without `DESIGN_RENDER_DIR`, the suite runs as a smoke test on
+`STORE_LOCALES`. `STORE_SHOWCASE=1` adds the roadmap preview targets. Without `DESIGN_RENDER_DIR`, the suite runs as a smoke test on
 one phone size and one desktop size and writes nothing.
 
 ## 2. Composition (Playwright)
@@ -75,7 +79,7 @@ back to the short headline in `scripts/store-screenshots/captions.json`.
 Outputs:
 
 - `apps/mobile/store/screenshots/<store>/<device>/<locale>/NN-<id>.jpg`: JPEG,
-  quality 88, RGB with no alpha, at the exact size in `specs.mjs`. Microsoft
+  quality 84, RGB with no alpha, at the exact size in `specs.mjs`. Microsoft
   Store targets (`format: 'png'`) write `NN-<id>.png` as 24-bit PNG with no
   alpha at 1920x1080. The metadata `files` paths and
   `scripts/store-metadata` expect `.png` for `windows`.
@@ -93,12 +97,120 @@ Options: `--only ios/iphone-6.9,macos/mac`, `--locales en`, `--plate <png>`
 `--gallery-only` (rebuilds only the web gallery from the composed screenshots,
 leaving them byte-for-byte unchanged).
 Headlines use Nunito from Google Fonts, so composition needs network access.
-Playwright resolves from a workspace that depends on it. Run
+Playwright and sharp resolve from a workspace that depends on them. Run
 `bunx playwright install chromium` once per host.
 
-`validate.mjs` (also run by `scripts/store-screenshots/validate.test.mjs` in
-`bun test:scripts`) checks exact sizes, each target's format and RGB channels,
-per-store file limits, opaque graphics, the web gallery limits, the 40 MiB
-budget for committed screenshots, and that every screenshot the metadata lists
-exists for each store that has any screenshot committed. Stores can land one at
-a time.
+Section 5 lists what `validate.mjs` checks.
+
+## 3. Roadmap feature previews
+
+The /roadmap page shows the real app in light and dark Sorbet on generic device
+frames. The previews come from the same capture suite as the store images.
+
+```bash
+cd apps/mobile
+DESIGN_RENDER_DIR=$PWD/build/store_raw STORE_SHOWCASE=1 \
+  flutter test --concurrency=2 test/store_screenshots/store_screenshots_test.dart
+cd ../..
+node scripts/store-screenshots/showcase.mjs --raw apps/mobile/build/store_raw
+```
+
+`showcaseDevices` (Flutter) and `SHOWCASE_DEVICES` (`specs.mjs`) hold the
+device table, and a test keeps their sizes in step. `showcaseScreens` lists the
+screens (`SHOWCASE.screens`): tasks board, task detail, calendar, Mira
+assistant, dashboard and time tracker. The task detail page loads its
+description in a WebView that widget tests cannot render, so the capture shows
+the fixture's empty description state, not drawn UI.
+
+| Device | Logical size | Ratio | Frame | Export long edge |
+| --- | --- | --- | --- | --- |
+| `iphone` | 393x852 | 3x | phone | 1280 px |
+| `ipad` | 1024x1366 | 2x | tablet | 1600 px |
+| `ipad-landscape` | 1366x1024 | 2x | tablet | 1600 px |
+| `mac` | 1512x982 | 2x | macOS window | 1600 px |
+| `duo-folded` | 466x678 | 3x | phone | 1280 px |
+| `duo-unfolded` | 951x669 | 3x | foldable with centre crease | 1600 px |
+
+`duo-folded` and `duo-unfolded` are the iPhone Duo outer and inner displays.
+The frames are generic: no Apple device art, a plain window with traffic-light
+controls for the Mac, and no headline, so the page supplies captions and the
+background.
+
+`showcase.mjs` renders each capture on a transparent canvas in headless
+Chromium and encodes AVIF (primary) and WebP (fallback) with sharp, at the
+highest quality in `SHOWCASE.avifQualities` / `webpQualities` that fits
+90 KB (AVIF) and 140 KB (WebP). Output:
+
+```text
+packages/roadmap-core/src/assets/previews/app/<screen>/<device>-<theme>-<locale>.avif
+packages/roadmap-core/src/assets/previews/app/<screen>/<device>-<theme>-<locale>.webp
+packages/roadmap-core/src/assets/previews/app/manifest.json
+```
+
+`manifest.json` is `{ generatedAt, items: [{ screen, device, theme, locale,
+width, height, avif, webp, avifBytes, webpBytes }] }` with repository-relative
+paths. Options: `--devices`, `--themes`, `--locales`, `--screens` and `--out`;
+a filtered run keeps the entries of files already written.
+`showcase-checks.mjs` (run by `validate.mjs` and `showcase.test.mjs`) requires
+the full set, sizes that match the manifest, an alpha channel in both formats,
+the long-edge and byte budgets and no stray files.
+
+## 4. Store requirements
+
+The store sizes live in `SCREENSHOT_TARGETS` (`specs.mjs`) and the limits in
+`store-rules.mjs`. Sources:
+
+- Apple: [screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications)
+- iPhone Duo: [specifications](https://www.apple.com/iphone-duo/specs/)
+- Google Play: [add preview assets](https://support.google.com/googleplay/android-developer/answer/9866151)
+
+| Target | Size | Notes |
+| --- | --- | --- |
+| `ios/iphone-6.9` | 1320x2868 | Large Dynamic Island display (1260x2736, 1290x2796 or 1320x2868) |
+| `ios/iphone-6.3` | 1206x2622 | Required: "At least one screenshot for iPhone with Dynamic Island (medium display)" at 1179x2556 or 1206x2622 |
+| `ios/iphone-6.5` | 1284x2778 | Needed only when large-display shots are missing; kept because it is cheap |
+| `ios/iphone-duo-outer` | 1398x2034 | iPhone Duo outer display, portrait (2034x1398 also accepted) |
+| `ios/iphone-duo-inner` | 2853x2007 | iPhone Duo inner display, landscape (2007x2853 also accepted) |
+| `ios/ipad-13` | 2064x2752 | Required when the app supports iPadOS |
+| `macos/mac` | 2880x1800 | Also 1280x800, 1440x900 or 2560x1600 |
+| `windows/desktop` | 1920x1080 | Opaque PNG |
+| `android/phone` | 1080x1920 | 2-8 per locale |
+| `android/tablet7` | 1080x1920 | At least 4, each side at least 1080, 9:16 or 16:9 |
+| `android/tablet10` | 1440x2560 | At least 4, each side at least 1080, 9:16 or 16:9 |
+
+The iPhone Duo page lists the inner display at "1878-by-2670-pixel resolution
+at 430 ppi" and the outer display at "1398-by-2034" at 460 ppi. App Store
+Connect lists "1398 × 2034 pixels, 2034 × 1398 pixels (outer display);
+2007 × 2853 pixels, 2853 × 2007 pixels (inner display)" and notes: "Starting in
+April 2027, screenshots will be required for any app using the iOS 27.1 SDK or
+later." Submitting Duo screenshots shows a "made for iPhone Duo" badge. The Duo
+targets carry four screens per locale: the dashboard, tasks, calendar and
+assistant.
+
+Apple accepts JPEG or PNG with no alpha, 1-10 per device size. Google Play
+takes JPEG or 24-bit PNG with no alpha, at most 8 MB each, each side 320-3840
+px and an aspect ratio of at most 2.3:1. Google Play does not require a
+foldable set, so none ships. `apps/mobile/store` is the source of truth for
+store images; there is no fastlane metadata tree, and the mobile deploy
+workflow does not upload screenshots.
+
+## 5. Validation
+
+`validate.mjs` (also run by `scripts/store-screenshots/validate.test.mjs` and
+`store-rules.test.mjs` in `bun test:scripts`) checks:
+
+- exact sizes, each target's format and RGB channels (no greyscale or CMYK);
+- colour profile: sRGB or untagged only. Display P3, Adobe RGB and any other
+  ICC profile fail;
+- Google Play side lengths, aspect ratio, the 9:16 or 16:9 ratio for tablets and
+  the 8 MB cap;
+- per-locale counts for each device class, and the same set in English and
+  Vietnamese;
+- per-store file limits, opaque graphics, the web gallery limits and the 40 MiB
+  budget for committed screenshots;
+- that every screenshot the metadata lists exists for each store that has any
+  screenshot committed. Stores can land one at a time;
+- the roadmap previews (section 3).
+
+Run `node scripts/store-metadata/validate.mjs --require-assets` as well: it
+checks that the metadata lists every committed screenshot.

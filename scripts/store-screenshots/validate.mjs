@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { checkColorProfile } from './color-profile.mjs';
+import { validateShowcase } from './showcase-checks.mjs';
 import { readImageInfo } from './image-info.mjs';
 import {
   GRAPHIC_TARGETS,
@@ -266,6 +267,11 @@ if (
   console.log(
     `${count} screenshots, ${(totalBytes / 1024 / 1024).toFixed(1)} MiB`
   );
+  const previews = validateShowcase(values.root);
+  console.log(
+    `${previews.count} roadmap previews, ${(previews.bytes / 1024 / 1024).toFixed(1)} MiB`
+  );
+  problems.push(...previews.problems);
   if (problems.length > 0) {
     console.error(problems.join('\n'));
     process.exit(1);

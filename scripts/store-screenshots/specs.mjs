@@ -241,6 +241,6 @@ export const SHOWCASE = {
   avifMaxBytes: 90 * 1024,
   webpMaxBytes: 140 * 1024,
   /** Quality ladders, best first; the first that fits the byte cap wins. */
-  avifQualities: [62, 56, 50, 44, 38, 32, 26],
-  webpQualities: [82, 76, 70, 64, 58, 52, 46, 40],
+  avifQualities: [74, 68, 62, 56, 50, 44, 38, 32, 26],
+  webpQualities: [88, 82, 76, 70, 64, 58, 52, 46, 40],
 };
