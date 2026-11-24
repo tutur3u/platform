@@ -2898,23 +2898,14 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
       ? asJsonObject(binding.canonical_project.delivery_profile)
       : asJsonObject(fixture.profileData);
 
-  const collections = await listWorkspaceExternalProjectCollections(
-    workspaceId,
-    admin
-  );
-  const entries = await listWorkspaceExternalProjectEntries(
-    workspaceId,
-    { includeDrafts },
-    admin
-  );
-  if (pending) includePendingPublication(entries, pending.entry);
-  const entryIds = entries.map((entry) => entry.id);
-
-  const [blocks, assets, relationData] = await Promise.all([
-    listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, entryIds, admin),
-    listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, entryIds, admin),
+  // Reads that do not depend on one another run together, in two rounds.
+  const [collections, entries, relationData] = await Promise.all([
+    listWorkspaceExternalProjectCollections(workspaceId, admin),
+    listWorkspaceExternalProjectEntries(workspaceId, { includeDrafts }, admin),
     listWorkspaceExternalProjectRelationData(workspaceId, admin),
   ]);
+  if (pending) includePendingPublication(entries, pending.entry);
+  const entryIds = entries.map((entry) => entry.id);
 
   const deliveryCollections = collections.filter(
     (collection) => !privateExternalProjectCollection(collection)
@@ -2927,17 +2918,19 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
       deliveryCollectionIds.has(entry.collection_id) &&
       !hasPrivateDeliveryFlag(entry.metadata)
   );
-  const assetOwners = new Set(assets.map((asset) => asset.entry_id));
-  const manifests = includeDrafts
-    ? new Map()
-    : await loadPublishedAssetManifests(
-        admin,
-        workspaceId,
-        binding.canonical_id,
-        deliveryEntries.filter(
-          (entry) => assetOwners.has(entry.id) && entry.id !== pending?.entry.id
-        )
-      );
+  // Proofs are read for every delivered entry; only those of entries with assets are consulted.
+  const [blocks, assets, manifests] = await Promise.all([
+    listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, entryIds, admin),
+    listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, entryIds, admin),
+    includeDrafts
+      ? new Map<string, Record<string, unknown>>()
+      : loadPublishedAssetManifests(
+          admin,
+          workspaceId,
+          binding.canonical_id,
+          deliveryEntries.filter((entry) => entry.id !== pending?.entry.id)
+        ),
+  ]);
   if (pending) manifests.set(pending.entry.id, pending.manifest);
   const visibleAssets = includeDrafts
     ? assets

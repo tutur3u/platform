@@ -137,6 +137,88 @@ describe('workspace asset publication', () => {
     expect(auditTable).not.toHaveBeenCalled();
   });
 
+  it('reads proofs for many entries in parallel batches and fails as a whole', async () => {
+    const entries = Array.from({ length: 330 }, (_, n) => ({
+      ...entry,
+      id: `entry-${n}`,
+    }));
+    const proofOf = (item: (typeof entries)[number]) => ({
+      id: assetPublicationProofId('workspace', 'project', item),
+      entry_id: item.id,
+      published_at,
+      entry_updated_at: item.updated_at,
+      asset_revisions: {
+        used: { revision: updated_at, sha256: 'a'.repeat(64) },
+      },
+    });
+    const batches: string[][] = [];
+    let inFlight = 0;
+    let peak = 0;
+    const answer = (error?: { code: string }) => {
+      const query = {
+        select: () => query,
+        eq: () => query,
+        in: async (_column: string, ids: string[]) => {
+          const failing = error && batches.push(ids) === 2;
+          if (!error) batches.push(ids);
+          inFlight += 1;
+          peak = Math.max(peak, inFlight);
+          await Promise.resolve();
+          inFlight -= 1;
+          return failing
+            ? { data: null, error }
+            : {
+                data: entries
+                  .filter((item) => ids.includes(proofOf(item).id))
+                  .map(proofOf),
+                error: null,
+              };
+        },
+      };
+      return {
+        schema: () => ({ from: () => query }),
+      } as unknown as TypedSupabaseClient;
+    };
+
+    const records = await loadPublishedAssetManifests(
+      answer(),
+      'workspace',
+      'project',
+      entries
+    );
+    expect(batches.map((ids) => ids.length)).toEqual([
+      50, 50, 50, 50, 50, 50, 30,
+    ]);
+    expect(peak).toBe(6);
+    expect(records.size).toBe(330);
+    expect(isPublishedAsset(records, { ...used, entry_id: 'entry-329' })).toBe(
+      true
+    );
+
+    batches.length = 0;
+    await expect(
+      loadPublishedAssetManifests(
+        answer({ code: 'XX000' }),
+        'workspace',
+        'project',
+        entries
+      )
+    ).rejects.toThrow('Could not verify published media');
+    // The failing first wave stops the read: the seventh batch is never asked for.
+    expect(batches).toHaveLength(6);
+    batches.length = 0;
+    expect(
+      (
+        await loadPublishedAssetManifests(
+          answer({ code: '42P01' }),
+          'workspace',
+          'project',
+          entries
+        )
+      ).size
+    ).toBe(0);
+  });
+
   it('keeps a new upload private on the direct asset path for a published parent', async () => {
     const { admin: fake } = database({
       used: { revision: updated_at, sha256: 'a'.repeat(64) },

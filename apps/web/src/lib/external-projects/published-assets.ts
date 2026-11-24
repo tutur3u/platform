@@ -243,6 +243,8 @@ function beforePublication(updated: string, published: string | null) {
   return subMillisecond(updated) <= subMillisecond(published);
 }
 
+const PROOF_READS_AT_ONCE = 6;
+
 export async function loadPublishedAssetManifests(
   admin: TypedSupabaseClient,
   workspaceId: string,
@@ -260,15 +262,33 @@ export async function loadPublishedAssetManifests(
   }
 
   const ids = [...revisions.keys()];
-  for (let start = 0; start < ids.length; start += 50) {
-    const { data, error } = await assetPublicationProofs(admin)
-      .select('id,entry_id,published_at,entry_updated_at,asset_revisions')
-      .eq('ws_id', workspaceId)
-      .eq('canonical_external_project_id', canonicalProjectId)
-      .in('id', ids.slice(start, start + 50));
-    // Delivery can serve text while the proof migration rolls out.
-    if (error?.code === '42P01' || error?.code === 'PGRST205') return new Map();
-    if (error) throw new Error('Could not verify published media');
+  const batches: string[][] = [];
+  for (let start = 0; start < ids.length; start += 50)
+    batches.push(ids.slice(start, start + 50));
+  // Up to PROOF_READS_AT_ONCE batches are read together. A wave's error decides the whole answer
+  // before the next wave is read.
+  const results = [];
+  for (let at = 0; at < batches.length; at += PROOF_READS_AT_ONCE) {
+    const wave = await Promise.all(
+      batches
+        .slice(at, at + PROOF_READS_AT_ONCE)
+        .map((batch) =>
+          assetPublicationProofs(admin)
+            .select('id,entry_id,published_at,entry_updated_at,asset_revisions')
+            .eq('ws_id', workspaceId)
+            .eq('canonical_external_project_id', canonicalProjectId)
+            .in('id', batch)
+        )
+    );
+    for (const { error } of wave) {
+      // Delivery can serve text while the proof migration rolls out.
+      if (error?.code === '42P01' || error?.code === 'PGRST205')
+        return new Map();
+      if (error) throw new Error('Could not verify published media');
+    }
+    results.push(...wave);
+  }
+  for (const { data } of results) {
     for (const proof of data ?? []) {
       const entry = revisions.get(proof.id);
       if (
