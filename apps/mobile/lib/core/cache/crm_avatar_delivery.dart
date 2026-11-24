@@ -54,8 +54,9 @@ Future<String> deliverCrmAvatar({
     );
   }
 
+  final query = Uri.encodeQueryComponent(path);
   final signed = await api.getJson(
-    '${CrmEndpoints.avatar(workspaceId)}?path=${Uri.encodeQueryComponent(path)}',
+    '${CrmEndpoints.avatar(workspaceId)}?path=$query',
   );
   final signedUrl = signed['signedUrl'] as String?;
   if (signedUrl == null || signedUrl.isEmpty) {
