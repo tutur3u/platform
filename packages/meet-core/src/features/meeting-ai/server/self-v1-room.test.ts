@@ -18,9 +18,7 @@ const room = { access: {} as never, accountId: 'u' };
 const sessionId = '00000000-0000-4000-8000-0000000000cc';
 const pending = [{ sessionId, accountId: 'u', seq: 4, kind: 'withdraw' }];
 const failWith = (status: number, code?: string) =>
-  mocks.room.mockRejectedValue(
-    Object.assign(new Error('x'), { status, code })
-  );
+  mocks.room.mockRejectedValue(Object.assign(new Error('x'), { status, code }));
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -143,14 +141,14 @@ describe('session record refusals', () => {
   ] as Array<[number, number, string | undefined, string?]>)(
     'maps room %i to %i %s',
     async (roomStatus, status, code, roomCode) => {
-    failWith(roomStatus, roomCode);
-    await expect(
-      selfRoomCommands.recordSession(room, {
-        sessionId,
-        active: true,
-        generation: 1,
-      })
-    ).rejects.toMatchObject({ status, code });
+      failWith(roomStatus, roomCode);
+      await expect(
+        selfRoomCommands.recordSession(room, {
+          sessionId,
+          active: true,
+          generation: 1,
+        })
+      ).rejects.toMatchObject({ status, code });
     }
   );
 });
@@ -159,10 +157,15 @@ describe('notice refusals from the room', () => {
   it.each([
     [400, 'MEET_SELF_NOTICE_REQUIRED', 400],
     [409, 'MEET_SELF_NOTICE_STALE', 409],
-  ])('keeps room %i %s as a fixed client code', async (roomStatus, code, status) => {
-    const { selfRoomError } = await import('./self-v1-room');
-    expect(
-      selfRoomError(Object.assign(new Error('x'), { status: roomStatus, code }))
-    ).toMatchObject({ status, code });
-  });
+  ])(
+    'keeps room %i %s as a fixed client code',
+    async (roomStatus, code, status) => {
+      const { selfRoomError } = await import('./self-v1-room');
+      expect(
+        selfRoomError(
+          Object.assign(new Error('x'), { status: roomStatus, code })
+        )
+      ).toMatchObject({ status, code });
+    }
+  );
 });

@@ -108,12 +108,14 @@ it('reports a room that stays unreachable as retryable, not a 500', async () => 
 it('keeps a fixed refusal code from the room, never its message', async () => {
   vi.stubGlobal(
     'fetch',
-    vi.fn().mockResolvedValue(
-      Response.json(
-        { code: 'MEET_SELF_SESSION_LIVE', error: 'room text' },
-        { status: 409 }
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { code: 'MEET_SELF_SESSION_LIVE', error: 'room text' },
+          { status: 409 }
+        )
       )
-    )
   );
   const error = await callRoomService(access, {
     action: 'transcript.session',

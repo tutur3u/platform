@@ -27,9 +27,10 @@ beforeEach(() => {
 describe('record_decision notice evidence feature check', () => {
   it('sends the evidence when the database accepts it', async () => {
     const { selfRpc } = await import('./self-v1-rpc');
-    const rpc = vi
-      .fn()
-      .mockResolvedValue({ data: [{ revision: 1, recorded: true }], error: null });
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ revision: 1, recorded: true }],
+      error: null,
+    });
     await selfRpc.recordDecision(client(rpc), input);
     expect(rpc).toHaveBeenCalledWith(
       'meet_ai_self_v1_record_decision',
@@ -42,7 +43,10 @@ describe('record_decision notice evidence feature check', () => {
     const rpc = vi
       .fn()
       .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202' } })
-      .mockResolvedValue({ data: [{ revision: 2, recorded: true }], error: null });
+      .mockResolvedValue({
+        data: [{ revision: 2, recorded: true }],
+        error: null,
+      });
     expect(await selfRpc.recordDecision(client(rpc), input)).toEqual({
       revision: 2,
       recorded: true,
@@ -66,9 +70,10 @@ describe('record_decision notice evidence feature check', () => {
 
   it('sends no evidence parameters for a withdraw', async () => {
     const { selfRpc } = await import('./self-v1-rpc');
-    const rpc = vi
-      .fn()
-      .mockResolvedValue({ data: [{ revision: 3, recorded: true }], error: null });
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ revision: 3, recorded: true }],
+      error: null,
+    });
     await selfRpc.recordDecision(client(rpc), {
       ...input,
       decision: 'withdraw',
