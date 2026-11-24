@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { BrowserContext } from '@playwright/test';
 import { type Actors, loadActors } from '../actors';
@@ -252,14 +260,9 @@ export async function ensureSeedClass(teacher: UpskiiIdentity, track: Track) {
   const preset = (teacher as UpskiiIdentity & { classId?: string }).classId;
   if (preset) return preset;
   const cache = join(dirname(run.ledgerPath), 'upskii-seed-class.json');
-  if (existsSync(cache)) {
-    const saved = JSON.parse(readFileSync(cache, 'utf8')) as {
-      teacherId?: string;
-      classId?: string;
-    };
-    if (saved.teacherId === teacher.userId && saved.classId)
-      return saved.classId;
-  }
+  const saved = readSeedCache(cache);
+  if (saved?.teacherId === teacher.userId && saved.classId)
+    return saved.classId;
   const base = {
     key: `upskii-object:${run.runLabel}:seed-class`,
     kind: 'upskii-object' as const,
@@ -280,10 +283,42 @@ export async function ensureSeedClass(teacher: UpskiiIdentity, track: Track) {
       body: { classId },
     },
   });
-  writeFileSync(cache, JSON.stringify({ teacherId: teacher.userId, classId }), {
-    mode: 0o600,
-  });
+  writeSeedCache(cache, { teacherId: teacher.userId, classId });
   return classId;
+}
+
+type SeedCache = { teacherId?: string; classId?: string };
+
+/** Reads the cache in one call; a missing or unreadable file is a miss. */
+function readSeedCache(path: string): SeedCache | null {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as SeedCache;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Writes the cache atomically: a fresh temp file created exclusively (0600)
+ * in the 0700 run directory, written through its descriptor, then renamed
+ * over the cache, so no reader sees a partial file and no existing path is
+ * reused.
+ */
+function writeSeedCache(path: string, value: SeedCache) {
+  mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+  const temp = `${path}.${randomUUID()}.tmp`;
+  const fd = openSync(temp, 'wx', 0o600);
+  try {
+    writeSync(fd, JSON.stringify(value));
+  } finally {
+    closeSync(fd);
+  }
+  try {
+    renameSync(temp, path);
+  } catch (error) {
+    rmSync(temp, { force: true });
+    throw error;
+  }
 }
 
 export async function isActiveMember(

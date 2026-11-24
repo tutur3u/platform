@@ -3,7 +3,7 @@ import type { BrowserContext, Locator, Page } from '@playwright/test';
 import type { Actors } from '../actors';
 import { expect, run, owners } from '../fixtures';
 import type { ResourceRecord } from '../ledger';
-import { HOSTS, on } from '../policy';
+import { HOSTS, isUpskiiCookieDomain, on } from '../policy';
 
 /**
  * Helpers for the meet-flow suite. Copy comes from the en bundles:
@@ -67,7 +67,7 @@ export async function bothSignedIn(
   upskiiCtx: BrowserContext
 ) {
   const upskii = (await upskiiCtx.cookies()).filter((c) =>
-    c.domain.endsWith('upskii.com')
+    isUpskiiCookieDomain(c.domain)
   );
   await tuturuuuCtx.addCookies(upskii);
   await upskiiCtx.close();

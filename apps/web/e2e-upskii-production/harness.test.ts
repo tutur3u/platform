@@ -7,6 +7,7 @@ import { Ledger } from './ledger';
 import {
   allowedBrowserRequest,
   isTuturuuuQaEmail,
+  isUpskiiCookieDomain,
   isUpskiiQaEmail,
   marker,
   markerRun,
@@ -56,6 +57,25 @@ describe('policy', () => {
     expect(isTuturuuuQaEmail('qa+ab12cd34-1@tuturuuu.com.evil.io')).toBe(false);
     expect(isUpskiiQaEmail('qa-fleet+gh-1-1-teacher@tuturuuu.com')).toBe(true);
     expect(isUpskiiQaEmail('teacher@upskii.com')).toBe(false);
+  });
+
+  it('admits only upskii.com and its subdomains as cookie domains', () => {
+    for (const ok of [
+      'upskii.com',
+      '.upskii.com',
+      'app.upskii.com',
+      '.APP.upskii.com',
+    ])
+      expect(isUpskiiCookieDomain(ok)).toBe(true);
+    for (const bad of [
+      'evilupskii.com',
+      '.evilupskii.com',
+      'upskii.com.evil.com',
+      'app.upskii.com.evil.com',
+      'upskii.co',
+      '',
+    ])
+      expect(isUpskiiCookieDomain(bad)).toBe(false);
   });
 
   it('marks created objects with the run label', () => {

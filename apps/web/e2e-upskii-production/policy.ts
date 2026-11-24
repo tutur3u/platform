@@ -130,3 +130,12 @@ export function on(host: keyof typeof HOSTS, path: string): string {
   if (url.origin !== HOSTS[host]) throw new Error('Path escaped its host');
   return url.toString();
 }
+
+/**
+ * True only for upskii.com itself and its subdomains (a leading cookie-domain
+ * dot is ignored). Suffix checks alone would admit evilupskii.com.
+ */
+export function isUpskiiCookieDomain(domain: string): boolean {
+  const host = domain.toLowerCase().replace(/^\./u, '');
+  return host === 'upskii.com' || host.endsWith('.upskii.com');
+}
