@@ -35,7 +35,10 @@ vi.mock('@/lib/infrastructure-admin-access', () => ({
           ) ?? null,
         error: null,
       }),
-      select: () => query,
+      select: (columns: string) => {
+        mocks.selects.push(columns);
+        return query;
+      },
       update: mocks.write,
     };
     mocks.write.mockReturnValue(query);
@@ -78,6 +81,7 @@ describe('admin Secrets routes with the workspace secrets Worker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.rows = [{ id: 'secret', name: 'X_TOKEN', value_rev: 3, ws_id: WS }];
+    mocks.selects = [];
   });
   afterEach(() => configureWorkspaceSecretsRuntime(null));
 
@@ -98,6 +102,18 @@ describe('admin Secrets routes with the workspace secrets Worker', () => {
       (await call(POST, { name: 'NEW_TOKEN', value: MARKER })).status
     ).toBe(200);
     expect(mocks.write).toHaveBeenCalled();
+  });
+
+  it('keeps the unbound PUT identical: it never selects value_rev', async () => {
+    // Production can serve this code before the step 1 migration adds the
+    // column, so the row shape here has no value_rev.
+    mocks.rows = [{ id: 'secret', name: 'X_TOKEN', ws_id: WS }];
+    expect((await call(PUT, { value: MARKER })).status).toBe(200);
+    expect(mocks.selects).not.toContain('value_rev');
+    expect(
+      mocks.selects.every((columns) => !columns.includes('value_rev'))
+    ).toBe(true);
+    expect(mocks.write).toHaveBeenCalledWith({ value: MARKER });
   });
 
   it('replaces and renames credentials with the row revision', async () => {

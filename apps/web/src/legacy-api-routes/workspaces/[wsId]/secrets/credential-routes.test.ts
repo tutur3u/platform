@@ -40,22 +40,26 @@ function fakeBinding(
   };
 }
 
-function db(existing: { name: string; value_rev: number } | null = null) {
+function db(existing: { name: string; value_rev?: number } | null = null) {
+  const selects: string[] = [];
   const insert = vi.fn().mockResolvedValue({ error: null });
   const update = vi.fn(() => ({
     eq: () => ({ eq: vi.fn().mockResolvedValue({ error: null }) }),
   }));
   const from = vi.fn(() => ({
     insert,
-    select: () => ({
-      eq: () => ({
+    select: (columns: string) => {
+      selects.push(columns);
+      return {
         eq: () => ({
-          maybeSingle: vi
-            .fn()
-            .mockResolvedValue({ data: existing, error: null }),
+          eq: () => ({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: existing, error: null }),
+          }),
         }),
-      }),
-    }),
+      };
+    },
     update,
   }));
   getWorkspaceSecretsAccessMock.mockResolvedValue({
@@ -63,7 +67,7 @@ function db(existing: { name: string; value_rev: number } | null = null) {
     db: { from },
     resolvedWsId: WS,
   });
-  return { insert, update };
+  return { insert, selects, update };
 }
 
 const request = (body: unknown, method = 'POST') =>
@@ -133,6 +137,15 @@ describe('generic Secrets routes with the workspace secrets Worker', () => {
       expect(insert).not.toHaveBeenCalled();
     }
   );
+
+  it('keeps the unbound PUT identical: it never selects value_rev', async () => {
+    // Production can serve this code before the step 1 migration adds the
+    // column, so the row shape here has no value_rev.
+    const { selects, update } = db({ name: 'X_TOKEN' });
+    expect((await put({ name: 'X_TOKEN', value: MARKER })).status).toBe(200);
+    expect(selects).toEqual(['name']);
+    expect(update).toHaveBeenCalledWith({ name: 'X_TOKEN', value: MARKER });
+  });
 
   it('replaces a credential with compare-and-swap on value_rev', async () => {
     const binding = fakeBinding();

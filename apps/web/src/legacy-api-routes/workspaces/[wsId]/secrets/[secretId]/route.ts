@@ -60,7 +60,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const { data: existingSecret, error: existingError } = await access.db
     .from('workspace_secrets')
-    .select('name, value_rev')
+    .select('name')
     .eq('id', secretId)
     .eq('ws_id', access.resolvedWsId)
     .maybeSingle();
@@ -116,8 +116,25 @@ export async function PUT(req: Request, { params }: Params) {
   const toCredential = getWorkspaceSecretTier(name) === 'credential';
   if (credentials && (fromCredential || toCredential)) {
     if (fromCredential !== toCredential) return crossTierChangeResponse();
+    // value_rev exists only once the step 1 migration is applied, and only
+    // this branch (a bound Worker) runs after that; the unbound path above
+    // never selects it.
+    const { data: revision, error: revisionError } = await access.db
+      .from('workspace_secrets')
+      .select('value_rev')
+      .eq('id', secretId)
+      .eq('ws_id', access.resolvedWsId)
+      .maybeSingle();
+    if (revisionError || !revision) {
+      if (revisionError) {
+        console.error('Error loading workspace secret revision', revisionError);
+      }
+      return credentialWriteResponse({
+        status: revisionError ? 'unavailable' : 'not_found',
+      });
+    }
     const write = {
-      expectedValueRev: existingSecret.value_rev,
+      expectedValueRev: revision.value_rev,
       requestId: crypto.randomUUID(),
       secretId,
       wsId: access.resolvedWsId,
