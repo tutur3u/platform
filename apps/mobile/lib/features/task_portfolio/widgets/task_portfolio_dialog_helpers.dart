@@ -108,7 +108,9 @@ class _DateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatted = value == null ? null : DateFormat.yMMMd().format(value!);
+    final formatted = value == null
+        ? null
+        : DateFormat.yMMMd(context.l10n.localeName).format(value!);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

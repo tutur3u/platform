@@ -64,8 +64,8 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final l10n = context.l10n;
-    final dateFmt = DateFormat.yMMMd();
-    final timeFmt = DateFormat.Hm();
+    final dateFmt = DateFormat.yMMMd(context.l10n.localeName);
+    final timeFmt = DateFormat.Hm(context.l10n.localeName);
 
     final startTime = _session.startTime;
     final endTime = _session.endTime;

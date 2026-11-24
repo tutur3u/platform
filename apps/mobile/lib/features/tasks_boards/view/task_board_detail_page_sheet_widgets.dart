@@ -42,7 +42,7 @@ class _DateFieldRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = DateFormat.yMd();
+    final formatter = DateFormat.yMd(context.l10n.localeName);
     final buttonLabel = value == null
         ? context.l10n.taskBoardDetailNoDate
         : formatter.format(value!);

@@ -139,8 +139,8 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
     final l10n = nestedContext.l10n;
     final theme = shad.Theme.of(nestedContext);
     final materialTheme = Theme.of(nestedContext);
-    final dateFmt = DateFormat.yMMMd();
-    final timeFmt = DateFormat.Hm();
+    final dateFmt = DateFormat.yMMMd(context.l10n.localeName);
+    final timeFmt = DateFormat.Hm(context.l10n.localeName);
 
     final duration = _endTime.difference(_startTime);
     final durationText = _formatDuration(duration);

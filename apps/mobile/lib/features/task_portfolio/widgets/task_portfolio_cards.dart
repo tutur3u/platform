@@ -313,7 +313,7 @@ class _TimelineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final fmt = DateFormat.yMd();
+    final fmt = DateFormat.yMd(context.l10n.localeName);
     final String label;
     if (startDate != null && endDate != null) {
       label = '${fmt.format(startDate!)} → ${fmt.format(endDate!)}';

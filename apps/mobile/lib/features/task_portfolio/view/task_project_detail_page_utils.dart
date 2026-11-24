@@ -1,8 +1,8 @@
 part of 'task_project_detail_page.dart';
 
-String? _timelineLabel(DateTime? startDate, DateTime? endDate) {
+String? _timelineLabel(DateTime? startDate, DateTime? endDate, String locale) {
   if (startDate == null && endDate == null) return null;
-  final formatter = DateFormat.yMd();
+  final formatter = DateFormat.yMd(locale);
   if (startDate != null && endDate != null) {
     return '${formatter.format(startDate)} - ${formatter.format(endDate)}';
   }

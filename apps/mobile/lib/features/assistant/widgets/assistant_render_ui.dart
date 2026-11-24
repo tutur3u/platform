@@ -404,7 +404,11 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
                 ].join(' • '),
               ),
               trailing: task.endDate != null
-                  ? Text(DateFormat.MMMd().format(task.endDate!.toLocal()))
+                  ? Text(
+                      DateFormat.MMMd(
+                        context.l10n.localeName,
+                      ).format(task.endDate!.toLocal()),
+                    )
                   : null,
             ),
         ],

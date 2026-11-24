@@ -73,7 +73,9 @@ class _AuditEntryCard extends StatelessWidget {
           ),
           const shad.Gap(10),
           Text(
-            DateFormat.yMMMd().add_jm().format(entry.occurredAt.toLocal()),
+            DateFormat.yMMMd(
+              context.l10n.localeName,
+            ).add_jm().format(entry.occurredAt.toLocal()),
             style: theme.typography.xSmall.copyWith(
               color: theme.colorScheme.mutedForeground,
             ),
@@ -129,9 +131,9 @@ class _AuditEntryDetailDialog extends StatelessWidget {
           ),
           _AuditDetailRow(
             label: context.l10n.inventoryAuditOccurredAt,
-            value: DateFormat.yMMMd().add_jm().format(
-              entry.occurredAt.toLocal(),
-            ),
+            value: DateFormat.yMMMd(
+              context.l10n.localeName,
+            ).add_jm().format(entry.occurredAt.toLocal()),
           ),
           if (entry.entityLabel?.trim().isNotEmpty ?? false)
             _AuditDetailRow(

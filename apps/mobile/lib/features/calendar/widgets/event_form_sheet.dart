@@ -360,7 +360,7 @@ class _EventFormContentState extends State<_EventFormContent> {
   Widget _buildSheet(BuildContext context) {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
-    final dateFormat = DateFormat.yMMMd();
+    final dateFormat = DateFormat.yMMMd(context.l10n.localeName);
 
     return AppSheetScaffold(
       title: _isEditing ? l10n.calendarEditEvent : l10n.calendarNewEvent,

@@ -57,7 +57,7 @@ class _DriveEntryTile extends StatelessWidget {
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
-    final updated = _formatDate(entry.updatedAt);
+    final updated = _formatDate(entry.updatedAt, l10n.localeName);
     final metadata = entry.isFolder
         ? null
         : [

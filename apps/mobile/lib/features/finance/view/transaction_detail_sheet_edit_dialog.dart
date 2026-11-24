@@ -422,7 +422,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                       const shad.Gap(12),
                       _DatePickerCard(
                         label: l10n.financeTakenAt,
-                        value: DateFormat.yMMMd().add_jm().format(_takenAt),
+                        value: DateFormat.yMMMd(
+                          context.l10n.localeName,
+                        ).add_jm().format(_takenAt),
                         onPressed: () => _pickDateTime(context),
                       ),
                     ],

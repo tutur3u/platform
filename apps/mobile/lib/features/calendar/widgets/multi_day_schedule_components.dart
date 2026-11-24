@@ -19,8 +19,9 @@ class _MultiDayHeaderCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final weekdayLabel = DateFormat.E().format(date).toUpperCase();
-    final monthLabel = DateFormat.MMM().format(date).toUpperCase();
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final weekdayLabel = DateFormat.E(localeTag).format(date).toUpperCase();
+    final monthLabel = DateFormat.MMM(localeTag).format(date).toUpperCase();
 
     if (eventCount != null) {
       final tokens = AppTokens.of(context);
@@ -35,10 +36,7 @@ class _MultiDayHeaderCell extends StatelessWidget {
                   container: true,
                   header: true,
                   child: Text(
-                    DateFormat(
-                      'EEEE d',
-                      Localizations.localeOf(context).toLanguageTag(),
-                    ).format(date),
+                    DateFormat('EEEE d', localeTag).format(date),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: tokens.typography.heading,

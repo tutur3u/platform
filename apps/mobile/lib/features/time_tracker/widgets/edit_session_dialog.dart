@@ -67,8 +67,8 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
-    final dateFmt = DateFormat.yMMMd();
-    final timeFmt = DateFormat.Hm();
+    final dateFmt = DateFormat.yMMMd(context.l10n.localeName);
+    final timeFmt = DateFormat.Hm(context.l10n.localeName);
     final isThresholdExceeded = exceedsThreshold(
       widget.session.startTime,
       widget.thresholdDays,

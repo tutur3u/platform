@@ -83,7 +83,7 @@ class _ManagementSessionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTokens.of(context);
-    final timeFormat = DateFormat.jm();
+    final timeFormat = DateFormat.jm(context.l10n.localeName);
     final start = session.startTime?.toLocal();
     final end = session.endTime?.toLocal();
     final subtitle = start != null && end != null

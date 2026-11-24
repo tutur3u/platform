@@ -16,7 +16,11 @@ class _ProjectDetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final timeline = _timelineLabel(project.startDate, project.endDate);
+    final timeline = _timelineLabel(
+      project.startDate,
+      project.endDate,
+      context.l10n.localeName,
+    );
     final editLabel = context.l10n.taskPortfolioEditProject;
     final deleteLabel = context.l10n.taskPortfolioDeleteProject;
 

@@ -336,7 +336,9 @@ class _OfflineProductRow extends StatelessWidget {
             : l10n.offlinePreparationQueued,
       OfflinePreparationStatus.waitingWifi => l10n.offlineWaitingWifi,
       OfflinePreparationStatus.waitingRetry => l10n.offlineWaitingRetry(
-        DateFormat.Hm().format(product.retryAt!.toLocal()),
+        DateFormat.Hm(
+          context.l10n.localeName,
+        ).format(product.retryAt!.toLocal()),
       ),
       OfflinePreparationStatus.downloading =>
         l10n.offlinePreparationDownloading,

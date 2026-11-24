@@ -390,8 +390,10 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
   String _rangeLabel() {
     final range = _currentRange();
     final sameYear = range.start.year == range.end.year;
-    final startFormat = sameYear ? DateFormat.MMMd() : DateFormat.yMMMd();
-    final endFormat = DateFormat.yMMMd();
+    final startFormat = sameYear
+        ? DateFormat.MMMd(context.l10n.localeName)
+        : DateFormat.yMMMd(context.l10n.localeName);
+    final endFormat = DateFormat.yMMMd(context.l10n.localeName);
 
     if (_period == _ManagementPeriod.day) {
       return endFormat.format(range.start);
@@ -443,7 +445,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
     final sortedKeys = grouped.keys.toList(growable: false)
       ..sort((a, b) => b.compareTo(a));
     final widgets = <Widget>[];
-    final headerFormat = DateFormat('EEEE, MMMM d, y');
+    final headerFormat = DateFormat.yMMMMEEEEd(context.l10n.localeName);
 
     for (final key in sortedKeys) {
       final daySessions = grouped[key]!

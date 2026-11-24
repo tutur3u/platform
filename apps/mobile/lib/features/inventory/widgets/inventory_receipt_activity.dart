@@ -25,6 +25,7 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final dayFormat = DateFormat.yMMMd(l10n.localeName);
     final now = (widget.now ?? DateTime.now()).toLocal();
     final today = DateTime(now.year, now.month, now.day);
     final counts = <DateTime, int>{};
@@ -96,15 +97,18 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.md),
               child: Semantics(
-                label:
-                    '${DateFormat.yMMMd().format(entry.key)}: ${entry.value}',
+                label: '${dayFormat.format(entry.key)}: ${entry.value}',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Expanded(
-                          child: Text(DateFormat.MMMd().format(entry.key)),
+                          child: Text(
+                            DateFormat.MMMd(
+                              context.l10n.localeName,
+                            ).format(entry.key),
+                          ),
                         ),
                         Text('${entry.value}'),
                       ],

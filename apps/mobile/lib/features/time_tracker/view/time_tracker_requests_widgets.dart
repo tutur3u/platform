@@ -117,6 +117,7 @@ class _RequestTile extends StatelessWidget {
                         label: _formatDateRange(
                           request.startTime!,
                           request.endTime,
+                          context.l10n.localeName,
                         ),
                       ),
                     if (request.images.isNotEmpty)
@@ -148,9 +149,9 @@ class _RequestTile extends StatelessWidget {
       (r.approvalStatus == ApprovalStatus.needsInfo &&
           r.needsInfoRequestedByName != null);
 
-  static String _formatDateRange(DateTime start, DateTime? end) {
+  static String _formatDateRange(DateTime start, DateTime? end, String locale) {
     final startLocal = start.toLocal();
-    final startStr = DateFormat('MMM d, h:mm a').format(startLocal);
+    final startStr = DateFormat.MMMd(locale).add_jm().format(startLocal);
     if (end == null) return startStr;
     final endLocal = end.toLocal();
     final sameDay =
@@ -158,8 +159,8 @@ class _RequestTile extends StatelessWidget {
         startLocal.month == endLocal.month &&
         startLocal.day == endLocal.day;
     final endStr = sameDay
-        ? DateFormat('h:mm a').format(endLocal)
-        : DateFormat('MMM d, h:mm a').format(endLocal);
+        ? DateFormat.jm(locale).format(endLocal)
+        : DateFormat.MMMd(locale).add_jm().format(endLocal);
     return '$startStr – $endStr';
   }
 }
@@ -357,7 +358,7 @@ class _ActionFooter extends StatelessWidget {
     switch (r.approvalStatus) {
       case ApprovalStatus.approved when r.approvedByName != null:
         final date = r.approvedAt != null
-            ? DateFormat('MMM d, yyyy').format(r.approvedAt!.toLocal())
+            ? DateFormat.yMMMd(l10n.localeName).format(r.approvedAt!.toLocal())
             : '';
         return (
           l10n.timerRequestApprovedByAt(r.approvedByName!, date),
@@ -366,7 +367,7 @@ class _ActionFooter extends StatelessWidget {
         );
       case ApprovalStatus.rejected when r.rejectedByName != null:
         final date = r.rejectedAt != null
-            ? DateFormat('MMM d, yyyy').format(r.rejectedAt!.toLocal())
+            ? DateFormat.yMMMd(l10n.localeName).format(r.rejectedAt!.toLocal())
             : '';
         return (
           l10n.timerRequestRejectedByAt(r.rejectedByName!, date),

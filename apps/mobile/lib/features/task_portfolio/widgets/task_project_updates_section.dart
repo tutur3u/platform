@@ -178,9 +178,9 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
                     ),
                   ),
                   Text(
-                    DateFormat.yMMMd().add_Hm().format(
-                      update.createdAt.toLocal(),
-                    ),
+                    DateFormat.yMMMd(
+                      context.l10n.localeName,
+                    ).add_Hm().format(update.createdAt.toLocal()),
                     style: theme.typography.xSmall.copyWith(
                       color: theme.colorScheme.mutedForeground,
                     ),

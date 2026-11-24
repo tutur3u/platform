@@ -155,7 +155,7 @@ class _ReminderSettingsPageState extends State<ReminderSettingsPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final status = _service.status;
-    final dateFormat = DateFormat.MMMd().add_jm();
+    final dateFormat = DateFormat.MMMd(context.l10n.localeName).add_jm();
     return AppScaffold(
       child: AppPageListView(
         children: [

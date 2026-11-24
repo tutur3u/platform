@@ -317,7 +317,9 @@ class _UserFormSheetState extends State<_UserFormSheet> {
             subtitle: Text(
               _birthday == null
                   ? l10n.commonSelectDate
-                  : DateFormat.yMMMd().format(_birthday!),
+                  : DateFormat.yMMMd(
+                      context.l10n.localeName,
+                    ).format(_birthday!),
             ),
             onTap: () async {
               final picked = await showAppDatePicker(
@@ -334,7 +336,9 @@ class _UserFormSheetState extends State<_UserFormSheet> {
             subtitle: Text(
               _archivedUntil == null
                   ? l10n.commonSelectDate
-                  : DateFormat.yMMMd().format(_archivedUntil!),
+                  : DateFormat.yMMMd(
+                      context.l10n.localeName,
+                    ).format(_archivedUntil!),
             ),
             onTap: () async {
               final picked = await showAppDatePicker(

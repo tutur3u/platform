@@ -209,13 +209,14 @@ class _YearMonthCard extends StatelessWidget {
     final startWeekday = (firstOfMonth.weekday % 7 - firstDayOfWeek + 7) % 7;
     final totalCells = ((startWeekday + daysInMonth + 6) ~/ 7) * 7;
     final weekCount = totalCells ~/ 7;
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
     final weekdayLabels = List.generate(7, (index) {
       final reference = calendarDate(
         2024,
         1,
         7 + ((firstDayOfWeek + index) % 7),
       );
-      final shortLabel = DateFormat.E().format(reference);
+      final shortLabel = DateFormat.E(localeTag).format(reference);
       return shortLabel.isEmpty ? '' : shortLabel.substring(0, 1).toUpperCase();
     });
 
@@ -233,7 +234,7 @@ class _YearMonthCard extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              DateFormat.MMMM().format(month),
+              DateFormat.MMMM(localeTag).format(month),
               maxLines: 1,
               softWrap: false,
               style: theme.typography.large.copyWith(

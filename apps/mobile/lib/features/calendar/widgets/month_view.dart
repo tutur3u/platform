@@ -53,14 +53,14 @@ class MonthView extends StatelessWidget {
     );
   }
 
-  List<String> _weekdayLabels() {
+  List<String> _weekdayLabels(String localeTag) {
     return List<String>.generate(7, (index) {
       final reference = calendarDate(
         2024,
         1,
         7 + ((firstDayOfWeek + index) % 7),
       );
-      final label = DateFormat.E().format(reference);
+      final label = DateFormat.E(localeTag).format(reference);
       return label.isEmpty ? '' : label.substring(0, 1).toUpperCase();
     }, growable: false);
   }
@@ -71,7 +71,9 @@ class MonthView extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final month = calendarDate(focusedMonth.year, focusedMonth.month);
     final visibleDates = _visibleDatesForMonth(month);
-    final weekdayLabels = _weekdayLabels();
+    final weekdayLabels = _weekdayLabels(
+      Localizations.localeOf(context).toLanguageTag(),
+    );
     final now = calendarNowInContext(context);
     final today = calendarDate(now.year, now.month, now.day);
 

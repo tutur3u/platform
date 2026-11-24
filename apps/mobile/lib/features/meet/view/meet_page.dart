@@ -550,9 +550,9 @@ class _MeetingTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
-    final formattedTime = DateFormat.yMMMd().add_jm().format(
-      meeting.time.toLocal(),
-    );
+    final formattedTime = DateFormat.yMMMd(
+      context.l10n.localeName,
+    ).add_jm().format(meeting.time.toLocal());
     return FinancePanel(
       onTap: onJoin,
       padding: const EdgeInsets.all(16),

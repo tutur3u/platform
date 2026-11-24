@@ -391,12 +391,13 @@ class _DateHeader extends StatelessWidget {
     final isToday = date == today;
     final isTomorrow = date == today.add(const Duration(days: 1));
 
-    final dayName = DateFormat.EEEE().format(date);
-    final dateStr = DateFormat.MMMd().format(date);
+    final l10n = context.l10n;
+    final dayName = DateFormat.EEEE(l10n.localeName).format(date);
+    final dateStr = DateFormat.MMMd(l10n.localeName).format(date);
     final label = isToday
-        ? 'Today'
+        ? l10n.calendarToday
         : isTomorrow
-        ? 'Tomorrow'
+        ? l10n.dashboardTaskTomorrow
         : dayName;
 
     return GestureDetector(

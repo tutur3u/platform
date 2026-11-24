@@ -39,7 +39,11 @@ class SessionTile extends StatelessWidget {
       invalidDurationLabel: l10n.timerInvalidDuration,
     );
 
-    final timeRange = _formatTimeRange(session.startTime, session.endTime);
+    final timeRange = _formatTimeRange(
+      context,
+      session.startTime,
+      session.endTime,
+    );
     final categoryLabel = session.categoryName?.trim().isNotEmpty == true
         ? session.categoryName!.trim()
         : l10n.timerNoCategory;
@@ -156,9 +160,13 @@ class SessionTile extends StatelessWidget {
     );
   }
 
-  String _formatTimeRange(DateTime? start, DateTime? end) {
+  String _formatTimeRange(
+    BuildContext context,
+    DateTime? start,
+    DateTime? end,
+  ) {
     if (start == null) return '';
-    final fmt = DateFormat.Hm();
+    final fmt = DateFormat.Hm(context.l10n.localeName);
     final startStr = fmt.format(start.toLocal());
     if (end == null) return startStr;
     final endStr = fmt.format(end.toLocal());

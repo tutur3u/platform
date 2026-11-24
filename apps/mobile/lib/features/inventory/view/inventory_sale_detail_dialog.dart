@@ -373,9 +373,9 @@ class _DetailInfoGrid extends StatelessWidget {
     items.add(
       _DetailStat(
         label: context.l10n.inventoryAuditRecentTitle,
-        value: DateFormat.yMMMd().add_jm().format(
-          sale.createdAt?.toLocal() ?? DateTime.now(),
-        ),
+        value: DateFormat.yMMMd(
+          context.l10n.localeName,
+        ).add_jm().format(sale.createdAt?.toLocal() ?? DateTime.now()),
         fullWidth: true,
       ),
     );

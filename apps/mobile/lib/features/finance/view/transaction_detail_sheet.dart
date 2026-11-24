@@ -565,7 +565,9 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final showAmounts = financeAmountsVisible(context);
     final date = _transaction.takenAt ?? _transaction.createdAt;
     final dateText = date != null
-        ? DateFormat.yMMMd().add_jm().format(date.toLocal())
+        ? DateFormat.yMMMd(
+            context.l10n.localeName,
+          ).add_jm().format(date.toLocal())
         : '-';
     final tagText = _transaction.tags.isEmpty
         ? l10n.financeNoTag

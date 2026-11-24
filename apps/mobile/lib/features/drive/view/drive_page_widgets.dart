@@ -72,11 +72,11 @@ String _formatBytes(int bytes) {
   return '${value.toStringAsFixed(index == 0 ? 0 : 1)} ${suffixes[index]}';
 }
 
-String _formatDate(String? value) {
+String _formatDate(String? value, String locale) {
   if (value == null) return '';
   final parsed = DateTime.tryParse(value);
   if (parsed == null) return '';
-  return DateFormat.yMMMd().add_Hm().format(parsed.toLocal());
+  return DateFormat.yMMMd(locale).add_Hm().format(parsed.toLocal());
 }
 
 class _DriveNameField extends StatefulWidget {
