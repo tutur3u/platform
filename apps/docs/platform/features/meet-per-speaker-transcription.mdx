@@ -109,6 +109,35 @@ bounded because each account may record at most 10 `allow` decisions per
 session (new migration check; `deny` and `withdraw` are never capped), so it
 holds at most 11 consent entries plus one stream entry per account.
 
+**Session end.** Once a session's closes are queued, the room queues one `end`
+entry for it, on the host account. The triggers are a room end, the 3-hour
+deadline, a drain end after a stop, or a replacement. The Meet Worker
+hard-stops the session and closes its database row when it receives the
+`end`. An `end` is never coalesced, is queued even when the outbox is full,
+and is released only after every earlier entry of its session.
+
+**Delivery batches.** A batch holds at most 64 entries and at most 8
+participant entries per account, with accounts that failed least picked first.
+Participant entries are picked before session ends. Ends fill the slots that
+are left, and only once every earlier entry of their session is in the batch
+or already acknowledged.
+
+When some `end` has no earlier entry of its session left, one slot is kept for
+ends. Every delivery then sends at least one `end` while any `end` is free to
+go, so unacknowledged entries of other sessions or accounts can't hold a
+finished session's end until the retry window closes.
+
+A non-empty outbox always gives a non-empty batch. An empty outbox is never
+posted, costs no attempt and never wakes the room. A held `end` isn't counted
+as a failure for its host.
+
+**Manager fences.** Removing an account is meeting-wide. A removed account is
+refused on every `transcript.session` call, in both modes. That includes
+starting a room-capture session after the host switches the meeting back to
+**Room capture**, even if the account was let back in. Re-recording a draining
+`self_v1` session needs its host admitted and present. So a removed or absent
+manager can never start a session or change its generation.
+
 A migration adds `room_seq` to `private.meet_ai_consents` and the revoke and
 close RPCs for `self_v1` sessions, with a unique `(session_id, user_id,
 room_seq)` key and a trigger that refuses any `room_seq` not greater than the
@@ -430,6 +459,7 @@ Regression coverage:
 11. Limiter, token bucket, 5-second minimum charge and per-account caps refuse without database or provider work.
 12. EN and VI notice text matches this page.
 13. The room-capture session read, draft notes, notes, follow-up and post-call review paths refuse `self_v1` sessions; the database refuses `completed` chunks without a current dispatch revision and any text on `discarded` chunks, on insert and update.
+14. A session `end` goes out only after every earlier entry of its session; a held `end` takes no slot and isn't counted as a host failure; one slot is kept for an `end` with nothing left to send, so unacknowledged entries can't hold it; an empty outbox is never posted; a removed or absent manager never starts or re-records a session (`packages/realtime/src/meet/room-self-capture-batch.test.ts`, `apps/meet-realtime/src/room-do-self-capture.test.ts`).
 
 ## Implementation conditions
 

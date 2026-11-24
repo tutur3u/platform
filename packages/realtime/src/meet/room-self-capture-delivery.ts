@@ -101,7 +101,9 @@ export function earliestDeadline(...deadlines: Array<number | undefined>) {
  * failed least first, so an account whose entries keep failing never blocks
  * the others. Session ends fill only the capacity left, after them, and only
  * once every earlier entry of their session is in the batch, so a held end
- * never takes a slot from an entry that can go now.
+ * never takes a slot from an entry that can go now. When some end has no
+ * earlier entry of its session left, one slot is kept for ends, so every
+ * delivery sends at least one end while any is free to go.
  */
 export function selectSelfOutboxBatch(capture: SelfCaptureState) {
   const byAccount = new Map<string, SelfOutboxEntry[]>();
@@ -112,10 +114,15 @@ export function selectSelfOutboxBatch(capture: SelfCaptureState) {
     byAccount.set(entry.accountId, list);
   }
   const failures = capture.delivery?.failures ?? {};
+  // An end whose session has nothing left to send keeps one slot, so entries
+  // the Meet Worker never acknowledges can't hold it past the retry window.
+  const reserve = releasableEnds(capture.outbox, new Set(), () => true).length
+    ? 1
+    : 0;
   const picked = [...byAccount.entries()]
     .sort(([a], [b]) => (failures[a] ?? 0) - (failures[b] ?? 0))
     .flatMap(([, list]) => list)
-    .slice(0, SELF_OUTBOX_BATCH);
+    .slice(0, SELF_OUTBOX_BATCH - reserve);
   let room = SELF_OUTBOX_BATCH - picked.length;
   return [
     ...picked,

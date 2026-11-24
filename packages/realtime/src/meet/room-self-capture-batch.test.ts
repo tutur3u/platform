@@ -109,6 +109,81 @@ describe('a delivery batch with session ends', () => {
     );
   });
 
+  it('keeps one slot for an end whose session has nothing left to send', () => {
+    // Eight accounts each keep eight unacknowledged closes of a live session:
+    // enough to fill every slot on every delivery.
+    const outbox: SelfOutboxEntry[] = [];
+    for (let a = 0; a < 8; a++)
+      for (let i = 0; i < 8; i++)
+        outbox.push({
+          sessionId: id(9, 50),
+          accountId: id(8, a),
+          seq: 8 * a + i + 1,
+          kind: 'close',
+        });
+    // A finished session whose closes were all acknowledged.
+    outbox.push({
+      sessionId: id(9, 51),
+      accountId: host,
+      seq: 100,
+      kind: 'end',
+    });
+    const batch = selectSelfOutboxBatch({
+      mode: 'self',
+      accounts: {},
+      outbox,
+      delivery: { attempts: 0, nextAt: T, startedAt: T },
+    });
+    expect(batch).toHaveLength(SELF_OUTBOX_BATCH);
+    expect(batch.filter((entry) => entry.kind === 'close')).toHaveLength(
+      SELF_OUTBOX_BATCH - 1
+    );
+    expect(batch.at(-1)).toMatchObject({ sessionId: id(9, 51), kind: 'end' });
+  });
+
+  it('releases a held end on the delivery after its entries are acknowledged', async () => {
+    // Nine closes of one account: one over its per-batch share, so the end
+    // is held on the first delivery and goes on the second.
+    const outbox: SelfOutboxEntry[] = [];
+    for (let i = 0; i < 9; i++)
+      outbox.push({ sessionId, accountId: bob, seq: i + 1, kind: 'close' });
+    outbox.push({ sessionId, accountId: host, seq: 10, kind: 'end' });
+    let state = {
+      ...selfRoom(),
+      selfCapture: {
+        mode: 'self',
+        accounts: {},
+        outbox,
+        delivery: { attempts: 0, nextAt: T, startedAt: T },
+      } as SelfCaptureState,
+    };
+    const posted: SelfOutboxEntry[][] = [];
+    const deliver = (now: number) =>
+      runSelfOutboxDelivery({
+        env: binding(async (request) => {
+          const body = (await request.json()) as {
+            entries: SelfOutboxEntry[];
+          };
+          posted.push(body.entries);
+          return Response.json({ acked: body.entries });
+        }),
+        secret: 'test-secret',
+        roomName: 'room',
+        now,
+        read: () => state,
+        commit: async (next) => {
+          state = next;
+        },
+      });
+    await deliver(T);
+    expect(posted[0]).toHaveLength(8);
+    expect(posted[0]!.every((entry) => entry.kind === 'close')).toBe(true);
+    // The next delivery runs when the first one scheduled it.
+    await deliver(state.selfCapture.delivery?.nextAt ?? T);
+    expect(posted[1]!.map((entry) => entry.kind)).toEqual(['close', 'end']);
+    expect(state.selfCapture.outbox).toEqual([]);
+  });
+
   it('the pending list does the same within its budget', () => {
     const pending = pendingFor(crowded(40), host);
     expect(pending).toHaveLength(32);
@@ -199,6 +274,11 @@ describe('session recording by a removed or absent manager', () => {
     const refused = svc(state, bob, session(otherSession, true), after, cohost);
     expect(refused.status).toBe(403);
     expect(refused.state.selfCapture?.session?.sessionId).toBe(sessionId);
+    // The same co-host, present and not removed, may.
+    expect(
+      ok(svc(drained(), bob, session(otherSession, true), after, cohost))
+        .selfCapture?.session?.sessionId
+    ).toBe(otherSession);
     // An absent co-host is refused too.
     const gone = releaseParticipant(
       drained(),
