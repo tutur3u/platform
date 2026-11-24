@@ -121,7 +121,13 @@ function selfSources(
  */
 export const WASM_COMPILE_SOURCE = "'wasm-unsafe-eval'";
 
-/** The only mounts whose script-src may carry {@link WASM_COMPILE_SOURCE}. */
+/**
+ * The only mounts whose script-src may carry {@link WASM_COMPILE_SOURCE}.
+ *
+ * `/parley` is listed ahead of time: under the Parley-to-Meet plan, Parley
+ * becomes a Meet activity and inherits Meet's profile, so it needs no separate
+ * policy of its own. Parley has no document CSP profile today.
+ */
 const WASM_COMPILE_BASE_PATHS: ReadonlySet<string> = new Set([
   '/meet',
   '/parley',
