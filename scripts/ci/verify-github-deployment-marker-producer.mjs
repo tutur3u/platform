@@ -467,7 +467,11 @@ export async function verifyMarker({
       ),
     'planner-attempt-binding'
   );
-  const classification = classifyPlannerJobs(callerJobs, callerRun.conclusion);
+  // Recovery opt-in lets the classifier hold the Cron serving-proof failure;
+  // the recovery check below still requires that exact failing step.
+  const classification = classifyPlannerJobs(callerJobs, callerRun.conclusion, {
+    recoverableFailures: allowFailure,
+  });
   assert(classification.ok, `planner-jobs-${classification.reason}`);
   if (callerRun.conclusion === 'failure') {
     const recovery = checkProductionMigrationRecovery({

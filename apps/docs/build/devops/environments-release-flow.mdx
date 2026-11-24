@@ -243,7 +243,15 @@ goes to the USER.
    manual recovery. The planner's Web verification job must have produced a
    successful `cloudflare-production-web` deployment marker for that SHA.
    Supabase Production checks the marker creator, trusted workflow blobs and
-   successful job in the selected run attempt.
+   successful job in the selected run attempt. The marker check classifies
+   every planner job first: a failed control-plane job blocks the apply. The
+   one exception applies only to a manual recovery dispatch
+   (`allow_cloudflare_verification_failures`). There the Cron Control
+   `deploy` job may be held when it failed exactly at **Verify the prebuilt
+   artifact is already serving** and its `validate` job passed. That happens
+   when the pin has no Cron Control `main` push run, and Cron Control keeps
+   serving its earlier version. `scripts/ci/production-planner-job-classes.test.mjs`
+   keeps the classifier and the recovery check in agreement on that job.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run

@@ -87,19 +87,22 @@ GitHub artifact and run metadata are public reads. Cloudflare reads use the
 Cron workflow's existing token for settings and version metadata, including
 module content.
 
-## Cron Control must not fail at the release pin
+## Cron Control at the release pin
 
-The production migration gate needs this job to succeed or be skipped at the
-pin; a failure is never accepted, even a tolerated one. Its migration job runs
+The automatic production migration run needs this job to succeed or be skipped
+at the pin. Its migration job runs
 `scripts/ci/verify-github-deployment-marker-producer.mjs`, which classifies
 every planner job with `scripts/ci/production-planner-job-classes.mjs`.
 `deploy-cron-control-cloudflare` is a control-plane job there, and a failed
-control-plane job always denies the production marker
-(`MARKER_PROVENANCE_DENIED`, phase `jobs`). That happens even though
-`scripts/ci/check-production-migration-recovery.ts` lists a failed
-"Verify the prebuilt artifact is already serving" step as a tolerated
-verification failure. A planner whose Cron job fails there therefore cannot
-apply migrations. Release order for a round that carries migrations:
+control-plane job denies the production marker (`MARKER_PROVENANCE_DENIED`).
+The one exception is a manual recovery dispatch of `supabase-production.yaml`
+with `allow_cloudflare_verification_failures` and the exact SHA. There the
+classifier holds a Cron `deploy` job that failed only at "Verify the prebuilt
+artifact is already serving", and
+`scripts/ci/check-production-migration-recovery.ts` then requires that exact
+step and a passing Cron `validate` job. Cron Control keeps serving its earlier
+version in that case. Prefer the normal order, so no recovery dispatch is
+needed. Release order for a round that carries migrations:
 
 1. If the Cron deploy runs for the pin (a skipped Cron job is accepted), pin a
    SHA whose commit changes a path in this workflow's `paths` filter, so a Cron

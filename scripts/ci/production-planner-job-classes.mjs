@@ -43,6 +43,16 @@ export const PLANNER_JOB_CLASSES = Object.freeze(
   ])
 );
 
+// The Cron Control deploy job fails closed at its serving-proof step when the
+// pin has no Cron Control push run. Explicit manual migration recovery
+// (check-production-migration-recovery.ts) tolerates exactly that step, so the
+// classifier may hold this control-plane job only when the caller opts into
+// recovery. Recovery itself still checks the failing step and its validation.
+export const CRON_SERVING_PROOF_JOB = 'deploy-cron-control-cloudflare / deploy';
+export const RECOVERABLE_CONTROL_PLANE_JOBS = Object.freeze([
+  CRON_SERVING_PROOF_JOB,
+]);
+
 export const REQUIRED_PLANNER_JOBS = Object.freeze([
   'plan',
   'deploy-web-cloudflare / Verify-Production',
@@ -63,7 +73,11 @@ export function plannerCaller(name) {
   return match ? { caller: match[1], nested: match[2] ?? null } : null;
 }
 
-export function classifyPlannerJobs(jobs, runConclusion) {
+export function classifyPlannerJobs(
+  jobs,
+  runConclusion,
+  { recoverableFailures = false } = {}
+) {
   if (runConclusion !== 'success' && runConclusion !== 'failure')
     return reject('planner-conclusion-not-terminal');
   if (!Array.isArray(jobs) || jobs.length === 0)
@@ -90,7 +104,13 @@ export function classifyPlannerJobs(jobs, runConclusion) {
     }
     if (!heldConclusions.has(conclusion))
       return reject('planner-job-conclusion-unknown');
-    if (kind !== INDEPENDENT_APP) return reject('required-job-failed');
+    const recoverable =
+      recoverableFailures === true &&
+      kind === CONTROL_PLANE_REQUIRED &&
+      conclusion === 'failure' &&
+      RECOVERABLE_CONTROL_PLANE_JOBS.includes(job.name);
+    if (kind !== INDEPENDENT_APP && !recoverable)
+      return reject('required-job-failed');
     const list = heldByApp.get(parsed.caller) ?? [];
     list.push({ name: job.name, conclusion });
     heldByApp.set(parsed.caller, list);
@@ -106,7 +126,16 @@ export function classifyPlannerJobs(jobs, runConclusion) {
     return reject('planner-conclusion-inconsistent');
   if (runConclusion === 'failure' && held.length === 0)
     return reject('planner-failure-unexplained');
-  return { ok: true, reason: 'only-independent-apps-held', held };
+  const recovered = held.some(
+    ({ app }) => PLANNER_JOB_CLASSES[app] !== INDEPENDENT_APP
+  );
+  return {
+    ok: true,
+    reason: recovered
+      ? 'recoverable-control-plane-held'
+      : 'only-independent-apps-held',
+    held,
+  };
 }
 
 // Held app names, job names and conclusions only: never logs or environment.

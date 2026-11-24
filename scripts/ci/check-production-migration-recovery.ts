@@ -1,8 +1,10 @@
 import { appendFileSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { plannerCaller } from './production-planner-job-classes.mjs';
+import {
+  CRON_SERVING_PROOF_JOB as CRON_DEPLOY_JOB,
+  plannerCaller,
+} from './production-planner-job-classes.mjs';
 
-const CRON_DEPLOY_JOB = 'deploy-cron-control-cloudflare / deploy';
 const verificationFailures = new Map([
   ['deploy-lettin-cloudflare / deploy', 'Verify deployed storage and version'],
   ['deploy-parley-cloudflare / deploy', 'Verify rendered canonical route'],
