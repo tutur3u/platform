@@ -5,6 +5,7 @@ import {
   consentRequired,
   DISPATCH_TTL_MS,
   isCurrentMiraRoomOn,
+  isMiraNoticeStale,
   miraRoomRequesterReady,
   miraRoomRequestReady,
   miraRoomSources,
@@ -193,13 +194,26 @@ export function guardMeetTranscriptAllow(
   )
     return null;
   const accountId = token.accountId ?? token.userId;
-  return isCurrentMiraRoomOn(
-    settleMiraRoomWithdrawals(state, Date.now()),
-    token.meetingId,
-    accountId
+  if (
+    !isCurrentMiraRoomOn(
+      settleMiraRoomWithdrawals(state, Date.now()),
+      token.meetingId,
+      accountId
+    )
   )
-    ? null
-    : consentRequired(state);
+    return consentRequired(state);
+  // The Allow is given under the current transcript notice, so Mira must be
+  // on under that notice too.
+  return isMiraNoticeStale(state, accountId)
+    ? {
+        state,
+        body: {
+          error: 'The transcript notice changed',
+          code: 'MIRA_ROOM_NOTICE_MODE_STALE',
+        },
+        status: 409,
+      }
+    : null;
 }
 
 /** Names and roles of admitted participants who are on, never anyone else. */

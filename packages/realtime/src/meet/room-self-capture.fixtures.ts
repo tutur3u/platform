@@ -68,9 +68,18 @@ export const ok = <T extends { status?: number; state: RoomServiceState }>(
 export const admit = (state: RoomServiceState, id: string) =>
   admitOrHold(state, tokenOf(id), '2026-11-24T00:00:00Z').state;
 
+/** Mira on under the notice of the room's current transcript mode. */
 export function miraOn(state: RoomServiceState, id: string, now = 1_000_000) {
   return ok(
-    applyMiraRoomConsent(state, tokenOf(id), miraChoice(state, 'on'), now)!
+    applyMiraRoomConsent(
+      state,
+      tokenOf(id),
+      {
+        ...miraChoice(state, 'on'),
+        noticeMode: state.selfCapture?.mode ?? 'room',
+      },
+      now
+    )!
   );
 }
 

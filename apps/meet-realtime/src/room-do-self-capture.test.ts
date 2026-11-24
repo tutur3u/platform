@@ -225,6 +225,13 @@ test('room.restore keeps undrained entries, epochs and sequences', async () => {
   assert.deepEqual(g.snapshot().selfCapture?.accounts, before.accounts);
 });
 
+const miraOnChoice = {
+  action: 'mira.room.choice',
+  choice: 'on',
+  version: MIRA_ROOM_NOTICE_VERSION,
+  acceptanceRevision: 1,
+  source: 'confirm',
+};
 const miraOff = {
   action: 'mira.room.choice',
   choice: 'off',
@@ -399,7 +406,24 @@ test('an Allow given in room mode needs per-speaker evidence before an open', as
     { allowed: refused.allowed, reason: refused.reason },
     { allowed: false, reason: 'notice_required' }
   );
-  // Re-sending the Allow with evidence recovers.
+  // Mira was turned on under the room capture notice.
+  const stale = (await (
+    await serviceCall(f.room, alice, { action: 'mira.room.read' })
+  ).json()) as { noticeMode: string; noticeStale: boolean };
+  assert.deepEqual(stale, { ...stale, noticeMode: 'self', noticeStale: true });
+  // An on under the room notice is refused in the same turn now.
+  assert.equal(
+    (await serviceCall(f.room, alice, { ...miraOnChoice, noticeMode: 'room' }))
+      .status,
+    409
+  );
+  // Confirming Mira under the per-speaker notice, then the Allow with its
+  // evidence, recovers.
+  assert.equal(
+    (await serviceCall(f.room, alice, { ...miraOnChoice, noticeMode: 'self' }))
+      .status,
+    200
+  );
   assert.equal(
     (await serviceCall(f.room, alice, transcriptChoice('allow'))).status,
     200
@@ -500,4 +524,66 @@ test('a replaced session gets its end before the next session starts', async () 
   // New entries keep counting from the room-wide sequence.
   const end = endsOf(f.snapshot())[0]!;
   assert.ok((f.snapshot().selfCapture?.seqCounter ?? 0) >= end.seq);
+});
+
+test('a change to room capture needs Mira confirmed under the room notice', async () => {
+  const at = Date.now() - 120_000;
+  let seed: RoomServiceState = createMeetRoomSnapshot();
+  for (const id of [host, alice]) seed = admit(seed, id);
+  seed = acceptMira(seed, host, 1, at);
+  const f = fixture(seed);
+  const call = async (id: string, body: object) => {
+    const response = await serviceCall(f.room, id, body);
+    return {
+      status: response.status,
+      body: (await response.json()) as Record<string, unknown>,
+    };
+  };
+  const fence = async () =>
+    (await call(host, { action: 'transcript.consent.read' })).body.fence;
+  assert.equal(
+    (await call(host, { action: 'transcript.mode.set', mode: 'self' })).status,
+    200
+  );
+  for (const id of [host, alice]) {
+    assert.equal(
+      (await call(id, { ...miraOnChoice, noticeMode: 'self' })).status,
+      200
+    );
+    assert.equal((await call(id, transcriptChoice('allow'))).status, 200);
+  }
+  assert.deepEqual(await fence(), {
+    ready: true,
+    pending: 0,
+    declined: 0,
+    admitted: 2,
+  });
+  assert.equal(
+    (await call(host, { action: 'transcript.mode.set', mode: 'room' })).status,
+    200
+  );
+  // Undecided for room capture until each confirms under the room notice.
+  assert.deepEqual(await fence(), {
+    ready: false,
+    pending: 2,
+    declined: 0,
+    admitted: 2,
+  });
+  const read = (await call(alice, { action: 'mira.room.read' })).body;
+  assert.equal(read.noticeStale, true);
+  // Room Mira chat keeps working.
+  assert.equal(read.ready, true);
+  for (const id of [host, alice])
+    assert.equal(
+      (await call(id, { ...miraOnChoice, noticeMode: 'room' })).status,
+      200
+    );
+  assert.deepEqual(await fence(), {
+    ready: true,
+    pending: 0,
+    declined: 0,
+    admitted: 2,
+  });
+  // Nothing recorded was rewritten: the transcript Allows are the same ones.
+  assert.equal(f.snapshot().transcriptConsent?.choices[alice]?.revision, 1);
 });

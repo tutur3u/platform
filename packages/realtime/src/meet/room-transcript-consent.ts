@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import { MEET_CLASS_COHOST_SCOPE } from './class-timer';
+import { isMiraNoticeStale } from './room-mira-choices';
 import type { RoomServiceState } from './room-service';
 import {
   isSelfSessionCapturing,
@@ -104,7 +105,10 @@ export function isCurrentTranscriptAllow(
     choice.meetingId === meetingId &&
     choice.version === MEET_TRANSCRIPT_NOTICE_VERSION &&
     Number.isSafeInteger(choice.revision) &&
-    choice.revision > 0
+    choice.revision > 0 &&
+    // Mira on under another transcript notice counts as undecided here, so
+    // room capture pauses for everyone until the person confirms again.
+    !isMiraNoticeStale(state, accountId)
   );
 }
 

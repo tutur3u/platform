@@ -9,6 +9,7 @@ import {
 import {
   activeMiraRoomLeases,
   admittedMiraRoomAccounts,
+  isMiraNoticeStale,
   miraRoomRequesterReady,
   miraRoomStatus,
   recordMiraRoomChoice,
@@ -46,6 +47,9 @@ const command = z.discriminatedUnion('action', [
     // 'toggle') turns an earlier off back on; a missing source counts as a
     // Join state, which never does.
     source: z.enum(['join', 'confirm', 'toggle']).optional(),
+    // The transcript notice the participant saw: room capture or each
+    // person's own device. Absent means the room notice.
+    noticeMode: z.enum(['room', 'self']).optional(),
   }),
   // Brackets every provider request that carries room-derived content.
   z.object({
@@ -85,6 +89,10 @@ function miraRoomView(
         }
       : null,
     choice: current ? own!.choice : null,
+    // The notice an on choice must be given under now, and whether the
+    // participant's current on was given under another one.
+    noticeMode: state.selfCapture?.mode ?? 'room',
+    noticeStale: current && isMiraNoticeStale(state, accountId),
     // The account's own latest choice in this meeting, kept across a new
     // acceptance so the next box can start where the person left it. An
     // opt-out still settling already counts as off.
@@ -149,7 +157,20 @@ export function applyMiraRoomConsent(
   if (parsed.data.action === 'mira.room.dispatch')
     return miraRoomDispatch(settled, token, accountId, parsed.data, now);
   const { choice, acceptanceRevision, source } = parsed.data;
+  const noticeMode = parsed.data.noticeMode ?? 'room';
   const currentRevision = currentMiraRoomAcceptance(settled)?.revision ?? 0;
+  // An on choice counts only under the notice of the room's current
+  // transcript mode, checked in the same turn as any mode change. Off is
+  // never refused.
+  if (choice === 'on' && noticeMode !== (settled.selfCapture?.mode ?? 'room'))
+    return {
+      state: settled,
+      body: {
+        error: 'The transcript notice changed',
+        code: 'MIRA_ROOM_NOTICE_MODE_STALE',
+      },
+      status: 409,
+    };
   // An on choice counts only for an acceptance that exists and that the
   // participant saw.
   if (
@@ -186,7 +207,8 @@ export function applyMiraRoomConsent(
     own?.choice === 'on' &&
     own.version === MIRA_ROOM_NOTICE_VERSION &&
     own.meetingId === token.meetingId &&
-    own.acceptanceRevision === currentRevision
+    own.acceptanceRevision === currentRevision &&
+    (own.noticeMode ?? 'room') === noticeMode
   )
     return reply(settled);
   return reply(
@@ -196,7 +218,8 @@ export function applyMiraRoomConsent(
       token.meetingId ?? '',
       'on',
       currentRevision,
-      now
+      now,
+      noticeMode
     )
   );
 }

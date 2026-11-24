@@ -14,6 +14,7 @@ import {
   notice,
   bob,
   host,
+  miraOn,
   ok,
   open,
   otherSession,
@@ -261,7 +262,12 @@ describe('per-speaker notice evidence', () => {
         T + 21_000
       )
     );
-    expect(svc(room, alice, allow({}), T + 60_000).status).toBeUndefined();
+    // Mira on under the per-speaker notice must be confirmed under the room
+    // notice first; then room capture keeps the plain Allow.
+    expect(svc(room, alice, allow({}), T + 60_000).status).toBe(409);
+    expect(
+      svc(miraOn(room, alice, T + 60_000), alice, allow({}), T + 60_000).status
+    ).toBeUndefined();
   });
 
   it('stores only version, locale and hash, returns them at open and clears them on withdraw', () => {

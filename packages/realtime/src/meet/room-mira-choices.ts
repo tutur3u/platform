@@ -26,6 +26,11 @@ export type MiraRoomChoice = {
   recordedAt: number;
   /** Per-account choice counter; request sources bind to it. */
   revision: number;
+  /**
+   * The transcript notice an on choice was given under: the room capture
+   * notice, or the per-speaker one. Absent means the room notice.
+   */
+  noticeMode?: 'room' | 'self';
 };
 /**
  * Turning off while already-admitted provider requests carry the account's
@@ -86,6 +91,20 @@ export function isCurrentMiraRoomOn(
   );
 }
 
+/**
+ * The account's Mira on was given under the other transcript notice: room
+ * capture (the host's mix of everyone) and each person's own device are
+ * different scopes. Room Mira chat still counts it; transcription in either
+ * mode waits for a confirmation under the current notice.
+ */
+export function isMiraNoticeStale(state: RoomServiceState, accountId: string) {
+  const own = state.miraRoom?.choices[accountId];
+  return (
+    own?.choice === 'on' &&
+    (own.noticeMode ?? 'room') !== (state.selfCapture?.mode ?? 'room')
+  );
+}
+
 export function miraRoomStatus(
   state: RoomServiceState,
   meetingId: string | undefined
@@ -135,7 +154,8 @@ export function recordMiraRoomChoice(
   meetingId: string,
   choice: MiraRoomChoice['choice'],
   acceptanceRevision: number,
-  now: number
+  now: number,
+  noticeMode?: MiraRoomChoice['noticeMode']
 ): RoomServiceState {
   const own = state.miraRoom?.choices[accountId];
   const { [accountId]: _cleared, ...pending } = state.miraRoom?.pending ?? {};
@@ -153,6 +173,7 @@ export function recordMiraRoomChoice(
           accountId,
           recordedAt: now,
           revision: own?.meetingId === meetingId ? own.revision + 1 : 1,
+          ...(choice === 'on' && noticeMode === 'self' ? { noticeMode } : {}),
         },
       },
       pending,

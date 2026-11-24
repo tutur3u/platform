@@ -176,7 +176,8 @@ export function isPresent(state: MeetRoomSnapshot, accountId: string) {
 export function selfConsentHeld(
   state: State,
   meetingId: string,
-  accountId: string
+  accountId: string,
+  { anyNotice = false }: { anyNotice?: boolean } = {}
 ) {
   const acceptance = currentMiraRoomAcceptance(state);
   const mira = state.miraRoom?.choices[accountId];
@@ -185,6 +186,9 @@ export function selfConsentHeld(
     acceptance &&
     !state.miraRoom?.pending?.[accountId] &&
     mira?.choice === 'on' &&
+    // Per-speaker capture needs Mira on under the per-speaker notice; an on
+    // given under the room capture notice waits for a new confirmation.
+    (anyNotice || mira.noticeMode === 'self') &&
     mira.accountId === accountId &&
     mira.meetingId === meetingId &&
     mira.version === MIRA_ROOM_NOTICE_VERSION &&

@@ -223,7 +223,13 @@ export function applySelfCapture(
   if (isRevoked(capture, accountId)) return refuse(spent, 'revoked');
   if (!isPresent(state, accountId)) return refuse(spent, 'not_present');
   if (!selfConsentHeld(state, current.meetingId, accountId))
-    return refuse(spent, 'consent');
+    return refuse(
+      spent,
+      // Consent held only under the room notice needs a new confirmation.
+      selfConsentHeld(state, current.meetingId, accountId, { anyNotice: true })
+        ? 'notice_required'
+        : 'consent'
+    );
   // The outbox never drops an entry, so new opens stop before it grows past
   // its bound.
   // A removal must always be recordable: once the removal set is full,
