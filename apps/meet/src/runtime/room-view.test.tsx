@@ -150,5 +150,7 @@ test('passes the redesigned flag to the live call without a name step', () => {
     mocks.shell
   );
   expect(shell?.props).toMatchObject({ meetUxV2: true });
-  expect(shell?.props.nameSetup).toBeUndefined();
+  expect(
+    (shell?.props as { nameSetup?: unknown } | undefined)?.nameSetup
+  ).toBeUndefined();
 });
