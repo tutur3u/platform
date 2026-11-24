@@ -19,6 +19,15 @@ const read = (file) => readFileSync(path.join(root, file), 'utf8');
 const auditReference = (source) =>
   /\b(?:record_version|audit_logs|get_ws_id)\b/i.test(source);
 
+// Generated database types declare every table and routine but read nothing.
+// The migrations that create audit readers and the app code that calls them
+// stay in the inventory, so the types file is excluded by exact path.
+const GENERATED_TYPES = new Set(['packages/types/src/supabase.ts']);
+const inventoried = (file) =>
+  /\.(?:[cm]?[jt]sx?|sql)$/.test(file) &&
+  !/(?:\.test\.|\.spec\.|\.d\.ts$|\/__tests__\/|\/__fixtures__\/)/.test(file) &&
+  !GENERATED_TYPES.has(file);
+
 function inventory(directory) {
   return readdirSync(path.join(root, directory), {
     withFileTypes: true,
@@ -32,12 +41,7 @@ function inventory(directory) {
         : inventory(file);
     }
     // Tests and type declarations cannot serve product history. SQL migrations are all included.
-    if (
-      !entry.isFile() ||
-      !/\.(?:[cm]?[jt]sx?|sql)$/.test(file) ||
-      /(?:\.test\.|\.spec\.|\.d\.ts$|\/__tests__\/|\/__fixtures__\/)/.test(file)
-    )
-      return [];
+    if (!entry.isFile() || !inventoried(file)) return [];
     const source = read(file);
     return auditReference(source) ? [[file, digest(source)]] : [];
   });
@@ -50,6 +54,20 @@ function assertAuditInventory(entries) {
     'Audit surface changed: review route/RPC/view reachability for workspace_documents history and its S-DH fence before updating this inventory. Do not blindly regenerate.'
   );
 }
+
+test('AT-9(h) excludes exactly the generated database types file', () => {
+  assert.deepEqual([...GENERATED_TYPES], ['packages/types/src/supabase.ts']);
+  assert.ok(auditReference(read('packages/types/src/supabase.ts')));
+  assert.equal(inventoried('packages/types/src/supabase.ts'), false);
+  for (const file of [
+    'packages/types/src/supabase-extra.ts',
+    'packages/types/src/index.ts',
+    'packages/utils/src/supabase.ts',
+    'apps/web/src/lib/audit/history.ts',
+    'apps/database/supabase/migrations/20990101000000_audit_reader.sql',
+  ])
+    assert.equal(inventoried(file), true, file);
+});
 
 test('AT-9(h): audit references in web, packages and every migration stay reviewed', () => {
   assertAuditInventory(
