@@ -32,7 +32,10 @@ export function PublicProfileSettingsPanel({
   centralUrl?: string;
 } = {}) {
   const t = useTranslations('public_profile');
-  const { openSettings } = useSettingsDialogUrlState();
+  const { open, openSettings, tab } = useSettingsDialogUrlState();
+  // The dialog body can stay mounted between opens, so the address follows
+  // whether this tab is showing rather than whether the panel is mounted.
+  const showing = open && tab === SHARED_SETTINGS_TAB_IDS.publicProfile;
   const profileQuery = useQuery({
     queryFn: () => getCurrentUserProfile(),
     queryKey: [...satelliteProfileQueryKey],
@@ -48,10 +51,10 @@ export function PublicProfileSettingsPanel({
   );
 
   useEffect(() => {
-    if (!profileUrl) return;
+    if (!profileUrl || !showing) return;
     enterPublicProfileAddress(profileUrl);
     return () => leavePublicProfileAddress();
-  }, [profileUrl]);
+  }, [profileUrl, showing]);
 
   const editProfile = (
     <Button

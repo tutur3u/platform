@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicProfileSettingsPanel } from './public-profile-panel';
 
+const dialogState = vi.hoisted(() => ({
+  open: true,
+  tab: 'public_profile' as string | null,
+}));
 const mocks = vi.hoisted(() => ({
   enter: vi.fn(),
   getProfile: vi.fn(),
@@ -19,7 +23,11 @@ vi.mock('@tuturuuu/ui/hooks/public-profile-address', () => ({
   leavePublicProfileAddress: mocks.leave,
 }));
 vi.mock('@tuturuuu/ui/hooks/use-settings-dialog-url-state', () => ({
-  useSettingsDialogUrlState: () => ({ openSettings: mocks.openSettings }),
+  useSettingsDialogUrlState: () => ({
+    open: dialogState.open,
+    openSettings: mocks.openSettings,
+    tab: dialogState.tab,
+  }),
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => `public_profile.${key}`,
@@ -51,7 +59,11 @@ function renderPanel(centralUrl?: string) {
   });
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  dialogState.open = true;
+  dialogState.tab = 'public_profile';
+});
 afterEach(cleanup);
 
 describe('PublicProfileSettingsPanel', () => {
@@ -94,5 +106,26 @@ describe('PublicProfileSettingsPanel', () => {
     renderPanel('https://tuturuuu.example');
     expect(await screen.findByText('public_profile.no_username')).toBeTruthy();
     expect(mocks.enter).not.toHaveBeenCalled();
+  });
+
+  it('shows the profile address again each time the tab reopens', async () => {
+    mocks.getProfile.mockResolvedValue(PROFILE);
+    const { rerender } = renderPanel('https://tuturuuu.example');
+    await screen.findByRole('heading', { level: 2, name: 'Public Creator' });
+    expect(mocks.enter).toHaveBeenCalledTimes(1);
+
+    dialogState.open = false;
+    dialogState.tab = null;
+    rerender(
+      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
+    );
+    expect(mocks.leave).toHaveBeenCalledTimes(1);
+
+    dialogState.open = true;
+    dialogState.tab = 'public_profile';
+    rerender(
+      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
+    );
+    expect(mocks.enter).toHaveBeenCalledTimes(2);
   });
 });
