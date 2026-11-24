@@ -3,8 +3,10 @@
 import { cn } from '@tuturuuu/utils/format';
 import {
   cloneElement,
+  isValidElement,
   type ReactElement,
   type ReactNode,
+  Suspense,
   useState,
 } from 'react';
 import {
@@ -36,6 +38,44 @@ interface Props<T> {
   setOpen?: (open: boolean) => void;
 }
 
+const REACT_LAZY_TYPE = Symbol.for('react.lazy');
+
+interface LazyNode {
+  $$typeof: symbol;
+  _payload: unknown;
+  _init: (payload: unknown) => unknown;
+}
+
+function isLazyNode(node: unknown): node is LazyNode {
+  return (
+    typeof node === 'object' &&
+    node !== null &&
+    (node as LazyNode).$$typeof === REACT_LAZY_TYPE
+  );
+}
+
+/*
+  A form element created in a Server Component reaches this client component
+  through the RSC payload. While its client module is still loading, React
+  Flight hands it over as a lazy node instead of an element, and cloning that
+  node produces an element whose type is undefined (React error #130). The
+  lazy node is unwrapped here first; a pending one suspends until its module
+  loads.
+*/
+function DialogForm<T>({
+  form,
+  formProps,
+}: {
+  form: unknown;
+  formProps: FormProps<T>;
+}) {
+  let node = form;
+  while (isLazyNode(node)) node = node._init(node._payload);
+
+  if (!isValidElement(node)) return null;
+  return cloneElement(node as ReactElement<FormProps<T>>, formProps);
+}
+
 export default function ModifiableDialogTrigger<T>({
   data,
   trigger,
@@ -53,16 +93,14 @@ export default function ModifiableDialogTrigger<T>({
   const open = externalOpen ?? internalOpen;
   const setOpen = setExternalOpen ?? setInternalOpen;
 
-  const formWithCallback = form
-    ? cloneElement(
-        form as ReactElement,
-        {
-          data,
-          forceDefault,
-          onFinish: () => setOpen(false),
-        } as FormProps<T>
-      )
-    : null;
+  const formWithCallback = form ? (
+    <Suspense fallback={null}>
+      <DialogForm
+        form={form}
+        formProps={{ data, forceDefault, onFinish: () => setOpen(false) }}
+      />
+    </Suspense>
+  ) : null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

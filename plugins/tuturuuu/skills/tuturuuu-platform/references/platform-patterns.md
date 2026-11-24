@@ -222,6 +222,13 @@ and its focused regression coverage before adding a reason or changing middlewar
   and invalidate it when the raw setting changes.
 - Server Components are the default. Add `'use client'` only for browser APIs,
   local state, or interactivity.
+- A client component must not `cloneElement` a node it received from a Server
+  Component (for example a `form` prop). Under vinext, React Flight delivers an
+  element whose client module is still loading as a lazy node, and cloning it
+  yields an element with an undefined type (React error #130) that only shows
+  when the node renders, such as on dialog open. Unwrap the lazy node in a
+  Suspense-wrapped child first, as `ModifiableDialogTrigger` does, or create the
+  element on the client.
 - Client data fetching and mutations use TanStack Query. Do not fetch data in
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
