@@ -384,6 +384,13 @@ class _ShellActionsOverflow extends StatelessWidget {
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
       icon: const Icon(Icons.more_horiz_rounded),
       onPressed: () async {
+        // Opening the sheet registers a modal, which re-resolves the shell's
+        // actions and can unmount this button before the sheet returns.
+        // Resolve everything needed afterwards now, and run the chosen
+        // action even if this button is gone: the action belongs to the
+        // still-mounted page. Gating on `context.mounted` silently dropped
+        // overflowed actions such as board Filters.
+        final router = GoRouter.maybeOf(context);
         final id = await showAdaptiveSheet<String>(
           context: context,
           builder: (sheetContext) => AppDialogScaffold(
@@ -414,9 +421,9 @@ class _ShellActionsOverflow extends StatelessWidget {
             ),
           ),
         );
-        if (!context.mounted || id == null) return;
+        if (id == null) return;
         if (id == _notificationsId) {
-          unawaited(context.push(Routes.notifications));
+          unawaited(router?.push(Routes.notifications));
           return;
         }
         for (final action in actions) {
