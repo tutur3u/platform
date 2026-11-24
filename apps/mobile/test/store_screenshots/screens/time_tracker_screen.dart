@@ -42,7 +42,7 @@ Widget buildStoreTimeTracker(
 
 const StoreScreen timeTrackerStoreScreen = StoreScreen(
   id: 'time-tracker',
-  order: 7,
+  order: 5,
   shellLocation: Routes.timer,
   build: buildStoreTimeTracker,
 );

@@ -64,7 +64,7 @@ Widget storeTaskBoardPage(
 /// The launch board in Kanban view.
 final StoreScreen tasksStoreScreen = StoreScreen(
   id: 'tasks',
-  order: 2,
+  order: 3,
   shellLocation: '/tasks/boards/spring-launch',
   build: storeTaskBoardPage,
   // Kanban loads a window of three lists; wide layouts show all four.

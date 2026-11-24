@@ -42,7 +42,7 @@ WorkspaceCubit _workspace() {
 /// layouts, filled with the team's launch-week schedule.
 final StoreScreen calendarStoreScreen = StoreScreen(
   id: 'calendar',
-  order: 3,
+  order: 4,
   shellLocation: Routes.calendar,
   build: (locale) {
     // Each capture starts from a cold calendar so no other locale leaks in.

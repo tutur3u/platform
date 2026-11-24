@@ -380,7 +380,7 @@ class _HistoryTabState extends State<HistoryTab> {
     List<TimeTrackingSession> sessions,
     AppLocalizations l10n,
   ) {
-    final dateFmt = DateFormat.yMMMEd();
+    final dateFmt = DateFormat.yMMMEd(l10n.localeName);
     final groups = <String, List<TimeTrackingSession>>{};
 
     for (final session in sessions) {

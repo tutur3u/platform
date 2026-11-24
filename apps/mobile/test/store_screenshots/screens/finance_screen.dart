@@ -9,6 +9,7 @@ import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../fixtures/finance_fixture.dart';
 import '../fixtures/shell_frame_fixture.dart';
 import '../fixtures/store_team.dart';
 import '../store_screenshot_app.dart';
@@ -17,7 +18,7 @@ import '../store_screenshot_app.dart';
 /// recent transactions with their categories.
 const StoreScreen financeStoreScreen = StoreScreen(
   id: 'finance',
-  order: 5,
+  order: 6,
   build: _build,
   prepare: _seedAndShow,
 );
@@ -51,8 +52,9 @@ Widget _build(StoreLocale locale) {
     ],
     child: ValueListenableBuilder<bool>(
       valueListenable: _cacheReady,
-      builder: (context, ready, _) =>
-          ready ? const FinancePage() : const SizedBox.shrink(),
+      builder: (context, ready, _) => ready
+          ? FinancePage(repository: StoreFinanceRepository(locale))
+          : const SizedBox.shrink(),
     ),
   );
 }

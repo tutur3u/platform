@@ -98,8 +98,9 @@ AssistantMessage _message(
   isPersisted: true,
 );
 
-/// Linh asks what is urgent; Mira answers brief-first, then proposes one
-/// concrete action and acts only after Linh agrees.
+/// Linh asks where the launch stands, then what is urgent; Mira answers
+/// brief-first, then proposes one concrete action and acts only after Linh
+/// agrees.
 List<AssistantMessage> storeAssistantMessages(StoreLocale l) {
   final illustrations = l.pick(
     'Review onboarding illustrations',
@@ -115,6 +116,36 @@ List<AssistantMessage> storeAssistantMessages(StoreLocale l) {
   );
   final block = l.pick('Illustration review', 'Duyệt minh hoạ');
   return [
+    _message(
+      'bbbbbbbb-0000-4000-8000-000000000005',
+      'user',
+      StoreTeam.at(9, 10),
+      [
+        _text(
+          l.pick(
+            'Where are we on the launch?',
+            'Việc ra mắt đang đến đâu rồi?',
+          ),
+        ),
+      ],
+    ),
+    _message(
+      'bbbbbbbb-0000-4000-8000-000000000006',
+      'assistant',
+      StoreTeam.at(9, 10),
+      [
+        _text(
+          l.pick(
+            'Launch is in four days. The landing page is the critical '
+                'task, due tomorrow, and the welcome emails follow in '
+                'three days.',
+            'Còn bốn ngày nữa là ra mắt. Trang giới thiệu là việc quan '
+                'trọng nhất, hạn ngày mai, còn email chào mừng hạn sau ba '
+                'ngày.',
+          ),
+        ),
+      ],
+    ),
     _message(
       'bbbbbbbb-0000-4000-8000-000000000001',
       'user',

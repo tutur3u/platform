@@ -69,7 +69,7 @@ WorkspaceCubit _workspace() {
 /// times and streaks.
 final StoreScreen habitsStoreScreen = StoreScreen(
   id: 'habits',
-  order: 6,
+  order: 7,
   shellLocation: Routes.habits,
   build: (locale) {
     FlutterSecureStorage.setMockInitialValues({});

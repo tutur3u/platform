@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/assistant/view/background_reply_harness.dart';
@@ -14,10 +15,29 @@ import '../store_screenshot_app.dart';
 /// answers with a short list, proposes one action and confirms it.
 const StoreScreen assistantStoreScreen = StoreScreen(
   id: 'assistant',
-  order: 4,
+  order: 2,
   build: _build,
   prepare: _openToolSteps,
+  anchors: _anchors,
 );
+
+/// The last tool card (Mira's calendar update): its "Done" pill and its
+/// Details button, for the composer's "Calendar updated" chip.
+Map<String, Rect> _anchors(WidgetTester tester) {
+  final l10n = tester.element(find.byType(AssistantPage)).l10n;
+  final done = find.text(l10n.assistantToolStepDone);
+  final details = find.byWidgetPredicate(
+    (widget) =>
+        widget is Text &&
+        (widget.data == l10n.assistantToolStepDetails ||
+            widget.data == l10n.assistantToolStepHideDetails),
+  );
+  if (done.evaluate().isEmpty || details.evaluate().isEmpty) return const {};
+  return {
+    'done': tester.getRect(done.last),
+    'details': tester.getRect(details.last),
+  };
+}
 
 /// Opens each turn's tool steps so the listing shows what Mira looked up
 /// and what it changed. Shorter screens keep them folded so the whole

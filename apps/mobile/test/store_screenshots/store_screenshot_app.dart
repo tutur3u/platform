@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -93,6 +96,7 @@ class StoreScreen {
     required this.build,
     this.prepare,
     this.shellLocation,
+    this.anchors,
   });
 
   /// Matches the metadata screenshot `id` (`dashboard`, `time-tracker`, ...).
@@ -110,6 +114,11 @@ class StoreScreen {
   /// When set, the page renders inside the app's real shell (header, dock or
   /// rail) at this route. Leave null when [build] already returns the shell.
   final String? shellLocation;
+
+  /// Named rectangles (logical pixels) the composer anchors captions to, such
+  /// as the card a chip points at. Written next to the capture as
+  /// `<NN-id>.json` in fractions of the viewport.
+  final Map<String, Rect> Function(WidgetTester tester)? anchors;
 
   String get fileName => '${order.toString().padLeft(2, '0')}-$id';
 }
@@ -196,6 +205,27 @@ Future<void> captureStoreScreen(
     '${device.id}/${locale.name}/${screen.fileName}',
     pixelRatio: device.pixelRatio,
   );
+  final anchors = screen.anchors?.call(tester);
+  final output = DesignRender.outputDir;
+  if (anchors != null && output != null) {
+    final size = device.logicalSize;
+    final file = File(
+      '$output/${device.id}/${locale.name}/${screen.fileName}.json',
+    );
+    final json = jsonEncode({
+      'anchors': {
+        for (final entry in anchors.entries)
+          entry.key: {
+            'x': entry.value.left / size.width,
+            'y': entry.value.top / size.height,
+            'w': entry.value.width / size.width,
+            'h': entry.value.height / size.height,
+          },
+      },
+    });
+    // Real file IO only completes outside the test's fake-async zone.
+    await tester.runAsync(() => file.writeAsString(json));
+  }
   // After the write, so a rejected frame can still be inspected.
   expectCleanStoreCapture(tester, locale);
   // Unmount between captures so timers and streams from one page never leak

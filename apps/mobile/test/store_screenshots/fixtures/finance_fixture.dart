@@ -7,6 +7,12 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
+import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
+import 'package:mobile/data/models/finance/transaction_stats.dart';
+import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
 
 import '../store_screenshot_app.dart';
@@ -75,7 +81,7 @@ class StoreFinance {
       'deposit',
       _studio,
       _amount(4800, 120000000),
-      locale.pick('Lumen Coffee deposit', 'Cọc dự án Lumen Coffee'),
+      locale.pick('Studio project deposit', 'Tiền cọc dự án studio'),
       locale.pick('Client payments', 'Thu từ khách hàng'),
       StoreTeam.at(10, 20),
     ),
@@ -154,6 +160,25 @@ class StoreFinance {
     'created_at': takenAt.toIso8601String(),
   };
 
+  /// This month's money in and out per wallet, as the stats endpoint
+  /// reports it: expenses are positive totals.
+  TransactionStats monthStats(String? walletId) {
+    final (income, expense) = switch (walletId) {
+      _studio => (_amount(14200, 355000000), _amount(3640, 91000000)),
+      _launch => (0.0, _amount(1980, 49500000)),
+      _petty => (0.0, _amount(410, 10250000)),
+      _card => (0.0, _amount(1350, 33750000)),
+      _ => (0.0, 0.0),
+    };
+    return TransactionStats(
+      totalTransactions: income > 0 ? 6 : 4,
+      totalIncome: income,
+      totalExpense: expense,
+      netTotal: income - expense,
+      currency: currency,
+    );
+  }
+
   /// The overview snapshot exactly as the finance cubit caches it.
   Map<String, dynamic> get overview => {
     'wallets': wallets,
@@ -162,6 +187,52 @@ class StoreFinance {
     'exchangeRates': const <Object>[],
     'lastUpdatedAt': null,
   };
+}
+
+/// Serves the overview from fixtures. The cubit shows the month totals only
+/// after its wallet, transaction, currency and rate loads all succeed, so the
+/// repository answers every one of them.
+class StoreFinanceRepository extends FinanceRepository {
+  StoreFinanceRepository(this.locale);
+
+  final StoreLocale locale;
+
+  StoreFinance get _data => StoreFinance(locale);
+
+  @override
+  Future<List<Wallet>> getWallets(String wsId) async => [
+    for (final wallet in _data.wallets) Wallet.fromJson(wallet),
+  ];
+
+  @override
+  Future<InfiniteTransactionResponse> getTransactionsInfinite({
+    required String wsId,
+    int limit = 20,
+    String? cursor,
+    String? search,
+    String? walletId,
+    FinanceTransactionQuery query = const FinanceTransactionQuery(),
+  }) async => InfiniteTransactionResponse.fromJson({
+    'data': _data.transactions.take(limit).toList(),
+    'hasMore': false,
+  });
+
+  @override
+  Future<String> getWorkspaceDefaultCurrency(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async => _data.currency;
+
+  @override
+  Future<List<ExchangeRate>> getExchangeRates() async => const [];
+
+  @override
+  Future<TransactionStats> getTransactionStats({
+    required String wsId,
+    String? walletId,
+    String? search,
+    FinanceTransactionQuery filters = const FinanceTransactionQuery(),
+  }) async => _data.monthStats(walletId);
 }
 
 Directory? _cacheDirectory;
