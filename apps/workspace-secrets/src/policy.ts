@@ -70,7 +70,11 @@ export const CALLER_POLICIES: Readonly<Record<CallerId, CallerPolicy>> = {
   },
 };
 
+/** BYOK provider keys are written only by their own handlers, never here. */
+const RESERVED_PUT_NAMES = /^AI_PROVIDER_KEY:/iu;
+
 export function canPut(caller: CallerId, name: string) {
+  if (RESERVED_PUT_NAMES.test(name.trim())) return false;
   return CALLER_POLICIES[caller].put(name);
 }
 

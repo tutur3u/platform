@@ -385,6 +385,32 @@ describe('put and reveal', () => {
   });
 });
 
+describe('AI provider keys', () => {
+  it('refuses put and rename before encrypting', async () => {
+    const { db } = fakeDb();
+    const deps = { db, env, randomUUID: uuid };
+    await expect(
+      putCredential(deps, 'admin', {
+        name: 'AI_PROVIDER_KEY:openai',
+        requestId: uuid(),
+        value: 'synthetic-provider-key',
+        wsId: WS,
+      })
+    ).resolves.toEqual({ status: 'forbidden' });
+    await expect(
+      renameCredential(deps, 'web', {
+        expectedValueRev: 0,
+        fromName: 'X_TOKEN',
+        requestId: uuid(),
+        secretId: uuid(),
+        toName: 'AI_PROVIDER_KEY:openai',
+        wsId: WS,
+      })
+    ).resolves.toEqual({ status: 'forbidden' });
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+});
+
 describe('rename', () => {
   it('re-seals for the new name so the value still decrypts', async () => {
     const { db } = fakeDb();

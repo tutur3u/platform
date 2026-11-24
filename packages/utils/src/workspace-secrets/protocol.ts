@@ -37,7 +37,12 @@ export interface WorkspaceSecretPutInput {
   secretId?: string;
   /** The row's current value_rev; omit to create. */
   expectedValueRev?: number;
-  /** A retry of the same put reuses its id and replays instead of failing. */
+  /**
+   * Identifies one write. The Worker's own database retries reuse it, so a
+   * write that already landed replays instead of conflicting. A create
+   * retried by the caller is a new request (the Worker picks a new row id)
+   * and reports a conflict if the first one landed.
+   */
   requestId: string;
 }
 

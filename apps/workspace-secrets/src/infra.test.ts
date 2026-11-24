@@ -111,6 +111,13 @@ describe('caller allowlist', () => {
     expect(canPut('key-status', 'X_TOKEN')).toBe(false);
   });
 
+  it('never writes or renames AI provider keys, for any caller', () => {
+    for (const caller of ['web', 'admin', 'storage', 'key-status'] as const) {
+      expect(canPut(caller, 'AI_PROVIDER_KEY:openai')).toBe(false);
+      expect(canPut(caller, ' ai_provider_key:google ')).toBe(false);
+    }
+  });
+
   it('scopes reveal by caller, purpose and name', () => {
     expect(canReveal('storage', 'DRIVE_R2_SECRET_ACCESS_KEY', 'storage')).toBe(
       true
