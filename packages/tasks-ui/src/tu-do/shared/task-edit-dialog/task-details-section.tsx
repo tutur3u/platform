@@ -22,6 +22,21 @@ import { PRIORITY_BADGE_COLORS } from '../../utils/taskConstants';
 import { getPriorityIcon } from '../../utils/taskPriorityUtils';
 import { useTaskOverrides } from './hooks/use-task-overrides';
 
+// Literal keys keep the translation lookup typed even where TaskPriority
+// resolves loosely (isolated type-checks without built dist).
+function priorityLabelKey(priority: string) {
+  switch (priority) {
+    case 'low':
+      return 'tasks.priority_low';
+    case 'high':
+      return 'tasks.priority_high';
+    case 'critical':
+      return 'tasks.priority_critical';
+    default:
+      return 'tasks.priority_normal';
+  }
+}
+
 export type TaskDetailsTab =
   | 'properties'
   | 'personal'
@@ -196,7 +211,7 @@ export function TaskDetailsSection({
                 className={PRIORITY_BADGE_COLORS[priority]}
                 icon={getPriorityIcon(priority, 'h-2.5 w-2.5')}
               >
-                {t(`tasks.priority_${priority}`)}
+                {t(priorityLabelKey(priority))}
               </SummaryChip>
             )}
             {dateLabel && (

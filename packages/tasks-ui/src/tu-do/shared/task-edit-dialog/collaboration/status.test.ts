@@ -79,7 +79,9 @@ describe('status mapping', () => {
       resolveStatusListId('done', board, { defaultDoneListId: 'closed-late' })
     ).toBe('done-early');
     expect(
-      resolveStatusListId('cancelled', board, { defaultClosedListId: 'done-late' })
+      resolveStatusListId('cancelled', board, {
+        defaultClosedListId: 'done-late',
+      })
     ).toBe('closed-early');
   });
 
