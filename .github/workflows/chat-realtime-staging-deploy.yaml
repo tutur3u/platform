@@ -155,7 +155,7 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in 1 2 3 4 5 6; do
-            stopped="$(curl --silent --max-time 10 "$CHAT_REALTIME_SMOKE_ORIGIN/health" | jq -r '.stopped // empty' || true)"
+            stopped="$(curl --silent --max-time 10 "$CHAT_REALTIME_SMOKE_ORIGIN/health" | jq -r 'if type == "object" and has("stopped") then .stopped else empty end' || true)"
             [[ "$stopped" == false ]] && exit 0
             sleep $((attempt * 5))
           done

@@ -40,7 +40,7 @@ if [[ -z "${CHAT_REALTIME_SMOKE_ORIGIN:-}" ]]; then
   exit 0
 fi
 for attempt in 1 2 3 4 5 6; do
-  stopped="$(curl --silent --max-time 10 "$CHAT_REALTIME_SMOKE_ORIGIN/health" | jq -r '.stopped // empty' || true)"
+  stopped="$(curl --silent --max-time 10 "$CHAT_REALTIME_SMOKE_ORIGIN/health" | jq -r 'if type == "object" and has("stopped") then .stopped else empty end' || true)"
   if [[ "$stopped" == true ]]; then
     echo "health reports stopped"
     exit 0
