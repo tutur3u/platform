@@ -25,7 +25,15 @@ export async function generateBilledMeetArtifact(
     meetingId: string;
     attemptId: string;
   },
-  admission?: MeetCreditAdmission
+  admission?: MeetCreditAdmission,
+  hooks?: {
+    /**
+     * Runs after the central run is reserved and before the provider call.
+     * A refusal here settles the run as failed with no credits and the
+     * provider is never called.
+     */
+    beforeProvider?: () => Promise<void>;
+  }
 ) {
   const { workspaceId, allowance } =
     admission ?? (await admitMeetCredits(actor.userId, actor.meetingId));
@@ -85,6 +93,22 @@ export async function generateBilledMeetArtifact(
     rejectExisting: true,
     metadata,
   });
+  if (hooks?.beforeProvider) {
+    try {
+      await hooks.beforeProvider();
+    } catch (error) {
+      await settleAiStudioRun({
+        runId: run.runId,
+        status: 'failed',
+        actualCredits: 0,
+        errorClass: 'dispatch_refused',
+        metadata: { ...metadata, usage_source: 'unavailable' },
+      }).catch(() => {
+        console.warn('Meeting AI run settlement pending', { runId: run.runId });
+      });
+      throw error;
+    }
+  }
   const started = Date.now();
   let measured: Awaited<ReturnType<typeof generateMeetArtifact>> | undefined;
   try {

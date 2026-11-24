@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/realtime/meet';
 import { connection } from 'next/server';
 import { z } from 'zod';
+import { readSelfConsentExtras } from '../../../../../features/meeting-ai/server/self-v1-controls';
 import { readMeetTranscriptionAvailability } from '../../../../../features/meeting-ai/server/transcription-availability';
 
 const choice = z
@@ -37,7 +38,15 @@ export async function GET(
     const consent = await callRoomService<MeetTranscriptConsentView>(access, {
       action: 'transcript.consent.read',
     });
-    return { available: true, ...consent };
+    // Per-speaker fields are optional; without them the client stays in
+    // room-capture mode.
+    const extras = await readSelfConsentExtras(access, consent).catch(() => ({
+      mode: 'room' as const,
+      perSpeakerAvailable: false,
+      session: null,
+      canManageMode: false,
+    }));
+    return { available: true, ...consent, ...extras };
   });
 }
 

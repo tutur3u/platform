@@ -4,6 +4,7 @@ import {
   resolveTranscriptActionOwners,
 } from '@tuturuuu/ai/meetings/transcript';
 import { isMeetingNotesAdmin } from '@tuturuuu/meet-core/features/meeting-ai/server/notes-admin';
+import { readSelfReview } from '@tuturuuu/meet-core/features/meeting-ai/server/self-v1-review';
 import { readTranscriptRoster } from '@tuturuuu/meet-core/features/meeting-ai/server/transcript-roster';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -116,15 +117,25 @@ export async function GET(request: Request, { params }: Params) {
     // User-scoped RLS is intentionally narrower, so read the permitted snapshot
     // server-side.
     const admin = await createAdminClient({ noCookie: true });
-    const { data: sessions, error: sessionsError } = await admin
+    const { data: rows, error: sessionsError } = await admin
       .from('meet_ai_sessions')
       .select(
-        'id,created_at,notes,notes_status,notes_cost_usd,notes_unpriced_attempts,notes_usage'
+        'id,created_at,protocol,cost_settled_usd,notes,notes_status,notes_cost_usd,notes_unpriced_attempts,notes_usage'
       )
       .eq('meeting_id', meetingId)
       .order('created_at')
       .range(0, 999);
     if (sessionsError) throw new Error('meet_ai_sessions_unavailable');
+    // Room-capture rows are read directly; self_v1 sessions only through
+    // their read contracts, which apply hiding, fences and redaction.
+    const sessions = rows.filter(
+      (session) => (session.protocol ?? 'legacy') === 'legacy'
+    );
+    const selfView = await readSelfReview(
+      admin,
+      rows.filter((session) => session.protocol === 'self_v1'),
+      auth.user.id
+    );
     const sessionIds = sessions.map((session) => session.id);
     const chunks = [];
     if (sessionIds.length) {
@@ -160,15 +171,17 @@ export async function GET(request: Request, { params }: Params) {
         a.sequence - b.sequence
     );
 
-    const transcriptionCostUsd = chunks.reduce(
-      (sum, chunk) =>
-        sum + Number(chunk.cost_usd ?? 0) + Number(chunk.prior_cost_usd ?? 0),
-      0
-    );
-    const notesCostUsd = sessions.reduce(
-      (sum, session) => sum + Number(session.notes_cost_usd ?? 0),
-      0
-    );
+    const transcriptionCostUsd =
+      chunks.reduce(
+        (sum, chunk) =>
+          sum + Number(chunk.cost_usd ?? 0) + Number(chunk.prior_cost_usd ?? 0),
+        0
+      ) + selfView.transcriptionCostUsd;
+    const notesCostUsd =
+      sessions.reduce(
+        (sum, session) => sum + Number(session.notes_cost_usd ?? 0),
+        0
+      ) + selfView.notesCostUsd;
     const unpricedRequests =
       chunks.reduce((sum, chunk) => sum + (chunk.unpriced_attempts ?? 0), 0) +
       sessions.reduce(
@@ -200,6 +213,7 @@ export async function GET(request: Request, { params }: Params) {
                   };
                 })(),
         })),
+        selfSessions: selfView.sessions,
         chunks: chunks.map((chunk) => ({
           id: chunk.id,
           sessionId: chunk.session_id,
@@ -208,6 +222,7 @@ export async function GET(request: Request, { params }: Params) {
           ...readTranscriptChunk(chunk, roster),
           status: chunk.status,
         })),
+        selfChunks: selfView.chunks,
         costs: canManage
           ? {
               transcriptionCostUsd,

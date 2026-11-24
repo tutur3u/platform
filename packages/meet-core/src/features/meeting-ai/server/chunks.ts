@@ -7,7 +7,9 @@ import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
-import { readMeetAudioForm } from './body';
+import { readMeetAudioBody, readMeetAudioForm } from './body';
+import { MEET_SELF_REQUEST_MAX_BYTES } from './self-v1-audio';
+import { transcribeSelfChunk } from './self-v1-chunks';
 import { admitMeetCredits } from './credit-admission';
 import { requireMeetTranscriptPayer } from './transcript-authority';
 import { requireMeetTranscriptFence } from './transcript-fence';
@@ -24,9 +26,34 @@ const schema = z.object({
   startSeconds: z.coerce.number().min(0).max(16_200),
 });
 
+/**
+ * One upload route for both capture protocols. A per-speaker request names
+ * its capture stream; it runs the per-speaker uploader check and is accepted
+ * only for a `self_v1` session. Every other request keeps the host-only room
+ * capture path, which refuses `self_v1` sessions. The session row, not the
+ * request, decides which audio a session accepts.
+ */
 export async function transcribeMeetChunk(
   request: Request,
   params: MeetAiParams
+) {
+  if (request.headers.get('x-meet-audio-batch') === '1')
+    return transcribeLegacyChunk(request, params);
+  if (Number(request.headers.get('content-length') ?? 0) > 500_000)
+    throw new MeetAiError(413, 'Audio too large');
+  const { form, size } = await readMeetAudioBody(request, 500_000);
+  if (form.has('streamId')) {
+    if (size > MEET_SELF_REQUEST_MAX_BYTES)
+      throw new MeetAiError(413, 'Audio too large');
+    return transcribeSelfChunk(request, params, form);
+  }
+  return transcribeLegacyChunk(request, params, form);
+}
+
+async function transcribeLegacyChunk(
+  request: Request,
+  params: MeetAiParams,
+  preread?: FormData
 ) {
   const { db, meetingId, wsId, user } = await meetAiAccess(
     request,
@@ -37,7 +64,7 @@ export async function transcribeMeetChunk(
   const maxBytes = batched ? MEET_AUDIO_REQUEST_MAX_BYTES : 500_000;
   if (Number(request.headers.get('content-length') ?? 0) > maxBytes)
     throw new MeetAiError(413, 'Audio too large');
-  const body = await readMeetAudioForm(request, maxBytes);
+  const body = preread ?? (await readMeetAudioForm(request, maxBytes));
   const parsed = schema.safeParse(Object.fromEntries(body));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid audio');
   const hints = {
@@ -56,6 +83,13 @@ export async function transcribeMeetChunk(
     .maybeSingle();
   if (error) throw new MeetAiError(500, 'Session lookup failed');
   if (!session) throw new MeetAiError(404, 'Session not found');
+  // Room-mix audio never enters a per-speaker session.
+  if ((session.protocol ?? 'legacy') !== 'legacy')
+    throw new MeetAiError(
+      409,
+      'This session does not accept room audio',
+      'MEET_SELF_PROTOCOL_MISMATCH'
+    );
   const existing = await db
     .from('meet_ai_chunks')
     .select('*')

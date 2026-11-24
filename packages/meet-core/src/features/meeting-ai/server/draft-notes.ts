@@ -58,13 +58,20 @@ export async function draftMeetAiNotes(input: {
   const { db, meetingId, sessionId } = input;
   const { data: session, error } = await db
     .from('meet_ai_sessions')
-    .select('id, ended_at')
+    .select('id, ended_at, protocol')
     .eq('id', sessionId)
     .eq('meeting_id', meetingId)
     .eq('user_id', input.userId)
     .maybeSingle();
   if (error) throw new MeetAiError(500, 'Session lookup failed');
   if (!session) throw new MeetAiError(404, 'Session not found');
+  // Live drafts read room-capture chunks only; self_v1 notes are final-only.
+  if ((session.protocol ?? 'legacy') !== 'legacy')
+    throw new MeetAiError(
+      409,
+      'Live notes are not available for this session',
+      'MEET_SELF_PROTOCOL_MISMATCH'
+    );
   if (session.ended_at) throw new MeetAiError(409, 'Transcription has ended');
   const { data, error: chunkError } = await db
     .from('meet_ai_chunks')
