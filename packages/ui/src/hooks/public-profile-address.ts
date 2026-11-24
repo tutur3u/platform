@@ -2,19 +2,22 @@
  * Shows the public profile address (`/u/<username>`) in the address bar while
  * the settings dialog's Public profile tab is open, without navigating.
  *
- * Entering replaces the current history entry's URL and tags its state with a
- * per-page nonce; leaving restores the URL it replaced. Back pops to the entry
- * before the dialog opened, which carries no tag, so the dialog closes. A
- * reload of `/u/<username>` loses the in-memory nonce and renders the full
- * public page. The address only changes when the profile URL shares the
- * current origin; other origins keep their `?settingsTab=` address.
+ * Entering replaces the current history entry's URL and tags its state with
+ * this page load's session id and the URL it replaced (`returnTo`). The tag
+ * alone says the dialog is open, so history traversal needs no extra
+ * bookkeeping: Back pops to the entry before the dialog opened, which carries
+ * no tag, so the dialog closes; Forward returns to the tagged entry, so the
+ * dialog reopens on the Public profile tab. Leaving restores `returnTo`. A
+ * tag from an earlier page load has another session id and is inert, so a
+ * reload of `/u/<username>` renders the full public page. The address only
+ * changes when the profile URL shares the current origin; other origins keep
+ * their `?settingsTab=` address.
  */
 
 const STATE_KEY = '__tuturuuuPublicProfileAddress';
 
-type ActiveAddress = { nonce: string; returnTo: string };
+type AddressTag = { returnTo: string; session: string };
 
-let active: ActiveAddress | null = null;
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -32,10 +35,22 @@ function createNonce() {
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+const PAGE_SESSION = createNonce();
+
+/** The current entry's tag when it was written by this page load. */
+function currentTag(): AddressTag | null {
+  if (typeof window === 'undefined') return null;
+  const tag = historyState()[STATE_KEY] as Partial<AddressTag> | undefined;
+  if (!tag || typeof tag !== 'object') return null;
+  if (tag.session !== PAGE_SESSION || typeof tag.returnTo !== 'string') {
+    return null;
+  }
+  return tag as AddressTag;
+}
+
 /** Whether the current history entry shows the public profile address. */
 export function isPublicProfileAddressActive(): boolean {
-  if (typeof window === 'undefined' || !active) return false;
-  return historyState()[STATE_KEY] === active.nonce;
+  return currentTag() !== null;
 }
 
 export function subscribePublicProfileAddress(listener: () => void) {
@@ -63,10 +78,12 @@ export function enterPublicProfileAddress(profileUrl: string): boolean {
   if (target.origin !== window.location.origin) return false;
 
   const { pathname, search, hash } = window.location;
-  const nonce = createNonce();
-  active = { nonce, returnTo: `${pathname}${search}${hash}` };
+  const tag: AddressTag = {
+    returnTo: `${pathname}${search}${hash}`,
+    session: PAGE_SESSION,
+  };
   window.history.replaceState(
-    { ...historyState(), [STATE_KEY]: nonce },
+    { ...historyState(), [STATE_KEY]: tag },
     '',
     `${target.pathname}${target.search}`
   );
@@ -77,13 +94,9 @@ export function enterPublicProfileAddress(profileUrl: string): boolean {
 /** Restores the address the profile replaced; a no-op when it is not shown. */
 export function leavePublicProfileAddress(): void {
   if (typeof window === 'undefined') return;
-  const current = active;
-  if (!current || !isPublicProfileAddressActive()) {
-    active = null;
-    return;
-  }
-  active = null;
+  const tag = currentTag();
+  if (!tag) return;
   const { [STATE_KEY]: _removed, ...state } = historyState();
-  window.history.replaceState(state, '', current.returnTo);
+  window.history.replaceState(state, '', tag.returnTo);
   notify();
 }

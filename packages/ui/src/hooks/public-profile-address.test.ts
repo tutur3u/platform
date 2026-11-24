@@ -57,4 +57,51 @@ describe('public profile address', () => {
     const reloaded = await loadAddress();
     expect(reloaded.isPublicProfileAddressActive()).toBe(false);
   });
+
+  it('reopens on the tagged entry when Forward follows Back', async () => {
+    const address = await loadAddress();
+    const settled = () =>
+      new Promise<void>((resolve) =>
+        window.addEventListener('popstate', () => resolve(), { once: true })
+      );
+    window.history.replaceState(null, '', '/ws/tasks');
+    window.history.pushState(null, '', '/ws/tasks?settingsDialog=open');
+    address.enterPublicProfileAddress('/u/creator');
+
+    let done = settled();
+    window.history.back();
+    await done;
+    expect(window.location.pathname).toBe('/ws/tasks');
+    expect(address.isPublicProfileAddressActive()).toBe(false);
+
+    done = settled();
+    window.history.forward();
+    await done;
+    expect(window.location.pathname).toBe('/u/creator');
+    expect(address.isPublicProfileAddressActive()).toBe(true);
+
+    address.leavePublicProfileAddress();
+    expect(`${window.location.pathname}${window.location.search}`).toBe(
+      '/ws/tasks?settingsDialog=open'
+    );
+    expect(address.isPublicProfileAddressActive()).toBe(false);
+  });
+
+  it('keeps an earlier page load tag inert after Forward', async () => {
+    const first = await loadAddress();
+    window.history.replaceState(null, '', '/ws/tasks');
+    window.history.pushState(null, '', '/ws/tasks?settingsDialog=open');
+    first.enterPublicProfileAddress('/u/creator');
+    window.history.back();
+    await new Promise<void>((resolve) =>
+      window.addEventListener('popstate', () => resolve(), { once: true })
+    );
+    const reloaded = await loadAddress();
+    window.history.forward();
+    await new Promise<void>((resolve) =>
+      window.addEventListener('popstate', () => resolve(), { once: true })
+    );
+    expect(window.location.pathname).toBe('/u/creator');
+    expect(reloaded.isPublicProfileAddressActive()).toBe(false);
+  });
 });
