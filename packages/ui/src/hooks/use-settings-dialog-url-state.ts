@@ -16,6 +16,7 @@ import {
 } from './settings-dialog-url';
 import {
   CLOSED_UPGRADE_DIALOG_QUERY,
+  UPGRADE_DIALOG_OPEN_VALUE,
   UPGRADE_DIALOG_PARAM,
   UPGRADE_TAB_PARAM,
 } from './use-upgrade-dialog-url-state';
@@ -70,7 +71,8 @@ export function useSettingsDialogUrlState<K extends string = never>(
   const openSettings = useCallback(
     (nextTab?: string | null, extras?: ExtraValues<K>) => {
       // Swapping from Upgrade replaces its entry, so Back does not reopen it.
-      const switching = open || query[UPGRADE_DIALOG_PARAM] === 'open';
+      const switching =
+        open || query[UPGRADE_DIALOG_PARAM] === UPGRADE_DIALOG_OPEN_VALUE;
       leavePublicProfileAddress();
       void setQuery(
         {

@@ -20,7 +20,8 @@ export function SidebarFooterActions({
    * Free workspaces see "Upgrade" on the Plans tab; paid workspaces see
    * "Current plan" on the Current plan tab of the same dialog. While the tier
    * is unknown (`null` or `undefined`) the entry is not published, so a paid
-   * workspace never flashes "Upgrade".
+   * workspace never flashes "Upgrade". A workspace that never resolves keeps
+   * the entry hidden: the menu fails closed rather than guessing a tier.
    */
   isFreeTier?: boolean | null;
 }) {
