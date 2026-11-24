@@ -107,6 +107,15 @@ export const FEATURE_COPY: Readonly<Record<string, FeatureCopy>> = {
       vi: 'Cùng bảng công việc trên màn hình lớn, có bộ lọc, sprint và chỉnh sửa nhanh.',
     }
   ),
+  'web/tasks-list': copy(
+    'Tasks',
+    'tasks',
+    { en: 'Task lists', vi: 'Danh sách công việc' },
+    {
+      en: 'Every task in one list, filtered by status, priority or assignee.',
+      vi: 'Mọi công việc trong một danh sách, lọc theo trạng thái, độ ưu tiên hoặc người phụ trách.',
+    }
+  ),
   'web/task-detail': copy(
     'Tasks',
     'tasks',
