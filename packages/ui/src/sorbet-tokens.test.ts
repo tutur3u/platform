@@ -367,16 +367,22 @@ describe('Sorbet token contract', () => {
     }
   });
 
-  it('strokes fields, OTP slots and checkboxes with the field role', () => {
-    const rule = css.slice(
-      css.indexOf(
-        '[data-slot="input"],\n    [data-slot="textarea"],\n    [data-slot="input-otp-slot"]'
-      )
-    );
+  it('strokes every field-like control with the field role', () => {
+    const start = css.indexOf('Field strokes:');
+    expect(start).toBeGreaterThan(-1);
+    const rule = css.slice(start);
     const body = rule.slice(0, rule.indexOf('}'));
-    for (const slot of ['input', 'textarea', 'input-otp-slot', 'checkbox']) {
+    for (const slot of [
+      'input',
+      'textarea',
+      'select-trigger',
+      'input-otp-slot',
+      'checkbox',
+      'radio-group-item',
+    ]) {
       expect(body).toContain(`[data-slot="${slot}"]`);
     }
+    expect(body).toContain('[data-slot="button"][role="combobox"]');
     for (const state of [
       ':focus-visible',
       '[aria-invalid="true"]',
@@ -385,6 +391,12 @@ describe('Sorbet token contract', () => {
       expect(body).toContain(state);
     }
     expect(body).toContain('border-color: var(--sorbet-field-stroke)');
+  });
+
+  it('fills unchecked switch tracks with the field role', () => {
+    expect(css).toMatch(
+      /\[data-slot="switch"\]\[data-state="unchecked"\]\) \{\s*background-color: var\(--sorbet-field-stroke\);/
+    );
   });
 
   it('keeps every Sorbet selector under the data-ui attribute', () => {
