@@ -51,16 +51,15 @@ class StoreDevice {
 /// Every device the store listings ask for.
 const storeDevices = <StoreDevice>[
   StoreDevice('ios/iphone-6.9', Size(440, 956), 3), // 1320x2868
-  // Provisional medium-display size; see mobile-store-screenshots.mdx.
   StoreDevice('ios/iphone-6.3', Size(402, 874), 3), // 1206x2622
+  // iPhone Duo outer (portrait) and inner (landscape) displays.
+  StoreDevice('ios/iphone-duo-outer', Size(466, 678), 3), // 1398x2034
+  StoreDevice('ios/iphone-duo-inner', Size(951, 669), 3), // 2853x2007
   StoreDevice('ios/iphone-6.5', Size(428, 926), 3), // 1284x2778
   StoreDevice('ios/ipad-13', Size(1032, 1376), 2), // 2064x2752
   StoreDevice('android/phone', Size(432, 768), 2.5), // 1080x1920
   StoreDevice('android/tablet7', Size(600, 960), 2), // 1200x1920
   StoreDevice('android/tablet10', Size(800, 1280), 2), // 1600x2560
-  // Play foldable captures: the outer display and the inner display.
-  StoreDevice('android/foldable-folded', Size(393, 852), 3), // 1179x2556
-  StoreDevice('android/foldable-unfolded', Size(786, 852), 3), // 2358x2556
   StoreDevice('macos/mac', Size(1440, 900), 2), // 2880x1800
   StoreDevice('windows/desktop', Size(1440, 810), 4 / 3), // 1920x1080
 ];
@@ -74,8 +73,8 @@ final showcaseDevices = <StoreDevice>[
     ('ipad', Size(1024, 1366), 2.0), // 2048x2732
     ('ipad-landscape', Size(1366, 1024), 2.0), // 2732x2048
     ('mac', Size(1512, 982), 2.0), // 3024x1964
-    ('duo-folded', Size(393, 852), 3.0), // 1179x2556
-    ('duo-unfolded', Size(786, 852), 3.0), // 2358x2556
+    ('duo-folded', Size(466, 678), 3.0), // 1398x2034
+    ('duo-unfolded', Size(951, 669), 3.0), // 2853x2007
   ])
     for (final brightness in Brightness.values)
       StoreDevice(

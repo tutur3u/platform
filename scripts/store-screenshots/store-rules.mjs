@@ -13,13 +13,14 @@ const PORTRAIT_OR_LANDSCAPE_16_9 = [
 
 /**
  * Per target (`<store>/<device>`): the device class it counts toward, its
- * count limits per locale, and optional side and aspect limits.
- * Classes shared by several targets (the Play foldable inner and outer
- * displays) count together.
+ * count limits per locale, and optional side and aspect limits. Targets that
+ * share a `group` count together.
  */
 export const TARGET_RULES = {
   'ios/iphone-6.9': { group: 'ios/iphone-6.9', min: 1, max: 10 },
   'ios/iphone-6.3': { group: 'ios/iphone-6.3', min: 1, max: 10 },
+  'ios/iphone-duo-outer': { group: 'ios/iphone-duo-outer', min: 1, max: 10 },
+  'ios/iphone-duo-inner': { group: 'ios/iphone-duo-inner', min: 1, max: 10 },
   'ios/iphone-6.5': { group: 'ios/iphone-6.5', min: 1, max: 10 },
   'ios/ipad-13': { group: 'ios/ipad-13', min: 1, max: 10 },
   'macos/mac': { group: 'macos/mac', min: 1, max: 10 },
@@ -47,27 +48,6 @@ export const TARGET_RULES = {
     max: 8,
     side: { min: 1080, max: PLAY_SIDE.max },
     ratios: PORTRAIT_OR_LANDSCAPE_16_9,
-    maxAspect: PLAY_MAX_ASPECT,
-    maxBytes: PLAY_MAX_BYTES,
-  },
-  'android/foldable-folded': {
-    group: 'android/foldable',
-    min: 3,
-    max: 8,
-    side: { min: 960, max: PLAY_SIDE.max },
-    ratios: [[10, 16]],
-    maxAspect: PLAY_MAX_ASPECT,
-    maxBytes: PLAY_MAX_BYTES,
-  },
-  'android/foldable-unfolded': {
-    group: 'android/foldable',
-    min: 3,
-    max: 8,
-    side: { min: 960, max: PLAY_SIDE.max },
-    ratios: [
-      [1, 1],
-      [4, 3],
-    ],
     maxAspect: PLAY_MAX_ASPECT,
     maxBytes: PLAY_MAX_BYTES,
   },

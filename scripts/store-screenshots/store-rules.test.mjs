@@ -168,14 +168,6 @@ test('Google Play geometry: sides, aspect and large-screen ratios', () => {
   assert.deepEqual(checkGeometry('t', 2560, 1440, tablet), []);
   assert.match(checkGeometry('t', 1600, 2560, tablet)[0], /9:16 or 16:9/);
   assert.match(checkGeometry('t', 1000, 1778, tablet)[0], /width 1000/);
-  const unfolded = TARGET_RULES['android/foldable-unfolded'];
-  assert.deepEqual(checkGeometry('u', 2160, 2160, unfolded), []);
-  assert.deepEqual(checkGeometry('u', 2160, 1620, unfolded), []);
-  assert.match(checkGeometry('u', 2160, 1215, unfolded)[0], /1:1 or 4:3/);
-  assert.match(checkGeometry('u', 900, 900, unfolded)[0], /width 900/);
-  const folded = TARGET_RULES['android/foldable-folded'];
-  assert.deepEqual(checkGeometry('f', 1350, 2160, folded), []);
-  assert.match(checkGeometry('f', 1080, 1920, folded)[0], /10:16/);
   assert.deepEqual(checkGeometry('x', 1, 1, undefined), []);
 });
 
@@ -237,24 +229,35 @@ test('counts per device class and locale stay within store limits', () => {
   );
 });
 
-test('the foldable inner and outer displays count as one device class', () => {
-  const both = (en, vi) =>
+test('iPhone Duo screenshots take exact outer and inner sizes', () => {
+  assert.deepEqual(
+    checkScreenshot(
+      'ios/iphone-duo-outer/en/01-dashboard.jpg',
+      jpeg(1398, 2034)
+    ),
+    []
+  );
+  assert.deepEqual(
+    checkScreenshot(
+      'ios/iphone-duo-inner/vi/01-dashboard.jpg',
+      jpeg(2853, 2007)
+    ),
+    []
+  );
+  assert.match(
+    checkScreenshot(
+      'ios/iphone-duo-inner/en/01-dashboard.jpg',
+      jpeg(2007, 2853)
+    )[0],
+    /expected 2853x2007/
+  );
+  assert.deepEqual(
     checkCounts([
-      ...shots('android/foldable-folded', 'en', en),
-      ...shots('android/foldable-unfolded', 'en', en),
-      ...shots('android/foldable-folded', 'vi', vi),
-      ...shots('android/foldable-unfolded', 'vi', vi),
-    ]);
-  assert.deepEqual(both(2, 2), []);
-  assert.deepEqual(both(4, 4), []);
-  assert.deepEqual(both(1, 1), [
-    'android/foldable/en: 2 screenshots, expected 3-8',
-    'android/foldable/vi: 2 screenshots, expected 3-8',
-  ]);
-  assert.deepEqual(both(5, 5), [
-    'android/foldable/en: 10 screenshots, expected 3-8',
-    'android/foldable/vi: 10 screenshots, expected 3-8',
-  ]);
+      ...shots('ios/iphone-duo-outer', 'en', 4),
+      ...shots('ios/iphone-duo-outer', 'vi', 4),
+    ]),
+    []
+  );
 });
 
 test('English and Vietnamese must ship the same screenshots', () => {

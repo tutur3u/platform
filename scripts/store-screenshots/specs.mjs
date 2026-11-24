@@ -22,12 +22,32 @@ export const SCREENSHOT_TARGETS = [
     maxBytes: 10_000_000,
   },
   {
-    // Provisional: Apple may ask for a medium-display (Dynamic Island) size.
+    // Apple requires one screenshot for iPhone with a Dynamic Island (medium
+    // display) at 1179x2556 or 1206x2622.
     store: 'ios',
     device: 'iphone-6.3',
     width: 1206,
     height: 2622,
     frame: 'phone',
+    maxBytes: 10_000_000,
+  },
+  {
+    // iPhone Duo outer display (portrait). Required from April 2027 for apps
+    // built with the iOS 27.1 SDK.
+    store: 'ios',
+    device: 'iphone-duo-outer',
+    width: 1398,
+    height: 2034,
+    frame: 'phone',
+    maxBytes: 10_000_000,
+  },
+  {
+    // iPhone Duo inner display, in its native landscape orientation.
+    store: 'ios',
+    device: 'iphone-duo-inner',
+    width: 2853,
+    height: 2007,
+    frame: 'foldable',
     maxBytes: 10_000_000,
   },
   {
@@ -72,24 +92,6 @@ export const SCREENSHOT_TARGETS = [
     frame: 'tablet',
     maxBytes: 8_000_000,
     fill: 0.92,
-  },
-  {
-    // Play foldable type: outer (folded) display, 10:16.
-    store: 'android',
-    device: 'foldable-folded',
-    width: 1350,
-    height: 2160,
-    frame: 'phone',
-    maxBytes: 8_000_000,
-  },
-  {
-    // Play foldable type: inner (unfolded) display, 1:1.
-    store: 'android',
-    device: 'foldable-unfolded',
-    width: 2160,
-    height: 2160,
-    frame: 'foldable',
-    maxBytes: 8_000_000,
   },
   {
     store: 'macos',
@@ -205,15 +207,15 @@ export const SHOWCASE_DEVICES = {
     maxEdge: 1600,
   },
   mac: { logical: [1512, 982], ratio: 2, frame: 'mac-window', maxEdge: 1600 },
-  // Provisional reading of "iPhone Duo": a book-style dual-screen phone.
+  // iPhone Duo: the outer display (closed) and the inner display (open).
   'duo-folded': {
-    logical: [393, 852],
+    logical: [466, 678],
     ratio: 3,
     frame: 'phone',
     maxEdge: 1280,
   },
   'duo-unfolded': {
-    logical: [786, 852],
+    logical: [951, 669],
     ratio: 3,
     frame: 'foldable',
     maxEdge: 1600,

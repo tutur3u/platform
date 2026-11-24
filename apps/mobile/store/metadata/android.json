@@ -61,14 +61,6 @@
     "tablet10": {
       "width": 1440,
       "height": 2560
-    },
-    "foldable-folded": {
-      "width": 1350,
-      "height": 2160
-    },
-    "foldable-unfolded": {
-      "width": 2160,
-      "height": 2160
     }
   },
   "screenshots": {
@@ -339,98 +331,6 @@
         "caption": {
           "en": "Capture ideas and turn them into tasks",
           "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
-        }
-      }
-    ],
-    "foldable-folded": [
-      {
-        "id": "dashboard",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-folded/en/01-dashboard.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-folded/vi/01-dashboard.jpg"
-        },
-        "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-folded/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-folded/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-folded/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-folded/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
-        }
-      },
-      {
-        "id": "assistant",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-folded/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-folded/vi/04-assistant.jpg"
-        },
-        "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
-        }
-      }
-    ],
-    "foldable-unfolded": [
-      {
-        "id": "dashboard",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-unfolded/en/01-dashboard.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-unfolded/vi/01-dashboard.jpg"
-        },
-        "caption": {
-          "en": "Your day at a glance",
-          "vi": "Cả ngày của bạn trong một màn hình"
-        }
-      },
-      {
-        "id": "tasks",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-unfolded/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-unfolded/vi/02-tasks.jpg"
-        },
-        "caption": {
-          "en": "Plan work in Kanban, list or timeline",
-          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
-        }
-      },
-      {
-        "id": "calendar",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-unfolded/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-unfolded/vi/03-calendar.jpg"
-        },
-        "caption": {
-          "en": "Day, week, month and agenda views",
-          "vi": "Xem lịch theo ngày, tuần, tháng"
-        }
-      },
-      {
-        "id": "assistant",
-        "files": {
-          "en": "apps/mobile/store/screenshots/android/foldable-unfolded/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/android/foldable-unfolded/vi/04-assistant.jpg"
-        },
-        "caption": {
-          "en": "Ask Mira by text or voice",
-          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
         }
       }
     ]

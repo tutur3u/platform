@@ -65,6 +65,14 @@
     "iphone-6.3": {
       "width": 1206,
       "height": 2622
+    },
+    "iphone-duo-outer": {
+      "width": 1398,
+      "height": 2034
+    },
+    "iphone-duo-inner": {
+      "width": 2853,
+      "height": 2007
     }
   },
   "screenshots": {
@@ -425,6 +433,98 @@
         "caption": {
           "en": "Capture ideas and turn them into tasks",
           "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+        }
+      }
+    ],
+    "iphone-duo-outer": [
+      {
+        "id": "dashboard",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/01-dashboard.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/01-dashboard.jpg"
+        },
+        "caption": {
+          "en": "Your day at a glance",
+          "vi": "Cả ngày của bạn trong một màn hình"
+        }
+      },
+      {
+        "id": "tasks",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/02-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/02-tasks.jpg"
+        },
+        "caption": {
+          "en": "Plan work in Kanban, list or timeline",
+          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
+        }
+      },
+      {
+        "id": "calendar",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/03-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/03-calendar.jpg"
+        },
+        "caption": {
+          "en": "Day, week, month and agenda views",
+          "vi": "Xem lịch theo ngày, tuần, tháng"
+        }
+      },
+      {
+        "id": "assistant",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-outer/en/04-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-outer/vi/04-assistant.jpg"
+        },
+        "caption": {
+          "en": "Ask Mira by text or voice",
+          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+        }
+      }
+    ],
+    "iphone-duo-inner": [
+      {
+        "id": "dashboard",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/01-dashboard.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/01-dashboard.jpg"
+        },
+        "caption": {
+          "en": "Your day at a glance",
+          "vi": "Cả ngày của bạn trong một màn hình"
+        }
+      },
+      {
+        "id": "tasks",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/02-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/02-tasks.jpg"
+        },
+        "caption": {
+          "en": "Plan work in Kanban, list or timeline",
+          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
+        }
+      },
+      {
+        "id": "calendar",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/03-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/03-calendar.jpg"
+        },
+        "caption": {
+          "en": "Day, week, month and agenda views",
+          "vi": "Xem lịch theo ngày, tuần, tháng"
+        }
+      },
+      {
+        "id": "assistant",
+        "files": {
+          "en": "apps/mobile/store/screenshots/ios/iphone-duo-inner/en/04-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/ios/iphone-duo-inner/vi/04-assistant.jpg"
+        },
+        "caption": {
+          "en": "Ask Mira by text or voice",
+          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
         }
       }
     ]
