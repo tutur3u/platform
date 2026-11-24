@@ -93,6 +93,40 @@ destroyed. The job uploads the report as `playground-execution-qualification-<sh
 and fails unless every case passed and the guest stopped. Check cases need an
 image built from a commit that includes check mode.
 
+## Deploy to production
+
+Dispatch `Playground execution production deploy`
+(`playground-execution-production.yaml`) on `main` with the registry
+reference staging qualified. The credential-free build job requires the
+`PLAYGROUND_PRODUCTION_SOURCE_ORIGIN` variable (Web's HTTPS origin, which
+serves `/api/v1/internal/playground-execution/source` and `/export`) and
+checks that the emitted output names only that digest, the custom domain
+`playground-execution.tuturuuu.com` and the source origin, with no qualifier
+class and no staging name. The deploy job runs in the reviewer-gated
+`playground-production` environment with `PLAYGROUND_PRODUCTION_CLOUDFLARE_API_TOKEN`,
+`PLAYGROUND_PRODUCTION_INGRESS_SECRET` and `PLAYGROUND_PRODUCTION_OPERATOR_SECRET`.
+`cf deploy --prebuilt --no-provision` attaches the custom domain on the
+`tuturuuu.com` zone, so the token also needs that zone's Workers route
+permission.
+
+The source origin must be a `tuturuuu.com` host. The environment's reviewer
+confirms the digest passed staging qualification before approving. The
+admission gate is durable: it starts paused, and when the domain already
+serves the Worker the job pauses admission before rolling out containers.
+The smoke waits for the custom domain to
+serve the Worker, then requires an unauthenticated `/run` to answer 401 and
+`/qualify` and `/` to answer 404, and pauses admission again through
+`/control`. Enabling admission and turning on Meet's cloud Run adapter are
+separate operator steps after the smoke.
+
+Web reaches the Worker through `PLAYGROUND_EXECUTION_ORIGIN`
+(`https://playground-execution.tuturuuu.com`), sends the same value as
+`PLAYGROUND_PRODUCTION_INGRESS_SECRET` as `PLAYGROUND_INGRESS_SECRET`, and
+signs source and export tickets with its own `PLAYGROUND_SOURCE_TICKET_SECRET`.
+Roll back by pausing admission, then removing the custom domain from the
+Worker; the Worker keeps the previous digest's deployment for
+`cf`-based rollback.
+
 ## Hosted qualification
 
 Run the fixture again against the digest on the actual Cloudflare execution
