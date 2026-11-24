@@ -41,6 +41,8 @@ export interface GithubImportDeps {
   ) => Promise<Record<string, unknown>[]>;
   sleep?: (ms: number) => Promise<void>;
   progress?: (message: string) => void;
+  /** Receives normalization warnings; defaults to stderr. */
+  warn?: (message: string) => void;
 }
 
 function parseNumberList(raw: string | undefined, flag: string) {
@@ -163,7 +165,8 @@ export async function loadGithubMapping(
 
 async function loadIssues(
   options: GithubImportOptions,
-  deps: GithubImportDeps
+  deps: GithubImportDeps,
+  warn: (message: string) => void
 ) {
   if (options.inputPath) {
     const raw = JSON.parse(await readFile(options.inputPath, 'utf8')) as Record<
@@ -176,7 +179,8 @@ async function loadIssues(
     return raw.map((node) =>
       normalizeGithubIssue(
         node,
-        options.repo ?? repoFromUrl(String(node.url)) ?? fallbackRepo
+        options.repo ?? repoFromUrl(String(node.url)) ?? fallbackRepo,
+        warn
       )
     );
   }
@@ -194,7 +198,7 @@ async function loadIssues(
           : undefined,
     onProgress: deps.progress,
   });
-  return nodes.map((node) => normalizeGithubIssue(node, options.repo!));
+  return nodes.map((node) => normalizeGithubIssue(node, options.repo!, warn));
 }
 
 function repoFromUrl(url: string) {
@@ -284,7 +288,21 @@ export async function runGithubImport(
     deps.sleep ??
     ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const mapping = await loadGithubMapping(options.mappingPath);
-  const issues = selectIssues(await loadIssues(options, deps), options);
+  // Warnings are held back and printed only for the issues that get imported.
+  const warnings = new Map<number, string[]>();
+  const issues = selectIssues(
+    await loadIssues(options, deps, (message) => {
+      const number = Number(/^#(\d+):/u.exec(message)?.[1] ?? 0);
+      warnings.set(number, [...(warnings.get(number) ?? []), message]);
+    }),
+    options
+  );
+  const warn =
+    deps.warn ??
+    ((message: string) => process.stderr.write(`warning: ${message}\n`));
+  for (const issue of issues) {
+    for (const message of warnings.get(issue.number) ?? []) warn(message);
+  }
   if (!issues.length) {
     process.stdout.write(
       json

@@ -165,6 +165,61 @@ export const normalizedIssueSchema = z
         message: 'Issue URL must match repo and number',
       });
     }
+    // Linked pull requests, commits and relationship URLs must be in the same
+    // repository too; a cross-repository link rejects the whole issue.
+    const sameRepo = (pattern: RegExp, url: string) => {
+      const match = pattern.exec(url);
+      return (
+        !!match &&
+        `${match[1]}/${match[2]}`.toLowerCase() === issue.repo.toLowerCase()
+      );
+    };
+    const requireRepo = (
+      pattern: RegExp,
+      url: string,
+      path: Array<string | number>,
+      what: string
+    ) => {
+      if (!sameRepo(pattern, url)) {
+        ctx.addIssue({
+          code: 'custom',
+          path,
+          message: `${what} must be in ${issue.repo}`,
+        });
+      }
+    };
+    issue.linked_prs.forEach((pr, index) =>
+      requireRepo(
+        PR_URL_PATTERN,
+        pr.url,
+        ['linked_prs', index, 'url'],
+        'Pull request URL'
+      )
+    );
+    issue.linked_commits.forEach((commit, index) =>
+      requireRepo(
+        COMMIT_URL_PATTERN,
+        commit.url,
+        ['linked_commits', index, 'url'],
+        'Commit URL'
+      )
+    );
+    if (issue.parent_url) {
+      requireRepo(
+        ISSUE_URL_PATTERN,
+        issue.parent_url,
+        ['parent_url'],
+        'Parent issue URL'
+      );
+    }
+    issue.sub_issue_urls.forEach((url, index) =>
+      requireRepo(
+        ISSUE_URL_PATTERN,
+        url,
+        ['sub_issue_urls', index],
+        'Sub-issue URL'
+      )
+    );
     issue.comments.forEach((comment, index) => {
       if (!owns(COMMENT_URL_PATTERN, comment.url)) {
         ctx.addIssue({

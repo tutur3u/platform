@@ -208,6 +208,28 @@ describe('runGithubImport', () => {
     ).toEqual([false, true]);
   });
 
+  it('warns about dropped cross-repo links for imported issues only', async () => {
+    const cross = (number: number) =>
+      node(number, {
+        parent: { url: 'https://github.com/other/repo/issues/1' },
+      });
+    const warn = vi.fn();
+    const { importGithub, client } = fakeClient();
+    capture();
+    await runImport(client, 'ws-1', { ...flags, issues: '2' }, false, {
+      fetchIssues: async () => [cross(1), cross(2)] as never,
+      warn,
+    });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain(
+      '#2: dropped parent issue outside tutur3u/platform'
+    );
+    const payload = importGithub.mock.calls[0]![1] as unknown as {
+      issues: Array<{ parent_url: string | null }>;
+    };
+    expect(payload.issues[0]?.parent_url).toBeNull();
+  });
+
   it('honors --batch-size and --dry-run', async () => {
     const { importGithub, client } = fakeClient();
     const out = capture();

@@ -23,11 +23,11 @@ describe('imported issue URL ownership', () => {
           created_at: base.created_at,
         },
       ],
-      linked_prs: [{ url: 'https://github.com/other/repo/pull/9' }],
+      linked_prs: [{ url: 'https://github.com/Tutur3u/platform/pull/9' }],
       linked_commits: [
-        { url: 'https://github.com/other/repo/commit/ABCDEF1234567' },
+        { url: 'https://github.com/tutur3u/platform/commit/ABCDEF1234567' },
       ],
-      parent_url: 'https://github.com/other/repo/issues/1',
+      parent_url: 'https://github.com/tutur3u/platform/issues/1',
       sub_issue_urls: ['https://github.com/tutur3u/platform/issues/8'],
     });
     expect(result.success).toBe(true);
@@ -77,6 +77,46 @@ describe('imported issue URL ownership', () => {
     expect(parse(comment('https://example.com/a#issuecomment-1')).success).toBe(
       false
     );
+  });
+
+  it('rejects cross-repository links with a clear error instead of dropping them', () => {
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [
+        { linked_prs: [{ url: 'https://github.com/other/repo/pull/9' }] },
+        'linked_prs.0.url',
+      ],
+      [
+        {
+          linked_commits: [
+            { url: 'https://github.com/other/repo/commit/abcdef1' },
+          ],
+        },
+        'linked_commits.0.url',
+      ],
+      [{ parent_url: 'https://github.com/other/repo/issues/1' }, 'parent_url'],
+      [
+        {
+          sub_issue_urls: [
+            'https://github.com/tutur3u/platform/issues/8',
+            'https://github.com/other/repo/issues/9',
+          ],
+        },
+        'sub_issue_urls.1',
+      ],
+    ];
+    for (const [over, path] of cases) {
+      const result = parse(over);
+      expect(result.success).toBe(false);
+      const issue = result.error?.issues.find((i) => i.path.join('.') === path);
+      expect(issue?.message).toContain('must be in tutur3u/platform');
+    }
+    // Same repository, any case, is fine.
+    expect(
+      parse({
+        linked_prs: [{ url: 'https://github.com/TUTUR3U/Platform/pull/9' }],
+        parent_url: 'https://github.com/tutur3u/PLATFORM/issues/1',
+      }).success
+    ).toBe(true);
   });
 
   it('rejects link and relationship URLs of the wrong shape', () => {

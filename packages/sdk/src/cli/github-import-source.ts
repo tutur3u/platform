@@ -256,15 +256,32 @@ export async function fetchGithubIssues(
 const lower = (value: unknown) =>
   typeof value === 'string' ? value.toLowerCase() : null;
 
-/** Converts a GraphQL issue node (live or from an export) to the import shape. */
+/** True when a github.com URL points into `repo` (owner/name, any case). */
+function urlInRepo(url: unknown, repo: string) {
+  const match = /^https:\/\/github\.com\/([^/]+\/[^/]+)\//u.exec(String(url));
+  return !!match && match[1]!.toLowerCase() === repo.toLowerCase();
+}
+
+/**
+ * Converts a GraphQL issue node (live or from an export) to the import shape.
+ * Links into other repositories are dropped, with a warning, because the API
+ * only accepts links inside the issue's own repository.
+ */
 export function normalizeGithubIssue(
   node: Node,
-  repo: string
+  repo: string,
+  warn: (message: string) => void = () => undefined
 ): GithubImportIssue {
+  const keep = (url: unknown, label: string) => {
+    if (urlInRepo(url, repo)) return true;
+    warn(`#${node.number}: dropped ${label} outside ${repo}: ${String(url)}`);
+    return false;
+  };
   const timeline: Node[] = node.timelineItems?.nodes ?? [];
   const prs = new Map<string, GithubImportIssue['linked_prs'][number]>();
   const addPr = (source: Node | null | undefined) => {
     if (!source?.url || !String(source.url).includes('/pull/')) return;
+    if (!keep(source.url, 'pull request')) return;
     prs.set(source.url, {
       url: source.url,
       number: source.number,
@@ -282,7 +299,7 @@ export function normalizeGithubIssue(
         if (item.source?.__typename === 'PullRequest') addPr(item.source);
         break;
       case 'ReferencedEvent':
-        if (item.commit?.url)
+        if (item.commit?.url && keep(item.commit.url, 'commit'))
           commits.set(item.commit.url, {
             url: item.commit.url,
             oid: item.commit.oid,
@@ -339,7 +356,12 @@ export function normalizeGithubIssue(
     linked_prs: [...prs.values()],
     linked_commits: [...commits.values()],
     events: events.slice(0, 100),
-    parent_url: node.parent?.url ?? null,
-    sub_issue_urls: (node.subIssues?.nodes ?? []).map((s: Node) => s.url),
+    parent_url:
+      node.parent?.url && keep(node.parent.url, 'parent issue')
+        ? node.parent.url
+        : null,
+    sub_issue_urls: (node.subIssues?.nodes ?? [])
+      .map((s: Node) => s.url)
+      .filter((url: string) => keep(url, 'sub-issue')),
   };
 }

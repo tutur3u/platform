@@ -165,7 +165,9 @@ The issue URL must be `https://github.com/<owner>/<repo>/issues/<n>` and match
 the declared `repo` and `number`. Comment URLs must be
 `.../issues/<n>#issuecomment-<id>` on the same issue, linked pull requests
 `.../pull/<n>`, linked commits `.../commit/<sha>`, and parent and sub-issue
-URLs issue URLs. Anything else fails validation, so a request cannot key an
+URLs issue URLs, all inside the declared `repo` (owner and name,
+case-insensitive). A link into another repository rejects the whole issue; the
+CLI drops such links and warns before sending. Anything else fails validation, so a request cannot key an
 import on a URL that GitHub does not own.
 
 ### Rules for safe re-runs

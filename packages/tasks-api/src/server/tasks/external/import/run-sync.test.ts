@@ -47,7 +47,7 @@ describe('idempotency', () => {
           created_at: '2023-05-02T00:00:00Z',
         },
       ],
-      linked_prs: [{ url: 'https://github.com/o/r/pull/9' }],
+      linked_prs: [{ url: 'https://github.com/tutur3u/platform/pull/9' }],
     }),
     issue({
       number: 2,
@@ -332,7 +332,7 @@ describe('human edits to imported tasks', () => {
           created_at: '2024-01-02T00:00:00Z',
         },
       ],
-      linked_prs: [{ url: 'https://github.com/o/r/pull/9' }],
+      linked_prs: [{ url: 'https://github.com/tutur3u/platform/pull/9' }],
       events: [
         {
           event: 'labeled',

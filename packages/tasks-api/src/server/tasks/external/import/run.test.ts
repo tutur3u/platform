@@ -241,8 +241,12 @@ describe('creating tasks', () => {
     const [result] = await run([
       issue({
         number: 6,
-        linked_prs: [{ url: 'https://github.com/o/r/pull/9', merged: true }],
-        linked_commits: [{ url: 'https://github.com/o/r/commit/abcdef1' }],
+        linked_prs: [
+          { url: 'https://github.com/tutur3u/platform/pull/9', merged: true },
+        ],
+        linked_commits: [
+          { url: 'https://github.com/tutur3u/platform/commit/abcdef1' },
+        ],
       }),
     ]);
     expect(

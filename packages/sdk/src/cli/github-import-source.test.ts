@@ -12,7 +12,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { node, norm } from './github-import-fixtures.test-support';
-import { fetchGithubIssues, isRateLimitError } from './github-import-source';
+import {
+  fetchGithubIssues,
+  isRateLimitError,
+  normalizeGithubIssue,
+} from './github-import-source';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -50,6 +54,83 @@ describe('normalizeGithubIssue', () => {
       },
       { event: 'closed', at: '2023-06-01T00:00:00Z', actor: 'vhpx' },
     ]);
+  });
+
+  it('drops links outside the repository and warns about each one', () => {
+    const warnings: string[] = [];
+    const issue = normalizeGithubIssue(
+      node(5, {
+        parent: { url: 'https://github.com/other/repo/issues/1' },
+        subIssues: {
+          nodes: [
+            { url: 'https://github.com/Tutur3u/Platform/issues/6' },
+            { url: 'https://github.com/other/repo/issues/7' },
+          ],
+        },
+        closedByPullRequestsReferences: {
+          nodes: [
+            {
+              url: 'https://github.com/other/repo/pull/2',
+              number: 2,
+              state: 'OPEN',
+              merged: false,
+              title: 'x',
+            },
+          ],
+        },
+        timelineItems: {
+          nodes: [
+            {
+              __typename: 'ReferencedEvent',
+              createdAt: '2023-06-02T00:00:00Z',
+              commit: {
+                oid: 'abc1234',
+                url: 'https://github.com/other/repo/commit/abc1234',
+              },
+            },
+            {
+              __typename: 'ReferencedEvent',
+              createdAt: '2023-06-02T00:00:00Z',
+              commit: {
+                oid: 'def5678',
+                url: 'https://github.com/tutur3u/platform/commit/def5678',
+              },
+            },
+            {
+              __typename: 'CrossReferencedEvent',
+              createdAt: '2023-06-03T00:00:00Z',
+              source: {
+                __typename: 'PullRequest',
+                number: 3,
+                url: 'https://github.com/tutur3u/platform/pull/3',
+                state: 'OPEN',
+                merged: false,
+                title: 'y',
+              },
+            },
+          ],
+        },
+      }),
+      'tutur3u/platform',
+      (message) => warnings.push(message)
+    );
+    expect(issue.parent_url).toBeNull();
+    expect(issue.sub_issue_urls).toEqual([
+      'https://github.com/Tutur3u/Platform/issues/6',
+    ]);
+    expect(issue.linked_prs.map((p) => p.url)).toEqual([
+      'https://github.com/tutur3u/platform/pull/3',
+    ]);
+    expect(issue.linked_commits.map((c) => c.url)).toEqual([
+      'https://github.com/tutur3u/platform/commit/def5678',
+    ]);
+    expect(warnings).toHaveLength(4);
+    expect(
+      warnings.every(
+        (w) =>
+          w.startsWith('#5: dropped') && w.includes('outside tutur3u/platform')
+      )
+    ).toBe(true);
   });
 
   it('maps parents, sub-issues and not-planned closes', () => {

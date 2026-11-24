@@ -155,28 +155,31 @@ describe('planLinks and helpers', () => {
         number: 1,
         linked_prs: [
           {
-            url: 'https://github.com/o/r/pull/9',
+            url: 'https://github.com/tutur3u/platform/pull/9',
             number: 9,
             state: 'CLOSED',
             merged: true,
             title: 'Fix',
           },
           {
-            url: 'https://github.com/o/r/pull/10',
+            url: 'https://github.com/tutur3u/platform/pull/10',
             number: 10,
             state: 'OPEN',
             merged: false,
           },
         ],
         linked_commits: [
-          { url: 'https://github.com/o/r/commit/abcdef1', oid: 'abcdef1' },
+          {
+            url: 'https://github.com/tutur3u/platform/commit/abcdef1',
+            oid: 'abcdef1',
+          },
         ],
       })
     );
     expect(specs.map((s) => [s.kind, s.state, s.externalId])).toEqual([
-      ['pull_request', 'merged', 'o/r#9'],
-      ['pull_request', 'open', 'o/r#10'],
-      ['commit', null, 'o/r@abcdef1'],
+      ['pull_request', 'merged', 'tutur3u/platform#9'],
+      ['pull_request', 'open', 'tutur3u/platform#10'],
+      ['commit', null, 'tutur3u/platform@abcdef1'],
     ]);
   });
 
