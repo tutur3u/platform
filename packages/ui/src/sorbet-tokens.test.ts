@@ -8,7 +8,10 @@ import {
   SORBET_RADII,
   SORBET_THEME_CONFIG_ID,
 } from './components/ui/custom/sorbet-theme';
-import { EXPERIMENTAL_SORBET_UI_CONFIG_ID } from './components/ui/custom/sorbet-ui';
+import {
+  EXPERIMENTAL_SORBET_UI_CONFIG_ID,
+  SORBET_UI_DEFAULT,
+} from './components/ui/custom/sorbet-ui';
 
 const repoRoot = existsSync(resolve(process.cwd(), 'packages/ui/package.json'))
   ? process.cwd()
@@ -259,7 +262,7 @@ describe('Sorbet token contract', () => {
     expect(tokens.setting.enabledConfigId).toBe(
       EXPERIMENTAL_SORBET_UI_CONFIG_ID
     );
-    expect(tokens.setting.enabledDefault).toBe(false);
+    expect(tokens.setting.enabledDefault).toBe(SORBET_UI_DEFAULT);
     expect(tokens.setting.themeConfigId).toBe(SORBET_THEME_CONFIG_ID);
     expect(tokens.setting.themeFields.preset).toEqual([...SORBET_PRESETS]);
     expect(tokens.setting.themeFields.radius).toEqual([...SORBET_RADII]);

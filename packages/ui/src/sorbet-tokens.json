@@ -5,7 +5,7 @@
   "setting": {
     "enabledConfigId": "EXPERIMENTAL_SORBET_UI",
     "enabledValues": ["true", "false"],
-    "enabledDefault": false,
+    "enabledDefault": true,
     "themeConfigId": "SORBET_THEME",
     "themeFields": {
       "preset": [
