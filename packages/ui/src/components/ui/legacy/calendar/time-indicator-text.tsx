@@ -52,7 +52,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
         transition: 'transform 0.3s ease-out',
       }}
     >
-      <div className="rounded-md bg-dynamic-light-red px-2 py-1 font-semibold text-black text-xs">
+      <div className="rounded-md bg-dynamic-light-red px-2 py-1 font-semibold text-background text-xs">
         {formattedTime}
       </div>
       <div className="h-0 w-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-dynamic-light-red" />

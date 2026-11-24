@@ -6,16 +6,16 @@ export const STUDIO_PAGE_GRADIENT_VARS: Record<
   FormStudioInput['theme']['accentColor'],
   [string, string]
 > = {
-  'dynamic-blue': ['--dynamic-blue', '--dynamic-cyan'],
-  'dynamic-cyan': ['--dynamic-cyan', '--dynamic-blue'],
-  'dynamic-gray': ['--dynamic-gray', '--dynamic-gray'],
-  'dynamic-green': ['--dynamic-green', '--dynamic-yellow'],
-  'dynamic-indigo': ['--dynamic-indigo', '--dynamic-purple'],
-  'dynamic-orange': ['--dynamic-orange', '--dynamic-yellow'],
-  'dynamic-pink': ['--dynamic-pink', '--dynamic-red'],
-  'dynamic-purple': ['--dynamic-purple', '--dynamic-pink'],
-  'dynamic-red': ['--dynamic-red', '--dynamic-orange'],
-  'dynamic-yellow': ['--dynamic-yellow', '--dynamic-orange'],
+  'dynamic-blue': ['--blue', '--cyan'],
+  'dynamic-cyan': ['--cyan', '--blue'],
+  'dynamic-gray': ['--gray', '--gray'],
+  'dynamic-green': ['--green', '--yellow'],
+  'dynamic-indigo': ['--indigo', '--purple'],
+  'dynamic-orange': ['--orange', '--yellow'],
+  'dynamic-pink': ['--pink', '--red'],
+  'dynamic-purple': ['--purple', '--pink'],
+  'dynamic-red': ['--red', '--orange'],
+  'dynamic-yellow': ['--yellow', '--orange'],
 };
 
 export function isErrorRecord(

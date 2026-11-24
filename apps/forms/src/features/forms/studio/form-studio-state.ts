@@ -181,12 +181,12 @@ export function useFormStudioState({
     STUDIO_PAGE_GRADIENT_VARS[values.theme.accentColor];
   const studioLoopGradient = `linear-gradient(180deg,
     var(--background) 0%,
-    rgb(var(${studioPrimaryColorVar}) / 0.04) 18%,
-    rgb(var(${studioPrimaryColorVar}) / 0.08) 34%,
-    rgb(var(${studioSecondaryColorVar}) / 0.11) 50%,
-    rgb(var(${studioSecondaryColorVar}) / 0.11) 56%,
-    rgb(var(${studioPrimaryColorVar}) / 0.08) 72%,
-    rgb(var(${studioPrimaryColorVar}) / 0.04) 86%,
+    color-mix(in oklab, var(${studioPrimaryColorVar}) 4%, transparent) 18%,
+    color-mix(in oklab, var(${studioPrimaryColorVar}) 8%, transparent) 34%,
+    color-mix(in oklab, var(${studioSecondaryColorVar}) 11%, transparent) 50%,
+    color-mix(in oklab, var(${studioSecondaryColorVar}) 11%, transparent) 56%,
+    color-mix(in oklab, var(${studioPrimaryColorVar}) 8%, transparent) 72%,
+    color-mix(in oklab, var(${studioPrimaryColorVar}) 4%, transparent) 86%,
     var(--background) 100%)`;
 
   const { data: shareQuery } = useFormShareLink({
