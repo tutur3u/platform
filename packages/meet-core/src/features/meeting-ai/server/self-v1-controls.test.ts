@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   flag: vi.fn(),
   admin: vi.fn(),
   drain: vi.fn(),
+  notice: vi.fn(),
   access: {
     isHost: false,
     canReadWorkspace: true,
@@ -38,6 +39,7 @@ vi.mock('./self-v1-room', async (original) => ({
   selfRoom: async () => ({ access: mocks.access, accountId: 'u' }),
   selfRoomCommands: { setMode: mocks.setMode },
 }));
+vi.mock('./self-v1-notice', () => ({ requireShownSelfNotice: mocks.notice }));
 vi.mock('./self-v1-access', () => ({ meetSelfAccess: mocks.selfAccess }));
 vi.mock('./self-v1-outbox', () => ({ drainSelfOutbox: mocks.drain }));
 vi.mock('./transcription-availability', () => ({
@@ -194,6 +196,29 @@ describe('per-speaker notice evidence', () => {
     expect(response.status).toBe(400);
     expect(mocks.selfAccess).not.toHaveBeenCalled();
     expect(mocks.room).not.toHaveBeenCalled();
+  });
+
+  it('refuses an allow whose hash does not match the shown notice text', async () => {
+    mocks.notice.mockRejectedValue(
+      Object.assign(new Error('mismatch'), {
+        status: 409,
+        code: 'MEET_SELF_NOTICE_MISMATCH',
+      })
+    );
+    await expect(
+      chooseSelfTranscript(post(allowBody), params)
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.notice).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: 'vi', textHash: 'a'.repeat(64) })
+    );
+    expect(mocks.selfAccess).not.toHaveBeenCalled();
+    expect(mocks.room).not.toHaveBeenCalled();
+  });
+
+  it('records a decline without checking the notice text', async () => {
+    mocks.room.mockResolvedValue({ choice: 'decline' });
+    await chooseSelfTranscript(post({ choice: 'decline' }), params);
+    expect(mocks.notice).not.toHaveBeenCalled();
   });
 
   it('records a complete allow under the current notice', async () => {

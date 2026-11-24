@@ -24,6 +24,7 @@ import {
   selfRoomError,
 } from './self-v1-room';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
+import { requireShownSelfNotice } from './self-v1-notice';
 import { withoutPending } from './self-v1-view';
 
 async function roomFor(request: Request, params: MeetAiParams) {
@@ -133,7 +134,8 @@ export const selfChoiceSchema = z.discriminatedUnion('choice', [
 /**
  * The participant's own transcript choice in a per-speaker meeting. Declining
  * always records, for anyone in the call. Allowing needs the current notice
- * evidence and the per-speaker uploader check. The room fences a decline at
+ * evidence, whose hash must match the notice text shown in its locale, and
+ * the per-speaker uploader check. The room fences a decline at
  * once; its legal entries are then written for this meeting's per-speaker
  * sessions only.
  */
@@ -145,7 +147,10 @@ export async function chooseSelfTranscript(
     await request.json().catch(() => null)
   );
   if (!parsed.success) throw new MeetAiError(400, 'Invalid choice');
-  if (parsed.data.choice === 'allow') await meetSelfAccess(request, params);
+  if (parsed.data.choice === 'allow') {
+    await requireShownSelfNotice(parsed.data);
+    await meetSelfAccess(request, params);
+  }
   const room = await roomFor(request, params);
   return recordSelfChoice(room, parsed.data.choice);
 }

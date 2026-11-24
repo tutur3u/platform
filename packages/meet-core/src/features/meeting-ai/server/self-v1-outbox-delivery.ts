@@ -120,7 +120,10 @@ export async function deliverSelfOutbox(request: Request) {
     .select('id, meeting_id, protocol')
     .in('id', sessionIds);
   if (error) throw new MeetAiError(503, 'Transcription storage is unavailable');
-  const found = new Map((data ?? []).map((row) => [row.id, row]));
+  type SessionRow = { id: string; meeting_id: string; protocol: string };
+  const found = new Map<string, SessionRow>(
+    ((data ?? []) as SessionRow[]).map((row) => [row.id, row])
+  );
   const gone = body.entries.filter((entry) => !found.has(entry.sessionId));
   if (gone.length)
     console.warn('[meet-ai] self_v1 outbox delivery for missing sessions');

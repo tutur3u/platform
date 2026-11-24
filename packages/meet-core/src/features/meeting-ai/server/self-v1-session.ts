@@ -1,6 +1,7 @@
 import 'server-only';
 import type { MiraRoomView } from '@tuturuuu/realtime/meet';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { MEETING_APP } from '../../../runtime';
 import { callRoomService } from '../../call/server/room-service';
 import { MeetAiError } from './access';
 import { meetPerSpeakerEnabled } from './per-speaker-flag';
@@ -29,6 +30,27 @@ const unavailable = () =>
     'Transcription of each voice is not available here',
     'MEET_SELF_UNAVAILABLE'
   );
+
+/**
+ * The protocol a new session takes from the room's capture mode. Outside the
+ * Meet app, or when the room cannot be read, it is room capture; the room
+ * still refuses a room-capture start while it is set to per-speaker.
+ */
+export async function roomCaptureProtocol(
+  meetingId: string,
+  hostId: string
+): Promise<'legacy' | 'self_v1'> {
+  if (MEETING_APP !== 'meet') return 'legacy';
+  try {
+    const room = await selfRoom(meetingId, hostId);
+    const view = await callRoomService<{ mode?: unknown }>(room.access, {
+      action: 'transcript.consent.read',
+    });
+    return view?.mode === 'self' ? 'self_v1' : 'legacy';
+  } catch {
+    return 'legacy';
+  }
+}
 
 const alreadyRunning = () =>
   new MeetAiError(409, 'A transcription session is already running');

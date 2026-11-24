@@ -17,7 +17,11 @@ import type { Json } from '@tuturuuu/types';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
-import { finishSelfSession, startSelfSession } from './self-v1-session';
+import {
+  finishSelfSession,
+  roomCaptureProtocol,
+  startSelfSession,
+} from './self-v1-session';
 import { enforceMeetAiUsage } from './usage-limit';
 
 export { readMeetAi } from './sessions-read';
@@ -76,7 +80,12 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       timezone: parsed.data.timezone,
     });
   }
-  if (action === 'start' && parsed.data.protocol === 'self_v1')
+  // The room's capture mode picks the protocol unless the host names one.
+  if (
+    action === 'start' &&
+    (parsed.data.protocol ??
+      (await roomCaptureProtocol(meetingId, user.id))) === 'self_v1'
+  )
     return startSelfSession({ db, meetingId, wsId, hostId: user.id });
   if (action === 'start') {
     // Free accounts cannot start; checked before any session row exists.
@@ -106,7 +115,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         .eq('id', data.id);
       throw indicatorError;
     }
-    return { sessionId: data.id };
+    return { sessionId: data.id, protocol: 'legacy' as const };
   }
   if (!sessionId) throw new MeetAiError(400, 'Missing session');
   const { data: session, error } = await db

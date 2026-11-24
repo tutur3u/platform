@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   startSelf: vi.fn(),
   finishSelf: vi.fn(),
   payer: vi.fn(),
+  roomProtocol: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
@@ -33,6 +34,7 @@ vi.mock('./artifact-billing', () => ({
   generateBilledMeetArtifact: mocks.generate,
 }));
 vi.mock('./self-v1-session', () => ({
+  roomCaptureProtocol: mocks.roomProtocol,
   startSelfSession: mocks.startSelf,
   finishSelfSession: mocks.finishSelf,
 }));
@@ -160,5 +162,38 @@ describe('room-capture paths read only legacy sessions', () => {
     });
     expect(from).not.toHaveBeenCalled();
     expect(mocks.payer).not.toHaveBeenCalled();
+  });
+
+  it('takes the protocol from the room mode when the host names none', async () => {
+    mocks.access.mockResolvedValue({
+      db: { from: vi.fn() },
+      meetingId: 'm',
+      wsId: 'w',
+      user: { id: 'host' },
+    });
+    mocks.roomProtocol.mockResolvedValue('self_v1');
+    mocks.startSelf.mockResolvedValue({ sessionId: self, protocol: 'self_v1' });
+    expect(await changeMeetAi(post({ action: 'start' }), params)).toEqual({
+      sessionId: self,
+      protocol: 'self_v1',
+    });
+    expect(mocks.roomProtocol).toHaveBeenCalledWith('m', 'host');
+  });
+
+  it('always names the protocol of a room-capture start', async () => {
+    const insert = chain({ data: { id: legacy }, error: null });
+    mocks.access.mockResolvedValue({
+      db: { from: () => insert },
+      meetingId: 'm',
+      wsId: 'w',
+      user: { id: 'host' },
+    });
+    mocks.roomProtocol.mockResolvedValue('legacy');
+    mocks.payer.mockResolvedValue({ billingWorkspaceId: 'w' });
+    expect(await changeMeetAi(post({ action: 'start' }), params)).toEqual({
+      sessionId: legacy,
+      protocol: 'legacy',
+    });
+    expect(mocks.startSelf).not.toHaveBeenCalled();
   });
 });

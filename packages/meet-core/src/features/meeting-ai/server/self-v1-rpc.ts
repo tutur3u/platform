@@ -81,7 +81,7 @@ async function call<F extends Fn>(
   }>;
   let result: Awaited<ReturnType<typeof rpc>>;
   try {
-    result = await rpc.call(db.schema('private'), fn, args);
+    result = await rpc.call(db.schema('private'), String(fn), args);
   } catch {
     throw new MeetSelfRpcError(503, 'Transcription storage is unavailable', '');
   }
