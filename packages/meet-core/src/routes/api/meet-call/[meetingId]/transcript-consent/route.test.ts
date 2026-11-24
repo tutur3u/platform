@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({
   available: vi.fn(),
   room: vi.fn(),
+  extras: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
@@ -10,6 +11,9 @@ vi.mock(
   '../../../../../features/meeting-ai/server/transcription-availability',
   () => ({ readMeetTranscriptionAvailability: f.available })
 );
+vi.mock('../../../../../features/meeting-ai/server/self-v1-controls', () => ({
+  readSelfConsentExtras: f.extras,
+}));
 vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
@@ -54,10 +58,18 @@ const read = {
   activeSince: null,
 };
 
+const roomMode = {
+  mode: 'room',
+  perSpeakerAvailable: false,
+  session: null,
+  canManageMode: false,
+};
+
 beforeEach(() => {
   vi.resetAllMocks();
   f.available.mockResolvedValue({ available: true });
   f.room.mockResolvedValue(read);
+  f.extras.mockResolvedValue(roomMode);
 });
 
 it('reports the unavailable reason without touching the room', async () => {
@@ -73,9 +85,36 @@ it('reports the unavailable reason without touching the room', async () => {
 
 it('reads only the caller view, guests included', async () => {
   const response = await GET(new Request('https://meet.test/x'), params);
-  expect(await response.json()).toEqual({ available: true, ...read });
+  expect(await response.json()).toEqual({
+    available: true,
+    ...read,
+    ...roomMode,
+  });
   expect(f.room).toHaveBeenCalledWith(guestAccess, {
     action: 'transcript.consent.read',
+  });
+});
+
+it('adds the per-speaker session for the caller', async () => {
+  const self = {
+    mode: 'self',
+    perSpeakerAvailable: true,
+    session: { id: 's', generation: 2 },
+    canManageMode: false,
+  };
+  f.extras.mockResolvedValue(self);
+  const response = await GET(new Request('https://meet.test/x'), params);
+  expect(await response.json()).toEqual({ available: true, ...read, ...self });
+  expect(f.extras).toHaveBeenCalledWith(guestAccess, read);
+});
+
+it('falls back to room capture when the per-speaker read fails', async () => {
+  f.extras.mockRejectedValue(new Error('down'));
+  const response = await GET(new Request('https://meet.test/x'), params);
+  expect(await response.json()).toEqual({
+    available: true,
+    ...read,
+    ...roomMode,
   });
 });
 
