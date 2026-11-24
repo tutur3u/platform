@@ -70,6 +70,7 @@ export function MeetingAiPanel({
         inCall={inCall}
         busy={ai.busy || choose.isPending}
         creditFailure={ai.creditFailure}
+        billingHref={`https://tuturuuu.com/${encodeURIComponent(ai.wsId)}/billing`}
         onStart={() => run(start)}
         onFinish={(sessionId) => run(() => finish(sessionId))}
         onRetryNotes={(sessionId) => run(() => ai.finish(sessionId))}

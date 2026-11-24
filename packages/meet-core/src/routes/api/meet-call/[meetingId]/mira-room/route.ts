@@ -22,7 +22,11 @@ import {
   canStoreMiraNoticeMode,
   readMiraBoxTickedByDefault,
   readOpenMiraAcceptanceRevision,
+  readOwnMiraLastChoice,
 } from '../../../../../features/live-assistant/server/room-mira-evidence';
+
+const isGuest = (access: MeetCallRouteAccess) =>
+  'guest' in access && access.guest === true;
 
 const command = z.discriminatedUnion('action', [
   z
@@ -84,12 +88,25 @@ export async function GET(
       // Not admitted yet: the join box needs only the workspace default.
       if (!(error instanceof MeetCallAccessError) || error.status !== 403)
         throw error;
-      const [joinDefault, joinRevision] = await Promise.all([
+      const [defaultTicked, joinRevision, joinLastChoice] = await Promise.all([
         // A failed lookup shows the box unticked, never fails the read.
         readMiraBoxTickedByDefault(access.meeting.ws_id).catch(() => false),
         readOpenMiraAcceptanceRevision(access.meeting.id),
+        // Only the caller's own latest choice, so a rejoin never shows the
+        // box ticked over an earlier off.
+        readOwnMiraLastChoice({
+          meetingId: access.meeting.id,
+          participantId: access.user.id,
+          guest: isGuest(access),
+        }),
       ]);
-      return { available: false, joinDefault, joinRevision };
+      return {
+        available: false,
+        // An unknown own choice shows the box unticked, never ticked.
+        joinDefault: defaultTicked && joinLastChoice !== undefined,
+        joinRevision,
+        ...(joinLastChoice === undefined ? {} : { joinLastChoice }),
+      };
     }
   });
 }

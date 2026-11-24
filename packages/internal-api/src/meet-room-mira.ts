@@ -14,6 +14,11 @@ export type RoomMiraConsent =
        * screen keeps it so a Join state applies only to that acceptance.
        */
       joinRevision?: number;
+      /**
+       * The caller's own latest choice in this meeting, whatever the
+       * revision; absent when unknown. An off keeps the join box unticked.
+       */
+      joinLastChoice?: 'on' | 'off' | null;
     }
   | {
       available: true;

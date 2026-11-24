@@ -217,3 +217,56 @@ it('never allows on the host’s behalf when a fresh read says per-speaker', asy
   expect(isSelfCaptureHeld('room')).toBe(true);
   resetSelfCaptureFlags('room');
 });
+
+it('(gap d) tells the host the plan lacks transcription after a 402, with a billing link and no "Notes ready"', () => {
+  // The refusal stopped capture and finished the session with empty notes.
+  show(
+    hook({
+      creditFailure: 'credits_model_not_on_plan',
+      data: data({
+        sessions: [
+          session({
+            ended_at: '2026-11-23T09:30:00Z',
+            notes_status: 'completed',
+          }),
+        ],
+      }),
+    })
+  );
+  expect(screen.getByText(ai.credits_stopped)).toBeTruthy();
+  expect(screen.getByText(ai.credits_model_not_on_plan)).toBeTruthy();
+  expect(ai.credits_model_not_on_plan).toMatch(/plan.*transcription/);
+  expect(screen.queryByText(ai.status_ready_title)).toBeNull();
+  const link = screen.getByRole('link', { name: ai.credits_billing });
+  expect(link.getAttribute('href')).toBe('https://tuturuuu.com/ws/billing');
+  // The host can start again once the plan changes.
+  expect(screen.getByRole('button', { name: ai.start_again })).toBeTruthy();
+});
+
+it('(gap d) offers the billing link only for a plan refusal', () => {
+  show(
+    hook({
+      creditFailure: 'credits_exhausted',
+      data: data({
+        sessions: [
+          session({
+            ended_at: '2026-11-23T09:30:00Z',
+            notes_status: 'completed',
+          }),
+        ],
+      }),
+    })
+  );
+  expect(screen.getByText(ai.credits_exhausted)).toBeTruthy();
+  expect(screen.queryByRole('link', { name: ai.credits_billing })).toBeNull();
+});
+
+it('(gap d) ships the plan message and billing link in Vietnamese too', async () => {
+  const vi_messages = (
+    await import('../../../../../apps/meet/messages/vi.json')
+  ).default.meet.ai;
+  expect(vi_messages.credits_billing).toBeTruthy();
+  expect(vi_messages.credits_model_not_on_plan).not.toBe(
+    ai.credits_model_not_on_plan
+  );
+});

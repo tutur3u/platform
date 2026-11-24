@@ -27,6 +27,7 @@ export function MeetingAiStatusBar({
   inCall,
   busy,
   creditFailure,
+  billingHref,
   onStart,
   onFinish,
   onRetryNotes,
@@ -38,6 +39,8 @@ export function MeetingAiStatusBar({
   inCall: boolean;
   busy: boolean;
   creditFailure: string | null;
+  /** The payer workspace's billing page, for a plan that lacks transcription. */
+  billingHref?: string;
   onStart: () => void;
   onFinish: (sessionId: string) => void;
   onRetryNotes: (sessionId: string) => void;
@@ -104,6 +107,18 @@ export function MeetingAiStatusBar({
       <div className="min-w-0 flex-1 space-y-0.5" role="status">
         <p className="font-medium text-sm">{copy[0]}</p>
         <p className="text-muted-foreground text-xs">{copy[1]}</p>
+        {status.kind === 'failed' &&
+          creditFailure === 'credits_model_not_on_plan' &&
+          billingHref && (
+            <a
+              className="inline-block text-xs underline underline-offset-4"
+              href={billingHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('credits_billing')}
+            </a>
+          )}
         {status.kind === 'paused' && status.declined > 0 && (
           <p className="text-muted-foreground text-xs">
             {t('status_declined', { count: status.declined })}

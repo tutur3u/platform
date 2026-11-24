@@ -26,6 +26,8 @@ vi.mock('@tuturuuu/internal-api', () => ({
   reportRoomMiraMinor: vi.fn(),
 }));
 
+vi.mock('./guest-lobby-upgrade', () => ({ GuestLobbyUpgrade: () => null }));
+
 import {
   forgetMiraJoinChoice,
   peekMiraJoinChoice,
@@ -76,7 +78,7 @@ function wrap(child: ReactNode) {
     </QueryClientProvider>
   );
 }
-function showLobby(onJoined = vi.fn()) {
+function showLobby(onJoined = vi.fn(), controller: MeetRoomController = room) {
   render(
     wrap(
       <ConnectedLobby
@@ -91,7 +93,7 @@ function showLobby(onJoined = vi.fn()) {
         outputDeviceId=""
         participants={[]}
         prepareJoin={() => false}
-        room={room}
+        room={controller}
         runMediaAction={(action) => action()}
         miraMeetingId="room"
       />
@@ -185,4 +187,88 @@ it('seeds the lobby box once, so a changed default never overwrites the particip
       .getByRole('checkbox', { name: m.box_label })
       .getAttribute('aria-checked')
   ).toBe('false');
+});
+
+const outside = (over: Record<string, unknown> = {}) => ({
+  available: false,
+  joinDefault: true,
+  joinRevision: 0,
+  ...over,
+});
+const waitingRoom = {
+  ...room,
+  state: { ...room.state, admission: 'waiting' },
+} as unknown as MeetRoomController;
+
+it('(gap b) tells someone outside the room that Mira is on, without naming anyone', async () => {
+  f.read.mockResolvedValue(outside({ joinRevision: 2 }));
+  showLobby();
+  expect(await screen.findByText(m.lobby_notice)).toBeTruthy();
+  // The acceptor is named by the indicator once the person is admitted.
+  expect(screen.queryByText(/Lan/)).toBeNull();
+  expect(
+    await screen.findByRole('checkbox', { name: m.box_label })
+  ).toBeTruthy();
+});
+
+it('(gap b) shows no Mira notice while no acceptance is open', async () => {
+  f.read.mockResolvedValue(outside({ joinRevision: 0 }));
+  showLobby();
+  await screen.findByRole('checkbox', { name: m.box_label });
+  expect(screen.queryByText(m.lobby_notice)).toBeNull();
+});
+
+it('(gap b) shows the notice in the waiting room and learns of a later acceptance', async () => {
+  f.read.mockResolvedValue(outside({ joinRevision: 0 }));
+  showLobby(vi.fn(), waitingRoom);
+  await screen.findByRole('checkbox', { name: m.box_label });
+  expect(screen.queryByText(m.lobby_notice)).toBeNull();
+  // The host turns Mira on while this person waits; the next read shows it.
+  f.read.mockResolvedValue(outside({ joinRevision: 5 }));
+  await client.invalidateQueries();
+  expect(await screen.findByText(m.lobby_notice)).toBeTruthy();
+});
+
+it('(gap b) refreshes only while Mira is offered and the caller is outside', async () => {
+  f.read.mockResolvedValue(outside({ joinRevision: 1 }));
+  showLobby();
+  await screen.findByText(m.lobby_notice);
+  const query = client.getQueryCache().getAll()[0]!;
+  const interval = (
+    query.observers[0]!.options as {
+      refetchInterval: (q: unknown) => number | false;
+    }
+  ).refetchInterval;
+  const read = (data: unknown) => interval({ state: { data } });
+  expect(read(outside())).toBe(20_000);
+  // Mira unavailable here, or the caller already admitted: no polling.
+  expect(read({ available: false })).toBe(false);
+  expect(read(accepted)).toBe(false);
+});
+
+it('(gap c) starts the lobby box unticked for someone whose own last choice here was off', async () => {
+  f.read.mockResolvedValue(outside({ joinRevision: 2, joinLastChoice: 'off' }));
+  showLobby();
+  const box = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(box.getAttribute('aria-checked')).toBe('false');
+});
+
+it('(gap c) keeps the off over a remembered ticked Join state, and ticks otherwise', async () => {
+  rememberMiraJoinChoice('room', {
+    ticked: true,
+    textHash: 'c'.repeat(64),
+    locale: 'en',
+    seenRevision: 2,
+  });
+  f.read.mockResolvedValue(outside({ joinRevision: 2, joinLastChoice: 'off' }));
+  showLobby();
+  const off = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(off.getAttribute('aria-checked')).toBe('false');
+  cleanup();
+  forgetMiraJoinChoice('room');
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  f.read.mockResolvedValue(outside({ joinRevision: 2, joinLastChoice: 'on' }));
+  showLobby();
+  const on = await screen.findByRole('checkbox', { name: m.box_label });
+  expect(on.getAttribute('aria-checked')).toBe('true');
 });

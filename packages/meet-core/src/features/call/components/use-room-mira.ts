@@ -39,6 +39,9 @@ export const roomMiraConsentKey = (meetingId: string) => [
   meetingId,
 ];
 
+/** How often a caller still outside the room re-reads what Mira is doing. */
+const JOIN_SEED_REFRESH_MS = 20_000;
+
 /** The caller's room Mira state, shared by every surface in the call. */
 export function useRoomMiraConsent(meetingId: string) {
   return useQuery({
@@ -54,9 +57,11 @@ export function useRoomMiraConsent(meetingId: string) {
 }
 
 /**
- * What the join screen shows before admission: the box default and the
- * acceptance revision open now. Cached apart from the in-call state so a
- * pre-admission answer never stands in for it after joining.
+ * What the join screen shows before admission: the box default, the
+ * acceptance revision open now and the caller's own latest choice here.
+ * Cached apart from the in-call state so a pre-admission answer never stands
+ * in for it after joining. It refreshes while the caller is still outside, so
+ * a waiting room learns that Mira was turned on.
  */
 export function useRoomMiraJoinSeed(meetingId: string | undefined) {
   const query = useQuery({
@@ -64,15 +69,27 @@ export function useRoomMiraJoinSeed(meetingId: string | undefined) {
     queryFn: () => readRoomMiraConsent(meetingId!),
     enabled: !!meetingId,
     retry: false,
+    // Only while Mira is offered here and the caller is still outside; a
+    // meeting without Mira is never polled.
+    refetchInterval: (current) => {
+      const data = current.state.data;
+      return data && !data.available && data.joinDefault !== undefined
+        ? JOIN_SEED_REFRESH_MS
+        : false;
+    },
   });
   const data = query.data;
   const ticked = data?.available ? data.boxTickedByDefault : data?.joinDefault;
   const revision = data?.available
     ? (data.acceptance?.revision ?? 0)
     : (data?.joinRevision ?? 0);
+  const lastChoice = data?.available ? data.lastChoice : data?.joinLastChoice;
   return useMemo(
-    () => (ticked === undefined ? undefined : { ticked, revision }),
-    [ticked, revision]
+    () =>
+      ticked === undefined
+        ? undefined
+        : { ticked, revision, lastChoice: lastChoice ?? null },
+    [ticked, revision, lastChoice]
   );
 }
 
@@ -264,6 +281,44 @@ export function useRoomMira(meetingId: string) {
     noticeKnown,
     noticeMode,
   ]);
+
+  // An untick is recorded even when no acceptance is open: an explicit off
+  // (revision 0) that also declines the live transcript, so the evidence
+  // matches what the participant did. A tick records nothing without an
+  // acceptance; the host's later acceptance asks for a confirm.
+  const untick =
+    data &&
+    !data.acceptance &&
+    data.choice === null &&
+    data.lastChoice !== 'off'
+      ? peekMiraJoinChoice(meetingId)
+      : null;
+  useEffect(() => {
+    if (!data || data.acceptance || data.choice !== null) return;
+    if (data.lastChoice === 'off' || !untick || untick.ticked) return;
+    const flight = `${meetingId}:none`;
+    if (
+      untick.appliedRevision === 0 ||
+      applying.has(flight) ||
+      failedAt.get(flight) === dataUpdatedAt
+    )
+      return;
+    applying.add(flight);
+    // Without a usable hash the notice is hashed again as it is shown now.
+    const evidence = /^[0-9a-f]{64}$/.test(untick.textHash)
+      ? { textHash: untick.textHash, locale: untick.locale }
+      : {};
+    void choose
+      .mutateAsync({ choice: 'off', source: 'join', ...evidence })
+      .then(
+        () => {
+          failedAt.delete(flight);
+          markMiraJoinChoiceApplied(meetingId, 0);
+        },
+        () => failedAt.set(flight, dataUpdatedAt)
+      )
+      .finally(() => applying.delete(flight));
+  }, [data, untick, meetingId, choose, dataUpdatedAt]);
 
   return {
     /** The notice the box must show; the choice is hashed over it. */

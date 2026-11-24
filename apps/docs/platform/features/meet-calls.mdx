@@ -3855,6 +3855,15 @@ apply. At zero credits, chunk uploads return 402 before reserving a chunk row,
 with an error identifying the meeting workspace. Personal "Talk to Mira"
 assistant sessions (voice and text) continue to use personal credits.
 
+After a 402 the host's transcript panel keeps showing why capture stopped, also
+once the session has ended with the notes of an empty transcript, and never
+shows "Notes ready" for it. A plan that does not include transcription
+(`MEET_AI_MODEL_NOT_ON_PLAN`) reads: this workspace's plan doesn't include live
+transcription, upgrade it in billing, with a link to the workspace's billing
+page. Exhausted or daily-limit credits keep their own messages without that
+link. Starting again clears the message. Regression coverage:
+`meeting-ai-status.test.ts` and `meeting-ai-panel.test.tsx`.
+
 ### Erased transcript reader readiness
 
 Transcript readers accept `{erased: true}` segments and selector-based speaker

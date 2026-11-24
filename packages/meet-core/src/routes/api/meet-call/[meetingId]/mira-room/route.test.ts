@@ -7,6 +7,7 @@ const f = vi.hoisted(() => ({
   end: vi.fn(),
   record: vi.fn(),
   boxDefault: vi.fn(),
+  lastChoice: vi.fn(),
   openRevision: vi.fn(),
   canStore: vi.fn(),
 }));
@@ -35,6 +36,7 @@ vi.mock(
     canStoreMiraNoticeMode: f.canStore,
     readMiraBoxTickedByDefault: f.boxDefault,
     readOpenMiraAcceptanceRevision: f.openRevision,
+    readOwnMiraLastChoice: f.lastChoice,
   })
 );
 vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
@@ -91,6 +93,7 @@ beforeEach(() => {
   f.available.mockResolvedValue(true);
   f.room.mockResolvedValue(read);
   f.boxDefault.mockResolvedValue(true);
+  f.lastChoice.mockResolvedValue(null);
   f.record.mockResolvedValue(undefined);
   f.canStore.mockResolvedValue(true);
 });
@@ -206,13 +209,19 @@ it('gives a participant who is not admitted yet the join box default and the ope
     available: false,
     joinDefault: false,
     joinRevision: 4,
+    joinLastChoice: null,
   });
   // A failed default lookup shows the box unticked instead of failing.
   f.room.mockRejectedValue(new MeetCallAccessError(403, 'Join first'));
   f.boxDefault.mockRejectedValue(new Error('db'));
   expect(
     await (await GET(new Request('https://meet.test/x'), params)).json()
-  ).toEqual({ available: false, joinDefault: false, joinRevision: 4 });
+  ).toEqual({
+    available: false,
+    joinDefault: false,
+    joinRevision: 4,
+    joinLastChoice: null,
+  });
   f.room.mockRejectedValue(new MeetCallAccessError(503, 'Down'));
   await expect(
     GET(new Request('https://meet.test/x'), params)
@@ -552,5 +561,43 @@ describe('room on without evidence is always compensated', () => {
     expect(f.record).toHaveBeenCalledWith(
       expect.objectContaining({ choice: 'off', source: 'join' })
     );
+  });
+});
+
+it('(gap c) gives a participant who is not admitted only their own latest choice', async () => {
+  const { MeetCallAccessError } =
+    await import('@tuturuuu/meet-core/features/call/lib/call-access');
+  f.room.mockRejectedValue(new MeetCallAccessError(403, 'Join first'));
+  f.openRevision.mockResolvedValue(2);
+  f.lastChoice.mockResolvedValue('off');
+  const response = await GET(new Request('https://meet.test/x'), params);
+  expect(await response.json()).toEqual({
+    available: false,
+    joinDefault: true,
+    joinRevision: 2,
+    joinLastChoice: 'off',
+  });
+  // The lookup is keyed by the authenticated session, never by the request.
+  expect(f.lastChoice).toHaveBeenCalledWith({
+    meetingId: 'room',
+    participantId: guestAccess.user.id,
+    guest: true,
+  });
+});
+
+it('(gap c) shows the box unticked when the own-choice lookup fails', async () => {
+  const { MeetCallAccessError } =
+    await import('@tuturuuu/meet-core/features/call/lib/call-access');
+  f.room.mockRejectedValue(new MeetCallAccessError(403, 'Join first'));
+  f.openRevision.mockResolvedValue(2);
+  f.lastChoice.mockResolvedValue(undefined);
+  const body = await (
+    await GET(new Request('https://meet.test/x'), params)
+  ).json();
+  // Unknown is not ticked, and no choice is claimed.
+  expect(body).toEqual({
+    available: false,
+    joinDefault: false,
+    joinRevision: 2,
   });
 });

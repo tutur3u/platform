@@ -1,5 +1,6 @@
 'use client';
 
+import { Sparkles } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type MutableRefObject, useEffect, useRef, useState } from 'react';
@@ -193,14 +194,45 @@ export function LobbyMiraBox({
   const seeded = useRef(false);
   const seedTicked = seed?.ticked;
   const seedRevision = seed?.revision;
+  const seedLastChoice = seed?.lastChoice;
   useEffect(() => {
     if (seedRevision !== undefined) revisionRef.current = seedRevision;
   }, [seedRevision, revisionRef]);
   useEffect(() => {
     if (seeded.current || seedTicked === undefined) return;
     seeded.current = true;
-    onTickedChange(peekMiraJoinChoice(meetingId)?.ticked ?? seedTicked);
-  }, [meetingId, seedTicked, onTickedChange]);
+    // An earlier off of this account in this meeting keeps the box unticked
+    // on any device; otherwise an earlier join screen's choice wins.
+    onTickedChange(
+      seedLastChoice === 'off'
+        ? false
+        : (peekMiraJoinChoice(meetingId)?.ticked ?? seedTicked)
+    );
+  }, [meetingId, seedTicked, seedLastChoice, onTickedChange]);
   if (ticked === null) return null;
-  return <MiraJoinBox checked={ticked} onCheckedChange={onTickedChange} />;
+  return (
+    <div className="space-y-2">
+      {seedRevision ? <MiraLobbyNotice /> : null}
+      <MiraJoinBox checked={ticked} onCheckedChange={onTickedChange} />
+    </div>
+  );
+}
+
+/**
+ * Tells someone outside the room that Mira is on in this meeting. It does not
+ * name the host or co-host who turned it on: someone who has not been
+ * admitted is not a participant yet, so the name is shown by the indicator
+ * once they are in the call.
+ */
+function MiraLobbyNotice() {
+  const t = useTranslations('meet.mira_consent');
+  return (
+    <p
+      role="status"
+      className="flex items-start gap-1.5 text-pretty font-medium text-sm"
+    >
+      <Sparkles aria-hidden className="mt-0.5 size-4 shrink-0" />
+      {t('lobby_notice')}
+    </p>
+  );
 }

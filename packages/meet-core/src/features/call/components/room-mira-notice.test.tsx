@@ -350,3 +350,93 @@ it('ships the About Mira, dismiss and off-line copy in English and Vietnamese', 
   expect('badge' in messages.meet.mira_adults).toBe(false);
   expect('badge' in vi_messages.meet.mira_adults).toBe(false);
 });
+
+it('(gap a) records an explicit off when someone unticked before any acceptance', async () => {
+  untickAtJoin(0);
+  f.read.mockResolvedValue(base);
+  f.choose.mockResolvedValue({ ...base, lastChoice: 'off' });
+  show();
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(1));
+  // Revision 0 means no acceptance; the room declines the transcript with it.
+  expect(f.choose).toHaveBeenCalledWith('room', {
+    choice: 'off',
+    version: expect.any(String),
+    acceptanceRevision: 0,
+    source: 'join',
+    textHash: 'b'.repeat(64),
+    locale: 'vi',
+  });
+  expect(f.transcript).not.toHaveBeenCalled();
+  expect(peekMiraJoinChoice('room')?.ticked).toBe(false);
+});
+
+it('(gap a) records the off once, and not again when the server already has it', async () => {
+  untickAtJoin(0);
+  f.read.mockResolvedValue(base);
+  f.choose.mockResolvedValue({ ...base, lastChoice: 'off' });
+  const client = show();
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(1));
+  await client.invalidateQueries();
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(f.choose).toHaveBeenCalledTimes(1);
+  cleanup();
+  // The same untick on a read that already carries the off sends nothing.
+  f.choose.mockClear();
+  untickAtJoin(0);
+  f.read.mockResolvedValue({ ...base, lastChoice: 'off' });
+  show();
+  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(f.choose).not.toHaveBeenCalled();
+});
+
+it('(gap a) records nothing for a ticked box until an acceptance exists', async () => {
+  rememberMiraJoinChoice('room', {
+    ticked: true,
+    textHash: 'b'.repeat(64),
+    locale: 'en',
+    seenRevision: 0,
+  });
+  f.read.mockResolvedValue(base);
+  show();
+  await vi.waitFor(() => expect(f.read).toHaveBeenCalled());
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(f.choose).not.toHaveBeenCalled();
+  expect(f.transcript).not.toHaveBeenCalled();
+});
+
+it('(gap a) hashes the notice again when the Join hash is missing', async () => {
+  rememberMiraJoinChoice('room', {
+    ticked: false,
+    textHash: '',
+    locale: 'vi',
+    seenRevision: 0,
+  });
+  f.read.mockResolvedValue(base);
+  f.choose.mockResolvedValue({ ...base, lastChoice: 'off' });
+  show();
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(1));
+  expect(f.choose).toHaveBeenCalledWith(
+    'room',
+    expect.objectContaining({
+      choice: 'off',
+      acceptanceRevision: 0,
+      textHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      locale: 'en',
+    })
+  );
+});
+
+it('(gap a) retries a failed explicit off on the next read, never in a loop', async () => {
+  untickAtJoin(0);
+  f.read.mockResolvedValue(base);
+  f.choose
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue({ ...base, lastChoice: 'off' });
+  const client = show();
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(1));
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  expect(f.choose).toHaveBeenCalledTimes(1);
+  await client.invalidateQueries();
+  await vi.waitFor(() => expect(f.choose).toHaveBeenCalledTimes(2));
+});

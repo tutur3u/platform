@@ -234,3 +234,38 @@ export async function readOpenMiraAcceptanceRevision(meetingId: string) {
     return 0;
   }
 }
+
+/**
+ * The caller's own latest Mira choice in one meeting, from the durable
+ * evidence, for the join box before the room will answer them. It reads only
+ * the caller's own rows: an account by its user id, a guest by its
+ * server-issued guest id, both taken from the authenticated session and
+ * never from the request. Returns `undefined` when the lookup fails, so the
+ * caller can show the box unticked instead of guessing.
+ */
+export async function readOwnMiraLastChoice(input: {
+  meetingId: string;
+  participantId: string;
+  guest: boolean;
+}): Promise<'on' | 'off' | null | undefined> {
+  try {
+    const db = await privateDb();
+    const rows = db
+      .from('meet_mira_participant_choices')
+      .select('choice')
+      .eq('meeting_id', input.meetingId);
+    const { data, error } = await (
+      input.guest
+        ? rows.eq('guest', true).eq('participant_ref', input.participantId)
+        : rows.eq('guest', false).eq('user_id', input.participantId)
+    )
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return undefined;
+    return data?.choice === 'on' || data?.choice === 'off' ? data.choice : null;
+  } catch {
+    return undefined;
+  }
+}

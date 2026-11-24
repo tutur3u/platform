@@ -117,6 +117,41 @@ describe('meeting AI status', () => {
     ).toMatchObject({ kind: 'failed', retryable: false });
   });
 
+  it('keeps showing a billing refusal after the session ended, never "ready"', () => {
+    // The refusal stopped capture and the session was finished with notes of
+    // an empty transcript, which the server reports as completed.
+    const ended = session({
+      ended_at: '2026-11-23T09:59:00Z',
+      notes_status: 'completed',
+    });
+    expect(
+      meetingAiStatus({
+        ...base,
+        data: state([ended]),
+        creditFailure: 'credits_model_not_on_plan',
+      })
+    ).toMatchObject({ kind: 'failed', retryable: false, session: ended });
+    // Without a refusal the same session is ready, and starting again clears it.
+    expect(meetingAiStatus({ ...base, data: state([ended]) }).kind).toBe(
+      'ready'
+    );
+    expect(
+      meetingAiStatus({
+        ...base,
+        data: state([ended]),
+        creditFailure: 'credits_model_not_on_plan',
+        phase: 'starting',
+      }).kind
+    ).toBe('starting');
+    expect(
+      meetingAiStatus({
+        ...base,
+        data: state([]),
+        creditFailure: 'credits_model_not_on_plan',
+      })
+    ).toMatchObject({ kind: 'failed', session: null });
+  });
+
   it('reports ready notes and offers retry only once it can help', () => {
     const ended = '2026-11-23T09:59:00Z';
     expect(

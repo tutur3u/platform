@@ -203,14 +203,27 @@ still succeeds and an untick is still kept. Every later confirm box starts
 unticked while the participant's own last state is off: from Join, from
 turning Mira off in the call, or from another tab or device (the room view
 returns the account's `lastChoice`, kept across acceptance revisions). A Join
-recording that fails retries on the next read without a toast. The room is the
+recording that fails retries on the next read without a toast. An untick is
+recorded even when no acceptance is open yet: an explicit off at revision 0
+with source `join`, which the room treats like any off (it declines the
+transcript). A tick records nothing without an acceptance, since an on choice
+needs a current one; the host's later acceptance asks for a confirm. The room is the
 fence: an on choice is refused (`MIRA_ROOM_JOIN_OVER_OFF`) when that account's
 earlier choice in the meeting was off, in any revision, unless its source is
 `confirm` or `toggle`; `join` and a missing source count as a Join state, so
 only an action in the call turns Mira back on. An on choice also
 needs a current acceptance, never revision 0.
 The lobby seeds its box once, so a changed default never overwrites a box the
-participant already toggled. When Mira is turned on mid-call, or the acceptance changes, everyone
+participant already toggled. Before admission the room refuses reads, so the
+mira-room read answers from the durable store with only what the caller may
+know: the workspace default, the open acceptance revision and the caller's own
+latest choice (`joinLastChoice`, keyed by the authenticated account or guest id;
+an unknown lookup shows the box unticked). The lobby and waiting room show
+**Mira is on in this meeting** while a revision is open, without naming the
+host or co-host, because someone not yet admitted is not a participant; the
+indicator names them once the person is in. While outside and with Mira
+offered, that read refreshes every 20 seconds, so a waiting room learns that
+Mira was turned on. When Mira is turned on mid-call, or the acceptance changes, everyone
 present gets the same box preset to the workspace default and counts as off
 until they confirm. Each choice is stored in the room with its acceptance
 revision and notice version (`2026-11-24-room-v2`) and counts only while both
