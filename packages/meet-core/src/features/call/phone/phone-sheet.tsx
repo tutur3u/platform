@@ -1,5 +1,6 @@
 'use client';
 
+import { Sheet, SheetContent, SheetTitle } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
 import {
   type PointerEvent,
@@ -31,9 +32,10 @@ function readViewport() {
 }
 
 /**
- * A full-height bottom sheet for phones. It follows the visual viewport, so
- * the composer stays above the keyboard, and the handle drags it down to
- * dismiss it. Escape and the scrim dismiss it too.
+ * A full-height modal sheet for phones. It is a Radix dialog, so it traps and
+ * restores focus, hides the call behind it from assistive technology and closes
+ * on Escape or a tap on the scrim. It follows the visual viewport, so the
+ * composer stays above the keyboard, and the handle drags it down to dismiss.
  */
 export function PhoneSheet({
   label,
@@ -48,50 +50,44 @@ export function PhoneSheet({
   const [height, offsetTop] = viewport.split(',').map(Number);
   const [drag, setDrag] = useState(0);
   const start = useRef<number | null>(null);
+  const distance = useRef(0);
   const press = (event: PointerEvent<HTMLDivElement>) => {
     start.current = event.clientY;
+    distance.current = 0;
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const move = (event: PointerEvent<HTMLDivElement>) => {
-    if (start.current !== null)
-      setDrag(Math.max(0, event.clientY - start.current));
+    if (start.current === null) return;
+    distance.current = Math.max(0, event.clientY - start.current);
+    setDrag(distance.current);
   };
   const release = () => {
-    const distance = drag;
+    const dragged = distance.current;
     start.current = null;
+    distance.current = 0;
     setDrag(0);
-    if (distance >= DISMISS_DISTANCE) onDismiss();
+    if (dragged >= DISMISS_DISTANCE) onDismiss();
   };
   return (
-    <div
-      className="fixed inset-x-0 z-40 flex flex-col justify-end"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onDismiss();
-      }}
-      style={height ? { top: offsetTop ?? 0, height } : { top: 0, bottom: 0 }}
-    >
-      <button
-        aria-label={label}
-        className="absolute inset-0 bg-foreground/30"
-        onClick={onDismiss}
-        tabIndex={-1}
-        type="button"
-      />
-      <section
-        aria-label={label}
+    <Sheet onOpenChange={(open) => !open && onDismiss()} open>
+      <SheetContent
+        aria-describedby={undefined}
         className={cn(
-          'relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl border-t bg-background pb-[env(keyboard-inset-height,0px)] shadow-lg',
-          drag === 0 && 'motion-safe:transition-transform'
+          'inset-x-0 gap-0 rounded-t-3xl p-0 pb-[env(keyboard-inset-height,0px)] [&>button:last-child]:hidden',
+          height ? 'bottom-auto' : 'top-3 bottom-0 h-auto',
+          drag !== 0 && 'transition-none'
         )}
-        role="dialog"
+        side="bottom"
         style={{
-          marginTop: TOP_GAP,
+          ...(height ? { top: (offsetTop ?? 0) + TOP_GAP, height } : null),
           transform: drag ? `translateY(${drag}px)` : undefined,
         }}
       >
+        <SheetTitle className="sr-only">{label}</SheetTitle>
         <div
           aria-hidden="true"
           className="flex h-6 shrink-0 cursor-grab touch-none items-center justify-center"
+          data-phone-sheet-handle
           onPointerCancel={release}
           onPointerDown={press}
           onPointerMove={move}
@@ -100,7 +96,7 @@ export function PhoneSheet({
           <span className="h-1 w-9 rounded-full bg-border" />
         </div>
         {children}
-      </section>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

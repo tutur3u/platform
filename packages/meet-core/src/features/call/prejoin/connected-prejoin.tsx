@@ -12,6 +12,7 @@ import {
   type ConnectedLobbyProps,
 } from '../components/call-lobby';
 import { PrejoinNameField } from './prejoin-name-field';
+import { usePrejoinInfo } from './prejoin-context';
 import { PrejoinParticipants } from './prejoin-participants';
 import { PrejoinTitle } from './prejoin-title';
 import { PrejoinStage, type PrejoinPhase } from './prejoin-stage';
@@ -77,6 +78,12 @@ export function ConnectedPrejoin({
     : connectionStatus === 'closed' || connectionStatus === 'error' || error
       ? t('join_error_hint')
       : null;
+  const meetingId = usePrejoinInfo()?.meetingId ?? miraMeetingId;
+  const { handedOff, reset } = capture;
+  // A failed join leaves the devices with the room; take them back for the retry.
+  useEffect(() => {
+    if (connectionError && handedOff) reset();
+  }, [connectionError, handedOff, reset]);
   const waiting = room.state.admission === 'waiting';
   const connecting = room.state.admission === 'connecting';
   const trimmed = prepareParticipantName(displayName);
@@ -203,9 +210,9 @@ export function ConnectedPrejoin({
       }
       title={room.state.title ?? meetingName}
       titleEditor={
-        room.state.role === 'host' && miraMeetingId ? (
+        room.state.role === 'host' && meetingId ? (
           <PrejoinTitle
-            meetingId={miraMeetingId}
+            meetingId={meetingId}
             onSaved={room.renameMeeting}
             title={room.state.title ?? meetingName}
           />

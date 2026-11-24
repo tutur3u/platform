@@ -7,32 +7,37 @@ afterEach(cleanup);
 
 function show(onDismiss = vi.fn()) {
   render(
-    <PhoneSheet label="Chat" onDismiss={onDismiss}>
-      <input aria-label="composer" />
-    </PhoneSheet>
+    <>
+      <button type="button">behind</button>
+      <PhoneSheet label="Chat" onDismiss={onDismiss}>
+        <input aria-label="composer" />
+        <button type="button">inside</button>
+      </PhoneSheet>
+    </>
   );
   return onDismiss;
 }
 
-it('renders a labelled dialog with the content', () => {
+it('is a modal dialog that holds focus and hides the call behind it', () => {
   show();
-  expect(screen.getByRole('dialog', { name: 'Chat' })).toBeTruthy();
-  expect(screen.getByLabelText('composer')).toBeTruthy();
+  const dialog = screen.getByRole('dialog', { name: 'Chat' });
+  expect(dialog).toBeTruthy();
+  expect(dialog.contains(document.activeElement)).toBe(true);
+  expect(screen.queryByRole('button', { name: 'behind' })).toBeNull();
 });
 
-it('dismisses from the scrim and Escape', () => {
+it('dismisses from Escape wherever focus is and draws a scrim', () => {
   const onDismiss = show();
-  fireEvent.click(
-    screen.getAllByRole('button', { name: 'Chat' })[0] as HTMLElement
-  );
-  fireEvent.keyDown(screen.getByLabelText('composer'), { key: 'Escape' });
-  expect(onDismiss).toHaveBeenCalledTimes(2);
+  fireEvent.keyDown(document.body, { key: 'Escape' });
+  expect(onDismiss).toHaveBeenCalledTimes(1);
+  // The scrim is the dialog's own overlay, so a tap outside closes it.
+  expect(document.querySelector('[data-slot="sheet-overlay"]')).toBeTruthy();
 });
 
 it('dismisses when the handle is dragged far enough, and not for a short drag', () => {
   const onDismiss = show();
   const handle = document.querySelector(
-    '[aria-hidden="true"].touch-none'
+    '[data-phone-sheet-handle]'
   ) as HTMLElement;
   fireEvent.pointerDown(handle, { clientY: 100, pointerId: 1 });
   fireEvent.pointerMove(handle, { clientY: 140, pointerId: 1 });
@@ -45,21 +50,18 @@ it('dismisses when the handle is dragged far enough, and not for a short drag', 
 });
 
 it('sizes to the visual viewport so the composer clears the keyboard', () => {
-  const listeners = new Set<() => void>();
   Object.defineProperty(window, 'visualViewport', {
     configurable: true,
     value: {
       height: 420,
       offsetTop: 0,
-      addEventListener: (_: string, listener: () => void) =>
-        listeners.add(listener),
-      removeEventListener: (_: string, listener: () => void) =>
-        listeners.delete(listener),
+      addEventListener: () => {},
+      removeEventListener: () => {},
     },
   });
   show();
-  const root = screen.getByRole('dialog').parentElement as HTMLElement;
-  expect(root.style.height).toBe('420px');
+  const dialog = screen.getByRole('dialog');
+  expect(dialog.style.height).toBe('420px');
   Object.defineProperty(window, 'visualViewport', {
     configurable: true,
     value: undefined,

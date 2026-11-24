@@ -42,6 +42,7 @@ export function CallShell({
   return (
     <PrejoinProvider
       info={{
+        meetingId: props.meetingId,
         meetingName: props.meetingName,
         displayName: props.defaultDisplayName,
         avatarUrl: props.defaultAvatarUrl,

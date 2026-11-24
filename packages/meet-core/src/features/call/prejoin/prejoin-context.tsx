@@ -5,6 +5,7 @@ import { type PrejoinCapture, usePrejoinCapture } from './use-prejoin-capture';
 
 /** What the pre-join stage shows before the room has reported anything. */
 export type PrejoinInfo = {
+  meetingId: string;
   meetingName: string;
   displayName: string;
   avatarUrl?: string;

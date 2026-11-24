@@ -25,6 +25,7 @@ const rename = vi.hoisted(() =>
 vi.mock('@tuturuuu/internal-api', () => ({ updateMeetCallTitle: rename }));
 
 import { ConnectedPrejoin } from './connected-prejoin';
+import { PrejoinProvider } from './prejoin-context';
 
 const call = messages.meet.call;
 
@@ -58,6 +59,7 @@ function capture() {
     outputDeviceId: '',
     handOff: vi.fn(() => media),
     release: vi.fn(),
+    reset: vi.fn(),
   } as unknown as PrejoinCapture;
 }
 
@@ -95,31 +97,54 @@ function show(
     name?: string;
     miraMeetingId?: string;
     role?: string;
+    error?: string;
+    handedOff?: boolean;
+    meetingIdFromProvider?: boolean;
   } = {}
 ) {
   const cap = capture();
+  if (options.handedOff)
+    (cap as unknown as { handedOff: boolean }).handedOff = true;
   const controller = room(options.admission ?? 'idle', {}, options.role);
+  if (options.error)
+    (controller.state as unknown as { error: string }).error = options.error;
   const onJoined = vi.fn();
   const onLeave = vi.fn();
+  const Wrap = options.meetingIdFromProvider
+    ? ({ children }: { children: React.ReactNode }) => (
+        <PrejoinProvider
+          info={{
+            meetingId: 'm-9',
+            meetingName: 'Weekly sync',
+            displayName: 'Linh Tran',
+            leaveHref: '/home',
+          }}
+        >
+          {children}
+        </PrejoinProvider>
+      )
+    : ({ children }: { children: React.ReactNode }) => <>{children}</>;
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <ConnectedPrejoin
-        canReadWorkspace={options.canReadWorkspace ?? true}
-        capture={cap}
-        defaultDisplayName={options.name ?? 'Linh Tran'}
-        joined={options.joined ?? false}
-        meetingName="Weekly sync"
-        miraMeetingId={options.miraMeetingId}
-        onJoined={onJoined}
-        onLeave={onLeave}
-        onOutputDeviceChange={vi.fn()}
-        onRetry={vi.fn()}
-        outputDeviceId=""
-        participants={[]}
-        prepareJoin={() => true}
-        room={controller}
-        runMediaAction={async (action) => action()}
-      />
+      <Wrap>
+        <ConnectedPrejoin
+          canReadWorkspace={options.canReadWorkspace ?? true}
+          capture={cap}
+          defaultDisplayName={options.name ?? 'Linh Tran'}
+          joined={options.joined ?? false}
+          meetingName="Weekly sync"
+          miraMeetingId={options.miraMeetingId}
+          onJoined={onJoined}
+          onLeave={onLeave}
+          onOutputDeviceChange={vi.fn()}
+          onRetry={vi.fn()}
+          outputDeviceId=""
+          participants={[]}
+          prepareJoin={() => true}
+          room={controller}
+          runMediaAction={async (action) => action()}
+        />
+      </Wrap>
     </NextIntlClientProvider>
   );
   return { cap, controller, onJoined, onLeave };
@@ -219,4 +244,21 @@ it('draws the host title as plain heading text at rest', () => {
   expect(field.className).toContain(
     'focus-visible:[--field-stroke:var(--border)]'
   );
+});
+
+it('lets a host rename the meeting without a Mira meeting id', () => {
+  show({ role: 'host', meetingIdFromProvider: true });
+  expect(
+    screen.getByRole('textbox', { name: call.meeting_title })
+  ).toBeTruthy();
+});
+
+it('takes the devices back for a retry after a failed join', () => {
+  const { cap } = show({ error: 'closed', handedOff: true });
+  expect(cap.reset).toHaveBeenCalledTimes(1);
+});
+
+it('leaves a fresh preview alone when nothing failed', () => {
+  const { cap } = show({});
+  expect(cap.reset).not.toHaveBeenCalled();
 });

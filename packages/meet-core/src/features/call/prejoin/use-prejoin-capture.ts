@@ -247,6 +247,12 @@ export function usePrejoinCapture() {
     videoEnabled,
   ]);
 
+  /** A failed join takes the devices back from the room, so the preview restarts. */
+  const reset = useCallback(() => {
+    transferred.current = null;
+    setHandedOff(false);
+  }, []);
+
   /** Leaving releases both local streams. */
   const release = useCallback(() => {
     stopMediaStream(micStreamRef.current);
@@ -278,6 +284,7 @@ export function usePrejoinCapture() {
     setLimit,
     handOff,
     release,
+    reset,
   };
 }
 

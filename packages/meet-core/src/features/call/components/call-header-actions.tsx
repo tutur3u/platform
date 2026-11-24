@@ -45,8 +45,10 @@ export function CallHeaderActions({
         {share}
       </>
     );
+  // Only settings live in More: it unmounts while closed, so anything that must
+  // keep running or be seen (transcript capture and consent, who is talking to
+  // Mira privately) stays mounted in the bar.
   const rows: Slot[] = [
-    { node: notice },
     { label: t('playback_volume'), node: volume },
     { label: t('audio_options_action'), node: sharedAudio },
     { label: t('settings_title'), node: settings },
@@ -54,6 +56,7 @@ export function CallHeaderActions({
   return (
     <>
       {clock}
+      {notice}
       {mira}
       {share}
       <Popover>

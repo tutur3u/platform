@@ -22,7 +22,6 @@ function show(extra: { mira?: boolean } = {}) {
           extra.mira === false ? undefined : <button type="button">Mira</button>
         }
         notice={<span>notice</span>}
-        roomAudio={<button type="button">room-audio</button>}
         settings={<button type="button">settings</button>}
         share={<button type="button">Share</button>}
         sharedAudio={<button type="button">shared-audio</button>}
@@ -41,7 +40,6 @@ it('keeps every control in the original order off a phone', () => {
   show();
   const order = [
     'notice',
-    'room-audio',
     'Mira',
     'volume',
     'shared-audio',
@@ -65,9 +63,11 @@ it('keeps the timer, Mira and Share on a phone and moves the rest into More', ()
   expect(screen.getByTestId('clock')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Mira' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy();
+  // Capture, consent and the private-Mira status stay mounted in the bar.
+  expect(screen.getByText('notice')).toBeTruthy();
   expect(screen.queryByText('volume')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: call.more_actions }));
-  for (const name of ['room-audio', 'volume', 'shared-audio', 'settings'])
+  for (const name of ['volume', 'shared-audio', 'settings'])
     expect(screen.getByRole('button', { name })).toBeTruthy();
   expect(screen.getByText(call.playback_volume)).toBeTruthy();
   expect(screen.getByText(call.settings_title)).toBeTruthy();
@@ -80,7 +80,6 @@ it('omits rows for controls a presence-only room does not have', () => {
       <CallHeaderActions
         clock={null}
         notice={null}
-        roomAudio={null}
         settings={<button type="button">settings</button>}
         share={null}
       />

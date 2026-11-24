@@ -374,7 +374,7 @@ function ParticipantTileImpl({
         <ParticipantTileActions
           audio={!isSelf && !!audioTrack}
           controlsHidden={controlsHidden}
-          displayName={participant.displayName}
+          displayName={displayName}
           exitFocusRef={exitFocusRef}
           expanded={expanded}
           focusKey={focusKey ?? `${participant.userId}:${kind}`}
