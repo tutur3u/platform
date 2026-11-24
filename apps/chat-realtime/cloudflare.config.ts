@@ -1,11 +1,18 @@
 import { bindings, defineConfig, exports } from 'cf/config';
 
+// Staging is a separate Worker reached only on workers.dev: no zone route, no
+// custom domain, and its own Durable Object namespaces and ticket secret.
+const staging = process.env.CHAT_REALTIME_DEPLOY_ENV === 'staging';
+const worker = staging
+  ? 'tuturuuu-chat-realtime-staging'
+  : 'tuturuuu-chat-realtime';
+
 export default defineConfig({
   worker: {
-    name: 'tuturuuu-chat-realtime',
+    name: worker,
     compatibilityDate: '2026-10-19',
     entrypoint: 'src/worker.ts',
-    workersDev: false,
+    workersDev: staging,
     previewUrls: false,
     observability: {
       enabled: true,
@@ -23,11 +30,11 @@ export default defineConfig({
       // stay valid until it is unset. Signers always use the current secret.
       CHAT_REALTIME_TOKEN_PREVIOUS_SECRET: bindings.secret(),
       INBOX: bindings.durableObject({
-        worker: 'tuturuuu-chat-realtime',
+        worker,
         exportName: 'ChatInboxRoom',
       }),
       CONVERSATION: bindings.durableObject({
-        worker: 'tuturuuu-chat-realtime',
+        worker,
         exportName: 'ChatConversationRoom',
       }),
     },

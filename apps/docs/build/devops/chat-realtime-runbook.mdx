@@ -63,6 +63,45 @@ uses. The probe does not boot Next, so session authentication stays on the
 staging workflow below. It prints PASS or FAIL names and removes the temporary
 stack and workdir when it finishes.
 
+## Staging Worker
+
+Staging is a separate Worker, `tuturuuu-chat-realtime-staging`, selected by
+`CHAT_REALTIME_DEPLOY_ENV=staging` in `cloudflare.config.ts`. It has its own
+Durable Object namespaces and is reached only on its `workers.dev` origin, with
+no zone route or custom domain. Production keeps the canonical name with
+`workers.dev` off.
+
+The **Chat Realtime Staging Deploy** workflow is `workflow_dispatch` only, from
+`main`. Its build job holds no credentials: it runs the chat tests and the
+workerd runtime checks, builds the staging config, asserts the staging name,
+`workers.dev` and no routes, and uploads the tar with its SHA-256. The deploy
+job runs behind the reviewer-gated `chat-realtime-staging` environment, which
+holds two secrets:
+
+- `CHAT_REALTIME_STAGING_CLOUDFLARE_API_TOKEN`: a short-lived account token
+  (Workers Scripts Write and Account Settings Read). Mint it for one run,
+  record it in the token ledger and revoke it afterwards.
+- `CHAT_REALTIME_STAGING_TOKEN_SECRET`: the staging-only ticket HMAC secret,
+  at least 32 characters. Never reuse the production value.
+
+The deploy job verifies the digest, publishes once with
+`CHAT_REALTIME_STOPPED=false` and no `CHAT_REALTIME_TOKEN_PREVIOUS_SECRET`, and
+confirms by secret name that the previous secret is unset. It then runs
+`scripts/staging-smoke.mjs --phase=live`, which checks that a signed ticket
+connects and that one publish is accepted and delivered. It also checks that a
+subscribe ticket, a body digest mismatch, a foreign signing key and an
+oversized body are refused. The job then raises the stop fence with
+`scripts/ci/chat-realtime-staging-fence.sh` and runs `--phase=stopped`: health
+reports stopped, and connect and publish are refused. A final `always()` step
+raises the fence again, so staging is fenced whenever the job exits. The live
+window is bounded by the job timeout. The smoke uses synthetic workspace,
+conversation and user IDs, so it touches only its own two rooms. The runtime
+tests run both phases against local workerd.
+
+The staging Web path is separate from this Worker smoke. Point a staging Web
+deployment's `CHAT_REALTIME_URL` at the staging origin, give it the same
+staging ticket secret, lower the fence, and then run the qualification below.
+
 ## Staging qualification
 
 The **Chat Realtime Staging Qualification** workflow is `workflow_dispatch`

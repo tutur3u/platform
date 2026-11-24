@@ -14,6 +14,7 @@ import {
   subscribeTicket,
   WS,
 } from './runtime-client.mjs';
+import { runLive, runStopped } from './staging-smoke.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const PREVIOUS_SECRET = 'runtime-fixture-only-chat-realtime-previous-000';
@@ -540,6 +541,16 @@ test('a stopped room closes idle sockets at its expiry alarm', async () => {
   assert.equal((await shortLived.closed).code, 4503);
 });
 
+test('the staging smoke passes its live phase against workerd', async () => {
+  const results = await runLive({ origin: server.origin, secret: SECRET });
+  assert.deepEqual(
+    results.filter(({ ok }) => !ok),
+    [],
+    'every live smoke check passes'
+  );
+  assert.equal(results.length, 7);
+});
+
 test('the Worker stop fence rejects new connects and publishes', async () => {
   await server.close();
   server = await startCfViteWorker({
@@ -562,4 +573,10 @@ test('the Worker stop fence rejects new connects and publishes', async () => {
   await assert.rejects(
     openSocket(server.origin, await subscribeTicket({ userId: ALICE }))
   );
+});
+
+test('the staging smoke passes its stopped phase against the fenced Worker', async () => {
+  const results = await runStopped({ origin: server.origin, secret: SECRET });
+  assert.deepEqual(results.filter(({ ok }) => !ok), []);
+  assert.equal(results.length, 3);
 });

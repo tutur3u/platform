@@ -12,6 +12,7 @@
   "calendar-generation-contract.yaml": ["path-filters"],
   "chat-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "chat-realtime-cloudflare.yaml": ["path-filters"],
+  "chat-realtime-staging-deploy.yaml": ["always"],
   "chat-realtime-staging-qualification.yaml": ["always"],
   "check-and-bump-versions.yaml": ["always"],
   "check-migration-timestamps.yml": ["always"],

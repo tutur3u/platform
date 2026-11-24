@@ -1,0 +1,168 @@
+name: Chat Realtime Staging Deploy
+
+# Manual deploy of the chat-realtime Worker to its staging name,
+# `tuturuuu-chat-realtime-staging`, reached only on workers.dev (no zone route
+# or custom domain). The build job holds no credentials. The deploy job runs
+# behind the reviewer-gated `chat-realtime-staging` environment, publishes the
+# digest-checked build once, smokes ticket, connect, publish bounds and the
+# stop fence, and always leaves the Worker fenced (CHAT_REALTIME_STOPPED=true)
+# when it exits. CHAT_REALTIME_TOKEN_PREVIOUS_SECRET stays unset on staging.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chat-realtime-staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CHAT_REALTIME_DEPLOY_ENV: staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - run: bun run --cwd packages/realtime test -- src/chat
+      - run: bun run --cwd apps/chat-realtime test
+      - run: bun run --cwd apps/chat-realtime test:runtime
+      - run: bun run --cwd apps/chat-realtime build
+      - name: Assert the staging publication shape
+        working-directory: apps/chat-realtime/.cloudflare/output/v0
+        run: |
+          jq -e '.name == "tuturuuu-chat-realtime-staging"
+            and .workersDev == true
+            and .previewUrls == false
+            and ((.routes // []) | length) == 0
+            and .exports.ChatInboxRoom.storage == "sqlite"
+            and .exports.ChatConversationRoom.storage == "sqlite"
+            and .env.CHAT_REALTIME_TOKEN_SECRET.type == "secret"
+            and .env.CHAT_REALTIME_TOKEN_PREVIOUS_SECRET.type == "secret"
+            and .env.CHAT_REALTIME_STOPPED.type == "secret"' \
+            workers/default/worker.config.json
+          ! grep -rqF '"tuturuuu-chat-realtime"' workers/default/worker.config.json
+      - name: Package with a digest
+        working-directory: apps/chat-realtime/.cloudflare
+        run: |
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+            -cf chat-realtime-staging.tar output
+          sha256sum chat-realtime-staging.tar > chat-realtime-staging.tar.sha256
+          echo "- sha256: \`$(cut -d' ' -f1 chat-realtime-staging.tar.sha256)\`" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: chat-realtime-staging-${{ github.sha }}
+          path: |
+            apps/chat-realtime/.cloudflare/chat-realtime-staging.tar
+            apps/chat-realtime/.cloudflare/chat-realtime-staging.tar.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    environment: chat-realtime-staging
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CHAT_REALTIME_STAGING_CLOUDFLARE_API_TOKEN }}
+      WORKER: tuturuuu-chat-realtime-staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: chat-realtime-staging-${{ github.sha }}
+          path: ${{ runner.temp }}/chat-realtime-staging
+      - name: Verify and restore the exact build
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/chat-realtime-staging"
+          sha256sum -c chat-realtime-staging.tar.sha256
+          rm -rf "$GITHUB_WORKSPACE/apps/chat-realtime/.cloudflare/output"
+          mkdir -p "$GITHUB_WORKSPACE/apps/chat-realtime/.cloudflare"
+          tar -xf chat-realtime-staging.tar -C "$GITHUB_WORKSPACE/apps/chat-realtime/.cloudflare"
+          jq -e '.name == env.WORKER' \
+            "$GITHUB_WORKSPACE/apps/chat-realtime/.cloudflare/output/v0/workers/default/worker.config.json"
+      - name: Resolve the workers.dev origin
+        run: |
+          set -euo pipefail
+          [[ "$CLOUDFLARE_ACCOUNT_ID" =~ ^[a-f0-9]{32}$ ]]
+          test -n "$CLOUDFLARE_API_TOKEN"
+          subdomain="$(curl --fail --silent --show-error --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+            | jq -er 'select(.success == true) | .result.subdomain // empty')"
+          # Never send the ticket secret's signatures to a host the account does not own.
+          [[ "$subdomain" =~ ^[a-z0-9-]+$ ]]
+          echo "CHAT_REALTIME_SMOKE_ORIGIN=https://$WORKER.$subdomain.workers.dev" >> "$GITHUB_ENV"
+      - name: Deploy the staging Worker running, without a previous ticket secret
+        working-directory: apps/chat-realtime
+        env:
+          CHAT_REALTIME_TOKEN_SECRET: ${{ secrets.CHAT_REALTIME_STAGING_TOKEN_SECRET }}
+        run: |
+          set -euo pipefail
+          test "${#CHAT_REALTIME_TOKEN_SECRET}" -ge 32
+          secrets="$RUNNER_TEMP/chat-realtime-secrets.env"
+          trap 'rm -f "$secrets"' EXIT
+          umask 077
+          printf 'CHAT_REALTIME_TOKEN_SECRET=${CHAT_REALTIME_TOKEN_SECRET}\nCHAT_REALTIME_STOPPED=false\n' > "$secrets"
+          bun x --no-install cf deploy --prebuilt --no-provision \
+            --secrets-file "$secrets" \
+            --tag "${GITHUB_SHA:0:12}" \
+            --message "chat-realtime staging ${GITHUB_SHA:0:12}"
+      - name: Confirm the previous ticket secret is unset
+        run: |
+          set -euo pipefail
+          names="$(curl --fail --silent --show-error --max-time 30 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/$WORKER/secrets" \
+            | jq -er 'select(.success == true) | [.result[].name] | sort | join(" ")')"
+          echo "secret names: $names"
+          [[ " $names " != *" CHAT_REALTIME_TOKEN_PREVIOUS_SECRET "* ]]
+          [[ " $names " == *" CHAT_REALTIME_TOKEN_SECRET "* ]]
+      - name: Wait for the new deployment to answer running
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            stopped="$(curl --silent --max-time 10 "$CHAT_REALTIME_SMOKE_ORIGIN/health" | jq -r '.stopped // empty' || true)"
+            [[ "$stopped" == false ]] && exit 0
+            sleep $((attempt * 5))
+          done
+          exit 1
+      - name: Smoke ticket, connect, publish and publish bounds
+        timeout-minutes: 3
+        env:
+          CHAT_REALTIME_SMOKE_SECRET: ${{ secrets.CHAT_REALTIME_STAGING_TOKEN_SECRET }}
+        run: node apps/chat-realtime/scripts/staging-smoke.mjs --phase=live
+      - name: Raise the stop fence
+        run: bash scripts/ci/chat-realtime-staging-fence.sh
+      - name: Smoke the stop fence
+        timeout-minutes: 3
+        env:
+          CHAT_REALTIME_SMOKE_SECRET: ${{ secrets.CHAT_REALTIME_STAGING_TOKEN_SECRET }}
+        run: node apps/chat-realtime/scripts/staging-smoke.mjs --phase=stopped
+      - name: Leave the Worker fenced whatever happened
+        if: always()
+        run: bash scripts/ci/chat-realtime-staging-fence.sh
