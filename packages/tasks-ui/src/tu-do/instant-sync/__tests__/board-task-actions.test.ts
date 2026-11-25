@@ -264,7 +264,7 @@ describe('instant reorder', () => {
       completed: false,
       completed_at: null,
       closed_at: null,
-    } as Partial<Task>);
+    } as unknown as Partial<Task>);
     const calls: string[] = [];
     const { actions, cacheRow, queryClient } = setup([original], {
       reorderTask: async (id, listId, sortKey) => {
@@ -281,7 +281,7 @@ describe('instant reorder', () => {
       completed_at: null,
       closed_at: null,
       _localMutationAt: 1,
-    } as Task;
+    } as unknown as Task;
     queryClient.setQueryData(boardTasksQueryKey(BOARD), [preview]);
 
     await expect(
@@ -328,7 +328,9 @@ describe('instant reorder', () => {
       targetListStatus: 'done',
       optimisticPreviousTasks: [original],
     });
-    expect(collection.get('a')?.completed).toBe(true);
+    expect(
+      (collection.get('a') as { completed?: boolean } | undefined)?.completed
+    ).toBe(true);
 
     remoteUpsert(task('a', { list_id: 'review' }));
     server.reject(new Error('network'));

@@ -55,9 +55,8 @@ export function useInstantBoardSyncController({
  * transaction, recomputed incrementally by TanStack DB.
  */
 export function useInstantBoardTasks(sync: InstantBoardSync): Task[] {
-  const { data } = useLiveQuery(
-    (q) => q.from({ task: sync.collection }),
-    [sync]
-  );
+  // This release takes no dependency list; the caller keys the component by
+  // board so a new board always gets a fresh live query.
+  const { data } = useLiveQuery((q) => q.from({ task: sync.collection }));
   return (data ?? []) as Task[];
 }

@@ -428,6 +428,7 @@ export function BoardClient({
               }
             >
               <InstantBoardViews
+                key={boardId}
                 {...boardViewsProps}
                 boardId={boardId}
                 wsId={boardWorkspaceId}
