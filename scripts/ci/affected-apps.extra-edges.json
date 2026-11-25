@@ -68,6 +68,7 @@
     "packages/offline",
     "packages/sdk"
   ],
+  "apps/web/cloudflare/opennext/": ["apps/deploy-coordinator"],
   "apps/web/e2e/helpers/": ["apps/inventory", "apps/lettin"],
   "apps/web/messages/": ["apps/contacts", "apps/tanstack-web", "packages/ui"],
   "apps/web/src/": ["packages/users-core"],
