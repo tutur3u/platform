@@ -30,8 +30,13 @@ permissions:
   contents: read
   actions: read
   deployments: read
+# One group per app and source SHA: a planner run and a manual dispatch of
+# the same SHA queue behind each other instead of building in parallel, and
+# the later one reconciles the already-active version without another
+# upload. Different SHAs build in parallel; their uploads serialize in the
+# publish job's per-app group. Nothing here cancels a run.
 concurrency:
-  group: wave1-native-production-${{ inputs.app }}
+  group: wave1-native-production-${{ inputs.app }}-${{ github.sha }}
   cancel-in-progress: false
   queue: max
 jobs:
@@ -279,6 +284,13 @@ jobs:
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
   publish:
     name: publish-${{ inputs.app }}
+    # Uploads of one app never overlap and are never cancelled. A queued
+    # older SHA stops in its read-only preflight as superseded when a newer
+    # production SHA already serves.
+    concurrency:
+      group: wave1-native-upload-${{ inputs.app }}
+      cancel-in-progress: false
+      queue: max
     needs: [production-policy, qualify, restored]
     # Bypass implicit success() because production skips release-admission upstream.
     if: ${{ !cancelled() && inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true' && needs.qualify.result == 'success' && needs.restored.result == 'success' }}

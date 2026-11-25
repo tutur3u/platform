@@ -81,6 +81,11 @@ export function setup(
     scriptlessAcme: false,
     publicServing: null,
     calls: [],
+    // Source SHA annotated on the serving version, and GitHub's compare
+    // status of that live SHA against the candidate.
+    liveSha: undefined,
+    compareStatus: 'behind',
+    compares: [],
     settingsReads: 0,
     settingsLagReads: 0,
     settingsErrorReads: 0,
@@ -110,7 +115,11 @@ export function setup(
     id,
     annotations:
       state.versionAnnotations ??
-      (id === newId ? { 'workers/message': sha, 'workers/tag': digest } : {}),
+      (id === newId
+        ? { 'workers/message': sha, 'workers/tag': digest }
+        : state.liveSha
+          ? { 'workers/message': state.liveSha }
+          : {}),
   });
   const fetcher = async (url, options) => {
     state.calls.push(url);
@@ -119,6 +128,10 @@ export function setup(
     assert.equal(options.method, 'GET');
     if (url.startsWith('https://api.github.com/')) {
       assert.equal(options.headers.Authorization, 'Bearer github-fixture');
+      if (url.includes('/compare/')) {
+        state.compares.push(url);
+        return Response.json({ status: state.compareStatus });
+      }
       if (url.includes('/artifacts?'))
         return Response.json({ total_count: 0, artifacts: [] });
       if (url.includes('/jobs?')) {

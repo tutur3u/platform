@@ -295,6 +295,50 @@ test('a route-free Worker without a record refuses an attached Custom Domain', a
   assert.equal(p.state.writes, 0);
 });
 
+test('an older SHA stops as superseded when a newer one already serves', async (t) => {
+  const p = setup(t);
+  p.state.liveSha = 'f'.repeat(40);
+  p.state.compareStatus = 'ahead';
+  const result = await p.run();
+  assert.equal(result.state, 'superseded');
+  assert.equal(result.liveSha, 'f'.repeat(40));
+  assert.equal(p.state.writes, 0);
+  assert.match(
+    p.state.compares[0],
+    new RegExp(`/compare/${sha}\\.\\.\\.${'f'.repeat(40)}`)
+  );
+  const steps = {
+    upload: {
+      ...p.env,
+      WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: undefined,
+      GITHUB_TOKEN: undefined,
+    },
+    verify: { ...p.env, WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: undefined },
+  };
+  for (const [mode, env] of Object.entries(steps)) {
+    const followUp = await p.run({ argv: ['calendar', sha, mode], env });
+    assert.equal(followUp.state, 'superseded', mode);
+  }
+  assert.equal(p.state.writes, 0);
+});
+
+test('a newer SHA publishes over an older live version', async (t) => {
+  const p = setup(t);
+  p.state.liveSha = 'f'.repeat(40);
+  p.state.compareStatus = 'behind';
+  const result = await p.run();
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(p.state.writes, 1);
+});
+
+test('a live version off the production history refuses before upload', async (t) => {
+  const p = setup(t);
+  p.state.liveSha = 'f'.repeat(40);
+  p.state.compareStatus = 'diverged';
+  await assert.rejects(p.run(), /not on the production history/);
+  assert.equal(p.state.writes, 0);
+});
+
 test('a planner push and a dispatch publish; other events refuse', async (t) => {
   const p = setup(t);
   p.env.GITHUB_EVENT_NAME = 'push';

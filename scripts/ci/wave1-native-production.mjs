@@ -79,6 +79,35 @@ export function assertRouteFree(config) {
   assert.equal(config.no_bundle, true);
 }
 
+const fullSha = /^[a-f0-9]{40}$/;
+
+/** The id of the single version serving 100%, or null for a split. */
+export function servingVersionId(deployment) {
+  const serving = deployment?.versions;
+  if (!Array.isArray(serving) || serving.length !== 1) return null;
+  return serving[0].percentage === 100 ? serving[0].version_id : null;
+}
+
+/** The source SHA a version was published from, when it is annotated. */
+export function annotatedSourceSha(version) {
+  const message = version?.annotations?.['workers/message'];
+  return typeof message === 'string' && fullSha.test(message) ? message : null;
+}
+
+/** GitHub's compare status of head against base: ahead, behind, identical or diverged. */
+async function sourceRelation({ env, base, head, fetcher }) {
+  const comparison = await boundedJson(
+    `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/compare/${base}...${head}?per_page=1`,
+    env.GITHUB_TOKEN,
+    fetcher
+  );
+  assert.ok(
+    ['ahead', 'behind', 'identical', 'diverged'].includes(comparison.status),
+    'Unknown production source relation'
+  );
+  return comparison.status;
+}
+
 export async function main({
   argv = process.argv.slice(2),
   env = process.env,
@@ -269,6 +298,50 @@ export async function main({
     }
     assertResolvedVersionsAbsent({ app, versions: observedVersions });
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
+    // A newer production push may already serve: an older SHA never
+    // downgrades it, and its attempt stops here as superseded, before any
+    // write. An in-flight upload is never cancelled; the per-app upload
+    // queue runs the next attempt after it.
+    const servingId = matches.length
+      ? null
+      : servingVersionId(deployments.deployments[0]);
+    const live = servingId
+      ? annotatedSourceSha(
+          observedVersions.find(({ id }) => id === servingId) ??
+            (await provider(`${script}/versions/${servingId}`))
+        )
+      : null;
+    if (live && live !== sha) {
+      const relation = await sourceRelation({
+        env,
+        base: sha,
+        head: live,
+        fetcher: boundedFetch,
+      });
+      if (relation === 'ahead') {
+        record = {
+          schema: 1,
+          app,
+          sha,
+          digest,
+          worker: p.name,
+          state: 'superseded',
+          liveSha: live,
+          runId: env.GITHUB_RUN_ID,
+          runAttempt: env.GITHUB_RUN_ATTEMPT,
+          preflightAt: Date.now(),
+        };
+        writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
+          mode: 0o600,
+        });
+        return record;
+      }
+      assert.equal(
+        relation,
+        'behind',
+        'Live version is not on the production history; owner reconciliation required'
+      );
+    }
     if (matches.length)
       assert.deepEqual(
         deployments.deployments[0].versions,
@@ -358,6 +431,8 @@ export async function main({
     assert.equal(record.worker, p.name);
     assert.equal(record.runId, env.GITHUB_RUN_ID);
     assert.equal(record.runAttempt, env.GITHUB_RUN_ATTEMPT);
+    // The preflight proved a newer SHA already serves: nothing to upload.
+    if (record.state === 'superseded') return record;
     before = record.topology;
   }
   const accept = async (id) => {

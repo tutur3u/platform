@@ -269,6 +269,10 @@ export async function assertNoEarlierUpload({
         fetcher,
         app,
       });
+      // A superseded attempt stopped in its read-only preflight because a
+      // newer production SHA already served; it never reached the upload.
+      if (receipt.state === 'superseded' && receipt.versionId === undefined)
+        continue;
       if (
         isResolvedFailedNoWrite({
           env,
