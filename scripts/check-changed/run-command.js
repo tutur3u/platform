@@ -9,7 +9,8 @@ const { pinVitestTsconfig } = require('./vitest-tsconfig-pin.js');
 function runCommand(step, context) {
   const missing = step.requiredFiles?.filter(
     (file) =>
-      !fs.statSync(path.join(context.root, file), { throwIfNoEntry: false })
+      !fs
+        .statSync(path.join(context.root, file), { throwIfNoEntry: false })
         ?.isFile()
   );
   if (missing?.length) {
