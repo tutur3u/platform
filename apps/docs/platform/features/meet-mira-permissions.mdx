@@ -14,8 +14,8 @@ Tutor chat), room documents, Polls and Co-programming. Parley and meetings
 with the flag off keep their existing behaviour.
 
 Default: Mira drafts but never publishes, edits only room documents, suggests
-code only as a diff, and reads no private notes or tutor chat until their
-owner turns sharing on.
+code only as a diff, and reads no tutor chat until its owner turns sharing
+on.
 
 Approved access rules:
 
@@ -24,7 +24,7 @@ Approved access rules:
 | Draft polls and action items | Mira drafts; a host or co-host publishes. Nothing posts by itself. |
 | Edit docs | Allowed on room-shared docs only; every edit is attributed "Mira for {person}" and can be undone. |
 | Suggest code | Mira's suggestions appear as a diff; one person must accept. No direct writes. |
-| Read private notes and tutor chats | Owner-only opt-in. Each person can share their own notes or tutor chat with their own Private Mira for this meeting (default off, revocable, shown as a chip). A host can never grant access to someone else's private data, and Room Mira never reads private data. Under-18 and unconfirmed accounts: never. |
+| Read tutor chat | Owner-only opt-in. Each person can share their own tutor chat with their own Private Mira for this meeting (default off, revocable, shown as a chip). A host can never grant access to someone else's private data, and Room Mira never reads private data. Under-18 and unconfirmed accounts: never. |
 
 ### How each rule is enforced
 
@@ -79,11 +79,19 @@ Approved access rules:
   stops it.
 - Withdrawing the Mira account confirmation revokes the share and ends the
   owner's Private Mira sessions. In a call, the room revoke returns the
-  sessions to stop. From account settings, the owner's session registry
-  revokes the share in each meeting with a live Private Mira session and
-  stops those sessions. Both are best effort and bounded; every later read
-  also needs a confirmed account, which a live worker may have cached for up
-  to a minute.
+  sessions to stop. From account settings, the owner's session registry stops
+  each live Private Mira session and then revokes its meeting's share; the
+  sessions run in parallel, each step has its own deadline, and a session
+  that could not be stopped stays listed for a retry. Both paths are best
+  effort and bounded; every later read also needs a confirmed account, which
+  a live worker may have cached for up to a minute.
+- A share counts only if it was turned on after the owner's latest Mira
+  confirmation. Withdrawing and confirming again therefore needs a fresh
+  opt-in, even for a share in a meeting that had no live Private Mira
+  session. The room reports when each share was turned on; the server and
+  the live worker compare that with the confirmation time, revoke an older
+  share, and treat it as off. A share without a known start, or an account
+  without a confirmation, fails closed.
 - Changing the Private Mira choice (Mute or Leave, then Continue again) ends
   the share and drops its shared tutor chat; the share does not come back on
   by itself.
@@ -120,14 +128,25 @@ on, and Private Mira's poll launch moves to the Polls panel for the host.
   eviction, no shared text in snapshot metadata, expired context refused and
   dropped, choice change drops context, subject and meeting erasure, and
   meeting end.
-- `apps/meet-realtime/src/room-do-mira-share.test.ts`: the room Durable Object
-  keeps shared chat out of the stored snapshot, serves it from its own key,
-  deletes the key on revoke and on a choice change, and sweeps it on the
-  expiry alarm without further requests.
+- `packages/realtime/src/meet/room-mira-share-storage.test.ts`: stored text is
+  served only for the grant revision and share time it was stored under, and
+  an unreferenced key is deleted. The package share tests read through the
+  same storage module the room uses.
+- `apps/meet-realtime/src/room-do-mira-share.test.ts` (run by the Meet
+  Cloudflare workflow's durable room step): the room Durable Object keeps
+  shared chat out of the stored snapshot, serves it from its own key, never
+  serves a key left at an older revision after re-enabling, and deletes the
+  key on revoke, a choice change, eviction, meeting end, restore and subject
+  erasure, and on the expiry alarm without further requests.
 - `packages/meet-core/src/features/live-assistant/registry.test.ts`,
   `apps/meet/src/app/api/meet-mira/account/route.test.ts` and
   `packages/meet-core/src/routes/api/meet-call/[meetingId]/mira-room/route-account.test.ts`:
-  a withdrawn confirmation revokes shares and stops Private Mira sessions.
+  a withdrawn confirmation revokes shares and stops Private Mira sessions;
+  each session stops before its share is revoked, one failure does not stop
+  the rest, and a stalled session is bounded and kept for a retry.
+- `packages/meet-core/src/features/live-assistant/server/private-share.test.ts`
+  and `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`: a
+  share older than the latest confirmation is revoked and treated as off.
 - `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`:
   unconfirmed accounts refused, Room Mira and flag-off refused, revoke refuses
   the next read, Mira cannot launch polls with the flag on.
