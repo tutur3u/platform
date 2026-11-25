@@ -381,7 +381,7 @@
       "appsComplete": false,
       "sources": [
         "packages/utils/src/feature-flags/data.ts",
-        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation-more-tools.tsx",
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/sidebar-apps.ts",
         "packages/utils/src/feature-flags/requestable-features.ts"
       ],
       "defaults": {
@@ -516,7 +516,7 @@
       "appsComplete": false,
       "sources": [
         "packages/utils/src/feature-flags/data.ts",
-        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation-more-tools.tsx"
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,
@@ -538,7 +538,7 @@
       "appsComplete": false,
       "sources": [
         "packages/utils/src/feature-flags/data.ts",
-        "apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation-more-tools.tsx"
+        "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/constants.ts"
       ],
       "defaults": {
         "development": false,

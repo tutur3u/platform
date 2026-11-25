@@ -122,6 +122,8 @@ test('workspace tsc build type-check scripts use the cache-invalidation wrapper'
     'apps/drive/package.json': 'type-check:cloudflare',
     // Marketing checks its roadmap routes with @tuturuuu/roadmap-core's options.
     'apps/marketing/package.json': 'type-check:roadmap',
+    // Whiteboards checks its Cloudflare project like Forms.
+    'apps/whiteboards/package.json': 'type-check:cloudflare',
   };
   const invalidScripts = [];
 

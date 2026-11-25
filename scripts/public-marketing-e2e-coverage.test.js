@@ -23,6 +23,8 @@ const TANSTACK_ROOT_REDIRECT_PATHS = [
 
 const AUTH_GATED_MARKETING_ROUTE_PATHS = new Set([
   '/:locale/account/delete',
+  // Documents' apex entry: signed-out visitors go to login.
+  '/:locale/docs',
   '/:locale/logout',
   '/:locale/users/:handle',
 ]);

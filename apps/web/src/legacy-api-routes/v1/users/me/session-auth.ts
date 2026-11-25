@@ -25,6 +25,7 @@ const CURRENT_USER_APP_SESSION_TARGETS = [
   'tasks',
   'teach',
   'track',
+  'whiteboards',
   CLI_APP_TARGET_APP,
 ] as const;
 

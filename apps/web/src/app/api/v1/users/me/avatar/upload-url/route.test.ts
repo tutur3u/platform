@@ -55,6 +55,7 @@ describe('current user avatar upload URL route', () => {
             'tasks',
             'teach',
             'track',
+            'whiteboards',
             'platform',
           ],
         },
