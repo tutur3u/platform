@@ -1,11 +1,13 @@
 /**
- * EduFest workshop page: a preview of the booth-voting game. Visitors pick a
- * booth and cast one vote; a cast vote is final. The game is not public, so
- * the section is marked Coming and its booths are placeholders.
+ * EduFest workshop page: a practice round of the booth-voting game. Visitors
+ * pick a placeholder booth and cast one practice vote that is not counted;
+ * the section links the public hall, where real votes are cast, and reads
+ * as Live.
  */
-import { Check, DoorOpen, Vote } from '@tuturuuu/icons';
+import { ArrowRight, Check, DoorOpen, Vote } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useReducer, useRef } from 'react';
+import { BOOTH_HALL_URL } from '../../content/workshops/edufest-2026';
 import {
   BOOTHS,
   VOTE_START,
@@ -25,7 +27,7 @@ export function WsBoothHall({ t }: { t: EduMessages }) {
           <h2 id="ws-booth">{copy.title}</h2>
           <p>{copy.subtitle}</p>
         </div>
-        <WsBadge status="planned" label={t.demos.coming} t={t} />
+        <WsBadge status="live" t={t} />
       </header>
       <div className="ws-hall-wrap">
         <div className="ws-hall-stage">
@@ -99,6 +101,15 @@ export function WsBoothHall({ t }: { t: EduMessages }) {
           )}
           <p className="ws-note">{copy.signIn}</p>
           <p className="ws-note">{copy.note}</p>
+          <a
+            className="ws-demo-link"
+            href={BOOTH_HALL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {copy.open}
+            <ArrowRight size={15} aria-hidden className="ws-link-arrow" />
+          </a>
         </div>
       </div>
     </section>

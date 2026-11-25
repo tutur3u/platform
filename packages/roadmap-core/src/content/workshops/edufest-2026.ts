@@ -329,38 +329,49 @@ export const LEARN = [
   'responsible',
 ] as const;
 
+/** The public EduFest booth hall. */
+export const BOOTH_HALL_URL = 'https://showcase.ieeai.net/edufest';
+
 export type DemoId = 'classroom' | 'mira' | 'lms' | 'booth' | 'fleet' | 'edge';
 
 /**
  * The live demos. `deliverable` is the roadmap item whose derived status the
  * card shows. A demo outside the roadmap has no deliverable: `coming` marks
- * one that is not public yet, otherwise it shows no status. `href` is a
- * public page that already answers.
+ * one that is not public yet, `live` one that is public at its `href`, and
+ * any other shows no status. `href` is a public page that already answers.
  */
 export const DEMOS: readonly {
   id: DemoId;
   deliverable: string | null;
   coming?: true;
+  live?: true;
   href: string | null;
 }[] = [
   { id: 'classroom', deliverable: 'meet-classroom-caps', href: null },
   { id: 'mira', deliverable: 'mira-zalo', href: null },
   { id: 'lms', deliverable: null, href: 'https://tuturuuu.com/lms' },
-  { id: 'booth', deliverable: null, coming: true, href: null },
+  {
+    id: 'booth',
+    deliverable: null,
+    live: true,
+    href: BOOTH_HALL_URL,
+  },
   { id: 'fleet', deliverable: null, href: null },
   { id: 'edge', deliverable: 'meet-workers', href: null },
 ];
 
 /**
  * The badge a demo card shows: its deliverable's derived status (planned when
- * unknown, never live), "coming" for a preview, or nothing.
+ * unknown, never live), "coming" for a preview, "live" for a public demo
+ * outside the roadmap, or nothing.
  */
 export function demoBadge(
   demo: (typeof DEMOS)[number],
   statuses: ReadonlyMap<string, WorkshopStatus>
 ): WorkshopStatus | 'coming' | null {
   if (demo.deliverable) return statuses.get(demo.deliverable) ?? 'planned';
-  return demo.coming ? 'coming' : null;
+  if (demo.coming) return 'coming';
+  return demo.live && demo.href ? 'live' : null;
 }
 
 /** Practical information rows; date and venue read WORKSHOP_EVENT. */

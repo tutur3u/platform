@@ -15,6 +15,7 @@ import {
 import { tracks } from '../tracks.ts';
 import {
   AI_LEVELS_DELIVERABLE,
+  BOOTH_HALL_URL,
   CAPABILITIES,
   DEMOS,
   demoBadge,
@@ -220,16 +221,21 @@ describe('EduFest workshop: learn, demos and practical information', () => {
     }
   });
 
-  it('a demo status comes from a real deliverable, or says Coming', () => {
+  it('a demo status comes from a real deliverable, or says Coming or Live', () => {
     for (const demo of DEMOS) {
       if (demo.deliverable)
         assert.ok(deliverables.has(demo.deliverable), demo.id);
-      assert.ok(!(demo.deliverable && demo.coming), demo.id);
+      assert.ok(!(demo.deliverable && (demo.coming || demo.live)), demo.id);
+      assert.ok(!(demo.coming && demo.live), demo.id);
+      // Live off the roadmap means a public page anyone can open.
+      if (demo.live) assert.ok(demo.href, demo.id);
     }
-    // Not public yet: the booth game has no link and reads as Coming.
+    // The booth hall is public: it links the hall and reads as Live.
     const booth = DEMOS.find((demo) => demo.id === 'booth');
-    assert.equal(booth?.coming, true);
-    assert.equal(booth?.href, null);
+    assert.equal(booth?.live, true);
+    assert.equal(booth?.coming, undefined);
+    assert.equal(booth?.href, BOOTH_HALL_URL);
+    assert.equal(BOOTH_HALL_URL, 'https://showcase.ieeai.net/edufest');
     assert.equal(en.demos.coming, 'Coming');
     // Broken variant: a misspelled demo deliverable is caught.
     assert.deepEqual(unresolved(['meet-clasroom-caps']), [
@@ -237,14 +243,18 @@ describe('EduFest workshop: learn, demos and practical information', () => {
     ]);
   });
 
-  it('each demo card shows its derived status, Coming, or nothing', () => {
+  it('each demo card shows its derived status, Coming, Live, or nothing', () => {
     const byId = new Map(DEMOS.map((demo) => [demo.id, demo]));
     const statuses = new Map([['meet-classroom-caps', 'in_progress' as const]]);
     assert.equal(demoBadge(byId.get('classroom')!, statuses), 'in_progress');
     // An unknown deliverable status never reads as live.
     assert.equal(demoBadge(byId.get('mira')!, statuses), 'planned');
-    assert.equal(demoBadge(byId.get('booth')!, statuses), 'coming');
+    assert.equal(demoBadge(byId.get('booth')!, statuses), 'live');
     assert.equal(demoBadge(byId.get('fleet')!, statuses), null);
+    // Broken variants: Coming wins over Live; Live without a page shows none.
+    const booth = byId.get('booth')!;
+    assert.equal(demoBadge({ ...booth, coming: true }, statuses), 'coming');
+    assert.equal(demoBadge({ ...booth, href: null }, statuses), null);
     for (const demo of DEMOS)
       if (demo.href)
         assert.match(demo.href, /^https:\/\/[a-z0-9.-]+\//, demo.id);
@@ -275,8 +285,8 @@ describe('EduFest workshop: learn, demos and practical information', () => {
       /a target; hosted video capacity is not yet verified/
     );
     assert.match(en.liveClass.ask.workshopNote, /hints only/);
-    assert.match(en.demos.items.booth.body, /^A preview/);
-    assert.match(en.booth.note, /not public yet/);
+    assert.doesNotMatch(en.demos.items.booth.body, /preview/i);
+    assert.match(en.booth.note, /placeholders; the real hall is open now/);
     assert.match(en.demos.items.mira.body, /18\+/);
     // Broken variant: the old wording promised a teacher choice that is planned.
     assert.doesNotMatch(

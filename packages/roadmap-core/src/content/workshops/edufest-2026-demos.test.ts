@@ -98,9 +98,23 @@ describe('EduFest demos: copy and honesty', () => {
   it('the workshop runs on hints; people request and approve', () => {
     assert.equal(WORKSHOP_ASK_MODE, 'hint');
     assert.deepEqual([...HUMAN_STEPS], ['request', 'approve']);
-    // The booth preview is labelled Coming and states it is not public.
-    assert.match(source('booth-hall.tsx'), /label=\{t\.demos\.coming\}/);
-    assert.match(vi.booth.note, /chưa công khai/);
+    // The booth preview reads as Live, links the public hall and says its
+    // booths are placeholders.
+    const hall = source('booth-hall.tsx');
+    assert.match(hall, /<WsBadge status="live"/);
+    assert.match(hall, /href=\{BOOTH_HALL_URL\}/);
+    assert.match(hall, /rel="noopener noreferrer"/);
+    assert.doesNotMatch(hall, /t\.demos\.coming/);
+    assert.match(vi.booth.note, /sảnh thật đã mở/);
+    // The placeholder vote says it is not counted and points to the hall.
+    assert.match(en.booth.cast, /not counted/);
+    assert.match(vi.booth.cast, /không được tính/);
+    assert.match(en.booth.castButton, /practice vote/);
+    assert.match(en.booth.chosen, /practice vote/);
+    assert.match(vi.booth.castButton, /phiếu thử/);
+    assert.match(vi.booth.chosen, /phiếu thử/);
+    for (const t of [en, vi])
+      assert.doesNotMatch(t.booth.title, /preview|xem trước/i);
     // Sample numbers are labelled as demo data wherever they appear.
     assert.equal(
       source('live-class.tsx').match(/t\.liveClass\.demoData/g)?.length,

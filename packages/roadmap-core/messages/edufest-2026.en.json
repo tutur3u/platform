@@ -329,8 +329,8 @@
       },
       "booth": {
         "title": "The EduFest booth game",
-        "body": "A preview of a walkable 3D booth fair where each visitor signs in with Google (or a Tuturuuu work account) and casts one vote, with live results for organisers.",
-        "try": "a first look at the fair and how voting works, if it is ready on the day."
+        "body": "A walkable 3D booth fair where each visitor signs in with Google (or a Tuturuuu work account) and casts one vote, with live results for organisers.",
+        "try": "walking the hall and visiting the booths."
       },
       "fleet": {
         "title": "The agent team behind it",
@@ -461,18 +461,19 @@
     }
   },
   "booth": {
-    "title": "Booth hall preview",
-    "subtitle": "A first look at the EduFest booth game: walk the hall, pick a booth and cast one vote.",
+    "title": "Try the booth hall",
+    "subtitle": "Walk the hall, pick a booth and cast a practice vote.",
     "hallLabel": "Booth hall",
     "boothLabel": "Booth",
     "entrance": "Hall entrance",
     "panelTitle": "Your vote",
     "choose": "Choose a booth in the hall.",
-    "chosen": "{booth} selected. Cast your vote when you are sure.",
-    "castButton": "Cast my vote",
-    "cast": "Your vote for {booth} is in. Each visitor gets one vote.",
-    "reset": "Reset preview",
-    "signIn": "On the day, visitors sign in with Google (or a Tuturuuu work account) before voting.",
-    "note": "Preview only: the game is not public yet, and these booths are placeholders."
+    "chosen": "{booth} selected. Cast a practice vote when you are sure.",
+    "castButton": "Cast a practice vote",
+    "cast": "Practice vote for {booth}: it is not counted. Cast your real vote in the booth hall.",
+    "reset": "Start over",
+    "signIn": "Visitors sign in with Google (or a Tuturuuu work account) before voting.",
+    "note": "The booths here are placeholders; the real hall is open now.",
+    "open": "Open the booth hall"
   }
 }

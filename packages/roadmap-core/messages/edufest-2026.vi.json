@@ -329,8 +329,8 @@
       },
       "booth": {
         "title": "Trò chơi gian hàng EduFest",
-        "body": "Bản xem trước của hội chợ gian hàng 3D có thể đi dạo, mỗi khách đăng nhập bằng Google (hoặc tài khoản công việc Tuturuuu) và bỏ một phiếu, ban tổ chức xem kết quả trực tiếp.",
-        "try": "xem trước hội chợ và cách bỏ phiếu, nếu đã sẵn sàng vào ngày diễn ra."
+        "body": "Hội chợ gian hàng 3D có thể đi dạo, mỗi khách đăng nhập bằng Google (hoặc tài khoản công việc Tuturuuu) và bỏ một phiếu, ban tổ chức xem kết quả trực tiếp.",
+        "try": "dạo quanh sảnh và ghé thăm các gian hàng."
       },
       "fleet": {
         "title": "Đội AI Agent phía sau",
@@ -461,18 +461,19 @@
     }
   },
   "booth": {
-    "title": "Xem trước sảnh gian hàng",
-    "subtitle": "Cái nhìn đầu tiên về trò chơi gian hàng EduFest: dạo quanh sảnh, chọn một gian hàng và bỏ một phiếu.",
+    "title": "Thử sảnh gian hàng",
+    "subtitle": "Dạo quanh sảnh, chọn một gian hàng và bỏ một phiếu thử.",
     "hallLabel": "Sảnh gian hàng",
     "boothLabel": "Gian",
     "entrance": "Lối vào sảnh",
     "panelTitle": "Phiếu của bạn",
     "choose": "Chọn một gian hàng trong sảnh.",
-    "chosen": "Đã chọn {booth}. Bỏ phiếu khi bạn chắc chắn.",
-    "castButton": "Bỏ phiếu",
-    "cast": "Phiếu của bạn cho {booth} đã được ghi nhận. Mỗi khách có một phiếu.",
-    "reset": "Đặt lại bản xem trước",
-    "signIn": "Vào ngày diễn ra, khách đăng nhập bằng Google (hoặc tài khoản công việc Tuturuuu) trước khi bỏ phiếu.",
-    "note": "Chỉ là bản xem trước: trò chơi chưa công khai và các gian hàng ở đây chỉ để minh hoạ."
+    "chosen": "Đã chọn {booth}. Bỏ phiếu thử khi bạn chắc chắn.",
+    "castButton": "Bỏ phiếu thử",
+    "cast": "Phiếu thử cho {booth}: phiếu này không được tính. Hãy bỏ phiếu thật trong sảnh gian hàng.",
+    "reset": "Làm lại",
+    "signIn": "Khách đăng nhập bằng Google (hoặc tài khoản công việc Tuturuuu) trước khi bỏ phiếu.",
+    "note": "Các gian hàng ở đây chỉ để minh hoạ; sảnh thật đã mở.",
+    "open": "Vào sảnh gian hàng"
   }
 }
