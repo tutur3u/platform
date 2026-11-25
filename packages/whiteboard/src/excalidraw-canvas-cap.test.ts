@@ -14,7 +14,8 @@ import { describe, expect, it } from 'vitest';
  * - a cached canvas is rebuilt only when its effective scale changes, and the
  *   scale is recomputed only when the zoom changes;
  * - a frame draws cached canvases worth at most 64 viewports of visible
- *   area, topmost first, charging each element what it draws.
+ *   area, topmost first, charging each element its padded canvas as drawn,
+ *   rotated.
  * These tests run that code from each build the app loads, at a device pixel
  * ratio of two (the server's guest budget measures at three). After an
  * upgrade the chunk names change and these tests fail: re-apply the patch and
@@ -177,12 +178,14 @@ function load({ file, sizing, cache, names }: Build) {
 }
 
 type Box = [number, number, number, number];
+type Point = [number, number];
 /** What the frame budget reads of an element, set directly by each test. */
 type Item = {
-  /** Rotated bounds, as getElementBounds returns them. */
-  bounds: Box;
-  /** Unrotated coordinates; the bounds when not given. */
-  coords?: Box;
+  /** Unrotated absolute coordinates, as getElementAbsoluteCoords gives. */
+  coords: Box;
+  /** Rotated bounds, as getElementBounds gives; the coords when not set. */
+  bounds?: Box;
+  angle?: number;
   /** Canvas padding in device pixels; 20 when not given. */
   padding?: number;
   text?: Item;
@@ -196,14 +199,47 @@ type Skip = (
   isExporting: boolean
 ) => Set<Item>;
 
+// Earlier patches read `bounds`; this one reads `coords` and `angle`.
 const measure = (dpr: number) => ({
-  bounds: (item: Item) => item.bounds,
-  coords: (item: Item) => item.coords ?? item.bounds,
+  bounds: (item: Item) => item.bounds ?? item.coords,
+  coords: (item: Item) => item.coords,
+  angle: (item: Item) => item.angle ?? 0,
   padding: (item: Item) => item.padding ?? 20,
   boundText: (item: Item) => item.text ?? null,
   isArrow: (item: Item) => item.arrow === true,
   dpr,
 });
+
+const boxOf = (points: readonly Point[]): Box => [
+  Math.min(...points.map(([x]) => x)),
+  Math.min(...points.map(([, y]) => y)),
+  Math.max(...points.map(([x]) => x)),
+  Math.max(...points.map(([, y]) => y)),
+];
+
+/**
+ * An element drawn through `points` at `angle`. Its coords are the points'
+ * box; its bounds are the points rotated about that box's centre, as
+ * Excalidraw computes them for lines, strokes and diamonds.
+ */
+function rotated(
+  points: readonly Point[],
+  angle: number,
+  padding?: number
+): Item {
+  const coords = boxOf(points);
+  const cx = (coords[0] + coords[2]) / 2;
+  const cy = (coords[1] + coords[3]) / 2;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const turned = points.map(
+    ([x, y]): Point => [
+      cx + (x - cx) * cos - (y - cy) * sin,
+      cy + (x - cx) * sin + (y - cy) * cos,
+    ]
+  );
+  return { coords, bounds: boxOf(turned), angle, padding };
+}
 
 /** The frame's area budget the patch appends to `file`. */
 function overAreaBudget(file: string): Skip {
@@ -226,7 +262,11 @@ const view = (zoom: number, width = 1920, height = 1080, scroll = 0) => ({
   scrollY: scroll,
 });
 
-/** Viewports `items` draw in `at`: padded bounds clipped to the view. */
+/**
+ * Viewports `items` draw in `at`: each cached canvas (coords grown by the
+ * padding, rotated about its centre) by its bounding box, clipped to the
+ * view.
+ */
 function viewports(items: readonly Item[], at: View, dpr: number) {
   const left = -at.scrollX;
   const top = -at.scrollY;
@@ -235,9 +275,17 @@ function viewports(items: readonly Item[], at: View, dpr: number) {
   const area = (right - left) * (bottom - top);
   return items.reduce((sum, item) => {
     const pad = (item.padding ?? 20) / dpr;
-    const [x1, y1, x2, y2] = item.bounds;
-    const w = Math.min(x2 + pad, right) - Math.max(x1 - pad, left);
-    const h = Math.min(y2 + pad, bottom) - Math.max(y1 - pad, top);
+    const [x1, y1, x2, y2] = item.coords;
+    const cos = Math.abs(Math.cos(item.angle ?? 0));
+    const sin = Math.abs(Math.sin(item.angle ?? 0));
+    const halfW = (x2 - x1) / 2 + pad;
+    const halfH = (y2 - y1) / 2 + pad;
+    const spanX = halfW * cos + halfH * sin;
+    const spanY = halfW * sin + halfH * cos;
+    const cx = (x1 + x2) / 2;
+    const cy = (y1 + y2) / 2;
+    const w = Math.min(cx + spanX, right) - Math.max(cx - spanX, left);
+    const h = Math.min(cy + spanY, bottom) - Math.max(cy - spanY, top);
     return w > 0 && h > 0 ? sum + (w * h) / area : sum;
   }, 0);
 }
@@ -327,7 +375,7 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     it('charges zero-size shapes their padded canvas', () => {
       // At 30x and DPR 3 each draws a 40 px canvas: 13.3 units a side.
       const at = view(30);
-      const items = stack(40_000, { bounds: [5, 5, 5, 5] });
+      const items = stack(40_000, { coords: [5, 5, 5, 5] });
       const shown = drawn(items, at, 3);
       bounded(items, shown, at, 3);
       expect(viewports(shown, at, 3)).toBeGreaterThan(BUDGET - 1);
@@ -336,25 +384,73 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     it('charges a one-point freehand stroke its 12-stroke padding', () => {
       // Width 16 pads 192 device pixels: a 128-unit square at DPR 3.
       const at = view(30);
-      const items = stack(455, { bounds: [10, 10, 10, 10], padding: 192 });
+      const items = stack(455, { coords: [10, 10, 10, 10], padding: 192 });
       expect(drawn(items, at, 3)).toEqual(items.slice(-BUDGET));
     });
 
-    it('charges a rotated strip by its rotated bounds', () => {
-      // Unrotated it sits off the view; rotated, it covers it.
+    it('charges a strip whose unrotated box is off the view', () => {
+      // Centred below the view, turned 45 degrees across it.
       const at = view(30);
-      const items = stack(1400, {
-        bounds: [0, 0, 64, 36],
-        coords: [1000, 1000, 1001, 1100],
-      });
+      const strip = (): Item =>
+        rotated(
+          [
+            [-568, 300],
+            [632, 300],
+          ],
+          Math.PI / 4
+        );
+      const items = Array.from({ length: 1400 }, strip);
       expect(drawn(items, at)).toEqual(items.slice(-BUDGET));
+    });
+
+    // Real rotated geometry: Excalidraw's bounds follow the rotated points,
+    // but it draws the whole padded canvas, rotated.
+    const diagonal = (length: number, padding: number) => (): Item =>
+      rotated(
+        [
+          [0, 0],
+          [length, length],
+        ],
+        Math.PI / 4,
+        padding
+      );
+
+    it.each([
+      ['freehand stroke of width 0.5', 6],
+      ['line', 20],
+    ])('charges a 45-degree diagonal %s its rotated canvas', (_, padding) => {
+      // 434 strokes of length 127 at 10x and DPR 3.
+      const at = view(10);
+      const items = Array.from({ length: 434 }, diagonal(127, padding));
+      const shown = drawn(items, at, 3);
+      bounded(items, shown, at, 3);
+      expect(viewports(shown, at, 3)).toBeGreaterThan(BUDGET - 1);
+    });
+
+    it('charges a 45-degree diamond its rotated canvas', () => {
+      const at = view(5);
+      const diamond = (): Item =>
+        rotated(
+          [
+            [50, 0],
+            [100, 50],
+            [50, 100],
+            [0, 50],
+          ],
+          Math.PI / 4
+        );
+      // The canvas is the 100-unit box, wider than the rotated corners.
+      const items = Array.from({ length: 400 }, diamond);
+      const shown = drawn(items, at);
+      bounded(items, shown, at, 2);
+      expect(viewports(shown, at, 2)).toBeGreaterThan(BUDGET - 1);
     });
 
     it('adds bound text to its container, even an empty one', () => {
       const at = view(30);
       const items = stack(500, {
-        bounds: [0, 0, 0, 0],
-        text: { bounds: [0, 0, 64, 36], padding: 10 },
+        coords: [0, 0, 0, 0],
+        text: { coords: [0, 0, 64, 36], padding: 10 },
       });
       const shown = drawn(items, at);
       expect(shown).toEqual(items.slice(-shown.length));
@@ -365,32 +461,32 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
       // A flat arrow's label canvas is a square of its length.
       const at = view(1);
       const arrow: Item = {
-        bounds: [0, 0, 16_000, 0],
+        coords: [0, 0, 16_000, 0],
         arrow: true,
-        text: { bounds: [7990, -10, 8010, 10] },
+        text: { coords: [7990, -10, 8010, 10] },
       };
       const items = stack(100, arrow);
       expect(drawn(items, at).length).toBeLessThanOrEqual(BUDGET);
       // Unlabelled, the same arrows draw a thin strip and all fit.
-      const plain = stack(100, { bounds: [0, 0, 16_000, 0] });
+      const plain = stack(100, { coords: [0, 0, 16_000, 0] });
       expect(drawn(plain, at)).toHaveLength(100);
     });
 
     it('bounds 20,000 tiny shapes at 30x and draws them all at 1x', () => {
-      const tiny = stack(20_000, { bounds: [10, 10, 11, 11] });
+      const tiny = stack(20_000, { coords: [10, 10, 11, 11] });
       const at = view(30);
       bounded(tiny, drawn(tiny, at), at, 2);
       // Spread over the view at 1x they cost little: all draw.
       const spread = Array.from({ length: 20_000 }, (_, i): Item => {
         const x = (i % 200) * 9;
         const y = Math.floor(i / 200) * 10;
-        return { bounds: [x, y, x + 1, y + 1] };
+        return { coords: [x, y, x + 1, y + 1] };
       });
       expect(drawn(spread, view(1))).toHaveLength(20_000);
     });
 
     it('charges every element at least 1/2000 of a viewport', () => {
-      const away = stack(130_000, { bounds: [9e6, 9e6, 9e6 + 1, 9e6 + 1] });
+      const away = stack(130_000, { coords: [9e6, 9e6, 9e6 + 1, 9e6 + 1] });
       const shown = drawn(away, view(1)).length;
       expect(shown).toBeLessThanOrEqual(128_000);
       expect(shown).toBeGreaterThan(127_990);
@@ -399,14 +495,14 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     it('draws the 64 topmost of 1,000 view-covering boxes at 3x', () => {
       const items = Array.from(
         { length: 1000 },
-        (_, i): Item => ({ bounds: [-i, -i, 1000, 1000] })
+        (_, i): Item => ({ coords: [-i, -i, 1000, 1000] })
       );
       expect(drawn(items, view(3))).toEqual(items.slice(-BUDGET));
     });
 
     it('bounds 6,700 stacked just-under-half boxes at 30x', () => {
       const at = view(30);
-      const items = stack(6700, { bounds: [0, 0, 44.8, 25.2] });
+      const items = stack(6700, { coords: [0, 0, 44.8, 25.2] });
       bounded(items, drawn(items, at), at, 2);
     });
 
@@ -416,12 +512,12 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     const lines = (count: number) =>
       Array.from(
         { length: count },
-        (_, i): Item => ({ bounds: [i * 8, 0, i * 8 + 400, 400] })
+        (_, i): Item => ({ coords: [i * 8, 0, i * 8 + 400, 400] })
       );
     const strokes = (count: number) =>
       Array.from(
         { length: count },
-        (_, i): Item => ({ bounds: [0, i * 2, 400, 400 + i * 2], padding: 24 })
+        (_, i): Item => ({ coords: [0, i * 2, 400, 400 + i * 2], padding: 24 })
       );
 
     it('draws 80-line and 80-stroke boards completely at 2x', () => {
@@ -431,7 +527,10 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
       }
     });
 
-    it('skips the oldest strokes past the cliff, about 112 at 2x', () => {
+    // This cliff is the model's bound. In the reviewer's run, real
+    // Excalidraw at 2x drew 112, 113 and 120 stacked strokes at 52 to 56
+    // viewports, since the real canvases differ from these boxes.
+    it('skips the oldest strokes past the modelled cliff at 2x', () => {
       const items = strokes(120);
       const shown = drawn(items, board);
       expect(shown).toEqual(items.slice(-shown.length));
@@ -441,9 +540,9 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
 
     it('charges small elements a little; they draw until it is spent', () => {
       const at = view(1);
-      const small = stack(1000, { bounds: [0, 0, 10, 10] });
+      const small = stack(1000, { coords: [0, 0, 10, 10] });
       const cover = (count: number) =>
-        stack(count, { bounds: [0, 0, 1920, 1080] });
+        stack(count, { coords: [0, 0, 1920, 1080] });
       expect(drawn([...small, ...cover(63)], at)).toHaveLength(1063);
       // The 65th covering box passes the budget; everything older is skipped.
       expect(drawn([...small, ...cover(65)], at)).toHaveLength(BUDGET);
@@ -451,13 +550,13 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
 
     it('counts an unmeasurable element as the whole budget', () => {
       const at = view(1);
-      const below = stack(10, { bounds: [0, 0, 10, 10] });
-      const broken: Item = { bounds: [0, 0, Number.NaN, 10] };
+      const below = stack(10, { coords: [0, 0, 10, 10] });
+      const broken: Item = { coords: [0, 0, Number.NaN, 10] };
       expect(drawn([...below, broken], at)).toEqual([]);
     });
 
     it('skips nothing in an export', () => {
-      const covering = stack(1000, { bounds: [0, 0, 1000, 1000] });
+      const covering = stack(1000, { coords: [0, 0, 1000, 1000] });
       expect(skip(covering, view(10), 2, true).size).toBe(0);
     });
 
@@ -468,8 +567,8 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
       expect(calls).toBe(2);
       expect(text).toContain(
         build.build === 'dev'
-          ? 'bounds: (el) => getElementBounds(el, elementsMap),'
-          : '{bounds:E=>Ke(E,n),coords:E=>C(E,n),padding:ri,'
+          ? 'angle: (el) => el.angle,'
+          : '{angle:E=>E.angle,coords:E=>C(E,n),padding:ri,'
       );
       expect(text).toContain(
         build.build === 'dev'
