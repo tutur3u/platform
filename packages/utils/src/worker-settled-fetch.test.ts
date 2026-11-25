@@ -211,12 +211,9 @@ describe('withSettledResponse', () => {
 
   it('answers 500 quickly when the fetch rejects, without logging detail', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { response, body, elapsed } = await settle(
-      async () => {
-        throw new Error('secret token abc123');
-      },
-      new Request('https://app.test/en')
-    );
+    const { response, body, elapsed } = await settle(async () => {
+      throw new Error('secret token abc123');
+    }, new Request('https://app.test/en'));
     expect(response.status).toBe(500);
     expect(body).toEqual({ text: 'Internal Server Error' });
     expect(elapsed).toBeLessThan(FAST);
@@ -225,12 +222,9 @@ describe('withSettledResponse', () => {
 
   it('answers 500 when the fetch throws synchronously', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { response } = await settle(
-      () => {
-        throw new Error('sync');
-      },
-      new Request('https://app.test/en')
-    );
+    const { response } = await settle(() => {
+      throw new Error('sync');
+    }, new Request('https://app.test/en'));
     expect(response.status).toBe(500);
   });
 

@@ -1,10 +1,7 @@
 // @vitest-environment node
 import { withSettledResponse } from '@tuturuuu/utils/worker-settled-fetch';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  isUnroutableLettinPath,
-  lettinHeadersTimeoutMs,
-} from './request-gate';
+import { isUnroutableLettinPath, lettinHeadersTimeoutMs } from './request-gate';
 
 describe('isUnroutableLettinPath', () => {
   it.each([
@@ -85,18 +82,24 @@ describe('Lettin Worker entry', () => {
   it.each([
     ['POST', 'https://lettin.tuturuuu.com/getcfg.php'],
     ['GET', 'https://lettin.tuturuuu.com/index.php/%0Atest'],
-  ])('answers scanner %s %s with a fast 404 outside the bridge', async (method, url) => {
-    const started = performance.now();
-    const response = await fetch(
-      new Request(url, method === 'POST' ? { method, body: 'a=b' } : { method }),
-      {},
-      ctx
-    );
-    expect(response.status).toBe(404);
-    expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(performance.now() - started).toBeLessThan(100);
-    expect(nextFetch).not.toHaveBeenCalled();
-  });
+  ])(
+    'answers scanner %s %s with a fast 404 outside the bridge',
+    async (method, url) => {
+      const started = performance.now();
+      const response = await fetch(
+        new Request(
+          url,
+          method === 'POST' ? { method, body: 'a=b' } : { method }
+        ),
+        {},
+        ctx
+      );
+      expect(response.status).toBe(404);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(performance.now() - started).toBeLessThan(100);
+      expect(nextFetch).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(['/apix.php', '/en/notes.txt', '/API/v1/x.php'])(
     'answers non-forwarded dotted %s with 404 outside the bridge',

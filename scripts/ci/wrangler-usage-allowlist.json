@@ -1219,10 +1219,10 @@
       "uses": 2,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8361 disabled public Worker development origins (workers_dev/preview_urls false); config content only."
+        "decision": "https://github.com/tutur3u/platform/commit/634de3a086c40f32c2f58d0d7c08660dcc0762cc",
+        "reason": "Lettin's Worker main moves from .open-next/worker.js to cloudflare/worker.ts, which wraps the OpenNext Worker to fence unroutable requests and backstop pending responses; config content only. Wrangler line and use counts stay 2/2 and the opennext-adapter gap is unchanged."
       },
-      "digest": "dbc358b6220131da89f722215f22be6661759b1176b954d0186830775dca1bec"
+      "digest": "03b8e8b7e7cc659ae84e8841a1111fbcb6115a8748a7a5ead110ae259e7d714e"
     },
     "apps/mail/cloudflare/acceptance/run.mjs": {
       "lines": 2,
