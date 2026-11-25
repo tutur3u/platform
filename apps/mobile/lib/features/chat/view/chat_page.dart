@@ -105,18 +105,19 @@ class _ChatPageState extends State<_ChatActorHost> {
                   current.selectedConversationId ||
               (current.error != null && previous.error != current.error),
           listener: (context, state) {
-            // Action failures surface once as a localized toast. Full-page
-            // and thread-load errors already show inline, so they are not
-            // repeated; dismissing lets an identical later failure show.
-            if (state.error != null &&
-                state.conversations.isNotEmpty &&
-                state.status != ChatStatus.error &&
-                state.messageStatus != ChatMessageStatus.error) {
-              showAppToast(
-                context,
-                message: context.l10n.chatActionFailed,
-                variant: AppAlertVariant.destructive,
-              );
+            // Action failures surface once as a localized toast, even over
+            // an empty list. A full-page error shows inline and keeps its
+            // text; a thread-load error shows its own localized copy. Every
+            // other error is dismissed once handled, so an identical later
+            // failure is reported again.
+            if (state.error != null && state.status != ChatStatus.error) {
+              if (state.messageStatus != ChatMessageStatus.error) {
+                showAppToast(
+                  context,
+                  message: context.l10n.chatActionFailed,
+                  variant: AppAlertVariant.destructive,
+                );
+              }
               _chatCubit.dismissError();
             }
             final selectedId = state.selectedConversationId;

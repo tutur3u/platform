@@ -15,6 +15,17 @@ bool isPendingChatMessage(String wsId, String messageId) =>
     );
 
 extension ChatCubitMessageMerge on ChatCubit {
+  List<ChatConversation> _sortConversations(
+    List<ChatConversation> conversations,
+  ) {
+    return <String, ChatConversation>{
+      for (final conversation in conversations) conversation.id: conversation,
+    }.values.toList()..sort((left, right) {
+      if (left.isPinned != right.isPinned) return left.isPinned ? -1 : 1;
+      return right.updatedAt.compareTo(left.updatedAt);
+    });
+  }
+
   ChatMessage? _findMessage(String conversationId, String messageId) {
     for (final message
         in state.messages[conversationId] ?? const <ChatMessage>[]) {

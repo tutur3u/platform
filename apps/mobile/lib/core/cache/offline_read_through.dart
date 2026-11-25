@@ -109,7 +109,9 @@ Future<({Map<String, dynamic> data, bool fromCache})> readThroughJsonResult({
   checkScope();
   return (
     data: result.data ?? const <String, dynamic>{},
-    fromCache: result.isFromCache,
+    // A read invalidated mid-flight returns no value; it reached no fresh
+    // payload, so it must not count as a network read.
+    fromCache: result.isFromCache || !result.hasValue,
   );
 }
 

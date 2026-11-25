@@ -245,6 +245,7 @@ class ChatCubit extends Cubit<ChatState> {
           forceRefresh: true,
           fresh: fresh,
           quietly: quietly,
+          reportFailure: reportFailure,
         );
       } else {
         _syncConversationRoom();
@@ -311,6 +312,7 @@ class ChatCubit extends Cubit<ChatState> {
     bool forceRefresh = false,
     bool fresh = false,
     bool quietly = false,
+    bool reportFailure = false,
   }) async {
     final wsId = state.wsId;
     if (wsId == null || conversationId.isEmpty) return;
@@ -319,7 +321,12 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     try {
-      await _selectConversation(conversationId, fresh: fresh, quietly: quietly);
+      await _selectConversation(
+        conversationId,
+        fresh: fresh,
+        quietly: quietly,
+        reportFailure: reportFailure,
+      );
     } finally {
       _syncConversationRoom();
     }
@@ -329,6 +336,7 @@ class ChatCubit extends Cubit<ChatState> {
     String conversationId, {
     required bool fresh,
     required bool quietly,
+    bool reportFailure = false,
   }) async {
     final wsId = state.wsId;
     if (wsId == null) return;
@@ -432,8 +440,14 @@ class ChatCubit extends Cubit<ChatState> {
             error: _displayError(error, 'thread load'),
           ),
         );
+      } else if (quietly && reportFailure && _scopeActive) {
+        // Pull to refresh reports a failed thread page as a toast.
+        emit(state.copyWith(error: _failureNote(error, 'thread refresh')));
       } else {
-        _failureNote(error, 'quiet thread load');
+        _failureNote(
+          error,
+          quietly ? 'quiet thread load' : 'superseded thread load',
+        );
       }
     }
   }
@@ -653,17 +667,6 @@ class ChatCubit extends Cubit<ChatState> {
     // Opening Chat starts at the conversation list. Only an explicit deep
     // link or a user selection opens a thread.
     return null;
-  }
-
-  List<ChatConversation> _sortConversations(
-    List<ChatConversation> conversations,
-  ) {
-    return <String, ChatConversation>{
-      for (final conversation in conversations) conversation.id: conversation,
-    }.values.toList()..sort((left, right) {
-      if (left.isPinned != right.isPinned) return left.isPinned ? -1 : 1;
-      return right.updatedAt.compareTo(left.updatedAt);
-    });
   }
 
   @override

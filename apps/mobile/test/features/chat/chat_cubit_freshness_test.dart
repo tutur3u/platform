@@ -84,6 +84,30 @@ void main() {
     expect(ids(), hasLength(3));
   });
 
+  test('a failed thread page during a pull is reported', () async {
+    serve(() => fixtureRange(1, 3));
+    await harness.open();
+    harness.repository.onListMessages = (conversationId, before) =>
+        Future.error(StateError('offline'));
+
+    await cubitOf().refresh(quietly: true, fresh: true, reportFailure: true);
+
+    expect(cubitOf().state.error, isNotNull);
+    expect(cubitOf().state.messageStatus, ChatMessageStatus.loaded);
+    expect(ids(), hasLength(3));
+  });
+
+  test('a quiet refresh without a pull still fails silently', () async {
+    serve(() => fixtureRange(1, 3));
+    await harness.open();
+    harness.repository.onListMessages = (conversationId, before) =>
+        Future.error(StateError('offline'));
+
+    await cubitOf().refresh(quietly: true, fresh: true);
+
+    expect(cubitOf().state.error, isNull);
+  });
+
   test('a first open from the network is not fetched twice', () async {
     serve(() => fixtureRange(1, 3));
     await harness.open();

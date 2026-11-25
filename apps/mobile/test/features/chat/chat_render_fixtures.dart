@@ -186,10 +186,22 @@ abstract final class ChatFixtures {
 
 /// Serves [ChatFixtures] without the network.
 class ChatFixtureRepository extends ChatRepository {
-  ChatFixtureRepository(ChatFixtureApi api, {this.failConversations = false})
-    : super(apiClient: api);
+  ChatFixtureRepository(
+    ChatFixtureApi api, {
+    this.failConversations = false,
+    this.conversations,
+  }) : super(apiClient: api);
 
   final bool failConversations;
+
+  /// Conversations to serve instead of [ChatFixtures.conversations].
+  final List<ChatConversation>? conversations;
+
+  /// Forced (server) conversation loads, as pull to refresh makes.
+  int forcedConversationLoads = 0;
+
+  /// Fails forced conversation loads, as a pull to refresh while offline.
+  bool failForcedLoads = false;
 
   @override
   Future<ChatConversationPage> listConversations(
@@ -199,10 +211,13 @@ class ChatFixtureRepository extends ChatRepository {
     int offset = 0,
     bool forceRefresh = false,
   }) async {
-    if (failConversations) {
+    if (forceRefresh) forcedConversationLoads++;
+    if (failConversations || (forceRefresh && failForcedLoads)) {
       throw const ApiException(message: 'Network unavailable', statusCode: 0);
     }
-    return ChatConversationPage(conversations: ChatFixtures.conversations());
+    return ChatConversationPage(
+      conversations: conversations ?? ChatFixtures.conversations(),
+    );
   }
 
   @override

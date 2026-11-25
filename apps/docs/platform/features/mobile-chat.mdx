@@ -65,7 +65,9 @@ fetched across a replacing refresh is discarded. Opening a conversation may
 show its cached page; when it does, and the thread has not come from the
 network in the last ten seconds, it is revalidated in the background through
 the same merge. Pull to refresh is a fresh quiet refresh: it merges rather than
-replacing the thread and reports a failure as a toast.
+replacing the thread and reports a failure (of the list or of the open
+thread's page) as a toast, even over an empty list; each later identical
+failure is reported again.
 Realtime `message.created` appends; edits, deletions and reaction updates patch
 a loaded message in place and leave the conversation list order alone.
 
@@ -91,8 +93,8 @@ Regression coverage: `chat_conversation_layout_test.dart`,
 `chat_thread_items_test.dart`, `chat_surface_width_test.dart`,
 `chat_cubit_history_test.dart`, `chat_cubit_message_actions_test.dart`,
 `chat_cubit_sync_test.dart`, `chat_cubit_fetch_range_test.dart`,
-`chat_cubit_range_generation_test.dart`, `chat_cubit_freshness_test.dart` and
-the
+`chat_cubit_range_generation_test.dart`, `chat_cubit_freshness_test.dart`,
+`chat_pull_refresh_test.dart` and the
 `chat_page_render_test.dart` design renders (phone, tablet and desktop in
 light and dark) in `apps/mobile/test/features/chat`.
 
