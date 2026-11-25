@@ -14,8 +14,8 @@ export function endMeetRoom(
 ) {
   // Room Mira state names the acceptor and keys every choice by account id.
   // A room that has ended cannot run Mira, so it keeps none of it; the durable
-  // evidence in the database is what remains. Private notes shared with a
-  // person's own Private Mira never outlive the meeting either.
+  // evidence in the database is what remains. Tutor chat shared with a
+  // person's own Private Mira never outlives the meeting either.
   const {
     miraRoom: _miraRoom,
     miraShares: _miraShares,

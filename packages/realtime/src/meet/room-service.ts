@@ -79,7 +79,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
   whiteboard?: RoomWhiteboard;
   breakouts?: RoomBreakouts;
   miraPrivate?: MiraPrivateState;
-  /** Per-person, owner-only shares of private notes with Private Mira. */
+  /** Per-person, owner-only shares of tutor chat with Private Mira. */
   miraShares?: MiraShareState;
   /** Shared tutor chat for the next storage write; stripped before persist. */
   miraSharePending?: MiraSharePending;

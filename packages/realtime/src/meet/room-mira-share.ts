@@ -188,11 +188,13 @@ export function withMiraShareStatus<
   )
     return result;
   const account = token.accountId ?? token.userId;
+  const active = activeMiraShare(result.state, token, account);
   return {
     ...result,
     body: {
       ...result.body,
-      shared: !!activeMiraShare(result.state, token, account),
+      shared: !!active,
+      ...(active ? { sharedAt: active.updatedAt } : {}),
     },
   };
 }
@@ -226,9 +228,12 @@ export function applyMiraShare(
   });
   const liveServer = token.scopes.includes('meet:live-server');
   const active = activeMiraShare(state, token, account);
+  // `sharedAt` lets the server refuse a grant older than the owner's
+  // latest Mira confirmation.
   const view = (grant: MiraShareGrant | null) => ({
     enabled: !!grant,
     revision: state.miraShares?.[account]?.revision ?? 0,
+    ...(grant ? { sharedAt: grant.updatedAt } : {}),
   });
 
   if (message.action === 'mira.share.private.read') {

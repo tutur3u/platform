@@ -10,12 +10,15 @@ import { endMeetRoom } from './room-ending';
 import { MIRA_PRIVATE_NOTICE_VERSION as version } from './room-mira-private';
 import {
   applyMiraShare,
-  authorizeMiraSharePrivateRead,
   MIRA_SHARE_CONTEXT_TTL_MS,
   MIRA_SHARE_MAX_CONTEXT_BYTES,
   MIRA_SHARE_TOTAL_CONTEXT_BYTES,
   nextMiraShareExpiry,
 } from './room-mira-share';
+import {
+  MiraShareStorage,
+  readSharedTutorChat,
+} from './room-mira-share-storage';
 import { roomService, type RoomServiceState } from './room-service';
 
 const owner = '00000000-0000-4000-8000-000000000001';
@@ -52,22 +55,28 @@ const tutor = [
 const read = { action: 'mira.share.private.read', sessionId };
 
 /**
- * The room Durable Object's answer to a Private Mira read, with the queued
- * text standing in for its storage key (see mira-share-storage.ts).
+ * The room Durable Object's real read path: queued text is flushed to an
+ * in-memory key store, then read back the way the room serves it.
  */
-function privateRead(
+async function privateRead(
   state: RoomServiceState,
   token = privateMira,
   input: unknown = read
 ) {
-  const result = authorizeMiraSharePrivateRead(state, token, input);
-  if ('status' in result) return { status: result.status, body: result.body };
-  const text = state.miraSharePending?.[result.account];
-  const current =
-    !!text &&
-    text.revision === result.grant.revision &&
-    text.updatedAt === result.grant.context?.updatedAt;
-  return { status: undefined, body: { tutor: current ? text.tutor : [] } };
+  const values = new Map<string, unknown>();
+  const storage = {
+    get: async <T>(key: string) => values.get(key) as T | undefined,
+    put: async (key: string, value: unknown) => {
+      values.set(key, structuredClone(value));
+    },
+    delete: async (keys: string[]) => {
+      for (const key of keys) values.delete(key);
+    },
+  };
+  const flushed = new MiraShareStorage(() => storage).flush(state);
+  const result = await readSharedTutorChat(storage, flushed, token, input);
+  if (!result) throw new Error('Expected a shared tutor chat read');
+  return result;
 }
 const expiredContext = () => ({
   updatedAt: Date.now() - MIRA_SHARE_CONTEXT_TTL_MS - 1,
@@ -107,38 +116,40 @@ function shared() {
   return state;
 }
 
-it('starts off and lets no Mira session read before the owner shares', () => {
+it('starts off and lets no Mira session read before the owner shares', async () => {
   const state = room();
   expect(
     roomService(state, ownerToken, { action: 'mira.share.read' }).body
   ).toEqual({ enabled: false, revision: 0 });
-  expect(privateRead(state).status).toBe(403);
+  expect((await privateRead(state)).status).toBe(403);
   expect(
     roomService(state, ownerToken, { action: 'mira.share.context', tutor })
       .status
   ).toBe(403);
 });
 
-it('lets the owner share with their own registered Private Mira session', () => {
+it('lets the owner share with their own registered Private Mira session', async () => {
   const state = shared();
   expect(
     roomService(state, ownerToken, { action: 'mira.share.read' }).body
   ).toEqual({ enabled: true, revision: 1 });
-  expect(privateRead(state).body).toEqual({ tutor });
+  expect((await privateRead(state)).body).toMatchObject({ tutor });
 });
 
-it('never lets Room Mira or an unregistered session read private data', () => {
+it('never lets Room Mira or an unregistered session read private data', async () => {
   const state = shared();
-  expect(privateRead(state, roomMira).status).toBe(403);
+  expect((await privateRead(state, roomMira)).status).toBe(403);
   expect(
-    privateRead(state, privateMira, {
-      action: 'mira.share.private.read',
-      sessionId: otherSession,
-    }).status
+    (
+      await privateRead(state, privateMira, {
+        action: 'mira.share.private.read',
+        sessionId: otherSession,
+      })
+    ).status
   ).toBe(403);
 });
 
-it('keeps each grant to its owner: a host can neither grant nor read it', () => {
+it('keeps each grant to its owner: a host can neither grant nor read it', async () => {
   const state = room();
   expect(
     roomService(state, host, {
@@ -152,7 +163,7 @@ it('keeps each grant to its owner: a host can neither grant nor read it', () => 
     enabled: true,
   }).state;
   expect(hostShared.miraShares?.[owner]).toBeUndefined();
-  expect(privateRead(hostShared).status).toBe(403);
+  expect((await privateRead(hostShared)).status).toBe(403);
 
   const ownerShared = shared();
   const hostMira = person(other, {
@@ -161,12 +172,14 @@ it('keeps each grant to its owner: a host can neither grant nor read it', () => 
   });
   // The host's own Private Mira reads only the host's grant, which is off.
   expect(
-    privateRead(ownerShared, hostMira, {
-      action: 'mira.share.private.read',
-      sessionId: otherSession,
-    }).status
+    (
+      await privateRead(ownerShared, hostMira, {
+        action: 'mira.share.private.read',
+        sessionId: otherSession,
+      })
+    ).status
   ).toBe(403);
-  expect(privateRead(ownerShared, hostMira).status).toBe(403);
+  expect((await privateRead(ownerShared, hostMira)).status).toBe(403);
 });
 
 it('refuses Mira itself and guests when they try to change a grant', () => {
@@ -184,7 +197,7 @@ it('refuses Mira itself and guests when they try to change a grant', () => {
   ).toBe(403);
 });
 
-it('takes effect immediately on revoke and drops the shared context', () => {
+it('takes effect immediately on revoke and drops the shared context', async () => {
   const revoked = roomService(shared(), ownerToken, {
     action: 'mira.share.set',
     enabled: false,
@@ -195,7 +208,7 @@ it('takes effect immediately on revoke and drops the shared context', () => {
     sessions: [sessionId],
   });
   expect(revoked.state.miraShares?.[owner]?.context).toBeUndefined();
-  expect(privateRead(revoked.state).status).toBe(403);
+  expect((await privateRead(revoked.state)).status).toBe(403);
   expect(
     roomService(revoked.state, ownerToken, {
       action: 'mira.share.context',
@@ -204,7 +217,7 @@ it('takes effect immediately on revoke and drops the shared context', () => {
   ).toBe(403);
 });
 
-it('ends with a changed Private Mira choice and does not revive on return', () => {
+it('ends with a changed Private Mira choice and does not revive on return', async () => {
   let state = roomService(shared(), ownerToken, {
     action: 'mira.private.ended',
     sessionId,
@@ -222,12 +235,12 @@ it('ends with a changed Private Mira choice and does not revive on return', () =
   expect(
     roomService(state, ownerToken, { action: 'mira.share.read' }).body
   ).toMatchObject({ enabled: false });
-  expect(privateRead(state).status).toBe(403);
+  expect((await privateRead(state)).status).toBe(403);
 });
 
-it('drops stale context and every share when the meeting ends', () => {
+it('drops stale context and every share when the meeting ends', async () => {
   const state = shared();
-  expect(privateRead(state).body).toEqual({ tutor });
+  expect((await privateRead(state)).body).toMatchObject({ tutor });
   const stale = {
     ...state,
     miraShares: {
@@ -237,10 +250,10 @@ it('drops stale context and every share when the meeting ends', () => {
       },
     },
   };
-  expect(privateRead(stale).body).toEqual({ tutor: [] });
+  expect((await privateRead(stale)).body).toMatchObject({ tutor: [] });
   const ended = endMeetRoom(state, '2026-11-25T01:00:00Z') as RoomServiceState;
   expect(ended.miraShares).toBeUndefined();
-  expect(privateRead(ended).status).toBe(403);
+  expect((await privateRead(ended)).status).toBe(403);
 });
 
 it('refuses a browser call token for everything but the owner revoking', () => {
@@ -269,7 +282,7 @@ it('refuses a browser call token for everything but the owner revoking', () => {
   ).toBe(403);
 });
 
-it('refuses shared context over the size cap and keeps the previous one', () => {
+it('refuses shared context over the size cap and keeps the previous one', async () => {
   const state = shared();
   const turn = { assistant: true, body: 'x'.repeat(2000) };
   const large = roomService(state, ownerToken, {
@@ -280,10 +293,10 @@ it('refuses shared context over the size cap and keeps the previous one', () => 
     ).slice(0, 12),
   });
   expect(large.status).toBe(413);
-  expect(privateRead(large.state).body).toEqual({ tutor });
+  expect((await privateRead(large.state)).body).toMatchObject({ tutor });
 });
 
-it('refuses and drops expired context on the next room access', () => {
+it('refuses and drops expired context on the next room access', async () => {
   const state = shared();
   const expired = {
     ...state,
@@ -294,7 +307,7 @@ it('refuses and drops expired context on the next room access', () => {
       },
     },
   };
-  expect(privateRead(expired).body).toEqual({ tutor: [] });
+  expect((await privateRead(expired)).body).toMatchObject({ tutor: [] });
   const choice = roomService(expired, ownerToken, {
     action: 'mira.private.read',
   });
@@ -373,42 +386,59 @@ it('keeps shared text out of the room snapshot metadata', () => {
 });
 
 it('evicts the oldest shared chat once the room cap is reached', () => {
-  const ids = Array.from({ length: 20 }, (_, index) =>
+  // Nineteen other people already share 14 KB each; only the writer needs
+  // to be in the room.
+  const others = Array.from({ length: 19 }, (_, index) =>
     `00000000-0000-4000-8000-${String(100 + index).padStart(12, '0')}`
   );
-  let state: RoomServiceState = createMeetRoomSnapshot();
-  const big = Array.from({ length: 7 }, (_, index) => ({
-    assistant: index % 2 === 1,
-    body: 'y'.repeat(1990),
-  }));
-  ids.forEach((id, index) => {
-    const token = person(id);
-    state = admitOrHold(state, token, '2026-11-25T00:00:00Z').state;
-    for (const input of [
-      { action: 'mira.private.choice', choice: 'continue', version },
-      { action: 'mira.share.set', enabled: true },
-    ])
-      state = roomService(state, token, input).state;
-    const result = applyMiraShare(
-      state,
-      token,
-      { action: 'mira.share.context', tutor: big },
-      1_800_000_000_000 + index
-    )!;
-    expect(result.status).toBeUndefined();
-    state = result.state;
+  let state = shared();
+  const now = Date.now();
+  others.forEach((id, index) => {
+    state = {
+      ...state,
+      miraPrivate: {
+        ...state.miraPrivate!,
+        choices: {
+          ...state.miraPrivate!.choices,
+          [id]: {
+            choice: 'continue',
+            version,
+            meetingId: ownerToken.meetingId!,
+            accountId: id,
+            recordedAt: now,
+            revision: 1,
+          },
+        },
+      },
+      miraShares: {
+        ...state.miraShares,
+        [id]: {
+          enabled: true,
+          revision: 1,
+          choiceRevision: 1,
+          meetingId: ownerToken.meetingId!,
+          updatedAt: now - 120_000,
+          context: { updatedAt: now - 60_000 + index, bytes: 14_000 },
+        },
+      },
+    };
   });
-  const kept = ids.filter((id) => state.miraShares?.[id]?.context);
-  const total = kept.reduce(
-    (sum, id) => sum + state.miraShares![id]!.context!.bytes,
+  const result = roomService(state, ownerToken, {
+    action: 'mira.share.context',
+    tutor,
+  });
+  expect(result.status).toBeUndefined();
+  const shares = result.state.miraShares!;
+  const total = Object.values(shares).reduce(
+    (sum, grant) => sum + (grant.context?.bytes ?? 0),
     0
   );
   expect(total).toBeLessThanOrEqual(MIRA_SHARE_TOTAL_CONTEXT_BYTES);
-  expect(kept.length).toBeLessThan(ids.length);
-  // The oldest go first; the newest are always kept.
-  expect(state.miraShares?.[ids[0]!]?.context).toBeUndefined();
-  expect(kept).toEqual(ids.slice(ids.length - kept.length));
-  expect(state.miraShares?.[ids[0]!]?.enabled).toBe(true);
+  // Only the oldest goes; its grant stays on without its chat.
+  expect(shares[others[0]!]?.context).toBeUndefined();
+  expect(shares[others[0]!]?.enabled).toBe(true);
+  expect(shares[others[1]!]?.context).toBeDefined();
+  expect(shares[owner]?.context).toBeDefined();
 });
 
 it('returns the owner’s sessions on revoke even when they are not admitted', () => {
