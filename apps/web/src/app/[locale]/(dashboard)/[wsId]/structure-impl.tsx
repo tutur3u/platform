@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppsLauncherDialog, SidebarSettingsButton } from '@tuturuuu/satellite';
+import { getAppLauncherIcon } from '@tuturuuu/satellite/apps-launcher-icons';
 import { FixedAppBrand } from '@tuturuuu/satellite/fixed-app-brand';
 import { SidebarOverlayLayout as BaseStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -11,7 +12,10 @@ import { SidebarNavSlide } from '@tuturuuu/ui/custom/sidebar-nav-slide';
 import { restsCollapsed } from '@tuturuuu/ui/custom/sidebar-behavior';
 import { useResponsiveSidebarCollapse } from '@tuturuuu/ui/custom/use-responsive-sidebar-collapse';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
+import {
+  getLaunchableApp,
+  type LaunchableWorkspace,
+} from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -96,7 +100,11 @@ function getNavigationStateSignature(state: {
 function hydrateDashboardNavigationLink(
   link: DashboardNavigationLink
 ): NavLink {
-  const icon = isDashboardNavigationIconDescriptor(link.icon) ? (
+  const app = link.appSlug ? getLaunchableApp(link.appSlug) : null;
+  const AppIcon = app ? getAppLauncherIcon(app) : null;
+  const icon = AppIcon ? (
+    <AppIcon className="h-5 w-5" />
+  ) : isDashboardNavigationIconDescriptor(link.icon) ? (
     <DashboardNavigationIcon
       className={link.icon.className}
       name={link.icon.name}

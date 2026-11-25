@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./apps-launcher-core": "./src/components/apps-launcher-core.tsx",
+    "./apps-launcher-icons": "./src/components/apps-launcher-icons.ts",
     "./public": "./src/public.ts",
     "./public/styles.css": "./src/public.css",
     "./providers": "./src/providers/providers.tsx",

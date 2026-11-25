@@ -85,8 +85,5 @@ describe('[wsId] layout compile graph', () => {
     expect(navigationSource).not.toMatch(
       staticImportPattern('@/lib/habits/access')
     );
-    expect(navigationSource).toMatch(
-      staticImportPattern('@/lib/habits/constants')
-    );
   });
 });

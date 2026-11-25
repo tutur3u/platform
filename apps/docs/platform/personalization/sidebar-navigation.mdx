@@ -7,27 +7,45 @@ audience: users
 
 ## Default layout
 
-The dashboard sidebar is one flat list of apps grouped under category sections. Every app belongs to exactly one category, categories always appear in the same order, and a section header appears once. The category registry (`sidebar-categories.ts`) is the only place that assigns sections; navigation items do not carry their own section labels.
+The dashboard sidebar lists apps, one entry per app, grouped under category sections. Each app owns its own navigation, so the sidebar never lists an app's inner pages (decided 2026-11-25). Entries come from the app registry (`LAUNCHABLE_APPS`): the title is the launcher's app name, the icon is the launcher's app icon, and the destination is resolved by `resolveLaunchableAppUrl`, which returns the app's apex path once the app is mounted (`app-mounts`) and its own origin before that. No subdomain is written in the sidebar code, so a mount cutover needs no sidebar change. Permission, plan and feature gating of each entry is unchanged.
+
+Every app belongs to exactly one category, categories always appear in the same order, and a section header appears once. The category registry (`sidebar-categories.ts` in `@tuturuuu/ui`) is the only place that assigns sections.
 
 | Section | Apps |
 | --- | --- |
 | Overview (no header) | Dashboard |
-| Productivity | Tasks, Calendar, Notes, Documents, Habits, Track, Forms, Personal journal |
+| Productivity | Tasks, Calendar, Track, Forms, Documents |
 | Communication | Mail, Chat, Meet, Contacts |
-| Finance & Operations | Finance, Inventory, Workforce, Reports |
-| Files & Content | Drive, Whiteboards |
-| AI | Mind, Hive, AI Lab |
-| Utilities | QR Generator, Link Shortener, Polls, Google Workspace, Feedback |
+| Finance & Operations | Finance, Inventory |
+| Files & Content | Drive |
+| AI | Mind, Hive, AI Studio |
+| Utilities | Tools, Shortener, Feedback (feedback staff only) |
 
-Documents is listed for members with the manage-documents permission and follows the plan's tier visibility; no feature secret hides it. Each app has its own icon. In the icon-only rail a thin divider marks each category.
+Documents and Shortener are served by the platform, so they open platform paths (`/<workspace>/documents`, `/<workspace>/link-shortener`). Documents is the only entry with a second level: Notes, Personal journal and Whiteboards are pages of the Documents app and open from it.
 
-Apps that are not in the registry fall into **Utilities** and sort after the known apps. A section whose apps are all unavailable or archived is not rendered. **Settings** is pinned to the bottom of the sidebar, below an **Archived** entry when one exists.
+Inner pages belong to the app that owns them:
 
-A header appears once because sections come from the registry, never from labels on individual items, so a saved per-user order that interleaves apps from different categories cannot repeat one.
+| Page | Reached from |
+| --- | --- |
+| Habits, task progress, goals, stats, leaderboards, import | Tasks app navigation |
+| Finance overview, transactions, wallets, budgets, invoices, debts, categories | Finance app navigation |
+| Track timer, history, management, requests | Track app navigation |
+| Meet plans and meetings | Meet app navigation |
+| Mail folders | Mail app navigation |
+| Workforce, Reports | Contacts app navigation |
+| QR Generator | Tools app |
+| Link shortener | Shortener entry |
+| Notes, Personal journal, Whiteboards | Documents (second level) |
+| AI Lab pages (Spark, AI chat, Memories, Models, Datasets, Pipelines, Crawlers, Cron, Queues) | AI Studio entry; the pages stay routable in the platform |
+| Polls, Google Workspace launcher | Not in the sidebar; reachable by direct route |
 
-Section headers are collapsible. The collapsed state is remembered in the browser (`localStorage`, key `tuturuuu:sidebar:collapsed-sections:v1`, shared across workspaces); when storage is unavailable every section renders open. A collapsed section still shows the page you are on. In the icon-only rail the headers keep their space but are hidden, so every icon stays at the same height as in the expanded panel and every app stays reachable with a tooltip. Collapsible sections are opt-in (`collapsibleSections` on the shared sidebar navigation); other apps keep the plain label headers. Manage members, SSO and Domains live in the settings dialog (see [Settings dialog](/platform/features/settings-dialog)). The navigation is authored under an internal `more_tools` container that the category layout expands in place, so the sidebar has no More tools section. Web and Workspace share the registry and layout helpers from `@tuturuuu/ui` (`sidebar-categories`, `sidebar-category-layout`).
+Apps that are not in the category registry fall into **Utilities** and sort after the known apps. A section whose apps are all unavailable or archived is not rendered. **Settings** is pinned to the bottom of the sidebar, below an **Archived** entry when one exists. Manage members, SSO and Domains live in the settings dialog (see [Settings dialog](/platform/features/settings-dialog)).
 
-Regression coverage: `__tests__/sidebar-navigation-preferences.test.ts`, `__tests__/sidebar-categories.test.ts` and `packages/ui/src/components/ui/custom/satellite-navigation.test.tsx`.
+A header appears once because sections come from the registry, never from labels on individual items, so a saved per-user order that interleaves apps from different categories cannot repeat one. Documents is listed for members with the manage-documents permission and follows the plan's tier visibility; no feature secret hides it. In the icon-only rail a thin divider marks each category and every icon stays at the height it has in the expanded panel.
+
+Section headers are collapsible. The collapsed state is remembered in the browser (`localStorage`, key `tuturuuu:sidebar:collapsed-sections:v1`, shared across workspaces); when storage is unavailable every section renders open. A collapsed section still shows the page you are on. Collapsible sections are opt-in (`collapsibleSections` on the shared sidebar navigation); other apps keep the plain label headers. Web and Workspace share the registry and layout helpers from `@tuturuuu/ui` (`sidebar-categories`, `sidebar-category-layout`).
+
+Regression coverage: `sidebar-apps.test.ts` (one entry per app, registry-resolved and mount-aware URLs, gating), `__tests__/sidebar-navigation-preferences.test.ts`, `sidebar-categories.test.ts` and `satellite-navigation.test.tsx`.
 
 ## Managing layout
 

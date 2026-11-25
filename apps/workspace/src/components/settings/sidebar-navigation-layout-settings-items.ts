@@ -5,7 +5,6 @@ import {
   BookUser,
   Bot,
   BrainCircuit,
-  BriefcaseBusiness,
   Calendar,
   ChartArea,
   CheckCircle2,
@@ -15,15 +14,10 @@ import {
   Link,
   Mail,
   MessageCircleIcon,
-  PencilRuler,
   QrCodeIcon,
-  Repeat,
-  ScreenShare,
   Settings,
   SquaresIntersect,
   Timer,
-  Users,
-  Vote,
 } from '@tuturuuu/icons';
 import {
   getSidebarCategory,
@@ -41,22 +35,16 @@ type SidebarLayoutItemKey =
   | 'items.drive'
   | 'items.finance'
   | 'items.forms'
-  | 'items.google_workspace'
-  | 'items.habits'
   | 'items.hive'
   | 'items.inventory'
   | 'items.link_shortener'
   | 'items.mail'
   | 'items.meet'
   | 'items.mind'
-  | 'items.polls'
   | 'items.qr_generator'
   | 'items.settings'
   | 'items.tasks'
-  | 'items.time_tracker'
-  | 'items.users'
-  | 'items.whiteboards'
-  | 'items.workforce';
+  | 'items.time_tracker';
 type SidebarSectionKey = SidebarCategoryId;
 type SidebarLayoutTranslate = (key: SidebarLayoutItemKey) => string;
 type SidebarSectionTranslate = (key: SidebarSectionKey) => string;
@@ -98,39 +86,9 @@ export function createSidebarNavigationItemDefinitions(
       defaultPlacement: 'root',
     },
     {
-      id: 'contacts',
-      title: t('items.contacts'),
-      icon: BookUser,
-      defaultPlacement: 'root',
-    },
-    {
-      id: 'finance',
-      title: t('items.finance'),
-      icon: BadgeDollarSign,
-      defaultPlacement: 'root',
-    },
-    {
-      id: 'habits',
-      title: t('items.habits'),
-      icon: Repeat,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'whiteboards',
-      title: t('items.whiteboards'),
-      icon: PencilRuler,
-      defaultPlacement: 'more',
-    },
-    {
       id: 'time_tracker',
       title: t('items.time_tracker'),
       icon: Timer,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'drive',
-      title: t('items.drive'),
-      icon: HardDrive,
       defaultPlacement: 'more',
     },
     {
@@ -143,6 +101,48 @@ export function createSidebarNavigationItemDefinitions(
       id: 'documents',
       title: t('items.documents'),
       icon: FileText,
+      defaultPlacement: 'more',
+    },
+    {
+      id: 'mail',
+      title: t('items.mail'),
+      icon: Mail,
+      defaultPlacement: 'more',
+    },
+    {
+      id: 'chat',
+      title: t('items.chat'),
+      icon: MessageCircleIcon,
+      defaultPlacement: 'more',
+    },
+    {
+      id: 'meet',
+      title: t('items.meet'),
+      icon: SquaresIntersect,
+      defaultPlacement: 'more',
+    },
+    {
+      id: 'contacts',
+      title: t('items.contacts'),
+      icon: BookUser,
+      defaultPlacement: 'root',
+    },
+    {
+      id: 'finance',
+      title: t('items.finance'),
+      icon: BadgeDollarSign,
+      defaultPlacement: 'root',
+    },
+    {
+      id: 'inventory',
+      title: t('items.inventory'),
+      icon: Archive,
+      defaultPlacement: 'more',
+    },
+    {
+      id: 'drive',
+      title: t('items.drive'),
+      icon: HardDrive,
       defaultPlacement: 'more',
     },
     {
@@ -162,63 +162,15 @@ export function createSidebarNavigationItemDefinitions(
         ]
       : []),
     {
-      id: 'chat',
-      title: t('items.chat'),
-      icon: MessageCircleIcon,
-      defaultPlacement: 'more',
-    },
-    {
       id: 'ai_lab',
       title: t('items.ai_lab'),
       icon: Bot,
       defaultPlacement: 'more',
     },
     {
-      id: 'workforce',
-      title: t('items.workforce'),
-      icon: BriefcaseBusiness,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'users',
-      title: t('items.users'),
-      icon: Users,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'inventory',
-      title: t('items.inventory'),
-      icon: Archive,
-      defaultPlacement: 'more',
-    },
-    {
       id: 'qr_generator',
       title: t('items.qr_generator'),
       icon: QrCodeIcon,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'google_workspace',
-      title: t('items.google_workspace'),
-      icon: ScreenShare,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'meet',
-      title: t('items.meet'),
-      icon: SquaresIntersect,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'polls',
-      title: t('items.polls'),
-      icon: Vote,
-      defaultPlacement: 'more',
-    },
-    {
-      id: 'mail',
-      title: t('items.mail'),
-      icon: Mail,
       defaultPlacement: 'more',
     },
     {

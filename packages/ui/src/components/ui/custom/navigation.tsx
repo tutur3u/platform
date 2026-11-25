@@ -25,6 +25,8 @@ export interface NavLink {
   label?: string;
   /** When set, renders a labeled section header above this item in the sidebar. */
   sectionLabel?: string;
+  /** Registry slug of the app this entry opens; the sidebar shows the app's launcher icon. */
+  appSlug?: string;
   /** Stable section id; links sharing it form one (optionally collapsible) section. */
   sectionId?: string;
   /** Whether the section header toggles the section when collapsible sections are on. */

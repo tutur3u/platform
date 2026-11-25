@@ -36,15 +36,15 @@ describe('sidebar categories', () => {
     expect(getSidebarCategory('chat')).toBe('communication');
     expect(getSidebarCategory('contacts')).toBe('communication');
     expect(getSidebarCategory('finance')).toBe('operations');
-    expect(getSidebarCategory('posts')).toBe('operations');
+    expect(getSidebarCategory('inventory')).toBe('operations');
     expect(getSidebarCategory('drive')).toBe('files_content');
     expect(getSidebarCategory('hive')).toBe('ai');
     expect(getSidebarCategory('qr_generator')).toBe('utilities');
     expect(getSidebarItemRank('tasks')).toBeLessThan(
       getSidebarItemRank('documents')
     );
-    expect(getSidebarItemRank('documents')).toBeLessThan(
-      getSidebarItemRank('habits')
+    expect(getSidebarItemRank('time_tracker')).toBeLessThan(
+      getSidebarItemRank('documents')
     );
   });
 

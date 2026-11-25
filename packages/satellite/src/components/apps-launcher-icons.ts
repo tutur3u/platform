@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Bot,
   BookText,
   BookUser,
   Boxes,
@@ -28,6 +29,7 @@ import {
 import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
 
 const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
+  ai: Bot,
   apps: Boxes,
   calendar: Calendar,
   chat: MessageSquare,

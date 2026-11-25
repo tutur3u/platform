@@ -16,16 +16,7 @@ export const SIDEBAR_CATEGORIES = [
   {
     id: 'productivity',
     collapsible: true,
-    itemIds: [
-      'tasks',
-      'calendar',
-      'notes',
-      'documents',
-      'habits',
-      'time_tracker',
-      'forms',
-      'personal_journal',
-    ],
+    itemIds: ['tasks', 'calendar', 'time_tracker', 'forms', 'documents'],
     showLabel: true,
   },
   {
@@ -37,13 +28,13 @@ export const SIDEBAR_CATEGORIES = [
   {
     id: 'operations',
     collapsible: true,
-    itemIds: ['finance', 'inventory', 'workforce', 'posts'],
+    itemIds: ['finance', 'inventory'],
     showLabel: true,
   },
   {
     id: 'files_content',
     collapsible: true,
-    itemIds: ['drive', 'whiteboards'],
+    itemIds: ['drive'],
     showLabel: true,
   },
   {
@@ -55,13 +46,7 @@ export const SIDEBAR_CATEGORIES = [
   {
     id: 'utilities',
     collapsible: true,
-    itemIds: [
-      'qr_generator',
-      'link_shortener',
-      'polls',
-      'google_workspace',
-      'product-feedback',
-    ],
+    itemIds: ['qr_generator', 'link_shortener', 'product-feedback'],
     showLabel: true,
   },
 ] as const;
