@@ -56,7 +56,7 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   through `calendar-cloudflare.yaml`, `mail-cloudflare.yaml` and `apps-cloudflare.yaml`
   on every production push that selects the app; its dispatch, which also lists
   `finance` and `drive`, is the manual and recovery path. Calendar, Mail, Apps and
-  Finance are admitted. Each run uses the protected GitHub environment
+  Finance are admitted; Calendar is held from automatic publication. Each run uses the protected GitHub environment
   `wave1-<app>-production` (`publish` only succeeds when `PUBLICATION_ENVIRONMENT` equals that
   exact name) and must be dispatched from the `production` ref.
 - Environments the release owner creates (restrict each to the `production` branch and add a
@@ -114,7 +114,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | Canonical host | `calendar.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
 | Bindings | `ASSETS` and `ABUSE_GUARD` (service `tuturuuu-abuse-guard`, entrypoint `AbuseGuardEntrypoint`); no database, KV, R2 or queue. Var `ABUSE_GUARD_FAMILIES=proxy`; Web sets `ABUSE_GUARD_KEY_PEPPER`, which is not deploy-required (without it `proxy` is `off` and fails open) |
-| Publication | Admitted in `tuturuuu.ci.ts`; the production planner publishes it through `calendar-cloudflare.yaml` and `wave1-native-production.yaml` (environment `wave1-calendar-production`); the reviewed `productionServingTopology` record admits its `calendar.tuturuuu.com` Custom Domain. Recovery: dispatch `wave1-native-production.yaml` with `app=calendar` from `production` |
+| Publication | Admitted in `tuturuuu.ci.ts`, held from automatic publication by its `productionPublicationExemptions` record until a manual release smokes the first version privately behind `calendar.tuturuuu.com`; then the production planner publishes it through `calendar-cloudflare.yaml` and `wave1-native-production.yaml` (environment `wave1-calendar-production`) |
 | Rollback | Previous `tuturuuu-calendar` version verified on the canonical host |
 
 The production artifact uses `TTR_ONE_ORIGIN_CALENDAR=shadow` to serve both

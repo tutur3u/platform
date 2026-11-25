@@ -747,20 +747,28 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   keep the file in `ci-check.yml`'s sparse checkout. A shared package change
   selects every consumer (`production-shared-package-selection.test.mjs`).
 - Every active production app publishes on a production push through the
-  planner or `serving-workers-production.yaml`, or carries a dated record in
+  planner or `serving-workers-production.yaml`, or carries a record in
   `productionPublicationExemptions` (`reason`, `owner`, `approvedOn`,
-  `expires`, `source`; at most 90 days). `production-publication-coverage.test.mjs`
-  fails on a missing, expired, malformed or stale record. When adding a
-  production target, policy entry or exclusion, wire its publisher or add the
-  record in the same change; never extend an expiry without the owner. The
+  `source`) that also holds it from automatic publication.
+  `production-publication-coverage.test.mjs` fails on a missing, unowned,
+  undated or malformed record and never reads the current date; do not add
+  date-triggered failures. When adding a production target, policy entry or
+  exclusion, wire its publisher or add the record in the same change. The
   test reads source only: repository variables such as
   `SERVING_WORKERS_PUBLICATION` can still leave a covered app inert.
+- Give every group a planner callee reaches a literal prefix and never the
+  caller's `github.workflow`; key builds by app and SHA, uploads by app,
+  keep `cancel-in-progress: false` with `queue: max`, and let an older SHA
+  stop as superseded in its read-only preflight instead of cancelling.
+  `wave1-production-concurrency.test.js` renders the reachable groups.
 - A called production publisher that needs environment-scoped credentials
   uses `secrets: inherit` only on a job that needs `production-policy` and
   holds while `allowed` is not `true`; `production-publisher-secrets.test.js`
-  enforces it. Wave-1 Workers stay route-free unless
-  `productionServingTopology` records their exact Custom Domains and routes,
-  and the publisher compares that topology before and after the upload.
+  enforces it, and `wave1-production-admission.test.js` evaluates each
+  publish condition across refs, events and policy outcomes. Wave-1 Workers
+  stay route-free unless `productionServingTopology` records their exact
+  Custom Domains and routes; add a record only with a private-smoke publish
+  path, because the upload activates the new version at 100%.
 - Check the queued automatic revision against the live `production` ref inside
   the planner's non-cancelling workflow lock, before checkout and target
   resolution. Only a proven descendant supersedes the candidate. Emit an empty

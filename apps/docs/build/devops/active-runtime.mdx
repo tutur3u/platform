@@ -55,11 +55,13 @@ explicit cutover PR. See
 ## Wave-1 production publication
 
 Calendar, Mail and Apps are admitted in `productionPublicationPolicy` in
-`tuturuuu.ci.ts`. Each production push that selects one of them publishes it
+`tuturuuu.ci.ts`. Each production push that selects Mail or Apps publishes it
 in the same planner run through `wave1-native-production.yaml`; see
 [Environments & Release Flow](/build/devops/environments-release-flow#production).
-Meet publishes through its own policy-gated production job. Drive and Contacts
-stay held, and each held or excluded app carries a dated exemption in
+Calendar stays held from automatic publication until a manual release smokes
+its first version privately behind `calendar.tuturuuu.com`. Meet publishes
+through its own policy-gated production job. Drive and Contacts stay held, and
+each held or excluded app carries an owned, dated record in
 `productionPublicationExemptions`. Native CI validation stays enabled for
 every app. Do not change framework, domains, bindings or scheduler ownership
 through these publishers. See the wave-1 cutover runbook.
