@@ -353,10 +353,9 @@ records the product rules of the shell entry and every tab.
   characters). Optional `~/.local/share/fleet-sync/config.json` sets
   `machineLabel`, `machineId`, `orchestratorThreadId` and
   `orchestratorTitlePattern` (default `^\[Iris\] Orchestrator$`, then any
-  `[Iris]` title). launchd job `com.skora.mastermind-fleet-publisher` runs the
+  `[Iris]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
-  `fleet-state.mjs`, `fit-to-budget.mjs`, `recovery-summary.mjs`,
-  `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
+  `fleet-state.mjs`, `fit-to-budget.mjs`, `recovery-summary.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
   `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, `web-call.mjs`,
   `private-files.mjs`, `secret-decision.mjs`, `secret-protocol.mjs` and
@@ -586,41 +585,25 @@ records the product rules of the shell entry and every tab.
 
 ### Iris activity and recovery coverage
 
-Today shows the turn state of the orchestrator. Set `orchestratorThreadId` in the
-publisher config (`~/.local/share/fleet-sync/config.json`) before deploying: the
-ID pins the identity, and an ID missing from the T3 database reads as offline. A
-blank, null or non-string value is ignored with a warning and counts as unset.
-Without an ID the publisher looks for a lane from a recent run titled
-`[Iris] Orchestrator`, then the newest live thread with that title (so an
-orchestrator idle beyond the 24-hour run window is still found), and only then
-repeats the search for any `[Iris]` title. A custom `orchestratorTitlePattern`
-replaces both titles and has no further fallback. An identity found only as an
-idle thread sets the turn state and never becomes a published lane or a lane
-count. Delegated running
-and waiting counts use the observed thread ancestry and appear separately from
-Iris's turn. Queued descendants count as waiting.
+Set `orchestratorThreadId` in the publisher config before deploying: it pins the
+orchestrator, and an ID missing from the T3 database reads as offline. A blank,
+null or non-string value is ignored with a warning. With no ID the publisher
+takes a recent-run lane or the newest live thread titled `[Iris] Orchestrator`
+(an idle thread sets the turn state and adds no lane), then any `[Iris]` title.
+A custom `orchestratorTitlePattern` replaces both titles with no fallback and is
+ignored when an ID is pinned. Delegated counts (queued counts as waiting) follow
+thread ancestry, apart from Iris's turn.
 
-The publisher accepts a private mode-0600 `fleet-recovery-summary/v1` file at
-`~/.local/share/fleet-sync/recovery/summary.json`. The producer must write it
-atomically (write a temporary file in the same directory, set mode 0600, then
-rename it over `summary.json`) so a tick never reads a partial file. It publishes
-optional `recovery` coverage and aggregate counts on the owner-only state
-endpoint. Host slots are anonymous (`host-1` to `host-32`) and come from the
-hosts the summary names; a missing host is reported through `coverage.partial`,
-not inferred from a fixed count. A `generatedAt` up to 60 seconds ahead of the
-publisher clock is accepted and clamped to now; later values are dropped. Today
-marks the report stale after two hours and shows partial coverage whenever the
-report is incomplete. A missing, invalid, oversized, or omitted report displays
-unavailable coverage. The card lists the active holds, the executed actions and
-the provider-family split next to the other aggregates. Holds and eligibility are
-informational and do not grant retry permission. The v1 publisher fallback omits
-recovery and delegated counts. Mobile clients may continue using the core
-snapshot and can adopt these additive fields separately.
-
-Regression coverage lives in `scripts/mastermind-fleet/recovery-summary.test.mjs`,
-`scripts/mastermind-fleet/fleet-state.test.mjs`,
-`scripts/mastermind-fleet/publish.test.mjs`, the fleet state route test and the
-Today component tests (English and Vietnamese).
+The publisher reads an optional mode-0600 `fleet-recovery-summary/v1` file at
+`~/.local/share/fleet-sync/recovery/summary.json`, which the producer must write
+atomically (temporary file, mode 0600, rename). Host slots (`host-1` to
+`host-32`) come from the hosts the summary names, and `coverage.partial` reports
+a missing host. A `generatedAt` up to 60 seconds ahead is clamped to now. Today
+marks the report stale after two hours, shows partial coverage, holds, executed
+actions and the provider split, and shows unavailable coverage for a missing,
+invalid or oversized file. Holds and eligibility grant no retry permission. The
+v1 fallback omits recovery and delegated counts. Tests:
+`scripts/mastermind-fleet/*.test.mjs` and the Today component tests.
 
 ## Fleet command center on mobile
 

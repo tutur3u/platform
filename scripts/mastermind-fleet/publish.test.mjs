@@ -408,6 +408,36 @@ test('an invalid orchestratorThreadId is ignored with a warning and keeps the ti
   assert.equal(warn.mock.callCount(), 4);
 });
 
+test('a pinned orchestrator id ignores an invalid title pattern, and an unpinned one falls back', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const states = [];
+  for (const config of [
+    { orchestratorThreadId: 't-iris', orchestratorTitlePattern: '[' },
+    { orchestratorTitlePattern: '[' },
+  ]) {
+    const paths = sandbox();
+    fs.writeFileSync(paths.configFile, JSON.stringify(config));
+    await runOnce({
+      paths,
+      origin: 'https://tuturuuu.com',
+      fetchImpl: async (url, init) => {
+        if (init.method === 'PUT') states.push(JSON.parse(init.body));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => (init.method === 'GET' ? { answers: [] } : {}),
+        };
+      },
+      openDatabase: () => fixtureDatabase(),
+      now: NOW,
+    });
+  }
+  assert.equal(states.length, 2);
+  for (const state of states) assert.notEqual(state.orchestrator.state, 'offline');
+  // Only the unpinned config reads the pattern, so only it warns.
+  assert.equal(warn.mock.callCount(), 1);
+});
+
 test('a degraded publish stays reported until the full snapshot lands', async () => {
   const paths = sandbox();
   paths.releaseFile = path.join(paths.root, 'release.json');

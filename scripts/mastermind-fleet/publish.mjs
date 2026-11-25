@@ -358,10 +358,16 @@ export async function runOnce({
       'fleet config orchestratorThreadId ignored: not a non-empty string'
     );
   // An explicit title pattern replaces both the strict and the broader title;
-  // it has no further fallback.
-  const customPattern = config.orchestratorTitlePattern
-    ? new RegExp(config.orchestratorTitlePattern, 'i')
-    : undefined;
+  // it has no further fallback. A pinned id never reads it, and an invalid one
+  // falls back to the default titles.
+  let customPattern;
+  if (!orchestratorThreadId && config.orchestratorTitlePattern) {
+    try {
+      customPattern = new RegExp(String(config.orchestratorTitlePattern), 'i');
+    } catch {
+      console.warn('fleet config orchestratorTitlePattern ignored: invalid');
+    }
+  }
   const pokeDir = path.join(paths.root, 'pokes');
   const observedAt = now.toISOString();
   const revision = now.getTime();
