@@ -209,6 +209,11 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     BuildContext? scrollContext,
   ) {
     if (depth != 0 || metrics.axis != Axis.vertical) return;
+    // Offstage root tabs and covered routes keep reporting layout changes.
+    if (scrollContext != null &&
+        !TickerMode.getValuesNotifier(scrollContext).value.enabled) {
+      return;
+    }
     // Scroll reports can arrive mid-layout (a ballistic start when content
     // size changes), when render boxes cannot be measured. Measure the latest
     // report once the frame has laid out.
@@ -229,10 +234,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       });
       return;
     }
+    // A report measured now supersedes any older one still waiting.
+    _deferredReport = null;
     double? edge;
     if (scrollContext != null) {
-      // Offstage root tabs and covered routes keep reporting layout changes.
-      if (!TickerMode.getValuesNotifier(scrollContext).value.enabled) return;
       final scrollable = Scrollable.maybeOf(scrollContext);
       if (scrollable != null) {
         _scrollables[widget.location] = WeakReference(scrollable);
