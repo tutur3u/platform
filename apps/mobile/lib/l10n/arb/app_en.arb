@@ -1965,6 +1965,14 @@
   "assistantToolStepFailed": "Couldn't finish this step",
   "assistantToolStepsInProgress": "Steps in progress",
   "assistantToolStepsDone": "Steps done",
+  "assistantToolStepsFailed": "{count, plural, =1{1 step needs attention} other{{count} steps need attention}}",
+  "@assistantToolStepsFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "assistantUntitledChat": "Untitled chat",
   "assistantUpcomingLabel": "upcoming",
   "assistantVideoAttachment": "Video",

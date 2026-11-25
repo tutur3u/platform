@@ -1482,6 +1482,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantToolStepsDone => 'Đã hoàn tất các bước';
 
   @override
+  String assistantToolStepsFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bước cần chú ý',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get assistantUntitledChat => 'Đoạn chat chưa có tiêu đề';
 
   @override

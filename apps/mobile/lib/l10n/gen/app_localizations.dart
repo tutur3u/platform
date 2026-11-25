@@ -2917,6 +2917,12 @@ abstract class AppLocalizations {
   /// **'Steps done'**
   String get assistantToolStepsDone;
 
+  /// No description provided for @assistantToolStepsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 step needs attention} other{{count} steps need attention}}'**
+  String assistantToolStepsFailed(int count);
+
   /// No description provided for @assistantUntitledChat.
   ///
   /// In en, this message translates to:

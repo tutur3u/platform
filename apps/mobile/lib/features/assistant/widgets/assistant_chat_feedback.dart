@@ -4,9 +4,9 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/mira_offline_reads.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/models/assistant_reply_failure.dart';
+import 'package:mobile/features/assistant/widgets/assistant_streaming_indicator.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 export 'package:mobile/features/assistant/local/assistant_remote_chat_actions.dart'
     show retryAssistantChat;
@@ -29,33 +29,40 @@ class AssistantChatFeedback extends StatelessWidget {
       final onRetry = assistantReplyFailureRetryable(failure)
           ? this.onRetry
           : null;
+      final tokens = AppTokens.of(context);
+      final colors = tokens.colorScheme;
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 2),
         child: DecoratedBox(
+          key: const ValueKey('assistant-reply-failure-card'),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            color: colors.destructive.withValues(alpha: 0.06),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
+              color: colors.destructive.withValues(alpha: 0.3),
             ),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              AppSpacing.md,
+              AppSpacing.xs + 2,
+              AppSpacing.xs,
+              AppSpacing.xs + 2,
+            ),
             child: Row(
               children: [
                 Icon(
                   LucideIcons.circleAlert,
-                  color: Theme.of(context).colorScheme.error,
-                  size: 20,
+                  color: colors.destructive,
+                  size: 18,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     assistantReplyFailureLabel(context.l10n, failure),
                     key: ValueKey('assistant-reply-failure-${failure.name}'),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 13,
+                    style: tokens.typography.uiSm.copyWith(
+                      color: colors.foreground,
                     ),
                   ),
                 ),
@@ -82,15 +89,8 @@ class AssistantChatFeedback extends StatelessWidget {
               (part.text?.trim().isNotEmpty ?? false),
         );
     if (state.isBusy && !responding) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            const NovaLoadingIndicator(size: 20),
-            const SizedBox(width: 8),
-            Text(context.l10n.assistantThinkingStatus),
-          ],
-        ),
+      return AssistantStreamingIndicator(
+        label: context.l10n.assistantThinkingStatus,
       );
     }
     return const SizedBox.shrink();

@@ -36,7 +36,11 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final colors = theme.colorScheme;
+    final tokens = AppTokens.of(context);
+    final palette = tokens.colorScheme;
     final running = widget.running;
+    final failedCount = parts.where(isAssistantToolPartFailed).length;
+    final failed = !running && failedCount > 0;
     final latestPart = running
         ? parts.lastWhere(isAssistantToolPartPending, orElse: () => parts.last)
         : parts.last;
@@ -52,7 +56,10 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
     );
     final status = running
         ? l10n.assistantToolStepsInProgress
+        : failed
+        ? l10n.assistantToolStepsFailed(failedCount)
         : l10n.assistantToolStepsDone;
+    final radius = BorderRadius.circular(AppRadius.md);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,71 +71,98 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
           onTap: _toggle,
           expanded: _expanded,
           label: '$status: $latest · $count',
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: const ValueKey('assistant-tools-toggle'),
-              borderRadius: BorderRadius.circular(8),
-              onTap: _toggle,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                child: LayoutBuilder(
-                  builder: (context, constraints) => Row(
-                    children: [
-                      SizedBox.square(
-                        dimension: 16,
-                        child: running
-                            ? const NovaLoadingIndicator(
-                                key: ValueKey('assistant-tools-running-icon'),
-                                size: 16,
-                              )
-                            : Icon(
-                                LucideIcons.circleCheck,
-                                key: const ValueKey(
-                                  'assistant-tools-done-icon',
+          // The status card mirrors the web tool section: a quiet surface
+          // that turns destructive when a step needs attention.
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: failed
+                  ? palette.destructive.withValues(alpha: 0.06)
+                  : palette.muted.withValues(alpha: palette.isDark ? 0.3 : 0.4),
+              border: Border.all(
+                color: failed
+                    ? palette.destructive.withValues(alpha: 0.3)
+                    : palette.border,
+              ),
+              borderRadius: radius,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const ValueKey('assistant-tools-toggle'),
+                borderRadius: radius,
+                onTap: _toggle,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs + 2,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) => Row(
+                      children: [
+                        SizedBox.square(
+                          dimension: 16,
+                          child: running
+                              ? const NovaLoadingIndicator(
+                                  key: ValueKey('assistant-tools-running-icon'),
+                                  size: 16,
+                                )
+                              : failed
+                              ? Icon(
+                                  LucideIcons.circleAlert,
+                                  key: const ValueKey(
+                                    'assistant-tools-error-icon',
+                                  ),
+                                  size: 16,
+                                  color: palette.destructive,
+                                )
+                              : Icon(
+                                  LucideIcons.circleCheck,
+                                  key: const ValueKey(
+                                    'assistant-tools-done-icon',
+                                  ),
+                                  size: 16,
+                                  color: palette.success,
                                 ),
-                                size: 16,
-                                color: colors.onSurfaceVariant,
-                              ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          latest,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: colors.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            latest,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: colors.onSurface,
+                            ),
                           ),
                         ),
-                      ),
-                      // The count keeps priority but never overflows at
-                      // large text scales.
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth * 0.55,
+                        // The count keeps priority but never overflows at
+                        // large text scales.
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: constraints.maxWidth * 0.6,
+                          ),
+                          child: Text(
+                            ' · $count',
+                            key: const ValueKey('assistant-tools-count'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: countStyle,
+                          ),
                         ),
-                        child: Text(
-                          ' · $count',
-                          key: const ValueKey('assistant-tools-count'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: countStyle,
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          turns: _expanded ? 0.5 : 0,
+                          duration: MediaQuery.disableAnimationsOf(context)
+                              ? Duration.zero
+                              : const Duration(milliseconds: 180),
+                          child: Icon(
+                            LucideIcons.chevronDown,
+                            size: 16,
+                            color: colors.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      AnimatedRotation(
-                        turns: _expanded ? 0.5 : 0,
-                        duration: MediaQuery.disableAnimationsOf(context)
-                            ? Duration.zero
-                            : const Duration(milliseconds: 180),
-                        child: Icon(
-                          LucideIcons.chevronDown,
-                          size: 16,
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -143,7 +177,7 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
           child: !_expanded
               ? const SizedBox.shrink()
               : Padding(
-                  padding: const EdgeInsets.only(left: 11, top: 2, bottom: 6),
+                  padding: const EdgeInsets.only(left: 15, top: 4, bottom: 6),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       border: BorderDirectional(

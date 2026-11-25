@@ -1489,6 +1489,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantToolStepsDone => 'Steps done';
 
   @override
+  String assistantToolStepsFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count steps need attention',
+      one: '1 step needs attention',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get assistantUntitledChat => 'Untitled chat';
 
   @override

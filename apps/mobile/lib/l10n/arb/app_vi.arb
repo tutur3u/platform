@@ -1790,6 +1790,7 @@
   "assistantToolStepFailed": "Không thể hoàn tất bước này",
   "assistantToolStepsInProgress": "Đang thực hiện các bước",
   "assistantToolStepsDone": "Đã hoàn tất các bước",
+  "assistantToolStepsFailed": "{count, plural, other{{count} bước cần chú ý}}",
   "assistantUntitledChat": "Đoạn chat chưa có tiêu đề",
   "assistantUpcomingLabel": "sắp tới",
   "assistantVideoAttachment": "Video",
