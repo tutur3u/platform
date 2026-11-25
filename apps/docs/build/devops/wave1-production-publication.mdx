@@ -48,7 +48,9 @@ every Cloudflare write.
    `Cloudflare-Workers-Version-Overrides: <worker>="<version>"`. The smoke
    contract:
    - `GET <public host>/api/build-info` and `GET tuturuuu.com/<mount>/api/build-info`
-     answer 200 and report the candidate `commitHash`. Retries cover edge
+     answer 200, report the candidate `commitHash` and name the app in
+     `appName`, so a gateway or another app answering the same path from the
+     same commit cannot pass. Build-info carries no version identity. Retries cover edge
      propagation for about a minute; if either path never reports it, the
      override did not reach the staged version and the smoke fails.
    - Where the app's source emits it (Finance today), `x-tuturuuu-runtime: native`
@@ -75,10 +77,48 @@ every Cloudflare write.
 7. **Verify.** The read-only step confirms the active version, script settings
    and unchanged topology, and records `accepted-private`.
 
+The smoke and the health gate stop at a 17-minute budget from the start of the
+upload step, whose timeout is 25 minutes, so a failure always leaves time to
+restore the rollback deployment. If the step is still killed, cancelled or
+crashes, the next step (**Restore the rollback deployment after an interrupted
+upload**, run on `failure() || cancelled()` with only the deploy credential)
+restores the recorded rollback deployment when the receipt is `staged`,
+`switched` or `rolling-back`.
+
+## Concurrent deployments
+
+Every stage, switch, restore and rollback writes only while the active
+deployment is exactly a split this attempt wrote, or the one it expects
+before staging. When another writer has changed it, for example a hand
+hotfix or rollback, the publisher writes nothing, records
+`concurrent-change` with the active split, and fails. The upload history then
+blocks later attempts until a release owner reconciles the receipt; it never
+overwrites that deployment.
+
+## Recovery
+
+The history skips an attempt that restored and confirmed its serving
+deployment (`stage-failed`, `smoke-failed`, `switch-failed`, `rolled-back`)
+and carries forward the serving SHA its preflight proved, so the next release
+can still prove what serves. `uncertain` and `concurrent-change` block until a
+release owner reconciles them.
+
+The planner only republishes an app when a production push selects it. After
+a failed staged attempt, a later push that does not touch the app does not
+retry it: dispatch `wave1-native-production.yaml` with the app from
+`production` to publish it again. A rerun of the failed SHA refuses because
+its version is already in the Worker's history; ship the fix on a new SHA.
+
+## Abuse guard coverage
+
+Apps with the `ABUSE_GUARD` service binding are smoked with the real binding
+attached, but a staged smoke proves the abuse-guard path only when one of the
+smoke endpoints exercises it. Build-info, signed-out page redirects and the
+release-recipe cases may not call the guard, so a broken guard binding can
+still pass the smoke and surface only in the health gate or later traffic.
+
 The receipt artifact `wave1-<app>-production-publication-<sha>-<run>-<attempt>`
-is retained 90 days in every outcome. An attempt that failed after its version
-upload leaves that version in the Worker's history, so a rerun of the same SHA
-refuses; ship a fix on a new SHA.
+is retained 90 days in every outcome.
 
 ## Why a 0% gradual deployment
 
@@ -108,6 +148,8 @@ replaces another.
 - `scripts/ci/wave1-production-staged.test.mjs`: end-to-end sequence with fakes.
 - `scripts/ci/wave1-production-health.test.mjs`: health gate, smoke contract,
   switch guards and serving-SHA proof.
+- `scripts/ci/wave1-production-concurrent.test.mjs`: concurrent deployments,
+  interrupted-upload recovery and the time budget.
 - `scripts/ci/wave1-native-production-history.test.mjs`: upload history.
 - `scripts/ci/wave1-production-admission.test.js` and
   `scripts/ci/wave1-production-concurrency.test.js`: workflow conditions and

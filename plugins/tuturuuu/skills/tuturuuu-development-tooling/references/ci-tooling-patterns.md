@@ -774,7 +774,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `Cloudflare-Workers-Version-Overrides`, switches only after the smoke and
   then runs a public health gate that restores the recorded deployment on
   failure; never shift traffic before a staged smoke, never record response
-  bodies, and never treat an unproven serving SHA as older. See
+  bodies, and never treat an unproven serving SHA as older. Write a
+  deployment only over a split the attempt itself wrote; on any other active
+  split record `concurrent-change` and stop. Keep a time budget inside the
+  step timeout and a `failure() || cancelled()` recovery step for the rest. See
   [wave-1 production publication](../../../../../apps/docs/build/devops/wave1-production-publication.mdx).
 - Check the queued automatic revision against the live `production` ref inside
   the planner's non-cancelling workflow lock, before checkout and target
