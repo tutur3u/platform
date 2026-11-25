@@ -137,6 +137,38 @@ describe('board socket transport', () => {
     expect(socket.sent[0].type).toBe('elements');
   });
 
+  it('holds back a line until it has a second point', async () => {
+    const { transport } = setup();
+    await tick();
+    const socket = FakeSocket.all[0]!;
+    socket.open();
+    const line = (count: number) => ({
+      id: 'l',
+      type: 'line',
+      version: count,
+      versionNonce: 1,
+      points: Array.from({ length: count }, (_, i) => [i, i]),
+    });
+    const send = (elements: object[]) =>
+      transport.sendElementChanges({
+        senderId: 'u',
+        changes: elements.map((element) => ({
+          type: 'update',
+          element: element as never,
+        })),
+        timestamp: 1,
+      });
+    // Pointer-down adds a one-point line; nothing goes out for it alone.
+    await send([line(1)]);
+    expect(socket.sent).toHaveLength(0);
+    await send([line(1), rect]);
+    expect(socket.sent[0].changes.map((c: any) => c.element.id)).toEqual([
+      'a',
+    ]);
+    await send([line(2)]);
+    expect(socket.sent[1].changes[0].element.points).toHaveLength(2);
+  });
+
   it('refreshes its ticket on schedule', async () => {
     const join = vi.fn(async () => session('fresh'));
     setup(join);

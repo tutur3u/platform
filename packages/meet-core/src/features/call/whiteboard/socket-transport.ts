@@ -43,6 +43,20 @@ const OPEN = 1;
 const DEFAULT_RETRY = [1000, 2000, 5000, 10_000, 20_000] as const;
 
 /**
+ * Excalidraw adds a line or arrow with a single point on pointer-down. The
+ * room refuses a guest's line with fewer than two points, so it is held back
+ * until the next point arrives; a line drawn no further is never sent.
+ */
+function isUnfinishedLine(element: unknown) {
+  const { type, points } = element as { type?: unknown; points?: unknown };
+  return (
+    (type === 'line' || type === 'arrow') &&
+    Array.isArray(points) &&
+    points.length < 2
+  );
+}
+
+/**
  * Whiteboard transport over the room's whiteboard socket. It keeps one socket,
  * refreshes its ticket before expiry, and reconnects a bounded number of times
  * with growing delays; after that it reports an error and stays closed.
@@ -239,12 +253,13 @@ export function createBoardSocketTransport(
         handlers = null;
       };
     },
-    sendElementChanges: async (batch) =>
-      send({
-        type: 'elements',
-        changes: batch.changes,
-        timestamp: batch.timestamp,
-      }),
+    async sendElementChanges(batch) {
+      const changes = batch.changes.filter(
+        (change) => !isUnfinishedLine(change.element)
+      );
+      if (changes.length === 0 && batch.changes.length > 0) return;
+      send({ type: 'elements', changes, timestamp: batch.timestamp });
+    },
     sendCursor: async (update) =>
       send({ type: 'cursor', x: update.x, y: update.y, tool: update.tool }),
     sendSelection: async (update) =>
