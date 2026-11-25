@@ -351,10 +351,12 @@ records the product rules of the shell entry and every tab.
   `MASTERMIND_FLEET_PUBLISHER_SECRET` and on the orchestrator Mac in
   `~/.local/share/fleet-sync/publisher-secret` (mode 0600, at least 32
   characters). Optional `~/.local/share/fleet-sync/config.json` sets
-  `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
-  `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
+  `machineLabel`, `machineId`, `orchestratorThreadId` and
+  `orchestratorTitlePattern` (default `^\[Iris\] Orchestrator$`, then any
+  `[Iris]` title). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
-  `fleet-state.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
+  `fleet-state.mjs`, `fit-to-budget.mjs`, `recovery-summary.mjs`,
+  `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
   `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, `web-call.mjs`,
   `private-files.mjs`, `secret-decision.mjs`, `secret-protocol.mjs` and
@@ -587,10 +589,14 @@ records the product rules of the shell entry and every tab.
 Today shows the turn state of the orchestrator. Set `orchestratorThreadId` in the
 publisher config (`~/.local/share/fleet-sync/config.json`) before deploying: the
 ID pins the identity, and an ID missing from the T3 database reads as offline. A
-blank or non-string value is ignored with a warning and counts as unset. Without
-an ID the publisher prefers a thread titled `[Iris] Orchestrator` (or the
-`orchestratorTitlePattern` match) and falls back to any `[Iris]` title, so an
-orchestrator under another `[Iris]` title never reads offline. Delegated running
+blank, null or non-string value is ignored with a warning and counts as unset.
+Without an ID the publisher looks for a lane from a recent run titled
+`[Iris] Orchestrator`, then the newest live thread with that title (so an
+orchestrator idle beyond the 24-hour run window is still found), and only then
+repeats the search for any `[Iris]` title. A custom `orchestratorTitlePattern`
+replaces both titles and has no further fallback. An identity found only as an
+idle thread sets the turn state and never becomes a published lane or a lane
+count. Delegated running
 and waiting counts use the observed thread ancestry and appear separately from
 Iris's turn. Queued descendants count as waiting.
 

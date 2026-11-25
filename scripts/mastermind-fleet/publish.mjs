@@ -353,14 +353,15 @@ export async function runOnce({
   const orchestratorThreadId = normalizeOrchestratorThreadId(
     config.orchestratorThreadId
   );
-  if (
-    config.orchestratorThreadId !== undefined &&
-    config.orchestratorThreadId !== null &&
-    !orchestratorThreadId
-  )
+  if (config.orchestratorThreadId !== undefined && !orchestratorThreadId)
     console.warn(
       'fleet config orchestratorThreadId ignored: not a non-empty string'
     );
+  // An explicit title pattern replaces both the strict and the broader title;
+  // it has no further fallback.
+  const customPattern = config.orchestratorTitlePattern
+    ? new RegExp(config.orchestratorTitlePattern, 'i')
+    : undefined;
   const pokeDir = path.join(paths.root, 'pokes');
   const observedAt = now.toISOString();
   const revision = now.getTime();
@@ -368,7 +369,12 @@ export async function runOnce({
   let rows;
   let todayOutcomes;
   try {
-    rows = readFleetRows(db, now, orchestratorThreadId);
+    rows = readFleetRows(
+      db,
+      now,
+      orchestratorThreadId,
+      customPattern ? [customPattern] : undefined
+    );
     try {
       todayOutcomes = readTodayOutcomes(db, now);
     } catch {
@@ -440,14 +446,10 @@ export async function runOnce({
     decisions,
     localMachine,
     orchestratorThreadId,
-    ...(!orchestratorThreadId && config.orchestratorTitlePattern
+    ...(!orchestratorThreadId && customPattern
       ? {
-          orchestratorPattern: new RegExp(config.orchestratorTitlePattern, 'i'),
-          // An explicit pattern has no broader fallback.
-          orchestratorFallbackPattern: new RegExp(
-            config.orchestratorTitlePattern,
-            'i'
-          ),
+          orchestratorPattern: customPattern,
+          orchestratorFallbackPattern: customPattern,
         }
       : {}),
   });

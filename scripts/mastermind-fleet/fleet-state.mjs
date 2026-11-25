@@ -104,8 +104,33 @@ export function normalizeOrchestratorThreadId(value) {
   return id && id.length <= 256 ? id : undefined;
 }
 
-/** Reads the rows the snapshot needs from an open read-only database. */
-export function readFleetRows(db, now = new Date(), orchestratorThreadId) {
+/** How many of the most recently updated threads title discovery scans. */
+const TITLE_SCAN_LIMIT = 2000;
+
+/** A live thread's idle lane, or nothing for an archived, deleted or side chat. */
+function idleThreadLane(threadId, thread) {
+  const updatedAt = isoTime(thread?.updated_at);
+  return thread &&
+    !thread.archived_at &&
+    !thread.deleted_at &&
+    !parsePayload(thread.payload_json)?.lineage?.sideChat &&
+    updatedAt
+    ? { lane: { id: opaqueId('lane', threadId), state: 'idle', updatedAt } }
+    : undefined;
+}
+
+/**
+ * Reads the rows the snapshot needs from an open read-only database. Without a
+ * configured orchestrator thread id, the newest live thread matching each title
+ * pattern is read too, so an orchestrator idle beyond the recent run window is
+ * still found; it is an identity only and never becomes a published lane.
+ */
+export function readFleetRows(
+  db,
+  now = new Date(),
+  orchestratorThreadId,
+  titlePatterns = [ORCHESTRATOR_TITLE, ORCHESTRATOR_TITLE_FALLBACK]
+) {
   orchestratorThreadId = normalizeOrchestratorThreadId(orchestratorThreadId);
   const since = new Date(now.getTime() - DAY_MS).toISOString();
   const active = db
@@ -132,6 +157,24 @@ export function readFleetRows(db, now = new Date(), orchestratorThreadId) {
     .all(since, since);
   const ids = [...new Set([...active, ...recent].map((row) => row.thread_id))];
   if (orchestratorThreadId) ids.push(orchestratorThreadId);
+  else {
+    const inventory = db
+      .prepare(
+        `SELECT thread_id, title, payload_json
+           FROM orchestration_v2_projection_threads
+          WHERE archived_at IS NULL AND deleted_at IS NULL
+          ORDER BY updated_at DESC LIMIT ?`
+      )
+      .all(TITLE_SCAN_LIMIT);
+    for (const pattern of titlePatterns) {
+      const match = inventory.find(
+        (row) =>
+          pattern.test(String(row.title ?? '')) &&
+          !parsePayload(row.payload_json)?.lineage?.sideChat
+      );
+      if (match) ids.push(match.thread_id);
+    }
+  }
   const threads = new Map();
   const lookup = db.prepare(
     `SELECT t.thread_id, t.title, t.updated_at, t.archived_at, t.deleted_at,
@@ -296,25 +339,6 @@ export function buildFleetState(
 
   const orchestratorThreadId =
     normalizeOrchestratorThreadId(configuredThreadId);
-  // A configured local identity can be idle beyond the recent run window.
-  // Keep that identity available without adding it to fleet lane totals.
-  const identity = rows.threads.get(orchestratorThreadId);
-  const identityUpdated = isoTime(identity?.updated_at);
-  const idleIdentity =
-    identity &&
-    !identity.archived_at &&
-    !identity.deleted_at &&
-    !parsePayload(identity.payload_json)?.lineage?.sideChat &&
-    identityUpdated
-      ? {
-          lane: {
-            id: opaqueId('lane', orchestratorThreadId),
-            state: 'idle',
-            updatedAt: identityUpdated,
-          },
-        }
-      : undefined;
-
   // Threads on linked environments carry their own machine's id. Machines past
   // the cap are left out with their lanes; a thread listed twice keeps the
   // local row, then a live listing over a cached one.
@@ -379,17 +403,34 @@ export function buildFleetState(
         counts[state] += extra;
 
   // A configured id pins the identity (missing from the database reads as
-  // offline). Without one, the strict title wins and the broader title is the
-  // fallback, so an unconventionally titled orchestrator never reads offline.
+  // offline, and an idle one beyond the recent run window stays available
+  // without joining the lane totals). Without one, the strict title wins and
+  // the broader title is the fallback, among running lanes first and then idle
+  // threads, so an unconventionally titled orchestrator never reads offline.
   const pickOrchestrator = (match) =>
     lanes.filter(match).sort((a, b) => compareLanes(a.lane, b.lane))[0];
+  const pickIdleThread = (pattern) => {
+    let best;
+    for (const [id, thread] of rows.threads) {
+      if (seen.has(id) || !pattern.test(String(thread.title ?? ''))) continue;
+      const idle = idleThreadLane(id, thread);
+      if (idle && (!best || idle.lane.updatedAt > best.lane.updatedAt))
+        best = idle;
+    }
+    return best;
+  };
   const orchestratorEntry = orchestratorThreadId
     ? (pickOrchestrator((entry) => entry.threadId === orchestratorThreadId) ??
-      idleIdentity)
+      idleThreadLane(
+        orchestratorThreadId,
+        rows.threads.get(orchestratorThreadId)
+      ))
     : (pickOrchestrator((entry) => orchestratorPattern.test(entry.title)) ??
+      pickIdleThread(orchestratorPattern) ??
       pickOrchestrator((entry) =>
         orchestratorFallbackPattern.test(entry.title)
-      ));
+      ) ??
+      pickIdleThread(orchestratorFallbackPattern));
   const delegated = { running: 0, waiting: 0 };
   if (orchestratorEntry) {
     const parents = new Map(lanes.map(({ lane }) => [lane.id, lane.parentId]));

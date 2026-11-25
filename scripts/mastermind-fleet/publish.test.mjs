@@ -382,7 +382,7 @@ test('a refused addition falls back to the v1 core and still picks up answers', 
 
 test('an invalid orchestratorThreadId is ignored with a warning and keeps the title fallback', async (t) => {
   const warn = t.mock.method(console, 'warn', () => {});
-  for (const value of ['', '  ', 7]) {
+  for (const value of ['', '  ', 7, null]) {
     const paths = sandbox();
     fs.writeFileSync(
       paths.configFile,
@@ -405,7 +405,7 @@ test('an invalid orchestratorThreadId is ignored with a warning and keeps the ti
     });
     assert.notEqual(bodies[0].orchestrator.state, 'offline');
   }
-  assert.equal(warn.mock.callCount(), 3);
+  assert.equal(warn.mock.callCount(), 4);
 });
 
 test('a degraded publish stays reported until the full snapshot lands', async () => {

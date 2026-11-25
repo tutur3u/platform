@@ -73,6 +73,17 @@ test('accepts a producer clock within 60 s ahead and clamps it to now', () => {
   assert.ok(
     normalizeRecoverySummary({ ...input, generatedAt: ahead(60_000) }, now)
   );
+  // One millisecond past the allowance is rejected.
+  assert.equal(
+    normalizeRecoverySummary(
+      {
+        ...input,
+        generatedAt: new Date(now.getTime() + 60_001).toISOString(),
+      },
+      now
+    ),
+    undefined
+  );
   for (const ms of [61_000, 3_600_000, 86_400_000])
     assert.equal(
       normalizeRecoverySummary({ ...input, generatedAt: ahead(ms) }, now),

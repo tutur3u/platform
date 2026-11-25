@@ -603,3 +603,57 @@ test('an empty or non-string orchestrator id reads as unset', () => {
     'offline'
   );
 });
+
+function idleIrisDatabase() {
+  const db = fixtureDatabase();
+  db.exec(
+    "DELETE FROM orchestration_v2_projection_runs WHERE thread_id = 't-iris'"
+  );
+  return db;
+}
+
+test('finds an orchestrator idle beyond the run window by its title', () => {
+  const rows = readFleetRows(idleIrisDatabase(), NOW);
+  const state = buildFleetState(rows, { now: NOW });
+  assert.equal(state.orchestrator.state, 'idle');
+  assert.ok(state.orchestrator.lastActiveAt);
+  // An identity only: it adds no lane and no lane count.
+  assert.equal(
+    state.lanes.some((lane) => lane.title === '[Iris] Orchestrator'),
+    false
+  );
+  const withRun = buildFleetState(readFleetRows(fixtureDatabase(), NOW), {
+    now: NOW,
+  });
+  assert.equal(state.lanes.length, withRun.lanes.length - 1);
+});
+
+test('does not discover an archived orchestrator or one outside the pattern', () => {
+  const archived = idleIrisDatabase();
+  archived.exec(
+    "UPDATE orchestration_v2_projection_threads SET archived_at = '2026-11-19T00:00:00.000Z' WHERE thread_id = 't-iris'"
+  );
+  assert.equal(
+    buildFleetState(readFleetRows(archived, NOW), { now: NOW }).orchestrator
+      .state,
+    'offline'
+  );
+  const custom = /^\[Nobody\]/;
+  const rows = readFleetRows(idleIrisDatabase(), NOW, undefined, [custom]);
+  assert.equal(
+    buildFleetState(rows, {
+      now: NOW,
+      orchestratorPattern: custom,
+      orchestratorFallbackPattern: custom,
+    }).orchestrator.state,
+    'offline'
+  );
+  // A configured id missing from the database still reads offline.
+  assert.equal(
+    buildFleetState(readFleetRows(idleIrisDatabase(), NOW, 'missing'), {
+      now: NOW,
+      orchestratorThreadId: 'missing',
+    }).orchestrator.state,
+    'offline'
+  );
+});
