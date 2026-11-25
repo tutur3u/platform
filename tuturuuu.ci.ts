@@ -359,8 +359,15 @@ export const productionPublicationExemptions = {
     approvedOn: '2026-11-25',
     source: 'none',
   },
+  whiteboards: {
+    reason:
+      'Held for its wave-1 cutover; no planner job calls whiteboards-cloudflare.yaml',
+    owner: 'vhpx',
+    approvedOn: '2026-11-25',
+    source: '600e795ff0',
+  },
   // The apps below are admitted or selected but have no automatic production
-  // publisher; the production owner lane owns wiring one up.
+  // publisher yet.
   git: {
     reason:
       'Planner target without a planner job; git-cloudflare.yaml deploys the sealed artifact only by manual release',
