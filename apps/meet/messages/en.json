@@ -4744,6 +4744,17 @@
       "join_missing_hint": "This link may be incorrect, or you may not have access to the meeting. Check the invite with the host.",
       "join_missing_title": "Meeting not found or unavailable",
       "join_now": "Join now",
+      "join_qr": {
+        "auto_hide": "Auto-hide",
+        "auto_hide_minutes": "After {minutes} min",
+        "auto_hide_off": "Off",
+        "chip": "Join QR",
+        "hide_all": "Hide for everyone",
+        "minimize": "Minimize QR",
+        "options": "QR options",
+        "show": "Show join QR",
+        "switch": "Join QR on stage"
+      },
       "join_removed_hint": "The host removed you from this meeting. Your camera and microphone have stopped sharing. Contact the host if you need to return.",
       "join_removed_title": "You were removed from the meeting",
       "join_retry": "Try again",

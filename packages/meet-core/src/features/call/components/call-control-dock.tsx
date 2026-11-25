@@ -7,6 +7,7 @@ import type { useRoomRecording } from '../hooks/use-room-recording';
 import type { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
 import type { MeetRoomController } from '../lib/room-controller';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { type MeetToolDefinition, meetTools } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
 import type { ActivityEntry } from './call-activities';
@@ -25,6 +26,7 @@ import {
 } from './call-settings-link';
 import type { CallLayout } from './call-stage';
 import { type CallPanel, ControlBar, ControlSwitchRow } from './control-bar';
+import { JoinQrSwitch } from './join-qr-controls';
 import { useRoomNavigationControls } from './room-navigation-controls';
 
 type Device = 'microphone' | 'camera' | 'screen';
@@ -119,6 +121,9 @@ export function CallControlDock({
   const aiT = useTranslations('meet.ai');
   const { state } = room;
   const presenceOnly = state.settings.transport === 'presence';
+  // The redesigned room (MEET_UX_V2) adds the stage join QR.
+  const callUx = useMeetCallUx();
+  const managesJoinQr = callUx && (state.canManageParticipants ?? canManage);
   const [extrasDialog, setExtrasDialog] = useCallExtrasDialog();
   const navControls = useRoomNavigationControls(nav);
   const settingsDialog = useCallSettingsDialog();
@@ -228,6 +233,12 @@ export function CallControlDock({
                 checked={transcript.active}
                 onCheckedChange={transcript.toggle}
                 closeOnChange
+              />
+            )}
+            {managesJoinQr && (
+              <JoinQrSwitch
+                settings={state.settings}
+                onChange={room.updateSettings}
               />
             )}
             <CallExtras

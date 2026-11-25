@@ -4372,6 +4372,17 @@
       "class_timer_mode": "Who sees this timer",
       "class_timer_mode_everyone": "Everyone",
       "class_timer_mode_me": "Just me",
+      "join_qr": {
+        "auto_hide": "Auto-hide",
+        "auto_hide_minutes": "After {minutes} min",
+        "auto_hide_off": "Off",
+        "chip": "Join QR",
+        "hide_all": "Hide for everyone",
+        "minimize": "Minimize QR",
+        "options": "QR options",
+        "show": "Show join QR",
+        "switch": "Join QR on stage"
+      },
       "participant_identity": {
         "external": "From outside this workspace",
         "guest": "Guest, not signed in"
