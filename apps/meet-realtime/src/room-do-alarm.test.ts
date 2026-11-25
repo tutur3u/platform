@@ -24,7 +24,7 @@ const token = meetRealtimeTokenPayloadSchema.parse({
   mode: 'call',
   role: 'host',
   roomId: 'workspace:meeting',
-  scopes: getMeetRealtimeScopesForRole('host'),
+  scopes: [...getMeetRealtimeScopesForRole('host'), 'meet:server'],
   userId: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691',
   wsId: '0f1a64f7-780f-4d30-9d72-5530f204e95c',
 });

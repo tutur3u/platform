@@ -173,9 +173,14 @@ it.each([
   async (code, header, retryAfterSeconds) => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response('{}', { status: code, headers: { 'Retry-After': header } })
-      )
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('{}', {
+            status: code,
+            headers: { 'Retry-After': header },
+          })
+        )
     );
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     await expect(
