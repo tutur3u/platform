@@ -109,43 +109,72 @@ Manage keeps every setup collection and its permitted add action visible without
 a second counter dashboard. Season selection, creation, editing and archiving
 remain visible on Sales.
 
-Products is a scan-and-search item list. The shell navbar owns search (server
-`q`, which matches product names) and, on iOS and Android, a scan action. Each
-row shows the name, the category, an Archived label when relevant, and up to three
-locations as "warehouse · unit" with the quantity at the trailing edge, then
-"N more locations". Prices, manufacturer, owner and Finance category stay in the
-item editor. Quantities across different units are not summed. A null quantity
-means unlimited stock and must never display as zero or a low-stock warning.
-Low stock (`amount <= min_amount`) uses the warning tone and zero or less uses
-the destructive tone. An absent stock row is shown as "No stock configured" only
-when the actor may view stock; otherwise the row says "Stock hidden", because
-the products API omits stock without view-stock or create-sales permission.
-Active, Archived and All pills map to the API `status` parameter. There are no
-count chips: totals and loaded-page low-stock counts were removed as noise.
-Catalog managers open the editor on tap and get Edit and Delete on long-press;
-other actors have no row action until read-only item detail ships.
+Products is a scan-and-search item list with filters and an item detail. The
+shell navbar owns search (server `q`, which matches product names) and, on iOS
+and Android, a scan action.
+
+Each row shows the image (or a package glyph), the name, "category ·
+manufacturer", an Archived label when relevant, one stock badge, the location
+count when there is more than one, and the price. The stock badge sums
+quantities only when every tracked location uses the same unit, because unlike
+units cannot be added; otherwise it names the state. A null quantity means
+unlimited stock and never displays as zero or low. Low stock
+(`amount <= min_amount`) uses the warning tone ("31 Bag · Low"), all tracked
+locations at zero or less use the destructive "Out of stock", and fully stocked
+items use the success tone. An absent stock row reads "No stock configured" only
+when the actor may view stock; otherwise the row says "Stock hidden" and shows no
+price, because the products API omits stock without view-stock or create-sales
+permission. When locations have different prices the row shows "From" the lowest.
+
+Active, Archived and All pills map to the API `status` parameter. Category and
+sort (newest, oldest, name A-Z, name Z-A) are server parameters (`categoryId`,
+`sortBy`, `sortOrder`). The products API has no warehouse or stock-state filter,
+so Warehouse and Stock (in stock, low, out) filter the loaded rows; while too few
+loaded rows match, the list fetches up to four more pages and then continues with
+normal infinite scroll. Warehouse and Stock are hidden without stock access. A
+filtered empty list offers Clear filters.
+
+Every actor can open an item. Wide layouts (body width 720dp or more) show the
+item beside the list; the first Back closes the pane. Compact layouts open
+`/inventory/products/{id}`, whose navbar title is the item name; the same route
+on a wide layout shows the list with that item selected. The detail shows the
+header (image, name, classification, stock badge), On hand, Locations and Price,
+stock per warehouse and unit with its price and minimum, the stock history from
+`GET products/{id}/inventory/history` (25 per page, Load more), and owner,
+manufacturer, Finance category, usage, created date and description. Stock
+figures and history need view-stock or create-sales permission. Catalog managers
+get Edit, Adjust stock and Delete in the header and Edit and Delete on long-press
+in the list; delete confirms in a dialog that keeps the server error on failure.
+
+The editor uploads a product image through `POST inventory/media/upload-url`
+(target `product-featured-image`), a `PUT` to the server-issued signed URL, and
+`POST inventory/media/read-url`, then saves the returned URL as `avatar_url`, the
+same flow as web. JPEG, PNG, WebP and GIF up to 8 MB are accepted. The upload runs
+online when the image is picked, so a queued offline save carries only a
+server-issued URL; Remove photo saves `avatar_url: null`. Product batches remain
+web-only: the batches API lists workspace batches and cannot filter by product.
 
 Products have no barcode or SKU field. A scanned Tuturuuu product link
 (`https://tuturuuu.com/{ws}/inventory/products/{uuid}`) is fetched in the current
-workspace under normal server authorization. It opens the item editor only for
-catalog managers; other actors get a name search for that product, widened to
-all statuses when the product is archived. A plain code without a URI scheme, up
-to the API's 500-character search limit, becomes the name search, shown as
-"Name matches for ..." with a Clear action. Every other payload, including other
-links, product links without a UUID, Wi-Fi credentials, `otpauth:`, `mailto:`,
-`tel:`, app intents and custom schemes, is reported as an unusable code and is
-never sent to the server or shown as a query. Barcode lookup needs a schema
-field and API filter and is not implied by this scanner.
+workspace under normal server authorization and opens that item's detail for any
+actor who can read it. A plain code without a URI scheme, up to the API's
+500-character search limit, becomes the name search, shown as "Name matches for
+..." with a Clear action. Every other payload, including other links, product
+links without a UUID, Wi-Fi credentials, `otpauth:`, `mailto:`, `tel:`, app
+intents and custom schemes, is reported as an unusable code and is never sent to
+the server or shown as a query. Barcode lookup needs a schema field and API
+filter and is not implied by this scanner.
 
-Switching the status filter or query never shows rows from the previous filter:
-a slow or failed load starts empty. A failed first load shows an error with
-Retry rather than an empty catalog, and a failed next page shows a retry footer
-instead of retrying on every scroll.
+Switching the status, category, sort or query never shows rows from the previous
+filter: a slow or failed load starts empty. A failed first load shows an error
+with Retry rather than an empty catalog, and a failed next page shows a retry
+footer instead of retrying on every scroll.
 
 Native presentation does not change server permissions, mutation authorization,
 or canonical workspace membership. Existing pending-sync indicators remain
 attached to their owning rows. Regression evidence: `inventory_items_page_test.dart`,
-`inventory_items_states_test.dart`, `inventory_scan_test.dart`, and the
+`inventory_items_states_test.dart`, `inventory_product_detail_test.dart`,
+`inventory_scan_test.dart`, `inventory_design_render_test.dart`, and the
 compact/fractional stock widget tests.
 
 Overview groups low-stock products by their location and shows the quantity next
