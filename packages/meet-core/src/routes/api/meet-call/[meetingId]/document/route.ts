@@ -48,9 +48,11 @@ export async function POST(
     const input = meetingDocumentAssistSchema.safeParse(body);
     if (!input.success)
       throw new MeetCallAccessError(400, 'Invalid Mira document request');
-    const cloudflare = await getCloudflareContext({ async: true }).catch(
-      () => null
-    );
+    // `await` first: a runtime whose `getCloudflareContext` answers without a
+    // Promise must not turn every request into a TypeError.
+    const cloudflare = await Promise.resolve()
+      .then(() => getCloudflareContext({ async: true }))
+      .catch(() => null);
     const env = cloudflare?.env as
       | { MEET_AI_DISABLED?: string; GOOGLE_GENERATIVE_AI_API_KEY?: string }
       | undefined;

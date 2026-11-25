@@ -60,9 +60,11 @@ const actionSchema = z
   );
 
 async function programmingMiraProvider(access: Access) {
-  const cloudflare = await getCloudflareContext({ async: true }).catch(
-    () => null
-  );
+  // `await` first: a runtime whose `getCloudflareContext` answers without a
+  // Promise must not turn every request into a TypeError.
+  const cloudflare = await Promise.resolve()
+    .then(() => getCloudflareContext({ async: true }))
+    .catch(() => null);
   const env = cloudflare?.env as
     | {
         MEET_AI_DISABLED?: string;
