@@ -253,6 +253,12 @@ goes to the USER.
    serving its earlier version. `scripts/ci/production-planner-job-classes.test.mjs`
    keeps the classifier and the recovery check in agreement on that job.
 
+   Release checklist: if a `CRON_CONTROL_SERVING_PROOF` record is set, clear it
+   after the planner run and before advancing the pin. A leftover record whose
+   `sha` differs from the planner SHA fails the Cron job with "Cron Control
+   approval belongs to a different source SHA". See the
+   [Cron Control README](https://github.com/tutur3u/platform/blob/main/apps/cron-control/README.md#recognize-an-approved-version-already-serving).
+
    Held apps never block the apply, so they are reported loudly instead:
    after every planner run for the current `production` head,
    `planner-held-app-alert.yaml` writes an error annotation per held job and

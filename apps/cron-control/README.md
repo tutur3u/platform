@@ -66,6 +66,18 @@ operations in the release approval.
    before recording the marker.
    Retain the attempt and clear the secret under the approved release packet
    before advancing the production pin.
+5. After the planner run for the approved SHA, whether it passes or fails, the
+   release owner clears `CRON_CONTROL_SERVING_PROOF` under the approved release
+   packet before the production pin advances. The record binds one SHA, so a
+   leftover from an earlier approval is stale for every later planner run.
+   Adding and clearing are separate approved operations; the clearing approval
+   must be on the packet before the pin moves.
+
+If a planner run fails at "Verify the prebuilt artifact is already serving" with
+"Cron Control approval belongs to a different source SHA", the cause is a stale
+record: its `sha` differs from the planner SHA. Clear the secret under the
+approved release packet and rerun, which then uses the regular strict publisher.
+Do not edit the verifier or the workflow to work around it.
 
 The approval's `runId` must name a `push` run of the Cron Control workflow on
 `main` whose head commit is the production SHA, and `artifactId` must be that
