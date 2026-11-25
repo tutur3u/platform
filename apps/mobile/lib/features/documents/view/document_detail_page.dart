@@ -20,6 +20,7 @@ import 'package:mobile/features/documents/view/document_share_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -193,6 +194,18 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     });
   }
 
+  /// The shell title is the document title. Renames are applied locally and
+  /// sent through the offline-capable save queue, so they never block on the
+  /// network and survive a dropped connection.
+  Future<void> _rename(String name) async {
+    final next = name.trim();
+    if (next.isEmpty || _closed || _document == null) return;
+    if (next == _title.text.trim()) return;
+    setState(() => _title.text = next);
+    _scheduleSave();
+    unawaited(_persist());
+  }
+
   Future<bool> _setPublic(bool value) async {
     _rememberWorkspace();
     final wsId = _wsIdCache;
@@ -337,6 +350,21 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
               deepLinkBackRoute: Routes.documents,
               items: const [],
             ),
+            ShellTitleOverride(
+              ownerId: 'document-detail-title',
+              locations: {Routes.documentDetailPath(widget.documentId)},
+              title: ready
+                  ? documentDisplayTitle(
+                      name: _title.text,
+                      untitled: l10n.documentsUntitled,
+                      editedAt: editedAt,
+                      locale: l10n.localeName,
+                    )
+                  : l10n.documentsTitle,
+              titleActionToken: (widget.documentId, ready),
+              showLeadingBrand: false,
+              onTitleSubmitted: ready ? _rename : null,
+            ),
             ShellChromeActions(
               ownerId: 'document-detail-actions',
               locations: {Routes.documentDetailPath(widget.documentId)},
@@ -376,14 +404,12 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             message: l10n.documentsEmptyDescription,
                           )
                         : DocumentEditor(
-                            title: _title,
                             editor: _editor,
                             focusNode: _editorFocus,
                             scrollController: _editorScroll,
                             status: _status,
                             owner: documentOwnerLabel(document, l10n),
                             lastEdited: edited,
-                            onTitleChanged: (_) => _scheduleSave(),
                           ),
                   ),
                 ),

@@ -15,6 +15,7 @@ import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -159,10 +160,7 @@ void main() {
       final cap = AppLayout.maxContentWidth(AppPageKind.reading, deviceClass)!;
       final width = math.min(size.width, cap);
       final inset = (size.width - width) / 2 + gutter;
-      for (final field in [
-        find.byType(TextField).first,
-        find.byType(QuillEditor),
-      ]) {
+      for (final field in [find.byType(QuillEditor)]) {
         final rect = tester.getRect(field);
         expect(rect.left, closeTo(inset, 0.5));
         expect(rect.width, closeTo(width - 2 * gutter, 0.5));
@@ -182,7 +180,49 @@ void main() {
       expect(toolbar.left, 0);
       expect(toolbar.width, 390);
       expect(toolbar.bottom, closeTo(844 - _clearance, 0.5));
-      expect(tester.getRect(find.byType(TextField).first).left, 16);
+      expect(tester.getRect(find.byType(QuillEditor)).left, 16);
+    });
+
+    testWidgets('the shell title is the editable document title', (
+      tester,
+    ) async {
+      final repository = _repository();
+      when(
+        () => repository.updateDocument(
+          any(),
+          any(),
+          name: any(named: 'name'),
+          content: any(named: 'content'),
+          isPublic: any(named: 'isPublic'),
+        ),
+      ).thenAnswer((_) async {});
+      await _pump(
+        tester,
+        DocumentDetailPage(documentId: 'doc-1', repository: repository),
+        const Size(390, 844),
+      );
+      final override = tester.widget<ShellTitleOverride>(
+        find.byType(ShellTitleOverride),
+      );
+      expect(override.title, 'Roadmap');
+      expect(override.showLeadingBrand, isFalse);
+      expect(override.onTitleSubmitted, isNotNull);
+      expect(find.text('Roadmap'), findsNothing);
+
+      await override.onTitleSubmitted!('Roadmap 2027');
+      await tester.pump();
+      verify(
+        () => repository.updateDocument(
+          'ws',
+          'doc-1',
+          name: 'Roadmap 2027',
+          content: any(named: 'content'),
+        ),
+      ).called(1);
+      final renamed = tester.widget<ShellTitleOverride>(
+        find.byType(ShellTitleOverride),
+      );
+      expect(renamed.title, 'Roadmap 2027');
     });
 
     testWidgets('the formatting toolbar lifts with the keyboard', (

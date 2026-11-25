@@ -6,28 +6,25 @@ import 'package:mobile/l10n/l10n.dart';
 
 enum DocumentSaveStatus { idle, saving, saved, error }
 
-/// Full-screen document body: inline title, status and a Quill editor.
+/// Full-screen document body: metadata, status and a Quill editor. The
+/// document title lives in the shell top bar, where it is edited inline.
 class DocumentEditor extends StatelessWidget {
   const DocumentEditor({
-    required this.title,
     required this.editor,
     required this.focusNode,
     required this.scrollController,
     required this.status,
     required this.owner,
-    required this.onTitleChanged,
     this.lastEdited,
     super.key,
   });
 
-  final TextEditingController title;
   final QuillController editor;
   final FocusNode focusNode;
   final ScrollController scrollController;
   final DocumentSaveStatus status;
   final String owner;
   final String? lastEdited;
-  final ValueChanged<String> onTitleChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -46,18 +43,6 @@ class DocumentEditor extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppTextField(
-            controller: title,
-            borderless: true,
-            placeholder: l10n.documentsTitlePlaceholder,
-            textCapitalization: TextCapitalization.sentences,
-            style: tokens.typography.x2Large.copyWith(
-              color: tokens.colorScheme.foreground,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            ),
-            onChanged: onTitleChanged,
-          ),
           Wrap(
             spacing: AppSpacing.md,
             runSpacing: AppSpacing.xs,
