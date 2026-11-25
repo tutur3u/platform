@@ -66,19 +66,39 @@ The repository pins a Bun patch for `@excalidraw/excalidraw@0.18.1`
 element on its own canvas scaled by the viewer's zoom, and gives an arrow with
 a text label a square label canvas of its longest side that it never caps, so
 zooming in or one long labelled arrow could take gigabytes on every viewer.
-The patch changes `cappedElementCanvasSize` in both shipped builds
+The patch changes the element canvas cache in both shipped builds
 (`dist/dev/chunk-4FTI6OG3.js` and the minified `dist/prod/chunk-K2UTITRG.js`):
 
-- the cache scale is at most 1, so a cached canvas never grows past its
-  100%-zoom size; zoomed in, Excalidraw draws it upscaled and slightly soft;
-- a labelled arrow's scale also keeps its label canvas within Excalidraw's own
+- `cappedElementCanvasSize` caps the cache scale at 1, so a cached canvas
+  never grows past its 100%-zoom size; zoomed in, Excalidraw draws it
+  upscaled, so shapes and text look blocky. The product owner accepted blocky
+  zoomed text in exchange for bounded memory. Images are exempt and keep the
+  upstream zoom scale, since a photo's detail is the point of zooming in and
+  people outside the workspace cannot add images.
+- A labelled arrow's scale also keeps its label canvas within Excalidraw's own
   limits of 16,777,216 px and 32,767 px a side.
+- `generateElementWithCanvas` rebuilds a cached canvas only when its effective
+  scale changes, not on every zoom change, so zooming between 100% and 1000%
+  reuses the same caches.
+- `drawElementFromCanvas` draws through `__ttrDrawClipped`, appended to each
+  chunk, which copies only the part of a cached canvas that lands on the
+  visible canvas. The pixels are the same, and one element costs at most
+  about a viewport of pixels (up to twice that when rotated), however far it
+  is zoomed.
 
-`packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the sizing code
-of both builds at zoom 1 to 3 and a device pixel ratio of two; it fails
-against the unpatched package. Any `@excalidraw/excalidraw` upgrade must
-re-apply the patch with `bun patch` to the new build's chunks, update the
-test's chunk names and helper names, and pass that test before it lands.
+The patch is produced by a script that applies each edit to the pristine
+chunks and refuses unless every edit matches exactly once. Replace the whole
+patch rather than editing the `.patch` file: restore the pristine package,
+run the script inside `bun patch @excalidraw/excalidraw`, then
+`bun patch --commit`.
+
+`packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the patched code
+of both builds: the sizing at zoom 1 to 3 and a device pixel ratio of two,
+the image exemption, the rebuild rule, and the clipped draw at 10x zoom,
+straight and rotated. It fails against the unpatched package. Any
+`@excalidraw/excalidraw` upgrade must re-apply the patch to the new build's
+chunks, update the test's chunk names and helper names, and pass that test
+before it lands.
 
 Step 1. Install [bun](https://bun.sh/docs/installation) on your machine (if you don't already have it yet), by running the following command:
 

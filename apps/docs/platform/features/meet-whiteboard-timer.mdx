@@ -127,14 +127,18 @@ dropped before the arrow is stored or relayed. Members' arrow labels are kept.
 
 Drawing from people outside the workspace is budgeted to limit the work and
 memory each viewer spends on the board. The budgets assume 100% zoom at a
-device pixel ratio of two. The board's editor never caches an element above
-its 100%-zoom size, so zooming in draws the cache upscaled instead of growing
-it, and it fits an arrow's label canvas within the per-element cap, for
-everyone on the board (see Excalidraw canvas cap in the development guide;
-regression test `packages/whiteboard/src/excalidraw-canvas-cap.test.ts`). Every
-element has one render cost, roughly the lines and
-points a viewer draws for it: one, plus its fill, its stroke points, its
-dashes and its text lines.
+device pixel ratio of three, the densest common phone and tablet screens.
+For everyone on the board, the editor never caches a shape above its
+100%-zoom size: zooming in draws the cache upscaled instead of growing it, so
+zoomed shapes and text look blocky, which the product owner accepted. Images
+keep their full zoom detail. It rebuilds a cache only when its scale changes,
+fits an arrow's label canvas within the per-element cap, and copies only the
+visible part of each cached canvas, so drawing one element costs at most about
+a viewport of pixels at any zoom (see Excalidraw canvas cap in the development
+guide; regression test
+`packages/whiteboard/src/excalidraw-canvas-cap.test.ts`). Every element has
+one render cost, roughly the lines and points a viewer draws for it: one,
+plus its fill, its stroke points, its dashes and its text lines.
 
 - A hachure, zigzag or cross-hatch fill on a rectangle, diamond or ellipse
   costs its diagonal over four times the stroke width, plus its diagonal over
@@ -153,14 +157,14 @@ dashes and its text lines.
 
 Every viewer also caches each element on its own canvas of up to 16.7 million
 pixels (64 MiB). The board measures that canvas at a device pixel ratio of
-two: twice the element's box (the bounds of its points for a line, arrow or
-freehand stroke, grown by a quarter on each axis plus four units per
+three: three times the element's box (the bounds of its points for a line,
+arrow or freehand stroke, grown by a quarter on each axis plus four units per
 roughness for a rounded line or arrow, which draws a curve past its points)
 plus Excalidraw's padding on each side, which is half the font size for text,
 twelve stroke widths for a freehand stroke and 20 px otherwise, up to that
-cap. An arrow that lists a text label also gets a square
-label canvas, twice its longest side plus ten paddings, which Excalidraw never
-caps; it counts whether or not the label exists.
+cap. An arrow that lists a text label also gets a square label canvas, three
+times its longest side plus ten paddings; the board counts it uncapped whether
+or not the label exists.
 
 One element from someone outside the workspace may cost at most 10,000. Their
 growing edits are refused once the whole board, members' shapes included,
@@ -318,8 +322,9 @@ Under `packages/meet-core/src/features/call`:
 
 Under `packages/whiteboard/src`:
 
-- `excalidraw-canvas-cap.test.ts`: the patched Excalidraw sizing at zoom 1 to
-  3 for the dev and prod builds.
+- `excalidraw-canvas-cap.test.ts`: the patched Excalidraw cache for the dev
+  and prod builds: sizing at zoom 1 to 3, the image exemption, the rebuild
+  rule, and the clipped draw at 10x zoom.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts`
 (a guest edit ticket refused and closed while guest drawing is held or the
