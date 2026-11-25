@@ -3,7 +3,6 @@ library;
 
 import 'dart:io';
 
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,14 +11,10 @@ import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/golden_tolerance.dart';
 import '../../helpers/pump_app.dart';
-
-class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 void main() {
   final original = goldenFileComparator;
@@ -63,14 +58,7 @@ void main() {
           });
           final settings = SettingsRepository();
           final tabs = AppTabCubit(settingsRepository: settings);
-          final workspace = _Workspace();
-          whenListen(
-            workspace,
-            const Stream<WorkspaceState>.empty(),
-            initialState: const WorkspaceState(hiddenModuleIds: ['crm', 'cms']),
-          );
           addTearDown(tabs.close);
-          addTearDown(workspace.close);
           await tabs.loadLastApp();
 
           await tester.pumpWidget(
@@ -78,11 +66,8 @@ void main() {
               sorbet: sorbet,
               brightness: brightness,
               boundaryKey: const ValueKey('golden'),
-              home: MultiBlocProvider(
-                providers: [
-                  BlocProvider.value(value: tabs),
-                  BlocProvider.value(value: workspace),
-                ],
+              home: BlocProvider.value(
+                value: tabs,
                 child: const Scaffold(body: AppsScreen()),
               ),
             ),
