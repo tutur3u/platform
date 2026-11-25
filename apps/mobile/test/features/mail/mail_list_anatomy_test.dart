@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
@@ -63,6 +64,10 @@ FontWeight? _weight(WidgetTester tester, String text) {
 }
 
 void main() {
+  // Date formatting reads locale data that no earlier test may have loaded
+  // when the suite runs on its own or in a different shard.
+  setUpAll(initializeDateFormatting);
+
   group('row anatomy', () {
     usePhoneSurface();
 
