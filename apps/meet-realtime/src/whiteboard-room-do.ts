@@ -107,11 +107,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   private opens: BoardOpenWindows = new Map();
   /**
    * The board's shared guest churn bucket (`refillRoomChurnBudget`), held in
-   * memory, so it costs no storage write. An eviction restarts it full,
-   * which grants nothing extra: a hibernating object is evicted only after
-   * about ten seconds without an event, and the bucket refills from empty in
-   * ten seconds anyway. A runtime restart grants at most one extra bucket.
-   * Each connection's own bucket survives either in its attachment.
+   * memory, so it costs no storage write. An eviction restarts it full.
+   * The runtime currently hibernates an object after about ten seconds
+   * without an event (Cloudflare's documented behaviour, not a guarantee),
+   * and the bucket refills from empty in ten seconds, so a reset after a
+   * quiet spell grants nothing extra. An earlier eviction or a runtime
+   * restart grants at most one extra room bucket each. Each connection's own
+   * bucket survives either in its attachment.
    */
   private roomChurn: ChurnBucket = {};
   /**
@@ -562,7 +564,8 @@ export class WhiteboardRoomDurableObject implements DurableObject {
             : null;
         // Guests are held to the scene's render cost and canvas area, and to
         // their connection's and the board's churn buckets, which every
-        // applied change spends, re-sent copies included.
+        // applied change spends, re-sent copies included. Their arrows keep
+        // only the text labels the scene backs.
         const now = Date.now();
         const own = guest ? refillChurnBudget(attachment, now) : 0;
         const shared = guest ? refillRoomChurnBudget(this.roomChurn, now) : 0;
@@ -575,6 +578,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
                 maxCost: BOARD_GUEST_LIMITS.maxSceneCost,
                 maxArea: BOARD_GUEST_LIMITS.maxSceneCanvasPixels,
                 budget,
+                checkLabels: true,
               }
             : {}
         );

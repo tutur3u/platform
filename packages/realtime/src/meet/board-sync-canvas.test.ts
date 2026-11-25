@@ -1,0 +1,215 @@
+import { describe, expect, it } from 'vitest';
+import {
+  elementCanvasArea,
+  elementChurnCost,
+  MAX_ELEMENT_CANVAS_PIXELS,
+} from './board-sync-cost';
+import { sanitizeGuestElement } from './board-sync-guest';
+import { guestElement } from './board-sync-guest.fixtures';
+import { checkArrowLabels } from './board-sync-labels';
+import { applyBoundedChanges, sceneFrom, sizesFrom } from './board-sync-merge';
+import {
+  BOARD_GUEST_LIMITS,
+  type BoardChange,
+  type BoardElement,
+} from './board-sync-schema';
+
+const insert = (element: BoardElement): BoardChange => ({
+  type: 'insert',
+  element,
+});
+const areaLimit = BOARD_GUEST_LIMITS.maxSceneCanvasPixels;
+
+describe('canvas area', () => {
+  it('measures the box at a pixel ratio of two plus its padding', () => {
+    // (200·2 + 40) × (100·2 + 40)
+    expect(elementCanvasArea(guestElement('rectangle'))).toBe(440 * 240);
+    const line = guestElement('line', {
+      width: 0,
+      height: 0,
+      points: [
+        [0, 0],
+        [300, -50],
+        [100, 40],
+      ],
+    });
+    expect(elementCanvasArea(line)).toBe(640 * 220);
+    const huge = guestElement('rectangle', { width: 1e4, height: 1e4 });
+    expect(elementCanvasArea(huge)).toBe(MAX_ELEMENT_CANVAS_PIXELS);
+    expect(elementCanvasArea({ ...huge, isDeleted: true })).toBe(0);
+    expect(elementCanvasArea({ type: 'text' })).toBe(MAX_ELEMENT_CANVAS_PIXELS);
+  });
+
+  it('pads text by half its font size and freehand by twelve strokes', () => {
+    const empty = guestElement('text', { width: 0, height: 0, fontSize: 256 });
+    expect(elementCanvasArea(empty)).toBe(256 * 256);
+    const stroke = (strokeWidth: number) =>
+      guestElement('freedraw', {
+        strokeWidth,
+        points: [
+          [0, 0],
+          [300, 200],
+        ],
+      });
+    expect(elementCanvasArea(stroke(2))).toBe((600 + 48) * (400 + 48));
+    expect(elementCanvasArea(stroke(16))).toBe((600 + 384) * (400 + 384));
+  });
+
+  it('refuses the padding exploits for guests', () => {
+    expect(
+      sanitizeGuestElement(guestElement('text', { fontSize: 257 }))
+    ).toBeNull();
+    expect(
+      sanitizeGuestElement(guestElement('freedraw', { strokeWidth: 17 }))
+    ).toBeNull();
+    expect(
+      sanitizeGuestElement(guestElement('rectangle', { strokeWidth: 64 }))
+    ).not.toBeNull();
+  });
+
+  it('adds the uncapped label canvas of a labelled arrow', () => {
+    const arrow = (boundElements: unknown) =>
+      guestElement('arrow', {
+        boundElements,
+        points: [
+          [0, 0],
+          [16_000, 0],
+        ],
+      });
+    expect(elementCanvasArea(arrow(null))).toBe(32_040 * 40);
+    // A square of the longest side plus ten paddings: about a gigapixel.
+    expect(elementCanvasArea(arrow([{ id: 't', type: 'text' }]))).toBe(
+      32_040 * 40 + 32_200 * 32_200
+    );
+  });
+
+  // Each costs one to draw, but every viewer caches it on a full-size canvas.
+  const large = (id: string, over: Record<string, unknown> = {}) =>
+    guestElement('rectangle', { id, width: 2048, height: 2048, ...over });
+
+  it('refuses a guest flood of large shapes past the scene area', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const flood = Array.from({ length: 2000 }, (_, i) =>
+      insert(large(`g${i}`))
+    );
+    const { applied, rejected } = applyBoundedChanges(
+      scene,
+      tracker,
+      flood,
+      undefined,
+      { maxArea: areaLimit }
+    );
+    expect(rejected).toBe('size');
+    expect(applied).toHaveLength(4);
+    expect(tracker.areaTotal).toBe(areaLimit);
+    expect(tracker.costTotal).toBe(4);
+  });
+
+  it('counts members and frees the area on shrink and delete', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const members = Array.from({ length: 4 }, (_, i) => insert(large(`m${i}`)));
+    applyBoundedChanges(scene, tracker, members);
+    const guest = (element: BoardElement) =>
+      applyBoundedChanges(scene, tracker, [insert(element)], undefined, {
+        maxArea: areaLimit,
+      });
+    expect(guest(large('g1')).rejected).toBe('size');
+    expect(
+      guest(large('m0', { version: 2, width: 10, height: 10 })).applied
+    ).toHaveLength(1);
+    expect(guest(large('g1')).rejected).toBe('size');
+    guest(large('m1', { version: 2, isDeleted: true }));
+    expect(guest(large('g1')).applied).toHaveLength(1);
+    expect(sizesFrom(scene).areaTotal).toBe(tracker.areaTotal);
+  });
+
+  it('charges the canvas to churn, cutting off a re-sent large shape', () => {
+    // One to draw and 4,096 for the full-size canvas each viewer redraws.
+    expect(elementChurnCost(large('a'))).toBe(1 + 4096);
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const budget = { tokens: BOARD_GUEST_LIMITS.churnCapacity };
+    const resend = Array.from({ length: 30 }, (_, i) =>
+      insert(large('a', { version: i + 1 }))
+    );
+    const { applied, rejected } = applyBoundedChanges(
+      scene,
+      tracker,
+      resend,
+      undefined,
+      { maxArea: areaLimit, budget }
+    );
+    expect(applied).toHaveLength(9);
+    expect(rejected).toBe('size');
+  });
+});
+
+describe('arrow labels', () => {
+  const arrow = (id: string, labels: string[]) =>
+    guestElement('arrow', {
+      id,
+      boundElements: [
+        { id: 'r', type: 'arrow' },
+        ...labels.map((label) => ({ id: label, type: 'text' })),
+      ],
+    });
+  const text = (id: string, containerId: string | null) =>
+    guestElement('text', { id, containerId });
+  const labelsOf = (change: BoardChange) =>
+    (
+      change.element as unknown as { boundElements: { id: string }[] }
+    ).boundElements.map((bound) => bound.id);
+
+  it('keeps only labels whose text names the arrow as its container', () => {
+    const scene = sceneFrom([
+      text('stored', 'a'),
+      text('elsewhere', 'other'),
+      text('loose', null),
+    ]);
+    const [checked, alone] = checkArrowLabels(
+      [
+        insert(arrow('a', ['a', 'stored', 'elsewhere', 'loose', 'sent', 'x'])),
+        insert(text('sent', 'a')),
+      ],
+      scene
+    );
+    // The arrow itself, other containers, free text and missing ids go.
+    expect(labelsOf(checked!)).toEqual(['r', 'stored', 'sent']);
+    expect(alone!.element.id).toBe('sent');
+  });
+
+  it('stores and relays a self-labelled guest arrow without its label', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const exploit = guestElement('arrow', {
+      id: 'a',
+      boundElements: [{ id: 'a', type: 'text' }],
+      points: [
+        [0, 0],
+        [16_000, 0],
+      ],
+    });
+    const { applied } = applyBoundedChanges(
+      scene,
+      tracker,
+      [insert(exploit)],
+      undefined,
+      { maxArea: areaLimit, checkLabels: true }
+    );
+    expect(labelsOf(applied[0]!)).toEqual([]);
+    expect(scene.get('a')).toEqual(applied[0]!.element);
+    expect(tracker.areaTotal).toBe(32_040 * 40);
+    // Unchecked, the same arrow's label canvas passes the scene area.
+    const fresh = sceneFrom([]);
+    const unchecked = applyBoundedChanges(
+      fresh,
+      sizesFrom(fresh),
+      [insert(exploit)],
+      undefined,
+      { maxArea: areaLimit }
+    );
+    expect(unchecked.rejected).toBe('size');
+  });
+});

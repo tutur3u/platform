@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'bun:test';
+import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
 import {
   clock,
   fixture,
@@ -10,7 +11,11 @@ import {
 
 installRoomTestHooks();
 
-/** About 4,775 render cost: a large hachure fill with a thin stroke. */
+/**
+ * About 4,775 render cost, a large hachure fill with a thin stroke, on a
+ * full-size canvas: each applied copy spends 8,871 churn (4,096 for the
+ * canvas every viewer redraws).
+ */
 const heavy = (id: string, version = 1) =>
   full(id, {
     version,
@@ -27,7 +32,7 @@ test('cuts a costly guest batch short but relays members', async () => {
   const member = await open(f, { userId: 'u2' });
   // 60 shapes of about 4,775 each, on a full-size canvas each, pass the
   // guest's churn bucket and the scene's cost and canvas area budgets;
-  // board-sync-cost.test.ts covers each budget alone.
+  // board-sync-cost.test.ts and board-sync-canvas.test.ts cover each alone.
   const fills = (prefix: string) =>
     Array.from({ length: 60 }, (_, i) => ({
       type: 'insert',
@@ -59,23 +64,23 @@ test('spends a guest churn bucket on every re-sent shape, across eviction', asyn
         changes: [{ type: 'insert', element: heavy('same', version) }],
       })
     );
-  // 40,000 tokens buy eight copies of a 4,775 shape.
-  for (let version = 1; version <= 8; version++) await send(f.the, version);
+  // 40,000 tokens buy four copies at 8,871: 4,516 remain.
+  for (let version = 1; version <= 4; version++) await send(f.the, version);
   assert.equal(
     guest.sent.some((m) => m.type === 'rejected'),
     false
   );
-  await send(f.the, 9);
+  await send(f.the, 5);
   assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
   // The bucket rides in the socket attachment, so an eviction keeps it.
   const restored = f.restart();
   guest.sent.length = 0;
-  await send(restored, 10);
+  await send(restored, 6);
   assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
   // Two seconds refill 8,000 tokens: one more copy applies.
   clock.now += 2000;
   guest.sent.length = 0;
-  await send(restored, 11);
+  await send(restored, 7);
   assert.equal(
     guest.sent.some((m) => m.type === 'rejected'),
     false
@@ -96,16 +101,16 @@ test('holds every guest on the board to one shared churn bucket', async () => {
         changes: [{ type: 'insert', element: heavy(id, version) }],
       })
     );
-  // Three guests each spend 38,200 of their own 40,000: 114,600 of the
+  // Three guests each spend 35,484 of their own 40,000: 106,452 of the
   // board's 120,000.
   for (const [i, guest] of guests.slice(0, 3).entries())
-    for (let version = 1; version <= 8; version++)
+    for (let version = 1; version <= 4; version++)
       await send(guest, `g${i}`, version);
   assert.equal(
     guests.some((guest) => guest.sent.some((m) => m.type === 'rejected')),
     false
   );
-  // The fourth guest's own bucket is full, but the board has 5,400 left.
+  // The fourth guest's own bucket is full, but the board has 13,548 left.
   const fourth = guests[3]!;
   await send(fourth, 'g3', 1);
   assert.equal(
@@ -122,4 +127,23 @@ test('holds every guest on the board to one shared churn bucket', async () => {
     fourth.sent.some((m) => m.type === 'rejected'),
     false
   );
+});
+
+test('relays a guest arrow without a label the scene does not back', async () => {
+  const f = fixture();
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const peer = await open(f, { userId: 'u2' });
+  const arrow = guestElement('arrow', {
+    id: 'a',
+    boundElements: [{ id: 'a', type: 'text' }],
+  });
+  await f.the.webSocketMessage(
+    guest as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [{ type: 'insert', element: arrow }],
+    })
+  );
+  const relayed = peer.sent.findLast((m) => m.type === 'elements');
+  assert.deepEqual(relayed.changes[0].element.boundElements, []);
 });

@@ -40,6 +40,15 @@ export const MAX_RENDER_COST = 1e9;
  * (`cappedElementCanvasSize`), four bytes each: 64 MiB at the cap.
  */
 export const MAX_ELEMENT_CANVAS_PIXELS = 16_777_216;
+/**
+ * Device pixel ratio the canvas area is measured at: a retina screen, where
+ * a canvas holds four device pixels per canvas unit.
+ */
+const MEASURED_PIXEL_RATIO = 2;
+/** Every canvas area is a finite integer no larger than this. */
+const MAX_CANVAS_AREA = 1e15;
+/** Canvas pixels that cost one churn token when an element is redrawn. */
+const CANVAS_PIXELS_PER_TOKEN = 4096;
 
 type CostShape = {
   type?: unknown;
@@ -53,6 +62,8 @@ type CostShape = {
   roughness?: unknown;
   points?: unknown;
   text?: unknown;
+  fontSize?: unknown;
+  boundElements?: unknown;
 };
 
 const finiteOr = (value: unknown, fallback: number) =>
@@ -207,17 +218,59 @@ function canvasBox(element: CostShape, type: string): [number, number] {
   return [maxX - minX, maxY - minY];
 }
 
+/** Excalidraw's padding around a cached element canvas (`getCanvasPadding`). */
+function canvasPadding(element: CostShape, type: string) {
+  if (type === 'freedraw')
+    return Math.abs(finiteOr(element.strokeWidth, 1)) * 12;
+  if (type === 'text')
+    return Math.abs(finiteOr(element.fontSize, Number.POSITIVE_INFINITY)) / 2;
+  return 20;
+}
+
+/** An arrow that names a text label among its bound elements. */
+function hasLabel(element: CostShape, type: string) {
+  return (
+    type === 'arrow' &&
+    Array.isArray(element.boundElements) &&
+    element.boundElements.some(
+      (bound) => (bound as { type?: unknown } | null)?.type === 'text'
+    )
+  );
+}
+
 /**
- * Pixels of the canvas every viewer allocates to cache one element: its box
- * (its point bounds for lines, arrows and freehand strokes), at least one
- * pixel each way, up to Excalidraw's cap. Deleted elements hold none; a
- * missing or non-finite size counts as the cap.
+ * Pixels of the canvases every viewer allocates to cache one element, at a
+ * device pixel ratio of two: its box (the bounds of its points for a line,
+ * arrow or freehand stroke) plus Excalidraw's padding on each side, up to the
+ * per-element cap. An arrow with a text label also gets a square label canvas
+ * of its longest side plus ten paddings, which Excalidraw never caps; it is
+ * counted whether or not the label exists, so adding the text later costs
+ * nothing extra. Deleted elements hold none; a missing or non-finite size
+ * counts as the most.
  */
 export function elementCanvasArea(element: CostShape) {
   if (element.isDeleted === true) return 0;
   const type = typeof element.type === 'string' ? element.type : '';
   const [width, height] = canvasBox(element, type);
-  const pixels = Math.max(1, width) * Math.max(1, height);
-  if (!(pixels >= 0)) return MAX_ELEMENT_CANVAS_PIXELS;
-  return Math.min(MAX_ELEMENT_CANVAS_PIXELS, Math.ceil(pixels));
+  const padding = canvasPadding(element, type);
+  const side = (length: number) => length * MEASURED_PIXEL_RATIO + padding * 2;
+  let pixels = Math.min(MAX_ELEMENT_CANVAS_PIXELS, side(width) * side(height));
+  if (hasLabel(element, type)) {
+    const label = Math.max(width, height) * MEASURED_PIXEL_RATIO + padding * 10;
+    pixels += label * label;
+  }
+  if (!(pixels >= 0)) return MAX_CANVAS_AREA;
+  return Math.min(MAX_CANVAS_AREA, Math.ceil(pixels));
+}
+
+/**
+ * What applying one element spends from a churn bucket: its render cost
+ * plus one per 4,096 canvas pixels, since every viewer redraws a re-sent
+ * element's canvases from scratch. A full-size canvas costs 4,096.
+ */
+export function elementChurnCost(element: CostShape) {
+  return clampRenderCost(
+    elementRenderCost(element) +
+      Math.ceil(elementCanvasArea(element) / CANVAS_PIXELS_PER_TOKEN)
+  );
 }

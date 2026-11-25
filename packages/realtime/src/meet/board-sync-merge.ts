@@ -1,4 +1,9 @@
-import { elementCanvasArea, elementRenderCost } from './board-sync-cost';
+import {
+  elementCanvasArea,
+  elementChurnCost,
+  elementRenderCost,
+} from './board-sync-cost';
+import { checkArrowLabels } from './board-sync-labels';
 import {
   BOARD_LIMITS,
   type BoardChange,
@@ -128,8 +133,13 @@ export interface GuestWriteLimits {
   maxCost?: number;
   /** Cached canvas pixels the scene may hold before growth is refused. */
   maxArea?: number;
-  /** Render cost this write may still apply; each applied change spends it. */
+  /**
+   * Churn this write may still apply (`elementChurnCost`); each applied
+   * change spends it.
+   */
   budget?: { tokens: number };
+  /** Keep only the arrow labels the scene backs (`checkArrowLabels`). */
+  checkLabels?: boolean;
 }
 
 export interface BoundedResult {
@@ -144,8 +154,10 @@ export interface BoundedResult {
  * element in the scene) and the writer's churn budget. Growth that would pass
  * a scene budget is refused; changes that keep or shrink an element pass them,
  * so a full board can still be cleaned up. The churn budget charges every
- * applied change, so only deletions (which cost nothing) apply once it is
- * spent.
+ * applied change its render cost and canvas area, so only deletions (which
+ * cost nothing) apply once it is spent. With `checkLabels`, arrow labels the
+ * scene does not back are dropped first, and the relayed change carries the
+ * element as stored.
  */
 export function applyBoundedChanges(
   scene: BoardScene,
@@ -156,11 +168,13 @@ export function applyBoundedChanges(
     maxCost = Number.POSITIVE_INFINITY,
     maxArea = Number.POSITIVE_INFINITY,
     budget,
+    checkLabels = false,
   }: GuestWriteLimits = {}
 ): BoundedResult {
   const applied: BoardChange[] = [];
   let rejected: BoundedResult['rejected'] = null;
-  for (const change of changes) {
+  const checked = checkLabels ? checkArrowLabels(changes, scene) : changes;
+  for (const change of checked) {
     const { element } = change;
     const existing = scene.get(element.id);
     if (existing && !supersedes(element, existing)) continue;
@@ -190,7 +204,8 @@ export function applyBoundedChanges(
       rejected ??= 'size';
       continue;
     }
-    if (budget && !(cost <= budget.tokens)) {
+    const churn = budget ? elementChurnCost(held) : 0;
+    if (budget && !(churn <= budget.tokens)) {
       rejected ??= 'size';
       continue;
     }
@@ -201,7 +216,7 @@ export function applyBoundedChanges(
     tracker.costTotal = nextCost;
     tracker.areas.set(element.id, area);
     tracker.areaTotal = nextArea;
-    if (budget) budget.tokens -= cost;
+    if (budget) budget.tokens -= churn;
     applied.push(change);
   }
   return { applied, rejected };

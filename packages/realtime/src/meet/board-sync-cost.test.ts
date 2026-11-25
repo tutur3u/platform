@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampRenderCost,
-  elementCanvasArea,
   elementRenderCost,
-  MAX_ELEMENT_CANVAS_PIXELS,
   MAX_RENDER_COST,
 } from './board-sync-cost';
 import {
@@ -272,81 +270,12 @@ describe('scene render budget', () => {
   });
 });
 
-describe('canvas area', () => {
-  it('measures the box, or the point bounds of a stroke, up to the cap', () => {
-    expect(elementCanvasArea(guestElement('rectangle'))).toBe(200 * 100);
-    const line = guestElement('line', {
-      width: 0,
-      height: 0,
-      points: [
-        [0, 0],
-        [300, -50],
-        [100, 40],
-      ],
-    });
-    expect(elementCanvasArea(line)).toBe(300 * 90);
-    const flat = guestElement('line', {
-      points: [
-        [0, 0],
-        [500, 0],
-      ],
-    });
-    expect(elementCanvasArea(flat)).toBe(500);
-    const huge = guestElement('rectangle', { width: 1e4, height: 1e4 });
-    expect(elementCanvasArea(huge)).toBe(MAX_ELEMENT_CANVAS_PIXELS);
-    expect(elementCanvasArea({ ...huge, isDeleted: true })).toBe(0);
-    expect(elementCanvasArea({ type: 'text' })).toBe(MAX_ELEMENT_CANVAS_PIXELS);
-  });
-
-  // Each costs one to draw, but every viewer caches it on a full-size canvas.
-  const large = (id: string, over: Record<string, unknown> = {}) =>
-    guestElement('rectangle', { id, width: 1e4, height: 1e4, ...over });
-  const areaLimit = BOARD_GUEST_LIMITS.maxSceneCanvasPixels;
-
-  it('refuses a guest flood of large shapes past the scene area', () => {
-    const scene = sceneFrom([]);
-    const tracker = sizesFrom(scene);
-    const flood = Array.from({ length: 2000 }, (_, i) =>
-      insert(large(`g${i}`))
-    );
-    const { applied, rejected } = applyBoundedChanges(
-      scene,
-      tracker,
-      flood,
-      undefined,
-      { maxCost: sceneLimit, maxArea: areaLimit }
-    );
-    expect(rejected).toBe('size');
-    expect(applied).toHaveLength(8);
-    expect(tracker.areaTotal).toBe(areaLimit);
-    expect(tracker.costTotal).toBe(8);
-  });
-
-  it('counts members and frees the area on shrink and delete', () => {
-    const scene = sceneFrom([]);
-    const tracker = sizesFrom(scene);
-    const members = Array.from({ length: 8 }, (_, i) => insert(large(`m${i}`)));
-    applyBoundedChanges(scene, tracker, members);
-    const guest = (element: BoardElement) =>
-      applyBoundedChanges(scene, tracker, [insert(element)], undefined, {
-        maxArea: areaLimit,
-      });
-    expect(guest(large('g1')).rejected).toBe('size');
-    expect(
-      guest(large('m0', { version: 2, width: 10, height: 10 })).applied
-    ).toHaveLength(1);
-    expect(guest(large('g1')).rejected).toBe('size');
-    guest(large('m1', { version: 2, isDeleted: true }));
-    expect(guest(large('g1')).applied).toHaveLength(1);
-    expect(sizesFrom(scene).areaTotal).toBe(tracker.areaTotal);
-  });
-});
-
 describe('churn budget', () => {
   it('charges every applied change, re-sent copies included', () => {
     const scene = sceneFrom([]);
     const tracker = sizesFrom(scene);
-    const budget = { tokens: 10_000 };
+    // Each copy costs 4,775 to draw and 4,096 for its full-size canvas.
+    const budget = { tokens: 20_000 };
     const send = (element: BoardElement) =>
       applyBoundedChanges(scene, tracker, [insert(element)], undefined, {
         maxCost: sceneLimit,

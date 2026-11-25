@@ -147,6 +147,9 @@ describe('guest element required fields', () => {
     const one = { points: [[0, 0]] };
     expect(sanitizeGuestElement(guestElement('line', one))).toBeNull();
     expect(sanitizeGuestElement(guestElement('arrow', one))).toBeNull();
+    // Removing points can leave one; deleting such a line must still apply.
+    const deleted = { ...one, isDeleted: true };
+    expect(sanitizeGuestElement(guestElement('line', deleted))).not.toBeNull();
     expect(sanitizeGuestElement(guestElement('freedraw', one))).not.toBeNull();
     expect(
       sanitizeGuestElement(guestElement('freedraw', { points: [] }))
@@ -292,7 +295,8 @@ describe('guest element ranges', () => {
     ['text', 'lineHeight', 0.5, 0.4],
     ['text', 'lineHeight', 10, 11],
     ['text', 'fontSize', 1, 0.5],
-    ['text', 'fontSize', 2048, 2049],
+    ['text', 'fontSize', 256, 257],
+    ['freedraw', 'strokeWidth', 16, 17],
     [
       'line',
       'points',

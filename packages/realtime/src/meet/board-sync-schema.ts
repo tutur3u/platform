@@ -67,10 +67,10 @@ export const BOARD_GUEST_LIMITS = {
   maxSceneCost: 200_000,
   /**
    * Canvas pixels every viewer may cache for the whole scene
-   * (`elementCanvasArea`), members' elements included: eight elements at
-   * Excalidraw's per-element cap, about 512 MiB.
+   * (`elementCanvasArea`, at a device pixel ratio of two), members' elements
+   * included: four elements at Excalidraw's per-element cap, 256 MiB.
    */
-  maxSceneCanvasPixels: 8 * MAX_ELEMENT_CANVAS_PIXELS,
+  maxSceneCanvasPixels: 4 * MAX_ELEMENT_CANVAS_PIXELS,
   /**
    * Each guest connection's churn bucket: render cost it may apply at once,
    * and how much returns each second. Every applied change is charged, so

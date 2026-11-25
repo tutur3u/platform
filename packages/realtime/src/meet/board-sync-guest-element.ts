@@ -81,10 +81,13 @@ const shared = {
   locked: z.boolean().optional(),
 };
 
-/** Lines and arrows, drawn along at least two points. */
+/**
+ * Lines and arrows, drawn along at least two points (a refinement below);
+ * a deleted one may keep a single point, since removing points can leave one.
+ */
 const linear = {
   ...shared,
-  points: points.min(2),
+  points: points.min(1),
   lastCommittedPoint: point.nullable().optional(),
   startBinding: binding.optional(),
   endBinding: binding.optional(),
@@ -113,13 +116,14 @@ const frame = (type: 'frame' | 'magicframe') =>
 /**
  * The Excalidraw 0.18 element a person outside the workspace may store, per
  * element type: every field that type draws from is required, numbers are
- * within drawing ranges, strings and arrays are bounded, text holds at most
- * `MAX_GUEST_TEXT_LINES` lines, a freehand stroke has a pressure per point or
- * simulates pressure, and the whole element costs at most
- * `MAX_GUEST_ELEMENT_COST` to draw. Unknown keys (`customData` included) and
- * fields another type uses are dropped; an element that fails any check is
- * refused as a whole, so it never reaches the other people's editors or the
- * stored scene.
+ * within drawing ranges, strings and arrays are bounded, a live line or arrow
+ * has two points or more, text holds at most `MAX_GUEST_TEXT_LINES` lines, a
+ * freehand stroke has a pressure per point or simulates pressure, and the
+ * whole element costs at most `MAX_GUEST_ELEMENT_COST` to draw. Unknown keys
+ * (`customData` included) and fields another type uses are dropped; an
+ * element that fails any check is refused as a whole, so it never reaches the
+ * other people's editors or the stored scene. The room also checks arrow
+ * labels against the scene (`checkArrowLabels`).
  */
 export const guestElementSchema = z
   .discriminatedUnion('type', [
@@ -133,6 +137,8 @@ export const guestElementSchema = z
     z.object({
       ...shared,
       type: z.literal('freedraw'),
+      // Excalidraw pads a freehand canvas by twelve stroke widths.
+      strokeWidth: range(0.5, 16),
       points: points.min(1),
       lastCommittedPoint: point.nullable().optional(),
       pressures: z.array(range(0, 1)).max(10_000).optional(),
@@ -143,7 +149,8 @@ export const guestElementSchema = z
       type: z.literal('text'),
       text,
       originalText: text.optional(),
-      fontSize: range(1, 2048),
+      // Excalidraw pads a text canvas by half the font size.
+      fontSize: range(1, 256),
       fontFamily: integer(0, 1000),
       lineHeight: range(0.5, 10),
       textAlign: z.enum(['left', 'center', 'right']).optional(),
@@ -153,6 +160,13 @@ export const guestElementSchema = z
       baseline: size.optional(),
     }),
   ])
+  .refine(
+    (element) =>
+      (element.type !== 'line' && element.type !== 'arrow') ||
+      element.isDeleted === true ||
+      element.points.length >= 2,
+    { message: 'Lines need two points' }
+  )
   .refine(
     (element) =>
       element.type !== 'text' ||
