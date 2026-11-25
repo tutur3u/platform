@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AsyncDeleteConfirmationDialog extends StatefulWidget {
@@ -46,18 +46,16 @@ class _AsyncDeleteConfirmationDialogState
       maxWidth: widget.maxWidth ?? 420,
       maxHeightFactor: 0.56,
       actions: [
-        shad.OutlineButton(
+        AppButton.outline(
           onPressed: _isDeleting ? null : () => Navigator.of(context).pop(),
           child: Text(widget.cancelLabel),
         ),
-        shad.DestructiveButton(
-          onPressed: _isDeleting ? null : _handleConfirm,
-          child: _isDeleting
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: NovaLoadingIndicator(size: 20),
-                )
-              : Text(widget.confirmLabel),
+        AppButton.destructive(
+          onPressed: _handleConfirm,
+          loading: _isDeleting,
+          replaceLabelWhileLoading: true,
+          semanticLabel: widget.confirmLabel,
+          child: Text(widget.confirmLabel),
         ),
       ],
       child: const SizedBox.shrink(),

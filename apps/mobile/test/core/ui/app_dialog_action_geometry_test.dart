@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 
 import '../../helpers/design_render_harness.dart';
 import '../../helpers/pump_app.dart';
@@ -27,9 +30,8 @@ void main() {
         await tester.pumpThemedHome(
           Builder(
             builder: (context) => MediaQuery(
-              data: MediaQuery.of(
-                context,
-              ).copyWith(textScaler: TextScaler.linear(scale)),
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
               child: Scaffold(
                 body: ValueListenableBuilder<bool>(
                   valueListenable: busy,
@@ -114,6 +116,46 @@ void main() {
       });
     }
   }
+
+  testWidgets('pending delete preserves wrapped action and name', (
+    tester,
+  ) async {
+    DesignRender.setSize(tester, const Size(280, 650));
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    final pending = Completer<void>();
+    const label = 'Xóa lượt nhập';
+    await tester.pumpThemedHome(
+      Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(2)),
+          child: Scaffold(
+            body: AsyncDeleteConfirmationDialog(
+              title: 'Xóa',
+              message: '',
+              cancelLabel: 'Hủy',
+              confirmLabel: label,
+              onConfirm: () => pending.future,
+            ),
+          ),
+        ),
+      ),
+    );
+    final action = find.widgetWithText(AppButton, label);
+    final before = tester.getRect(action);
+    await tester.tap(action);
+    await tester.pump();
+    expect(tester.getRect(action), before);
+    expect(
+      tester.getCenter(find.byType(CircularProgressIndicator)),
+      before.center,
+    );
+    expect(find.bySemanticsLabel(label), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    pending.complete();
+    await tester.pump();
+  });
 
   testWidgets('explicit leading button alignment is respected', (tester) async {
     const key = ValueKey('navigation');
