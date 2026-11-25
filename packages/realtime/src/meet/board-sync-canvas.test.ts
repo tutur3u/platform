@@ -21,9 +21,9 @@ const insert = (element: BoardElement): BoardChange => ({
 const areaLimit = BOARD_GUEST_LIMITS.maxSceneCanvasPixels;
 
 describe('canvas area', () => {
-  it('measures the box at a pixel ratio of two plus its padding', () => {
-    // (200·2 + 40) × (100·2 + 40)
-    expect(elementCanvasArea(guestElement('rectangle'))).toBe(440 * 240);
+  it('measures the box at a pixel ratio of three plus its padding', () => {
+    // (200·3 + 40) × (100·3 + 40)
+    expect(elementCanvasArea(guestElement('rectangle'))).toBe(640 * 340);
     const line = guestElement('line', {
       width: 0,
       height: 0,
@@ -33,7 +33,7 @@ describe('canvas area', () => {
         [100, 40],
       ],
     });
-    expect(elementCanvasArea(line)).toBe(640 * 220);
+    expect(elementCanvasArea(line)).toBe(940 * 310);
     const huge = guestElement('rectangle', { width: 1e4, height: 1e4 });
     expect(elementCanvasArea(huge)).toBe(MAX_ELEMENT_CANVAS_PIXELS);
     expect(elementCanvasArea({ ...huge, isDeleted: true })).toBe(0);
@@ -51,8 +51,8 @@ describe('canvas area', () => {
           [300, 200],
         ],
       });
-    expect(elementCanvasArea(stroke(2))).toBe((600 + 48) * (400 + 48));
-    expect(elementCanvasArea(stroke(16))).toBe((600 + 384) * (400 + 384));
+    expect(elementCanvasArea(stroke(2))).toBe((900 + 48) * (600 + 48));
+    expect(elementCanvasArea(stroke(16))).toBe((900 + 384) * (600 + 384));
   });
 
   it('refuses the padding exploits for guests', () => {
@@ -76,10 +76,10 @@ describe('canvas area', () => {
           [16_000, 0],
         ],
       });
-    expect(elementCanvasArea(arrow(null))).toBe(32_040 * 40);
+    expect(elementCanvasArea(arrow(null))).toBe(48_040 * 40);
     // A square of the longest side plus ten paddings: about a gigapixel.
     expect(elementCanvasArea(arrow([{ id: 't', type: 'text' }]))).toBe(
-      32_040 * 40 + 32_200 * 32_200
+      48_040 * 40 + 48_200 * 48_200
     );
   });
 
@@ -100,11 +100,11 @@ describe('canvas area', () => {
         ],
       });
     const round = { type: 2 };
-    // (1,250·2 + 40)², and (1,270·2 + 40)² with four units per roughness.
-    expect(elementCanvasArea(zigzag(0, round))).toBe(2540 * 2540);
-    expect(elementCanvasArea(zigzag(5, round))).toBe(2580 * 2580);
+    // (1,250·3 + 40)², and (1,270·3 + 40)² with four units per roughness.
+    expect(elementCanvasArea(zigzag(0, round))).toBe(3790 * 3790);
+    expect(elementCanvasArea(zigzag(5, round))).toBe(3850 * 3850);
     // Straight segments stay within their points.
-    expect(elementCanvasArea(zigzag(5, null))).toBe(2040 * 2040);
+    expect(elementCanvasArea(zigzag(5, null))).toBe(3040 * 3040);
     // A rounded arrow's label canvas grows with it.
     const arrow = guestElement('arrow', {
       roughness: 0,
@@ -115,7 +115,7 @@ describe('canvas area', () => {
         [16_000, 0],
       ],
     });
-    expect(elementCanvasArea(arrow)).toBe(40_040 * 40 + 40_200 * 40_200);
+    expect(elementCanvasArea(arrow)).toBe(60_040 * 40 + 60_200 * 60_200);
   });
 
   // Each costs one to draw, but every viewer caches it on a full-size canvas.
@@ -232,7 +232,7 @@ describe('arrow labels', () => {
     );
     expect(labelsOf(applied[0]!)).toEqual([]);
     expect(scene.get('a')).toEqual(applied[0]!.element);
-    expect(tracker.areaTotal).toBe(32_040 * 40);
+    expect(tracker.areaTotal).toBe(48_040 * 40);
   });
 
   it('keeps and charges a member arrow label', () => {
@@ -240,6 +240,6 @@ describe('arrow labels', () => {
     const tracker = sizesFrom(scene);
     const { applied } = applyBoundedChanges(scene, tracker, [insert(long)]);
     expect(labelsOf(applied[0]!)).toEqual(['a']);
-    expect(tracker.areaTotal).toBe(32_040 * 40 + 32_200 * 32_200);
+    expect(tracker.areaTotal).toBe(48_040 * 40 + 48_200 * 48_200);
   });
 });

@@ -41,10 +41,10 @@ export const MAX_RENDER_COST = 1e9;
  */
 export const MAX_ELEMENT_CANVAS_PIXELS = 16_777_216;
 /**
- * Device pixel ratio the canvas area is measured at: a retina screen, where
- * a canvas holds four device pixels per canvas unit.
+ * Device pixel ratio the canvas area is measured at: a phone or tablet
+ * screen at three, where a canvas holds nine device pixels per canvas unit.
  */
-const MEASURED_PIXEL_RATIO = 2;
+const MEASURED_PIXEL_RATIO = 3;
 /** Every canvas area is a finite integer no larger than this. */
 const MAX_CANVAS_AREA = 1e15;
 /**
@@ -263,12 +263,13 @@ function hasLabel(element: CostShape, type: string) {
 
 /**
  * Pixels of the canvases every viewer allocates to cache one element, at a
- * device pixel ratio of two and 100% zoom: its box (`canvasBox`) plus
+ * device pixel ratio of three and 100% zoom: its box (`canvasBox`) plus
  * Excalidraw's padding on each side, up to the per-element cap. An arrow
  * with a text label also gets a square label canvas of its longest side plus
- * ten paddings, which Excalidraw never caps; it is counted whether or not the
- * label exists, so adding the text later costs nothing extra. Deleted elements hold none; a missing or non-finite size
- * counts as the most.
+ * ten paddings, which unpatched Excalidraw never caps; it is counted whether
+ * or not the label exists, so adding the text later costs nothing extra.
+ * Deleted elements hold none; a missing or non-finite size counts as the
+ * most.
  */
 export function elementCanvasArea(element: CostShape) {
   if (element.isDeleted === true) return 0;

@@ -67,7 +67,7 @@ export const BOARD_GUEST_LIMITS = {
   maxSceneCost: 200_000,
   /**
    * Canvas pixels every viewer may cache for the whole scene
-   * (`elementCanvasArea`, at a device pixel ratio of two), members' elements
+   * (`elementCanvasArea`, at a device pixel ratio of three), members' elements
    * included: four elements at Excalidraw's per-element cap, 256 MiB.
    */
   maxSceneCanvasPixels: 4 * MAX_ELEMENT_CANVAS_PIXELS,
