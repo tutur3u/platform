@@ -1,6 +1,11 @@
 /** Keep database reservations at one per ten-second upload window. */
 export const MEET_AUDIO_BATCH_INTERVAL_MS = 10_000;
 export const MEET_AUDIO_BATCH_MAX_CLIPS = 48;
+export const MEET_WAV_HEADER_BYTES = 44;
+export const MEET_PCM_SAMPLE_BYTES = 2;
+// Leave room for multipart fields within the unbatched request limit.
+export const MEET_AUDIO_CLIP_MAX_BYTES = 480_044;
+export const MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES = 500_000;
 // Base64 plus prompts stays below the provider's 20 MB inline-audio request bound.
 export const MEET_AUDIO_BATCH_MAX_BYTES = 12_000_000;
 export const MEET_AUDIO_REQUEST_MAX_BYTES = 12_100_000;

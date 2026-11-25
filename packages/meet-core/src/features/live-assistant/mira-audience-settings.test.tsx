@@ -26,6 +26,9 @@ vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
   updateMiraAudienceAttestation: f.write,
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: f.toastError } }));
+vi.mock('../call/components/meeting-local-time', () => ({
+  useMeetingTimeZone: () => 'America/Los_Angeles',
+}));
 
 import { MiraAudienceSettings } from './mira-audience-settings';
 
@@ -43,13 +46,17 @@ const toggle = () =>
   screen.getByRole('switch', { name: copy.toggle }) as HTMLButtonElement;
 const checked = () => toggle().getAttribute('aria-checked');
 
-function show(actorId = 'synthetic-account') {
+function show(actorId = 'synthetic-account', timeZone: string | null = 'UTC') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   render(
     <QueryClientProvider client={client}>
-      <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
+      <NextIntlClientProvider
+        locale="en"
+        timeZone={timeZone ?? undefined}
+        messages={messages}
+      >
         <WorkspaceVisibilityProvider actorId={actorId}>
           <MiraAudienceSettings wsId={WS} />
         </WorkspaceVisibilityProvider>
@@ -65,6 +72,12 @@ beforeEach(() => {
     creator_id: 'synthetic-account',
     deleted: false,
   });
+});
+
+it('formats the confirmation date in the browser time zone without an app time zone', async () => {
+  f.read.mockResolvedValue(on);
+  show('synthetic-account', null);
+  expect(await screen.findByText('Confirmed on Nov 19, 2026')).toBeTruthy();
 });
 afterEach(cleanup);
 

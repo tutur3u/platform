@@ -1,7 +1,10 @@
 import { readTranscriptChunk } from '@tuturuuu/ai/meetings/transcript';
 import { readTranscriptRoster } from './transcript-roster';
 import 'server-only';
-import { MEET_AUDIO_REQUEST_MAX_BYTES } from '@tuturuuu/ai/meetings/audio-contract';
+import {
+  MEET_AUDIO_REQUEST_MAX_BYTES,
+  MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES,
+} from '@tuturuuu/ai/meetings/audio-contract';
 import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
@@ -37,22 +40,32 @@ export async function transcribeMeetChunk(
   request: Request,
   params: MeetAiParams
 ) {
-  if (request.headers.get('x-meet-audio-batch') === '1')
-    return transcribeLegacyChunk(request, params);
-  if (Number(request.headers.get('content-length') ?? 0) > 500_000)
+  // Preserve the batch budget even when the transport drops custom headers.
+  const batched =
+    request.headers.get('x-meet-audio-batch') === '1' ||
+    new URL(request.url).searchParams.get('audioBatch') === '1';
+  if (batched) return transcribeLegacyChunk(request, params, true);
+  if (
+    Number(request.headers.get('content-length') ?? 0) >
+    MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES
+  )
     throw new MeetAiError(413, 'Audio too large');
-  const { form, size } = await readMeetAudioBody(request, 500_000);
+  const { form, size } = await readMeetAudioBody(
+    request,
+    MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES
+  );
   if (form.has('streamId')) {
     if (size > MEET_SELF_REQUEST_MAX_BYTES)
       throw new MeetAiError(413, 'Audio too large');
     return transcribeSelfChunk(request, params, form);
   }
-  return transcribeLegacyChunk(request, params, form);
+  return transcribeLegacyChunk(request, params, false, form);
 }
 
 async function transcribeLegacyChunk(
   request: Request,
   params: MeetAiParams,
+  batched: boolean,
   preread?: FormData
 ) {
   const { db, meetingId, wsId, user } = await meetAiAccess(
@@ -60,11 +73,17 @@ async function transcribeLegacyChunk(
     params,
     true
   );
-  const batched = request.headers.get('x-meet-audio-batch') === '1';
-  const maxBytes = batched ? MEET_AUDIO_REQUEST_MAX_BYTES : 500_000;
+  const maxBytes = batched
+    ? MEET_AUDIO_REQUEST_MAX_BYTES
+    : MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES;
   if (Number(request.headers.get('content-length') ?? 0) > maxBytes)
     throw new MeetAiError(413, 'Audio too large');
   const body = preread ?? (await readMeetAudioForm(request, maxBytes));
+  if (batched && body.has('streamId'))
+    throw new MeetAiError(
+      400,
+      'Batched audio is not accepted for a capture stream'
+    );
   const parsed = schema.safeParse(Object.fromEntries(body));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid audio');
   const hints = {

@@ -67,8 +67,8 @@ it('shows everyone a read-only synced timer chip in the header placement', () =>
   vi.setSystemTime(new Date(NOW));
   for (const role of ['host', 'participant'] as const) {
     const { container } = renderClock(running(role));
-    const chip = screen.getByTitle('05:00 left');
-    expect(chip.textContent).toBe('Timer: 05:00');
+    const chip = screen.getByTitle('Class timer · 05:00 left');
+    expect(chip.textContent).toBe('Class timer: 05:00');
     expect(chip.getAttribute('aria-live')).toBeNull();
     // A timer already running on join is not re-announced.
     expect(screen.getByRole('status').textContent).toBe('');
@@ -86,7 +86,7 @@ it('announces each timer change in one always-mounted polite status', () => {
   const status = screen.getByRole('status');
   expect(status.getAttribute('aria-live')).toBe('polite');
   expect(status.textContent).toBe('');
-  expect(screen.queryByTitle('05:00 left')).toBeNull();
+  expect(screen.queryByTitle('Class timer · 05:00 left')).toBeNull();
   view.update(running('host'));
   expect(screen.getByRole('status')).toBe(status);
   expect(status.textContent).toBe('Timer started');
@@ -139,7 +139,7 @@ it('hides the timer and attendance while the server switches are off', () => {
     classAttendanceEnabled: false,
     classTimerEnabled: false,
   });
-  expect(screen.queryByTitle('05:00 left')).toBeNull();
+  expect(screen.queryByTitle('Class timer · 05:00 left')).toBeNull();
   expect(screen.getByRole('status').textContent).toBe('');
   expect(screen.queryByRole('button', { name: 'Attendance' })).toBeNull();
 });
@@ -148,7 +148,7 @@ it('hides the header timers from lg up, where the call bar shows them', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
   renderClock(running('participant'));
-  const chip = screen.getByTitle('05:00 left');
+  const chip = screen.getByTitle('Class timer · 05:00 left');
   // The header placement is display:none from lg up; the polite status
   // lives inside it, so only the bar's copy is exposed there.
   const placement = chip.closest('.lg\\:hidden');

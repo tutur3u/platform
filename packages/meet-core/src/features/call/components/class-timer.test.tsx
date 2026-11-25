@@ -66,16 +66,37 @@ function renderControls(state: CallState) {
   );
 }
 
-it('names the room timer Timer in both languages', () => {
-  expect(messages.meet.call.class_timer).toBe('Timer');
-  expect(viMessages.meet.call.class_timer).toBe('Hẹn giờ');
+it('names the room timer Class timer in both languages', () => {
+  expect(messages.meet.call.class_timer).toBe('Class timer');
+  expect(viMessages.meet.call.class_timer).toBe('Hẹn giờ lớp học');
+  expect(messages.meet.call.activities.merged.timer).toBe('Class timer');
+  expect(viMessages.meet.call.activities.merged.timer).toBe('Hẹn giờ lớp học');
+});
+
+it('fills Minutes and starts the preset, then starts that same duration from the form', async () => {
+  renderControls(running('host'));
+  const minutes = screen.getByRole<HTMLInputElement>('spinbutton', {
+    name: 'Minutes',
+  });
+  expect(minutes.value).toBe('15');
+  fireEvent.click(screen.getByRole('button', { name: '5 min' }));
+  expect(minutes.value).toBe('5');
+  fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+  await act(async () => {
+    await Promise.resolve();
+  });
+  const start = { action: 'start', durationMs: 300_000 };
+  expect(command.mock.calls).toEqual([
+    [meetingId, start],
+    [meetingId, start],
+  ]);
 });
 
 it('lets the host start, pause and stop the room timer', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
   renderControls(running('host'));
-  expect(screen.getByTitle('05:00 left')).toBeTruthy();
+  expect(screen.getByTitle('Class timer · 05:00 left')).toBeTruthy();
   // The page chip is not a live region; the header announces state.
   expect(screen.queryByRole('status')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: '1 min' }));
@@ -143,5 +164,5 @@ it('keeps the arrival skew when the chip mounts late', () => {
       />
     </NextIntlClientProvider>
   );
-  expect(screen.getByTitle('03:00 left')).toBeTruthy();
+  expect(screen.getByTitle('Class timer · 03:00 left')).toBeTruthy();
 });

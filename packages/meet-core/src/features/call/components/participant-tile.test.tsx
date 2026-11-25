@@ -119,6 +119,14 @@ it('uses theme-aware name bar colors on avatar tiles', () => {
   expect(html).not.toContain('from-media-scrim');
 });
 
+it('uses letters for stage avatar initials even when the name contains punctuation and digits', () => {
+  const html = renderTile({
+    participant: { ...participant, displayName: '[QA] meet-g5-live 1' },
+    resumePlaybackLabel: 'Play audio',
+  });
+  expect(html).toMatch(/data-slot="avatar-fallback"[^>]*>QM<\/span>/u);
+});
+
 it('keeps the self marker beside a long name that stays on one line', () => {
   const longName = 'Alexandria Montgomery-Featherstonehaugh the Third';
   const html = renderTile({

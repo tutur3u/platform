@@ -12,5 +12,9 @@ export function showMeetingAiFailure(
 ) {
   const { key, status, code } = meetingAiRequestFailure(error);
   console.warn('Meeting AI request failed', { status, code });
+  if (key === 'failure_mira_consent') {
+    toast.error(t(key));
+    return;
+  }
   toast.error(t('failed'), { description: key ? t(key) : undefined });
 }

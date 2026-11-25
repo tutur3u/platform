@@ -10,20 +10,32 @@ import {
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useTimeZone, useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { SettingsField } from '../../../../ui/src/components/ui/custom/settings-field';
 import { SettingItemTab } from '../../../../ui/src/components/ui/custom/settings-item-tab';
+import { useMeetingTimeZone } from '../call/components/meeting-local-time';
 import { MiraAdultNotice } from './mira-adult-notice';
 import { MiraConsentDefaultField } from './mira-consent-default-field';
 import { useMiraAudience, useSetMiraAudience } from './use-mira-audience';
 
-export function MiraAudienceSettings({ wsId }: { wsId: string }) {
+export function MiraAudienceSettings({
+  wsId,
+  accountSettings,
+}: {
+  wsId: string;
+  accountSettings?: ReactNode;
+}) {
   const t = useTranslations('meet.mira_adults');
   const format = useFormatter();
+  const appTimeZone = useTimeZone();
+  const browserTimeZone = useMeetingTimeZone();
+  const timeZone = appTimeZone ?? browserTimeZone;
   const audience = useMiraAudience(wsId);
   const save = useSetMiraAudience(wsId, () => toast.error(t('save_failed')));
-  if (audience.failed)
-    return (
+  const checked = save.isPending ? save.variables : audience.setting?.attested;
+  if (audience.failed) {
+    const failed = (
       <SettingsSection>
         <SettingsSectionMessage
           tone="error"
@@ -43,23 +55,31 @@ export function MiraAudienceSettings({ wsId }: { wsId: string }) {
         </SettingsSectionMessage>
       </SettingsSection>
     );
+    return (
+      <>
+        {accountSettings}
+        {failed}
+      </>
+    );
+  }
 
   const icon = <ShieldCheck className="size-4" />;
   const description = (
     <>
       {t('effect')}
-      {audience.setting?.attested && audience.setting.attestedAt && (
+      {checked && audience.setting?.attestedAt && timeZone && (
         <span className="mt-1 block text-xs">
           {t('confirmed_at', {
             date: format.dateTime(new Date(audience.setting.attestedAt), {
               dateStyle: 'medium',
+              timeZone,
             }),
           })}
         </span>
       )}
     </>
   );
-  return (
+  const settings = (
     <SettingsSection>
       <SettingsSectionBlock>
         <MiraAdultNotice />
@@ -79,9 +99,7 @@ export function MiraAudienceSettings({ wsId }: { wsId: string }) {
             >
               <Switch
                 {...field}
-                checked={
-                  save.isPending ? save.variables : audience.setting?.attested
-                }
+                checked={checked}
                 disabled={save.isPending}
                 onCheckedChange={(next) => save.mutate(next)}
               />
@@ -108,5 +126,11 @@ export function MiraAudienceSettings({ wsId }: { wsId: string }) {
         </SettingsSectionBlock>
       )}
     </SettingsSection>
+  );
+  return (
+    <>
+      {(audience.readOnly || checked) && accountSettings}
+      {settings}
+    </>
   );
 }

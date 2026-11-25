@@ -9,6 +9,7 @@ describe('safe meeting AI failure guidance', () => {
     [402, undefined, 'failure_credits'],
     [403, undefined, 'failure_access'],
     [409, undefined, 'failure_conflict'],
+    [409, 'MIRA_ROOM_CONSENT_REQUIRED', 'failure_mira_consent'],
     [502, 'MEET_AI_PROVIDER_LIMIT', 'failure_limit'],
     [503, undefined, 'failure_unavailable'],
   ])(
@@ -20,6 +21,7 @@ describe('safe meeting AI failure guidance', () => {
         message: 'synthetic-private-provider-body',
       });
       expect(result.key).toBe(key);
+      expect(result.code).toBe(code ?? null);
       expect(JSON.stringify(result)).not.toContain('synthetic-private');
     }
   );

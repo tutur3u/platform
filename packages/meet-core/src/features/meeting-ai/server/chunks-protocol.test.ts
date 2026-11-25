@@ -1,3 +1,7 @@
+import {
+  MEET_AUDIO_REQUEST_MAX_BYTES,
+  MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES,
+} from '@tuturuuu/ai/meetings/audio-contract';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { encodeMeetWav } from '../audio';
 
@@ -103,6 +107,61 @@ describe('chunk upload protocol branch', () => {
     expect(mocks.access).toHaveBeenCalledOnce();
     expect(mocks.self).not.toHaveBeenCalled();
   });
+
+  it('accepts a multi-speaker batch over the single-upload cap without the custom header', async () => {
+    const from = vi.fn().mockReturnValue(chain({ data: null, error: null }));
+    mocks.access.mockResolvedValue({
+      db: { from },
+      meetingId: id,
+      user: { id },
+    });
+    const body = legacyForm();
+    body.delete('audio');
+    const audio = encodeMeetWav(new Float32Array(160_000));
+    body.set('audio_0', audio, 'source-0.wav');
+    body.set('audio_1', audio, 'source-1.wav');
+    body.set(
+      'sources',
+      JSON.stringify(
+        [0, 1].map(() => ({
+          speakerAccountId: id,
+          sourceKind: 'microphone',
+          startSeconds: 0,
+        }))
+      )
+    );
+    const url =
+      'https://meet.tuturuuu.com/meet/api/meet-ai/x/y/chunks?audioBatch=1';
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(new Request(url, { method: 'POST', body }), params)
+    );
+    expect(2 * audio.size).toBeGreaterThan(MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES);
+    expect(response.status).toBe(404);
+    expect(from).toHaveBeenCalledWith('meet_ai_sessions');
+    expect(mocks.self).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['', MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES],
+    ['?audioBatch=1', MEET_AUDIO_REQUEST_MAX_BYTES],
+  ] as const)(
+    'enforces the exact body byte boundary for %s without Content-Length',
+    async (query, limit) => {
+      mocks.access.mockResolvedValue({ db: {}, meetingId: id, user: { id } });
+      const url = `https://meet.tuturuuu.com/api/meet-ai/x/y/chunks${query}`;
+      const upload = (size: number) =>
+        meetAiResponse(() =>
+          transcribeMeetChunk(
+            new Request(url, { method: 'POST', body: new Uint8Array(size) }),
+            params
+          )
+        );
+      // At the byte limit, the reader reaches multipart validation.
+      expect((await upload(limit)).status).toBe(400);
+      expect((await upload(limit + 1)).status).toBe(413);
+      expect(mocks.self).not.toHaveBeenCalled();
+    }
+  );
 
   it('refuses room-mix audio for a per-speaker session before any work', async () => {
     const from = vi.fn().mockReturnValueOnce(

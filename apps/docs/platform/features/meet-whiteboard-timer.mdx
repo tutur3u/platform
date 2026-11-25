@@ -265,30 +265,35 @@ control are unchanged.
 
 ## Timer
 
-**Scope.** The Activities menu and the Timer pane or page.
+**Scope.** The Activities menu, Class timer pane or page, and in-call clocks
+in Meet and Parley.
 
-**Default.** One Timer with a **Just me** / **Everyone** switch ("Chỉ mình tôi"
+**Default.** One Class timer with a **Just me** / **Everyone** switch ("Chỉ mình tôi"
 / "Mọi người"). Hosts and co-hosts who may set the room timer start on
 **Everyone**; everyone else starts on **Just me**.
 
 - **Everyone** is the room's class timer with its server rules unchanged: it
   needs `MEET_CLASS_TIMER_ENABLED`, hosts and co-hosts start it, and only the
-  host pauses, resumes and stops it. Everyone admitted sees the read-only chip.
+  host pauses, resumes and stops it. A preset fills **Minutes** and starts
+  the countdown. **Start** uses the value shown in **Minutes**. Everyone
+  admitted sees the read-only chip.
 - **Just me** is the private countdown on this device. It never writes room
   state and keeps running while hidden.
 - People who may not set the room timer see **Everyone** disabled with the
   reason: "Only hosts and co-hosts can set a timer for everyone." or, when the
   room has no shared timer, "This room does not offer a timer for everyone."
 
-**Where it opens.** For people who browse the tools it is the Timer pane
+The meeting deadline has its own **Meeting ends in** clock.
+
+**Where it opens.** For people who browse the tools it is the Class timer pane
 (`tool:timers`). A host or co-host who does not browse the tools (for example in
-a host-only room) still gets the Timer as a page in the Activities dialog
+a host-only room) still gets the Class timer as a page in the Activities dialog
 (`class-timer`), with the same switch. The older ids keep routing; a `tool:timers`
-pane is titled **Timer**.
+pane is titled **Class timer**.
 
 **Default activity setting.** With `MEET_UX_V2` on, the host's **Open for
 everyone who joins** setting names the pen board **Whiteboard** and the
-private timer **Timer**. The stored values (`tool:pen-whiteboard`,
+private timer **Class timer**. The stored values (`tool:pen-whiteboard`,
 `tool:timers`) are unchanged, so a room that already has one keeps it.
 
 ## EduFest classes
@@ -308,13 +313,17 @@ Under `packages/meet-core/src/features/call`:
 
 - `stage-layout/merged-activities.test.ts`: the older id to merged kind mapping
   and the preference order.
-- `components/activities-merge.test.ts`: one Whiteboard and one Timer, the
+- `components/activities-merge.test.ts`: one Whiteboard and one Class timer, the
   fallbacks, and the Activities groups.
 - `components/activities-menu-merged.test.tsx`: the Activities menu with and
   without `MEET_UX_V2`, and no "saved" wording.
 - `stage-layout/room-stage-merged.test.tsx`: pane titles for every older id.
 - `components/timer-modes.test.tsx`: the switch defaults, Everyone through the
   class timer command, Just me without room writes, and the disabled reason.
+- `components/class-timer.test.tsx`: a preset starts the shared countdown and
+  updates the Minutes value used by Start.
+- `components/room-countdown.test.tsx`: the separate deadline clock shows the
+  time until the meeting ends.
 - `whiteboard/board-room.test.tsx`: the board status note without saving
   wording.
 - `whiteboard/socket-transport.test.ts`: a new line or arrow is held back

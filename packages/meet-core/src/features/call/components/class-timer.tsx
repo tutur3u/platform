@@ -111,7 +111,7 @@ export function ClassTimerChip({
           'motion-safe:animate-pulse bg-dynamic-orange/15 text-dynamic-orange'
       )}
       data-slot="class-timer-chip"
-      title={label}
+      title={`${t('class_timer')} · ${label}`}
     >
       <Clock3 className="size-4 shrink-0" aria-hidden="true" />
       <span className="sr-only">{t('class_timer')}: </span>
@@ -158,7 +158,10 @@ export function ClassTimerControls({
         {CLASS_TIMER_PRESETS_MS.map((durationMs) => (
           <Button
             key={durationMs}
-            onClick={() => send('start', durationMs)}
+            onClick={() => {
+              setCustom(String(durationMs / 60_000));
+              send('start', durationMs);
+            }}
             size="sm"
             type="button"
             variant="outline"

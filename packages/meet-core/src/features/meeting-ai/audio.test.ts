@@ -1,3 +1,7 @@
+import {
+  MEET_AUDIO_CLIP_MAX_BYTES,
+  MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES,
+} from '@tuturuuu/ai/meetings/audio-contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { encodeMeetWav, MeetAudioCapture } from './audio';
 
@@ -123,6 +127,36 @@ describe('participant capture lifecycle', () => {
     expect(chunk).toHaveBeenCalledTimes(1);
     expect(chunk.mock.calls[0]![1]).toBe(10);
     expect(chunk.mock.calls[0]![0].size).toBe(320044);
+    capture.dispose();
+  });
+  it('splits oversized worklet audio into valid WAV clips with multipart headroom', async () => {
+    const { nodes, stream } = setup();
+    const chunks: Array<{ audio: Blob; start: number }> = [];
+    const capture = new MeetAudioCapture((audio, start) =>
+      chunks.push({ audio, start })
+    );
+    await capture.start();
+    capture.update([{ stream: stream('long'), kind: 'microphone' }]);
+    nodes[0]!.port.onmessage?.({
+      data: { samples: new Float32Array(500_000).fill(0.5) },
+    });
+    expect(chunks.map(({ start }) => start)).toEqual([0, 15, 30]);
+    let pcmBytes = 0;
+    for (const { audio } of chunks) {
+      expect(audio.size).toBeLessThanOrEqual(MEET_AUDIO_CLIP_MAX_BYTES);
+      const wav = new DataView(await audio.arrayBuffer());
+      const length = wav.getUint32(40, true);
+      expect(length).toBe(audio.size - 44);
+      pcmBytes += length;
+
+      const form = new FormData();
+      form.set('audio', audio, 'source.wav');
+      form.set('context', 'ậ'.repeat(400));
+      form.set('glossary', 'ậ'.repeat(800));
+      const body = await new Response(form).arrayBuffer();
+      expect(body.byteLength).toBeLessThan(MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES);
+    }
+    expect(pcmBytes).toBe(1_000_000);
     capture.dispose();
   });
   it('keeps simultaneous sources separate and flushes their final audio on stop', async () => {

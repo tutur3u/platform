@@ -376,13 +376,17 @@ export function CallSettings({
         {activeTab === 'notes' && isHost && <NotesAccessSettings room={room} />}
         {activeTab === MIRA_SETTINGS_TAB && miraWorkspaceId && (
           <MeetSettingsStack>
-            {MEETING_APP === 'meet' && accountId && (
-              <MiraAccountSettings
-                meetingId={meetingId}
-                accountId={accountId}
-              />
-            )}
-            <MiraAudienceSettings wsId={miraWorkspaceId} />
+            <MiraAudienceSettings
+              wsId={miraWorkspaceId}
+              accountSettings={
+                MEETING_APP === 'meet' && accountId ? (
+                  <MiraAccountSettings
+                    meetingId={meetingId}
+                    accountId={accountId}
+                  />
+                ) : undefined
+              }
+            />
           </MeetSettingsStack>
         )}
         {activeTab === 'public' && (

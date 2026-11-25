@@ -5,6 +5,7 @@ import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
@@ -283,11 +284,7 @@ function ParticipantTileImpl({
             >
               <AvatarImage src={participant.avatarUrl} alt="" />
               <AvatarFallback>
-                {displayName
-                  .split(/\s+/u)
-                  .slice(0, 2)
-                  .map((name) => name[0]?.toUpperCase())
-                  .join('')}
+                {getInitials(displayName, { firstTwoWords: true }) || '?'}
               </AvatarFallback>
             </Avatar>
           )}

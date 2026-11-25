@@ -2,6 +2,7 @@ import {
   MEET_AUDIO_BATCH_INTERVAL_MS,
   MEET_AUDIO_BATCH_MAX_BYTES,
   MEET_AUDIO_BATCH_MAX_CLIPS,
+  MEET_AUDIO_CLIP_MAX_BYTES,
 } from '@tuturuuu/ai/meetings/audio-contract';
 import type { MeetAudioSource } from './audio';
 
@@ -36,6 +37,7 @@ export class MeetAudioBatcher {
     if (this.closed) return;
     if (
       this.clips.length >= MEET_AUDIO_BATCH_MAX_CLIPS ||
+      clip.audio.size > MEET_AUDIO_CLIP_MAX_BYTES ||
       this.bytes + clip.audio.size > MEET_AUDIO_BATCH_MAX_BYTES
     ) {
       this.flush();

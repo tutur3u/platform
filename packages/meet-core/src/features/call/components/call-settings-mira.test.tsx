@@ -57,6 +57,12 @@ import { CallSettingsLinkProvider } from './call-settings-link';
 
 const copy = messages.meet.mira_adults;
 const off = { attested: false, attestedAt: null, attestedByCurrentUser: false };
+const on = {
+  attested: true,
+  attestedAt: '2026-11-20T00:00:00Z',
+  attestedByCurrentUser: true,
+};
+const withdrawLabel = { name: messages.meet.mira_consent.withdraw_account };
 
 function show(participants: Record<string, { accountId?: string }>) {
   const room = {
@@ -122,11 +128,7 @@ afterEach(() => {
 
 it('opens the meeting settings on the Mira section from a refusal and saves the switch there', async () => {
   f.read.mockResolvedValue(off);
-  f.write.mockResolvedValue({
-    attested: true,
-    attestedAt: '2026-11-20T00:00:00Z',
-    attestedByCurrentUser: true,
-  });
+  f.write.mockResolvedValue(on);
   show({ device: { accountId: 'synthetic-account' } });
   expect(screen.queryByRole('switch', { name: copy.toggle })).toBeNull();
   fireEvent.click(
@@ -135,11 +137,19 @@ it('opens the meeting settings on the Mira section from a refusal and saves the 
   const toggle = await screen.findByRole('switch', { name: copy.toggle });
   expect(screen.getByRole('button', { name: copy.settings_tab })).toBeTruthy();
   expect(screen.queryByText('Device controls')).toBeNull();
+  expect(screen.queryByRole('button', withdrawLabel)).toBeNull();
   fireEvent.click(toggle);
   await waitFor(() =>
     expect(f.write).toHaveBeenCalledExactlyOnceWith('synthetic-workspace', true)
   );
   await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('true'));
+  expect(await screen.findByRole('button', withdrawLabel)).toBeTruthy();
+
+  await waitFor(() => expect(toggle.getAttribute('disabled')).toBeNull());
+  f.write.mockResolvedValue(off);
+  fireEvent.click(toggle);
+  await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('false'));
+  expect(screen.queryByRole('button', withdrawLabel)).toBeNull();
 });
 
 it('offers the Mira section in the settings navigation only to signed-in participants', async () => {
@@ -151,7 +161,7 @@ it('offers the Mira section in the settings navigation only to signed-in partici
 });
 
 it('withdraws the signed-in participant’s confirmation from Mira settings', async () => {
-  f.read.mockResolvedValue(off);
+  f.read.mockResolvedValue(on);
   f.withdraw.mockResolvedValue({ available: false });
   show({ device: { accountId: 'synthetic-account' } });
   fireEvent.click(
@@ -173,7 +183,7 @@ it('withdraws the signed-in participant’s confirmation from Mira settings', as
 });
 
 it('retries an incomplete withdrawal for the same account and meeting', async () => {
-  f.read.mockResolvedValue(off);
+  f.read.mockResolvedValue(on);
   f.withdraw
     .mockRejectedValueOnce(
       new InternalApiError('Incomplete', 503, 'withdraw_incomplete')

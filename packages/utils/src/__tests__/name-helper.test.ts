@@ -11,6 +11,11 @@ describe('Name Helper', () => {
       expect(getInitials(null)).toBe('');
     });
 
+    it('finds Unicode letters past punctuation and ignores words without letters', () => {
+      expect(getInitials('1 [Đặng] 2 Ánh 3')).toBe('ĐÁ');
+      expect(getInitials('1 [...] 3')).toBe('');
+    });
+
     it('returns empty string for undefined', () => {
       expect(getInitials(undefined)).toBe('');
     });

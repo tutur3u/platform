@@ -169,7 +169,7 @@ it('shows dialog pages in place and keeps unlisted ones out of the grid', () => 
   expect(
     screen.queryByRole('button', { name: `Open ${room.title}` })
   ).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Open Timer' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Open Class timer' }));
   expect(screen.getByText('Timer controls')).toBeTruthy();
   expect(dialog()).toBeTruthy();
   fireEvent.click(nav.getByRole('button', { name: room.title }));

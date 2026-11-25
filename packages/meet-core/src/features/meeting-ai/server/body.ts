@@ -1,12 +1,12 @@
 import { MeetAiError } from './access';
 
 /** Bound actual bytes, including requests without a Content-Length header. */
-export async function readMeetAudioForm(request: Request, maxBytes = 500_000) {
+export async function readMeetAudioForm(request: Request, maxBytes: number) {
   return (await readMeetAudioBody(request, maxBytes)).form;
 }
 
 /** The bounded form plus its actual byte size. */
-export async function readMeetAudioBody(request: Request, maxBytes = 500_000) {
+export async function readMeetAudioBody(request: Request, maxBytes: number) {
   const reader = request.body?.getReader();
   if (!reader) throw new MeetAiError(400, 'Missing audio');
   const chunks: Uint8Array[] = [];

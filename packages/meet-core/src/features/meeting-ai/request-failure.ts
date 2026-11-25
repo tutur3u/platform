@@ -14,6 +14,7 @@ const codes = new Set([
   'MEET_AI_RATE_LIMITED',
   'MEET_AI_LIMITER_UNAVAILABLE',
   'MEET_TRANSCRIPT_CONSENT_REQUIRED',
+  'MIRA_ROOM_CONSENT_REQUIRED',
 ]);
 const creditReasons: Record<string, MeetingAiCreditReason> = {
   MEET_AI_CREDITS_EXHAUSTED: 'credits_exhausted',
@@ -39,6 +40,8 @@ export function meetingAiRequestFailure(error: unknown) {
   const rawCode = 'code' in record ? record.code : undefined;
   const code =
     typeof rawCode === 'string' && codes.has(rawCode) ? rawCode : null;
+  if (code === 'MIRA_ROOM_CONSENT_REQUIRED')
+    return { status, code, key: 'failure_mira_consent' } as const;
   const key =
     status === 402
       ? 'failure_credits'

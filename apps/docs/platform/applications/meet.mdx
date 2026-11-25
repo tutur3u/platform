@@ -760,11 +760,12 @@ and [API exception semantics](https://developers.cloudflare.com/waf/managed-rule
 
 `useMeetingAi` attaches WAV Blobs as `audio_0`, `audio_1`, ... multipart binary
 file parts; only source metadata is JSON. `uploadMeetAiChunk` forwards FormData
-without JSON/base64 conversion. The dormant decoder retains its 480,044-byte
-per-file cap, aggregate byte/clip caps and PCM validation. The public chunks POST
-handler unconditionally returns 403 before reading audio. Removing an audio
-exception therefore needs no encoding or consent change while transcription is
-off; WAF rejection can still mask that application 403.
+without JSON/base64 conversion. Room capture splits 16 kHz mono PCM16 into WAV
+clips of at most 480,044 bytes. Batched uploads identify the same host-only
+protocol in the URL and by header, so the server can select the 12.1 MB request
+budget even if the custom header is absent. The batch still has a 12 MB audio
+limit and one reservation per ten-second window. Unbatched uploads keep the
+500 KB body cap and per-speaker uploads keep their 350 KB cap.
 
 If transcription is explicitly restored and binary multipart still produces a
 confirmed false positive, propose only 949110 with host `meet.tuturuuu.com`,
@@ -777,6 +778,8 @@ Do not install a speculative exception or expand it to all Meet APIs.
 Regression evidence: `apps/meet/src/runtime/server-function-transport.test.ts`,
 `packages/meet-core/src/features/call/lib/invite-continuation.test.ts`,
 `packages/meet-core/src/features/meeting-ai/use-meeting-ai.test.ts`,
+`packages/meet-core/src/features/meeting-ai/audio.test.ts`,
+`packages/meet-core/src/features/meeting-ai/server/chunks-protocol.test.ts`,
 `packages/internal-api/src/meet-ai-upload.test.ts`,
 `packages/meet-core/src/features/meeting-ai/server/audio-input.test.ts`, and
 `packages/meet-core/src/features/live-assistant/phase-a-denial.test.ts`.

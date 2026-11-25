@@ -146,13 +146,15 @@ export function uploadMeetAiChunk(
   options?: InternalApiClientOptions,
   signal?: AbortSignal
 ) {
+  const batched = data.has('sources');
   return getInternalApiClient(options).json<MeetAiChunk>(
     `${path(wsId, meetingId)}/chunks`,
     {
       method: 'POST',
       body: data,
       signal,
-      headers: data.has('sources') ? { 'X-Meet-Audio-Batch': '1' } : undefined,
+      query: batched ? { audioBatch: '1' } : undefined,
+      headers: batched ? { 'X-Meet-Audio-Batch': '1' } : undefined,
     }
   );
 }

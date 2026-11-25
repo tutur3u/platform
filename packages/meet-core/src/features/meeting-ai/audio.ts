@@ -1,4 +1,14 @@
+import {
+  MEET_AUDIO_CLIP_MAX_BYTES,
+  MEET_PCM_SAMPLE_BYTES,
+  MEET_WAV_HEADER_BYTES,
+} from '@tuturuuu/ai/meetings/audio-contract';
 import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
+
+const SAMPLE_RATE = 16_000;
+const MAX_CLIP_SAMPLES = Math.floor(
+  (MEET_AUDIO_CLIP_MAX_BYTES - MEET_WAV_HEADER_BYTES) / MEET_PCM_SAMPLE_BYTES
+);
 
 export function hasMeetSpeech(samples: Float32Array, threshold = 0.000001) {
   if (!Number.isFinite(threshold) || threshold < 0)
@@ -14,28 +24,29 @@ export function hasMeetSpeech(samples: Float32Array, threshold = 0.000001) {
 }
 
 export function encodeMeetWav(samples: Float32Array): Blob {
-  const data = new ArrayBuffer(44 + samples.length * 2);
+  const pcmBytes = samples.length * MEET_PCM_SAMPLE_BYTES;
+  const data = new ArrayBuffer(MEET_WAV_HEADER_BYTES + pcmBytes);
   const view = new DataView(data);
   const write = (offset: number, value: string) =>
     [...value].forEach((char, index) => {
       view.setUint8(offset + index, char.charCodeAt(0));
     });
   write(0, 'RIFF');
-  view.setUint32(4, 36 + samples.length * 2, true);
+  view.setUint32(4, data.byteLength - 8, true);
   write(8, 'WAVE');
   write(12, 'fmt ');
   view.setUint32(16, 16, true);
   view.setUint16(20, 1, true);
   view.setUint16(22, 1, true);
-  view.setUint32(24, 16000, true);
-  view.setUint32(28, 32000, true);
-  view.setUint16(32, 2, true);
+  view.setUint32(24, SAMPLE_RATE, true);
+  view.setUint32(28, SAMPLE_RATE * MEET_PCM_SAMPLE_BYTES, true);
+  view.setUint16(32, MEET_PCM_SAMPLE_BYTES, true);
   view.setUint16(34, 16, true);
   write(36, 'data');
-  view.setUint32(40, samples.length * 2, true);
+  view.setUint32(40, pcmBytes, true);
   samples.forEach((sample, index) => {
     view.setInt16(
-      44 + index * 2,
+      MEET_WAV_HEADER_BYTES + index * MEET_PCM_SAMPLE_BYTES,
       Math.max(-1, Math.min(1, sample)) * 32767,
       true
     );
@@ -77,9 +88,9 @@ export class MeetAudioCapture {
   async start() {
     this.stopping = false;
     this.incomplete = false;
-    const context = new AudioContext({ sampleRate: 16000 });
+    const context = new AudioContext({ sampleRate: SAMPLE_RATE });
     this.context = context;
-    if (context.sampleRate !== 16000)
+    if (context.sampleRate !== SAMPLE_RATE)
       throw new Error('Unsupported audio sample rate');
     await context.audioWorklet.addModule(
       meetBrowserPath('/meet-audio-processor.js')
@@ -117,11 +128,20 @@ export class MeetAudioCapture {
       node.port.onmessage = ({
         data,
       }: MessageEvent<{ samples?: Float32Array; flushed?: boolean }>) => {
-        if (data.samples?.length) {
+        const inputSamples = data.samples;
+        for (
+          let offset = 0;
+          inputSamples && offset < inputSamples.length;
+          offset += MAX_CLIP_SAMPLES
+        ) {
+          const samples = inputSamples.subarray(
+            offset,
+            offset + MAX_CLIP_SAMPLES
+          );
           const start = elapsed;
-          elapsed += data.samples.length / 16000;
-          if (hasMeetSpeech(data.samples, this.energyThreshold))
-            this.onChunk(encodeMeetWav(data.samples), start, {
+          elapsed += samples.length / SAMPLE_RATE;
+          if (hasMeetSpeech(samples, this.energyThreshold))
+            this.onChunk(encodeMeetWav(samples), start, {
               accountId: input.accountId,
               kind: input.kind,
             });

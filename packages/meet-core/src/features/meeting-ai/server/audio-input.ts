@@ -1,6 +1,8 @@
 import {
   MEET_AUDIO_BATCH_MAX_BYTES,
   MEET_AUDIO_BATCH_MAX_CLIPS,
+  MEET_AUDIO_CLIP_MAX_BYTES,
+  MEET_WAV_HEADER_BYTES,
 } from '@tuturuuu/ai/meetings/audio-contract';
 import { z } from 'zod';
 import { MeetAiError } from './access';
@@ -32,7 +34,11 @@ export async function readAudioParts(body: FormData, batched: boolean) {
   const parts = [];
   for (const [index, source] of sources.entries()) {
     const audio = body.get(batched ? `audio_${index}` : 'audio');
-    if (!(audio instanceof File) || audio.size <= 44 || audio.size > 480_044)
+    if (
+      !(audio instanceof File) ||
+      audio.size <= MEET_WAV_HEADER_BYTES ||
+      audio.size > MEET_AUDIO_CLIP_MAX_BYTES
+    )
       throw new MeetAiError(400, 'Invalid audio');
     totalBytes += audio.size;
     if (totalBytes > MEET_AUDIO_BATCH_MAX_BYTES)
