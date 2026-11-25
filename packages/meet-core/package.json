@@ -440,6 +440,8 @@
     "./routes/og/route.tsx": "./src/routes/og/route.tsx",
     "./features/call/lib/meeting-public-info": "./src/features/call/lib/meeting-public-info.ts",
     "./features/call/lib/meeting-public-info.ts": "./src/features/call/lib/meeting-public-info.ts",
+    "./features/call/lib/meeting-display-name": "./src/features/call/lib/meeting-display-name.ts",
+    "./features/call/lib/meeting-display-name.ts": "./src/features/call/lib/meeting-display-name.ts",
     "./features/call/lib/media-error": "./src/features/call/lib/media-error.ts",
     "./features/call/lib/media-error.ts": "./src/features/call/lib/media-error.ts",
     "./features/call/lib/remote-playback": "./src/features/call/lib/remote-playback.ts",
