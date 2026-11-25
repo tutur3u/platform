@@ -277,13 +277,27 @@ for (const scenario of ['normal', 'unavailable', 'minute-overflow']) {
           }
         );
       }
-      for (const host of [
-        'tuturuuu.com',
-        'inventory.tuturuuu.com.attacker.invalid',
-        'unknown.invalid',
+      // The apex mounts the app under /inventory (start-bridge.config.ts
+      // mountHosts): the mount answers like the root host's private page and
+      // never redirects off the apex.
+      const mounted = await get('tuturuuu.com', '/inventory');
+      assert.equal(mounted.status, 307);
+      assertHeaders(mounted);
+      assert.equal(
+        new URL(mounted.headers.location ?? '', 'http://tuturuuu.com').host,
+        'tuturuuu.com'
+      );
+      // Apex paths outside the mount, spoofed suffix hosts and unknown hosts
+      // are rejected before any app code runs.
+      for (const [host, path] of [
+        ['tuturuuu.com', '/'],
+        ['tuturuuu.com', '/inventoryx'],
+        ['tuturuuu.com', '/personal/catalog'],
+        ['inventory.tuturuuu.com.attacker.invalid', '/inventory'],
+        ['unknown.invalid', '/inventory'],
       ]) {
-        const rejected = await get(host, '/inventory');
-        assert.equal(rejected.status, 404);
+        const rejected = await get(host, path);
+        assert.equal(rejected.status, 404, `${host}${path}`);
         assertHeaders(rejected);
       }
     }
