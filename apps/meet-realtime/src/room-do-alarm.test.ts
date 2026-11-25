@@ -7,7 +7,14 @@ import {
   meetRealtimeTokenPayloadSchema,
 } from '../../../packages/realtime/src/meet';
 import { MeetRoomDurableObject, type MeetRoomEnv } from './room-do';
-import { roomAlarmTime } from './room-maintenance';
+import { expireRoomLive } from '../../../packages/realtime/src/meet/room-live';
+import {
+  armRoomAlarm,
+  expiryDeadline,
+  roomAlarmTime,
+  scheduleRoomFollowUps,
+} from './room-maintenance';
+import { selfOutbox } from './room-self-outbox';
 
 const token = meetRealtimeTokenPayloadSchema.parse({
   exp: Math.floor(Date.now() / 1000) + 600,
@@ -129,3 +136,70 @@ for (const cleanupAt of [0, undefined]) {
     assert.ok(alarms.at(-1)! > Date.now());
   });
 }
+
+test('one non-finite wake source does not hide the valid earliest one', () => {
+  const emptySince = 1_800_000_000_000;
+  const snapshot = {
+    ...createMeetRoomSnapshot(),
+    lifecycle: { emptySince },
+    // An older pending Mira on without its expiry reads as NaN.
+    miraRoom: { pendingOn: { a: {} } },
+  } as unknown as Parameters<typeof selfOutbox.wakeAt>[0];
+  const wake = selfOutbox.wakeAt(snapshot, {} as MeetRoomEnv);
+  assert.ok(Number.isFinite(wake));
+  assert.ok(wake! > emptySince);
+});
+
+test('drops a non-finite deadline with a warning, never as now', async () => {
+  const set: number[] = [];
+  const storage = {
+    getAlarm: async () => null,
+    setAlarm: async (at: number) => {
+      set.push(at);
+    },
+  } as unknown as Parameters<typeof armRoomAlarm>[0];
+  const warn = console.warn;
+  const warnings: unknown[] = [];
+  console.warn = (...args: unknown[]) => warnings.push(args);
+  try {
+    await armRoomAlarm(storage, Number.NaN, Date.now());
+  } finally {
+    console.warn = warn;
+  }
+  assert.deepEqual(set, []);
+  assert.equal(warnings.length, 1);
+});
+
+test('schedules a non-finite expiry once; the sweep clears it', async () => {
+  const now = Date.now();
+  assert.equal(expiryDeadline(Number.NaN, now), now);
+  assert.equal(expiryDeadline(now + 5000, now), now + 5000);
+  const snapshot = {
+    ...admitOrHold(createMeetRoomSnapshot(), token, new Date(now).toISOString())
+      .state,
+    liveAssistant: {
+      sessionId: 's',
+      ownerId: token.userId,
+      expiresAt: Number.NaN,
+    },
+  } as unknown as Parameters<typeof scheduleRoomFollowUps>[0]['snapshot'];
+  const sweeps: (number | undefined)[] = [];
+  const followUps = (current: typeof snapshot) =>
+    scheduleRoomFollowUps({
+      snapshot: current,
+      connectedUserIds: new Set([token.userId]),
+      now,
+      scheduleSweep: async (deadline) => {
+        sweeps.push(deadline);
+      },
+      scheduleEmptyRoom: async () => {},
+    });
+  await followUps(snapshot);
+  assert.ok(sweeps.includes(now));
+  // The sweep the alarm runs drops the assistant, so nothing re-arms.
+  const swept = expireRoomLive(snapshot as never, now);
+  assert.ok(swept);
+  sweeps.length = 0;
+  await followUps(swept.state as typeof snapshot);
+  assert.ok(!sweeps.includes(now));
+});

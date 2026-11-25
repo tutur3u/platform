@@ -42,11 +42,12 @@ import {
 } from './attendance-directory-request';
 import { handleMeetClassServiceRequest } from './room-class-service';
 import {
+  armRoomAlarm,
   cleanupRoomPublications,
   countRoomHttpRequest,
+  expiryDeadline,
   restoreHttpCounter,
   retainRoomAttendance,
-  roomAlarmTime,
   scheduleRoomFollowUps,
   wakeAttendanceCopies,
 } from './room-maintenance';
@@ -279,7 +280,9 @@ export class MeetRoomDurableObject implements DurableObject {
             String((body as { action?: string } | null)?.action)
           )
         )
-          await this.scheduleSweep(this.snapshot.liveAssistant.expiresAt);
+          await this.scheduleSweep(
+            expiryDeadline(this.snapshot.liveAssistant.expiresAt, Date.now())
+          );
       }
       return Response.json(result.body, {
         status: result.status ?? 200,
@@ -374,7 +377,9 @@ export class MeetRoomDurableObject implements DurableObject {
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());
     else if (this.snapshot.budget && !this.snapshot.ended)
-      await this.scheduleSweep(this.snapshot.budget.expiresAt);
+      await this.scheduleSweep(
+        expiryDeadline(this.snapshot.budget.expiresAt, Date.now())
+      );
     if (this.snapshot.usage && this.snapshot.presence[token.userId])
       if (Object.keys(this.snapshot.usage.devices).length < 4096)
         this.snapshot.usage.devices[token.userId] = true;
@@ -550,13 +555,8 @@ export class MeetRoomDurableObject implements DurableObject {
     this.delivery.sendToManagers(outcome.toManagers);
   }
 
-  private async scheduleSweep(deadline = Date.now() + PRESENCE_SWEEP_MS) {
-    // `setAlarm` refuses times <= 0; a past or zero deadline runs next.
-    const at = roomAlarmTime(deadline, Date.now());
-    if (at === undefined) return;
-    const existing = await this.state.storage.getAlarm();
-    if (existing === null || existing > at)
-      await this.state.storage.setAlarm(at);
+  private scheduleSweep(deadline = Date.now() + PRESENCE_SWEEP_MS) {
+    return armRoomAlarm(this.state.storage, deadline, Date.now());
   }
 
   async alarm() {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  earliestDeadline,
   runSelfOutboxDelivery,
   SELF_OUTBOX_DAILY_DELIVERIES,
   SELF_OUTBOX_MAX_DELIVERIES,
@@ -301,5 +302,14 @@ describe('outbox delivery bounds', () => {
       error.mockRestore();
       warn.mockRestore();
     }
+  });
+});
+
+describe('earliestDeadline', () => {
+  it('leaves out deadlines that are not finite numbers', () => {
+    // One missing field read from an older snapshot cannot hide the others.
+    expect(earliestDeadline(Number.NaN, 500, undefined, 300)).toBe(300);
+    expect(earliestDeadline(Number.POSITIVE_INFINITY, 900)).toBe(900);
+    expect(earliestDeadline(Number.NaN, undefined)).toBeUndefined();
   });
 });

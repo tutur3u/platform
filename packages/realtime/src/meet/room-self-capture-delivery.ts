@@ -90,9 +90,13 @@ export function selfSessionWake(
   return until === undefined || until === Infinity ? undefined : until;
 }
 
-/** The earlier of the empty-room deadline and the next outbox delivery. */
+/**
+ * The earliest of the room's wake deadlines. A deadline that is not a finite
+ * number (an older snapshot missing the field it is read from) is left out,
+ * so it cannot hide the others.
+ */
 export function earliestDeadline(...deadlines: Array<number | undefined>) {
-  const set = deadlines.filter((d): d is number => d !== undefined);
+  const set = deadlines.filter((d): d is number => Number.isFinite(d));
   return set.length ? Math.min(...set) : undefined;
 }
 

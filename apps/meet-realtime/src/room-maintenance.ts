@@ -26,6 +26,37 @@ export function roomAlarmTime(deadline: number, now: number) {
   if (!Number.isFinite(deadline)) return undefined;
   return Math.max(deadline, now + 1);
 }
+
+/**
+ * Arms the room alarm for `deadline` unless an earlier one is set. A past or
+ * zero deadline runs at the next moment (`roomAlarmTime`); a non-finite one
+ * is dropped with a warning, never re-armed as now, which would wake the
+ * room on every run.
+ */
+export async function armRoomAlarm(
+  storage: Pick<DurableObjectStorage, 'getAlarm' | 'setAlarm'>,
+  deadline: number,
+  now: number
+) {
+  const at = roomAlarmTime(deadline, now);
+  if (at === undefined) {
+    console.warn('Meet room sweep skipped: deadline is not a number');
+    return;
+  }
+  const existing = await storage.getAlarm();
+  if (existing === null || existing > at) await storage.setAlarm(at);
+}
+
+/**
+ * When to sweep for an expiry stored as `expiresAt`. One that is not a finite
+ * number counts as expired now: the sweep then treats it as expired too
+ * (`expireRoomLive` drops the assistant, `expireRoomBudget` ends the room),
+ * so it is scheduled once and cannot re-arm the alarm.
+ */
+export function expiryDeadline(expiresAt: number, now: number) {
+  return Number.isFinite(expiresAt) ? expiresAt : now;
+}
+
 type AttendanceStorage = Parameters<typeof publishStoredAttendance>[1];
 
 export function countRoomHttpRequest(
@@ -155,13 +186,17 @@ export async function scheduleRoomFollowUps(input: {
     await input.scheduleSweep();
   if (input.snapshot.liveAssistant)
     await input.scheduleSweep(
-      input.snapshot.ended ? input.now : input.snapshot.liveAssistant.expiresAt
+      input.snapshot.ended
+        ? input.now
+        : expiryDeadline(input.snapshot.liveAssistant.expiresAt, input.now)
     );
   if (input.snapshot.budget?.pendingPublications?.length)
     // `nextCleanupAt: 0` marks cleanup as due now.
     await input.scheduleSweep(input.snapshot.budget.nextCleanupAt || input.now);
   if (input.snapshot.budget && !input.snapshot.ended)
-    await input.scheduleSweep(input.snapshot.budget.expiresAt);
+    await input.scheduleSweep(
+      expiryDeadline(input.snapshot.budget.expiresAt, input.now)
+    );
   const attendanceAlarm = nextAttendanceAlarm(
     input.snapshot.attendance,
     input.now
