@@ -184,11 +184,11 @@ describe('Mail request bridge', () => {
       '/favicon.ico',
       '/robots.txt',
       '/_next/static/a.js',
-      '/media/a.png',
+      '/a.png',
     ])
       expect(proxyMatches(path)).toBe(false);
     const response = await dispatchThroughMailProxy({
-      request: new Request('https://mail.tuturuuu.com/media/a.png'),
+      request: new Request('https://mail.tuturuuu.com/a.png'),
       waitUntil,
       proxy: async () => {
         throw new Error('Asset must bypass proxy');

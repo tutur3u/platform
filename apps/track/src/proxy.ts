@@ -314,7 +314,9 @@ export const config = {
      * - webp
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
+    // Asset extensions skip the proxy only at the root and inside public
+    // asset folders, so protected routes can never bypass it via a suffix.
+    '/((?!(?:_next/static|_next/image|monitoring)(?:/|$)|(?:favicon\\.ico|robots\\.txt|sitemap\\.xml|site\\.webmanifest)$|(?:media)/.+\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$|[^/]+\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
 };
 

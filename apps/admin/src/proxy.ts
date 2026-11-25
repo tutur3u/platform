@@ -309,5 +309,5 @@ export const proxy = withCanonicalLocaleCookie(
 );
 
 export const config = {
-  matcher: ['/((?!_next|.*\\..*).*)'],
+  matcher: ['/((?!_next(?:/|$)|[^/]+\\.[^/]+$).*)'],
 };

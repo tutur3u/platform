@@ -228,7 +228,9 @@ export const config = {
   // Repository paths legitimately contain dots (for example SECURITY.md and
   // turbo.json). Only framework assets, the app favicon, and root metadata
   // bypass locale routing; nested repository files still need it.
-  matcher: ['/((?!_next|favicon\\.svg|sitemap\\.xml$|robots\\.txt$).*)'],
+  matcher: [
+    '/((?!_next(?:/|$)|favicon\\.svg$|sitemap\\.xml$|robots\\.txt$).*)',
+  ],
 };
 
 export async function proxy(request: NextRequest) {

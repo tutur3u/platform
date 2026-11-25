@@ -97,5 +97,5 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
 export const proxy = withSecureLocaleCookie(handleProxy, () => BASE_URL);
 
 export const config = {
-  matcher: ['/((?!_next|.*\\..*).*)'],
+  matcher: ['/((?!_next(?:/|$)|[^/]+\\.[^/]+$).*)'],
 };

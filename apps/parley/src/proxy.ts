@@ -123,6 +123,8 @@ export default proxy;
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|meet-live-processor.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Asset extensions skip the proxy only at the root and inside public
+    // asset folders, so protected routes can never bypass it via a suffix.
+    '/((?!(?:_next/static|_next/image)(?:/|$)|(?:favicon\\.ico|meet-live-processor\\.js)$|(?:media)/.+\\.(?:svg|png|jpg|jpeg|gif|webp)$|[^/]+\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

@@ -10,9 +10,10 @@ const proxySource = fs.readFileSync(new URL('./proxy.ts', import.meta.url), {
 describe('Mail proxy matcher', () => {
   it('keeps the Next proxy config matcher inline for static analysis', () => {
     expect(proxySource).toContain(
-      "matcher: [\n    '/((?!_next/static|_next/image|favicon.ico"
+      "matcher: [\n    '/((?!(?:_next/static|_next/image|serwist|monitoring"
     );
     expect(proxySource).not.toContain('matcher: [MAIL_PROXY_MATCHER]');
+    expect(proxySource).toContain(MAIL_PROXY_MATCHER.replaceAll('\\', '\\\\'));
   });
 
   it('keeps generated public assets out of centralized auth redirects', () => {
@@ -25,5 +26,7 @@ describe('Mail proxy matcher', () => {
   it('still protects workspace pages', () => {
     expect(proxyMatcherRegex.test('/personal')).toBe(true);
     expect(proxyMatcherRegex.test('/personal?folder=sent')).toBe(true);
+    expect(proxyMatcherRegex.test('/personal/inbox/probe.png')).toBe(true);
+    expect(proxyMatcherRegex.test('/en/personal/sent/report.pdf')).toBe(true);
   });
 });

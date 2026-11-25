@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 function matchesProxy(pathname: string) {
   const source = readFileSync(new URL('./proxy.ts', import.meta.url), 'utf8');
-  const sourceMatcher = source.match(/matcher: \['([^']+)'\]/u)?.[1];
+  const sourceMatcher = source.match(/matcher: \[\s*'([^']+)',?\s*\]/u)?.[1];
   if (!sourceMatcher) throw new Error('Git proxy matcher was not found');
   const matcher = sourceMatcher.replaceAll('\\\\', '\\');
   return new RegExp(`^${matcher}$`, 'u').test(pathname);
