@@ -4,11 +4,28 @@ import {
   withdrawPrivateLiveSessions,
 } from '@tuturuuu/meet-core/features/live-assistant/privacy-reset';
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
+import { readMiraAccountConfirmationStatus } from '@tuturuuu/meet-core/features/live-assistant/server/account-confirmation';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { z } from 'zod';
 
 const headers = { 'Cache-Control': 'private, no-store' };
 const schema = z.object({ expectedActorId: z.uuid() }).strict();
+
+export async function GET() {
+  const user = await getSatelliteAppSessionUser('meet');
+  if (!user)
+    return Response.json({ error: 'Unauthorized' }, { status: 401, headers });
+  const status = await readMiraAccountConfirmationStatus(user.id);
+  if (status === 'unavailable')
+    return Response.json(
+      { error: 'Mira confirmation is unavailable' },
+      { status: 503, headers }
+    );
+  return Response.json(
+    { accountId: user.id, confirmed: status === 'confirmed' },
+    { headers }
+  );
+}
 
 export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin)

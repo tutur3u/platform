@@ -2851,13 +2851,19 @@ default applies to the original flow, including Parley.
   that Mira may listen and transcribe while it is on. The server stores the
   statement version, confirmation time, locale, and SHA-256 text hash in
   `auth.users.raw_app_meta_data.meet_mira_account_confirmation`.
-  In a call, **Call settings → Mira → Withdraw Mira confirmation** first turns
+  An account has no confirmation until the person confirms. The confirmation
+  applies across all Meet workspaces. **Meeting settings → Mira** offers
+  **Withdraw Mira confirmation** when the account has a confirmation,
+  regardless of the workspace’s 18+ switch. The switch controls only the
+  workspace’s audience declaration. Withdrawal first turns
   Room Mira off for the caller, then removes the account record and stops the
   caller's active Private Mira sessions in that meeting. Meet retries once if
-  either of the last two steps fails. Use the same button if the withdrawal
-  still needs to finish. Outside a call,
-  **Meet Settings → Account → Mira** removes the account record without writing
-  any room choice or directly stopping a session. Successful account reads are
+  either of the last two steps fails. Use **Try again** if the withdrawal
+  still needs to finish. Outside a call, **Meet Settings → Account → Mira**
+  offers the same account action. It removes the account record and asks the
+  Live service to stop the account’s Private Mira sessions and revoke their
+  shared tutor chat access.
+  Successful reads used to authorize Mira are
   cached for up to 60 seconds. Withdrawal clears the serving isolate's entry
   immediately. Other Meet isolates and the live Worker can use a cached
   confirmation for up to 60 seconds after withdrawal. The live Worker refuses
@@ -2908,6 +2914,8 @@ default applies to the original flow, including Parley.
   new legacy opt-ins with `account_confirmation_required`.
 
 Regression coverage includes
+[account withdrawal with the workspace switch on or off](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/call-settings-mira.test.tsx),
+[withdrawal from Meet account settings](https://github.com/tutur3u/platform/blob/main/apps/meet/src/runtime/mira-settings.test.tsx),
 [the host-on and join-while-on notices, deferral and the opt-out action](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/room-mira-popover.test.tsx),
 [auto-on evidence, withdrawal, and acceptance refusals](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/routes/api/meet-call/%5BmeetingId%5D/mira-room/route-account.test.ts),
 [the evidence source constraint](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/meet-mira-host-consent.sql),

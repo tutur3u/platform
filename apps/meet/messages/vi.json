@@ -6239,6 +6239,7 @@
     },
     "mira_consent": {
       "about": "Giới thiệu về Mira",
+      "account_not_confirmed": "Bạn chưa xác nhận Mira cho tài khoản này.",
       "account_statement": "Tôi từ đủ 18 tuổi và đồng ý cho Mira nghe và chép lời cuộc họp khi được bật để hỗ trợ tạo phụ đề, ghi chú và trả lời câu hỏi.",
       "account_title": "Xác nhận để dùng Mira",
       "adults": "Mira dành cho người từ 18 tuổi trở lên. Dưới 18 tuổi? Hãy bỏ chọn ô này.",
@@ -6294,8 +6295,9 @@
       "turn_off_me": "Tắt Mira cho tôi",
       "turning_on": "Đang bật Mira cho bạn…",
       "withdraw_account": "Rút lại xác nhận cho Mira",
-      "withdraw_account_description": "Quản lý xác nhận cho Mira của tài khoản trong Meet.",
+      "withdraw_account_description": "Xác nhận Mira áp dụng cho tài khoản của bạn trong mọi không gian làm việc trên Meet.",
       "withdraw_account_failed": "Không thể rút lại xác nhận cho Mira. Hãy thử lại.",
+      "withdraw_account_load_failed": "Không thể kiểm tra xác nhận Mira của bạn.",
       "withdraw_incomplete": "Chưa thể hoàn tất việc rút lại xác nhận. Hãy thử lại.",
       "withdrawn_account": "Đã rút lại xác nhận cho Mira",
       "you_choose": "Xác nhận lựa chọn Mira của bạn cho cuộc họp này.",

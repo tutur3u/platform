@@ -16,6 +16,7 @@ import { liveErrorMessageKey } from '../../live-assistant/live-errors';
 import { useLiveSession } from '../../live-assistant/live-session-store';
 import { MiraWorkspaceOff } from '../../live-assistant/mira-workspace-off';
 import { confirmPrivateChoice } from '../../live-assistant/private-choice';
+import { miraAccountConfirmationKey } from '../../live-assistant/use-mira-account-confirmation';
 import { useMeetUxV2 } from '../prejoin/prejoin-context';
 import { MiraConfirmDialog } from './mira-confirm-dialog';
 import type { MiraPermissionsProps } from './mira-permissions-card';
@@ -202,6 +203,9 @@ export function PersonalChat({
         if (!confirm) return { ...scope, action, needsConfirmation: true };
         const next = await confirmMeetMiraAccount(meetingId, accountId, locale);
         queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
+        void queryClient.invalidateQueries({
+          queryKey: miraAccountConfirmationKey(accountId),
+        });
       } else if (policy.accountConfirmation !== 'confirmed') {
         throw new Error('Mira confirmation is unavailable');
       }

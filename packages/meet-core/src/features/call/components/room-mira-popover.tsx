@@ -9,6 +9,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLiveSession } from '../../live-assistant/live-session-store';
+import { miraAccountConfirmationKey } from '../../live-assistant/use-mira-account-confirmation';
 import { MiraAbout } from './mira-about';
 import { MiraConfirmDialog } from './mira-confirm-dialog';
 import { MiraPrivateEntry } from './mira-private-entry';
@@ -75,6 +76,9 @@ export function RoomMiraPopover({
       if (status === 'required') {
         const next = await confirmMeetMiraAccount(meetingId, accountId, locale);
         queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
+        void queryClient.invalidateQueries({
+          queryKey: miraAccountConfirmationKey(accountId),
+        });
       }
       if (intent === 'host') await mira.acceptance.mutateAsync('accept');
       if (intent === 'personal')

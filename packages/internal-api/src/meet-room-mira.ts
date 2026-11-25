@@ -128,8 +128,17 @@ export function withdrawMeetMiraAccount(
   });
 }
 
+const miraAccountPath = '/api/meet-mira/account';
+
+export function readMeetMiraAccountConfirmation(signal?: AbortSignal) {
+  return getInternalApiClient().json<{ accountId: string; confirmed: boolean }>(
+    miraAccountPath,
+    { cache: 'no-store', signal }
+  );
+}
+
 export function withdrawMeetMiraAccountFromSettings(expectedActorId: string) {
-  return getInternalApiClient().json<{ ok: true }>('/api/meet-mira/account', {
+  return getInternalApiClient().json<{ ok: true }>(miraAccountPath, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ expectedActorId }),

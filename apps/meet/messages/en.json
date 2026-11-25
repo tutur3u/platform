@@ -6239,6 +6239,7 @@
     },
     "mira_consent": {
       "about": "About Mira",
+      "account_not_confirmed": "You haven’t confirmed Mira for this account.",
       "account_statement": "I’m 18 or older and agree that Mira may listen to and transcribe meetings when it’s on to help with captions, notes, and answers.",
       "account_title": "Confirm for Mira",
       "adults": "Mira is for people 18 or older. Under 18? Untick the box.",
@@ -6294,8 +6295,9 @@
       "turn_off_me": "Turn Mira off for me",
       "turning_on": "Turning Mira on for you…",
       "withdraw_account": "Withdraw Mira confirmation",
-      "withdraw_account_description": "Manage your account’s confirmation for Mira in Meet.",
+      "withdraw_account_description": "Your Mira confirmation applies to your account across all Meet workspaces.",
       "withdraw_account_failed": "Couldn't withdraw your Mira confirmation. Try again.",
+      "withdraw_account_load_failed": "Couldn’t check your Mira confirmation.",
       "withdraw_incomplete": "Withdrawal didn't finish. Try again.",
       "withdrawn_account": "Mira confirmation withdrawn",
       "you_choose": "Confirm your Mira choice for this meeting.",

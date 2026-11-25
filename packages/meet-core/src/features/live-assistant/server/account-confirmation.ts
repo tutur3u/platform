@@ -28,7 +28,9 @@ export function usesMiraAccountConfirmation() {
   return MEETING_APP === 'meet' && isMeetUxV2Enabled();
 }
 
-async function readConfirmation(userId: string): Promise<ConfirmationStatus> {
+export async function readMiraAccountConfirmationStatus(
+  userId: string
+): Promise<ConfirmationStatus> {
   try {
     const db = await createAdminClient({ noCookie: true });
     const { data, error } = await db.auth.admin.getUserById(userId);
@@ -65,7 +67,7 @@ export async function readMiraAccountConfirmation(access: MeetCallRouteAccess) {
   const userId = access.user.id;
   return confirmations.read(
     userId,
-    () => readConfirmation(userId),
+    () => readMiraAccountConfirmationStatus(userId),
     (status) => status === 'confirmed'
   );
 }
@@ -98,7 +100,7 @@ export async function confirmMiraAccount(
   locale: MiraConfirmationLocale
 ) {
   const userId = requireMiraAccountActor(access, expectedActorId);
-  const status = await readConfirmation(userId);
+  const status = await readMiraAccountConfirmationStatus(userId);
   if (status === 'confirmed') return;
   if (status !== 'required') throw unavailable();
 

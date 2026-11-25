@@ -2,6 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   actor: vi.fn(),
+  get: vi.fn(),
   update: vi.fn(),
   live: vi.fn(),
 }));
@@ -12,7 +13,7 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
-    auth: { admin: { updateUserById: f.update } },
+    auth: { admin: { getUserById: f.get, updateUserById: f.update } },
   }),
 }));
 
@@ -24,7 +25,7 @@ vi.mock(
   })
 );
 
-import { POST } from './route';
+import { GET, POST } from './route';
 
 const origin = 'https://meet.test';
 const account = '0b1e0d1c-2f3a-4b5c-8d6e-7f8091a2b3c4';
@@ -56,6 +57,34 @@ it('withdraws only the signed-in account marker without a meeting id', async () 
   expect(f.update).toHaveBeenCalledExactlyOnceWith(account, {
     app_metadata: { [marker]: null },
   });
+});
+
+it.each([
+  [{ [marker]: '2026-11-25-v1' }, true],
+  [{}, false],
+] as const)(
+  'reads the authenticated account confirmation',
+  async (appMetadata, confirmed) => {
+    f.get.mockResolvedValue({
+      data: { user: { id: account, app_metadata: appMetadata } },
+      error: null,
+    });
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({ accountId: account, confirmed });
+    expect(f.get).toHaveBeenCalledExactlyOnceWith(account);
+    expect(f.update).not.toHaveBeenCalled();
+  }
+);
+
+it('distinguishes an unavailable confirmation lookup from an unconfirmed account', async () => {
+  f.get.mockRejectedValue(new Error('unavailable'));
+  expect((await GET()).status).toBe(503);
+  f.get.mockClear();
+  f.actor.mockResolvedValue(null);
+  expect((await GET()).status).toBe(401);
+  expect(f.get).not.toHaveBeenCalled();
 });
 
 it('rejects a cross-origin request, a changed account, and a missing session', async () => {

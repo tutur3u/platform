@@ -80,6 +80,14 @@ When a workspace policy blocks Mira, the owner can open the setting directly
 if the workspace lacks a declaration. Other participants can ask the owner to
 check the setting. Each Mira feature still applies its own access policy.
 
+Meet’s account confirmation is off until the person confirms. It applies to
+their account across all Meet workspaces. In **Meeting settings → Mira** and
+**Meet Settings → Account → Mira**, **Withdraw Mira confirmation** appears
+when the signed-in account has confirmed. The in-call 18+ switch controls the
+workspace’s audience declaration independently. Parley uses its room choice flow.
+See [in-call settings coverage](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/call-settings-mira.test.tsx)
+and [account settings coverage](https://github.com/tutur3u/platform/blob/main/apps/meet/src/runtime/mira-settings.test.tsx).
+
 While a host acceptance is current, the call header shows one compact Mira
 control (a short label and a status dot: on, pending the participant's choice,
 or off). Its accessible name is the full statement **Mira is on, turned on by

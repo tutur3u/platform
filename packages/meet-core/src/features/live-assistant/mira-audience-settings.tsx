@@ -11,7 +11,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useFormatter, useTimeZone, useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
 import { SettingsField } from '../../../../ui/src/components/ui/custom/settings-field';
 import { SettingItemTab } from '../../../../ui/src/components/ui/custom/settings-item-tab';
 import { useMeetingTimeZone } from '../call/components/meeting-local-time';
@@ -19,13 +18,7 @@ import { MiraAdultNotice } from './mira-adult-notice';
 import { MiraConsentDefaultField } from './mira-consent-default-field';
 import { useMiraAudience, useSetMiraAudience } from './use-mira-audience';
 
-export function MiraAudienceSettings({
-  wsId,
-  accountSettings,
-}: {
-  wsId: string;
-  accountSettings?: ReactNode;
-}) {
+export function MiraAudienceSettings({ wsId }: { wsId: string }) {
   const t = useTranslations('meet.mira_adults');
   const format = useFormatter();
   const appTimeZone = useTimeZone();
@@ -34,8 +27,8 @@ export function MiraAudienceSettings({
   const audience = useMiraAudience(wsId);
   const save = useSetMiraAudience(wsId, () => toast.error(t('save_failed')));
   const checked = save.isPending ? save.variables : audience.setting?.attested;
-  if (audience.failed) {
-    const failed = (
+  if (audience.failed)
+    return (
       <SettingsSection>
         <SettingsSectionMessage
           tone="error"
@@ -55,13 +48,6 @@ export function MiraAudienceSettings({
         </SettingsSectionMessage>
       </SettingsSection>
     );
-    return (
-      <>
-        {accountSettings}
-        {failed}
-      </>
-    );
-  }
 
   const icon = <ShieldCheck className="size-4" />;
   const description = (
@@ -79,7 +65,7 @@ export function MiraAudienceSettings({
       )}
     </>
   );
-  const settings = (
+  return (
     <SettingsSection>
       <SettingsSectionBlock>
         <MiraAdultNotice />
@@ -126,11 +112,5 @@ export function MiraAudienceSettings({
         </SettingsSectionBlock>
       )}
     </SettingsSection>
-  );
-  return (
-    <>
-      {(audience.readOnly || checked) && accountSettings}
-      {settings}
-    </>
   );
 }

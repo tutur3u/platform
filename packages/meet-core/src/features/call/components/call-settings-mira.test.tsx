@@ -17,11 +17,13 @@ import type { MeetRoomController } from '../lib/room-controller';
 
 const f = vi.hoisted(() => ({
   read: vi.fn(),
+  confirmation: vi.fn(),
   write: vi.fn(),
   withdraw: vi.fn(),
 }));
-vi.mock('@tuturuuu/internal-api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tuturuuu/internal-api')>()),
+vi.mock('@tuturuuu/internal-api/meet-call', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api/meet-call')>()),
+  readMeetMiraAccountConfirmation: f.confirmation,
   withdrawMeetMiraAccount: f.withdraw,
 }));
 vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
@@ -112,6 +114,10 @@ function show(participants: Record<string, { accountId?: string }>) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  f.confirmation.mockResolvedValue({
+    accountId: 'synthetic-account',
+    confirmed: true,
+  });
   vi.stubGlobal(
     'matchMedia',
     vi.fn(() => ({
@@ -135,9 +141,10 @@ it('opens the meeting settings on the Mira section from a refusal and saves the 
     await screen.findByRole('button', { name: copy.open_settings })
   );
   const toggle = await screen.findByRole('switch', { name: copy.toggle });
+  expect(toggle.getAttribute('aria-checked')).toBe('false');
   expect(screen.getByRole('button', { name: copy.settings_tab })).toBeTruthy();
   expect(screen.queryByText('Device controls')).toBeNull();
-  expect(screen.queryByRole('button', withdrawLabel)).toBeNull();
+  expect(await screen.findByRole('button', withdrawLabel)).toBeTruthy();
   fireEvent.click(toggle);
   await waitFor(() =>
     expect(f.write).toHaveBeenCalledExactlyOnceWith('synthetic-workspace', true)
@@ -149,6 +156,22 @@ it('opens the meeting settings on the Mira section from a refusal and saves the 
   f.write.mockResolvedValue(off);
   fireEvent.click(toggle);
   await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('false'));
+  expect(screen.getByRole('button', withdrawLabel)).toBeTruthy();
+});
+
+it('hides withdrawal for an unconfirmed account with the workspace switch on', async () => {
+  f.read.mockResolvedValue(on);
+  f.confirmation.mockResolvedValue({
+    accountId: 'synthetic-account',
+    confirmed: false,
+  });
+  show({ device: { accountId: 'synthetic-account' } });
+  fireEvent.click(
+    await screen.findByRole('button', { name: copy.open_settings })
+  );
+  const toggle = await screen.findByRole('switch', { name: copy.toggle });
+  expect(toggle.getAttribute('aria-checked')).toBe('true');
+  expect(f.confirmation).toHaveBeenCalledOnce();
   expect(screen.queryByRole('button', withdrawLabel)).toBeNull();
 });
 
@@ -161,7 +184,7 @@ it('offers the Mira section in the settings navigation only to signed-in partici
 });
 
 it('withdraws the signed-in participant’s confirmation from Mira settings', async () => {
-  f.read.mockResolvedValue(on);
+  f.read.mockResolvedValue(off);
   f.withdraw.mockResolvedValue({ available: false });
   show({ device: { accountId: 'synthetic-account' } });
   fireEvent.click(
@@ -175,6 +198,7 @@ it('withdraws the signed-in participant’s confirmation from Mira settings', as
   expect(
     await screen.findByText(messages.meet.mira_consent.withdrawn_account)
   ).toBeTruthy();
+  expect(screen.queryByRole('button', withdrawLabel)).toBeNull();
   expect(f.withdraw).toHaveBeenCalledExactlyOnceWith(
     'synthetic-meeting',
     'synthetic-account',
