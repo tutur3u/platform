@@ -108,6 +108,6 @@ class AppChip extends StatelessWidget {
     );
     return tooltip == null
         ? result
-        : AppTooltip(message: tooltip, child: result);
+        : AppTooltip(message: tooltip!, child: result);
   }
 }

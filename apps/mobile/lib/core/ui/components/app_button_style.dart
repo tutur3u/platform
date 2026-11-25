@@ -188,7 +188,7 @@ class AppButtonFrame extends StatelessWidget {
       child: tooltip == null
           ? target
           : AppTooltip(
-              message: tooltip,
+              message: tooltip!,
               excludeFromSemantics: true,
               child: target,
             ),

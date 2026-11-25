@@ -113,6 +113,7 @@ void main() {
     second.requestFocus();
     await tester.pumpAndSettle();
     expect(find.text('Delete'), findsOneWidget);
+    expect(find.text('Archive'), findsNothing);
   });
 
   testWidgets('a long tooltip wraps at the web max width', (tester) async {

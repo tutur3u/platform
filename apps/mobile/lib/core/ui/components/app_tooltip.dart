@@ -75,9 +75,7 @@ class _AppTooltipState extends State<AppTooltip> {
 
   GlobalKey<TooltipState> get _tooltip => widget.tooltipKey ?? _ownKey;
 
-  /// The tooltip currently opened by keyboard focus. Focus moving to the
-  /// next button notifies the new owner before the old one, so a blur only
-  /// dismisses when no other tooltip took over.
+  /// The tooltip currently opened by keyboard focus.
   static _AppTooltipState? _focusOwner;
 
   void _onFocusChange(bool focused) {
@@ -88,8 +86,11 @@ class _AppTooltipState extends State<AppTooltip> {
       _tooltip.currentState?.ensureTooltipVisible();
     } else if (!focused && identical(_focusOwner, this)) {
       _focusOwner = null;
+      // Close what this focus opened; a button that took focus meanwhile
+      // gets its own tooltip back, so tabbing shows one tooltip at a time.
       scheduleMicrotask(() {
-        if (_focusOwner == null) Tooltip.dismissAllToolTips();
+        Tooltip.dismissAllToolTips();
+        _focusOwner?._tooltip.currentState?.ensureTooltipVisible();
       });
     }
   }
