@@ -632,15 +632,40 @@ for (const state of [
   'stage-failed',
   'switch-failed',
 ]) {
-  test(`a ${state} receipt that restored the serving baseline ends the walk`, async () => {
+  test(`a ${state} receipt that restored the serving baseline ends the walk and names its SHA`, async () => {
     const p = fixture();
     p.state.receipt.state = state;
     p.state.receipt.rollback = {
       versions: [{ version_id: versionId, percentage: 100 }],
     };
+    // The restored attempt's preflight proved the serving SHA; a later
+    // attempt uses it to identify the unannotated serving version.
+    p.state.receipt.servingSha = 'f'.repeat(40);
+    assert.deepEqual(await p.run(), { versionId, sha: 'f'.repeat(40) });
+    delete p.state.receipt.servingSha;
     assert.equal(await p.run(), undefined);
   });
 }
+
+test('a later release proceeds after a restored failure on an unannotated baseline', async () => {
+  const p = fixture();
+  p.state.receipt.state = 'smoke-failed';
+  p.state.receipt.rollback = {
+    versions: [{ version_id: versionId, percentage: 100 }],
+  };
+  p.state.receipt.servingSha = earlierSha;
+  const baseline = await p.run();
+  const { supersedingSha } = await import('./wave1-production-supersede.mjs');
+  const result = await supersedingSha({
+    env: { GITHUB_REPOSITORY: 'fixture/repo', GITHUB_TOKEN: 'fixture' },
+    sha,
+    deployment: { versions: [{ version_id: versionId, percentage: 100 }] },
+    readVersion: async () => ({ annotations: {} }),
+    baseline,
+    fetcher: async () => Response.json({ status: 'behind' }),
+  });
+  assert.deepEqual(result, { live: earlierSha, newer: null });
+});
 
 test('a restored receipt whose baseline no longer serves blocks', async () => {
   const p = fixture();

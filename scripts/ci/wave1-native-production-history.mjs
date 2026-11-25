@@ -318,7 +318,13 @@ export async function assertNoEarlierUpload({
           'Earlier rolled-back upload no longer matches the serving baseline; owner reconciliation required'
         );
         assertCurrentSeen();
-        return;
+        // The restored serving version, with the SHA that attempt proved for
+        // it in its preflight, identifies the baseline for the next attempt.
+        const [serving] = rollback.versions;
+        return rollback.versions.length === 1 &&
+          /^[a-f0-9]{40}$/.test(receipt.servingSha ?? '')
+          ? { versionId: serving.version_id, sha: receipt.servingSha }
+          : undefined;
       }
       if (
         isResolvedFailedNoWrite({

@@ -67,3 +67,37 @@ export async function deployVersions({
     await sleep(readbackDelayMs);
   }
 }
+
+/** Another writer changed the deployment; this attempt wrote nothing. */
+export class ConcurrentDeploymentError extends Error {
+  constructor(active, why) {
+    super(
+      `${why}: the active deployment is not one this attempt wrote; nothing was written`
+    );
+    this.name = 'ConcurrentDeploymentError';
+    this.active = active;
+  }
+}
+
+/**
+ * Writes `versions` only while the active deployment is exactly one of the
+ * splits this attempt wrote (`owned`), so a hand hotfix or rollback is never
+ * overwritten. Returns 'already' when the target already serves, 'written'
+ * after a confirmed write, and throws ConcurrentDeploymentError otherwise.
+ */
+export async function guardedDeploy({
+  script,
+  token,
+  request,
+  versions,
+  owned,
+  why,
+  sleep,
+}) {
+  const active = await activeSplit({ script, token, request });
+  if (sameSplit(active, versions)) return 'already';
+  if (!owned.some((split) => sameSplit(active, split)))
+    throw new ConcurrentDeploymentError(active, why);
+  await deployVersions({ script, token, request, versions, sleep });
+  return 'written';
+}

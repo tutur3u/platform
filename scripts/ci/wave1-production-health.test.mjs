@@ -15,6 +15,14 @@ const profiles = JSON.parse(
 );
 const noSleep = async () => {};
 
+// The app a public URL reaches: <app>.tuturuuu.com or tuturuuu.com/<app>.
+function appOf(url) {
+  const { hostname, pathname } = new URL(url);
+  return hostname === 'tuturuuu.com'
+    ? pathname.split('/')[1]
+    : hostname.split('.')[0];
+}
+
 // A public edge whose answers come from `answer(url, call)`.
 function edge(answer) {
   const calls = [];
@@ -29,7 +37,7 @@ function edge(answer) {
     if (typeof result === 'number')
       return new Response('x', { status: result });
     if (typeof result === 'string')
-      return Response.json({ commitHash: result });
+      return Response.json({ commitHash: result, appName: appOf(url) });
     return new Response(null, {
       status: result.status,
       headers: result.location ? { location: result.location } : {},
@@ -195,37 +203,6 @@ const baseRecord = () => ({
   rollback: { id: 'd', versions: [{ version_id: 'old', percentage: 100 }] },
 });
 
-test('a deployment that moves between stage and switch restores serving', async () => {
-  const { state, request } = controlPlane([
-    { version_id: 'old', percentage: 100 },
-  ]);
-  const record = baseRecord();
-  // Another writer replaces the stage while the smoke runs.
-  const edgeFetch = healthy(sha).fetcher;
-  const smokeFetcher = (url, options) => {
-    state.split = [{ version_id: 'other', percentage: 100 }];
-    return edgeFetch(url, options);
-  };
-  await assert.rejects(
-    stageSmokeSwitch({
-      app: 'calendar',
-      sha,
-      worker: 'tuturuuu-calendar',
-      record,
-      save: () => {},
-      script: 'https://api.example/script',
-      token: 'deploy',
-      request,
-      cases: [],
-      smokeFetcher,
-      sleep: noSleep,
-    }),
-    /Switching traffic failed.*serving deployment is restored/
-  );
-  assert.equal(record.state, 'switch-failed');
-  assert.deepEqual(state.split, [{ version_id: 'old', percentage: 100 }]);
-});
-
 test('a split serving deployment is refused before any write', async () => {
   const { state, request } = controlPlane([]);
   const record = baseRecord();
@@ -300,8 +277,14 @@ test('a newer serving SHA supersedes; an older one proceeds; diverged refuses', 
     readVersion: async () => ({ annotations: { 'workers/message': older } }),
     fetcher: compare(status),
   });
-  assert.equal(await supersedingSha(input('ahead')), older);
-  assert.equal(await supersedingSha(input('behind')), null);
+  assert.deepEqual(await supersedingSha(input('ahead')), {
+    live: older,
+    newer: older,
+  });
+  assert.deepEqual(await supersedingSha(input('behind')), {
+    live: older,
+    newer: null,
+  });
   await assert.rejects(supersedingSha(input('diverged')), /production history/);
 });
 
@@ -318,7 +301,11 @@ function financeEdge({ buildInfo = {}, mount = {} } = {}) {
           headers: { 'cf-ray': 'ray-1', 'set-cookie': 'session=secret' },
         });
       return new Response(
-        JSON.stringify({ commitHash: buildInfo.commit ?? sha, secret: 'x' }),
+        JSON.stringify({
+          commitHash: buildInfo.commit ?? sha,
+          appName: buildInfo.appName ?? 'finance',
+          secret: 'x',
+        }),
         {
           status: 200,
           headers: {

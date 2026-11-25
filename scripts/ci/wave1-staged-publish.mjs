@@ -10,11 +10,11 @@
 // still current.
 import assert from 'node:assert/strict';
 import {
-  deployVersions,
-  expectActive,
+  ConcurrentDeploymentError,
+  guardedDeploy,
   splitOf,
 } from './wave1-production-deployments.mjs';
-import { healthTargets } from './wave1-production-health.mjs';
+import { buildIdentity, healthTargets } from './wave1-production-health.mjs';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -25,16 +25,6 @@ export const SMOKE_DEFAULTS = {
   reachDelayMs: 5_000,
   probeTimeoutMs: 10_000,
 };
-
-function commitOf(text) {
-  try {
-    const info = JSON.parse(text);
-    const commit = info.commitHash ?? info.commit;
-    return typeof commit === 'string' ? commit : null;
-  } catch {
-    return null;
-  }
-}
 
 // Response headers a smoke record may keep. Bodies are never recorded.
 const RECORDED_HEADERS = [
@@ -121,6 +111,8 @@ export async function stagedSmoke({
   reachAttempts = SMOKE_DEFAULTS.reachAttempts,
   reachDelayMs = SMOKE_DEFAULTS.reachDelayMs,
   probeTimeoutMs = SMOKE_DEFAULTS.probeTimeoutMs,
+  deadlineAt = Number.POSITIVE_INFINITY,
+  now = Date.now,
 }) {
   const override = `${worker}="${versionId}"`;
   const options = { fetcher, override, timeoutMs: probeTimeoutMs };
@@ -135,13 +127,20 @@ export async function stagedSmoke({
     attempt += 1
   ) {
     if (attempt > 1) await sleep(reachDelayMs);
+    if (now() >= deadlineAt) return fail('time budget exhausted');
     const still = [];
     for (const origin of pending) {
       const result = await get(`${origin}/api/build-info`, options);
-      const commit = commitOf(result.text);
-      observations.push(observed('build-info', result, { attempt, commit }));
+      const { commit, appName } = buildIdentity(result.text);
+      observations.push(
+        observed('build-info', result, { attempt, commit, appName })
+      );
       const failure = failureOf(result);
       if (failure) return fail(failure);
+      if (result.status === 200 && appName !== app)
+        return fail(
+          `${result.url} reports app ${appName ?? 'none'}, expected ${app}`
+        );
       if (result.status !== 200 || commit !== sha) {
         still.push(origin);
         continue;
@@ -235,20 +234,33 @@ export async function stageSmokeSwitch({
   );
   const context = { script, token, request };
   const stage = [serving[0], { version_id: record.versionId, percentage: 0 }];
-  await expectActive({
-    ...context,
-    expected: serving,
-    why: 'Serving deployment changed before staging',
-  });
+  const switched = [{ version_id: record.versionId, percentage: 100 }];
+  const message = (error) =>
+    error instanceof Error ? error.message : 'unknown error';
+  // Another writer's deployment is never overwritten: record it and stop.
+  const concurrent = (error, failure) => {
+    record.state = 'concurrent-change';
+    record.concurrent = { active: error.active };
+    save();
+    return new Error(
+      `${failure}; another writer changed the deployment, so this attempt wrote nothing more`
+    );
+  };
+  // Restores the serving deployment only over a split this attempt wrote.
   const restore = async (state, failure) => {
     try {
-      await deployVersions({ ...context, versions: serving, sleep });
+      await guardedDeploy({
+        ...context,
+        versions: serving,
+        owned: [stage, switched],
+        why: failure,
+        sleep,
+      });
     } catch (error) {
+      if (error instanceof ConcurrentDeploymentError)
+        throw concurrent(error, failure);
       record.state = 'uncertain';
-      record.rollbackResult = {
-        state: 'failed',
-        error: error instanceof Error ? error.message : 'unknown restore error',
-      };
+      record.rollbackResult = { state: 'failed', error: message(error) };
       save();
       throw new Error(
         `${failure}; restoring the serving deployment FAILED, receipt marked uncertain`
@@ -259,12 +271,17 @@ export async function stageSmokeSwitch({
     throw new Error(`${failure}; the serving deployment is restored`);
   };
   try {
-    await deployVersions({ ...context, versions: stage, sleep });
+    await guardedDeploy({
+      ...context,
+      versions: stage,
+      owned: [serving],
+      why: 'Serving deployment changed before staging',
+      sleep,
+    });
   } catch (error) {
-    await restore(
-      'stage-failed',
-      `Staging at 0% failed (${error instanceof Error ? error.message : 'unknown'})`
-    );
+    if (error instanceof ConcurrentDeploymentError)
+      throw concurrent(error, 'Staging at 0% refused');
+    await restore('stage-failed', `Staging at 0% failed (${message(error)})`);
   }
   record.state = 'staged';
   save();
@@ -294,20 +311,19 @@ export async function stageSmokeSwitch({
       `Staged smoke failed (${smoke.failure}); no traffic moved`
     );
   try {
-    await expectActive({
+    await guardedDeploy({
       ...context,
-      expected: stage,
+      versions: switched,
+      owned: [stage],
       why: 'Staged deployment changed before the switch',
-    });
-    await deployVersions({
-      ...context,
-      versions: [{ version_id: record.versionId, percentage: 100 }],
       sleep,
     });
   } catch (error) {
+    if (error instanceof ConcurrentDeploymentError)
+      throw concurrent(error, 'Switching traffic refused');
     await restore(
       'switch-failed',
-      `Switching traffic failed (${error instanceof Error ? error.message : 'unknown'})`
+      `Switching traffic failed (${message(error)})`
     );
   }
   record.state = 'switched';

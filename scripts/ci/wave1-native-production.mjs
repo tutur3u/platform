@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { productionPublicationHold } from './production-publication-policy.ts';
@@ -34,7 +34,12 @@ import {
 import { UploadLimitsError } from './wave1-native-upload-limits.mjs';
 import { gateOrRollBack } from './wave1-production-health.mjs';
 import { supersedingSha } from './wave1-production-supersede.mjs';
+import { recoverPublication } from './wave1-production-recovery.mjs';
 import { stageSmokeSwitch } from './wave1-staged-publish.mjs';
+
+// Upload, staged smoke and health gate stop by this budget; the upload
+// step's 25-minute timeout keeps the rest for the rollback and its re-probe.
+export const UPLOAD_BUDGET_MS = 17 * 60_000;
 
 export function assertRouteFree(config) {
   // The shared abuse guard is the only admitted service binding.
@@ -98,9 +103,24 @@ export async function main({
   smokeOptions = {},
 } = {}) {
   const [app, sha, mode] = argv;
-  assert.ok(['all', 'preflight', 'upload', 'verify'].includes(mode));
+  assert.ok(['all', 'preflight', 'upload', 'verify', 'recover'].includes(mode));
   assert.ok(Object.hasOwn(profiles.apps, app), 'Unknown wave-1 frontend');
   assert.match(sha ?? '', /^[a-f0-9]{40}$/);
+  // Recovery protects production after an interrupted upload step, so it
+  // runs even if the app was held meanwhile.
+  if (mode === 'recover')
+    return recoverPublication({
+      app,
+      sha,
+      env,
+      accountId: profiles.accountId,
+      fetcher,
+      sleep: healthSleep,
+    });
+  // The upload step stops smoking and probing at this deadline, which leaves
+  // its timeout enough room to restore the rollback deployment.
+  const deadlineAt =
+    Date.now() + Number(env.WAVE1_UPLOAD_BUDGET_MS || UPLOAD_BUDGET_MS);
   assert.equal(
     productionPublicationHold(`${app}-cloudflare.yaml`, {
       automatic: env.WAVE1_AUTOMATIC_PUBLICATION === 'true',
@@ -139,6 +159,15 @@ export async function main({
       'Read credentials forbidden in upload step'
     );
   appRoot ??= resolve('apps', app);
+  // The Calendar artifact publisher always activates, so a staged
+  // production upload refuses it first, before any read or state.
+  assert.ok(
+    !(
+      app === 'calendar' &&
+      existsSync(resolve(appRoot, 'calendar-artifact.json'))
+    ),
+    'Calendar artifact publication cannot upload a version without traffic'
+  );
   // Tests pass null for a route-free Worker; production reads tuturuuu.ci.ts.
   if (servingTopology === undefined)
     servingTopology = productionServingTopologyFor(app);
@@ -327,7 +356,7 @@ export async function main({
       // downgrades it and stops here as superseded, before any write. An
       // in-flight upload is never cancelled; the per-app upload queue runs
       // the next attempt after it.
-      const newer = await supersedingSha({
+      const { live, newer } = await supersedingSha({
         env,
         sha,
         deployment: deployments.deployments[0],
@@ -355,6 +384,9 @@ export async function main({
         });
         return record;
       }
+      // The proven serving SHA lets a later attempt identify this baseline
+      // even when this attempt restores it after a failure.
+      record.servingSha = live;
     }
     try {
       record.measurements = await uploadArtifact({
@@ -506,7 +538,7 @@ export async function main({
         cases: profiles.apps[app]?.releaseRecipe?.smokeSpec?.cases ?? [],
         smokeFetcher: healthFetcher,
         sleep: healthSleep,
-        smokeOptions,
+        smokeOptions: { deadlineAt, ...smokeOptions },
       });
       await gateOrRollBack({
         app,
@@ -518,7 +550,7 @@ export async function main({
         request,
         healthFetcher,
         sleep: healthSleep,
-        options: healthOptions,
+        options: { deadlineAt, ...healthOptions },
       });
     }
     if (mode === 'upload') return record;

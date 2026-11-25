@@ -341,6 +341,7 @@ export function setup(
     const { pathname } = new URL(url);
     if (pathname.endsWith('/api/build-info'))
       return Response.json({
+        appName: state.buildInfoApp ?? app,
         commitHash:
           serving !== newId
             ? state.liveSha

@@ -55,8 +55,9 @@ export async function provenLiveSha({ deployment, readVersion, baseline }) {
 }
 
 /**
- * Returns the newer serving SHA when this attempt is superseded, or null when
- * it may proceed. Refuses a serving SHA off the production history.
+ * Returns { live, newer }: the proven serving SHA, and that SHA again when it
+ * is newer than `sha` (the attempt is superseded) or null when the attempt
+ * may proceed. Refuses a serving SHA off the production history.
  */
 export async function supersedingSha({
   env,
@@ -67,18 +68,18 @@ export async function supersedingSha({
   fetcher,
 }) {
   const live = await provenLiveSha({ deployment, readVersion, baseline });
-  if (live === sha) return null;
+  if (live === sha) return { live, newer: null };
   const relation = await sourceRelation({
     env,
     base: sha,
     head: live,
     fetcher,
   });
-  if (relation === 'ahead') return live;
+  if (relation === 'ahead') return { live, newer: live };
   assert.equal(
     relation,
     'behind',
     'Live version is not on the production history; owner reconciliation required'
   );
-  return null;
+  return { live, newer: null };
 }

@@ -1,7 +1,7 @@
 // Staged production publication end to end against fakes: version-only
 // upload, 0% stage, override smoke, switch, health gate and rollback.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
@@ -159,4 +159,29 @@ test('a reconciled version is neither staged nor rolled back', async (t) => {
   const result = await p.run();
   assert.equal(result.reconciled, true);
   assert.deepEqual(p.state.deploymentWrites, []);
+});
+
+test('build-info answered by another app never passes the smoke', async (t) => {
+  const p = setup(t);
+  p.state.buildInfoApp = 'gateway';
+  await assert.rejects(p.run(), /reports app gateway, expected calendar/);
+  assert.deepEqual(p.state.deploymentWrites, [stage, serving]);
+});
+
+test('the Calendar artifact publisher refuses in preflight, before any state', async (t) => {
+  const p = setup(t);
+  writeFileSync(join(p.appRoot, 'calendar-artifact.json'), '{}');
+  await assert.rejects(p.run(), /cannot upload a version without traffic/);
+  assert.equal(p.state.writes, 0);
+  assert.deepEqual(p.state.deploymentWrites, []);
+  assert.deepEqual(p.state.calls, []);
+});
+
+test('the preflight records the proven serving SHA in the receipt', async (t) => {
+  const p = setup(t);
+  p.state.publicStatus[newId] = 500;
+  await assert.rejects(p.run(), /Staged smoke failed/);
+  const record = receipt(p);
+  assert.equal(record.state, 'smoke-failed');
+  assert.equal(record.servingSha, 'e'.repeat(40));
 });

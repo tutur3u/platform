@@ -309,8 +309,8 @@ jobs:
     if: ${{ !cancelled() && inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true' && needs.qualify.result == 'success' && needs.restored.result == 'success' }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
-    # Upload plus health gate and a possible rollback take up to ten minutes.
-    timeout-minutes: 25
+    # Setup, preflight, the 25-minute upload step, recovery and verify.
+    timeout-minutes: 45
     env:
       APP: ${{ inputs.app }}
       # The publisher re-checks the automatic hold for a called run.
@@ -352,17 +352,30 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
         run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" preflight
-      # The upload step also runs the public health gate (about a minute of
-      # probes) and, when it fails, restores the recorded rollback deployment
-      # with this step's own credential and re-probes it.
+      # The upload step stages, smokes, switches and runs the public health
+      # gate, restoring the recorded rollback deployment with its own
+      # credential when the gate fails. Its smoke and gate stop at a
+      # 17-minute budget, so the timeout keeps room for that rollback.
       - name: Upload once without attaching serving topology
         id: upload
-        timeout-minutes: 10
+        timeout-minutes: 25
         env:
           WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
         run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" upload
+      # A killed, cancelled or crashed upload step can leave the new version
+      # staged or serving without its rollback. This step holds only the
+      # deploy credential and restores the recorded rollback deployment when
+      # the receipt is staged, switched or rolling back and the active split
+      # is still one this attempt wrote.
+      - name: Restore the rollback deployment after an interrupted upload
+        id: recover
+        if: ${{ (failure() || cancelled()) && steps.upload.outcome != 'skipped' && steps.upload.outcome != '' }}
+        timeout-minutes: 4
+        env:
+          WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" recover
       - name: Read-only post-upload topology verification
         id: verify
         timeout-minutes: 2

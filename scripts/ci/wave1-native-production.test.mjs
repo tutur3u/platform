@@ -406,7 +406,19 @@ test('only the production environment upload step receives the named deploy toke
   );
   assert.deepEqual(
     tokenSteps.map((step) => step.id),
-    ['upload']
+    ['upload', 'recover']
+  );
+  // Recovery holds only the deploy credential and runs only after an upload
+  // step that failed or was cancelled.
+  const recover = tokenSteps[1];
+  assert.deepEqual(Object.keys(recover.env), [
+    'WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN',
+  ]);
+  assert.match(recover.if, /failure\(\) \|\| cancelled\(\)/u);
+  assert.match(recover.if, /steps\.upload\.outcome != 'skipped'/u);
+  assert.equal(
+    recover.run,
+    'node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" recover'
   );
   const readSteps = workflow.jobs.publish.steps.filter((step) =>
     JSON.stringify(step).includes(

@@ -4,7 +4,10 @@
 // times out, across consecutive rounds. The gate reads public endpoints
 // only and needs no credential.
 import assert from 'node:assert/strict';
-import { deployVersions } from './wave1-production-deployments.mjs';
+import {
+  ConcurrentDeploymentError,
+  guardedDeploy,
+} from './wave1-production-deployments.mjs';
 
 // The public mounts each app serves today: its canonical host and, where the
 // apex gateway mounts it, tuturuuu.com/<app>. Pages are probed without
@@ -13,7 +16,7 @@ import { deployVersions } from './wave1-production-deployments.mjs';
 // https://tuturuuu.com/login, or 200 for the public Apps catalog. Drive has
 // no apex mount. `runtimeHeader` marks apps whose source emits
 // `x-tuturuuu-runtime: native`; the staged smoke requires it there and
-// records it elsewhere (production-health-targets.test checks the source).
+// records it elsewhere (wave1-production-health.test.mjs checks the source).
 export const HEALTH_TARGETS = {
   mail: {
     buildInfo: ['https://mail.tuturuuu.com', 'https://tuturuuu.com/mail'],
@@ -87,13 +90,21 @@ async function probe(url, { fetcher, timeoutMs, round }) {
   }
 }
 
-function commitOf(text) {
+/**
+ * The commit and app a build-info body reports. appName proves which Worker
+ * answered: a gateway or another app answering the same path from the same
+ * commit cannot pass for the app. Build-info carries no version identity.
+ */
+export function buildIdentity(text) {
   try {
     const info = JSON.parse(text);
     const commit = info.commitHash ?? info.commit;
-    return typeof commit === 'string' ? commit : null;
+    return {
+      commit: typeof commit === 'string' ? commit : null,
+      appName: typeof info.appName === 'string' ? info.appName : null,
+    };
   } catch {
-    return null;
+    return { commit: null, appName: null };
   }
 }
 
@@ -112,7 +123,7 @@ export async function probeRound({
         timeoutMs,
         round,
       });
-      return { ...result, kind: 'build-info', commit: commitOf(result.text) };
+      return { ...result, kind: 'build-info', ...buildIdentity(result.text) };
     }),
     ...pages.map(async (url) => ({
       ...(await probe(url, { fetcher, timeoutMs, round })),
@@ -122,7 +133,7 @@ export async function probeRound({
   return results.map(({ text: _text, ...rest }) => rest);
 }
 
-function roundFailure(results) {
+function roundFailure(results, app) {
   for (const result of results) {
     if (result.error) return `${result.url} ${result.error}`;
     if (result.status >= 500) return `${result.url} answered ${result.status}`;
@@ -130,6 +141,8 @@ function roundFailure(results) {
       return `${result.url} answered ${result.status}`;
     if (result.kind === 'build-info' && !result.commit)
       return `${result.url} reported no commit`;
+    if (result.kind === 'build-info' && result.appName !== app)
+      return `${result.url} reports app ${result.appName ?? 'none'}, expected ${app}`;
   }
   return null;
 }
@@ -149,12 +162,16 @@ export async function healthGate({
   intervalMs = HEALTH_DEFAULTS.intervalMs,
   propagationRounds = HEALTH_DEFAULTS.propagationRounds,
   probeTimeoutMs = HEALTH_DEFAULTS.probeTimeoutMs,
+  deadlineAt = Number.POSITIVE_INFINITY,
+  now = Date.now,
 }) {
   const probes = [];
   let healthy = 0;
   let matched = false;
   for (let round = 0; round < propagationRounds + rounds; round += 1) {
     if (round > 0) await sleep(intervalMs);
+    if (now() >= deadlineAt)
+      return { healthy: false, failure: 'time budget exhausted', probes };
     const results = await probeRound({
       app,
       fetcher,
@@ -162,7 +179,7 @@ export async function healthGate({
       round,
     });
     probes.push({ round, results });
-    const failure = roundFailure(results);
+    const failure = roundFailure(results, app);
     if (failure) return { healthy: false, failure, probes };
     const stale = expected
       ? results.find(
@@ -185,23 +202,44 @@ export async function healthGate({
   return { healthy: false, failure: 'health rounds exhausted', probes };
 }
 
-/** Restores the recorded rollback deployment and confirms it is active. */
+/**
+ * The splits an attempt with `versionId` may have left active: staged at 0%
+ * beside the serving split, or switched to 100%.
+ */
+export function attemptSplits(record) {
+  const serving = (record.rollback?.versions ?? []).map(
+    ({ version_id, percentage }) => ({ version_id, percentage })
+  );
+  return [
+    [...serving, { version_id: record.versionId, percentage: 0 }],
+    [{ version_id: record.versionId, percentage: 100 }],
+  ];
+}
+
+/**
+ * Restores the recorded rollback deployment, but only over a split this
+ * attempt wrote; another writer's deployment raises
+ * ConcurrentDeploymentError and nothing is written.
+ */
 export async function restoreRollback({
   script,
   token,
-  rollback,
+  record,
   request,
   sleep,
 }) {
   assert.ok(
-    Array.isArray(rollback?.versions) && rollback.versions.length > 0,
+    Array.isArray(record.rollback?.versions) &&
+      record.rollback.versions.length > 0,
     'No recorded rollback deployment'
   );
-  await deployVersions({
+  return guardedDeploy({
     script,
     token,
     request,
-    versions: rollback.versions,
+    versions: record.rollback.versions,
+    owned: attemptSplits(record),
+    why: 'Rolling back',
     sleep,
   });
 }
@@ -247,14 +285,16 @@ export async function gateOrRollBack({
   record.state = 'rolling-back';
   save();
   try {
-    await restoreRollback({
-      script,
-      token,
-      rollback: record.rollback,
-      request,
-      sleep,
-    });
+    await restoreRollback({ script, token, record, request, sleep });
   } catch (error) {
+    if (error instanceof ConcurrentDeploymentError) {
+      record.state = 'concurrent-change';
+      record.concurrent = { active: error.active };
+      save();
+      throw new Error(
+        `Production health gate failed (${gate.failure}); another writer changed the deployment, so nothing was rolled back`
+      );
+    }
     record.state = 'uncertain';
     record.rollbackResult = {
       state: 'failed',
@@ -277,6 +317,8 @@ export async function gateOrRollBack({
     fetcher: healthFetcher,
     sleep,
     ...options,
+    // The rollback's re-probe is bounded by its rounds, not the budget.
+    deadlineAt: Number.POSITIVE_INFINITY,
     rounds: Math.min(options.rounds ?? HEALTH_DEFAULTS.rounds, 3),
   });
   record.state = 'rolled-back';
