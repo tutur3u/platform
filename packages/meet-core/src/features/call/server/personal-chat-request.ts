@@ -9,6 +9,16 @@ type Input = Parameters<typeof answerPersonalMeetChat>[1] & {
   requestId: string;
   startedAt: number;
 };
+/**
+ * One typed Private Mira turn, at most once per request id. The room records
+ * two receipt writes per turn, and no fewer will do: `personal.begin`
+ * reserves the request before anything is generated or billed, so a retry of
+ * the same id can never generate or bill twice, and `personal.finish` stores
+ * the answer, so a retry after a lost reply recovers it instead of being
+ * refused. `personal.release` replaces the finish only when credits are
+ * unavailable, and the finish is retried only on failure. The other room
+ * calls in a turn are the route's consent reads, which change no room state.
+ */
 export async function requestPersonalMeetChat(
   access: Access,
   input: Input,

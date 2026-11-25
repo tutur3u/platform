@@ -17,7 +17,11 @@ import {
   MIRA_ACCOUNT_CONFIRMATION_KEY,
   MIRA_ACCOUNT_CONFIRMATION_VERSION,
 } from '../account-confirmation';
-import { readMiraAccountConfirmation } from './account-confirmation';
+import {
+  isMiraAccountMissing,
+  readMiraAccountConfirmation,
+  readMiraConfirmedAt,
+} from './account-confirmation';
 
 const access = { user: { id: 'account' } } as MeetCallRouteAccess;
 const reply = (id: string) => ({
@@ -58,4 +62,26 @@ it('fails closed on unavailable and mismatched Auth reads and caches only succes
   await expect(readMiraAccountConfirmation(access)).resolves.toBe('confirmed');
   await expect(readMiraAccountConfirmation(access)).resolves.toBe('confirmed');
   expect(f.getUserById).toHaveBeenCalledTimes(4);
+});
+
+it('marks a deleted account apart from an Auth outage', async () => {
+  f.getUserById.mockResolvedValueOnce({
+    data: { user: null },
+    error: { status: 404, code: 'user_not_found' },
+  });
+  const deleted = await readMiraConfirmedAt('deleted-account').catch(
+    (error: unknown) => error
+  );
+  expect(deleted).toBeInstanceOf(Error);
+  expect(isMiraAccountMissing(deleted)).toBe(true);
+
+  f.getUserById.mockResolvedValueOnce({
+    data: { user: null },
+    error: { status: 500, code: 'unexpected_failure' },
+  });
+  const outage = await readMiraConfirmedAt('outage-account').catch(
+    (error: unknown) => error
+  );
+  expect(outage).toBeInstanceOf(Error);
+  expect(isMiraAccountMissing(outage)).toBe(false);
 });

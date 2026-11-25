@@ -47,6 +47,45 @@ export async function readPrivateMiraChoice(access: Access) {
   return result.data;
 }
 
+type ChoiceWrite =
+  | { action: 'mira.private.initialize'; version: string }
+  | {
+      action: 'mira.private.choice';
+      choice: 'continue' | 'mute' | 'leave';
+      version: string;
+    };
+
+/**
+ * Records the caller's Private Mira choice. The room can record it and still
+ * fail to answer (a reply lost to a timeout or a dropped connection), which
+ * would leave a recorded Continue that the client was told failed. So on any
+ * failure other than the room's own refusal, the choice is read back: when
+ * the room holds the requested choice, that recorded state is returned, and
+ * otherwise the failure stands. The write is idempotent in the room.
+ */
+export async function recordPrivateMiraChoice(
+  access: Access,
+  write: ChoiceWrite
+) {
+  try {
+    return await callRoomService(access, write);
+  } catch (error) {
+    if (error instanceof MeetCallAccessError && error.status < 500) throw error;
+    const wanted =
+      write.action === 'mira.private.initialize' ? 'continue' : write.choice;
+    const recorded = await readPrivateMiraChoice(access).catch(() => undefined);
+    const choice = recorded?.choice;
+    if (
+      choice?.choice === wanted &&
+      choice.version === write.version &&
+      choice.accountId === access.user.id &&
+      choice.meetingId === access.meeting.id
+    )
+      return recorded;
+    throw error;
+  }
+}
+
 export async function stopPrivateMiraSessions(
   access: Access,
   sessions: readonly string[],

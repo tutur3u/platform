@@ -27,6 +27,7 @@ import { readMiraDemoAuthority } from '../../../../features/live-assistant/serve
 import { privateMiraBillingWorkspace } from '../../../../features/live-assistant/server/mira-billing';
 import {
   readPrivateMiraChoice,
+  recordPrivateMiraChoice,
   requirePrivateMiraChoice,
   stopPrivateMiraSessions,
 } from '../../../../features/live-assistant/server/private-consent';
@@ -104,7 +105,7 @@ export async function POST(
       }
       if (command.choice !== 'continue')
         await stopPrivateMiraSessions(access, current.sessions, env.MEET_LIVE);
-      return callRoomService(
+      return recordPrivateMiraChoice(
         access,
         accountFlow && command.choice === 'continue'
           ? { action: 'mira.private.initialize', version: command.version }

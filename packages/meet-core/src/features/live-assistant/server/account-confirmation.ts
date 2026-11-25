@@ -23,6 +23,25 @@ const isGuest = (access: MeetCallRouteAccess) =>
   'guest' in access && access.guest === true;
 const unavailable = () =>
   new MeetCallAccessError(503, 'Mira confirmation is unavailable');
+const ACCOUNT_MISSING = Symbol.for('tuturuuu.meet.miraAccountMissing');
+
+/** Auth reports the account as deleted: not an outage. */
+function isMissingUser(error: unknown) {
+  const auth = error as { status?: unknown; code?: unknown } | null;
+  return auth?.status === 404 || auth?.code === 'user_not_found';
+}
+
+/**
+ * Whether a confirmation read was refused because the account no longer
+ * exists, rather than because Auth could not be reached.
+ */
+export function isMiraAccountMissing(error: unknown) {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    Reflect.get(error, ACCOUNT_MISSING) === true
+  );
+}
 
 export function usesMiraAccountConfirmation() {
   return MEETING_APP === 'meet' && isMeetUxV2Enabled();
@@ -46,7 +65,9 @@ export async function readMiraAccountConfirmationStatus(
 /**
  * When the account last confirmed Mira (0 for an undated marker), or null
  * when it has no confirmation. A failed lookup throws instead, so callers
- * never mistake an outage for a withdrawn confirmation.
+ * never mistake an outage for a withdrawn confirmation; a deleted account
+ * throws the same refusal, marked (`isMiraAccountMissing`) so callers can
+ * refuse instead of waiting the outage out.
  */
 export async function readMiraConfirmedAt(userId: string) {
   return confirmedTimes.read(
@@ -54,7 +75,11 @@ export async function readMiraConfirmedAt(userId: string) {
     async () => {
       const db = await createAdminClient({ noCookie: true });
       const { data, error } = await db.auth.admin.getUserById(userId);
-      if (error) throw unavailable();
+      if (error) {
+        const refusal = unavailable();
+        if (isMissingUser(error)) Reflect.set(refusal, ACCOUNT_MISSING, true);
+        throw refusal;
+      }
       if (data.user?.id !== userId) return null;
       return miraConfirmedAt(data.user.app_metadata[KEY]);
     },

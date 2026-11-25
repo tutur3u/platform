@@ -11,6 +11,8 @@ const f = vi.hoisted(() => ({
 vi.mock('server-only', () => ({}));
 vi.mock('../../call/server/room-service', () => ({ callRoomService: f.room }));
 vi.mock('./account-confirmation', () => ({
+  isMiraAccountMissing: (error: unknown) =>
+    (error as { missing?: boolean } | null)?.missing === true,
   readMiraConfirmedAt: f.confirmedAt,
   requireMiraAccountConfirmation: f.confirm,
   usesMiraAccountConfirmation: () => f.enabled,
@@ -208,6 +210,17 @@ it('treats a failed confirmation lookup as off for now, without revoking', async
 });
 
 const enable = { ...revoke, enabled: true };
+
+it('refuses a deleted owner instead of reading the share as unknown', async () => {
+  const missing = Object.assign(new Error('Mira confirmation is unavailable'), {
+    missing: true,
+  });
+  f.confirmedAt.mockRejectedValue(missing);
+  f.room.mockResolvedValue({ enabled: true, revision: 3, sharedAt });
+  await expect(readPrivateMiraShare(access as Access)).rejects.toBe(missing);
+  // A refusal, not a revocation on the strength of a lookup.
+  expect(f.room).toHaveBeenCalledTimes(1);
+});
 
 it('replaces a grant older than the latest confirmation on a fresh opt-in', async () => {
   f.confirmedAt.mockResolvedValue(sharedAt + 1);

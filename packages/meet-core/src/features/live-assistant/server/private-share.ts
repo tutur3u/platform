@@ -11,6 +11,7 @@ import {
   type SignedInMeetCallAccess,
 } from '../../call/server/room-service';
 import {
+  isMiraAccountMissing,
   readMiraConfirmedAt,
   requireMiraAccountConfirmation,
   usesMiraAccountConfirmation,
@@ -44,7 +45,9 @@ function isGuest(access: Access) {
  * confirmation, or held by an account without one, is `stale`: withdrawing
  * and confirming again needs a fresh opt-in, so it is revoked. When the
  * share start or the confirmation cannot be read, it is `unknown`: off for
- * this request, but never revoked on the strength of an outage.
+ * this request, but never revoked on the strength of an outage. A deleted
+ * owner account is not an outage: the confirmation-unavailable refusal is
+ * thrown instead.
  */
 export async function shareStanding(
   access: Access,
@@ -54,7 +57,8 @@ export async function shareStanding(
   let confirmedAt: number | null;
   try {
     confirmedAt = await readMiraConfirmedAt(access.user.id);
-  } catch {
+  } catch (error) {
+    if (isMiraAccountMissing(error)) throw error;
     return 'unknown';
   }
   return confirmedAt === null || sharedAt < confirmedAt ? 'stale' : 'current';
