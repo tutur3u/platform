@@ -185,3 +185,22 @@ test('the preflight records the proven serving SHA in the receipt', async (t) =>
   assert.equal(record.state, 'smoke-failed');
   assert.equal(record.servingSha, 'e'.repeat(40));
 });
+
+for (const budget of ['abc', '0', '-5', '1.5', '1e6', '9999999999'])
+  test(`a malformed upload budget ${budget} refuses before any write`, async (t) => {
+    const p = setup(t);
+    await assert.rejects(
+      p.run({ env: { ...p.env, WAVE1_UPLOAD_BUDGET_MS: budget } }),
+      /WAVE1_UPLOAD_BUDGET_MS must be a positive whole number/
+    );
+    assert.equal(p.state.writes, 0);
+    assert.deepEqual(p.state.deploymentWrites, []);
+  });
+
+test('a valid upload budget is accepted', async (t) => {
+  const p = setup(t);
+  const result = await p.run({
+    env: { ...p.env, WAVE1_UPLOAD_BUDGET_MS: '600000' },
+  });
+  assert.equal(result.state, 'accepted-private');
+});

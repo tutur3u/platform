@@ -32,7 +32,7 @@ import {
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
 import { UploadLimitsError } from './wave1-native-upload-limits.mjs';
-import { gateOrRollBack } from './wave1-production-health.mjs';
+import { gateOrRollBack, minimumGateMs } from './wave1-production-health.mjs';
 import { supersedingSha } from './wave1-production-supersede.mjs';
 import { recoverPublication } from './wave1-production-recovery.mjs';
 import { stageSmokeSwitch } from './wave1-staged-publish.mjs';
@@ -119,8 +119,13 @@ export async function main({
     });
   // The upload step stops smoking and probing at this deadline, which leaves
   // its timeout enough room to restore the rollback deployment.
-  const deadlineAt =
-    Date.now() + Number(env.WAVE1_UPLOAD_BUDGET_MS || UPLOAD_BUDGET_MS);
+  const budget = env.WAVE1_UPLOAD_BUDGET_MS;
+  // A malformed budget would silently disable the deadline, so it refuses.
+  assert.ok(
+    budget === undefined || budget === '' || /^[1-9]\d{0,8}$/.test(budget),
+    'WAVE1_UPLOAD_BUDGET_MS must be a positive whole number of milliseconds'
+  );
+  const deadlineAt = Date.now() + (budget ? Number(budget) : UPLOAD_BUDGET_MS);
   assert.equal(
     productionPublicationHold(`${app}-cloudflare.yaml`, {
       automatic: env.WAVE1_AUTOMATIC_PUBLICATION === 'true',
@@ -538,7 +543,9 @@ export async function main({
         cases: profiles.apps[app]?.releaseRecipe?.smokeSpec?.cases ?? [],
         smokeFetcher: healthFetcher,
         sleep: healthSleep,
-        smokeOptions: { deadlineAt, ...smokeOptions },
+        smokeOptions,
+        deadlineAt: smokeOptions.deadlineAt ?? deadlineAt,
+        gateReserveMs: minimumGateMs(healthOptions),
       });
       await gateOrRollBack({
         app,

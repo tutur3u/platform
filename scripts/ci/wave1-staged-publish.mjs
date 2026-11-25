@@ -224,6 +224,9 @@ export async function stageSmokeSwitch({
   smokeFetcher = fetch,
   sleep = wait,
   smokeOptions = {},
+  deadlineAt = Number.POSITIVE_INFINITY,
+  gateReserveMs = 0,
+  now = Date.now,
 }) {
   assert.equal(record.state, 'uploaded-version', 'Stage needs a version');
   assert.ok(record.versionId, 'Stage needs the uploaded version id');
@@ -295,6 +298,8 @@ export async function stageSmokeSwitch({
       cases,
       fetcher: smokeFetcher,
       sleep,
+      deadlineAt,
+      now,
       ...smokeOptions,
     });
   } catch (error) {
@@ -303,6 +308,14 @@ export async function stageSmokeSwitch({
       failure: error instanceof Error ? error.message : 'smoke error',
     };
   }
+  // Switching with too little budget left would let the health gate stop at
+  // once and roll back; treat the shortfall as a failed smoke instead.
+  if (smoke.passed && now() + gateReserveMs > deadlineAt)
+    smoke = {
+      ...smoke,
+      passed: false,
+      failure: `too little time budget left for the health gate (${gateReserveMs} ms)`,
+    };
   record.smoke = smoke;
   save();
   if (!smoke.passed)

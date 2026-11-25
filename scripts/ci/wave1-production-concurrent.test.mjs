@@ -288,6 +288,8 @@ for (const [state, active] of [
     const result = await r.run();
     assert.equal(result.state, 'rolled-back');
     assert.equal(result.rollbackResult.by, 'recovery');
+    // Recovery confirms by readback only; it records that no re-probe ran.
+    assert.deepEqual(result.rollbackHealth, { probed: false, by: 'recovery' });
     assert.deepEqual(r.plane.state.split, serving);
     assert.equal(r.receipt().state, 'rolled-back');
   });
@@ -319,4 +321,31 @@ test('recovery holds only the deploy credential', async () => {
     { WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: '' },
   ])
     await assert.rejects(recovery('switched', switched).run(extra));
+});
+
+test('a smoke that leaves too little budget for the gate never switches', async () => {
+  const plane = controlPlane(serving);
+  const rec = record();
+  await assert.rejects(
+    stageSmokeSwitch({
+      app: 'calendar',
+      sha,
+      worker: 'tuturuuu-calendar',
+      record: rec,
+      save: () => {},
+      script: 'https://api.example/script',
+      token: 'deploy',
+      request: plane.request,
+      cases: [],
+      smokeFetcher: edge(),
+      sleep: noSleep,
+      deadlineAt: 1_000,
+      gateReserveMs: 5_000,
+      now: () => 0,
+    }),
+    /too little time budget left for the health gate.*no traffic moved/
+  );
+  assert.equal(rec.state, 'smoke-failed');
+  assert.deepEqual(plane.state.writes, [stage, serving]);
+  assert.deepEqual(plane.state.split, serving);
 });

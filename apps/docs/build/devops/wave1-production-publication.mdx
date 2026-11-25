@@ -79,11 +79,33 @@ every Cloudflare write.
 
 The smoke and the health gate stop at a 17-minute budget from the start of the
 upload step, whose timeout is 25 minutes, so a failure always leaves time to
-restore the rollback deployment. If the step is still killed, cancelled or
-crashes, the next step (**Restore the rollback deployment after an interrupted
-upload**, run on `failure() || cancelled()` with only the deploy credential)
-restores the recorded rollback deployment when the receipt is `staged`,
-`switched` or `rolling-back`.
+restore the rollback deployment. `WAVE1_UPLOAD_BUDGET_MS` overrides the budget
+and must be a positive whole number of milliseconds; any other value refuses.
+Before the switch the step also checks that the budget still covers a full
+health-gate run (every propagation and healthy round with its probe timeout);
+if not, the smoke counts as failed and traffic never moves, instead of
+switching only to stop the gate at once and roll back.
+
+If the step is still killed, cancelled or crashes, the next step (**Restore
+the rollback deployment after an interrupted upload**, run on `failure() ||
+cancelled()` with only the deploy credential) restores the recorded rollback
+deployment when the receipt is `staged`, `switched` or `rolling-back`. It
+confirms the restore by reading the active deployment back but runs no public
+re-probe, and records `rollbackResult.by: recovery` and
+`rollbackHealth: { probed: false }`; the health gate's own rollback re-probes.
+The upload history treats both as confirmed restores.
+
+A step timeout or a manual cancel lets this step run. A job-level timeout
+(45 minutes) is a cancellation of the whole job: GitHub documents that a
+cancelled run re-evaluates step conditions, so a `cancelled()` step is
+expected to run, but it does not document the job-timeout case and the runner
+force-terminates a cancelling job after a short grace period. The publisher
+does not rely on it. The step timeouts add up well inside the job timeout, so
+the 25-minute upload step times out first, and recovery then runs as an
+ordinary step after a failure. If recovery still never runs, the receipt keeps
+`switched` or `rolling-back`, which the upload history never skips: every
+later attempt refuses until a release owner restores the receipt's rollback
+deployment and reconciles it.
 
 ## Concurrent deployments
 
@@ -92,8 +114,14 @@ deployment is exactly a split this attempt wrote, or the one it expects
 before staging. When another writer has changed it, for example a hand
 hotfix or rollback, the publisher writes nothing, records
 `concurrent-change` with the active split, and fails. The upload history then
-blocks later attempts until a release owner reconciles the receipt; it never
-overwrites that deployment.
+blocks later attempts until a release owner reconciles the receipt.
+
+Cloudflare offers no compare-and-swap for deployments, so the check and the
+write are two API calls. A hand deploy that lands in that single round-trip is
+still replaced, and the readback then shows the publisher's split. The window
+is accepted: it is about one request long, the receipt records every write,
+and writing without the check would overwrite every concurrent change. Release
+owners should not deploy by hand while a publish job's upload step runs.
 
 ## Recovery
 

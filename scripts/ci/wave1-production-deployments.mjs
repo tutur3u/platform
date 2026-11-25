@@ -81,9 +81,14 @@ export class ConcurrentDeploymentError extends Error {
 
 /**
  * Writes `versions` only while the active deployment is exactly one of the
- * splits this attempt wrote (`owned`), so a hand hotfix or rollback is never
- * overwritten. Returns 'already' when the target already serves, 'written'
- * after a confirmed write, and throws ConcurrentDeploymentError otherwise.
+ * splits this attempt wrote (`owned`), so a hand hotfix or rollback that is
+ * already active is not overwritten. Cloudflare has no compare-and-swap for
+ * deployments: a hand deploy that lands between this read and the write (one
+ * API round-trip) is still replaced, and the readback then shows this split.
+ * That window is accepted because the alternative, writing without the
+ * check, overwrites every concurrent change. Returns 'already' when the
+ * target already serves, 'written' after a confirmed write, and throws
+ * ConcurrentDeploymentError otherwise.
  */
 export async function guardedDeploy({
   script,

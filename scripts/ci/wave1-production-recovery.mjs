@@ -69,6 +69,9 @@ export async function recoverPublication({
       interrupted,
       result,
     };
+    // Recovery confirms the restored split by readback but runs no public
+    // re-probe; the health gate's own rollback re-probes.
+    record.rollbackHealth = { probed: false, by: 'recovery' };
     save();
     return record;
   } catch (error) {

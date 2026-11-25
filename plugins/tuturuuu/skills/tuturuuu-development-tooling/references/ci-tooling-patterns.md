@@ -776,8 +776,11 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   failure; never shift traffic before a staged smoke, never record response
   bodies, and never treat an unproven serving SHA as older. Write a
   deployment only over a split the attempt itself wrote; on any other active
-  split record `concurrent-change` and stop. Keep a time budget inside the
-  step timeout and a `failure() || cancelled()` recovery step for the rest. See
+  split record `concurrent-change` and stop (Cloudflare has no
+  compare-and-swap, so a one-round-trip window remains). Keep a time budget
+  inside the step timeout, check it covers a full health gate before the
+  switch, and add a `failure() || cancelled()` recovery step; do not rely on
+  that step after a job-level timeout. See
   [wave-1 production publication](../../../../../apps/docs/build/devops/wave1-production-publication.mdx).
 - Check the queued automatic revision against the live `production` ref inside
   the planner's non-cancelling workflow lock, before checkout and target

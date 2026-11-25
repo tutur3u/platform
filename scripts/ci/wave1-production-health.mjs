@@ -65,6 +65,19 @@ export const HEALTH_DEFAULTS = {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * The longest a health gate run can take: every propagation and healthy
+ * round with its interval and a probe timeout. A switch needs this much of
+ * the budget left, or the gate would stop at once and roll back.
+ */
+export function minimumGateMs(options = {}) {
+  const { rounds, propagationRounds, intervalMs, probeTimeoutMs } = {
+    ...HEALTH_DEFAULTS,
+    ...options,
+  };
+  return (rounds + propagationRounds) * (intervalMs + probeTimeoutMs);
+}
+
 export function healthTargets(app) {
   assert.ok(Object.hasOwn(HEALTH_TARGETS, app), `No health targets for ${app}`);
   return HEALTH_TARGETS[app];
