@@ -3433,9 +3433,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsTitle => 'Tài liệu';
 
   @override
-  String get documentsTitlePlaceholder => 'Tiêu đề';
-
-  @override
   String get documentsUntitled => 'Chưa đặt tên';
 
   @override

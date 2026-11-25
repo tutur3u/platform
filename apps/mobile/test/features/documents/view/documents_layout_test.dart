@@ -225,6 +225,44 @@ void main() {
       expect(renamed.title, 'Roadmap 2027');
     });
 
+    testWidgets('renaming an untitled document drops the date label', (
+      tester,
+    ) async {
+      final repository = _repository();
+      when(
+        () => repository.getDocument(any(), any()),
+      ).thenAnswer((_) async => _document.copyWith(name: ''));
+      when(
+        () => repository.updateDocument(
+          any(),
+          any(),
+          name: any(named: 'name'),
+          content: any(named: 'content'),
+          isPublic: any(named: 'isPublic'),
+        ),
+      ).thenAnswer((_) async {});
+      await _pump(
+        tester,
+        DocumentDetailPage(documentId: 'doc-1', repository: repository),
+        const Size(390, 844),
+      );
+      final override = tester.widget<ShellTitleOverride>(
+        find.byType(ShellTitleOverride),
+      );
+      expect(override.title, startsWith('Untitled · '));
+
+      await override.onTitleSubmitted!('${override.title} notes');
+      await tester.pump();
+      verify(
+        () => repository.updateDocument(
+          'ws',
+          'doc-1',
+          name: 'notes',
+          content: any(named: 'content'),
+        ),
+      ).called(1);
+    });
+
     testWidgets('the formatting toolbar lifts with the keyboard', (
       tester,
     ) async {

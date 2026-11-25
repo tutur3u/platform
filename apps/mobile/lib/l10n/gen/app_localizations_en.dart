@@ -3449,9 +3449,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsTitle => 'Documents';
 
   @override
-  String get documentsTitlePlaceholder => 'Title';
-
-  @override
   String get documentsUntitled => 'Untitled';
 
   @override

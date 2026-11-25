@@ -198,8 +198,22 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   /// sent through the offline-capable save queue, so they never block on the
   /// network and survive a dropped connection.
   Future<void> _rename(String name) async {
-    final next = name.trim();
-    if (next.isEmpty || _closed || _document == null) return;
+    final document = _document;
+    if (_closed || document == null) return;
+    var next = name.trim();
+    // An untitled document shows "Untitled · Nov 19". The editor opens on
+    // that label, so text typed after it must not save the label as well.
+    if (documentNameIsUntitled(_title.text)) {
+      final l10n = context.l10n;
+      final shown = documentDisplayTitle(
+        name: _title.text,
+        untitled: l10n.documentsUntitled,
+        editedAt: documentEditedAt(document.editedAtRaw),
+        locale: l10n.localeName,
+      );
+      if (next.startsWith(shown)) next = next.substring(shown.length).trim();
+    }
+    if (next.isEmpty) return;
     if (next == _title.text.trim()) return;
     setState(() => _title.text = next);
     _scheduleSave();

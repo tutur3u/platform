@@ -6637,12 +6637,6 @@ abstract class AppLocalizations {
   /// **'Documents'**
   String get documentsTitle;
 
-  /// No description provided for @documentsTitlePlaceholder.
-  ///
-  /// In en, this message translates to:
-  /// **'Title'**
-  String get documentsTitlePlaceholder;
-
   /// No description provided for @documentsUntitled.
   ///
   /// In en, this message translates to:
