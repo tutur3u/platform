@@ -22,6 +22,7 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_eligibility_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_config.dart';
@@ -91,7 +92,6 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
-import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -171,6 +171,9 @@ class _AssistantPageState extends State<AssistantPage>
   bool _settingsWritePending = false;
 
   bool _historySidebarCollapsed = false;
+
+  /// Whether the last layout fitted the history sidebar beside the thread.
+  bool _historySidebarFits = false;
   void _toggleHistorySidebar() =>
       setState(() => _historySidebarCollapsed = !_historySidebarCollapsed);
   bool _newConversationPending = false;

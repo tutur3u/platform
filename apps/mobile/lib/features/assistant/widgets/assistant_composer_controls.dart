@@ -8,14 +8,15 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// The model and response-mode controls under the Mira prompt, matching the
 /// web composer toolbar. The mode toggles between Fast and Thinking; it is
-/// absent where it does not apply (on-device models and subscription models
-/// that use their provider's defaults). Local models show their label and
-/// open the local model list.
+/// absent where it does not apply (on-device models, subscription models
+/// that use their provider's defaults and legacy conversations). Local models
+/// show their label and open the local model list.
 class AssistantComposerControls extends StatelessWidget {
   const AssistantComposerControls({
     required this.shellState,
     required this.onOpenModels,
     this.onThinkingModeChanged,
+    this.modeEnabled = true,
     this.localModelLabel,
     super.key,
   });
@@ -27,6 +28,10 @@ class AssistantComposerControls extends StatelessWidget {
 
   /// Null hides the response-mode toggle.
   final Future<void> Function(AssistantThinkingMode)? onThinkingModeChanged;
+
+  /// False while a reply is in flight or messages are queued; the toggle
+  /// stays visible but waits for the reply to settle.
+  final bool modeEnabled;
 
   /// The selected on-device model; set only in the local lane.
   final String? localModelLabel;
@@ -100,13 +105,15 @@ class AssistantComposerControls extends StatelessWidget {
                   size: 16,
                   color: colors.mutedForeground,
                 ),
-                onPressed: () => unawaited(
-                  changeMode(
-                    thinking
-                        ? AssistantThinkingMode.fast
-                        : AssistantThinkingMode.thinking,
-                  ),
-                ),
+                onPressed: modeEnabled
+                    ? () => unawaited(
+                        changeMode(
+                          thinking
+                              ? AssistantThinkingMode.fast
+                              : AssistantThinkingMode.thinking,
+                        ),
+                      )
+                    : null,
                 child: Text(
                   modeLabel,
                   maxLines: 1,

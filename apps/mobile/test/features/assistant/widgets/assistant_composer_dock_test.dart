@@ -98,7 +98,6 @@ Widget composerTestApp({
             isPersonalWorkspace: true,
             onModelSelected: (_) async {},
             onOpenCreditSourceSheet: onCredits ?? () async {},
-            onThinkingModeChanged: onThinking ?? (_) async {},
             controller: controller,
             focusNode: focus,
             onOpenAttachments: onAttach ?? () async {},

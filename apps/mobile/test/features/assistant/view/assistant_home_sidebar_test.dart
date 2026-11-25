@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_empty_hero.dart';
+import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
+import 'package:mobile/features/shell/cubit/sidebar_behavior_cubit.dart';
 
+import '../../../helpers/fake_sidebar_preferences.dart';
 import 'assistant_s5_shell_harness.dart';
 
 const ValueKey<String> _sidebar = ValueKey('assistant-history-sidebar');
@@ -18,6 +22,7 @@ void _size(WidgetTester tester, Size size) {
 
 void main() {
   setUpAssistantShellHarness();
+  useFakeSidebarPreferences();
 
   testWidgets('phone new chat shows quick actions and recent conversations', (
     tester,
@@ -149,30 +154,115 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('the sidebar takes the leading safe-area inset', (tester) async {
-    _size(tester, const Size(834, 1194));
-    tester.view
-      ..padding = const FakeViewPadding(left: 24)
-      ..viewPadding = const FakeViewPadding(left: 24);
+  for (final direction in TextDirection.values) {
+    testWidgets('the sidebar takes the leading inset (${direction.name})', (
+      tester,
+    ) async {
+      // A dock-mode tablet whose body, after a 12dp leading inset, still
+      // fits the sidebar.
+      _size(tester, const Size(834, 1194));
+      final rtl = direction == TextDirection.rtl;
+      final inset = rtl
+          ? const FakeViewPadding(right: 12)
+          : const FakeViewPadding(left: 12);
+      tester.view
+        ..padding = inset
+        ..viewPadding = inset;
+      await pumpAssistantShell(
+        tester,
+        repository: AssistantShellFixtureRepository(),
+        storedId: null,
+        textDirection: direction,
+      );
+      final sidebar = tester.getRect(find.byKey(_sidebar));
+      final slot = tester.getRect(
+        find.byKey(const ValueKey('assistant-history-sidebar-slot')),
+      );
+      final actions = tester.getRect(
+        find.byKey(const ValueKey('assistant-quick-actions')),
+      );
+      expect(sidebar.width, 280);
+      expect(slot.width, 292);
+      if (rtl) {
+        expect(sidebar.right, 834 - 12);
+        expect(slot.left, 834 - 292);
+        // The thread starts at the sidebar's edge without the inset again.
+        expect(actions.right, lessThan(slot.left));
+        expect(actions.right, greaterThan(slot.left - 64));
+      } else {
+        expect(sidebar.left, 12);
+        expect(slot.right, 292);
+        expect(actions.left, greaterThan(slot.right));
+        expect(actions.left, lessThan(slot.right + 64));
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('an expanded rail leaves too little room for the sidebar', (
+    tester,
+  ) async {
+    // A 1024dp landscape tablet fits the sidebar beside the collapsed rail
+    // but not beside the 240dp expanded one.
+    _size(tester, const Size(1024, 768));
     await pumpAssistantShell(
       tester,
       repository: AssistantShellFixtureRepository(),
       storedId: null,
     );
-    final sidebar = tester.getRect(find.byKey(_sidebar));
-    expect(sidebar.left, 24);
-    expect(sidebar.width, 280);
-    // The thread starts at the sidebar's edge rather than adding the inset
-    // again.
-    final slot = tester.getRect(
-      find.byKey(const ValueKey('assistant-history-sidebar-slot')),
+    expect(find.byKey(_sidebar), findsOneWidget);
+    final behavior = BlocProvider.of<SidebarBehaviorCubit>(
+      tester.element(find.byType(AssistantEmptyHero)),
     );
-    final actions = tester.getRect(
-      find.byKey(const ValueKey('assistant-quick-actions')),
+    await behavior.setBehavior(SidebarBehavior.expanded);
+    await tester.pumpAndSettle();
+    expect(find.byKey(_sidebar), findsNothing);
+    expect(find.byKey(_recent), findsOneWidget);
+    // The history action opens the Conversations page instead.
+    await tester.tap(find.byTooltip('Conversations'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AssistantConversations), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('toggling the sidebar keeps the thread mounted', (tester) async {
+    _size(tester, const Size(1440, 900));
+    await pumpAssistantShell(
+      tester,
+      repository: AssistantShellFixtureRepository()..longTranscript = true,
     );
-    expect(slot.right, 304);
-    expect(actions.left, greaterThan(slot.right));
-    expect(actions.left, lessThan(slot.right + 64));
+    ScrollableState thread() => tester.state<ScrollableState>(
+      find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    final before = thread();
+    final field = find.byType(TextField);
+    await tester.enterText(field, 'Draft kept across the toggle');
+    await tester.pump();
+    final editable = tester.state<EditableTextState>(find.byType(EditableText));
+
+    await tester.tap(find.byTooltip('Conversations'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(_sidebar), findsNothing);
+    expect(identical(thread(), before), isTrue);
+    expect(
+      identical(
+        tester.state<EditableTextState>(find.byType(EditableText)),
+        editable,
+      ),
+      isTrue,
+    );
+    expect(
+      tester.widget<TextField>(field).controller?.text,
+      'Draft kept across the toggle',
+    );
+
+    await tester.tap(find.byTooltip('Conversations'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(_sidebar), findsOneWidget);
+    expect(identical(thread(), before), isTrue);
     expect(tester.takeException(), isNull);
   });
 }

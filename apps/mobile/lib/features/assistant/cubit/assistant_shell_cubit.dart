@@ -45,6 +45,11 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   final AssistantPreferences _preferences;
   final Object? Function()? _currentScopeToken;
   final AssistantSettingsSelector? _selectSettings;
+
+  /// The response mode chosen in this workspace session. An opened
+  /// conversation shows and sends with its stored mode, which the native
+  /// message endpoint requires; new chats use this one.
+  AssistantThinkingMode _sessionThinkingMode = AssistantThinkingMode.fast;
   final Object? Function()? _currentSettingsToken;
   final void Function(AssistantSettingsDisposition)?
   _onSettingsSelectionFailure;
@@ -69,6 +74,12 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     bool forceRefresh = false,
   }) async {
     final requestVersion = ++_requestVersion;
+    // Every workspace session starts at Fast, as on web, ignoring any stored
+    // mode; only an explicit choice in this session changes it. Refreshing
+    // the same workspace keeps that choice.
+    if (state.workspace?.id != workspace.id) {
+      _sessionThinkingMode = AssistantThinkingMode.fast;
+    }
     _emitIfOpen(
       state.copyWith(
         status: AssistantShellStatus.loading,
@@ -79,9 +90,6 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
 
     try {
       final storedModel = await _preferences.loadModel(workspace.id);
-      final storedThinkingMode =
-          await _preferences.loadThinkingMode(workspace.id) ??
-          AssistantThinkingMode.fast;
       final storedCreditSource =
           await _preferences.loadCreditSource(workspace.id) ??
           AssistantCreditSource.workspace;
@@ -160,7 +168,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           activeCredits: activeCredits,
           availableModels: models,
           selectedModel: selectedModel,
-          thinkingMode: storedThinkingMode,
+          thinkingMode: _sessionThinkingMode,
           conversationSettings: null,
           creditSource: activeCreditSource,
           workspaceContextId: storedWorkspaceContext,
@@ -170,9 +178,6 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       );
 
       unawaited(_preferences.saveModel(workspace.id, selectedModel));
-      unawaited(
-        _preferences.saveThinkingMode(workspace.id, storedThinkingMode),
-      );
       unawaited(
         _preferences.saveCreditSource(workspace.id, activeCreditSource),
       );
@@ -231,7 +236,14 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     _settingsRequestVersion++;
     if (isClosed) return;
     if (settings == null) {
-      emit(state.copyWith(conversationSettings: null));
+      // A new chat takes the session's mode, not the last opened
+      // conversation's.
+      emit(
+        state.copyWith(
+          conversationSettings: null,
+          thinkingMode: _sessionThinkingMode,
+        ),
+      );
       return;
     }
     final model =
@@ -258,9 +270,9 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     if (!isClosed) emit(state.copyWith(selectedModel: model));
   }
 
-  /// Selects the response mode for later sends and keeps it for the
-  /// workspace. Subscription models use their provider's defaults, so they
-  /// keep the current mode.
+  /// Selects the response mode for later sends in this workspace session.
+  /// Subscription models use their provider's defaults, so they keep the
+  /// current mode.
   Future<bool> setThinkingMode(AssistantThinkingMode mode) =>
       _selectThinkingMode(mode);
 

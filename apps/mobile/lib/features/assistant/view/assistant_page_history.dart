@@ -18,7 +18,7 @@ extension _AssistantPageHistory on _AssistantPageState {
     }
     if (!_remoteGuard(wsId).current || _showsConversations) return;
     if (toggleSidebar &&
-        _historySidebarFits(context) &&
+        _historySidebarFits &&
         !context.read<AssistantChromeCubit>().state.isLiveMode) {
       _toggleHistorySidebar();
       return;

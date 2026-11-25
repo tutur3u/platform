@@ -68,7 +68,6 @@ extension _AssistantPageComposer on _AssistantPageState {
         shellState: shellState,
         isPersonalWorkspace: isPersonalWorkspace,
       ),
-      onThinkingModeChanged: _shellCubit.setThinkingMode,
       controller: _inputController,
       focusNode: _inputFocusNode,
       onOpenAttachments: () => _showAttachmentSheet(context, wsId),
@@ -99,12 +98,10 @@ extension _AssistantPageComposer on _AssistantPageState {
                       onModelSelected: _selectRemoteModel,
                     ),
               onThinkingModeChanged:
-                  localLane ||
-                      assistantModelUsesProviderDefaults(
-                        shellState.selectedModel,
-                      )
-                  ? null
-                  : _selectThinkingMode,
+                  _thinkingModeAvailable(chatState, shellState, localLane)
+                  ? _selectThinkingMode
+                  : null,
+              modeEnabled: _thinkingModeIdle(chatState),
             )
           : null,
       child: composer,
@@ -154,15 +151,34 @@ extension _AssistantPageComposer on _AssistantPageState {
     );
   }
 
-  /// Switches the response mode for later sends. A reply in flight stops,
-  /// as on web, so the next send uses the new mode; the switch never waits
-  /// for that reply to wind down.
+  /// Whether the response mode applies: not on device, not for
+  /// subscription models that use their provider's defaults, and not in a
+  /// legacy conversation, whose settings cannot be changed.
+  bool _thinkingModeAvailable(
+    AssistantChatState chat,
+    AssistantShellState shell,
+    bool localLane,
+  ) {
+    if (localLane || assistantModelUsesProviderDefaults(shell.selectedModel)) {
+      return false;
+    }
+    final chatId = chat.chat?.id ?? chat.storedChatId;
+    if (chatId == null) return true;
+    try {
+      return AssistantChatRoute.parse(chatId).kind ==
+          AssistantChatRouteKind.native;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  /// The mode changes only between replies, so a switch never stops a reply
+  /// in flight or drops queued messages; it applies to the next send.
+  bool _thinkingModeIdle(AssistantChatState chat) =>
+      !chat.isBusy && chat.queuedMessages.isEmpty;
+
   Future<void> _selectThinkingMode(AssistantThinkingMode mode) async {
-    if (mode == _shellCubit.state.thinkingMode) return;
-    final stopping = _chatCubit.state.isBusy
-        ? _chatCubit.stopStreaming()
-        : null;
+    if (!_thinkingModeIdle(_chatCubit.state)) return;
     await _shellCubit.setThinkingMode(mode);
-    await stopping;
   }
 }

@@ -67,7 +67,8 @@ extension _AssistantShellSettings on AssistantShellCubit {
   }
 
   /// Response mode follows the model's settings path: an open conversation
-  /// acknowledges it, a new chat carries it in its creation receipt.
+  /// acknowledges it, a new chat carries it in its creation receipt. It is
+  /// not stored across sessions, so each workspace session starts at Fast.
   Future<bool> _selectThinkingMode(AssistantThinkingMode mode) async {
     final workspace = state.workspace;
     if (workspace == null ||
@@ -90,8 +91,8 @@ extension _AssistantShellSettings on AssistantShellCubit {
         thinkingMode: mode,
       );
       if (!await _acceptSettings(selection, current)) return false;
-      await _preferences.saveThinkingMode(workspace.id, mode);
       if (!current()) return false;
+      _sessionThinkingMode = mode;
       _emitIfOpen(
         state.copyWith(thinkingMode: mode, conversationSettings: null),
       );

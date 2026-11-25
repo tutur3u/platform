@@ -79,7 +79,6 @@ Future<void> pumpStableComposer(
                     isPersonalWorkspace: true,
                     onModelSelected: (_) async {},
                     onOpenCreditSourceSheet: () async {},
-                    onThinkingModeChanged: (_) async {},
                     controller: controller,
                     focusNode: focus,
                     onOpenAttachments: () async {},

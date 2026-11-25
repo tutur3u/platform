@@ -57,7 +57,6 @@ Future<TextEditingController> _pumpComposer(
     isPersonalWorkspace: true,
     onModelSelected: (_) async {},
     onOpenCreditSourceSheet: () async {},
-    onThinkingModeChanged: (_) async {},
     controller: controller,
     focusNode: focus,
     onOpenAttachments: () async {},

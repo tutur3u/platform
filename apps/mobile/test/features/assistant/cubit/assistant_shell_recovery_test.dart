@@ -96,7 +96,7 @@ void main() {
     expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
   });
 
-  test('the stored mode loads and a selection persists it', () async {
+  test('a stale stored Thinking still starts the session at Fast', () async {
     calendarMissing();
     final preferences = AssistantPreferences(
       currentUserId: () => '33333333-3333-4333-8333-333333333333',
@@ -106,15 +106,33 @@ void main() {
       AssistantThinkingMode.thinking,
     );
     await cubit.loadWorkspace(workspace);
-    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
-    expect(await cubit.setThinkingMode(AssistantThinkingMode.fast), isTrue);
+    expect(cubit.state.status, AssistantShellStatus.loaded);
     expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
-    expect(
-      await preferences.loadThinkingMode(
-        '22222222-2222-4222-8222-222222222222',
+  });
+
+  test('a new chat takes the session mode, not the opened chat', () async {
+    calendarMissing();
+    await cubit.loadWorkspace(workspace);
+    // Opening a conversation saved with Thinking shows and sends with it.
+    cubit.restoreConversationSettings(
+      const AssistantConversationSettings(
+        modelId: 'google/gemini-3-flash',
+        creditSource: AssistantCreditSource.workspace,
+        creditWsId: '22222222-2222-4222-8222-222222222222',
+        thinkingMode: AssistantThinkingMode.thinking,
       ),
-      AssistantThinkingMode.fast,
     );
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    // New chat returns to the session's Fast.
+    cubit.restoreConversationSettings(null);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+    // An explicit choice becomes the session mode for later new chats.
+    expect(await cubit.setThinkingMode(AssistantThinkingMode.thinking), isTrue);
+    cubit.restoreConversationSettings(null);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    // Refreshing the same workspace keeps it.
+    await cubit.loadWorkspace(workspace, forceRefresh: true);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
   });
 
   test('a mode selection travels in the settings selection', () async {

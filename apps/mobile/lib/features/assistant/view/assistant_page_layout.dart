@@ -441,7 +441,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                         }
 
                         return _historySplit(
-                          context: context,
                           hidden: isLiveMode || localLane,
                           sidebar: () => _buildHistorySidebar(
                             wsId: currentWorkspace.id,

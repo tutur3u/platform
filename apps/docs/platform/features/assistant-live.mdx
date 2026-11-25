@@ -743,15 +743,21 @@ remain part of release verification.
 
 Decision (2026-11-25), under the owner's mobile-web parity directive: native
 mobile text chat offers web's Fast/Thinking response-mode selector beside the
-model control. It defaults to Fast for a workspace without a saved choice, keeps
-the choice per workspace, and is absent for on-device models and for `chatgpt/`
-subscription models, which use their provider's defaults. An open conversation
-acknowledges the mode through its AI settings, a new chat carries it in its
-creation receipt, and the legacy transport sends it in the request body.
-Changing the mode stops a reply in flight. Live keeps its own model choice.
-Regression coverage: `assistant_shell_recovery_test.dart`,
-`assistant_legacy_chat_test.dart`, `assistant_thinking_mode_switch_test.dart`
-and `assistant_home_render_test.dart`. Model
+model control. As on web, every workspace session starts at Fast and ignores
+any stored mode (see the Mira dashboard chat rule in
+[structured data](/platform/ai/structured-data)); an explicit choice applies for
+the rest of that session and to its new chats. The selector is absent for
+on-device models, for `chatgpt/` subscription models, which use their
+provider's defaults, and in legacy conversations, whose settings cannot change.
+Because the native message endpoint sends with a conversation's stored settings,
+an opened conversation shows and uses its own mode; a new chat returns to the
+session's mode. An open conversation acknowledges a change through its AI
+settings, a new chat carries the mode in its creation receipt, and the legacy
+transport sends it in the request body. The selector waits while a reply is in
+flight or messages are queued, so a change never stops a reply or drops queued
+messages. Live keeps its own model choice. Regression coverage:
+`assistant_shell_recovery_test.dart`, `assistant_legacy_chat_test.dart`,
+`assistant_thinking_mode_switch_test.dart` and `assistant_home_render_test.dart`. Model
 selection defaults to hiding locked or disabled models; users can reveal them
 for inspection but cannot select them. Model and attachment sheets use the dock
 glass material. Add attachments offers Files, Photos & Videos Library, and

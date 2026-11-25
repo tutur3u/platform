@@ -33,7 +33,6 @@ class AssistantComposerDock extends StatelessWidget {
     required this.isPersonalWorkspace,
     required this.onModelSelected,
     required this.onOpenCreditSourceSheet,
-    required this.onThinkingModeChanged,
     required this.controller,
     required this.focusNode,
     required this.onOpenAttachments,
@@ -87,7 +86,6 @@ class AssistantComposerDock extends StatelessWidget {
   final bool isPersonalWorkspace;
   final Future<void> Function(AssistantGatewayModel) onModelSelected;
   final Future<void> Function() onOpenCreditSourceSheet;
-  final Future<void> Function(AssistantThinkingMode mode) onThinkingModeChanged;
   final TextEditingController controller;
   final FocusNode focusNode;
   final Future<void> Function() onOpenAttachments;
@@ -166,7 +164,6 @@ class AssistantComposerDock extends StatelessWidget {
           onOpenAttachments: onOpenAttachments,
           onModelSelected: onModelSelected,
           onOpenCreditSourceSheet: onOpenCreditSourceSheet,
-          onThinkingModeChanged: onThinkingModeChanged,
           onRemoveAttachment: onRemoveAttachment,
           onCloseComposer: onCloseComposer,
           onDismissKeyboard: focusNode.unfocus,

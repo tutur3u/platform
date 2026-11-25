@@ -63,66 +63,62 @@ extension _AssistantPageHistoryPanes on _AssistantPageState {
     );
   }
 
-  /// Whether this window shows the history sidebar beside the thread: a
-  /// tablet-class window (shortest side of at least 600dp) whose body beside
-  /// the shell navigation fits [assistantHistorySidebarMinWidth]. Phones keep
-  /// the Conversations page, landscape included.
-  bool _historySidebarFits(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final body = size.width - shellNavigationExtentFor(size);
-    return size.shortestSide >= Breakpoints.mediumMin &&
-        body >= assistantHistorySidebarMinWidth;
-  }
-
-  /// The thread beside the history sidebar when the window fits it. The
-  /// sidebar takes the leading safe-area inset, so its rows clear a notch or
-  /// camera housing, and the thread drops that inset. The tree keeps one
-  /// shape either way, so toggling the sidebar never remounts the thread.
+  /// The thread beside the history sidebar when the page fits both: a
+  /// tablet-class window (shortest side of at least 600dp) whose own body,
+  /// measured after the shell's navigation and the leading safe inset, fits
+  /// [assistantHistorySidebarMinWidth]. Phones keep the Conversations page,
+  /// landscape included. The sidebar takes the leading safe-area inset so its
+  /// rows clear a notch, and the thread drops it. The tree keeps one shape
+  /// either way, so toggling the sidebar never remounts the thread.
   Widget _historySplit({
-    required BuildContext context,
     required bool hidden,
     required Widget Function() sidebar,
     required Widget Function(bool sidebarShown) page,
-  }) {
-    final shown =
-        !hidden && !_historySidebarCollapsed && _historySidebarFits(context);
-    final size = MediaQuery.sizeOf(context);
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    final padding = MediaQuery.paddingOf(context);
-    final start = shown ? (rtl ? padding.right : padding.left) : 0.0;
-    final width = shown
-        ? assistantHistorySidebarWidth(
-                size.width - shellNavigationExtentFor(size),
-              ) +
-              start
-        : 0.0;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-          key: const ValueKey('assistant-history-sidebar-slot'),
-          width: width,
-          child: shown
-              ? Padding(
-                  padding: EdgeInsetsDirectional.only(start: start),
-                  child: MediaQuery.removePadding(
-                    context: context,
-                    removeLeft: !rtl,
-                    removeRight: rtl,
-                    child: sidebar(),
-                  ),
-                )
-              : null,
-        ),
-        Expanded(
-          child: MediaQuery.removePadding(
-            context: context,
-            removeLeft: shown && !rtl,
-            removeRight: shown && rtl,
-            child: page(shown),
+  }) => LayoutBuilder(
+    builder: (context, constraints) {
+      final size = MediaQuery.sizeOf(context);
+      final rtl = Directionality.of(context) == TextDirection.rtl;
+      final padding = MediaQuery.paddingOf(context);
+      final inset = rtl ? padding.right : padding.left;
+      final body = constraints.maxWidth - inset;
+      final fits =
+          !hidden &&
+          size.shortestSide >= Breakpoints.mediumMin &&
+          body >= assistantHistorySidebarMinWidth;
+      // The history action reads the last measured fit to choose between
+      // toggling the sidebar and opening the Conversations page.
+      _historySidebarFits = fits;
+      final shown = fits && !_historySidebarCollapsed;
+      final start = shown ? inset : 0.0;
+      final width = shown ? assistantHistorySidebarWidth(body) + start : 0.0;
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            key: const ValueKey('assistant-history-sidebar-slot'),
+            width: width,
+            child: shown
+                ? Padding(
+                    padding: EdgeInsetsDirectional.only(start: start),
+                    child: MediaQuery.removePadding(
+                      context: context,
+                      removeLeft: !rtl,
+                      removeRight: rtl,
+                      child: sidebar(),
+                    ),
+                  )
+                : null,
           ),
-        ),
-      ],
-    );
-  }
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeLeft: shown && !rtl,
+              removeRight: shown && rtl,
+              child: page(shown),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

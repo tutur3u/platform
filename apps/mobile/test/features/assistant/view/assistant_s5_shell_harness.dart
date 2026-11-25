@@ -184,6 +184,7 @@ Future<GoRouter> pumpAssistantShell(
   bool? alwaysUse24HourFormat,
   SorbetTheme? sorbet,
   String? storedId = _activeId,
+  TextDirection? textDirection,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final auth = ReplyAuth();
@@ -213,22 +214,25 @@ Future<GoRouter> pumpAssistantShell(
           data: MediaQuery.of(
             context,
           ).copyWith(alwaysUse24HourFormat: alwaysUse24HourFormat),
-          child: ShellPage(
-            matchedLocation: state.uri.path,
-            retainedRootLocation:
-                state.uri.path == Routes.assistantConversations
-                ? Routes.assistant
-                : null,
-            enableDebugLogs: false,
-            assistantPageBuilder: (token) => AssistantPage(
-              replayToken: token,
-              shellLocation: state.uri.path,
-              conversationsClock: AssistantShellFixtureRepository.now,
-              repository: repository,
-              preferences: preferences,
-              currentActor: () => auth.state.user?.id,
+          child: _directed(
+            textDirection,
+            ShellPage(
+              matchedLocation: state.uri.path,
+              retainedRootLocation:
+                  state.uri.path == Routes.assistantConversations
+                  ? Routes.assistant
+                  : null,
+              enableDebugLogs: false,
+              assistantPageBuilder: (token) => AssistantPage(
+                replayToken: token,
+                shellLocation: state.uri.path,
+                conversationsClock: AssistantShellFixtureRepository.now,
+                repository: repository,
+                preferences: preferences,
+                currentActor: () => auth.state.user?.id,
+              ),
+              child: child,
             ),
-            child: child,
           ),
         ),
         routes: [
@@ -276,3 +280,7 @@ Future<GoRouter> pumpAssistantShell(
   await tester.pumpAndSettle();
   return router;
 }
+
+Widget _directed(TextDirection? direction, Widget child) => direction == null
+    ? child
+    : Directionality(textDirection: direction, child: child);

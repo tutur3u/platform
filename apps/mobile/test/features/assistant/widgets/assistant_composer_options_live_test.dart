@@ -63,7 +63,6 @@ void main() {
                         shellState: const AssistantShellState(),
                         onOpenAttachments: () async {},
                         onOpenCreditSourceSheet: () async {},
-                        onThinkingModeChanged: (_) async {},
                         onRemoveAttachment: (_) async {},
                         onCloseComposer: () {},
                         onModelSelected: (_) async {},

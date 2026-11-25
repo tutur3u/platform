@@ -151,7 +151,6 @@ class AssistantLiveShellHarness extends StatelessWidget {
                   isPersonalWorkspace: true,
                   onModelSelected: (_) async {},
                   onOpenCreditSourceSheet: () async {},
-                  onThinkingModeChanged: (_) async {},
                   controller: controller.input,
                   focusNode: controller.focus,
                   onOpenAttachments: () async {},

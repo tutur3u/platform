@@ -45,7 +45,6 @@ class AssistantComposerOptions extends StatelessWidget {
     required this.onOpenAttachments,
     required this.onModelSelected,
     required this.onOpenCreditSourceSheet,
-    required this.onThinkingModeChanged,
     required this.onRemoveAttachment,
     required this.onCloseComposer,
     this.repository,
@@ -70,7 +69,6 @@ class AssistantComposerOptions extends StatelessWidget {
   final Future<void> Function() onOpenAttachments;
   final Future<void> Function(AssistantGatewayModel) onModelSelected;
   final Future<void> Function() onOpenCreditSourceSheet;
-  final Future<void> Function(AssistantThinkingMode) onThinkingModeChanged;
   final Future<void> Function(String) onRemoveAttachment;
 
   Future<void> _select(BuildContext context, _ComposerOption option) async {
