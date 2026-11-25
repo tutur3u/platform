@@ -7,6 +7,8 @@ import {
   type PrivateRpcAdmin,
 } from '@tuturuuu/feature-flags';
 
+import { startFeatureFlagDefinitionSync } from './definition-sync';
+
 export { asPrivateRpcAdmin };
 
 export async function commitPlatformFeatureFlag(input: {
@@ -32,6 +34,7 @@ export async function readPlatformFeatureFlagState(input: {
   actorId: string;
   admin: PrivateRpcAdmin;
 }) {
+  startFeatureFlagDefinitionSync(input.admin);
   try {
     return interpretAdminStateRead(
       await input.admin
@@ -52,6 +55,7 @@ export async function readPlatformFeatureFlagAudit(input: {
   limit: number;
   operationId?: string | null;
 }) {
+  startFeatureFlagDefinitionSync(input.admin);
   try {
     return interpretAdminAuditRead(
       await input.admin

@@ -10,6 +10,7 @@ import {
   commitPlatformFeatureFlag,
   readPlatformFeatureFlagState,
 } from '@/lib/feature-flags/platform-feature-flag-store';
+import { hasFeatureFlagWriteIntent } from '@/lib/feature-flags/write-intent';
 
 export async function GET(request: Request) {
   await connection();
@@ -40,30 +41,8 @@ export async function POST(request: Request) {
     request
   );
   if (!access.ok) return access.response;
-  // Bearer authentication never falls back to cookies in the admin guard.
-  // Cookie mutations require a same-origin browser intent boundary.
-  if (request.headers.get('authorization') === null) {
-    const origin = request.headers.get('origin');
-    const fetchSite = request.headers.get('sec-fetch-site');
-    let sameOrigin = false;
-    try {
-      sameOrigin =
-        origin !== null &&
-        origin === new URL(origin).origin &&
-        origin === new URL(request.url).origin;
-    } catch {
-      sameOrigin = false;
-    }
-    if (
-      !sameOrigin ||
-      request.headers.get('x-tuturuuu-feature-flag-action') !== '1' ||
-      (fetchSite !== null && fetchSite !== 'same-origin')
-    ) {
-      return NextResponse.json(
-        { error: 'mutation_forbidden' },
-        { status: 403 }
-      );
-    }
+  if (!hasFeatureFlagWriteIntent(request)) {
+    return NextResponse.json({ error: 'mutation_forbidden' }, { status: 403 });
   }
   let body: unknown;
   try {
