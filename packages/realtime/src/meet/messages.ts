@@ -39,6 +39,7 @@ import {
   meetRealtimeTrackKindSchema,
 } from './primitives';
 import { normalizeDisplayNameText } from './room-display-name';
+import type { MeetRoomSettingsFeature } from './room-join-qr';
 import {
   type MeetStageLayoutSnapshot,
   meetStageLayoutSnapshotSchema,
@@ -350,6 +351,10 @@ export type MeetRealtimeServerMessage =
   | {
       type: 'room.settings';
       settings: MeetRoomSettings;
+      /** Settings features this room keeps; older rooms send none. */
+      features?: MeetRoomSettingsFeature[];
+      /** The room's clock when it sent these settings. */
+      serverNow?: string;
       /** Set on the reply to a `room.settings.update`, so the sender sees it land. */
       requestId?: string;
     }

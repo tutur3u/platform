@@ -87,6 +87,43 @@ describe('stage join QR settings', () => {
       later
     ).state.settings;
     expect(other?.joinQrShownAt).toBeUndefined();
+    const timed = run(state, {
+      type: 'room.settings.update',
+      settings: { joinQrAutoHide: 5 },
+    }).state;
+    const hidden = run(
+      timed,
+      { type: 'room.settings.update', settings: { joinQrHidden: true } },
+      host,
+      '2026-11-25T08:09:00.000Z'
+    ).state.settings;
+    // Hiding keeps the stamp; only showing or a new auto-hide restarts it.
+    expect(hidden).toMatchObject({ joinQrHidden: true, joinQrShownAt: now });
+  });
+
+  it('announces the join QR feature and its clock with the settings', () => {
+    const later = '2026-11-25T08:04:00.000Z';
+    const result = run(
+      admitted(),
+      {
+        type: 'room.settings.update',
+        requestId: 'qr-1',
+        settings: { joinQrHidden: false },
+      },
+      host,
+      later
+    );
+    const expected = {
+      type: 'room.settings',
+      features: ['joinQr'],
+      serverNow: later,
+    };
+    expect(result.reply).toEqual([
+      expect.objectContaining({ ...expected, requestId: 'qr-1' }),
+    ]);
+    expect(result.broadcast).toContainEqual(
+      expect.objectContaining(expected)
+    );
   });
 
   it('rejects auto-hide values outside Off, 2, 5 and 10 minutes', () => {

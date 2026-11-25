@@ -5,6 +5,15 @@ export const MEET_JOIN_QR_AUTO_HIDE_MINUTES = [2, 5, 10] as const;
 export type MeetJoinQrAutoHide =
   (typeof MEET_JOIN_QR_AUTO_HIDE_MINUTES)[number];
 
+/**
+ * Room settings features a room announces with its settings. A room on an
+ * older realtime Worker announces none and drops the join QR keys, so
+ * clients keep the QR's room controls off until the room lists `joinQr`.
+ */
+export const MEET_ROOM_SETTINGS_FEATURES = ['joinQr'] as const;
+export type MeetRoomSettingsFeature =
+  (typeof MEET_ROOM_SETTINGS_FEATURES)[number];
+
 /** Settings a room manager patches; both need the participant manage scope. */
 export const MEET_JOIN_QR_SETTING_KEYS = [
   'joinQrHidden',
@@ -33,20 +42,25 @@ type JoinQrSettings = {
   joinQrShownAt?: string;
 };
 
-export function patchesMeetJoinQr(patch: object) {
-  return MEET_JOIN_QR_SETTING_KEYS.some((key) => key in patch);
+/** True when a patch shows the QR or changes its auto-hide. */
+export function restartsMeetJoinQr(patch: {
+  joinQrHidden?: boolean;
+  joinQrAutoHide?: unknown;
+}) {
+  return 'joinQrAutoHide' in patch || patch.joinQrHidden === false;
 }
 
 /**
  * Restarts the auto-hide clock on the room's own time whenever a manager
  * shows the QR or changes its auto-hide, so every client hides it together.
+ * Hiding keeps the last stamp.
  */
 export function stampMeetJoinQr<T extends JoinQrSettings>(
   settings: T,
-  patch: object,
+  patch: { joinQrHidden?: boolean; joinQrAutoHide?: unknown },
   now: string
 ): T {
-  return patchesMeetJoinQr(patch)
+  return restartsMeetJoinQr(patch)
     ? { ...settings, joinQrShownAt: now }
     : settings;
 }

@@ -211,7 +211,7 @@ export function admitOrHold(
         ...buildReady(next, token, 'admitted', now, features),
         resumed: !!previous,
       },
-      roomSettingsMessage(next),
+      roomSettingsMessage(next, now),
       recordingMessage(next),
       ...transcriptionAnnouncements(next, token.userId),
       ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
@@ -392,7 +392,7 @@ function decideParticipant(
         },
         userId: targetId,
       },
-      { userId: targetId, message: roomSettingsMessage(next) },
+      { userId: targetId, message: roomSettingsMessage(next, now) },
       ...(features.timer
         ? [
             {

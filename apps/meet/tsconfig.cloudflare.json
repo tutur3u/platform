@@ -118,6 +118,7 @@
     "../../packages/realtime/src/meet/room-documents.ts",
     "../../packages/realtime/src/meet/room-ending.ts",
     "../../packages/realtime/src/meet/room-idle.ts",
+    "../../packages/realtime/src/meet/room-join-qr.ts",
     "../../packages/realtime/src/meet/room-forms.ts",
     "../../packages/realtime/src/meet/room-lifecycle.ts",
     "../../packages/realtime/src/meet/room-class-view.ts",

@@ -20,7 +20,11 @@ import {
   type MeetRoomSnapshot,
 } from './room';
 import { startRoomBudget } from './room-budget';
-import { MEET_JOIN_QR_SETTING_KEYS, stampMeetJoinQr } from './room-join-qr';
+import {
+  MEET_JOIN_QR_SETTING_KEYS,
+  MEET_ROOM_SETTINGS_FEATURES,
+  stampMeetJoinQr,
+} from './room-join-qr';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { publicationCleanupKey } from './room-tracks';
 import { meetClassFeatures } from './class-features';
@@ -37,12 +41,15 @@ export function approvedParticipantsMessage(
   };
 }
 export function roomSettingsMessage(
-  state: MeetRoomSnapshot
-): MeetRealtimeServerMessage {
+  state: MeetRoomSnapshot,
+  now?: string
+) {
   return {
-    type: 'room.settings',
+    type: 'room.settings' as const,
     settings: state.settings ?? { shareNotes: false },
-  };
+    features: [...MEET_ROOM_SETTINGS_FEATURES],
+    ...(now ? { serverNow: now } : {}),
+  } satisfies MeetRealtimeServerMessage;
 }
 export function canReadRoomNotes(
   state: MeetRoomSnapshot,
@@ -228,8 +235,7 @@ export function applyRoomControl(
           reply: [
             ...applied.reply,
             {
-              type: 'room.settings' as const,
-              settings: applied.state.settings ?? { shareNotes: false },
+              ...roomSettingsMessage(applied.state, now),
               requestId: message.requestId,
             },
           ],
@@ -300,7 +306,9 @@ export function applyMeetRoomSettings(
   now: string
 ) {
   const next = { ...state, settings };
-  const messages: MeetRealtimeServerMessage[] = [roomSettingsMessage(next)];
+  const messages: MeetRealtimeServerMessage[] = [
+    roomSettingsMessage(next, now),
+  ];
   const kinds = ['audio', 'video', 'screen', 'screen_audio'] as const;
   const revoked = new Map<string, Set<MeetRealtimeTrackKind>>();
   for (const person of Object.values(state.presence)) {

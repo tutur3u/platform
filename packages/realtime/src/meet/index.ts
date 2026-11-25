@@ -263,7 +263,9 @@ export {
 export {
   isMeetJoinQrShown,
   MEET_JOIN_QR_AUTO_HIDE_MINUTES,
+  MEET_ROOM_SETTINGS_FEATURES,
   type MeetJoinQrAutoHide,
+  type MeetRoomSettingsFeature,
   meetJoinQrHidesAt,
 } from './room-join-qr';
 export type {

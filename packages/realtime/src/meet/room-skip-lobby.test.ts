@@ -114,6 +114,8 @@ describe('automatic admission of signed-in people', () => {
       {
         type: 'room.settings',
         settings: expect.objectContaining({ skipLobby: true }),
+        features: ['joinQr'],
+        serverNow: expect.any(String),
         requestId: 'req-1',
       },
     ]);

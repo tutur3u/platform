@@ -48,7 +48,7 @@ export function resolveRoomSettingsPatch(
     return new Response('Meet AI is temporarily unavailable', { status: 403 });
   return stampMeetJoinQr(
     patch.data,
-    body as object,
+    body as { joinQrHidden?: boolean; joinQrAutoHide?: unknown },
     new Date().toISOString()
   );
 }
