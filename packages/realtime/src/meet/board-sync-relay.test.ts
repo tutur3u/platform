@@ -122,4 +122,20 @@ describe('GuestRelay', () => {
     expect(relay.flush(10_001, to)).toBeNull();
     expect(to.sent.map(([id]) => id)).toEqual(['a', 'b']);
   });
+
+  it('bounds the next wait after a long clock rollback', () => {
+    const relay = new GuestRelay();
+    const to = target({ a: 1, b: 1 });
+    const beforeRollback = 60_000;
+    const fullRefillMs = (capacity / refill) * 1000;
+    relay.hold('a', 'selection', bytes(capacity));
+    expect(relay.flush(beforeRollback, to)).toBeNull();
+
+    relay.hold('b', 'selection', bytes(capacity));
+    expect(relay.flush(0, to)).toBe(fullRefillMs + interval);
+    expect(to.sent.map(([id]) => id)).toEqual(['a']);
+    expect(relay.flush(beforeRollback, to)).toBe(fullRefillMs);
+    expect(relay.flush(beforeRollback + fullRefillMs, to)).toBeNull();
+    expect(to.sent.map(([id]) => id)).toEqual(['a', 'b']);
+  });
 });

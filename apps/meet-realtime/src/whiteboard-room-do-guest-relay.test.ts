@@ -177,10 +177,15 @@ test('batches guest reconnect presence and bounds the bytes sent to a full room'
       (sum, message) => sum + Buffer.byteLength(JSON.stringify(message)),
       0
     );
-  assert.ok(bytes < 2_000_000, `${bytes} presence bytes`);
+  assert.ok(
+    bytes < 23 * 1024 * BOARD_LIMITS.maxSockets,
+    `${bytes} presence bytes`
+  );
   const [first] = presence(member);
   const guestId = boardActorId(SECRET, ids.boardId, guest.userId);
   assert.equal(first.members.length, BOARD_LIMITS.maxSockets);
+  for (const entry of first.members)
+    assert.equal(entry.displayName, '\u0000'.repeat(64));
   assert.ok(first.members.some((entry: BoardMember) => entry.id === guestId));
 
   f.sockets.pop();
@@ -195,6 +200,22 @@ test('batches guest reconnect presence and bounds the bytes sent to a full room'
   assert.deepEqual(
     presence(member)[1].members,
     first.members.filter((entry: BoardMember) => entry.id !== guestId)
+  );
+});
+
+test('truncates presence display names by UTF-8 bytes at code point boundaries', async () => {
+  const f = fixture();
+  const codePoint = '\u{1f600}';
+  const short = 'a'.repeat(61);
+  const exact = `${'b'.repeat(60)}${codePoint}`;
+  const member = await open(f, { displayName: `${short}${codePoint}z` });
+  await open(f, { userId: 'g1', actorKind: 'guest', displayName: `${exact}z` });
+
+  jest.advanceTimersByTime(1000);
+  const [snapshot] = presence(member);
+  assert.deepEqual(
+    snapshot.members.map((entry: BoardMember) => entry.displayName),
+    [short, exact]
   );
 });
 

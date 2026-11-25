@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { jest, test } from 'bun:test';
+import { jest, spyOn, test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import { boardActorId } from '../../../packages/realtime/src/meet/board-sync-actor';
 import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
 import {
   BOARD_GUEST_LIMITS,
   BOARD_LIMITS,
+  type BoardTicket,
 } from '../../../packages/realtime/src/meet/board-sync-schema';
 import {
   clock,
@@ -360,6 +361,71 @@ test('keeps member seats free when guests crowd a board', async () => {
   assert.equal(refused.status, 429);
   await open(f, { userId: 'member' });
   assert.equal(f.sockets.length, BOARD_GUEST_LIMITS.maxSockets + 1);
+});
+
+async function joinDuringCheckpoint(
+  f: ReturnType<typeof fixture>,
+  joins: Partial<BoardTicket>[]
+) {
+  const started = Promise.withResolvers<void>();
+  const resume = Promise.withResolvers<void>();
+  const fetch = globalThis.fetch;
+  const delayed = spyOn(globalThis, 'fetch').mockImplementationOnce(
+    async (...args) => {
+      started.resolve();
+      await resume.promise;
+      return fetch(...args);
+    }
+  );
+  try {
+    const attempts = joins.map((join) => f.join(join));
+    await started.promise;
+    assert.equal(f.sockets.length, 0);
+    resume.resolve();
+    return await Promise.all(attempts);
+  } finally {
+    resume.resolve();
+    delayed.mockRestore();
+  }
+}
+
+test('reserves every member seat during a guest burst on the first checkpoint', async () => {
+  useRoomFakeTimers();
+  const f = fixture();
+  const burst = BOARD_GUEST_LIMITS.maxSockets + 10;
+  const results = await joinDuringCheckpoint(
+    f,
+    Array.from({ length: burst }, (_, i) => ({
+      userId: `guest-${i}`,
+      actorKind: 'guest',
+    }))
+  );
+  assert.equal(f.sockets.length, BOARD_GUEST_LIMITS.maxSockets);
+  const refused = results.filter((response) => response.status === 429);
+  assert.equal(refused.length, burst - BOARD_GUEST_LIMITS.maxSockets);
+  for (const response of refused)
+    assert.equal(await response.text(), 'Room full');
+
+  const reservedSeats = BOARD_LIMITS.maxSockets - BOARD_GUEST_LIMITS.maxSockets;
+  for (let i = 0; i < reservedSeats; i++)
+    await open(f, { userId: `member-${i}` });
+  assert.equal(f.sockets.length, BOARD_LIMITS.maxSockets);
+});
+
+test('enforces the per-user socket cap after a shared first checkpoint', async () => {
+  useRoomFakeTimers();
+  const f = fixture();
+  const results = await joinDuringCheckpoint(
+    f,
+    Array.from({ length: BOARD_GUEST_LIMITS.socketsPerUser + 1 }, () => ({
+      userId: 'guest',
+      actorKind: 'guest',
+    }))
+  );
+  assert.equal(f.sockets.length, BOARD_GUEST_LIMITS.socketsPerUser);
+  const refused = results.filter((response) => response.status === 429);
+  assert.equal(refused.length, 1);
+  assert.equal(await refused[0].text(), 'Too many connections');
 });
 
 test('names people by a per-board id, never their user id', async () => {

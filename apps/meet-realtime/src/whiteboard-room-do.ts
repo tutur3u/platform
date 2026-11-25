@@ -80,6 +80,7 @@ type Attachment = {
 const CHECKPOINT_PATH = '/api/v1/realtime/whiteboard/checkpoint';
 const OPENS_KEY = 'guest-opens';
 const PRESENCE_INTERVAL_MS = 1000;
+const PRESENCE_NAME_MAX_BYTES = 64;
 
 async function sha256(text: string) {
   return Buffer.from(
@@ -183,6 +184,25 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     return socket.deserializeAttachment() as Attachment;
   }
 
+  private checkSocketLimits({ actorKind, userId }: BoardTicket) {
+    const sockets = this.sockets();
+    if (sockets.length >= BOARD_LIMITS.maxSockets)
+      return new Response('Room full', { status: 429 });
+    const held = sockets.map((socket) => this.attachment(socket).ticket);
+    if (
+      held.filter((other) => other.userId === userId).length >=
+      boardSocketBudget(actorKind).socketsPerUser
+    )
+      return new Response('Too many connections', { status: 429 });
+    if (
+      actorKind === 'guest' &&
+      held.filter((other) => other.actorKind === 'guest').length >=
+        BOARD_GUEST_LIMITS.maxSockets
+    )
+      return new Response('Room full', { status: 429 });
+    return null;
+  }
+
   /**
    * The ticket as this room honours it: a guest's role is capped at view
    * while guest drawing is held here, whatever the Meet API signed.
@@ -253,13 +273,17 @@ export class WhiteboardRoomDurableObject implements DurableObject {
 
   private members(): BoardMember[] {
     const now = Date.now();
+    const encoder = new TextEncoder();
+    const nameBytes = new Uint8Array(PRESENCE_NAME_MAX_BYTES);
     return this.sockets().flatMap((socket) => {
       const attachment = this.attachment(socket);
       if (attachment.ticket.exp * 1000 <= now) return [];
+      const { displayName } = attachment.ticket;
+      const { read } = encoder.encodeInto(displayName, nameBytes);
       return [
         {
           id: this.actorOf(attachment),
-          displayName: attachment.ticket.displayName,
+          displayName: displayName.slice(0, read),
           role: this.honoured(attachment.ticket).role,
         },
       ];
@@ -340,28 +364,16 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       )
     )
       return new Response(null, { status: 403 });
-    if (this.sockets().length >= BOARD_LIMITS.maxSockets)
-      return new Response('Room full', { status: 429 });
-    const budget = boardSocketBudget(ticket.data.actorKind);
-    const held = this.sockets().map((socket) => this.attachment(socket).ticket);
-    if (
-      held.filter((other) => other.userId === ticket.data.userId).length >=
-      budget.socketsPerUser
-    )
-      return new Response('Too many connections', { status: 429 });
+    const initialLimit = this.checkSocketLimits(joined);
+    if (initialLimit) return initialLimit;
     if (ticket.data.actorKind === 'guest') {
-      // Guests never take the last member seats, and each guest may reopen
-      // only a few times a minute: every open sends the whole scene.
-      if (
-        held.filter((other) => other.actorKind === 'guest').length >=
-        BOARD_GUEST_LIMITS.maxSockets
-      )
-        return new Response('Room full', { status: 429 });
+      // Each guest may reopen only a few times a minute: every open sends
+      // the whole scene.
       if (
         !chargeBoardOpen(
           this.opens,
           ticket.data.userId,
-          budget.opensPerMinute,
+          BOARD_GUEST_LIMITS.opensPerMinute,
           Date.now()
         )
       )
@@ -395,8 +407,8 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     }
     if (this.room.closed) return new Response(null, { status: 410 });
     // Preparing the room can yield while other sockets join.
-    if (this.sockets().length >= BOARD_LIMITS.maxSockets)
-      return new Response('Room full', { status: 429 });
+    const currentLimit = this.checkSocketLimits(joined);
+    if (currentLimit) return currentLimit;
     const pair = new WebSocketPair();
     pair[1].serializeAttachment({
       ticket: joined,

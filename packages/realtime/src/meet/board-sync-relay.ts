@@ -115,7 +115,12 @@ export class GuestRelay {
         if (cost > tokens) {
           this.blocked = { id, kind };
           const refillWait = Math.ceil(((cost - tokens) / refill) * 1000);
-          wait = Math.max(tokensAt - now + refillWait, sent ? interval : 0);
+          // Keep a clock rollback from arming a timer longer than a full refill
+          // plus the relay interval, without crediting that time to the bucket.
+          wait = Math.min(
+            (capacity / refill) * 1000 + interval,
+            Math.max(tokensAt - now + refillWait, sent ? interval : 0)
+          );
           break;
         }
         tokens -= cost;
