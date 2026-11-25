@@ -8,7 +8,7 @@ import {
   realpathSync,
   rmSync,
 } from 'node:fs';
-import { join, posix, relative, resolve } from 'node:path';
+import { join, posix, relative, resolve, sep } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
   assertUploadLimits,
@@ -55,7 +55,8 @@ export function buildOutputObservability(observability) {
   return output;
 }
 
-function discoverCfBuildOutputEsmModulesFromVite(bundleRoot, mainModule) {
+/** The ssr Vite graph: a presence check, never the upload set. */
+function viteGraphModules(bundleRoot, mainModule) {
   const manifestPath = join(bundleRoot, '.vite/manifest.json');
   let manifest;
   try {
@@ -112,13 +113,14 @@ function discoverCfBuildOutputEsmModulesFromVite(bundleRoot, mainModule) {
 /**
  * Relative static and dynamic import specifiers in emitted ESM, including
  * comments inside `import(` (`/* @vite-ignore *\/`) and constant template
- * literals (`import(\`./rsc/bridge-api.js\`)`). Vite RSC
- * loads a second environment's graph this way, and that graph is absent from
- * the ssr environment's `.vite/manifest.json`.
+ * literals (`import(\`./rsc/bridge-api.js\`)`). Vite RSC loads its second
+ * environment this way, and that graph is absent from the ssr manifest.
  */
 const RELATIVE_SPECIFIER =
-  /(?:\bfrom\s*|\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)*|\bimport\s*)(["'`])(\.{1,2}\/[^"'`$\s]+?)\1/gu;
-const MAX_FOLLOWED_MODULES = 20_000;
+  /(?:\bfrom\s*|\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)*|\bimport\s*)(["'`])(\.{1,2}\/[^"'`$\s?#]+)(?:[?#][^"'`]*)?\1/gu;
+/** A relative dynamic import whose path is built at runtime. */
+const COMPUTED_RELATIVE_IMPORT =
+  /\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)*`\.{1,2}\/[^`]*\$\{/u;
 
 /** Bundle-root-relative `.js`/`.mjs` paths a module's specifiers name. */
 export function relativeModuleReferences(bundleRoot, rel) {
@@ -131,118 +133,14 @@ export function relativeModuleReferences(bundleRoot, rel) {
   return references;
 }
 
-function existingModule(bundleRoot, target) {
-  if (target.startsWith('../') || posix.isAbsolute(target)) return false;
-  if (target.split('/').some((segment) => segment.startsWith('.')))
-    return false;
-  let stat;
-  try {
-    stat = lstatSync(join(bundleRoot, target));
-  } catch (error) {
-    if (error?.code === 'ENOENT') return false;
-    throw error;
-  }
-  assert.ok(!stat.isSymbolicLink(), `bundle symlink forbidden: ${target}`);
-  return stat.isFile();
-}
-
 /**
- * Adds every existing module the included modules import by relative path,
- * transitively and within the bundle root. Unreferenced files stay excluded.
+ * Every `.js`/`.mjs` module under the bundle root that the Wrangler rules
+ * match, as `wrangler deploy --no-bundle` uploads them. Dot directories and
+ * source maps are skipped; symlinks (files or directories) are refused.
  */
-function followRelativeImports(bundleRoot, modules) {
-  const queue = Object.keys(modules);
-  let followed = 0;
-  while (queue.length) {
-    const rel = queue.shift();
-    for (const target of relativeModuleReferences(bundleRoot, rel)) {
-      if (Object.hasOwn(modules, target)) continue;
-      if (!existingModule(bundleRoot, target)) continue;
-      followed += 1;
-      assert.ok(
-        followed <= MAX_FOLLOWED_MODULES,
-        'relative import walk exceeded its module bound'
-      );
-      modules[target] = { type: 'esm' };
-      queue.push(target);
-    }
-  }
-  return modules;
-}
-
-/**
- * Fails when an included module imports, by relative path, a module that
- * exists in the bundle but is not in the upload set: the Worker would start
- * and then reject that import on every request that reaches it.
- */
-export function assertModuleClosure(bundleRoot, modules) {
-  const dropped = new Set();
-  for (const rel of Object.keys(modules)) {
-    for (const target of relativeModuleReferences(bundleRoot, rel)) {
-      if (Object.hasOwn(modules, target)) continue;
-      if (existingModule(bundleRoot, target)) dropped.add(`${rel} -> ${target}`);
-    }
-  }
-  assert.equal(
-    dropped.size,
-    0,
-    `cf Build Output drops imported modules: ${[...dropped].slice(0, 5).join(', ')}`
-  );
-}
-
-/**
- * Compares a published version's module names (Cloudflare
- * `versions/<id>?include=modules`, names may carry a `./` prefix) with the
- * emitted manifest. Not yet called by a publish path: wiring it needs a
- * names-only read of the published version.
- */
-export function assertUploadedModuleSet(uploadedNames, expectedModules) {
-  const normalize = (name) => (name.startsWith('./') ? name.slice(2) : name);
-  const uploaded = new Set(
-    uploadedNames.map(normalize).filter((name) => /\.(?:m?js)$/u.test(name))
-  );
-  const expected = new Set(Object.keys(expectedModules).map(normalize));
-  const missing = [...expected].filter((name) => !uploaded.has(name));
-  const extra = [...uploaded].filter((name) => !expected.has(name));
-  assert.deepEqual(
-    { missing: missing.slice(0, 5), extra: extra.slice(0, 5) },
-    { missing: [], extra: [] },
-    `uploaded modules differ from the emitted manifest (${uploaded.size} uploaded, ${expected.size} expected)`
-  );
-}
-
-/** Sealed `.js`/`.mjs` modules under a bundle root, skipping dot directories. */
-export function sealedModuleCount(bundleRoot) {
-  let count = 0;
-  const visit = (directory) => {
-    for (const name of readdirSync(directory)) {
-      const path = join(directory, name);
-      const stat = lstatSync(path);
-      if (stat.isDirectory()) {
-        if (!name.startsWith('.')) visit(path);
-      } else if (stat.isFile() && /\.(?:m?js)$/u.test(name)) count += 1;
-    }
-  };
-  visit(bundleRoot);
-  return count;
-}
-
-export function discoverCfBuildOutputEsmModules(
-  bundleRoot,
-  config,
-  mainModule
-) {
-  const fromVite = discoverCfBuildOutputEsmModulesFromVite(
-    bundleRoot,
-    mainModule
-  );
-  if (fromVite) {
-    followRelativeImports(bundleRoot, fromVite);
-    assertModuleClosure(bundleRoot, fromVite);
-    return fromVite;
-  }
+export function sealedModules(bundleRoot, config, mainModule) {
   const globs = moduleGlobs(config);
-  const modules = {};
+  const modules = [];
   function visit(directory) {
     for (const name of readdirSync(directory)) {
       const path = join(directory, name);
@@ -258,14 +156,128 @@ export function discoverCfBuildOutputEsmModules(
       const rel = posixPath(relative(bundleRoot, path));
       if (!/\.(?:m?js)$/u.test(rel)) continue;
       if (rel !== mainModule && !matchesModuleBasename(name, globs)) continue;
-      modules[rel] = { type: 'esm' };
+      modules.push(rel);
     }
   }
   visit(bundleRoot);
-  assert.ok(
-    Object.hasOwn(modules, mainModule),
-    'main module missing from bundle'
+  return modules.sort();
+}
+
+/** All `.js`/`.mjs` files under a bundle root, skipping dot directories. */
+export function sealedModuleCount(bundleRoot) {
+  let count = 0;
+  const visit = (directory) => {
+    for (const name of readdirSync(directory)) {
+      const path = join(directory, name);
+      const stat = lstatSync(path);
+      if (stat.isDirectory()) {
+        if (!name.startsWith('.')) visit(path);
+      } else if (stat.isFile() && /\.(?:m?js)$/u.test(name)) count += 1;
+    }
+  };
+  visit(bundleRoot);
+  return count;
+}
+
+function referenceState(bundleRoot, target) {
+  const path = resolve(bundleRoot, target);
+  let real;
+  try {
+    real = realpathSync(path);
+  } catch (error) {
+    if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') return 'missing';
+    throw error;
+  }
+  const root = realpathSync(bundleRoot);
+  const inside =
+    real.startsWith(root + sep) &&
+    !target.startsWith('../') &&
+    !target.split('/').some((segment) => segment.startsWith('.'));
+  return inside ? 'inside' : 'outside';
+}
+
+/**
+ * Fails when an emitted module imports, by relative path, a file that exists
+ * but is not emitted: outside the bundle root, in a dot directory, or
+ * excluded. That Worker would start and then reject the import on every
+ * request that reaches it. Specifiers naming no file (comments, prose) pass.
+ */
+export function assertModuleClosure(bundleRoot, modules) {
+  const dropped = [];
+  for (const rel of Object.keys(modules)) {
+    for (const target of relativeModuleReferences(bundleRoot, rel)) {
+      if (Object.hasOwn(modules, target)) continue;
+      if (referenceState(bundleRoot, target) !== 'missing')
+        dropped.push(`${rel} -> ${target}`);
+    }
+  }
+  assert.equal(
+    dropped.length,
+    0,
+    `cf Build Output drops imported modules: ${dropped.slice(0, 5).join(', ')}`
   );
+}
+
+/**
+ * Compares a published version's module names with the emitted manifest.
+ * Names are normalized (`./`, `/`, backslashes); duplicates fail. Not yet
+ * called by a publish path: see the module discovery docs page.
+ */
+export function assertUploadedModuleSet(uploadedNames, expectedModules) {
+  const normalize = (name) =>
+    name.replaceAll('\\', '/').replace(/^(?:\.\/|\/)+/u, '');
+  const names = uploadedNames
+    .map(normalize)
+    .filter((name) => /\.(?:m?js)$/u.test(name));
+  const uploaded = new Set(names);
+  assert.equal(uploaded.size, names.length, 'uploaded module names repeat');
+  const expected = new Set(Object.keys(expectedModules).map(normalize));
+  const missing = [...expected].filter((name) => !uploaded.has(name));
+  const extra = [...uploaded].filter((name) => !expected.has(name));
+  assert.deepEqual(
+    { missing: missing.slice(0, 5), extra: extra.slice(0, 5) },
+    { missing: [], extra: [] },
+    `uploaded modules differ from the emitted manifest (${uploaded.size} uploaded, ${expected.size} expected)`
+  );
+}
+
+/**
+ * The Worker module set for a cf Build Output emit: every sealed module the
+ * rules match (Wrangler `--no-bundle` parity), minus an explicit
+ * `excludedOrphans` list. The ssr Vite graph and relative-import closure are
+ * independent checks, so a graph the manifest omits (Vite RSC) or a module
+ * loaded through a computed path can never be dropped silently.
+ */
+export function discoverCfBuildOutputEsmModules(
+  bundleRoot,
+  config,
+  mainModule,
+  { excludedOrphans = [] } = {}
+) {
+  const sealed = sealedModules(bundleRoot, config, mainModule);
+  assert.ok(sealed.includes(mainModule), 'main module missing from bundle');
+  const graph = viteGraphModules(bundleRoot, mainModule);
+  const excluded = new Set(excludedOrphans.map(posixPath));
+  for (const name of excluded) {
+    assert.ok(sealed.includes(name), `excluded orphan not sealed: ${name}`);
+    assert.ok(name !== mainModule, 'main module cannot be excluded');
+    assert.ok(!graph?.[name], `excluded orphan is in the Vite graph: ${name}`);
+  }
+  const modules = {};
+  for (const name of sealed)
+    if (!excluded.has(name)) modules[name] = { type: 'esm' };
+  for (const name of Object.keys(graph ?? {}))
+    assert.ok(Object.hasOwn(modules, name), `Vite module not emitted: ${name}`);
+  if (excluded.size > 0) {
+    // A computed relative import could load an excluded file.
+    for (const name of Object.keys(modules)) {
+      const source = readFileSync(join(bundleRoot, name), 'utf8');
+      assert.ok(
+        !COMPUTED_RELATIVE_IMPORT.test(source),
+        `computed relative import in ${name} forbids excluding orphans`
+      );
+    }
+  }
   assertModuleClosure(bundleRoot, modules);
   return modules;
 }

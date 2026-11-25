@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -68,7 +68,7 @@ test('buildOutputObservability maps Wrangler head sampling fields', () => {
   );
 });
 
-test('discoverCfBuildOutputEsmModules prefers the Vite manifest module graph', () => {
+test('discoverCfBuildOutputEsmModules emits sealed modules and excludes only listed orphans', () => {
   const bundleRoot = mkdtempSync(join(tmpdir(), 'cf-build-output-vite-graph-'));
   mkdirSync(join(bundleRoot, 'assets'), { recursive: true });
   mkdirSync(join(bundleRoot, '.vite'), { recursive: true });
@@ -86,15 +86,30 @@ test('discoverCfBuildOutputEsmModules prefers the Vite manifest module graph', (
     })
   );
   writeFileSync(join(bundleRoot, 'assets', 'chunk.js'), 'export const y=1;\n');
+  const rules = { rules: [{ globs: ['**/*'] }] };
+  assert.deepEqual(
+    Object.keys(
+      discoverCfBuildOutputEsmModules(bundleRoot, rules, 'assets/index.js')
+    ),
+    ['assets/chunk.js', 'assets/index.js', 'assets/orphan.js']
+  );
   const modules = discoverCfBuildOutputEsmModules(
     bundleRoot,
-    { rules: [{ globs: ['**/*'] }] },
-    'assets/index.js'
+    rules,
+    'assets/index.js',
+    { excludedOrphans: ['assets/orphan.js'] }
   );
-  assert.deepEqual(Object.keys(modules).sort(), [
+  assert.deepEqual(Object.keys(modules), [
     'assets/chunk.js',
     'assets/index.js',
   ]);
+  assert.throws(
+    () =>
+      discoverCfBuildOutputEsmModules(bundleRoot, rules, 'assets/index.js', {
+        excludedOrphans: ['assets/chunk.js'],
+      }),
+    /excluded orphan is in the Vite graph: assets\/chunk\.js/
+  );
 });
 
 test('discoverCfBuildOutputEsmModules respects Wrangler globs without widening', () => {
@@ -187,12 +202,11 @@ function rscLayout() {
 
 test('discoverCfBuildOutputEsmModules keeps the Vite RSC graph the ssr manifest omits', () => {
   const root = rscLayout();
-  const modules = discoverCfBuildOutputEsmModules(
-    root,
-    { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] },
-    'index.mjs'
-  );
-  assert.deepEqual(Object.keys(modules).sort(), [
+  const rules = { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] };
+  const modules = discoverCfBuildOutputEsmModules(root, rules, 'index.mjs', {
+    excludedOrphans: ['assets/orphan.js'],
+  });
+  assert.deepEqual(Object.keys(modules), [
     '__vite_rsc_assets_manifest.js',
     'assets/a.mjs',
     'assets/lazy.js',
@@ -214,25 +228,82 @@ test('assertModuleClosure rejects a manifest-only set that drops the RSC graph',
   );
 });
 
-test('relative import walk never leaves the bundle root or enters dot directories', () => {
-  const root = mkdtempSync(join(tmpdir(), 'cf-build-output-escape-'));
-  mkdirSync(join(root, '.vite'), { recursive: true });
+test('excluding orphans fails when a relative import path is computed', () => {
+  const root = rscLayout();
+  writeFileSync(
+    join(root, 'rsc/bridge-api.js'),
+    'const n="route";export const h=()=>import(`./assets/${n}.js`);\n'
+  );
+  const rules = { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] };
+  // Everything sealed is emitted, so the computed import still resolves.
+  assert.ok(
+    Object.hasOwn(
+      discoverCfBuildOutputEsmModules(root, rules, 'index.mjs'),
+      'rsc/assets/route.js'
+    )
+  );
+  assert.throws(
+    () =>
+      discoverCfBuildOutputEsmModules(root, rules, 'index.mjs', {
+        excludedOrphans: ['assets/orphan.js'],
+      }),
+    /computed relative import in rsc\/bridge-api\.js forbids excluding orphans/
+  );
+});
+
+test('an import that leaves the root or enters a dot directory fails emission', () => {
+  const parent = mkdtempSync(join(tmpdir(), 'cf-build-output-escape-'));
+  const root = join(parent, 'server');
   mkdirSync(join(root, '.hidden'), { recursive: true });
+  writeFileSync(join(parent, 'outside.js'), 'export {};\n');
+  writeFileSync(join(root, '.hidden/x.js'), 'export {};\n');
+  const rules = { rules: [{ globs: ['**/*'] }] };
   writeFileSync(
     join(root, 'index.mjs'),
-    'import("../outside.js");import("./.hidden/x.js");import("./missing.js");export default {};\n'
+    'import("./missing.js");/** @import {T} from "./types.js" */export default {};\n'
   );
-  writeFileSync(join(root, '.hidden/x.js'), 'export {};\n');
+  assert.deepEqual(
+    Object.keys(discoverCfBuildOutputEsmModules(root, rules, 'index.mjs')),
+    ['index.mjs']
+  );
   writeFileSync(
-    join(root, '.vite/manifest.json'),
-    JSON.stringify({ entry: { file: 'index.mjs', isEntry: true } })
+    join(root, 'index.mjs'),
+    'import("../outside.js");export default {};\n'
   );
-  const modules = discoverCfBuildOutputEsmModules(
-    root,
-    { rules: [{ globs: ['**/*'] }] },
-    'index.mjs'
+  assert.throws(
+    () => discoverCfBuildOutputEsmModules(root, rules, 'index.mjs'),
+    /index\.mjs -> \.\.\/outside\.js/
   );
-  assert.deepEqual(Object.keys(modules), ['index.mjs']);
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import("./.hidden/x.js?v=1");export default {};\n'
+  );
+  assert.throws(
+    () => discoverCfBuildOutputEsmModules(root, rules, 'index.mjs'),
+    /index\.mjs -> \.hidden\/x\.js/
+  );
+});
+
+test('a symlinked bundle directory is refused', () => {
+  const parent = mkdtempSync(join(tmpdir(), 'cf-build-output-symlink-'));
+  const root = join(parent, 'server');
+  mkdirSync(join(parent, 'elsewhere'), { recursive: true });
+  mkdirSync(root, { recursive: true });
+  writeFileSync(join(parent, 'elsewhere/bridge-api.js'), 'export {};\n');
+  symlinkSync(join(parent, 'elsewhere'), join(root, 'rsc'));
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import("./rsc/bridge-api.js");export default {};\n'
+  );
+  assert.throws(
+    () =>
+      discoverCfBuildOutputEsmModules(
+        root,
+        { rules: [{ globs: ['**/*'] }] },
+        'index.mjs'
+      ),
+    /bundle symlink forbidden/
+  );
 });
 
 test('assertUploadedModuleSet compares a published version with the emitted manifest', () => {
@@ -241,11 +312,28 @@ test('assertUploadedModuleSet compares a published version with the emitted mani
     'rsc/bridge-api.js': { type: 'esm' },
   };
   assertUploadedModuleSet(
-    ['./index.mjs', './rsc/bridge-api.js', './_headers'],
+    ['./index.mjs', '/rsc/bridge-api.js', './_headers'],
     expected
   );
+  assertUploadedModuleSet(['index.mjs', 'rsc\\bridge-api.js'], expected);
   assert.throws(
     () => assertUploadedModuleSet(['./index.mjs'], expected),
     /uploaded modules differ from the emitted manifest \(1 uploaded, 2 expected\)/
+  );
+  assert.throws(
+    () =>
+      assertUploadedModuleSet(
+        ['./index.mjs', './rsc/bridge-api.js', './extra.js'],
+        expected
+      ),
+    /\(3 uploaded, 2 expected\)/
+  );
+  assert.throws(
+    () =>
+      assertUploadedModuleSet(
+        ['./index.mjs', 'index.mjs', './rsc/bridge-api.js'],
+        expected
+      ),
+    /uploaded module names repeat/
   );
 });

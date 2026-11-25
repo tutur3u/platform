@@ -1,40 +1,81 @@
 ---
 title: "cf Build Output module discovery"
-description: "How wave-1 cf Build Output emits choose Worker modules, and why Vite RSC graphs need import-following."
+description: "How wave-1 cf Build Output emits choose Worker modules, and the checks that stop a dropped module graph from shipping."
 ---
 
 `discoverCfBuildOutputEsmModules` (in `scripts/ci/cf-build-output-publisher.mjs`)
-starts from the `dist/server/.vite/manifest.json` graph. That manifest belongs to
-the ssr environment only. A Vite RSC Worker reaches its second environment with
+chooses the Worker modules that a wave-1 cf Build Output emit uploads.
+
+## Why it changed
+
+The emit used to walk only `dist/server/.vite/manifest.json`, which belongs to
+the ssr environment. A Vite RSC Worker reaches its second environment with
 `import.meta.viteRsc.loadModule`, which compiles to
 `` import(`./rsc/bridge-api.js`) ``. The `rsc/` graph and
-`__vite_rsc_assets_manifest.js` are absent from that manifest. A manifest-only
-emit therefore uploads a Worker that starts cleanly, then rejects that import on
-every request that reaches it. Finance `831c6aae6f` shipped 222 of 470 modules this
-way, and every route returned 500 from the outer response-policy catch.
-`wrangler --no-bundle` uploads every module that matches its rules, so it was
-unaffected.
+`__vite_rsc_assets_manifest.js` are absent from that manifest.
 
-The publisher now follows relative static and dynamic specifiers from every
-included module, including constant template literals, to files that exist. The
-walk is transitive, bounded, stays inside the bundle root and skips dot
-directories. Comments inside `import(` are allowed. Non-constant templates such
-as `` import(`./rsc/${name}.js`) `` are not followed, so they would need the
-manifest or a rules-glob emit. Unimported files stay excluded. `assertModuleClosure` fails emission
-when an included module imports an existing module that is outside the upload
-set; on the Vite path the walk already adds those, so the assertion is the
-backstop for the rules-glob path. `wave1-cf-output` logs the emitted count
-against the sealed count. `assertUploadedModuleSet` compares a published
-version's module names with the emitted manifest; no publish path calls it yet,
-because wiring it needs a names-only read of the published version that stays
-within the 1 MiB control-plane response cap. Regression coverage is in
-`scripts/ci/cf-build-output-publisher.test.mjs` (RSC layout, a manifest-only
-negative control, and the root and dot-directory bounds).
+As a result, Finance `831c6aae6f` uploaded 222 of its 470 modules through cf. The
+Worker started cleanly, but the top-level `import()` rejected, so every route
+returned 500 from the outer response-policy catch. `wrangler deploy --no-bundle`
+uploads every module that matches its rules, so it was unaffected.
 
-Two cautions apply when you audit a hosted version:
+## Emit rule
+
+The emit uploads every sealed `.js`/`.mjs` module that the Wrangler rules match
+under `dist/server`, as `--no-bundle` does. Source maps and dot directories are
+skipped, and symlinks (files or directories) are refused. Modules are sorted, so
+`worker.config.json` is byte-stable.
+
+A caller can drop unimported files only by listing them in `excludedOrphans`.
+Each listed file must be sealed, must not be the main module and must not be in
+the Vite graph. If any emitted module builds a relative `import()` path at
+runtime (`` import(`./rsc/${name}.js`) ``), excluding orphans fails, because that
+import could load an excluded file. No wave-1 caller excludes orphans today.
+
+## Independent checks
+
+These checks run before any upload in the production path:
+`wave1-cf-output.mjs` `buildInput` → `discoverCfBuildOutputEsmModules`.
+
+- **Vite graph presence.** Every module in the ssr manifest graph, following
+  `imports` and `dynamicImports`, must exist and be emitted.
+- **Relative-import closure (`assertModuleClosure`).** This check scans each
+  emitted module for relative static and dynamic specifiers. That includes
+  comments inside `import(` and constant template literals, and it ignores
+  `?query` and `#hash` suffixes. Emission fails if a specifier names an existing
+  file that is not emitted: one outside the bundle root, in a dot directory, or
+  excluded. Specifiers that name no file pass, such as JSDoc `@import` comments
+  or prose.
+- **Count.** `wave1-cf-output` logs the emitted count against the sealed count.
+
+Regression coverage is in `scripts/ci/cf-build-output-publisher.test.mjs` and
+`scripts/ci/wave1-cf-output.test.mjs`. It covers the RSC layout, a manifest-only
+negative control, computed imports, root and dot-directory escapes, a symlinked
+directory, explicit orphan exclusion, and the published-set comparison.
+
+## Published-version comparison (not yet wired)
+
+`assertUploadedModuleSet(uploadedNames, manifest)` compares a published
+version's module names with the emitted manifest. It normalizes `./`, a leading
+`/` and backslashes, and fails on missing, extra or repeated names. No publish
+path calls it yet.
+
+Cloudflare has no names-only endpoint for a version's modules.
+`GET /accounts/<account>/workers/workers/<worker>/versions/<id>` returns no
+module data, and `include=modules_metadata` is ignored. `?include=modules`
+returns every module's name and base64 bytes, which is about 17 MB for Finance.
+
+To wire the comparison without raising the 1 MiB control-plane JSON cap, read
+that response with a separate streaming reader. The reader keeps only
+`result.modules[].name` and `result.main_module`, discards `content_base64` as
+it streams, and bounds the total bytes by the measured upload size. Run it after
+`cf workers versions create` and before any traffic split.
+
+## Auditing a hosted version
 
 - `GET /workers/scripts/<name>/content/v2` ignores `?version=` and returns the
   latest upload. Do not use it to compare versions.
-- `GET /workers/workers/<name>/versions/<id>?include=modules` returns that
-  version's module names and bytes, so you can check import closure against the
-  version that actually serves traffic.
+- `GET /workers/workers/<name>/versions/<id>?include=modules` returns the module
+  names and bytes of the version that actually serves traffic. A closure walk
+  from `main_module` over those bytes shows whether any imported module is
+  missing.

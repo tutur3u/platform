@@ -195,9 +195,12 @@ test('hashed assets entry modules pass cf deploy prebuilt dry-run', async (t) =>
     headSamplingRate: 0.05,
   });
   assert.equal(worker.manifest.mainModule, 'assets/index-abc12345.js');
+  // Every sealed module ships, as Wrangler --no-bundle uploads them,
+  // including the fixture's unimported default index.js.
   assert.deepEqual(Object.keys(worker.manifest.modules).sort(), [
     'assets/chunk-xyz98765.js',
     'assets/index-abc12345.js',
+    'index.js',
   ]);
   await rehearseWave1Publication({
     appRoot,
