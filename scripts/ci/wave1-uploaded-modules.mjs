@@ -11,6 +11,8 @@ import { assertUploadedModuleSet } from './cf-build-output-publisher.mjs';
 
 export const MODULE_READ_TIMEOUT_MS = 15_000;
 const MAX_KEPT_STRING = 4096;
+// The versions response nests a few levels; deeper input is not a listing.
+const MAX_DEPTH = 32;
 const MAX_LITERAL = 64;
 
 /**
@@ -50,6 +52,9 @@ export function createModuleNameScanner() {
     mainModule: undefined,
     names: [],
     errors: [],
+    // Whether result.modules was an array: absence is a failed read, not an
+    // empty module set.
+    modulesSeen: false,
   };
   let state = 'value';
   let isKey = false;
@@ -58,6 +63,19 @@ export function createModuleNameScanner() {
   let unicode = '';
   let literal = '';
   let done = false;
+  // Every kept character goes through here, escapes included, so the cap
+  // holds for plain, escaped and \u-encoded text alike.
+  const append = (text) => {
+    assert.ok(
+      buffer.length + text.length <= MAX_KEPT_STRING,
+      'Module listing field too long'
+    );
+    buffer += text;
+  };
+  const push = (frame) => {
+    assert.ok(stack.length < MAX_DEPTH, 'Module listing nests too deeply');
+    stack.push(frame);
+  };
 
   const wanted = () => {
     const path = stack.map((frame) =>
@@ -117,10 +135,17 @@ export function createModuleNameScanner() {
           top.index += 1;
         }
         if (ch === '{') {
-          stack.push({ type: 'object', key: null });
+          push({ type: 'object', key: null });
           state = 'key';
         } else if (ch === '[') {
-          stack.push({ type: 'array', index: -1 });
+          if (
+            stack.length === 2 &&
+            stack[0].key === 'result' &&
+            stack[1].type === 'object' &&
+            stack[1].key === 'modules'
+          )
+            out.modulesSeen = true;
+          push({ type: 'array', index: -1 });
           state = 'value';
         } else if (ch === '"') {
           isKey = false;
@@ -162,13 +187,7 @@ export function createModuleNameScanner() {
             if (target !== null && target !== 'success') keep(buffer);
             afterValue();
           }
-        } else if (keeping) {
-          assert.ok(
-            buffer.length < MAX_KEPT_STRING,
-            'Module listing field too long'
-          );
-          buffer += ch;
-        }
+        } else if (keeping) append(ch);
         return;
       }
       case 'escape':
@@ -178,7 +197,7 @@ export function createModuleNameScanner() {
           return;
         }
         assert.ok(Object.hasOwn(escapes, ch), 'Malformed module listing');
-        if (isKey || target !== null) buffer += escapes[ch];
+        if (isKey || target !== null) append(escapes[ch]);
         state = 'string';
         return;
       case 'unicode':
@@ -186,7 +205,7 @@ export function createModuleNameScanner() {
         unicode += ch;
         if (unicode.length === 4) {
           if (isKey || target !== null)
-            buffer += String.fromCharCode(Number.parseInt(unicode, 16));
+            append(String.fromCharCode(Number.parseInt(unicode, 16)));
           state = 'string';
         }
         return;
@@ -281,6 +300,7 @@ export async function readUploadedModuleNames({
     true,
     `Uploaded module listing reported an API error${listing.errors.length ? `: ${listing.errors.join('; ')}` : ''}`
   );
+  assert.ok(listing.modulesSeen, 'Uploaded module listing has no modules');
   return { ...listing, bytes };
 }
 

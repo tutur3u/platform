@@ -286,6 +286,7 @@ for (const [state, active] of [
   ['switched', switched],
   ['staged', stage],
   ['rolling-back', switched],
+  ['uploaded-version', stage],
 ]) {
   test(`recovery restores the rollback after an interrupted ${state} upload`, async () => {
     const r = recovery(state, active);
@@ -387,4 +388,12 @@ test('the pre-switch reserve includes the switch worst case', async () => {
   const enough = attempt(5_000 + SWITCH_WORST_CASE_MS);
   assert.equal((await enough.done).state, 'switched');
   assert.deepEqual(enough.plane.state.writes, [stage, switched]);
+});
+
+test('recovery after an interrupted compare writes nothing while serving is untouched', async () => {
+  const r = recovery('uploaded-version', serving);
+  const result = await r.run();
+  assert.equal(result.state, 'rolled-back');
+  assert.equal(result.rollbackResult.result, 'already');
+  assert.deepEqual(r.plane.state.writes, []);
 });

@@ -46,7 +46,10 @@ every Cloudflare write.
    bytes bounded by the measured upload) and compares them with the emitted
    manifest. A different main module or a missing, extra or repeated module,
    or a failed read, records `module-mismatch` or `module-compare-failed`
-   with names only and stops before staging, so traffic never moves. See
+   with names only and stops before staging, so traffic never moves. The
+   uploaded version stays in the Worker's history unused and counts toward
+   the fewer-than-100 versions the preflight's bounded history read accepts;
+   delete unused versions before that bound is reached. See
    [cf Build Output module discovery](/build/development-tools/cf-build-output-module-discovery).
 3. **Stage at 0%.** A gradual deployment keeps the serving version at 100% and
    adds the new version at 0%.
@@ -97,8 +100,11 @@ switching only to stop the gate at once and roll back.
 If the step is still killed, cancelled or crashes, the next step (**Restore
 the rollback deployment after an interrupted upload**, run on `failure() ||
 cancelled()` with only the deploy credential) restores the recorded rollback
-deployment when the receipt is `staged`, `switched` or `rolling-back`. It
-confirms the restore by reading the active deployment back but runs no public
+deployment when the receipt is `uploaded-version`, `staged`, `switched` or
+`rolling-back`. `uploaded-version` covers an interruption during the module
+compare or the stage write: when the serving deployment is still active the
+guard writes nothing and records `rollbackResult.result: already`, so later
+releases are not blocked. It confirms the restore by reading the active deployment back but runs no public
 re-probe, and records `rollbackResult.by: recovery` and
 `rollbackHealth: { probed: false, by: 'recovery' }`; the health gate's own
 rollback re-probes.

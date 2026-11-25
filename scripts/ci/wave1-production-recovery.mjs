@@ -12,7 +12,10 @@ import { ConcurrentDeploymentError } from './wave1-production-deployments.mjs';
 import { restoreRollback } from './wave1-production-health.mjs';
 
 // Receipt states in which this attempt may have left its own deployment.
+// `uploaded-version` covers an interruption during the module compare or the
+// stage write: the guard writes nothing when serving is still active.
 export const RECOVERABLE_STATES = new Set([
+  'uploaded-version',
   'staged',
   'switched',
   'rolling-back',

@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
+import { emittedManifest } from './wave1-cf-publisher.mjs';
 import {
   compareUploadedModules,
   createModuleNameScanner,
@@ -215,4 +219,96 @@ test('the read sends the deploy credential with a bounded timeout', async () => 
   assert.equal(seen.headers.Authorization, 'Bearer deploy');
   assert.equal(seen.redirect, 'error');
   assert.ok(seen.signal);
+});
+
+// JSON text written by hand, so the scanner decodes real escapes: é and
+// a 😀 surrogate pair, next to raw multibyte UTF-8.
+const unicodeBody = [
+  '{"success":true,"result":{"main_module":"index.js","modules":[',
+  '{"name":"index.js","content_base64":"aW5kZXg="},',
+  '{"name":"caf\\u00e9/\\ud83d\\ude00.js","content_base64":"eA=="},',
+  '{"name":"café/😀-raw.js","content_base64":"eQ=="}',
+  ']}}',
+].join('');
+
+test('the streamed reader decodes escapes, surrogate pairs and split UTF-8', async () => {
+  for (const chunk of [1, 2, 3]) {
+    const listing = await readUploadedModuleNames({
+      url: 'https://api.example/v?include=modules',
+      token: 'deploy',
+      maxBytes: 1_000_000,
+      fetcher: streamed(unicodeBody, { chunk }),
+    });
+    assert.deepEqual(listing.names, [
+      'index.js',
+      'café/😀.js',
+      'café/😀-raw.js',
+    ]);
+  }
+});
+
+test('a non-ASCII module name compares through the full path', async () => {
+  const c = compareUploadedModules;
+  const record = {
+    state: 'uploaded-version',
+    versionId: '22222222-2222-2222-2222-222222222222',
+    measurements,
+  };
+  await c({
+    record,
+    save: () => {},
+    manifest: {
+      mainModule: 'index.js',
+      modules: {
+        'index.js': {},
+        'café/😀.js': {},
+        'café/😀-raw.js': {},
+      },
+    },
+    accountId: 'a'.repeat(32),
+    worker: 'w',
+    token: 'deploy',
+    fetcher: streamed(unicodeBody, { chunk: 1 }),
+  });
+  assert.equal(record.moduleCompare.state, 'match');
+});
+
+test('escaped characters count toward the kept-field cap', () => {
+  const scanner = createModuleNameScanner();
+  assert.throws(
+    () =>
+      scanner.feed(
+        `{"result":{"modules":[{"name":"${'\\u0041'.repeat(5000)}"}]}}`
+      ),
+    /field too long/
+  );
+  const plain = createModuleNameScanner();
+  assert.throws(
+    () => plain.feed(`{"result":{"main_module":"${'\\n'.repeat(5000)}"}}`),
+    /field too long/
+  );
+});
+
+test('a listing that nests too deeply fails', () => {
+  const scanner = createModuleNameScanner();
+  assert.throws(() => scanner.feed('['.repeat(40)), /nests too deeply/);
+});
+
+test('a listing without a modules array fails the read, not the compare', async () => {
+  const c = compare(
+    streamed(
+      JSON.stringify({ success: true, result: { main_module: 'index.js' } })
+    )
+  );
+  await assert.rejects(c.run(), /has no modules/);
+  assert.equal(c.record.state, 'module-compare-failed');
+});
+
+test('a missing emitted worker config fails outside the test fixture', () => {
+  const root = mkdtempSync(join(tmpdir(), 'wave1-emit-'));
+  assert.throws(() => emittedManifest(root, {}), /worker config is missing/);
+  assert.deepEqual(
+    emittedManifest(root, { WAVE1_PUBLICATION_TEST: '1' }).modules,
+    { 'index.js': { type: 'esm' } }
+  );
 });

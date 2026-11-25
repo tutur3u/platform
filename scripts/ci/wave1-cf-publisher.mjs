@@ -195,19 +195,25 @@ export async function publishWave1Artifact({
   // The emitted manifest names the modules the upload must contain; the
   // production publisher compares it with the uploaded version.
   return withManifest
-    ? { versionId, manifest: emittedManifest(rehearsal.buildRoot) }
+    ? { versionId, manifest: emittedManifest(rehearsal.buildRoot, env) }
     : versionId;
 }
 
 /** The module manifest the cf Build Output emit wrote for the upload. */
-export function emittedManifest(buildRoot) {
+export function emittedManifest(buildRoot, env = process.env) {
   const path = join(
     buildRoot,
     BUILD_OUTPUT_PREFIX,
     'workers/default/worker.config.json'
   );
   if (!existsSync(path)) {
-    // The fixture emit writes a single index.js module and no config.
+    // Only the publication test fixture emits a single index.js and no
+    // config; a real emit without one must not pass as a one-module Worker.
+    assert.equal(
+      env.WAVE1_PUBLICATION_TEST,
+      '1',
+      'Emitted worker config is missing'
+    );
     return { mainModule: 'index.js', modules: { 'index.js': { type: 'esm' } } };
   }
   const { manifest } = JSON.parse(readFileSync(path, 'utf8'));
