@@ -72,6 +72,9 @@ time.
   skips or fails, stop and report the blocker rather than pushing manually.
 - Do not commit secrets, API keys, tokens, credentials, or raw sensitive values.
   Reference environment variables by name only.
+- Do not open issues on the public `tutur3u/platform` GitHub repository. File
+  internal work, bugs and follow-ups with `ttr tasks create` in the fleet backlog
+  (Tuturuuu workspace, board `Platform backlog (from GitHub)`, key `GH`).
 - Keep conversation history out of maintainer-facing text. Code comments, docs,
   commit messages and PR titles and descriptions describe the code as it is and
   why. Never record the conversation, prompt, review rounds or iteration history

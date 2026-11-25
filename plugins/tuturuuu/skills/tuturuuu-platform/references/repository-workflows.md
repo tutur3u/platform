@@ -126,9 +126,10 @@ generated type files.
   `bun ttr ...` delegates to the trusted global `~/.bun/bin/ttr`. For source development run `TUTURUUU_CONFIG=<private-config> TTR_RESOURCES_HOME=<disposable-resource-home> bun packages/sdk/src/cli/index.ts ...` explicitly from the repo root.
 - Discover live IDs with `ttr whoami`, `ttr workspaces`, `ttr boards`,
   `ttr lists`, `ttr labels`, and `ttr tasks --json --no-update-check`.
-- For task capture, use `ttr tasks create/update/done/close` as the default
-  source of truth instead of local TODO files or GitHub issues unless the user
-  explicitly asks for those.
+- For task capture, use `ttr tasks create/update/done/close` as the source of
+  truth instead of local TODO files. File internal work, bugs and follow-ups in
+  the fleet backlog (Tuturuuu workspace, board `Platform backlog (from GitHub)`,
+  key `GH`); never open issues on the public `tutur3u/platform` repository.
 - For machine-readable commands, keep stdout JSON clean and use
   `--no-update-check` where appropriate.
 
