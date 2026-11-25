@@ -1431,10 +1431,10 @@ export const config = {
      * - sw.js (service worker)
      * - monitoring (analytics)
      * - .well-known (domain verification files)
-     * Excludes static assets: svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf,
-     * gif and webp.
+     * Asset extensions (svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf, gif,
+     * webp) skip it only at the root, so protected routes can never bypass
+     * the proxy through a suffix.
      */
-
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
+    '/((?!(?:_next/static|_next/image|serwist|monitoring|\\.well-known)(?:/|$)|(?:favicon\\.ico|robots\\.txt|sitemap\\.xml|site\\.webmanifest|manifest\\.webmanifest|sw\\.js(?:\\.map)?)$|[^/]+\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',
   ],
 };
