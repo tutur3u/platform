@@ -60,12 +60,13 @@ begin
 end;
 $path_check$;
 
+-- SET includes roles the migration role can assume without inheriting privileges.
 -- Managed or non-ownable functions are inventory, not application DDL targets.
 select json_build_object('excluded_definer', p.oid::regprocedure::text,
   'owner', pg_get_userbyid(p.proowner), 'proconfig', p.proconfig)
 from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid=p.pronamespace
 where n.nspname=any(string_to_array(current_setting('security.exposed_schemas'), ','))
-  and p.prosecdef and p.prokind='f' and (not pg_has_role(current_user,p.proowner,'USAGE')
+  and p.prosecdef and p.prokind='f' and (not pg_has_role(current_user,p.proowner,'SET')
     or n.nspname in ('storage','graphql_public')
     or exists(select 1 from pg_catalog.pg_depend d
       where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e'));
@@ -78,7 +79,7 @@ create temp table security_definer_owner_allowlist(
 select is((select count(*)::integer
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname in ('public','private') and p.prosecdef and p.prokind='f'
-    and not pg_has_role(current_user,p.proowner,'USAGE')
+    and not pg_has_role(current_user,p.proowner,'SET')
     and not exists(select 1 from pg_depend d where d.classid='pg_proc'::regclass
       and d.objid=p.oid and d.deptype='e')
     and not exists(select 1 from security_definer_owner_allowlist a
@@ -92,7 +93,7 @@ select is((
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where n.nspname = any(string_to_array(current_setting('security.exposed_schemas'), ','))
     and p.prosecdef and p.prokind='f'
-    and pg_has_role(current_user, p.proowner, 'USAGE')
+    and pg_has_role(current_user, p.proowner, 'SET')
     and n.nspname not in ('storage', 'graphql_public')
     and not exists (select 1 from pg_catalog.pg_depend d
       where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')
@@ -142,7 +143,7 @@ select is((
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where n.nspname = any(string_to_array(current_setting('security.exposed_schemas'), ','))
     and p.prosecdef and p.prokind='f'
-    and pg_has_role(current_user, p.proowner, 'USAGE')
+    and pg_has_role(current_user, p.proowner, 'SET')
     and n.nspname not in ('storage', 'graphql_public')
     and not exists (select 1 from pg_catalog.pg_depend d
       where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')

@@ -2,14 +2,12 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 SELECT no_plan();
-
 CREATE TEMP TABLE anon_definer_allowlist (signature text PRIMARY KEY);
 INSERT INTO anon_definer_allowlist VALUES
   ('public.is_org_member(uuid,uuid)'),
   ('public.has_workspace_permission(uuid,uuid,text)'),
   ('public.check_request()'),
   ('public.validate_cross_app_token_with_session(text,text)');
-
 CREATE FUNCTION pg_temp.anon_definer_violations() RETURNS text[]
 LANGUAGE plpgsql AS $$
 DECLARE fn record; failures text[] := '{}';
@@ -39,7 +37,6 @@ SELECT ok(to_regprocedure(signature) IS NOT NULL
   AND has_function_privilege('anon', to_regprocedure(signature), 'EXECUTE'),
   'anon retains allowlisted ' || signature)
 FROM anon_definer_allowlist ORDER BY signature;
-
 SELECT ok(count(*) > 0 AND bool_and(
   NOT has_function_privilege('anon', p.oid, 'EXECUTE')
   AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
@@ -54,7 +51,6 @@ SELECT is((SELECT count(DISTINCT p.proname)::integer
   WHERE n.nspname = 'public'
     AND p.proname IN ('record_email_bounce', 'record_email_complaint')), 2,
   'both provider-ingestion functions exist');
-
 SET LOCAL ROLE anon;
 SELECT throws_ok('SELECT public.get_workspace_overview()', '42501',
   'permission denied for function get_workspace_overview', 'anon cannot call workspace overview');
@@ -70,7 +66,6 @@ SELECT lives_ok('SELECT public.check_account_request()',
   'signed-out PostgREST pre-request hook still runs');
 RESET ROLE;
 SELECT set_config('request.jwt.claims', '{}', true);
-
 CREATE FUNCTION public.sb19_default_probe() RETURNS integer
 LANGUAGE sql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$SELECT 1$$;
 SELECT ok(NOT has_function_privilege('anon', 'public.sb19_default_probe()', 'EXECUTE'),
@@ -625,7 +620,13 @@ INSERT INTO definer_added_later VALUES
   ('public.remove_workspace_member_guarded_in_mode(uuid,uuid,uuid,text,boolean)'),
   ('public.remove_workspace_role_member_guarded_in_mode(uuid,uuid,uuid,uuid,text,boolean)'),
   ('public.delete_workspace_role_guarded(uuid,uuid,uuid,text)'),
-  ('public.reduce_external_app_workspace_admin_guarded(uuid,uuid,boolean,uuid)');
+  ('public.reduce_external_app_workspace_admin_guarded(uuid,uuid,boolean,uuid)'),
+  -- Workspace Secrets credential and config RPCs are service-role only.
+  ('public.put_workspace_secret_credential(uuid,uuid,text,bigint,uuid,smallint,bytea,bytea,text)'),
+  ('public.get_workspace_secret_credential(uuid,text)'),
+  ('public.workspace_secret_credential_status(uuid,uuid)'),
+  ('public.put_workspace_secret_config(uuid,text,text)'),
+  ('public.list_workspace_secret_config(uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
   WHERE to_regprocedure(l.signature) IS NULL
     OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')
@@ -674,7 +675,6 @@ SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid 
 SELECT ok(has_schema_privilege('supabase_auth_admin', 'public', 'USAGE')
   AND has_function_privilege('supabase_auth_admin', 'public.hook_mfa_verification_attempt(jsonb)', 'EXECUTE'),
   'Auth MFA hook retains schema USAGE and EXECUTE for supabase_auth_admin');
-
 CREATE TABLE public.sb19_policy_probe (ws_id uuid);
 INSERT INTO public.sb19_policy_probe VALUES ('00000000-0000-0000-0000-000000000000');
 ALTER TABLE public.sb19_policy_probe ENABLE ROW LEVEL SECURITY;

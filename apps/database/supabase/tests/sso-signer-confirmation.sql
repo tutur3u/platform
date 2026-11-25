@@ -379,6 +379,9 @@ SELECT is((SELECT count(*)::integer FROM pg_shdepend d WHERE d.refclassid = 'pg_
 SELECT set_config('sso_test.transaction', (SELECT id::text FROM happy), true);
 SELECT set_config('sso_test.client', (SELECT client::text FROM sf), true);
 UPDATE private.sso_transactions SET consumed_at = clock_timestamp() WHERE id = (SELECT id FROM happy);
+-- Check the deployed grants above before enabling role switching for this
+-- transaction. The harness can administer the role but cannot assume it.
+GRANT sso_signer TO SESSION_USER WITH INHERIT FALSE, SET TRUE;
 SET LOCAL ROLE sso_signer;
 SELECT set_config('sso_test.as_signer', coalesce(public.sso_signer_confirm_transaction(
   current_setting('sso_test.transaction')::uuid, current_setting('sso_test.client')::uuid, 'key-active')->>'kid', 'null'), true);
