@@ -223,8 +223,7 @@ extension _ShellPageLayout on _ShellPageState {
           .toList(),
       selectedKey: selectedKey,
       onSelected: navContent.onSelected,
-      onProfileSelected: () =>
-          unawaited(_onItemTapped(Routes.profileRoot, context)),
+      onProfileSelected: () => _onItemTapped(Routes.profileRoot, context),
       body: _buildBodyWithFloatingNav(
         body: globalBody,
         header: immersive
@@ -286,7 +285,7 @@ extension _ShellPageLayout on _ShellPageState {
       if (mini) {
         unawaited(_onMiniAppItemTapped(key, context, activeModule, items));
       } else {
-        unawaited(_onItemTapped(_routeForRootKey(key), context));
+        _onItemTapped(_routeForRootKey(key), context);
       }
     }
 
