@@ -197,6 +197,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     if (!mounted) return;
     try {
       await Navigator.of(context).push<void>(route);
+      if (route == _readerRoute && route is TransitionRoute<void>) {
+        await route.completed;
+      }
     } finally {
       if (mounted) {
         setState(() => _childRouteOpen = false);
