@@ -1052,7 +1052,9 @@ cannot be recalled. Transcription mutations remain host-only.
   stage's bottom edge, clear of a bottom-left tile's name and identity strip
   and inside the stage, so it never reaches the control bar. A tile's
   resume-audio action (shown when the browser blocks autoplay) sits at the
-  tile's centre, so the chip never covers it. Anyone can shrink the card to
+  tile's centre, so the chip never covers it; it stays inside the tile, and
+  on a tile narrower than 12rem it shows only its icon, with the label kept
+  as its accessible name. Anyone can shrink the card to
   the chip for themselves.
 - Default: on in every `MEET_UX_V2` meeting, for every participant, with
   auto-hide off. A room that has never stored the setting shows it.

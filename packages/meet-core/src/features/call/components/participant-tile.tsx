@@ -1,5 +1,5 @@
 'use client';
-import { Hand, MicOff, MonitorUp } from '@tuturuuu/icons';
+import { Hand, MicOff, MonitorUp, Volume2 } from '@tuturuuu/icons';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -295,13 +295,18 @@ function ParticipantTileImpl({
       )}
       {playbackBlocked && !isSelf && !condensed && (
         // Centred, so no corner overlay (such as the stage's join QR chip,
-        // which sits at the bottom-left) can cover it.
+        // which sits at the bottom-left) can cover it. It stays inside the
+        // tile; on a narrow tile it is an icon whose name is the label.
         <Button
+          data-testid="tile-resume-audio"
           variant="secondary"
-          className="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+          className="absolute top-1/2 left-1/2 z-20 max-w-[calc(100%-1rem)] -translate-x-1/2 -translate-y-1/2 @max-[12rem]:size-9 @max-[12rem]:px-0"
           onClick={resumePlayback}
         >
-          {resumePlaybackLabel}
+          <Volume2 aria-hidden="true" className="size-4 shrink-0" />
+          <span className="min-w-0 truncate @max-[12rem]:sr-only">
+            {resumePlaybackLabel}
+          </span>
         </Button>
       )}
       {handRaised && kind === 'camera' && (

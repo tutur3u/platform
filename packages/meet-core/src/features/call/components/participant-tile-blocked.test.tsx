@@ -121,3 +121,32 @@ it('centres the resume-audio action clear of the join QR chip', () => {
   for (const anchor of STAGE_JOIN_QR_ANCHOR.split(/\s+/))
     expect(position).not.toContain(anchor);
 });
+
+it('keeps the resume-audio name when a narrow tile shows only its icon', () => {
+  const track = {
+    kind: 'audio',
+    addEventListener() {},
+    removeEventListener() {},
+    stop() {},
+  };
+  const view = render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantTile
+        participant={participant}
+        resumePlaybackLabel="Play meeting audio"
+        stream={new FakeStream([track]) as unknown as MediaStream}
+      />
+    </NextIntlClientProvider>
+  );
+  const resume = view.getByRole('button', { name: 'Play meeting audio' });
+  // It never grows past the tile, and the label truncates rather than clips.
+  expect(resume.className).toContain('max-w-[calc(100%-1rem)]');
+  const label = view.getByText('Play meeting audio');
+  expect(label.className).toContain('truncate');
+  // Below a 12rem tile the label is read but not shown: icon only.
+  expect(label.className).toContain('@max-[12rem]:sr-only');
+  expect(resume.className).toContain('@max-[12rem]:size-9');
+  expect(resume.querySelector('svg')?.getAttribute('aria-hidden')).toBe(
+    'true'
+  );
+});
