@@ -548,17 +548,32 @@ test('refuses guest elements whose known fields have the wrong type', async () =
       type: 'elements',
       changes: [
         { type: 'insert', element: { ...full('groups'), groupIds: {} } },
-        { type: 'insert', element: { ...full('points'), points: 'x' } },
-        { type: 'insert', element: { ...full('font'), fontFamily: {} } },
         { type: 'insert', element: { ...full('round'), roundness: 1 } },
-        { type: 'insert', element: full('fine') },
+        // Wrong-typed fields of the element's own type refuse it.
+        {
+          type: 'insert',
+          element: guestElement('line', { id: 'points', points: 'x' }),
+        },
+        {
+          type: 'insert',
+          element: guestElement('text', { id: 'font', fontFamily: {} }),
+        },
+        // A field another type uses is stripped: the element's own type never
+        // reads it, and it reaches neither the room nor other people.
+        {
+          type: 'insert',
+          element: { ...full('fine'), points: 'x', fontFamily: {} },
+        },
       ],
     })
   );
+  const relayed = peer.sent.at(-1).changes.map((c: any) => c.element);
   assert.deepEqual(
-    peer.sent.at(-1).changes.map((c: any) => c.element.id),
+    relayed.map((element: any) => element.id),
     ['fine']
   );
+  assert.equal('points' in relayed[0], false);
+  assert.equal('fontFamily' in relayed[0], false);
   assert.deepEqual(guest.sent.at(-1), {
     type: 'rejected',
     reason: 'unsupported',

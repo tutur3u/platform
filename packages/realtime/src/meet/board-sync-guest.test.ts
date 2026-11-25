@@ -13,7 +13,6 @@ import {
   sanitizeGuestChanges,
   sanitizeGuestElement,
 } from './board-sync-guest';
-import type { BoardElement } from './board-sync-schema';
 
 describe('guest board links', () => {
   it('keeps http(s) and same-site links only', () => {
