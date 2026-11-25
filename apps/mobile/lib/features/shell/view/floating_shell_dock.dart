@@ -197,6 +197,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     return position.hasPixels && position.pixels > position.minScrollExtent;
   }
 
+  /// The latest report received during layout, measured after the frame.
+  (ScrollMetrics, int, BuildContext?)? _deferredReport;
+
   /// Layout and scroll reports of the visible page drive the separator. A
   /// route opened at rest reports only its first layout, which clears the
   /// previous page's separator.
@@ -206,6 +209,26 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     BuildContext? scrollContext,
   ) {
     if (depth != 0 || metrics.axis != Axis.vertical) return;
+    // Scroll reports can arrive mid-layout (a ballistic start when content
+    // size changes), when render boxes cannot be measured. Measure the latest
+    // report once the frame has laid out.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      final scheduled = _deferredReport != null;
+      _deferredReport = (metrics, depth, scrollContext);
+      if (scheduled) return;
+      final location = widget.location;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final report = _deferredReport;
+        _deferredReport = null;
+        if (report == null || !mounted || widget.location != location) return;
+        final (latest, latestDepth, latestContext) = report;
+        if (latestContext?.mounted ?? true) {
+          _trackScrolledUnder(latest, latestDepth, latestContext);
+        }
+      });
+      return;
+    }
     double? edge;
     if (scrollContext != null) {
       // Offstage root tabs and covered routes keep reporting layout changes.
@@ -218,20 +241,6 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     }
     final scrolled = metrics.pixels > metrics.minScrollExtent;
     if (scrolled != _scrolledUnder || edge != _separatorEdge) {
-      // List content can shrink during layout when a refresh changes state.
-      // Defer the separator update until the scroll viewport has settled.
-      if (SchedulerBinding.instance.schedulerPhase ==
-          SchedulerPhase.persistentCallbacks) {
-        final location = widget.location;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted &&
-              widget.location == location &&
-              (scrollContext?.mounted ?? true)) {
-            _trackScrolledUnder(metrics, depth, scrollContext);
-          }
-        });
-        return;
-      }
       setState(() {
         _scrolledUnder = scrolled;
         _separatorEdge = edge;
