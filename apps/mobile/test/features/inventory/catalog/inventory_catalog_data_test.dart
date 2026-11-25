@@ -92,6 +92,29 @@ void main() {
     });
   });
 
+  test('single-product reads take names from the parallel stock list', () {
+    final product = InventoryProduct.fromJson(const {
+      'id': 'p',
+      'inventory': [
+        {'unit_id': 'u', 'warehouse_id': 'w', 'amount': 3, 'price': 45000},
+        {
+          'unit_id': 'u2',
+          'warehouse_id': 'w2',
+          'amount': null,
+          'unit_name': 'Kept',
+        },
+      ],
+      'stock': [
+        {'unit': 'Pack', 'warehouse': 'QA Kiosk'},
+        {'unit': 'Ignored', 'warehouse': 'Van'},
+      ],
+    });
+    expect(product.inventory.first.unitName, 'Pack');
+    expect(product.inventory.first.warehouseName, 'QA Kiosk');
+    expect(product.inventory.last.unitName, 'Kept');
+    expect(product.inventory.last.warehouseName, 'Van');
+  });
+
   test('stock history parses movements and paging', () {
     final page = InventoryStockHistoryPage.fromJson(const {
       'data': [

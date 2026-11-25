@@ -45,11 +45,42 @@ class InventoryProduct extends Equatable {
         wsId: json['ws_id'] as String? ?? '',
         createdAt: _asDateTime(json['created_at']),
         archived: json['archived'] as bool? ?? false,
-        inventory: (json['inventory'] as List<dynamic>? ?? const <dynamic>[])
-            .whereType<Map<String, dynamic>>()
-            .map(InventoryStockEntry.fromJson)
-            .toList(growable: false),
+        inventory: _inventoryWithNames(json),
       );
+
+  /// The single-product endpoint lists names in a parallel `stock` array
+  /// (same order as `inventory`) instead of `unit_name`/`warehouse_name`.
+  static List<InventoryStockEntry> _inventoryWithNames(
+    Map<String, dynamic> json,
+  ) {
+    final rows = (json['inventory'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList(growable: false);
+    final stock = json['stock'] is List<dynamic>
+        ? (json['stock'] as List<dynamic>)
+        : const <dynamic>[];
+    final named = stock.length == rows.length;
+    return [
+      for (var index = 0; index < rows.length; index++)
+        InventoryStockEntry.fromJson(
+          _withNames(rows[index], named ? stock[index] : null),
+        ),
+    ];
+  }
+
+  static Map<String, dynamic> _withNames(
+    Map<String, dynamic> row,
+    Object? names,
+  ) {
+    if (names is! Map<String, dynamic>) return row;
+    return {
+      ...row,
+      if (row['unit_name'] == null && names['unit'] is String)
+        'unit_name': names['unit'],
+      if (row['warehouse_name'] == null && names['warehouse'] is String)
+        'warehouse_name': names['warehouse'],
+    };
+  }
 
   final String id;
   final String? name;
