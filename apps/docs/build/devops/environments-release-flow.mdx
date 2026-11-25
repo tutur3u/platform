@@ -39,6 +39,25 @@ if that boundary is missing, normalization fails instead of rewriting history.
 The generated release commit is amended using the existing exact-SHA lease.
 No package version, dependency resolution or published changelog is rewritten.
 
+## Direct Version Commits
+
+The Release Please pull-request job is off, so package versions, changelogs and
+`.release-please-manifest.json` change through a reviewed direct commit. Every
+workspace's version is also recorded in `bun.lock`, and the TypeScript Type
+Check lockfile gate (`bun install --lockfile-only --ignore-scripts`, then a
+clean `git status -- bun.lock`) fails every later main head when the two
+disagree. In the same commit as any `package.json` version change:
+
+1. Run `bun install --lockfile-only --ignore-scripts` with the pinned Bun
+   (`packageManager` in the root `package.json`) on a build-allowed host.
+2. Commit the regenerated `bun.lock` with the version, manifest and changelog
+   changes, and nothing else from the install.
+3. Regenerate `apps/docs/reference/repository/versions.mdx` with
+   `node scripts/generate-docs-inventory.js` when the manifest changes.
+
+The SDK publishes from `release-sdk-package.yaml` when that commit reaches
+`production`.
+
 ## Branch-to-Environment Map
 
 | Branch or event                     | What deploys                                                                                       | Follow-up automation                                                                                                                 |
