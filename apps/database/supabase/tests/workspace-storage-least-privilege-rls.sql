@@ -1,14 +1,16 @@
--- Contract for 20261026170000_least_privilege_workspace_storage_rls.sql and
--- 20261026192000_topic_announcements_private_storage_root.sql:
+-- Contract for 20261026170000_least_privilege_workspace_storage_rls.sql,
+-- 20261026192000_topic_announcements_private_storage_root.sql and
+-- 20261125085300_workspace_storage_service_roots.sql:
 -- every root of the `workspaces` bucket (including the Drive private upload
--- census roots and the spaced `AI Agent Imports` root) x {non-member, member, view_drive,
+-- census roots, the spaced `AI Agent Imports` root, CMS media, project update
+-- attachments and template backgrounds) x {non-member, member, view_drive,
 -- manage_drive, chat owner/uploader, service_role} x {select, insert,
 -- update, delete}. Each probe runs in a subtransaction that is always rolled
 -- back, so probes never affect each other.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(515);
+select plan(690);
 
 -- Actors: creator (seed only), member, viewer, manager, owner, non-member.
 insert into auth.users (id) values
@@ -23,6 +25,8 @@ select id from auth.users where id::text like '5707a6e0-0000-4000-8000-000000009
 on conflict do nothing;
 insert into public.workspaces (id, name, personal, creator_id)
 values ('5707a6e0-0000-4000-8000-000000009711', 'Storage RLS test', false,
+  '5707a6e0-0000-4000-8000-000000009701'),
+  ('5707a6e0-0000-4000-8000-000000009712', 'Storage RLS foreign', false,
   '5707a6e0-0000-4000-8000-000000009701');
 insert into public.workspace_members (ws_id, user_id, type) values
   ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009701', 'MEMBER'),
@@ -47,6 +51,33 @@ insert into public.workspace_role_members (role_id, user_id) values
 insert into public.ai_chats (id, creator_id) values
   ('5707a6e0-0000-4000-8000-000000009721', '5707a6e0-0000-4000-8000-000000009705'),
   ('5707a6e0-0000-4000-8000-000000009722', '5707a6e0-0000-4000-8000-000000009702');
+-- Template backgrounds are readable only through a template the reader can
+-- read; the private one belongs to the owner (9705). The foreign workspace's
+-- template must not unlock a path in this workspace.
+insert into public.board_templates (ws_id, created_by, name, visibility, content, background_path) values
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009705', 'Public', 'public', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/public.png'),
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009705', 'Workspace', 'workspace', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/workspace.png'),
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009705', 'Private', 'private', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/private.png'),
+  ('5707a6e0-0000-4000-8000-000000009712', '5707a6e0-0000-4000-8000-000000009701', 'Foreign', 'public', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/foreign.png'),
+  -- Templates whose creator was deleted: public stays readable, private does not.
+  ('5707a6e0-0000-4000-8000-000000009711', null, 'Orphan public', 'public', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/orphan-public.png'),
+  ('5707a6e0-0000-4000-8000-000000009711', null, 'Orphan private', 'private', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/orphan-private.png'),
+  -- A member's own templates pointing outside template-backgrounds grant nothing.
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009702', 'Drive pointer', 'private', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf'),
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009702', 'CMS pointer', 'public', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png'),
+  -- The Drive viewer (9703) owns pointers too, so its Drive rights are visible.
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009703', 'Viewer Drive pointer', 'private', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf'),
+  ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009703', 'Viewer CMS pointer', 'public', '{}',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png');
 
 create temp table storage_rls_objects (key text primary key, name text not null)
 on commit drop;
@@ -68,6 +99,13 @@ insert into storage_rls_objects values
   ('recordings', '5707a6e0-0000-4000-8000-000000009711/recordings/m/s/r.webm'),
   ('project_updates', '5707a6e0-0000-4000-8000-000000009711/project-updates/u/p.png'),
   ('template_bg', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/t.png'),
+  ('template_bg_public', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/public.png'),
+  ('template_bg_workspace', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/workspace.png'),
+  ('template_bg_private', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/private.png'),
+  ('template_bg_orphan_public', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/orphan-public.png'),
+  ('template_bg_orphan_private', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/orphan-private.png'),
+  ('template_bg_foreign', '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/foreign.png'),
+  ('external_projects', '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png'),
   ('ai_agent_imports', '5707a6e0-0000-4000-8000-000000009711/AI Agent Imports/discord/channel/thread/g.png'),
   ('mira_images', '5707a6e0-0000-4000-8000-000000009711/mira/images/h.png'),
   ('drive_mira_qr', '5707a6e0-0000-4000-8000-000000009711/drive/mira/qr/q.png'),
@@ -89,12 +127,13 @@ select a.actor, o.key,
   case
     when a.actor = 'service' then 'SIUD'
     when a.actor = 'nonmember' then '----'
-    when o.key = 'project_updates' then 'SIUD'
     when o.key in ('drive_root', 'drive_folder', 'drive_mira_qr', 'drive_unicode',
       'ai_imports_dotless_i') then
       case a.actor when 'manager' then 'SIUD' when 'viewer' then 'S---' else '----' end
-    when o.key = 'template_bg' then
-      case a.actor when 'manager' then 'SIUD' else 'S---' end
+    when o.key in ('template_bg_public', 'template_bg_workspace',
+      'template_bg_orphan_public') then 'S---'
+    when o.key = 'template_bg_private' then
+      case a.actor when 'owner' then 'S---' else '----' end
     when o.key in ('chat_owner', 'chats_owner', 'chats_temp') then
       case a.actor when 'owner' then 'S--D' else '----' end
     when o.key = 'chat_other' then
@@ -160,7 +199,7 @@ begin
 end;
 $$;
 
--- Structure (1-11).
+-- Structure (1-18).
 select is((select count(*)::int from pg_policies
   where schemaname = 'storage' and tablename = 'objects'
     and policyname like 'Allow workspace members to % workspace folder'), 0,
@@ -194,6 +233,49 @@ select ok(not pg_temp.storage_rls_can('manager', 'select',
 select ok(not pg_temp.storage_rls_can('manager', 'delete',
   '5707a6e0-0000-4000-8000-000000009711/Topic-Announcements/attachments/x.pdf'),
   'topic-announcements matches case-insensitively (no Drive fallback)');
+select ok(not pg_temp.storage_rls_can('manager', 'insert',
+  '5707a6e0-0000-4000-8000-000000009711/External-Projects/shared/blog/cover.png')
+  and not pg_temp.storage_rls_can('manager', 'insert',
+    '5707a6e0-0000-4000-8000-000000009711/PROJECT-UPDATES/u/p.png')
+  and not pg_temp.storage_rls_can('manager', 'insert',
+    '5707a6e0-0000-4000-8000-000000009711/Template-Backgrounds/t.png'),
+  'service roots match case-insensitively (no Drive fallback)');
+select ok(not pg_temp.storage_rls_can('member', 'select',
+  '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/foreign.png'),
+  'a template in another workspace does not unlock a background path');
+select ok((select p.prosecdef and p.provolatile = 's'
+    and p.proconfig = array['search_path=pg_catalog, pg_temp']
+    and p.proowner = 'postgres'::regrole
+    and has_function_privilege('authenticated', p.oid, 'EXECUTE')
+    and not has_function_privilege('anon', p.oid, 'EXECUTE')
+  from pg_proc p
+  where p.oid = 'workspace_storage.object_access(text,text,workspace_storage.actor_access)'::regprocedure),
+  'object_access stays a stable security definer owned by postgres with a pinned search_path, executable by authenticated, not anon');
+select ok(not pg_temp.storage_rls_can('member', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf')
+  and not pg_temp.storage_rls_can('member', 'update',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf')
+  and not pg_temp.storage_rls_can('member', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png')
+  and not pg_temp.storage_rls_can('member', 'update',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png'),
+  'a member template pointing at a Drive or CMS path grants nothing');
+select ok(pg_temp.storage_rls_can('viewer', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf')
+  and not pg_temp.storage_rls_can('viewer', 'insert',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf')
+  and not pg_temp.storage_rls_can('viewer', 'update',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf')
+  and not pg_temp.storage_rls_can('viewer', 'delete',
+    '5707a6e0-0000-4000-8000-000000009711/docs/report.pdf'),
+  'a Drive viewer template pointing at a docs file keeps only view_drive rights');
+select ok(not pg_temp.storage_rls_can('viewer', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png')
+  and not pg_temp.storage_rls_can('viewer', 'update',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png')
+  and not pg_temp.storage_rls_can('viewer', 'delete',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png'),
+  'a Drive viewer template pointing at CMS media stays denied');
 
 select ok(pg_temp.storage_rls_can('creator', 'insert', '5707a6e0-0000-4000-8000-000000009711/drive.txt'),
   'workspace creator manages Drive without an explicit role');
@@ -205,9 +287,18 @@ select ok(pg_temp.storage_rls_can('member', 'delete', '5707a6e0-0000-4000-8000-0
   and not pg_temp.storage_rls_can('member', 'select',
     '5707a6e0-0000-4000-8000-000000009711/topic-announcements/attachments/u-a.pdf'),
   'MEMBER default admin manages Drive but still cannot read private roots');
+select ok(not pg_temp.storage_rls_can('member', 'select',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png')
+  and not pg_temp.storage_rls_can('member', 'update',
+    '5707a6e0-0000-4000-8000-000000009711/external-projects/shared/blog/cover.png')
+  and not pg_temp.storage_rls_can('member', 'delete',
+    '5707a6e0-0000-4000-8000-000000009711/project-updates/u/p.png')
+  and not pg_temp.storage_rls_can('member', 'update',
+    '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/public.png'),
+  'MEMBER default admin cannot read or overwrite CMS media, project updates or template backgrounds');
 delete from public.workspace_default_permissions where ws_id = '5707a6e0-0000-4000-8000-000000009711';
 
--- Matrix (12-515): 6 actors x 21 objects x 4 operations.
+-- Matrix (19-690): 6 actors x 28 objects x 4 operations.
 select is(
   pg_temp.storage_rls_can(e.actor, op.name, o.name),
   position(op.flag in e.flags) > 0,

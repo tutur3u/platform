@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 -- Match installed Storage fixtures; the transaction rolls back all changes.
 set local storage.allow_delete_query = 'true';
-select plan(53);
+select plan(55);
 insert into auth.users(id) values ('5707a6e0-0000-4000-8000-000000008801');
 insert into public.users(id) values ('5707a6e0-0000-4000-8000-000000008801') on conflict do nothing;
 insert into public.workspaces(id,name,personal,creator_id)
@@ -29,7 +29,9 @@ select throws_ok($$insert into storage.objects(bucket_id,name) values ('storage-
 select throws_ok($$insert into storage.objects(bucket_id,name) values ('avatars','denied')$$,'42501',null,'avatars client insert follows bucket contract');
 select throws_ok($$insert into storage.objects(bucket_id,name) values ('banners','denied')$$,'42501',null,'banners client insert follows bucket contract');
 select throws_ok($$insert into storage.buckets(id,name,public) values ('client-created','client-created',true)$$,'42501',null,'client bucket creation is denied');
-select lives_ok($$insert into storage.objects(bucket_id,name) values ('workspaces','5707a6e0-0000-4000-8000-000000008811/project-updates/test.png')$$,'workspaces authorized client upload works');
+select lives_ok($$insert into storage.objects(bucket_id,name) values ('workspaces','5707a6e0-0000-4000-8000-000000008811/docs/test.png')$$,'workspaces authorized client upload works');
+select throws_ok($$insert into storage.objects(bucket_id,name) values ('workspaces','5707a6e0-0000-4000-8000-000000008811/project-updates/test.png')$$,'42501',null,'project-updates client upload requires the attachments route');
+select throws_ok($$insert into storage.objects(bucket_id,name) values ('workspaces','5707a6e0-0000-4000-8000-000000008811/external-projects/shared/test.png')$$,'42501',null,'external-projects client upload requires the CMS upload route');
 select throws_ok($$insert into storage.objects(bucket_id,name) values ('support_inquiries','5707a6e0-0000-4000-8000-000000008821/test.png')$$,'42501',null,'support_inquiries client upload requires a server-issued ticket');
 select throws_ok($$insert into storage.objects(bucket_id,name) values ('time_tracking_requests','5707a6e0-0000-4000-8000-000000008831/test.png')$$,'42501',null,'time_tracking_requests client upload requires a server-issued ticket');
 with affected as (update storage.objects set name='changed' where bucket_id='devbox-code-archives' and name='existing' returning 1) select is(count(*),0::bigint,'devbox-code-archives client update affects no rows') from affected;

@@ -208,7 +208,7 @@ No non-disposable apply is authorized by this verifier or the proposal migration
   table privilege errors in other buckets after a permissive policy changes.
   Scope obsolete client policies to their supported role rather than adding
   table SELECT grants. See the bucket contracts in
-  `apps/docs/build/devops/workspace-storage-rls.mdx` and
+  `apps/docs/platform/applications/drive.mdx#storage-access-decision` and
   `storage-insert-policies.sql`. SQL deletion fixtures use transaction-local
   `storage.allow_delete_query = 'true'` and roll back.
 
@@ -222,11 +222,16 @@ No non-disposable apply is authorized by this verifier or the proposal migration
   (`workspace_storage.object_access`). Pass
   `(select workspace_storage.actor_access())` so permissions resolve once per
   statement, not per row. Browsers never write private
-  roots (`chat`, `chats`, `external-apps`, `AI Agent Imports`, `mira/images`,
-  `recordings`, `.tuturuuu`). Issue signed upload URLs from the owning API
-  after an ownership check. When you add a private root, update the helper,
-  the Drive path policy and `tests/workspace-storage-least-privilege-rls.sql`
-  together. See `apps/docs/build/devops/workspace-storage-rls.mdx`.
+  roots (`chat`, `chats`, `external-apps`, `external-projects`,
+  `AI Agent Imports`, `mira/images`, `project-updates`, `recordings`,
+  `template-backgrounds`, `topic-announcements`, `.tuturuuu`). Issue signed
+  upload URLs from the owning API after an ownership check. When you add a
+  private root, update the helper, `workspace-storage-roots.ts` and
+  `tests/workspace-storage-least-privilege-rls.sql` together, and audit every
+  request-scoped caller first: route-level user clients must move to a
+  service-role storage client, and owning APIs that list through
+  `listWorkspaceStorageDirectory` pass `serviceRoot`. See
+  `apps/docs/platform/applications/drive.mdx#storage-access-decision`.
 - Folder deletes should recurse through the Storage API; do not depend on
   direct `storage.objects` SQL scans.
 - Mixed Supabase/R2 upload helpers must preserve Authorization headers when

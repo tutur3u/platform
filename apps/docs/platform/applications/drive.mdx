@@ -432,18 +432,40 @@ commit; do not run `bun validate` or app builds on the shared machine.
 - **Private roots:** `chat/**` and `chats/ai/resources/**` are private to the
   chat creator (or, for `temp/<userId>/**`, the uploader). Owners can read and
   delete their own objects, but nobody writes them directly. Other `chats/**`,
-  `external-apps/**`, `AI Agent Imports/**`, `mira/images/**`, `recordings/**`,
+  `external-apps/**`, `external-projects/**`, `AI Agent Imports/**`,
+  `mira/images/**`, `project-updates/**`, `recordings/**`,
   `topic-announcements/**` and `.tuturuuu/**` objects have no direct client
-  access.
+  access. CMS drafts therefore stay private, and published CMS assets change
+  only through the CMS upload and publication routes.
+- **Template backgrounds:** a workspace member may read a
+  `template-backgrounds/**` object only when a template in the same workspace
+  references that exact path and the member can read the template: any public
+  or workspace template, including one whose creator was deleted, or their own
+  private template. Nobody writes or deletes them directly; the template APIs
+  sign uploads and remove objects with the service role. Accepted risk: a
+  member can point their own template's `background_path` at another
+  `template-backgrounds/<name>` object in the same workspace and then read it.
+  Names carry a random UUID and listing that folder goes through the same rule,
+  so this needs a name the member already knows. A template pointing outside
+  `template-backgrounds/` grants nothing; Drive and service-root rules still
+  apply to that path.
 - **Affected surfaces:** Web, Rewise and Mind AI chat attachments now upload
   through `POST /api/ai/chat/upload-url`. It enforces chat ownership and issues
-  a signed upload URL. Meeting recording routes use the service role after
-  their checks. The Drive app and SDK keep their server-side checks.
-- **Intentional exceptions:** `project-updates/**` stays member-wide, matching
-  its request-scoped route. `template-backgrounds/**` is member-readable for
-  template pickers. `drive/mira/qr/**` is an intentional Drive output.
-- **Evidence:** the matrix, rollback and verification steps are in
-  [Workspace storage RLS](/build/devops/workspace-storage-rls).
+  a signed upload URL. Meeting recording, project update attachment and CMS
+  routes use the service role after their checks; the CMS storage route lists
+  its root through `listWorkspaceStorageDirectory` with
+  `serviceRoot: 'external-projects'`, which allows listing only inside that
+  root. The Drive app and SDK keep their server-side checks.
+- **Intentional exceptions:** `drive/mira/qr/**` is an intentional Drive output.
+  The storage-core signing mirror (`workspace-storage-access.ts`) treats
+  `template-backgrounds/**` as private, because only the template APIs sign
+  those objects.
+- **Evidence:** the SQL helper is `workspace_storage.object_access`, last
+  redefined by `20261125085300_workspace_storage_service_roots.sql`. The pgTAP
+  matrix is `apps/database/supabase/tests/workspace-storage-least-privilege-rls.sql`,
+  with client-insert cases in `storage-insert-policies.sql`; storage-core
+  `workspace-storage-access.test.ts` and `drive-path-policy.test.ts` cover the
+  TypeScript mirror and Drive listing boundary.
 
 ## Start candidate staging cookies and authentication
 

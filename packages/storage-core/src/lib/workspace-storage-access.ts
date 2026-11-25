@@ -4,13 +4,15 @@
  * This is the server-side mirror of the database helper
  * `workspace_storage.object_access` (migration
  * 20261026170000_least_privilege_workspace_storage_rls.sql, last redefined by
- * 20261122181200_workspace_storage_ascii_roots.sql). Service-role routes
+ * 20261125085300_workspace_storage_service_roots.sql). Service-role routes
  * that sign or list objects on a user's behalf must apply the same rules,
  * otherwise they widen what RLS allows. Keep both in sync: a change to a root
  * here needs the same change in SQL and in the pgTAP matrix
  * (supabase/tests/workspace-storage-least-privilege-rls.sql). The mirror may
- * be stricter than RLS, never weaker: only their owning APIs sign
- * `external-projects`, `project-updates` and `template-backgrounds` objects.
+ * be stricter than RLS, never weaker: RLS lets members read a
+ * `template-backgrounds` object bound to a template they can read, while this
+ * mirror treats the root as private because only the template APIs sign
+ * those objects.
  *
  * Framework-independent: identity, membership, permission and chat lookups
  * are injected by the caller.
