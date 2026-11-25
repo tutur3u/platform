@@ -108,10 +108,7 @@ extension _MailWorkspaceKeyboard on _MailWorkspaceState {
           } else if (id != reader.id &&
               !_pendingDeferredIds.containsKey(id) &&
               !_pendingReaderIds.containsKey(id)) {
-            _routeSelection.value = _selectConversation(
-              item,
-              reader.mailboxId,
-            );
+            _routeSelection.value = _selectConversation(item, reader.mailboxId);
           }
         }
         return true;

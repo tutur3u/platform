@@ -42,50 +42,59 @@ void main() {
     expect(SidebarBehavior.parse(null), isNull);
   });
 
-  test('keeps an unset device responsive and restores an explicit choice', () async {
-    final cubit = SidebarBehaviorCubit();
-    await cubit.restore(null);
-    expect(cubit.state.behavior, isNull);
-    await cubit.setBehavior(SidebarBehavior.hover);
-    await cubit.close();
+  test(
+    'keeps an unset device responsive and restores an explicit choice',
+    () async {
+      final cubit = SidebarBehaviorCubit();
+      await cubit.restore(null);
+      expect(cubit.state.behavior, isNull);
+      await cubit.setBehavior(SidebarBehavior.hover);
+      await cubit.close();
 
-    final reopened = SidebarBehaviorCubit();
-    addTearDown(reopened.close);
-    await reopened.restore(null);
-    expect(reopened.state.behavior, SidebarBehavior.hover);
-  });
+      final reopened = SidebarBehaviorCubit();
+      addTearDown(reopened.close);
+      await reopened.restore(null);
+      expect(reopened.state.behavior, SidebarBehavior.hover);
+    },
+  );
 
-  test('local override survives restart without uploading local edits', () async {
-    final prefs = _Preferences()..remote['a'] = SidebarBehavior.expanded;
-    final cubit = SidebarBehaviorCubit(preferences: prefs);
-    await cubit.restore('a');
-    expect(cubit.state.behavior, SidebarBehavior.expanded);
-    await cubit.setBehavior(SidebarBehavior.collapsed);
-    expect(prefs.writes, [('a', SidebarBehavior.collapsed)]);
-    await cubit.setLocalOverride(
-      value: true,
-      displayed: SidebarBehavior.collapsed,
-    );
-    expect(cubit.state.behavior, SidebarBehavior.collapsed);
-    await cubit.setBehavior(SidebarBehavior.minimal);
-    await cubit.close();
+  test(
+    'local override survives restart without uploading local edits',
+    () async {
+      final prefs = _Preferences()..remote['a'] = SidebarBehavior.expanded;
+      final cubit = SidebarBehaviorCubit(preferences: prefs);
+      await cubit.restore('a');
+      expect(cubit.state.behavior, SidebarBehavior.expanded);
+      await cubit.setBehavior(SidebarBehavior.collapsed);
+      expect(prefs.writes, [('a', SidebarBehavior.collapsed)]);
+      await cubit.setLocalOverride(
+        value: true,
+        displayed: SidebarBehavior.collapsed,
+      );
+      expect(cubit.state.behavior, SidebarBehavior.collapsed);
+      await cubit.setBehavior(SidebarBehavior.minimal);
+      await cubit.close();
 
-    final reopened = SidebarBehaviorCubit(preferences: prefs);
-    addTearDown(reopened.close);
-    await reopened.restore('a');
-    expect(reopened.state.localOverride, isTrue);
-    expect(reopened.state.behavior, SidebarBehavior.minimal);
-    expect(prefs.writes, [('a', SidebarBehavior.collapsed)]);
-    await reopened.setLocalOverride(
-      value: false,
-      displayed: SidebarBehavior.minimal,
-    );
-    expect(reopened.state.behavior, SidebarBehavior.collapsed);
-  });
+      final reopened = SidebarBehaviorCubit(preferences: prefs);
+      addTearDown(reopened.close);
+      await reopened.restore('a');
+      expect(reopened.state.localOverride, isTrue);
+      expect(reopened.state.behavior, SidebarBehavior.minimal);
+      expect(prefs.writes, [('a', SidebarBehavior.collapsed)]);
+      await reopened.setLocalOverride(
+        value: false,
+        displayed: SidebarBehavior.minimal,
+      );
+      expect(reopened.state.behavior, SidebarBehavior.collapsed);
+    },
+  );
 
   test('pending choices are scoped to their account and retried', () async {
     final prefs = _Preferences()
-      ..remote.addAll({'a': SidebarBehavior.collapsed, 'b': SidebarBehavior.hover})
+      ..remote.addAll({
+        'a': SidebarBehavior.collapsed,
+        'b': SidebarBehavior.hover,
+      })
       ..rejectWrites = true;
     final cubit = SidebarBehaviorCubit(preferences: prefs);
     await cubit.restore('a');

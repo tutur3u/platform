@@ -37,13 +37,17 @@ class ShellSidebarShortcuts extends StatelessWidget {
           control: true,
           alt: true,
           includeRepeats: false,
-        ): _SidebarBehaviorIntent(minimal: true),
+        ): _SidebarBehaviorIntent(
+          minimal: true,
+        ),
         SingleActivator(
           LogicalKeyboardKey.keyB,
           meta: true,
           alt: true,
           includeRepeats: false,
-        ): _SidebarBehaviorIntent(minimal: true),
+        ): _SidebarBehaviorIntent(
+          minimal: true,
+        ),
       },
       if (onDismiss != null)
         const SingleActivator(LogicalKeyboardKey.escape):
@@ -51,14 +55,12 @@ class ShellSidebarShortcuts extends StatelessWidget {
     },
     child: Actions(
       actions: {
-        _SidebarBehaviorIntent: _SidebarBehaviorAction(
-          (intent) {
-            onSelected?.call(
-              intent.minimal ? SidebarBehavior.minimal : behavior.toggled,
-            );
-            return null;
-          },
-        ),
+        _SidebarBehaviorIntent: _SidebarBehaviorAction((intent) {
+          onSelected?.call(
+            intent.minimal ? SidebarBehavior.minimal : behavior.toggled,
+          );
+          return null;
+        }),
         _DismissSidebarIntent: CallbackAction<_DismissSidebarIntent>(
           onInvoke: (_) {
             onDismiss?.call();

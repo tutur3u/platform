@@ -41,9 +41,8 @@ class MailAppearancePreference extends ValueNotifier<MailMessageAppearance?> {
     }
   }
 
-  Future<void> selectMode(String id) => select(
-    id == 'auto' ? null : MailMessageAppearance.values.byName(id),
-  );
+  Future<void> selectMode(String id) =>
+      select(id == 'auto' ? null : MailMessageAppearance.values.byName(id));
 }
 
 Map<String, String> mailAppearanceLabels(BuildContext context) => {

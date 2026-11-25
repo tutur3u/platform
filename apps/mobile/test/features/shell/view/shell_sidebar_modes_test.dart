@@ -66,7 +66,9 @@ void main() {
   }
 
   for (final mode in [SidebarBehavior.hover, SidebarBehavior.minimal]) {
-    testWidgets('${mode.name} hover overlay does not reflow the page', (tester) async {
+    testWidgets('${mode.name} hover overlay does not reflow the page', (
+      tester,
+    ) async {
       useShellWindow(tester, _desktop);
       await pumpRailShell(
         tester,
@@ -180,34 +182,35 @@ void main() {
     expect(_bodyRect(tester).left, shellNavigationSidebarExtent);
   });
 
-  testWidgets('minimal opens with keyboard focus and closes when focus leaves', (
-    tester,
-  ) async {
-    useShellWindow(tester, _desktop);
-    final bodyFocus = FocusNode();
-    addTearDown(bodyFocus.dispose);
-    await pumpRailShell(
-      tester,
-      Routes.inventorySales,
-      sidebarBehavior: 'minimal',
-      page: (_) => Focus(
-        focusNode: bodyFocus,
-        child: const SizedBox.expand(key: _body),
-      ),
-    );
-    final icon = find.descendant(
-      of: find.byKey(_logo),
-      matching: find.byType(Image),
-    );
-    Focus.of(tester.element(icon)).requestFocus();
-    await settleShell(tester);
-    expect(find.byKey(_overlay), findsOneWidget);
-    final body = _bodyRect(tester);
-    bodyFocus.requestFocus();
-    await settleShell(tester);
-    expect(find.byKey(_overlay), findsNothing);
-    expect(_bodyRect(tester), body);
-  });
+  testWidgets(
+    'minimal opens with keyboard focus and closes when focus leaves',
+    (tester) async {
+      useShellWindow(tester, _desktop);
+      final bodyFocus = FocusNode();
+      addTearDown(bodyFocus.dispose);
+      await pumpRailShell(
+        tester,
+        Routes.inventorySales,
+        sidebarBehavior: 'minimal',
+        page: (_) => Focus(
+          focusNode: bodyFocus,
+          child: const SizedBox.expand(key: _body),
+        ),
+      );
+      final icon = find.descendant(
+        of: find.byKey(_logo),
+        matching: find.byType(Image),
+      );
+      Focus.of(tester.element(icon)).requestFocus();
+      await settleShell(tester);
+      expect(find.byKey(_overlay), findsOneWidget);
+      final body = _bodyRect(tester);
+      bodyFocus.requestFocus();
+      await settleShell(tester);
+      expect(find.byKey(_overlay), findsNothing);
+      expect(_bodyRect(tester), body);
+    },
+  );
 
   testWidgets('sidebar shortcuts toggle modes and defer to text editors', (
     tester,
@@ -249,7 +252,9 @@ void main() {
     expect(_bodyRect(tester).left, shellNavigationRailExtent);
   });
 
-  testWidgets('a phone keeps its dock with a saved sidebar mode', (tester) async {
+  testWidgets('a phone keeps its dock with a saved sidebar mode', (
+    tester,
+  ) async {
     useShellWindow(tester, const Size(390, 844));
     await pumpRailShell(
       tester,

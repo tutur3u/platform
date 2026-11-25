@@ -58,9 +58,9 @@ class ShellRoutedBody extends StatelessWidget {
     context: context,
     removeTop: true,
     child: Theme(
-      data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: background(context),
-      ),
+      data: Theme.of(
+        context,
+      ).copyWith(scaffoldBackgroundColor: background(context)),
       child: SizedBox.expand(child: child),
     ),
   );

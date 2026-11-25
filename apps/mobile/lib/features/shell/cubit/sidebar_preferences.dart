@@ -6,14 +6,10 @@ typedef SidebarDevicePreference = ({
   SidebarBehavior? behavior,
   bool localOverride,
 });
-typedef SidebarAccountPreference = ({
-  SidebarBehavior? behavior,
-  bool pending,
-});
+typedef SidebarAccountPreference = ({SidebarBehavior? behavior, bool pending});
 
 class SidebarPreferences {
-  SidebarPreferences({ApiClient? apiClient})
-    : _api = apiClient ?? ApiClient();
+  SidebarPreferences({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
 
   static const _deviceKey = 'sidebar-behavior:device';
   static const _accountPrefix = 'sidebar-behavior:account:';

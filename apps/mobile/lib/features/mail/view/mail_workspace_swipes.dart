@@ -469,8 +469,7 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         feedback.inverse!,
         threads: feedback.threads,
       );
-      if (feedback.inverse == 'restore' &&
-          feedback.restoreUnread) {
+      if (feedback.inverse == 'restore' && feedback.restoreUnread) {
         await _repository.bulk(
           widget.workspaceId,
           feedback.box,
@@ -481,9 +480,9 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
       }
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.mailActionFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
       }
     } finally {
       if (mounted) {

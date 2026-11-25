@@ -20,7 +20,8 @@ extension _ShellPageLayout on _ShellPageState {
       _showMiniNav = true;
     }
     _activeLayerPage = isMiniAppRoute ? 1 : 0;
-    _syncingLayerPage = _layerController.hasClients &&
+    _syncingLayerPage =
+        _layerController.hasClients &&
         _layerController.page?.round() != _activeLayerPage;
     if (_syncingLayerPage) {
       unawaited(
@@ -61,12 +62,17 @@ extension _ShellPageLayout on _ShellPageState {
               rootVisible ? widget.matchedLocation : _lastRootLocation,
               LazyIndexedStack(
                 animate: true,
-                index: _ShellPageState._calculateSelectedIndex(_lastRootLocation),
+                index: _ShellPageState._calculateSelectedIndex(
+                  _lastRootLocation,
+                ),
                 builders: [
-                  (_) => widget.homePageBuilder?.call(token(Routes.home)) ??
+                  (_) =>
+                      widget.homePageBuilder?.call(token(Routes.home)) ??
                       HomePage(replayToken: token(Routes.home)),
                   (_) =>
-                      widget.assistantPageBuilder?.call(token(Routes.assistant)) ??
+                      widget.assistantPageBuilder?.call(
+                        token(Routes.assistant),
+                      ) ??
                       AssistantPage(
                         shellLocation: widget.matchedLocation,
                         replayToken: token(Routes.assistant),
@@ -75,12 +81,19 @@ extension _ShellPageLayout on _ShellPageState {
                     isActive: widget.matchedLocation == Routes.apps,
                     replayToken: token(Routes.apps),
                   ),
-                  (context) => widget.notificationsPageBuilder?.call(context) ??
+                  (context) =>
+                      widget.notificationsPageBuilder?.call(context) ??
                       NotificationsPage(
-                        isActive: widget.matchedLocation == Routes.notifications,
+                        isActive:
+                            widget.matchedLocation == Routes.notifications,
                       ),
-                  (_) => widget.profilePageBuilder?.call(token(Routes.profileRoot)) ??
-                      ProfileOverviewPage(replayToken: token(Routes.profileRoot)),
+                  (_) =>
+                      widget.profilePageBuilder?.call(
+                        token(Routes.profileRoot),
+                      ) ??
+                      ProfileOverviewPage(
+                        replayToken: token(Routes.profileRoot),
+                      ),
                 ],
               ),
             ),
@@ -386,7 +399,8 @@ extension _ShellPageLayout on _ShellPageState {
                       context,
                       activeModule: activeModule,
                       registration: injectedMiniNavRegistration,
-                      selectedIndex: (items) => _miniSelectedIndex(location, items),
+                      selectedIndex: (items) =>
+                          _miniSelectedIndex(location, items),
                     ),
                   ),
                 ),

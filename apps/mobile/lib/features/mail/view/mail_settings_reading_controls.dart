@@ -53,9 +53,8 @@ extension _MailSettingsReadingControls on _MailSettingsPageState {
           for (final choice in mailAppearanceLabels(context).entries)
             AppSelectOption(value: choice.key, label: choice.value),
         ],
-        onChanged: (id) => unawaited(
-          MailAppearancePreference.instance.selectMode(id),
-        ),
+        onChanged: (id) =>
+            unawaited(MailAppearancePreference.instance.selectMode(id)),
       ),
     ),
   ];

@@ -358,7 +358,10 @@ class ShellLayeredNavigation extends StatelessWidget {
         ? shad.NavigationBar(
             key: navKey,
             selectedKey: selected,
-            padding: EdgeInsets.symmetric(horizontal: mini ? 4 : 8, vertical: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: mini ? 4 : 8,
+              vertical: 4,
+            ),
             onSelected: onSelected,
             children: [
               for (final (index, item) in destinations.indexed)

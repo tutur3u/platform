@@ -9,7 +9,9 @@ String? shellSidebarDestinationTitle(
   required ShellMiniNavRegistration? registration,
   required int Function(List<MiniAppNavItem>) selectedIndex,
 }) {
-  final selected = registration?.items.where((item) => item.selected).firstOrNull;
+  final selected = registration?.items
+      .where((item) => item.selected)
+      .firstOrNull;
   if (selected != null) return selected.label;
   if (activeModule == null) return null;
   final items = activeModule.miniAppNavItemsFor(context);

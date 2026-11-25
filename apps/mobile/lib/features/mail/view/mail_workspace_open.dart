@@ -158,8 +158,12 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
         selection.mailboxId != _mailboxId ||
         selection.folder != _folder ||
         selection.listKey != _visibleListKey ||
-        !const {'archive', 'trash', 'restore', 'move_to_folder'}
-            .contains(action)) {
+        !const {
+          'archive',
+          'trash',
+          'restore',
+          'move_to_folder',
+        }.contains(action)) {
       return false;
     }
     final order = _items.any((row) => row['id'] == selection.id)
@@ -573,10 +577,12 @@ class _MailRowVisibilityState extends State<_MailRowVisibility> {
   void _reveal() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.ensureVisible) {
-        unawaited(Scrollable.ensureVisible(
-          context,
-          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-        ));
+        unawaited(
+          Scrollable.ensureVisible(
+            context,
+            alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+          ),
+        );
       }
     });
   }

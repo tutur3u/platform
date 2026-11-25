@@ -2,10 +2,8 @@ part of 'mail_page.dart';
 
 extension _MailWorkspaceLayout on _MailWorkspaceState {
   Widget _buildWorkspace(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => _buildWorkspaceBody(
-      context,
-      constraints.maxWidth,
-    ),
+    builder: (context, constraints) =>
+        _buildWorkspaceBody(context, constraints.maxWidth),
   );
 
   Widget _buildWorkspaceBody(BuildContext context, double bodyWidth) {
@@ -243,9 +241,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppSpacing.sm,
-                    ),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: _buildMailControls(
                       folderPicker,
                       sharedShell,
@@ -253,13 +249,10 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                       showCompose: wide && !hasSidebar,
                     ),
                   ),
-                  if (!wide && _selected.isNotEmpty)
-                    _buildMailBulkToolbar(),
+                  if (!wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
                   if (_failed && _listResolved)
                     TextButton.icon(
-                      onPressed: !_accessVerified
-                          ? _bootstrap
-                          : _load,
+                      onPressed: !_accessVerified ? _bootstrap : _load,
                       icon: const Icon(Icons.refresh),
                       label: Text(l10n.commonSomethingWentWrong),
                     ),
@@ -302,9 +295,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         ),
                         if (_failed && !_listResolved)
                           TextButton.icon(
-                            onPressed: !_accessVerified
-                                ? _bootstrap
-                                : _load,
+                            onPressed: !_accessVerified ? _bootstrap : _load,
                             icon: const Icon(Icons.refresh),
                             label: Text(l10n.commonRetry),
                           ),
@@ -321,9 +312,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               builder: (context, constraints) {
                 final width = constraints.crossAxisExtent;
                 final page = AppPageInsets.of(context, width: width);
-                final gutter = AppLayout.gutter(
-                  Breakpoints.fromWidth(width),
-                );
+                final gutter = AppLayout.gutter(Breakpoints.fromWidth(width));
                 return SliverPadding(
                   padding: EdgeInsets.fromLTRB(
                     page.left - gutter,
@@ -366,8 +355,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                               _accessVerified &&
                               _selected.isEmpty &&
                               _folder != 'drafts',
-                          onAction: (action) =>
-                              _swipeMessage(item, action),
+                          onAction: (action) => _swipeMessage(item, action),
                           child: MailMessageTile(
                             item: item,
                             desktop: wide,
@@ -375,8 +363,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                             workspaceId: widget.workspaceId,
                             thread: _threads,
                             active:
-                                _split &&
-                                _activeSelection?.id == item['id'],
+                                _split && _activeSelection?.id == item['id'],
                             selected: _selected.contains(item['id']),
                             onSelect: () =>
                                 _toggleSelection(item['id'] as String),

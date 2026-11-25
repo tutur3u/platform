@@ -93,11 +93,7 @@ Future<void> showMailKeyboardHelp(BuildContext context) => showAppSheet<void>(
             ('?', l10n.mailKeyboardShortcuts),
             ('Esc', l10n.mailKeyboardBack),
           ])
-            ListTile(
-              dense: true,
-              title: Text(label),
-              trailing: Text(keys),
-            ),
+            ListTile(dense: true, title: Text(label), trailing: Text(keys)),
         ],
       ),
     );

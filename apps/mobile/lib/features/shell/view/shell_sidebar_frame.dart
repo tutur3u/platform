@@ -12,12 +12,13 @@ import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_mode_menu.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_shortcuts.dart';
 
-typedef SidebarRailBuilder = Widget Function(
-  bool extended,
-  Widget modeMenu,
-  VoidCallback dismiss, {
-    VoidCallback? onBrandTap,
-});
+typedef SidebarRailBuilder =
+    Widget Function(
+      bool extended,
+      Widget modeMenu,
+      VoidCallback dismiss, {
+      VoidCallback? onBrandTap,
+    });
 
 class ShellSidebarFrame extends StatelessWidget {
   const ShellSidebarFrame({
@@ -236,6 +237,7 @@ class _SidebarFrameState extends State<_SidebarFrame>
       if (value != behavior) _dismiss();
       unawaited(cubit.setBehavior(value));
     }
+
     Widget rail(bool extended) => buildRail!(
       extended,
       ShellSidebarModeMenu(
@@ -251,8 +253,8 @@ class _SidebarFrameState extends State<_SidebarFrame>
     final restExtent = switch (behavior) {
       SidebarBehavior.expanded => shellNavigationSidebarExtent,
       SidebarBehavior.minimal => shellSidebarMinimalExtent,
-      SidebarBehavior.collapsed || SidebarBehavior.hover =>
-        shellNavigationRailExtent,
+      SidebarBehavior.collapsed ||
+      SidebarBehavior.hover => shellNavigationRailExtent,
     };
     final overlay = buildRail != null && behavior.opensAsOverlay;
     final showPanel = overlay && _showPanel;
@@ -343,10 +345,7 @@ class _SidebarFrameState extends State<_SidebarFrame>
                       child: Material(
                         color: style.page,
                         elevation: 8,
-                        child: FocusScope(
-                          node: _panelFocus,
-                          child: rail(true),
-                        ),
+                        child: FocusScope(node: _panelFocus, child: rail(true)),
                       ),
                     ),
                   ),

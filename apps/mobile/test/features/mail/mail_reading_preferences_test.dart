@@ -21,10 +21,7 @@ void main() {
 
   test('advance follows the next available row and skips removed rows', () {
     expect(next(MailAfterArchive.next, 'first'), 'second');
-    expect(
-      next(MailAfterArchive.next, 'first', remaining: {'third'}),
-      'third',
-    );
+    expect(next(MailAfterArchive.next, 'first', remaining: {'third'}), 'third');
     expect(next(MailAfterArchive.next, 'third'), 'second');
   });
 

@@ -78,8 +78,13 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
 
   void _updateSettingsState(VoidCallback update) => setState(update);
 
-  List<TextEditingController> get _settingsControllers =>
-      [_sender, _signature, _signatureHtml, _instructions, _forwardTo];
+  List<TextEditingController> get _settingsControllers => [
+    _sender,
+    _signature,
+    _signatureHtml,
+    _instructions,
+    _forwardTo,
+  ];
 
   @override
   void initState() {

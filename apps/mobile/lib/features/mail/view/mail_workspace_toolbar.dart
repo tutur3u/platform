@@ -20,9 +20,7 @@ extension _MailWorkspaceToolbar on _MailWorkspaceState {
           IconButton(
             tooltip: l10n.mailSelectAll,
             onPressed: () => _updateState(
-              () => _selected.addAll(
-                _items.map((i) => i['id'] as String),
-              ),
+              () => _selected.addAll(_items.map((i) => i['id'] as String)),
             ),
             icon: const Icon(Icons.select_all),
           ),
@@ -39,25 +37,20 @@ extension _MailWorkspaceToolbar on _MailWorkspaceState {
           IconButton(
             tooltip: l10n.mailMarkAllRead,
             onPressed: () => _bulk('mark_read'),
-            icon: const Icon(
-              Icons.mark_email_read_outlined,
-            ),
+            icon: const Icon(Icons.mark_email_read_outlined),
           ),
           if (_labels.isNotEmpty)
             PopupMenuButton<String>(
               tooltip: l10n.mailLabels,
               icon: const Icon(Icons.label_outline),
-              onSelected: (id) =>
-                  _bulk('add_label', labelId: id),
+              onSelected: (id) => _bulk('add_label', labelId: id),
               itemBuilder: (_) => _labels
                   .map(
                     (l) => PopupMenuItem(
                       value: l['id'] as String,
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.label_outline,
-                          ),
+                          const Icon(Icons.label_outline),
                           const SizedBox(width: 12),
                           Text(l['name'] as String),
                         ],
@@ -68,8 +61,7 @@ extension _MailWorkspaceToolbar on _MailWorkspaceState {
             ),
           IconButton(
             tooltip: l10n.commonCancel,
-            onPressed: () =>
-                _updateState(_selected.clear),
+            onPressed: () => _updateState(_selected.clear),
             icon: const Icon(Icons.close),
           ),
         ],
