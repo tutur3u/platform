@@ -29,30 +29,60 @@ function moduleGlobs(config) {
 /**
  * Wrangler-style rule globs matched against the bundle-relative path:
  * `**\/` spans zero or more directories, `*` and `?` stay within one path
- * segment, `{a,b}` alternates, and every other character is literal.
+ * segment, and `{a,b}` alternates (nesting allowed). Every other character
+ * is literal; backslashes are path separators (see `moduleGlobs`), so there
+ * is no escape syntax. Unbalanced braces fail with the offending glob.
  */
 export function globToRegExp(glob) {
+  return new RegExp(`^${compileGlob(glob, glob)}$`, 'u');
+}
+
+function compileGlob(part, glob) {
   let pattern = '';
-  for (let index = 0; index < glob.length; index += 1) {
-    const char = glob[index];
-    if (char === '*' && glob[index + 1] === '*') {
-      const slash = glob[index + 2] === '/';
+  for (let index = 0; index < part.length; index += 1) {
+    const char = part[index];
+    if (char === '*' && part[index + 1] === '*') {
+      const slash = part[index + 2] === '/';
       pattern += slash ? '(?:.*/)?' : '.*';
       index += slash ? 2 : 1;
     } else if (char === '*') pattern += '[^/]*';
     else if (char === '?') pattern += '[^/]';
     else if (char === '{') {
-      const close = glob.indexOf('}', index);
-      assert.ok(close > index, `unclosed brace in module glob: ${glob}`);
-      const options = glob
-        .slice(index + 1, close)
-        .split(',')
-        .map((option) => option.replace(/[.+^$()|[\]\\]/gu, '\\$&'));
-      pattern += `(?:${options.join('|')})`;
+      const close = matchingBrace(part, index, glob);
+      const options = splitTopLevel(part.slice(index + 1, close));
+      pattern += `(?:${options.map((option) => compileGlob(option, glob)).join('|')})`;
       index = close;
-    } else pattern += char.replace(/[.+^$()|[\]\\]/gu, '\\$&');
+    } else {
+      assert.ok(char !== '}', `unbalanced "}" in module glob: ${glob}`);
+      pattern += char.replace(/[.+^$()|[\]\\{}*?]/gu, '\\$&');
+    }
   }
-  return new RegExp(`^${pattern}$`, 'u');
+  return pattern;
+}
+
+function matchingBrace(part, open, glob) {
+  let depth = 0;
+  for (let index = open; index < part.length; index += 1) {
+    if (part[index] === '{') depth += 1;
+    else if (part[index] === '}' && --depth === 0) return index;
+  }
+  assert.fail(`unclosed "{" in module glob: ${glob}`);
+}
+
+function splitTopLevel(body) {
+  const options = [];
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < body.length; index += 1) {
+    if (body[index] === '{') depth += 1;
+    else if (body[index] === '}') depth -= 1;
+    else if (body[index] === ',' && depth === 0) {
+      options.push(body.slice(start, index));
+      start = index + 1;
+    }
+  }
+  options.push(body.slice(start));
+  return options;
 }
 
 function matchesModuleGlob(rel, globs) {
@@ -235,6 +265,7 @@ function referenceState(bundleRoot, target) {
     if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') return 'missing';
     throw error;
   }
+  if (!lstatSync(real).isFile()) return 'not-a-file';
   const root = realpathSync(bundleRoot);
   const inside =
     real.startsWith(root + sep) &&
@@ -244,25 +275,35 @@ function referenceState(bundleRoot, target) {
 }
 
 /**
- * Fails when an emitted module imports, by relative path, a file that exists
- * but is not emitted: outside the bundle root, in a dot directory, or
- * excluded. That Worker would start and then reject the import on every
- * request that reaches it. Specifiers naming no file (comments, prose) pass.
+ * Fails when an emitted module imports, by relative path, an existing file
+ * that is not emitted. An ES module target fails when it is excluded, outside
+ * the bundle root or in a dot directory: the Worker would start and then
+ * reject the import on every request that reaches it. A non-ESM target
+ * (wasm, text, data) inside the root fails as unsupported by this emit.
+ * Missing paths, directories and non-ESM files outside the root pass, since
+ * specifier text also appears in comments and strings.
  */
 export function assertModuleClosure(bundleRoot, modules) {
   const dropped = [];
+  const unsupported = [];
   for (const rel of Object.keys(modules)) {
     for (const target of relativeReferences(bundleRoot, rel)) {
       if (Object.hasOwn(modules, target)) continue;
-      // An existing non-ESM file (wasm, text, data) is never emitted either.
-      if (referenceState(bundleRoot, target) !== 'missing')
-        dropped.push(`${rel} -> ${target}`);
+      const state = referenceState(bundleRoot, target);
+      if (state === 'missing' || state === 'not-a-file') continue;
+      if (/\.(?:m?js)$/u.test(target)) dropped.push(`${rel} -> ${target}`);
+      else if (state === 'inside') unsupported.push(`${rel} -> ${target}`);
     }
   }
   assert.equal(
     dropped.length,
     0,
     `cf Build Output drops imported modules: ${dropped.slice(0, 5).join(', ')}`
+  );
+  assert.equal(
+    unsupported.length,
+    0,
+    `non-ESM modules are unsupported by this emit: ${unsupported.slice(0, 5).join(', ')}`
   );
 }
 

@@ -350,6 +350,11 @@ test('globToRegExp matches Wrangler rule globs against the relative path', () =>
     ['*.mjs', 'a/b.mjs', false],
     ['a.b.js', 'axbxjs', false],
     ['chunk-?.js', 'chunk-1.js', true],
+    ['**/{*.js,*.mjs}', 'a/b.mjs', true],
+    ['**/{a,{b,c}}.js', 'x/c.js', true],
+    ['**/{a,{b,c}}.js', 'x/d.js', false],
+    ['{a?,b}.js', 'ax.js', true],
+    ['{a?,b}.js', 'a.js', false],
   ];
   for (const [glob, path, expected] of cases)
     assert.equal(globToRegExp(glob).test(path), expected, `${glob} ~ ${path}`);
@@ -404,7 +409,7 @@ test('an import of an existing non-ESM file fails emission', () => {
         { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] },
         'index.mjs'
       ),
-    /index\.mjs -> engine\.wasm/
+    /non-ESM modules are unsupported by this emit: index\.mjs -> engine\.wasm/
   );
 });
 
@@ -423,4 +428,46 @@ test('assertModuleClosure resolves symlinked directories by real path', () => {
     () => assertModuleClosure(root, { 'index.mjs': { type: 'esm' } }),
     /index\.mjs -> rsc\/bridge-api\.js/
   );
+});
+
+test('globToRegExp rejects unbalanced braces with the glob named', () => {
+  assert.throws(
+    () => globToRegExp('**/{a,b.js'),
+    /unclosed "\{" in module glob: \*\*\/\{a,b\.js/
+  );
+  assert.throws(
+    () => globToRegExp('**/a}.js'),
+    /unbalanced "\}" in module glob/
+  );
+});
+
+test('closure ignores directories and non-ESM files outside the root', () => {
+  const parent = mkdtempSync(join(tmpdir(), 'cf-build-output-noise-'));
+  const root = join(parent, 'dist/server');
+  mkdirSync(join(root, 'dir'), { recursive: true });
+  writeFileSync(join(parent, 'package.json'), '{}');
+  writeFileSync(
+    join(root, 'index.mjs'),
+    '// see from "./dir/" and from "../../package.json"\nimport("./dir/");export default {};\n'
+  );
+  assert.deepEqual(
+    Object.keys(
+      discoverCfBuildOutputEsmModules(
+        root,
+        { rules: [{ globs: ['**/*'] }] },
+        'index.mjs'
+      )
+    ),
+    ['index.mjs']
+  );
+});
+
+test('hasComputedDynamicImport documents its textual limits', () => {
+  // Over-reports (only blocks orphan exclusion): a method named import.
+  assert.equal(hasComputedDynamicImport('obj.import(x)'), true);
+  // Under-reports: a comment between import and "(" and CommonJS require.
+  assert.equal(hasComputedDynamicImport('import /* c */ (x)'), false);
+  assert.equal(hasComputedDynamicImport('require(x)'), false);
+  // Constant specifiers inside strings or comments stay constant.
+  assert.equal(hasComputedDynamicImport('"import(\'./a.js\')"'), false);
 });
