@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide ThemeMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
@@ -71,7 +72,13 @@ List<Widget> shellAccountMenuChildren(
       _item(
         l10n.settingsSwitchWorkspace,
         LucideIcons.layers,
-        () => showWorkspacePickerSheet(context),
+        () => unawaited(
+          showWorkspacePicker(
+            context,
+            // Switching workspace over an open draft would discard it.
+            canSelect: () => !DraftRouteGuard.instance.hasBlockingRoute,
+          ),
+        ),
       ),
     _item(
       l10n.profileTitle,
@@ -87,7 +94,14 @@ List<Widget> shellAccountMenuChildren(
       _item(
         action.tooltip ?? action.id,
         action.icon,
-        action.enabled && !action.isLoading ? action.onPressed : null,
+        action.enabled && !action.isLoading && action.onPressed != null
+            ? () {
+                // Pages and sheets open above the shell, so a drawer that
+                // holds this menu closes first.
+                data.onNavigate?.call();
+                action.onPressed!();
+              }
+            : null,
       ),
     const Divider(height: AppSpacing.sm),
     ?_languageMenu(context),
@@ -101,6 +115,7 @@ List<Widget> shellAccountMenuChildren(
           context,
           profile: data.profile?.profile,
           avatarUrl: data.profile?.avatarUrl,
+          beforeNavigate: data.onNavigate,
         ),
       ),
     ),

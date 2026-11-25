@@ -13,6 +13,9 @@ Future<void> showProfileAccountSwitcher(
   BuildContext context, {
   UserProfile? profile,
   String? avatarUrl,
+
+  /// Runs before Manage accounts opens, e.g. to close a drawer above it.
+  VoidCallback? beforeNavigate,
 }) async {
   final selected = await showAccountSwitcherSheet(
     context,
@@ -21,7 +24,9 @@ Future<void> showProfileAccountSwitcher(
   );
   if (!context.mounted || selected == null) return;
   if (selected.action == AccountSwitcherAction.manage) {
-    await context.push(Routes.settingsAccounts);
+    final router = GoRouter.of(context);
+    beforeNavigate?.call();
+    await router.push<void>(Routes.settingsAccounts);
     return;
   }
 
