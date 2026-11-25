@@ -71,10 +71,12 @@ export async function requireCurrentPrivateGrant(
     throw new Error('Private Mira choice is unavailable');
 
   if (env.MEET_UX_V2 === 'true' && saved.claims.app !== 'parley') {
+    // A failed lookup refuses the grant with the same message as a missing
+    // confirmation, so callers never see the raw auth error.
     const confirmedAt = await readLiveMiraConfirmedAt(
       env,
       saved.claims.ownerId
-    );
+    ).catch(() => null);
     if (confirmedAt === null)
       throw new Error('Private Mira account confirmation is unavailable');
   }
