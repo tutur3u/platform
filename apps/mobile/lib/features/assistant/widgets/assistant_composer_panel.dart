@@ -6,6 +6,7 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class AssistantComposerPanel extends StatelessWidget {
@@ -32,17 +33,17 @@ class AssistantComposerPanel extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final deviceClass = Breakpoints.fromWidth(constraints.maxWidth);
-          // Phones keep the full-width page insets in either orientation.
-          final phone =
-              MediaQuery.sizeOf(context).shortestSide < Breakpoints.mediumMin;
-          final maxWidth = phone
+          final withDock =
+              shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
+              ShellNavigationMode.dock;
+          final maxWidth = withDock
               ? null
               : AppLayout.maxContentWidth(AppPageKind.reading, deviceClass);
           final panelWidth = math.min(
             constraints.maxWidth,
             maxWidth ?? constraints.maxWidth,
           );
-          final insets = phone
+          final insets = withDock
               ? AppPageInsets.of(
                   context,
                   width: constraints.maxWidth,
@@ -70,7 +71,9 @@ class AssistantComposerPanel extends StatelessWidget {
                                 : math.max(0, panelWidth - insets.horizontal),
                           ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisAlignment: withDock
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.center,
                             spacing: AppSpacing.sm,
                             children: [
                               for (final prompt in [
