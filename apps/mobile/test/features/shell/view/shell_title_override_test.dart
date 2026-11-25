@@ -42,5 +42,40 @@ void main() {
 
       expect(find.text('Board Alpha'), findsOneWidget);
     });
+
+    testWidgets('leaving an edited title saves it instead of discarding', (
+      tester,
+    ) async {
+      final saved = <String>[];
+      await tester.pumpApp(
+        BlocProvider(
+          create: (_) => ShellTitleOverrideCubit(),
+          child: Material(
+            child: Column(
+              children: [
+                const ShellTopBarTitle(matchedLocation: '/documents/doc-1'),
+                ShellTitleOverride(
+                  ownerId: 'doc-title',
+                  locations: const {'/documents/doc-1'},
+                  title: 'Draft',
+                  showLeadingBrand: false,
+                  onTitleSubmitted: (title) async => saved.add(title),
+                ),
+                const TextField(key: ValueKey('elsewhere')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Draft'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Quarterly plan');
+      await tester.tap(find.byKey(const ValueKey('elsewhere')));
+      await tester.pumpAndSettle();
+
+      expect(saved, ['Quarterly plan']);
+    });
   });
 }

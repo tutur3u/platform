@@ -190,7 +190,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.title);
-    _focusNode = FocusNode();
+    _focusNode = FocusNode()..addListener(_submitOnBlur);
     _titleScrollController = ScrollController();
     _titleScrollController.addListener(_syncTitleFade);
   }
@@ -220,7 +220,9 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
       ..removeListener(_syncTitleFade)
       ..dispose();
     _controller.dispose();
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_submitOnBlur)
+      ..dispose();
     super.dispose();
   }
 
@@ -236,6 +238,13 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
     }
 
     setState(() => _hasMoreTitleToRight = nextHasMore);
+  }
+
+  /// Leaving the field keeps the edit, as on web: blur saves the typed title
+  /// instead of discarding it. Saving, or an already-closed editor, wins.
+  void _submitOnBlur() {
+    if (_focusNode.hasFocus || !_isEditing || _isSaving) return;
+    unawaited(_submit());
   }
 
   void _startEditing() {
