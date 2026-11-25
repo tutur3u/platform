@@ -202,7 +202,12 @@ export function uploadNeverStarted(job) {
   );
 }
 
+// Terminal states in which the serving deployment is the recorded baseline:
+// restored and confirmed, or never changed (a failed module compare stops
+// before staging).
 const restoredStates = new Set([
+  'module-compare-failed',
+  'module-mismatch',
   'stage-failed',
   'smoke-failed',
   'switch-failed',

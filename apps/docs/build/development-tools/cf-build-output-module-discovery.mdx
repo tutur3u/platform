@@ -62,23 +62,31 @@ directory, explicit orphan exclusion, non-ESM imports, comment and directory
 noise, rule globs including nested and unbalanced braces, the computed-import
 detector's documented limits, and the published-set comparison.
 
-## Published-version comparison (not yet wired)
+## Published-version comparison
 
 `assertUploadedModuleSet(uploadedNames, manifest)` compares a published
 version's module names with the emitted manifest. It normalizes `./`, a leading
-`/` and backslashes, and fails on missing, extra or repeated names. No publish
-path calls it yet.
+`/` and backslashes, and fails on missing, extra or repeated names.
 
 Cloudflare has no names-only endpoint for a version's modules.
 `GET /accounts/<account>/workers/workers/<worker>/versions/<id>` returns no
 module data, and `include=modules_metadata` is ignored. `?include=modules`
 returns every module's name and base64 bytes, which is about 17 MB for Finance.
 
-To wire the comparison without raising the 1 MiB control-plane JSON cap, read
-that response with a separate streaming reader. The reader keeps only
-`result.modules[].name` and `result.main_module`, discards `content_base64` as
-it streams, and bounds the total bytes by the measured upload size. Run it after
-`cf workers versions create` and before any traffic split.
+The wave-1 production publisher runs the comparison after
+`cf workers versions create` and before staging the version at 0%
+(`scripts/ci/wave1-uploaded-modules.mjs`). It reads `?include=modules` with
+the upload step's deploy credential through a streaming JSON scanner that keeps
+only `result.modules[].name`, `result.main_module`, `success` and error
+messages, and discards `content_base64` as it streams, so the 1 MiB
+control-plane JSON cap stays in place. The read is bounded by the measured
+upload (base64 size of the modules plus per-module and envelope margin) and a
+15-second timeout. The emitted manifest comes from the upload's own
+`worker.config.json`. A different main module, a missing, extra or repeated
+module, an HTTP or API error, or a truncated, malformed or oversized body fails
+the publish before any deployment names the version, and the receipt records
+`moduleCompare` with the only-sealed, only-uploaded and repeated names, never
+module content. `scripts/ci/wave1-uploaded-modules.test.mjs` covers each case.
 
 ## Source maps over the upload limit
 

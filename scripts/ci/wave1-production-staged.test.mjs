@@ -204,3 +204,36 @@ test('a valid upload budget is accepted', async (t) => {
   });
   assert.equal(result.state, 'accepted-private');
 });
+
+test('uploaded modules that differ from the emit stop before any deployment write', async (t) => {
+  const p = setup(t);
+  p.state.moduleNames = (names) => names.slice(1);
+  await assert.rejects(
+    p.run(),
+    /Uploaded modules differ from the emitted manifest.*no traffic moved/
+  );
+  assert.equal(p.state.moduleReads, 1);
+  assert.deepEqual(p.state.deploymentWrites, []);
+  const record = receipt(p);
+  assert.equal(record.state, 'module-mismatch');
+  assert.equal(record.moduleCompare.onlySealed.length, 1);
+});
+
+test('a failed module read stops before any deployment write', async (t) => {
+  const p = setup(t);
+  p.state.moduleResponse = () =>
+    new Response('{"success":false}', { status: 502 });
+  await assert.rejects(p.run(), /Uploaded module compare failed/);
+  assert.deepEqual(p.state.deploymentWrites, []);
+  assert.equal(receipt(p).state, 'module-compare-failed');
+});
+
+test('a healthy release compares the uploaded modules once before staging', async (t) => {
+  const p = setup(t);
+  const result = await p.run();
+  assert.equal(result.moduleCompare.state, 'match');
+  assert.equal(p.state.moduleReads, 1);
+  // The compare ran before the first deployment write, which is the stage.
+  assert.equal(p.state.writesBeforeModuleRead, 0);
+  assert.deepEqual(p.state.deploymentWrites[0], stage);
+});

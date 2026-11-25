@@ -309,8 +309,8 @@ export function assertModuleClosure(bundleRoot, modules) {
 
 /**
  * Compares a published version's module names with the emitted manifest.
- * Names are normalized (`./`, `/`, backslashes); duplicates fail. Not yet
- * called by a publish path: see the module discovery docs page.
+ * Names are normalized (`./`, `/`, backslashes); duplicates fail. The
+ * wave-1 production publisher calls it before staging an uploaded version.
  */
 export function assertUploadedModuleSet(uploadedNames, expectedModules) {
   const normalize = (name) =>

@@ -627,6 +627,8 @@ test('a planner run with many rerun attempts pages through all of its jobs', asy
 });
 
 for (const state of [
+  'module-compare-failed',
+  'module-mismatch',
   'rolled-back',
   'smoke-failed',
   'stage-failed',

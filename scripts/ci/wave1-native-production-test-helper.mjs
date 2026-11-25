@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import {
+  existsSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
+  statSync,
   truncateSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,6 +20,24 @@ import { artifactDigest, prepare } from './wave1-native-artifact.mjs';
 import { assertRouteFree, main } from './wave1-native-production.mjs';
 
 const require = createRequire(import.meta.url);
+
+// The manifest the wave-1 emit wrote under this test's runner scratch.
+function emittedManifestIn(runnerTemp) {
+  const found = readdirSync(runnerTemp)
+    .filter((name) => name.startsWith('wave1-cf-publish-'))
+    .map((name) =>
+      join(
+        runnerTemp,
+        name,
+        'prebuilt/.cloudflare/output/v0/workers/default/worker.config.json'
+      )
+    )
+    .filter((path) => existsSync(path))
+    // The preflight measurement emits too; the upload's emit is the newest.
+    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
+  assert.ok(found.length > 0, 'the upload emitted a worker config');
+  return JSON.parse(readFileSync(found[0], 'utf8')).manifest;
+}
 const { fixture } = require('./wave1-native-test-fixture.cjs');
 export const sha = 'a'.repeat(40);
 export const oldId = '11111111-1111-1111-1111-111111111111';
@@ -87,6 +108,11 @@ export function setup(
     // The active deployment split; null derives one from `active`.
     split: null,
     deploymentWrites: [],
+    // The uploaded module listing: names from the emitted manifest, passed
+    // through moduleNames; moduleResponse replaces the whole response.
+    moduleNames: (names) => names,
+    moduleResponse: null,
+    moduleReads: 0,
     failDeploymentWrite: () => false,
     // Public edge behaviour: status codes per serving version, and whether
     // the override header reaches a staged version.
@@ -209,6 +235,28 @@ export function setup(
         workflow_runs: state.prior
           ? [run, { ...run, id: 122, head_sha: 'b'.repeat(40) }]
           : [run],
+      });
+    }
+    if (url.includes('/workers/workers/') && url.endsWith('?include=modules')) {
+      assert.equal(options.headers.Authorization, 'Bearer production-fixture');
+      state.moduleReads++;
+      state.writesBeforeModuleRead = state.deploymentWrites.length;
+      // The uploaded version's modules: the emitted manifest's, unless a
+      // test reshapes the listing.
+      const manifest = emittedManifestIn(runnerTemp);
+      const names = state.moduleNames(Object.keys(manifest.modules));
+      if (state.moduleResponse) return state.moduleResponse(names, manifest);
+      return Response.json({
+        success: true,
+        result: {
+          id: newId,
+          main_module: manifest.mainModule,
+          modules: names.map((name) => ({
+            name,
+            content_type: 'application/javascript+module',
+            content_base64: Buffer.from(`// ${name}`).toString('base64'),
+          })),
+        },
       });
     }
     const topology =

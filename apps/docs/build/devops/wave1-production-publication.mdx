@@ -41,7 +41,13 @@ every Cloudflare write.
    accepted receipt that wrote it. When it is newer than the candidate, the
    attempt records `superseded` and uploads nothing.
 2. **Version upload.** `cf workers versions create --prebuilt` creates the
-   version with no traffic.
+   version with no traffic. The publisher then reads the version's module
+   names back (`?include=modules`, streamed with the content discarded and the
+   bytes bounded by the measured upload) and compares them with the emitted
+   manifest. A different main module or a missing, extra or repeated module,
+   or a failed read, records `module-mismatch` or `module-compare-failed`
+   with names only and stops before staging, so traffic never moves. See
+   [cf Build Output module discovery](/build/development-tools/cf-build-output-module-discovery).
 3. **Stage at 0%.** A gradual deployment keeps the serving version at 100% and
    adds the new version at 0%.
 4. **Staged smoke.** Signed-out requests carry
@@ -133,8 +139,9 @@ owners should not deploy by hand while a publish job's upload step runs.
 
 ## Recovery
 
-The history skips an attempt that restored and confirmed its serving
-deployment (`stage-failed`, `smoke-failed`, `switch-failed`, `rolled-back`)
+The history skips an attempt that left the serving deployment unchanged
+(`module-compare-failed`, `module-mismatch`) or restored and confirmed it
+(`stage-failed`, `smoke-failed`, `switch-failed`, `rolled-back`)
 and carries forward the serving SHA its preflight proved, so the next release
 can still prove what serves. `uncertain` and `concurrent-change` block until a
 release owner reconciles them.

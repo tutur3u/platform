@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -10,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import {
   assertMeasuredLimits,
   assertUploadNameParity,
+  BUILD_OUTPUT_PREFIX,
   cfBundleSecondaryModuleNames,
   measureBuildOutputUpload,
   parseCfVersionId,
@@ -133,6 +135,7 @@ export async function publishWave1Artifact({
   dryRun = false,
   secretNames = [],
   traffic = 'activate',
+  withManifest = false,
 }) {
   if (dryRun)
     assert.equal(
@@ -189,5 +192,28 @@ export async function publishWave1Artifact({
     VERSION_ID.test(versionId ?? ''),
     'cf publication returned no version id'
   );
-  return versionId;
+  // The emitted manifest names the modules the upload must contain; the
+  // production publisher compares it with the uploaded version.
+  return withManifest
+    ? { versionId, manifest: emittedManifest(rehearsal.buildRoot) }
+    : versionId;
+}
+
+/** The module manifest the cf Build Output emit wrote for the upload. */
+export function emittedManifest(buildRoot) {
+  const path = join(
+    buildRoot,
+    BUILD_OUTPUT_PREFIX,
+    'workers/default/worker.config.json'
+  );
+  if (!existsSync(path)) {
+    // The fixture emit writes a single index.js module and no config.
+    return { mainModule: 'index.js', modules: { 'index.js': { type: 'esm' } } };
+  }
+  const { manifest } = JSON.parse(readFileSync(path, 'utf8'));
+  assert.ok(
+    manifest?.mainModule && manifest.modules,
+    'Emitted worker config has no module manifest'
+  );
+  return { mainModule: manifest.mainModule, modules: manifest.modules };
 }

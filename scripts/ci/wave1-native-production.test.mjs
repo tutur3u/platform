@@ -552,12 +552,23 @@ test('separate preflight, upload and verification steps enforce credential isola
   });
   assert.equal(uploaded.state, 'healthy');
   assert.equal(p.state.writes, 1);
-  // The upload step only stages, switches and reads back deployments, with
-  // its own credential; it reads no topology, history or settings.
+  // The upload step reads the uploaded version's module names, then stages,
+  // switches and reads back deployments, all with its own credential; it
+  // reads no topology, history or settings.
+  const uploadCalls = p.state.calls.slice(readsBefore);
   assert.ok(
-    p.state.calls
-      .slice(readsBefore)
-      .every((url) => url.endsWith('/deployments'))
+    uploadCalls.every(
+      (url) =>
+        url.endsWith('/deployments') ||
+        /\/workers\/workers\/[^/]+\/versions\/[^/?]+\?include=modules$/u.test(
+          url
+        )
+    ),
+    uploadCalls.join(', ')
+  );
+  assert.equal(
+    uploadCalls.filter((url) => url.endsWith('?include=modules')).length,
+    1
   );
   delete readEnv.GITHUB_TOKEN;
   const accepted = await p.run({

@@ -36,6 +36,7 @@ import { gateOrRollBack, minimumGateMs } from './wave1-production-health.mjs';
 import { supersedingSha } from './wave1-production-supersede.mjs';
 import { recoverPublication } from './wave1-production-recovery.mjs';
 import { stageSmokeSwitch } from './wave1-staged-publish.mjs';
+import { compareUploadedModules } from './wave1-uploaded-modules.mjs';
 
 // Upload, staged smoke and health gate stop by this budget; the upload
 // step's 25-minute timeout keeps the rest for the rollback and its re-probe.
@@ -101,6 +102,7 @@ export async function main({
   healthSleep,
   healthOptions = {},
   smokeOptions = {},
+  moduleReadTimeoutMs,
 } = {}) {
   const [app, sha, mode] = argv;
   assert.ok(['all', 'preflight', 'upload', 'verify', 'recover'].includes(mode));
@@ -492,12 +494,13 @@ export async function main({
     );
     validate();
     deadline.throwIfAborted();
+    let manifest;
     if (!record.reconciled) {
       record.state = 'pending';
       save();
       // One bounded upload. Exceptions remain pending, including a lost CLI receipt.
       try {
-        record.versionId = await uploadArtifact({
+        ({ versionId: record.versionId, manifest } = await uploadArtifact({
           env,
           appRoot,
           app,
@@ -511,7 +514,8 @@ export async function main({
           measurements: record.measurements,
           // A version without traffic; stageSmokeSwitch moves traffic.
           traffic: 'version-only',
-        });
+          withManifest: true,
+        }));
       } catch (error) {
         if (error instanceof NativeUploadError) {
           record.uploadFailure = error.uploadFailure;
@@ -529,6 +533,18 @@ export async function main({
     } else {
       record.state = 'uploaded-version';
       save();
+      // The uploaded version must hold exactly the emitted modules before any
+      // deployment names it; a dropped module graph fails here, not in traffic.
+      await compareUploadedModules({
+        record,
+        save,
+        manifest,
+        accountId: p.accountId,
+        worker: p.name,
+        token,
+        fetcher,
+        timeoutMs: moduleReadTimeoutMs,
+      });
       const request = (url, credential, body) =>
         boundedJson(url, credential, fetcher, body);
       await stageSmokeSwitch({

@@ -563,6 +563,7 @@ export async function uploadArtifact({
   secretNames = [],
   appRoot,
   traffic = 'activate',
+  withManifest = false,
 }) {
   if (dryRun)
     assert.equal(
@@ -615,6 +616,7 @@ export async function uploadArtifact({
       dryRun,
       secretNames,
       traffic,
+      withManifest,
     });
   }
   assert.fail(
