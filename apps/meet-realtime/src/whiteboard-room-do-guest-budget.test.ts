@@ -101,28 +101,30 @@ test('holds every guest on the board to one shared churn bucket', async () => {
         changes: [{ type: 'insert', element: heavy(id, version) }],
       })
     );
-  // Three guests each spend 35,484 of their own 40,000: 106,452 of the
-  // board's 120,000.
-  for (const [i, guest] of guests.slice(0, 3).entries())
-    for (let version = 1; version <= 4; version++)
-      await send(guest, `g${i}`, version);
+  // Every guest re-sends one shared shape, so only churn grows: the scene's
+  // seed element (no size, so counted as a full canvas) and this shape stay
+  // well inside the canvas area budget. Three guests each spend 35,484 of
+  // their own 40,000: 106,452 of the board's 120,000.
+  let version = 0;
+  for (const guest of guests.slice(0, 3))
+    for (let copy = 0; copy < 4; copy++) await send(guest, 'shared', ++version);
   assert.equal(
     guests.some((guest) => guest.sent.some((m) => m.type === 'rejected')),
     false
   );
   // The fourth guest's own bucket is full, but the board has 13,548 left.
   const fourth = guests[3]!;
-  await send(fourth, 'g3', 1);
+  await send(fourth, 'shared', ++version);
   assert.equal(
     fourth.sent.some((m) => m.type === 'rejected'),
     false
   );
-  await send(fourth, 'g3', 2);
+  await send(fourth, 'shared', ++version);
   assert.deepEqual(fourth.sent.at(-1), { type: 'rejected', reason: 'size' });
   // One second refills 12,000 to the board.
   clock.now += 1000;
   fourth.sent.length = 0;
-  await send(fourth, 'g3', 3);
+  await send(fourth, 'shared', ++version);
   assert.equal(
     fourth.sent.some((m) => m.type === 'rejected'),
     false
