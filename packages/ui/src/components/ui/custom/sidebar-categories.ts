@@ -2,11 +2,9 @@
  * Single source of truth for how the root app sidebar is sectioned.
  *
  * Every navigable app belongs to exactly one category, and categories render
- * in the fixed order below. Nothing else assigns section labels: the sidebar
- * used to stamp a label on each item and print a header whenever two
- * neighbouring labels differed, so a saved per-user order interleaved items
- * from different groups and headers repeated. Grouping by this registry
- * makes that impossible.
+ * in the fixed order below. Nothing else assigns section labels, so a header
+ * appears once however a saved per-user order interleaves apps from
+ * different categories.
  */
 export const SIDEBAR_CATEGORIES = [
   {

@@ -21,9 +21,9 @@ The dashboard sidebar is one flat list of apps grouped under category sections. 
 
 Apps that are not in the registry fall into **Utilities** and sort after the known apps. A section whose apps are all unavailable or archived is not rendered. **Settings** is pinned to the bottom of the sidebar, below an **Archived** entry when one exists.
 
-Why headers used to repeat: each app carried its own section label and the renderer printed a header whenever two neighbouring labels differed. A saved per-user order that interleaved apps from different groups therefore repeated headers out of order. Grouping by the registry makes that impossible.
+A header appears once because sections come from the registry, never from labels on individual items, so a saved per-user order that interleaves apps from different categories cannot repeat one.
 
-Section headers are collapsible. The collapsed state is remembered in the browser (`localStorage`, key `tuturuuu:sidebar:collapsed-sections:v1`, shared across workspaces); when storage is unavailable every section renders open. A collapsed section still shows the page you are on. In the icon-only rail the headers keep their space but are hidden, so every icon stays at the same height as in the expanded panel and every app stays reachable with a tooltip. Collapsible sections are opt-in (`collapsibleSections` on the shared sidebar navigation); other apps keep the plain label headers. Manage members, SSO and Domains live in the settings dialog (see [Settings dialog](/platform/features/settings-dialog)). The earlier More tools container (`more_tools`) is still how the navigation is authored, but it is expanded in place by the category layout, so no section or `flattenToolsSection` step remains. The apps/workspace copy of this sidebar is not changed by this decision.
+Section headers are collapsible. The collapsed state is remembered in the browser (`localStorage`, key `tuturuuu:sidebar:collapsed-sections:v1`, shared across workspaces); when storage is unavailable every section renders open. A collapsed section still shows the page you are on. In the icon-only rail the headers keep their space but are hidden, so every icon stays at the same height as in the expanded panel and every app stays reachable with a tooltip. Collapsible sections are opt-in (`collapsibleSections` on the shared sidebar navigation); other apps keep the plain label headers. Manage members, SSO and Domains live in the settings dialog (see [Settings dialog](/platform/features/settings-dialog)). The navigation is authored under an internal `more_tools` container that the category layout expands in place, so the sidebar has no More tools section. Web and Workspace share the registry and layout helpers from `@tuturuuu/ui` (`sidebar-categories`, `sidebar-category-layout`).
 
 Regression coverage: `__tests__/sidebar-navigation-preferences.test.ts`, `__tests__/sidebar-categories.test.ts` and `packages/ui/src/components/ui/custom/satellite-navigation.test.tsx`.
 
@@ -233,14 +233,14 @@ Sidebar layout preferences use a hybrid model:
 
 The saved layout stores three ordered id lists:
 
-- `root` and `more`: ids the user has ordered. They no longer decide which section an app is in; within its category an explicitly ordered app comes first, in the user's order, followed by the remaining apps in registry order.
+- `root` and `more`: ids the user has ordered. They do not decide which section an app is in; within its category an explicitly ordered app comes first, in the user's order, followed by the remaining apps in registry order.
 - `hidden`: first-level tools archived from normal sidebar rendering.
 
 Unknown or stale ids are ignored when the layout is applied and are dropped the next time the user saves preferences.
 
 ## Quick actions
 
-First-level navigation items expose an **Archive** hover action that hides an item from normal sidebar rendering. It also appears on tier-gated items that render grayed out. Saving layout preferences does not grant access to unavailable tools. Pin and unpin were removed from the sidebar (decided 2026-11-25) because every app now sits in a fixed category section; the stored `root`/`more` lists only order apps within their category. The sidebar-layout settings list the apps in the same category order, so each category header appears once there too.
+First-level navigation items expose an **Archive** hover action that hides an item from normal sidebar rendering. It also appears on tier-gated items that render grayed out. Saving layout preferences does not grant access to unavailable tools. The sidebar has no Pin or Unpin action (decided 2026-11-25) because every app sits in a fixed category section; the stored `root`/`more` lists only order apps within their category. The sidebar-layout settings list the apps in the same category order, so each category header appears once there too.
 
 Dashboard and Settings are locked and cannot be archived.
 
