@@ -61,8 +61,7 @@ test('holds a guest flood to the board relay byte budget', async () => {
   for (let step = 0; step < 20; step++) {
     for (const [i, guest] of guests.entries()) {
       await f.message(guest, selection(100, i));
-      if (step % 2 === 0)
-        await f.message(guest, cursor(step));
+      if (step % 2 === 0) await f.message(guest, cursor(step));
     }
     jest.advanceTimersByTime(BOARD_GUEST_LIMITS.relayIntervalMs);
   }
@@ -174,7 +173,10 @@ test('batches guest reconnect presence and bounds the bytes sent to a full room'
   for (const socket of f.sockets) assert.equal(presence(socket).length, 1);
   const bytes = f.sockets
     .flatMap(presence)
-    .reduce((sum, message) => sum + Buffer.byteLength(JSON.stringify(message)), 0);
+    .reduce(
+      (sum, message) => sum + Buffer.byteLength(JSON.stringify(message)),
+      0
+    );
   assert.ok(bytes < 2_000_000, `${bytes} presence bytes`);
   const [first] = presence(member);
   const guestId = boardActorId(SECRET, ids.boardId, guest.userId);
@@ -237,9 +239,10 @@ test('batches presence on refresh only when the honoured role changes', async ()
 
   await refresh('view');
   await refresh('view');
-  assert.deepEqual(guest.sent.filter((m) => m.type === 'role'), [
-    { type: 'role', role: 'view' },
-  ]);
+  assert.deepEqual(
+    guest.sent.filter((m) => m.type === 'role'),
+    [{ type: 'role', role: 'view' }]
+  );
   jest.advanceTimersByTime(1000);
   assert.equal(presence(member).length, 2);
   assert.deepEqual(
