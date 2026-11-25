@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/app/view/app_appearance.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
@@ -246,3 +247,29 @@ Widget routedSorbetTestApp({
 
 /// Hosts the drawers and sheets a routed [page] opens.
 Widget routedTestPage(Widget page) => shad.DrawerOverlay(child: page);
+
+/// [home] through the app builder's order: the platform [textScaler], the
+/// appearance host (window and user text size) and the Material bridge.
+Widget appBuilderTestApp({
+  required Widget home,
+  required AppearanceSettings appearance,
+  required TextScaler textScaler,
+  SorbetTheme? sorbet,
+}) => shad.ShadcnApp(
+  theme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.light),
+  themeMode: shad.ThemeMode.light,
+  enableThemeAnimation: false,
+  home: home,
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+    child: AppAppearanceHost(
+      appearance: appearance,
+      sorbet: sorbet,
+      child: ShadcnMaterialBridge(child: child!),
+    ),
+  ),
+);
+
+/// The font family the shad theme applies to all text below [context].
+String? shadSansFamilyOf(BuildContext context) =>
+    shad.Theme.of(context).typography.sans.fontFamily;
