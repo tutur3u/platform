@@ -47,16 +47,11 @@ import { JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { CallWaitingBanner } from './call-waiting-banner';
 import { PlaybackVolumeProvider } from './playback-volume';
-import { ReactionOverlay } from './reaction-overlay';
 import { CallPanelOwnerContext } from './resizable-call-panel';
 import { CallHeaderControls } from './call-header-controls';
-import { ScreenAudioStatus } from './screen-audio-status';
 import { SidePanel } from './side-panel';
-import { StageJoinQr } from './stage-join-qr';
-import {
-  offersJoinQrOptions,
-  useStageJoinQr,
-} from '../hooks/use-stage-join-qr';
+import { CallStageOverlays, StageScreenAudio } from './call-stage-overlays';
+import { useStageJoinQr } from '../hooks/use-stage-join-qr';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { findMeetTool, meetTools } from '../tools/registry';
 import { useMeetTools } from '../tools/use-meet-tools';
@@ -474,14 +469,7 @@ function CallShellContent({
       <FollowBanner nav={nav} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 min-w-0 flex-1 p-2 sm:p-3">
-          {room.screenStream && (
-            <div className="absolute top-3 left-3 z-20">
-              <ScreenAudioStatus
-                key={room.screenStream.id}
-                stream={room.screenStream}
-              />
-            </div>
-          )}
+          <StageScreenAudio stream={room.screenStream} />
           <RoomStage
             controller={stage}
             peopleCount={participants.length}
@@ -533,8 +521,7 @@ function CallShellContent({
                   compact={showActivities}
                   focus={focus}
                   onFocus={focusFeed}
-                  reserveCorner={joinQr.reserveCorner}
-                  onFillChange={joinQr.setStageFilled}
+                  {...joinQr.stage}
                 />
               ) : showActivities ? null : (
                 <PresenceStage
@@ -554,15 +541,7 @@ function CallShellContent({
               )
             }
           />
-          <ReactionOverlay state={state} />
-          <StageJoinQr
-            meetingId={meetingId}
-            qr={joinQr}
-            settings={state.settings}
-            onSettings={
-              offersJoinQrOptions(state) ? room.updateSettings : undefined
-            }
-          />
+          <CallStageOverlays meetingId={meetingId} room={room} qr={joinQr} />
         </main>
         {activities.dialog}
         <AccountGatedPersonalDrawer

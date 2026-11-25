@@ -72,15 +72,18 @@ export function useStageJoinQr(state: CallState, activityOpen: boolean) {
       presenceOnly: state.settings.transport === 'presence',
       stageFilled,
     });
+  /** The stage keeps a left gutter free from `lg` up for the open card. */
+  const reserveCorner = card && !minimized;
   return {
     visible,
     origin,
     card,
-    /** The stage keeps a left gutter free from `lg` up for the open card. */
-    reserveCorner: card && !minimized,
+    reserveCorner,
     minimized,
     setMinimized,
     setStageFilled,
+    /** `CallStage` props: keep the corner free and report a filled stage. */
+    stage: { reserveCorner, onFillChange: setStageFilled },
   };
 }
 
