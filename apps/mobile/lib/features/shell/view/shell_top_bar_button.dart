@@ -77,7 +77,8 @@ class ShellTopBarButton extends StatelessWidget {
     );
     final label = tooltip;
     if (label == null || label.trim().isEmpty) return button;
-    return AppTooltip(message: label, child: button);
+    // Top-bar tooltips open below so they never sit under the status bar.
+    return AppTooltip(message: label, preferBelow: true, child: button);
   }
 }
 

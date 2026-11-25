@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 export 'app_checkbox.dart';
-export 'app_tooltip.dart';
 export 'app_switch.dart';
+export 'app_tooltip.dart';
 
 /// Hairline separator. Replaces `shad.Divider` / `shad.VerticalDivider`.
 class AppDivider extends StatelessWidget {

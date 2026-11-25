@@ -226,6 +226,8 @@ class AppFilterButton extends StatelessWidget {
         ),
       ),
     );
-    return tooltip == null ? button : AppTooltip(message: tooltip, child: button);
+    return tooltip == null
+        ? button
+        : AppTooltip(message: tooltip, child: button);
   }
 }

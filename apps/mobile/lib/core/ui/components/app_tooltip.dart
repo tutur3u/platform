@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
@@ -73,20 +75,36 @@ class _AppTooltipState extends State<AppTooltip> {
 
   GlobalKey<TooltipState> get _tooltip => widget.tooltipKey ?? _ownKey;
 
+  /// The tooltip currently opened by keyboard focus. Focus moving to the
+  /// next button notifies the new owner before the old one, so a blur only
+  /// dismisses when no other tooltip took over.
+  static _AppTooltipState? _focusOwner;
+
   void _onFocusChange(bool focused) {
     final keyboard =
         FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
     if (focused && keyboard) {
+      _focusOwner = this;
       _tooltip.currentState?.ensureTooltipVisible();
-    } else if (!focused) {
-      Tooltip.dismissAllToolTips();
+    } else if (!focused && identical(_focusOwner, this)) {
+      _focusOwner = null;
+      scheduleMicrotask(() {
+        if (_focusOwner == null) Tooltip.dismissAllToolTips();
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    if (identical(_focusOwner, this)) _focusOwner = null;
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Focus(
     canRequestFocus: false,
     skipTraversal: true,
+    includeSemantics: false,
     onFocusChange: _onFocusChange,
     child: Tooltip(
       key: _tooltip,

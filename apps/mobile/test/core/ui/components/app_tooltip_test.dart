@@ -25,10 +25,7 @@ void main() {
 
       final decoration = theme.decoration! as BoxDecoration;
       expect(decoration.color, tokens.colorScheme.background);
-      expect(
-        decoration.border,
-        Border.all(color: tokens.colorScheme.border),
-      );
+      expect(decoration.border, Border.all(color: tokens.colorScheme.border));
       expect(theme.textStyle?.color, tokens.colorScheme.foreground);
       expect(theme.textStyle?.fontSize, 12);
       expect(
@@ -69,6 +66,73 @@ void main() {
     focus.unfocus();
     await tester.pumpAndSettle(const Duration(seconds: 1));
     expect(find.text('Archive'), findsNothing);
+  });
+
+  testWidgets('tabbing to the next button keeps its tooltip open', (
+    tester,
+  ) async {
+    final first = FocusNode();
+    final second = FocusNode();
+    addTearDown(first.dispose);
+    addTearDown(second.dispose);
+    FocusManager.instance.highlightStrategy =
+        FocusHighlightStrategy.alwaysTraditional;
+    addTearDown(
+      () => FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.automatic,
+    );
+    await tester.pumpApp(
+      Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppTooltip(
+              message: 'Archive',
+              child: TextButton(
+                focusNode: first,
+                onPressed: () {},
+                child: const Text('A'),
+              ),
+            ),
+            AppTooltip(
+              message: 'Delete',
+              child: TextButton(
+                focusNode: second,
+                onPressed: () {},
+                child: const Text('D'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    first.requestFocus();
+    await tester.pumpAndSettle();
+    expect(find.text('Archive'), findsOneWidget);
+
+    second.requestFocus();
+    await tester.pumpAndSettle();
+    expect(find.text('Delete'), findsOneWidget);
+  });
+
+  testWidgets('a long tooltip wraps at the web max width', (tester) async {
+    final key = GlobalKey<TooltipState>();
+    await tester.pumpApp(
+      Center(
+        child: AppTooltip(
+          tooltipKey: key,
+          message: 'word ' * 80,
+          child: const Text('target'),
+        ),
+      ),
+    );
+    key.currentState!.ensureTooltipVisible();
+    await tester.pumpAndSettle();
+    final bubble = find.ancestor(
+      of: find.text('word ' * 80),
+      matching: find.byType(DecoratedBox),
+    );
+    expect(tester.getSize(bubble.first).width, lessThanOrEqualTo(384));
   });
 
   testWidgets('a caller key can show the tooltip on demand', (tester) async {

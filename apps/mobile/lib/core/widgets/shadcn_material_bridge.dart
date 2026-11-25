@@ -60,15 +60,15 @@ class ShadcnMaterialBridge extends StatelessWidget {
         settings: appearance ?? const AppearanceSettings(),
         child: AppTooltipTheme(
           child: Material(
-          color: Colors.transparent,
-          child: ScaffoldMessenger(
-            child: AnnotatedRegion<SystemUiOverlayStyle>(
-              value: AppTheme.systemUiOverlayStyleFor(theme.brightness),
-              child:
-                  navigatorBoundary?.call(_AccountToastLayer(child: child)) ??
-                  child,
+            color: Colors.transparent,
+            child: ScaffoldMessenger(
+              child: AnnotatedRegion<SystemUiOverlayStyle>(
+                value: AppTheme.systemUiOverlayStyleFor(theme.brightness),
+                child:
+                    navigatorBoundary?.call(_AccountToastLayer(child: child)) ??
+                    child,
+              ),
             ),
-          ),
           ),
         ),
       ),
