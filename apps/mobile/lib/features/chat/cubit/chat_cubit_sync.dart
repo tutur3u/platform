@@ -50,6 +50,21 @@ extension ChatCubitSync on ChatCubit {
     return kept;
   }
 
+  /// Forgets local rows that are gone without a server copy (dropped by a
+  /// merge, or a send the queue rejected for good).
+  void _pruneUnsynced() {
+    final wsId = state.wsId;
+    final present = {
+      for (final messages in state.messages.values)
+        for (final message in messages) message.id,
+    };
+    _unsyncedIds.removeWhere(
+      (id) =>
+          !present.contains(id) &&
+          (wsId == null || !isPendingChatMessage(wsId, id)),
+    );
+  }
+
   void _onQueueChanged() {
     final wsId = state.wsId;
     final selectedId = state.selectedConversationId;
@@ -60,8 +75,16 @@ extension ChatCubitSync on ChatCubit {
           !isPendingChatMessage(wsId, message.id),
     );
     if (replayed) {
+      // Bypass the cache: the cached page predates the replay and holds
+      // neither the local row nor its server copy. A failed refetch is
+      // left for the next refresh, so it must not escape this listener.
       unawaited(
-        selectConversation(selectedId, forceRefresh: true, quietly: true),
+        selectConversation(
+          selectedId,
+          forceRefresh: true,
+          fresh: true,
+          quietly: true,
+        ).catchError((Object _) {}),
       );
     }
   }

@@ -40,11 +40,21 @@ extension ChatCubitMessageMerge on ChatCubit {
   }
 
   /// [messages] without duplicate ids (the last occurrence wins) or local
-  /// rows already replaced by their server copy, oldest first.
+  /// rows already replaced by their server copy, oldest first, with the
+  /// viewer's in-flight reaction taps applied over fetched reactions.
   List<ChatMessage> _sortedById(List<ChatMessage> messages) =>
       _withoutReplayedDuplicates(
         <String, ChatMessage>{
-          for (final message in messages) message.id: message,
+          for (final message in messages)
+            message.id:
+                _latestReactionOps.keys.any((key) => key.$1 == message.id)
+                ? message.copyWith(
+                    reactions: _withPendingReactions(
+                      message.id,
+                      message.reactions,
+                    ),
+                  )
+                : message,
         }.values.toList(),
       )..sort(
         (left, right) => (left.createdAt ?? DateTime(0)).compareTo(
@@ -52,60 +62,79 @@ extension ChatCubitMessageMerge on ChatCubit {
         ),
       );
 
-  /// Folds a freshly fetched newest page into the loaded thread.
+  /// Folds a fetched newest page into the loaded thread.
   ///
-  /// When the page overlaps the loaded messages (it shares a synced id or
-  /// starts at or before the newest loaded one), messages at or before its
-  /// start stay, so older pages, the history cursor and the scroll position
-  /// survive. A page that does not overlap replaces the thread: keeping the
-  /// old messages would leave a gap the history cursor could never fill.
-  /// Loaded messages newer than the page, such as a realtime message that
+  /// Overlap is judged only against rows earlier fetches returned (the
+  /// conversation's fetched range), never against rows realtime or a live
+  /// send appended: those can share an id with a page that skipped a long
+  /// run of messages. A quiet refresh whose full page overlaps keeps the
+  /// messages at or before its start, so older pages, the history cursor
+  /// and the reading position survive. Any other page replaces the fetched
+  /// rows, because keeping them would leave a gap the cursor never fills.
+  /// Appended rows newer than the page, such as a realtime message that
   /// arrived during the fetch, are kept either way.
-  ({List<ChatMessage> messages, bool hasOlder}) _mergeNewestPage(
-    String wsId,
+  ({List<ChatMessage> messages, bool hasOlder}) _mergeFetchedPage(
     String conversationId,
-    ChatMessagePage page,
-  ) {
+    ChatMessagePage page, {
+    required bool quietly,
+  }) {
     final full = page.serverCount >= ChatCubit.messagePageSize;
-    final existing = state.messages[conversationId];
-    if (existing == null) {
-      return (messages: _sortedById(page.messages), hasOlder: full);
-    }
-    final synced = existing
+    final fetched = _fetched[conversationId];
+    final synced = (state.messages[conversationId] ?? const <ChatMessage>[])
         .where((message) => isMessageSynced(message.id))
         .toList(growable: false);
     final pageStart = _syncedBound(page.messages, newest: false);
     final pageEnd = _syncedBound(page.messages, newest: true);
-    final loadedEnd = _syncedBound(synced, newest: true);
     final pageIds = {for (final message in page.messages) message.id};
+    final fetchedEnd = fetched?.end;
     final overlaps =
-        synced.any((message) => pageIds.contains(message.id)) ||
-        (pageStart != null &&
-            loadedEnd != null &&
-            !pageStart.isAfter(loadedEnd));
+        quietly &&
+        full &&
+        pageStart != null &&
+        fetched != null &&
+        (pageIds.any(fetched.ids.contains) ||
+            (fetchedEnd != null && !pageStart.isAfter(fetchedEnd)));
     final newer = pageEnd == null
         ? const <ChatMessage>[]
         : synced
-              .where((message) => message.createdAt?.isAfter(pageEnd) ?? false)
+              .where(
+                (message) =>
+                    !(fetched?.ids.contains(message.id) ?? false) &&
+                    !pageIds.contains(message.id) &&
+                    (message.createdAt?.isAfter(pageEnd) ?? false),
+              )
               .toList(growable: false);
-    if (!full || !overlaps || pageStart == null) {
-      return (
-        messages: _sortedById([...page.messages, ...newer]),
-        hasOlder: full,
-      );
-    }
-    final older = synced
-        .where(
-          (message) =>
-              !pageIds.contains(message.id) &&
-              !(message.createdAt?.isAfter(pageStart) ?? true),
-        )
-        .toList(growable: false);
+    final older = overlaps
+        ? synced
+              .where(
+                (message) =>
+                    !pageIds.contains(message.id) &&
+                    !(message.createdAt?.isAfter(pageStart) ?? true),
+              )
+              .toList(growable: false)
+        : const <ChatMessage>[];
+    _fetched[conversationId] = overlaps
+        ? (
+            end: pageEnd == null || fetchedEnd!.isAfter(pageEnd)
+                ? fetchedEnd
+                : pageEnd,
+            ids: {...fetched.ids, ...pageIds},
+          )
+        : (end: pageEnd, ids: pageIds);
     return (
       messages: _sortedById([...older, ...page.messages, ...newer]),
       hasOlder: older.isEmpty
           ? full
           : state.hasOlderMessages[conversationId] ?? full,
+    );
+  }
+
+  /// Records an older history page as fetched without moving the range end.
+  void _recordOlderPage(String conversationId, ChatMessagePage page) {
+    final fetched = _fetched[conversationId];
+    _fetched[conversationId] = (
+      end: fetched?.end ?? _syncedBound(page.messages, newest: true),
+      ids: {...?fetched?.ids, for (final message in page.messages) message.id},
     );
   }
 

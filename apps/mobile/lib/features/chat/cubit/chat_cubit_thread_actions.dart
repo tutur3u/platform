@@ -100,6 +100,7 @@ extension ChatCubitThreadActions on ChatCubit {
       );
       if (!_scopeActive || token != _loadToken || state.wsId != wsId) return;
       _trackUnsynced(wsId, page.messages);
+      _recordOlderPage(conversationId, page);
       final merged = _sortedById([
         ...?state.messages[conversationId],
         ...page.messages,
@@ -113,6 +114,7 @@ extension ChatCubitThreadActions on ChatCubit {
           },
         ),
       );
+      _pruneUnsynced();
     } on ApiException catch (error) {
       _emitState(state.copyWith(error: error.message));
     } on Object catch (error) {

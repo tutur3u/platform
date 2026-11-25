@@ -104,9 +104,17 @@ class CubitFixtureRepository extends ChatRepository {
     bool forceRefresh = false,
   }) async {
     beforeCursors.add(before);
+    // Like the real repository, serve the cached page unless forced.
+    final key = (conversationId, before);
+    final cached = _cache[key];
+    if (!forceRefresh && cached != null) return cached;
     final messages = await onListMessages(conversationId, before);
-    return (messages: messages, serverCount: serverCountOf(messages));
+    final page = (messages: messages, serverCount: serverCountOf(messages));
+    _cache[key] = page;
+    return page;
   }
+
+  final Map<(String, String?), ChatMessagePage> _cache = {};
 
   @override
   Future<ChatConversation> markRead(

@@ -52,10 +52,14 @@ Older history loads a page at a time with `before` set to the oldest synced
 message, as web does; a page is full when the server itself returned a full
 page, before queued sends or deletes are overlaid. A quiet refresh (realtime
 fallback, resync or pull to refresh) folds the newest page into the loaded
-thread only when the page overlaps it, so older pages and the reading position
-survive; a page that does not overlap replaces the thread, because keeping the
-old messages would leave a gap the history cursor could never fill. Messages
-newer than the page, such as one that arrived during the fetch, are kept.
+thread only when the page overlaps the rows earlier fetches returned, so older
+pages and the reading position survive. Rows appended by realtime or a live
+send never count toward that overlap, since they can share an id with a page
+that skipped a long run of messages; a page that does not overlap replaces the
+fetched rows, because keeping them would leave a gap the history cursor could
+never fill. Appended messages newer than the page, such as one that arrived
+during a fetch, are kept on every load, and in-flight reaction taps are
+re-applied over fetched reactions.
 Realtime `message.created` appends; edits, deletions and reaction updates patch
 a loaded message in place and leave the conversation list order alone.
 
@@ -80,7 +84,7 @@ Regression coverage: `chat_conversation_layout_test.dart`,
 `chat_pagination_scope_test.dart`, `chat_thread_layout_test.dart`,
 `chat_thread_items_test.dart`, `chat_surface_width_test.dart`,
 `chat_cubit_history_test.dart`, `chat_cubit_message_actions_test.dart`,
-`chat_cubit_sync_test.dart` and the
+`chat_cubit_sync_test.dart`, `chat_cubit_fetch_range_test.dart` and the
 `chat_page_render_test.dart` design renders (phone, tablet and desktop in
 light and dark) in `apps/mobile/test/features/chat`.
 

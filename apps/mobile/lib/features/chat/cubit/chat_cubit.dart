@@ -39,6 +39,11 @@ class ChatCubit extends Cubit<ChatState> {
   /// sends whose server copy has not replaced the local row.
   final Set<String> _unsyncedIds = {};
 
+  /// Per conversation, the newest `createdAt` and the ids of rows that
+  /// fetches returned. Rows appended by realtime or a live send are not
+  /// included, so they cannot make a later page look contiguous.
+  final Map<String, ({DateTime? end, Set<String> ids})> _fetched = {};
+
   final String? Function() _currentUserId;
   final String? _ownerId;
   final CacheStore _store;
@@ -349,12 +354,7 @@ class ChatCubit extends Cubit<ChatState> {
       // A quiet refresh folds the newest page into the loaded thread so
       // older pages, the history cursor and the scroll position survive.
       _trackUnsynced(wsId, page.messages);
-      final next = quietly
-          ? _mergeNewestPage(wsId, conversationId, page)
-          : (
-              messages: _withoutReplayedDuplicates(page.messages),
-              hasOlder: page.serverCount >= messagePageSize,
-            );
+      final next = _mergeFetchedPage(conversationId, page, quietly: quietly);
       final replyId = state.replyToMessageId;
       emit(
         state.copyWith(
@@ -371,6 +371,7 @@ class ChatCubit extends Cubit<ChatState> {
               : replyId,
         ),
       );
+      _pruneUnsynced();
       if (!quietly) {
         _clearUnread(conversationId);
         unawaited(_repository.markRead(wsId, conversationId));
