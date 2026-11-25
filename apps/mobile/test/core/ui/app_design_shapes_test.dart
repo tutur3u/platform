@@ -53,6 +53,18 @@ BoxDecoration _decoration(WidgetTester tester, Finder within) =>
             .decoration
         as BoxDecoration;
 
+/// The border a card paints in front of its fill, if any.
+BoxBorder? _cardOutline(WidgetTester tester, Finder within) {
+  final outlines = tester
+      .widgetList<DecoratedBox>(
+        find.descendant(of: within, matching: find.byType(DecoratedBox)),
+      )
+      .where((box) => box.position == DecorationPosition.foreground);
+  return outlines.isEmpty
+      ? null
+      : (outlines.first.decoration as BoxDecoration).border;
+}
+
 OutlineInputBorder _fieldBorder(WidgetTester tester) =>
     tester.widget<TextField>(find.byType(TextField)).decoration!.enabledBorder!
         as OutlineInputBorder;
@@ -289,13 +301,16 @@ void main() {
         if (sorbet == null) {
           expect(radius(card), AppRadius.md);
           expect(radius(panel), AppRadius.card);
-          expect(card.border, isNotNull);
+          expect(
+            _cardOutline(tester, find.byKey(const Key('card'))),
+            isNotNull,
+          );
           expect(panel.border, isNotNull);
           expect(card.boxShadow, isEmpty);
         } else {
           expect(radius(card), 18);
           expect(radius(panel), 24);
-          expect(card.border, isNull);
+          expect(_cardOutline(tester, find.byKey(const Key('card'))), isNull);
           expect(panel.border, isNull);
           expect(card.boxShadow, tokens.depth.card);
           expect(panel.color?.a, 1);
@@ -320,10 +335,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        _decoration(tester, find.byKey(const Key('card'))).border,
-        isNotNull,
-      );
+      expect(_cardOutline(tester, find.byKey(const Key('card'))), isNotNull);
     });
 
     for (final sorbet in [null, const SorbetTheme()]) {
