@@ -4423,6 +4423,138 @@ abstract class AppLocalizations {
   /// **'Could not refresh. Showing the last loaded content.'**
   String get cmsRefreshFailed;
 
+  /// No description provided for @commandPaletteActionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This action is unavailable here.'**
+  String get commandPaletteActionUnavailable;
+
+  /// No description provided for @commandPaletteActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get commandPaletteActions;
+
+  /// No description provided for @commandPaletteCommands.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands'**
+  String get commandPaletteCommands;
+
+  /// No description provided for @commandPaletteControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Ctrl'**
+  String get commandPaletteControl;
+
+  /// No description provided for @commandPaletteDestinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to'**
+  String get commandPaletteDestinations;
+
+  /// No description provided for @commandPaletteEnterKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get commandPaletteEnterKey;
+
+  /// No description provided for @commandPaletteEscapeKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Esc'**
+  String get commandPaletteEscapeKey;
+
+  /// No description provided for @commandPaletteMoveSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Move selection'**
+  String get commandPaletteMoveSelection;
+
+  /// No description provided for @commandPaletteNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New Mira chat'**
+  String get commandPaletteNewChat;
+
+  /// No description provided for @commandPaletteNewItem.
+  ///
+  /// In en, this message translates to:
+  /// **'New item'**
+  String get commandPaletteNewItem;
+
+  /// No description provided for @commandPaletteNewItemDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat in Mira, new task elsewhere'**
+  String get commandPaletteNewItemDescription;
+
+  /// No description provided for @commandPaletteNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching tasks or notes'**
+  String get commandPaletteNoResults;
+
+  /// No description provided for @commandPalettePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search commands, tasks, and notes'**
+  String get commandPalettePlaceholder;
+
+  /// No description provided for @commandPaletteRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get commandPaletteRecent;
+
+  /// No description provided for @commandPaletteRunSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Run selected command'**
+  String get commandPaletteRunSelection;
+
+  /// No description provided for @commandPaletteSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks and notes'**
+  String get commandPaletteSearchResults;
+
+  /// No description provided for @commandPaletteSearchUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Some search results could not be loaded.'**
+  String get commandPaletteSearchUnavailable;
+
+  /// No description provided for @commandPaletteShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get commandPaletteShortcuts;
+
+  /// No description provided for @commandPaletteSwitchWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch workspace'**
+  String get commandPaletteSwitchWorkspace;
+
+  /// No description provided for @commandPaletteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Command palette'**
+  String get commandPaletteTitle;
+
+  /// No description provided for @commandPaletteToggleTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle light or dark theme'**
+  String get commandPaletteToggleTheme;
+
+  /// No description provided for @commandPaletteUntitledTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get commandPaletteUntitledTask;
+
   /// No description provided for @commonActive.
   ///
   /// In en, this message translates to:
@@ -17112,6 +17244,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Surfaces'**
   String get appearanceSurfacesTitle;
+
+  /// No description provided for @appearanceTextFontInterfaceDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Match design'**
+  String get appearanceTextFontInterfaceDefault;
+
+  /// No description provided for @appearanceTextFontTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Font family'**
+  String get appearanceTextFontTitle;
+
+  /// No description provided for @appearanceTextSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Your tasks, notes, and calendar.'**
+  String get appearanceTextSample;
+
+  /// No description provided for @appearanceTextSizeDecrease.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease text size'**
+  String get appearanceTextSizeDecrease;
+
+  /// No description provided for @appearanceTextSizeIncrease.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase text size'**
+  String get appearanceTextSizeIncrease;
+
+  /// No description provided for @appearanceTextSizeReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset text size'**
+  String get appearanceTextSizeReset;
+
+  /// No description provided for @appearanceTextSizeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get appearanceTextSizeTitle;
+
+  /// No description provided for @appearanceTextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get appearanceTextTitle;
 
   /// No description provided for @appearanceThemeAurora.
   ///

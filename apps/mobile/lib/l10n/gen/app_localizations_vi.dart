@@ -2266,6 +2266,72 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cmsRefreshFailed => 'Không thể làm mới. Đang hiển thị nội dung đã tải gần nhất.';
 
   @override
+  String get commandPaletteActionUnavailable => 'Thao tác này không dùng được tại đây.';
+
+  @override
+  String get commandPaletteActions => 'Thao tác';
+
+  @override
+  String get commandPaletteCommands => 'Lệnh';
+
+  @override
+  String get commandPaletteControl => 'Ctrl';
+
+  @override
+  String get commandPaletteDestinations => 'Đi đến';
+
+  @override
+  String get commandPaletteEnterKey => 'Enter';
+
+  @override
+  String get commandPaletteEscapeKey => 'Esc';
+
+  @override
+  String get commandPaletteMoveSelection => 'Di chuyển vùng chọn';
+
+  @override
+  String get commandPaletteNewChat => 'Cuộc trò chuyện mới với Mira';
+
+  @override
+  String get commandPaletteNewItem => 'Tạo mục mới';
+
+  @override
+  String get commandPaletteNewItemDescription => 'Tạo cuộc trò chuyện trong Mira, tạo công việc ở nơi khác';
+
+  @override
+  String get commandPaletteNoResults => 'Không tìm thấy công việc hoặc ghi chú phù hợp';
+
+  @override
+  String get commandPalettePlaceholder => 'Tìm lệnh, công việc và ghi chú';
+
+  @override
+  String get commandPaletteRecent => 'Gần đây';
+
+  @override
+  String get commandPaletteRunSelection => 'Chạy lệnh đã chọn';
+
+  @override
+  String get commandPaletteSearchResults => 'Công việc và ghi chú';
+
+  @override
+  String get commandPaletteSearchUnavailable => 'Không thể tải một số kết quả tìm kiếm.';
+
+  @override
+  String get commandPaletteShortcuts => 'Phím tắt';
+
+  @override
+  String get commandPaletteSwitchWorkspace => 'Chuyển không gian làm việc';
+
+  @override
+  String get commandPaletteTitle => 'Bảng lệnh';
+
+  @override
+  String get commandPaletteToggleTheme => 'Chuyển giao diện sáng hoặc tối';
+
+  @override
+  String get commandPaletteUntitledTask => 'Công việc chưa có tiêu đề';
+
+  @override
   String get commonActive => 'Đang hoạt động';
 
   @override
@@ -9009,6 +9075,30 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appearanceSurfacesTitle => 'Bề mặt';
+
+  @override
+  String get appearanceTextFontInterfaceDefault => 'Theo thiết kế';
+
+  @override
+  String get appearanceTextFontTitle => 'Phông chữ';
+
+  @override
+  String get appearanceTextSample => 'Công việc, ghi chú và lịch của bạn.';
+
+  @override
+  String get appearanceTextSizeDecrease => 'Giảm cỡ chữ';
+
+  @override
+  String get appearanceTextSizeIncrease => 'Tăng cỡ chữ';
+
+  @override
+  String get appearanceTextSizeReset => 'Đặt lại cỡ chữ';
+
+  @override
+  String get appearanceTextSizeTitle => 'Cỡ chữ';
+
+  @override
+  String get appearanceTextTitle => 'Chữ';
 
   @override
   String get appearanceThemeAurora => 'Cực quang';

@@ -2280,6 +2280,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmsRefreshFailed => 'Could not refresh. Showing the last loaded content.';
 
   @override
+  String get commandPaletteActionUnavailable => 'This action is unavailable here.';
+
+  @override
+  String get commandPaletteActions => 'Actions';
+
+  @override
+  String get commandPaletteCommands => 'Commands';
+
+  @override
+  String get commandPaletteControl => 'Ctrl';
+
+  @override
+  String get commandPaletteDestinations => 'Go to';
+
+  @override
+  String get commandPaletteEnterKey => 'Enter';
+
+  @override
+  String get commandPaletteEscapeKey => 'Esc';
+
+  @override
+  String get commandPaletteMoveSelection => 'Move selection';
+
+  @override
+  String get commandPaletteNewChat => 'New Mira chat';
+
+  @override
+  String get commandPaletteNewItem => 'New item';
+
+  @override
+  String get commandPaletteNewItemDescription => 'New chat in Mira, new task elsewhere';
+
+  @override
+  String get commandPaletteNoResults => 'No matching tasks or notes';
+
+  @override
+  String get commandPalettePlaceholder => 'Search commands, tasks, and notes';
+
+  @override
+  String get commandPaletteRecent => 'Recent';
+
+  @override
+  String get commandPaletteRunSelection => 'Run selected command';
+
+  @override
+  String get commandPaletteSearchResults => 'Tasks and notes';
+
+  @override
+  String get commandPaletteSearchUnavailable => 'Some search results could not be loaded.';
+
+  @override
+  String get commandPaletteShortcuts => 'Keyboard shortcuts';
+
+  @override
+  String get commandPaletteSwitchWorkspace => 'Switch workspace';
+
+  @override
+  String get commandPaletteTitle => 'Command palette';
+
+  @override
+  String get commandPaletteToggleTheme => 'Toggle light or dark theme';
+
+  @override
+  String get commandPaletteUntitledTask => 'Untitled task';
+
+  @override
   String get commonActive => 'Active';
 
   @override
@@ -9123,6 +9189,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSurfacesTitle => 'Surfaces';
+
+  @override
+  String get appearanceTextFontInterfaceDefault => 'Match design';
+
+  @override
+  String get appearanceTextFontTitle => 'Font family';
+
+  @override
+  String get appearanceTextSample => 'Your tasks, notes, and calendar.';
+
+  @override
+  String get appearanceTextSizeDecrease => 'Decrease text size';
+
+  @override
+  String get appearanceTextSizeIncrease => 'Increase text size';
+
+  @override
+  String get appearanceTextSizeReset => 'Reset text size';
+
+  @override
+  String get appearanceTextSizeTitle => 'Text size';
+
+  @override
+  String get appearanceTextTitle => 'Text';
 
   @override
   String get appearanceThemeAurora => 'Aurora';
