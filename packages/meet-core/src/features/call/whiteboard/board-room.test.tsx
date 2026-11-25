@@ -25,6 +25,10 @@ vi.mock('next-themes', () => ({
   useTheme: () => ({ resolvedTheme: 'light' }),
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
+const ux = vi.hoisted(() => ({ v2: false }));
+vi.mock('../prejoin/prejoin-context', () => ({
+  useMeetUxV2: () => ux.v2,
+}));
 
 const { BoardRoom } = await import('./board-room');
 const boardId = '33333333-4444-4555-8666-777777777777';
@@ -57,6 +61,40 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  ux.v2 = false;
+});
+
+function renderRoom() {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <BoardRoom
+          meetingId="m"
+          boardId={boardId}
+          title="Plan"
+          onBack={() => {}}
+          onClosed={() => {}}
+        />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+}
+
+it('speaks of no saving on the Meet UX v2 Whiteboard', async () => {
+  const c = messages.meet.collaboration;
+  renderRoom();
+  await screen.findByTestId('canvas');
+  expect(screen.getByRole('status').getAttribute('title')).toBe(
+    c.board_saved_note
+  );
+  cleanup();
+  ux.v2 = true;
+  renderRoom();
+  await screen.findByTestId('canvas');
+  const note = screen.getByRole('status').getAttribute('title');
+  expect(note).toBe(c.board_live_note);
+  expect(note).not.toMatch(/sav/i);
+  expect(screen.queryByRole('button', { name: /save/i })).toBeNull();
 });
 
 it('opens the board socket with the ticket as a subprotocol', async () => {

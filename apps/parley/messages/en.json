@@ -4367,6 +4367,11 @@
       "bandwidth_hint": "Video adapts to network conditions. Speech stays prioritized, and sending pauses when you are alone.",
       "bandwidth_quality": "Higher quality",
       "bandwidth_saver": "Data saver",
+      "class_timer_everyone_off": "This room does not offer a timer for everyone.",
+      "class_timer_everyone_role": "Only hosts and co-hosts can set a timer for everyone.",
+      "class_timer_mode": "Who sees this timer",
+      "class_timer_mode_everyone": "Everyone",
+      "class_timer_mode_me": "Just me",
       "participant_identity": {
         "external": "From outside this workspace",
         "guest": "Guest, not signed in"
@@ -4907,6 +4912,12 @@
       },
       "activities": {
         "button": "Activities",
+        "merged": {
+          "timer": "Timer",
+          "timer_description": "Count down for yourself or the whole room",
+          "whiteboard": "Whiteboard",
+          "whiteboard_description": "Draw together on a Tuturuuu Whiteboard"
+        },
         "title": "Activities",
         "hint": "Opens for you; Summon brings others",
         "settings": "Activities",
@@ -5327,6 +5338,7 @@
       "ask_actions": "Action items"
     },
     "collaboration": {
+      "board_live_note": "Every change reaches the workspace whiteboard as you draw.",
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",
       "checkpoint_deferred": "Workspace backup is delayed. Live edits remain in this room while saving is retried.",
       "connecting": "Connecting to the shared document…",

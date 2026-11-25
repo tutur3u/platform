@@ -1,5 +1,12 @@
 'use client';
-import { CodeXml, FileText, LayoutGrid, Presentation } from '@tuturuuu/icons';
+import {
+  CodeXml,
+  FileText,
+  LayoutGrid,
+  PenTool,
+  Presentation,
+  Timer,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { SettingsDialogFocusContext } from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
@@ -8,6 +15,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useRef, useState } from 'react';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import {
   BOARD_ACTIVITY,
   CLASSROOM_ACTIVITIES,
@@ -18,6 +26,7 @@ import {
 import { useActivitiesRequest } from '../stage-layout/activities-request';
 import type { MeetToolDefinition } from '../tools/registry';
 import { ActivitiesDialog } from './activities-dialog';
+import { mergeActivityTiles } from './activities-merge';
 import type { ActivityNavigation } from './activity-launch-control';
 import {
   ActivitiesNavigationContext,
@@ -73,6 +82,7 @@ export function ActivitiesMenu({
   const programmingT = useTranslations('programmingPlayground');
   const collaborationT = useTranslations('meet.collaboration');
   const all = useTranslations();
+  const merged = useMeetCallUx();
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const afterClose = useRef<(() => void) | undefined>(undefined);
@@ -159,7 +169,22 @@ export function ActivitiesMenu({
     })),
     ...pages,
   ];
-  const tiles = entries.map((tile) => ({
+  // Meet UX v2 lists one Whiteboard and one Timer; older kinds still open.
+  const listed = merged
+    ? mergeActivityTiles(entries, {
+        whiteboard: {
+          label: t('merged.whiteboard'),
+          description: t('merged.whiteboard_description'),
+          icon: PenTool,
+        },
+        timer: {
+          label: t('merged.timer'),
+          description: t('merged.timer_description'),
+          icon: Timer,
+        },
+      })
+    : entries;
+  const tiles = listed.map((tile) => ({
     ...tile,
     description: tile.description ?? describe(tile.id),
   }));

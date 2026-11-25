@@ -67,6 +67,7 @@ import { RoomStage } from '../stage-layout/room-stage';
 import { useStageLayout } from '../stage-layout/use-stage-layout';
 import { useStageNavigation } from '../stage-layout/use-stage-navigation';
 import { useDefaultActivity } from '../stage-layout/use-default-activity';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { FollowBanner } from './room-navigation-controls';
 function CallShellContent({
   accountId,
@@ -280,6 +281,9 @@ function CallShellContent({
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
   const showBoard = stage.isOpen(BOARD_ACTIVITY);
+  // Meet UX v2: one Timer pane with the room timer, and one Whiteboard that
+  // leaves the account-only board out for guests (see `mergeActivityTiles`).
+  const merged = useMeetCallUx();
   const tools = useMeetTools({
     stage,
     meetingId,
@@ -463,6 +467,7 @@ function CallShellContent({
             controller={stage}
             peopleCount={participants.length}
             presentation={presentation}
+            roomTimer={merged ? { meetingId, state } : null}
             tools={meetTools}
             renderTool={tools.renderPanel}
             renderClassroom={activities.renderPanel}
@@ -608,10 +613,14 @@ function CallShellContent({
           active: showDocument,
           toggle: () => stage.toggle(DOCUMENT_ACTIVITY),
         }}
-        board={{
-          active: showBoard,
-          toggle: () => stage.toggle(BOARD_ACTIVITY),
-        }}
+        board={
+          merged && requiresAccount
+            ? undefined
+            : {
+                active: showBoard,
+                toggle: () => stage.toggle(BOARD_ACTIVITY),
+              }
+        }
         layout={layout}
         setLayout={(next) => {
           setLayout(next);

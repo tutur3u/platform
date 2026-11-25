@@ -4367,6 +4367,11 @@
       "bandwidth_hint": "Video thích ứng với mạng. Giọng nói được ưu tiên và tạm dừng gửi khi bạn ở một mình.",
       "bandwidth_quality": "Chất lượng cao hơn",
       "bandwidth_saver": "Tiết kiệm dữ liệu",
+      "class_timer_everyone_off": "Phòng này không có hẹn giờ chung cho mọi người.",
+      "class_timer_everyone_role": "Chỉ người chủ trì và đồng chủ trì mới đặt được hẹn giờ cho mọi người.",
+      "class_timer_mode": "Ai thấy hẹn giờ này",
+      "class_timer_mode_everyone": "Mọi người",
+      "class_timer_mode_me": "Chỉ mình tôi",
       "participant_identity": {
         "external": "Ngoài không gian làm việc này",
         "guest": "Khách, chưa đăng nhập"
@@ -4907,6 +4912,12 @@
       },
       "activities": {
         "button": "Hoạt động",
+        "merged": {
+          "timer": "Hẹn giờ",
+          "timer_description": "Đếm ngược cho riêng bạn hoặc cả phòng",
+          "whiteboard": "Bảng trắng",
+          "whiteboard_description": "Cùng vẽ trên Bảng trắng Tuturuuu"
+        },
         "title": "Hoạt động",
         "hint": "Mở cho bạn; Triệu tập để đưa người khác đến",
         "settings": "Hoạt động",
@@ -5327,6 +5338,7 @@
       "ask_actions": "Việc cần làm"
     },
     "collaboration": {
+      "board_live_note": "Mọi thay đổi được ghi vào bảng trắng của không gian làm việc ngay khi bạn vẽ.",
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
       "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại.",
       "connecting": "Đang kết nối tài liệu chung…",

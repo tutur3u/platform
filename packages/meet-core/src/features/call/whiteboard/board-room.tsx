@@ -15,6 +15,7 @@ import { WhiteboardEditor } from '@tuturuuu/whiteboard/react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { BoardError } from './board-error';
 import { createBoardSocketTransport } from './socket-transport';
 
@@ -92,6 +93,8 @@ function LiveBoard({
   onClosed: () => void;
 }) {
   const t = useTranslations('meet.collaboration');
+  // Meet UX v2's Whiteboard is always kept, so it speaks of no saving.
+  const merged = useMeetCallUx();
   const [role, setRole] = useState<MeetWhiteboardRole>(initial.role);
   const [members, setMembers] = useState<WhiteboardPresenceMember[]>([]);
   const [connection, setConnection] = useState<Connection>('connecting');
@@ -143,7 +146,7 @@ function LiveBoard({
         <span
           role="status"
           className="text-muted-foreground text-xs"
-          title={t('board_saved_note')}
+          title={t(merged ? 'board_live_note' : 'board_saved_note')}
         >
           {t(
             `board_${failed && connection !== 'live' ? 'failed' : connection}`

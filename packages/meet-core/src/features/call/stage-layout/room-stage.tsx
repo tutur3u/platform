@@ -6,9 +6,12 @@ import {
   LayoutGrid,
   PenTool,
   Presentation,
+  Timer,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { type RoomTimer, RoomTimerProvider } from '../components/timer-modes';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import type { MeetToolDefinition } from '../tools/registry';
 import {
   BOARD_ACTIVITY,
@@ -17,6 +20,7 @@ import {
   PROGRAMMING_ACTIVITY,
   toolIdOf,
 } from './activity-ids';
+import { mergedKindOf } from './merged-activities';
 import { type StageActivity, StageLayoutView } from './stage-layout-view';
 import type { ActivityPresentation } from './use-activity-presentation';
 import type { StageLayoutController } from './use-stage-layout';
@@ -30,6 +34,7 @@ export function RoomStage({
   stage,
   peopleCount,
   presentation,
+  roomTimer = null,
   tools,
   renderTool,
   renderClassroom,
@@ -39,6 +44,8 @@ export function RoomStage({
   stage: ReactNode;
   peopleCount: number;
   presentation?: ActivityPresentation;
+  /** Meet UX v2's room timer, for the one Timer pane. */
+  roomTimer?: RoomTimer | null;
   tools: readonly MeetToolDefinition[];
   renderTool: (activityId: string) => ReactNode;
   renderClassroom: (activityId: string) => ReactNode;
@@ -48,7 +55,9 @@ export function RoomStage({
   const classroomT = useTranslations('meet.classroom_tools');
   const programmingT = useTranslations('programmingPlayground');
   const collaborationT = useTranslations('meet.collaboration');
-  const activities = controller.openIds.flatMap((id): StageActivity[] => {
+  const activitiesT = useTranslations('meet.call.activities');
+  const merged = useMeetCallUx();
+  const named = controller.openIds.flatMap((id): StageActivity[] => {
     if (id === PROGRAMMING_ACTIVITY)
       return [
         {
@@ -100,13 +109,28 @@ export function RoomStage({
       ];
     return [];
   });
+  // Meet UX v2 names each older whiteboard and timer pane after the one
+  // Whiteboard or Timer it now belongs to, in its title, chip and switcher.
+  const activities = merged
+    ? named.map((activity) => {
+        const kind = mergedKindOf(activity.id);
+        if (!kind) return activity;
+        return {
+          ...activity,
+          title: activitiesT(`merged.${kind}`),
+          icon: kind === 'whiteboard' ? PenTool : Timer,
+        };
+      })
+    : named;
   return (
-    <StageLayoutView
-      controller={controller}
-      activities={activities}
-      stage={stage}
-      peopleCount={peopleCount}
-      presentation={presentation}
-    />
+    <RoomTimerProvider value={roomTimer}>
+      <StageLayoutView
+        controller={controller}
+        activities={activities}
+        stage={stage}
+        peopleCount={peopleCount}
+        presentation={presentation}
+      />
+    </RoomTimerProvider>
   );
 }

@@ -31,6 +31,8 @@ const GROUP_OF: Readonly<Record<string, ActivityGroup>> = {
   document: 'create',
   board: 'create',
   'class-timer': 'run',
+  // Meet UX v2's one Timer, for the room or just this person.
+  timer: 'run',
   timers: 'other',
   breakouts: 'run',
   'room-activities': 'run',

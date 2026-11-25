@@ -103,7 +103,8 @@ export function CallControlDock({
   };
   programming: Toggle;
   document: Toggle;
-  board: Toggle;
+  /** Absent where the person cannot use the board, such as a v2 guest. */
+  board?: Toggle;
   layout: CallLayout;
   setLayout: (layout: CallLayout) => void;
   nav: RoomNavigation;
