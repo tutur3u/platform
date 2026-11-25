@@ -1,0 +1,104 @@
+---
+title: Mira permissions in meetings
+updatedAt: '2026-11-25'
+description: What Mira may do in a meeting with the redesigned Meet flow, who approves each action, and how a person shares their own private notes and tutor chat with their Private Mira.
+audience: users
+---
+
+## Product decision
+
+Decision (25 November 2026). Status: implemented behind `MEET_UX_V2`.
+
+Scope: Meet meetings with `MEET_UX_V2` enabled. Private Mira (voice and the
+Tutor chat), room documents, Polls and Co-programming. Parley and meetings
+with the flag off keep their existing behaviour.
+
+Default: Mira drafts but never publishes, edits only room documents, suggests
+code only as a diff, and reads no private notes or tutor chat until their
+owner turns sharing on.
+
+Approved access rules:
+
+| Capability | Rule |
+| --- | --- |
+| Draft polls and action items | Mira drafts; a host or co-host publishes. Nothing posts by itself. |
+| Edit docs | Allowed on room-shared docs only; every edit is attributed "Mira for {person}" and can be undone. |
+| Suggest code | Mira's suggestions appear as a diff; one person must accept. No direct writes. |
+| Read private notes and tutor chats | Owner-only opt-in. Each person can share their own notes or tutor chat with their own Private Mira for this meeting (default off, revocable, shown as a chip). A host can never grant access to someone else's private data, and Room Mira never reads private data. Under-18 and unconfirmed accounts: never. |
+
+### How each rule is enforced
+
+- **Polls.** With the flag on, Private Mira voice has no `launch_poll` tool and
+  the live worker refuses a `launch_poll` call. Mira's drafts stay drafts until
+  someone who manages the room's polls launches them in Polls: the host, or a
+  co-host with participant management, which the room checks on `poll.launch`. Action items reach the room only
+  through notes review or a document edit, both of which a person approves.
+- **Documents.** The room records a Mira edit only for a tab that exists in the
+  meeting's shared document set, and only while the requester's Private Mira
+  choice is the revision the server checked. Each edit stores the requester's
+  account and in-call name; the document panel shows **Mira for {person}**,
+  and the host or requester can undo it.
+- **Code.** Mira's live answer is saved as a private draft. The host publishes
+  it as a proposed diff, and a person (the host, never a Mira service token)
+  accepts or dismisses it. The code document changes only on that accept, and
+  only when the original lines still match.
+- **Private notes and tutor chat.** The share is a per-meeting grant in the
+  room, keyed by the signed-in account. Only that person can turn it on or
+  off; the request carries no target account. Turning it on needs a confirmed
+  adult Mira account ([one Mira confirmation per account](/platform/features/meet-calls#one-mira-confirmation-per-meet-account))
+  and a current Private Mira Continue choice. While it is on, the server passes
+  the owner's latest tutor chat (up to 12 turns, about 15 KB) to the room after
+  each Tutor answer. Only a Private Mira voice session registered to that same
+  person, on a token carrying the private scope, can read it, and the live
+  worker checks the account confirmation again before every read. Room Mira
+  sessions never carry that scope.
+
+### Revoke and lifetime
+
+- The chip **Shared with your Private Mira** shows while sharing is on; its
+  close button revokes in one tap. The Private Mira panel's info popover has
+  the same switch.
+- Revoking deletes the shared tutor chat and refuses the next read. It never
+  needs a confirmation or a network-side check beyond the room write.
+- Changing the Private Mira choice (Mute or Leave, then Continue again) ends
+  the share; it does not come back on by itself.
+- Shared tutor chat is dropped one hour after the owner last sent it, and every
+  share is removed when the meeting ends or is restored.
+
+### Intentional exceptions
+
+- Meet does not yet have a separate private notes surface, so today the share
+  carries the Tutor chat only. A future private notes surface must use the
+  same grant.
+- With the flag off, the permissions card keeps showing **Read private notes
+  or tutor chats: Blocked** and Private Mira keeps its original poll tools.
+- Private Mira poll tools remain available to the meeting host only.
+- A workspace admin who joins someone else's meeting as a co-host without
+  participant management cannot launch polls; this slice does not widen the
+  room's existing poll rule.
+
+### EduFest classroom flow
+
+Guest join and classroom activities do not change. Guests cannot turn sharing
+on, and Private Mira's poll launch moves to the Polls panel for the host.
+
+### Regression coverage
+
+- `packages/realtime/src/meet/room-mira-share.test.ts`: default off, owner-only
+  grant, host cannot grant or read, Room Mira and unregistered sessions refused,
+  immediate revoke, choice change, stale context and meeting end.
+- `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`:
+  unconfirmed accounts refused, Room Mira and flag-off refused, revoke refuses
+  the next read, Mira cannot launch polls with the flag on.
+- `packages/meet-core/src/cloudflare/live/private-share-room.test.ts`: only
+  Private Mira tokens carry the private scope; flag-on tool list.
+- `packages/meet-core/src/routes/api/meet-live/[meetingId]/route.share.test.ts`
+  and `packages/meet-core/src/features/live-assistant/server/private-share.test.ts`:
+  flag gate, confirmation, no sharing for someone else, revoke always allowed,
+  bounded tutor turns.
+- `packages/realtime/src/meet/room-documents.test.ts` and
+  `packages/realtime/src/meet/room-programming.test.ts`: room-shared tabs only
+  with attribution and undo; only a person accepts a code diff.
+- `packages/meet-core/src/features/call/components/mira-private-share.test.tsx`
+  and `document-edits-attribution.test.tsx`: owner switch, chip with one-tap
+  revoke, and the **Mira for {person}** label.

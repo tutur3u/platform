@@ -167,6 +167,7 @@
               "platform/features/meet-forms",
               "platform/features/meet-live-assistants",
               "platform/features/meet-mira-host-consent",
+              "platform/features/meet-mira-permissions",
               "platform/features/meet-mira-room-voice",
               "platform/features/meet-per-speaker-transcription",
               "platform/features/meet-solo-mode",
