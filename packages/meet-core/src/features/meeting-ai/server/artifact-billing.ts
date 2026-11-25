@@ -3,6 +3,7 @@ import 'server-only';
 import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
 import { geminiSttProvider } from '@tuturuuu/ai/meetings/stt-provider';
 import { MEET_AI_MODEL, MEET_AI_PRICING } from '@tuturuuu/ai/meetings/usage';
+import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import {
   beginAiStudioRun,
   recordAiStudioRunStep,
@@ -13,7 +14,12 @@ import { Effect } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MEETING_APP } from '../../../runtime';
 import { MeetAiError } from './access';
-import { admitMeetCredits, type MeetCreditAdmission } from './credit-admission';
+import {
+  admitMeetCredits,
+  type MeetCreditAdmission,
+  meetCreditRefusal,
+} from './credit-admission';
+import { logMeetAiError } from './error-log';
 
 type Input = Parameters<typeof generateMeetArtifact>[0];
 
@@ -92,6 +98,14 @@ export async function generateBilledMeetArtifact(
     idempotencyKey: actor.attemptId,
     rejectExisting: true,
     metadata,
+  }).catch((error: unknown) => {
+    if (error instanceof AiStudioError) {
+      if (error.code === 'insufficient_credits')
+        throw meetCreditRefusal(workspaceId, 'CREDITS_EXHAUSTED');
+      if (error.code === 'model_not_found')
+        throw meetCreditRefusal(workspaceId, 'MODEL_NOT_ALLOWED');
+    }
+    throw error;
   });
   if (hooks?.beforeProvider) {
     try {
@@ -131,6 +145,8 @@ export async function generateBilledMeetArtifact(
       actualCredits: 0,
       errorClass: 'provider_failed',
       metadata: { ...metadata, usage_source: 'unavailable' },
+    }).catch((settlementError: unknown) => {
+      logMeetAiError('Meeting AI failure settlement failed', settlementError);
     });
     throw error;
   }

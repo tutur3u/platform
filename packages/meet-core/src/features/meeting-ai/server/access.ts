@@ -2,6 +2,7 @@ import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { meetingAiGenerationFailureCode } from '../request-failure';
+import { logMeetAiError } from './error-log';
 import { canReadSharedMeetingNotes } from './room-access';
 import { readMeetTranscriptionAvailability } from './transcription-availability';
 import 'server-only';
@@ -143,6 +144,9 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {
+    const classified =
+      error instanceof MeetAiError || error instanceof MeetAiGenerationError;
+    if (!classified) logMeetAiError('Meeting AI request failed', error);
     return Response.json(
       {
         code:
@@ -151,16 +155,10 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
             : error instanceof MeetAiGenerationError
               ? meetingAiGenerationFailureCode(error.reason)
               : undefined,
-        error:
-          error instanceof MeetAiError || error instanceof MeetAiGenerationError
-            ? error.message
-            : 'Meeting AI request failed',
+        error: classified ? error.message : 'Meeting AI request failed',
       },
       {
-        status:
-          error instanceof MeetAiError || error instanceof MeetAiGenerationError
-            ? error.status
-            : 500,
+        status: classified ? error.status : 500,
         headers: {
           'Cache-Control': 'no-store',
           ...(error instanceof MeetAiError &&

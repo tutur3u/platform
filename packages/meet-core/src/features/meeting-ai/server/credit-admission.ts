@@ -20,6 +20,24 @@ const refusalCodes: Record<string, string> = {
 
 class TransientCreditCheck extends Error {}
 
+export function meetCreditRefusal(
+  workspaceId: string,
+  reason: MeetCreditAdmission['allowance']['errorCode']
+) {
+  const staffPayer = workspaceId === ROOT_WORKSPACE_ID;
+  return new MeetAiError(
+    402,
+    reason === 'CREDITS_EXHAUSTED'
+      ? staffPayer
+        ? 'Tuturuuu staff billing is out of AI credits'
+        : 'The meeting workspace is out of AI credits'
+      : staffPayer
+        ? 'AI credits unavailable for Tuturuuu staff billing'
+        : 'AI credits unavailable for the meeting workspace',
+    refusalCodes[reason ?? ''] ?? 'MEET_AI_CREDITS_UNAVAILABLE'
+  );
+}
+
 async function meetingBillingWorkspace(meetingId: string): Promise<string> {
   const db = await createAdminClient({ noCookie: true });
   const { data: meeting, error } = await db
@@ -76,19 +94,7 @@ export async function admitMeetCredits(
       'MEET_AI_CREDIT_CHECK_FAILED'
     );
   const allowance = checked.right;
-  // Name the payer that refused: verified-staff use is billed to root.
-  const staffPayer = workspaceId === ROOT_WORKSPACE_ID;
   if (!allowance.allowed)
-    throw new MeetAiError(
-      402,
-      allowance.errorCode === 'CREDITS_EXHAUSTED'
-        ? staffPayer
-          ? 'Tuturuuu staff billing is out of AI credits'
-          : 'The meeting workspace is out of AI credits'
-        : staffPayer
-          ? 'AI credits unavailable for Tuturuuu staff billing'
-          : 'AI credits unavailable for the meeting workspace',
-      refusalCodes[allowance.errorCode ?? ''] ?? 'MEET_AI_CREDITS_UNAVAILABLE'
-    );
+    throw meetCreditRefusal(workspaceId, allowance.errorCode);
   return { workspaceId, allowance };
 }

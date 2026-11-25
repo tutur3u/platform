@@ -2,6 +2,8 @@ vi.mock('./provider-transport', () => ({
   meetingProviderTransport: async () => ({}),
 }));
 
+import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
+import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
@@ -42,7 +44,8 @@ vi.mock('./access', () => ({
   MeetAiError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string
     ) {
       super(message);
     }
@@ -137,4 +140,57 @@ it('does not execute again when AI Hub rejects an existing attempt', async () =>
     generateBilledMeetArtifact({ transcript: 'hello' }, actor)
   ).rejects.toThrow('already running');
   expect(f.generate).not.toHaveBeenCalled();
+});
+
+it.each([
+  ['insufficient_credits', 402, 'MEET_AI_CREDITS_EXHAUSTED'],
+  ['model_not_found', 404, 'MEET_AI_MODEL_NOT_ON_PLAN'],
+] as const)(
+  'returns a terminal Meet billing refusal when reservation reports %s',
+  async (code, status, meetCode) => {
+    f.begin.mockRejectedValue(
+      new AiStudioError('AI Studio refusal', { code, status })
+    );
+
+    await expect(
+      generateBilledMeetArtifact(
+        { audioSegments: [new Uint8Array(100)] },
+        actor
+      )
+    ).rejects.toMatchObject({
+      status: 402,
+      code: meetCode,
+    });
+    expect(f.generate).not.toHaveBeenCalled();
+    expect(f.settle).not.toHaveBeenCalled();
+  }
+);
+
+it('keeps the provider failure when releasing its reservation also fails', async () => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const failure = new MeetAiGenerationError('network_error');
+    f.generate.mockRejectedValue(failure);
+    f.settle.mockRejectedValue(new Error('AI usage could not be settled.'));
+
+    await expect(
+      generateBilledMeetArtifact(
+        { audioSegments: [new Uint8Array(100)] },
+        actor
+      )
+    ).rejects.toBe(failure);
+    expect(f.settle).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        runId: 'run',
+        status: 'failed',
+        actualCredits: 0,
+      })
+    );
+    expect(log).toHaveBeenCalledWith(
+      'Meeting AI failure settlement failed',
+      expect.objectContaining({ message: 'AI usage could not be settled.' })
+    );
+  } finally {
+    log.mockRestore();
+  }
 });

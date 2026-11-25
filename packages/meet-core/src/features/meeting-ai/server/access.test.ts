@@ -44,7 +44,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.membership,
 }));
 
-import { meetAiAccess, meetAiResponse } from './access';
+import { MeetAiError, meetAiAccess, meetAiResponse } from './access';
 
 const params = {
   params: Promise.resolve({
@@ -328,5 +328,77 @@ it('returns an allowlisted provider failure code without raw provider details', 
   expect(await response.json()).toEqual({
     code: 'MEET_AI_PROVIDER_LIMIT',
     error: 'Meeting AI provider request failed',
+  });
+});
+
+describe('Meet AI error logging', () => {
+  it('logs only safe exception details and at most three source locations', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const error = new TypeError('fetch failed');
+      error.stack = [
+        'TypeError: fetch failed',
+        '    at start (worker.js:12:34)',
+        '    at helper (worker.js:54:76)',
+        '    at fetch (worker.js:78:90)',
+        '    at outer (worker.js:91:92)',
+      ].join('\n');
+      const response = await meetAiResponse(() => Promise.reject(error));
+
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({
+        error: 'Meeting AI request failed',
+      });
+      expect(log).toHaveBeenCalledExactlyOnceWith('Meeting AI request failed', {
+        name: 'TypeError',
+        message: 'fetch failed',
+        stack: ['12:34', '54:76', '78:90'],
+      });
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('redacts arbitrary names, messages, stack text and non-Error throws', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const error = new Error(
+        'Private transcript\n    at forged (worker.js:99:99)'
+      );
+      error.name = 'Untrusted account id';
+      error.stack = `${error.name}: ${error.message}\n    at requestDerivedName (/private/path/meeting-id.js:40:30)\nPrivate header`;
+      await meetAiResponse(() => Promise.reject(error));
+      await meetAiResponse(() => Promise.reject({ audio: 'Private audio' }));
+
+      expect(log.mock.calls).toEqual([
+        [
+          'Meeting AI request failed',
+          {
+            name: 'Error',
+            message: 'Unexpected exception',
+            stack: ['40:30'],
+          },
+        ],
+        [
+          'Meeting AI request failed',
+          { name: 'Unknown', message: 'Non-Error thrown', stack: [] },
+        ],
+      ]);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('does not log classified errors at the response boundary', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      await meetAiResponse(() =>
+        Promise.reject(new MeetAiError(403, 'Denied'))
+      );
+      await meetAiResponse(() => Promise.reject(new MeetAiGenerationError()));
+      expect(log).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
   });
 });
