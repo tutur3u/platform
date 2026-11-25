@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
@@ -75,23 +73,24 @@ class _AppTooltipState extends State<AppTooltip> {
 
   GlobalKey<TooltipState> get _tooltip => widget.tooltipKey ?? _ownKey;
 
-  /// The tooltip currently opened by keyboard focus.
+  /// The tooltip currently opened by keyboard focus. Flutter notifies the
+  /// newly focused node before the one that lost focus, so a handover is
+  /// handled when the next tooltip gains focus.
   static _AppTooltipState? _focusOwner;
 
   void _onFocusChange(bool focused) {
     final keyboard =
         FocusManager.instance.highlightMode == FocusHighlightMode.traditional;
     if (focused && keyboard) {
+      if (_focusOwner != null && !identical(_focusOwner, this)) {
+        Tooltip.dismissAllToolTips();
+      }
       _focusOwner = this;
       _tooltip.currentState?.ensureTooltipVisible();
     } else if (!focused && identical(_focusOwner, this)) {
+      // Focus left for something without a tooltip: close the one it opened.
       _focusOwner = null;
-      // Close what this focus opened; a button that took focus meanwhile
-      // gets its own tooltip back, so tabbing shows one tooltip at a time.
-      scheduleMicrotask(() {
-        Tooltip.dismissAllToolTips();
-        _focusOwner?._tooltip.currentState?.ensureTooltipVisible();
-      });
+      Tooltip.dismissAllToolTips();
     }
   }
 
