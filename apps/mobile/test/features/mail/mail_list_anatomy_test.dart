@@ -142,8 +142,8 @@ void main() {
         now: _now,
       );
       expect(format(DateTime(2026, 11, 25, 9, 5)), '9:05\u202FAM');
-      expect(format(DateTime(2026, 3, 4, 9, 5)), '4 Mar');
-      expect(format(DateTime(2024, 3, 4, 9, 5)), '4 Mar 2024');
+      expect(format(DateTime(2026, 3, 4, 9, 5)), 'Mar 4');
+      expect(format(DateTime(2024, 3, 4, 9, 5)), 'Mar 4, 2024');
       expect(
         formatMailThreadDateTitle(
           DateTime(2024, 3, 4, 9, 5),

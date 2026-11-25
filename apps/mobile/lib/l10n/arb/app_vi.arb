@@ -3691,6 +3691,7 @@
   "mailUnblockRestore": "Bỏ chặn và chuyển thư liên quan về Hộp thư đến",
   "mailUnblockSender": "Bỏ chặn người gửi",
   "mailUnmute": "Bật lại thông báo",
+  "mailUnreadCount": "{count, plural, other{{count} chưa đọc}}",
   "mailUnsnooze": "Đưa về hộp thư đến ngay",
   "mailUnstar": "Bỏ gắn sao",
   "mailViewOriginal": "Xem thư có định dạng",

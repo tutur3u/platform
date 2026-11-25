@@ -7220,6 +7220,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailUnmute => 'Bật lại thông báo';
 
   @override
+  String mailUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chưa đọc',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mailUnsnooze => 'Đưa về hộp thư đến ngay';
 
   @override

@@ -13735,6 +13735,12 @@ abstract class AppLocalizations {
   /// **'Unmute thread'**
   String get mailUnmute;
 
+  /// No description provided for @mailUnreadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unread} other{{count} unread}}'**
+  String mailUnreadCount(int count);
+
   /// No description provided for @mailUnsnooze.
   ///
   /// In en, this message translates to:

@@ -4030,6 +4030,14 @@
   "mailUnblockRestore": "Unblock and move affected mail to Inbox",
   "mailUnblockSender": "Unblock sender",
   "mailUnmute": "Unmute thread",
+  "mailUnreadCount": "{count, plural, =1{1 unread} other{{count} unread}}",
+  "@mailUnreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mailUnsnooze": "Move to Inbox now",
   "mailUnstar": "Remove star",
   "mailViewOriginal": "View formatted message",

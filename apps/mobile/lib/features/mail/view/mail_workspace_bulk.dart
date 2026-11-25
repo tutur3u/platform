@@ -84,7 +84,21 @@ extension _MailWorkspaceBulk on _MailWorkspaceState {
     if (!await _beginMutation()) return;
     final sameList = listKey == _visibleListKey;
     final previous = _items;
+    final previousMailboxes = _mailboxes;
     final generation = sameList ? ++_generation : _generation;
+    // The sidebar's Inbox count comes from the bootstrap summary, so clear it
+    // with the rows instead of waiting for the next bootstrap.
+    if (folder == 'inbox') {
+      _updateState(
+        () => _mailboxes = [
+          for (final mailbox in _mailboxes)
+            if (mailbox['id'] == box)
+              {...mailbox, 'unreadCount': 0}
+            else
+              mailbox,
+        ],
+      );
+    }
     if (sameList) {
       _updateState(() {
         _loading = false;
@@ -103,6 +117,9 @@ extension _MailWorkspaceBulk on _MailWorkspaceState {
       if (mounted) {
         if (sameList && generation == _generation) {
           _updateState(() => _items = previous);
+        }
+        if (folder == 'inbox' && box == _mailboxId) {
+          _updateState(() => _mailboxes = previousMailboxes);
         }
         ScaffoldMessenger.of(
           context,

@@ -7298,6 +7298,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailUnmute => 'Unmute thread';
 
   @override
+  String mailUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unread',
+      one: '1 unread',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mailUnsnooze => 'Move to Inbox now';
 
   @override

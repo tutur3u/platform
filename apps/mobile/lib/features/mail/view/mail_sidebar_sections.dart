@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/view/mail_row_parts.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 /// A collapsible sidebar section heading, as web Mail's Folders and Labels.
 class MailSidebarHeading extends StatelessWidget {
@@ -147,6 +148,7 @@ class MailSidebarRow extends StatelessWidget {
                         ),
                         child: Text(
                           '$count',
+                          semanticsLabel: context.l10n.mailUnreadCount(count),
                           style: tokens.typography.xSmall.copyWith(
                             color: colors.background,
                             fontFeatures: const [FontFeature.tabularFigures()],

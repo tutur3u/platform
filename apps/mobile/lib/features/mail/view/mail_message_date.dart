@@ -85,15 +85,17 @@ String formatMailThreadDate(
   final pattern = DateUtils.isSameDay(local, today)
       ? (use24HourFormat ? 'Hm' : 'jm')
       : local.year == today.year
-      ? 'd MMM'
-      : 'd MMM y';
+      ? 'MMMd'
+      : 'yMMMd';
   return _formats
       .putIfAbsent(
         (pattern, locale),
         () => switch (pattern) {
           'Hm' => DateFormat.Hm(locale),
           'jm' => DateFormat.jm(locale),
-          _ => DateFormat(pattern, locale),
+          // Locale skeletons, as web's Intl.DateTimeFormat: "Mar 4" in en.
+          'MMMd' => DateFormat.MMMd(locale),
+          _ => DateFormat.yMMMd(locale),
         },
       )
       .format(local);
