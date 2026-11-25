@@ -4381,7 +4381,8 @@
         "minimize": "Minimize QR",
         "options": "QR options",
         "show": "Show join QR",
-        "switch": "Join QR on stage"
+        "switch": "Join QR on stage",
+        "unavailable": "Available after the next Meet update"
       },
       "participant_identity": {
         "external": "From outside this workspace",

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { useRoomRecording } from '../hooks/use-room-recording';
 import type { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
+import { roomKeepsJoinQr } from '../hooks/use-stage-join-qr';
 import type { MeetRoomController } from '../lib/room-controller';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { type MeetToolDefinition, meetTools } from '../tools/registry';
@@ -239,6 +240,8 @@ export function CallControlDock({
             {managesJoinQr && (
               <JoinQrSwitch
                 settings={state.settings}
+                serverNow={state.settingsServerNow}
+                supported={roomKeepsJoinQr(state)}
                 onChange={room.updateSettings}
               />
             )}

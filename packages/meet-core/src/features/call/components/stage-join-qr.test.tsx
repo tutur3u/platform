@@ -8,9 +8,10 @@ import {
 } from '@testing-library/react';
 import type { MeetRoomSettings } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
-import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
+import { useStageJoinQr } from '../hooks/use-stage-join-qr';
+import { type CallState, INITIAL_CALL_STATE } from '../lib/call-state';
 import { buildJoinUrl } from '../lib/room-code';
 import { JoinQrSwitch } from './join-qr-controls';
 import { StageJoinQr } from './stage-join-qr';
@@ -29,12 +30,34 @@ const meetingId = '00000000-0000-4000-8000-000000000001';
 const copy = messages.meet.call.join_qr;
 const base: MeetRoomSettings = { shareNotes: false };
 
-const wrap = (node: ReactNode) => (
-  <NextIntlClientProvider locale="en" messages={messages}>
-    {node}
-  </NextIntlClientProvider>
-);
+function roomState(patch: Partial<CallState> = {}): CallState {
+  return { ...INITIAL_CALL_STATE, settingsFeatures: ['joinQr'], ...patch };
+}
+
+function Stage({
+  state = roomState(),
+  activityOpen = false,
+  onSettings,
+}: {
+  state?: CallState;
+  activityOpen?: boolean;
+  onSettings?: (patch: object) => void;
+}) {
+  const qr = useStageJoinQr(state, activityOpen);
+  return (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <StageJoinQr
+        meetingId={meetingId}
+        qr={qr}
+        settings={state.settings}
+        onSettings={onSettings}
+      />
+    </NextIntlClientProvider>
+  );
+}
+
 const card = () => screen.queryByRole('figure');
+const stageQr = () => screen.queryByTestId('stage-join-qr');
 
 beforeEach(() => {
   mocks.ux = true;
@@ -56,12 +79,12 @@ afterEach(() => {
 describe('StageJoinQr', () => {
   it('is absent from the classic room', () => {
     mocks.ux = false;
-    render(wrap(<StageJoinQr meetingId={meetingId} settings={base} />));
-    expect(screen.queryByTestId('stage-join-qr')).toBeNull();
+    render(<Stage />);
+    expect(stageQr()).toBeNull();
   });
 
-  it('encodes the same join link the Share dialog gives guests', () => {
-    render(wrap(<StageJoinQr meetingId={meetingId} settings={base} />));
+  it('is on by default and encodes the link the Share dialog gives', () => {
+    render(<Stage state={{ ...INITIAL_CALL_STATE }} />);
     expect(screen.getByTestId('qr').getAttribute('data-value')).toBe(
       buildJoinUrl(window.location.origin, meetingId)
     );
@@ -71,39 +94,66 @@ describe('StageJoinQr', () => {
 
   it('stays hidden while a manager has hidden it', () => {
     render(
-      wrap(
-        <StageJoinQr
-          meetingId={meetingId}
-          settings={{ ...base, joinQrHidden: true }}
-        />
-      )
+      <Stage
+        state={roomState({ settings: { ...base, joinQrHidden: true } })}
+      />
     );
-    expect(screen.queryByTestId('stage-join-qr')).toBeNull();
+    expect(stageQr()).toBeNull();
   });
 
   it('hides itself when the auto-hide minutes pass', () => {
     vi.useFakeTimers();
+    const now = new Date().toISOString();
     const settings: MeetRoomSettings = {
       ...base,
       joinQrAutoHide: 2,
-      joinQrShownAt: new Date().toISOString(),
+      joinQrShownAt: now,
     };
-    render(wrap(<StageJoinQr meetingId={meetingId} settings={settings} />));
+    render(<Stage state={roomState({ settings, settingsServerNow: now })} />);
     act(() => vi.advanceTimersByTime(119_000));
-    expect(screen.queryByTestId('stage-join-qr')).not.toBeNull();
+    expect(stageQr()).not.toBeNull();
     act(() => vi.advanceTimersByTime(1_000));
-    expect(screen.queryByTestId('stage-join-qr')).toBeNull();
+    expect(stageQr()).toBeNull();
+  });
+
+  it('reads auto-hide on the room clock when this device runs fast', () => {
+    vi.useFakeTimers();
+    const roomNow = '2026-11-25T08:00:00.000Z';
+    // This device is ten minutes ahead of the room.
+    vi.setSystemTime(Date.parse(roomNow) + 600_000);
+    const settings: MeetRoomSettings = {
+      ...base,
+      joinQrAutoHide: 2,
+      joinQrShownAt: roomNow,
+    };
+    render(
+      <Stage state={roomState({ settings, settingsServerNow: roomNow })} />
+    );
+    expect(stageQr()).not.toBeNull();
+    act(() => vi.advanceTimersByTime(119_000));
+    expect(stageQr()).not.toBeNull();
+    act(() => vi.advanceTimersByTime(1_000));
+    expect(stageQr()).toBeNull();
   });
 
   it('keeps to the chip while an activity is open', () => {
-    render(wrap(<StageJoinQr meetingId={meetingId} settings={base} compact />));
+    render(<Stage activityOpen />);
     expect(card()).toBeNull();
     const chip = screen.getByRole('button', { name: copy.show });
     expect(chip.className).not.toContain('lg:hidden');
   });
 
+  it('keeps to the chip in a presence-only room', () => {
+    render(
+      <Stage
+        state={roomState({ settings: { ...base, transport: 'presence' } })}
+      />
+    );
+    expect(card()).toBeNull();
+  });
+
   it('shrinks to the chip for this viewer and hands focus back', () => {
-    render(wrap(<StageJoinQr meetingId={meetingId} settings={base} />));
+    render(<Stage />);
     fireEvent.click(screen.getByRole('button', { name: copy.minimize }));
     expect(card()).toBeNull();
     const [restore] = screen.getAllByRole('button', { name: copy.show });
@@ -115,21 +165,11 @@ describe('StageJoinQr', () => {
     );
   });
 
-  it('offers room options to hosts and co-hosts only', () => {
+  it('offers room options only when given a settings writer', () => {
     const onSettings = vi.fn();
-    const { rerender } = render(
-      wrap(<StageJoinQr meetingId={meetingId} settings={base} />)
-    );
+    const { rerender } = render(<Stage />);
     expect(screen.queryByRole('button', { name: copy.options })).toBeNull();
-    rerender(
-      wrap(
-        <StageJoinQr
-          meetingId={meetingId}
-          settings={base}
-          onSettings={onSettings}
-        />
-      )
-    );
+    rerender(<Stage onSettings={onSettings} />);
     const open = () =>
       fireEvent.keyDown(screen.getByRole('button', { name: copy.options }), {
         key: 'Enter',
@@ -144,26 +184,44 @@ describe('StageJoinQr', () => {
 });
 
 describe('JoinQrSwitch', () => {
-  it('shows and hides the QR for the room', () => {
-    const onChange = vi.fn();
-    const { rerender } = render(
-      wrap(<JoinQrSwitch settings={base} onChange={onChange} />)
-    );
-    const toggle = screen.getByRole('switch', { name: copy.switch });
-    expect(toggle.getAttribute('aria-checked')).toBe('true');
-    fireEvent.click(toggle);
-    expect(onChange).toHaveBeenLastCalledWith({ joinQrHidden: true });
-    rerender(
-      wrap(
+  const renderSwitch = (
+    settings: MeetRoomSettings,
+    supported: boolean,
+    onChange = vi.fn()
+  ) =>
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
         <JoinQrSwitch
-          settings={{ ...base, joinQrHidden: true }}
+          settings={settings}
+          supported={supported}
           onChange={onChange}
         />
-      )
+      </NextIntlClientProvider>
     );
+
+  it('shows and hides the QR in a room that keeps the setting', () => {
+    const onChange = vi.fn();
+    renderSwitch(base, true, onChange);
+    const toggle = screen.getByRole('switch', { name: copy.switch });
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByText(copy.unavailable)).toBeNull();
+    fireEvent.click(toggle);
+    expect(onChange).toHaveBeenLastCalledWith({ joinQrHidden: true });
+    cleanup();
+    renderSwitch({ ...base, joinQrHidden: true }, true, onChange);
     const hidden = screen.getByRole('switch', { name: copy.switch });
     expect(hidden.getAttribute('aria-checked')).toBe('false');
     fireEvent.click(hidden);
     expect(onChange).toHaveBeenLastCalledWith({ joinQrHidden: false });
+  });
+
+  it('stays off with a note in a room that drops the setting', () => {
+    const onChange = vi.fn();
+    renderSwitch(base, false, onChange);
+    const toggle = screen.getByRole('switch', { name: copy.switch });
+    expect(toggle.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText(copy.unavailable)).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

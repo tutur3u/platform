@@ -193,27 +193,45 @@ export function ControlSwitchRow({
   checked,
   onCheckedChange,
   closeOnChange = false,
+  disabled = false,
+  note,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   closeOnChange?: boolean;
+  disabled?: boolean;
+  /** One short line under the label, such as why the switch is off. */
+  note?: string;
 }) {
   const closeOverflow = useContext(CloseCallOverflow);
   const switchId = useId();
+  const labelId = `${switchId}-label`;
+  const noteId = `${switchId}-note`;
   return (
     <Label
       htmlFor={switchId}
       className={cn(
         controlRowClass,
-        'flex cursor-pointer items-center text-sm leading-snug hover:bg-accent'
+        'flex items-center text-sm leading-snug',
+        disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-accent'
       )}
     >
       <Icon className="size-5 shrink-0" />
-      <span className="min-w-0 flex-1">{label}</span>
+      <span className="grid min-w-0 flex-1">
+        <span id={labelId}>{label}</span>
+        {note && (
+          <span id={noteId} className="text-muted-foreground text-xs">
+            {note}
+          </span>
+        )}
+      </span>
       <Switch
         id={switchId}
+        aria-labelledby={labelId}
+        aria-describedby={note ? noteId : undefined}
+        disabled={disabled}
         checked={checked}
         onCheckedChange={(next) => {
           onCheckedChange(next);

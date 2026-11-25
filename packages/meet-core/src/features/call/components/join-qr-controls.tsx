@@ -91,21 +91,31 @@ export function JoinQrOptions({
   );
 }
 
-/** More menu row for hosts and co-hosts: shows or hides the QR for the room. */
+/**
+ * More menu row for hosts and co-hosts: shows or hides the QR for the room.
+ * A room on an older realtime Worker drops the QR settings, so the row stays
+ * off with a note until the room announces it keeps them.
+ */
 export function JoinQrSwitch({
   settings,
+  serverNow,
+  supported,
   onChange,
 }: {
   settings: MeetRoomSettings;
+  serverNow?: string;
+  supported: boolean;
   onChange: (patch: JoinQrPatch) => void;
 }) {
   const t = useTranslations('meet.call');
-  const shown = useJoinQrShown(settings);
+  const shown = useJoinQrShown(settings, serverNow);
   return (
     <ControlSwitchRow
       icon={QrCode}
       label={t('join_qr.switch')}
       checked={shown}
+      disabled={!supported}
+      note={supported ? undefined : t('join_qr.unavailable')}
       // Showing again restarts the room's auto-hide clock.
       onCheckedChange={(next) => onChange({ joinQrHidden: !next })}
       closeOnChange

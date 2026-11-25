@@ -72,6 +72,8 @@ export function CallStage({
   focus,
   onFocus,
   onChat,
+  reserveCorner = false,
+  onFillChange,
 }: {
   room: MeetRoomController;
   outputDeviceId?: string;
@@ -89,6 +91,13 @@ export function CallStage({
   focus: string | null;
   onFocus: (key: string | null) => void;
   onChat: () => void;
+  /**
+   * From `lg` up, keep a left gutter free so tiles lay out beside the join
+   * QR card in the bottom-left corner instead of under it.
+   */
+  reserveCorner?: boolean;
+  /** Reports whether a screen share or spotlight fills the stage. */
+  onFillChange?: (filled: boolean) => void;
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
@@ -260,6 +269,9 @@ export function CallStage({
   const spotlightUserId =
     spotlight && focused?.kind === 'camera' ? focused.userId : undefined;
   useEffect(() => {
+    onFillChange?.(spotlight);
+  }, [onFillChange, spotlight]);
+  useEffect(() => {
     room.setStageVideoWindow?.(
       cameraWindow ? cameraWindow.split(',') : [],
       spotlightUserId
@@ -363,7 +375,8 @@ export function CallStage({
     <div
       className={cn(
         'flex h-full min-h-0 flex-col',
-        !focusView && '[container-type:size]'
+        !focusView && '[container-type:size]',
+        reserveCorner && 'lg:pl-40'
       )}
     >
       <IncomingVideoStatus status={room.receiveStatus} />

@@ -4753,7 +4753,8 @@
         "minimize": "Thu gọn mã QR",
         "options": "Tùy chọn mã QR",
         "show": "Hiện mã QR tham gia",
-        "switch": "Mã QR tham gia trên sân khấu"
+        "switch": "Mã QR tham gia trên sân khấu",
+        "unavailable": "Có sau bản cập nhật Meet tới"
       },
       "join_removed_hint": "Chủ phòng đã xóa bạn khỏi cuộc họp. Camera và micrô của bạn đã ngừng chia sẻ. Hãy liên hệ chủ phòng nếu bạn cần quay lại.",
       "join_removed_title": "Bạn đã bị xóa khỏi cuộc họp",

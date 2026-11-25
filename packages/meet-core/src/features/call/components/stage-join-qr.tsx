@@ -7,16 +7,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { QRCodeSVG } from 'qrcode.react';
-import { useRef, useState, useSyncExternalStore } from 'react';
+import { useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { useJoinQrShown } from '../hooks/use-join-qr-shown';
+import type { StageJoinQrState } from '../hooks/use-stage-join-qr';
 import { buildJoinUrl } from '../lib/room-code';
-import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { JoinQrOptions, type JoinQrPatch } from './join-qr-controls';
-
-const noSubscribe = () => () => undefined;
-const readOrigin = () => window.location.origin;
-const noOrigin = () => null;
 
 /** Scanners read dark modules on a light ground, so it stays black on white. */
 function JoinQrCode({ url, size }: { url: string; size: number }) {
@@ -36,39 +31,34 @@ function JoinQrCode({ url, size }: { url: string; size: number }) {
 
 /**
  * The room's join QR, pinned to the stage's bottom-left corner. It encodes
- * the same link the Share dialog gives guests. From `lg` up, with no activity
- * open, it is a small card; otherwise it is a chip that opens the code, so it
- * never covers a face or activity controls. Anyone may shrink the card to the
- * chip for themselves; hosts and co-hosts set auto-hide or hide it for
- * everyone.
+ * the same link the Share dialog gives guests. From `lg` up, while nothing
+ * fills the stage, it is a small card beside a gutter the stage keeps free;
+ * otherwise it is a chip that opens the code, so it never covers a face, a
+ * shared screen or activity controls. Anyone may shrink the card to the chip
+ * for themselves; hosts and co-hosts set auto-hide or hide it for everyone.
  */
 export function StageJoinQr({
   meetingId,
+  qr,
   settings,
-  compact = false,
   onSettings,
 }: {
   meetingId: string;
+  qr: StageJoinQrState;
   settings: MeetRoomSettings;
-  /** An activity is open: keep to the chip at every width. */
-  compact?: boolean;
-  /** Present for hosts and co-hosts. */
+  /** Present for hosts and co-hosts in a room that keeps the QR settings. */
   onSettings?: (patch: JoinQrPatch) => void;
 }) {
   const t = useTranslations('meet.call');
-  // Part of the redesigned room (MEET_UX_V2); the classic room has no QR.
-  const enabled = useMeetCallUx();
-  const shown = useJoinQrShown(settings);
-  const origin = useSyncExternalStore(noSubscribe, readOrigin, noOrigin);
-  const [minimized, setMinimized] = useState(false);
   const minimizeRef = useRef<HTMLButtonElement>(null);
   const restoreRef = useRef<HTMLButtonElement>(null);
-  if (!enabled || !shown || !origin) return null;
-  const url = buildJoinUrl(origin, meetingId);
+  if (!qr.visible || !qr.origin) return null;
+  const url = buildJoinUrl(qr.origin, meetingId);
   const options = onSettings && (
     <JoinQrOptions autoHide={settings.joinQrAutoHide} onChange={onSettings} />
   );
-  const card = !compact && !minimized;
+  const { minimized, setMinimized } = qr;
+  const card = qr.card && !minimized;
   // The button that hid itself hands focus to the one that replaces it.
   const toggleCard = (next: boolean) => {
     flushSync(() => setMinimized(!next));
@@ -109,7 +99,7 @@ export function StageJoinQr({
           </figcaption>
         </figure>
       )}
-      {!compact && minimized && (
+      {qr.card && minimized && (
         <Button
           ref={restoreRef}
           aria-label={t('join_qr.show')}
@@ -126,7 +116,7 @@ export function StageJoinQr({
         <PopoverTrigger asChild>
           <Button
             aria-label={t('join_qr.show')}
-            className={cn(chipClass, !compact && 'lg:hidden')}
+            className={cn(chipClass, qr.card && 'lg:hidden')}
             size="sm"
             type="button"
             variant="outline"

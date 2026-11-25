@@ -4381,7 +4381,8 @@
         "minimize": "Thu gọn mã QR",
         "options": "Tùy chọn mã QR",
         "show": "Hiện mã QR tham gia",
-        "switch": "Mã QR tham gia trên sân khấu"
+        "switch": "Mã QR tham gia trên sân khấu",
+        "unavailable": "Có sau bản cập nhật Meet tới"
       },
       "participant_identity": {
         "external": "Ngoài không gian làm việc này",

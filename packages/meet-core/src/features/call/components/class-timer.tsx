@@ -11,26 +11,22 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { useServerClockSkew } from '../hooks/use-server-clock-skew';
 import type { CallState } from '../lib/call-state';
 
 type TimerAction = 'start' | 'pause' | 'resume' | 'stop';
 type Timer = CallState['classTimer'];
 
 function useSyncedClock(serverNow: string | null, running: boolean) {
-  const skew = useRef(0);
-  const seen = useRef<string | null>(null);
-  if (serverNow !== seen.current) {
-    seen.current = serverNow;
-    skew.current = serverNow ? Date.parse(serverNow) - Date.now() : 0;
-  }
+  const skew = useServerClockSkew(serverNow);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [running]);
-  return now + skew.current;
+  return now + skew;
 }
 
 /** Remaining time on the room's clock; null without a timer. */

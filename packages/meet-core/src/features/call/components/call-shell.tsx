@@ -53,6 +53,7 @@ import { CallHeaderControls } from './call-header-controls';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SidePanel } from './side-panel';
 import { StageJoinQr } from './stage-join-qr';
+import { useStageJoinQr } from '../hooks/use-stage-join-qr';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { findMeetTool, meetTools } from '../tools/registry';
 import { useMeetTools } from '../tools/use-meet-tools';
@@ -283,6 +284,7 @@ function CallShellContent({
   });
   const { presentation, activityRail, showActivities, revealActivity } =
     useCallActivityPresentation(room, stage);
+  const joinQr = useStageJoinQr(state, showActivities);
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
   const showBoard = stage.isOpen(BOARD_ACTIVITY);
@@ -528,6 +530,8 @@ function CallShellContent({
                   compact={showActivities}
                   focus={focus}
                   onFocus={focusFeed}
+                  reserveCorner={joinQr.reserveCorner}
+                  onFillChange={joinQr.setStageFilled}
                 />
               ) : showActivities ? null : (
                 <PresenceStage
@@ -550,10 +554,10 @@ function CallShellContent({
           <ReactionOverlay state={state} />
           <StageJoinQr
             meetingId={meetingId}
+            qr={joinQr}
             settings={state.settings}
-            compact={showActivities}
             onSettings={
-              (state.canManageParticipants ?? canManage)
+              joinQr.supported && (state.canManageParticipants ?? canManage)
                 ? room.updateSettings
                 : undefined
             }

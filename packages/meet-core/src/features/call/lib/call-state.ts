@@ -84,6 +84,10 @@ export interface CallState {
   roomId?: string;
   bulkAdmission?: { admitted: number; denied: number; remaining: number };
   settings: MeetRoomSettings;
+  /** Settings features the room announced; older rooms announce none. */
+  settingsFeatures?: readonly string[];
+  /** The room's clock when it last sent settings. */
+  settingsServerNow?: string;
   approved: MeetApprovedParticipant[];
   reactions: Array<{
     reaction: MeetReaction;
@@ -176,7 +180,12 @@ export function reduceCallState(
         remoteTracks: {},
       };
     case 'room.settings':
-      return { ...state, settings: message.settings };
+      return {
+        ...state,
+        settings: message.settings,
+        settingsFeatures: message.features ?? [],
+        settingsServerNow: message.serverNow ?? state.settingsServerNow,
+      };
     case 'admission.approved':
       return { ...state, approved: message.participants };
     case 'reaction':

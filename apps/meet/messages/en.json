@@ -4753,7 +4753,8 @@
         "minimize": "Minimize QR",
         "options": "QR options",
         "show": "Show join QR",
-        "switch": "Join QR on stage"
+        "switch": "Join QR on stage",
+        "unavailable": "Available after the next Meet update"
       },
       "join_removed_hint": "The host removed you from this meeting. Your camera and microphone have stopped sharing. Contact the host if you need to return.",
       "join_removed_title": "You were removed from the meeting",
