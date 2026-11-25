@@ -39,7 +39,10 @@ it('adds no host to script-src or connect-src: formatter code is same-origin', (
   expect(directive('connect-src')).toBe(
     'connect-src https://tuturuuu.com/meet/ https://tuturuuu.com/api/ https://abc.supabase.co wss://abc.supabase.co https://meet-realtime.tuturuuu.com https://rtc.live.cloudflare.com'
   );
-  // Every https source is a tuturuuu.com path: the host must end at a slash, so
-  // a look-alike host such as tuturuuu.com.example.org still fails.
-  expect(directive('worker-src')).not.toMatch(/https:\/\/(?!tuturuuu\.com\/)/u);
+  // Every https worker source is served from tuturuuu.com itself.
+  const workerHosts = (directive('worker-src') ?? '')
+    .split(' ')
+    .filter((source) => source.startsWith('https:'))
+    .map((source) => new URL(source).host);
+  expect([...new Set(workerHosts)]).toEqual(['tuturuuu.com']);
 });
