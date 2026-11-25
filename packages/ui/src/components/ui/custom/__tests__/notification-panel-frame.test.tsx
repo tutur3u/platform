@@ -55,7 +55,7 @@ describe('notification panel header frame', () => {
     expect(populatedFrame.titleRow).toBe(NOTIFICATION_TITLE_ROW_CLASS);
     expect(populatedFrame.tabRow).toBe(NOTIFICATION_TAB_ROW_CLASS);
     // The title row reserves the action's height even when it is absent.
-    expect(populatedFrame.titleRow).toContain('min-h-8');
+    expect(populatedFrame.titleRow).toContain('min-h-13');
   });
 
   it('always reserves the Unread count slot so the next tab never moves', () => {

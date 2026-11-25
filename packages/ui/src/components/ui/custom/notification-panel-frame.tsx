@@ -5,9 +5,13 @@ import type { ReactNode } from 'react';
  * Geometry shared by the loaded panel header and its loading fallback, so the
  * title and tab rows keep one position and height in every state (loading,
  * empty, list) and with or without the Mark all read action.
+ *
+ * The title row's min height covers its vertical padding (20px) plus the
+ * 32px Mark all read button (44px on coarse pointers), so the row is the same
+ * height with or without the button.
  */
 export const NOTIFICATION_TITLE_ROW_CLASS =
-  'flex min-h-8 shrink-0 items-center gap-2 px-4 pt-3 pb-2 pointer-coarse:min-h-11';
+  'flex min-h-13 shrink-0 items-center gap-2 px-4 pt-3 pb-2 pointer-coarse:min-h-16';
 export const NOTIFICATION_TAB_ROW_CLASS =
   'flex shrink-0 items-center gap-1 border-b px-3 pb-2';
 export const NOTIFICATION_TAB_CLASS =
