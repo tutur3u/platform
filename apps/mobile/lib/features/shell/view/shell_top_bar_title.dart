@@ -29,7 +29,11 @@ class ShellTopBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (matchedLocation == Routes.assistant) {
-      return const AssistantModeTitle();
+      return Semantics(
+        container: true,
+        header: true,
+        child: const AssistantModeTitle(),
+      );
     }
     final config = ShellChromeConfig.forLocation(context, matchedLocation);
     final resolvedFallback = Routes.isSettingsHubLocation(matchedLocation)
