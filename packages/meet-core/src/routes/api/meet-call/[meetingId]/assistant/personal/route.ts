@@ -42,13 +42,13 @@ type Stage = { name: string };
  * error class are logged, never the question, history or answer.
  */
 function privateMiraFailure(error: unknown, stage: Stage) {
-  const action = roomServiceFailureAction(error);
-  if (
-    error instanceof MeetCallAccessError &&
-    (error.status < 500 || (error.code && !action))
-  )
-    return error;
+  // Refusals (the access gate, consent, authority) and invalid input keep
+  // their own status before anything inspects the failure further.
+  if (error instanceof MeetCallAccessError && error.status < 500) return error;
   if (error instanceof z.ZodError || error instanceof SyntaxError) return error;
+  const action = roomServiceFailureAction(error);
+  if (error instanceof MeetCallAccessError && error.code && !action)
+    return error;
   console.error('Private Mira answer failed', {
     stage: stage.name,
     action,
