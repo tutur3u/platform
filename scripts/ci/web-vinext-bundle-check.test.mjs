@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
+  assertAssetHeadersStamp,
   assertPatchedRsdw,
   checkVinextBundle,
   isPatchedRsdwVersion,
@@ -76,4 +77,45 @@ test('records the resolved react-server-dom-webpack and refuses a vulnerable one
     () => checkVinextBundle(join(app, 'bundle'), { appDir: app }),
     /GHSA-xqc2-xf4c-x3h3/u
   );
+});
+
+const SHA = '0123456789abcdef0123456789abcdef01234567';
+
+test('requires the stamped client _headers when a build commit is set', (t) => {
+  const out = mkdtempSync(join(tmpdir(), 'web-vinext-stamp-'));
+  t.after(() => rmSync(out, { recursive: true, force: true }));
+  const bundle = join(out, 'workers/default/bundle');
+  const assets = join(out, 'workers/default/assets');
+  mkdirSync(bundle, { recursive: true });
+  mkdirSync(assets, { recursive: true });
+  writeFileSync(join(bundle, 'index.mjs'), 'export default {};');
+  assert.equal(checkVinextBundle(bundle).assetHeaders, null);
+  assert.throws(
+    () => checkVinextBundle(bundle, { commit: SHA }),
+    /No client _headers/u
+  );
+  writeFileSync(join(assets, '_headers'), `/*\n  x-tuturuuu-build: ${SHA}\n`);
+  assert.equal(
+    checkVinextBundle(bundle, { commit: SHA }).assetHeaders,
+    join(assets, '_headers')
+  );
+  const other = 'f'.repeat(40);
+  assert.throws(
+    () => checkVinextBundle(bundle, { commit: other }),
+    /no "\/\*" rule/u
+  );
+});
+
+test('accepts the stamp only inside the /* rule', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'web-vinext-stamp-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const file = join(dir, '_headers');
+  const write = (text) => writeFileSync(file, text);
+  write(`/sw.js\n  X-A: 1\n/*\n  x-tuturuuu-build: ${SHA}\n`);
+  assert.equal(assertAssetHeadersStamp(dir, SHA), file);
+  write(`/sw.js\n  x-tuturuuu-build: ${SHA}\n`);
+  assert.throws(() => assertAssetHeadersStamp(dir, SHA), /no "\/\*" rule/u);
+  write(`/*\nx-tuturuuu-build: ${SHA}\n`);
+  assert.throws(() => assertAssetHeadersStamp(dir, SHA), /no "\/\*" rule/u);
+  assert.throws(() => assertAssetHeadersStamp(dir, 'abc'), /40 lowercase hex/u);
 });

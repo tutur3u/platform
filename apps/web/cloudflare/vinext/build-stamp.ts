@@ -2,6 +2,7 @@
 // signed-out request (a 404, a bodyless redirect, a 401 API answer) still
 // names the version that served it. The value is fixed at build time and is
 // never read from the request.
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 
 /** Response header carrying the full 40-hex build commit. */
 export const BUILD_STAMP_HEADER = 'x-tuturuuu-build';
@@ -18,7 +19,8 @@ export function buildCommit(value: unknown): string | null {
 /**
  * Sets the stamp on `response`, replacing any upstream value. Without a
  * commit the header is removed, never invented. Upgrade (101) responses keep
- * their WebSocket and are stamped only when their headers are mutable.
+ * their WebSocket, and a response that cannot be copied is returned as is;
+ * both are stamped only when their headers are mutable.
  */
 export function stampResponse(
   response: Response,
@@ -28,15 +30,21 @@ export function stampResponse(
     if (commit) headers.set(BUILD_STAMP_HEADER, commit);
     else headers.delete(BUILD_STAMP_HEADER);
   };
-  if (response.status === 101) {
+  const inPlace = () => {
     try {
       apply(response.headers);
     } catch {
-      // Immutable upgrade headers: keep the WebSocket attached.
+      // Immutable headers: serve the response unstamped rather than fail.
     }
     return response;
+  };
+  if (response.status === 101) return inPlace();
+  let next: Response;
+  try {
+    next = new Response(response.body, response);
+  } catch {
+    return inPlace();
   }
-  const next = new Response(response.body, response);
   apply(next.headers);
   return next;
 }
@@ -46,9 +54,11 @@ type FetchHandler<Env, Ctx> = {
 };
 
 /**
- * Wraps a module Worker handler so every response it returns, including a
- * thrown error turned into a 500, carries the stamp. Other handler members
- * stay reachable through the prototype.
+ * Wraps a module Worker handler so every response it returns carries the
+ * stamp. A thrown error is logged scrubbed and re-thrown unchanged, so Workers
+ * still records the exception (and the gateway still answers 502); only that
+ * failure goes unstamped. Other handler members stay reachable through the
+ * prototype.
  */
 export function withBuildStamp<Env, Ctx, H extends FetchHandler<Env, Ctx>>(
   handler: H,
@@ -61,14 +71,11 @@ export function withBuildStamp<Env, Ctx, H extends FetchHandler<Env, Ctx>>(
     try {
       response = await handler.fetch(request, env, ctx);
     } catch (error) {
-      console.error('vinext worker request failed', error);
-      response = new Response('Internal Server Error', {
-        status: 500,
-        headers: {
-          'cache-control': 'no-store',
-          'content-type': 'text/plain; charset=utf-8',
-        },
-      });
+      console.error(
+        'vinext worker request failed',
+        safeErrorFields(error, { message: true })
+      );
+      throw error;
     }
     return stampResponse(response, commit);
   };
@@ -76,10 +83,11 @@ export function withBuildStamp<Env, Ctx, H extends FetchHandler<Env, Ctx>>(
 }
 
 /**
- * Workers static-assets `_headers` rules for the asset files the runtime
- * serves without running the Worker (`/_next/static/*` and
- * `/_f/<id>/_next/static/*`).
- * Empty without a commit.
+ * Workers static-assets `_headers` rules: one `/*` rule, so every asset the
+ * runtime serves (including the `/_next/static/*` and
+ * `/_f/<id>/_next/static/*` files it serves without running the Worker)
+ * carries the stamp. The uploader must pass this file's contents as the
+ * assets config `_headers`, not as a public file. Empty without a commit.
  */
 export function assetHeadersRules(commitValue: unknown): string {
   const commit = buildCommit(commitValue);

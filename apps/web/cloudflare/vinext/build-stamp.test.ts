@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { safeErrorFields } from '@tuturuuu/utils/log-safety';
 import { describe, expect, it, vi } from 'vitest';
 import {
   assetHeadersRules,
@@ -11,6 +12,7 @@ import { BUILD_COMMIT_DEFINE, buildStamp } from './build-stamp-plugin';
 
 const SHA = '0123456789abcdef0123456789abcdef01234567';
 const OTHER = 'fedcba9876543210fedcba9876543210fedcba98';
+const THROWN = new Error('render failed');
 
 // Stands in for the vinext handler: one response per path.
 const vinext = {
@@ -37,7 +39,7 @@ const vinext = {
       case '/spoof':
         return new Response('ok', { headers: { [BUILD_STAMP_HEADER]: OTHER } });
       case '/throw':
-        throw new Error('render failed');
+        throw THROWN;
       default:
         return new Response('Not Found', { status: 404 });
     }
@@ -79,7 +81,6 @@ describe('withBuildStamp', () => {
     ['/personal', 307],
     ['/api/v1/infrastructure/devboxes', 401],
     ['/favicon.ico', 200],
-    ['/throw', 500],
   ])('stamps %s (%i) with the build commit', async (path, status) => {
     const response = await serve(path);
     expect(response.status).toBe(status);
@@ -106,19 +107,21 @@ describe('withBuildStamp', () => {
 
   it('omits the header when the build has no commit', async () => {
     for (const commit of [undefined, '', 'dev', SHA.slice(0, 12)]) {
-      for (const path of ['/vi/login', '/missing', '/spoof', '/throw']) {
+      for (const path of ['/vi/login', '/missing', '/spoof']) {
         const response = await serve(path, commit);
         expect(response.headers.has(BUILD_STAMP_HEADER), path).toBe(false);
       }
     }
   });
 
-  it('turns a thrown error into a stamped 500 without details', async () => {
+  it('logs a thrown error scrubbed and re-throws it unchanged', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const response = await serve('/throw');
-    expect(await response.text()).toBe('Internal Server Error');
-    expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(error).toHaveBeenCalled();
+    await expect(serve('/throw')).rejects.toBe(THROWN);
+    expect(error).toHaveBeenCalledWith(
+      'vinext worker request failed',
+      safeErrorFields(THROWN, { message: true })
+    );
+    expect(error.mock.calls[0]).not.toContain(THROWN);
     error.mockRestore();
   });
 
@@ -132,6 +135,13 @@ describe('stampResponse', () => {
     const upgrade = { status: 101, headers: new Headers() } as Response;
     expect(stampResponse(upgrade, SHA)).toBe(upgrade);
     expect(upgrade.headers.get(BUILD_STAMP_HEADER)).toBe(SHA);
+  });
+
+  it('returns a response it cannot copy instead of failing', () => {
+    // Copying with an init the runtime rejects (status 0) throws.
+    const odd = { status: 0, body: null, headers: new Headers() } as Response;
+    expect(stampResponse(odd, SHA)).toBe(odd);
+    expect(odd.headers.get(BUILD_STAMP_HEADER)).toBe(SHA);
   });
 });
 
@@ -173,6 +183,18 @@ describe('static assets', () => {
     ]);
     expect(generate(SHA, 'rsc').emitted).toEqual([]);
     expect(generate(undefined, 'client').emitted).toEqual([]);
+  });
+
+  it('appends to an existing binary _headers asset', () => {
+    const { bundle } = generate(SHA, 'client', {
+      _headers: {
+        type: 'asset',
+        source: new TextEncoder().encode('/sw.js\n  X-A: 1\n') as never,
+      },
+    });
+    expect(bundle._headers?.source).toBe(
+      `/sw.js\n  X-A: 1\n${assetHeadersRules(SHA)}`
+    );
   });
 
   it('appends to an existing _headers file', () => {

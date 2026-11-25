@@ -103,14 +103,30 @@ changes with each build. `cloudflare/vinext/service-worker.test.ts` checks the
 single owner, the order of the build steps, the binding and the parity with the
 Next.js route.
 
-Every family response, including 404s, redirects, 401/403/405 API answers,
-errors and static assets, carries `x-tuturuuu-build: <full 40-hex commit>`.
-`build-family.sh` exports `PLATFORM_BUILD_COMMIT`, and
-`cloudflare/vinext/build-stamp-plugin.ts` bakes it into the Worker entry
-wrapper and the client `_headers`; the wrapper overwrites any upstream value
-and omits the header when the build has no commit. Staged 0% smokes
+Every family response, including 404s, redirects and 401/403/405 API answers,
+carries `x-tuturuuu-build: <full 40-hex commit>`; staged 0% smokes
 (`Cloudflare-Workers-Version-Overrides`) read it as the signed-out version
-identity; `build-stamp.test.ts` covers the contract.
+identity. `build-family.sh` exports `PLATFORM_BUILD_COMMIT`, and
+`cloudflare/vinext/build-stamp-plugin.ts` bakes it into the Worker entry
+wrapper and the client `_headers`. The wrapper overwrites any upstream value
+and omits the header when the build has no commit. A thrown error is logged
+scrubbed and re-thrown, so it still surfaces as a Worker exception and a
+gateway 502, without the header. `build-stamp.test.ts` covers the contract.
+
+Assets served without the Worker (`/_next/static/*`, `/_f/<id>/_next/static/*`)
+are stamped only through `_headers`, which takes effect only when the uploader
+sends the file's contents as the assets config: in the Workers script or
+version upload metadata, `"assets": { "jwt": "<completion jwt>", "config": {
+"_headers": "<contents of the client _headers>", ... } }`, and leaves
+`_headers` out of the uploaded asset manifest. A plain upload serves it as the
+public file `/_headers` and stamps no asset (the cf Build Output rehearsal in
+`scripts/ci/fixtures/cf-toolchain-receipts.json` records that `_headers` ships
+as a plain asset there, so verify `cf deploy --prebuilt` too). With
+`PLATFORM_BUILD_COMMIT` set, `web-vinext-bundle-check.mjs` fails unless the
+client output holds a `/*` rule with the stamp; uploaders can run
+`node scripts/ci/web-vinext-bundle-check.mjs --stamp <client-dir> <commit>`
+first. The smoke then expects `x-tuturuuu-build` on a
+`/_f/<family>/_next/static/*` asset and a 404 for `/_f/<family>/_headers`.
 
 Worker builds emit no source maps (`build.sourcemap: false`): Cloudflare
 rejects an upload whose source maps exceed 60 MiB (error 10021), and the

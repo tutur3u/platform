@@ -25,7 +25,11 @@ export function buildStamp(commitValue: unknown): Plugin {
       if (!rules) return;
       const existing = bundle._headers;
       if (existing && existing.type === 'asset') {
-        existing.source = `${String(existing.source).trimEnd()}\n${rules}`;
+        const text =
+          typeof existing.source === 'string'
+            ? existing.source
+            : new TextDecoder().decode(existing.source);
+        existing.source = `${text.trimEnd()}\n${rules}`;
         return;
       }
       this.emitFile({ type: 'asset', fileName: '_headers', source: rules });
