@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/features/shell/view/readable_shell_title.dart';
 import 'package:mobile/features/shell/view/shell_title_text_style.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -14,9 +16,19 @@ const EdgeInsets shellTopBarPadding = EdgeInsets.fromLTRB(20, 5, 8, 5);
 
 /// [shellTopBarPadding] for a bar [width] wide; narrow phones (under 360dp)
 /// keep the title at the plain gutter so trailing actions fit.
-EdgeInsets shellTopBarPaddingFor(double width) => width < 360
-    ? shellTopBarPadding.copyWith(left: 16, right: 4)
-    : shellTopBarPadding;
+///
+/// Beside the navigation rail the title starts at the page gutter for the
+/// window's device class, so it lines up with the content column below it.
+EdgeInsets shellTopBarPaddingFor(double width, {bool besideRail = false}) {
+  if (besideRail) {
+    return shellTopBarPadding.copyWith(
+      left: AppLayout.gutter(Breakpoints.fromWidth(width)),
+    );
+  }
+  return width < 360
+      ? shellTopBarPadding.copyWith(left: 16, right: 4)
+      : shellTopBarPadding;
+}
 
 /// Fit the scaled title line plus the brand control's vertical padding without
 /// reducing accessibility text. Default text keeps the normal compact height.

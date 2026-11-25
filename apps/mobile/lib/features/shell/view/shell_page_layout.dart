@@ -360,7 +360,10 @@ extension _ShellPageLayout on _ShellPageState {
           location: location,
         ),
       ),
-      padding: shellTopBarPaddingFor(MediaQuery.sizeOf(context).width),
+      padding: shellTopBarPaddingFor(
+        MediaQuery.sizeOf(context).width,
+        besideRail: railVisible,
+      ),
       backgroundColor: Colors.transparent,
       trailingGap: 4,
       trailing: searchAction != null
@@ -394,6 +397,7 @@ extension _ShellPageLayout on _ShellPageState {
                   child: ShellTopBarTitle(
                     key: ValueKey(location),
                     matchedLocation: location,
+                    brandInSidebar: railVisible,
                     fallbackTitle: shellSidebarDestinationTitle(
                       context,
                       activeModule: activeModule,

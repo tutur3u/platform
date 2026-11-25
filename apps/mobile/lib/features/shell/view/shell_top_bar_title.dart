@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
@@ -20,11 +21,16 @@ class ShellTopBarTitle extends StatelessWidget {
   const ShellTopBarTitle({
     required this.matchedLocation,
     this.fallbackTitle,
+    this.brandInSidebar = false,
     super.key,
   });
 
   final String matchedLocation;
   final String? fallbackTitle;
+
+  /// True when a visible rail or sidebar already shows the Tuturuuu brand,
+  /// as on web: the page title then stands alone, aligned to the content.
+  final bool brandInSidebar;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +51,7 @@ class ShellTopBarTitle extends StatelessWidget {
       return _ShellTopBarTitleContent(
         title: resolvedFallback ?? config.title,
         showLeadingBrand: true,
+        brandInSidebar: brandInSidebar,
       );
     }
 
@@ -65,6 +72,7 @@ class ShellTopBarTitle extends StatelessWidget {
         return _ShellTopBarTitleContent(
           title: title,
           showLeadingBrand: state.showLeadingBrandForLocation(matchedLocation),
+          brandInSidebar: brandInSidebar,
           onTitleSubmitted: state.titleSubmitterForLocation(matchedLocation),
         );
       },
@@ -76,15 +84,35 @@ class _ShellTopBarTitleContent extends StatelessWidget {
   const _ShellTopBarTitleContent({
     required this.title,
     required this.showLeadingBrand,
+    required this.brandInSidebar,
     this.onTitleSubmitted,
   });
 
   final String title;
   final bool showLeadingBrand;
+  final bool brandInSidebar;
   final Future<void> Function(String title)? onTitleSubmitted;
 
   @override
   Widget build(BuildContext context) {
+    final showLogo = showLeadingBrand && !brandInSidebar;
+    if (showLeadingBrand && brandInSidebar && onTitleSubmitted == null) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Semantics(
+          header: true,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: ReadableShellTitle(
+              title,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+      );
+    }
     if (showLeadingBrand && onTitleSubmitted == null) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -116,7 +144,7 @@ class _ShellTopBarTitleContent extends StatelessWidget {
       width: double.infinity,
       child: Row(
         children: [
-          if (showLeadingBrand) ...[
+          if (showLogo) ...[
             Image.asset(
               'assets/logos/transparent.png',
               width: mobileSectionAppBarLogoSize,
