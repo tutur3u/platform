@@ -84,6 +84,31 @@ actions.
   `apps/web/src/lib/external-projects/studio-setup.test.ts` and
   `apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.test.ts`.
 
+### Mobile CMS visibility
+
+Product decision: the mobile app shows CMS only in workspaces whose studio is
+enabled, so an unavailable studio is never a resting error screen.
+
+- **Scope:** the mobile Apps launcher, rail and sidebar, Apps hub search, and
+  `/cms` deep links.
+- **Default:** hidden until access resolves. The app probes
+  `GET /api/v1/workspaces/{wsId}/external-projects/summary`. A `200` shows CMS.
+  A `404` ("External project studio unavailable for this workspace") or a plain
+  `403` hides it. MFA and verification challenges, `401`, and transient
+  failures keep the previous answer. Each workspace entry shows the stored
+  answer, then revalidates with the server.
+- **Deep links:** `/cms` stays open while access is loading and falls back to
+  Apps once access resolves as unavailable. If the page itself receives the
+  `404`, it shows a neutral "CMS isn't enabled" state with an Open Apps action
+  and asks the gate to re-check.
+- **Intentional exception:** the summary route requires `manage` mode, and so
+  does every mobile CMS action (summary, collections and entry edits). Members
+  with only `edit_external_projects` or `publish_external_projects` therefore
+  see CMS on web but not on mobile, until mobile supports editor-only
+  workflows.
+- **Regression coverage:** `apps/mobile/test/features/cms/cubit/cms_access_test.dart`
+  and `apps/mobile/test/features/cms/view/cms_workspace_test.dart`.
+
 ## API Ownership
 
 - `apps/cms` owns host-local auth/session and build-info routes. It also owns
