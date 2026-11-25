@@ -1,9 +1,10 @@
 // CI alert sink: keeps one open task per alert key on a configured board so
 // repository workflows report failures without opening public GitHub issues.
 //
-// The caller holds one shared secret (`x-ci-alert-token`) that can only open,
-// comment on or resolve alert tasks in the configured lists. It never reads
-// tasks, other boards or workspace data.
+// The caller holds one shared secret (`x-ci-alert-token`) that can only open
+// tasks in the alert list, and comment on or resolve open `[alert:<key>] ...`
+// tasks on the alert board. It never reads tasks, other boards or workspace
+// data.
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { z } from 'zod';
@@ -49,8 +50,10 @@ export function readCiAlertConfig(
   const doneListId = env.TASKS_CI_ALERT_DONE_LIST_ID?.trim();
   const actorId = env.TASKS_CI_ALERT_ACTOR_ID?.trim();
   if (!tokens.length || !openListId || !doneListId || !actorId) return null;
-  // The audit actor must be a user id; anything else is a config error.
-  if (!z.uuid().safeParse(actorId).success) return null;
+  // The audit actor must have the uuid shape the admin client and Postgres
+  // accept (any 8-4-4-4-12 hex, including seed ids); anything else is a config
+  // error.
+  if (!z.guid().safeParse(actorId).success) return null;
   return { tokens, openListId, doneListId, actorId };
 }
 

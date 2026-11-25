@@ -23,11 +23,12 @@ import {
 } from './handler';
 
 const TOKEN = 'a'.repeat(40);
+const ACTOR = '00000000-0000-4000-8000-000000000001';
 const config = {
   tokens: [TOKEN],
   openListId: 'list-open',
   doneListId: 'list-done',
-  actorId: 'actor',
+  actorId: ACTOR,
 };
 const RUN = 'https://github.com/tutur3u/platform/actions/runs/';
 
@@ -111,6 +112,13 @@ describe('CI alert sink', () => {
     expect(
       readCiAlertConfig({ ...env, TASKS_CI_ALERT_ACTOR_ID: 'not-a-uuid' })
     ).toBeNull();
+    // Seed-style ids (version digit 0) are valid Postgres uuids.
+    expect(
+      readCiAlertConfig({
+        ...env,
+        TASKS_CI_ALERT_ACTOR_ID: '00000000-0000-0000-0000-000000000001',
+      })?.actorId
+    ).toBe('00000000-0000-0000-0000-000000000001');
     expect(
       readCiAlertConfig({ ...env, TASKS_CI_ALERT_ACTOR_ID: '' })
     ).toBeNull();
@@ -153,7 +161,7 @@ describe('CI alert sink', () => {
     expect(task).toMatchObject({
       name: alertTaskName(alert('failing')),
       list_id: 'list-open',
-      creator_id: 'actor',
+      creator_id: ACTOR,
       priority: 'high',
     });
 
