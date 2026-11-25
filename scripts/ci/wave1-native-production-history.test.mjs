@@ -7,6 +7,7 @@ import {
   plannerPublicationSince,
   publicationReceipt,
   publicationRunSources,
+  uploadNeverStarted,
   uploadStepName,
 } from './wave1-native-production-history.mjs';
 
@@ -338,4 +339,180 @@ test('history that never reaches an accepted upload within its page bound fails 
     });
   };
   await assert.rejects(p.run(), /Unbounded or incomplete publication history/);
+});
+
+// The shape of run 45609260589: a manual Mail dispatch whose two attempts
+// both failed at the read-only preflight, so the upload step was skipped
+// (GitHub still stamps started_at on skipped steps) and no receipt exists.
+function preflightRefusal(attempt) {
+  return {
+    name: 'publish-mail',
+    run_id: 45609260589,
+    run_attempt: attempt,
+    status: 'completed',
+    conclusion: 'failure',
+    steps: [
+      {
+        name: 'Read-only production preflight',
+        status: 'completed',
+        conclusion: 'failure',
+        started_at: '2026-11-25T12:33:41Z',
+      },
+      {
+        name: uploadStepName,
+        status: 'completed',
+        conclusion: 'skipped',
+        started_at: '2026-11-25T12:33:47Z',
+      },
+    ],
+  };
+}
+
+function mailHistory({ failedJobs, receiptState = 'accepted-private' }) {
+  const currentRun = 45700000000;
+  const failedRun = 45609260589;
+  const acceptedRun = 44720765059;
+  const accepted = {
+    name: 'publish-mail',
+    run_id: acceptedRun,
+    run_attempt: 1,
+    status: 'completed',
+    conclusion: 'success',
+    steps: [
+      {
+        name: uploadStepName,
+        status: 'completed',
+        conclusion: 'success',
+        started_at: '2026-11-20T10:50:00Z',
+      },
+    ],
+  };
+  const reads = [];
+  const fetcher = async (url) => {
+    if (url.includes('/jobs?')) {
+      const id = Number(/\/runs\/(\d+)\//u.exec(url)[1]);
+      const jobs =
+        id === failedRun ? failedJobs : id === acceptedRun ? [accepted] : [];
+      return Response.json({ total_count: jobs.length, jobs });
+    }
+    if (url.includes('/artifacts?')) {
+      reads.push(url);
+      const id = Number(/\/runs\/(\d+)\//u.exec(url)[1]);
+      return Response.json(
+        id === acceptedRun
+          ? {
+              total_count: 1,
+              artifacts: [
+                {
+                  id: 7,
+                  expired: false,
+                  name: `wave1-mail-production-publication-${earlierSha}-${acceptedRun}-1`,
+                },
+              ],
+            }
+          : { total_count: 0, artifacts: [] }
+      );
+    }
+    const runs = url.includes('wave1-native-production.yaml')
+      ? [
+          {
+            id: failedRun,
+            head_sha: 'c'.repeat(40),
+            head_branch: 'production',
+          },
+          { id: acceptedRun, head_sha: earlierSha, head_branch: 'production' },
+        ]
+      : [{ id: currentRun, head_sha: sha, head_branch: 'production' }];
+    return Response.json({ total_count: runs.length, workflow_runs: runs });
+  };
+  return {
+    reads,
+    run: () =>
+      assertNoEarlierUpload({
+        env: {
+          GITHUB_REPOSITORY: 'tutur3u/platform',
+          GITHUB_TOKEN: 'fixture',
+          GITHUB_RUN_ID: String(currentRun),
+          GITHUB_RUN_ATTEMPT: '1',
+        },
+        sha,
+        app: 'mail',
+        worker: 'tuturuuu-mail',
+        rollback: { versions: [{ version_id: versionId, percentage: 100 }] },
+        fetcher,
+        readReceipt: async () => ({
+          app: 'mail',
+          worker: 'tuturuuu-mail',
+          sha: earlierSha,
+          digest: 'c'.repeat(64),
+          runId: String(acceptedRun),
+          runAttempt: '1',
+          versionId,
+          state: receiptState,
+        }),
+      }),
+  };
+}
+
+test('a failed manual dispatch that never uploaded does not poison the walk', async () => {
+  const history = mailHistory({
+    failedJobs: [preflightRefusal(2), preflightRefusal(1)],
+  });
+  await history.run();
+  // Only the accepted baseline's receipt is read; the refusal has none.
+  assert.equal(history.reads.length, 1);
+  assert.match(history.reads[0], /\/runs\/44720765059\//);
+});
+
+test('a job cancelled before any runner picked it up is ignored', async () => {
+  const history = mailHistory({
+    failedJobs: [
+      {
+        ...preflightRefusal(1),
+        conclusion: 'cancelled',
+        runner_id: null,
+        steps: [],
+      },
+    ],
+  });
+  await history.run();
+  assert.equal(history.reads.length, 1);
+});
+
+test('a failed job without steps or runner evidence stays unknown', async () => {
+  await assert.rejects(
+    mailHistory({
+      failedJobs: [{ ...preflightRefusal(1), steps: [] }],
+    }).run(),
+    /Unknown earlier upload step/
+  );
+});
+
+test('a failed attempt whose upload started still blocks without a receipt', async () => {
+  const started = preflightRefusal(1);
+  started.steps[1] = {
+    name: uploadStepName,
+    status: 'completed',
+    conclusion: 'failure',
+    started_at: '2026-11-25T12:33:47Z',
+  };
+  await assert.rejects(
+    mailHistory({ failedJobs: [started] }).run(),
+    /never replay/
+  );
+});
+
+test('uploadNeverStarted keeps unknown and started uploads blocking', () => {
+  assert.equal(uploadNeverStarted(preflightRefusal(1)), true);
+  assert.throws(
+    () => uploadNeverStarted({ conclusion: 'success', steps: [] }),
+    /Unknown earlier upload step/
+  );
+  assert.equal(
+    uploadNeverStarted({
+      conclusion: 'failure',
+      steps: [{ name: uploadStepName, status: 'in_progress', started_at: 'x' }],
+    }),
+    false
+  );
 });

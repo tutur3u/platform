@@ -166,6 +166,33 @@ async function runJobs({ base, run, env, fetcher }) {
   assert.fail('Unknown earlier upload status; never replay');
 }
 
+/**
+ * True only when the job provably never started its upload step: GitHub
+ * ended it without ever assigning a runner (runner_id null, no steps), or
+ * the upload step itself was skipped or never left the queue, for example
+ * after a failed read-only preflight in a manual dispatch. A job with no
+ * step list for any other reason, or whose upload step started, stays
+ * unknown and blocks.
+ */
+export function uploadNeverStarted(job) {
+  const terminal = ['failure', 'cancelled', 'timed_out'].includes(
+    job.conclusion
+  );
+  if (
+    terminal &&
+    job.runner_id === null &&
+    Array.isArray(job.steps) &&
+    job.steps.length === 0
+  )
+    return true;
+  const step = job.steps?.find((entry) => entry.name === uploadStepName);
+  assert.ok(step, 'Unknown earlier upload step; never replay');
+  return (
+    step.conclusion === 'skipped' ||
+    (['queued', 'pending'].includes(step.status) && !step.started_at)
+  );
+}
+
 // A planner run names the called job `<caller> / <workflow job> / publish-<app>`.
 export function isPublicationJob(name, app) {
   return (
@@ -214,12 +241,7 @@ export async function assertNoEarlierUpload({
       )
         continue;
       if (job.conclusion === 'skipped' || job.status === 'queued') continue;
-      const step = job.steps?.find((entry) => entry.name === uploadStepName);
-      assert.ok(step, 'Unknown earlier upload step; never replay');
-      const notStarted =
-        step.conclusion === 'skipped' ||
-        (['queued', 'pending'].includes(step.status) && !step.started_at);
-      if (notStarted) continue;
+      if (uploadNeverStarted(job)) continue;
       const name = `wave1-${app}-production-publication-${run.head_sha}-${run.id}-${job.run_attempt}`;
       const artifacts = await boundedJson(
         `${base}/runs/${run.id}/artifacts?name=${name}&per_page=100`,
