@@ -3,7 +3,10 @@ import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import {
   assertNoEarlierUpload,
+  isPublicationJob,
+  plannerPublicationSince,
   publicationReceipt,
+  publicationRunSources,
   uploadStepName,
 } from './wave1-native-production-history.mjs';
 
@@ -83,8 +86,9 @@ function fixture() {
       ],
     });
   };
-  return {
+  const fixtureState = {
     state,
+    fetcher,
     run: () =>
       assertNoEarlierUpload({
         env,
@@ -92,13 +96,14 @@ function fixture() {
         app: 'calendar',
         worker: 'tuturuuu-calendar',
         rollback: { versions: [{ version_id: versionId, percentage: 100 }] },
-        fetcher,
+        fetcher: (url, options) => fixtureState.fetcher(url, options),
         readReceipt: async () => {
           state.reads++;
           return receipt;
         },
       }),
   };
+  return fixtureState;
 }
 
 test('current in-progress attempt is ignored and accepted baseline closes earlier app history', async () => {
@@ -260,4 +265,77 @@ test('oversized receipt download is refused before decoding', async () => {
     }),
     /exceeds limit/
   );
+});
+
+test('a planner-called publish job is recognised by its nested name', () => {
+  assert.ok(isPublicationJob('publish-calendar', 'calendar'));
+  assert.ok(isPublicationJob('publish', 'calendar'));
+  assert.ok(
+    isPublicationJob(
+      'deploy-calendar-native / native-publish-production / publish-calendar',
+      'calendar'
+    )
+  );
+  assert.ok(
+    !isPublicationJob(
+      'deploy-mail-native / native-publish-production / publish-mail',
+      'calendar'
+    )
+  );
+  assert.ok(!isPublicationJob('deploy-colab-cloudflare / publish', 'calendar'));
+});
+
+test('history reads manual dispatches and planner runs since the planner gained the publisher', async () => {
+  const p = fixture();
+  p.state.previous.name =
+    'deploy-calendar-native / native-publish-production / publish-calendar';
+  const urls = [];
+  const fetcher = p.fetcher;
+  p.fetcher = async (url, options) => {
+    urls.push(url);
+    return fetcher(url, options);
+  };
+  await p.run();
+  assert.equal(p.state.reads, 1);
+  const runLists = urls.filter((url) => url.includes('/runs?'));
+  assert.deepEqual(
+    runLists.map((url) => /workflows\/([^/]+)\/runs/.exec(url)[1]).sort(),
+    publicationRunSources.map(({ workflow }) => workflow).sort()
+  );
+  assert.ok(
+    runLists.some(
+      (url) =>
+        url.includes('vercel-production.yaml') &&
+        url.includes(
+          `created=${encodeURIComponent(`>=${plannerPublicationSince}`)}`
+        )
+    )
+  );
+  assert.ok(
+    runLists.some(
+      (url) =>
+        url.includes('wave1-native-production.yaml') &&
+        url.includes('event=workflow_dispatch')
+    )
+  );
+});
+
+test('history that never reaches an accepted upload within its page bound fails closed', async () => {
+  const p = fixture();
+  p.state.previous.name = 'publish-mail';
+  p.fetcher = async (url) => {
+    if (url.includes('/jobs?'))
+      return Response.json({ total_count: 0, jobs: [] });
+    const page = Number(/[?&]page=(\d+)/.exec(url)[1]);
+    const first = 100_000 - page * 100;
+    return Response.json({
+      total_count: 5000,
+      workflow_runs: Array.from({ length: 100 }, (_, index) => ({
+        id: page === 1 && index === 0 ? 123 : first - index,
+        head_sha: page === 1 && index === 0 ? sha : earlierSha,
+        head_branch: 'production',
+      })),
+    });
+  };
+  await assert.rejects(p.run(), /Unbounded or incomplete publication history/);
 });

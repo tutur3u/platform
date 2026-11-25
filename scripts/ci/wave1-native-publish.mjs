@@ -37,15 +37,20 @@ export function publicationAdmission({
   admissionRecord,
   app,
   sha,
-  hold = profiles.productionHold,
+  hold,
 }) {
+  // Production admission lives in tuturuuu.ci.ts productionPublicationPolicy;
+  // wave1-native-production.yaml performs the upload, never this script.
   if (environment === 'production') {
     if (hold) return { allowed: false, reason: hold };
+    const allowed =
+      ref === 'refs/heads/production' &&
+      ['push', 'workflow_dispatch'].includes(event);
     return {
-      allowed:
-        ref === 'refs/heads/production' &&
-        ['push', 'workflow_dispatch'].includes(event),
-      reason: 'Explicit source cutover admission required',
+      allowed,
+      reason: allowed
+        ? 'Admitted by productionPublicationPolicy; wave1-native-production.yaml publishes'
+        : 'Production publication runs only from a production push or dispatch',
     };
   }
   if (

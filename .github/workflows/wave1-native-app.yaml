@@ -33,7 +33,7 @@ jobs:
           APP: ${{ inputs.app }}
         run: node scripts/ci/wave1-native-publish.mjs policy "$APP" staging "$GITHUB_SHA" "$GITHUB_STEP_SUMMARY"
   policy-production:
-    name: Report held for wave-1 cutover
+    name: Report production publication policy
     runs-on: ubuntu-latest
     timeout-minutes: 3
     outputs:

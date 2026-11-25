@@ -1,6 +1,5 @@
 {
   "accountId": "e8912e2867beecc673d171907bf09649",
-  "productionHold": "held for wave-1 cutover",
   "apps": {
     "calendar": {
       "stagingWorker": "tuturuuu-calendar-wave1-staging",

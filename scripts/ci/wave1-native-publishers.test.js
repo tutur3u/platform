@@ -158,8 +158,21 @@ test('hold and enable flag reject production, PRs, branch dispatch and unprovisi
         ref: 'refs/heads/production',
         event,
         stagingEnabled: 'true',
+        hold: 'held for wave-1 cutover',
       }),
       { allowed: false, reason: 'held for wave-1 cutover' }
+    );
+  }
+  for (const [ref, event, allowed] of [
+    ['refs/heads/production', 'push', true],
+    ['refs/heads/production', 'workflow_dispatch', true],
+    ['refs/heads/production', 'pull_request', false],
+    ['refs/heads/main', 'push', false],
+  ]) {
+    assert.equal(
+      publicationAdmission({ environment: 'production', ref, event }).allowed,
+      allowed,
+      `${ref} ${event}`
     );
   }
   for (const [ref, event, enabled] of [
@@ -221,7 +234,7 @@ test('production policy CLI reports admission without loading artifact or provid
       },
     }
   );
-  assert.match(result, /Explicit source cutover admission required/);
+  assert.match(result, /Admitted by productionPublicationPolicy/);
 });
 for (const phase of ['stopped', 'verify', 'write', 'accept', 'success']) {
   test(`one-shot publication bounds writes and preserves ${phase} outcome`, async () => {

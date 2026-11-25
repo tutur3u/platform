@@ -31,6 +31,7 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
       'production-policy': { result: 'success', outputs: { allowed } },
       qualify: { result: 'success' },
       restored: { result: 'success' },
+      'restore-acceptance': { result: 'success' },
       'check-ci': {
         result: 'success',
         outputs: { should_run: 'true', run_checks: 'true' },
@@ -87,18 +88,18 @@ function assertProductionCredentialsAdmitted(workflow) {
     const fields = strings(job).filter(([, value]) =>
       secretReference.test(value)
     );
-    assert.notEqual(
-      job.secrets,
-      'inherit',
-      `${name} inherits secrets before admission`
-    );
+    // Inheriting forwards every credential, including environment-scoped
+    // ones, so it is held to the same admission gate as a direct reference.
+    const inherits = job.secrets === 'inherit';
     const productionFields = fields.filter(([, value]) =>
       scopes.some((scope) => exposesSecret(value, scope))
     );
-    if (!productionFields.length) continue;
+    if (!productionFields.length && !inherits) continue;
     assert.ok(
       [job.needs].flat().includes('production-policy'),
-      `${name} references production secrets without needing admission`
+      inherits
+        ? `${name} inherits secrets before admission`
+        : `${name} references production secrets without needing admission`
     );
     for (const allowed of ['false', '', undefined]) {
       const scope = context(production);
@@ -303,6 +304,10 @@ function assertStagingCallerSecrets(workflow) {
   );
   for (const [name, otherJob] of Object.entries(workflow.jobs)) {
     if (name === 'native-publish-staging') continue;
+    // The production publisher's inherit is admission-gated; see
+    // assertProductionCredentialsAdmitted.
+    if (name === 'native-publish-production' && otherJob.secrets === 'inherit')
+      continue;
     assert.equal(
       otherJob.secrets,
       undefined,
@@ -554,4 +559,36 @@ test('Meet affected gate cannot expose production credentials or admit validatio
     evaluate(workflows['meet-cloudflare.yaml'].jobs.validate.if, scope),
     false
   );
+});
+
+test('an inherited production publisher must wait for admission', () => {
+  for (const name of [
+    'calendar-cloudflare.yaml',
+    'mail-cloudflare.yaml',
+    'apps-cloudflare.yaml',
+  ]) {
+    const ungated = readWorkflow(name);
+    ungated.jobs['native-publish-production'].needs = ['check-ci'];
+    assert.throws(
+      () => assertProductionCredentialsAdmitted(ungated),
+      /native-publish-production inherits secrets before admission/
+    );
+    const ignored = readWorkflow(name);
+    ignored.jobs['native-publish-production'].if =
+      "github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'";
+    assert.throws(
+      () => assertProductionCredentialsAdmitted(ignored),
+      /native-publish-production runs with production credentials/
+    );
+    const staging = readWorkflow(name);
+    staging.jobs[
+      'native-profiles' in staging.jobs
+        ? 'native-profiles'
+        : 'native-publication-profiles'
+    ].secrets = 'inherit';
+    assert.throws(
+      () => assertProductionCredentialsAdmitted(staging),
+      /inherits secrets before admission/
+    );
+  }
 });

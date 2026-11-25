@@ -232,6 +232,15 @@ test('topology change after upload is not accepted', async (t) => {
   );
 });
 
+test('a planner push and a dispatch publish; other events refuse', async (t) => {
+  const p = setup(t);
+  p.env.GITHUB_EVENT_NAME = 'push';
+  assert.equal((await p.run()).state, 'accepted-private');
+  const refused = setup(t);
+  refused.env.GITHUB_EVENT_NAME = 'pull_request';
+  await assert.rejects(refused.run(), /production push or dispatch/);
+});
+
 for (const app of ['calendar', 'mail', 'apps', 'finance', 'drive']) {
   test(`${app} sealed production config has no serving routes`, (t) => {
     const root = fixture(t, app);

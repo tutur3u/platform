@@ -64,6 +64,118 @@ with zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read())) as z:
   return JSON.parse(decoded);
 }
 
+// Production uploads come from manual dispatches of the publisher and from
+// Production Deployment Planner runs that call it. Run ids grow across every
+// workflow in a repository, so a merged newest-first walk meets the latest
+// started upload before any older one. Planner runs created before the
+// planner first called the publisher hold no upload job, so the walk skips
+// them. A walk that needs more than maxPages of either source fails closed.
+export const plannerPublicationSince = '2026-11-25T00:00:00Z';
+export const publicationRunSources = [
+  {
+    workflow: 'wave1-native-production.yaml',
+    filter: '&event=workflow_dispatch',
+  },
+  {
+    workflow: 'vercel-production.yaml',
+    filter: `&created=${encodeURIComponent(`>=${plannerPublicationSince}`)}`,
+  },
+];
+const maxPages = 10;
+const incompleteHistory = 'Unbounded or incomplete publication history';
+
+function runReader({ base, source, env, fetcher }) {
+  let page = 0;
+  let seen = 0;
+  let total;
+  let buffer = [];
+  return async function next() {
+    if (!buffer.length) {
+      if (total !== undefined && seen >= total) return undefined;
+      page += 1;
+      assert.ok(page <= maxPages, incompleteHistory);
+      const runs = await boundedJson(
+        `${base}/workflows/${source.workflow}/runs?branch=production${source.filter}&per_page=100&page=${page}`,
+        env.GITHUB_TOKEN,
+        fetcher
+      );
+      assert.ok(
+        Array.isArray(runs.workflow_runs) &&
+          Number.isSafeInteger(runs.total_count) &&
+          runs.workflow_runs.length <= 100 &&
+          (runs.workflow_runs.length > 0 || seen >= runs.total_count),
+        incompleteHistory
+      );
+      total = runs.total_count;
+      seen += runs.workflow_runs.length;
+      buffer = [...runs.workflow_runs].sort((a, b) => b.id - a.id);
+      if (!buffer.length) return undefined;
+    }
+    return buffer.shift();
+  };
+}
+
+// Newest-first merge of every source, each run once.
+async function* productionRuns(context) {
+  const readers = publicationRunSources.map((source) =>
+    runReader({ ...context, source })
+  );
+  const heads = await Promise.all(readers.map((next) => next()));
+  let last = Number.POSITIVE_INFINITY;
+  for (;;) {
+    let index = -1;
+    for (const [candidate, run] of heads.entries())
+      if (run && (index < 0 || run.id > heads[index].id)) index = candidate;
+    if (index < 0) return;
+    const run = heads[index];
+    heads[index] = await readers[index]();
+    assert.ok(
+      Number.isSafeInteger(run.id) && run.id > 0,
+      'Malformed prior run identity'
+    );
+    if (run.id >= last) continue;
+    last = run.id;
+    yield run;
+  }
+}
+
+async function runJobs({ base, run, env, fetcher }) {
+  const jobs = [];
+  for (let page = 1; page <= 3; page += 1) {
+    const response = await boundedJson(
+      `${base}/runs/${run.id}/jobs?filter=all&per_page=100&page=${page}`,
+      env.GITHUB_TOKEN,
+      fetcher
+    );
+    assert.ok(
+      Array.isArray(response.jobs) &&
+        Number.isSafeInteger(response.total_count) &&
+        response.total_count < 300,
+      'Unknown earlier upload status; never replay'
+    );
+    jobs.push(...response.jobs);
+    if (jobs.length >= response.total_count || !response.jobs.length) {
+      assert.equal(
+        jobs.length,
+        response.total_count,
+        'Unknown earlier upload status; never replay'
+      );
+      return jobs;
+    }
+  }
+  assert.fail('Unknown earlier upload status; never replay');
+}
+
+// A planner run names the called job `<caller> / <workflow job> / publish-<app>`.
+export function isPublicationJob(name, app) {
+  return (
+    typeof name === 'string' &&
+    (name === `publish-${app}` ||
+      name === 'publish' ||
+      name.endsWith(` / publish-${app}`))
+  );
+}
+
 export async function assertNoEarlierUpload({
   env,
   sha,
@@ -74,46 +186,21 @@ export async function assertNoEarlierUpload({
   readReceipt = publicationReceipt,
 }) {
   const base = `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions`;
-  const runs = await boundedJson(
-    `${base}/workflows/wave1-native-production.yaml/runs?branch=production&event=workflow_dispatch&per_page=100`,
-    env.GITHUB_TOKEN,
-    fetcher
-  );
-  assert.ok(
-    Array.isArray(runs.workflow_runs) &&
-      runs.total_count < 100 &&
-      runs.total_count === runs.workflow_runs.length,
-    'Unbounded or incomplete publication history'
-  );
-  assert.ok(
-    runs.workflow_runs.some(
-      (run) =>
-        String(run.id) === env.GITHUB_RUN_ID &&
-        run.head_sha === sha &&
-        run.head_branch === 'production'
-    ),
-    'Current production run missing from history'
-  );
-  const ordered = [...runs.workflow_runs].sort((a, b) => b.id - a.id);
-  for (const run of ordered) {
+  let sawCurrent = false;
+  const assertCurrentSeen = () =>
+    assert.ok(sawCurrent, 'Current production run missing from history');
+  for await (const run of productionRuns({ base, env, fetcher })) {
+    if (String(run.id) === env.GITHUB_RUN_ID) {
+      assert.ok(
+        run.head_sha === sha && run.head_branch === 'production',
+        'Current production run missing from history'
+      );
+      sawCurrent = true;
+    }
     if (run.head_branch !== 'production') continue;
-    assert.ok(
-      Number.isSafeInteger(run.id) && run.id > 0,
-      'Malformed prior run identity'
-    );
-    const jobs = await boundedJson(
-      `${base}/runs/${run.id}/jobs?filter=all&per_page=100`,
-      env.GITHUB_TOKEN,
-      fetcher
-    );
-    assert.ok(
-      Array.isArray(jobs.jobs) &&
-        jobs.total_count < 100 &&
-        jobs.total_count === jobs.jobs.length,
-      'Unknown earlier upload status; never replay'
-    );
-    const publishers = jobs.jobs
-      .filter((job) => job.name === `publish-${app}` || job.name === 'publish')
+    const jobs = await runJobs({ base, run, env, fetcher });
+    const publishers = jobs
+      .filter((job) => isPublicationJob(job.name, app))
       .sort((a, b) => b.run_attempt - a.run_attempt);
     for (const job of publishers) {
       assert.equal(job.run_id, run.id, 'Malformed publication job run');
@@ -133,8 +220,9 @@ export async function assertNoEarlierUpload({
         step.conclusion === 'skipped' ||
         (['queued', 'pending'].includes(step.status) && !step.started_at);
       if (notStarted) continue;
+      const name = `wave1-${app}-production-publication-${run.head_sha}-${run.id}-${job.run_attempt}`;
       const artifacts = await boundedJson(
-        `${base}/runs/${run.id}/artifacts?per_page=100`,
+        `${base}/runs/${run.id}/artifacts?name=${name}&per_page=100`,
         env.GITHUB_TOKEN,
         fetcher
       );
@@ -144,7 +232,6 @@ export async function assertNoEarlierUpload({
           artifacts.total_count === artifacts.artifacts.length,
         'Incomplete publication receipt inventory'
       );
-      const name = `wave1-${app}-production-publication-${run.head_sha}-${run.id}-${job.run_attempt}`;
       const receipts = artifacts.artifacts.filter(
         (artifact) => artifact.name === name && !artifact.expired
       );
@@ -190,7 +277,9 @@ export async function assertNoEarlierUpload({
         'Earlier accepted version is not the rollback baseline; owner reconciliation required'
       );
       // This accepted baseline already cleared all older app history before its upload.
+      assertCurrentSeen();
       return;
     }
   }
+  assertCurrentSeen();
 }

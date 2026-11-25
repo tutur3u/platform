@@ -1,5 +1,15 @@
 name: Upload private wave-1 production Worker
+# The Production Deployment Planner calls this through each app's
+# <app>-cloudflare.yaml on every production push that selects the app; a
+# manual dispatch from the production branch is the recovery path. Both run
+# the same jobs. A called run never seals a release artifact.
 on:
+  workflow_call:
+    inputs:
+      app:
+        description: Admitted wave-1 app
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       app:
