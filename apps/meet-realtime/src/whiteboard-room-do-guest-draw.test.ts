@@ -104,3 +104,38 @@ test('leaves members drawing whatever the guest switch says', async () => {
     assert.equal(peer.sent.at(-1).changes[0].element.id, 'm');
   }
 });
+
+test('closes a viewer whose write holds only unsupported elements', async () => {
+  const image = JSON.stringify({
+    type: 'elements',
+    changes: [
+      {
+        type: 'insert',
+        element: { id: 'img', type: 'image', version: 1, versionNonce: 1 },
+      },
+    ],
+  });
+  const f = fixture({ MEET_GUEST_WHITEBOARD_DRAW: undefined });
+  const member = await open(f);
+  // A held guest and a member with a view ticket are both read-only.
+  for (const viewer of [
+    await open(f, { ...guest, role: 'edit' }),
+    await open(f, { userId: 'u3', role: 'view' }),
+  ]) {
+    await f.the.webSocketMessage(viewer as any, image);
+    assert.equal(viewer.closed, 1008);
+    assert.ok(!viewer.sent.some((m) => m.type === 'rejected'));
+    // No churn was charged to the refused connection.
+    assert.equal((viewer as any).deserializeAttachment().tokens, undefined);
+  }
+  assert.ok(!member.sent.some((m) => m.type === 'elements'));
+  const later = await open(f, { userId: 'u2' });
+  assert.ok(!later.sent[0].elements.some((e: any) => e.id === 'img'));
+  // An editor sending the same write gets the notice and stays open.
+  await f.the.webSocketMessage(member as any, image);
+  assert.deepEqual(member.sent.at(-1), {
+    type: 'rejected',
+    reason: 'unsupported',
+  });
+  assert.equal(member.closed, null);
+});

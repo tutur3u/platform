@@ -473,6 +473,16 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     let unsupported = 0;
     try {
       const raw = JSON.parse(data);
+      // Any element write from someone who may not edit closes the socket,
+      // before the unsupported notice below, so a viewer sending only images
+      // is refused like any other drawing. Rechecked at write time, so a
+      // socket accepted before guest drawing was held (its attachment
+      // survives hibernation) cannot write either.
+      if (
+        raw?.type === 'elements' &&
+        this.honoured(attachment.ticket).role !== 'edit'
+      )
+        return socket.close(1008, 'Read-only board');
       // Elements the room cannot hold (images, embeds) are dropped with a
       // notice; closing the socket would only make the client reconnect.
       if (
@@ -567,10 +577,6 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         return this.flushGuestRelays();
       }
       case 'elements': {
-        // Rechecked at write time, so a socket accepted before guest drawing
-        // was held (its attachment survives hibernation) cannot write either.
-        if (this.honoured(ticket).role !== 'edit')
-          return socket.close(1008, 'Read-only board');
         // People outside the workspace store only well-typed known fields and
         // safe links; an element that fails is refused like an image is.
         const guest =
