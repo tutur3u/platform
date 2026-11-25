@@ -72,19 +72,22 @@ void main() {
     );
   });
 
-  test('toggledReactions adds, increments and removes the viewer', () {
+  test('reactionsWith sets the viewer state idempotently', () {
     const thumbs = '\u{1F44D}';
-    final added = toggledReactions(const [], thumbs, 'me');
+    final added = reactionsWith(const [], thumbs, 'me', true);
     expect(added.single.count, 1);
-    final joined = toggledReactions(
+    expect(reactionsWith(added, thumbs, 'me', true), added);
+    final joined = reactionsWith(
       const [
         ChatReactionSummary(emoji: thumbs, count: 1, userIds: ['ada']),
       ],
       thumbs,
       'me',
+      true,
     );
     expect(joined.single.count, 2);
     expect(joined.single.userIds, ['ada', 'me']);
-    expect(toggledReactions(added, thumbs, 'me'), isEmpty);
+    expect(reactionsWith(added, thumbs, 'me', false), isEmpty);
+    expect(reactionsWith(const [], thumbs, 'me', false), isEmpty);
   });
 }

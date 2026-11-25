@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/master_detail.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -121,12 +122,35 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('a wide body shows the list and thread side by side', (
+  testWidgets('the split starts exactly at the master-detail width', (
     tester,
   ) async {
-    await _pump(tester, 1000);
+    const split = AppMasterDetailLayout.splitMinWidth;
+    await _pump(tester, split - 1);
+    expect(find.byKey(_pane), findsNothing);
+    await _pump(tester, split);
     expect(find.byKey(_pane), findsOneWidget);
-    expect(tester.getSize(find.byKey(_pane)).width, 340);
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  // Below, inside and above the 320-400dp clamp of the list pane.
+  for (final bodyWidth in [720.0, 1000.0, 1180.0]) {
+    testWidgets('a ${bodyWidth.toInt()}dp body sizes the list by policy', (
+      tester,
+    ) async {
+      await _pump(tester, bodyWidth);
+      expect(find.byKey(_pane), findsOneWidget);
+      final expected = AppMasterDetailLayout.listWidth(bodyWidth);
+      expect(tester.getSize(find.byKey(_pane)).width, expected);
+      expect(
+        expected,
+        bodyWidth == 720
+            ? AppMasterDetailLayout.listMinWidth
+            : bodyWidth == 1180
+            ? AppMasterDetailLayout.listMaxWidth
+            : bodyWidth * 0.34,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 }

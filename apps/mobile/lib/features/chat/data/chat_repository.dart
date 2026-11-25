@@ -560,27 +560,38 @@ class ChatRepository {
     );
   }
 
-  Future<ChatMessage> toggleReaction(
+  /// Sets the viewer's [emoji] reaction on a message to [present]. The
+  /// request is idempotent under [opId], so a queued replay or a retry cannot
+  /// flip the reaction back.
+  Future<ChatMessage> setReaction(
     String wsId,
     String conversationId, {
     required String messageId,
     required String emoji,
+    required bool present,
+    required String opId,
   }) async {
     final path = '${_conversationPath(wsId, conversationId)}/reactions';
-    final payload = {'messageId': messageId, 'emoji': emoji};
+    final payload = {
+      'messageId': messageId,
+      'emoji': emoji,
+      'opId': opId,
+      'present': present,
+    };
     return await queueOrSendValue<ChatMessage>(
       feature: 'chat',
-      method: 'POST',
+      method: 'PUT',
       path: path,
       workspaceId: wsId,
       entityId: messageId,
       payload: payload,
+      replaySafe: true,
       pendingValue: (_) => ChatMessage.fromJson({
         'id': messageId,
         'conversation_id': conversationId,
       }),
       send: () async => ChatMessage.fromJson(
-        (await _apiClient.postJson(path, payload))['message']
+        (await _apiClient.putJson(path, payload))['message']
                 as Map<String, dynamic>? ??
             const <String, dynamic>{},
       ),

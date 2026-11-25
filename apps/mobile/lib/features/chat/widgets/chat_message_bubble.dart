@@ -25,7 +25,7 @@ class ChatMessageBubble extends StatelessWidget {
     required this.item,
     required this.maxWidth,
     required this.currentUserId,
-    required this.onReaction,
+    this.onReaction,
     this.showSenderName = true,
     this.hasReply = false,
     this.replyParent,
@@ -38,7 +38,10 @@ class ChatMessageBubble extends StatelessWidget {
   final ChatMessageItem item;
   final double maxWidth;
   final String? currentUserId;
-  final ValueChanged<String> onReaction;
+
+  /// Null for messages not yet on the server; their reactions are shown
+  /// but cannot change.
+  final ValueChanged<String>? onReaction;
   final bool showSenderName;
   final bool hasReply;
   final ChatMessage? replyParent;
@@ -93,7 +96,7 @@ class ChatMessageBubble extends StatelessWidget {
               reactions: message.reactions,
               currentUserId: currentUserId,
               onToggle: onReaction,
-              onAdd: onOpenActions,
+              onAdd: onReaction == null ? null : onOpenActions,
             ),
           ),
         if (item.endsGroup) _MessageMeta(message: message, mine: mine),

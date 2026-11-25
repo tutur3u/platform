@@ -38,12 +38,24 @@ avatar and, outside direct messages, the sender's name; the last shows the
 time. Day separators read Today, Yesterday or the date, and a New messages
 divider marks the first message from someone else after the viewer's read
 marker. Replies quote their parent; tapping a loaded parent scrolls to it.
-Reactions render as pills, tinted where the viewer reacted, and toggle on tap.
-Long press (secondary click on desktop) opens web's six quick reactions plus
-Reply, Copy text and, for the viewer's own synced messages, Delete. Shared
-files render as rows that request a signed URL only when opened. Older history
-loads a page at a time with `before` set to the oldest loaded message, as web
-does.
+Reactions render as pills, tinted where the viewer reacted, and toggle on tap
+through the idempotent desired-state request (`opId` and `present`); only the
+latest operation on a message may apply its reply or roll back, and a rollback
+restores just that emoji. Long press (secondary click on desktop) opens web's
+six quick reactions plus Reply, Copy text and, for the viewer's own messages,
+Delete. Mobile has no moderation permission signal yet, so moderators cannot
+delete other people's messages here as they can on web. Messages still waiting
+in the offline queue take no reactions, replies or deletion. Shared files
+render as rows that request a signed URL only when opened.
+
+Older history loads a page at a time with `before` set to the oldest synced
+message, as web does; a page counts as full only by its synced messages. A
+quiet refresh (realtime fallback, resync or pull to refresh) folds the newest
+page into the loaded thread, so older pages and the reading position survive.
+Realtime `message.created` appends; edits, deletions and reaction updates patch
+a loaded message in place and leave the conversation list order alone. A reply
+whose target disappears is dropped before sending. Action failures show one
+localized toast.
 
 ## Composer
 
@@ -57,7 +69,8 @@ are still required for delivery.
 
 Regression coverage: `chat_conversation_layout_test.dart`,
 `chat_pagination_scope_test.dart`, `chat_thread_layout_test.dart`,
-`chat_thread_items_test.dart`, `chat_surface_width_test.dart` and the
+`chat_thread_items_test.dart`, `chat_surface_width_test.dart`,
+`chat_cubit_history_test.dart`, `chat_cubit_message_actions_test.dart` and the
 `chat_page_render_test.dart` design renders (phone, tablet and desktop in
 light and dark) in `apps/mobile/test/features/chat`.
 

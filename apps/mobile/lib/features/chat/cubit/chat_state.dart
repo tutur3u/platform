@@ -38,7 +38,7 @@ class ChatState extends Equatable {
     this.canManageChat = false,
     this.replyToMessageId,
     this.hasOlderMessages = const {},
-    this.isLoadingOlderMessages = false,
+    this.loadingOlderConversationId,
     this.error,
   });
 
@@ -71,14 +71,24 @@ class ChatState extends Equatable {
 
   /// Conversations whose last history page was full, keyed by id.
   final Map<String, bool> hasOlderMessages;
-  final bool isLoadingOlderMessages;
+
+  /// Conversation whose older history is loading; one thread's request never
+  /// shows a spinner in another.
+  final String? loadingOlderConversationId;
+
+  bool get isLoadingOlderMessages =>
+      loadingOlderConversationId != null &&
+      loadingOlderConversationId == selectedConversationId;
   final String? error;
 
+  /// The message being answered, or null when it is not loaded or deleted.
   ChatMessage? get replyToMessage {
     final replyId = replyToMessageId;
     if (replyId == null) return null;
     for (final message in selectedMessages) {
-      if (message.id == replyId) return message;
+      if (message.id == replyId) {
+        return message.deletedAt == null ? message : null;
+      }
     }
     return null;
   }
@@ -142,7 +152,7 @@ class ChatState extends Equatable {
     bool? canManageChat,
     Object? replyToMessageId = _chatStateSentinel,
     Map<String, bool>? hasOlderMessages,
-    bool? isLoadingOlderMessages,
+    Object? loadingOlderConversationId = _chatStateSentinel,
     Object? error = _chatStateSentinel,
     bool clearError = false,
   }) {
@@ -186,8 +196,10 @@ class ChatState extends Equatable {
           ? this.replyToMessageId
           : replyToMessageId as String?,
       hasOlderMessages: hasOlderMessages ?? this.hasOlderMessages,
-      isLoadingOlderMessages:
-          isLoadingOlderMessages ?? this.isLoadingOlderMessages,
+      loadingOlderConversationId:
+          loadingOlderConversationId == _chatStateSentinel
+          ? this.loadingOlderConversationId
+          : loadingOlderConversationId as String?,
       error: clearError
           ? null
           : error == _chatStateSentinel
@@ -223,7 +235,7 @@ class ChatState extends Equatable {
     canManageChat,
     replyToMessageId,
     hasOlderMessages,
-    isLoadingOlderMessages,
+    loadingOlderConversationId,
     error,
   ];
 }

@@ -4087,6 +4087,12 @@ abstract class AppLocalizations {
   /// **'Workspace'**
   String get chatWorkspace;
 
+  /// No description provided for @chatActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t finish that. Try again.'**
+  String get chatActionFailed;
+
   /// No description provided for @chatAddReaction.
   ///
   /// In en, this message translates to:

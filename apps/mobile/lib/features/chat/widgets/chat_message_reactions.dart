@@ -9,14 +9,14 @@ class ChatMessageReactions extends StatelessWidget {
   const ChatMessageReactions({
     required this.reactions,
     required this.currentUserId,
-    required this.onToggle,
+    this.onToggle,
     this.onAdd,
     super.key,
   });
 
   final List<ChatReactionSummary> reactions;
   final String? currentUserId;
-  final ValueChanged<String> onToggle;
+  final ValueChanged<String>? onToggle;
   final VoidCallback? onAdd;
 
   @override
@@ -32,7 +32,7 @@ class ChatMessageReactions extends StatelessWidget {
             mine:
                 currentUserId != null &&
                 reaction.userIds.contains(currentUserId),
-            onTap: () => onToggle(reaction.emoji),
+            onTap: onToggle == null ? null : () => onToggle!(reaction.emoji),
           ),
         if (onAdd != null)
           AppIconButton(
@@ -57,7 +57,7 @@ class _ReactionPill extends StatelessWidget {
 
   final ChatReactionSummary reaction;
   final bool mine;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +66,7 @@ class _ReactionPill extends StatelessWidget {
     final radius = BorderRadius.circular(AppRadius.pill);
     return Semantics(
       button: true,
-      enabled: true,
+      enabled: onTap != null,
       toggled: mine,
       label: context.l10n.chatReactionSummary(reaction.emoji, reaction.count),
       onTap: onTap,

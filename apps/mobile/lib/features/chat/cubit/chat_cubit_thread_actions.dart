@@ -1,10 +1,11 @@
 part of 'chat_cubit.dart';
 
-/// Returns [reactions] with [userId]'s [emoji] reaction toggled.
-List<ChatReactionSummary> toggledReactions(
+/// Returns [reactions] with [userId]'s [emoji] reaction set to [present].
+List<ChatReactionSummary> reactionsWith(
   List<ChatReactionSummary> reactions,
   String emoji,
   String userId,
+  bool present,
 ) {
   final next = <ChatReactionSummary>[];
   var found = false;
@@ -14,18 +15,22 @@ List<ChatReactionSummary> toggledReactions(
       continue;
     }
     found = true;
-    final reacted = reaction.userIds.contains(userId);
-    final userIds = reacted
-        ? reaction.userIds.where((id) => id != userId).toList(growable: false)
-        : [...reaction.userIds, userId];
-    final count = reacted ? reaction.count - 1 : reaction.count + 1;
+    final has = reaction.userIds.contains(userId);
+    if (has == present) {
+      next.add(reaction);
+      continue;
+    }
+    final userIds = present
+        ? [...reaction.userIds, userId]
+        : reaction.userIds.where((id) => id != userId).toList(growable: false);
+    final count = reaction.count + (present ? 1 : -1);
     if (count > 0) {
       next.add(
         ChatReactionSummary(emoji: emoji, count: count, userIds: userIds),
       );
     }
   }
-  if (!found) {
+  if (!found && present) {
     next.add(ChatReactionSummary(emoji: emoji, count: 1, userIds: [userId]));
   }
   return next;
@@ -41,6 +46,11 @@ extension ChatCubitThreadActions on ChatCubit {
   }
 
   void cancelReply() => _emitState(state.copyWith(replyToMessageId: null));
+
+  /// Clears a reported action error so the same failure can report again.
+  void dismissError() {
+    if (state.error != null) _emitState(state.copyWith(clearError: true));
+  }
 
   Future<void> deleteMessage(ChatMessage message) async {
     if (!_scopeActive) return;
@@ -61,26 +71,22 @@ extension ChatCubitThreadActions on ChatCubit {
     }
   }
 
-  /// Loads the page before the oldest loaded message of the open thread.
+  /// Loads the page before the oldest loaded message of the open thread,
+  /// using its `createdAt` as the `before` cursor as web does.
   Future<void> loadOlderMessages() async {
-    if (!_scopeActive || state.isLoadingOlderMessages) return;
+    if (!_scopeActive) return;
     final wsId = state.wsId;
     final conversationId = state.selectedConversationId;
     if (wsId == null ||
         conversationId == null ||
+        state.loadingOlderConversationId == conversationId ||
         !state.selectedHasOlderMessages) {
       return;
     }
-    final oldest = state.selectedMessages
-        .map((message) => message.createdAt)
-        .whereType<DateTime>()
-        .fold<DateTime?>(
-          null,
-          (oldest, at) => oldest == null || at.isBefore(oldest) ? at : oldest,
-        );
+    final oldest = _oldestServerMessageAt(wsId, conversationId);
     if (oldest == null) return;
     final token = _loadToken;
-    _emitState(state.copyWith(isLoadingOlderMessages: true));
+    _emitState(state.copyWith(loadingOlderConversationId: conversationId));
     try {
       final page = await _repository.listMessages(
         wsId,
@@ -88,74 +94,25 @@ extension ChatCubitThreadActions on ChatCubit {
         before: oldest.toUtc().toIso8601String(),
       );
       if (!_scopeActive || token != _loadToken || state.wsId != wsId) return;
-      final known = {
-        for (final message
-            in state.messages[conversationId] ?? const <ChatMessage>[])
-          message.id,
-      };
-      final merged =
-          [
-            ...page.where((message) => !known.contains(message.id)),
-            ...?state.messages[conversationId],
-          ]..sort(
-            (left, right) => (left.createdAt ?? DateTime(0)).compareTo(
-              right.createdAt ?? DateTime(0),
-            ),
-          );
+      final merged = _sortedById([...?state.messages[conversationId], ...page]);
       _emitState(
         state.copyWith(
-          isLoadingOlderMessages: false,
           messages: {...state.messages, conversationId: merged},
           hasOlderMessages: {
             ...state.hasOlderMessages,
-            conversationId: page.length >= ChatCubit.messagePageSize,
+            conversationId: _isFullPage(wsId, page),
           },
         ),
       );
     } on ApiException catch (error) {
-      _emitState(
-        state.copyWith(isLoadingOlderMessages: false, error: error.message),
-      );
+      _emitState(state.copyWith(error: error.message));
+    } on Object catch (error) {
+      _emitState(state.copyWith(error: error.toString()));
+    } finally {
+      if (state.loadingOlderConversationId == conversationId) {
+        _emitState(state.copyWith(loadingOlderConversationId: null));
+      }
     }
-  }
-
-  ChatMessage? _findMessage(String conversationId, String messageId) {
-    for (final message
-        in state.messages[conversationId] ?? const <ChatMessage>[]) {
-      if (message.id == messageId) return message;
-    }
-    return null;
-  }
-
-  /// Applies reaction, edit and deletion changes to a loaded message without
-  /// treating it as new activity in the conversation list.
-  void _patchMessage(ChatMessage patch) {
-    final existing = _findMessage(patch.conversationId, patch.id);
-    if (existing == null) return;
-    final deleted = patch.deletedAt != null;
-    final merged = existing.copyWith(
-      content: deleted
-          ? ''
-          : (patch.content.isEmpty ? existing.content : patch.content),
-      reactions: patch.reactions,
-      editedAt: patch.editedAt,
-      deletedAt: patch.deletedAt,
-    );
-    final list = state.messages[patch.conversationId]!
-        .map((message) => message.id == patch.id ? merged : message)
-        .toList(growable: false);
-    _emitState(
-      state.copyWith(
-        messages: {...state.messages, patch.conversationId: list},
-        conversations: state.conversations
-            .map(
-              (conversation) => conversation.latestMessage?.id == patch.id
-                  ? conversation.copyWith(latestMessage: merged)
-                  : conversation,
-            )
-            .toList(growable: false),
-      ),
-    );
   }
 
   void _clearUnread(String conversationId) {

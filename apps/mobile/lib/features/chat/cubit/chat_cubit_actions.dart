@@ -108,9 +108,8 @@ extension ChatCubitActions on ChatCubit {
     final attachments = state.pendingAttachments
         .map((attachment) => attachment.toDraft())
         .toList(growable: false);
-    final replyToMessageId = state.replyToMessage?.deletedAt == null
-        ? state.replyToMessageId
-        : null;
+    // Only a loaded, live target is sent; a missing one is dropped.
+    final replyToMessageId = state.replyToMessage?.id;
     _emitState(
       state.copyWith(
         isSending: true,
@@ -200,34 +199,57 @@ extension ChatCubitActions on ChatCubit {
     );
   }
 
+  /// Toggles the viewer's [emoji] on [message] through the idempotent
+  /// desired-state API. Only the latest operation on a message may apply
+  /// its response or roll back, and a rollback restores just that emoji, so
+  /// out-of-order replies cannot undo a newer tap or a realtime update.
   Future<void> toggleReaction(ChatMessage message, String emoji) async {
     if (!_scopeActive) return;
     final wsId = state.wsId;
+    final userId = _currentUserId();
     if (wsId == null ||
-        (state.selectedConversation?.isReadOnlyAgent ?? false)) {
+        userId == null ||
+        (state.selectedConversation?.isReadOnlyAgent ?? false) ||
+        isPendingChatMessage(wsId, message.id)) {
       return;
     }
-    final userId = _currentUserId();
-    final before = _findMessage(message.conversationId, message.id) ?? message;
-    if (userId != null) {
-      _patchMessage(
-        before.copyWith(
-          reactions: toggledReactions(before.reactions, emoji, userId),
-        ),
-      );
-    }
+    final current = _findMessage(message.conversationId, message.id) ?? message;
+    final present = !current.reactions.any(
+      (reaction) =>
+          reaction.emoji == emoji && reaction.userIds.contains(userId),
+    );
+    final opId = newLocalMutationId();
+    _latestReactionOps[message.id] = opId;
+    _patchMessage(
+      current.copyWith(
+        reactions: reactionsWith(current.reactions, emoji, userId, present),
+      ),
+    );
     try {
-      final updated = await _repository.toggleReaction(
+      final updated = await _repository.setReaction(
         wsId,
         message.conversationId,
         messageId: message.id,
         emoji: emoji,
+        present: present,
+        opId: opId,
       );
-      // A queued (offline) toggle answers with an id-only placeholder; keep
-      // the optimistic reactions until the server returns the message.
+      if (_latestReactionOps[message.id] != opId) return;
+      _latestReactionOps.remove(message.id);
+      // A queued (offline) operation answers with an id-only placeholder;
+      // keep the optimistic state until the server returns the message.
       if (updated.createdAt != null) _patchMessage(updated);
     } on ApiException catch (error) {
-      _patchMessage(before);
+      if (_latestReactionOps[message.id] != opId) return;
+      _latestReactionOps.remove(message.id);
+      final now = _findMessage(message.conversationId, message.id);
+      if (now != null) {
+        _patchMessage(
+          now.copyWith(
+            reactions: reactionsWith(now.reactions, emoji, userId, !present),
+          ),
+        );
+      }
       _emitState(state.copyWith(error: error.message));
     }
   }

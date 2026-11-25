@@ -2100,6 +2100,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatWorkspace => 'Workspace';
 
   @override
+  String get chatActionFailed => 'Couldn\'t finish that. Try again.';
+
+  @override
   String get chatAddReaction => 'Add reaction';
 
   @override

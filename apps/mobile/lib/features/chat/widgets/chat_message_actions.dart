@@ -13,7 +13,8 @@ import 'package:mobile/l10n/l10n.dart';
 Future<void> showChatMessageActions(
   BuildContext context, {
   required ChatMessage message,
-  required ValueChanged<String> onReaction,
+  required String? currentUserId,
+  ValueChanged<String>? onReaction,
   VoidCallback? onReply,
   Future<void> Function()? onDelete,
 }) {
@@ -30,24 +31,30 @@ Future<void> showChatMessageActions(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (final emoji in chatQuickReactions)
-                  _QuickReaction(
-                    key: ValueKey('chat-quick-reaction-$emoji'),
-                    emoji: emoji,
-                    selected: message.reactions.any(
-                      (reaction) => reaction.emoji == emoji,
+            if (onReaction != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (final emoji in chatQuickReactions)
+                    _QuickReaction(
+                      key: ValueKey('chat-quick-reaction-$emoji'),
+                      emoji: emoji,
+                      selected:
+                          currentUserId != null &&
+                          message.reactions.any(
+                            (reaction) =>
+                                reaction.emoji == emoji &&
+                                reaction.userIds.contains(currentUserId),
+                          ),
+                      onTap: () {
+                        close();
+                        onReaction(emoji);
+                      },
                     ),
-                    onTap: () {
-                      close();
-                      onReaction(emoji);
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             if (onReply != null)
               AppButton.ghost(
                 leading: const Icon(LucideIcons.reply),

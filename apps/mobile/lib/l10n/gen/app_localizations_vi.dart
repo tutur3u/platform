@@ -2087,6 +2087,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatWorkspace => 'Workspace';
 
   @override
+  String get chatActionFailed => 'Không thể hoàn tất. Hãy thử lại.';
+
+  @override
   String get chatAddReaction => 'Thêm cảm xúc';
 
   @override

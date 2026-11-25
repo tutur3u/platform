@@ -30,29 +30,53 @@ class _MessageList extends StatefulWidget {
 }
 
 class _MessageListState extends State<_MessageList> {
+  final ScrollController _scroll = ScrollController();
   final Map<String, GlobalKey> _keys = {};
+
+  /// Builder index of each message row, refreshed on every build.
+  Map<String, int> _indexById = const {};
+  int _itemCount = 0;
   String? _highlightedId;
   Timer? _highlightTimer;
 
   @override
   void dispose() {
     _highlightTimer?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
   GlobalKey _keyFor(String id) => _keys.putIfAbsent(id, GlobalKey.new);
 
-  void _jumpTo(ChatMessage parent) {
-    final target = _keys[parent.id]?.currentContext;
-    if (target == null) return;
-    unawaited(
-      Scrollable.ensureVisible(
-        target,
-        alignment: 0.4,
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-      ),
-    );
+  /// Scrolls to a loaded parent. A row outside the built range has no
+  /// context yet, so jump by its share of the list and retry until it is
+  /// built, then settle it into view.
+  Future<void> _jumpTo(ChatMessage parent) async {
+    for (var attempt = 0; attempt < 6; attempt++) {
+      if (!mounted) return;
+      final target = _keys[parent.id]?.currentContext;
+      if (target != null) {
+        if (!target.mounted) return;
+        await Scrollable.ensureVisible(
+          target,
+          alignment: 0.4,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        );
+        break;
+      }
+      final index = _indexById[parent.id];
+      if (index == null || !_scroll.hasClients || _itemCount == 0) return;
+      final position = _scroll.position;
+      final extent = position.maxScrollExtent + position.viewportDimension;
+      final estimate =
+          extent * (index / _itemCount) - position.viewportDimension / 2;
+      position.jumpTo(
+        estimate.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    if (!mounted) return;
     _highlightTimer?.cancel();
     setState(() => _highlightedId = parent.id);
     _highlightTimer = Timer(const Duration(milliseconds: 1400), () {
@@ -60,14 +84,23 @@ class _MessageListState extends State<_MessageList> {
     });
   }
 
+  /// Queued sends and the streaming reply are not on the server yet, so
+  /// they take no reactions, replies or deletion.
+  bool _isSynced(ChatMessage message) =>
+      message.id != _streamingId &&
+      !isPendingChatMessage(widget.conversation.wsId, message.id);
+
   void _openActions(ChatMessage message, {required bool mine}) {
     if (message.deletedAt != null) return;
-    final pending = !_isServerId(message.id);
+    final pending = !_isSynced(message);
     unawaited(
       showChatMessageActions(
         context,
         message: message,
-        onReaction: (emoji) => widget.onReaction(message, emoji),
+        currentUserId: widget.currentUserId,
+        onReaction: pending
+            ? null
+            : (emoji) => widget.onReaction(message, emoji),
         onReply: widget.onReply == null || pending
             ? null
             : () => widget.onReply!(message),
@@ -84,7 +117,7 @@ class _MessageListState extends State<_MessageList> {
       ...widget.messages,
       if (widget.streamingAssistantText.isNotEmpty)
         ChatMessage(
-          id: 'streaming-assistant',
+          id: _streamingId,
           conversationId: widget.conversation.id,
           content: widget.streamingAssistantText,
           kind: ChatMessageKind.assistant,
@@ -103,6 +136,14 @@ class _MessageListState extends State<_MessageList> {
       lastReadAt: chatLastReadAt(widget.conversation, widget.currentUserId),
     );
     final byId = {for (final message in messages) message.id: message};
+    _keys.removeWhere((id, _) => !byId.containsKey(id));
+    final historyRows = widget.hasOlderMessages ? 1 : 0;
+    _itemCount = items.length + historyRows;
+    _indexById = {
+      for (var i = 0; i < items.length; i++)
+        if (items[i] case ChatMessageItem(:final message))
+          message.id: items.length - 1 - i,
+    };
     final showNames = widget.conversation.type != ChatConversationType.direct;
     final showHistory = widget.hasOlderMessages;
 
@@ -110,6 +151,7 @@ class _MessageListState extends State<_MessageList> {
       builder: (context, constraints) {
         final bubbleWidth = (constraints.maxWidth * 0.78).clamp(220.0, 600.0);
         return ListView.builder(
+          controller: _scroll,
           reverse: true,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(
@@ -175,22 +217,20 @@ class _MessageListState extends State<_MessageList> {
       showSenderName: showNames,
       hasReply: replyId != null,
       replyParent: parent,
-      onJumpToReply: parent == null ? null : () => _jumpTo(parent),
+      onJumpToReply: parent == null ? null : () => unawaited(_jumpTo(parent)),
       highlighted: _highlightedId == message.id,
-      onReaction: (emoji) => widget.onReaction(message, emoji),
-      onOpenActions: message.id == 'streaming-assistant'
+      onReaction: _isSynced(message)
+          ? (emoji) => widget.onReaction(message, emoji)
+          : null,
+      onOpenActions: message.id == _streamingId
           ? null
           : () => _openActions(message, mine: item.isMine),
     );
   }
 }
 
-/// Server message ids are UUIDs; optimistic and queued rows are not, and
-/// cannot be replied to or deleted until they sync.
-bool _isServerId(String id) => RegExp(
-  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-  caseSensitive: false,
-).hasMatch(id);
+/// Id of the assistant reply that is still streaming.
+const _streamingId = 'streaming-assistant';
 
 class _DayDivider extends StatelessWidget {
   const _DayDivider({required this.day});

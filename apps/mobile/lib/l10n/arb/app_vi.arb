@@ -1992,6 +1992,7 @@
   "chatUnpin": "Bỏ ghim",
   "chatUntitled": "Cuộc trò chuyện chưa đặt tên",
   "chatWorkspace": "Workspace",
+  "chatActionFailed": "Không thể hoàn tất. Hãy thử lại.",
   "chatAddReaction": "Thêm cảm xúc",
   "chatAiAgents": "Trợ lý AI",
   "chatAttachmentCount": "{count, plural, one{{count} tệp đính kèm} other{{count} tệp đính kèm}}",

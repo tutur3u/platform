@@ -16,6 +16,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 part 'chat_state.dart';
 part 'chat_cubit_actions.dart';
 part 'chat_cubit_thread_actions.dart';
+part 'chat_cubit_message_merge.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit({
@@ -92,6 +93,10 @@ class ChatCubit extends Cubit<ChatState> {
             record.workspaceId == wsId &&
             record.entityId == entityId,
       );
+
+  /// Latest reaction operation per message; an older operation's response
+  /// or rollback must not overwrite a newer optimistic state.
+  final Map<String, String> _latestReactionOps = {};
 
   Future<void> setWorkspace(
     String wsId, {
@@ -333,16 +338,25 @@ class ChatCubit extends Cubit<ChatState> {
           state.selectedConversationId != conversationId) {
         return;
       }
-      final allMessages = Map<String, List<ChatMessage>>.from(state.messages);
-      allMessages[conversationId] = messages;
+      // A quiet refresh folds the newest page into the loaded thread so
+      // older pages, the history cursor and the scroll position survive.
+      final next = quietly
+          ? _mergeNewestPage(wsId, conversationId, messages)
+          : (messages: messages, hasOlder: _isFullPage(wsId, messages));
+      final replyId = state.replyToMessageId;
       emit(
         state.copyWith(
           messageStatus: ChatMessageStatus.loaded,
-          messages: allMessages,
+          messages: {...state.messages, conversationId: next.messages},
           hasOlderMessages: {
             ...state.hasOlderMessages,
-            conversationId: messages.length >= ChatCubit.messagePageSize,
+            conversationId: next.hasOlder,
           },
+          replyToMessageId:
+              replyId != null &&
+                  !next.messages.any((message) => message.id == replyId)
+              ? null
+              : replyId,
         ),
       );
       if (!quietly) {
@@ -389,8 +403,15 @@ class ChatCubit extends Cubit<ChatState> {
         _upsertConversation(conversation);
       case ChatRealtimeConversationDeletedEvent(:final conversationId):
         _removeConversation(conversationId);
-      case ChatRealtimeMessageEvent(:final message):
-        _upsertMessage(message);
+      case ChatRealtimeMessageEvent(:final type, :final message):
+        // Only a new message is new activity. Edits, deletions and reaction
+        // echoes patch a loaded message in place, so an old message outside
+        // the loaded pages is never appended and the list order holds.
+        if (type == 'message.created') {
+          _upsertMessage(message);
+        } else {
+          _patchMessage(message, replaceReactions: type == 'reaction.updated');
+        }
       case ChatRealtimeTypingEvent(
         :final conversationId,
         :final actorUserId,
