@@ -44,10 +44,24 @@ describe('sanitizeMeetingName', () => {
   });
 
   it('runs in linear time on a long run of joiners', () => {
-    const run = `a${hidden(0x200d).repeat(100_000)}b`;
-    const started = performance.now();
-    expect(sanitizeMeetingName(run)).toBe(`a${hidden(0x200d)}b`);
-    expect(performance.now() - started).toBeLessThan(50);
+    // Compare how the cost grows instead of a fixed wall-clock budget, which a
+    // loaded CI runner can miss. 8x the input costs about 8x when linear and
+    // about 64x when quadratic; the bound sits well between the two.
+    const median = (length: number) => {
+      const run = `a${hidden(0x200d).repeat(length)}b`;
+      const times: number[] = [];
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const started = performance.now();
+        expect(sanitizeMeetingName(run)).toBe(`a${hidden(0x200d)}b`);
+        times.push(performance.now() - started);
+      }
+      return times.sort((a, b) => a - b)[2] as number;
+    };
+    median(25_000); // warm up the JIT
+    const small = median(25_000);
+    const large = median(200_000);
+    expect(large / Math.max(small, 0.5)).toBeLessThan(24);
+    expect(large).toBeLessThan(2000);
     const edges = `${hidden(0x200d).repeat(100_000)} a ${hidden(0x200c).repeat(100_000)}`;
     expect(sanitizeMeetingName(edges)).toBe('a');
   });

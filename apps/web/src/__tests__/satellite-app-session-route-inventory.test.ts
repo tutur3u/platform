@@ -122,6 +122,9 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/review/route.ts',
   // Admitted participants read the room Mira notice and record their own choice.
   'apps/meet/src/app/api/meet-call/[meetingId]/mira-room/route.ts',
+  // Signed-in Meet users withdraw their own account-level Mira confirmation
+  // (Meet app session, same-origin, strict body, own marker only).
+  'apps/meet/src/app/api/meet-mira/account/route.ts',
   // Admitted participants read the live transcript notice and record their own choice.
   'apps/meet/src/app/api/meet-call/[meetingId]/transcript-consent/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts',
