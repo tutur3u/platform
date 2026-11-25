@@ -72,6 +72,20 @@ test('a refresh may lower the role but not change the actor', async () => {
     })
   );
   assert.ok(socket.sent.some((m) => m.type === 'role' && m.role === 'view'));
+  // The lowered socket may no longer write: the write closes it, and nothing
+  // reaches the room or the other people.
+  const peer = await open(f, { userId: 'u3' });
+  await f.the.webSocketMessage(
+    socket as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [{ type: 'insert', element: rect('lowered') }],
+    })
+  );
+  assert.equal(socket.closed, 1008);
+  assert.ok(!peer.sent.some((m) => m.type === 'elements'));
+  const later = await open(f, { userId: 'u4' });
+  assert.ok(!later.sent[0].elements.some((e: any) => e.id === 'lowered'));
   const other = await open(f, { userId: 'u9' });
   await f.the.webSocketMessage(
     other as any,
