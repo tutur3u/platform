@@ -28,6 +28,15 @@ async function resolveExistingBoardId(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions
 ) {
+  // The preferred-board read does not depend on the board list, so both run
+  // together. An unreadable preference falls back to the first board.
+  const preferredBoardId = getUserWorkspaceConfig(
+    workspaceId,
+    TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+    internalApiOptions
+  )
+    .then((config) => config?.value ?? null)
+    .catch(() => null);
   // The task-boards endpoint repairs a missing personal default board before
   // returning. New accounts therefore get a usable board in the same request
   // instead of bouncing between `/personal/tasks` and the app root.
@@ -40,21 +49,10 @@ async function resolveExistingBoardId(
 
   if (!firstBoardId) return null;
 
-  try {
-    const { value } = await getUserWorkspaceConfig(
-      workspaceId,
-      TASK_DEFAULT_BOARD_ID_CONFIG_ID,
-      internalApiOptions
-    );
-
-    if (value && boards.some((board) => board.id === value)) {
-      return value;
-    }
-  } catch {
-    return firstBoardId;
-  }
-
-  return firstBoardId;
+  const value = await preferredBoardId;
+  return value && boards.some((board) => board.id === value)
+    ? value
+    : firstBoardId;
 }
 
 async function resolveBoardAfterCreateRace(

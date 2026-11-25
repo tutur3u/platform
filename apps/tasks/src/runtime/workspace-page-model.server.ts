@@ -76,8 +76,12 @@ export async function boardModel(scope: Scope, boardId: string) {
         throw error;
       }
     },
+    // The layout guard already loaded and membership-checked this workspace
+    // for the same actor; only a board from another workspace needs a read.
     getWorkspace: (id, actor) =>
-      getWorkspace(id, { useAdmin: true, user: actor }),
+      id === scope.workspace.id && actor.id === scope.user.id
+        ? Promise.resolve(scope.workspace)
+        : getWorkspace(id, { useAdmin: true, user: actor }),
   });
   if (!snapshot) notFound();
   const workspace =

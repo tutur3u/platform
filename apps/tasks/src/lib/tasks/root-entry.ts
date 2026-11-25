@@ -37,6 +37,13 @@ export async function resolveTasksRootEntry({
   | { kind: 'board'; target: string; path: string }
   | { kind: 'entrypoint'; target: string; path: string }
 > {
+  // Personal is the destination unless the user forces another default
+  // workspace, so its board resolves while that preference loads instead of
+  // after it. When another workspace wins, the personal result is unused.
+  const personalBoard = resolveTaskBoardEntrypoint('personal', auth, {
+    locale,
+  });
+  personalBoard.catch(() => {});
   let target = 'personal';
 
   try {
@@ -63,7 +70,9 @@ export async function resolveTasksRootEntry({
   }
 
   try {
-    const boardId = await resolveTaskBoardEntrypoint(target, auth, { locale });
+    const boardId = await (target === 'personal'
+      ? personalBoard
+      : resolveTaskBoardEntrypoint(target, auth, { locale }));
 
     if (boardId) {
       const localePrefix = localePrefixed ? `/${locale}` : '';

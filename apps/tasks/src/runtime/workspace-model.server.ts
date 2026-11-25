@@ -22,6 +22,11 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 export async function workspaceModel(id: string) {
   const user = await getSatelliteAppSessionUser('tasks');
   if (!user?.id) redirect('/login');
+  // The profile read does not depend on the workspace guards, so it overlaps
+  // them instead of running after them. A guard that redirects leaves it
+  // settled and unused.
+  const profilePromise = getSatelliteCurrentUser('tasks');
+  profilePromise.catch(() => {});
   const workspace = await getRequestWorkspace(id, { useAdmin: true, user });
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, await headers());
@@ -31,13 +36,16 @@ export async function workspaceModel(id: string) {
   if (!workspace.joined) redirect('/');
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
-  const permissions = await getPermissions({ user, wsId: workspace.id });
+  const [permissions, profile] = await Promise.all([
+    getPermissions({ user, wsId: workspace.id }),
+    profilePromise,
+  ]);
   return {
     kind: 'workspace' as const,
     workspace,
     slug: toWorkspaceSlug(workspace.id, { personal: !!workspace.personal }),
     user,
-    profile: await getSatelliteCurrentUser('tasks'),
+    profile,
     behavior,
     behaviorUpdatedAt: getSidebarBehaviorUpdatedAt(cookieStore),
     defaultCollapsed: getSidebarCollapsedState(cookieStore, behavior),
