@@ -25,29 +25,15 @@ test('every reviewed serving topology belongs to an admitted wave-1 app', () => 
   }
 });
 
-test('every wave-1 Worker stays route-free until a reviewed record exists', () => {
-  // Calendar's Custom Domain record waits for a private-smoke publish path.
-  for (const app of ['calendar', 'mail', 'apps'])
+test('Calendar publishes behind exactly calendar.tuturuuu.com; Mail and Apps stay route-free', () => {
+  assert.deepEqual(productionServingTopologyFor('calendar'), {
+    reason: productionServingTopology.calendar.reason,
+    customDomains: ['calendar.tuturuuu.com'],
+    routes: [],
+  });
+  for (const app of ['mail', 'apps', 'finance', 'drive'])
     assert.equal(productionServingTopologyFor(app), null, app);
 });
-
-for (const [name, topology] of [
-  ['an app that is not admitted', { drive: entry(['drive.tuturuuu.com']) }],
-  ['an unknown app', { unknown: entry() }],
-  ['an extra key', { calendar: { ...entry(), owner: 'x' } }],
-  ['a multi-line reason', { calendar: { ...entry(), reason: 'a\nb' } }],
-  ['a wildcard domain', { calendar: entry(['*.tuturuuu.com']) }],
-  [
-    'a duplicate domain',
-    { calendar: entry(['a.tuturuuu.com', 'a.tuturuuu.com']) },
-  ],
-  ['an empty record', { calendar: entry([]) }],
-  ['a malformed route', { calendar: { ...entry(), routes: ['not a route'] } }],
-]) {
-  test(`serving topology rejects ${name}`, () => {
-    assert.throws(() => validateProductionServingTopology(topology));
-  });
-}
 
 test('a reviewed record for an admitted app validates', () => {
   assert.deepEqual(

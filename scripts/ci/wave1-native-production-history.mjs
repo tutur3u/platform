@@ -122,6 +122,7 @@ async function* productionRuns(context) {
   );
   const heads = await Promise.all(readers.map((next) => next()));
   let last = Number.POSITIVE_INFINITY;
+  const seen = new Set();
   for (;;) {
     let index = -1;
     for (const [candidate, run] of heads.entries())
@@ -133,15 +134,23 @@ async function* productionRuns(context) {
       Number.isSafeInteger(run.id) && run.id > 0,
       'Malformed prior run identity'
     );
-    if (run.id >= last) continue;
+    // A page that shifts under a new run repeats a run already read; any
+    // other run newer than the last one means the listing is out of order.
+    if (seen.has(run.id)) continue;
+    assert.ok(run.id < last, 'Publication history is out of order');
+    seen.add(run.id);
     last = run.id;
     yield run;
   }
 }
 
+// Planner runs carry every app's jobs and each rerun adds a full attempt, so
+// a run may list up to maxJobPages pages of jobs before the walk fails closed.
+export const maxJobPages = 10;
+
 async function runJobs({ base, run, env, fetcher }) {
   const jobs = [];
-  for (let page = 1; page <= 3; page += 1) {
+  for (let page = 1; page <= maxJobPages; page += 1) {
     const response = await boundedJson(
       `${base}/runs/${run.id}/jobs?filter=all&per_page=100&page=${page}`,
       env.GITHUB_TOKEN,
@@ -150,7 +159,7 @@ async function runJobs({ base, run, env, fetcher }) {
     assert.ok(
       Array.isArray(response.jobs) &&
         Number.isSafeInteger(response.total_count) &&
-        response.total_count < 300,
+        response.total_count <= maxJobPages * 100,
       'Unknown earlier upload status; never replay'
     );
     jobs.push(...response.jobs);
@@ -193,6 +202,23 @@ export function uploadNeverStarted(job) {
   );
 }
 
+const restoredStates = new Set([
+  'stage-failed',
+  'smoke-failed',
+  'switch-failed',
+  'rolled-back',
+]);
+
+function sameSplit(actual, expected) {
+  const shape = (list) =>
+    JSON.stringify(
+      (list ?? [])
+        .map(({ version_id, percentage }) => [version_id, percentage])
+        .sort()
+    );
+  return shape(actual) === shape(expected);
+}
+
 // A planner run names the called job `<caller> / <workflow job> / publish-<app>`.
 export function isPublicationJob(name, app) {
   return (
@@ -229,6 +255,16 @@ export async function assertNoEarlierUpload({
     const publishers = jobs
       .filter((job) => isPublicationJob(job.name, app))
       .sort((a, b) => b.run_attempt - a.run_attempt);
+    // The walk trusts job names only after it recognizes this attempt's own
+    // publish job: a renamed caller or job would otherwise hide every
+    // earlier upload.
+    if (String(run.id) === env.GITHUB_RUN_ID)
+      assert.ok(
+        publishers.some(
+          (job) => String(job.run_attempt) === env.GITHUB_RUN_ATTEMPT
+        ),
+        'This run has no recognized publish job; never trust the history walk'
+      );
     for (const job of publishers) {
       assert.equal(job.run_id, run.id, 'Malformed publication job run');
       assert.ok(
@@ -273,6 +309,17 @@ export async function assertNoEarlierUpload({
       // newer production SHA already served; it never reached the upload.
       if (receipt.state === 'superseded' && receipt.versionId === undefined)
         continue;
+      // A failed stage, smoke, switch or health gate restored this baseline
+      // and confirmed it; that run's own preflight already cleared
+      // everything older. An unconfirmed restore is `uncertain` and blocks.
+      if (restoredStates.has(receipt.state)) {
+        assert.ok(
+          sameSplit(receipt.rollback?.versions, rollback.versions),
+          'Earlier rolled-back upload no longer matches the serving baseline; owner reconciliation required'
+        );
+        assertCurrentSeen();
+        return;
+      }
       if (
         isResolvedFailedNoWrite({
           env,
@@ -302,9 +349,10 @@ export async function assertNoEarlierUpload({
         ),
         'Earlier accepted version is not the rollback baseline; owner reconciliation required'
       );
-      // This accepted baseline already cleared all older app history before its upload.
+      // This accepted baseline already cleared all older app history before
+      // its upload; the caller uses it to prove the serving SHA.
       assertCurrentSeen();
-      return;
+      return receipt;
     }
   }
   assertCurrentSeen();

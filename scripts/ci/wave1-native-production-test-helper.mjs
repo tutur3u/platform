@@ -83,7 +83,20 @@ export function setup(
     calls: [],
     // Source SHA annotated on the serving version, and GitHub's compare
     // status of that live SHA against the candidate.
-    liveSha: undefined,
+    liveSha: 'e'.repeat(40),
+    // The active deployment split; null derives one from `active`.
+    split: null,
+    deploymentWrites: [],
+    failDeploymentWrite: () => false,
+    // Public edge behaviour: status codes per serving version, and whether
+    // the override header reaches a staged version.
+    publicStatus: {},
+    // Behaviour once a version serves publicly, without the override.
+    unstagedStatus: {},
+    unstagedCommit: undefined,
+    overrideReaches: true,
+    stagedCommit: undefined,
+    publicCalls: [],
     compareStatus: 'behind',
     compares: [],
     settingsReads: 0,
@@ -125,7 +138,25 @@ export function setup(
     state.calls.push(url);
     assert.equal(options.redirect, 'error');
     assert.ok(options.signal);
-    assert.equal(options.method, 'GET');
+    const deploymentWrite =
+      options.method === 'POST' && url.endsWith('/deployments');
+    assert.equal(options.method, deploymentWrite ? 'POST' : 'GET');
+    if (deploymentWrite) {
+      assert.equal(
+        options.headers.Authorization,
+        'Bearer production-fixture',
+        'Only the upload credential writes deployments'
+      );
+      const { strategy, versions } = JSON.parse(options.body);
+      assert.equal(strategy, 'percentage');
+      state.deploymentWrites.push(versions);
+      if (state.failDeploymentWrite(versions, state.deploymentWrites.length))
+        return new Response('{"success":false}', { status: 500 });
+      state.split = versions;
+      const full = versions.find(({ percentage }) => percentage === 100);
+      if (full) state.active = full.version_id;
+      return Response.json({ success: true, result: { id: 'written' } });
+    }
     if (url.startsWith('https://api.github.com/')) {
       assert.equal(options.headers.Authorization, 'Bearer github-fixture');
       if (url.includes('/compare/')) {
@@ -258,7 +289,9 @@ export function setup(
         deployments: [
           {
             id: 'deployment',
-            versions: [{ version_id: state.active, percentage: 100 }],
+            versions: state.split ?? [
+              { version_id: state.active, percentage: 100 },
+            ],
           },
           ...(state.noRollbackHistory
             ? []
@@ -277,9 +310,61 @@ export function setup(
     else throw new Error('Unexpected request');
     return Response.json({ success: true, result });
   };
+  // The public edge: the 100% version answers unless the override header
+  // names a staged version in the current split.
+  const healthFetcher = async (url, options) => {
+    state.publicCalls.push({ url, options });
+    assert.equal(options.redirect, 'manual');
+    assert.equal(options.headers.cookie, undefined);
+    assert.equal(options.headers.Authorization, undefined);
+    const split = state.split ?? [
+      { version_id: state.active, percentage: 100 },
+    ];
+    const override = options.headers['Cloudflare-Workers-Version-Overrides'];
+    const staged = split.find(
+      ({ version_id }) => override === `${receipt.profile.name}="${version_id}"`
+    );
+    const viaOverride = Boolean(staged && state.overrideReaches);
+    const serving = viaOverride
+      ? staged.version_id
+      : split.find(({ percentage }) => percentage === 100).version_id;
+    const behaviour = viaOverride
+      ? state.publicStatus[serving]
+      : (state.unstagedStatus[serving] ?? state.publicStatus[serving]);
+    if (behaviour === 'timeout') {
+      const error = new Error('timed out');
+      error.name = 'TimeoutError';
+      throw error;
+    }
+    if (typeof behaviour === 'number')
+      return new Response('error', { status: behaviour });
+    const { pathname } = new URL(url);
+    if (pathname.endsWith('/api/build-info'))
+      return Response.json({
+        commitHash:
+          serving !== newId
+            ? state.liveSha
+            : viaOverride
+              ? (state.stagedCommit ?? sha)
+              : (state.unstagedCommit ?? sha),
+      });
+    return new Response(null, {
+      status: 307,
+      headers: { location: 'https://tuturuuu.com/login' },
+    });
+  };
   const exec = (command, args, options) => {
     assert.ok(command.endsWith('/bin/cf'), command);
-    assert.deepEqual(args.slice(0, 2), ['deploy', '--prebuilt']);
+    const versionOnly = args[0] === 'workers';
+    assert.deepEqual(
+      args.slice(0, versionOnly ? 4 : 2),
+      versionOnly
+        ? ['workers', 'versions', 'create', '--prebuilt']
+        : ['deploy', '--prebuilt']
+    );
+    // Production uploads a version without traffic; only the measurement
+    // runs the dry deploy.
+    assert.equal(versionOnly, !args.includes('--dry-run'));
     assert.equal(options.cwd, appRoot);
     assert.equal(options.env.GITHUB_TOKEN, undefined);
     assertRouteFree(
@@ -314,7 +399,6 @@ export function setup(
     if (state.uncertain)
       throw state.uploadError ?? new Error('Lost upload response');
     if (state.duringUpload) state.attached = true;
-    state.active = newId;
     state.ids = [newId];
     return JSON.stringify({ version_id: newId });
   };
@@ -331,6 +415,10 @@ export function setup(
         exec,
         appRoot,
         servingTopology: state.servingTopology,
+        healthFetcher,
+        healthSleep: async () => {},
+        healthOptions: { rounds: 2, propagationRounds: 2 },
+        smokeOptions: { reachAttempts: 2, reachDelayMs: 0 },
         settingsTiming: {
           now: () => state.settingsWaitMs,
           sleep: (ms) => {

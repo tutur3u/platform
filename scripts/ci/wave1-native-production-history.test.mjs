@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   assertNoEarlierUpload,
   isPublicationJob,
+  maxJobPages,
   plannerPublicationSince,
   publicationReceipt,
   publicationRunSources,
@@ -89,6 +90,7 @@ function fixture() {
   };
   const fixtureState = {
     state,
+    env,
     fetcher,
     run: () =>
       assertNoEarlierUpload({
@@ -324,15 +326,21 @@ test('history reads manual dispatches and planner runs since the planner gained 
 test('history that never reaches an accepted upload within its page bound fails closed', async () => {
   const p = fixture();
   p.state.previous.name = 'publish-mail';
+  // The current run is the newest; every older run holds no upload.
+  const current = 200_000;
+  p.env.GITHUB_RUN_ID = String(current);
+  p.state.current.run_id = current;
   p.fetcher = async (url) => {
-    if (url.includes('/jobs?'))
-      return Response.json({ total_count: 0, jobs: [] });
+    if (url.includes('/jobs?')) {
+      const jobs = url.includes(`/runs/${current}/`) ? [p.state.current] : [];
+      return Response.json({ total_count: jobs.length, jobs });
+    }
     const page = Number(/[?&]page=(\d+)/.exec(url)[1]);
     const first = 100_000 - page * 100;
     return Response.json({
       total_count: 5000,
       workflow_runs: Array.from({ length: 100 }, (_, index) => ({
-        id: page === 1 && index === 0 ? 123 : first - index,
+        id: page === 1 && index === 0 ? current : first - index,
         head_sha: page === 1 && index === 0 ? sha : earlierSha,
         head_branch: 'production',
       })),
@@ -387,12 +395,23 @@ function mailHistory({ failedJobs, receiptState = 'accepted-private' }) {
       },
     ],
   };
+  const ownJob = {
+    name: 'deploy-mail-native / native-publish-production / publish-mail',
+    run_id: currentRun,
+    run_attempt: 1,
+    status: 'in_progress',
+    steps: [{ name: uploadStepName, status: 'in_progress' }],
+  };
   const reads = [];
   const fetcher = async (url) => {
     if (url.includes('/jobs?')) {
       const id = Number(/\/runs\/(\d+)\//u.exec(url)[1]);
       const jobs =
-        id === failedRun ? failedJobs : id === acceptedRun ? [accepted] : [];
+        id === failedRun
+          ? failedJobs
+          : id === acceptedRun
+            ? [accepted]
+            : [ownJob];
       return Response.json({ total_count: jobs.length, jobs });
     }
     if (url.includes('/artifacts?')) {
@@ -515,4 +534,127 @@ test('uploadNeverStarted keeps unknown and started uploads blocking', () => {
     }),
     false
   );
+});
+
+test("the walk refuses when it cannot recognize this run's own publish job", async () => {
+  const p = fixture();
+  p.state.current.name = 'deploy-calendar-native / renamed / ship-calendar';
+  await assert.rejects(p.run(), /no recognized publish job/);
+});
+
+test('the accepted baseline receipt is returned to prove the serving SHA', async () => {
+  const p = fixture();
+  const baseline = await p.run();
+  assert.equal(baseline.state, 'accepted-private');
+  assert.equal(baseline.sha, earlierSha);
+});
+
+function listing(runs) {
+  return async (url) => {
+    if (url.includes('/jobs?')) {
+      const jobs = url.includes('/runs/123/')
+        ? [
+            {
+              name: 'publish-calendar',
+              run_id: 123,
+              run_attempt: 2,
+              status: 'in_progress',
+              steps: [{ name: uploadStepName, status: 'in_progress' }],
+            },
+          ]
+        : [];
+      return Response.json({ total_count: jobs.length, jobs });
+    }
+    return Response.json({
+      total_count: url.includes('vercel-production') ? runs.length : 0,
+      workflow_runs: url.includes('vercel-production') ? runs : [],
+    });
+  };
+}
+
+test('a repeated run from a shifted page is skipped once', async () => {
+  const p = fixture();
+  const run = { id: 123, head_sha: sha, head_branch: 'production' };
+  p.fetcher = listing([run, run, { ...run, id: 100, head_sha: earlierSha }]);
+  await p.run();
+});
+
+test('runs listed out of order fail closed', async () => {
+  const p = fixture();
+  p.fetcher = async (url, options) => {
+    if (!url.includes('/runs?')) return listing([])(url, options);
+    if (!url.includes('vercel-production'))
+      return Response.json({ total_count: 0, workflow_runs: [] });
+    // Page two lists a run newer than the last run of page one.
+    const pages = {
+      1: [
+        { id: 123, head_sha: sha, head_branch: 'production' },
+        { id: 90, head_sha: earlierSha, head_branch: 'production' },
+      ],
+      2: [{ id: 110, head_sha: earlierSha, head_branch: 'production' }],
+    };
+    const runs = pages[Number(/[?&]page=(\d+)/.exec(url)[1])] ?? [];
+    return Response.json({ total_count: 3, workflow_runs: runs });
+  };
+  await assert.rejects(p.run(), /out of order/);
+});
+
+test('a planner run with many rerun attempts pages through all of its jobs', async () => {
+  const p = fixture();
+  const jobs = Array.from({ length: 450 }, (_, index) => ({
+    name: `deploy-other / job-${index}`,
+    run_id: 122,
+    run_attempt: 1 + (index % 5),
+    status: 'completed',
+    conclusion: 'success',
+    steps: [],
+  }));
+  jobs.push(p.state.previous);
+  const fetcher = p.fetcher;
+  p.fetcher = async (url, options) => {
+    if (url.includes('/runs/122/jobs?')) {
+      const page = Number(/[?&]page=(\d+)/.exec(url)[1]);
+      return Response.json({
+        total_count: jobs.length,
+        jobs: jobs.slice((page - 1) * 100, page * 100),
+      });
+    }
+    return fetcher(url, options);
+  };
+  await p.run();
+  assert.equal(p.state.reads, 1);
+  assert.ok(jobs.length > 300 && jobs.length <= maxJobPages * 100);
+});
+
+for (const state of [
+  'rolled-back',
+  'smoke-failed',
+  'stage-failed',
+  'switch-failed',
+]) {
+  test(`a ${state} receipt that restored the serving baseline ends the walk`, async () => {
+    const p = fixture();
+    p.state.receipt.state = state;
+    p.state.receipt.rollback = {
+      versions: [{ version_id: versionId, percentage: 100 }],
+    };
+    assert.equal(await p.run(), undefined);
+  });
+}
+
+test('a restored receipt whose baseline no longer serves blocks', async () => {
+  const p = fixture();
+  p.state.receipt.state = 'rolled-back';
+  p.state.receipt.rollback = {
+    versions: [
+      { version_id: '33333333-3333-3333-3333-333333333333', percentage: 100 },
+    ],
+  };
+  await assert.rejects(p.run(), /owner reconciliation/);
+});
+
+test('an uncertain receipt blocks', async () => {
+  const p = fixture();
+  p.state.receipt.state = 'uncertain';
+  await assert.rejects(p.run(), /never replay/);
 });

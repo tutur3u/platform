@@ -32,6 +32,9 @@ import {
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
 import { UploadLimitsError } from './wave1-native-upload-limits.mjs';
+import { gateOrRollBack } from './wave1-production-health.mjs';
+import { supersedingSha } from './wave1-production-supersede.mjs';
+import { stageSmokeSwitch } from './wave1-staged-publish.mjs';
 
 export function assertRouteFree(config) {
   // The shared abuse guard is the only admitted service binding.
@@ -79,35 +82,6 @@ export function assertRouteFree(config) {
   assert.equal(config.no_bundle, true);
 }
 
-const fullSha = /^[a-f0-9]{40}$/;
-
-/** The id of the single version serving 100%, or null for a split. */
-export function servingVersionId(deployment) {
-  const serving = deployment?.versions;
-  if (!Array.isArray(serving) || serving.length !== 1) return null;
-  return serving[0].percentage === 100 ? serving[0].version_id : null;
-}
-
-/** The source SHA a version was published from, when it is annotated. */
-export function annotatedSourceSha(version) {
-  const message = version?.annotations?.['workers/message'];
-  return typeof message === 'string' && fullSha.test(message) ? message : null;
-}
-
-/** GitHub's compare status of head against base: ahead, behind, identical or diverged. */
-async function sourceRelation({ env, base, head, fetcher }) {
-  const comparison = await boundedJson(
-    `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/compare/${base}...${head}?per_page=1`,
-    env.GITHUB_TOKEN,
-    fetcher
-  );
-  assert.ok(
-    ['ahead', 'behind', 'identical', 'diverged'].includes(comparison.status),
-    'Unknown production source relation'
-  );
-  return comparison.status;
-}
-
 export async function main({
   argv = process.argv.slice(2),
   env = process.env,
@@ -118,13 +92,19 @@ export async function main({
   settingsTiming,
   readWorkerConfig,
   servingTopology,
+  healthFetcher = fetch,
+  healthSleep,
+  healthOptions = {},
+  smokeOptions = {},
 } = {}) {
   const [app, sha, mode] = argv;
   assert.ok(['all', 'preflight', 'upload', 'verify'].includes(mode));
   assert.ok(Object.hasOwn(profiles.apps, app), 'Unknown wave-1 frontend');
   assert.match(sha ?? '', /^[a-f0-9]{40}$/);
   assert.equal(
-    productionPublicationHold(`${app}-cloudflare.yaml`),
+    productionPublicationHold(`${app}-cloudflare.yaml`, {
+      automatic: env.WAVE1_AUTOMATIC_PUBLICATION === 'true',
+    }),
     undefined,
     'Production publication is held'
   );
@@ -164,7 +144,9 @@ export async function main({
     servingTopology = productionServingTopologyFor(app);
   const validate = () => {
     assert.equal(
-      productionPublicationHold(`${app}-cloudflare.yaml`),
+      productionPublicationHold(`${app}-cloudflare.yaml`, {
+        automatic: env.WAVE1_AUTOMATIC_PUBLICATION === 'true',
+      }),
       undefined,
       'Production publication is held'
     );
@@ -298,50 +280,6 @@ export async function main({
     }
     assertResolvedVersionsAbsent({ app, versions: observedVersions });
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
-    // A newer production push may already serve: an older SHA never
-    // downgrades it, and its attempt stops here as superseded, before any
-    // write. An in-flight upload is never cancelled; the per-app upload
-    // queue runs the next attempt after it.
-    const servingId = matches.length
-      ? null
-      : servingVersionId(deployments.deployments[0]);
-    const live = servingId
-      ? annotatedSourceSha(
-          observedVersions.find(({ id }) => id === servingId) ??
-            (await provider(`${script}/versions/${servingId}`))
-        )
-      : null;
-    if (live && live !== sha) {
-      const relation = await sourceRelation({
-        env,
-        base: sha,
-        head: live,
-        fetcher: boundedFetch,
-      });
-      if (relation === 'ahead') {
-        record = {
-          schema: 1,
-          app,
-          sha,
-          digest,
-          worker: p.name,
-          state: 'superseded',
-          liveSha: live,
-          runId: env.GITHUB_RUN_ID,
-          runAttempt: env.GITHUB_RUN_ATTEMPT,
-          preflightAt: Date.now(),
-        };
-        writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
-          mode: 0o600,
-        });
-        return record;
-      }
-      assert.equal(
-        relation,
-        'behind',
-        'Live version is not on the production history; owner reconciliation required'
-      );
-    }
     if (matches.length)
       assert.deepEqual(
         deployments.deployments[0].versions,
@@ -376,8 +314,8 @@ export async function main({
       preflightAt: Date.now(),
       ...(matches.length ? { versionId: matches[0], reconciled: true } : {}),
     };
-    if (!matches.length)
-      await assertNoEarlierUpload({
+    if (!matches.length) {
+      const baseline = await assertNoEarlierUpload({
         env,
         sha,
         app,
@@ -385,6 +323,39 @@ export async function main({
         rollback,
         fetcher: boundedFetch,
       });
+      // A newer production push may already serve: an older SHA never
+      // downgrades it and stops here as superseded, before any write. An
+      // in-flight upload is never cancelled; the per-app upload queue runs
+      // the next attempt after it.
+      const newer = await supersedingSha({
+        env,
+        sha,
+        deployment: deployments.deployments[0],
+        baseline,
+        fetcher: boundedFetch,
+        readVersion: async (id) =>
+          observedVersions.find((version) => version.id === id) ??
+          (await provider(`${script}/versions/${id}`)),
+      });
+      if (newer) {
+        record = {
+          schema: 1,
+          app,
+          sha,
+          digest,
+          worker: p.name,
+          state: 'superseded',
+          liveSha: newer,
+          runId: env.GITHUB_RUN_ID,
+          runAttempt: env.GITHUB_RUN_ATTEMPT,
+          preflightAt: Date.now(),
+        };
+        writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
+          mode: 0o600,
+        });
+        return record;
+      }
+    }
     try {
       record.measurements = await uploadArtifact({
         env,
@@ -501,6 +472,8 @@ export async function main({
           p,
           exec,
           measurements: record.measurements,
+          // A version without traffic; stageSmokeSwitch moves traffic.
+          traffic: 'version-only',
         });
       } catch (error) {
         if (error instanceof NativeUploadError) {
@@ -510,11 +483,52 @@ export async function main({
         throw error;
       }
     }
-    record.state = 'uploaded';
-    save();
+    // Only a version this attempt wrote is staged, smoked, switched and
+    // health-gated, and only then can a failure roll back; a reconciled
+    // version was accepted earlier and is already serving.
+    if (record.reconciled) {
+      record.state = 'uploaded';
+      save();
+    } else {
+      record.state = 'uploaded-version';
+      save();
+      const request = (url, credential, body) =>
+        boundedJson(url, credential, fetcher, body);
+      await stageSmokeSwitch({
+        app,
+        sha,
+        worker: p.name,
+        record,
+        save,
+        script,
+        token,
+        request,
+        cases: profiles.apps[app]?.releaseRecipe?.smokeSpec?.cases ?? [],
+        smokeFetcher: healthFetcher,
+        sleep: healthSleep,
+        smokeOptions,
+      });
+      await gateOrRollBack({
+        app,
+        sha,
+        record,
+        save,
+        script,
+        token,
+        request,
+        healthFetcher,
+        sleep: healthSleep,
+        options: healthOptions,
+      });
+    }
     if (mode === 'upload') return record;
   }
-  assert.equal(record.state, 'uploaded');
+  assert.ok(
+    record.reconciled
+      ? record.state === 'uploaded'
+      : record.state === 'healthy',
+    'Upload did not pass its staged smoke and health gate'
+  );
   deadline = AbortSignal.timeout(60_000);
   await accept(record.versionId);
   record.state = 'accepted-private';

@@ -10,6 +10,13 @@ on:
         description: Admitted wave-1 app
         type: string
         required: true
+      # A called run publishes without an operator, so an app held by its
+      # productionPublicationExemptions record refuses. A manual dispatch
+      # has no such input and reads the source policy alone.
+      automatic:
+        description: Publish without an operator
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       app:
@@ -57,7 +64,13 @@ jobs:
       - id: policy
         env:
           APP: ${{ inputs.app }}
-        run: node scripts/ci/production-publication-policy.ts "$APP-cloudflare.yaml" "$GITHUB_STEP_SUMMARY"
+          AUTOMATIC: ${{ inputs.automatic == true }}
+        run: |
+          if [ "$AUTOMATIC" = true ]; then
+            node scripts/ci/production-publication-policy.ts "$APP-cloudflare.yaml" "$GITHUB_STEP_SUMMARY" --automatic
+          else
+            node scripts/ci/production-publication-policy.ts "$APP-cloudflare.yaml" "$GITHUB_STEP_SUMMARY"
+          fi
   release-admission:
     if: ${{ inputs['release-artifact'] == true }}
     runs-on: ubuntu-latest
@@ -296,9 +309,12 @@ jobs:
     if: ${{ !cancelled() && inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true' && needs.qualify.result == 'success' && needs.restored.result == 'success' }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
-    timeout-minutes: 15
+    # Upload plus health gate and a possible rollback take up to ten minutes.
+    timeout-minutes: 25
     env:
       APP: ${{ inputs.app }}
+      # The publisher re-checks the automatic hold for a called run.
+      WAVE1_AUTOMATIC_PUBLICATION: ${{ inputs.automatic == true }}
       SOURCE_SHA: ${{ github.sha }}
       PUBLICATION_ENVIRONMENT: wave1-${{ inputs.app }}-production
       WRANGLER_SEND_METRICS: 'false'
@@ -336,9 +352,12 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
         run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" preflight
+      # The upload step also runs the public health gate (about a minute of
+      # probes) and, when it fails, restores the recorded rollback deployment
+      # with this step's own credential and re-probes it.
       - name: Upload once without attaching serving topology
         id: upload
-        timeout-minutes: 4
+        timeout-minutes: 10
         env:
           WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}

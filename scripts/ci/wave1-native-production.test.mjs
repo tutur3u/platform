@@ -228,7 +228,7 @@ test('topology change after upload is not accepted', async (t) => {
         join(p.env.RUNNER_TEMP, 'calendar-production-publication.json')
       )
     ).state,
-    'uploaded'
+    'healthy'
   );
 });
 
@@ -538,9 +538,15 @@ test('separate preflight, upload and verification steps enforce credential isola
     argv: ['calendar', sha, 'upload'],
     env: uploadEnv,
   });
-  assert.equal(uploaded.state, 'uploaded');
+  assert.equal(uploaded.state, 'healthy');
   assert.equal(p.state.writes, 1);
-  assert.equal(p.state.calls.length, readsBefore);
+  // The upload step only stages, switches and reads back deployments, with
+  // its own credential; it reads no topology, history or settings.
+  assert.ok(
+    p.state.calls
+      .slice(readsBefore)
+      .every((url) => url.endsWith('/deployments'))
+  );
   delete readEnv.GITHUB_TOKEN;
   const accepted = await p.run({
     argv: ['calendar', sha, 'verify'],

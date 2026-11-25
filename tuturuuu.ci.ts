@@ -284,10 +284,15 @@ export const productionPublicationPolicy = {
 // without a record must stay route-free. Change a record only in a reviewed
 // release-owner PR.
 export const productionServingTopology = {
-  // Calendar serves calendar.tuturuuu.com as a Custom Domain on
-  // tuturuuu-calendar. Its record waits for a publish path that smokes the
-  // new version privately before it serves; the current upload activates it
-  // at 100% behind the domain.
+  // The staged publisher smokes a new version at 0% through the version
+  // override header before any traffic moves, so a version behind this
+  // Custom Domain serves only after its private smoke passes.
+  calendar: {
+    reason:
+      'calendar.tuturuuu.com is a Custom Domain on tuturuuu-calendar; staged releases smoke at 0% before switching',
+    customDomains: ['calendar.tuturuuu.com'],
+    routes: [],
+  },
 } satisfies ProductionServingTopology;
 
 // Every active production app publishes automatically on a production push
@@ -344,13 +349,13 @@ export const productionPublicationExemptions = {
     approvedOn: '2026-11-23',
     source: '5de7c0df7c',
   },
-  // Admitted, but its first publish behind the calendar.tuturuuu.com Custom
-  // Domain needs a manual release whose new version is smoked privately
-  // before it serves. Remove this record to let the planner publish it.
+  // Admitted, but its first staged release behind calendar.tuturuuu.com runs
+  // by manual wave1-native-production.yaml dispatch. Remove this record once
+  // that release is smoked and serving to let the planner publish it.
   calendar: {
     reason:
-      'First publish behind calendar.tuturuuu.com needs a manual release with a private smoke before it serves',
-    owner: 'prod-owner',
+      'First staged release behind calendar.tuturuuu.com runs by manual dispatch before planner publication',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
@@ -359,45 +364,45 @@ export const productionPublicationExemptions = {
   git: {
     reason:
       'Planner target without a planner job; git-cloudflare.yaml deploys the sealed artifact only by manual release',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
   external: {
     reason:
       'Planner target without a planner job; external-cloudflare.yaml builds production only on a main dispatch',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
   finance: {
     reason:
       'Admitted, but publishes only through a manual wave1-native-production.yaml dispatch',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
   forms: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
   inventory: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
   workspace: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },
   shortener: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'prod-owner',
+    owner: 'vhpx',
     approvedOn: '2026-11-25',
     source: 'none',
   },

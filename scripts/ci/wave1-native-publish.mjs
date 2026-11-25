@@ -576,6 +576,13 @@ export async function uploadArtifact({
     app === 'calendar' &&
     existsSync(resolve(resolvedAppRoot, 'calendar-artifact.json'))
   ) {
+    // The Calendar artifact publisher always activates; staged production
+    // publication needs the wave-1 artifact's version-only upload.
+    assert.equal(
+      traffic,
+      'activate',
+      'Calendar artifact publication cannot upload a version without traffic'
+    );
     const { publishCalendarArtifact } =
       await import('./calendar-cf-publisher.mjs');
     return publishCalendarArtifact({

@@ -50,8 +50,9 @@ for (const [name, annotations] of [
 test('an unrelated hosted version does not trigger the orphan refusal', async (t) => {
   const p = setup(t);
   p.state.ids = [oldId];
+  // An unrelated source SHA: the serving version must still be annotated.
   p.state.versionAnnotations = {
-    'workers/message': 'unrelated',
+    'workers/message': 'e'.repeat(40),
     'workers/tag': 'unrelated',
   };
   const env = { ...p.env };
