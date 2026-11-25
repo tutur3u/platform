@@ -30,46 +30,52 @@ async function openPreferenceMenu() {
 }
 
 describe('apps launcher opening preference', () => {
-  it('persists the selected app opening mode in a shared cookie', async () => {
+  it('opens apps in this tab by default and persists an explicit choice in a shared cookie', async () => {
     renderAppsLauncherDialog();
 
     const trigger = screen.getByRole('button', { name: 'Open options' });
-    expect(trigger.textContent).toBe('New tab');
+    expect(trigger.textContent).toBe('This tab');
+    expect(financeLink().getAttribute('target')).toBeNull();
+    expect(document.cookie).not.toContain(APP_OPEN_MODE_PREFERENCE_KEY);
     await openPreferenceMenu();
     expect(screen.getByText('Open apps in')).toBeTruthy();
     const currentTab = screen.getByRole('radio', { name: 'This tab' });
     const newTab = screen.getByRole('radio', { name: 'New tab' });
-    expect(newTab.getAttribute('data-state')).toBe('on');
-    expect(newTab.getAttribute('data-selected')).toBe('true');
-    expect(newTab.className).toContain('data-[selected=true]:!bg-accent');
-    expect(currentTab.getAttribute('data-state')).toBe('off');
-    expect(currentTab.getAttribute('data-selected')).toBe('false');
-
-    fireEvent.click(currentTab);
-
-    expect(financeLink().getAttribute('target')).toBeNull();
-    expect(financeLink().getAttribute('rel')).toBeNull();
-    expect(trigger.textContent).toBe('This tab');
     expect(currentTab.getAttribute('data-state')).toBe('on');
     expect(currentTab.getAttribute('data-selected')).toBe('true');
+    expect(currentTab.className).toContain('data-[selected=true]:!bg-accent');
+    expect(newTab.getAttribute('data-state')).toBe('off');
     expect(newTab.getAttribute('data-selected')).toBe('false');
+
+    fireEvent.click(newTab);
+
+    expect(financeLink().getAttribute('target')).toBe('_blank');
+    expect(financeLink().getAttribute('rel')).toBe('noopener noreferrer');
+    expect(trigger.textContent).toBe('New tab');
+    expect(newTab.getAttribute('data-state')).toBe('on');
+    expect(newTab.getAttribute('data-selected')).toBe('true');
+    expect(currentTab.getAttribute('data-selected')).toBe('false');
     expect(document.cookie).toContain(
-      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
+      `${APP_OPEN_MODE_PREFERENCE_KEY}=new-tab`
     );
 
+    // An explicit new-tab choice survives the this-tab default.
     cleanup();
     renderAppsLauncherDialog();
 
     await waitFor(() => {
-      expect(financeLink().getAttribute('target')).toBeNull();
+      expect(financeLink().getAttribute('target')).toBe('_blank');
     });
     await openPreferenceMenu();
     expect(
-      screen.getByRole('radio', { name: 'This tab' }).getAttribute('data-state')
+      screen.getByRole('radio', { name: 'New tab' }).getAttribute('data-state')
     ).toBe('on');
 
-    fireEvent.click(screen.getByRole('radio', { name: 'New tab' }));
-    expect(financeLink().getAttribute('target')).toBe('_blank');
+    fireEvent.click(screen.getByRole('radio', { name: 'This tab' }));
+    expect(financeLink().getAttribute('target')).toBeNull();
+    expect(document.cookie).toContain(
+      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
+    );
   }, 30_000);
 
   it('shares the open-mode cookie across Tuturuuu subdomains', () => {
@@ -124,23 +130,23 @@ describe('apps launcher opening preference', () => {
     expect(parseAppsLauncherSlugs(null)).toEqual([]);
   });
 
-  it('migrates the previous local preference into the shared cookie', async () => {
+  it('migrates a previous new-tab choice over the this-tab default', async () => {
     window.localStorage.setItem(
       APP_OPEN_MODE_PREFERENCE_KEY,
-      JSON.stringify('current-tab')
+      JSON.stringify('new-tab')
     );
 
     renderAppsLauncherDialog();
 
     await waitFor(() => {
-      expect(financeLink().getAttribute('target')).toBeNull();
+      expect(financeLink().getAttribute('target')).toBe('_blank');
     });
     await openPreferenceMenu();
     expect(
-      screen.getByRole('radio', { name: 'This tab' }).getAttribute('data-state')
+      screen.getByRole('radio', { name: 'New tab' }).getAttribute('data-state')
     ).toBe('on');
     expect(document.cookie).toContain(
-      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
+      `${APP_OPEN_MODE_PREFERENCE_KEY}=new-tab`
     );
     expect(
       window.localStorage.getItem(APP_OPEN_MODE_PREFERENCE_KEY)

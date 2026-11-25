@@ -325,7 +325,7 @@ describe('AppsLauncherDialog', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('renders new-tab links by default and closes on click', () => {
+  it('renders this-tab links by default and closes on click', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const { onOpenChange } = renderDialog();
@@ -336,11 +336,25 @@ describe('AppsLauncherDialog', () => {
     expect(financeRow.getAttribute('href')).toBe(
       'http://localhost:7808/personal?source=sidebar-apps'
     );
-    expect(financeRow.getAttribute('target')).toBe('_blank');
-    expect(financeRow.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(financeRow.hasAttribute('target')).toBe(false);
+    expect(financeRow.hasAttribute('rel')).toBe(false);
     fireEvent.click(financeRow);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(open).not.toHaveBeenCalled();
+  });
+
+  it('keeps new-tab links for a user who chose new tabs', async () => {
+    document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=new-tab; path=/`;
+    renderDialog();
+
+    await waitFor(() => {
+      expect(option('category-operations-finance').getAttribute('target')).toBe(
+        '_blank'
+      );
+    });
+    expect(option('category-operations-finance').getAttribute('rel')).toBe(
+      'noopener noreferrer'
+    );
   });
 });

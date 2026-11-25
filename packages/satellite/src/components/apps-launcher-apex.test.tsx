@@ -1,7 +1,8 @@
 // @vitest-environment-options {"url":"https://tuturuuu.com/personal"}
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { APP_OPEN_MODE_PREFERENCE_KEY } from './apps-launcher-preference';
 import {
   renderAppsLauncherDialog,
   setupAppsLauncherTestEnvironment,
@@ -55,14 +56,29 @@ it.each([
   }
 );
 
+it('registers the public Tools prefetch by default when the launcher opens', async () => {
+  vi.stubEnv('NODE_ENV', 'production');
+  vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'tools,apps,mail,meet');
+
+  renderAppsLauncherDialog();
+
+  expect(
+    document.head
+      .querySelector('script[data-slot="apps-launcher-prefetch"]')
+      ?.getAttribute('type')
+  ).toBe('speculationrules');
+});
+
 it('registers only current-tab public Tools document prefetch while open', async () => {
   vi.stubEnv('NODE_ENV', 'production');
   vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'tools,apps,mail,meet');
   const readRules = () =>
     document.head.querySelector('script[data-slot="apps-launcher-prefetch"]');
 
+  // Start from an explicit new-tab choice so switching to this tab is visible.
+  document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=new-tab; path=/`;
   renderAppsLauncherDialog();
-  expect(readRules()).toBeNull();
+  await waitFor(() => expect(readRules()).toBeNull());
 
   fireEvent.click(screen.getByRole('button', { name: 'Open options' }));
   fireEvent.click(await screen.findByRole('radio', { name: 'This tab' }));

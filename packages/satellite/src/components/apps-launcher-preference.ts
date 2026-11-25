@@ -94,7 +94,10 @@ function persistPreference(mode: AppOpenMode) {
 }
 
 export function useAppsLauncherOpenMode() {
-  const [openMode, setOpenModeState] = useState<AppOpenMode>('new-tab');
+  // Apps open in this tab unless the user chose otherwise: same-tab switches
+  // reuse prefetched documents and the back/forward cache, so they are the
+  // fast path. An explicit choice (cookie or legacy storage) always wins.
+  const [openMode, setOpenModeState] = useState<AppOpenMode>('current-tab');
 
   useEffect(() => {
     const cookiePreference = readAppsLauncherCookie(
