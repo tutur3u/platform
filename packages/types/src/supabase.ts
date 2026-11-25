@@ -7424,6 +7424,7 @@ export type Database = {
         Row: {
           allow_user_ids: string[] | null;
           allow_workspace_ids: string[] | null;
+          enabled_by: string | null;
           environment: string;
           flag_key: string;
           mode: string | null;
@@ -7439,6 +7440,7 @@ export type Database = {
         Insert: {
           allow_user_ids?: string[] | null;
           allow_workspace_ids?: string[] | null;
+          enabled_by?: string | null;
           environment: string;
           flag_key: string;
           mode?: string | null;
@@ -7452,6 +7454,7 @@ export type Database = {
         Update: {
           allow_user_ids?: string[] | null;
           allow_workspace_ids?: string[] | null;
+          enabled_by?: string | null;
           environment?: string;
           flag_key?: string;
           mode?: string | null;

@@ -1,4 +1,4 @@
--- Runtime feature flag rule store (20261125030000, 20261125030100): client
+-- Runtime feature flag rule store (20261125030000, 20261125030100, 20261125080000): client
 -- isolation, service-role-only RPCs, definition sync, shape validation that
 -- matches ruleMutationError (packages/feature-flags/src/rule-store-contract.test.ts
 -- binds each 'shape: <name>' row to the TypeScript table), controller
@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(121);
+select plan(132);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data) values
   ('5ff00000-0000-4000-8000-000000000001', 'ff-root-creator@example.com', now(), '{}', '{}'),
@@ -528,22 +528,64 @@ select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uu
   'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 0, 'Other environment', 'workspace-ui'),
   'applied', 'the cap counts one environment');
 
+insert into public.workspace_members (ws_id, user_id, type) values
+  ('5ff00000-0000-4000-8000-0000000000a2', '5ff00000-0000-4000-8000-000000000004', 'MEMBER');
+insert into public.workspace_roles (id, ws_id, name) values
+  ('5ff00000-0000-4000-8000-0000000000c5', '5ff00000-0000-4000-8000-0000000000a2', 'Settings managers');
+insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled) values
+  ('5ff00000-0000-4000-8000-0000000000a2', '5ff00000-0000-4000-8000-0000000000c5', 'manage_workspace_settings', true);
+insert into public.workspace_role_members (role_id, user_id) values
+  ('5ff00000-0000-4000-8000-0000000000c5', '5ff00000-0000-4000-8000-000000000004');
+
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'off', null, null, null, 0, 'Start off', 'workspace-ui', true),
+  'applied', 'the workspace starts with an off rule');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 1, 'Enable', 'workspace-ui', true),
+  'applied', 'off to on consumes one quota slot');
+
 select set_config('feature_flags.entrypoint', 'mutate_rule', true);
-insert into private.feature_flag_rules (flag_key, scope, subject_id, environment, mode, revision, updated_by)
-select flag, 'workspace', gen_random_uuid(), 'development', 'on', 1, actor
-from generate_series(1, 200),
+insert into private.feature_flag_rules (flag_key, scope, subject_id, environment, mode, revision, updated_by, enabled_by)
+select flag, 'workspace', gen_random_uuid(), 'development', 'on', 1, actor, actor
+from generate_series(1, 199),
   (values ('FF_RULE_TEST', '5ff00000-0000-4000-8000-000000000004'::uuid),
     ('FF_RULE_ADMIN_USER', '5ff00000-0000-4000-8000-000000000002'::uuid)) as quota(flag, actor);
+insert into private.feature_flag_rules (flag_key, scope, subject_id, environment, mode, revision, updated_by, enabled_by)
+values ('FF_RULE_ADMIN_USER', 'workspace', gen_random_uuid(), 'development', 'on', 1,
+  '5ff00000-0000-4000-8000-000000000002', '5ff00000-0000-4000-8000-000000000002');
 select set_config('feature_flags.entrypoint', '', true);
 select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
   'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 0, 'Over the quota', 'workspace-ui'),
   'feature_flag_actor_rule_limit', 'a tenant actor holds at most 200 enabling rules per flag and environment');
 select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
-  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'off', null, null, null, 0, 'Off at quota', 'workspace-ui'),
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'off', null, null, null, 0, 'Off at quota', 'workspace-ui', true),
   'applied', 'an off rule is allowed at the actor quota');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 1, 'Enable at quota', 'workspace-ui'),
+  'feature_flag_actor_rule_limit', 'off to on is refused at the actor quota');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000001', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'staff', null, null, null, 2, 'Second manager edits', 'workspace-ui', true),
+  'applied', 'a second settings manager can edit the enabling rule');
+select is((select row(enabled_by, updated_by)::text from private.feature_flag_rules
+  where flag_key = 'FF_RULE_TEST' and environment = 'development' and subject_id = '5ff00000-0000-4000-8000-0000000000a2'),
+  row('5ff00000-0000-4000-8000-000000000004'::uuid, '5ff00000-0000-4000-8000-000000000001'::uuid)::text,
+  'editing an enabling rule preserves the original enabler');
+select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000004', gen_random_uuid(), 'FF_RULE_TEST', 'development',
+  'workspace', '5ff00000-0000-4000-8000-0000000000a1', 'on', null, null, null, 1, 'Enable after edit', 'workspace-ui'),
+  'feature_flag_actor_rule_limit', 'another manager cannot free an enabling slot by editing the rule');
+select is(pg_temp.rpc($q$private.feature_flag_erase_subject('user', '5ff00000-0000-4000-8000-000000000004')$q$) ->> 'status',
+  'erased', 'the enabling actor can be erased');
+select is((select row(enabled_by, updated_by)::text from private.feature_flag_rules
+  where flag_key = 'FF_RULE_TEST' and environment = 'development' and subject_id = '5ff00000-0000-4000-8000-0000000000a2'),
+  row(null::uuid, '5ff00000-0000-4000-8000-000000000001'::uuid)::text,
+  'erasure clears the original enabler while preserving the unrelated editor');
 select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uuid(), 'FF_RULE_ADMIN_USER', 'development',
   'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Root beyond quota', 'admin-ui'),
   'applied', 'the actor quota does not apply to platform-admin controlled rules');
+
+select has_index('private', 'feature_flag_rules', 'feature_flag_rules_keyset_idx');
+select has_index('private', 'feature_flag_audit', 'feature_flag_audit_actor_idx');
+select has_index('private', 'feature_flag_audit', 'feature_flag_audit_subject_idx');
 
 select * from finish();
 rollback;
