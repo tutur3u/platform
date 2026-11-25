@@ -86,6 +86,7 @@ export const appApiPatterns = [
   "/api/v1/infrastructure/external-apps/managed-cron-approval",
   "/api/v1/infrastructure/feature-flags",
   "/api/v1/infrastructure/feature-flags/audit",
+  "/api/v1/infrastructure/feature-flags/sync",
   "/api/v1/infrastructure/github-bot",
   "/api/v1/infrastructure/github-bot/auto-pickup",
   "/api/v1/infrastructure/github-bot/clients",

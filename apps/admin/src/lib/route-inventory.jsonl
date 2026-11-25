@@ -153,6 +153,7 @@
 {"file":"api/v1/infrastructure/external-apps/route.ts","path":"/api/v1/infrastructure/external-apps","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/feature-flags/audit/route.ts","path":"/api/v1/infrastructure/feature-flags/audit","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/feature-flags/route.ts","path":"/api/v1/infrastructure/feature-flags","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/feature-flags/sync/route.ts","path":"/api/v1/infrastructure/feature-flags/sync","methods":[{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/github-bot/auto-pickup/route.ts","path":"/api/v1/infrastructure/github-bot/auto-pickup","methods":[{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/github-bot/clients/[clientId]/route.ts","path":"/api/v1/infrastructure/github-bot/clients/[clientId]","methods":[{"method":"DELETE","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/github-bot/clients/route.ts","path":"/api/v1/infrastructure/github-bot/clients","methods":[{"method":"POST","classification":"ADMIN"}]}
