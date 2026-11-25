@@ -105,6 +105,6 @@ export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
   'packages/storage-core/src/lib/workspace-storage-auto-extract.ts',
   'packages/storage-core/src/lib/workspace-storage-config.ts',
   'packages/storage-core/src/lib/workspace-storage-credentials.ts',
-  'packages/storage-core/src/lib/workspace-storage-provider.ts',
+  'packages/storage-core/src/lib/workspace-storage-provider-config.ts',
   'packages/utils/src/workspace-secret-tier-rules.ts',
 ];
