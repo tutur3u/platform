@@ -4758,7 +4758,7 @@
       "room_chat": "Mọi người",
       "room_chat_audience": "Cả phòng đều xem được tin nhắn này, kể cả người tham gia sau.",
       "room_deadline": "Cuộc họp kết thúc lúc {time}.",
-      "room_time_action": "Xem thời gian còn lại",
+      "room_time_action": "Thời gian còn lại",
       "room_time_expired": "Cuộc họp đã hết thời gian",
       "room_time_hours": "Còn {hours} giờ {minutes} phút",
       "room_time_limit": "Thời gian cuộc họp",

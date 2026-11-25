@@ -44,9 +44,7 @@ it('shows a compact countdown and exposes the localized deadline on click', () =
       </TooltipProvider>
     </NextIntlClientProvider>
   );
-  const button = screen.getByRole('button', {
-    name: 'View meeting time limit',
-  });
+  const button = screen.getByRole('button', { name: 'Time left' });
   expect(container.querySelector('[role="alert"]')).toBeNull();
   act(() => vi.advanceTimersByTime(90_000));
   expect(
@@ -57,7 +55,7 @@ it('shows a compact countdown and exposes the localized deadline on click', () =
   fireEvent.click(button);
   expect(screen.getByRole('dialog').textContent).toContain('30s remaining');
   expect(screen.getByRole('dialog').textContent).toMatch(/5:02|17:02/);
-  expect(button.getAttribute('aria-label')).toBe('View meeting time limit');
+  expect(button.getAttribute('aria-label')).toBe('Time left');
   act(() => vi.advanceTimersByTime(30_000));
   expect(screen.getByRole('dialog').textContent).toContain(
     'Meeting time limit reached'

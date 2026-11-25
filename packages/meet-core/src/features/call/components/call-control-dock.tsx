@@ -121,7 +121,7 @@ export function CallControlDock({
   const aiT = useTranslations('meet.ai');
   const { state } = room;
   const presenceOnly = state.settings.transport === 'presence';
-  // The redesigned room (MEET_UX_V2) adds the stage join QR.
+  // The redesigned room (MEET_UX_V2) moves people left and adds the join QR.
   const callUx = useMeetCallUx();
   const managesJoinQr = callUx && (state.canManageParticipants ?? canManage);
   const [extrasDialog, setExtrasDialog] = useCallExtrasDialog();
@@ -186,6 +186,7 @@ export function CallControlDock({
         }
         context={<SurfaceContext nav={nav} />}
         leading={<CallTimers state={state} align="start" />}
+        peopleAtStart={callUx}
         liveActivity={activities.liveControl}
         // Without tool access, More is the only place that lists every live
         // poll and Quiz Arena shortcut; the bar shows just one of them. The

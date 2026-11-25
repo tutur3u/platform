@@ -15,7 +15,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useSyncExternalStore } from 'react';
+import {
+  type ReactNode,
+  type Ref,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
+import { usePanelFocusReturn } from '../hooks/use-panel-focus-return';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { readRoomControls, subscribeRoomControls } from '../lib/room-actions';
 import { CallMoreMenu } from './call-more-menu';
@@ -33,17 +39,19 @@ export {
 
 export type CallPanel = 'chat' | 'participants' | null;
 
-/** The bottom-right people count; it opens the participants panel. */
+/** The people count; it opens the participants panel. */
 function PeopleControl({
   active,
   count,
   waiting,
   onClick,
+  buttonRef,
 }: {
   active: boolean;
   count: number;
   waiting: number;
   onClick: () => void;
+  buttonRef?: Ref<HTMLButtonElement>;
 }) {
   const t = useTranslations('meet.call');
   const label = t('participants', { count });
@@ -51,6 +59,7 @@ function PeopleControl({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
+          ref={buttonRef}
           aria-label={label}
           aria-pressed={active}
           className={cn(
@@ -108,6 +117,7 @@ export function ControlBar({
   presenceOnly = false,
   onPresenceChange,
   onOpenSettings,
+  peopleAtStart = false,
 }: {
   activePanel: CallPanel;
   /** Legacy tools hub trigger, used when no `activities` control is given. */
@@ -152,6 +162,11 @@ export function ControlBar({
   viewer?: boolean;
   presenceOnly?: boolean;
   onPresenceChange?: (enabled: boolean) => void;
+  /**
+   * From `lg` up, the people count sits right of the clocks at the leading
+   * edge instead of the trailing end. Phones keep it at the trailing end.
+   */
+  peopleAtStart?: boolean;
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
@@ -162,6 +177,19 @@ export function ControlBar({
   );
   const locked = mediaLocks ?? controls?.locked;
   const hub = activities ?? tools;
+  const peopleStart = useRef<HTMLButtonElement>(null);
+  const peopleEnd = useRef<HTMLButtonElement>(null);
+  const peopleOpen = activePanel === 'participants';
+  usePanelFocusReturn(peopleOpen, peopleAtStart, peopleStart, peopleEnd);
+  const people = (ref: Ref<HTMLButtonElement>) => (
+    <PeopleControl
+      buttonRef={ref}
+      active={peopleOpen}
+      count={participantCount}
+      waiting={waitingCount}
+      onClick={() => onTogglePanel(peopleOpen ? null : 'participants')}
+    />
+  );
   const shareScreen = (
     <ControlButton
       active={screenOn}
@@ -207,6 +235,9 @@ export function ControlBar({
     >
       <div className="hidden min-w-0 flex-1 items-center gap-3 text-muted-foreground text-sm lg:flex">
         {leading}
+        {peopleAtStart && (
+          <div className="text-foreground">{people(peopleStart)}</div>
+        )}
         {context}
       </div>
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -300,16 +331,11 @@ export function ControlBar({
       <div className="flex shrink-0 flex-1 items-center justify-end gap-1 sm:gap-2">
         {/* The narrowest phones reach chat through More, so nothing overlaps. */}
         <div className="hidden min-[360px]:block">{chat}</div>
-        <PeopleControl
-          active={activePanel === 'participants'}
-          count={participantCount}
-          waiting={waitingCount}
-          onClick={() =>
-            onTogglePanel(
-              activePanel === 'participants' ? null : 'participants'
-            )
-          }
-        />
+        {peopleAtStart ? (
+          <div className="lg:hidden">{people(peopleEnd)}</div>
+        ) : (
+          people(peopleEnd)
+        )}
       </div>
     </div>
   );
