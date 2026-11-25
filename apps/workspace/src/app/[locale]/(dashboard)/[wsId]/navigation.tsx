@@ -299,7 +299,7 @@ export async function WorkspaceNavigationLinks({
             title: t('product-feedback.title'),
             href: `/${personalOrWsId}/feedback`,
             aliases: [`/${personalOrWsId}/feedback`],
-            icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
+            icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
             children: [],
             matchExact: true,
           } satisfies DashboardNavigationLink,

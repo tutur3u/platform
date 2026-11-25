@@ -55,7 +55,7 @@ export function createMoreToolsNavigation({
         title: t('personal_journal.title'),
         href: `/${personalOrWsId}/personal-journal`,
         aliases: [`/${personalOrWsId}/personal-journal/*`],
-        icon: createDashboardNavigationIcon('NotebookPen', 'h-5 w-5'),
+        icon: createDashboardNavigationIcon('BookText', 'h-5 w-5'),
         disabled: !isPersonal,
       },
       {
@@ -69,10 +69,7 @@ export function createMoreToolsNavigation({
         title: t('sidebar_tabs.documents'),
         href: `/${personalOrWsId}/documents`,
         icon: createDashboardNavigationIcon('FileText', 'h-5 w-5'),
-        disabled:
-          ENABLE_AI_ONLY ||
-          !hasSecret('ENABLE_DOCS', 'true') ||
-          withoutPermission('manage_documents'),
+        disabled: ENABLE_AI_ONLY || withoutPermission('manage_documents'),
         requiredWorkspaceTier: createTierRequirement('documents', {
           alwaysShow: true,
         }),
@@ -160,7 +157,7 @@ export function createMoreToolsNavigation({
         id: 'posts',
         title: t('workspace-users-tabs.reports'),
         href: `${contactsAppHref}/reports`,
-        icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
+        icon: createDashboardNavigationIcon('ScrollText', 'h-5 w-5'),
         disabled:
           (!DEV_MODE && ENABLE_AI_ONLY) ||
           (withoutPermission('view_user_groups_posts') &&

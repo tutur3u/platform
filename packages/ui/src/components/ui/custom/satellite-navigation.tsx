@@ -92,18 +92,22 @@ function CollapsibleSidebarSection({
 }) {
   const contentId = useId();
 
-  // The icon-only rail has no room for the header but keeps its space, so
-  // every icon sits at the same height as in the expanded panel and every
-  // app stays reachable.
+  // The icon-only rail has no room for the header text but keeps its space,
+  // so every icon sits at the same height as in the expanded panel. A thin
+  // divider in that space separates the categories, and every app stays
+  // reachable.
   if (isCollapsed) {
     return (
       <>
         {block.label && (
           <div
             aria-hidden
-            className={cn('invisible px-4 pb-1', isFirst ? 'pt-0' : 'pt-3')}
+            className={cn('relative pb-1', isFirst ? 'pt-0' : 'pt-3')}
           >
-            <span className="block truncate font-semibold text-[11px] uppercase tracking-wider">
+            {!isFirst && (
+              <span className="absolute inset-x-2 top-1.5 border-border border-t" />
+            )}
+            <span className="invisible block truncate px-4 font-semibold text-[11px] uppercase tracking-wider">
               {block.label}
             </span>
           </div>

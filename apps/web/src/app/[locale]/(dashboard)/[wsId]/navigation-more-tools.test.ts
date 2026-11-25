@@ -49,3 +49,34 @@ describe('more-tools journal navigation', () => {
     );
   });
 });
+
+describe('more-tools entries', () => {
+  const children = createMoreToolsNavigation(input).children ?? [];
+  const find = (id: string) => children.find((item) => item?.id === id);
+  const iconName = (id: string) =>
+    (find(id)?.icon as { name?: string } | undefined)?.name;
+
+  it('shows Documents to anyone with the permission, with no feature secret', () => {
+    expect(find('documents')).toMatchObject({
+      disabled: false,
+      href: '/personal/documents',
+    });
+    expect(
+      createMoreToolsNavigation({
+        ...input,
+        withoutPermission: (permission: string) =>
+          permission === 'manage_documents',
+      }).children?.find((item) => item?.id === 'documents')
+    ).toMatchObject({ disabled: true });
+  });
+
+  it('gives each top-level app its own icon', () => {
+    const names = children
+      .filter((item) => item?.id && item.id !== 'google_workspace')
+      .map((item) => iconName(item!.id!));
+
+    expect(iconName('personal_journal')).not.toBe(iconName('notes'));
+    expect(iconName('posts')).not.toBe('ClipboardList');
+    expect(new Set(names).size).toBe(names.length);
+  });
+});

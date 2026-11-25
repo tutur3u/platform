@@ -92,9 +92,10 @@ describe('SidebarNavigation collapsible sections', () => {
   });
 
   it('shows every icon in the collapsed rail and keeps headers out of reach', () => {
-    renderSidebar({ isCollapsed: true });
+    const { container } = renderSidebar({ isCollapsed: true });
 
     expect(screen.queryByRole('button')).toBeNull();
+    expect(container.querySelectorAll('span.border-t')).toHaveLength(2);
     expect(
       screen.getByText('Productivity').closest('[aria-hidden]')
     ).not.toBeNull();
