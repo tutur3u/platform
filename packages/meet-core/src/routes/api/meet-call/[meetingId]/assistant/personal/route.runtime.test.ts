@@ -17,11 +17,10 @@ import {
   roomService,
 } from '../../../../../../../../../apps/meet-realtime/src/room-service';
 
-const owner = '00000000-0000-4000-8000-0000000000a1';
-const meetingId = '00000000-0000-4000-8000-0000000000b2';
-const wsId = '00000000-0000-4000-8000-0000000000c3';
-
 const fixture = vi.hoisted(() => {
+  const owner = '00000000-0000-4000-8000-0000000000a1';
+  const meetingId = '00000000-0000-4000-8000-0000000000b2';
+  const wsId = '00000000-0000-4000-8000-0000000000c3';
   class MeetCallAccessError extends Error {
     constructor(
       public status: number,
@@ -32,13 +31,39 @@ const fixture = vi.hoisted(() => {
       super(message);
     }
   }
+  // vi.mock factories are hoisted above module code, so the shared module
+  // factories live here rather than in top-level consts.
+  const callAccess = () => ({
+    MeetCallAccessError,
+    getMeetCallAccess: async () => ({
+      user: { id: owner },
+      meeting: { id: meetingId, ws_id: wsId },
+      isHost: true,
+      displayName: 'Host',
+      admission: 'open',
+      canReadWorkspace: true,
+    }),
+  });
+  const callSession = () => ({
+    getMeetCallSession: async () => ({
+      realtimeUrl: 'wss://realtime.test/realtime',
+      token: 'synthetic-test',
+    }),
+  });
   return {
+    owner,
+    meetingId,
+    wsId,
+    callAccess,
+    callSession,
     MeetCallAccessError,
     request: {} as { cloudflare?: unknown },
     confirmation: false,
     waits: [] as Promise<unknown>[],
   };
 });
+
+const { owner, meetingId, wsId } = fixture;
 
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({
@@ -53,27 +78,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/account-benefits-server', () => ({
   AccountServiceError: class extends Error {},
 }));
-const callAccess = () => ({
-  MeetCallAccessError: fixture.MeetCallAccessError,
-  getMeetCallAccess: async () => ({
-    user: { id: owner },
-    meeting: { id: meetingId, ws_id: wsId },
-    isHost: true,
-    displayName: 'Host',
-    admission: 'open',
-    canReadWorkspace: true,
-  }),
-});
-vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', callAccess);
-vi.mock('../../../../../../features/call/lib/call-access', callAccess);
-const callSession = () => ({
-  getMeetCallSession: async () => ({
-    realtimeUrl: 'wss://realtime.test/realtime',
-    token: 'synthetic-test',
-  }),
-});
-vi.mock('@tuturuuu/meet-core/features/call/lib/call-session', callSession);
-vi.mock('../../../../../../features/call/lib/call-session', callSession);
+vi.mock(
+  '@tuturuuu/meet-core/features/call/lib/call-access',
+  fixture.callAccess
+);
+vi.mock('../../../../../../features/call/lib/call-access', fixture.callAccess);
+vi.mock(
+  '@tuturuuu/meet-core/features/call/lib/call-session',
+  fixture.callSession
+);
+vi.mock(
+  '../../../../../../features/call/lib/call-session',
+  fixture.callSession
+);
 vi.mock('../../../../../../features/call/lib/guest-access', () => ({
   getMeetGuestCallAccess: vi.fn(),
 }));
@@ -112,7 +129,8 @@ vi.mock(
 );
 vi.mock(
   '@opennextjs/cloudflare',
-  () => import('../../../../../../../../../apps/meet/src/runtime/cloudflare-context')
+  () =>
+    import('../../../../../../../../../apps/meet/src/runtime/cloudflare-context')
 );
 
 import { POST } from './route';
