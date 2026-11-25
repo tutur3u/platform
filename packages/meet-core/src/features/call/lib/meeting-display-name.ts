@@ -9,9 +9,15 @@ export const STORED_DEFAULT_MEETING_NAMES: readonly string[] = [
   'Cuộc họp chưa đặt tên',
 ];
 
+/**
+ * Compares in Unicode NFC on both sides, so a default stored with decomposed
+ * Vietnamese diacritics still matches.
+ */
 export function isStoredDefaultMeetingName(name: string) {
-  const trimmed = name.trim();
-  return STORED_DEFAULT_MEETING_NAMES.some((known) => known === trimmed);
+  const stored = name.trim().normalize('NFC');
+  return STORED_DEFAULT_MEETING_NAMES.some(
+    (known) => known.normalize('NFC') === stored
+  );
 }
 
 /**

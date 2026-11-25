@@ -1,6 +1,7 @@
 'use client';
 
 import { Video } from '@tuturuuu/icons';
+import { meetingDisplayName } from '@tuturuuu/meet-core/features/call/lib/meeting-display-name';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -29,7 +30,9 @@ export function CurrentSection({ meetings }: { meetings: LiveMeeting[] }) {
             key={meeting.id}
           >
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-sm">{meeting.name}</p>
+              <p className="truncate font-medium text-sm">
+                {meetingDisplayName(meeting.name, t('untitled'))}
+              </p>
               <p className="text-muted-foreground text-sm">
                 {t('in_call', { count: meeting.participantCount })}
               </p>

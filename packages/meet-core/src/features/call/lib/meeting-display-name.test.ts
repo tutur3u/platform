@@ -34,6 +34,14 @@ describe('meetingDisplayName', () => {
     );
   });
 
+  it('matches a stored default with decomposed diacritics', () => {
+    const decomposed = 'Cuộc họp chưa đặt tên'.normalize('NFD');
+    expect(decomposed).not.toBe('Cuộc họp chưa đặt tên');
+    expect(meetingDisplayName(decomposed, EN_DEFAULT)).toBe(
+      'Untitled meeting'
+    );
+  });
+
   it('keeps a chosen title verbatim', () => {
     expect(meetingDisplayName('Lớp 10A1 – Toán', EN_DEFAULT)).toBe(
       'Lớp 10A1 – Toán'

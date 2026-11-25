@@ -381,3 +381,45 @@ describe('Upcoming empty state', () => {
     expect(heading.parentElement?.textContent).toContain('Times in');
   });
 });
+
+describe('Default meeting names in the list', () => {
+  const storedDefault = 'Cuộc họp chưa đặt tên';
+
+  it('shows a stored default name in the viewer locale in Upcoming', () => {
+    render(
+      <UpcomingSection
+        accountId="account-a"
+        calendarAccess={{ status: 'unavailable' }}
+        management={{ onDelete: () => {}, onEdit: () => {} }}
+        meetings={[
+          { ...meeting('vi', '2026-03-11T09:00:00.000Z'), name: storedDefault },
+        ]}
+        now={NOW}
+        timeZone="UTC"
+        wsId="workspace-1"
+      />
+    );
+    expect(screen.getByText('Untitled meeting')).toBeTruthy();
+    expect(screen.queryByText(storedDefault)).toBeNull();
+  });
+
+  it('shows a stored default name in the viewer locale under Current', () => {
+    render(
+      <Harness
+        current={{
+          current: [
+            {
+              ...meeting('00000000-0000-4000-8000-000000000002', NOW),
+              name: storedDefault,
+              participantCount: 2,
+              viewerJoined: false,
+            },
+          ],
+          currentSource: 'presence',
+        }}
+      />
+    );
+    expect(screen.getByText('Untitled meeting')).toBeTruthy();
+    expect(screen.queryByText(storedDefault)).toBeNull();
+  });
+});

@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, Ellipsis, Pencil, Trash2 } from '@tuturuuu/icons';
+import { meetingDisplayName } from '@tuturuuu/meet-core/features/call/lib/meeting-display-name';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -52,6 +53,7 @@ export function MeetingRow({
 }) {
   const t = useTranslations('meet.meetings');
   const locale = useLocale();
+  const name = meetingDisplayName(meeting.name, t('untitled'));
   const duration = compactAction
     ? formatMeetingDuration(meeting, locale)
     : null;
@@ -66,7 +68,7 @@ export function MeetingRow({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-sm">{meeting.name}</p>
+        <p className="truncate font-medium text-sm">{name}</p>
         <p className="flex flex-wrap items-center gap-x-2 text-muted-foreground text-sm">
           <MeetingTimeRange
             meeting={meeting}
@@ -99,7 +101,7 @@ export function MeetingRow({
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
-              aria-label={t('more_actions', { name: meeting.name })}
+              aria-label={t('more_actions', { name })}
               size="icon"
               variant="ghost"
               className="size-8 pointer-coarse:size-11"
