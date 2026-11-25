@@ -70,6 +70,16 @@ class CubitFixtureRepository extends ChatRepository {
       [];
 
   final List<String?> sentReplyIds = [];
+
+  /// Fails `deleteConversation` with this message when set.
+  String? deleteConversationFailure;
+
+  @override
+  Future<void> deleteConversation(String wsId, String conversationId) async {
+    final failure = deleteConversationFailure;
+    if (failure != null) throw ApiException(message: failure, statusCode: 500);
+  }
+
   final List<String> deletedIds = [];
 
   @override
@@ -81,16 +91,21 @@ class CubitFixtureRepository extends ChatRepository {
     bool forceRefresh = false,
   }) async => ChatConversationPage(conversations: conversations);
 
+  /// Server row count of a page; defaults to every returned message.
+  int Function(List<ChatMessage> messages) serverCountOf = _allRows;
+  static int _allRows(List<ChatMessage> messages) => messages.length;
+
   @override
-  Future<List<ChatMessage>> listMessages(
+  Future<ChatMessagePage> listMessagePage(
     String wsId,
     String conversationId, {
     String? before,
     int limit = 60,
     bool forceRefresh = false,
-  }) {
+  }) async {
     beforeCursors.add(before);
-    return onListMessages(conversationId, before);
+    final messages = await onListMessages(conversationId, before);
+    return (messages: messages, serverCount: serverCountOf(messages));
   }
 
   @override

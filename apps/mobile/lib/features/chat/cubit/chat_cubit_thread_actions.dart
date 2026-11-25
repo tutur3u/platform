@@ -39,6 +39,7 @@ List<ChatReactionSummary> reactionsWith(
 extension ChatCubitThreadActions on ChatCubit {
   void startReply(ChatMessage message) {
     if (message.deletedAt != null ||
+        !isMessageSynced(message.id) ||
         message.conversationId != state.selectedConversationId) {
       return;
     }
@@ -55,7 +56,11 @@ extension ChatCubitThreadActions on ChatCubit {
   Future<void> deleteMessage(ChatMessage message) async {
     if (!_scopeActive) return;
     final wsId = state.wsId;
-    if (wsId == null || message.deletedAt != null) return;
+    if (wsId == null ||
+        message.deletedAt != null ||
+        !isMessageSynced(message.id)) {
+      return;
+    }
     try {
       final deleted = await _repository.deleteMessage(
         wsId,
@@ -88,19 +93,23 @@ extension ChatCubitThreadActions on ChatCubit {
     final token = _loadToken;
     _emitState(state.copyWith(loadingOlderConversationId: conversationId));
     try {
-      final page = await _repository.listMessages(
+      final page = await _repository.listMessagePage(
         wsId,
         conversationId,
         before: oldest.toUtc().toIso8601String(),
       );
       if (!_scopeActive || token != _loadToken || state.wsId != wsId) return;
-      final merged = _sortedById([...?state.messages[conversationId], ...page]);
+      _trackUnsynced(wsId, page.messages);
+      final merged = _sortedById([
+        ...?state.messages[conversationId],
+        ...page.messages,
+      ]);
       _emitState(
         state.copyWith(
           messages: {...state.messages, conversationId: merged},
           hasOlderMessages: {
             ...state.hasOlderMessages,
-            conversationId: _isFullPage(wsId, page),
+            conversationId: page.serverCount >= ChatCubit.messagePageSize,
           },
         ),
       );

@@ -149,21 +149,26 @@ class _ChatDetailsSheetState extends State<ChatDetailsSheet> {
     required String confirmLabel,
   }) async {
     final cubit = context.read<ChatCubit>();
+    final failureLabel = context.l10n.chatActionFailed;
     final closed = await showAppAsyncConfirmDialog(
       context: context,
       title: title,
       message: message,
       confirmLabel: confirmLabel,
       cancelLabel: context.l10n.commonCancel,
-      describeError: (error) => error.toString(),
+      // The dialog owns this failure: the cubit does not record it, so the
+      // page does not also toast it, and the message is localized.
+      describeError: (_) => failureLabel,
       onConfirm: () async {
-        final fallback = context.l10n.commonSomethingWentWrong;
-        await cubit.deleteConversation(conversation);
+        final failure = await cubit.deleteConversation(
+          conversation,
+          reportError: false,
+        );
         final stillOpen = cubit.state.conversations.any(
           (item) => item.id == conversation.id,
         );
-        if (stillOpen) {
-          throw StateError(cubit.state.error ?? fallback);
+        if (failure != null || stillOpen) {
+          throw StateError('Conversation was not closed');
         }
       },
     );

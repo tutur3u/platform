@@ -1,6 +1,24 @@
 part of 'chat_repository.dart';
 
 extension ChatRepositoryPanels on ChatRepository {
+  Future<String> attachmentReadUrl(
+    String wsId,
+    String conversationId,
+    String attachmentId,
+  ) async {
+    final response = await _apiClient.getJson(
+      '${_conversationPath(wsId, conversationId)}/attachments/$attachmentId',
+    );
+    final url = response['signedUrl'] as String?;
+    if (url == null || url.isEmpty) {
+      throw const ApiException(
+        message: 'Attachment preview unavailable',
+        statusCode: 0,
+      );
+    }
+    return url;
+  }
+
   Future<List<ChatLinkPreview>> getLinkPreviews(
     String wsId,
     String conversationId,

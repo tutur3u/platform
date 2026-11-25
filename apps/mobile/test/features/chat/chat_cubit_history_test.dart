@@ -134,13 +134,29 @@ void main() {
       ),
     ];
     addTearDown(() => OfflineMutationQueue.instance.pending.value = []);
+    // The server returned 59 rows; the repository overlaid the queued send.
     harness.repository.onListMessages = (conversationId, before) async => [
       ...fixtureRange(1, 59),
       fixtureMessage(999),
     ];
+    harness.repository.serverCountOf = (messages) => 59;
     await harness.open();
     expect(cubitOf().state.selectedMessages, hasLength(60));
     expect(cubitOf().state.selectedHasOlderMessages, isFalse);
+    expect(cubitOf().isMessageSynced(messageId(999)), isFalse);
+    expect(cubitOf().isMessageSynced(messageId(59)), isTrue);
+  });
+
+  test('a queued delete does not make a full page look short', () async {
+    // The server returned 60 rows; a queued delete removed one locally.
+    harness.repository.onListMessages = (conversationId, before) async => [
+      ...fixtureRange(41, 69),
+      ...fixtureRange(71, 100),
+    ];
+    harness.repository.serverCountOf = (messages) => 60;
+    await harness.open();
+    expect(cubitOf().state.selectedMessages, hasLength(59));
+    expect(cubitOf().state.selectedHasOlderMessages, isTrue);
   });
 
   group('realtime', () {

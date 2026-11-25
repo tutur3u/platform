@@ -10,6 +10,7 @@ class ChatMessage extends Equatable {
     this.metadata = const {},
     this.reactions = const [],
     this.replyToMessageId,
+    this.clientRequestId,
     this.sender,
     this.senderId,
     this.createdAt,
@@ -33,6 +34,11 @@ class ChatMessage extends Equatable {
       replyToMessageId:
           json['replyToMessageId']?.toString() ??
           json['reply_to_message_id']?.toString(),
+      // Queued sends carry it at the top level; the server keeps it in
+      // metadata, which lets a replayed send replace its local row.
+      clientRequestId:
+          json['clientRequestId']?.toString() ??
+          _mapFromJson(json['metadata'])['clientRequestId']?.toString(),
       sender: json['sender'] == null
           ? null
           : ChatUserProfile.fromJson(_mapFromJson(json['sender'])),
@@ -52,6 +58,7 @@ class ChatMessage extends Equatable {
   final Map<String, dynamic> metadata;
   final List<ChatReactionSummary> reactions;
   final String? replyToMessageId;
+  final String? clientRequestId;
   final ChatUserProfile? sender;
   final String? senderId;
   final DateTime? createdAt;
@@ -68,6 +75,7 @@ class ChatMessage extends Equatable {
     Map<String, dynamic>? metadata,
     List<ChatReactionSummary>? reactions,
     String? replyToMessageId,
+    String? clientRequestId,
     ChatUserProfile? sender,
     String? senderId,
     DateTime? createdAt,
@@ -84,6 +92,7 @@ class ChatMessage extends Equatable {
       metadata: metadata ?? this.metadata,
       reactions: reactions ?? this.reactions,
       replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      clientRequestId: clientRequestId ?? this.clientRequestId,
       sender: sender ?? this.sender,
       senderId: senderId ?? this.senderId,
       createdAt: createdAt ?? this.createdAt,
@@ -103,6 +112,7 @@ class ChatMessage extends Equatable {
     metadata,
     reactions,
     replyToMessageId,
+    clientRequestId,
     sender,
     senderId,
     createdAt,

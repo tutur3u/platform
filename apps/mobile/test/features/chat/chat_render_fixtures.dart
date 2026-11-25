@@ -206,15 +206,18 @@ class ChatFixtureRepository extends ChatRepository {
   }
 
   @override
-  Future<List<ChatMessage>> listMessages(
+  Future<ChatMessagePage> listMessagePage(
     String wsId,
     String conversationId, {
     String? before,
     int limit = 60,
     bool forceRefresh = false,
-  }) async => conversationId == 'design' && before == null
-      ? ChatFixtures.designMessages()
-      : const [];
+  }) async {
+    final messages = conversationId == 'design' && before == null
+        ? ChatFixtures.designMessages()
+        : const <ChatMessage>[];
+    return (messages: messages, serverCount: messages.length);
+  }
 
   @override
   Future<ChatConversation> markRead(

@@ -23,6 +23,9 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_repository_panels.dart';
 
+/// A history page and how many rows the server itself returned.
+typedef ChatMessagePage = ({List<ChatMessage> messages, int serverCount});
+
 class ChatRepository {
   ChatRepository({
     ApiClient? apiClient,
@@ -246,6 +249,23 @@ class ChatRepository {
     String? before,
     int limit = 60,
     bool forceRefresh = false,
+  }) async => (await listMessagePage(
+    wsId,
+    conversationId,
+    before: before,
+    limit: limit,
+    forceRefresh: forceRefresh,
+  )).messages;
+
+  /// One history page with queued sends and deletes overlaid, plus the
+  /// number of rows the server returned. Only `serverCount`
+  /// says whether older history may exist.
+  Future<ChatMessagePage> listMessagePage(
+    String wsId,
+    String conversationId, {
+    String? before,
+    int limit = 60,
+    bool forceRefresh = false,
   }) async {
     final query = Uri(
       queryParameters: {
@@ -260,13 +280,14 @@ class ChatRepository {
       '$path?$query',
       forceRefresh: forceRefresh,
     );
+    final source = (response['messages'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .toList(growable: false);
     final rows = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'chat',
       pathContains: path,
-      source: (response['messages'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .toList(growable: false),
+      source: source,
       pending: (await _messageMutationQueue.listPending())
           .where((item) => item.path == path || item.path.startsWith('$path/'))
           .toList(growable: false),
@@ -277,25 +298,10 @@ class ChatRepository {
       },
       includeCreates: before == null,
     );
-    return rows.map(ChatMessage.fromJson).toList(growable: false);
-  }
-
-  Future<String> attachmentReadUrl(
-    String wsId,
-    String conversationId,
-    String attachmentId,
-  ) async {
-    final response = await _apiClient.getJson(
-      '${_conversationPath(wsId, conversationId)}/attachments/$attachmentId',
+    return (
+      messages: rows.map(ChatMessage.fromJson).toList(growable: false),
+      serverCount: source.length,
     );
-    final url = response['signedUrl'] as String?;
-    if (url == null || url.isEmpty) {
-      throw const ApiException(
-        message: 'Attachment preview unavailable',
-        statusCode: 0,
-      );
-    }
-    return url;
   }
 
   /// Mira date tools need the device zone; an unverified lookup is omitted so

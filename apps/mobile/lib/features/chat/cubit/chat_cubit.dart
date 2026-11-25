@@ -17,6 +17,7 @@ part 'chat_state.dart';
 part 'chat_cubit_actions.dart';
 part 'chat_cubit_thread_actions.dart';
 part 'chat_cubit_message_merge.dart';
+part 'chat_cubit_sync.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit({
@@ -31,7 +32,12 @@ class ChatCubit extends Cubit<ChatState> {
        _realtimeClient = realtimeClient ?? ChatRealtimeClient(),
        super(const ChatState()) {
     _ownerRevision = _store.resourceRevisionFor(_actorFence);
+    OfflineMutationQueue.instance.pending.addListener(_onQueueChanged);
   }
+
+  /// Ids of rows that are not on the server yet: queued sends, and replayed
+  /// sends whose server copy has not replaced the local row.
+  final Set<String> _unsyncedIds = {};
 
   final String? Function() _currentUserId;
   final String? _ownerId;
@@ -94,9 +100,11 @@ class ChatCubit extends Cubit<ChatState> {
             record.entityId == entityId,
       );
 
-  /// Latest reaction operation per message; an older operation's response
-  /// or rollback must not overwrite a newer optimistic state.
-  final Map<String, String> _latestReactionOps = {};
+  /// Latest reaction operation per (message, emoji) and the state it asks
+  /// for. An older operation's reply or rollback must not overwrite a newer
+  /// tap, and a server copy for one emoji keeps the others' pending state.
+  final Map<(String, String), ({String opId, bool present})>
+  _latestReactionOps = {};
 
   Future<void> setWorkspace(
     String wsId, {
@@ -327,7 +335,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     try {
-      final messages = await _repository.listMessages(
+      final page = await _repository.listMessagePage(
         wsId,
         conversationId,
         forceRefresh: fresh,
@@ -340,9 +348,13 @@ class ChatCubit extends Cubit<ChatState> {
       }
       // A quiet refresh folds the newest page into the loaded thread so
       // older pages, the history cursor and the scroll position survive.
+      _trackUnsynced(wsId, page.messages);
       final next = quietly
-          ? _mergeNewestPage(wsId, conversationId, messages)
-          : (messages: messages, hasOlder: _isFullPage(wsId, messages));
+          ? _mergeNewestPage(wsId, conversationId, page)
+          : (
+              messages: _withoutReplayedDuplicates(page.messages),
+              hasOlder: page.serverCount >= messagePageSize,
+            );
       final replyId = state.replyToMessageId;
       emit(
         state.copyWith(
@@ -548,11 +560,21 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void _upsertMessage(ChatMessage message) {
+    final wsId = state.wsId;
+    if (wsId != null) _trackUnsynced(wsId, [message]);
     final allMessages = Map<String, List<ChatMessage>>.from(state.messages);
     final messages = <ChatMessage>[
       ...(allMessages[message.conversationId] ?? const <ChatMessage>[]),
     ];
-    final index = messages.indexWhere((item) => item.id == message.id);
+    // A replayed queued send arrives under its server id; it replaces the
+    // local row that carries the same client request id.
+    final index = messages.indexWhere(
+      (item) =>
+          item.id == message.id || _isReplayOf(local: item, server: message),
+    );
+    if (index >= 0 && messages[index].id != message.id) {
+      _unsyncedIds.remove(messages[index].id);
+    }
     if (index >= 0) {
       messages[index] = message;
     } else {
@@ -610,6 +632,7 @@ class ChatCubit extends Cubit<ChatState> {
   @override
   Future<void> close() async {
     _closing = true;
+    OfflineMutationQueue.instance.pending.removeListener(_onQueueChanged);
     ++_loadToken;
     ++_searchRequestVersion;
     await _sendSubscription?.cancel();

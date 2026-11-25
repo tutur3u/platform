@@ -49,13 +49,22 @@ in the offline queue take no reactions, replies or deletion. Shared files
 render as rows that request a signed URL only when opened.
 
 Older history loads a page at a time with `before` set to the oldest synced
-message, as web does; a page counts as full only by its synced messages. A
-quiet refresh (realtime fallback, resync or pull to refresh) folds the newest
-page into the loaded thread, so older pages and the reading position survive.
+message, as web does; a page is full when the server itself returned a full
+page, before queued sends or deletes are overlaid. A quiet refresh (realtime
+fallback, resync or pull to refresh) folds the newest page into the loaded
+thread only when the page overlaps it, so older pages and the reading position
+survive; a page that does not overlap replaces the thread, because keeping the
+old messages would leave a gap the history cursor could never fill. Messages
+newer than the page, such as one that arrived during the fetch, are kept.
 Realtime `message.created` appends; edits, deletions and reaction updates patch
-a loaded message in place and leave the conversation list order alone. A reply
-whose target disappears is dropped before sending. Action failures show one
-localized toast.
+a loaded message in place and leave the conversation list order alone.
+
+A queued send keeps its local row until it replays; the thread then refetches
+and the server copy, matched by client request id, replaces the row, so
+replies, reactions and deletion only ever target server ids. A reply whose
+target disappears is dropped before sending. Action failures show one
+localized toast; a failure shown in a dialog, such as leaving a conversation
+from the details sheet, is not toasted as well.
 
 ## Composer
 
@@ -70,7 +79,8 @@ are still required for delivery.
 Regression coverage: `chat_conversation_layout_test.dart`,
 `chat_pagination_scope_test.dart`, `chat_thread_layout_test.dart`,
 `chat_thread_items_test.dart`, `chat_surface_width_test.dart`,
-`chat_cubit_history_test.dart`, `chat_cubit_message_actions_test.dart` and the
+`chat_cubit_history_test.dart`, `chat_cubit_message_actions_test.dart`,
+`chat_cubit_sync_test.dart` and the
 `chat_page_render_test.dart` design renders (phone, tablet and desktop in
 light and dark) in `apps/mobile/test/features/chat`.
 

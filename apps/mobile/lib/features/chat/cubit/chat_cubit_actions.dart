@@ -108,8 +108,13 @@ extension ChatCubitActions on ChatCubit {
     final attachments = state.pendingAttachments
         .map((attachment) => attachment.toDraft())
         .toList(growable: false);
-    // Only a loaded, live target is sent; a missing one is dropped.
-    final replyToMessageId = state.replyToMessage?.id;
+    // Only a loaded, live, synced target is sent; a local row's id never
+    // reaches the server.
+    final replyTarget = state.replyToMessage;
+    final replyToMessageId =
+        replyTarget != null && isMessageSynced(replyTarget.id)
+        ? replyTarget.id
+        : null;
     _emitState(
       state.copyWith(
         isSending: true,
@@ -200,9 +205,9 @@ extension ChatCubitActions on ChatCubit {
   }
 
   /// Toggles the viewer's [emoji] on [message] through the idempotent
-  /// desired-state API. Only the latest operation on a message may apply
-  /// its response or roll back, and a rollback restores just that emoji, so
-  /// out-of-order replies cannot undo a newer tap or a realtime update.
+  /// desired-state API. Only the latest operation for a message and emoji
+  /// may apply its reply or roll back, and a rollback restores just that
+  /// emoji, so out-of-order replies cannot undo a newer tap.
   Future<void> toggleReaction(ChatMessage message, String emoji) async {
     if (!_scopeActive) return;
     final wsId = state.wsId;
@@ -210,7 +215,7 @@ extension ChatCubitActions on ChatCubit {
     if (wsId == null ||
         userId == null ||
         (state.selectedConversation?.isReadOnlyAgent ?? false) ||
-        isPendingChatMessage(wsId, message.id)) {
+        !isMessageSynced(message.id)) {
       return;
     }
     final current = _findMessage(message.conversationId, message.id) ?? message;
@@ -218,13 +223,11 @@ extension ChatCubitActions on ChatCubit {
       (reaction) =>
           reaction.emoji == emoji && reaction.userIds.contains(userId),
     );
+    final key = (message.id, emoji);
     final opId = newLocalMutationId();
-    _latestReactionOps[message.id] = opId;
-    _patchMessage(
-      current.copyWith(
-        reactions: reactionsWith(current.reactions, emoji, userId, present),
-      ),
-    );
+    _latestReactionOps[key] = (opId: opId, present: present);
+    _patchMessage(current);
+    bool latest() => _latestReactionOps[key]?.opId == opId;
     try {
       final updated = await _repository.setReaction(
         wsId,
@@ -234,14 +237,14 @@ extension ChatCubitActions on ChatCubit {
         present: present,
         opId: opId,
       );
-      if (_latestReactionOps[message.id] != opId) return;
-      _latestReactionOps.remove(message.id);
+      if (!latest()) return;
+      _latestReactionOps.remove(key);
       // A queued (offline) operation answers with an id-only placeholder;
       // keep the optimistic state until the server returns the message.
       if (updated.createdAt != null) _patchMessage(updated);
-    } on ApiException catch (error) {
-      if (_latestReactionOps[message.id] != opId) return;
-      _latestReactionOps.remove(message.id);
+    } on Object catch (error) {
+      if (!latest()) return;
+      _latestReactionOps.remove(key);
       final now = _findMessage(message.conversationId, message.id);
       if (now != null) {
         _patchMessage(
@@ -250,7 +253,11 @@ extension ChatCubitActions on ChatCubit {
           ),
         );
       }
-      _emitState(state.copyWith(error: error.message));
+      _emitState(
+        state.copyWith(
+          error: error is ApiException ? error.message : error.toString(),
+        ),
+      );
     }
   }
 
@@ -318,15 +325,23 @@ extension ChatCubitActions on ChatCubit {
     }
   }
 
-  Future<void> deleteConversation(ChatConversation conversation) async {
-    if (!_scopeActive) return;
+  /// Archives or leaves [conversation]. Returns the failure message, or
+  /// null on success. With [reportError] false the caller shows the failure
+  /// itself and the page does not toast it as well.
+  Future<String?> deleteConversation(
+    ChatConversation conversation, {
+    bool reportError = true,
+  }) async {
+    if (!_scopeActive) return null;
     final wsId = state.wsId;
-    if (wsId == null || conversation.isReadOnlyAgent) return;
+    if (wsId == null || conversation.isReadOnlyAgent) return null;
     try {
       await _repository.deleteConversation(wsId, conversation.id);
       _removeConversation(conversation.id);
+      return null;
     } on ApiException catch (error) {
-      _emitState(state.copyWith(error: error.message));
+      if (reportError) _emitState(state.copyWith(error: error.message));
+      return error.message;
     }
   }
 

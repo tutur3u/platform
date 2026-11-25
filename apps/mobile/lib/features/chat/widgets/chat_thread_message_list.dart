@@ -12,6 +12,7 @@ class _MessageList extends StatefulWidget {
     required this.hasOlderMessages,
     required this.isLoadingOlderMessages,
     required this.onLoadOlderMessages,
+    required this.isMessageSynced,
   });
 
   final ChatConversation conversation;
@@ -24,6 +25,7 @@ class _MessageList extends StatefulWidget {
   final bool hasOlderMessages;
   final bool isLoadingOlderMessages;
   final VoidCallback? onLoadOlderMessages;
+  final bool Function(String messageId) isMessageSynced;
 
   @override
   State<_MessageList> createState() => _MessageListState();
@@ -87,8 +89,7 @@ class _MessageListState extends State<_MessageList> {
   /// Queued sends and the streaming reply are not on the server yet, so
   /// they take no reactions, replies or deletion.
   bool _isSynced(ChatMessage message) =>
-      message.id != _streamingId &&
-      !isPendingChatMessage(widget.conversation.wsId, message.id);
+      message.id != _streamingId && widget.isMessageSynced(message.id);
 
   void _openActions(ChatMessage message, {required bool mine}) {
     if (message.deletedAt != null) return;
@@ -147,57 +148,62 @@ class _MessageListState extends State<_MessageList> {
     final showNames = widget.conversation.type != ChatConversationType.direct;
     final showHistory = widget.hasOlderMessages;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bubbleWidth = (constraints.maxWidth * 0.78).clamp(220.0, 600.0);
-        return ListView.builder(
-          controller: _scroll,
-          reverse: true,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.lg,
-          ),
-          itemCount: items.length + (showHistory ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == items.length) {
-              return _HistoryButton(
-                loading: widget.isLoadingOlderMessages,
-                onPressed: widget.onLoadOlderMessages,
-              );
-            }
-            final item = items[items.length - 1 - index];
-            return switch (item) {
-              ChatDayItem(:final day) => _DayDivider(day: day),
-              ChatUnreadItem() => const _UnreadDivider(),
-              ChatMessageItem(:final message) =>
-                message.kind == ChatMessageKind.system
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.sm,
+    // Rebuild when the offline queue changes, so a send that replays
+    // becomes actionable without waiting for another state change.
+    return ValueListenableBuilder(
+      valueListenable: OfflineMutationQueue.instance.pending,
+      builder: (context, _, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          final bubbleWidth = (constraints.maxWidth * 0.78).clamp(220.0, 600.0);
+          return ListView.builder(
+            controller: _scroll,
+            reverse: true,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            itemCount: items.length + (showHistory ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == items.length) {
+                return _HistoryButton(
+                  loading: widget.isLoadingOlderMessages,
+                  onPressed: widget.onLoadOlderMessages,
+                );
+              }
+              final item = items[items.length - 1 - index];
+              return switch (item) {
+                ChatDayItem(:final day) => _DayDivider(day: day),
+                ChatUnreadItem() => const _UnreadDivider(),
+                ChatMessageItem(:final message) =>
+                  message.kind == ChatMessageKind.system
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.sm,
+                          ),
+                          child: ChatSystemMessage(message: message),
+                        )
+                      : Padding(
+                          key: _keyFor(message.id),
+                          padding: EdgeInsets.only(
+                            bottom: item.endsGroup
+                                ? AppSpacing.md
+                                : AppSpacing.xxs,
+                          ),
+                          child: PendingSyncFrame(
+                            workspaceId: widget.conversation.wsId,
+                            feature: 'chat',
+                            entityId: message.id,
+                            child: _bubble(item, byId, bubbleWidth, showNames),
+                          ),
                         ),
-                        child: ChatSystemMessage(message: message),
-                      )
-                    : Padding(
-                        key: _keyFor(message.id),
-                        padding: EdgeInsets.only(
-                          bottom: item.endsGroup
-                              ? AppSpacing.md
-                              : AppSpacing.xxs,
-                        ),
-                        child: PendingSyncFrame(
-                          workspaceId: widget.conversation.wsId,
-                          feature: 'chat',
-                          entityId: message.id,
-                          child: _bubble(item, byId, bubbleWidth, showNames),
-                        ),
-                      ),
-            };
-          },
-        );
-      },
+              };
+            },
+          );
+        },
+      ),
     );
   }
 

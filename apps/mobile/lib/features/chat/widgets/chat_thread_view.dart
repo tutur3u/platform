@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -42,6 +43,7 @@ class ChatThreadView extends StatelessWidget {
     this.isLoadingOlderMessages = false,
     this.onLoadOlderMessages,
     this.onRetry,
+    this.isMessageSynced,
     super.key,
   });
 
@@ -70,6 +72,10 @@ class ChatThreadView extends StatelessWidget {
   final bool isLoadingOlderMessages;
   final VoidCallback? onLoadOlderMessages;
   final VoidCallback? onRetry;
+
+  /// Whether a message is on the server and can take replies, reactions
+  /// and deletion. Defaults to "not waiting in the offline queue".
+  final bool Function(String messageId)? isMessageSynced;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +118,9 @@ class ChatThreadView extends StatelessWidget {
                     hasOlderMessages: hasOlderMessages,
                     isLoadingOlderMessages: isLoadingOlderMessages,
                     onLoadOlderMessages: onLoadOlderMessages,
+                    isMessageSynced:
+                        isMessageSynced ??
+                        (id) => !isPendingChatMessage(selected.wsId, id),
                   ),
                 },
         ),
