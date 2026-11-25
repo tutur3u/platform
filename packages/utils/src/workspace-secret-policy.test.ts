@@ -167,6 +167,9 @@ describe('workspace secret registry scan', () => {
         // The external app registry field, as a quoted key literal.
         '[\'"`]secretHash[\'"`]',
         ':channel:[^:]+:secret:',
+        // Storage credential reveals reached through the shared name list.
+        'revealWorkspaceStorageCredentials',
+        'DRIVE_R2_CREDENTIAL_SECRET_NAMES',
       ].join('|'),
       'u'
     );

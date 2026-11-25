@@ -104,6 +104,10 @@ export const WORKSPACE_CREDENTIAL_SECRET_REFERENCES = [
   'apps/workspace-secrets/src/policy.ts',
   'packages/storage-core/src/lib/workspace-storage-auto-extract.ts',
   'packages/storage-core/src/lib/workspace-storage-config.ts',
+  // Read-only diagnostic that no route calls: it reveals the R2 credentials
+  // only to check that they are present and drops the values. Any caller
+  // needs security approval and a rate limit first.
+  'packages/storage-core/src/lib/workspace-storage-config-diagnostics.ts',
   'packages/storage-core/src/lib/workspace-storage-credentials.ts',
   'packages/storage-core/src/lib/workspace-storage-provider-config.ts',
   'packages/utils/src/workspace-secret-tier-rules.ts',
