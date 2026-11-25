@@ -26,11 +26,13 @@ const fields = {
     'limit_waiting_no_auto_resume',
     'owner_paused_or_interrupted',
     'failed_no_recovery_armed',
+    'unknown',
   ],
   byOwnerClass: [
     'parent_lead',
     'delegating_lead_other_host',
     'parent_settled_orphan',
+    'unknown',
   ],
   byRetryEligibility: [
     'blocked_seat_exhausted',
@@ -38,6 +40,7 @@ const fields = {
     'blocked_claude_freeze',
     'eligible_codex_code_only',
     'settle_candidate',
+    'unknown',
   ],
   byNextAction: [
     'owner_moves_to_admitted_seat_or_waits_for_reset',
@@ -45,8 +48,10 @@ const fields = {
     'wait_for_weekly_reset_or_topup',
     'owner_resumes_on_codex_if_code_only',
     'settle_after_owner_confirms',
+    'unknown',
   ],
   byProviderFamily: [
+    'unknown',
     'antigravity',
     'claude',
     'codex',
@@ -117,6 +122,7 @@ export function normalizeRecoverySummary(input, now) {
     !hasOnly(coverage, [
       'hosts_read',
       'hosts_without_unsettled',
+      'hosts_unread',
       'partial',
       'source',
       'note',
@@ -127,11 +133,21 @@ export function normalizeRecoverySummary(input, now) {
   )
     return;
   const read = [...coverage.hosts_read, ...coverage.hosts_without_unsettled];
+  const unread = Object.hasOwn(coverage, 'hosts_unread')
+    ? coverage.hosts_unread
+    : [];
+  if (!Array.isArray(unread) || (unread.length && !coverage.partial)) return;
+  const expected = [...read, ...unread];
   if (
-    read.length === 0 ||
-    read.length > MAX_HOSTS ||
-    new Set(read).size !== read.length ||
-    !read.every((host) => typeof host === 'string' && hostAlias.test(host))
+    expected.length === 0 ||
+    expected.length > MAX_HOSTS ||
+    new Set(expected).size !== expected.length ||
+    !expected.every((host) => typeof host === 'string' && hostAlias.test(host))
+  )
+    return;
+  if (
+    Object.hasOwn(coverage, 'hosts_unread') &&
+    !expected.every((host) => /^host-(?:[1-9]|[12]\d|3[0-2])$/.test(host))
   )
     return;
   const total = input.total_unsettled_failed_or_interrupted;
@@ -190,14 +206,14 @@ export function normalizeRecoverySummary(input, now) {
     stale: now.getTime() - effective > STALE_AFTER_MS,
     coverage: {
       hostsRead: read.length,
-      // The hosts are the ones the summary names; a missing host is reported by
-      // the producer through `coverage.partial`, never inferred from a fixed count.
-      hostsExpected: read.length,
+      hostsExpected: expected.length,
       partial: coverage.partial,
-      hosts: read.map((_, index) => ({
-        id: `host-${index + 1}`,
-        readAt: generatedAt,
-        ok: true,
+      hosts: expected.map((host, index) => ({
+        id: Object.hasOwn(coverage, 'hosts_unread')
+          ? host
+          : `host-${index + 1}`,
+        readAt: index < read.length ? generatedAt : null,
+        ok: index < read.length,
       })),
     },
     total,

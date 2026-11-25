@@ -596,7 +596,7 @@ thread ancestry, apart from Iris's turn.
 
 The publisher reads an optional mode-0600 `fleet-recovery-summary/v1` file at
 `~/.local/share/fleet-sync/recovery/summary.json`, which the producer must write
-atomically (temporary file, mode 0600, rename). Host slots (`host-1` to
+atomically. See the [recovery producer runbook](/platform/features/mobile-mastermind-recovery). Host slots (`host-1` to
 `host-32`) come from the hosts the summary names, and `coverage.partial` reports
 a missing host. A `generatedAt` up to 60 seconds ahead is clamped to now. Today
 marks the report stale after two hours, shows partial coverage, holds, executed

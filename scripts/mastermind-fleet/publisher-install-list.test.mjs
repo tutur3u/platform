@@ -29,8 +29,8 @@ function importedModules(entry) {
 }
 
 /** The publisher files the runbook tells an operator to install. */
-function documentedModules() {
-  const text = fs.readFileSync(docs, 'utf8');
+function documentedModules(runbook = docs) {
+  const text = fs.readFileSync(runbook, 'utf8');
   const start = text.indexOf(
     'installed copy in `~/.local/share/fleet-sync/bin/`'
   );
@@ -75,4 +75,14 @@ test('the import scan covers every relative import form the publisher uses', () 
     'g.mjs',
     'h.mjs',
   ]);
+});
+
+test('the recovery runbook covers every producer module', () => {
+  const documented = documentedModules(
+    path.join(path.dirname(docs), 'mobile-mastermind-recovery.mdx')
+  );
+  const missing = importedModules('recovery-producer.mjs').filter(
+    (file) => !documented.has(file)
+  );
+  assert.deepEqual(missing, []);
 });

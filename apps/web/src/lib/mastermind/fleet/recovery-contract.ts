@@ -42,6 +42,7 @@ export const fleetRecoverySchema = z
         'limit_waiting_no_auto_resume',
         'owner_paused_or_interrupted',
         'failed_no_recovery_armed',
+        'unknown',
       ]),
       count
     ),
@@ -50,6 +51,7 @@ export const fleetRecoverySchema = z
         'parent_lead',
         'delegating_lead_other_host',
         'parent_settled_orphan',
+        'unknown',
       ]),
       count
     ),
@@ -60,6 +62,7 @@ export const fleetRecoverySchema = z
         'blocked_claude_freeze',
         'eligible_codex_code_only',
         'settle_candidate',
+        'unknown',
       ]),
       count
     ),
@@ -70,11 +73,20 @@ export const fleetRecoverySchema = z
         'wait_for_weekly_reset_or_topup',
         'owner_resumes_on_codex_if_code_only',
         'settle_after_owner_confirms',
+        'unknown',
       ]),
       count
     ),
     byProviderFamily: z.partialRecord(
-      z.enum(['antigravity', 'claude', 'codex', 'cursor', 'grok', 'opencode']),
+      z.enum([
+        'antigravity',
+        'claude',
+        'codex',
+        'cursor',
+        'grok',
+        'opencode',
+        'unknown',
+      ]),
       count
     ),
     actionsExecuted: z.partialRecord(
