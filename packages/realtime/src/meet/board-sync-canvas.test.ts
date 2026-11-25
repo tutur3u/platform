@@ -55,6 +55,21 @@ describe('canvas area', () => {
     expect(elementCanvasArea(stroke(16))).toBe((900 + 384) * (600 + 384));
   });
 
+  it('charges zero-size shapes and one-point strokes their padding', () => {
+    // Nothing to draw, but every viewer still allocates the padding.
+    const empty = guestElement('rectangle', { width: 0, height: 0 });
+    expect(elementCanvasArea(empty)).toBe(40 * 40);
+    expect(elementChurnCost(empty)).toBe(1 + 1);
+    const dot = guestElement('freedraw', {
+      strokeWidth: 16,
+      width: 0,
+      height: 0,
+      points: [[0, 0]],
+    });
+    expect(elementCanvasArea(dot)).toBe(384 * 384);
+    expect(sanitizeGuestElement(dot)).not.toBeNull();
+  });
+
   it('refuses the padding exploits for guests', () => {
     expect(
       sanitizeGuestElement(guestElement('text', { fontSize: 257 }))
