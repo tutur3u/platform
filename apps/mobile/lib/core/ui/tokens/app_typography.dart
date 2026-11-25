@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeExtension;
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/ui/tokens/app_type_scale.dart';
 
@@ -6,7 +7,7 @@ export 'package:mobile/core/ui/tokens/app_type_scale.dart';
 /// Type scale of the mobile design system.
 ///
 /// The size getters keep the legacy shadcn names and metrics in every design;
-/// only their family follows the design's font. The role getters ([title],
+/// only their family follows the active font choice. The role getters ([title],
 /// [ui], [caption] and so on) carry each design's metrics from [scale], so
 /// components read roles and never branch on the design. Styles carry no
 /// colour; components apply `AppColorTokens` roles. Text scaling comes from
@@ -90,4 +91,19 @@ class AppTypography {
 
   @override
   int get hashCode => Object.hash(fontFamily, monoFamily, scale);
+}
+
+/// App-wide typography when Appearance specifies a font family.
+class AppTypographyTheme extends ThemeExtension<AppTypographyTheme> {
+  const AppTypographyTheme(this.typography);
+
+  final AppTypography typography;
+
+  @override
+  AppTypographyTheme copyWith({AppTypography? typography}) =>
+      AppTypographyTheme(typography ?? this.typography);
+
+  @override
+  AppTypographyTheme lerp(AppTypographyTheme? other, double t) =>
+      t < 0.5 ? this : other ?? this;
 }

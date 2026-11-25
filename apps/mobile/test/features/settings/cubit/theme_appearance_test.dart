@@ -147,6 +147,37 @@ void main() {
       expect(AppearanceSettings.decode(_aurora.encode()), _aurora);
     });
 
+    test('round-trips the text font and size', () {
+      for (final font in AppTextFont.values) {
+        final appearance = _aurora.copyWith(textFont: font, textScale: 1.25);
+        final decoded = AppearanceSettings.decode(appearance.encode());
+        expect(decoded, appearance);
+        expect(decoded.textFont, font);
+        expect(decoded.textScale, 1.25);
+      }
+    });
+
+    test('defaults legacy and malformed text settings', () {
+      final legacy = AppearanceSettings.decode('{"theme":"aurora"}');
+      expect(legacy.theme, AppearanceThemeId.aurora);
+      expect(legacy.textFont, AppTextFont.interfaceDefault);
+      expect(legacy.textScale, 1);
+
+      for (final invalid in [null, '1.25', double.nan, double.infinity]) {
+        final decoded = AppearanceSettings.fromJson({
+          'textFont': 'unknown-font',
+          'textScale': invalid,
+        });
+        expect(decoded.textFont, AppTextFont.interfaceDefault);
+        expect(decoded.textScale, 1);
+      }
+    });
+
+    test('clamps numeric text sizes to the supported range', () {
+      expect(AppearanceSettings.decode('{"textScale":0}').textScale, 0.85);
+      expect(AppearanceSettings.decode('{"textScale":3}').textScale, 1.4);
+    });
+
     test('malformed payloads fall back to defaults', () {
       for (final raw in [null, '', 'not json', '[1,2]', '"text"']) {
         expect(AppearanceSettings.decode(raw), const AppearanceSettings());

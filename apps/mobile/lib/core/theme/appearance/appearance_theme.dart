@@ -11,21 +11,30 @@ import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_theme.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_typography.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Derives app-wide shad and Material themes from [AppearanceSettings].
 ///
-/// Classic dark with the neutral accent and a solid background returns the
-/// original [MobileShadTheme] and [AppTheme] instances. Every other choice,
-/// including the default Classic light (an iOS-style grouped page with white
-/// cards), derives a scheme whose text and role colours meet WCAG AA against
-/// the theme's worst-case background blend.
+/// The base Classic dark palette uses the original [MobileShadTheme] and
+/// [AppTheme] colours. Other palettes derive roles with WCAG AA contrast
+/// against the theme's worst-case background blend.
 abstract final class AppearanceTheme {
   static final _shadCache =
-      <(AppearanceSettings, Brightness), shad.ThemeData>{};
+      <(AppearanceSettings, AppTextFont, Brightness), shad.ThemeData>{};
   static final _materialCache =
       <(AppearanceSettings, Brightness), material.ThemeData>{};
-  static final _sorbetCache = <(SorbetTheme, Brightness), shad.ThemeData>{};
+  static final _sorbetCache =
+      <(SorbetTheme, AppTextFont, Brightness), shad.ThemeData>{};
+  static final _materialFontCache =
+      <
+        (AppearanceSettings?, SorbetTheme?, AppTextFont, Brightness),
+        material.ThemeData
+      >{};
+
+  static String? interfaceFontFamily(SorbetTheme? sorbet) => sorbet == null
+      ? const AppTypography().fontFamily
+      : SorbetAppTheme.fontFamily(sorbet.font);
 
   static bool _usesBaseScheme(AppearanceSettings settings, Brightness b) =>
       b == Brightness.dark &&
@@ -38,13 +47,21 @@ abstract final class AppearanceTheme {
     final base = b == Brightness.dark
         ? MobileShadTheme.dark
         : MobileShadTheme.light;
-    if (_usesBaseScheme(settings, b)) return base;
-    final key = (_colorKey(settings), b);
-    return _remember(
-      _shadCache,
-      key,
-      () => base.copyWith(colorScheme: () => colorScheme(settings, b)),
-    );
+    final useBase = _usesBaseScheme(settings, b);
+    final font = settings.textFont;
+    if (useBase && font == AppTextFont.interfaceDefault) return base;
+    return _remember(_shadCache, (_colorKey(settings), font, b), () {
+      final theme = useBase
+          ? base
+          : base.copyWith(colorScheme: () => colorScheme(settings, b));
+      return font == AppTextFont.interfaceDefault
+          ? theme
+          : theme.copyWith(
+              typography: () => theme.typography.copyWith(
+                sans: () => TextStyle(fontFamily: font.resolveFamily(null)),
+              ),
+            );
+    });
   }
 
   /// The app's shad theme: [shadTheme] itself without [sorbet], otherwise
@@ -56,13 +73,15 @@ abstract final class AppearanceTheme {
     Brightness b,
   ) {
     if (sorbet == null) return shadTheme(settings, b);
-    return _remember(_sorbetCache, (sorbet, b), () {
+    return _remember(_sorbetCache, (sorbet, settings.textFont, b), () {
       final base = b == Brightness.dark
           ? MobileShadTheme.dark
           : MobileShadTheme.light;
       final roles = SorbetAppTheme.colorTokens(sorbet, b);
       final hues = SorbetPalettes.hues(sorbet.preset, b);
-      final family = SorbetAppTheme.fontFamily(sorbet.font);
+      final family = settings.textFont.resolveFamily(
+        interfaceFontFamily(sorbet),
+      );
       return base.copyWith(
         colorScheme: () => base.colorScheme.copyWith(
           background: () => roles.background,
@@ -99,6 +118,52 @@ abstract final class AppearanceTheme {
   }
 
   static material.ThemeData materialTheme(
+    AppearanceSettings settings,
+    Brightness b,
+  ) => materialThemeFor(settings, null, b);
+
+  static material.ThemeData materialThemeFor(
+    AppearanceSettings settings,
+    SorbetTheme? sorbet,
+    Brightness b,
+  ) {
+    final font = settings.textFont;
+    final base = sorbet == null
+        ? _classicMaterialTheme(settings, b)
+        : SorbetAppTheme.materialTheme(
+            font == AppTextFont.system
+                ? sorbet.copyWith(font: SorbetFont.system)
+                : sorbet,
+            b,
+          );
+    if (font == AppTextFont.interfaceDefault) return base;
+    final key = (sorbet == null ? _colorKey(settings) : null, sorbet, font, b);
+    return _remember(_materialFontCache, key, () {
+      final family = font.resolveFamily(null);
+      final defaults =
+          base.extension<SorbetTokens>()?.typography ?? const AppTypography();
+      return base.copyWith(
+        textTheme: family == null
+            ? null
+            : base.textTheme.apply(fontFamily: family),
+        primaryTextTheme: family == null
+            ? null
+            : base.primaryTextTheme.apply(fontFamily: family),
+        extensions: [
+          ...base.extensions.values,
+          AppTypographyTheme(
+            AppTypography(
+              fontFamily: family,
+              monoFamily: defaults.monoFamily,
+              scale: defaults.scale,
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  static material.ThemeData _classicMaterialTheme(
     AppearanceSettings settings,
     Brightness b,
   ) {
@@ -251,8 +316,7 @@ abstract final class AppearanceTheme {
     dark: AppColors.textPrimaryLight,
   );
 
-  /// Colour-affecting fields only; sliders and motion do not change the
-  /// theme objects, which keeps theme identity stable while they move.
+  /// Only the fields that determine the Classic palette.
   static AppearanceSettings _colorKey(AppearanceSettings s) =>
       AppearanceSettings(
         theme: s.theme,

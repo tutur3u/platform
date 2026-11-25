@@ -71,10 +71,14 @@ class AppTokens {
     final interface =
         theme.extension<AppInterfaceTokens>() ?? AppInterfaceTokens.standard;
     final sorbet = theme.extension<SorbetTokens>();
+    final typography =
+        theme.extension<AppTypographyTheme>()?.typography ??
+        sorbet?.typography ??
+        _typography;
     if (sorbet == null) {
       return AppTokens._(
         colors,
-        _typography,
+        typography,
         interface,
         AppShapes.classic(interface, colors),
         AppDepth.classic(colors),
@@ -83,7 +87,7 @@ class AppTokens {
     }
     return AppTokens._(
       colors,
-      sorbet.typography,
+      typography,
       interface,
       AppShapes.sorbet(sorbet, colors),
       AppDepth.sorbet(sorbet),

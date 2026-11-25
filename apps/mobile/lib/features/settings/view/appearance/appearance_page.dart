@@ -20,6 +20,7 @@ import 'package:mobile/features/settings/view/appearance/appearance_labels.dart'
 import 'package:mobile/features/settings/view/appearance/appearance_pickers.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_preview.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_sorbet_section.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_text_section.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_theme_gallery.dart';
 import 'package:mobile/features/settings/view/settings_profile_parts.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
@@ -27,8 +28,8 @@ import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Settings → Appearance: mode, curated themes, accent, background style,
-/// surface tuning and the interface group. Every choice applies instantly
-/// and follows the signed-in account unless this device overrides it.
+/// surface tuning, typography and the interface group. Every choice applies
+/// instantly and follows the signed-in account unless this device overrides it.
 class AppearancePage extends StatefulWidget {
   const AppearancePage({this.highlight, super.key});
 
@@ -131,6 +132,23 @@ class _AppearancePageState extends State<AppearancePage> {
                 onSelected: (mode) => choose(
                   () =>
                       cubit.setThemeMode(ThemeCubit.parseThemeMode(mode.name)),
+                ),
+              ),
+            ),
+            section(
+              l10n.appearanceTextTitle,
+              AppearanceTextSection(
+                settings: settings,
+                sorbet: sorbet?.state.active,
+                onFontChanged: (font) => choose(
+                  () => cubit.setAppearance(
+                    cubit.state.appearance.copyWith(textFont: font),
+                  ),
+                ),
+                onScaleChanged: (scale) => choose(
+                  () => cubit.setAppearance(
+                    cubit.state.appearance.copyWith(textScale: scale),
+                  ),
                 ),
               ),
             ),

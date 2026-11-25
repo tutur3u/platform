@@ -60,6 +60,14 @@ extension AppearanceLabels on AppLocalizations {
     AppCornerStyle.square => appearanceCornersSquare,
   };
 
+  String appearanceTextFont(AppTextFont font) => switch (font) {
+    AppTextFont.interfaceDefault => appearanceTextFontInterfaceDefault,
+    AppTextFont.notoSans => 'Noto Sans',
+    AppTextFont.nunito => 'Nunito',
+    AppTextFont.jetBrainsMono => 'JetBrains Mono',
+    AppTextFont.system => settingsThemeSystem,
+  };
+
   String sorbetPreset(SorbetPreset preset) => switch (preset) {
     SorbetPreset.sorbet => appearanceSorbetPresetSorbet,
     SorbetPreset.matcha => appearanceSorbetPresetMatcha,

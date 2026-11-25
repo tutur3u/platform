@@ -27,7 +27,6 @@ import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/sync/smart_sync_runtime.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
 import 'package:mobile/core/ui/components/app_alert.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
@@ -650,7 +649,7 @@ class _AppState extends State<App> {
                       final authIdentity = context.select<AuthCubit, String?>(
                         (cubit) => cubit.state.user?.id,
                       );
-                      return SorbetAppearanceHost(
+                      return AppAppearanceHost(
                         appearance: appearance,
                         sorbet: sorbet,
                         child: ShadcnMaterialBridge(

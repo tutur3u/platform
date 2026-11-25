@@ -218,6 +218,45 @@ void registerSettingsAppearanceShellChecks() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('text settings preview fonts and persist selection and size', (
+    tester,
+  ) async {
+    final h = await _pumpAppearance(tester, const AppearanceSettings());
+    await _tapRow(tester, const ValueKey('settings-appearance-row'));
+
+    Future<void> tapControl(Finder control) async {
+      await tester.scrollUntilVisible(
+        control,
+        160,
+        scrollable: _appearanceScrollable,
+      );
+      await _settle(tester);
+      await tester.tap(control);
+      await _settle(tester);
+    }
+
+    await tapControl(find.text('Font family'));
+    final option = find.text('JetBrains Mono');
+    expect(tester.widget<Text>(option).style?.fontFamily, 'JetBrainsMono');
+    await tester.tap(option);
+    await _settle(tester);
+    expect(h.theme.state.appearance.textFont, AppTextFont.jetBrainsMono);
+
+    await tapControl(find.byTooltip('Increase text size'));
+    final prefs = await SharedPreferences.getInstance();
+    AppearanceSettings stored() =>
+        AppearanceSettings.decode(prefs.getString('appearance-v1'));
+
+    expect(h.theme.state.appearance.textScale, 1.05);
+    expect(stored(), h.theme.state.appearance);
+    expect(find.text('105%'), findsOneWidget);
+
+    await tapControl(find.text('Reset text size'));
+    expect(stored().textScale, 1);
+    expect(stored().textFont, AppTextFont.jetBrainsMono);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final reduced in [false, true]) {
     testWidgets('animated blobs ${reduced ? 'stay still' : 'drift'} '
         '${reduced ? 'with' : 'without'} reduced motion', (tester) async {

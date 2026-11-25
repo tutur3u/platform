@@ -33,10 +33,12 @@ class ShadcnMaterialBridge extends StatelessWidget {
     final appearance = AppearanceScope.maybeOf(context)?.settings;
     final sorbet = SorbetScope.maybeOf(context);
 
-    final base = sorbet != null
-        ? SorbetAppTheme.materialTheme(sorbet, theme.brightness)
-        : appearance != null
-        ? AppearanceTheme.materialTheme(appearance, theme.brightness)
+    final base = appearance != null || sorbet != null
+        ? AppearanceTheme.materialThemeFor(
+            appearance ?? const AppearanceSettings(),
+            sorbet,
+            theme.brightness,
+          )
         : theme.brightness == Brightness.light
         ? AppTheme.light
         : AppTheme.dark;

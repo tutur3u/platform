@@ -33,6 +33,23 @@ enum AppearanceAccentId {
 /// How the app-wide page background is painted.
 enum AppearanceBackgroundStyle { solid, gradient, blobs }
 
+/// Font family for app text, with the active design's family as the default.
+enum AppTextFont {
+  interfaceDefault,
+  notoSans,
+  nunito,
+  jetBrainsMono,
+  system;
+
+  String? resolveFamily(String? interfaceFamily) => switch (this) {
+    interfaceDefault => interfaceFamily,
+    notoSans => 'NotoSans',
+    nunito => 'Nunito',
+    jetBrainsMono => 'JetBrainsMono',
+    system => null,
+  };
+}
+
 /// Persisted appearance customisation, excluding light/dark/system mode which
 /// keeps its original `theme-mode` preference for backward compatibility.
 class AppearanceSettings extends Equatable {
@@ -48,6 +65,8 @@ class AppearanceSettings extends Equatable {
     this.density = AppDensity.comfortable,
     this.corners = AppCornerStyle.rounded,
     this.reduceMotion = false,
+    this.textFont = AppTextFont.interfaceDefault,
+    this.textScale = defaultTextScale,
   });
 
   /// Decodes a stored payload. Unknown or malformed values fall back to the
@@ -112,6 +131,12 @@ class AppearanceSettings extends Equatable {
         AppCornerStyle.rounded,
       ),
       reduceMotion: json['reduceMotion'] == true,
+      textFont: pick(
+        AppTextFont.values,
+        json['textFont'],
+        AppTextFont.interfaceDefault,
+      ),
+      textScale: _normalizeTextScale(json['textScale']),
     );
   }
 
@@ -119,6 +144,14 @@ class AppearanceSettings extends Equatable {
   static const defaultSoftness = 0.6;
   static const defaultSurfaceOpacity = 0.78;
   static const minSurfaceOpacity = 0.4;
+  static const defaultTextScale = 1.0;
+  static const minTextScale = 0.85;
+  static const maxTextScale = 1.4;
+
+  static double _normalizeTextScale(Object? value) =>
+      value is num && value.isFinite
+      ? value.clamp(minTextScale, maxTextScale).toDouble()
+      : defaultTextScale;
 
   final AppearanceThemeId theme;
   final AppearanceAccentId accent;
@@ -149,6 +182,8 @@ class AppearanceSettings extends Equatable {
   /// Always reduce motion, even when the system setting is off. When false
   /// the system setting decides.
   final bool reduceMotion;
+  final AppTextFont textFont;
+  final double textScale;
 
   /// The interface choices as a theme extension.
   AppInterfaceTokens get interfaceTokens => AppInterfaceTokens(
@@ -175,6 +210,8 @@ class AppearanceSettings extends Equatable {
     AppDensity? density,
     AppCornerStyle? corners,
     bool? reduceMotion,
+    AppTextFont? textFont,
+    double? textScale,
   }) => AppearanceSettings(
     theme: theme ?? this.theme,
     accent: accent ?? this.accent,
@@ -189,6 +226,8 @@ class AppearanceSettings extends Equatable {
     density: density ?? this.density,
     corners: corners ?? this.corners,
     reduceMotion: reduceMotion ?? this.reduceMotion,
+    textFont: textFont ?? this.textFont,
+    textScale: _normalizeTextScale(textScale ?? this.textScale),
   );
 
   Map<String, Object> toJson() => {
@@ -204,6 +243,8 @@ class AppearanceSettings extends Equatable {
     'density': density.name,
     'corners': corners.name,
     'reduceMotion': reduceMotion,
+    'textFont': textFont.name,
+    'textScale': textScale,
   };
 
   String encode() => jsonEncode(toJson());
@@ -221,5 +262,7 @@ class AppearanceSettings extends Equatable {
     density,
     corners,
     reduceMotion,
+    textFont,
+    textScale,
   ];
 }
