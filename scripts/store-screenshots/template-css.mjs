@@ -24,6 +24,7 @@ body{position:relative;font-family:Nunito,ui-rounded,system-ui,sans-serif;color:
 .artwork[data-feature="finance"]::before{background:repeating-linear-gradient(0deg,transparent 0 9%,#a4d4ad 9% 9.4%);opacity:.7}
 .artwork[data-feature="habits"]::before{inset:37% -18% -10%;background:radial-gradient(circle,#562a80 0 16%,transparent 17%) 0 0/8vw 8vw;opacity:.34}
 .artwork[data-feature="notes"]::before{inset:40% -7% -10% 3%;transform:rotate(9deg);background:repeating-linear-gradient(0deg,#f3c7c7 0 7%,#d590a2 7% 7.2%);box-shadow:1.1vw -1.1vw #a64366}
+@media (min-aspect-ratio: 1/1){.artwork[data-feature="notes"]::before{left:36%}}
 .artwork[data-feature="dashboard"] .headline,.artwork[data-feature="assistant"] .headline,.artwork[data-feature="notes"] .headline{font-family:Georgia,'Times New Roman',serif;font-weight:700}
 .artwork .caption{z-index:4}
 .artwork .card{box-shadow:0 .8vw 2.8vw #120d2a38}

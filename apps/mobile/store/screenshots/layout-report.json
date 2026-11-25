@@ -3264,7 +3264,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "bc7a72121c3bb3d5ca1e5a7da6122c5f82c6c04f3b838280bb10be88d95ca303"
+      "sha256": "62cd50321f6a55a68d7a574d762c132a678e934cf26761a11e8814f9e3f7d87b"
     },
     "macos/mac/vi/01-dashboard.jpg": {
       "canvas": {
@@ -3456,7 +3456,7 @@
         "fontSize": 119,
         "lines": 2
       },
-      "sha256": "279e39fea6601f7be56ce32f797ce23de8150092caa49a8348b4611091a8dee9"
+      "sha256": "c1ca5b2b6d74e55f85a8e26cf61a4f19276ba318594d04effe7103c3bf3da8b2"
     },
     "windows/desktop/en/01-dashboard.png": {
       "canvas": {
@@ -3648,7 +3648,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "c39603e93f8dcc50c64c50ddaa6dc4e11703248de1058e8973889ad9fc20cb0a"
+      "sha256": "5987db49d6fdb427cda3f1891794e5d6efe42ab5afc2d15018b30bfccb663b6e"
     },
     "windows/desktop/vi/01-dashboard.png": {
       "canvas": {
@@ -3840,7 +3840,7 @@
         "fontSize": 79,
         "lines": 2
       },
-      "sha256": "a01c8339f6ffa12bf6a113928f67f19baea4104f974a3a15528f4c14e814d2fe"
+      "sha256": "b9b41cb2aa385ef566237fb98c4ee28267c4e5e141311c8b91578a8d3b9e81f7"
     }
   }
 }
