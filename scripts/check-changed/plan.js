@@ -516,6 +516,18 @@ function planChecks(changes, context) {
   const mobileFiles = present.filter((file) => file.startsWith(MOBILE_PREFIX));
   if (all.some((file) => file.startsWith(MOBILE_PREFIX))) {
     const cwd = 'apps/mobile';
+    // Without resolved packages the formatter cannot read the project's
+    // analysis_options include and formats with defaults, which reports drift
+    // that is not there. Resolve them before any Dart step.
+    if (!exists('apps/mobile/.dart_tool/package_config.json')) {
+      steps.push({
+        id: 'flutter-pub-get',
+        label: 'flutter pub get',
+        command: 'flutter',
+        args: ['pub', 'get'],
+        cwd,
+      });
+    }
     if (any(/^apps\/mobile\/lib\/l10n\/arb\/.*\.arb$/)) {
       steps.push({
         id: 'flutter-gen-l10n',

@@ -302,7 +302,7 @@ test('mobile changes run gen-l10n first, dart format and flutter analyze', () =>
       'apps/mobile/lib/features/a.g.dart',
       'apps/mobile/lib/l10n/gen/app_localizations.dart'
     ),
-    context()
+    context(['apps/mobile/.dart_tool/package_config.json'])
   );
   const mobile = plan.steps.filter((step) => step.cwd === 'apps/mobile');
   assert.deepEqual(
@@ -314,6 +314,19 @@ test('mobile changes run gen-l10n first, dart format and flutter analyze', () =>
   assert.equal(ids(plan).includes('oxfmt'), false);
   assert.ok(ids(plan).includes('mobile-api-mappings'));
   assert.ok(ids(plan).includes('mobile-shadcn-ratchet'));
+});
+
+test('unresolved mobile packages are fetched before dart format runs', () => {
+  const plan = planChecks(
+    changed('apps/mobile/lib/features/a.dart'),
+    context()
+  );
+  const mobile = plan.steps.filter((step) => step.cwd === 'apps/mobile');
+  assert.deepEqual(
+    mobile.map((step) => step.id),
+    ['flutter-pub-get', 'dart-format', 'flutter-analyze']
+  );
+  assert.deepEqual(mobile[0].args, ['pub', 'get']);
 });
 
 test('web Lucide version changes run the mobile icon sync check', () => {
