@@ -140,8 +140,9 @@ and at least 1/2000 of a viewport. Once the budget is spent, older elements are
 not drawn in that frame, but stay on the board, reappear when the view zooms out
 or moves, and can still be selected. This limits the drawing work for a dense
 stack zoomed in; it is not a guarantee of frame time: the reviewer measured
-about 0.9 s per frame in software Chromium at a device pixel ratio of three for
-its worst case, thick one-point freehand strokes. The charge is approximate and
+up to about 1.2 s per frame in software Chromium at a device pixel ratio of
+three for its worst case, elements rotated by 45 degrees (about 0.9 s for thick
+one-point freehand strokes). The charge is approximate and
 errs high (a thin diagonal line costs the bounding box of its rotated, padded
 canvas). Ordinary boards fit: 80 diagonal lines or 80 zig-zag strokes at 200%
 count about 35 and 51 viewports. Past the budget the oldest content is hidden;

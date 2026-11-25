@@ -107,8 +107,12 @@ The patch changes the element canvas cache in both shipped builds
   ordinary shapes in software Chromium at a device pixel ratio of three, so
   64 viewports is about 230 ms there. The cost per viewport is not uniform:
   one-point freehand strokes of width 16, whose canvases are mostly padding,
-  measured about 0.9 s per frame at 64 viewports in the same setup. That is
-  the known worst case. Lowering the budget to 16 would bring it near 0.23 s
+  measured about 0.9 s per frame at 64 viewports in the same setup, and any
+  canvas rotated by 45 degrees (diagonal strokes, lines, diamonds, rotated
+  rectangles) about 1.15 s, because rotated drawing costs more per pixel in
+  software. About 1.2 s per frame is the known worst case; Chromium with a
+  GPU and WebKit draw the same scenes at about 33 ms. Lowering the budget to
+  16 would bring the worst case near 0.3 s
   but hide content on ordinary boards (80 zig-zag strokes at 200% count about
   51 viewports), so the budget stays at 64 while guest drawing is off. They
   also measured 20,000 tiny shapes at 100% drawing in about 70 ms a frame
