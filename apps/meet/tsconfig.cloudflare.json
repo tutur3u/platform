@@ -74,7 +74,7 @@
     "../../packages/realtime/src/meet/board-sync-access.ts",
     "../../packages/realtime/src/meet/board-sync-actor.ts",
     "../../packages/realtime/src/meet/board-sync-core.ts",
-    "../../packages/realtime/src/meet/board-sync-fill.ts",
+    "../../packages/realtime/src/meet/board-sync-cost.ts",
     "../../packages/realtime/src/meet/board-sync-flush.ts",
     "../../packages/realtime/src/meet/board-sync-guest-element.ts",
     "../../packages/realtime/src/meet/board-sync-guest.ts",

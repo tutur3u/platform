@@ -1,5 +1,9 @@
 import { guestElementSchema } from './board-sync-guest-element';
-import type { BoardChange, BoardElement } from './board-sync-schema';
+import {
+  BOARD_GUEST_LIMITS,
+  type BoardChange,
+  type BoardElement,
+} from './board-sync-schema';
 
 /** A backslash, an ASCII control character or DEL. */
 const hasUnsafeCharacter = (value: string) =>
@@ -80,4 +84,23 @@ export function chargeBoardOpen(
   }
   windows.set(userId, { count: current.count + 1, windowAt: current.windowAt });
   return true;
+}
+
+/**
+ * A guest connection's churn bucket after refilling to `now`. A connection
+ * with no bucket yet (a new one, or one accepted before buckets existed)
+ * starts full.
+ */
+export function refillChurnBudget(
+  bucket: { tokens?: number; tokensAt?: number },
+  now: number
+) {
+  const { churnCapacity, churnRefillPerSecond } = BOARD_GUEST_LIMITS;
+  if (bucket.tokens === undefined || bucket.tokensAt === undefined)
+    return churnCapacity;
+  const elapsed = Math.max(0, now - bucket.tokensAt) / 1000;
+  return Math.min(
+    churnCapacity,
+    bucket.tokens + elapsed * churnRefillPerSecond
+  );
 }

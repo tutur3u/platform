@@ -13,6 +13,7 @@ import {
 } from './board-sync-flush';
 import {
   type BoardScene,
+  type GuestWriteLimits,
   applyBoundedChanges,
   canonicalScene,
   chunkElements,
@@ -357,18 +358,15 @@ export function createBoardRoom(deps: BoardRoomDeps) {
     snapshotMeta: () => meta,
     /**
      * Applies an accepted batch; returns what changed, for relay, and what was
-     * refused. `maxFillLines` caps the scene's fill lines for guest writes.
+     * refused. Guest writes pass their scene cost cap and churn budget.
      */
-    async edit(
-      changes: readonly BoardChange[],
-      { maxFillLines }: { maxFillLines?: number } = {}
-    ) {
+    async edit(changes: readonly BoardChange[], limits: GuestWriteLimits = {}) {
       const { applied, rejected } = applyBoundedChanges(
         scene,
         tracker,
         changes,
         BOARD_LIMITS.maxSnapshotBytes,
-        maxFillLines
+        limits
       );
       if (applied.length === 0) return { applied, rejected };
       for (const { element } of applied) dirty.add(element.id);

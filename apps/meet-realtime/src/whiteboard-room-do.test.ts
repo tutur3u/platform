@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import { boardActorId } from '../../../packages/realtime/src/meet/board-sync-actor';
+import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
 import {
   BOARD_GUEST_LIMITS,
   BOARD_LIMITS,
@@ -30,6 +31,9 @@ const ticket = (over: Partial<BoardTicket> = {}): BoardTicket => ({
   exp: Math.floor(now / 1000) + 120,
   ...over,
 });
+/** A complete rectangle, as a guest's editor sends it. */
+const full = (id: string, over: Record<string, unknown> = {}) =>
+  guestElement('rectangle', { id, ...over });
 const rect = (id: string, version = 1) => ({
   id,
   type: 'rectangle',
@@ -501,7 +505,7 @@ test('stores only known fields and safe links from guests', async () => {
   const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
   const peer = await open(f, { userId: 'u2' });
   const element = (id: string, link: string) => ({
-    ...rect(id),
+    ...full(id),
     link,
     customData: { tracker: true },
     sneaky: 'x',
@@ -543,11 +547,11 @@ test('refuses guest elements whose known fields have the wrong type', async () =
     JSON.stringify({
       type: 'elements',
       changes: [
-        { type: 'insert', element: { ...rect('groups'), groupIds: {} } },
-        { type: 'insert', element: { ...rect('points'), points: 'x' } },
-        { type: 'insert', element: { ...rect('font'), fontFamily: {} } },
-        { type: 'insert', element: { ...rect('round'), roundness: 1 } },
-        { type: 'insert', element: rect('fine') },
+        { type: 'insert', element: { ...full('groups'), groupIds: {} } },
+        { type: 'insert', element: { ...full('points'), points: 'x' } },
+        { type: 'insert', element: { ...full('font'), fontFamily: {} } },
+        { type: 'insert', element: { ...full('round'), roundness: 1 } },
+        { type: 'insert', element: full('fine') },
       ],
     })
   );
@@ -588,22 +592,27 @@ test('the stop fence keeps the guest open windows out of storage', async () => {
   assert.equal(f.values.has('guest-opens'), false);
 });
 
-test('refuses guest fills past the scene budget but relays members', async () => {
+/** About 4,775 render cost: a large hachure fill with a thin stroke. */
+const heavy = (id: string, version = 1) =>
+  full(id, {
+    version,
+    width: 6000,
+    height: 6000,
+    strokeWidth: 0.5,
+    fillStyle: 'hachure',
+    backgroundColor: '#ffc9c9',
+  });
+
+test('cuts a costly guest batch short but relays members', async () => {
   const f = fixture();
   const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
   const member = await open(f, { userId: 'u2' });
-  // About 4,243 fill lines each; 60 of them pass the 200,000 scene budget.
+  // 60 shapes of about 4,775 each pass the guest's churn bucket and the
+  // 200,000 scene budget; board-sync-cost.test.ts covers each budget alone.
   const fills = (prefix: string) =>
     Array.from({ length: 60 }, (_, i) => ({
       type: 'insert',
-      element: {
-        ...rect(`${prefix}${i}`),
-        width: 6000,
-        height: 6000,
-        strokeWidth: 0.5,
-        fillStyle: 'hachure',
-        backgroundColor: '#ffc9c9',
-      },
+      element: heavy(`${prefix}${i}`),
     }));
   await f.the.webSocketMessage(
     guest as any,
@@ -618,4 +627,39 @@ test('refuses guest fills past the scene budget but relays members', async () =>
     JSON.stringify({ type: 'elements', changes: fills('m') })
   );
   assert.equal(guest.sent.at(-1).changes.length, 60);
+});
+
+test('spends a guest churn bucket on every re-sent shape, across eviction', async () => {
+  const f = fixture();
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const send = (the: typeof f.the, version: number) =>
+    the.webSocketMessage(
+      guest as any,
+      JSON.stringify({
+        type: 'elements',
+        changes: [{ type: 'insert', element: heavy('same', version) }],
+      })
+    );
+  // 40,000 tokens buy eight copies of a 4,775 shape.
+  for (let version = 1; version <= 8; version++) await send(f.the, version);
+  assert.equal(
+    guest.sent.some((m) => m.type === 'rejected'),
+    false
+  );
+  await send(f.the, 9);
+  assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
+  // The bucket rides in the socket attachment, so an eviction keeps it.
+  const restored = f.restart();
+  guest.sent.length = 0;
+  await send(restored, 10);
+  assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
+  // Two seconds refill 8,000 tokens: one more copy applies.
+  now += 2000;
+  guest.sent.length = 0;
+  await send(restored, 11);
+  assert.equal(
+    guest.sent.some((m) => m.type === 'rejected'),
+    false
+  );
+  assert.equal(guest.closed, null);
 });

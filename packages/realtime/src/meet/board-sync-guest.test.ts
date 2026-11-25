@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { boardActorId } from './board-sync-actor';
+import { elementRenderCost } from './board-sync-cost';
 import {
-  estimatedFillLines,
-  MAX_GUEST_FILL_LINES,
+  MAX_GUEST_ELEMENT_COST,
+  MAX_GUEST_TEXT_LINES,
 } from './board-sync-guest-element';
+import { guestElement, withoutField } from './board-sync-guest.fixtures';
 import {
   type BoardOpenWindows,
   chargeBoardOpen,
@@ -42,27 +44,19 @@ describe('guest board links', () => {
   });
 
   it('drops unknown fields and unsafe links from guest elements', () => {
-    const element = {
-      id: 'a',
-      type: 'rectangle',
-      version: 1,
-      versionNonce: 1,
-      x: 4,
+    const element = guestElement('rectangle', {
       link: 'javascript:alert(1)',
       customData: { a: 1 },
-      __proto__hack: true,
-    } as unknown as BoardElement;
-    expect(sanitizeGuestElement(element)).toEqual({
-      id: 'a',
-      type: 'rectangle',
-      version: 1,
-      versionNonce: 1,
-      x: 4,
-      link: null,
+      points: [[0, 0]],
     });
-    expect(
-      sanitizeGuestElement({ ...element, link: '/ok' } as BoardElement).link
-    ).toBe('/ok');
+    const kept = sanitizeGuestElement(element);
+    expect(kept).not.toBeNull();
+    expect(kept!.link).toBeNull();
+    // A field another type uses is dropped too.
+    expect('customData' in kept! || 'points' in kept!).toBe(false);
+    const safe = sanitizeGuestElement({ ...element, link: '/ok' });
+    expect(safe).not.toBeNull();
+    expect(safe!.link).toBe('/ok');
   });
 });
 
@@ -96,32 +90,100 @@ describe('board actor ids', () => {
   });
 });
 
-describe('guest element types', () => {
-  const base = {
-    id: 'a',
-    type: 'arrow',
-    version: 2,
-    versionNonce: 7,
-    x: 1,
-    y: 2,
-    groupIds: ['g1'],
-    points: [
-      [0, 0],
-      [10, 5],
-    ],
-    boundElements: [{ id: 't', type: 'text' }],
-    roundness: { type: 2 },
-    fontFamily: 5,
-    startBinding: { elementId: 'b', focus: 0, gap: 4 },
-    endArrowhead: 'arrow',
-    strokeStyle: 'dashed',
-    opacity: 100,
-  };
+describe('guest element required fields', () => {
+  it.each([
+    'rectangle',
+    'diamond',
+    'ellipse',
+    'frame',
+    'line',
+    'arrow',
+    'freedraw',
+    'text',
+  ])('keeps a complete %s', (type) => {
+    expect(sanitizeGuestElement(guestElement(type))).not.toBeNull();
+  });
 
-  it('keeps a well-formed element', () => {
-    expect(sanitizeGuestElement(base as unknown as BoardElement)).toEqual(
-      base
-    );
+  const shared = [
+    'x',
+    'y',
+    'width',
+    'height',
+    'angle',
+    'strokeWidth',
+    'roughness',
+    'opacity',
+    'seed',
+    'groupIds',
+    'strokeColor',
+    'backgroundColor',
+    'fillStyle',
+    'strokeStyle',
+  ];
+  it.each(
+    ['rectangle', 'freedraw', 'text'].flatMap((type) =>
+      shared.map((field) => [type, field] as const)
+    )
+  )('refuses a %s without %s', (type, field) => {
+    expect(
+      sanitizeGuestElement(withoutField(guestElement(type), field))
+    ).toBeNull();
+  });
+
+  it.each([
+    ['text', 'text'],
+    ['text', 'fontSize'],
+    ['text', 'fontFamily'],
+    ['text', 'lineHeight'],
+    ['line', 'points'],
+    ['arrow', 'points'],
+    ['freedraw', 'points'],
+  ])('refuses a %s without %s', (type, field) => {
+    expect(
+      sanitizeGuestElement(withoutField(guestElement(type), field))
+    ).toBeNull();
+  });
+
+  it('needs two points on a line or arrow and one on a freehand stroke', () => {
+    const one = { points: [[0, 0]] };
+    expect(sanitizeGuestElement(guestElement('line', one))).toBeNull();
+    expect(sanitizeGuestElement(guestElement('arrow', one))).toBeNull();
+    expect(sanitizeGuestElement(guestElement('freedraw', one))).not.toBeNull();
+    expect(
+      sanitizeGuestElement(guestElement('freedraw', { points: [] }))
+    ).toBeNull();
+  });
+
+  it('refuses a rectangle or diamond without a height', () => {
+    for (const type of ['rectangle', 'diamond'])
+      expect(
+        sanitizeGuestElement(withoutField(guestElement(type), 'height'))
+      ).toBeNull();
+  });
+
+  it('caps text at 500 lines', () => {
+    const lines = (count: number) =>
+      guestElement('text', { text: Array(count).fill('a').join('\n') });
+    expect(sanitizeGuestElement(lines(MAX_GUEST_TEXT_LINES))).not.toBeNull();
+    expect(sanitizeGuestElement(lines(MAX_GUEST_TEXT_LINES + 1))).toBeNull();
+  });
+});
+
+describe('guest element types', () => {
+  const arrow = (over: Record<string, unknown> = {}) =>
+    guestElement('arrow', {
+      groupIds: ['g1'],
+      boundElements: [{ id: 't', type: 'text' }],
+      roundness: { type: 2 },
+      startBinding: { elementId: 'b', focus: 0, gap: 4 },
+      endArrowhead: 'arrow',
+      strokeStyle: 'dashed',
+      ...over,
+    });
+  const text = (over: Record<string, unknown>) => guestElement('text', over);
+
+  it('keeps a well-formed element as sent', () => {
+    expect(sanitizeGuestElement(arrow())).toEqual(arrow());
   });
 
   it.each([
@@ -133,34 +195,33 @@ describe('guest element types', () => {
     ['boundElements', 1],
     ['boundElements', [{ id: 't', type: 'image' }]],
     ['roundness', 1],
-    ['fontFamily', {}],
-    ['fontFamily', 1.5],
     ['x', 'NaN'],
     ['opacity', 400],
     ['strokeStyle', 'wavy'],
     ['startBinding', { elementId: 5 }],
-    ['text', 'x'.repeat(20_001)],
     ['link', 7],
   ])('refuses %s set to a confused value', (key, value) => {
-    expect(
-      sanitizeGuestElement({ ...base, [key]: value } as unknown as BoardElement)
-    ).toBeNull();
+    expect(sanitizeGuestElement(arrow({ [key]: value }))).toBeNull();
+  });
+
+  it.each([
+    ['fontFamily', {}],
+    ['fontFamily', 1.5],
+    ['text', 'x'.repeat(20_001)],
+  ])('refuses text %s set to a confused value', (key, value) => {
+    expect(sanitizeGuestElement(text({ [key]: value }))).toBeNull();
   });
 
   it('refuses a points array past ten thousand pairs', () => {
     const points = Array.from({ length: 10_001 }, () => [0, 0]);
-    expect(
-      sanitizeGuestElement({ ...base, points } as unknown as BoardElement)
-    ).toBeNull();
+    expect(sanitizeGuestElement(arrow({ points }))).toBeNull();
   });
 
   it('drops the refused elements of a batch and counts them', () => {
-    const element = (over: object) =>
-      ({ ...base, ...over }) as unknown as BoardElement;
     const result = sanitizeGuestChanges([
-      { type: 'insert', element: element({ id: 'ok' }) },
-      { type: 'insert', element: element({ id: 'bad', groupIds: {} }) },
-      { type: 'update', element: element({ id: 'ok2' }) },
+      { type: 'insert', element: arrow({ id: 'ok' }) },
+      { type: 'insert', element: arrow({ id: 'bad', groupIds: {} }) },
+      { type: 'update', element: arrow({ id: 'ok2' }) },
     ]);
     expect(result.dropped).toBe(1);
     expect(result.changes.map((change) => change.element.id)).toEqual([
@@ -171,75 +232,79 @@ describe('guest element types', () => {
 });
 
 describe('guest element ranges', () => {
-  const rectangle = {
-    id: 'r',
-    type: 'rectangle',
-    version: 1,
-    versionNonce: 1,
-    seed: 1,
-    x: 0,
-    y: 0,
-    width: 200,
-    height: 100,
-    angle: 0,
-    strokeWidth: 2,
-    roughness: 1,
-    opacity: 100,
-    fillStyle: 'hachure',
-    backgroundColor: '#ffc9c9',
-  };
-  const check = (over: object) =>
-    sanitizeGuestElement({ ...rectangle, ...over } as unknown as BoardElement);
+  const filled = { fillStyle: 'hachure', backgroundColor: '#ffc9c9' };
 
   it('refuses a hachure fill that would freeze every viewer', () => {
-    const exploit = { strokeWidth: 0.01, height: 1e9 };
-    expect(check(exploit)).toBeNull();
-    // Even inside every single range, the fill line estimate still refuses.
-    const wide = { strokeWidth: 0.5, width: 1e5, height: 1e5 };
-    expect(estimatedFillLines({ ...rectangle, ...wide })).toBeGreaterThan(
-      MAX_GUEST_FILL_LINES
-    );
-    expect(check(wide)).toBeNull();
-    expect(check({ ...wide, fillStyle: 'solid' })).not.toBeNull();
-    expect(check(rectangle)).not.toBeNull();
+    const exploit = { ...filled, strokeWidth: 0.01, height: 1e9 };
+    expect(sanitizeGuestElement(guestElement('rectangle', exploit))).toBeNull();
+    // Even inside every single range, the render cost still refuses.
+    const wide = guestElement('rectangle', {
+      ...filled,
+      strokeWidth: 0.5,
+      width: 1e5,
+      height: 1e5,
+    });
+    expect(elementRenderCost(wide)).toBeGreaterThan(MAX_GUEST_ELEMENT_COST);
+    expect(sanitizeGuestElement(wide)).toBeNull();
+    expect(
+      sanitizeGuestElement({ ...wide, fillStyle: 'solid' } as typeof wide)
+    ).not.toBeNull();
   });
 
   it.each([
-    ['x', 1e6, 1e6 + 1],
-    ['y', -1e6, -1e6 - 1],
-    ['width', 1e5, 1e5 + 1],
-    ['width', 0, -1],
-    ['height', 1e5, 1e5 + 1],
-    ['strokeWidth', 0.5, 0.49],
-    ['strokeWidth', 64, 65],
-    ['roughness', 5, 6],
-    ['roughness', 0, -1],
-    ['opacity', 0, -1],
-    ['angle', 8 * Math.PI, 8 * Math.PI + 1],
-    ['seed', 2 ** 31, 2 ** 31 + 1],
-    ['version', 0, -1],
-    ['versionNonce', -(2 ** 31), -(2 ** 31) - 1],
-    ['lineHeight', 0.5, 0.4],
-    ['lineHeight', 10, 11],
-    ['fontSize', 1, 0.5],
-    ['fontSize', 2048, 2049],
-    ['roundness', { type: 3, value: 1e5 }, { type: 3, value: 1e5 + 1 }],
-    ['points', [[1e5, -1e5]], [[1e5 + 1, 0]]],
-    ['pressures', [0, 1], [1.5]],
+    ['rectangle', 'x', 1e6, 1e6 + 1],
+    ['rectangle', 'y', -1e6, -1e6 - 1],
+    ['rectangle', 'width', 1e5, 1e5 + 1],
+    ['rectangle', 'width', 0, -1],
+    ['rectangle', 'height', 1e5, 1e5 + 1],
+    ['rectangle', 'strokeWidth', 0.5, 0.49],
+    ['rectangle', 'strokeWidth', 64, 65],
+    ['rectangle', 'roughness', 5, 6],
+    ['rectangle', 'roughness', 0, -1],
+    ['rectangle', 'opacity', 0, -1],
+    ['rectangle', 'angle', 8 * Math.PI, 8 * Math.PI + 1],
+    ['rectangle', 'seed', 2 ** 31, 2 ** 31 + 1],
+    ['rectangle', 'version', 0, -1],
+    ['rectangle', 'versionNonce', -(2 ** 31), -(2 ** 31) - 1],
     [
+      'rectangle',
+      'roundness',
+      { type: 3, value: 1e5 },
+      { type: 3, value: 1e5 + 1 },
+    ],
+    ['text', 'lineHeight', 0.5, 0.4],
+    ['text', 'lineHeight', 10, 11],
+    ['text', 'fontSize', 1, 0.5],
+    ['text', 'fontSize', 2048, 2049],
+    [
+      'line',
+      'points',
+      [
+        [0, 0],
+        [1e5, -1e5],
+      ],
+      [
+        [0, 0],
+        [1e5 + 1, 0],
+      ],
+    ],
+    ['freedraw', 'pressures', [0, 1], [1.5]],
+    [
+      'arrow',
       'startBinding',
       { elementId: 'b', focus: 1, gap: 0, fixedPoint: [0, 1] },
       { elementId: 'b', focus: 1.1, gap: 0 },
     ],
     [
+      'arrow',
       'endBinding',
       { elementId: 'b', fixedPoint: [-1, 2] },
       { elementId: 'b', fixedPoint: [0, 3] },
     ],
-  ])('keeps %s at its bound and refuses it past', (key, edge, past) => {
-    // Keep the fill estimate out of the way of the field under test.
-    const solid = { fillStyle: 'solid' };
-    expect(check({ ...solid, [key]: edge })).not.toBeNull();
-    expect(check({ ...solid, [key]: past })).toBeNull();
+  ])('keeps a %s %s at its bound and refuses it past', (type, key, edge, past) => {
+    const at = (value: unknown) =>
+      sanitizeGuestElement(guestElement(type, { [key]: value }));
+    expect(at(edge)).not.toBeNull();
+    expect(at(past)).toBeNull();
   });
 });

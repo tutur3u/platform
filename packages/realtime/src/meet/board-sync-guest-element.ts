@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { estimatedFillLines } from './board-sync-fill';
-import { BOARD_ELEMENT_TYPES } from './board-sync-schema';
-
-export { estimatedFillLines } from './board-sync-fill';
+import { elementRenderCost } from './board-sync-cost';
 
 // `z.number()` refuses NaN and infinities; every number below also has a
 // range, so no guest value can make a viewer draw without bound.
@@ -17,6 +14,7 @@ const id = z.string().min(1).max(64);
 const color = z.string().max(64);
 const text = z.string().max(20_000);
 const point = z.tuple([pointValue, pointValue]);
+const points = z.array(point).max(10_000);
 const binding = z
   .object({
     elementId: id,
@@ -29,85 +27,132 @@ const binding = z
 const arrowhead = z.string().max(32).nullable();
 
 /**
- * Fill lines one guest element may ask every viewer to draw; a normal shape
- * needs a few hundred. The room also caps the whole scene
- * (`BOARD_GUEST_LIMITS.maxSceneFillLines`).
+ * Render cost one guest element may carry (`elementRenderCost`); a normal
+ * shape costs a few hundred at most. The room also caps the whole scene
+ * (`BOARD_GUEST_LIMITS.maxSceneCost`).
  */
-export const MAX_GUEST_FILL_LINES = 10_000;
+export const MAX_GUEST_ELEMENT_COST = 10_000;
+/** Lines of text one guest text element may hold. */
+export const MAX_GUEST_TEXT_LINES = 500;
 
 /**
- * The Excalidraw 0.18 element a person outside the workspace may store, field
- * by field: numbers within drawing ranges, bounded strings, the drawing enums
- * and capped arrays, and a line fill of at most `MAX_GUEST_FILL_LINES`.
- * Unknown keys (`customData` included) are dropped, and an element whose known
- * fields have the wrong type, size or range is refused as a whole, so a
- * malformed element never reaches the other people's editors or the stored
- * scene.
+ * Fields every element type draws from. Excalidraw reads them without
+ * defaults on remote elements (no restore runs on a live scene), so a
+ * missing one can crash or hang every viewer; all are required.
+ */
+const shared = {
+  id,
+  version: integer(0, RANDOM_MAX),
+  versionNonce: integer(-RANDOM_MAX, RANDOM_MAX),
+  x: coordinate,
+  y: coordinate,
+  width: size,
+  height: size,
+  angle: range(-8 * Math.PI, 8 * Math.PI),
+  strokeColor: color,
+  backgroundColor: color,
+  fillStyle: z.enum(['hachure', 'cross-hatch', 'solid', 'zigzag']),
+  strokeWidth: range(0.5, 64),
+  strokeStyle: z.enum(['solid', 'dashed', 'dotted']),
+  roughness: range(0, 5),
+  opacity: range(0, 100),
+  seed: integer(0, RANDOM_MAX),
+  groupIds: z.array(id).max(32),
+  isDeleted: z.boolean().optional(),
+  roundness: z
+    .object({ type: integer(0, 16), value: range(0, 1e5).optional() })
+    .nullable()
+    .optional(),
+  index: z.string().max(64).nullable().optional(),
+  frameId: id.nullable().optional(),
+  boundElements: z
+    .array(z.object({ id, type: z.enum(['arrow', 'text']) }))
+    .max(256)
+    .nullable()
+    .optional(),
+  updated: range(0, 1e14).optional(),
+  link: z.string().max(2048).nullable().optional(),
+  locked: z.boolean().optional(),
+};
+
+/** Lines and arrows, drawn along at least two points. */
+const linear = {
+  ...shared,
+  points: points.min(2),
+  lastCommittedPoint: point.nullable().optional(),
+  startBinding: binding.optional(),
+  endBinding: binding.optional(),
+  startArrowhead: arrowhead.optional(),
+  endArrowhead: arrowhead.optional(),
+  elbowed: z.boolean().optional(),
+  fixedSegments: z
+    .array(z.object({ start: point, end: point, index: integer(0, 10_000) }))
+    .max(256)
+    .nullable()
+    .optional(),
+  startIsSpecial: z.boolean().nullable().optional(),
+  endIsSpecial: z.boolean().nullable().optional(),
+  polygon: z.boolean().optional(),
+};
+
+const box = (type: 'rectangle' | 'diamond' | 'ellipse') =>
+  z.object({ ...shared, type: z.literal(type) });
+const frame = (type: 'frame' | 'magicframe') =>
+  z.object({
+    ...shared,
+    type: z.literal(type),
+    name: z.string().max(256).nullable().optional(),
+  });
+
+/**
+ * The Excalidraw 0.18 element a person outside the workspace may store, per
+ * element type: every field that type draws from is required, numbers are
+ * within drawing ranges, strings and arrays are bounded, text holds at most
+ * `MAX_GUEST_TEXT_LINES` lines, and the whole element costs at most
+ * `MAX_GUEST_ELEMENT_COST` to draw. Unknown keys (`customData` included) and
+ * fields another type uses are dropped; an element that fails any check is
+ * refused as a whole, so it never reaches the other people's editors or the
+ * stored scene.
  */
 export const guestElementSchema = z
-  .object({
-    id,
-    type: z.enum(BOARD_ELEMENT_TYPES),
-    version: integer(0, RANDOM_MAX),
-    versionNonce: integer(-RANDOM_MAX, RANDOM_MAX),
-    isDeleted: z.boolean().optional(),
-    x: coordinate.optional(),
-    y: coordinate.optional(),
-    width: size.optional(),
-    height: size.optional(),
-    angle: range(-8 * Math.PI, 8 * Math.PI).optional(),
-    strokeColor: color.optional(),
-    backgroundColor: color.optional(),
-    fillStyle: z.enum(['hachure', 'cross-hatch', 'solid', 'zigzag']).optional(),
-    strokeWidth: range(0.5, 64).optional(),
-    strokeStyle: z.enum(['solid', 'dashed', 'dotted']).optional(),
-    roundness: z
-      .object({ type: integer(0, 16), value: range(0, 1e5).optional() })
-      .nullable()
-      .optional(),
-    roughness: range(0, 5).optional(),
-    opacity: range(0, 100).optional(),
-    seed: integer(0, RANDOM_MAX).optional(),
-    index: z.string().max(64).nullable().optional(),
-    groupIds: z.array(id).max(32).optional(),
-    frameId: id.nullable().optional(),
-    boundElements: z
-      .array(z.object({ id, type: z.enum(['arrow', 'text']) }))
-      .max(256)
-      .nullable()
-      .optional(),
-    updated: range(0, 1e14).optional(),
-    link: z.string().max(2048).nullable().optional(),
-    locked: z.boolean().optional(),
-    text: text.optional(),
-    originalText: text.optional(),
-    fontSize: range(1, 2048).optional(),
-    fontFamily: integer(0, 1000).optional(),
-    textAlign: z.enum(['left', 'center', 'right']).optional(),
-    verticalAlign: z.enum(['top', 'middle', 'bottom']).optional(),
-    containerId: id.nullable().optional(),
-    autoResize: z.boolean().optional(),
-    lineHeight: range(0.5, 10).optional(),
-    baseline: size.optional(),
-    points: z.array(point).max(10_000).optional(),
-    lastCommittedPoint: point.nullable().optional(),
-    startBinding: binding.optional(),
-    endBinding: binding.optional(),
-    startArrowhead: arrowhead.optional(),
-    endArrowhead: arrowhead.optional(),
-    elbowed: z.boolean().optional(),
-    fixedSegments: z
-      .array(z.object({ start: point, end: point, index: integer(0, 10_000) }))
-      .max(256)
-      .nullable()
-      .optional(),
-    startIsSpecial: z.boolean().nullable().optional(),
-    endIsSpecial: z.boolean().nullable().optional(),
-    polygon: z.boolean().optional(),
-    pressures: z.array(range(0, 1)).max(10_000).optional(),
-    simulatePressure: z.boolean().optional(),
-    name: z.string().max(256).nullable().optional(),
-  })
-  .refine((element) => estimatedFillLines(element) <= MAX_GUEST_FILL_LINES, {
-    message: 'Fill draws too many lines',
-  });
+  .discriminatedUnion('type', [
+    box('rectangle'),
+    box('diamond'),
+    box('ellipse'),
+    frame('frame'),
+    frame('magicframe'),
+    z.object({ ...linear, type: z.literal('line') }),
+    z.object({ ...linear, type: z.literal('arrow') }),
+    z.object({
+      ...shared,
+      type: z.literal('freedraw'),
+      points: points.min(1),
+      lastCommittedPoint: point.nullable().optional(),
+      pressures: z.array(range(0, 1)).max(10_000).optional(),
+      simulatePressure: z.boolean().optional(),
+    }),
+    z.object({
+      ...shared,
+      type: z.literal('text'),
+      text,
+      originalText: text.optional(),
+      fontSize: range(1, 2048),
+      fontFamily: integer(0, 1000),
+      lineHeight: range(0.5, 10),
+      textAlign: z.enum(['left', 'center', 'right']).optional(),
+      verticalAlign: z.enum(['top', 'middle', 'bottom']).optional(),
+      containerId: id.nullable().optional(),
+      autoResize: z.boolean().optional(),
+      baseline: size.optional(),
+    }),
+  ])
+  .refine(
+    (element) =>
+      element.type !== 'text' ||
+      element.text.split('\n').length <= MAX_GUEST_TEXT_LINES,
+    { message: 'Text has too many lines' }
+  )
+  .refine(
+    (element) => elementRenderCost(element) <= MAX_GUEST_ELEMENT_COST,
+    { message: 'Element costs too much to draw' }
+  );

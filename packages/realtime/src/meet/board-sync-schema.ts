@@ -60,10 +60,17 @@ export const BOARD_GUEST_LIMITS = {
   /** Guest join tickets; the call renews them at half their life. */
   ticketTtlSeconds: 60,
   /**
-   * Fill lines the whole scene may hold (`estimatedFillLines`), members'
+   * Render cost the whole scene may hold (`elementRenderCost`), members'
    * elements included, past which a guest's growing edit is refused.
    */
-  maxSceneFillLines: 200_000,
+  maxSceneCost: 200_000,
+  /**
+   * Each guest connection's churn bucket: render cost it may apply at once,
+   * and how much returns each second. Every applied change is charged, so
+   * re-sending the same costly shape is bounded too.
+   */
+  churnCapacity: 40_000,
+  churnRefillPerSecond: 4_000,
 } as const;
 
 /** The socket budget for a join ticket's actor. */

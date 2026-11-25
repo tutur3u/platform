@@ -18,6 +18,7 @@ import { boardFlushFenced } from '../../../packages/realtime/src/meet/board-sync
 import {
   type BoardOpenWindows,
   chargeBoardOpen,
+  refillChurnBudget,
   sanitizeGuestChanges,
 } from '../../../packages/realtime/src/meet/board-sync-guest';
 import {
@@ -56,6 +57,14 @@ type Attachment = {
   messages: number;
   /** When this socket last asked for the scene; resends are throttled. */
   lastSyncAt: number;
+  /**
+   * A guest connection's churn bucket (`refillChurnBudget`). It rides in the
+   * attachment, so it survives hibernation and eviction without a storage
+   * write; a new connection starts full, which the persisted open limit
+   * bounds to six a minute per guest.
+   */
+  tokens?: number;
+  tokensAt?: number;
 };
 
 const CHECKPOINT_PATH = '/api/v1/realtime/whiteboard/checkpoint';
@@ -443,10 +452,20 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           ticket.actorKind === 'guest'
             ? sanitizeGuestChanges(message.changes)
             : null;
+        // Guests are held to the scene's render cost and their churn bucket,
+        // which every applied change spends, re-sent copies included.
+        const budget = guest
+          ? { tokens: refillChurnBudget(attachment, Date.now()) }
+          : undefined;
         const { applied, rejected } = await this.room.edit(
           guest?.changes ?? message.changes,
-          guest ? { maxFillLines: BOARD_GUEST_LIMITS.maxSceneFillLines } : {}
+          budget ? { maxCost: BOARD_GUEST_LIMITS.maxSceneCost, budget } : {}
         );
+        if (budget) {
+          attachment.tokens = budget.tokens;
+          attachment.tokensAt = Date.now();
+          socket.serializeAttachment(attachment);
+        }
         const refused = unsupported + (guest?.dropped ?? 0);
         const refusal = rejected ?? (refused > 0 ? 'unsupported' : null);
         if (refusal)
