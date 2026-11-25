@@ -84,9 +84,8 @@ extension _ShellPageInteractions on _ShellPageState {
       isMiniAppRoot ? 'miniAppNav.go' : 'miniAppNav.goChild',
       selectedRoute,
     );
+    // ShellPage persists the committed location after any onExit guard.
     context.go(selectedRoute);
-
-    await context.read<AppTabCubit>().setLastTabRoute(selected.route);
 
     if (_activeLayerPage == 0) {
       await _setActiveLayerPage(1);
@@ -184,7 +183,7 @@ extension _ShellPageInteractions on _ShellPageState {
     context.go(origin);
   }
 
-  Future<void> _onItemTapped(String route, BuildContext context) async {
+  void _onItemTapped(String route, BuildContext context) {
     final appTabCubit = context.read<AppTabCubit>();
 
     final currentRoute = _normalizeRouteLocation(widget.matchedLocation);
@@ -203,10 +202,6 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
     context.go(route);
-    await appTabCubit.setLastTabRoute(route);
-    if (!context.mounted) {
-      return;
-    }
     _tapStopwatch
       ..reset()
       ..start();

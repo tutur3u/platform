@@ -62,12 +62,13 @@ abstract final class Routes {
   ) {
     final hiddenDocuments = hiddenModuleIds.contains('documents');
     final hiddenNotes = hiddenModuleIds.contains('notes');
-    return switch (location) {
-      documents when hiddenDocuments => hiddenNotes ? apps : notes,
-      notes ||
-      legacyNotes when hiddenNotes => hiddenDocuments ? apps : documents,
-      _ => null,
-    };
+    if (location == notes || location == legacyNotes) {
+      return hiddenNotes ? (hiddenDocuments ? apps : documents) : null;
+    }
+    if (location == documents || location.startsWith('$documents/')) {
+      return hiddenDocuments ? (hiddenNotes ? apps : notes) : null;
+    }
+    return null;
   }
 
   static String noteDetailPath(String noteId) =>

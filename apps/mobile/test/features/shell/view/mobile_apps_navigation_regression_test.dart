@@ -54,6 +54,57 @@ void main() {
   late _Workspaces workspaces;
   late _Profile profile;
   late GoRouter router;
+  late bool allowNotesExit;
+
+  GoRouter buildRouter(String initialLocation) => GoRouter(
+    initialLocation: initialLocation,
+    routes: [
+      ShellRoute(
+        builder: (context, state, child) => ShellPage(
+          matchedLocation: state.uri.path,
+          enableDebugLogs: false,
+          child: child,
+        ),
+        routes: [
+          GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
+          GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
+          GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
+          GoRoute(path: Routes.calendar, builder: (_, _) => const SizedBox()),
+          GoRoute(
+            path: Routes.notes,
+            onExit: (_, _) async => allowNotesExit,
+            builder: (_, _) => const Text('Notes editor fixture'),
+          ),
+          GoRoute(
+            path: Routes.documents,
+            builder: (_, _) => const Text('Documents fixture'),
+          ),
+          GoRoute(path: Routes.finance, builder: (_, _) => const SizedBox()),
+          GoRoute(
+            path: Routes.transactions,
+            builder: (_, _) => const SizedBox(),
+          ),
+          GoRoute(
+            path: Routes.taskPlanning,
+            builder: (_, _) => const ShellMiniNav(
+              ownerId: 'task-planning-mini-nav',
+              locations: {Routes.taskPlanning},
+              deepLinkBackRoute: Routes.tasks,
+              items: [],
+            ),
+          ),
+          GoRoute(path: Routes.taskBoards, builder: (_, _) => const SizedBox()),
+          GoRoute(
+            path: Routes.taskBoardDetail,
+            builder: (_, state) => TaskBoardDetailPage(
+              boardId: state.pathParameters['boardId']!,
+              taskRepository: _Tasks(),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -78,50 +129,10 @@ void main() {
       const Stream<ShellProfileState>.empty(),
       initialState: const ShellProfileState(),
     );
-    router = GoRouter(
-      initialLocation: Routes.apps,
-      routes: [
-        ShellRoute(
-          builder: (context, state, child) => ShellPage(
-            matchedLocation: state.uri.path,
-            enableDebugLogs: false,
-            child: child,
-          ),
-          routes: [
-            GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
-            GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
-            GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
-            GoRoute(path: Routes.calendar, builder: (_, _) => const SizedBox()),
-            GoRoute(path: Routes.finance, builder: (_, _) => const SizedBox()),
-            GoRoute(
-              path: Routes.transactions,
-              builder: (_, _) => const SizedBox(),
-            ),
-            GoRoute(
-              path: Routes.taskPlanning,
-              builder: (_, _) => const ShellMiniNav(
-                ownerId: 'task-planning-mini-nav',
-                locations: {Routes.taskPlanning},
-                deepLinkBackRoute: Routes.tasks,
-                items: [],
-              ),
-            ),
-            GoRoute(
-              path: Routes.taskBoards,
-              builder: (_, _) => const SizedBox(),
-            ),
-            GoRoute(
-              path: Routes.taskBoardDetail,
-              builder: (_, state) => TaskBoardDetailPage(
-                boardId: state.pathParameters['boardId']!,
-                taskRepository: _Tasks(),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
+    allowNotesExit = true;
+    router = buildRouter(Routes.apps);
   });
+
   tearDown(() async {
     router.dispose();
     await apps.close();
@@ -164,6 +175,41 @@ void main() {
     );
     await _pump(tester);
   }
+
+  testWidgets('Documents dock persists only successful Notes switches', (
+    tester,
+  ) async {
+    final settings = SettingsRepository();
+    String committedPath() =>
+        router.routerDelegate.currentConfiguration.uri.path;
+    Future<void> coldRestore(String expected) async {
+      final saved = await settings.getLastTabRoute();
+      expect(saved, expected);
+      await tester.pumpWidget(const SizedBox.shrink());
+      router.dispose();
+      router = buildRouter(saved!);
+      await mount(tester);
+      expect(committedPath(), expected);
+    }
+
+    await mount(tester);
+    router.go(Routes.notes);
+    await _pump(tester);
+    final documents = find.byKey(
+      const ValueKey('mini-nav-documents-documents_home'),
+    );
+    allowNotesExit = false;
+    await tester.tap(documents);
+    await _pump(tester);
+    expect(committedPath(), Routes.notes);
+    await coldRestore(Routes.notes);
+
+    allowNotesExit = true;
+    await tester.tap(documents);
+    await _pump(tester);
+    expect(committedPath(), Routes.documents);
+    await coldRestore(Routes.documents);
+  });
 
   testWidgets('Finance overview keeps its Finance destinations in the dock', (
     tester,

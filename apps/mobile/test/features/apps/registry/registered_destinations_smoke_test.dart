@@ -19,6 +19,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/auth/widgets/auth_heading.dart';
+import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -120,6 +121,37 @@ void main() {
       authOptions: const supa.FlutterAuthClientOptions(autoRefreshToken: false),
     );
   });
+
+  for (final (hidden, destination) in [
+    (<String>[], Routes.documentDetailPath('synthetic-doc')),
+    (['documents'], Routes.notes),
+    (['notes', 'documents'], Routes.apps),
+  ]) {
+    testWidgets(
+      'document detail deep link honors workspace visibility $hidden',
+      (tester) async {
+        final harness = _DestinationHarness(
+          Routes.documentDetailPath('synthetic-doc'),
+          hasWorkspace: true,
+          hiddenModuleIds: hidden,
+        );
+        addTearDown(() async {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await harness.dispose();
+        });
+        await tester.pumpWidget(harness.build());
+        await tester.pumpAndSettle();
+        expect(
+          harness.router.routerDelegate.currentConfiguration.uri.path,
+          destination,
+        );
+        expect(
+          find.byType(DocumentDetailPage),
+          hidden.isEmpty ? findsOneWidget : findsNothing,
+        );
+      },
+    );
+  }
 
   for (final cancel in [true, false]) {
     testWidgets(
@@ -396,6 +428,7 @@ class _DestinationHarness {
   _DestinationHarness(
     String destination, {
     required bool hasWorkspace,
+    List<String> hiddenModuleIds = const [],
     AuthCubit? realAuth,
     AppLockCubit? realLock,
   }) : auth = realAuth ?? _Auth(),
@@ -411,10 +444,11 @@ class _DestinationHarness {
       workspace,
       const Stream<WorkspaceState>.empty(),
       initialState: hasWorkspace
-          ? const WorkspaceState(
+          ? WorkspaceState(
               status: WorkspaceStatus.loaded,
               currentWorkspace: _workspace,
-              workspaces: [_workspace],
+              workspaces: const [_workspace],
+              hiddenModuleIds: hiddenModuleIds,
             )
           : const WorkspaceState(),
     );

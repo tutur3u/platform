@@ -45,7 +45,7 @@ void main() {
       );
       expect(
         Routes.documentsViewRedirect('/documents/doc-1', ['documents']),
-        isNull,
+        Routes.notes,
       );
     });
 
