@@ -53,6 +53,11 @@ test('Meet durable room tests follow Worker, dependency and workflow changes', (
     assert.deepEqual(step.args, ['test', path.resolve(ROOT, MEET_CI_TEST)]);
     assert.equal(step.temporaryCwd, true);
     assert.equal(step.heavy, true);
+    assert.deepEqual(step.inputDirectories, [
+      'apps/meet-realtime',
+      'packages/realtime',
+      'packages/utils',
+    ]);
   }
   for (const file of [
     'apps/meet/src/worker.ts',

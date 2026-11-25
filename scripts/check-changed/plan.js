@@ -445,7 +445,11 @@ function planChecks(changes, context) {
         ),
       ],
       temporaryCwd: true,
-      inputDirectories: ['apps/meet-realtime', 'packages/realtime'],
+      inputDirectories: [
+        'apps/meet-realtime',
+        'packages/realtime',
+        'packages/utils',
+      ],
       heavy: true,
     });
   }

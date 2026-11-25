@@ -213,6 +213,9 @@ reverse dependents because those files can affect type-checking and test discove
 When script tests are selected, the fence covers `scripts/`, `plugins/` and
 `.github/actions/` as well as the tests' own parent directories, so nested tests
 cannot depend on untracked helpers in a parent or sibling directory.
+The Meet durable room step checks `apps/meet-realtime`, `packages/realtime`
+and `packages/utils` for untracked files because its suites import from all
+three directories.
 The translation usage checks read the working tree of every app and shared
 package, so an untracked file in a workspace the push does not touch can fail
 them, or satisfy an import that CI cannot resolve. The hook does not refuse
