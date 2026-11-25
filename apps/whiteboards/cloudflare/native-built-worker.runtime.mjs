@@ -320,9 +320,16 @@ test(
         async () => {
           for (const [path, expected] of Object.entries(EXPECTED)) {
             const response = await call(mountedPath(BASE, path), APEX);
+            // The sign-in redirect keeps the scheme of the request, and this
+            // fixture addresses the apex over http, so an absolute https
+            // expectation is compared on that scheme.
             const failure = runtimeOutcomeFailure({
               path,
-              expected,
+              expected:
+                typeof expected === 'object' &&
+                expected.redirect.startsWith('https://')
+                  ? { redirect: expected.redirect.replace(/^https:/u, 'http:') }
+                  : expected,
               ...response,
               origin: `http://${APEX}`,
               base: BASE,
