@@ -56,7 +56,7 @@ it.each([
   }
 );
 
-it('registers the public Tools prefetch by default when the launcher opens', async () => {
+it('registers the public Tools prefetch by default when the launcher opens', () => {
   vi.stubEnv('NODE_ENV', 'production');
   vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'tools,apps,mail,meet');
 
@@ -104,6 +104,16 @@ it('registers only current-tab public Tools document prefetch while open', async
       .getByRole('option', { name: 'Tools' })
       .hasAttribute('data-router-link')
   ).toBe(false);
+
+  const choose = async (name: 'New tab' | 'This tab') => {
+    if (!screen.queryByRole('radio', { name }))
+      fireEvent.click(screen.getByRole('button', { name: 'Open options' }));
+    fireEvent.click(await screen.findByRole('radio', { name }));
+  };
+  await choose('New tab');
+  expect(readRules()).toBeNull();
+  await choose('This tab');
+  expect(readRules()).not.toBeNull();
 
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   expect(readRules()).toBeNull();

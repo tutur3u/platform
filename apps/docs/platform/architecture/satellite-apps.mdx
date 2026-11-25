@@ -92,8 +92,9 @@ tab** in the launcher's "Open apps in" menu keeps that choice through the
 shared `tuturuuu-apps-launcher-open-mode` cookie (`.tuturuuu.com`), and a
 legacy stored choice migrates to it. Only users without a saved choice get
 the default. Exceptions: Cmd/Ctrl-click and middle-click still open a new tab
-because launcher items are ordinary links; the global command launcher has
-its own new-tab option and ignores this preference; on preview hosts outside
+because launcher items are ordinary links; the global command launcher
+ignores this preference and opens Pay in a new tab and every other app in
+this tab; on preview hosts outside
 `tuturuuu.com` the cookie stays on that host. Regression coverage:
 `packages/satellite/src/components/apps-launcher-preference.test.tsx`,
 `packages/satellite/src/components/apps-launcher.test.tsx` and
@@ -107,8 +108,10 @@ In this-tab mode, the launcher's links are prefetchable:
   sign-in or sign-out routes are excluded; see
   [Shell Performance](/build/devops/shell-performance) for the rules, cost and
   stop fence.
-- On the apex origin, every launcher also registers a rule for the public
-  Tools entry. Chromium triggers both rules on hover or pointerdown. The
+- On the apex origin, every launcher registers a rule for the public Tools
+  entry while it is open in this-tab mode. Chromium triggers these rules on
+  hover or pointerdown; an apex page from a native Start app (Mail, Tasks)
+  carries both, other apex pages only the Tools rule. The
   Tools apex root GET selects the display language for the response without
   writing a locale cookie; explicit locale redirects still save the
   preference.

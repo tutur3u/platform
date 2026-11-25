@@ -190,9 +190,10 @@ after the app-base and Trusted Types head scripts. Mail and Tasks use it.
   app that open in the current tab
   (`a[data-app-slug]:not([target]):not([data-current])`) with `moderate`
   eagerness: on hover or pointer down. A prefetch only serves a navigation in
-  the same tab, so the launcher's default new-tab open mode
-  (`target="_blank"`) prefetches nothing; users who choose "This tab" get the
-  prefetch. The launcher marks the open app with
+  the same tab. The launcher opens apps in this tab by default, so the rule
+  applies to every user without a saved choice; a user who chose "New tab"
+  gets `target="_blank"` links, which the rule skips. The launcher marks the
+  open app with
   `data-current`; `data-active` only marks the highlighted option and must
   stay out of the selector, because hovering a link highlights it. Chrome
   retains at most two `moderate` prefetches, evicting the oldest. API routes,
@@ -217,8 +218,13 @@ after the app-base and Trusted Types head scripts. Mail and Tasks use it.
     session or render work. The request is still billed, but runs no
     session or render work. Web and other non-bridge targets have no such
     layer.
-  - The satellite launcher's separate Tools rule
-    (`useAppsLauncherPrefetch`) does not read the flag.
+  - The satellite launcher's separate apex Tools rule
+    (`useAppsLauncherPrefetch`, registered while the launcher is open in
+    this-tab mode) is client-only and does not read the flag. Its fence is
+    the Tools Worker: Tools serves through `createBridgeHandler`, so
+    `TUTURUUU_SPECULATION_RULES=off` on Tools refuses those prefetches with
+    `503` before any session or render work. They are still billed as
+    requests.
 - **Coverage.** `packages/start-bridge/src/core/speculation-rules.test.ts`
   covers the render gate, the browser decision and the refusal response;
   `packages/satellite/src/components/apps-launcher.test.tsx` checks that a
