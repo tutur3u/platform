@@ -216,6 +216,53 @@ settings section. These labels describe downloaded snapshots, not server
 acknowledgement of queued edits. Regression coverage:
 `apps/mobile/test/features/settings/view/offline_status_ui_test.dart`.
 
+### Sidebar and account menu
+
+The Flutter app's sidebar follows the web dashboard sidebar. Scope: the app
+shell on every platform; on phones it opens as a drawer.
+
+- **Layout.** From top to bottom: the brand, the workspace switcher, the
+  destinations, the sidebar mode control, then the account avatar. The current
+  destination has the accent fill and semibold label.
+- **Modes.** Expanded, Collapsed, Expand on hover and Minimal, as on web.
+  Default: Expanded from 1280dp, Collapsed (icon rail) below. The choice syncs
+  per account. With a keyboard, Ctrl/Cmd+B toggles Expanded and Collapsed and
+  Ctrl/Cmd+Alt+B picks Minimal.
+- **Workspace switcher.** Shows the current workspace's avatar and name. It
+  opens the workspace list with its search field always visible, plus Create
+  and Manage workspaces. It appears on root pages, where the top bar also
+  offers the workspace picker.
+- **Account menu.** The avatar opens a menu in the web order: name and email;
+  Switch workspace, Profile and Settings (Home adds Timeline and Customize);
+  Language (System, English, Vietnamese) and Theme (Light, Dark, System)
+  submenus; Switch account, Add account and Manage accounts; then Log out.
+  Arrow keys move through the items and submenus; Escape and Back close the
+  menu.
+- **Phones.** The top bar keeps a single title bar with no Back button; the
+  floating dock owns Back. On root pages at 360dp or wider, an avatar in the
+  top bar opens the same sidebar as a drawer from the leading edge. Back, the
+  scrim, choosing a destination or switching workspace closes it.
+
+Intentional exceptions:
+
+- Log out asks for confirmation before signing out, unlike web, because
+  signing out of a device can drop to another saved account.
+- Switch account opens the saved-accounts sheet rather than a nested list,
+  so expired sessions can sign in again. Removing an account stays in Manage
+  accounts.
+- The phone avatar is hidden on Mira, whose mode title fills the bar, on
+  pages that publish their own header actions, and below 360dp. Those phones
+  reach the same destinations from the dock and the account from the Profile
+  tab.
+
+Regression coverage:
+`apps/mobile/test/features/shell/view/shell_sidebar_web_parity_test.dart`
+(menu order, Settings, Theme, Log out confirmation, workspace search, collapse
+and expand, phone drawer without a navbar Back),
+`apps/mobile/test/features/shell/view/shell_sidebar_account_test.dart`,
+`apps/mobile/test/features/shell/view/shell_sidebar_modes_test.dart` and
+`apps/mobile/test/features/workspace/widgets/workspace_picker_sheet_test.dart`.
+
 ## Versions and privacy
 
 The [toolchain reference](/reference/repository/versions) reads the Flutter and
