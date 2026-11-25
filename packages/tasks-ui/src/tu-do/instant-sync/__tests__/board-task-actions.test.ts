@@ -339,3 +339,75 @@ describe('instant reorder', () => {
     expect(collection.get('a')?.list_id).toBe('review');
   });
 });
+
+describe('tasks-full caches', () => {
+  const fullKey = ['tasks-full', BOARD] as const;
+  const pagedKey = ['tasks-full', BOARD, 'pages', 'kanban'] as const;
+  const filteredKey = ['tasks-full', BOARD, 'source-filter', 'mine'] as const;
+
+  function seedFull(queryClient: QueryClient, rows: Task[]) {
+    queryClient.setQueryData(fullKey, rows);
+    queryClient.setQueryData(pagedKey, {
+      pages: [{ tasks: rows, nextCursor: 'next' }],
+      pageParams: [null],
+    });
+    queryClient.setQueryData(filteredKey, [] as Task[]);
+  }
+
+  it('patches every shape in place without adding rows to filtered caches', async () => {
+    const { actions, queryClient } = setup([task('a')], {
+      updateTask: async (id) => task(id, { name: 'Saved' }),
+    });
+    seedFull(queryClient, [task('a')]);
+
+    await expect(
+      actions.updateTask('a', { name: 'Saved' })
+    ).resolves.toMatchObject({ name: 'Saved' });
+
+    expect(queryClient.getQueryData<Task[]>(fullKey)?.[0]?.name).toBe('Saved');
+    const paged = queryClient.getQueryData<{
+      pages: { tasks: Task[]; nextCursor: string | null }[];
+    }>(pagedKey);
+    expect(paged?.pages[0]?.tasks[0]?.name).toBe('Saved');
+    expect(paged?.pages[0]?.nextCursor).toBe('next');
+    expect(queryClient.getQueryData<Task[]>(filteredKey)).toEqual([]);
+  });
+
+  it('reverts a failed drop in each shape from its own snapshot', async () => {
+    const original = task('a', { list_id: 'todo' });
+    const { actions, queryClient } = setup([original], {
+      reorderTask: async () => {
+        throw new Error('network');
+      },
+    });
+    const preview = {
+      ...original,
+      list_id: 'done',
+      _localMutationAt: 7,
+    } as Task;
+    queryClient.setQueryData(boardTasksQueryKey(BOARD), [preview]);
+    seedFull(queryClient, [preview]);
+
+    await expect(
+      actions.reorderTask({
+        taskId: 'a',
+        newListId: 'done',
+        newSortKey: 5,
+        targetListStatus: 'done',
+        optimisticPreviousTasks: [original],
+        optimisticPreviousFullTaskEntries: [
+          [fullKey, [original]],
+          [pagedKey, [original]],
+        ],
+      })
+    ).rejects.toThrow('network');
+
+    expect(queryClient.getQueryData<Task[]>(fullKey)?.[0]?.list_id).toBe(
+      'todo'
+    );
+    const paged = queryClient.getQueryData<{
+      pages: { tasks: Task[] }[];
+    }>(pagedKey);
+    expect(paged?.pages[0]?.tasks[0]?.list_id).toBe('todo');
+  });
+});

@@ -1,6 +1,10 @@
 import { createCollection } from '@tanstack/db';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import {
+  setBoardTaskQueries,
+  setBoardTaskQuery,
+} from '@tuturuuu/utils/task-helper/board-task-query-cache';
 
 /**
  * Instant board sync — read model.
@@ -119,18 +123,29 @@ export function createBoardTaskCollection({
 
 export type BoardTaskCollection = ReturnType<typeof createBoardTaskCollection>;
 
-type TaskCacheUpdater = (tasks: Task[] | undefined) => Task[] | undefined;
-
-function updateBoardTaskCaches(
-  queryClient: QueryClient,
-  boardId: string,
-  updater: TaskCacheUpdater
+function mergeConfirmedRow(
+  tasks: Task[] | undefined,
+  confirmed: Task,
+  replaceTaskId: string,
+  appendWhenMissing: boolean
 ) {
-  queryClient.setQueryData<Task[]>(boardTasksQueryKey(boardId), updater);
-  queryClient.setQueriesData<Task[]>(
-    { queryKey: ['tasks-full', boardId] },
-    updater
-  );
+  if (!tasks) return tasks;
+  let found = false;
+  const next: Task[] = [];
+  for (const task of tasks) {
+    if (task.id === replaceTaskId || task.id === confirmed.id) {
+      if (found) continue;
+      found = true;
+      next.push({ ...task, ...confirmed });
+    } else {
+      next.push(task);
+    }
+  }
+  if (!found) {
+    if (!appendWhenMissing) return tasks;
+    next.push(confirmed);
+  }
+  return next;
 }
 
 /**
@@ -153,22 +168,17 @@ export function upsertServerTaskIntoBoardCaches(
     localMutationAt === undefined
       ? serverTask
       : ({ ...serverTask, _localMutationAt: localMutationAt } as Task);
-  updateBoardTaskCaches(queryClient, boardId, (tasks) => {
-    if (!tasks) return tasks;
-    let found = false;
-    const next: Task[] = [];
-    for (const task of tasks) {
-      if (task.id === replaceTaskId || task.id === serverTask.id) {
-        if (found) continue;
-        found = true;
-        next.push({ ...task, ...confirmed });
-      } else {
-        next.push(task);
-      }
-    }
-    if (!found) next.push(confirmed);
-    return next;
-  });
+  queryClient.setQueryData<Task[]>(boardTasksQueryKey(boardId), (tasks) =>
+    mergeConfirmedRow(tasks, confirmed, replaceTaskId, true)
+  );
+  // `tasks-full` holds plain, paged and server-filtered caches. They are only
+  // patched in place: a row they do not already hold may not match their
+  // filter or page, so it waits for their own fetch.
+  setBoardTaskQueries(
+    queryClient,
+    { queryKey: ['tasks-full', boardId] },
+    (tasks) => mergeConfirmedRow(tasks, confirmed, replaceTaskId, false)
+  );
 }
 
 type LocallyMarkedTask = Task & { _localMutationAt?: number };
@@ -222,7 +232,8 @@ export function revertTaskRowInBoardCaches(
   // own snapshot.
   for (const [queryKey, previousTasks] of previousFullEntries) {
     if (!previousTasks) continue;
-    queryClient.setQueryData<Task[]>(
+    setBoardTaskQuery(
+      queryClient,
       queryKey,
       revertTo(previousTasks.find((task) => task.id === taskId))
     );

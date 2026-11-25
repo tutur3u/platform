@@ -189,10 +189,17 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
 
 ## Pilot plan
 
-1. Allow-list internal pilot workspaces with a platform rollout rule:
+1. Sync the catalog definition into the rule store first: rule writes are
+   validated against `feature_flag_definitions`, which a root flag manager's
+   feature-flags dashboard read or
+   `POST /api/v1/infrastructure/feature-flags/sync` refreshes. Then allow-list
+   internal pilot workspaces with a platform rollout rule:
    `ttr flags set TASKS_INSTANT_BOARD_SYNC --mode rollout --percent 0
    --allow-workspaces <ids> --reason "<text>"`. Only `apps/tasks` evaluates
-   the flag; Web's shared board route never enables it.
+   the flag; Web's shared board route never enables it. A Worker without
+   `VERCEL_ENV` and with `NODE_ENV=production` resolves to the `production`
+   rule environment, so a staging deployment configured that way reads
+   production rules.
 2. Covered interactions: drag-and-drop move/reorder, the card edit dialog
    (update), and the task dialog create path. Other menus keep their cache-level
    optimistic code and stay live through the mirror. See the pilot limits
