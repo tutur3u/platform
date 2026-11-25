@@ -268,8 +268,8 @@ function installRuntimeInput(input: RuntimeInput | null) {
   ) {
     return;
   }
-  // Derive everything before touching shared state, so a throw leaves the
-  // previous configuration (and its circuit breakers) intact.
+  // Derive everything before touching shared state, so a throw never leaves
+  // a half-installed input; the failure path then turns assigned families off.
   const override = input ? deriveOverride(input) : null;
   failedFamiliesKey = null;
   // A recovered isolate reports its next, possibly different, failure.

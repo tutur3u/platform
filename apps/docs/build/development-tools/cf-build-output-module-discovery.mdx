@@ -22,15 +22,18 @@ uploads every module that matches its rules, so it was unaffected.
 ## Emit rule
 
 The emit uploads every sealed `.js`/`.mjs` module that the Wrangler rules match
-under `dist/server`, as `--no-bundle` does. Source maps and dot directories are
+under `dist/server`, as `--no-bundle` does. Rule globs match the bundle-relative
+path: `**/` spans directories, `*` and `?` stay within one segment, and `{a,b}`
+alternates. Source maps and dot directories are
 skipped, and symlinks (files or directories) are refused. Modules are sorted, so
 `worker.config.json` is byte-stable.
 
 A caller can drop unimported files only by listing them in `excludedOrphans`.
 Each listed file must be sealed, must not be the main module and must not be in
-the Vite graph. If any emitted module builds a relative `import()` path at
-runtime (`` import(`./rsc/${name}.js`) ``), excluding orphans fails, because that
-import could load an excluded file. No wave-1 caller excludes orphans today.
+the Vite graph. Excluding orphans fails if any emitted module calls `import()`
+with anything other than one constant string or template literal (a variable,
+concatenation or `` `${base}/x.js` ``), because that import could load an
+excluded file. No wave-1 caller excludes orphans today.
 
 ## Independent checks
 
@@ -43,15 +46,17 @@ These checks run before any upload in the production path:
   emitted module for relative static and dynamic specifiers. That includes
   comments inside `import(` and constant template literals, and it ignores
   `?query` and `#hash` suffixes. Emission fails if a specifier names an existing
-  file that is not emitted: one outside the bundle root, in a dot directory, or
-  excluded. Specifiers that name no file pass, such as JSDoc `@import` comments
+  file that is not emitted: one outside the bundle root (after resolving
+  symlinks), in a dot directory, excluded, or a non-ESM file such as `.wasm` or
+  text, which this emit never uploads. Specifiers that name no file pass, such as JSDoc `@import` comments
   or prose.
 - **Count.** `wave1-cf-output` logs the emitted count against the sealed count.
 
 Regression coverage is in `scripts/ci/cf-build-output-publisher.test.mjs` and
 `scripts/ci/wave1-cf-output.test.mjs`. It covers the RSC layout, a manifest-only
 negative control, computed imports, root and dot-directory escapes, a symlinked
-directory, explicit orphan exclusion, and the published-set comparison.
+directory, explicit orphan exclusion, non-ESM imports, rule globs, and the
+published-set comparison.
 
 ## Published-version comparison (not yet wired)
 

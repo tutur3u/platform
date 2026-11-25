@@ -117,7 +117,7 @@ function buildInput(appRoot, app, environment, sha) {
     config,
     mainModule
   );
-  // Unimported files stay out; every imported module is already asserted in.
+  // Every rules-matching sealed module is emitted; discovery asserted closure.
   console.log(
     `[wave1-cf-output] ${app}: ${Object.keys(modules).length} of ${sealedModuleCount(bundleRoot)} sealed modules emitted`
   );

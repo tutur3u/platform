@@ -12,6 +12,8 @@ import {
   buildOutputObservability,
   cfBundleSecondaryModuleNames,
   discoverCfBuildOutputEsmModules,
+  globToRegExp,
+  hasComputedDynamicImport,
 } from './cf-build-output-publisher.mjs';
 
 test('Wave-1 publisher entry-module parity excludes the main module from upload checks', (t) => {
@@ -247,7 +249,7 @@ test('excluding orphans fails when a relative import path is computed', () => {
       discoverCfBuildOutputEsmModules(root, rules, 'index.mjs', {
         excludedOrphans: ['assets/orphan.js'],
       }),
-    /computed relative import in rsc\/bridge-api\.js forbids excluding orphans/
+    /computed dynamic import in rsc\/bridge-api\.js forbids excluding orphans/
   );
 });
 
@@ -335,5 +337,90 @@ test('assertUploadedModuleSet compares a published version with the emitted mani
         expected
       ),
     /uploaded module names repeat/
+  );
+});
+
+test('globToRegExp matches Wrangler rule globs against the relative path', () => {
+  const cases = [
+    ['**/*.js', 'a/b.js', true],
+    ['**/*.js', 'b.js', true],
+    ['**/*.{js,mjs}', 'x/y.mjs', true],
+    ['**/*.{js,mjs}', 'x/y.cjs', false],
+    ['*.mjs', 'index.mjs', true],
+    ['*.mjs', 'a/b.mjs', false],
+    ['a.b.js', 'axbxjs', false],
+    ['chunk-?.js', 'chunk-1.js', true],
+  ];
+  for (const [glob, path, expected] of cases)
+    assert.equal(globToRegExp(glob).test(path), expected, `${glob} ~ ${path}`);
+});
+
+test('hasComputedDynamicImport flags any non-constant import argument', () => {
+  for (const source of [
+    'import(v)',
+    'import("./"+x)',
+    'import(`${base}/x.js`)',
+    'import(`./rsc/${n}.js`)',
+  ])
+    assert.equal(hasComputedDynamicImport(source), true, source);
+  for (const source of [
+    'import("./a.js")',
+    'import(`./rsc/bridge-api.js`)',
+    'import(/* @vite-ignore */ "./a.js", { with: {} })',
+    'const u = import.meta.url',
+  ])
+    assert.equal(hasComputedDynamicImport(source), false, source);
+});
+
+test('excluding orphans fails for a variable or concatenated import', () => {
+  const root = rscLayout();
+  const rules = { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] };
+  for (const body of [
+    'const p="./assets/route.js";export const h=()=>import(p);\n',
+    'const n="route";export const h=()=>import("./assets/"+n+".js");\n',
+  ]) {
+    writeFileSync(join(root, 'rsc/bridge-api.js'), body);
+    assert.throws(
+      () =>
+        discoverCfBuildOutputEsmModules(root, rules, 'index.mjs', {
+          excludedOrphans: ['assets/orphan.js'],
+        }),
+      /computed dynamic import in rsc\/bridge-api\.js forbids excluding orphans/
+    );
+  }
+});
+
+test('an import of an existing non-ESM file fails emission', () => {
+  const root = mkdtempSync(join(tmpdir(), 'cf-build-output-wasm-'));
+  writeFileSync(join(root, 'engine.wasm'), 'wasm');
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import engine from "./engine.wasm";export default {engine};\n'
+  );
+  assert.throws(
+    () =>
+      discoverCfBuildOutputEsmModules(
+        root,
+        { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] },
+        'index.mjs'
+      ),
+    /index\.mjs -> engine\.wasm/
+  );
+});
+
+test('assertModuleClosure resolves symlinked directories by real path', () => {
+  const parent = mkdtempSync(join(tmpdir(), 'cf-build-output-realpath-'));
+  const root = join(parent, 'server');
+  mkdirSync(join(parent, 'elsewhere'), { recursive: true });
+  mkdirSync(root, { recursive: true });
+  writeFileSync(join(parent, 'elsewhere/bridge-api.js'), 'export {};\n');
+  symlinkSync(join(parent, 'elsewhere'), join(root, 'rsc'));
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import("./rsc/bridge-api.js");export default {};\n'
+  );
+  assert.throws(
+    () => assertModuleClosure(root, { 'index.mjs': { type: 'esm' } }),
+    /index\.mjs -> rsc\/bridge-api\.js/
   );
 });

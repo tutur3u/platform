@@ -26,14 +26,37 @@ function moduleGlobs(config) {
   );
 }
 
-function matchesModuleBasename(name, globs) {
-  return globs.some((glob) => {
-    const pattern = glob
-      .replaceAll('**/', '')
-      .replaceAll('**', '')
-      .replaceAll('*', '.*');
-    return new RegExp(`^${pattern}$`).test(name);
-  });
+/**
+ * Wrangler-style rule globs matched against the bundle-relative path:
+ * `**\/` spans zero or more directories, `*` and `?` stay within one path
+ * segment, `{a,b}` alternates, and every other character is literal.
+ */
+export function globToRegExp(glob) {
+  let pattern = '';
+  for (let index = 0; index < glob.length; index += 1) {
+    const char = glob[index];
+    if (char === '*' && glob[index + 1] === '*') {
+      const slash = glob[index + 2] === '/';
+      pattern += slash ? '(?:.*/)?' : '.*';
+      index += slash ? 2 : 1;
+    } else if (char === '*') pattern += '[^/]*';
+    else if (char === '?') pattern += '[^/]';
+    else if (char === '{') {
+      const close = glob.indexOf('}', index);
+      assert.ok(close > index, `unclosed brace in module glob: ${glob}`);
+      const options = glob
+        .slice(index + 1, close)
+        .split(',')
+        .map((option) => option.replace(/[.+^$()|[\]\\]/gu, '\\$&'));
+      pattern += `(?:${options.join('|')})`;
+      index = close;
+    } else pattern += char.replace(/[.+^$()|[\]\\]/gu, '\\$&');
+  }
+  return new RegExp(`^${pattern}$`, 'u');
+}
+
+function matchesModuleGlob(rel, globs) {
+  return globs.some((glob) => globToRegExp(glob).test(rel));
 }
 
 /** Maps Wrangler observability fields to cf Build Output worker schema casing. */
@@ -118,19 +141,43 @@ function viteGraphModules(bundleRoot, mainModule) {
  */
 const RELATIVE_SPECIFIER =
   /(?:\bfrom\s*|\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)*|\bimport\s*)(["'`])(\.{1,2}\/[^"'`$\s?#]+)(?:[?#][^"'`]*)?\1/gu;
-/** A relative dynamic import whose path is built at runtime. */
-const COMPUTED_RELATIVE_IMPORT =
-  /\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)*`\.{1,2}\/[^`]*\$\{/u;
+const DYNAMIC_IMPORT = /\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)*/gu;
+
+/**
+ * Whether any `import(` takes an argument other than one constant string or
+ * template literal (a variable, concatenation or interpolation). Such an
+ * import can load any sealed file, so it forbids excluding orphans.
+ */
+export function hasComputedDynamicImport(source) {
+  for (const match of source.matchAll(DYNAMIC_IMPORT)) {
+    const start = match.index + match[0].length;
+    const quote = source[start];
+    if (quote !== '"' && quote !== "'" && quote !== '`') return true;
+    const end = source.indexOf(quote, start + 1);
+    if (end < 0) return true;
+    if (quote === '`' && source.slice(start, end).includes('${')) return true;
+    const next = source.slice(end + 1).match(/^\s*(.)/su)?.[1];
+    if (next !== ')' && next !== ',') return true;
+  }
+  return false;
+}
+
+/** Bundle-root-relative paths of every relative specifier a module names. */
+export function relativeReferences(bundleRoot, rel) {
+  const source = readFileSync(join(bundleRoot, rel), 'utf8');
+  const references = new Set();
+  for (const match of source.matchAll(RELATIVE_SPECIFIER))
+    references.add(posix.normalize(posix.join(posix.dirname(rel), match[2])));
+  return references;
+}
 
 /** Bundle-root-relative `.js`/`.mjs` paths a module's specifiers name. */
 export function relativeModuleReferences(bundleRoot, rel) {
-  const source = readFileSync(join(bundleRoot, rel), 'utf8');
-  const references = new Set();
-  for (const match of source.matchAll(RELATIVE_SPECIFIER)) {
-    const target = posix.normalize(posix.join(posix.dirname(rel), match[2]));
-    if (/\.(?:m?js)$/u.test(target)) references.add(target);
-  }
-  return references;
+  return new Set(
+    [...relativeReferences(bundleRoot, rel)].filter((target) =>
+      /\.(?:m?js)$/u.test(target)
+    )
+  );
 }
 
 /**
@@ -155,7 +202,7 @@ export function sealedModules(bundleRoot, config, mainModule) {
       if (name.endsWith('.map')) continue;
       const rel = posixPath(relative(bundleRoot, path));
       if (!/\.(?:m?js)$/u.test(rel)) continue;
-      if (rel !== mainModule && !matchesModuleBasename(name, globs)) continue;
+      if (rel !== mainModule && !matchesModuleGlob(rel, globs)) continue;
       modules.push(rel);
     }
   }
@@ -205,8 +252,9 @@ function referenceState(bundleRoot, target) {
 export function assertModuleClosure(bundleRoot, modules) {
   const dropped = [];
   for (const rel of Object.keys(modules)) {
-    for (const target of relativeModuleReferences(bundleRoot, rel)) {
+    for (const target of relativeReferences(bundleRoot, rel)) {
       if (Object.hasOwn(modules, target)) continue;
+      // An existing non-ESM file (wasm, text, data) is never emitted either.
       if (referenceState(bundleRoot, target) !== 'missing')
         dropped.push(`${rel} -> ${target}`);
     }
@@ -269,12 +317,12 @@ export function discoverCfBuildOutputEsmModules(
   for (const name of Object.keys(graph ?? {}))
     assert.ok(Object.hasOwn(modules, name), `Vite module not emitted: ${name}`);
   if (excluded.size > 0) {
-    // A computed relative import could load an excluded file.
+    // A computed dynamic import could load an excluded file.
     for (const name of Object.keys(modules)) {
       const source = readFileSync(join(bundleRoot, name), 'utf8');
       assert.ok(
-        !COMPUTED_RELATIVE_IMPORT.test(source),
-        `computed relative import in ${name} forbids excluding orphans`
+        !hasComputedDynamicImport(source),
+        `computed dynamic import in ${name} forbids excluding orphans`
       );
     }
   }

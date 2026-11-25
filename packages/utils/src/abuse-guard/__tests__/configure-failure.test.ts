@@ -36,6 +36,44 @@ describe('configureAbuseGuardRuntime failures', () => {
     expect(JSON.stringify(error.mock.calls)).not.toContain('1234');
   });
 
+  it('contains a logger that throws while reporting', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      throw new Error('log sink down');
+    });
+    expect(() =>
+      configureAbuseGuardRuntime({
+        binding: { run: vi.fn() },
+        get pepper(): string {
+          throw new Error('unavailable');
+        },
+        families: 'proxy',
+      })
+    ).not.toThrow();
+    expect(selectAbuseGuard('proxy', {})).toEqual({ kind: 'off' });
+  });
+
+  it('reports again after a recovery', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const failing = () => ({
+      binding: { run: vi.fn() },
+      get pepper(): string {
+        throw new Error('unavailable');
+      },
+      families: 'proxy',
+    });
+    configureAbuseGuardRuntime(failing());
+    configureAbuseGuardRuntime({
+      binding: { run: vi.fn() },
+      pepper: PEPPER,
+      families: 'proxy',
+    });
+    configureAbuseGuardRuntime(failing());
+    const alerts = error.mock.calls.filter((args) =>
+      String(args[0]).includes('abuse-guard-configure-failed')
+    );
+    expect(alerts).toHaveLength(2);
+  });
+
   it('turns every family off when the family list is not a string', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() =>
