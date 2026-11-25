@@ -521,14 +521,34 @@ ${buildInfo}
     await t.test('the apex mount serves every declared page alike', async () => {
       for (const [path, expected] of Object.entries(EXPECTED)) {
         const response = await call(mountedPath(BASE, path), APEX);
+        const absolute =
+          typeof expected === 'object' && expected.redirect.startsWith('https://');
+        // The Worker builds an absolute sign-in URL on the https shared origin.
+        // The local runtime proxy rewrites a Location on the forwarded host to the
+        // fixture's http scheme (inferred from the http host beside an https
+        // returnUrl), so the scheme is compared on http while the host, path and
+        // returnUrl below pin the real https target.
         const failure = runtimeOutcomeFailure({
           path,
-          expected,
+          expected: absolute
+            ? { redirect: expected.redirect.replace(/^https:/u, 'http:') }
+            : expected,
           ...response,
           origin: \`http://\${APEX}\`,
           base: BASE,
         });
         assert.equal(failure, null, failure ?? '');
+        if (absolute) {
+          const target = new URL(response.location, \`http://\${APEX}\`);
+          const want = new URL(expected.redirect);
+          assert.equal(target.host, want.host, response.location);
+          assert.equal(target.pathname, want.pathname, response.location);
+          const returnUrl = target.searchParams.get('returnUrl') ?? '';
+          assert.ok(
+            returnUrl.startsWith(\`https://\${APEX}\${BASE}/\`),
+            \`\${path}: returnUrl \${returnUrl} is not under https://\${APEX}\${BASE}/\`
+          );
+        }
       }
     });
   } else {

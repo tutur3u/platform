@@ -31,7 +31,10 @@ export interface TrackPolicyEnv {
   TUTURUUU_STAGING_HOSTS?: string;
 }
 
-/** Root-only and fail-closed: no apex mount, unlisted hosts get 404. */
+/**
+ * Fail-closed: the subdomain and staging hosts serve the root, the apex
+ * serves `/track`, and unlisted hosts get 404.
+ */
 export function trackMounts(env: TrackPolicyEnv) {
   const staging = (env.TUTURUUU_STAGING_HOSTS ?? '')
     .split(',')
