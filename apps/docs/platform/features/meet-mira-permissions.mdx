@@ -46,12 +46,16 @@ Approved access rules:
   room, keyed by the signed-in account. Only that person can turn it on or
   off; the request carries no target account. Turning it on needs a confirmed
   adult Mira account ([one Mira confirmation per account](/platform/features/meet-calls#one-mira-confirmation-per-meet-account))
-  and a current Private Mira Continue choice. While it is on, the server passes
-  the owner's latest tutor chat (up to 12 turns, about 15 KB) to the room after
-  each Tutor answer. Only a Private Mira voice session registered to that same
-  person, on a token carrying the private scope, can read it, and the live
-  worker checks the account confirmation again before every read. Room Mira
-  sessions never carry that scope.
+  and a current Private Mira Continue choice. The room accepts turning a
+  share on, reading it and filling it only from a server-issued token without
+  the live scope, so a browser call token cannot skip those checks; revoking
+  stays open to the owner. While it is on, the server passes the owner's
+  latest tutor chat (up to 12 turns, about 15 KB) to the room after each Tutor
+  answer, in the background so the answer never waits for it. With sharing
+  off, no forward happens. Only a Private Mira voice session registered to
+  that same person, on a token carrying the private scope, can read it, and
+  the live worker checks the workspace gate and the account confirmation
+  again before every read. Room Mira sessions never carry that scope.
 
 ### Revoke and lifetime
 
@@ -59,11 +63,18 @@ Approved access rules:
   close button revokes in one tap. The Private Mira panel's info popover has
   the same switch.
 - Revoking deletes the shared tutor chat and refuses the next read. It never
-  needs a confirmation or a network-side check beyond the room write.
+  needs an account confirmation.
+- Revoking also ends the owner's Private Mira voice sessions, so nothing a
+  session already read stays in a live model conversation. If a session
+  cannot be stopped, the revoke still applies to future reads and the request
+  reports the failure; trying again stops it.
 - Changing the Private Mira choice (Mute or Leave, then Continue again) ends
-  the share; it does not come back on by itself.
-- Shared tutor chat is dropped one hour after the owner last sent it, and every
-  share is removed when the meeting ends or is restored.
+  the share and drops its shared tutor chat; the share does not come back on
+  by itself.
+- Shared tutor chat expires one hour after the owner last sent it. An expired
+  read returns nothing, and the next room-service request drops it from room
+  state. Every share is removed when the meeting ends or is restored, and a
+  subject or meeting erasure removes the subject's share (or every share).
 
 ### Intentional exceptions
 
@@ -86,7 +97,9 @@ on, and Private Mira's poll launch moves to the Polls panel for the host.
 
 - `packages/realtime/src/meet/room-mira-share.test.ts`: default off, owner-only
   grant, host cannot grant or read, Room Mira and unregistered sessions refused,
-  immediate revoke, choice change, stale context and meeting end.
+  browser call tokens refused except for revoking, immediate revoke, the size
+  cap, expired context refused and dropped, choice change drops context,
+  subject and meeting erasure, and meeting end.
 - `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`:
   unconfirmed accounts refused, Room Mira and flag-off refused, revoke refuses
   the next read, Mira cannot launch polls with the flag on.
@@ -94,8 +107,10 @@ on, and Private Mira's poll launch moves to the Polls panel for the host.
   Private Mira tokens carry the private scope; flag-on tool list.
 - `packages/meet-core/src/routes/api/meet-live/[meetingId]/route.share.test.ts`
   and `packages/meet-core/src/features/live-assistant/server/private-share.test.ts`:
-  flag gate, confirmation, no sharing for someone else, revoke always allowed,
-  bounded tutor turns.
+  flag gate, confirmation, no sharing for someone else, revoke always allowed
+  and ending the voice session, bounded tutor turns.
+- `packages/meet-core/src/routes/api/meet-call/[meetingId]/assistant/personal/route.test.ts`:
+  no forward while sharing is off, and a shared forward never holds the answer.
 - `packages/realtime/src/meet/room-documents.test.ts` and
   `packages/realtime/src/meet/room-programming.test.ts`: room-shared tabs only
   with attribution and undo; only a person accepts a code diff.
