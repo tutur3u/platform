@@ -21,6 +21,13 @@ it('returns a Promise for async callers, as @opennextjs/cloudflare does', async 
   await expect(pending.catch(() => null)).resolves.toBe(bindings);
 });
 
+it('reads the bindings in the request scope, before any await', async () => {
+  const pending = getCloudflareContext({ async: true });
+  // The request scope ends before the Promise is awaited.
+  request.current = {};
+  await expect(pending).resolves.toBe(bindings);
+});
+
 it('rejects an async read without bindings instead of throwing', async () => {
   request.current = {};
   let pending: Promise<unknown> | undefined;
