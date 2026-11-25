@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useEffect, useId, useState } from 'react';
+import { MEETING_APP } from '../../../runtime';
 import { MiraAudienceSettings } from '../../live-assistant/mira-audience-settings';
 import { MIRA_SETTINGS_TAB } from '../../live-assistant/use-mira-audience';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
@@ -55,6 +56,7 @@ import { DeviceSettings } from './device-settings';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetSettingsStack } from './meet-settings-card';
 import { MeetingPublicSettings } from './meeting-public-settings';
+import { MiraAccountSettings } from './mira-account-settings';
 import { CallProfileSettings } from './call-profile-settings';
 import { NotesAccessSettings } from './notes-access-settings';
 import { RecordingSettings } from './recording-settings';
@@ -373,7 +375,12 @@ export function CallSettings({
         )}
         {activeTab === 'notes' && isHost && <NotesAccessSettings room={room} />}
         {activeTab === MIRA_SETTINGS_TAB && miraWorkspaceId && (
-          <MiraAudienceSettings wsId={miraWorkspaceId} />
+          <MeetSettingsStack>
+            {MEETING_APP === 'meet' && accountId && (
+              <MiraAccountSettings meetingId={meetingId} accountId={accountId} />
+            )}
+            <MiraAudienceSettings wsId={miraWorkspaceId} />
+          </MeetSettingsStack>
         )}
         {activeTab === 'public' && (
           <MeetSettingsStack>

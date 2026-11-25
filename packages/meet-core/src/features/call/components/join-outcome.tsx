@@ -31,7 +31,9 @@ export function JoinOutcome({
       meetingName={meetingName}
       leaveHref={leaveHref}
       title={t(guestDenied ? 'prejoin.guest_denied' : `join_${reason}_title`)}
-      description={t(guestDenied ? 'prejoin.guest_denied_hint' : `join_${reason}_hint`)}
+      description={t(
+        guestDenied ? 'prejoin.guest_denied_hint' : `join_${reason}_hint`
+      )}
     >
       {onRetry && <Button onClick={onRetry}>{t('connection_refresh')}</Button>}
     </CallPreparation>

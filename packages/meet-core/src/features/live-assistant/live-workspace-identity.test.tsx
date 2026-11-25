@@ -30,6 +30,8 @@ vi.mock('./use-live-assistant', () => ({
     status: 'idle',
     error: f.error,
     mode: 'personal',
+    transcript: [],
+    reviews: [],
     start: f.start,
     send: vi.fn(),
     stop: vi.fn(),

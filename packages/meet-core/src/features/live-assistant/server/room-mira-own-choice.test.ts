@@ -22,6 +22,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
           f.calls.push(['eq', column, value]);
           return chain;
         },
+        neq: (column: string, value: unknown) => {
+          f.calls.push(['neq', column, value]);
+          return chain;
+        },
         order: (column: string, options: unknown) => {
           f.calls.push(['order', column, options]);
           return chain;
@@ -81,4 +85,10 @@ it('returns undefined when the lookup fails, so the box is not guessed ticked', 
   expect(await readOwnMiraLastChoice(account)).toBeUndefined();
   f.result.mockRejectedValue(new Error('network'));
   expect(await readOwnMiraLastChoice(account)).toBeUndefined();
+});
+
+it('excludes staged auto-on evidence when checking for an explicit opt-out', async () => {
+  f.result.mockResolvedValue({ data: { choice: 'off' }, error: null });
+  expect(await readOwnMiraLastChoice({ ...account, explicitOnly: true })).toBe('off');
+  expect(f.calls).toContainEqual(['neq', 'source', 'auto_on']);
 });

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
@@ -11,19 +12,31 @@ const f = vi.hoisted(() => ({
   openRevision: vi.fn(),
   canStore: vi.fn(),
   cf: vi.fn(),
-  access: { guest: true },
+  access: { guest: true, userId: '' },
   getUserById: vi.fn(),
   updateUserById: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async ({ locale }: { locale: 'en' | 'vi' }) => {
+    const { default: messages } = locale === 'vi'
+      ? await import('../../../../../../../../apps/meet/messages/vi.json')
+      : await import('../../../../../../../../apps/meet/messages/en.json');
+    const strings = messages.meet.mira_consent;
+    return (key: keyof typeof strings, values?: { name: string }) =>
+      values ? strings[key].replace('{name}', values.name) : strings[key];
+  },
+}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: f.cf }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
-    auth: { admin: {
-      getUserById: f.getUserById,
-      updateUserById: f.updateUserById,
-    } },
+    auth: {
+      admin: {
+        getUserById: f.getUserById,
+        updateUserById: f.updateUserById,
+      },
+    },
   }),
 }));
 vi.mock(
@@ -71,7 +84,11 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _request: Request,
     _id: string,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run({ ...guestAccess, guest: f.access.guest })),
+  ) => Response.json(await run({
+      ...guestAccess,
+      guest: f.access.guest,
+      user: { id: f.access.userId || guestAccess.user.id },
+    })),
 }));
 
 import { MIRA_ROOM_NOTICE_VERSION as version } from '@tuturuuu/realtime/meet';
@@ -110,6 +127,7 @@ const choice = (overrides: Record<string, unknown> = {}) => ({
 beforeEach(() => {
   vi.resetAllMocks();
   f.access.guest = true;
+  f.access.userId = '';
   f.available.mockResolvedValue(true);
   f.room.mockImplementation(roomDefault);
   f.boxDefault.mockResolvedValue(true);
@@ -120,19 +138,39 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe('account confirmation in the redesigned Meet flow', () => {
-  const actor = guestAccess.user.id;
-  const marker = { meet_mira_account_confirmation: '2026-11-25-v1' };
+  const key = 'meet_mira_account_confirmation';
+  const accountVersion = '2026-11-25-v1';
+  const marker = { [key]: accountVersion };
+  const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+  const reply = (app_metadata: Record<string, unknown>) => ({
+    data: { user: { id: f.access.userId, app_metadata } },
+  });
+  const confirmedRoom = {
+    ...read,
+    lastChoice: null,
+    acceptance: {
+      revision: 1,
+      acceptorName: 'Lan',
+      accountConfirmationRequired: true,
+    },
+  };
+  const autoOn = () =>
+    choice({
+      source: 'auto_on',
+      expectedActorId: f.access.userId,
+      textHash: hash('Mira is on, turned on by Lan'),
+      locale: 'en',
+    });
 
   beforeEach(() => {
     vi.stubEnv('MEET_UX_V2', 'true');
     f.access.guest = false;
-    f.getUserById.mockResolvedValue({
-      data: { user: { id: actor, app_metadata: {} } },
-    });
+    f.access.userId = crypto.randomUUID();
+    f.getUserById.mockResolvedValue(reply({}));
   });
 
   it('refuses an on for an unconfirmed account before touching the room', async () => {
-    await expect(post(choice())).rejects.toMatchObject({
+    await expect(post(autoOn())).rejects.toMatchObject({
       status: 403,
       code: 'MIRA_ACCOUNT_CONFIRMATION_REQUIRED',
     });
@@ -141,25 +179,116 @@ describe('account confirmation in the redesigned Meet flow', () => {
   });
 
   it('refuses automatic on when the durable meeting choice was off', async () => {
-    f.getUserById.mockResolvedValue({ data: { user: { id: actor, app_metadata: marker } } });
+    f.getUserById.mockResolvedValue(reply(marker));
     f.lastChoice.mockResolvedValue('off');
-    await expect(post(choice())).rejects.toMatchObject({ status: 409, code: 'MIRA_ROOM_JOIN_OVER_OFF' });
+    await expect(post(autoOn())).rejects.toMatchObject({
+      status: 409,
+      code: 'MIRA_ROOM_JOIN_OVER_OFF',
+    });
     expect(f.room).not.toHaveBeenCalled();
   });
 
-  it('writes the account marker only for the authenticated actor and once if confirmed', async () => {
-    const action = { action: 'confirm_account', expectedActorId: actor };
-    const confirmed = { data: { user: { id: actor, app_metadata: marker } } };
-    f.updateUserById.mockImplementation(async () => {
-      f.getUserById.mockResolvedValue(confirmed);
-      return confirmed;
+  it('records the localized auto-on evidence for the current account before confirming', async () => {
+    f.getUserById.mockResolvedValue(reply(marker));
+    f.room.mockImplementation(async (access, command: { action: string }) =>
+      command.action === 'mira.room.read'
+        ? confirmedRoom
+        : roomDefault(access, command)
+    );
+    const input = autoOn();
+    expect((await post(input)).status).toBe(200);
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        choice: 'on',
+        source: 'auto_on',
+        meetingId: 'room',
+        participantId: f.access.userId,
+        acceptanceRevision: 1,
+        textHash: input.textHash,
+        locale: 'en',
+        pendingId: PENDING,
+      })
+    );
+    const confirmIndex = f.room.mock.calls.findIndex(
+      ([, command]) => command.action === 'mira.room.confirm'
+    );
+    const confirmOrder = f.room.mock.invocationCallOrder[confirmIndex];
+    expect(f.record.mock.invocationCallOrder[0]).toBeLessThan(confirmOrder ?? -1);
+
+    f.record.mockClear();
+    await expect(post({ ...input, textHash: 'b'.repeat(64) })).rejects.toMatchObject({
+      status: 409,
+      code: 'mira_notice_required',
     });
-    await expect(post({ ...action, expectedActorId: PENDING })).rejects.toMatchObject({ status: 403 });
+    expect(f.record).not.toHaveBeenCalled();
+  });
+
+  it('writes one structured marker for the authenticated actor and evicts it on withdrawal', async () => {
+    const actor = f.access.userId;
+    const action = { action: 'confirm_account', expectedActorId: actor, locale: 'vi' };
+    f.updateUserById.mockImplementation(async (_id, { app_metadata }) => {
+      const result = reply(app_metadata[key] === null ? {} : app_metadata);
+      f.getUserById.mockResolvedValue(result);
+      return result;
+    });
+    await expect(post({ ...action, expectedActorId: PENDING })).rejects.toMatchObject({
+      status: 403,
+    });
     expect(f.updateUserById).not.toHaveBeenCalled();
-    expect(await (await post(action)).json()).toMatchObject({ accountConfirmation: 'confirmed' });
-    expect(await (await post(action)).json()).toMatchObject({ accountConfirmation: 'confirmed' });
-    expect(f.updateUserById).toHaveBeenCalledWith(actor, { app_metadata: marker });
+    expect(await (await post(action)).json()).toMatchObject({
+      accountConfirmation: 'confirmed',
+    });
+    expect(await (await post(action)).json()).toMatchObject({
+      accountConfirmation: 'confirmed',
+    });
     expect(f.updateUserById).toHaveBeenCalledOnce();
+    expect(f.updateUserById).toHaveBeenCalledWith(actor, {
+      app_metadata: {
+        [key]: {
+          version: accountVersion,
+          confirmedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.+Z$/),
+          locale: 'vi',
+          textHash: '3a43d3691dcc721785bff9132cec51e2ea5716931a1a32a3daea03489398d69a',
+        },
+      },
+    });
+
+    const withdraw = { ...action, action: 'withdraw_account' };
+    await expect(post({ ...withdraw, expectedActorId: PENDING })).rejects.toMatchObject({
+      status: 403,
+    });
+    expect(f.updateUserById).toHaveBeenCalledOnce();
+    expect(await (await post(withdraw)).json()).toMatchObject({
+      accountConfirmation: 'required',
+    });
+    expect(f.updateUserById).toHaveBeenLastCalledWith(actor, {
+      app_metadata: { [key]: null },
+    });
+    expect(f.record).toHaveBeenCalledWith(
+      expect.objectContaining({ choice: 'off', participantId: actor })
+    );
+    await expect(post(autoOn())).rejects.toMatchObject({
+      status: 403,
+      code: 'MIRA_ACCOUNT_CONFIRMATION_REQUIRED',
+    });
+  });
+
+  it('caches the active room ledger fallback and invalidates it after the caller chooses', async () => {
+    f.getUserById.mockResolvedValue(reply(marker));
+    f.room.mockImplementation(async (access, command: { action: string }) =>
+      command.action === 'mira.room.read'
+        ? confirmedRoom
+        : roomDefault(access, command)
+    );
+    const get = () => GET(new Request('https://meet.test/x'), params);
+    await get();
+    await get();
+    expect(f.lastChoice).toHaveBeenCalledOnce();
+
+    f.lastChoice.mockResolvedValue('off');
+    const response = await post(choice({ choice: 'off', source: 'toggle' }));
+    expect(await response.json()).toMatchObject({ lastChoice: 'off' });
+    expect(f.lastChoice).toHaveBeenCalledTimes(2);
   });
 });
 

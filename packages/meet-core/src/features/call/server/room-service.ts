@@ -44,6 +44,7 @@ const ROOM_READ_RETRY_MS = 250;
 
 /** Room refusal codes a Meet Worker caller may see; anything else is dropped. */
 export const ROOM_REFUSAL_CODES: ReadonlySet<string> = new Set([
+  'account_confirmation_required',
   'MEET_SELF_MODE_LOCKED',
   'MEET_SELF_NOTICE_REQUIRED',
   'MEET_SELF_NOTICE_STALE',

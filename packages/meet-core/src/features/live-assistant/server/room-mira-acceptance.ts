@@ -30,6 +30,7 @@ type AcceptResult = {
   revision: number;
   acceptorName: string;
   replacedRevision: number | null;
+  accountConfirmationRequired?: true;
 };
 
 /**
@@ -116,6 +117,21 @@ export async function acceptRoomMira(
         name: error instanceof Error ? error.name : 'unknown',
       })
     );
+  if (accountFlow && result.accountConfirmationRequired !== true) {
+    // Older Workers ignore the marker. End that live acceptance and reconcile
+    // its evidence before telling the host to retry on a compatible Worker.
+    await endRoomMiraWithOptions(access, 'turned_off', options, revision).catch(
+      (error: unknown) =>
+        console.error('Room Mira incompatible acceptance could not end', {
+          name: error instanceof Error ? error.name : 'unknown',
+        })
+    );
+    throw new MeetCallAccessError(
+      503,
+      'Realtime must be updated before turning on Mira',
+      'realtime_outdated'
+    );
+  }
   return result;
 }
 
@@ -127,10 +143,27 @@ export async function endRoomMira(
   access: MeetCallRouteAccess,
   reason: 'turned_off' | 'minor_reported'
 ) {
+  return endRoomMiraWithOptions(
+    access,
+    reason,
+    reason === 'turned_off' ? await roomOptions(access) : {}
+  );
+}
+
+async function endRoomMiraWithOptions(
+  access: MeetCallRouteAccess,
+  reason: 'turned_off' | 'minor_reported',
+  options: Awaited<ReturnType<typeof roomOptions>>,
+  expectedRevision?: number
+) {
   const result = await callRoomService<{ endedRevision: number | null }>(
     access,
-    { action: 'mira.room.end', reason },
-    reason === 'turned_off' ? await roomOptions(access) : {}
+    {
+      action: 'mira.room.end',
+      reason,
+      ...(expectedRevision ? { expectedRevision } : {}),
+    },
+    options
   );
   // The room has already ended Mira; a failed evidence write is logged and
   // never reported as Mira still being on.

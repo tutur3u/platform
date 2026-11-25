@@ -1,7 +1,8 @@
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { z } from 'zod';
 import {
   MIRA_ACCOUNT_CONFIRMATION_KEY,
-  MIRA_ACCOUNT_CONFIRMATION_VERSION,
+  isMiraAccountConfirmed,
 } from '../../features/live-assistant/account-confirmation';
 import {
   miraAttestationFromRow,
@@ -13,16 +14,18 @@ import {
   miraPayerMatchesBilling,
   newestActiveSubscriptionTier,
 } from '../../features/live-assistant/mira-entitlement';
-import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
-import { liveRoomCommand } from './room';
+import { MiraTtlCache } from '../../features/live-assistant/mira-ttl-cache';
 import { hasMiraAdultAttestation } from '../../features/live-assistant/participant-consent';
+import { liveRoomCommand } from './room';
 import type { SavedSession } from './session-state';
 import { liveAuthUser, liveDatabase, type LiveEnvironment } from './storage';
 import { liveWorkspaceAllowed } from './workspace-gate';
 
+const confirmations = new MiraTtlCache<boolean>();
+
 export async function requireCurrentPrivateGrant(
   env: LiveEnvironment,
-  saved: SavedSession
+  saved: Pick<SavedSession, 'claims' | 'identity'>
 ) {
   const result = await liveRoomCommand<{
     choice?: {
@@ -46,11 +49,23 @@ export async function requireCurrentPrivateGrant(
     throw new Error('Private Mira choice is unavailable');
 
   if (env.MEET_UX_V2 === 'true' && saved.claims.app !== 'parley') {
-    const actor = authResult.parse(await liveAuthUser(env, saved.claims.ownerId));
-    if (
-      actor.id !== saved.claims.ownerId ||
-      actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY] !== MIRA_ACCOUNT_CONFIRMATION_VERSION
-    )
+    const ownerId = saved.claims.ownerId;
+    const confirmed = await confirmations
+      .read(
+        ownerId,
+        async () => {
+          const actor = authResult.parse(await liveAuthUser(env, ownerId));
+          return (
+            actor.id === ownerId &&
+            isMiraAccountConfirmed(
+              actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY]
+            )
+          );
+        },
+        (value) => value
+      )
+      .catch(() => false);
+    if (!confirmed)
       throw new Error('Private Mira account confirmation is unavailable');
   }
 

@@ -6,8 +6,13 @@ const f = vi.hoisted(() => ({
   role: vi.fn(),
   record: vi.fn(),
   end: vi.fn(),
+  accountFlow: false,
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('./account-confirmation', () => ({
+  usesMiraAccountConfirmation: () => f.accountFlow,
+  requireMiraAccountConfirmation: async () => undefined,
+}));
 vi.mock('./room-mira-authority', () => ({
   readRoomMiraAvailability: f.available,
 }));
@@ -49,6 +54,7 @@ const guest = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  f.accountFlow = false;
   f.available.mockResolvedValue(true);
   f.role.mockResolvedValue({ coHost: false });
   f.record.mockResolvedValue(4);
@@ -153,4 +159,50 @@ it('lets a guest report a minor and records the end without an account', async (
     userId: null,
     reason: 'minor_reported',
   });
+});
+
+it('ends an acceptance that an older Realtime Worker applied without the account fence', async () => {
+  f.accountFlow = true;
+  f.room.mockImplementation(async (_access, command: { action: string }) => {
+    if (command.action === 'mira.room.read') return { canAccept: true };
+    if (command.action === 'mira.room.end') return { endedRevision: 4 };
+    return { revision: 4, acceptorName: 'Host', replacedRevision: null };
+  });
+  await expect(acceptRoomMira(host, ['chat'])).rejects.toMatchObject({
+    status: 503,
+    code: 'realtime_outdated',
+  });
+  expect(f.room).toHaveBeenNthCalledWith(
+    2,
+    host,
+    expect.objectContaining({ accountConfirmationRequired: true }),
+    {}
+  );
+  expect(f.room).toHaveBeenLastCalledWith(
+    host,
+    { action: 'mira.room.end', reason: 'turned_off', expectedRevision: 4 },
+    {}
+  );
+  expect(f.end).toHaveBeenCalledWith({
+    meetingId: 'meeting',
+    revision: 4,
+    userId: 'host',
+    reason: 'turned_off',
+  });
+});
+
+it('keeps the accepted revision when Realtime confirms the account fence', async () => {
+  f.accountFlow = true;
+  f.room.mockResolvedValueOnce({ canAccept: true }).mockResolvedValueOnce({
+    revision: 4,
+    acceptorName: 'Host',
+    replacedRevision: null,
+    accountConfirmationRequired: true,
+  });
+  await expect(acceptRoomMira(host, ['chat'])).resolves.toMatchObject({
+    revision: 4,
+    accountConfirmationRequired: true,
+  });
+  expect(f.room).toHaveBeenCalledTimes(2);
+  expect(f.end).not.toHaveBeenCalled();
 });

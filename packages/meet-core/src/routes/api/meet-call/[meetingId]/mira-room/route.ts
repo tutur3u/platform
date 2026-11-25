@@ -9,13 +9,19 @@ import {
   MIRA_ROOM_NOTICE_VERSION,
   type MiraRoomView,
 } from '@tuturuuu/realtime/meet';
+import { getTranslations } from 'next-intl/server';
 import { connection } from 'next/server';
 import { z } from 'zod';
+import { MEETING_APP } from '../../../../../runtime';
+import { miraConfirmationLocale } from '../../../../../features/live-assistant/account-confirmation';
+import { hashMiraNotice } from '../../../../../features/live-assistant/mira-notice-hash';
+import { MiraTtlCache } from '../../../../../features/live-assistant/mira-ttl-cache';
 import {
   confirmMiraAccount,
   readMiraAccountConfirmation,
   requireMiraAccountConfirmation,
   usesMiraAccountConfirmation,
+  withdrawMiraAccount,
 } from '../../../../../features/live-assistant/server/account-confirmation';
 import {
   acceptRoomMira,
@@ -41,7 +47,8 @@ const command = z.discriminatedUnion('action', [
       choice: z.enum(['on', 'off']),
       version: z.literal(MIRA_ROOM_NOTICE_VERSION),
       acceptanceRevision: z.number().int().nonnegative(),
-      source: z.enum(['join', 'confirm', 'toggle']),
+      source: z.enum(['join', 'confirm', 'toggle', 'auto_on']),
+      expectedActorId: z.uuid().optional(),
       // SHA-256 hex of the exact notice text shown, and its locale.
       textHash: z.string().regex(/^[0-9a-f]{64}$/),
       locale: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/),
@@ -66,12 +73,37 @@ const command = z.discriminatedUnion('action', [
     .object({
       action: z.literal('confirm_account'),
       expectedActorId: z.uuid(),
+      locale: miraConfirmationLocale,
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal('withdraw_account'),
+      expectedActorId: z.uuid(),
+      locale: miraConfirmationLocale,
     })
     .strict(),
 ]);
 
 /** A storage check that cannot run counts as unable to store: fail closed. */
 const canStoreModeOrFalse = () => canStoreMiraNoticeMode().catch(() => false);
+
+const lastChoices = new MiraTtlCache<'on' | 'off' | null | undefined>();
+const choiceKey = (access: MeetCallRouteAccess) =>
+  `${access.meeting.id}:${access.user.id}`;
+
+async function applyOwnChoice(
+  access: MeetCallRouteAccess,
+  input: Parameters<typeof applyRoomMiraChoice>[1],
+  requireNoticeMode: boolean,
+  accountFlow: boolean
+) {
+  try {
+    await applyRoomMiraChoice(access, input, requireNoticeMode, accountFlow);
+  } finally {
+    lastChoices.delete(choiceKey(access));
+  }
+}
 
 async function readView(access: MeetCallRouteAccess) {
   const [view, boxTickedByDefault, accountConfirmation] = await Promise.all([
@@ -87,12 +119,20 @@ async function readView(access: MeetCallRouteAccess) {
   if (!accountConfirmation)
     return { available: true as const, ...view, boxTickedByDefault };
   const lastChoice =
-    accountConfirmation !== 'guest' && view.lastChoice === null
-      ? await readOwnMiraLastChoice({
-          meetingId: access.meeting.id,
-          participantId: access.user.id,
-          guest: false,
-        })
+    accountConfirmation === 'confirmed' &&
+    view.acceptance &&
+    view.lastChoice === null
+      ? await lastChoices.read(
+          choiceKey(access),
+          () =>
+            readOwnMiraLastChoice({
+              meetingId: access.meeting.id,
+              participantId: access.user.id,
+              guest: false,
+              explicitOnly: true,
+            }),
+          (choice) => choice !== undefined
+        )
       : view.lastChoice;
   return {
     available: true as const,
@@ -161,7 +201,31 @@ export async function POST(
         throw new MeetCallAccessError(403, 'Mira confirmation is unavailable');
       // Require live presence before recording a confirmation from this call.
       await callRoomService(access, { action: 'mira.room.read' });
-      await confirmMiraAccount(access, data.expectedActorId);
+      await confirmMiraAccount(access, data.expectedActorId, data.locale);
+      if (!(await readRoomMiraAvailability(access))) return { available: false };
+      return readView(access);
+    }
+    if (data.action === 'withdraw_account') {
+      if (MEETING_APP !== 'meet')
+        throw new MeetCallAccessError(403, 'Mira confirmation is unavailable');
+      await withdrawMiraAccount(access, data.expectedActorId);
+      const t = await getTranslations({
+        locale: data.locale,
+        namespace: 'meet.mira_consent',
+      });
+      await applyOwnChoice(
+        access,
+        {
+          choice: 'off',
+          source: 'toggle',
+          version: MIRA_ROOM_NOTICE_VERSION,
+          acceptanceRevision: 0,
+          textHash: await hashMiraNotice(t('withdraw_account')),
+          locale: data.locale,
+        },
+        false,
+        accountFlow
+      );
       if (!(await readRoomMiraAvailability(access))) return { available: false };
       return readView(access);
     }
@@ -178,6 +242,17 @@ export async function POST(
       );
       return readView(access);
     }
+    if (data.expectedActorId && data.expectedActorId !== access.user.id)
+      throw new MeetCallAccessError(403, 'Mira account changed');
+    if (
+      data.source === 'auto_on' &&
+      (!accountFlow || data.choice !== 'on' || !data.expectedActorId)
+    )
+      throw new MeetCallAccessError(
+        403,
+        'Automatic Mira activation is unavailable'
+      );
+
     // Off always records, so anyone can turn Mira off for themselves.
     if (data.choice === 'on' && !(await readRoomMiraAvailability(access)))
       throw new MeetCallAccessError(403, 'Room Mira is unavailable');
@@ -188,11 +263,18 @@ export async function POST(
     if (data.choice === 'on') {
       if (accountFlow) {
         await requireMiraAccountConfirmation(access);
-        if (data.source === 'join') {
+        if (data.source === 'join')
+          throw new MeetCallAccessError(
+            409,
+            'Refresh Meet before joining with Mira on',
+            'mira_notice_required'
+          );
+        if (data.source === 'auto_on') {
           const previous = await readOwnMiraLastChoice({
             meetingId,
             participantId: access.user.id,
             guest: false,
+            explicitOnly: true,
           });
           if (previous === undefined)
             throw new MeetCallAccessError(503, 'Your choice could not be read');
@@ -212,7 +294,37 @@ export async function POST(
       if (requireNoticeMode && !(await canStoreModeOrFalse()))
         throw new MeetCallAccessError(503, 'Your choice could not be saved');
     }
-    await applyRoomMiraChoice(access, data, requireNoticeMode, accountFlow);
+    if (data.source === 'auto_on') {
+      const locale = miraConfirmationLocale.safeParse(data.locale);
+      if (!locale.success) throw new MeetCallAccessError(400, 'Invalid locale');
+      const view = await callRoomService<MiraRoomView>(access, {
+        action: 'mira.room.read',
+      });
+      const acceptance = view.acceptance;
+      if (
+        !acceptance?.accountConfirmationRequired ||
+        acceptance.revision !== data.acceptanceRevision
+      )
+        throw new MeetCallAccessError(
+          409,
+          'Mira acceptance changed',
+          'MIRA_ROOM_STALE'
+        );
+      const t = await getTranslations({
+        locale: locale.data,
+        namespace: 'meet.mira_consent',
+      });
+      const textHash = await hashMiraNotice(
+        t('indicator_on', { name: acceptance.acceptorName })
+      );
+      if (data.textHash !== textHash)
+        throw new MeetCallAccessError(
+          409,
+          'The Mira notice changed',
+          'mira_notice_required'
+        );
+    }
+    await applyOwnChoice(access, data, requireNoticeMode, accountFlow);
     return readView(access);
   });
 }

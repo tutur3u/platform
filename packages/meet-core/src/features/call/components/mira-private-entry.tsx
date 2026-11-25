@@ -22,12 +22,22 @@ export function MiraPrivateEntry({
   const t = useTranslations('meet.live');
   const live = !['idle', 'error', 'ended'].includes(session.status);
   return (
-    <div className={compact ? 'space-y-2' : 'space-y-2 border-t pt-2 first:border-t-0 first:pt-0'}>
+    <div
+      className={
+        compact
+          ? 'space-y-2'
+          : 'space-y-2 border-t pt-2 first:border-t-0 first:pt-0'
+      }
+    >
       <Button
         type="button"
         size="sm"
         variant={compact ? 'default' : 'outline'}
-        className={compact ? 'w-full justify-start pointer-coarse:h-11' : 'w-full justify-start'}
+        className={
+          compact
+            ? 'w-full justify-start pointer-coarse:h-11'
+            : 'w-full justify-start'
+        }
         onClick={onOpen}
       >
         <Lock aria-hidden className="size-4" />

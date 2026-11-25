@@ -9,7 +9,7 @@ import {
   setPrivateMiraChoice,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { MEETING_APP } from '../../../runtime';
 import { liveErrorMessageKey } from '../../live-assistant/live-errors';
@@ -74,6 +74,7 @@ export function PersonalChat({
 }) {
   const t = useTranslations('meet.call');
   const liveT = useTranslations('meet.live');
+  const locale = useLocale();
   const v2 = useMeetUxV2() && MEETING_APP === 'meet';
   const queryClient = useQueryClient();
   const roomConsent = useRoomMiraConsent(meetingId, false).data;
@@ -81,9 +82,13 @@ export function PersonalChat({
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [confirmEnable, setConfirmEnable] = useState(false);
-  const [confirmationIntent, setConfirmationIntent] = useState<'send' | 'talk' | null>(null);
-  const awaitingConfirmation = confirmationIntent !== null &&
-    (!roomConsent?.available || roomConsent.accountConfirmation !== 'confirmed');
+  const [confirmationIntent, setConfirmationIntent] = useState<
+    'send' | 'talk' | null
+  >(null);
+  const awaitingConfirmation =
+    confirmationIntent !== null &&
+    (!roomConsent?.available ||
+      roomConsent.accountConfirmation !== 'confirmed');
   const [share, setShare] = useState<string | null>(null);
   const activeScope = useRef({ accountId, meetingId });
   activeScope.current = { accountId, meetingId };
@@ -160,7 +165,13 @@ export function PersonalChat({
     },
   });
   const prepare = useMutation({
-    mutationFn: async ({ action, confirm }: { action: 'send' | 'talk'; confirm: boolean }) => {
+    mutationFn: async ({
+      action,
+      confirm,
+    }: {
+      action: 'send' | 'talk';
+      confirm: boolean;
+    }) => {
       const scope = { accountId, meetingId };
       const policy = await readPrivateMiraPolicy(meetingId);
       if (!accountId || policy.accountId !== accountId)
@@ -172,16 +183,29 @@ export function PersonalChat({
           `MIRA_${(policy.unavailableReason ?? 'account').toUpperCase()}_UNAVAILABLE`
         );
       if (policy.choice && policy.choice.choice !== 'continue')
-        throw new InternalApiError('Private Mira is off in this meeting', 403, 'MIRA_PRIVATE_OFF');
+        throw new InternalApiError(
+          'Private Mira is off in this meeting',
+          403,
+          'MIRA_PRIVATE_OFF'
+        );
       if (policy.accountConfirmation === 'required') {
         if (!confirm) return { ...scope, action, needsConfirmation: true };
-        const next = await confirmMeetMiraAccount(meetingId, accountId);
+        const next = await confirmMeetMiraAccount(
+          meetingId,
+          accountId,
+          locale
+        );
         queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
       } else if (policy.accountConfirmation !== 'confirmed') {
         throw new Error('Mira confirmation is unavailable');
       }
       if (!policy.choice)
-        await setPrivateMiraChoice(meetingId, policy.version, 'continue', accountId);
+        await setPrivateMiraChoice(
+          meetingId,
+          policy.version,
+          'continue',
+          accountId
+        );
       return { ...scope, action, needsConfirmation: false };
     },
     onSuccess: (result) => {
@@ -231,9 +255,16 @@ export function PersonalChat({
   };
   const failure = prepare.isError
     ? personalFailureKey(prepare.error)
-    : ask.isError ? personalFailureKey(ask.error) : null;
+    : ask.isError
+      ? personalFailureKey(ask.error)
+      : null;
   return (
     <>
+      {v2 && (
+        <p className="text-muted-foreground text-xs">
+          {liveT('private_notice_summary')}
+        </p>
+      )}
       {!v2 && (
         <PersonalChatToolbar
           voice={canTalk}
@@ -257,7 +288,13 @@ export function PersonalChat({
         onDraft={setDraft}
         onSubmit={submit}
         onTalk={canTalk && !live ? talk : undefined}
-        locked={ask.isPending || enable.isPending || confirmEnable || prepare.isPending || awaitingConfirmation}
+        locked={
+          ask.isPending ||
+          enable.isPending ||
+          confirmEnable ||
+          prepare.isPending ||
+          awaitingConfirmation
+        }
         retrying={ask.isError && ask.variables === draft.trim()}
       >
         {failure === 'personal_workspace_unavailable' ? (
@@ -305,7 +342,8 @@ export function PersonalChat({
             setConfirmationIntent(null);
           }}
           onConfirm={() =>
-            confirmationIntent && prepare.mutate({ action: confirmationIntent, confirm: true })
+            confirmationIntent &&
+            prepare.mutate({ action: confirmationIntent, confirm: true })
           }
         />
       ) : (

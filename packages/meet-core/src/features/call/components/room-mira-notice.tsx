@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Check,
-  Loader2,
-  Lock,
-  Pause,
-  Power,
-} from '@tuturuuu/icons';
+import { Check, Loader2, Lock, Pause, Power } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Label } from '@tuturuuu/ui/label';
@@ -250,17 +244,20 @@ function RoomMiraTranscriptChoice({ meetingId }: { meetingId: string }) {
     !mira.noticeStale ||
     mira.data?.choice !== 'on' ||
     mira.data.accountConfirmation !== 'confirmed'
-  ) return null;
+  )
+    return null;
   return (
     <div className="space-y-2">
       <p className="text-muted-foreground text-xs">
-        {t('mode_changed_reason', { mode: mira.noticeMode === 'self' ? 'per_speaker' : 'room' })}
+        {t('mode_changed_reason', {
+          mode: mira.noticeMode === 'self' ? 'per_speaker' : 'room',
+        })}
       </p>
       <Button
         type="button"
         size="sm"
         disabled={mira.choosing || !mira.noticeKnown}
-        onClick={() => mira.choose.mutate({ choice: 'on', source: 'join' })}
+        onClick={() => mira.choose.mutate({ choice: 'on', source: 'confirm' })}
       >
         {t('confirm_transcript_mode')}
       </Button>

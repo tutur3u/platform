@@ -7,7 +7,11 @@ import { useState } from 'react';
 import type { useRoomMira } from './use-room-mira';
 
 /** Anyone can report a minor; a second press confirms, never a dialog. */
-export function ReportMinor({ mira }: { mira: ReturnType<typeof useRoomMira> }) {
+export function ReportMinor({
+  mira,
+}: {
+  mira: ReturnType<typeof useRoomMira>;
+}) {
   const t = useTranslations('meet.mira_consent');
   const [confirming, setConfirming] = useState(false);
   return (

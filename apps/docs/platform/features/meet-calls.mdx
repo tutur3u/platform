@@ -2713,34 +2713,56 @@ default applies to the original flow, including Parley.
 
 - Each signed-in Meet account confirms once that they are 18 or older and agree
   that Mira may listen and transcribe while it is on. The server stores the
-  versioned confirmation in `auth.users.raw_app_meta_data.meet_mira_account_confirmation`.
-  Anonymous guests can join the call and report a minor, but have no account
-  confirmation and stay outside the new room Mira acceptance.
-- A new host acceptance activates Mira for confirmed participants as their
-  clients receive the room update. Activation still uses the room's current
-  acceptance revision and the participant's evidence before it takes effect.
-  An unconfirmed participant gets one **Confirm** or **Not now** dialog after
-  admission. Pre-join has no checkbox for Mira.
-- **Not now** in the room and the personal switch off record a meeting opt-out.
-  Later host activations and rejoins preserve it. Mira excludes that person’s
-  room content and refuses their room requests. The existing audio fence
-  still pauses shared room capture when someone declines. In per-speaker
-  mode, a separate voice Allow is required and the other speakers can continue.
-  Room activation can allow the shared transcript for a participant who has
+  statement version, confirmation time, locale, and SHA-256 text hash in
+  `auth.users.raw_app_meta_data.meet_mira_account_confirmation`.
+  **Call settings → Mira → Withdraw Mira confirmation** removes the account
+  record and turns Mira off for the caller in that meeting. Successful account
+  reads are cached for 60 seconds per instance or Worker isolate. Withdrawal
+  clears the local entry immediately. Other instances can rely on their cached
+  confirmation until it expires. The room view also caches its fallback lookup
+  of the caller's last ledger choice for 60 seconds per meeting and account,
+  and invalidates it after the caller chooses. Auto-on checks the durable
+  choice before applying.
+- During the first host activation in a meeting, and when a confirmed
+  participant joins a meeting where Mira is on, Meet shows a non-blocking
+  notice in the call with the name of the host or co-host who turned it on.
+  Each participant sees the notice once per meeting in a browser session.
+  Each automatic activation uses the current acceptance and takes effect
+  after the server writes an `auto_on` evidence row for the authenticated
+  participant with the meeting ID, locale, and SHA-256 hash of the shown text.
+  If the name or locale changes the notice text within that session, the
+  participant can turn Mira on explicitly.
+- People without a current 18+ confirmation stay outside auto-on.
+  Unconfirmed signed-in participants can confirm after admission. Guests
+  can join the call and report a minor. A report that someone is under 18
+  ends room Mira for everyone. Pre-join has no Mira checkbox in this flow.
+- Closing the confirmation or choosing **Not now** defers the choice.
+  **Turn off for me** on the notice and turning off the personal switch
+  record a meeting opt-out through the same room fence. Later host
+  activations and rejoins preserve it. Mira excludes that person's room
+  content and refuses their room requests. The audio fence pauses shared
+  room capture when someone declines. In per-speaker mode, a separate
+  voice Allow is required and the other speakers can continue. Automatic
+  room activation can allow the shared transcript for a participant who has
   no transcript choice. It preserves any recorded transcript decline.
-- **Open private assistant** opens the private chat directly. The first text or
-  voice request uses the same account confirmation if needed. Private Mira
-  still has its own meeting authorization and eligibility checks. A prior
-  private withdrawal stays in force. Host activation does not turn on
-  anyone’s private microphone.
-- An active room acceptance created before the rollout retains its existing
-  participant evidence. The account fence applies to new host acceptances,
-  new **on** choices and assistant requests in Meet with the flag enabled.
-  Deploy the compatible Meet Realtime worker before enabling the flag.
+- **Open private assistant** opens the private chat and displays the private
+  input summary. The first text or voice request uses the same account
+  confirmation if needed. Private Mira still checks meeting access and
+  eligibility. A prior private withdrawal stays in force. Room activation
+  leaves each participant's private microphone under their own control.
+- Deploy the compatible Meet Realtime Worker and apply the evidence source
+  migration before enabling the flag. An older Worker that fails to echo
+  the account fence is asked to end the acceptance and Meet returns
+  `realtime_outdated`. An acceptance made before the rollout retains its
+  existing participant evidence. The host must re-accept to enable auto-on
+  for that meeting. After rolling back the flag, the host must turn Mira off
+  and re-accept under the original flow. Until then the room refuses new
+  legacy opt-ins with `account_confirmation_required`.
 
 Regression coverage includes
-[the one-confirm popover and host controls](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/room-mira-popover.test.tsx),
-[account and durable opt-out refusals](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/routes/api/meet-call/%5BmeetingId%5D/mira-room/route.test.ts),
+[the host-on and join-while-on notices, deferral and the opt-out action](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/room-mira-popover.test.tsx),
+[auto-on evidence and unconfirmed-account refusals](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/routes/api/meet-call/%5BmeetingId%5D/mira-room/route.test.ts),
+[the evidence source constraint](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/meet-mira-host-consent.sql),
 [room request and source exclusion](https://github.com/tutur3u/platform/blob/main/packages/realtime/src/meet/room-mira-consent.test.ts)
 and [transcript decline preservation](https://github.com/tutur3u/platform/blob/main/apps/meet-realtime/src/room-do-mira-pending.test.ts).
 

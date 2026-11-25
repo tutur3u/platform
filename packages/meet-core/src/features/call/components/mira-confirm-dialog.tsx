@@ -90,7 +90,12 @@ export function MiraConfirmDialog({
           </p>
         )}
         <DialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={onDismiss}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={pending}
+            onClick={onDismiss}
+          >
             {t('not_now')}
           </Button>
           <Button type="button" disabled={pending} onClick={onConfirm}>

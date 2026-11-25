@@ -36,6 +36,7 @@ export type RoomMiraConsent =
         capabilities: Array<'chat' | 'captions' | 'notes'>;
         /** Server time the acceptance started, in epoch milliseconds. */
         acceptedAt: number;
+        accountConfirmationRequired?: true;
       } | null;
       /** The caller's choice for the current acceptance; null is off. */
       choice: 'on' | 'off' | null;
@@ -67,7 +68,8 @@ export type RoomMiraChoiceInput = {
   choice: 'on' | 'off';
   version: string;
   acceptanceRevision: number;
-  source: 'join' | 'confirm' | 'toggle';
+  source: 'join' | 'confirm' | 'toggle' | 'auto_on';
+  expectedActorId?: string;
   /** SHA-256 hex of the exact notice text shown. */
   textHash: string;
   locale: string;
@@ -104,11 +106,25 @@ export function setRoomMiraChoice(
 
 export function confirmMeetMiraAccount(
   meetingId: string,
-  expectedActorId: string
+  expectedActorId: string,
+  locale: string
 ) {
   return postRoomMira(meetingId, {
     action: 'confirm_account',
     expectedActorId,
+    locale,
+  });
+}
+
+export function withdrawMeetMiraAccount(
+  meetingId: string,
+  expectedActorId: string,
+  locale: string
+) {
+  return postRoomMira(meetingId, {
+    action: 'withdraw_account',
+    expectedActorId,
+    locale,
   });
 }
 

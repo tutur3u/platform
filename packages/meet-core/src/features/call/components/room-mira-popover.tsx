@@ -6,7 +6,7 @@ import { confirmMeetMiraAccount } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useLiveSession } from '../../live-assistant/live-session-store';
 import { MiraAbout } from './mira-about';
@@ -14,6 +14,7 @@ import { MiraConfirmDialog } from './mira-confirm-dialog';
 import { MiraPrivateEntry } from './mira-private-entry';
 import { ReportMinor } from './mira-report-minor';
 import { RoomMiraChip } from './room-mira-chip';
+import { useMiraAutoOn } from './use-mira-auto-on';
 import { roomMiraConsentKey, useRoomMira } from './use-room-mira';
 
 export function RoomMiraPopover({
@@ -27,6 +28,7 @@ export function RoomMiraPopover({
 }) {
   const t = useTranslations('meet.mira_consent');
   const live = useTranslations('meet.live');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const mira = useRoomMira(meetingId, accountId);
   const data = mira.data;
@@ -39,49 +41,42 @@ export function RoomMiraPopover({
   const trigger = useRef<HTMLButtonElement>(null);
   const focusElsewhere = useRef(false);
   const [dismissed, setDismissed] = useState(false);
-  const prompted = !!accountId && status === 'required' && !!active &&
-    data?.lastChoice !== 'off' && !dismissed;
+  const prompted =
+    !!accountId &&
+    status === 'required' &&
+    !!active &&
+    data?.lastChoice !== 'off' &&
+    !dismissed;
   const on = data?.choice === 'on' && !data.pausing;
-  const off = data?.lastChoice === 'off';
   const busy = mira.choosing || mira.turningOn || !!data?.pausing;
-  const canEnable = !!accountId && (status === 'required' || status === 'confirmed');
+  const canEnable =
+    !!accountId && (status === 'required' || status === 'confirmed');
 
   // The room broadcasts its acceptance changes through the existing chat
   // notice stream. Polling still covers reconnects and missing notices.
   useEffect(() => {
     if (acceptanceEventId)
-      void queryClient.invalidateQueries({ queryKey: roomMiraConsentKey(meetingId) });
+      void queryClient.invalidateQueries({
+        queryKey: roomMiraConsentKey(meetingId),
+      });
   }, [acceptanceEventId, meetingId, queryClient]);
 
-  const lastAttempt = useRef<{ revision: number; read: number; count: number } | null>(null);
   const { mutate: choose } = mira.choose;
-  const revision = active?.revision;
-  useEffect(() => {
-    if (
-      !revision || status !== 'confirmed' || data?.choice !== null ||
-      off || busy || dismissed || intent || !mira.noticeKnown ||
-      data.autoJoinBlocked
-    ) return;
-    const last = lastAttempt.current;
-    if (last?.revision === revision && (last.read === mira.dataUpdatedAt || last.count >= 5))
-      return;
-    lastAttempt.current = {
-      revision,
-      read: mira.dataUpdatedAt,
-      count: last?.revision === revision ? last.count + 1 : 1,
-    };
-    choose({ choice: 'on', source: 'join' });
-  }, [busy, choose, data, dismissed, intent, mira.dataUpdatedAt, mira.noticeKnown, off, revision, status]);
+  useMiraAutoOn({ meetingId, accountId, mira, deferred: dismissed || !!intent });
 
   const confirm = useMutation({
     mutationFn: async () => {
       if (!accountId) throw new Error('Mira account is unavailable');
       if (status === 'required') {
-        const next = await confirmMeetMiraAccount(meetingId, accountId);
+        const next = await confirmMeetMiraAccount(
+          meetingId,
+          accountId,
+          locale
+        );
         queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
       }
       if (intent === 'host') await mira.acceptance.mutateAsync('accept');
-      if (intent === 'personal' && (off || mira.noticeStale))
+      if (intent === 'personal')
         await mira.choose.mutateAsync({ choice: 'on', source: 'toggle' });
     },
     onSuccess: () => {
@@ -96,14 +91,20 @@ export function RoomMiraPopover({
     setIntent(next);
   };
   const dismiss = () => {
-    if (intent !== 'host' && active) {
-      setDismissed(true);
-      choose({ choice: 'off', source: 'confirm' });
-    }
+    if (intent !== 'host' && active) setDismissed(true);
     setIntent(null);
   };
   if (!active && !data?.canAccept && !session) return null;
-  const label = active ? t('status_by', { name: active.acceptorName }) : t('status_off');
+  const label = active
+    ? t('status_by', { name: active.acceptorName })
+    : t('status_off');
+  const personalStatus = data?.pausing
+    ? 'pausing'
+    : busy
+      ? 'turning_on'
+      : on
+        ? 'status_transcript_paused'
+        : 'status_off_for_you';
   return (
     <>
       <RoomMiraChip
@@ -118,16 +119,26 @@ export function RoomMiraPopover({
         }}
       >
         <div role="status" className="flex items-center gap-2 font-medium">
-          <span aria-hidden className={active ? 'size-2 shrink-0 rounded-full bg-primary' : 'size-2 shrink-0 rounded-full bg-muted-foreground'} />
+          <span
+            aria-hidden
+            className={
+              active
+                ? 'size-2 shrink-0 rounded-full bg-primary'
+                : 'size-2 shrink-0 rounded-full bg-muted-foreground'
+            }
+          />
           <span className="min-w-0 flex-1 break-words">{label}</span>
           {active && (!on || mira.noticeStale) && (
             <Badge variant="secondary" className="shrink-0">
-              {t(data?.pausing ? 'pausing' : busy ? 'turning_on' : on ? 'status_transcript_paused' : 'status_off_for_you')}
+              {t(personalStatus)}
             </Badge>
           )}
         </div>
         {active && (
-          <label htmlFor={choiceId} className="flex min-h-8 items-center gap-2 text-sm pointer-coarse:min-h-11">
+          <label
+            htmlFor={choiceId}
+            className="flex min-h-8 items-center gap-2 text-sm pointer-coarse:min-h-11"
+          >
             <AudioLines aria-hidden className="size-4 shrink-0" />
             <span className="flex-1">{t('personal_switch')}</span>
             <Switch
@@ -144,22 +155,35 @@ export function RoomMiraPopover({
             />
           </label>
         )}
-        {session && <MiraPrivateEntry session={session} compact onOpen={() => {
-          focusElsewhere.current = true;
-          trigger.current?.focus();
-          setOpen(false);
-          session.controls.openConsent();
-        }} />}
+        {session && (
+          <MiraPrivateEntry
+            session={session}
+            compact
+            onOpen={() => {
+              focusElsewhere.current = true;
+              trigger.current?.focus();
+              setOpen(false);
+              session.controls.openConsent();
+            }}
+          />
+        )}
         {data?.canAccept && (
-          <section aria-label={t('host_section')} className="space-y-2 border-t pt-2">
-            <p className="text-xs font-medium text-muted-foreground">{t('host_section')}</p>
+          <section
+            aria-label={t('host_section')}
+            className="space-y-2 border-t pt-2"
+          >
+            <p className="font-medium text-muted-foreground text-xs">
+              {t('host_section')}
+            </p>
             <Button
               type="button"
               size="sm"
               variant={active ? 'destructive' : 'outline'}
               className="w-full justify-start pointer-coarse:h-11"
               disabled={mira.acceptance.isPending || (!active && !canEnable)}
-              onClick={() => active ? mira.acceptance.mutate('turn_off') : openDialog('host')}
+              onClick={() =>
+                active ? mira.acceptance.mutate('turn_off') : openDialog('host')
+              }
             >
               <Power aria-hidden className="size-4" />
               {t(active ? 'host_turn_off' : 'host_turn_on')}

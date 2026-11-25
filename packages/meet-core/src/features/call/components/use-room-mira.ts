@@ -116,7 +116,7 @@ async function roomCaptureMode(meetingId: string) {
 export const MIRA_OFF_RETRY_MS = [5000, 10_000];
 
 export type RoomMiraAvailable = Extract<RoomMiraConsent, { available: true }>;
-type Source = 'join' | 'confirm' | 'toggle';
+type Source = 'join' | 'confirm' | 'toggle' | 'auto_on';
 
 /** Join states being recorded now, shared by every surface in the tab. */
 const applying = new Set<string>();
@@ -173,6 +173,7 @@ export function useRoomMira(meetingId: string, accountId?: string) {
       choice: 'on' | 'off';
       source: Source;
       textHash?: string;
+      noticeText?: string;
       locale?: string;
     }) => {
       const ticket = (latestChoice.get(meetingId) ?? 0) + 1;
@@ -189,7 +190,9 @@ export function useRoomMira(meetingId: string, accountId?: string) {
         version: MIRA_ROOM_NOTICE_VERSION,
         acceptanceRevision: data?.acceptance?.revision ?? 0,
         source: input.source,
-        textHash: input.textHash ?? (await hashMiraConsentText(text)),
+        textHash:
+          input.textHash ?? (await hashMiraConsentText(input.noticeText ?? text)),
+        ...(accountFlow && accountId ? { expectedActorId: accountId } : {}),
         locale: input.locale ?? locale,
         ...(mode === 'self' ? { noticeMode: 'self' as const } : {}),
       };
@@ -246,8 +249,10 @@ export function useRoomMira(meetingId: string, accountId?: string) {
     onError: (error, input) => {
       // A newer choice took over; it reports its own outcome.
       if (error instanceof SupersededMiraChoice) return;
-      if (input.source === 'join') return;
-      toast.error(t('save_failed'));
+      if (input.source === 'join' || input.source === 'auto_on') return;
+      const rollback =
+        'code' in error && error.code === 'account_confirmation_required';
+      toast.error(t(rollback ? 'host_reaccept_required' : 'save_failed'));
       void queryClient.invalidateQueries({
         queryKey: roomMiraConsentKey(meetingId),
       });

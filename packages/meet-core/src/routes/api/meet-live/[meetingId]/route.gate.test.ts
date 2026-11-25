@@ -1,4 +1,4 @@
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import {
   actorId,
   bind,
@@ -12,6 +12,17 @@ import { POST as review } from './review/route';
 import { POST as live } from './route';
 
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: {
+      admin: {
+        getUserById: async () => ({
+          data: { user: { id: actorId, app_metadata: {} } },
+        }),
+      },
+    },
+  }),
+}));
 vi.mock('@opennextjs/cloudflare', async () =>
   (await import('./phase-a-fixture')).phaseAModules.cloudflare()
 );
@@ -185,4 +196,19 @@ it('does not record recovery consent for an ineligible workspace', async () => {
   expect(f.callRoom.mock.calls[0]?.[1]).toEqual({
     action: 'mira.private.read',
   });
+});
+
+afterEach(() => vi.unstubAllEnvs());
+
+it('refuses private Continue without account confirmation under Meet UX v2', async () => {
+  vi.stubEnv('MEET_UX_V2', 'true');
+  const response = await call(live, {
+    action: 'choice',
+    choice: 'continue',
+    version,
+    expectedActorId: actorId,
+  });
+  expect(response.status).toBe(403);
+  expect(f.order).toEqual(['mira.private.read']);
+  expect(f.sign).not.toHaveBeenCalled();
 });

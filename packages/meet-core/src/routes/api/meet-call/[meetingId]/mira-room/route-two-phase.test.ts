@@ -13,6 +13,9 @@ const f = vi.hoisted(() => ({
   cf: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(),
+}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: f.cf }));
 vi.mock('../../../../../features/meeting-ai/server/per-speaker-flag', () => ({

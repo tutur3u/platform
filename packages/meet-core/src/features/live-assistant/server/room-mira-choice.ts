@@ -17,7 +17,7 @@ export type RoomMiraChoiceInput = {
   choice: 'on' | 'off';
   version: string;
   acceptanceRevision: number;
-  source: 'join' | 'confirm' | 'toggle';
+  source: 'join' | 'confirm' | 'toggle' | 'auto_on';
   textHash: string;
   locale: string;
   noticeMode?: 'room' | 'self';
@@ -92,7 +92,7 @@ const roomChoice = (
     version: input.version,
     acceptanceRevision: input.acceptanceRevision,
     // The room refuses a Join state that would turn an earlier off on.
-    source: input.source,
+    source: input.source === 'auto_on' ? 'join' : input.source,
     // The room refuses an on under another mode's notice in the same turn.
     ...(input.noticeMode ? { noticeMode: input.noticeMode } : {}),
     ...(accountConfirmed ? { accountConfirmed: true } : {}),
@@ -177,6 +177,10 @@ async function recordOn(
   // once: record its evidence as before. The server can therefore deploy
   // before or with the room, never after it.
   if (reply?.pendingId === undefined) {
+    if (input.source === 'auto_on') {
+      await keepAlive(compensateLegacyOn(access, input, offEvidence));
+      throw notSaved();
+    }
     await keepAlive(
       recordEffectiveOn(access, input, requireNoticeMode, offEvidence)
     );
@@ -189,7 +193,13 @@ async function recordOn(
   if (!pendingId) throw notSaved();
   // The evidence and confirm finish even if the client disconnects.
   await keepAlive(
-    confirmWithEvidence(access, input, requireNoticeMode, pendingId, accountConfirmed)
+    confirmWithEvidence(
+      access,
+      input,
+      requireNoticeMode,
+      pendingId,
+      accountConfirmed
+    )
   );
 }
 
@@ -233,7 +243,7 @@ async function confirmWithEvidence(
   }
   const allowUndecidedTranscript =
     accountConfirmed &&
-    input.source === 'join' &&
+    input.source === 'auto_on' &&
     !requireNoticeMode &&
     (await readMeetTranscriptionAvailability(access.meeting.ws_id)
       .then((availability) => availability.available)

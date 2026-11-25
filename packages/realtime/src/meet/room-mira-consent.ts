@@ -102,6 +102,9 @@ function miraRoomView(
           acceptorName: acceptance.acceptorName,
           capabilities: acceptance.capabilities,
           acceptedAt: acceptance.acceptedAt,
+          ...(acceptance.accountConfirmationRequired
+            ? { accountConfirmationRequired: true as const }
+            : {}),
         }
       : null,
     choice: current ? own!.choice : null,
@@ -235,7 +238,10 @@ export function applyMiraRoomConsent(
   )
     return {
       state: settled,
-      body: { error: 'Confirm your account before using Mira' },
+      body: {
+        error: 'Confirm your account before using Mira',
+        code: 'account_confirmation_required',
+      },
       status: 403,
     };
   const own = settled.miraRoom?.choices[accountId];

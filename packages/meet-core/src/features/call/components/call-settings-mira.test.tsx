@@ -14,7 +14,15 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { MeetRoomController } from '../lib/room-controller';
 
-const f = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn() }));
+const f = vi.hoisted(() => ({
+  read: vi.fn(),
+  write: vi.fn(),
+  withdraw: vi.fn(),
+}));
+vi.mock('@tuturuuu/internal-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api')>()),
+  withdrawMeetMiraAccount: f.withdraw,
+}));
 vi.mock('@tuturuuu/internal-api/workspace-configs', () => ({
   getMiraAudienceAttestation: f.read,
   updateMiraAudienceAttestation: f.write,
@@ -139,4 +147,26 @@ it('offers the Mira section in the settings navigation only to signed-in partici
   fireEvent.click(screen.getByRole('button', { name: 'Meeting settings' }));
   expect(await screen.findByText('Device controls')).toBeDefined();
   expect(screen.queryByRole('button', { name: copy.settings_tab })).toBeNull();
+});
+
+it('withdraws the signed-in participant’s confirmation from Mira settings', async () => {
+  f.read.mockResolvedValue(off);
+  f.withdraw.mockResolvedValue({ available: false });
+  show({ device: { accountId: 'synthetic-account' } });
+  fireEvent.click(
+    await screen.findByRole('button', { name: copy.open_settings })
+  );
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.withdraw_account,
+    })
+  );
+  expect(
+    await screen.findByText(messages.meet.mira_consent.withdrawn_account)
+  ).toBeTruthy();
+  expect(f.withdraw).toHaveBeenCalledExactlyOnceWith(
+    'synthetic-meeting',
+    'synthetic-account',
+    'en'
+  );
 });

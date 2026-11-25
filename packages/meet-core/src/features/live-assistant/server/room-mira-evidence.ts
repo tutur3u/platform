@@ -69,7 +69,7 @@ export type MiraChoiceEvidence = {
    * `system_fallback`: the server turned an older room back off after an on
    * it could not record (rooms without two-phase Mira support only).
    */
-  source: 'join' | 'confirm' | 'toggle' | 'system_fallback';
+  source: 'join' | 'confirm' | 'toggle' | 'system_fallback' | 'auto_on';
   acceptanceRevision: number;
   noticeVersion: string;
   textHash: string;
@@ -280,6 +280,7 @@ export async function readOwnMiraLastChoice(input: {
   meetingId: string;
   participantId: string;
   guest: boolean;
+  explicitOnly?: boolean;
 }): Promise<'on' | 'off' | null | undefined> {
   try {
     const db = await privateDb();
@@ -287,11 +288,12 @@ export async function readOwnMiraLastChoice(input: {
       .from('meet_mira_participant_choices')
       .select('choice')
       .eq('meeting_id', input.meetingId);
-    const { data, error } = await (
-      input.guest
-        ? rows.eq('guest', true).eq('participant_ref', input.participantId)
-        : rows.eq('guest', false).eq('user_id', input.participantId)
-    )
+    const own = input.guest
+      ? rows.eq('guest', true).eq('participant_ref', input.participantId)
+      : rows.eq('guest', false).eq('user_id', input.participantId);
+    // A staged automatic on can race an off, but cannot supersede it.
+    const choices = input.explicitOnly ? own.neq('source', 'auto_on') : own;
+    const { data, error } = await choices
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(1)

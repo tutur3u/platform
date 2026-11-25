@@ -113,7 +113,10 @@ it('requires the server’s account proof, and automatic on never revives a with
       accountConfirmationRequired: true,
     }, 'host');
   acceptWithAccountProof(1);
-  expect(choose(bob, 'on').status).toBe(403);
+  expect(choose(bob, 'on')).toMatchObject({
+    status: 403,
+    body: { code: 'account_confirmation_required' },
+  });
   expect(view(bob)).toMatchObject({ choice: null, ready: false });
   expect(act(bob, {
     ...miraChoice(room, 'on'),

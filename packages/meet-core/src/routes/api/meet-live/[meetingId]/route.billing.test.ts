@@ -3,6 +3,9 @@ import { actorId, call, f, meetingId, version } from './phase-a-fixture';
 import { POST as live } from './route';
 
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(),
+}));
 vi.mock('@opennextjs/cloudflare', async () =>
   (await import('./phase-a-fixture')).phaseAModules.cloudflare()
 );

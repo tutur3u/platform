@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   authority: vi.fn(),
@@ -7,10 +7,12 @@ const f = vi.hoisted(() => ({
   gate: vi.fn(),
   room: vi.fn(),
   workspace: vi.fn(),
+  getUserById: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
+    auth: { admin: { getUserById: f.getUserById } },
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle: f.workspace }) }),
     }),
@@ -177,4 +179,19 @@ it('offers the notice only when the deployment, gate, attestation and provider a
     f.env.mockResolvedValueOnce(env);
     expect(await readRoomMiraAvailability(access)).toBe(false);
   }
+});
+
+afterEach(() => vi.unstubAllEnvs());
+
+it('rejects an unconfirmed Meet account before requesting the room fence', async () => {
+  vi.stubEnv('MEET_UX_V2', 'true');
+  f.getUserById.mockResolvedValue({
+    data: { user: { id: 'requester', app_metadata: {} } },
+  });
+  f.room.mockResolvedValue({ ready: true });
+  await expect(requireRoomMiraFence(access)).rejects.toMatchObject({
+    status: 403,
+    code: 'MIRA_ACCOUNT_CONFIRMATION_REQUIRED',
+  });
+  expect(f.room).not.toHaveBeenCalled();
 });

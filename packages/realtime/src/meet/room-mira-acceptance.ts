@@ -46,6 +46,7 @@ export const miraRoomAcceptanceCommand = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('mira.room.end'),
     reason: z.enum(['turned_off', 'minor_reported']),
+    expectedRevision: z.number().int().positive().optional(),
   }),
 ]);
 
@@ -154,7 +155,12 @@ export function applyMiraRoomAcceptance(
         ? !state.ended && !!presenceOf(state, accountId)
         : canAcceptMiraRoom(state, token);
     if (!allowed) return { state, body: { error: 'Forbidden' }, status: 403 };
-    if (!current) return { state, body: { endedRevision: null } };
+    if (
+      !current ||
+      (parsed.data.expectedRevision !== undefined &&
+        parsed.data.expectedRevision !== current.revision)
+    )
+      return { state, body: { endedRevision: null } };
     const next = withoutTranscriptAllows({
       ...state,
       miraRoom: { ...room, acceptance: null },
@@ -211,6 +217,9 @@ export function applyMiraRoomAcceptance(
       revision,
       acceptorName,
       replacedRevision: current?.revision ?? null,
+      ...(acceptance.accountConfirmationRequired
+        ? { accountConfirmationRequired: true }
+        : {}),
     },
     messages: [line],
   };

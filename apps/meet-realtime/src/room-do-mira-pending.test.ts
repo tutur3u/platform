@@ -112,14 +112,33 @@ test('account-based room activation leaves a transcript decline intact', async (
   const f = fixture(seed());
   const declined = await f.call(alice, transcriptChoice('decline'));
   assert.equal(declined.status, 200);
-  const staged = await f.call(alice, { ...choice('on'), accountConfirmed: true });
+  const staged = await f.call(alice, {
+    ...choice('on'),
+    accountConfirmed: true,
+  });
   assert.equal(staged.status, 200);
-  const finished = await f.call(alice, confirm(staged.body.pendingId, {
-    allowUndecidedTranscript: true,
-  }));
+  const finished = await f.call(
+    alice,
+    confirm(staged.body.pendingId, { allowUndecidedTranscript: true })
+  );
   assert.equal(finished.status, 200);
   assert.equal(isOn(f.snapshot()), true);
-  assert.equal(f.snapshot().transcriptConsent?.choices[alice]?.choice, 'decline');
+  assert.equal(
+    f.snapshot().transcriptConsent?.choices[alice]?.choice,
+    'decline'
+  );
+});
+
+test('ending an incompatible acceptance leaves another revision intact', async () => {
+  const f = fixture(seed());
+  const ended = await f.call(host, {
+    action: 'mira.room.end',
+    reason: 'turned_off',
+    expectedRevision: 2,
+  });
+  assert.equal(ended.status, 200);
+  assert.equal(ended.body.endedRevision, null);
+  assert.equal(f.snapshot().miraRoom?.acceptance?.revision, 1);
 });
 
 test('a staged on has no consent effect until the server confirms it', async () => {

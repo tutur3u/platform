@@ -60,16 +60,7 @@ export function useMiraConsentText(mode: MiraNoticeMode = 'room') {
   ].join('\n');
 }
 
-/** SHA-256 hex of the shown notice text. */
-export async function hashMiraConsentText(text: string) {
-  const digest = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(text)
-  );
-  return [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-}
+export { hashMiraNotice as hashMiraConsentText } from './mira-notice-hash';
 
 /**
  * The notice items and links behind every Mira info affordance, for the

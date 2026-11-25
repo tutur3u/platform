@@ -405,8 +405,9 @@ function CallShellContent({
         onRetry={retryConnection}
         privateMiraUsers={privateMiraUsers(room.state.participants)}
         miraAcceptanceEventId={
-          state.chat.findLast(({ notice }) =>
-            notice?.kind === 'mira.on' || notice?.kind === 'mira.off'
+          state.chat.findLast(
+            ({ notice }) =>
+              notice?.kind === 'mira.on' || notice?.kind === 'mira.off'
           )?.id
         }
         actions={
