@@ -236,10 +236,13 @@ describe('outbox delivery bounds', () => {
     const base = pendingRoom();
     const [first] = base.selfCapture!.outbox;
     // A few more entries than the cap, so only the cap can stop delivery.
-    const outbox = Array.from({ length: SELF_OUTBOX_DAILY_DELIVERIES + 20 }, (_, i) => ({
-      ...first!,
-      seq: 100 + i,
-    }));
+    const outbox = Array.from(
+      { length: SELF_OUTBOX_DAILY_DELIVERIES + 20 },
+      (_, i) => ({
+        ...first!,
+        seq: 100 + i,
+      })
+    );
     const state: RoomServiceState = {
       ...base,
       selfCapture: { ...base.selfCapture!, outbox },
