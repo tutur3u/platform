@@ -18,7 +18,11 @@ export const DEFAULT_WEB_API_ORIGIN = 'https://tuturuuu.com';
  * request to one of them and relies on that proxy for the API cost guard and
  * the CSRF check, so a forward target outside this list is refused.
  */
-export const WEB_API_HOSTS = ['tuturuuu.com', 'web.tutur3u.com'] as const;
+export const WEB_API_HOSTS = [
+  'tuturuuu.com',
+  'web.tutur3u.com',
+  'web-api.tuturuuu.com',
+] as const;
 
 /** `TUTURUUU_WEB_API_HOSTS` entries must be exact, dotted DNS hostnames. */
 const HOSTNAME =

@@ -23,6 +23,14 @@ describe('resolveWebApiOrigin', () => {
     expect(DEFAULT_WEB_API_ORIGIN).toBe('https://tuturuuu.com');
   });
 
+  it('accepts the production API-core origin without an environment allowlist', () => {
+    expect(
+      resolveWebApiOrigin({
+        INTERNAL_WEB_API_ORIGIN: 'https://web-api.tuturuuu.com',
+      })
+    ).toBe('https://web-api.tuturuuu.com');
+  });
+
   it.each([
     ...WEB_API_HOSTS.map((host) => `https://${host}`),
     'https://tuturuuu.com/',
