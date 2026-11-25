@@ -275,6 +275,8 @@ extension _InventoryLocalReads on InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
+    String? categoryId,
+    InventoryProductSort sort = InventoryProductSort.newest,
   }) async {
     if (!await _networkAvailable()) {
       return await _localProducts(
@@ -283,6 +285,8 @@ extension _InventoryLocalReads on InventoryRepository {
         status: status,
         page: page,
         pageSize: pageSize,
+        categoryId: categoryId,
+        sort: sort,
       );
     }
     try {
@@ -297,6 +301,8 @@ extension _InventoryLocalReads on InventoryRepository {
               'status': status,
               'page': '$page',
               'pageSize': '$pageSize',
+              if (categoryId != null) 'categoryId': categoryId,
+              if (sort.sortBy != null) 'sort': sort.name,
             },
             fetch: () => _api.getJson(
               InventoryEndpoints.products(
@@ -305,6 +311,9 @@ extension _InventoryLocalReads on InventoryRepository {
                 status: status,
                 page: page,
                 pageSize: pageSize,
+                categoryId: categoryId,
+                sortBy: sort.sortBy,
+                sortOrder: sort.sortOrder,
               ),
             ),
             decode: (response) => (
@@ -361,7 +370,7 @@ extension _InventoryLocalReads on InventoryRepository {
         result.data,
         await _mutationQueue.listPending(),
         query: query?.trim(),
-        includeCreates: page == 1 && status == 'active',
+        includeCreates: page == 1 && status == 'active' && categoryId == null,
       );
       return (
         data: data,
@@ -375,6 +384,8 @@ extension _InventoryLocalReads on InventoryRepository {
         status: status,
         page: page,
         pageSize: pageSize,
+        categoryId: categoryId,
+        sort: sort,
       );
     }
   }
@@ -537,6 +548,8 @@ extension _InventoryLocalReads on InventoryRepository {
     required int page,
     required int pageSize,
     String? query,
+    String? categoryId,
+    InventoryProductSort sort = InventoryProductSort.newest,
   }) async {
     final search = query?.trim() ?? '';
     final matcher = search.isEmpty ? null : compileLocalIlike(search);
@@ -546,17 +559,13 @@ extension _InventoryLocalReads on InventoryRepository {
               (product) =>
                   (status == 'all' ||
                       product.archived == (status == 'archived')) &&
+                  (categoryId == null || product.categoryId == categoryId) &&
                   (matcher == null ||
                       (product.name != null &&
                           matcher.hasMatch(product.name!))),
             )
             .toList(growable: false)
-          ..sort((a, b) {
-            final date = (b.createdAt ?? DateTime(0)).compareTo(
-              a.createdAt ?? DateTime(0),
-            );
-            return date == 0 ? a.id.compareTo(b.id) : date;
-          });
+          ..sort((a, b) => _compareLocalProducts(a, b, sort));
     return (
       data: products
           .skip((page - 1).clamp(0, 100000) * pageSize)
@@ -564,5 +573,25 @@ extension _InventoryLocalReads on InventoryRepository {
           .toList(growable: false),
       count: products.length,
     );
+  }
+
+  static int _compareLocalProducts(
+    InventoryProduct a,
+    InventoryProduct b,
+    InventoryProductSort sort,
+  ) {
+    final name = (a.name ?? '').toLowerCase().compareTo(
+      (b.name ?? '').toLowerCase(),
+    );
+    final date = (a.createdAt ?? DateTime(0)).compareTo(
+      b.createdAt ?? DateTime(0),
+    );
+    final order = switch (sort) {
+      InventoryProductSort.newest => -date,
+      InventoryProductSort.oldest => date,
+      InventoryProductSort.nameAsc => name,
+      InventoryProductSort.nameDesc => -name,
+    };
+    return order == 0 ? a.id.compareTo(b.id) : order;
   }
 }

@@ -15,6 +15,8 @@ import 'package:mobile/data/models/inventory/inventory_checkout_defaults.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/inventory/inventory_season_price.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
+import 'package:mobile/data/repositories/inventory_media_upload.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_product_image_cache.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -22,6 +24,7 @@ import 'package:mobile/data/sources/api_client.dart';
 part 'inventory_repository_cache.dart';
 part 'inventory_repository_local.dart';
 part 'inventory_repository_offline_preparation.dart';
+part 'inventory_repository_product_detail.dart';
 part 'inventory_repository_product_mutations.dart';
 part 'inventory_repository_sales_pending.dart';
 part 'inventory_repository_sales_period_mutations.dart';
@@ -58,38 +61,6 @@ class InventoryRepository {
   DateTime? _catalogBackfillAt;
   InventorySaleDetail? peekSaleDetail(String wsId, String saleId) =>
       _peekSaleDetail(wsId, saleId);
-
-  Map<String, dynamic> _buildProductPayload({
-    required String name,
-    required String categoryId,
-    required String ownerId,
-    required List<InventoryStockEntry> inventory,
-    String? manufacturerId,
-    String? description,
-    String? usage,
-    String? financeCategoryId,
-  }) {
-    return {
-      'name': name,
-      'category_id': categoryId,
-      'owner_id': ownerId,
-      'manufacturer_id': manufacturerId,
-      if (description != null) 'description': description,
-      if (usage != null) 'usage': usage,
-      if (financeCategoryId != null) 'finance_category_id': financeCategoryId,
-      'inventory': inventory
-          .map(
-            (row) => {
-              'unit_id': row.unitId,
-              'warehouse_id': row.warehouseId,
-              'amount': row.amount,
-              'min_amount': row.minAmount,
-              'price': row.price,
-            },
-          )
-          .toList(growable: false),
-    };
-  }
 
   Map<String, dynamic> _normalizeOptionProduct(
     Map<String, dynamic> json, {
@@ -198,6 +169,8 @@ class InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
+    String? categoryId,
+    InventoryProductSort sort = InventoryProductSort.newest,
   }) => _getProducts(
     wsId,
     query: query,
@@ -205,6 +178,29 @@ class InventoryRepository {
     page: page,
     pageSize: pageSize,
     forceRefresh: forceRefresh,
+    categoryId: categoryId,
+    sort: sort,
+  );
+
+  /// Stock movements for one product, newest first; needs view-stock.
+  Future<InventoryStockHistoryPage> getProductStockHistory(
+    String wsId,
+    String productId, {
+    int offset = 0,
+  }) => _getProductStockHistory(wsId, productId, offset: offset);
+
+  /// Uploads a product image and returns the URL to save as `avatar_url`.
+  Future<String> uploadProductImage({
+    required String wsId,
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) => uploadInventoryProductImage(
+    api: _api,
+    wsId: wsId,
+    bytes: bytes,
+    fileName: fileName,
+    contentType: contentType,
   );
 
   Future<InventoryProduct?> getProduct(

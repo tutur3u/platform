@@ -205,26 +205,39 @@ abstract final class InventoryEndpoints {
     String? status,
     int? page,
     int? pageSize,
+    String? categoryId,
+    String? sortBy,
+    String? sortOrder,
   }) {
-    final params = <String, String>{};
-    if (query != null && query.trim().isNotEmpty) {
-      params['q'] = query.trim();
-    }
-    if (status != null && status.trim().isNotEmpty) {
-      params['status'] = status.trim();
-    }
-    if (page != null) {
-      params['page'] = '$page';
-    }
-    if (pageSize != null) {
-      params['pageSize'] = '$pageSize';
-    }
-
-    final suffix = params.isEmpty
-        ? ''
-        : '?${Uri(queryParameters: params).query}';
+    final suffix = _suffix({
+      'q': query?.trim(),
+      'status': status?.trim(),
+      'page': page?.toString(),
+      'pageSize': pageSize?.toString(),
+      'categoryId': categoryId,
+      'sortBy': sortBy,
+      'sortOrder': sortOrder,
+    });
     return '/api/v1/workspaces/$wsId/inventory/products$suffix';
   }
+
+  /// Present values only, encoded as a query string with its leading `?`.
+  static String _suffix(Map<String, String?> params) {
+    final present = {
+      for (final MapEntry(:key, :value) in params.entries)
+        if (value != null && value.isNotEmpty) key: value,
+    };
+    return present.isEmpty ? '' : '?${Uri(queryParameters: present).query}';
+  }
+
+  static String productStockHistory(String wsId, String productId) =>
+      '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}/inventory/history';
+
+  static String mediaUploadUrl(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/media/upload-url';
+
+  static String mediaReadUrl(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/media/read-url';
 
   static String product(String wsId, String productId) =>
       '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}';
@@ -244,19 +257,11 @@ abstract final class InventoryEndpoints {
     int? offset,
     String? periodId,
   }) {
-    final params = <String, String>{};
-    if (limit != null) {
-      params['limit'] = '$limit';
-    }
-    if (offset != null) {
-      params['offset'] = '$offset';
-    }
-    if (periodId != null && periodId.isNotEmpty) {
-      params['period_id'] = periodId;
-    }
-    final suffix = params.isEmpty
-        ? ''
-        : '?${Uri(queryParameters: params).query}';
+    final suffix = _suffix({
+      'limit': limit?.toString(),
+      'offset': offset?.toString(),
+      'period_id': periodId,
+    });
     return '/api/v1/workspaces/$wsId/inventory/sales$suffix';
   }
 
@@ -274,16 +279,10 @@ abstract final class InventoryEndpoints {
       '/api/v1/workspaces/$wsId/inventory/sales-periods/$periodId';
 
   static String auditLogs(String wsId, {int? limit, int? offset}) {
-    final params = <String, String>{};
-    if (limit != null) {
-      params['limit'] = '$limit';
-    }
-    if (offset != null) {
-      params['offset'] = '$offset';
-    }
-    final suffix = params.isEmpty
-        ? ''
-        : '?${Uri(queryParameters: params).query}';
+    final suffix = _suffix({
+      'limit': limit?.toString(),
+      'offset': offset?.toString(),
+    });
     return '/api/v1/workspaces/$wsId/inventory/audit-logs$suffix';
   }
 

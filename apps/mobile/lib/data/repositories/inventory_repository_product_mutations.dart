@@ -1,6 +1,40 @@
 part of 'inventory_repository.dart';
 
 extension InventoryProductMutations on InventoryRepository {
+  Map<String, dynamic> _buildProductPayload({
+    required String name,
+    required String categoryId,
+    required String ownerId,
+    required List<InventoryStockEntry> inventory,
+    String? manufacturerId,
+    String? description,
+    String? usage,
+    String? financeCategoryId,
+    String? avatarUrl,
+  }) {
+    return {
+      'name': name,
+      'category_id': categoryId,
+      'owner_id': ownerId,
+      'manufacturer_id': manufacturerId,
+      if (description != null) 'description': description,
+      if (usage != null) 'usage': usage,
+      if (financeCategoryId != null) 'finance_category_id': financeCategoryId,
+      if (avatarUrl != null) 'avatar_url': avatarUrl.isEmpty ? null : avatarUrl,
+      'inventory': inventory
+          .map(
+            (row) => {
+              'unit_id': row.unitId,
+              'warehouse_id': row.warehouseId,
+              'amount': row.amount,
+              'min_amount': row.minAmount,
+              'price': row.price,
+            },
+          )
+          .toList(growable: false),
+    };
+  }
+
   Future<void> deleteProduct({
     required String wsId,
     required String productId,
@@ -34,6 +68,7 @@ extension InventoryProductMutations on InventoryRepository {
     String? description,
     String? usage,
     String? financeCategoryId,
+    String? avatarUrl,
   }) async {
     final path = InventoryEndpoints.createProduct(wsId);
     final payload = _buildProductPayload(
@@ -45,6 +80,7 @@ extension InventoryProductMutations on InventoryRepository {
       description: description,
       usage: usage,
       financeCategoryId: financeCategoryId,
+      avatarUrl: avatarUrl,
     );
     await queueOrSendVoid(
       queue: _mutationQueue,
@@ -75,6 +111,7 @@ extension InventoryProductMutations on InventoryRepository {
     String? description,
     String? usage,
     String? financeCategoryId,
+    String? avatarUrl,
   }) async {
     final path = InventoryEndpoints.product(wsId, productId);
     final payload = _buildProductPayload(
@@ -86,6 +123,7 @@ extension InventoryProductMutations on InventoryRepository {
       description: description,
       usage: usage,
       financeCategoryId: financeCategoryId,
+      avatarUrl: avatarUrl,
     );
     await queueOrSendVoid(
       queue: _mutationQueue,
