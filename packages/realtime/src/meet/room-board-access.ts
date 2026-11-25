@@ -14,7 +14,8 @@ const boardAccessCommand = z.object({ action: z.literal('board.access') });
  * The room passes `connected`, the room ids with an open socket. Presence
  * outlives a dropped socket for the reconnect grace period, so with it a
  * person whose connection dropped is refused at once instead of after the
- * grace period.
+ * grace period. Only the Meet API, with a signed server token, may ask; a
+ * browser token is refused before presence is read.
  */
 export function applyRoomBoardAccess(
   snapshot: RoomServiceState,
@@ -23,6 +24,12 @@ export function applyRoomBoardAccess(
   connected?: ReadonlySet<string>
 ): RoomServiceResult | null {
   if (!boardAccessCommand.safeParse(input).success) return null;
+  const denied = {
+    state: snapshot,
+    body: { error: 'Board access denied' },
+    status: 403,
+  };
+  if (!token.scopes.includes('meet:server')) return denied;
   const account = token.accountId ?? token.userId;
   const present = Object.entries(snapshot.presence).some(
     ([userId, person]) =>
@@ -34,7 +41,5 @@ export function applyRoomBoardAccess(
     (present ||
       token.role === 'host' ||
       token.scopes.includes('meet:workspace-member'));
-  return allowed
-    ? { state: snapshot, body: { ok: true } }
-    : { state: snapshot, body: { error: 'Board access denied' }, status: 403 };
+  return allowed ? { state: snapshot, body: { ok: true } } : denied;
 }

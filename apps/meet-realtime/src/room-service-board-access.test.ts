@@ -34,3 +34,16 @@ test('the room answers the board check only over an open socket', () => {
   // Without the room's socket list the check fails closed.
   assert.equal(check().status, 403);
 });
+
+test('the room refuses the board check from a browser token', () => {
+  const browser = { ...guest, scopes: [] } as MeetRealtimeTokenPayload;
+  const result = roomService(
+    state,
+    browser,
+    { action: 'board.access' },
+    undefined,
+    { connectedUsers: new Set(['guest']) }
+  );
+  assert.equal(result.status, 403);
+  assert.deepEqual(result.body, { error: 'Board access denied' });
+});

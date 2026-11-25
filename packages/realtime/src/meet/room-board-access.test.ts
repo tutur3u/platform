@@ -81,6 +81,18 @@ describe('board access', () => {
     ).toMatchObject({ body: { ok: true } });
   });
 
+  it('refuses a browser token even with an open socket', () => {
+    const browser = { ...guest, scopes: [] } as MeetRealtimeTokenPayload;
+    expect(
+      applyRoomBoardAccess(
+        present,
+        browser,
+        { action: 'board.access' },
+        new Set(['guest'])
+      )?.status
+    ).toBe(403);
+  });
+
   it('ignores every other action', () => {
     expect(
       applyRoomBoardAccess(present, guest, { action: 'read' }, new Set())

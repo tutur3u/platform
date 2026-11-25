@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { boardActorId } from './board-sync-actor';
 import {
+  estimatedFillLines,
+  MAX_GUEST_FILL_LINES,
+} from './board-sync-guest-element';
+import {
   type BoardOpenWindows,
   chargeBoardOpen,
   isSafeBoardLink,
@@ -163,5 +167,79 @@ describe('guest element types', () => {
       'ok',
       'ok2',
     ]);
+  });
+});
+
+describe('guest element ranges', () => {
+  const rectangle = {
+    id: 'r',
+    type: 'rectangle',
+    version: 1,
+    versionNonce: 1,
+    seed: 1,
+    x: 0,
+    y: 0,
+    width: 200,
+    height: 100,
+    angle: 0,
+    strokeWidth: 2,
+    roughness: 1,
+    opacity: 100,
+    fillStyle: 'hachure',
+    backgroundColor: '#ffc9c9',
+  };
+  const check = (over: object) =>
+    sanitizeGuestElement({ ...rectangle, ...over } as unknown as BoardElement);
+
+  it('refuses a hachure fill that would freeze every viewer', () => {
+    const exploit = { strokeWidth: 0.01, height: 1e9 };
+    expect(check(exploit)).toBeNull();
+    // Even inside every single range, the fill line estimate still refuses.
+    const wide = { strokeWidth: 0.5, width: 1e5, height: 1e5 };
+    expect(estimatedFillLines({ ...rectangle, ...wide })).toBeGreaterThan(
+      MAX_GUEST_FILL_LINES
+    );
+    expect(check(wide)).toBeNull();
+    expect(check({ ...wide, fillStyle: 'solid' })).not.toBeNull();
+    expect(check(rectangle)).not.toBeNull();
+  });
+
+  it.each([
+    ['x', 1e6, 1e6 + 1],
+    ['y', -1e6, -1e6 - 1],
+    ['width', 1e5, 1e5 + 1],
+    ['width', 0, -1],
+    ['height', 1e5, 1e5 + 1],
+    ['strokeWidth', 0.5, 0.49],
+    ['strokeWidth', 64, 65],
+    ['roughness', 5, 6],
+    ['roughness', 0, -1],
+    ['opacity', 0, -1],
+    ['angle', 8 * Math.PI, 8 * Math.PI + 1],
+    ['seed', 2 ** 31, 2 ** 31 + 1],
+    ['version', 0, -1],
+    ['versionNonce', -(2 ** 31), -(2 ** 31) - 1],
+    ['lineHeight', 0.5, 0.4],
+    ['lineHeight', 10, 11],
+    ['fontSize', 1, 0.5],
+    ['fontSize', 512, 513],
+    ['roundness', { type: 3, value: 1e5 }, { type: 3, value: 1e5 + 1 }],
+    ['points', [[1e5, -1e5]], [[1e5 + 1, 0]]],
+    ['pressures', [0, 1], [1.5]],
+    [
+      'startBinding',
+      { elementId: 'b', focus: 1, gap: 0, fixedPoint: [0, 1] },
+      { elementId: 'b', focus: 1.1, gap: 0 },
+    ],
+    [
+      'endBinding',
+      { elementId: 'b', fixedPoint: [-1, 2] },
+      { elementId: 'b', fixedPoint: [0, 3] },
+    ],
+  ])('keeps %s at its bound and refuses it past', (key, edge, past) => {
+    // Keep the fill estimate out of the way of the field under test.
+    const solid = { fillStyle: 'solid' };
+    expect(check({ ...solid, [key]: edge })).not.toBeNull();
+    expect(check({ ...solid, [key]: past })).toBeNull();
   });
 });
